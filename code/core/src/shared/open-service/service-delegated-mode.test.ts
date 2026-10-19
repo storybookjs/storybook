@@ -13,7 +13,7 @@ import {
   SERVICE_COMMAND_INVOKE,
   SERVICE_COMMAND_RESULT,
   SERVICE_COMMAND_UNHANDLED,
-  SERVICE_PATCHES,
+  SERVICE_ENTRY,
   type CommandInvokePayload,
 } from './service-channel.ts';
 import { defineService } from './service-definition.ts';
@@ -143,19 +143,19 @@ describe('delegated command dispatch', () => {
     channel.emitExternal(SERVICE_COMMAND_ACK, {
       serviceId: mutableRecordLookupServiceDef.id,
       callId,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
-    channel.emitExternal(SERVICE_PATCHES, {
+    channel.emitExternal(SERVICE_ENTRY, {
       serviceId: mutableRecordLookupServiceDef.id,
-      state: { a: { k: 'v' } },
-      version: 1,
-      clientId: 'peer',
+      stamp: { seq: 1, runtimeId: 'peer', counter: 1 },
+      command: 'assignRecordField',
+      patch: [{ op: 'add', path: '/a', value: { k: 'v' } }],
     });
     channel.emitExternal(SERVICE_COMMAND_RESULT, {
       serviceId: mutableRecordLookupServiceDef.id,
       callId,
       result: undefined,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     await expect(promise).resolves.toBeUndefined();
@@ -182,7 +182,7 @@ describe('delegated command dispatch', () => {
       commandName: 'assignRecordField',
       input: { entryId: 'a', fieldKey: 'k', fieldValue: 'v' },
       callId: 'call-1',
-      clientId: 'requester',
+      runtimeId: 'requester',
     });
 
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
@@ -206,7 +206,6 @@ describe('delegated command dispatch', () => {
     channel.emitExternal(SERVICE_COMMAND_UNHANDLED, {
       serviceId: locallyImplementedServiceDef.id,
       callId,
-      clientId: 'instance',
     });
 
     const error = await promise.catch((caught: unknown) => caught);
@@ -282,19 +281,19 @@ describe('delegated thin loads', () => {
     channel.emitExternal(SERVICE_COMMAND_ACK, {
       serviceId: thinLoadServiceDef.id,
       callId: invoke.callId,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
-    channel.emitExternal(SERVICE_PATCHES, {
+    channel.emitExternal(SERVICE_ENTRY, {
       serviceId: thinLoadServiceDef.id,
-      state: { components: { button: 'extracted-on-peer' } },
-      version: 1,
-      clientId: 'peer',
+      stamp: { seq: 1, runtimeId: 'peer', counter: 1 },
+      command: 'extractDocgen',
+      patch: [{ op: 'add', path: '/components/button', value: 'extracted-on-peer' }],
     });
     channel.emitExternal(SERVICE_COMMAND_RESULT, {
       serviceId: thinLoadServiceDef.id,
       callId: invoke.callId,
       result: 'extracted-on-peer',
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     await expect(promise).resolves.toBe('extracted-on-peer');

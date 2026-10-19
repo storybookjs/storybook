@@ -1,0 +1,11 @@
+{
+  "name": "706-new-ui-scheduled-flow",
+  "description": "Agentic reference, new-UI workflow (scheduled delivery).",
+  "type": "module",
+  "evals": {
+    "externalRepo": {
+      "repo": "yannbf/mealdrop",
+      "ref": "refs/tags/agentic-reference/droppy-70pc-v4"
+    }
+  }
+}

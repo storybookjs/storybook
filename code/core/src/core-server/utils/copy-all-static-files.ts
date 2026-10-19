@@ -1,5 +1,5 @@
 import { cp } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 
@@ -17,8 +17,9 @@ export async function copyAllStaticFilesRelativeToMain(
 
     const { staticPath: from, targetEndpoint: to } = mapStaticDir(dir, configDir);
     const targetPath = join(outputDir, to);
+    // Resolved on both sides so the comparison does not depend on the separators `cp` reports.
     const skipPaths = ['index.html', 'iframe.html', 'index.json', 'project.json'].map((f) =>
-      join(outputDir, f)
+      resolve(outputDir, f)
     );
     if (!from.includes('node_modules')) {
       logger.info(
@@ -28,7 +29,7 @@ export async function copyAllStaticFilesRelativeToMain(
     await cp(from, targetPath, {
       dereference: true,
       preserveTimestamps: true,
-      filter: (_, dest) => !skipPaths.includes(dest),
+      filter: (_, dest) => !skipPaths.includes(resolve(dest)),
       recursive: true,
       force: true,
     });

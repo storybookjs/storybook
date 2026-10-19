@@ -1,6 +1,6 @@
 import type {
   AnnotatedStoryFn,
-  Args,
+  Args as BaseArgs,
   ArgsFromMeta,
   ArgsStoryFn,
   ComponentAnnotations,
@@ -16,15 +16,35 @@ import type { Component, ComponentProps } from 'svelte';
 import type { SetOptional, Simplify } from 'type-fest';
 
 import type { SvelteRenderer } from './types.ts';
+import type { StoryComponent } from './svelte-csf/types.ts';
 
-export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
+export type { ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
+
+/**
+ * Without a type argument, the args of a story: a record of arg names to values.
+ *
+ * With the `Story` component from `defineMeta`, the args of that story.
+ *
+ * @example
+ * ```svelte
+ * {#snippet template(args: Args<typeof Story>)}
+ *   <!--             👆 first parameter ->
+ * {/snippet}
+ * ```
+ */
+export type Args<TStoryCmp = never> = [TStoryCmp] extends [never]
+  ? BaseArgs
+  : // The component type is `any`: `Component` props are contravariant, so matching on `Cmp` infers nothing
+    TStoryCmp extends StoryComponent<infer TArgs extends Record<string, any>, any>
+    ? TArgs
+    : never;
 
 /**
  * Metadata to configure the stories for a component.
  *
  * @see [Default export](https://storybook.js.org/docs/api/csf#default-export)
  */
-export type Meta<CmpOrArgs = Args> =
+export type Meta<CmpOrArgs = BaseArgs> =
   CmpOrArgs extends Component<infer Props>
     ? ComponentAnnotations<SvelteRenderer<CmpOrArgs>, Props>
     : ComponentAnnotations<SvelteRenderer, CmpOrArgs>;
@@ -34,7 +54,7 @@ export type Meta<CmpOrArgs = Args> =
  *
  * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
  */
-export type StoryFn<TCmpOrArgs = Args> =
+export type StoryFn<TCmpOrArgs = BaseArgs> =
   TCmpOrArgs extends Component<infer Props>
     ? AnnotatedStoryFn<SvelteRenderer, Props>
     : AnnotatedStoryFn<SvelteRenderer, TCmpOrArgs>;
@@ -44,7 +64,7 @@ export type StoryFn<TCmpOrArgs = Args> =
  *
  * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
  */
-export type StoryObj<MetaOrCmpOrArgs = Args> = MetaOrCmpOrArgs extends {
+export type StoryObj<MetaOrCmpOrArgs = BaseArgs> = MetaOrCmpOrArgs extends {
   render?: ArgsStoryFn<SvelteRenderer, any>;
   component: infer Comp; // We cannot use "extends Component" here, because TypeScript for some reason then refuses to ever enter the true branch
   args?: infer DefaultArgs;

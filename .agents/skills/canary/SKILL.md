@@ -2,6 +2,8 @@
 name: canary
 description: Finds or publishes a pkg.pr.new canary release for a Storybook branch. Use when the user wants the canary package specifier for a branch or needs to trigger the canary workflow manually.
 allowed-tools: Bash
+metadata:
+  internal: true
 ---
 
 # Find Or Publish Canary Release

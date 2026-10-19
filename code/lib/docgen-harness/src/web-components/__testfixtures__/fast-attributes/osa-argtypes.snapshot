@@ -1,0 +1,149 @@
+{
+  "count": {
+    "description": "Current click count.",
+    "name": "count",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "0",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "disabled": {
+    "description": "Disables the button (boolean attribute).",
+    "name": "disabled",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
+  "fast-count-change-event": {
+    "control": false,
+    "description": "Emitted after every click with the new count.",
+    "name": "fast-count-change",
+    "table": {
+      "category": "events",
+      "type": {
+        "summary": "CustomEvent<number>",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "CustomEvent<number>",
+    },
+  },
+  "increment-method": {
+    "description": "Increments the counter and fires `fast-count-change`.",
+    "name": "increment",
+    "table": {
+      "category": "methods",
+      "type": {
+        "summary": "() => void",
+      },
+    },
+    "type": {
+      "name": "function",
+    },
+  },
+  "items": {
+    "description": "Property only, never reflected.",
+    "name": "items",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "[]",
+      },
+      "type": {
+        "summary": "string[]",
+      },
+    },
+    "type": {
+      "name": "array",
+      "value": {
+        "name": "string",
+      },
+    },
+  },
+  "label": {
+    "description": "Visible label.",
+    "name": "label",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'Go'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "max-count": {
+    "description": "Upper bound for the counter; attribute name differs from the field.",
+    "name": "max-count",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "3",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "maxCount": {
+    "description": "Upper bound for the counter; attribute name differs from the field.",
+    "name": "maxCount",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "3",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "size": {
+    "description": "Button size.",
+    "name": "size",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'small'",
+      },
+      "type": {
+        "summary": "'small' | 'large'",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "value": [
+        "small",
+        "large",
+      ],
+    },
+  },
+}

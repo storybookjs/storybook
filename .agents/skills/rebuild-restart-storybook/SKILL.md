@@ -2,6 +2,8 @@
 name: rebuild-restart-storybook
 description: Rebuild and restart the internal Storybook UI after changes to internal Storybook code (core, addons, frameworks, renderers, libs, etc.), then optionally display a UI review. Use after editing any package in the Storybook monorepo's code/ directory, or when the user asks to rebuild and/or restart Storybook.
 allowed-tools: Bash, Read
+metadata:
+  internal: true
 ---
 
 # Rebuild and Restart Storybook

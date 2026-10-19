@@ -2,6 +2,8 @@
 name: storybook-startup-benchmark
 description: Measure Storybook startup time from spawning `storybook dev` until the first story renders in the browser. Use when the user asks about Storybook boot time, server-ready timing, first story render timing, startup regressions, benchmarking with repeat runs, or comparing Storybook versions or feature flags.
 allowed-tools: Bash, Read
+metadata:
+  internal: true
 ---
 
 # Storybook Startup Benchmark

@@ -1129,6 +1129,31 @@ function collectObjectLiteralDefaults(
   }
 }
 
+function followVariableReferences(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  symbol: ts.Symbol
+): ts.Symbol {
+  let current = symbol;
+  for (let depth = 0; depth <= MAX_UNWRAP_DEPTH; depth++) {
+    const decl = current.valueDeclaration;
+    if (
+      !decl ||
+      !typescript.isVariableDeclaration(decl) ||
+      !decl.initializer ||
+      !typescript.isIdentifier(decl.initializer)
+    ) {
+      return current;
+    }
+    const next = checker.getSymbolAtLocation(decl.initializer);
+    if (!next) {
+      return current;
+    }
+    current = resolveAliasedSymbol(typescript, checker, next);
+  }
+  return current;
+}
+
 /**
  * Extracts default values from `Component.defaultProps = {...}` and `static defaultProps = {...}`
  * patterns.
@@ -1302,42 +1327,36 @@ function extractPropItem(
  * hundreds of CSS properties. Project-local `.d.ts` with fewer than 30 props per file are
  * unaffected.
  */
-function getBulkSourceExclusions(properties: ts.Symbol[]): Set<string> {
-  // Cache getPropSourceFile results — avoids walking declarations twice per prop.
-  const propSourceCache = new Map<ts.Symbol, string | undefined>();
-  const getSource = (prop: ts.Symbol) => {
-    let cached = propSourceCache.get(prop);
-    if (cached === undefined && !propSourceCache.has(prop)) {
-      cached = getPropSourceFile(prop);
-      propSourceCache.set(prop, cached);
+function getBulkSourceExclusions(typescript: typeof ts, properties: ts.Symbol[]): Set<string> {
+  const bulkCandidates = properties.flatMap((prop) => {
+    const source = getPropSourceFile(prop);
+    if (!source || !(source.includes('node_modules') || source.endsWith('.d.ts'))) {
+      return [];
     }
-    return cached;
+    // A module augmentation (e.g. Next.js adding `tw` to React's HTMLAttributes) declares a single
+    // prop in its own file, so the interface it extends is counted alongside the file.
+    return [{ prop, source, parent: getParentType(typescript, prop)?.name }];
+  });
+
+  const countBy = (keys: (string | undefined)[]) => {
+    const counts = new Map<string, number>();
+    for (const key of keys) {
+      if (key) {
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+    }
+    return counts;
   };
+  const sourceCount = countBy(bulkCandidates.map(({ source }) => source));
+  const parentCount = countBy(bulkCandidates.map(({ parent }) => parent));
+  const isBulk = (counts: Map<string, number>, key: string | undefined) =>
+    !!key && (counts.get(key) ?? 0) > LARGE_SOURCE_THRESHOLD;
 
-  const sourceCount = new Map<string, number>();
-
-  for (const prop of properties) {
-    const source = getSource(prop);
-    if (source && (source.includes('node_modules') || source.endsWith('.d.ts'))) {
-      sourceCount.set(source, (sourceCount.get(source) ?? 0) + 1);
-    }
-  }
-
-  const bulkSources = new Set(
-    [...sourceCount.entries()]
-      .filter(([, count]) => count > LARGE_SOURCE_THRESHOLD)
-      .map(([source]) => source)
+  return new Set(
+    bulkCandidates
+      .filter(({ source, parent }) => isBulk(sourceCount, source) || isBulk(parentCount, parent))
+      .map(({ prop }) => prop.getName())
   );
-
-  const excluded = new Set<string>();
-  for (const prop of properties) {
-    const source = getSource(prop);
-    if (source && bulkSources.has(source)) {
-      excluded.add(prop.getName());
-    }
-  }
-
-  return excluded;
 }
 
 // ---------------------------------------------------------------------------
@@ -1482,10 +1501,13 @@ export function serializeComponentDoc(
   } else {
     allProperties = propsType.getApparentProperties();
   }
-  const excluded = getBulkSourceExclusions(allProperties);
+  const excluded = getBulkSourceExclusions(typescript, allProperties);
+
+  // Defaults live on the implementation, not on `export const Button = Inner` re-bindings.
+  const implementation = followVariableReferences(typescript, checker, resolved);
 
   // Collect defaults: destructuring > defaultProps > JSDoc (in extractPropItem)
-  const defaultsMap = extractDestructuringDefaults(typescript, resolved, checker);
+  const defaultsMap = extractDestructuringDefaults(typescript, implementation, checker);
 
   // Fallback: when the symbol resolves to a .d.ts file (e.g. package imports in
   // monorepos), .d.ts declarations have no function bodies so extractDestructuringDefaults
@@ -1502,7 +1524,7 @@ export function serializeComponentDoc(
   }
 
   // Also check for defaultProps pattern (legacy, deprecated in React 19)
-  const staticDefaults = extractStaticDefaultProps(typescript, checker, resolved);
+  const staticDefaults = extractStaticDefaultProps(typescript, checker, implementation);
   for (const [key, value] of staticDefaults) {
     if (!defaultsMap.has(key)) {
       defaultsMap.set(key, value);
@@ -1511,7 +1533,10 @@ export function serializeComponentDoc(
 
   const props: Record<string, PropItem> = {};
   for (const prop of allProperties) {
-    if (excluded.has(prop.getName())) {
+    if (
+      excluded.has(prop.getName()) ||
+      prop.getJsDocTags(checker).some((tag) => tag.name === 'ignore')
+    ) {
       continue;
     }
     const unionProp = isUnionType(propsType)

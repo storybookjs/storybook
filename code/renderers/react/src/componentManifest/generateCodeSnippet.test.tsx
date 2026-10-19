@@ -24,7 +24,8 @@ function generateResolved(code: string) {
   return Object.keys(csf._storyExports).map((name) => {
     const snippet = getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle');
     return {
-      snippet: recast.print(snippet.node).code,
+      // Recast defaults to `os.EOL`, which would carriage-return snippets built on Windows.
+      snippet: recast.print(snippet.node, { lineTerminator: '\n' }).code,
       imports: snippet.imports.map((ref) => `${ref.importName} from ${ref.importId}`),
       unresolved: snippet.unresolved,
     };
@@ -203,6 +204,14 @@ test('CSF1', () => {
   expect(generateExample(input)).toMatchInlineSnapshot(
     `"const CSF1 = () => <Button label="String"></Button>;"`
   );
+});
+
+test('Local function story reference', () => {
+  const input = withCSF3(dedent`
+    const ParagraphStory = () => <Button />;
+    export const Example = ParagraphStory;
+  `);
+  expect(generateExample(input)).toBe('const Example = () => <Button />;');
 });
 
 test('CSF2', () => {
@@ -819,6 +828,25 @@ test('an arg naming an imported value keeps the name and reports the import it n
       },
     ]
   `);
+});
+
+test('an imported bound story keeps its helper and resolved args', () => {
+  const input = dedent`
+    import { Button } from '@design-system/button';
+    import { renderMatch as Match } from './match-helper';
+    export default { title: 'Match', component: Button };
+    export const FirstHalf = Match.bind({});
+    FirstHalf.args = { home: 'Arsenal', away: 'Aston Villa' };
+  `;
+
+  expect(generateResolved(input)).toEqual([
+    {
+      snippet:
+        'const FirstHalf = () => Match.bind({})({\n    "home": \'Arsenal\',\n    "away": \'Aston Villa\'\n});',
+      imports: ['renderMatch from ./match-helper'],
+      unresolved: [],
+    },
+  ]);
 });
 
 test('args assembled at runtime are reported rather than dropped', () => {

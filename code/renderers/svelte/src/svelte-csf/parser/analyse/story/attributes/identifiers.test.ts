@@ -1,0 +1,390 @@
+import url from 'node:url';
+
+import { describe, expect, it } from 'vitest';
+
+import { getStoryIdentifiers, getStoriesIdentifiers } from './identifiers.ts';
+
+import { getSvelteAST } from '../../../ast.ts';
+import { extractSvelteASTNodes } from '../../../extract/svelte/nodes.ts';
+import { extractStoryAttributesNodes } from '../../../extract/svelte/story/attributes.ts';
+import { StorybookSvelteCSFError } from '../../../../utils/error.ts';
+
+describe(getStoryIdentifiers.name, () => {
+  it("extracts 'exportName' attribute when is a Text string", async () => {
+    const ast = getSvelteAST({
+      code: `
+        <script module>
+          import { defineMeta } from "@storybook/svelte"
+          const { Story } = defineMeta();
+        </script>
+        <Story exportName="Text" />
+      `,
+    });
+    const nodes = await extractSvelteASTNodes({ ast });
+    const { component } = nodes.storyComponents[0];
+    const { exportName, name } = extractStoryAttributesNodes({
+      component,
+      attributes: ['exportName', 'name'],
+    });
+
+    expect(
+      getStoryIdentifiers({
+        exportNameNode: exportName,
+        nameNode: name,
+        component,
+      })
+    ).toEqual({
+      exportName: 'Text',
+      name: undefined,
+    });
+  });
+
+  it("extracts 'exportName' attribute when is an expression with literal", async () => {
+    const ast = getSvelteAST({
+      code: `
+        <script module>
+          import { defineMeta } from "@storybook/svelte"
+          const { Story } = defineMeta();
+        </script>
+        <Story exportName={"ExpressionWithLiteral"} />
+      `,
+    });
+    const nodes = await extractSvelteASTNodes({ ast });
+    const { component } = nodes.storyComponents[0];
+    const { exportName, name } = extractStoryAttributesNodes({
+      component,
+      attributes: ['exportName', 'name'],
+    });
+
+    expect(
+      getStoryIdentifiers({
+        exportNameNode: exportName,
+        nameNode: name,
+        component,
+      })
+    ).toEqual({
+      exportName: 'ExpressionWithLiteral',
+      name: undefined,
+    });
+  });
+
+  it("throws when '<Story />' doesn't provide an 'exportName' or 'name' attribute prop", async () => {
+    const ast = getSvelteAST({
+      code: `
+        <script module>
+          import { defineMeta } from "@storybook/svelte"
+          const { Story } = defineMeta();
+        </script>
+        <Story />
+      `,
+    });
+    const nodes = await extractSvelteASTNodes({ ast });
+    const { component } = nodes.storyComponents[0];
+    const { exportName, name } = extractStoryAttributesNodes({
+      component,
+      attributes: ['exportName', 'name'],
+    });
+
+    expect(() =>
+      getStoryIdentifiers({
+        exportNameNode: exportName,
+        nameNode: name,
+        filename: 'invalid.stories.svelte',
+        component,
+      })
+    ).toThrowErrorMatchingInlineSnapshot(
+      `
+      [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0004 (NoStoryIdentifierError): Missing 'name' or 'exportName' attribute (prop) in a '<Story />' definition in the stories file:  '${url.pathToFileURL('invalid.stories.svelte')}'.
+      All stories must either have a 'name' or an 'exportName' prop, or both.
+
+      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0004
+      ]
+    `
+    );
+  });
+
+  it("it ignores the 'exportName' attribute of '<Story>'s children component", async () => {
+    const ast = getSvelteAST({
+      code: `
+        <script module>
+          import { defineMeta } from "@storybook/svelte"
+          const { Story } = defineMeta();
+        </script>
+        <Story exportName="Default">
+          <Icon exportName="close" />
+        </Story>
+      `,
+    });
+    const nodes = await extractSvelteASTNodes({ ast });
+    const { component } = nodes.storyComponents[0];
+    const { exportName } = extractStoryAttributesNodes({
+      component,
+      attributes: ['exportName', 'args'],
+    });
+
+    expect(
+      getStoryIdentifiers({
+        exportNameNode: exportName,
+        nameNode: undefined,
+        component,
+      })
+    ).toEqual({
+      exportName: 'Default',
+      name: undefined,
+    });
+  });
+
+  it("extracts both 'exportName' and 'name' attributes", async () => {
+    const ast = getSvelteAST({
+      code: `
+        <script module>
+          import { defineMeta } from "@storybook/svelte"
+          const { Story } = defineMeta();
+        </script>
+        <Story exportName="SomeExportName" name="some name" />
+      `,
+    });
+    const nodes = await extractSvelteASTNodes({ ast });
+    const { component } = nodes.storyComponents[0];
+    const { exportName, name } = extractStoryAttributesNodes({
+      component,
+      attributes: ['exportName', 'name'],
+    });
+
+    expect(
+      getStoryIdentifiers({
+        exportNameNode: exportName,
+        nameNode: name,
+        component,
+      })
+    ).toEqual({
+      exportName: 'SomeExportName',
+      name: 'some name',
+    });
+  });
+
+  it("derives 'exportName' from 'name' attribute when 'exportName' attribute is missing", async () => {
+    const ast = getSvelteAST({
+      code: `
+        <script module>
+          import { defineMeta } from "@storybook/svelte"
+          const { Story } = defineMeta();
+        </script>
+        <Story name="some name" />
+      `,
+    });
+    const nodes = await extractSvelteASTNodes({ ast });
+    const { component } = nodes.storyComponents[0];
+    const { exportName, name } = extractStoryAttributesNodes({
+      component,
+      attributes: ['exportName', 'name'],
+    });
+
+    expect(
+      getStoryIdentifiers({
+        exportNameNode: exportName,
+        nameNode: name,
+        component,
+      })
+    ).toEqual({
+      exportName: 'SomeName',
+      name: 'some name',
+    });
+  });
+
+  it("throws when 'exportName' is not a valid JavaScript variable name", async () => {
+    const ast = getSvelteAST({
+      code: `
+        <script module>
+          import { defineMeta } from "@storybook/svelte"
+          const { Story } = defineMeta();
+        </script>
+        <Story exportName="default" />
+      `,
+    });
+    const nodes = await extractSvelteASTNodes({ ast });
+    const { component } = nodes.storyComponents[0];
+    const { exportName } = extractStoryAttributesNodes({
+      component,
+      attributes: ['exportName'],
+    });
+
+    expect(() =>
+      getStoryIdentifiers({
+        exportNameNode: exportName,
+        nameNode: undefined,
+        filename: 'invalid.stories.svelte',
+        component,
+      })
+    ).toThrowErrorMatchingInlineSnapshot(
+      `
+      [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0005 (InvalidStoryExportNameError): Invalid attribute 'exportName' value 'default' found in '<Story />' component inside stories file: ${url.pathToFileURL('invalid.stories.svelte')}
+
+        'exportName' value must be a valid JavaScript variable name.
+        It must start with a letter, $ or _, followed by letters, numbers, $ or _.
+        Reserved words like 'default' are also not allowed (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#reserved_words)
+
+      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0005
+      ]
+    `
+    );
+  });
+});
+
+describe(getStoriesIdentifiers.name, () => {
+  it('extracts multiple <Story /> components identifiers', async () => {
+    const ast = getSvelteAST({
+      code: `
+        <script module>
+          import { defineMeta } from "@storybook/svelte"
+          const { Story } = defineMeta();
+        </script>
+
+        <Story name="Only name" />
+        <Story exportName="OnlyExportName" />
+        <Story exportName="BothExportNameAndName" name="Both export name and name" />
+        <Story exportName="DifferentExportName" name="ExportName and name, but different" />`,
+    });
+    const nodes = await extractSvelteASTNodes({ ast });
+
+    expect(getStoriesIdentifiers({ nodes })).toMatchInlineSnapshot(`
+      [
+        {
+          "exportName": "OnlyName",
+          "name": "Only name",
+        },
+        {
+          "exportName": "OnlyExportName",
+          "name": undefined,
+        },
+        {
+          "exportName": "BothExportNameAndName",
+          "name": "Both export name and name",
+        },
+        {
+          "exportName": "DifferentExportName",
+          "name": "ExportName and name, but different",
+        },
+      ]
+    `);
+  });
+
+  it("throws on identical 'exportName' attributes", async () => {
+    const ast = getSvelteAST({
+      code: `
+        <script module>
+          import { defineMeta } from "@storybook/svelte"
+          const { Story } = defineMeta();
+        </script>
+
+        <Story exportName="SomeExportName" />
+        <Story exportName="OtherExportName" />
+        <Story exportName="SomeExportName" />`,
+    });
+    const nodes = await extractSvelteASTNodes({ ast });
+
+    expect(() =>
+      getStoriesIdentifiers({
+        nodes,
+        filename: 'duplicate-identifiers.stories.svelte',
+      })
+    ).toThrowErrorMatchingInlineSnapshot(
+      `
+      [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0006 (DuplicateStoryIdentifiersError): Duplicate exportNames found between two '<Story />' definitions in stories file: ${url.pathToFileURL('duplicate-identifiers.stories.svelte')}
+
+      First instance: <Story name={undefined} exportName="SomeExportName" ... />
+      Second instance: <Story name={undefined} exportName="SomeExportName" ... />
+
+      This can happen when 'exportName' is implicitly derived by 'name'.
+      Complex names will be simplified to a PascalCased, valid JavaScript variable name,
+      eg. 'Some story name!!' will be converted to 'SomeStoryName'.
+      You can fix this collision by providing a unique 'exportName' prop with <Story exportName="SomeUniqueExportName" ... />.
+
+      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0006
+      ]
+    `
+    );
+  });
+
+  it("throws on identical 'exportName' attributes when deriving from 'name' attributes", async () => {
+    const ast = getSvelteAST({
+      code: `
+        <script module>
+          import { defineMeta } from "@storybook/svelte"
+          const { Story } = defineMeta();
+        </script>
+
+        <Story exportName="SomeStoryName" />
+        <Story name="some story name!!!" />`,
+    });
+    const nodes = await extractSvelteASTNodes({ ast });
+
+    expect(() =>
+      getStoriesIdentifiers({
+        nodes,
+        filename: 'duplicate-identifiers.stories.svelte',
+      })
+    ).toThrowErrorMatchingInlineSnapshot(
+      `
+      [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0006 (DuplicateStoryIdentifiersError): Duplicate exportNames found between two '<Story />' definitions in stories file: ${url.pathToFileURL('duplicate-identifiers.stories.svelte')}
+
+      First instance: <Story name={undefined} exportName="SomeStoryName" ... />
+      Second instance: <Story name="some story name!!!" exportName="SomeStoryName" ... />
+
+      This can happen when 'exportName' is implicitly derived by 'name'.
+      Complex names will be simplified to a PascalCased, valid JavaScript variable name,
+      eg. 'Some story name!!' will be converted to 'SomeStoryName'.
+      You can fix this collision by providing a unique 'exportName' prop with <Story exportName="SomeUniqueExportName" ... />.
+
+      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0006
+      ]
+    `
+    );
+  });
+
+  // Only `name` must be a string. A falsy `exportName` literal means "derive it from `name`", and a
+  // truthy non-string one is an invalid export name.
+  const getIdentifiersOf = async (storyTag: string) => {
+    const ast = getSvelteAST({
+      code: `
+        <script module>
+          import { defineMeta } from "@storybook/svelte"
+          const { Story } = defineMeta();
+        </script>
+        ${storyTag}
+      `,
+    });
+    const nodes = await extractSvelteASTNodes({ ast });
+    const { component } = nodes.storyComponents[0];
+    const { exportName, name } = extractStoryAttributesNodes({
+      component,
+      attributes: ['exportName', 'name'],
+    });
+
+    return () => getStoryIdentifiers({ exportNameNode: exportName, nameNode: name, component });
+  };
+
+  it.each(['{null}', '{0}', '{false}'])(
+    "derives 'exportName' from 'name' when 'exportName' is %s",
+    async (value) => {
+      const getIdentifiers = await getIdentifiersOf(
+        `<Story name="Some name" exportName=${value} />`
+      );
+
+      expect(getIdentifiers()).toEqual({ exportName: 'SomeName', name: 'Some name' });
+    }
+  );
+
+  it.each(['{1}', '{true}'])(
+    "throws InvalidStoryExportNameError when 'exportName' is %s",
+    async (value) => {
+      const getIdentifiers = await getIdentifiersOf(
+        `<Story name="Some name" exportName=${value} />`
+      );
+
+      expect(getIdentifiers).toThrow(
+        expect.objectContaining({ fullErrorCode: 'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0005' })
+      );
+    }
+  );
+});

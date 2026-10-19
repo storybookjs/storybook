@@ -73,6 +73,7 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
       getPreferredStdio: vi.fn(),
       executeTask: vi.fn(),
       executeTaskWithSpinner: vi.fn(),
+      spinner: vi.fn(() => ({ start: vi.fn(), stop: vi.fn(), message: vi.fn() })),
       taskLog: vi.fn(() => ({
         message: vi.fn(),
         success: vi.fn(),

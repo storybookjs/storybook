@@ -1,3 +1,4 @@
+import { stripVTControlCharacters } from 'node:util';
 import picocolors from 'picocolors';
 
 const NPM_REGISTRY = 'https://registry.npmjs.org';
@@ -118,12 +119,10 @@ export const waitForPackagesToBePublished = async ({
   return missing;
 };
 
-const stripAnsi = (value: string) => value.replace(/\u001b\[[0-9;]*m/g, '');
-
 export const packagesAcceptedByRegistry = (output: string) => {
   const accepted = new Set<string>();
   for (const line of output.split('\n')) {
-    const prefix = stripAnsi(line).match(/\[([^\]]+)\]:/);
+    const prefix = stripVTControlCharacters(line).match(/\[([^\]]+)\]:/);
     if (!prefix) {
       continue;
     }

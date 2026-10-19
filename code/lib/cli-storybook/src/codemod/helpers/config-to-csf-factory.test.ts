@@ -32,7 +32,7 @@ describe('main/preview codemod: general parsing functionality', () => {
         };
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { defineMain } from "@storybook/react-vite/node";
+      import { defineMain } from '@storybook/react-vite/node';
       export default defineMain({
         stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
         addons: ['@storybook/addon-essentials'],
@@ -52,7 +52,7 @@ describe('main/preview codemod: general parsing functionality', () => {
         export default config;
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { defineMain } from "@storybook/react-vite/node";
+      import { defineMain } from '@storybook/react-vite/node';
 
       export default defineMain({
         stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
@@ -75,7 +75,7 @@ describe('main/preview codemod: general parsing functionality', () => {
     ).resolves.toMatchInlineSnapshot(`
       // @ts-check
       /** @license MIT */
-      import { defineMain } from "@storybook/react-vite/node";
+      import { defineMain } from '@storybook/react-vite/node';
 
       export default defineMain({
         stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
@@ -103,7 +103,7 @@ describe('main/preview codemod: general parsing functionality', () => {
           ${variant}
         `)
       ).resolves.toMatchInlineSnapshot(`
-        import { defineMain } from "@storybook/react-vite/node";
+        import { defineMain } from '@storybook/react-vite/node';
 
         export default defineMain({
           stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
@@ -126,7 +126,7 @@ describe('main/preview codemod: general parsing functionality', () => {
         export default config;
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { defineMain } from "@storybook/react-vite/node";
+      import { defineMain } from '@storybook/react-vite/node';
 
       export default defineMain({
         tags: [],
@@ -144,7 +144,7 @@ describe('main/preview codemod: general parsing functionality', () => {
         export const framework = '@storybook/react-vite';
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { defineMain } from "@storybook/react-vite/node";
+      import { defineMain } from '@storybook/react-vite/node';
 
       export default defineMain({
         stories: () => { return ['../src/**/*.stories.@(js|jsx|ts|tsx)'] },
@@ -212,7 +212,7 @@ describe('main/preview codemod: general parsing functionality', () => {
         export default config;
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { defineMain } from "@storybook/react-vite/node";
+      import { defineMain } from '@storybook/react-vite/node';
       export default defineMain({
         stories: []
       });
@@ -235,7 +235,7 @@ describe('main/preview codemod: general parsing functionality', () => {
         export default config;
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { defineMain } from "@storybook/react-vite/node";
+      import { defineMain } from '@storybook/react-vite/node';
       import { type StorybookConfig } from '@storybook/react-vite'
 
       const features: StorybookConfig['features'] = {
@@ -266,7 +266,7 @@ describe('preview specific functionality', () => {
         };
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { definePreview } from "@storybook/react-vite";
+      import { definePreview } from '@storybook/react-vite';
       export default definePreview({
         tags: ['test']
       });
@@ -284,7 +284,7 @@ describe('preview specific functionality', () => {
         export default preview;
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { definePreview } from "@storybook/react-vite";
+      import { definePreview } from '@storybook/react-vite';
       export default definePreview({
         tags: []
       });
@@ -304,7 +304,7 @@ describe('preview specific functionality', () => {
         export default preview;
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { definePreview } from "@storybook/react-vite";
+      import { definePreview } from '@storybook/react-vite';
 
       export const withStore: Decorator = () => {}
 
@@ -393,7 +393,7 @@ describe('preview specific functionality', () => {
         import './preview.scss'
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { definePreview } from "@storybook/react-vite";
+      import { definePreview } from '@storybook/react-vite';
       import './preview.scss'
       export default definePreview({});
     `);
@@ -413,7 +413,7 @@ describe('preview specific functionality', () => {
         import './global.css'
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { definePreview } from "@storybook/react-vite";
+      import { definePreview } from '@storybook/react-vite';
       import './preview.scss'
       import './global.css'
       export default definePreview({});

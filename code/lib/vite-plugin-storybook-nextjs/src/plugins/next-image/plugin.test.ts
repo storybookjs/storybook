@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { vol } from 'memfs';
 
 const requireResolveMock = vi.hoisted(() => vi.fn());
+const resolveMock = vi.hoisted(() => vi.fn());
 
 vi.mock('node:module', () => ({
   createRequire: () => ({
@@ -22,8 +23,7 @@ import { vitePluginNextImage } from './plugin.ts';
 const VIRTUAL_IMAGE_PREFIX = '\0virtual:next-image:';
 const SHORT_ID_MAX_LENGTH = VIRTUAL_IMAGE_PREFIX.length + 8;
 
-const createContext = (resolve: PluginContext['resolve'] = vi.fn()) =>
-  ({ resolve }) as PluginContext;
+const createContext = () => ({ resolve: resolveMock }) as PluginContext;
 
 const passthroughConfig = {
   promise: Promise.resolve({ images: { disableStaticImages: true } } as NextConfigComplete),
@@ -32,35 +32,36 @@ const passthroughConfig = {
 } as PromiseWithResolvers<NextConfigComplete>;
 
 describe('vitePluginNextImage resolveId', () => {
+  beforeEach(() => {
+    vi.mocked(resolveMock).mockReset();
+    vi.mocked(resolveMock).mockResolvedValue(null);
+    vi.mocked(requireResolveMock).mockReset();
+  });
+
   it('resolves relative image imports against importer', async () => {
     const plugin = vitePluginNextImage(passthroughConfig);
-    const resolve = vi.fn();
     const importer = '/project/src/Component.tsx';
     const expectedPath = join(dirname(importer), './images/avatar.png');
 
-    const id = await plugin.resolveId!.call(
-      createContext(resolve),
-      './images/avatar.png',
-      importer
-    );
+    const id = await plugin.resolveId!.call(createContext(), './images/avatar.png', importer);
     const loaded = await plugin.load!.call({} as PluginContext, id as string);
 
-    expect(resolve).not.toHaveBeenCalled();
+    expect(resolveMock).not.toHaveBeenCalled();
     expect(loaded).toContain(expectedPath);
   });
 
   it('uses Vite resolver for package image imports', async () => {
     const plugin = vitePluginNextImage(passthroughConfig);
     const resolvedPath = '/project/packages/assets/src/images/avatar.png';
-    const resolve = vi.fn().mockResolvedValue({ id: resolvedPath });
+    vi.mocked(resolveMock).mockResolvedValue({ id: resolvedPath });
     const id = await plugin.resolveId!.call(
-      createContext(resolve),
+      createContext(),
       '@myorg/assets/images/avatar.png',
       '/project/src/Component.tsx'
     );
     const loaded = await plugin.load!.call({} as PluginContext, id as string);
 
-    expect(resolve).toHaveBeenCalledWith(
+    expect(resolveMock).toHaveBeenCalledWith(
       '@myorg/assets/images/avatar.png',
       '/project/src/Component.tsx',
       { skipSelf: true }
@@ -72,21 +73,36 @@ describe('vitePluginNextImage resolveId', () => {
     const plugin = vitePluginNextImage(passthroughConfig);
     const importer = '/project/src/Component.tsx?import';
     const resolvedPath = '/project/packages/assets/src/images/avatar.png';
-    const resolve = vi.fn().mockResolvedValue(null);
 
-    requireResolveMock.mockReturnValueOnce(resolvedPath);
+    vi.mocked(requireResolveMock).mockReturnValueOnce(resolvedPath);
     const id = await plugin.resolveId!.call(
-      createContext(resolve),
+      createContext(),
       '@myorg/assets/images/avatar.png',
       importer
     );
     const loaded = await plugin.load!.call({} as PluginContext, id as string);
 
-    expect(resolve).toHaveBeenCalled();
+    expect(resolveMock).toHaveBeenCalled();
     expect(requireResolveMock).toHaveBeenCalledWith('@myorg/assets/images/avatar.png', {
       paths: [dirname(importer.split('?')[0])],
     });
     expect(loaded).toContain(resolvedPath);
+  });
+
+  it('does not claim bare image imports that cannot be resolved', async () => {
+    const plugin = vitePluginNextImage(passthroughConfig);
+    const importer = '/project/src/Component.tsx';
+    vi.mocked(requireResolveMock).mockImplementationOnce(() => {
+      throw new Error('Cannot find module');
+    });
+
+    const id = await plugin.resolveId!.call(createContext(), '@/assets/avatar.png', importer);
+
+    expect(resolveMock).toHaveBeenCalledWith('@/assets/avatar.png', importer, { skipSelf: true });
+    expect(requireResolveMock).toHaveBeenCalledWith('@/assets/avatar.png', {
+      paths: [dirname(importer)],
+    });
+    expect(id).toBeNull();
   });
 
   it('keeps virtual IDs short and stable for deeply nested monorepo paths', async () => {

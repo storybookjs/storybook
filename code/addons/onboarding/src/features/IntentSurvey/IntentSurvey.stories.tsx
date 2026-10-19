@@ -11,7 +11,7 @@ const meta = {
     onComplete: fn(),
     onDismiss: fn(),
   },
-} as Meta<typeof IntentSurvey>;
+} satisfies Meta<typeof IntentSurvey>;
 
 type Story = StoryObj<typeof meta>;
 export default meta;

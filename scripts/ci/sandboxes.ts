@@ -2,11 +2,11 @@ import { join } from 'path';
 
 import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { type TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
-import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../utils/constants.ts';
 import { build_linux } from './common-jobs.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   artifact,
+  npm,
   sandboxArchive,
   server,
   testResults,
@@ -190,14 +190,9 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         },
         ...('inDevelopment' in data && data.inDevelopment
           ? [
-              {
-                run: {
-                  name: 'Install npm with min-release-age support',
-                  // Node's bundled npm is older and silently ignores NPM_CONFIG_MIN_RELEASE_AGE
-                  // during scaffold; `ensureNpmSupportsMinReleaseAge` fails the generate task on it.
-                  command: `sudo npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}`,
-                },
-              },
+              // Node's bundled npm silently ignores NPM_CONFIG_MIN_RELEASE_AGE during scaffold;
+              // `ensureNpmSupportsMinReleaseAge` fails the generate task on it.
+              npm.installPinnedVersion(),
               {
                 run: {
                   name: 'Generate Sandbox',
@@ -361,27 +356,6 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     }),
     [createJob]
   );
-  const testRunnerJob = defineJob(
-    `${name} (test-runner)`,
-    () => ({
-      executor: {
-        name: 'sb_playwright',
-        class: 'medium',
-      },
-      steps: [
-        ...getSandboxSetupSteps(key),
-        ...workflow.restoreLinux({ sandboxId: id }),
-        {
-          run: {
-            name: 'Running test-runner',
-            command: `yarn task test-runner --template ${key} --no-link -s test-runner --junit`,
-          },
-        },
-        testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
-      ],
-    }),
-    [createJob]
-  );
 
   const jobs = [
     createJob,
@@ -389,19 +363,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     !skipTasks?.includes('chromatic') ? chromaticJob : undefined,
     !skipTasks?.includes('vitest-integration') ? vitestJob : undefined,
     !skipTasks?.includes('e2e-tests') ? e2eJob : undefined,
-
-    /**
-     * Question: What is this for? Do we want to know if the test-runner works? Or do we want to
-     * know if the sandbox works?
-     *
-     * If it's the first, we actually only need to run the test-runner job once, on any sandbox. If
-     * it's the second, we need to run the test-runner job for each sandbox, but then we don't need
-     * to run it when we're already running the chromatic job.
-     */
-    !skipTasks?.includes('test-runner') && skipTasks.includes('chromatic')
-      ? testRunnerJob
-      : undefined,
-  ].filter(Boolean);
+  ].filter((job) => job !== undefined);
   return {
     id,
     name: key,
@@ -410,30 +372,6 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     createJob,
     devJob,
   };
-}
-
-export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandboxFlow>) {
-  return defineJob(
-    `${sandbox.id}--test-runner`,
-    () => ({
-      executor: {
-        name: 'sb_playwright',
-        class: 'medium',
-      },
-      steps: [
-        ...getSandboxSetupSteps(sandbox.name),
-        ...workflow.restoreLinux({ sandboxId: sandbox.id }),
-        {
-          run: {
-            name: 'Running test-runner',
-            command: `yarn task test-runner --template ${sandbox.name} --no-link -s test-runner --junit`,
-          },
-        },
-        testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
-      ],
-    }),
-    [sandbox.createJob]
-  );
 }
 
 export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandboxFlow>) {
@@ -563,9 +501,8 @@ export function getSandboxes(workflow: Workflow) {
   if (isWorkflowOrAbove(workflow, 'daily')) {
     const windows_sandbox_build = defineWindowsSandboxBuild(sandboxes[0]);
     const windows_sandbox_dev = defineWindowsSandboxDev(sandboxes[0]);
-    const testRunner = defineSandboxTestRunner(sandboxes[0]);
 
-    list.push(windows_sandbox_build, windows_sandbox_dev, testRunner);
+    list.push(windows_sandbox_build, windows_sandbox_dev);
   }
 
   return list;

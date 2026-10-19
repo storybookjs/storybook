@@ -52,7 +52,7 @@ function generateConfig(workflow: Workflow) {
     jobs.push(fmt);
   } else {
     const sandboxes = getSandboxes(workflow);
-    const testStorybooks = getTestStorybooks(workflow);
+    const testStorybooks = getTestStorybooks();
     const initEmpty = getInitEmpty(workflow);
 
     if (isWorkflowOrAbove(workflow, 'daily')) {

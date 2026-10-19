@@ -180,6 +180,36 @@ beforeEach(() => {
   });
 });
 
+describe('createServiceDocsAccess listNames', () => {
+  it('names components by their title and standalone docs by their index name, without docgen', async () => {
+    const names = await createAccess().listNames!();
+
+    expect(names).toEqual([
+      { id: 'zebra', name: 'zebra' },
+      { id: 'alpha', name: 'alpha' },
+      { id: 'only-docs', name: 'only-docs' },
+      { id: 'guide--docs', name: 'Guide' },
+    ]);
+    expect(docgenForAllComponents).not.toHaveBeenCalled();
+  });
+
+  it('names a component by the last segment of its title, without spaces', async () => {
+    index = {
+      v: 5,
+      entries: {
+        'forms-text-field--primary': {
+          ...storyEntry('forms-text-field--primary', 'Primary', ['manifest']),
+          title: 'Forms/Text Field',
+        },
+      },
+    };
+
+    expect(await createAccess().listNames!()).toEqual([
+      { id: 'forms-text-field', name: 'TextField' },
+    ]);
+  });
+});
+
 describe('createServiceDocsAccess list', () => {
   it('lists manifest-tagged components in story-index order', async () => {
     const manifests = await createAccess().list({ withStoryIds: false });

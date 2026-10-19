@@ -1,25 +1,19 @@
 import { dedent } from 'ts-dedent';
 import type { ProjectInfo } from '../../../project-info.ts';
 import { ext } from '../../setup-utils/ext.ts';
+import { isReactProject } from '../../setup-utils/is-react-project.ts';
+import { getTypeImportSource } from '../../setup-utils/type-import-source.ts';
 
 export function getPreviewExample(projectInfo: ProjectInfo): string {
-  const { configDir, language, framework, rendererPackage, hasCsfFactoryPreview } = projectInfo;
-  const tsx = ext(language, true);
-  const typeImport = framework || rendererPackage || '@storybook/react-vite';
+  const { configDir, language, hasCsfFactoryPreview } = projectInfo;
+  const tsx = ext(language, isReactProject(projectInfo));
+  const typeImport = getTypeImportSource(projectInfo);
 
-  if (hasCsfFactoryPreview) {
-    return dedent`
-      \`\`\`${tsx}
-      // ${configDir}/preview.${tsx}
-      import { definePreview } from '${typeImport}';
-      import '../src/index.css';
-      import MockDate from 'mockdate';
-      import addonMsw from 'msw-storybook-addon';
-      import { SessionProvider } from '../src/contexts/SessionContext';
-      import { mswHandlers } from './msw-handlers';
-
-      export default definePreview({
-        addons: [addonMsw()],
+  const providerImport = isReactProject(projectInfo)
+    ? "import { SessionProvider } from '../src/contexts/SessionContext';"
+    : '';
+  const decorators = isReactProject(projectInfo)
+    ? dedent`
         decorators: [
           (Story) => (
             <SessionProvider>
@@ -27,6 +21,25 @@ export function getPreviewExample(projectInfo: ProjectInfo): string {
             </SessionProvider>
           ),
         ],
+      `
+    : '';
+
+  if (hasCsfFactoryPreview) {
+    return dedent`
+      \`\`\`${tsx}
+      // ${configDir}/preview.${tsx}
+      import { definePreview } from '${typeImport}';
+      import '../src/index.css';
+      // Only include MockDate when selected stories depend on the current date or time.
+      import MockDate from 'mockdate';
+      // Only include MSW when selected stories make network requests.
+      import addonMsw from 'msw-storybook-addon';
+      ${providerImport}
+      import { mswHandlers } from './msw-handlers';
+
+      export default definePreview({
+        addons: [addonMsw()],
+        ${decorators}
         async beforeEach({ msw }) {
           msw.use(...mswHandlers);
           localStorage.setItem('theme', 'dark');
@@ -42,19 +55,15 @@ export function getPreviewExample(projectInfo: ProjectInfo): string {
       \`\`\`${tsx}
       // ${configDir}/preview.${tsx}
       import '../src/index.css';
+      // Only include MockDate when selected stories depend on the current date or time.
       import MockDate from 'mockdate';
+      // Only include MSW when selected stories make network requests.
       import { mswLoader } from 'msw-storybook-addon/csf3';
-      import { SessionProvider } from '../src/contexts/SessionContext';
+      ${providerImport}
       import { mswHandlers } from './msw-handlers';
 
       const preview = {
-        decorators: [
-          (Story) => (
-            <SessionProvider>
-              <Story />
-            </SessionProvider>
-          ),
-        ],
+        ${decorators}
         loaders: [mswLoader()],
         async beforeEach({ msw }) {
           msw.use(...mswHandlers);
@@ -73,19 +82,15 @@ export function getPreviewExample(projectInfo: ProjectInfo): string {
     // ${configDir}/preview.${tsx}
     import type { Preview } from '${typeImport}';
     import '../src/index.css';
+    // Only include MockDate when selected stories depend on the current date or time.
     import MockDate from 'mockdate';
+    // Only include MSW when selected stories make network requests.
     import { mswLoader } from 'msw-storybook-addon/csf3';
-    import { SessionProvider } from '../src/contexts/SessionContext';
+    ${providerImport}
     import { mswHandlers } from './msw-handlers';
 
     const preview: Preview = {
-      decorators: [
-        (Story) => (
-          <SessionProvider>
-            <Story />
-          </SessionProvider>
-        ),
-      ],
+      ${decorators}
       loaders: [mswLoader()],
       async beforeEach({ msw }) {
         msw.use(...mswHandlers);
@@ -101,7 +106,7 @@ export function getPreviewExample(projectInfo: ProjectInfo): string {
 
 export function getPortalDecoratorExample(projectInfo: ProjectInfo): string {
   const { language } = projectInfo;
-  const tsx = ext(language, true);
+  const tsx = ext(language, isReactProject(projectInfo));
 
   return dedent`
     \`\`\`${tsx}
@@ -114,16 +119,16 @@ export function getPortalDecoratorExample(projectInfo: ProjectInfo): string {
           document.body.appendChild(el);
         }
       }
-      return <Story />;
+      return ${isReactProject(projectInfo) ? '<Story />' : 'Story()'};
     }
     \`\`\`
   `;
 }
 
 export function getMainConfigExample(projectInfo: ProjectInfo): string {
-  const { configDir, framework, rendererPackage, language } = projectInfo;
+  const { configDir, language } = projectInfo;
   const ts = ext(language, false);
-  const typeImport = framework || rendererPackage || '@storybook/react';
+  const typeImport = getTypeImportSource(projectInfo);
 
   if (language === 'js') {
     return dedent`
@@ -147,9 +152,17 @@ export function getMainConfigExample(projectInfo: ProjectInfo): string {
 }
 
 export function getStoryExample(projectInfo: ProjectInfo): string {
-  const { language, framework, rendererPackage } = projectInfo;
-  const tsx = ext(language, true);
-  const typeImport = framework || rendererPackage || '@storybook/react-vite';
+  if (!isReactProject(projectInfo)) {
+    return dedent`
+      Follow existing stories and the installed framework's Component Story Format. Import the real component using the project's conventions and use its actual props or inputs as \`args\`. Use the framework's rendering syntax for composition, projected content, slots, and event bindings when needed.
+
+      For TypeScript, import \`Meta\` and \`StoryObj\` from '${getTypeImportSource(projectInfo)}' and use the type parameters supported by that framework. Add \`tags: ['ai-generated', 'needs-work']\` to the meta, then export story objects for the component's meaningful states. Include a \`play\` function only when it verifies behavior.
+    `;
+  }
+
+  const { language } = projectInfo;
+  const tsx = ext(language, isReactProject(projectInfo));
+  const typeImport = getTypeImportSource(projectInfo);
 
   if (language === 'js') {
     return dedent`
@@ -212,7 +225,7 @@ export function getStoryExample(projectInfo: ProjectInfo): string {
 
 export function getInteractionPlayExample(projectInfo: ProjectInfo): string {
   const { language } = projectInfo;
-  const tsx = ext(language, true);
+  const tsx = ext(language, isReactProject(projectInfo));
   const typeAnnotation = language === 'ts' ? ': Story' : '';
 
   return dedent`

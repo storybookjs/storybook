@@ -58,7 +58,7 @@ const changeDetectionReadinessSchema = v.variant('status', [
     status: v.literal('unavailable'),
     reason: v.pipe(
       v.string(),
-      v.description('Why change detection cannot publish statuses, such as disabled or no git.')
+      v.description('Why change detection cannot publish statuses, such as no git.')
     ),
     error: v.optional(
       v.object({
@@ -90,6 +90,7 @@ export const moduleGraphServiceDef = defineService({
     workingDir: process.cwd(),
     status: { value: 'booting' },
     graphRevision: 0,
+    graphChangedAt: 0,
     fileActivityRevision: 0,
     storyChangeRevisions: {},
     latestChangedStoryFiles: [],
@@ -108,7 +109,7 @@ export const moduleGraphServiceDef = defineService({
     },
     changeDetectionReadiness: {
       description:
-        'Change-detection scan readiness. Distinct from `status`: the graph can be ready while change detection is disabled or its initial scan has failed.',
+        'Change-detection scan readiness. Distinct from `status`: the graph can be ready while git is unusable or the initial scan has failed.',
       input: noInputSchema,
       output: changeDetectionReadinessSchema,
       load: async (_input, ctx) => {
@@ -152,6 +153,13 @@ export const moduleGraphServiceDef = defineService({
         return max;
       },
     },
+    graphChangedAt: {
+      description:
+        "Newest time (unix ms) a file change that advanced `graphRevision` was made, 0 before the first one. Dated by the file's modification time where possible, so a builder that reports an edit late cannot make it look newer than it is.",
+      input: noInputSchema,
+      output: v.number(),
+      handler: (_input, ctx) => ctx.self.state.graphChangedAt,
+    },
     fileActivityRevision: {
       description:
         'Monotonic counter advanced on every processed file-change event, including out-of-graph paths that do not advance `graphRevision`. Change detection watches this to rescan git after working-tree edits.',
@@ -179,37 +187,6 @@ export const moduleGraphServiceDef = defineService({
         revision: ctx.self.state.graphRevision,
         storyFiles: ctx.self.state.latestChangedStoryFiles,
       }),
-    },
-    /** @deprecated Use {@link status} instead. */
-    getStatus: {
-      description: 'Deprecated alias for `status`. Use `status` instead.',
-      input: noInputSchema,
-      output: moduleGraphStatusSchema,
-      handler: (input, ctx) => ctx.self.queries.status.get(input),
-      load: async (input, ctx) => {
-        await ctx.self.queries.status.loaded(input);
-      },
-    },
-    /** @deprecated Use {@link graphRevision} instead. */
-    getGraphRevision: {
-      description: 'Deprecated alias for `graphRevision`. Use `graphRevision` instead.',
-      input: v.optional(
-        v.object({
-          storyFiles: v.array(
-            v.pipe(
-              v.string(),
-              v.description(
-                'Story file to scope the watch to. Accepts absolute paths, story-index-style relative paths with `./`, or relative paths without `./`. Pass an empty array to watch nothing (returns 0).'
-              )
-            )
-          ),
-        })
-      ),
-      output: v.number(),
-      handler: (input, ctx) => ctx.self.queries.graphRevision.get(input),
-      load: async (input, ctx) => {
-        await ctx.self.queries.graphRevision.loaded(input);
-      },
     },
   },
   commands: {
@@ -250,12 +227,18 @@ export const moduleGraphServiceDef = defineService({
     _applyGraphUpdate: {
       internal: true,
       description:
-        'Advances file activity for every processed file event. When `bumpedStoryFiles` is non-empty, also bumps graph revision and records those stories. Called by the graph engine after any index apply for the same patch; does not write the reverse index.',
+        'Advances file activity for every processed file event. When `bumpedStoryFiles` is non-empty, also bumps graph revision, advances `graphChangedAt`, and records those stories. Called by the graph engine after any index apply for the same patch; does not write the reverse index.',
       input: v.object({
         bumpedStoryFiles: v.pipe(
           v.array(storyIndexPathSchema),
           v.description(
             'Story files whose graph changed, using story-index-style relative paths. Each listed file has its version incremented.'
+          )
+        ),
+        changedAt: v.optional(
+          v.pipe(
+            v.number(),
+            v.description('When (unix ms) the change was made. Defaults to now when unknown.')
           )
         ),
       }),
@@ -271,6 +254,7 @@ export const moduleGraphServiceDef = defineService({
             return;
           }
           state.graphRevision += 1;
+          state.graphChangedAt = Math.max(state.graphChangedAt, input.changedAt ?? Date.now());
           state.latestChangedStoryFiles = input.bumpedStoryFiles;
           for (const storyFile of input.bumpedStoryFiles) {
             state.storyChangeRevisions[storyFile] = state.graphRevision;

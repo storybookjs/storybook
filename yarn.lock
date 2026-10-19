@@ -10181,7 +10181,7 @@ __metadata:
     sass: ^1.0.0
     sass-embedded: ^1.0.0
     storybook: "workspace:^"
-    typescript: ^5.9.0 || ^6.0.0
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ">=8.0.0"
     zone.js: ">=0.14.0"
   peerDependenciesMeta:
@@ -10241,7 +10241,7 @@ __metadata:
     "@angular/platform-browser-dynamic": ">=21.0.0 < 23.0.0"
     rxjs: ^6.5.3 || ^7.4.0
     storybook: "workspace:^"
-    typescript: ^5.9.0 || ^6.0.0
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     zone.js: ">=0.14.0"
   peerDependenciesMeta:
     "@angular/animations":
@@ -10854,7 +10854,7 @@ __metadata:
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
-    typescript: ^5.9.0 || ^6.0.0
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     typescript:
@@ -10874,7 +10874,7 @@ __metadata:
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
-    typescript: ^5.9.0 || ^6.0.0
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
   peerDependenciesMeta:
     typescript:
       optional: true
@@ -10916,7 +10916,7 @@ __metadata:
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
-    typescript: ^5.9.0 || ^6.0.0
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
   peerDependenciesMeta:
     "@types/react":
       optional: true
@@ -11114,13 +11114,13 @@ __metadata:
     svelte: "npm:^5.39.5"
     svelte2tsx: "npm:^0.7.55"
     sveltedoc-parser: "npm:^4.2.1"
-    typescript: "npm:^5.9.0 || ^6.0.0"
+    typescript: "npm:^5.9.0 || ^6.0.0 || ^7.0.0"
     vite: "npm:^7.0.4"
   peerDependencies:
     "@sveltejs/vite-plugin-svelte": ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
     storybook: "workspace:^"
     svelte: ^5.0.0
-    typescript: ^5.9.0 || ^6.0.0
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
@@ -11147,7 +11147,7 @@ __metadata:
   peerDependencies:
     storybook: "workspace:^"
     svelte: ^5.0.0
-    typescript: ^5.9.0 || ^6.0.0
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     typescript:
@@ -11221,7 +11221,7 @@ __metadata:
     vue-docgen-api: "npm:^4.75.1"
   peerDependencies:
     storybook: "workspace:^"
-    typescript: ^5.9.0 || ^6.0.0
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     typescript:
@@ -11248,7 +11248,7 @@ __metadata:
     vue-tsc: "npm:latest"
   peerDependencies:
     storybook: "workspace:^"
-    typescript: ^5.9.0 || ^6.0.0
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vue: ^3.0.0
   peerDependenciesMeta:
     typescript:

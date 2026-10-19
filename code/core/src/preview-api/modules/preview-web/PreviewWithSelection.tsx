@@ -546,7 +546,6 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   // UTILITIES
   mainStoryCallbacks(storyId: StoryId) {
     return {
-      showStoryDuringRender: () => this.view.showStoryDuringRender(),
       showMain: () => this.view.showMain(),
       storyUrl: () => this.selectionStore.url,
       showError: (err: { title: string; description: string }) => this.renderError(storyId, err),

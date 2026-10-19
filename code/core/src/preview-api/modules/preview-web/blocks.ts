@@ -4,12 +4,12 @@ import { global } from '@storybook/global';
 const { document } = global;
 
 const blockHtml = {
-  PREPARING_STORY: `
+  'preparing-story': `
     <div class="sb-preparing-story sb-wrapper">
       <div class="sb-loader"></div>
     </div>
   `,
-  PREPARING_DOCS: `
+  'preparing-docs': `
     <div class="sb-preparing-docs sb-wrapper">
       <div class="sb-previewBlock">
         <div class="sb-previewBlock_header">
@@ -75,7 +75,7 @@ const blockHtml = {
       </table>
     </div>
   `,
-  NOPREVIEW: `
+  nopreview: `
     <div class="sb-nopreview sb-wrapper">
       <div class="sb-nopreview_main">
         <h1 class="sb-nopreview_heading sb-heading">No Preview</h1>
@@ -90,7 +90,7 @@ const blockHtml = {
       </div>
     </div>
   `,
-  ERROR: `
+  error: `
     <div class="sb-errordisplay sb-wrapper">
       <div class="sb-errordisplay_main">
         <h1 id="error-message"></h1>

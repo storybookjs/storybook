@@ -31,6 +31,7 @@ import { type StoryStore, hideArgTypes } from '../../store/index.ts';
 import type { Render, RenderType } from './Render.ts';
 import { PREPARE_ABORTED } from './Render.ts';
 import { isTestEnvironment, pauseAnimations, waitForAnimations } from './animation-utils.ts';
+import { markDocumentRoot } from './documentRoot.ts';
 
 const { AbortController } = globalThis;
 
@@ -78,6 +79,8 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
   private teardownRender: TeardownRenderToCanvas = () => {};
 
+  private releaseDocumentRoot = () => {};
+
   public torndown = false;
 
   private teardownPromise?: Promise<void>;
@@ -86,7 +89,6 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     public channel: Channel,
     public store: StoryStore<TRenderer>,
     private callbacks: RenderContextCallbacks<TRenderer> & {
-      showStoryDuringRender?: () => void;
       storyUrl?: () => string | undefined;
     },
     public id: StoryId,
@@ -193,12 +195,18 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     initial?: boolean;
     forceRemount?: boolean;
   } = {}) {
-    const { canvasElement } = this;
-
     if (!this.story) {
       throw new Error('cannot render when not prepared');
     }
     const story = this.story;
+
+    // Only the story the preview shows owns the document; in a docs page it renders to its block.
+    const ownsDocument = this.viewMode === 'story' && story.parameters.layout === 'document';
+    // Such a story renders to the <body> the document has now, which an earlier render may have left.
+    if (ownsDocument && this.canvasElement) {
+      this.canvasElement = document.body as TRenderer['canvasElement'];
+    }
+    const { canvasElement } = this;
 
     if (!canvasElement) {
       throw new Error('cannot render when canvasElement is unset');
@@ -254,9 +262,20 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
           if (!renderStory) {
             throw new MissingRenderToCanvasError();
           }
+          if (ownsDocument) {
+            // The document's own loading is the story's to show, not Storybook's preparing block.
+            this.callbacks.showMain();
+          }
           const teardown = await renderStory(renderContext, canvasElement);
           this.teardownRender = teardown || (() => {});
           mounted = true;
+          // A render that a teardown aborted marks nothing: the document is the next story's.
+          if (ownsDocument && !abortSignal.aborted) {
+            // Its root is the <body> the render left, which may be a new one after every render.
+            this.releaseDocumentRoot();
+            this.releaseDocumentRoot = markDocumentRoot(id);
+            context.canvasElement = document.body as TRenderer['canvasElement'];
+          }
         },
         // The story provides (set in a renderer) a mount function that is a higher order function
         // (context) => (...args) => Canvas
@@ -264,7 +283,6 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         // Before assigning it to the context, we resolve the context dependency,
         // so that a user can just call it as await mount(...args) in their play function.
         mount: async (...args) => {
-          this.callbacks.showStoryDuringRender?.();
           let mountReturn: Awaited<ReturnType<StoryContext['mount']>> = null!;
           await this.runPhase(abortSignal, 'rendering', async () => {
             mountReturn = await story.mount(context)(...args);
@@ -370,9 +388,6 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
             await this.runPhase(abortSignal, 'played');
           }
         } catch (error) {
-          // Remove the loading screen, even if there was an error before rendering
-          this.callbacks.showStoryDuringRender?.();
-
           await this.runPhase(abortSignal, 'errored', async () => {
             this.channel.emit(PLAY_FUNCTION_THREW_EXCEPTION, serializeError(error));
           });
@@ -503,6 +518,8 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   private async runTeardown({ keepRenderedDom = false }: { keepRenderedDom?: boolean }) {
     this.torndown = true;
     this.cancelRender();
+    this.releaseDocumentRoot();
+    this.releaseDocumentRoot = () => {};
 
     // A render that never got a canvas registered no cleanups: the story's list is another's.
     if (this.story && this.canvasElement) {

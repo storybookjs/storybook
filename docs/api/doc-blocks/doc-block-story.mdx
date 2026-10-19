@@ -72,7 +72,7 @@ Type: `string`
 
 Default: `parameters.docs.story.height`
 
-Set a minimum height (note for an iframe this is the actual height) when rendering a story in an iframe or inline. This overrides `parameters.docs.story.iframeHeight` for iframes.
+Set a minimum height (note for an iframe this is the actual height) when rendering a story in an iframe or inline. This overrides `parameters.docs.story.iframeHeight` for iframes. A story with [`layout: 'document'`](../../configure/story-layout.mdx#a-story-that-renders-the-whole-document) defaults to `'667px'`.
 
 ### `inline`
 
@@ -80,7 +80,7 @@ Type: `boolean`
 
 Default: `parameters.docs.story.inline` or `true` (for [supported frameworks](../../configure/integration/frameworks-feature-support.mdx))
 
-Determines whether the story is rendered `inline` (in the same browser frame as the other docs content) or in an iframe.
+Determines whether the story is rendered `inline` (in the same browser frame as the other docs content) or in an iframe. A story with [`layout: 'document'`](../../configure/story-layout.mdx#a-story-that-renders-the-whole-document) always renders in an iframe.
 
 <Callout variant="info">
 

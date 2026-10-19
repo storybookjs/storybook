@@ -60,6 +60,30 @@ export const config: Config = {
 
 For older Stencil versions, use `experimentalImportInjection: true` instead.
 
+### Why don't my Stencil components load after building for production?
+
+If you register Stencil components using the generated loader, first enable [Stencil's import injection](https://stenciljs.com/docs/config-extras#enableimportinjection) as described above. This allows Vite to discover the lazy-loaded component entry files during a production build.
+
+If your components still fail to render after `storybook build`, check whether the generated JavaScript chunks are available at the URLs requested by the browser.
+
+For projects using Stencil's lazy-loaded ESM output, you can configure Storybook to copy those chunks into the built preview. Add the following property to your existing `.storybook/main.js|ts` configuration:
+
+```ts
+staticDirs: [{ from: '../dist/esm', to: '/assets' }],
+```
+
+This example assumes that Stencil generates its ESM chunks in `dist/esm` and that the built preview requests them from `/assets`. Adjust these paths to match your project's output and the URLs requested by the browser.
+
+Alternatively, if your Stencil project uses the `dist-custom-elements` output target, you can import generated components directly in `.storybook/preview.ts`:
+
+```ts
+import '../dist/components/my-component.js';
+```
+
+This lets Vite include the imported component in its production bundle without relying on Storybook's `staticDirs` configuration.
+
+See [Images, fonts, and assets](../../configure/integration/images-and-assets.mdx) for more information about serving static files.
+
 ### How do I manually install the Web Components framework?
 
 First, install the framework:

@@ -54,17 +54,25 @@ const labelStart = (diagnostic: E.OxcError) => diagnostic.labels?.[0]?.start;
 // resident. It is unsupported on 32-bit hosts, under the WASM binding and before Node 22. The
 // first raw parse also loads the deserializer with `require`; when that fails, for example under
 // a test that mocks `node:fs`, this process reads trees through JSON from then on.
-let rawTransferEnabled = rawTransferSupported();
+// Off on Windows until oxc PR #27566 lands: its 6 GiB reservation fails there (oxc issue #11834).
+let rawTransferEnabled = process.platform !== 'win32' && rawTransferSupported();
 
 // The option is missing from the `ParserOptions` type of oxc-parser 0.153.
 type ParseOptions = E.ParserOptions & { experimentalRawTransfer: boolean };
 
-/** Runs `fn` with raw transfer forced on or off; for tests that compare the two tree readers. */
+/**
+ * Runs `fn` with raw transfer forced on or off; for tests that compare the two tree readers.
+ * Throws when a parse in `fn` turned raw transfer off, so its trees came through JSON after all.
+ */
 export const withRawTransfer = <T>(enabled: boolean, fn: () => T): T => {
   const before = rawTransferEnabled;
   rawTransferEnabled = enabled;
   try {
-    return fn();
+    const result = fn();
+    if (enabled && !rawTransferEnabled) {
+      throw new Error('Raw transfer was turned off during the call, so later parses used JSON');
+    }
+    return result;
   } finally {
     rawTransferEnabled = before;
   }
@@ -90,8 +98,10 @@ const parseWith = (code: string, fileName: string | undefined, lang: Lang): Pars
       throw error;
     }
     // The raw transfer deserializer recurses, so a tree nested deeper than the call stack allows
-    // comes through JSON, which does not. Any other failure of the raw path disables it.
-    if (!(error instanceof RangeError)) {
+    // comes through JSON, which does not. Any other failure, the buffer's allocation included,
+    // turns the raw path off for the process: a failed 6 GiB allocation costs full garbage
+    // collections, which would repeat on every parse.
+    if (!(error instanceof RangeError && /call stack/i.test(error.message))) {
       rawTransferEnabled = false;
     }
     const json: ParseOptions = { ...options, experimentalRawTransfer: false };

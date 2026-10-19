@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { rawTransferSupported } from 'oxc-parser';
+import { parseSync, rawTransferSupported } from 'oxc-parser';
 
 import {
   type E,
@@ -13,6 +13,8 @@ import {
   walk,
   withRawTransfer,
 } from './ast.ts';
+
+vi.mock('oxc-parser', { spy: true });
 
 // Raw transfer is only available on 64-bit Node 22+, where both ways of reading the tree run.
 const transfers = rawTransferSupported() ? [true, false] : [false];
@@ -132,6 +134,43 @@ describe('parseModule', () => {
     expect(() =>
       withRawTransfer(rawTransfer, () => parseModule('const a = 1;\nconst = ;\n', 'a.ts'))
     ).toThrow('Unexpected token (2:6) in a.ts');
+  });
+});
+
+describe('raw transfer fallback', () => {
+  afterEach(() => {
+    vi.mocked(parseSync).mockReset();
+  });
+
+  const failRawTransferWith = async (error: Error) => {
+    const actual = await vi.importActual<typeof import('oxc-parser')>('oxc-parser');
+    let attempts = 0;
+    vi.mocked(parseSync).mockImplementation((name, code, options) => {
+      if ((options as { experimentalRawTransfer?: boolean }).experimentalRawTransfer) {
+        attempts++;
+        throw error;
+      }
+      return actual.parseSync(name, code, options);
+    });
+    return () => attempts;
+  };
+
+  const parseFive = () => {
+    for (let index = 0; index < 5; index++) {
+      parseModule(`const a${index} = ${index};`, 'a.ts');
+    }
+  };
+
+  it('turns raw transfer off for the process when its buffer cannot be allocated', async () => {
+    const attempts = await failRawTransferWith(new RangeError('Array buffer allocation failed'));
+    expect(() => withRawTransfer(true, parseFive)).toThrow('Raw transfer was turned off');
+    expect(attempts()).toBe(1);
+  });
+
+  it('keeps raw transfer on when a tree overflows the call stack of its deserializer', async () => {
+    const attempts = await failRawTransferWith(new RangeError('Maximum call stack size exceeded'));
+    withRawTransfer(true, parseFive);
+    expect(attempts()).toBe(5);
   });
 });
 

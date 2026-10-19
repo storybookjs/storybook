@@ -9,7 +9,8 @@ import { dedent } from 'ts-dedent';
 import { generateProjectAnnotationsCodeFromPreviews } from './codegen-project-annotations.ts';
 
 const options = {
-  previewAnnotations: ['/project/addon/preview.js', '/project/.storybook/preview.ts'],
+  previewAnnotations: ['/project/addon/preview.js'],
+  previewFile: '/project/.storybook/preview.ts',
   projectRoot: '/project',
   frameworkName: 'frameworkName',
 };
@@ -136,7 +137,7 @@ describe('generateProjectAnnotationsCodeFromPreviews with a module loader', () =
   it('loads no other preview annotation through the loader when the project has no preview file', () => {
     const code = generateProjectAnnotationsCodeFromPreviews({
       ...options,
-      previewAnnotations: ['/project/addon/preview.js', undefined],
+      previewFile: undefined,
       isCsf4: false,
       moduleLoader: '/project/loader.js',
     });
@@ -161,7 +162,8 @@ describe('generateProjectAnnotationsCodeFromPreviews with a module loader', () =
     await writeFile(
       join(dir, 'project-annotations.js'),
       generateProjectAnnotationsCodeFromPreviews({
-        previewAnnotations: [join(dir, 'preview.js')],
+        previewAnnotations: [],
+        previewFile: join(dir, 'preview.js'),
         projectRoot: dir,
         frameworkName: 'frameworkName',
         isCsf4: true,

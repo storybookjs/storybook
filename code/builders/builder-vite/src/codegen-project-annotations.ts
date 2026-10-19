@@ -27,7 +27,8 @@ export async function generateProjectAnnotationsCode(options: Options, projectRo
   const moduleLoader = await getModuleLoader(options);
 
   return generateProjectAnnotationsCodeFromPreviews({
-    previewAnnotations: [...previewAnnotations, previewOrConfigFile],
+    previewAnnotations,
+    previewFile: previewOrConfigFile,
     projectRoot,
     frameworkName,
     isCsf4,
@@ -36,8 +37,10 @@ export async function generateProjectAnnotationsCode(options: Options, projectRo
 }
 
 export function generateProjectAnnotationsCodeFromPreviews(options: {
-  /** The last one is the project's preview file, or `undefined` if the project has none. */
-  previewAnnotations: (PreviewAnnotation | undefined)[];
+  /** The preview annotations of presets and addons. */
+  previewAnnotations: PreviewAnnotation[];
+  /** The project's preview file. */
+  previewFile?: PreviewAnnotation;
   projectRoot: string;
   frameworkName: string;
   isCsf4: boolean;
@@ -45,47 +48,37 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
   moduleLoader?: string;
 }) {
   const { projectRoot, moduleLoader } = options;
-  const hasPreviewFile = options.previewAnnotations.at(-1) !== undefined;
-  const previewAnnotationURLs = options.previewAnnotations
-    .filter((path) => path !== undefined)
-    .map((path) => processPreviewAnnotation(path, projectRoot));
 
-  const variables: string[] = [];
-  const imports: string[] = [];
-  for (const previewAnnotation of previewAnnotationURLs) {
+  const toModule = (previewAnnotation: PreviewAnnotation) => {
+    const url = processPreviewAnnotation(previewAnnotation, projectRoot);
     const variable =
-      genSafeVariableName(filename(previewAnnotation)).replace(/_(45|46|47)/g, '_') +
-      '_' +
-      hash(previewAnnotation);
-    variables.push(variable);
-    imports.push(genImport(previewAnnotation, { name: '*', as: variable }));
-  }
-
-  const previewFileURL = previewAnnotationURLs[previewAnnotationURLs.length - 1];
-  const previewFileVariable = variables[variables.length - 1];
-  const previewFileImport = imports[imports.length - 1];
+      genSafeVariableName(filename(url)).replace(/_(45|46|47)/g, '_') + '_' + hash(url);
+    return { url, variable, import: genImport(url, { name: '*', as: variable }) };
+  };
+  const annotations = options.previewAnnotations.map(toModule);
+  const previewFile = options.previewFile ? toModule(options.previewFile) : undefined;
 
   // Prefer the updated module from an HMR update, otherwise the original module
   const moduleAt = (index: number, variable: string) =>
     `hmrPreviewAnnotationModules[${index}] ?? ${variable}`;
-  const loadPreviewFile = (module: string) =>
+  const loadPreviewFile = (url: string, module: string) =>
     moduleLoader
-      ? `await load(${JSON.stringify(toImportPath(previewFileURL))}, async () => ${module})`
+      ? `await load(${JSON.stringify(toImportPath(url))}, async () => ${module})`
       : module;
   const loaderImport = moduleLoader ? `${genImport(moduleLoader, ['load'])}\n` : '';
   const maybeAsync = moduleLoader ? 'async ' : '';
 
-  if (options.isCsf4) {
+  if (options.isCsf4 && previewFile) {
     return dedent`
-      ${loaderImport}${previewFileImport}
+      ${loaderImport}${previewFile.import}
 
       export ${maybeAsync}function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
-        const preview = ${loadPreviewFile(moduleAt(0, previewFileVariable))};
+        const preview = ${loadPreviewFile(previewFile.url, moduleAt(0, previewFile.variable))};
         return preview.default.composed;
       }
 
       if (import.meta.hot) {
-        import.meta.hot.accept([${JSON.stringify(previewFileURL)}], (previewAnnotationModules) => {
+        import.meta.hot.accept([${JSON.stringify(previewFile.url)}], (previewAnnotationModules) => {
           // getProjectAnnotations has changed so we need to patch the new one in
           window?.__STORYBOOK_PREVIEW__?.onGetProjectAnnotationsChanged({
             getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules),
@@ -95,25 +88,26 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
     `.trim();
   }
 
+  const modules = previewFile ? [...annotations, previewFile] : annotations;
+  const configs = annotations.map(({ variable }, index) => moduleAt(index, variable));
+  if (previewFile) {
+    configs.push(
+      loadPreviewFile(previewFile.url, moduleAt(annotations.length, previewFile.variable))
+    );
+  }
+
   return dedent`
     import { composeConfigs } from 'storybook/preview-api';
     ${loaderImport}
-    ${imports.join('\n')}
+    ${modules.map((module) => module.import).join('\n')}
 
     export ${maybeAsync}function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
-      const configs = ${genArrayFromRaw(
-        variables.map((variable, index) =>
-          hasPreviewFile && index === variables.length - 1
-            ? loadPreviewFile(moduleAt(index, variable))
-            : moduleAt(index, variable)
-        ),
-        '  '
-      )};
+      const configs = ${genArrayFromRaw(configs, '  ')};
       return composeConfigs(configs);
     }
 
     if (import.meta.hot) {
-      import.meta.hot.accept(${JSON.stringify(previewAnnotationURLs)}, (previewAnnotationModules) => {
+      import.meta.hot.accept(${JSON.stringify(modules.map((module) => module.url))}, (previewAnnotationModules) => {
         // getProjectAnnotations has changed so we need to patch the new one in
         window?.__STORYBOOK_PREVIEW__?.onGetProjectAnnotationsChanged({
           getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules),

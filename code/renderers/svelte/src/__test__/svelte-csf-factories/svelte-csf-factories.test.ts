@@ -5,7 +5,6 @@ import { isStory } from 'storybook/internal/csf';
 
 import { composeStories } from '../../portable-stories.ts';
 import * as ButtonStories from './button.stories.svelte';
-import * as ExportedMetaStories from './exported-meta.stories.svelte';
 import * as InteractionsStories from './interactions.stories.svelte';
 import * as MetaTypeStories from './meta-type.stories.svelte';
 import * as TemplatingStories from './templating.stories.svelte';
@@ -17,7 +16,6 @@ afterEach(() => {
 
 const files = {
   ButtonStories,
-  ExportedMetaStories,
   InteractionsStories,
   MetaTypeStories,
   TemplatingStories,

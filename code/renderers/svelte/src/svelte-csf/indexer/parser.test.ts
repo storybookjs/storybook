@@ -224,12 +224,6 @@ describe('parseForIndexer', () => {
           .meta({ title: 'Example', tags: ['meta-tag'] })
           .type<{ args: { theme: string } }>();`,
       ],
-      [
-        'an exported meta variable',
-        `import preview from '#.storybook/preview';
-        export const meta = preview.meta({ title: 'Example', tags: ['meta-tag'] });
-        const { Story } = meta;`,
-      ],
     ])('indexes %s', async ([, moduleScript], { expect }) => {
       const file = await writeFactoryStoriesFile(moduleScript);
 
@@ -349,6 +343,18 @@ describe('parseForIndexer', () => {
       const file = await writeFactoryStoriesFile(`
         import preview from '#.storybook/preview';
         preview.meta({ title: 'Example' });
+      `);
+
+      await expect(parseForIndexer(file)).rejects.toThrow(
+        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004'
+      );
+    });
+
+    it('fails when the meta is exported', async ({ expect }) => {
+      const file = await writeFactoryStoriesFile(`
+        import preview from '#.storybook/preview';
+        export const meta = preview.meta({ title: 'Example' });
+        const { Story } = meta;
       `);
 
       await expect(parseForIndexer(file)).rejects.toThrow(

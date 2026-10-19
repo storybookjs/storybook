@@ -58,7 +58,7 @@ export function hasMetaImport(imports: MetaImports): boolean {
 }
 
 // `const { Story } = defineMeta({ … })`, `const { Story } = preview.meta({ … }).type<…>()`, or
-// `export const meta = preview.meta({ … })` followed by `const { Story } = meta` and
+// `const meta = preview.meta({ … })` followed by `const { Story } = meta` and
 // `const { Story: IconStory } = meta.type<…>()`
 export interface MetaNodes {
   // `preview.meta()` creates a CSF factories meta
@@ -80,10 +80,8 @@ export function findMeta(
 ): MetaNodes | undefined {
   let meta: MetaNodes | undefined;
 
-  for (const node of body) {
-    const statement = node.type === 'ExportNamedDeclaration' ? node.declaration : node;
-
-    if (statement?.type !== 'VariableDeclaration') {
+  for (const statement of body) {
+    if (statement.type !== 'VariableDeclaration') {
       continue;
     }
 

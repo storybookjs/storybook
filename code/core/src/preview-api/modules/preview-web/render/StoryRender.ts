@@ -302,10 +302,8 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       const renderContext: RenderContext<TRenderer> = {
         componentId,
         title,
-        kind: title,
         id,
         name,
-        story: name,
         tags,
         ...this.callbacks,
         showError: (error) => {

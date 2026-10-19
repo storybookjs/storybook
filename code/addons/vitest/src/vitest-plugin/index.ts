@@ -464,6 +464,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
               ? ['react-dom/test-utils']
               : []),
           ],
+          // Vitest only excludes these when coverage is enabled at startup. Storybook can enable
+          // coverage later, and without this Vite would optimize them mid-run and reload the tests.
+          exclude: ['@vitest/coverage-v8/browser', '@vitest/coverage-istanbul'],
         },
 
         define: {

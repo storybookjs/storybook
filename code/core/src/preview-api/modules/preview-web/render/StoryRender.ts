@@ -216,8 +216,12 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       unboundStoryFn,
       playFunction,
       runStep,
-      renderToCanvas,
     } = story;
+
+    // A story renders with the project annotations it was prepared with: a CSF Next file carries
+    // the annotations of its own preview. A preview without a renderToCanvas leaves it to the
+    // project's, as the store does for every annotation a file does not carry.
+    const renderStory = story.renderToCanvas ?? this.store.projectAnnotations.renderToCanvas;
 
     if (forceRemount && !initial) {
       // NOTE: we don't check the cancel actually worked here, so the previous
@@ -246,13 +250,11 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         context: null!,
         canvas: {} as Canvas,
         userEvent: {} as UserEventObject,
-        // The story's own project annotations decide how it renders: a CSF Next file carries the
-        // annotations of the preview it was defined with.
         renderToCanvas: async () => {
-          if (!renderToCanvas) {
+          if (!renderStory) {
             throw new MissingRenderToCanvasError();
           }
-          const teardown = await renderToCanvas(renderContext, canvasElement);
+          const teardown = await renderStory(renderContext, canvasElement);
           this.teardownRender = teardown || (() => {});
           mounted = true;
         },

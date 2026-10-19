@@ -217,6 +217,7 @@ describe('StoryStore', () => {
       { renderToCanvas: projectRenderToCanvas, parameters: { layout: 'centered' } },
     ]);
 
+    // Guard: storyFromCSFFile already prepared a file's stories with the file's annotations.
     it("prepares the file's stories with its preview's renderToCanvas", async () => {
       const store = new StoryStore(storyIndex, csfNextImportFn, projectWithRenderer);
 

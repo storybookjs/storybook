@@ -82,36 +82,55 @@ beforeEach(() => {
 });
 
 describe('StoryRender', () => {
-  it.each(['story', 'docs'] as const)(
-    'renders with the renderToCanvas of the story in %s view mode',
-    async (viewMode) => {
-      const renderToCanvas = vi.fn();
-      const canvasElement = {} as any;
-      const render = new StoryRender(
-        new Channel({}),
-        buildStore(),
-        {} as any,
-        entry.id,
-        viewMode,
-        { autoplay: true },
-        buildStory({ renderToCanvas })
-      );
-
-      await render.renderToElement(canvasElement);
-
-      expect(renderToCanvas).toHaveBeenCalledOnce();
-      expect(renderToCanvas).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 'id' }),
-        canvasElement
-      );
-    }
-  );
-
-  it('shows an exception when the story has no renderToCanvas', async () => {
-    const callbacks = { showException: vi.fn() };
+  it('renders with the renderToCanvas of the story', async () => {
+    const renderToCanvas = vi.fn();
+    const canvasElement = {} as any;
     const render = new StoryRender(
       new Channel({}),
       buildStore(),
+      {} as any,
+      entry.id,
+      'story',
+      { autoplay: true },
+      buildStory({ renderToCanvas })
+    );
+
+    await render.renderToElement(canvasElement);
+
+    expect(renderToCanvas).toHaveBeenCalledOnce();
+    expect(renderToCanvas).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'id' }),
+      canvasElement
+    );
+  });
+
+  it("renders with the project's renderToCanvas when the story has none", async () => {
+    const projectRenderToCanvas = vi.fn();
+    const canvasElement = {} as any;
+    const render = new StoryRender(
+      new Channel({}),
+      buildStore({ projectAnnotations: { renderToCanvas: projectRenderToCanvas } as any }),
+      {} as any,
+      entry.id,
+      'story',
+      { autoplay: true },
+      buildStory({ renderToCanvas: undefined })
+    );
+
+    await render.renderToElement(canvasElement);
+
+    expect(projectRenderToCanvas).toHaveBeenCalledOnce();
+    expect(projectRenderToCanvas).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'id' }),
+      canvasElement
+    );
+  });
+
+  it('shows an exception when neither the story nor the project has a renderToCanvas', async () => {
+    const callbacks = { showException: vi.fn() };
+    const render = new StoryRender(
+      new Channel({}),
+      buildStore({ projectAnnotations: {} as any }),
       callbacks as any,
       entry.id,
       'story',

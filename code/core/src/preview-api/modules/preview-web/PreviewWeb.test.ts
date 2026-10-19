@@ -889,6 +889,22 @@ describe('PreviewWeb', () => {
       expect(projectAnnotations.renderToCanvas).toHaveBeenCalledOnce();
       expect(fileRenderToCanvas).not.toHaveBeenCalled();
     });
+
+    it("renders with the project's renderToCanvas when its preview has none", async () => {
+      document.location.search = '?id=component-one--a';
+      const bareMeta = definePreview({ render: vi.fn() }).meta({ title: 'Component One' });
+      const bareExports = { default: bareMeta, a: bareMeta.story() };
+
+      await createAndRenderPreview({
+        importFn: async (path: string) =>
+          path === './src/ComponentOne.stories.js' ? bareExports : importFn(path),
+      });
+
+      expect(projectAnnotations.renderToCanvas).toHaveBeenCalledOnce();
+      expect(projectAnnotations.renderToCanvas.mock.calls[0][0].storyContext.id).toBe(
+        'component-one--a'
+      );
+    });
   });
 
   describe('onUpdateGlobals', () => {
@@ -3900,6 +3916,23 @@ describe('PreviewWeb', () => {
       await waitForRender();
 
       expect(teardownrenderToCanvas).not.toHaveBeenCalled();
+    });
+
+    it('rerenders the current story with the new renderToCanvas', async () => {
+      document.location.search = '?id=component-one--a';
+      const preview = await createAndRenderPreview();
+      const newRenderToCanvas = vi.fn();
+
+      projectAnnotations.renderToCanvas.mockClear();
+      preview.onGetProjectAnnotationsChanged({
+        getProjectAnnotations: () => ({ ...projectAnnotations, renderToCanvas: newRenderToCanvas }),
+      });
+
+      await vi.waitFor(() => {
+        expect(newRenderToCanvas).toHaveBeenCalledOnce();
+      });
+      expect(newRenderToCanvas.mock.calls[0][0].storyContext.id).toBe('component-one--a');
+      expect(projectAnnotations.renderToCanvas).not.toHaveBeenCalled();
     });
 
     it('rerenders the current story with new global meta-generated context', async () => {

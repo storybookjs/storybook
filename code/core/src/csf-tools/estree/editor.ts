@@ -1041,19 +1041,27 @@ const isRemoved = (editor: SourceEditor, span: Span) => {
   }
 };
 
+// The text `appendStatement` added last to a batch of edits, with the statement it follows.
+const lastAppended = new WeakMap<SourceEdits, { after: Span; text: string }>();
+
 /**
  * Insert a statement after the last statement that pending edits did not remove. A blank line
- * sets it apart when it or that statement spans lines.
+ * sets it apart when it or what it follows spans lines: that statement, or the text appended after
+ * it before.
  */
 export const appendStatement = (editor: SourceEditor, text: string) => {
   const last = editor.program.body.findLast((statement) => !isRemoved(editor, statement));
   if (!last) {
-    const output = editor.edits.toString();
+    // A BOM is no content to end the line of.
+    const output = editor.edits.toString().replace(/^\uFEFF/, '');
     editor.edits.append(`${output && !output.endsWith('\n') ? '\n' : ''}${text}\n`);
     return;
   }
-  const multiline = text.includes('\n') || editor.source(last).includes('\n');
+  const previous = lastAppended.get(editor.edits);
+  const before = previous?.after === last ? previous.text : editor.source(last);
+  const multiline = text.includes('\n') || before.includes('\n');
   insertStatementAfter(editor, last, `${multiline ? '\n' : ''}${text}`);
+  lastAppended.set(editor.edits, { after: last, text });
 };
 
 /** The span of a statement with the comments it owns. */

@@ -540,6 +540,12 @@ describe('prependStatement', () => {
     prependStatement(editor, `import a from 'a';`);
     expect(editor.toString()).toBe(`\uFEFF// @ts-nocheck\nimport a from 'a';\n`);
   });
+
+  it('inserts right after the BOM of a file with nothing else', () => {
+    const editor = new SourceEditor('\uFEFF');
+    prependStatement(editor, `import a from 'a';`);
+    expect(editor.toString()).toBe(`\uFEFFimport a from 'a';\n`);
+  });
 });
 
 describe('insertAfterImports', () => {
@@ -606,6 +612,13 @@ describe('appendStatement', () => {
     removeStatement(editor, editor.program.body[1]);
     appendStatement(editor, `const c = 3;`);
     expect(editor.toString()).toBe(`const a = 1;\nconst c = 3;\n`);
+  });
+
+  it('sets a run of one-line statements apart from a multi-line statement once', () => {
+    const editor = new SourceEditor(`const a = {\n  b: 1,\n};\n`);
+    appendStatement(editor, `const c = 3;`);
+    appendStatement(editor, `const d = 4;`);
+    expect(editor.toString()).toBe(`const a = {\n  b: 1,\n};\n\nconst c = 3;\nconst d = 4;\n`);
   });
 
   it('appends to the end of a file whose statements are all removed', () => {

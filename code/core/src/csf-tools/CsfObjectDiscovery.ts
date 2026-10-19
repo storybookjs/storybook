@@ -32,10 +32,7 @@ type AnnotationCandidate = {
 // An object literal an editor works on, before it is wrapped into a `CsfObject`.
 type Discovered = { target: CsfObjectTarget; prefix: readonly string[]; node: E.ObjectExpression };
 
-const loc = (csf: CsfFile, node: Node) => {
-  const span = node as Node & { start: number; end: number };
-  return { loc: locationOf(csf._code, span.start, span.end) };
-};
+const loc = (csf: CsfFile, node: Node) => ({ loc: locationOf(csf._code, node.start, node.end) });
 
 const storyTarget = ({ exportName, localName }: StoryBinding): CsfObjectTarget => ({
   kind: 'story',

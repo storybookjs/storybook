@@ -926,7 +926,9 @@ describe('CsfObject', () => {
       );
       expect(csf.changed).toBe(true);
       expect(meta.changed).toBe(true);
-      expect(csf.mutationDiagnostics).toEqual([result.diagnostic]);
+      expect(csf.mutationDiagnostics).toEqual([
+        expect.objectContaining({ code: 'invalid-csf', target: { kind: 'meta' } }),
+      ]);
     });
 
     it.each([

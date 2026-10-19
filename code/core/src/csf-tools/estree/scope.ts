@@ -759,15 +759,11 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
     scopeOf: (node) => {
       // Linear over scopes; only write paths ask.
       let best = declaredProgramScope;
-      for (const [scopeNode, scope] of nodeScopes) {
-        const span = scopeNode as Node & { start: number; end: number };
-        const target = node as Node & { start: number; end: number };
+      for (const [span, scope] of nodeScopes) {
         if (
-          span.start <= target.start &&
-          target.end <= span.end &&
-          span.end - span.start <
-            (best.node as Node & { start: number; end: number }).end -
-              (best.node as Node & { start: number; end: number }).start
+          span.start <= node.start &&
+          node.end <= span.end &&
+          span.end - span.start < best.node.end - best.node.start
         ) {
           best = scope;
         }

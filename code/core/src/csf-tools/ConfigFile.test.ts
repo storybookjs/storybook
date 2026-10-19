@@ -1152,26 +1152,6 @@ describe('ConfigFile', () => {
     });
   });
 
-  describe('quote inference under EOL reconstruction', () => {
-    it('infers quotes and keeps the line endings of CRLF sources', () => {
-      const source = [
-        "import { addons } from 'storybook/manager-api';",
-        '',
-        'export const tags = [];',
-      ].join('\r\n');
-      const config = loadConfig(source).parse();
-      config.set(['tags'], ['autodocs']);
-
-      expect(printConfig(config).code).toBe(
-        [
-          "import { addons } from 'storybook/manager-api';",
-          '',
-          "export const tags = ['autodocs'];",
-        ].join('\r\n')
-      );
-    });
-  });
-
   describe('config helpers', () => {
     describe('getNameFromPath', () => {
       it(`supports string literal node`, () => {

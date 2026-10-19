@@ -120,10 +120,7 @@ export const enrichCsf = async (csf: CsfFile, csfSource: CsfFile, options?: Enri
 
 // The story's own source text: the initializer of `const X = …`, or the function itself.
 export const extractSource = (node: Node, code: string) => {
-  const src = (node?.type === 'VariableDeclarator' ? node.init : node) as
-    | { start: number; end: number }
-    | null
-    | undefined;
+  const src = node?.type === 'VariableDeclarator' ? node.init : node;
   return src ? code.slice(src.start, src.end) : '';
 };
 

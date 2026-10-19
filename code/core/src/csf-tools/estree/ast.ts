@@ -416,7 +416,7 @@ const codeOf = (node: Node) => {
  * other node, such as one from `parseModule`.
  */
 export const textOf = (node: Node): string =>
-  fragments.get(node)?.text ?? sourceOf(codeOf(node), node as Node & Span);
+  fragments.get(node)?.text ?? sourceOf(codeOf(node), node);
 
 /**
  * `textOf` for placing a node as a value: a comma expression keeps its parentheses or gets them,
@@ -429,7 +429,7 @@ export const placeableTextOf = (node: Node): string => {
   }
   const code = codeOf(node);
   if (node.type !== 'SequenceExpression') {
-    return sourceOf(code, node as Node & Span);
+    return sourceOf(code, node);
   }
   const outer = outerSpan(node);
   return outer === node ? `(${sourceOf(code, node)})` : sourceOf(code, outer);

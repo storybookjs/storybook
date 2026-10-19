@@ -3,7 +3,9 @@ import {
   type Node,
   type Property,
   type SourceLocation,
+  isNode,
   locationOf,
+  moduleOf,
   parseExpression,
   placeableTextOf,
   staticKey,
@@ -13,7 +15,6 @@ import {
   type SourceEditor,
   appendMembers,
   groupMembers,
-  isSpan,
   keySource,
   prependMembers,
   printKey,
@@ -431,8 +432,8 @@ class CsfObjectEditor implements CsfObject {
   }
 
   private sourceFor(value: CsfValue | CsfExpression) {
-    if (isSpan(value)) {
-      return placeableTextOf(value as Node);
+    if (isNode(value) && moduleOf(value)) {
+      return placeableTextOf(value);
     }
     if (isAstLike(value)) {
       throw new Error(
@@ -876,14 +877,13 @@ class CsfObjectEditor implements CsfObject {
     node: Node,
     message = `Cannot mutate ${path.join('.')} because the target contains ${code.replaceAll('-', ' ')}`
   ) {
-    const span = node as Node & { start?: number; end?: number };
     const diagnostic: CsfMutationDiagnostic = {
       code,
       target: this.target,
       path: [...path],
       message,
-      ...(typeof span.start === 'number' && span.end !== undefined && node !== this.editor.program
-        ? { loc: locationOf(this.editor.code, span.start, span.end) }
+      ...(node !== this.editor.program
+        ? { loc: locationOf(this.editor.code, node.start, node.end) }
         : {}),
     };
     this.reportDiagnostic(diagnostic);

@@ -7,7 +7,6 @@ import {
   type ParsedModule,
   type Property,
   type Span,
-  isNode,
   isStringLiteral,
   isValidIdentifier,
   derivedFrom,
@@ -557,7 +556,7 @@ const isMultiline = (code: string, list: List) => code.slice(list.open, list.clo
 const literalSpans = (root: Node, range: Span): Span[] => {
   const spans: Span[] = [];
   walk(root, (node) => {
-    const { start, end } = node as Node & Span;
+    const { start, end } = node;
     if (end <= range.start || start >= range.end) {
       return false;
     }
@@ -1182,8 +1181,5 @@ const methodFromFunction = (text: string, key: string) => {
     ? `${match[1] ? 'async ' : ''}${match[2] ? '*' : ''}${key}${text.slice(match[0].length)}`
     : undefined;
 };
-
-export const isSpan = (value: unknown): value is Span =>
-  isNode(value) && typeof (value as unknown as Span).start === 'number';
 
 export type { Node };

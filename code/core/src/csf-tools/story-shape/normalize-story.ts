@@ -10,10 +10,8 @@ export type NormalizedStoryDeclaration =
 type StoryDeclarationExpression = E.Function | E.Expression;
 
 /** An error pointing at the node a story file got wrong. */
-export const storyShapeError = (message: string, node: Node, editor: SourceEditor) => {
-  const span = node as Node & { start: number; end: number };
-  return new SyntaxError(`${message}\n${codeFrame(editor.fileName, editor.code, span.start)}`);
-};
+export const storyShapeError = (message: string, node: Node, editor: SourceEditor) =>
+  new SyntaxError(`${message}\n${codeFrame(editor.fileName, editor.code, node.start)}`);
 
 /**
  * Resolve a story export's declaration to its snippet-ready story shape.

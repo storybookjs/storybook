@@ -26,6 +26,7 @@ import {
   EstreeParseError,
   type Node,
   type SourceLocation,
+  type Span,
   children,
   staticKey,
   isFunction,
@@ -401,11 +402,8 @@ export class CsfFile {
     return this._editor.code;
   }
 
-  _loc(node: Node | { start: number; end: number } | undefined): Located {
-    const span = node as { start?: number; end?: number } | undefined;
-    return typeof span?.start === 'number' && typeof span.end === 'number'
-      ? { loc: locationOf(this._editor.code, span.start, span.end) }
-      : undefined;
+  _loc(node: Span | undefined): Located {
+    return node ? { loc: locationOf(this._editor.code, node.start, node.end) } : undefined;
   }
 
   /**
@@ -651,7 +649,7 @@ export class CsfFile {
        */
       const metaName = generateUid(this._editor.scopes, 'meta');
       this._metaVariableName = metaName;
-      const declaration = node.declaration as Node & { start: number; end: number };
+      const { declaration } = node;
       this._editor.edits.overwrite(
         node.start,
         outerSpan(declaration).start,

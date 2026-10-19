@@ -239,7 +239,11 @@ export class WebView implements View<HTMLElement> {
       document.documentElement.append(host);
     }
     host.dataset.mode = mode;
-    host.replaceChildren(this.block(mode));
+    const block = this.block(mode);
+    // The block that is shown stays in place, so its spinner does not start over.
+    if (host.firstElementChild !== block) {
+      host.replaceChildren(block);
+    }
     if (!host.matches(':popover-open')) {
       host.showPopover();
     }

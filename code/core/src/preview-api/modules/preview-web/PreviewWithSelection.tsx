@@ -446,6 +446,18 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     // Wait for the previous render to leave the page. NOTE: this will wait to ensure anything async
     // is properly aborted, which (in some cases) can lead to the whole screen being refreshed.
     if (lastRender) {
+      // The preparing block waits a short delay, so a fast switch does not flash it. Around a story
+      // that owns the document the whole document changes hands, which seldom happens within the
+      // delay, so the block shows at once, before the teardown. A change of view mode showed it at
+      // once already (above).
+      const ownsDocument = (r: PossibleRender<TRenderer>) => isStoryRender(r) && r.ownsDocument;
+      if (
+        storyIdChanged &&
+        !viewModeChanged &&
+        (ownsDocument(lastRender) || ownsDocument(render))
+      ) {
+        this.view.showPreparingStory({ immediate: true });
+      }
       await this.teardownRender(lastRender, {
         viewModeChanged,
         // On a same-story re-render, the previous DOM stays mounted until the new render

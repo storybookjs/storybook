@@ -44,7 +44,8 @@ const createGate = (): [Promise<void>, () => void] => {
 };
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-window.location = { reload: vi.fn() } as any;
+const storyAUrl = 'http://localhost/iframe.html?id=component--a&viewMode=story';
+window.location = { href: storyAUrl, reload: vi.fn() } as any;
 
 const mountSpy = vi.fn(async (context) => {
   await context.renderToCanvas();
@@ -79,6 +80,7 @@ const buildStore = (overrides: Partial<StoryStore<Renderer>> = {}): StoryStore<R
 
 beforeEach(() => {
   vi.restoreAllMocks();
+  window.location.href = storyAUrl;
 });
 
 describe('StoryRender', () => {
@@ -704,6 +706,68 @@ describe('StoryRender', () => {
         expect(window.location.reload).toHaveBeenCalledOnce();
         expect(store.cleanupStory).toHaveBeenCalledOnce();
       });
+    });
+
+    it('returns to the URL of the selected story when the teardown changed `location`', async () => {
+      const replaceState = vi.spyOn(window.history, 'replaceState').mockImplementation(() => {});
+      const storyUrl = '/iframe.html?id=component--b&viewMode=story';
+      const teardownRender = vi.fn(() => {
+        window.location.href = 'http://localhost/app/a';
+      });
+      const render = new StoryRender(
+        new Channel({}),
+        buildStore(),
+        { storyUrl: () => storyUrl } as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        buildStory({ renderToCanvas: vi.fn(async () => teardownRender) })
+      );
+
+      await render.renderToElement({} as any);
+      await render.teardown();
+
+      expect(replaceState).toHaveBeenCalledOnce();
+      expect(replaceState).toHaveBeenCalledWith({}, '', storyUrl);
+      expect(teardownRender.mock.invocationCallOrder[0]).toBeLessThan(
+        replaceState.mock.invocationCallOrder[0]
+      );
+    });
+
+    it('leaves the URL alone when the document is at the URL of the selected story', async () => {
+      const replaceState = vi.spyOn(window.history, 'replaceState').mockImplementation(() => {});
+      const render = new StoryRender(
+        new Channel({}),
+        buildStore(),
+        { storyUrl: () => '/iframe.html?id=component--a&viewMode=story' } as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        buildStory()
+      );
+
+      await render.renderToElement({} as any);
+      await render.teardown();
+
+      expect(replaceState).not.toHaveBeenCalled();
+    });
+
+    it('leaves the URL alone when it keeps the rendered DOM', async () => {
+      const replaceState = vi.spyOn(window.history, 'replaceState').mockImplementation(() => {});
+      const render = new StoryRender(
+        new Channel({}),
+        buildStore(),
+        { storyUrl: () => '/iframe.html?id=component--b&viewMode=story' } as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        buildStory()
+      );
+
+      await render.renderToElement({} as any);
+      await render.teardown({ keepRenderedDom: true });
+
+      expect(replaceState).not.toHaveBeenCalled();
     });
 
     it('replaces the URL with the URL of the selected story before reloading', async () => {

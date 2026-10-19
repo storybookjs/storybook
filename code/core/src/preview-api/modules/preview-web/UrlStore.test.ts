@@ -146,4 +146,21 @@ describe('UrlStore', () => {
       expect(store.url).toBe(url);
     });
   });
+
+  describe('setQueryParams', () => {
+    it('keeps the params in the URL of the selected story', () => {
+      document.location.pathname = '/iframe.html';
+      document.location.search = '';
+      document.location.hash = '';
+      const store = new UrlStore();
+      store.setSelection({ storyId: 'story--id', viewMode: 'story' });
+      document.location.search = '?id=story--id&viewMode=story';
+
+      store.setQueryParams({ args: 'a:1' });
+
+      const url = '/iframe.html?id=story--id&viewMode=story&args=a%3A1';
+      expect(history.replaceState).toHaveBeenLastCalledWith({}, '', url);
+      expect(store.url).toBe(url);
+    });
+  });
 });

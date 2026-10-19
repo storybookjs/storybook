@@ -132,5 +132,10 @@ export class UrlStore implements SelectionStore {
     const query = getQueryString({ extraParams: queryParams });
     const { hash = '' } = document.location;
     history.replaceState({}, '', `${document.location.pathname}${query}${hash}`);
+    // The URL of the selected story carries the params too, so the story keeps them on a reload.
+    if (this.selection) {
+      const storyQuery = getQueryString({ selection: this.selection, extraParams: queryParams });
+      this.url = `${this.pathname}${storyQuery}${hash}`;
+    }
   }
 }

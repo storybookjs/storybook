@@ -168,13 +168,16 @@ export const viteFinal = async (config: any, options: DocsOptions) => {
     enforce: 'pre',
     config: () => ({
       resolve: {
-        alias: {
-          react,
-          // Vite doesn't respect export maps when resolving an absolute path, so we need to do that manually here
-          ...(isAbsolute(reactDom) && { 'react-dom/server': `${reactDom}/server.browser.js` }),
-          'react-dom': reactDom,
-          '@mdx-js/react': mdx,
-        },
+        // An alias of a package to its own name dedupes nothing
+        alias: Object.fromEntries(
+          Object.entries({
+            react,
+            // Vite doesn't respect export maps when resolving an absolute path, so we need to do that manually here
+            ...(isAbsolute(reactDom) && { 'react-dom/server': `${reactDom}/server.browser.js` }),
+            'react-dom': reactDom,
+            '@mdx-js/react': mdx,
+          }).filter(([name, target]) => target !== name)
+        ),
       },
     }),
   };

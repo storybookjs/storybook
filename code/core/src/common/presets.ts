@@ -282,15 +282,13 @@ async function loadPresets(
     return [];
   }
 
-  return (
-    await Promise.all(
-      presets.map(async (preset) => {
-        return loadPreset(preset, level, storybookOptions);
-      })
-    )
-  ).reduce((acc, loaded) => {
-    return acc.concat(loaded);
-  }, []);
+  // Sequential on purpose: a CJS preset that require()s an ESM module still being import()ed in parallel crashes with ERR_INTERNAL_ASSERTION.
+  const loaded: LoadedPreset[] = [];
+  for (const preset of presets) {
+    loaded.push(...(await loadPreset(preset, level, storybookOptions)));
+  }
+
+  return loaded;
 }
 
 function applyPresets(

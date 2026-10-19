@@ -12,6 +12,10 @@ const tsconfigPathsMock = vi.hoisted(() => vi.fn());
 const getExecutionEnvironmentMock = vi.hoisted(() => vi.fn());
 const getNextjsMajorVersionMock = vi.hoisted(() => vi.fn());
 const getViteMajorVersionMock = vi.hoisted(() => vi.fn());
+const findBabelConfigFileMock = vi.hoisted(() =>
+  vi.fn((_dir: string) => undefined as string | undefined)
+);
+const warnOnceMock = vi.hoisted(() => vi.fn());
 
 vi.mock('node:module', () => ({
   createRequire: () => ({
@@ -21,11 +25,11 @@ vi.mock('node:module', () => ({
 
 // The `node:module` mock above would break these modules' own imports.
 vi.mock('storybook/internal/common', () => ({
-  findBabelConfigFile: () => undefined,
+  findBabelConfigFile: findBabelConfigFileMock,
 }));
 
 vi.mock('storybook/internal/node-logger', () => ({
-  once: { warn: vi.fn() },
+  once: { warn: warnOnceMock },
 }));
 
 vi.mock('next/dist/build/load-jsconfig.js', () => ({
@@ -124,6 +128,18 @@ describe('VitePlugin', () => {
       },
     });
     expect((await configPlugin?.config?.({}))?.resolve).not.toHaveProperty('tsconfigPaths');
+  });
+
+  it('warns about a Babel config in the folder it loads next.config from', async () => {
+    findBabelConfigFileMock.mockImplementation((dir) =>
+      dir === '/root/apps/web' ? '/root/apps/web/.babelrc' : undefined
+    );
+    const { default: VitePlugin } = await import('./index.ts');
+
+    await VitePlugin({ dir: '/root/apps/web' })[1]?.config?.({});
+
+    expect(findBabelConfigFileMock).toHaveBeenCalledWith('/root/apps/web');
+    expect(warnOnceMock).toHaveBeenCalledWith(expect.stringContaining('`.babelrc`'));
   });
 
   it('injects vite-tsconfig-paths when load-jsconfig is a function export', async () => {

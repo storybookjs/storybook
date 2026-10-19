@@ -527,9 +527,9 @@ Not all Vite modifications are copy/paste-able between `next.config.js` and `.st
 
 ### Babel
 
-This framework compiles your code with SWC and ignores `.babelrc` and `babel.config.*` files. When it finds one, it logs a warning naming the file. To hide the warning, set `experimental.forceSwcTransforms: true` in `next.config.js`, which makes your Next.js app compile with SWC too.
+This framework compiles your code with SWC and ignores `.babelrc` and `babel.config.*` files. When it finds one, it logs a warning naming the file. To hide the warning, set `experimental.forceSwcTransforms: true` in `next.config.js`, which also makes webpack builds of your Next.js app compile with SWC. Turbopack does not read this flag.
 
-Most Babel plugins used with Next.js have an SWC equivalent in `next.config.js`, and Storybook applies it: the [`compiler` options](https://nextjs.org/docs/architecture/nextjs-compiler) (`styledComponents`, `emotion`, `relay`, `reactRemoveProperties`, `removeConsole`) and `experimental.swcPlugins`. For a plugin without an equivalent, add the tool's Vite plugin in [`viteFinal`](../../builders/vite.mdx#configuration).
+Most Babel plugins used with Next.js have an SWC equivalent in `next.config.js`, and Storybook applies it: the [`compiler` options](https://nextjs.org/docs/architecture/nextjs-compiler) (`styledComponents`, `emotion`, `relay`, `removeConsole`) and `experimental.swcPlugins`. For a plugin without an equivalent, add the tool's Vite plugin in [`viteFinal`](../../builders/vite.mdx#configuration).
 
 ### Typescript
 

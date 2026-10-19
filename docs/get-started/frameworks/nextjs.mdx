@@ -544,11 +544,11 @@ Below is an example of how to add SVGR support to Storybook with this framework.
 
 ### Babel
 
-This framework compiles your code with SWC and ignores `.babelrc` and `babel.config.*` files. When it finds one, it logs a warning naming the file. To hide the warning, set `experimental.forceSwcTransforms: true` in `next.config.js`, which makes your Next.js app compile with SWC too.
+This framework compiles your code with SWC and ignores `.babelrc` and `babel.config.*` files. When it finds one, it logs a warning naming the file. To hide the warning, set `experimental.forceSwcTransforms: true` in `next.config.js`, which also makes webpack builds of your Next.js app compile with SWC. Turbopack does not read this flag.
 
 Most Babel plugins used with Next.js have an SWC equivalent in `next.config.js`, and Storybook applies it: the [`compiler` options](https://nextjs.org/docs/architecture/nextjs-compiler) (`styledComponents`, `emotion`, `relay`, `reactRemoveProperties`, `removeConsole`) and `experimental.swcPlugins`. For a plugin without an equivalent, add a `babel-loader` rule in [`webpackFinal`](../../builders/webpack.mdx#override-the-default-configuration) that runs only that plugin before SWC, with `babel-loader` and `@babel/core` installed in your project. The [migration guide](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-storybooknextjs-always-compiles-with-swc) shows the rule.
 
-For StyleX, use that rule with `@stylexjs/babel-plugin`, and `@stylexjs/postcss-plugin` for the CSS, as in [StyleX's Next.js guide](https://stylexjs.com/docs/learn/installation/nextjs). `@stylexjs/unplugin` does not work with this framework, because Storybook injects CSS with `style-loader` and the plugin needs an emitted `.css` file.
+For StyleX, use that rule with `@stylexjs/babel-plugin`, and `@stylexjs/postcss-plugin` for the CSS, as in [StyleX's Next.js guide](https://stylexjs.com/docs/learn/installation/nextjs). With its default options, `@stylexjs/unplugin` does not work with this framework, because Storybook injects CSS with `style-loader` and the plugin needs an emitted `.css` file.
 
 ### Typescript
 

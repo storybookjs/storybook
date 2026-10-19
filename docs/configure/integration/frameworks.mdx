@@ -24,6 +24,38 @@ Storybook provides support for the leading industry builders and frameworks. How
 
 In addition to supporting the most popular frameworks in the industry, Storybook also tries to retain the same level of feature support for each framework, including the addon ecosystem. For more information, see [Framework support](./frameworks-feature-support.mdx) for a comprehensive list of which features and addons are currently maintained with the community's help.
 
+### Remix 3
+
+There is no `@storybook/remix` package, and `storybook init` does not detect Remix 3 yet. In a Remix 3 project, initialize the HTML renderer with the Vite builder:
+
+```bash
+storybook init --type html --builder vite
+```
+
+A story renders a Remix component by creating a DOM node, mounting into it with `createRoot` from `remix/component`, and returning that node:
+
+```tsx
+import { createRoot } from 'remix/component';
+
+import { Counter } from './Counter';
+
+export default {
+  component: Counter,
+};
+
+export const Default = {
+  render: (args) => {
+    const div = document.createElement('div');
+    createRoot(div).render(<Counter {...args} />);
+    return div;
+  },
+};
+```
+
+Vite picks up `jsxImportSource` from `tsconfig.json`. When that option is already `"remix/component"`, the JSX in the story compiles against Remix.
+
+This was tried with Storybook 11.0.0-alpha.6, `@storybook/html-vite`, Vite 7, and `remix@3.0.0`. `storybook build` completed. Controls, play functions, and the Vitest addon were not part of that run.
+
 ## Configure
 
 Every modern web application has unique requirements and relies on various tools and frameworks. By default, with Storybook, you get an out-of-the-box configuration generated to work with most frameworks. However, you can extend your existing configuration file (i.e., `./storybook/main.js|ts|cjs`) and provide additional options. Below is an abridged table with available options and examples of configuring Storybook for your framework.

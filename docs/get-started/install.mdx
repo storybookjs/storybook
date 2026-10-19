@@ -48,9 +48,11 @@ Storybook is designed to work with a variety of frameworks and environments. If 
 - Vitest 3+
 - Vue 3+
 - Webpack 5+
-- Yarn 4+
+- Yarn 4
 
 </div>
+
+Yarn 4 is the release we test with. Yarn 6 is a rewrite in Rust, and it is still a release candidate. The `latest` release of Yarn is still 4. You can try Storybook on Yarn 6. Until Yarn 6 is stable, support for it is best effort.
 
 Additionally, the Storybook app supports the following browsers:
 
@@ -67,6 +69,61 @@ If your browser meets Storybook 10's requirements but not Storybook 11's raised 
 You can also develop or build your Storybook in ["preview-only" mode](../sharing/publish-storybook.mdx#build-storybook-for-older-browsers). This omits the manager UI; browser compatibility depends on your builder and its configuration. Open `/iframe.html?navigator=true` instead of `/index.html`. This does not add older-browser support to the Storybook manager.
 
 </details>
+
+## Package manager release delays
+
+[pnpm 11](https://pnpm.io/settings#minimumreleaseage) and later, and [Yarn 4.15](https://yarnpkg.com/configuration/yarnrc#npmMinimalAgeGate) and later, wait about a day before they will install a version that was just published. The wait is a supply-chain precaution, because a bad release is often removed from the registry inside that window. On the day a new Storybook version is published, `storybook@latest` can still resolve to 10.x with Yarn, or to the last Storybook 11 release candidate with pnpm, until the new version is old enough.
+
+You can exempt Storybook from the wait. Each list below includes `create-storybook`, the package behind `create storybook`, along with `storybook` itself.
+
+### pnpm
+
+In pnpm 11 and 12, `minimumReleaseAge` defaults to 1440 minutes (one day). Add an exemption in `pnpm-workspace.yaml` with [`minimumReleaseAgeExclude`](https://pnpm.io/settings#minimumreleaseageexclude). Patterns are allowed, so `@storybook/*` covers the scoped packages:
+
+```yaml
+minimumReleaseAgeExclude:
+  - storybook
+  - create-storybook
+  - '@storybook/*'
+```
+
+To run a single upgrade without editing that file, set the age to zero for one command. pnpm reads `pnpm_config_minimum_release_age` as the `minimumReleaseAge` setting:
+
+```bash
+pnpm_config_minimum_release_age=0 pnpm dlx storybook@latest upgrade
+```
+
+### Yarn
+
+Yarn 4.15 changed the default of `npmMinimalAgeGate` to `1d` for new projects. When you upgrade Yarn inside an existing project, Yarn writes the previous default into `.yarnrc.yml`, so that project keeps the old behavior until you change the setting. To let a new Storybook release through, list it under [`npmPreapprovedPackages`](https://yarnpkg.com/configuration/yarnrc#npmPreapprovedPackages) in `.yarnrc.yml`. Entries can be package names or glob patterns:
+
+```yaml
+npmPreapprovedPackages:
+  - storybook
+  - create-storybook
+  - '@storybook/*'
+```
+
+`yarn add` and `yarn up` also accept `--no-time-gate`, which skips the check for that one command. `yarn create` and `yarn dlx` do not have this flag.
+
+### npm
+
+npm does not wait unless you opt in with [`min-release-age`](https://docs.npmjs.com/cli/v11/using-npm/config#min-release-age). If you have turned that on, [`min-release-age-exclude`](https://docs.npmjs.com/cli/v11/using-npm/config#min-release-age-exclude) in an `.npmrc` file is how you let specific packages update immediately. Each entry is a package name or a minimatch pattern:
+
+```text
+min-release-age-exclude[]=storybook
+min-release-age-exclude[]=create-storybook
+min-release-age-exclude[]=@storybook/*
+```
+
+### Bun
+
+Bun leaves this wait off unless you set [`minimumReleaseAge`](https://bun.com/docs/pm/cli/install#minimum-release-age). If you have set it, exempt packages with `minimumReleaseAgeExcludes` under `[install]` in `bunfig.toml`. An entry is a package name, or one exact version of a package. Bun's docs do not describe glob patterns for this setting, so list `@storybook` packages by name if you need them exempted too:
+
+```toml
+[install]
+minimumReleaseAgeExcludes = ["storybook", "create-storybook"]
+```
 
 ## Installation
 

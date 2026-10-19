@@ -1,5 +1,5 @@
 import { types as t, traverse } from 'storybook/internal/babel';
-import { isValidPreviewPath, loadCsf, printCsf } from 'storybook/internal/csf-tools';
+import { loadCsf, printCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
 import path from 'path';
@@ -10,6 +10,11 @@ import { addImportToTop } from './csf-factories-utils.ts';
 import { customArgsTypes } from './custom-args-type.ts';
 import { removeUnusedTypes } from './remove-unused-types.ts';
 import { wrapArgsMocks } from './wrap-args-mocks.ts';
+
+// The import of the project's own preview, which the codemod points at `previewConfigPath`. A
+// story file may also import a named preview (`preview.<name>`) or a sibling module such as
+// `preview.css`; those keep their import.
+const PROJECT_PREVIEW_IMPORT_REGEX = /\/preview(\.(js|jsx|mjs|ts|tsx))?$/;
 
 // Name of properties that should not be renamed to `Story.input.xyz`
 const reuseDisallowList = ['play', 'run', 'extends', 'story'];
@@ -128,7 +133,7 @@ export async function storyToCsfFactory(
       }
     }
 
-    if (t.isImportDeclaration(node) && isValidPreviewPath(node.source.value)) {
+    if (t.isImportDeclaration(node) && PROJECT_PREVIEW_IMPORT_REGEX.test(node.source.value)) {
       const defaultImportSpecifier = node.specifiers.find((specifier) =>
         t.isImportDefaultSpecifier(specifier)
       );

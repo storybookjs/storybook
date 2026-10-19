@@ -2624,6 +2624,17 @@ describe('CsfFile', () => {
         `);
       });
 
+      it('meta from a named preview file', () => {
+        const { stories } = parse(
+          dedent`
+            import preview from '#.storybook/preview.server'
+            const meta = preview.meta({ component: 'foo' });
+            export const A = meta.story({})
+          `
+        );
+        expect(stories).toMatchObject([{ id: 'default-title--a', __stats: { factory: true } }]);
+      });
+
       it('meta variable with renamed factory', () => {
         expect(
           parse(
@@ -3195,8 +3206,14 @@ describe('isValidPreviewPath', () => {
     ['./preview.js', true],
     ['./preview.jsx', true],
     ['./preview.mjs', true],
+    ['./preview.server', true],
+    ['./preview.server.tsx', true],
+    ['../.storybook/preview.dark-theme.ts', true],
     ['foo', false],
     ['#.storybook/bad-preview', false],
+    ['#.storybook/preview-server', false],
+    ['./previews.ts', false],
+    ['./preview.server/index.ts', false],
     ['preview', false],
   ])('isValidPreviewPath("%s") === %s', (path, expected) => {
     expect(isValidPreviewPath(path)).toBe(expected);

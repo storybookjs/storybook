@@ -10,6 +10,7 @@ import {
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
+import { valid } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { logger } from '../../node-logger/index.ts';
@@ -28,8 +29,10 @@ import {
   hasStorybookMinimumAgeExclusions,
   parsePackageData,
   parsePackageTimeMap,
-  parsePositiveIntegerConfigValue,
   parseReleaseTime,
+  parseYarnMinimalAgeGateMinutes,
+  readPackageVersions,
+  registryPackumentUrl,
   STORYBOOK_PACKAGE_PATTERNS,
 } from './util.ts';
 
@@ -218,7 +221,7 @@ export class Yarn2Proxy extends JsPackageManager {
     } catch (error) {
       const logs = getErrorLogs(error);
 
-      if (logs.includes('YN0016') && logs.includes('quarantined')) {
+      if (this.isMinimumAgeGateError(logs)) {
         const handledError = new MinimumReleaseAgeHandledError({
           packageManagerName: 'yarn',
           minimumReleaseAgeConfigName: 'npmMinimalAgeGate',
@@ -253,7 +256,8 @@ export class Yarn2Proxy extends JsPackageManager {
       return;
     }
 
-    if (hasStorybookMinimumAgeExclusions(await this.getPreapprovedPackages())) {
+    const preapprovedPackages = await this.getPreapprovedPackages();
+    if (!preapprovedPackages || hasStorybookMinimumAgeExclusions(preapprovedPackages)) {
       return;
     }
 
@@ -372,18 +376,23 @@ export class Yarn2Proxy extends JsPackageManager {
     packageName: string,
     fetchAllVersions: T
   ): Promise<T extends true ? string[] : string> {
-    const field = fetchAllVersions ? 'versions' : 'version';
-    const args = ['--fields', field, '--json'];
     try {
-      const process = executeCommand({
-        command: 'yarn',
-        args: ['npm', 'info', packageName, ...args],
-      });
-      const result = await process;
-      const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
+      const info = await this.queryNpmPackageInfo(packageName);
 
-      const parsedOutput = JSON.parse(commandResult);
-      return parsedOutput[field];
+      if (!fetchAllVersions) {
+        if (typeof info.version !== 'string' || info.version.length === 0) {
+          throw new Error(`Missing version for ${packageName}`);
+        }
+        return info.version as T extends true ? string[] : string;
+      }
+
+      const versions =
+        readPackageVersions(info.versions) ??
+        readPackageVersions((await this.fetchRegistryPackument(packageName))?.versions);
+      if (!versions) {
+        throw new Error(`Missing versions for ${packageName}`);
+      }
+      return versions as T extends true ? string[] : string;
     } catch (error) {
       throw new FindPackageVersionsError({
         error,
@@ -432,6 +441,13 @@ export class Yarn2Proxy extends JsPackageManager {
     };
   }
 
+  private isMinimumAgeGateError(logs: string) {
+    return (
+      (logs.includes('YN0016') && logs.includes('quarantined')) ||
+      logs.includes('No candidates found')
+    );
+  }
+
   private extractQuarantinedPackage(logs: string): string | null {
     const match = logs.match(
       /│\s+((?:@[^/\s]+\/)?[^@\s]+)@npm:([^:\s]+):\s+All versions satisfying/
@@ -454,7 +470,7 @@ export class Yarn2Proxy extends JsPackageManager {
         'pipe'
       );
 
-      return parsePositiveIntegerConfigValue(
+      return parseYarnMinimalAgeGateMinutes(
         typeof result.stdout === 'string' ? result.stdout : undefined
       );
     } catch {
@@ -463,19 +479,56 @@ export class Yarn2Proxy extends JsPackageManager {
   }
 
   private async getPackageTimeMap(packageName: string): Promise<Record<string, string> | null> {
+    try {
+      const info = await this.queryNpmPackageInfo(packageName);
+      const fromInfo = parsePackageTimeMap(info.time);
+      if (fromInfo && Object.keys(fromInfo).some((key) => valid(key))) {
+        return fromInfo;
+      }
+
+      // Yarn 6 `npm info --json` is one version manifest and leaves out packument `time`.
+      return parsePackageTimeMap((await this.fetchRegistryPackument(packageName))?.time);
+    } catch (error) {
+      logger.debug(`Failed to read publish times for ${packageName}: ${String(error)}`);
+      return null;
+    }
+  }
+
+  private async queryNpmPackageInfo(packageName: string): Promise<Record<string, unknown>> {
     const result = await this.runInternalCommand(
       'npm',
-      ['info', packageName, '--fields', 'time', '--json'],
+      ['info', packageName, '--json'],
       undefined,
       'pipe'
     );
-    const normalizedValue = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+    const stdout = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+    const parsed: unknown = JSON.parse(stdout);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error(`Unexpected npm info output for ${packageName}`);
+    }
+    return parsed as Record<string, unknown>;
+  }
 
-    if (!normalizedValue) {
+  private async fetchRegistryPackument(
+    packageName: string
+  ): Promise<Record<string, unknown> | null> {
+    try {
+      const registry = (await this.getRegistryURL()) ?? 'https://registry.yarnpkg.com';
+      const response = await fetch(registryPackumentUrl(registry, packageName), {
+        headers: { accept: 'application/json' },
+      });
+      if (!response.ok) {
+        return null;
+      }
+      const body: unknown = await response.json();
+      if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        return null;
+      }
+      return body as Record<string, unknown>;
+    } catch (error) {
+      logger.debug(`Failed to read the npm packument for ${packageName}: ${String(error)}`);
       return null;
     }
-
-    return parsePackageTimeMap(JSON.parse(normalizedValue)?.time);
   }
 
   private createMinimalAgeGateRerunMessage({
@@ -503,6 +556,9 @@ export class Yarn2Proxy extends JsPackageManager {
 
   private async updatePreapprovedPackages(): Promise<void> {
     const currentPreapprovedPackages = await this.getPreapprovedPackages();
+    if (!currentPreapprovedPackages) {
+      return;
+    }
     const nextPreapprovedPackages = Array.from(
       new Set([...currentPreapprovedPackages, ...STORYBOOK_PACKAGE_PATTERNS])
     );
@@ -524,11 +580,11 @@ export class Yarn2Proxy extends JsPackageManager {
     );
   }
 
-  private async getPreapprovedPackages(): Promise<string[]> {
+  private async getPreapprovedPackages(): Promise<string[] | null> {
     try {
       const result = await this.runInternalCommand(
         'config',
-        ['get', 'npmPreapprovedPackages'],
+        ['get', 'npmPreapprovedPackages', '--json'],
         undefined,
         'pipe'
       );
@@ -540,20 +596,28 @@ export class Yarn2Proxy extends JsPackageManager {
 
       return this.parsePreapprovedPackages(normalizedValue);
     } catch {
-      return [];
+      return null;
     }
   }
 
-  private parsePreapprovedPackages(value: string): string[] {
+  private parsePreapprovedPackages(value: string): string[] | null {
+    if (value.includes('unimplemented')) {
+      return null;
+    }
+
     try {
       const parsedValue = JSON.parse(value);
+      if (parsedValue == null) {
+        return [];
+      }
       return Array.isArray(parsedValue)
         ? parsedValue.filter(
             (entry): entry is string => typeof entry === 'string' && entry.length > 0
           )
-        : [];
+        : null;
     } catch {
-      return Array.from(value.matchAll(/['"]([^'"\n]+)['"]/g), (match) => match[1]);
+      const quoted = Array.from(value.matchAll(/['"]([^'"\n]+)['"]/g), (match) => match[1]);
+      return quoted.length > 0 ? quoted : null;
     }
   }
 }

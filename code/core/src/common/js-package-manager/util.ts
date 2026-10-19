@@ -1,4 +1,4 @@
-import { gt, prerelease, valid } from 'semver';
+import { compare, gt, prerelease, valid } from 'semver';
 
 import type { JsPackageManager } from './JsPackageManager.ts';
 import { PackageManagerName } from './JsPackageManager.ts';
@@ -57,6 +57,81 @@ export const parsePositiveIntegerConfigValue = (value: string | null | undefined
   }
 
   return parsedValue;
+};
+
+const YARN_AGE_GATE_UNITS_IN_MINUTES = {
+  ms: 1 / 60_000,
+  s: 1 / 60,
+  m: 1,
+  h: 60,
+  d: 60 * 24,
+  w: 60 * 24 * 7,
+} as const;
+
+export const parseYarnMinimalAgeGateMinutes = (value: string | null | undefined): number | null => {
+  const normalizedValue = value?.trim() ?? '';
+
+  if (
+    !normalizedValue ||
+    normalizedValue === 'undefined' ||
+    normalizedValue === 'null' ||
+    normalizedValue === 'false'
+  ) {
+    return null;
+  }
+
+  if (normalizedValue.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(normalizedValue) as { secs?: unknown; nanos?: unknown };
+      if (typeof parsed.secs === 'number') {
+        const nanos = typeof parsed.nanos === 'number' ? parsed.nanos : 0;
+        const minutes = parsed.secs / 60 + nanos / 60_000_000_000;
+        return minutes > 0 ? minutes : null;
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }
+
+  const duration = normalizedValue.match(/^(\d+(?:\.\d+)?)(ms|s|m|h|d|w)$/);
+  if (duration) {
+    const amount = Number(duration[1]);
+    const unit = duration[2] as keyof typeof YARN_AGE_GATE_UNITS_IN_MINUTES;
+    const minutes = amount * YARN_AGE_GATE_UNITS_IN_MINUTES[unit];
+    return minutes > 0 ? minutes : null;
+  }
+
+  if (!/^\d+$/.test(normalizedValue)) {
+    return null;
+  }
+
+  const parsedValue = Number(normalizedValue);
+  return parsedValue > 0 ? parsedValue : null;
+};
+
+export const readPackageVersions = (value: unknown): string[] | null => {
+  if (Array.isArray(value)) {
+    const versions = value.filter(
+      (entry): entry is string => typeof entry === 'string' && !!valid(entry)
+    );
+    return versions.length > 0 ? versions : null;
+  }
+
+  if (value && typeof value === 'object') {
+    const versions = Object.keys(value).filter((version) => !!valid(version));
+    return versions.length > 0 ? versions.sort(compare) : null;
+  }
+
+  return null;
+};
+
+export const registryPackumentUrl = (registry: string, packageName: string) => {
+  const base = registry.endsWith('/') ? registry : `${registry}/`;
+  const encodedName = packageName.startsWith('@')
+    ? `@${encodeURIComponent(packageName.slice(1))}`
+    : encodeURIComponent(packageName);
+  return new URL(encodedName, base).href;
 };
 
 export const parseReleaseTime = (value: unknown): Date | null => {

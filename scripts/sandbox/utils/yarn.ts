@@ -175,7 +175,7 @@ export async function refreshBeforeStorybookLockfile({
   // named allowlist rather than switching it off, so a compromised release of
   // anything they do not explicitly track is still quarantined.
   await runCommand(
-    `yarn config set npmMinimalAgeGate ${BEFORE_SANDBOX_MIN_AGE_MINUTES}`,
+    `yarn config set npmMinimalAgeGate ${BEFORE_SANDBOX_MIN_AGE_GATE}`,
     { cwd, env },
     debug
   );

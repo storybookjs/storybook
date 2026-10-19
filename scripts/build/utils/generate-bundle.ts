@@ -136,7 +136,8 @@ export async function generateBundle({
         name: 'postbuild',
         setup(build) {
           build.onEnd(async (result) => {
-            if (!postbuild) {
+            // Production runs postbuild once, after declaration emit, in build-package.
+            if (!isWatch || !postbuild) {
               return;
             }
             if (result.errors.length) {

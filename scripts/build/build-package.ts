@@ -111,6 +111,11 @@ async function run() {
     }),
   ]);
 
+  if (!isWatch && entry.postbuild) {
+    console.log('Running postbuild script');
+    await entry.postbuild(DIR_CWD);
+  }
+
   if (prebuildTime) {
     console.log(`Prebuild script completed in`, picocolors.yellow(prettyTime(prebuildTime)));
   }

@@ -57,7 +57,8 @@ export type BuildEntries = {
   /**
    * The function to run after each successful build (works with watch-mode)
    *
-   * @note this runs **after** each successful build, even in watch-mode
+   * @note In a production build this runs after declaration emit, so it can replace a generated
+   * d.ts. In watch mode it runs from the bundler's rebuild hook; declarations are not emitted.
    */
   postbuild?: (cwd: string) => Promise<void>;
 };

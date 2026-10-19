@@ -669,6 +669,7 @@ export const Tree = React.memo<{
   // Create a list of component IDs which should be collapsed into their (only) child.
   // That is:
   //  - components with a single story child with the same name
+  //  - components left with only a docs child after filtering (e.g. docs-only `!dev` stories)
   const singleStoryComponentIds = useMemo(() => {
     return Object.keys(data).filter((id) => {
       const entry = data[id];
@@ -684,6 +685,10 @@ export const Tree = React.memo<{
       }
 
       const onlyChild = data[children[0]];
+
+      if (onlyChild.type === 'docs') {
+        return true;
+      }
 
       if (onlyChild.type === 'story' && onlyChild.subtype === 'story') {
         return isStoryHoistable(onlyChild.name, name);

@@ -933,7 +933,8 @@ Each title is now typed by everything the story index puts under it:
 | Several docs pages and no stories | `group` |
 
 The type comes from the full index, so `index` and `filteredIndex` always agree on it.
-Filters only remove entries: a component whose stories are all filtered out stays a `component` with its docs child, and the sidebar shows it as such instead of collapsing it.
+Filters only remove entries: a component whose stories are all filtered out stays a `component` with its docs child in `filteredIndex`.
+The sidebar still shows such a component as a single docs page, for example for [docs-only stories](https://storybook.js.org/docs/writing-stories/tags#docs-only-stories).
 
 Functions passed to `sidebar.renderLabel` and sidebar filters receive the `docs` entry instead of the old wrapper and its `Docs` child.
 Sidebar search lists these pages under their own name, for example `Introduction` instead of `Docs` under `Introduction`.

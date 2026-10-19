@@ -244,6 +244,50 @@ export const DocsOnlySingleStoryComponents = {
   },
 };
 
+/** A component whose stories are all hidden (`!dev`) shows as a single docs page. */
+export const ComponentWithOnlyDocsLeft: Story = {
+  render: () => (
+    <Tree
+      docsMode={false}
+      isBrowsing
+      isMain
+      refId={DEFAULT_REF_ID}
+      data={{
+        'docs-only': {
+          type: 'component',
+          name: 'Docs Only',
+          id: 'docs-only',
+          depth: 0,
+          children: ['docs-only--docs'],
+          tags: [],
+        },
+        'docs-only--docs': {
+          type: 'docs',
+          id: 'docs-only--docs',
+          title: 'Docs Only',
+          name: 'Docs',
+          tags: ['autodocs'],
+          prepared: true,
+          depth: 1,
+          parent: 'docs-only',
+          importPath: './docs-only.stories.js',
+        },
+      }}
+      highlightedRef={{ current: null }}
+      setHighlightedItemId={action('setHighlightedItemId')}
+      selectedStoryId={null}
+      onSelectStoryId={action('onSelectStoryId')}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const docsItem = canvasElement.querySelector('[data-item-id="docs-only--docs"]');
+
+    await expect(docsItem).toHaveAttribute('data-nodetype', 'document');
+    await expect(docsItem).toHaveTextContent('Docs Only');
+    await expect(canvasElement.querySelector('[data-item-id="docs-only"]')).toBeNull();
+  },
+};
+
 // SkipToCanvas Link only shows on desktop widths
 export const SkipToCanvasLinkFocused: Story = {
   ...DocsOnlySingleStoryComponents,

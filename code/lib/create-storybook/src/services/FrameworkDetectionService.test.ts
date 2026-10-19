@@ -244,6 +244,32 @@ describe('FrameworkDetectionService', () => {
       );
     });
 
+    it('uses Vite for Remix 3 when the project has no bundler', async () => {
+      vi.mocked(find.any).mockReturnValue(undefined);
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        remix: '^3.0.0',
+      });
+
+      const result = await service.detectBuilder();
+
+      expect(result).toBe(SupportedBuilder.VITE);
+      expect(prompt.select).not.toHaveBeenCalled();
+    });
+
+    it('does not treat @remix-run/dev as Remix 3', async () => {
+      vi.mocked(find.any).mockReturnValue(undefined);
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        '@remix-run/dev': '^2.15.0',
+        react: '^18.2.0',
+      });
+      vi.mocked(prompt.select).mockResolvedValue(SupportedBuilder.WEBPACK5);
+
+      const result = await service.detectBuilder();
+
+      expect(result).toBe(SupportedBuilder.WEBPACK5);
+      expect(prompt.select).toHaveBeenCalled();
+    });
+
     it('should prompt user when no builders are detected', async () => {
       vi.mocked(find.any).mockReturnValue(undefined);
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});

@@ -77,17 +77,17 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
 };
 
 /**
- * Try to resolve react and react-dom from the root node_modules of the project addon-docs uses this
- * to alias react and react-dom to the project's version when possible If the user doesn't have an
- * explicit dependency on react this will return the existing values Which will be the versions
- * shipped with addon-docs
+ * Resolve react and react-dom starting from this package. `@storybook/react` declares them as peer
+ * dependencies, so every package manager links the project's React here, including pnpm's global
+ * virtual store where the `storybook` package itself cannot see React. The preview alias below and
+ * addon-docs both read this value.
  */
 export const resolvedReact = async (existing: any) => {
   try {
     return {
       ...existing,
-      react: resolvePackageDir('react'),
-      reactDom: resolvePackageDir('react-dom'),
+      react: resolvePackageDir('react', import.meta.url),
+      reactDom: resolvePackageDir('react-dom', import.meta.url),
     };
   } catch {
     return existing;

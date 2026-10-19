@@ -13,6 +13,7 @@ import { BlockOfAndIdPropsError, InvalidBlockOfPropError } from 'storybook/inter
 import { Story as PureStory, StorySkeleton } from '../components';
 import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
+import { rendersInline } from './rendersInline.ts';
 import { useStory } from './useStory';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
@@ -95,13 +96,6 @@ export const getStoryId = (props: StoryProps, context: DocsContextProps): StoryI
   return resolved.story.id;
 };
 
-/** Whether a docs page renders the story in its own document rather than in an iframe. */
-export const rendersInline = (
-  story: Pick<PreparedStory, 'parameters'>,
-  props: Pick<StoryParameters, 'inline'> = {}
-) =>
-  props.inline ?? (story.parameters?.docs?.story as StoryParameters | undefined)?.inline ?? false;
-
 export const getStoryProps = <TFramework extends Renderer>(
   props: StoryParameters,
   story: PreparedStory<TFramework>,
@@ -118,7 +112,7 @@ export const getStoryProps = <TFramework extends Renderer>(
   // prefer block props, then story parameters defined by the framework-specific settings
   // and optionally overridden by users
 
-  const inline = rendersInline(story, props);
+  const inline = rendersInline(story, props.inline);
 
   if (inline) {
     const height = props.height ?? storyParameters.height;

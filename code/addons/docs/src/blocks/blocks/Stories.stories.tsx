@@ -28,6 +28,18 @@ export const WithoutPrimary: Story = {
     relativeCsfPaths: ['../examples/Button.stories'],
   },
 };
+// The primary story renders in an iframe, so only the Primary block shows it.
+export const PrimaryInIframe: Story = {
+  parameters: {
+    relativeCsfPaths: ['../examples/ButtonInIframe.stories'],
+  },
+};
+export const PrimaryInIframeIncluded: Story = {
+  args: { includePrimary: true },
+  parameters: {
+    relativeCsfPaths: ['../examples/ButtonInIframe.stories'],
+  },
+};
 export const DifferentToolbars: Story = {
   parameters: {
     relativeCsfPaths: ['../examples/StoriesParameters.stories'],

@@ -46,8 +46,13 @@ describe('onDevicePeerAllowsCli', () => {
     expect(onDevicePeerAllowsCli('11.0.0-alpha.6', '^10.5.4')).toBe(false);
   });
 
-  it('accepts a Storybook 11 peer for a Storybook 11 prerelease', () => {
-    expect(onDevicePeerAllowsCli('11.0.0-alpha.6', '^11.0.0')).toBe(true);
+  it('rejects a stable or higher prerelease floor that npm would reject', () => {
+    expect(onDevicePeerAllowsCli('11.0.0-alpha.6', '^11.0.0')).toBe(false);
+    expect(onDevicePeerAllowsCli('11.0.0-alpha.6', '^11.0.0-alpha.7')).toBe(false);
+  });
+
+  it('accepts a prerelease range that includes the CLI, and a stable CLI against a stable range', () => {
+    expect(onDevicePeerAllowsCli('11.0.0-alpha.6', '>=11.0.0-0')).toBe(true);
     expect(onDevicePeerAllowsCli('11.0.0', '^11.0.0')).toBe(true);
   });
 });
@@ -88,8 +93,21 @@ describe('assertReactNativeOnDevicePeers', () => {
       'fetch',
       vi.fn(async () => ({
         ok: true,
-        json: async () => ({ peerDependencies: { storybook: '^11.0.0' } }),
+        json: async () => ({ peerDependencies: { storybook: '>=11.0.0-0' } }),
       }))
+    );
+
+    await expect(
+      assertReactNativeOnDevicePeers(packageManager, '11.0.0-alpha.6')
+    ).resolves.toBeUndefined();
+  });
+
+  it('skips the peer check when the registry lookup fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('self-signed certificate');
+      })
     );
 
     await expect(

@@ -244,6 +244,19 @@ describe('FrameworkDetectionService', () => {
       );
     });
 
+    it('uses Vite for Remix 3 when the only detected builder is Webpack', async () => {
+      vi.mocked(find.any).mockReturnValue(undefined);
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        remix: '^3.0.0',
+        webpack: '^5.0.0',
+      });
+
+      const result = await service.detectBuilder();
+
+      expect(result).toBe(SupportedBuilder.VITE);
+      expect(prompt.select).not.toHaveBeenCalled();
+    });
+
     it('uses Vite for Remix 3 when the project has no bundler', async () => {
       vi.mocked(find.any).mockReturnValue(undefined);
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({

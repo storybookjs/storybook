@@ -24,6 +24,13 @@ describe('rewriteExpoTsconfigBase', () => {
     expect(rewriteExpoTsconfigBase(source)).toBe(source);
   });
 
+  it('rewrites expo/tsconfig.base inside an extends array', () => {
+    const source = '{ "extends": ["expo/tsconfig.base", "./tsconfig.shared.json"] }';
+    const rewritten = rewriteExpoTsconfigBase(source);
+    expect(rewritten).toContain('"expo/tsconfig.base.json"');
+    expect(rewritten).toContain('"./tsconfig.shared.json"');
+  });
+
   it('does not rewrite other extends values', () => {
     const source = '{ "extends": "./tsconfig.base" }';
     expect(rewriteExpoTsconfigBase(source)).toBe(source);

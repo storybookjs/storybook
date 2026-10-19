@@ -232,6 +232,19 @@ describe('ProjectTypeService', () => {
       expect(result).toBe(ProjectType.NUXT);
     });
 
+    it('detects Remix 3 when the dependency is a pnpm catalog specifier', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { remix: 'catalog:' },
+      };
+      (pm as any).getDeclaredVersionSpecifier = vi.fn(async () => '3.1.0');
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+      expect(result).toBe(ProjectType.HTML);
+      expect(pm.getDeclaredVersionSpecifier).toHaveBeenCalledWith('remix');
+    });
+
     it('detects Remix 3 as the HTML renderer', async () => {
       (pm as any).primaryPackageJson.packageJson = {
         dependencies: { remix: '^3.0.0' },

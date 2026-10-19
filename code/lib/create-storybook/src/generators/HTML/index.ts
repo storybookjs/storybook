@@ -20,6 +20,6 @@ export default defineGeneratorModule({
       return;
     }
 
-    logger.log('Remix 3 is set up with the HTML renderer (@storybook/html-vite).');
+    logger.log('Remix 3 is set up with the HTML renderer.');
   },
 });

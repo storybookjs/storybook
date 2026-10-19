@@ -59,8 +59,14 @@ export class FrameworkDetectionService {
       detectedBuilders.push(SupportedBuilder.RSBUILD);
     }
 
-    // Remix 3 ships no bundler, so the HTML renderer uses Vite.
-    if (detectedBuilders.length === 0 && isRemix3VersionRange(dependencies.remix)) {
+    // Remix 3 ships no bundler. The HTML renderer has Vite and Rsbuild, not Webpack.
+    if (isRemix3VersionRange(dependencies.remix)) {
+      if (detectedBuilders.includes(SupportedBuilder.VITE)) {
+        return SupportedBuilder.VITE;
+      }
+      if (detectedBuilders.includes(SupportedBuilder.RSBUILD)) {
+        return SupportedBuilder.RSBUILD;
+      }
       return SupportedBuilder.VITE;
     }
 

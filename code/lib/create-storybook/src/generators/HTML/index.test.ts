@@ -18,9 +18,7 @@ describe('HTML generator', () => {
 
     htmlGenerator.postConfigure?.({ packageManager });
 
-    expect(logger.log).toHaveBeenCalledWith(
-      expect.stringContaining('HTML renderer (@storybook/html-vite)')
-    );
+    expect(logger.log).toHaveBeenCalledWith('Remix 3 is set up with the HTML renderer.');
   });
 
   it('stays quiet for projects that are not Remix 3', () => {

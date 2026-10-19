@@ -227,6 +227,21 @@ export class ProjectTypeService {
     return detectIncompatiblePackageVersions(this.jsPackageManager);
   }
 
+  /** `catalog:` and `workspace:` are not semver ranges. Resolve those before the version check. */
+  private async detectNonSemverRemix3(packageJson: PackageJsonWithMaybeDeps): Promise<boolean> {
+    const raw = packageJson.dependencies?.remix ?? packageJson.devDependencies?.remix;
+    if (typeof raw !== 'string' || semver.validRange(raw)) {
+      return false;
+    }
+
+    try {
+      const resolved = await this.jsPackageManager.getDeclaredVersionSpecifier('remix');
+      return isRemix3VersionRange(resolved);
+    } catch {
+      return false;
+    }
+  }
+
   private eqMajor(versionRange: string, major: number) {
     // Uses validRange to avoid a throw from minVersion if an invalid range gets passed
     if (semver.validRange(versionRange)) {
@@ -244,6 +259,9 @@ export class ProjectTypeService {
         return ProjectType.HTML;
       }
       const { packageJson } = this.jsPackageManager.primaryPackageJson;
+      if (await this.detectNonSemverRemix3(packageJson)) {
+        return ProjectType.HTML;
+      }
       return this.detectFrameworkPreset(packageJson);
     } catch {
       return ProjectType.UNDETECTED;

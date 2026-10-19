@@ -2,7 +2,7 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { HandledError } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { coerce, prerelease, satisfies, validRange } from 'semver';
+import { prerelease, satisfies, validRange } from 'semver';
 import { dedent } from 'ts-dedent';
 
 export const REACT_NATIVE_ON_DEVICE_PACKAGES = [
@@ -25,9 +25,9 @@ export function onDevicePeerAllowsCli(cliVersion: string, peerRange: string): bo
   if (!validRange(peerRange)) {
     return true;
   }
-  // A prerelease does not satisfy the same-major stable range (`11.0.0-alpha.6` vs `^11.0.0`).
-  const comparable = coerce(cliVersion)?.version ?? cliVersion;
-  return satisfies(comparable, peerRange);
+  // Match npm. `11.0.0-alpha.6` does not satisfy `^11.0.0`, and coercing it to `11.0.0`
+  // would also accept a higher prerelease floor such as `^11.0.0-alpha.7`.
+  return satisfies(cliVersion, peerRange);
 }
 
 const readStorybookPeer = async (
@@ -35,13 +35,19 @@ const readStorybookPeer = async (
   packageName: string,
   version: string
 ): Promise<string | undefined> => {
-  const response = await fetch(`${registry}/${packageName}/${version}`);
-  if (!response.ok) {
+  try {
+    const response = await fetch(`${registry}/${packageName}/${version}`);
+    if (!response.ok) {
+      return undefined;
+    }
+    const body = (await response.json()) as { peerDependencies?: { storybook?: unknown } };
+    const peer = body.peerDependencies?.storybook;
+    return typeof peer === 'string' ? peer : undefined;
+  } catch {
+    // A private registry or a custom CA can reject this lookup. Skip the check
+    // and let the package manager, which has the user's auth and certs, install.
     return undefined;
   }
-  const body = (await response.json()) as { peerDependencies?: { storybook?: unknown } };
-  const peer = body.peerDependencies?.storybook;
-  return typeof peer === 'string' ? peer : undefined;
 };
 
 export async function assertReactNativeOnDevicePeers(

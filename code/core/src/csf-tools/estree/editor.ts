@@ -173,16 +173,20 @@ export class SourceEditor {
     }
   }
 
-  /** Apply pending edits and parse the result again. Returns whether anything changed. */
+  /**
+   * Apply pending edits and parse the result again. Returns whether anything changed. A result
+   * that does not parse throws and leaves the editor as it was, the edits still pending.
+   */
   commit() {
     if (!this.pending) {
       return false;
     }
+    const module = parsePrintable(this._edits.toString(), this.fileName);
     this._style ??= inferStyle(this._module);
     this._committed.push(
       this._edits.generateMap({ hires: true, includeContent: true, source: mapSource(this) })
     );
-    this._module = parsePrintable(this._edits.toString(), this.fileName);
+    this._module = module;
     this._scopes = undefined;
     this._parents = undefined;
     this._edits = new MagicString(this.code, { filename: this.fileName });

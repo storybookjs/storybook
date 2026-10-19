@@ -973,9 +973,22 @@ describe('CsfObject', () => {
       );
       expect(csf.changed).toBe(true);
       expect(meta.changed).toBe(true);
+      expect(csf._editor._committed).toHaveLength(1);
       expect(csf.mutationDiagnostics).toEqual([
         expect.objectContaining({ code: 'invalid-csf', target: { kind: 'meta' } }),
       ]);
+    });
+
+    it('throws for code that does not parse, leaving the edits pending and the index as it was', () => {
+      const csf = load("export default { title: 'B' };\nexport const A = {};\n");
+      const [meta] = csf.objects({ stories: false });
+      csf._editor.edits.appendLeft(0, '(');
+
+      expect(() => meta.set(['tags'], ['docs'])).toThrow(/B\.stories\.ts$/);
+      expect(csf._editor.pending).toBe(true);
+      expect(csf._editor._committed).toEqual([]);
+      expect(csf.meta?.title).toBe('B');
+      expect(csf.mutationDiagnostics).toEqual([]);
     });
 
     it.each([

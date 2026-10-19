@@ -891,13 +891,17 @@ class CsfObjectEditor implements CsfObject {
   }
 
   // The edit stays applied when the file's indexer rejects the committed code: the file is valid
-  // JS, so that is a diagnostic rather than an error.
+  // JS, so that is a diagnostic rather than an error. Code that does not parse is left pending by
+  // the editor, and the error is the caller's.
   private commit(path: readonly string[]): CsfMutationResult {
     this.#changed = true;
     this.markChanged();
     try {
       this.editor.commit();
     } catch (error) {
+      if (this.editor.pending) {
+        throw error;
+      }
       const reason = error instanceof Error ? error.message : String(error);
       const rejected = this.failure(
         'invalid-csf',

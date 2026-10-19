@@ -9,6 +9,7 @@ import type { ModuleExport, ModuleExports, StoryId } from 'storybook/internal/ty
 import type { Layout, PreviewProps as PurePreviewProps } from '../components';
 import { Preview as PurePreview, PreviewSkeleton } from '../components';
 import { DocsContext } from './DocsContext';
+import { rendersInline } from './rendersInline.ts';
 import type { SourceProps } from './Source';
 import { useSourceProps } from './Source';
 import { SourceContext } from './SourceContainer';
@@ -98,11 +99,8 @@ const CanvasOf: FC<CanvasProps> = (props) => {
     props.additionalActions ?? story.parameters.docs?.canvas?.additionalActions;
   const sourceState = props.sourceState ?? story.parameters.docs?.canvas?.sourceState ?? 'hidden';
   const className = props.className ?? story.parameters.docs?.canvas?.className;
-  // By default, stories will be iframed, but most frameworks support inline rendering and override that in a docs entry file.
-  // A story that owns the document is always iframed.
-  const inline =
-    story.parameters?.layout !== 'document' &&
-    (props.story?.inline ?? story.parameters?.docs?.story?.inline ?? false);
+  // By default, stories will be iframed, but most frameworks support inline rendering and override that in a docs entry file
+  const inline = rendersInline(story, props.story?.inline);
 
   const handleReloadStory = useCallback(() => {
     docsContext.channel.emit(FORCE_REMOUNT, { storyId: story.id });

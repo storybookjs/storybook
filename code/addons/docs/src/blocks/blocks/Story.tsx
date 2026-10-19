@@ -13,6 +13,7 @@ import { BlockOfAndIdPropsError, InvalidBlockOfPropError } from 'storybook/inter
 import { Story as PureStory, StorySkeleton } from '../components';
 import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
+import { rendersInline } from './rendersInline.ts';
 import { useStory } from './useStory';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
@@ -115,7 +116,7 @@ export const getStoryProps = <TFramework extends Renderer>(
   // prefer block props, then story parameters defined by the framework-specific settings
   // and optionally overridden by users
 
-  const inline = !ownsDocument && (props.inline ?? storyParameters.inline ?? false);
+  const inline = rendersInline(story, props.inline);
   const autoplay = props.autoplay ?? storyParameters.autoplay ?? false;
 
   if (inline) {

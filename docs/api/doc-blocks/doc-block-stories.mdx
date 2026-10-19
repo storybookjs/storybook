@@ -29,9 +29,11 @@ import { Stories } from '@storybook/addon-docs/blocks';
 
 Type: `boolean`
 
-Default: `true`
+Default: `true`, except on an autodocs page whose primary story renders in an iframe (`parameters.docs.story.inline: false`)
 
-Determines if the collection of stories includes the primary (first) story.
+Determines if the collection of stories includes the primary story.
+
+On an autodocs page the [`Primary`](./doc-block-primary.mdx) block already shows the primary story, and a story in an iframe loads a whole preview, so by default the page shows a primary story that renders in an iframe once. Set `includePrimary={true}` to list it in the collection anyway. In an MDX file the collection includes the primary story unless you set `includePrimary={false}`.
 
 <Callout variant="info" icon="💡">
 

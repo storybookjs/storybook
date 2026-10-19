@@ -80,6 +80,8 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
   public torndown = false;
 
+  private teardownPromise?: Promise<void>;
+
   constructor(
     public channel: Channel,
     public store: StoryStore<TRenderer>,
@@ -138,8 +140,8 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       this.story = await this.store.loadStory({ storyId: this.id });
     });
 
+    // A render dropped while preparing has acquired nothing, so it releases nothing.
     if (this.abortController.signal.aborted) {
-      await this.store.cleanupStory(this.story as PreparedStory<TRenderer>);
       throw PREPARE_ABORTED;
     }
   }
@@ -457,7 +459,11 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   }
 
   async remount() {
-    await this.teardown();
+    await this.runTeardown({});
+    // A teardown that started meanwhile is for good, so this render must not mount again.
+    if (this.teardownPromise) {
+      return;
+    }
     return this.render({ forceRemount: true });
   }
 
@@ -477,12 +483,19 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     }
   }
 
-  async teardown({ keepRenderedDom = false }: { keepRenderedDom?: boolean } = {}) {
+  // Callers share one teardown, so cleanups run once and every caller waits for them. A remount
+  // tears down for itself, since it mounts again afterwards.
+  teardown(options: { keepRenderedDom?: boolean } = {}) {
+    this.teardownPromise ??= this.runTeardown(options);
+    return this.teardownPromise;
+  }
+
+  private async runTeardown({ keepRenderedDom = false }: { keepRenderedDom?: boolean }) {
     this.torndown = true;
     this.cancelRender();
 
-    // If the story has loaded, we need to clean up
-    if (this.story) {
+    // A render that never got a canvas registered no cleanups: the story's list is another's.
+    if (this.story && this.canvasElement) {
       await this.store.cleanupStory(this.story);
     }
 

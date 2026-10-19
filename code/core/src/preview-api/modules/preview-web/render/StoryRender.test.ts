@@ -434,6 +434,60 @@ describe('StoryRender', () => {
       await expect(preparePromise).rejects.toThrowError(PREPARE_ABORTED);
     });
 
+    it('leaves the story cleanups alone when torn down before it rendered', async () => {
+      const store = buildStore({ loadStory: vi.fn(async () => buildStory()) as any });
+      const render = new StoryRender(new Channel({}), store, vi.fn(), {} as any, entry.id, 'story');
+
+      await render.prepare();
+      await render.teardown();
+
+      expect(store.cleanupStory).not.toHaveBeenCalled();
+    });
+
+    it('cleans up once per pass when torn down by several callers', async () => {
+      const store = buildStore();
+      const render = new StoryRender(
+        new Channel({}),
+        store,
+        vi.fn() as any,
+        {} as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        buildStory()
+      );
+      await render.renderToElement({} as any);
+
+      await render.remount();
+      await Promise.all([render.teardown(), render.teardown()]);
+
+      expect(store.cleanupStory).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not mount again when torn down while it remounts', async () => {
+      const [cleanupGate, openCleanupGate] = createGate();
+      const store = buildStore({ cleanupStory: vi.fn(() => cleanupGate) });
+      const renderToScreen = vi.fn();
+      const render = new StoryRender(
+        new Channel({}),
+        store,
+        renderToScreen,
+        {} as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        buildStory()
+      );
+      await render.renderToElement({} as any);
+
+      const remounting = render.remount();
+      const tearingDown = render.teardown();
+      openCleanupGate();
+      await Promise.all([remounting, tearingDown]);
+
+      expect(renderToScreen).toHaveBeenCalledTimes(1);
+    });
+
     it('stops after the completing phase when torn down during it', async () => {
       const [completingGate, openCompletingGate] = createGate();
       vi.mocked(waitForAnimations).mockImplementationOnce(() => completingGate);

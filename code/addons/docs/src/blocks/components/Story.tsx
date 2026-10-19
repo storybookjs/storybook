@@ -14,13 +14,13 @@ import { ZoomContext } from './ZoomContext';
 interface CommonProps {
   story: PreparedStory;
   inline: boolean;
+  autoplay: boolean;
   primary: boolean;
 }
 
 interface InlineStoryProps extends CommonProps {
   inline: true;
   height?: string;
-  autoplay: boolean;
   forceInitialArgs: boolean;
   renderStoryToElement: DocsContextProps['renderStoryToElement'];
 }
@@ -92,29 +92,42 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
   );
 };
 
-const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500px' }) => (
-  <div style={{ width: '100%', height }}>
-    <ZoomContext.Consumer>
-      {({ scale }) => {
-        return (
-          <IFrame
-            key="iframe"
-            id={`iframe--${story.id}`}
-            title={story.name}
-            src={getStoryHref(story.id, { viewMode: 'story' })}
-            allowFullScreen
-            scale={scale}
-            style={{
-              width: '100%',
-              height: '100%',
-              border: '0 none',
-            }}
-          />
-        );
-      }}
-    </ZoomContext.Consumer>
-  </div>
-);
+// The preview in the iframe decides whether to play before its first render, so the URL says it.
+const IFrameStory: FunctionComponent<IFrameStoryProps> = ({
+  story,
+  height = '500px',
+  autoplay,
+}) => {
+  // The preview in the iframe decides whether to play before its first render, so the URL says it.
+  const src = getStoryHref(story.id, {
+    viewMode: 'story',
+    ...(!autoplay && { autoplay: 'false' }),
+  });
+  return (
+    <div style={{ width: '100%', height }}>
+      <ZoomContext.Consumer>
+        {({ scale }) => {
+          return (
+            <IFrame
+              // `IFrame` never updates, so a new URL is a new iframe.
+              key={src}
+              id={`iframe--${story.id}`}
+              title={story.name}
+              src={src}
+              allowFullScreen
+              scale={scale}
+              style={{
+                width: '100%',
+                height: '100%',
+                border: '0 none',
+              }}
+            />
+          );
+        }}
+      </ZoomContext.Consumer>
+    </div>
+  );
+};
 
 /** A story element, either rendered inline or in an iframe, with configurable height. */
 
@@ -125,7 +138,7 @@ const ErrorMessage = styled.strong(({ theme }) => ({
 const Story: FunctionComponent<StoryProps> = (props) => {
   const { inline, story } = props;
 
-  if (inline && !props.autoplay && story.usesMount) {
+  if (!props.autoplay && story.usesMount) {
     return (
       <ErrorMessage>
         This story mounts inside of play. Set{' '}

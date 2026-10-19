@@ -311,6 +311,7 @@ export const WithCenteredIframe = (
     <Story
       inline={false}
       story={getPreparedStory(docsContext, ButtonStories.Centered)}
+      autoplay={false}
       primary={false}
       height="100px"
     />

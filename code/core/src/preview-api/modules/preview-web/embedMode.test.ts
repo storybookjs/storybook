@@ -19,4 +19,13 @@ describe('shouldAutoplay', () => {
       })
     ).toBe(false);
   });
+
+  it('disables play functions when the page that shows the story says autoplay=false', () => {
+    expect(shouldAutoplay({ search: '?id=example--story&viewMode=story&autoplay=false' })).toBe(
+      false
+    );
+    expect(shouldAutoplay({ search: '?id=example--story&viewMode=story&autoplay=true' })).toBe(
+      true
+    );
+  });
 });

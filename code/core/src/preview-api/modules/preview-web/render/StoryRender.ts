@@ -519,6 +519,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         // the document, which makes the browser clamp the scroll position to 0 (#22057).
         if (!keepRenderedDom) {
           await this.teardownRender();
+          this.returnToStoryUrl();
         }
         return;
       }
@@ -529,12 +530,22 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     // If we still haven't completed, reload the page (iframe) to ensure we have a clean slate
     // for the next render. Since the reload can take a brief moment to happen, we want to stop
     // further rendering by awaiting a never-resolving promise (which is destroyed on reload).
-    // The story may have changed `location`, so reload at the URL of the selected story.
-    const storyUrl = this.callbacks.storyUrl?.();
-    if (storyUrl) {
-      window.history.replaceState({}, '', storyUrl);
-    }
+    this.returnToStoryUrl();
     window?.location?.reload?.();
     await new Promise(() => {});
+  }
+
+  // A story may have changed `location`, and so may its teardown (e.g. back to where its render
+  // began). After a teardown the document is at the URL of the selected story, so the next render
+  // and a reload start there.
+  private returnToStoryUrl() {
+    const storyUrl = this.callbacks.storyUrl?.();
+    if (!storyUrl) {
+      return;
+    }
+    const { href } = window.location;
+    if (new URL(storyUrl, href).href !== href) {
+      window.history.replaceState({}, '', storyUrl);
+    }
   }
 }

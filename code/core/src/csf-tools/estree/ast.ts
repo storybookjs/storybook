@@ -415,7 +415,7 @@ class Tag extends Stamp {
     }
     const tags = node.#tags;
     if (tags instanceof Extra) {
-      return tags[key];
+      return (tags as Partial<Tags>)[key];
     }
     return key === 'module' ? (tags as Tags[K] | undefined) : undefined;
   }

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { loadCsf, printCsf } from './CsfFile.ts';
 import { loadConfig, printConfig } from './ConfigFile.ts';
-import type { CsfValue } from './CsfObject.ts';
+import type { CsfExpression, CsfValue } from './CsfObject.ts';
 import { parseExpression, placeableTextOf, textOf } from './estree/ast.ts';
 
 const parse = (source: string) =>
@@ -157,7 +157,8 @@ describe('CsfObject', () => {
     const csf = parse(`export default { a: 1 };`);
     const [meta] = csf.objects({ stories: false });
 
-    expect(() => meta.set(['b'], { ...meta.get(['a'])!, value: 5, raw: '5' })).toThrow(
+    const copy = { ...meta.get(['a'])!, value: 5, raw: '5' } as CsfExpression;
+    expect(() => meta.set(['b'], copy)).toThrow(
       'CsfObject: expressions must come from `get`, `transform` or `parseExpression`, not a Literal node'
     );
     expect(printCsf(csf).code).toBe(`export default { a: 1 };`);

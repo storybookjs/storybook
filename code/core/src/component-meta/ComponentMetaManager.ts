@@ -113,7 +113,7 @@ export class ComponentMetaManager<
     // their memory limit rather than silently paying repeated rebuilds (or eventually crashing).
     const heapLimitMb = Math.round(v8.getHeapStatistics().heap_size_limit / (1024 * 1024));
     once.warn(dedent`
-      Storybook's experimental docgen server is nearing the Node.js memory limit (~${heapLimitMb} MB) while extracting component types, and recycled its TypeScript program to avoid an out-of-memory crash. This can briefly slow down the docs and Controls panels.
+      Storybook's docgen server is nearing the Node.js memory limit (~${heapLimitMb} MB) while extracting component types, and recycled its TypeScript program to avoid an out-of-memory crash. This can briefly slow down the docs and Controls panels.
 
       If this happens often, raise Node's memory limit before starting Storybook, for example:
         NODE_OPTIONS="--max-old-space-size=${heapLimitMb * 2}"

@@ -27,13 +27,16 @@ const buttonStyleAdditions = ({
   overflow: visible;
   margin-top: 0;
   z-index: 1;
-  ${isMobile &&
-  `
+  ${
+    isMobile &&
+    `
     width: 36px;
     height: 36px;
-  `}
-  ${highlighted &&
   `
+  }
+  ${
+    highlighted &&
+    `
     &:before,
     &:after {
       content: '';
@@ -57,7 +60,8 @@ const buttonStyleAdditions = ({
     &:focus-visible:after {
       box-shadow: 0 0 0 2px ${transparentize(0.88, theme.color.secondary)};
     }
-  `}
+  `
+  }
 `;
 
 const Container = styled.div({

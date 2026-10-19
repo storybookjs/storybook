@@ -64,8 +64,10 @@ export const run = async () => {
 
   const runsToCancel = patchRuns.data.workflow_runs
     .concat(nonPatchRuns.data.workflow_runs)
-    .filter(({ status }) =>
-      ['in_progress', 'pending', 'queued', 'requested', 'waiting'].includes(status)
+    .filter(
+      ({ status }) =>
+        status !== null &&
+        ['in_progress', 'pending', 'queued', 'requested', 'waiting'].includes(status)
     );
 
   if (runsToCancel.length === 0) {

@@ -2973,18 +2973,20 @@ describe('PreviewWeb', () => {
         document.location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
         mockChannel.emit.mockClear();
+        projectAnnotations.renderToCanvas.mockClear();
 
         preview.onStoriesChanged({ importFn: newImportFn });
         await importFnCalledGate;
         preview.onStoriesChanged({ importFn });
 
         openBlockImportFnGate();
-        await waitForRender();
+        await waitForEvents([STORY_UNCHANGED]);
 
         expect(preview.storyRenders.length).toEqual(1);
+        expect(projectAnnotations.renderToCanvas).not.toHaveBeenCalled();
       });
 
-      it('renders the second importFn', async () => {
+      it('loads the second importFn', async () => {
         const [importGate, openImportGate] = createGate();
         const [importedGate, openImportedGate] = createGate();
         const secondImportFn = vi.fn(async (path) => {
@@ -3008,9 +3010,98 @@ describe('PreviewWeb', () => {
         preview.onStoriesChanged({ importFn: thirdImportFn });
 
         openImportGate();
-        await waitForRender();
+        await waitForEvents([STORY_UNCHANGED]);
 
         expect(thirdImportFn).toHaveBeenCalled();
+      });
+    });
+
+    describe('when a newer change supersedes one in flight', () => {
+      const setup = () => {
+        const [cleanupGate, openCleanupGate] = createGate();
+        const [cleanupCalledGate, openCleanupCalledGate] = createGate();
+        const abortedAtCleanup: boolean[] = [];
+        const beforeEachHook = vi.fn(({ abortSignal }: { abortSignal: AbortSignal }) => {
+          return async () => {
+            abortedAtCleanup.push(abortSignal.aborted);
+            openCleanupCalledGate();
+            await cleanupGate;
+          };
+        });
+        const exportsWith = (args: object) =>
+          toMerged(componentOneExports, { a: { args, beforeEach: beforeEachHook } });
+        const importFnFor =
+          (componentOne: object): ModuleImportFn =>
+          async (path) =>
+            path === './src/ComponentOne.stories.js' ? componentOne : importFn(path);
+
+        return {
+          initialImportFn: importFnFor(exportsWith({})),
+          editedImportFn: importFnFor(exportsWith({ foo: 'edited' })),
+          abortedAtCleanup,
+          cleanupCalledGate,
+          openCleanupGate,
+        };
+      };
+
+      it('lets the newer change replace the story once, after its cleanup', async () => {
+        const {
+          initialImportFn,
+          editedImportFn,
+          abortedAtCleanup,
+          cleanupCalledGate,
+          openCleanupGate,
+        } = setup();
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview({ importFn: initialImportFn });
+        mockChannel.emit.mockClear();
+        projectAnnotations.renderToCanvas.mockClear();
+
+        preview.onStoriesChanged({ importFn: editedImportFn });
+        await cleanupCalledGate;
+        preview.onStoriesChanged({ importFn: editedImportFn });
+        await waitForQuiescence();
+
+        expect(projectAnnotations.renderToCanvas).not.toHaveBeenCalled();
+
+        openCleanupGate();
+        await waitForRender();
+        await waitForQuiescence();
+
+        expect(abortedAtCleanup).toEqual([true]);
+        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(1);
+        expect(preview.storyRenders).toHaveLength(1);
+        expect(
+          mockChannel.emit.mock.calls.filter(([event]) => event === STORY_PREPARED)
+        ).toHaveLength(1);
+        expect(mockChannel.emit).not.toHaveBeenCalledWith(STORY_UNCHANGED, 'component-one--a');
+        expect(mockChannel.emit).not.toHaveBeenCalledWith(STORY_CHANGED, 'component-one--a');
+      });
+
+      it('leaves the story on screen alone when the newer change does not change it', async () => {
+        const { initialImportFn, editedImportFn, abortedAtCleanup, openCleanupGate } = setup();
+        openCleanupGate();
+        const [importGate, openImportGate] = createGate();
+        const [importCalledGate, openImportCalledGate] = createGate();
+        const blockedImportFn: ModuleImportFn = async (path) => {
+          openImportCalledGate();
+          await importGate;
+          return editedImportFn(path);
+        };
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview({ importFn: initialImportFn });
+        mockChannel.emit.mockClear();
+        projectAnnotations.renderToCanvas.mockClear();
+
+        preview.onStoriesChanged({ importFn: blockedImportFn });
+        await importCalledGate;
+        preview.onStoriesChanged({ importFn: initialImportFn });
+        openImportGate();
+        await waitForQuiescence();
+
+        expect(abortedAtCleanup).toEqual([]);
+        expect(projectAnnotations.renderToCanvas).not.toHaveBeenCalled();
+        expect(mockChannel.emit).toHaveBeenCalledWith(STORY_UNCHANGED, 'component-one--a');
       });
     });
 

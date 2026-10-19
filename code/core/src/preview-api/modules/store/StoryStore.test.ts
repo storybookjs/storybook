@@ -625,6 +625,39 @@ describe('StoryStore', () => {
       await store.cleanupStory(story);
       expect(hooks.clean).toHaveBeenCalled();
     });
+
+    it('runs each callback once when two cleanups overlap', async () => {
+      const store = new StoryStore(storyIndex, importFn, projectAnnotations);
+      const story = await store.loadStory({ storyId: 'component-one--a' });
+      let release = () => {};
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      const callback = vi.fn(() => gate);
+      store.addCleanupCallbacks(story, callback);
+
+      const first = store.cleanupStory(story);
+      const second = store.cleanupStory(story);
+      release();
+      await Promise.all([first, second]);
+
+      expect(callback).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps a callback registered while a cleanup is running', async () => {
+      const store = new StoryStore(storyIndex, importFn, projectAnnotations);
+      const story = await store.loadStory({ storyId: 'component-one--a' });
+      let release = () => {};
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      store.addCleanupCallbacks(story, () => gate);
+      const late = vi.fn();
+
+      const running = store.cleanupStory(story);
+      store.addCleanupCallbacks(story, late);
+      release();
+      await running;
+      await store.cleanupStory(story);
+
+      expect(late).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('loadAllCSFFiles', () => {

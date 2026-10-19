@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
 import { executeCommand } from '../utils/command.ts';
@@ -154,6 +154,77 @@ describe('NPM Proxy', () => {
         expect(error).toMatchObject({ cause: originalError });
         expect(error?.message).toContain('min-release-age');
         expect(error?.message).toContain('@storybook/react-vite@10.4.0-alpha.17');
+      });
+    });
+
+    describe('ERESOLVE fallback', () => {
+      const eresolveError = new Error(
+        [
+          'npm error code ERESOLVE',
+          'npm error ERESOLVE could not resolve',
+          'npm error',
+          'npm error While resolving: proj@0.0.0',
+          'npm error Found: typescript@7.0.2',
+          'npm error',
+          'npm error Could not resolve dependency:',
+          'npm error   peerOptional typescript@"^5.9.0 || ^6.0.0" from @storybook/react-vite@11.0.0-alpha.6',
+          'npm error',
+          'npm error Fix the upstream dependency conflict, or retry',
+          'npm error this command with --force or --legacy-peer-deps',
+        ].join('\n')
+      );
+
+      it('retries the install once with --legacy-peer-deps when npm reports ERESOLVE', async () => {
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(async (fn: any) => {
+          await Promise.resolve(fn());
+        });
+        const executeCommandSpy = mockedExecuteCommand
+          .mockRejectedValueOnce(eresolveError)
+          .mockResolvedValueOnce({ stdout: '' } as any);
+
+        await npmProxy.installDependencies();
+
+        expect(executeCommandSpy).toHaveBeenCalledTimes(2);
+        expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            command: 'npm',
+            args: ['install', '--legacy-peer-deps'],
+          })
+        );
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('--legacy-peer-deps'));
+      });
+
+      it('rethrows the fallback error when the legacy-peer-deps retry also fails', async () => {
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(async (fn: any) => {
+          await Promise.resolve(fn());
+        });
+        mockedExecuteCommand
+          .mockRejectedValueOnce(eresolveError)
+          .mockRejectedValueOnce(new Error('npm error code EACCES\nnpm error permission denied'));
+
+        const error = await npmProxy.installDependencies().then(
+          () => null,
+          (caughtError) => caughtError
+        );
+
+        expect(error?.message).toContain('EACCES');
+      });
+
+      it('rethrows unrelated install errors without retrying', async () => {
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(async (fn: any) => {
+          await Promise.resolve(fn());
+        });
+        const executeCommandSpy = mockedExecuteCommand.mockRejectedValueOnce(
+          new Error('npm error code EACCES\nnpm error permission denied')
+        );
+
+        const error = await npmProxy.installDependencies().then(
+          () => null,
+          (caughtError) => caughtError
+        );
+
+        expect(executeCommandSpy).toHaveBeenCalledTimes(1);
+        expect(error?.message).toContain('EACCES');
       });
     });
   });

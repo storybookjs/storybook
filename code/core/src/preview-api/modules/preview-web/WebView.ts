@@ -15,19 +15,19 @@ const { document } = global;
 const PREPARING_DELAY = 100;
 
 enum Mode {
-  MAIN = 'MAIN',
-  NOPREVIEW = 'NOPREVIEW',
-  PREPARING_STORY = 'PREPARING_STORY',
-  PREPARING_DOCS = 'PREPARING_DOCS',
-  ERROR = 'ERROR',
+  MAIN = 'main',
+  NOPREVIEW = 'nopreview',
+  PREPARING_STORY = 'preparing-story',
+  PREPARING_DOCS = 'preparing-docs',
+  ERROR = 'error',
 }
-// Addons, Chromatic and the preview's CSS read these from <body>.
+// The mode as classes on <body>, for addons and Chromatic, which read them there. The view never does.
 const classes: Record<Mode, string> = {
-  PREPARING_STORY: 'sb-show-preparing-story',
-  PREPARING_DOCS: 'sb-show-preparing-docs',
-  MAIN: 'sb-show-main',
-  NOPREVIEW: 'sb-show-nopreview',
-  ERROR: 'sb-show-errordisplay',
+  [Mode.PREPARING_STORY]: 'sb-show-preparing-story',
+  [Mode.PREPARING_DOCS]: 'sb-show-preparing-docs',
+  [Mode.MAIN]: 'sb-show-main',
+  [Mode.NOPREVIEW]: 'sb-show-nopreview',
+  [Mode.ERROR]: 'sb-show-errordisplay',
 };
 
 type BlockMode = Exclude<Mode, Mode.MAIN>;
@@ -50,11 +50,20 @@ const createRoot = (id: string) => {
 };
 
 // A story may replace the body, which takes our elements out of the document with it.
-const attach = (element: HTMLElement, position: 'prepend' | 'append' = 'append') => {
+const attach = (element: HTMLElement) => {
   if (!element.isConnected) {
-    document.body[position](element);
+    document.body.append(element);
   }
   return element;
+};
+
+// Storybook's own UI: a child of <html> after <body>, in the top layer while it shows a block and out
+// of the document otherwise, so a story that replaces, clears or covers the body takes nothing of it
+// away.
+const createHost = () => {
+  const host = document.createElement('sb-preview');
+  host.setAttribute('popover', 'manual');
+  return host;
 };
 
 export class WebView implements View<HTMLElement> {
@@ -68,7 +77,9 @@ export class WebView implements View<HTMLElement> {
 
   private docsRootElement?: HTMLElement;
 
-  // Only the block of the current mode is in the document.
+  private hostElement?: HTMLElement;
+
+  // Only the block of the current mode is in the host.
   private blocks = new Map<BlockMode, HTMLElement>();
 
   constructor() {
@@ -196,21 +207,33 @@ export class WebView implements View<HTMLElement> {
 
   showMode(mode: Mode) {
     clearTimeout(this.preparingTimeout);
-    Object.keys(Mode).forEach((otherMode) => {
-      if (otherMode === mode) {
-        document.body.classList.add(classes[otherMode]);
-      } else {
-        document.body.classList.remove(classes[otherMode as Mode]);
-      }
+    Object.values(Mode).forEach((otherMode) => {
+      document.body.classList.toggle(classes[otherMode], otherMode === mode);
     });
-    this.blocks.forEach((element, blockMode) => {
-      if (blockMode !== mode) {
-        element.remove();
-      }
-    });
-    if (mode !== Mode.MAIN) {
-      attach(this.block(mode), 'prepend');
+    if (mode === Mode.MAIN) {
+      this.hideHost();
+    } else {
+      this.showHost(mode);
     }
+  }
+
+  private showHost(mode: BlockMode) {
+    this.hostElement ??= createHost();
+    const host = this.hostElement;
+    // A render that clears <html> removes the host, which also closes it.
+    if (!host.isConnected) {
+      document.documentElement.append(host);
+    }
+    host.dataset.mode = mode;
+    host.replaceChildren(this.block(mode));
+    if (!host.matches(':popover-open')) {
+      host.showPopover();
+    }
+  }
+
+  // Leaving the document also closes it.
+  private hideHost() {
+    this.hostElement?.remove();
   }
 
   showErrorDisplay({ message = '', stack = '' }) {
@@ -274,14 +297,5 @@ export class WebView implements View<HTMLElement> {
   showStory() {
     this.docsRoot().setAttribute('hidden', 'true');
     this.storyRoot().removeAttribute('hidden');
-  }
-
-  showStoryDuringRender() {
-    // When 'showStory' is called (at the start of rendering) we get rid of our display:none
-    // from all children of the root (but keep the preparing spinner visible). This may mean
-    // that very weird and high z-index stories are briefly visible.
-    // See https://github.com/storybookjs/storybook/issues/16847 and
-    //   http://localhost:9011/?path=/story/core-rendering--auto-focus (official SB)
-    document.body.classList.add(classes.MAIN);
   }
 }

@@ -103,3 +103,62 @@ it('sets filterByAutodocs to true for autodocs pages', async () => {
 
   expect(context.filterByAutodocs).toBe(true);
 });
+
+it("renders with the project's docs parameters when the story's preview has none", async () => {
+  const { story: baseStory, csfFile, moduleExports } = csfFileParts();
+  // A CSF Next file whose own preview does not register the docs addon: its story's docs
+  // parameters have no renderer.
+  const story = { ...baseStory, parameters: { docs: { story: { inline: false } } } };
+  const renderDocs = vi.fn();
+  const projectDocs = {
+    renderer: async () => ({ render: renderDocs, unmount: vi.fn() }),
+    theme: 'project-theme',
+  };
+
+  const store = {
+    loadEntry: () => ({ entryExports: moduleExports, csfFiles: [] }),
+    processCSFFileWithCache: () => csfFile,
+    componentStoriesFromCSFFile: () => [story],
+    storyFromCSFFile: () => story,
+    projectAnnotations: { parameters: { docs: projectDocs } },
+  } as unknown as StoryStore<Renderer>;
+
+  const render = new CsfDocsRender(new Channel({}), store, entry, {
+    showException: vi.fn(),
+  } as unknown as RenderContextCallbacks<Renderer>);
+  await render.prepare();
+  await render.renderToElement({} as Renderer['canvasElement'], vi.fn());
+
+  expect(renderDocs).toHaveBeenCalledWith(
+    expect.anything(),
+    {
+      renderer: projectDocs.renderer,
+      theme: 'project-theme',
+      story: { inline: false },
+    },
+    expect.anything()
+  );
+});
+
+it('throws that the docs addon is missing when neither the project nor the story has a renderer', async () => {
+  const { story, csfFile, moduleExports } = csfFileParts();
+  const store = {
+    loadEntry: () => ({ entryExports: moduleExports, csfFiles: [] }),
+    processCSFFileWithCache: () => csfFile,
+    componentStoriesFromCSFFile: () => [story],
+    storyFromCSFFile: () => story,
+    projectAnnotations: { parameters: {} },
+  } as unknown as StoryStore<Renderer>;
+
+  const render = new CsfDocsRender(
+    new Channel({}),
+    store,
+    entry,
+    {} as RenderContextCallbacks<Renderer>
+  );
+  await render.prepare();
+
+  await expect(render.renderToElement({} as Renderer['canvasElement'], vi.fn())).rejects.toThrow(
+    /addon-docs` is not installed/
+  );
+});

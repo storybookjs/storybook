@@ -10,7 +10,6 @@ import { readCapture } from './capture/files.ts';
 import type { CompareRunOptions } from './options.ts';
 import { stableStringify } from './stable-stringify.ts';
 
-
 const waiversSchema = z.array(
   z
     .object({
@@ -113,7 +112,15 @@ export function compareCaptures(options: CompareRunOptions) {
         });
       } else {
         coverage.compared++;
-        add(collectCurrentOrBetterViolations({ kind: 'snippet', framework: options.framework, baseline: baselineResult.code, candidate: candidateResult.code }), storyId);
+        add(
+          collectCurrentOrBetterViolations({
+            kind: 'snippet',
+            framework: options.framework,
+            baseline: baselineResult.code,
+            candidate: candidateResult.code,
+          }),
+          storyId
+        );
       }
     }
   }

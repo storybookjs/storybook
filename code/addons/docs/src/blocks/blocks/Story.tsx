@@ -117,10 +117,10 @@ export const getStoryProps = <TFramework extends Renderer>(
   // and optionally overridden by users
 
   const inline = rendersInline(story, props.inline);
+  const autoplay = props.autoplay ?? storyParameters.autoplay ?? false;
 
   if (inline) {
     const height = props.height ?? storyParameters.height;
-    const autoplay = props.autoplay ?? storyParameters.autoplay ?? false;
     return {
       story: story as any,
       inline: true,
@@ -141,7 +141,7 @@ export const getStoryProps = <TFramework extends Renderer>(
     story: story as any,
     inline: false,
     height,
-
+    autoplay,
     primary: !!props.__primary,
   };
 };

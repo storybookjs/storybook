@@ -4,21 +4,25 @@ import { SupportedRenderer } from 'storybook/internal/types';
 
 import { join } from 'pathe';
 
-import { getRendererName } from '../helpers/mainConfigFile.ts';
+import { getFrameworkPackageName, getRendererName } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
 
-// Mirrors `isDocgenProviderEnabled` in `@storybook/react`'s preset, which turns docgen server on by
-// default, from the project directory instead of the renderer's own process.
-const reactResolvesTypescript = (projectDir: string) => {
+const resolveFrom = (from: string, id: string) => {
   try {
-    const react = createRequire(join(projectDir, 'package.json')).resolve(
-      '@storybook/react/package.json'
-    );
-    createRequire(react).resolve('typescript');
-    return true;
+    return createRequire(from).resolve(id);
   } catch {
-    return false;
+    return undefined;
   }
+};
+
+// Mirrors `isDocgenProviderEnabled` in `@storybook/react`'s preset, which turns docgen server on by
+// default, from the project directory instead of the renderer's own process. pnpm links
+// `@storybook/react` only into the framework's `node_modules`, so it is resolved through the framework.
+const reactResolvesTypescript = (projectDir: string, framework: string | null) => {
+  const project = join(projectDir, 'package.json');
+  const from = (framework && resolveFrom(project, `${framework}/package.json`)) || project;
+  const react = resolveFrom(from, '@storybook/react/package.json');
+  return !!react && !!resolveFrom(react, 'typescript');
 };
 
 // Remove in Storybook 12, together with builder docgen.
@@ -39,7 +43,7 @@ export const reactDocgenOptional: Fix<{}> = {
     }
     const usesDocgenServer =
       mainConfig.features?.docgenServer !== false &&
-      reactResolvesTypescript(packageManager.instanceDir);
+      reactResolvesTypescript(packageManager.instanceDir, getFrameworkPackageName(mainConfig));
     return usesDocgenServer ? null : {};
   },
 

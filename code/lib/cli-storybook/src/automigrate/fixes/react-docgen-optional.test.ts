@@ -10,16 +10,29 @@ import { reactDocgenOptional } from './react-docgen-optional.ts';
 
 vi.mock('node:module', { spy: true });
 
-const makePackageManager = ({ declared = [] as string[], installed = [] as string[] }) => {
-  const resolvable = ['@storybook/react/package.json', ...installed];
-  vi.mocked(createRequire).mockReturnValue({
-    resolve: (id: string) => {
-      if (!resolvable.includes(id)) {
-        throw new Error(`Cannot find module '${id}'`);
-      }
-      return `/project/node_modules/${id}`;
+// pnpm layout: the project resolves only the framework, which resolves `@storybook/react`.
+const makePackageManager = ({ declared = [] as string[], typescript = false }) => {
+  const links: Record<string, Record<string, string>> = {
+    '/project/package.json': {
+      '@storybook/react-vite/package.json': '/pnpm/react-vite/package.json',
     },
-  } as unknown as NodeJS.Require);
+    '/pnpm/react-vite/package.json': {
+      '@storybook/react/package.json': '/pnpm/react/package.json',
+    },
+    '/pnpm/react/package.json': typescript ? { typescript: '/pnpm/typescript/index.js' } : {},
+  };
+  vi.mocked(createRequire).mockImplementation(
+    (from) =>
+      ({
+        resolve: (id: string) => {
+          const resolved = links[String(from)]?.[id];
+          if (!resolved) {
+            throw new Error(`Cannot find module '${id}'`);
+          }
+          return resolved;
+        },
+      }) as unknown as NodeJS.Require
+  );
   return {
     instanceDir: '/project',
     isDependencyInstalled: (name: string) => declared.includes(name),
@@ -44,15 +57,13 @@ describe('react-docgen-optional', () => {
   });
 
   it('is offered to a TypeScript project that turned docgen server off', async () => {
-    expect(
-      await check({ features: { docgenServer: false } }, { installed: ['typescript'] })
-    ).toEqual({});
+    expect(await check({ features: { docgenServer: false } }, { typescript: true })).toEqual({});
   });
 
   it.each<[string, Partial<StorybookConfigRaw>, Parameters<typeof makePackageManager>[0]]>([
     ['react-docgen is declared', {}, { declared: ['react-docgen'] }],
     ['reactDocgen is false', { typescript: { reactDocgen: false } as any }, {}],
-    ['docgen server documents the components', {}, { installed: ['typescript'] }],
+    ['docgen server documents the components', {}, { typescript: true }],
     ['the renderer is not React', { framework: '@storybook/vue3-vite' }, {}],
   ])('is not offered when %s', async (_name, mainConfig, packages) => {
     expect(await check(mainConfig, packages)).toBeNull();

@@ -1,0 +1,68 @@
+# Dismisses reviews (approvals and change requests) from users who are not
+# members of the storybookjs org. See MAINTAINERS.md ("Review eligibility").
+name: Dismiss non-member reviews
+
+on:
+  pull_request_review:
+    types:
+      - submitted
+
+permissions: {}
+
+jobs:
+  dismiss:
+    name: Dismiss reviews from non-members
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Dismiss reviews from users outside the storybookjs org
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const org = 'storybookjs';
+            const review = context.payload.review;
+            const reviewer = review?.user?.login;
+
+            if (!reviewer) {
+              throw new Error('Review event is missing the reviewer login');
+            }
+
+            // Comment-only reviews do not gate merges, so there is nothing to dismiss.
+            if (review.state === 'COMMENTED') {
+              return;
+            }
+
+            // 204 = org member (the review stands), 404 = not a member (dismiss below).
+            const token = process.env.STORYBOOKJS_ORG_MEMBERSHIP_TOKEN || process.env.GITHUB_TOKEN;
+            const response = await fetch(
+              `https://api.github.com/orgs/${org}/members/${encodeURIComponent(reviewer)}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  Accept: 'application/vnd.github+json',
+                  'X-GitHub-Api-Version': '2022-11-28',
+                },
+              }
+            );
+
+            if (response.status === 204) {
+              return;
+            }
+
+            if (response.status !== 404) {
+              throw new Error(`GitHub org membership request failed with status ${response.status}`);
+            }
+
+            core.info(`Reviewer ${reviewer} is not a member of ${org}; dismissing the review`);
+            await github.rest.pulls.dismissReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              review_id: review.id,
+              message:
+                'Automatically dismissed: only reviews from members of the storybookjs organization count. Re-review from an org member if this change needs one.',
+            });
+        env:
+          STORYBOOKJS_ORG_MEMBERSHIP_TOKEN: ${{ secrets.STORYBOOKJS_ORG_MEMBERSHIP_TOKEN }}

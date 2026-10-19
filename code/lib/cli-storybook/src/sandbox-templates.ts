@@ -718,6 +718,8 @@ export const baseTemplates = {
     name: 'Lit Latest (Vite | JavaScript)',
     script:
       'npm create vite --yes {{beforeDir}} -- --template lit && cd {{beforeDir}} && echo "export default {}" > vite.config.js',
+    // TODO: remove after oct 21 2026
+    minAgeGateExemptions: ['@wc-toolkit/*'],
     expected: {
       framework: '@storybook/web-components-vite',
       renderer: '@storybook/web-components',
@@ -743,6 +745,7 @@ export const baseTemplates = {
     name: 'Lit Latest (Vite | TypeScript)',
     script:
       'npm create vite --yes {{beforeDir}} -- --template lit-ts && cd {{beforeDir}} && echo "export default {}" > vite.config.js',
+    minAgeGateExemptions: ['@wc-toolkit/*'],
     expected: {
       framework: '@storybook/web-components-vite',
       renderer: '@storybook/web-components',
@@ -773,6 +776,7 @@ export const baseTemplates = {
   'lit-rsbuild/default-ts': {
     name: 'Web Components Latest (RsBuild | TypeScript)',
     script: 'npx create-rsbuild -d {{beforeDir}} -t lit-ts --tools eslint',
+    minAgeGateExemptions: ['@wc-toolkit/*'],
     expected: {
       framework: 'storybook-web-components-rsbuild',
       renderer: '@storybook/web-components',

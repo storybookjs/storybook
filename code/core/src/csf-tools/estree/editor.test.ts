@@ -1114,6 +1114,26 @@ describe('generateMap', () => {
     });
   });
 
+  it('maps through two commits and a pending edit back to the original code', () => {
+    const editor = new SourceEditor(original, 'file.ts');
+    editOf(editor);
+    editor.commit();
+    editor.edits.appendLeft(0, '// header\n');
+    editor.commit();
+    const title = editor.code.indexOf("'A'");
+    editor.edits.overwrite(title, title + 3, "'Renamed'");
+    const result = editor.generateMap();
+    expect(result.sources).toEqual(['file.ts']);
+    expect(result.sourcesContent).toEqual([original]);
+    expect(entryOf(result, editor.toString(), 'title')).toMatchObject({
+      originalLine: 2,
+      originalColumn: original.split('\n')[2].indexOf('title'),
+    });
+    expect(result.mappings).toMatchInlineSnapshot(
+      `";AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACX,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;AACX,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,SAAG,CAAC,CAAC"`
+    );
+  });
+
   it('names the source as requested after a committed edit', () => {
     const editor = new SourceEditor(original, 'file.ts');
     editOf(editor);

@@ -89,9 +89,9 @@ export class SourceEditor {
 
   _edits: SourceEdits;
 
-  // Maps of the edits applied by earlier commits, oldest first, so the output still maps to the
-  // code the editor was created with.
-  _committed: GeneratedMap[] = [];
+  // The edits each earlier commit applied, oldest first. Their maps are only generated when one
+  // is requested, so the output still maps to the code the editor was created with.
+  _committed: SourceEdits[] = [];
 
   // The code the editor was created with, line endings included: the content its maps name.
   readonly _originalCode: string;
@@ -183,9 +183,7 @@ export class SourceEditor {
     }
     const module = parsePrintable(this._edits.toString(), this.fileName);
     this._style ??= inferStyle(this._module);
-    this._committed.push(
-      this._edits.generateMap({ hires: true, includeContent: true, source: mapSource(this) })
-    );
+    this._committed.push(this._edits);
     this._module = module;
     this._scopes = undefined;
     this._parents = undefined;
@@ -201,16 +199,14 @@ export class SourceEditor {
    */
   generateMap(options: { source?: string; inputSourceMap?: InputSourceMap } = {}): GeneratedMap {
     const source = options.source ?? this.fileName ?? '';
-    const current = this._edits.generateMap({
-      hires: true,
-      includeContent: true,
-      source: mapSource(this),
-    });
+    const chain = [this._edits, ...this._committed.slice().reverse()].map((edits) =>
+      edits.generateMap({ hires: true, includeContent: true, source: mapSource(this) })
+    );
+    const [current] = chain;
     const input =
       typeof options.inputSourceMap === 'string'
         ? (JSON.parse(options.inputSourceMap) as Exclude<InputSourceMap, string>)
         : options.inputSourceMap;
-    const chain = [current, ...this._committed.slice().reverse()];
     if (chain.length === 1 && !input) {
       current.sources = [source];
       current.sourcesContent = [this._originalCode];

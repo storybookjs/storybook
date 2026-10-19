@@ -16,9 +16,8 @@ export type ToolbarShortcuts = Record<ToolbarShortcutType, ToolbarShortcutConfig
 /**
  * The names of the icon components exported by `@storybook/icons`, e.g. `'CircleHollowIcon'`.
  *
- * The name is serialized from the preview to the manager, where the manager-side `ToolbarIcon`
- * component resolves it to a component. The namespace import is type-only, so the icons package
- * (and with it React) is never bundled into the preview.
+ * The manager resolves the name against the package's exports and renders the matching icon;
+ * a name the package does not export renders no icon.
  */
 export type ToolbarIconType = {
   [K in keyof typeof Icons]: K extends `${string}Icon` ? K : never;
@@ -37,7 +36,7 @@ export interface ToolbarItem {
 export interface NormalizedToolbarConfig {
   /** The label to show for this toolbar item */
   title?: string;
-  /** Name of an `@storybook/icons` icon shown next to the toolbar title */
+  /** Name of an icon exported by `@storybook/icons`, e.g. `'CircleHollowIcon'` */
   icon?: ToolbarIconType;
   /** Set to true to prevent default update of icon to match any present selected items icon */
   preventDynamicIcon?: boolean;

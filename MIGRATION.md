@@ -725,9 +725,11 @@ Storybook 11 removes the experimental and undocumented tag filtering names. They
 
 ### Toolbar icon no longer accepts legacy icon names
 
-Toolbar menus in `globalTypes` (and toolbar `argTypes` in stories) configure their `icon` with the name of an icon exported by `@storybook/icons` — e.g. `'CircleHollowIcon'` — instead of a legacy name like `'circlehollow'`. The manager resolves the name where the toolbar renders, so the icon can cross the serialization boundary between the preview and the manager. Passing an `icon` on individual items works the same way. For history, the legacy names came from the `Icons` and `Symbols` components that were removed from `@storybook/components` in 9.0 (see [#29159](https://github.com/storybookjs/storybook/issues/29159)).
+Historically, toolbar menu icons were bundled inside Storybook, and you had to pass an icon's name (like `'circlehollow'`) to use one. The icons were moved to the separate `@storybook/icons` package in Storybook 9, where the bundled `Icons` and `Symbols` components that owned the legacy names were removed (see [#29159](https://github.com/storybookjs/storybook/issues/29159)).
 
-`storybook automigrate` rewrites legacy names in your `.storybook` config and story files:
+Starting in Storybook 11, you must use the names exported by that package instead of the legacy names: set `icon: 'CircleHollowIcon'` where you used `icon: 'circlehollow'`. This applies to the `icon` of a toolbar in `globalTypes` (or toolbar `argTypes` in stories) and to the `icon` of each of its `items`. A legacy name no longer resolves, so the toolbar renders without an icon.
+
+`storybook automigrate` rewrites legacy names in your `.storybook` config and story files, both on the toolbar itself and on its items:
 
 ```diff
  myAddon: {
@@ -735,7 +737,8 @@ Toolbar menus in `globalTypes` (and toolbar `argTypes` in stories) configure the
 -   icon: 'circlehollow',
 +   icon: 'CircleHollowIcon',
     title: 'Background',
-    items: [{ value: 'light', title: 'Light' }],
+-   items: [{ value: 'light', title: 'Light', icon: 'sun' }],
++   items: [{ value: 'light', title: 'Light', icon: 'SunIcon' }],
   },
 }
 ```

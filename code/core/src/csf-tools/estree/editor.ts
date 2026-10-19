@@ -1010,6 +1010,7 @@ const CONTINUES_STATEMENT = /^[([`+\-/]/;
  */
 export const insertStatementAfter = (editor: SourceEditor, statement: Span, text: string) => {
   const { code, edits } = editor;
+  lastInserted.set(edits, { after: statement, text });
   const end = statementEnd(editor, statement);
   const next = end + /^[^\S\n]*/.exec(code.slice(end))![0].length;
   const separator = code[statement.end - 1] !== ';' && CONTINUES_STATEMENT.test(text) ? ';' : '';
@@ -1070,8 +1071,8 @@ const isRemoved = (editor: SourceEditor, span: Span) => {
   }
 };
 
-// The text `appendStatement` added last to a batch of edits, with the statement it follows.
-const lastAppended = new WeakMap<SourceEdits, { after: Span; text: string }>();
+// The text `insertStatementAfter` added last to a batch of edits, with the statement it follows.
+const lastInserted = new WeakMap<SourceEdits, { after: Span; text: string }>();
 
 /**
  * Insert a statement after the last statement that pending edits did not remove. A blank line
@@ -1086,11 +1087,11 @@ export const appendStatement = (editor: SourceEditor, text: string) => {
     editor.edits.append(`${output && !output.endsWith('\n') ? '\n' : ''}${text}\n`);
     return;
   }
-  const previous = lastAppended.get(editor.edits);
-  const before = previous?.after === last ? previous.text : editor.source(last);
+  const previous = lastInserted.get(editor.edits);
+  // The text inserted last may lead with the blank line that set it apart.
+  const before = previous?.after === last ? previous.text.trim() : editor.source(last);
   const multiline = text.includes('\n') || before.includes('\n');
   insertStatementAfter(editor, last, `${multiline ? '\n' : ''}${text}`);
-  lastAppended.set(editor.edits, { after: last, text });
 };
 
 /** The span of a statement with the comments it owns. */

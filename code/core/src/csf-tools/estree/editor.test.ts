@@ -680,6 +680,16 @@ describe('appendStatement', () => {
     expect(editor.toString()).toBe(`const a = {\n  b: 1,\n};\n\nconst c = 3;\nconst d = 4;\n`);
   });
 
+  it('sets a statement apart from the one inserted after the imports before it, not from an earlier append', () => {
+    const editor = new SourceEditor(`import a from 'a';\n`);
+    appendStatement(editor, `const x = {\n  y: 1,\n};`);
+    insertAfterImports(editor, `const b = 1;`);
+    appendStatement(editor, `const c = 2;`);
+    expect(editor.toString()).toBe(
+      `import a from 'a';\n\nconst x = {\n  y: 1,\n};\nconst b = 1;\nconst c = 2;\n`
+    );
+  });
+
   it('appends to the end of a file whose statements are all removed', () => {
     const editor = new SourceEditor(`const a = 1;\nconst b = 2;\n`);
     removeStatements(editor, new Set(editor.program.body));

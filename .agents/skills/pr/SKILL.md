@@ -38,7 +38,7 @@ Add these labels to the PR:
 
 **CI (required once the PR is out of draft, pick one):**
 
-Draft PRs never get a `ci:*` label, and CircleCI does not run on drafts. Add the label when you mark the PR ready (see **Command** below).
+Don't add a `ci:*` label to a draft PR. Add it when you mark the PR ready (see **Command** below).
 
 - `ci:normal` - standard sandbox set; default for most code changes
 - `ci:merged` - merged sandbox set

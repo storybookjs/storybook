@@ -75,5 +75,5 @@ Share the PR URL. Then **AskQuestion**: "Do you want to create a canary release 
 ## Notes
 
 - Always draft; always assign `@me`.
-- Drafts get no `ci:*` label and CircleCI skips them. When the PR is ready, follow the `pr` skill's **Command** section to mark it ready and add the label.
+- Don't add a `ci:*` label to the draft. When the PR is ready, follow the `pr` skill's **Command** section to mark it ready and add the label.
 - For canary details after publishing, see the `canary` skill.

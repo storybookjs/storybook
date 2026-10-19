@@ -11,6 +11,7 @@ import {
   parsePrintable,
   textOf,
   walk,
+  withRawTransfer,
 } from './ast.ts';
 
 // Raw transfer is only available on 64-bit Node 22+, where both ways of reading the tree run.
@@ -105,7 +106,7 @@ describe('parseModule', () => {
     'normalizes an expression nested deeper than the call stack allows recursion, rawTransfer %s',
     (rawTransfer) => {
       const code = `x = ${Array(20_000).fill('(a)').join(' + ')};`;
-      const { program } = parseModule(code, undefined, { rawTransfer });
+      const { program } = withRawTransfer(rawTransfer, () => parseModule(code));
       expect(program.body).toHaveLength(1);
     }
   );
@@ -121,16 +122,16 @@ describe('parseModule', () => {
         'const r = /a+/gu, b = 10n, n = 0x1f, s = `${b}`;',
         "export default { title: 'A' } satisfies Meta; // end",
       ].join('\n');
-      const raw = parseModule(code, 'a.tsx', { rawTransfer: true });
-      const json = parseModule(code, 'a.tsx', { rawTransfer: false });
+      const raw = withRawTransfer(true, () => parseModule(code, 'a.tsx'));
+      const json = withRawTransfer(false, () => parseModule(code, 'a.tsx'));
       expect(raw).toEqual(json);
     }
   );
 
   it.each(transfers)('reports a parse error at its position with rawTransfer %s', (rawTransfer) => {
-    expect(() => parseModule('const a = 1;\nconst = ;\n', 'a.ts', { rawTransfer })).toThrow(
-      'Unexpected token (2:6) in a.ts'
-    );
+    expect(() =>
+      withRawTransfer(rawTransfer, () => parseModule('const a = 1;\nconst = ;\n', 'a.ts'))
+    ).toThrow('Unexpected token (2:6) in a.ts');
   });
 });
 

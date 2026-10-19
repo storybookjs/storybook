@@ -59,17 +59,19 @@ let rawTransferEnabled = rawTransferSupported();
 // The option is missing from the `ParserOptions` type of oxc-parser 0.153.
 type ParseOptions = E.ParserOptions & { experimentalRawTransfer: boolean };
 
-/** Whether a parse reads its tree through raw transfer, as it does wherever that is supported. */
-export interface TransferOptions {
-  rawTransfer?: boolean;
-}
+/** Runs `fn` with raw transfer forced on or off; for tests that compare the two tree readers. */
+export const withRawTransfer = <T>(enabled: boolean, fn: () => T): T => {
+  const before = rawTransferEnabled;
+  rawTransferEnabled = enabled;
+  try {
+    return fn();
+  } finally {
+    rawTransferEnabled = before;
+  }
+};
 
-const parseWith = (
-  code: string,
-  fileName: string | undefined,
-  lang: Lang,
-  rawTransfer: boolean
-): ParseAttempt => {
+const parseWith = (code: string, fileName: string | undefined, lang: Lang): ParseAttempt => {
+  const rawTransfer = rawTransferEnabled;
   const name = fileName ?? `file.${lang}`;
   const options: ParseOptions = {
     lang,
@@ -135,12 +137,8 @@ export const restoreLineEndings = (code: string, original: string) => {
  *
  * The tree has no parenthesized nodes: `outerSpan` gives the span of the parentheses around one.
  */
-export const parseModule = (
-  code: string,
-  fileName?: string,
-  options: TransferOptions = {}
-): ParsedModule => {
-  const module = parseWithParentheses(code, fileName, options.rawTransfer ?? rawTransferEnabled);
+export const parseModule = (code: string, fileName?: string): ParsedModule => {
+  const module = parseWithParentheses(code, fileName);
   normalize(module.program, undefined);
   return module;
 };
@@ -152,16 +150,10 @@ export const parsePrintable = (code: string, fileName?: string): ParsedModule =>
   return module;
 };
 
-const parseWithParentheses = (
-  source: string,
-  fileName: string | undefined,
-  rawTransfer = rawTransferEnabled
-): ParsedModule => {
+const parseWithParentheses = (source: string, fileName: string | undefined): ParsedModule => {
   const code = normalizeLineEndings(source);
   const lang = fileName === undefined ? undefined : langFor(fileName);
-  const attempt = lang
-    ? parseWith(code, fileName, lang, rawTransfer)
-    : parseEither(code, fileName, rawTransfer);
+  const attempt = lang ? parseWith(code, fileName, lang) : parseEither(code, fileName);
   if ('module' in attempt) {
     return attempt.module;
   }
@@ -180,16 +172,12 @@ const LEADING_COMMENTS = /^(?:\s*(?:\/\/[^\n]*|\/\*[\s\S]*?\*\/))*/;
 // Flow reads its pragma from any comment in the file's header, including `/** @flow */` docblocks.
 const hasFlowPragma = (code: string) => /@flow\b/.test(LEADING_COMMENTS.exec(code)?.[0] ?? '');
 
-const parseEither = (
-  code: string,
-  fileName: string | undefined,
-  rawTransfer: boolean
-): ParseAttempt => {
-  const tsx = parseWith(code, fileName, 'tsx', rawTransfer);
+const parseEither = (code: string, fileName: string | undefined): ParseAttempt => {
+  const tsx = parseWith(code, fileName, 'tsx');
   if ('module' in tsx) {
     return tsx;
   }
-  const ts = parseWith(code, fileName, 'ts', rawTransfer);
+  const ts = parseWith(code, fileName, 'ts');
   return 'module' in ts || ts.offset > tsx.offset ? ts : tsx;
 };
 

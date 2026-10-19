@@ -58,7 +58,9 @@ type CsfMutationState = {
 
 const mutationStates = new WeakMap<CsfFile, CsfMutationState>();
 
-const PREVIEW_FILE_REGEX = /\/preview(.(js|jsx|mjs|ts|tsx))?$/;
+// `.storybook/preview` with an optional name, `preview.<name>`, and an optional extension: a
+// project may have several CSF Next previews, each story file importing one of them.
+const PREVIEW_FILE_REGEX = /\/preview(\.[\w-]+)?(\.(js|jsx|mjs|ts|tsx))?$/;
 export const isValidPreviewPath = (filepath: string) => PREVIEW_FILE_REGEX.test(filepath);
 
 function parseIncludeExclude(prop: t.Node) {

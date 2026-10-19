@@ -4,17 +4,18 @@ import type { FC } from 'react';
 
 import { FORCE_REMOUNT } from 'storybook/internal/core-events';
 import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
-import type { ModuleExport, ModuleExports } from 'storybook/internal/types';
+import type { ModuleExport, ModuleExports, StoryId } from 'storybook/internal/types';
 
 import type { Layout, PreviewProps as PurePreviewProps } from '../components';
-import { Preview as PurePreview } from '../components';
+import { Preview as PurePreview, PreviewSkeleton } from '../components';
 import { DocsContext } from './DocsContext';
 import type { SourceProps } from './Source';
 import { useSourceProps } from './Source';
 import { SourceContext } from './SourceContainer';
 import type { StoryProps } from './Story';
-import { Story } from './Story';
+import { Story, getStoryId } from './Story';
 import { useOf } from './useOf';
+import { useStory } from './useStory';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
 type CanvasProps = Pick<PurePreviewProps, 'withToolbar' | 'additionalActions' | 'className'> & {
@@ -42,6 +43,22 @@ type CanvasProps = Pick<PurePreviewProps, 'withToolbar' | 'additionalActions' | 
    */
   meta?: ModuleExports;
   /**
+   * Pass the id of a story to render a story whose CSF file this docs file cannot import, such as
+   * a story of another package
+   *
+   * ```jsx
+   * import { Canvas } from '@storybook/addon-docs/blocks';
+   *
+   * <Canvas id="example-button--primary" />;
+   * ```
+   *
+   * The id is an unattached reference. Nothing checks it before the docs page renders: renaming
+   * the story or changing its title changes the id, and the page then shows an error. A change to
+   * the story's file does not update an inline story until the docs page renders again. Prefer `of`
+   * when the docs file can import the story.
+   */
+  id?: StoryId;
+  /**
    * Specify the initial state of the source panel hidden: the source panel is hidden by default
    * shown: the source panel is shown by default none: the source panel is not available and the
    * button to show it is hidden
@@ -63,7 +80,7 @@ type CanvasProps = Pick<PurePreviewProps, 'withToolbar' | 'additionalActions' | 
   story?: Pick<StoryProps, 'inline' | 'height' | 'autoplay' | '__forceInitialArgs' | '__primary'>;
 };
 
-const CanvasImpl: FC<CanvasProps> = (props) => {
+const CanvasOf: FC<CanvasProps> = (props) => {
   const docsContext = useContext(DocsContext);
   const sourceContext = useContext(SourceContext);
   const { of, source } = props;
@@ -103,5 +120,19 @@ const CanvasImpl: FC<CanvasProps> = (props) => {
     </PurePreview>
   );
 };
+
+// Loading the story makes the docs context reference its CSF file, so from then on the story
+// resolves by its export like a story the docs file imports.
+const CanvasById: FC<CanvasProps> = (props) => {
+  const docsContext = useContext(DocsContext);
+  const story = useStory(getStoryId(props, docsContext), docsContext);
+  if (!story) {
+    return <PreviewSkeleton />;
+  }
+  return <CanvasOf {...props} of={story.moduleExport} />;
+};
+
+const CanvasImpl: FC<CanvasProps> = (props) =>
+  props.id === undefined ? <CanvasOf {...props} /> : <CanvasById {...props} />;
 
 export const Canvas = withMdxComponentOverride('Canvas', CanvasImpl);

@@ -186,7 +186,7 @@ export class StoryStore<TRenderer extends Renderer> {
 
     return this.prepareMetaWithCache(
       componentAnnotations,
-      this.projectAnnotations,
+      csfFile.projectAnnotations ?? this.projectAnnotations,
       csfFile.moduleExports.default
     );
   }

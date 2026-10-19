@@ -7,7 +7,10 @@ import {
   STORY_RENDERED,
   STORY_RENDER_PHASE_CHANGED,
 } from 'storybook/internal/core-events';
-import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
+import {
+  ArgTypesRemovedFromStoryContextError,
+  MissingRenderToCanvasError,
+} from 'storybook/internal/preview-errors';
 import type {
   PreparedStory,
   Renderer,
@@ -60,6 +63,7 @@ const buildStory = (overrides: Partial<PreparedStory> = {}): PreparedStory =>
     unboundStoryFn: vi.fn(),
     playFunction: vi.fn(),
     mount: (context: StoryContext) => () => mountSpy(context),
+    renderToCanvas: vi.fn(),
     ...overrides,
   }) as any;
 
@@ -78,12 +82,72 @@ beforeEach(() => {
 });
 
 describe('StoryRender', () => {
+  it('renders with the renderToCanvas of the story', async () => {
+    const renderToCanvas = vi.fn();
+    const canvasElement = {} as any;
+    const render = new StoryRender(
+      new Channel({}),
+      buildStore(),
+      {} as any,
+      entry.id,
+      'story',
+      { autoplay: true },
+      buildStory({ renderToCanvas })
+    );
+
+    await render.renderToElement(canvasElement);
+
+    expect(renderToCanvas).toHaveBeenCalledOnce();
+    expect(renderToCanvas).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'id' }),
+      canvasElement
+    );
+  });
+
+  it("renders with the project's renderToCanvas when the story has none", async () => {
+    const projectRenderToCanvas = vi.fn();
+    const canvasElement = {} as any;
+    const render = new StoryRender(
+      new Channel({}),
+      buildStore({ projectAnnotations: { renderToCanvas: projectRenderToCanvas } as any }),
+      {} as any,
+      entry.id,
+      'story',
+      { autoplay: true },
+      buildStory({ renderToCanvas: undefined })
+    );
+
+    await render.renderToElement(canvasElement);
+
+    expect(projectRenderToCanvas).toHaveBeenCalledOnce();
+    expect(projectRenderToCanvas).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'id' }),
+      canvasElement
+    );
+  });
+
+  it('shows an exception when neither the story nor the project has a renderToCanvas', async () => {
+    const callbacks = { showException: vi.fn() };
+    const render = new StoryRender(
+      new Channel({}),
+      buildStore({ projectAnnotations: {} as any }),
+      callbacks as any,
+      entry.id,
+      'story',
+      { autoplay: true },
+      buildStory({ renderToCanvas: undefined })
+    );
+
+    await render.renderToElement({} as any);
+
+    expect(callbacks.showException).toHaveBeenCalledWith(expect.any(MissingRenderToCanvasError));
+  });
+
   it('does run play function if passed autoplay=true', async () => {
     const story = buildStory();
     const render = new StoryRender(
       new Channel({}),
       buildStore(),
-      vi.fn() as any,
       {} as any,
       entry.id,
       'story',
@@ -100,7 +164,6 @@ describe('StoryRender', () => {
     const render = new StoryRender(
       new Channel({}),
       buildStore(),
-      vi.fn() as any,
       {} as any,
       entry.id,
       'story',
@@ -115,15 +178,15 @@ describe('StoryRender', () => {
   it('only rerenders once when triggered multiple times while pending', async () => {
     // Arrange - setup StoryRender and async gate blocking applyLoaders
     const [loaderGate, openLoaderGate] = createGate();
-    const renderToScreen = vi.fn();
+    const renderToCanvas = vi.fn();
 
     const story = buildStory({
       applyLoaders: vi.fn(() => loaderGate as any),
+      renderToCanvas,
     });
     const render = new StoryRender(
       new Channel({}),
       buildStore(),
-      renderToScreen,
       {} as any,
       entry.id,
       'story',
@@ -143,7 +206,7 @@ describe('StoryRender', () => {
     // Assert - still loading, not yet rendered
     expect(story.applyLoaders).toHaveBeenCalledOnce();
     expect(render.phase).toBe('loading');
-    expect(renderToScreen).not.toHaveBeenCalled();
+    expect(renderToCanvas).not.toHaveBeenCalled();
 
     // Act - finish loading
     openLoaderGate();
@@ -151,7 +214,7 @@ describe('StoryRender', () => {
     // Assert - loaded and rendered twice, played once
     await vi.waitFor(async () => {
       expect(story.applyLoaders).toHaveBeenCalledTimes(2);
-      expect(renderToScreen).toHaveBeenCalledTimes(2);
+      expect(renderToCanvas).toHaveBeenCalledTimes(2);
       expect(story.playFunction).toHaveBeenCalledOnce();
     });
   });
@@ -163,7 +226,6 @@ describe('StoryRender', () => {
     const render = new StoryRender(
       new Channel({}),
       buildStore(),
-      vi.fn() as any,
       {} as any,
       entry.id,
       'story',
@@ -178,6 +240,7 @@ describe('StoryRender', () => {
   it('hides argTypes from lifecycle hooks but passes them to the renderer', async () => {
     const argTypes = { label: { name: 'label' } };
     const hookContexts: StoryContext[] = [];
+    const renderToCanvas = vi.fn();
     const story = buildStory({
       applyLoaders: vi.fn(async (context) => {
         hookContexts.push(context);
@@ -197,14 +260,13 @@ describe('StoryRender', () => {
         hookContexts.push(context);
       }),
       runStep: vi.fn((label, play, context) => play(context)),
+      renderToCanvas,
     });
-    const renderToScreen = vi.fn();
     const render = new StoryRender(
       new Channel({}),
       buildStore({
         getStoryContext: () => ({ argTypes, reporting: new ReporterAPI() }) as any,
       }),
-      renderToScreen,
       {} as any,
       entry.id,
       'story',
@@ -219,7 +281,7 @@ describe('StoryRender', () => {
       expect(() => context.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
       expect('argTypes' in context).toBe(false);
     }
-    expect(renderToScreen.mock.calls[0][0].storyContext.argTypes).toBe(argTypes);
+    expect(renderToCanvas.mock.calls[0][0].storyContext.argTypes).toBe(argTypes);
   });
 
   it('does not call mount twice if mount called in play function', async () => {
@@ -232,7 +294,6 @@ describe('StoryRender', () => {
     const render = new StoryRender(
       new Channel({}),
       buildStore(),
-      vi.fn() as any,
       {} as any,
       entry.id,
       'story',
@@ -254,7 +315,6 @@ describe('StoryRender', () => {
     const render = new StoryRender(
       new Channel({}),
       buildStore(),
-      vi.fn() as any,
       view as any,
       entry.id,
       'story',
@@ -277,7 +337,6 @@ describe('StoryRender', () => {
     const render = new StoryRender(
       new Channel({}),
       buildStore(),
-      vi.fn() as any,
       view as any,
       entry.id,
       'story',
@@ -297,6 +356,9 @@ describe('StoryRender', () => {
     });
     const story = buildStory({
       mount: (context) => () => actualMount(context) as any,
+      renderToCanvas: vi.fn(() => {
+        expect(render.phase).toBe('rendering');
+      }) as any,
       usesMount: true,
       playFunction: async ({ mount }) => {
         expect(render.phase).toBe('loading');
@@ -307,9 +369,6 @@ describe('StoryRender', () => {
     const render = new StoryRender(
       new Channel({}),
       buildStore(),
-      vi.fn(() => {
-        expect(render.phase).toBe('rendering');
-      }) as any,
       {} as any,
       entry.id,
       'story',
@@ -337,7 +396,6 @@ describe('StoryRender', () => {
     const render = new StoryRender(
       channel,
       store,
-      vi.fn() as any,
       {} as any,
       entry.id,
       'story',
@@ -380,7 +438,6 @@ describe('StoryRender', () => {
     const render = new StoryRender(
       channel,
       store,
-      vi.fn() as any,
       {
         showException: vi.fn(),
       } as any,
@@ -416,14 +473,7 @@ describe('StoryRender', () => {
         }) as any,
       });
 
-      const render = new StoryRender(
-        new Channel({}),
-        mockStore,
-        vi.fn(),
-        {} as any,
-        entry.id,
-        'story'
-      );
+      const render = new StoryRender(new Channel({}), mockStore, {} as any, entry.id, 'story');
 
       const preparePromise = render.prepare();
 
@@ -436,7 +486,7 @@ describe('StoryRender', () => {
 
     it('leaves the story cleanups alone when torn down before it rendered', async () => {
       const store = buildStore({ loadStory: vi.fn(async () => buildStory()) as any });
-      const render = new StoryRender(new Channel({}), store, vi.fn(), {} as any, entry.id, 'story');
+      const render = new StoryRender(new Channel({}), store, {} as any, entry.id, 'story');
 
       await render.prepare();
       await render.teardown();
@@ -449,7 +499,6 @@ describe('StoryRender', () => {
       const render = new StoryRender(
         new Channel({}),
         store,
-        vi.fn() as any,
         {} as any,
         entry.id,
         'story',
@@ -467,16 +516,15 @@ describe('StoryRender', () => {
     it('does not mount again when torn down while it remounts', async () => {
       const [cleanupGate, openCleanupGate] = createGate();
       const store = buildStore({ cleanupStory: vi.fn(() => cleanupGate) });
-      const renderToScreen = vi.fn();
+      const renderToCanvas = vi.fn();
       const render = new StoryRender(
         new Channel({}),
         store,
-        renderToScreen,
         {} as any,
         entry.id,
         'story',
         { autoplay: true },
-        buildStory()
+        buildStory({ renderToCanvas })
       );
       await render.renderToElement({} as any);
 
@@ -485,7 +533,7 @@ describe('StoryRender', () => {
       openCleanupGate();
       await Promise.all([remounting, tearingDown]);
 
-      expect(renderToScreen).toHaveBeenCalledTimes(1);
+      expect(renderToCanvas).toHaveBeenCalledTimes(1);
     });
 
     it('stops after the completing phase when torn down during it', async () => {
@@ -497,7 +545,6 @@ describe('StoryRender', () => {
       const render = new StoryRender(
         channel,
         buildStore(),
-        vi.fn() as any,
         {} as any,
         entry.id,
         'story',
@@ -535,7 +582,6 @@ describe('StoryRender', () => {
       const render = new StoryRender(
         channel,
         buildStore(),
-        vi.fn() as any,
         {} as any,
         entry.id,
         'story',
@@ -576,7 +622,6 @@ describe('StoryRender', () => {
       const render = new StoryRender(
         new Channel({}),
         store,
-        vi.fn() as any,
         {} as any,
         entry.id,
         'story',
@@ -598,16 +643,15 @@ describe('StoryRender', () => {
     });
 
     it('reloads the page when tearing down during rendering', async () => {
-      // Arrange - setup StoryRender and async gate blocking renderToScreen
+      // Arrange - setup StoryRender and async gate blocking renderToCanvas
       const [renderGate] = createGate();
-      const story = buildStory();
+      const renderToCanvas = vi.fn(() => renderGate);
+      const story = buildStory({ renderToCanvas: renderToCanvas as any });
       const store = buildStore();
-      const renderToScreen = vi.fn(() => renderGate);
 
       const render = new StoryRender(
         new Channel({}),
         store,
-        renderToScreen as any,
         {} as any,
         entry.id,
         'story',
@@ -615,10 +659,10 @@ describe('StoryRender', () => {
         story
       );
 
-      // Act - render (blocked by renderToScreen), teardown
+      // Act - render (blocked by renderToCanvas), teardown
       render.renderToElement({} as any);
       await tick(); // go from 'loading' to 'rendering' phase
-      expect(renderToScreen).toHaveBeenCalledOnce();
+      expect(renderToCanvas).toHaveBeenCalledOnce();
       expect(render.phase).toBe('rendering');
       render.teardown();
 
@@ -640,7 +684,6 @@ describe('StoryRender', () => {
       const render = new StoryRender(
         new Channel({}),
         store,
-        vi.fn() as any,
         {} as any,
         entry.id,
         'story',
@@ -672,7 +715,6 @@ describe('StoryRender', () => {
       const render = new StoryRender(
         new Channel({}),
         buildStore(),
-        vi.fn() as any,
         { storyUrl: () => storyUrl } as any,
         entry.id,
         'story',
@@ -702,7 +744,6 @@ describe('StoryRender', () => {
       const render = new StoryRender(
         new Channel({}),
         store,
-        vi.fn() as any,
         {} as any,
         entry.id,
         'story',

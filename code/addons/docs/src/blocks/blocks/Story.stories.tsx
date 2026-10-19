@@ -44,6 +44,18 @@ export const OfWithMetaUnattached: Story = {
   },
 };
 
+// The story's CSF file is not one this docs entry imports (see `relativeCsfPaths`).
+export const ById: Story = {
+  args: {
+    id: 'addons-docs-examples-stories-for-the-canvas-block--with-toolbar',
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(canvasElement).toHaveTextContent('This component is not intended to render anything')
+    );
+  },
+};
+
 export const OfError: Story = {
   args: {
     of: ButtonStories.ErrorStory,

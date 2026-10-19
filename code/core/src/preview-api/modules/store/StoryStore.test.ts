@@ -194,6 +194,50 @@ describe('StoryStore', () => {
     });
   });
 
+  describe('a CSF Next file with its own preview', () => {
+    const projectRenderToCanvas = vi.fn();
+    const fileRenderToCanvas = vi.fn();
+    const filePreview = definePreview({
+      render: vi.fn(),
+      renderToCanvas: fileRenderToCanvas,
+      parameters: { layout: 'fullscreen' },
+    });
+    const fileMeta = filePreview.meta({ title: 'Component One' });
+    const fileExports = { default: fileMeta, a: fileMeta.story() };
+    const csfNextImportFn = vi.fn(async (path: string) =>
+      path === './src/ComponentOne.stories.js' ? fileExports : componentTwoExports
+    );
+    const projectWithRenderer = composeConfigs([
+      projectAnnotations,
+      { renderToCanvas: projectRenderToCanvas, parameters: { layout: 'centered' } },
+    ]);
+
+    // Guard: storyFromCSFFile already prepared a file's stories with the file's annotations.
+    it("prepares the file's stories with its preview's renderToCanvas", async () => {
+      const store = new StoryStore(storyIndex, csfNextImportFn, projectWithRenderer);
+
+      const csfNextStory = await store.loadStory({ storyId: 'component-one--a' });
+      const csf3Story = await store.loadStory({ storyId: 'component-two--c' });
+
+      expect(csfNextStory.renderToCanvas).toBe(fileRenderToCanvas);
+      expect(csf3Story.renderToCanvas).toBe(projectRenderToCanvas);
+    });
+
+    it("prepares the file's meta with its preview's annotations", async () => {
+      const store = new StoryStore(storyIndex, csfNextImportFn, projectWithRenderer);
+
+      const csfNextFile = await store.loadCSFFileByStoryId('component-one--a');
+      const csf3File = await store.loadCSFFileByStoryId('component-two--c');
+
+      expect(store.preparedMetaFromCSFFile({ csfFile: csfNextFile }).parameters.layout).toBe(
+        'fullscreen'
+      );
+      expect(store.preparedMetaFromCSFFile({ csfFile: csf3File }).parameters.layout).toBe(
+        'centered'
+      );
+    });
+  });
+
   describe('setProjectAnnotations', () => {
     it('busts the loadStory cache', async () => {
       const store = new StoryStore(storyIndex, importFn, projectAnnotations);

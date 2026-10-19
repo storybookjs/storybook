@@ -172,8 +172,6 @@ type ParserState = { program: ts.Program; fileParser: FileParser };
  * without the cost of a full program rebuild.
  */
 const previousProgramsByConfigKey = new Map<string, ts.Program | undefined>();
-// TypeScript files the tsconfig does not include, but a caller asked for; they stay roots.
-const extraRootFilesByConfigKey = new Map<string, Set<string>>();
 let parserCache = new Map<string, ParserState>();
 let parserBuilds = new Map<string, Promise<ParserState>>();
 
@@ -200,12 +198,12 @@ async function getParser(filePath: string, userOptions?: ParserOptions) {
   const parserKey = `${configKey}::${optionsKey}`;
   const cachedParser = parserCache.get(parserKey);
   if (cachedParser) {
-    return { ...cachedParser, typescript, configKey };
+    return { ...cachedParser, typescript };
   }
 
   const pendingParser = parserBuilds.get(parserKey);
   if (pendingParser) {
-    return { ...(await pendingParser), typescript, configKey };
+    return { ...(await pendingParser), typescript };
   }
 
   const buildParser = (async () => {
@@ -219,13 +217,13 @@ async function getParser(filePath: string, userOptions?: ParserOptions) {
     } else {
       logger.warn(
         'No tsconfig.json (or tsconfig.base.json / tsconfig.app.json) found. ' +
-          'react-docgen-typescript reads your components with default compiler options, which is less accurate. ' +
+          'react-docgen-typescript reads each component without your compiler options, which is slower and less accurate. ' +
           'Create a tsconfig.json in your project root.'
       );
     }
 
     const program = typescript.createProgram(
-      [...fileNames, ...(extraRootFilesByConfigKey.get(configKey) ?? [])],
+      fileNames,
       compilerOptions,
       undefined,
       previousProgramsByConfigKey.get(configKey)
@@ -252,29 +250,10 @@ async function getParser(filePath: string, userOptions?: ParserOptions) {
   parserBuilds.set(parserKey, buildParser);
 
   try {
-    return { ...(await buildParser), typescript, configKey };
+    return { ...(await buildParser), typescript };
   } finally {
     parserBuilds.delete(parserKey);
   }
-}
-
-const TYPESCRIPT_FILE = /\.[cm]?tsx?$/;
-
-/** Rebuild the parsers of a tsconfig with `filePath` as an extra root file. */
-async function getParserIncluding(filePath: string, userOptions?: ParserOptions) {
-  const parser = await getParser(filePath, userOptions);
-  if (parser.program.getSourceFile(filePath) || !TYPESCRIPT_FILE.test(filePath)) {
-    return parser;
-  }
-  const extraRootFiles = extraRootFilesByConfigKey.get(parser.configKey) ?? new Set<string>();
-  extraRootFiles.add(filePath);
-  extraRootFilesByConfigKey.set(parser.configKey, extraRootFiles);
-  for (const parserKey of parserCache.keys()) {
-    if (parserKey.startsWith(`${parser.configKey}::`)) {
-      parserCache.delete(parserKey);
-    }
-  }
-  return getParser(filePath, userOptions);
 }
 
 /** Find the component doc that matches the given import/component name. */
@@ -337,11 +316,12 @@ export function getReactDocgenTypescriptError(
  */
 export const parseWithReactDocgenTypescript = asyncCache(
   async (filePath: string, userOptions?: ParserOptions): Promise<ComponentDocWithExportName[]> => {
-    const { program, fileParser, typescript } = await getParserIncluding(filePath, userOptions);
+    const { program, fileParser, typescript } = await getParser(filePath, userOptions);
     const checker = program.getTypeChecker();
     const sourceFile = program.getSourceFile(filePath);
 
-    // TypeScript files joined the program as extra roots; anything else is parsed on its own.
+    // A file outside the tsconfig's `include` is not in the program: parse it on its own. Adding
+    // it as a root instead would make TypeScript rebuild the whole program without reuse.
     const docs = sourceFile
       ? fileParser.parseWithProgramProvider(filePath, () => program)
       : fileParser.parse(filePath);

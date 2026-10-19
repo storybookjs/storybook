@@ -1000,7 +1000,7 @@ Remove `docgenServer: false` to use server-side docgen.
 `@storybook/react`, `@storybook/react-vite` and `@storybook/preset-react-webpack` no longer install `react-docgen`, and with it Babel.
 TypeScript projects document components with server-side docgen and need nothing.
 `react-docgen` still documents components when server-side docgen is off: in JavaScript projects without the `typescript` package, and with `features.docgenServer: false`.
-It is also the only engine that reads `propTypes` and `defaultProps`.
+It is also the only engine that reads `propTypes`.
 Without it, Storybook warns once and shows no prop tables or inferred controls for those projects.
 Install it as a devDependency; `storybook upgrade` offers to with the `react-docgen-optional` automigration:
 
@@ -1008,7 +1008,7 @@ Install it as a devDependency; `storybook upgrade` offers to with the `react-doc
 npm install --save-dev react-docgen
 ```
 
-- `typescript: { reactDocgen: false }` needs nothing and hides the warning. It now also turns docgen off in the components manifest, which ran `react-docgen` regardless. `storybook build --test` sets it, so the manifest of a test build has no props.
+- `typescript: { reactDocgen: false }` needs nothing and hides the warning. With server-side docgen off and without `experimentalReactComponentMeta`, it now also turns docgen off in the components manifest, which ran `react-docgen` regardless. `storybook build --test` sets it, so in that setup the manifest of a test build has no props.
 - With `reactDocgen: 'react-docgen-typescript'`, TypeScript files are unaffected; `.js` and `.jsx` components only get props with `react-docgen` installed.
 - With server-side docgen on, the argTypes the Vitest addon infers for components without stories come from `react-docgen-typescript` for TypeScript files, also when the tsconfig does not include them. `.js` and `.jsx` components still need `react-docgen` for those argTypes.
 - Every React framework follows these rules: add `react-docgen` to the project's own `package.json`. `@storybook/nextjs` still installs Babel for its own compilation.

@@ -78,7 +78,7 @@ describe('parseWithReactDocgenTypescript', () => {
     expect(docs).toHaveLength(1);
     expect(docs[0].exportName).toBe('Outside');
     expect(Object.keys(docs[0].props)).toEqual(['label', 'count']);
-    // The file stays a root after the parsers are rebuilt.
+    // Still parsed after the parsers are rebuilt.
     invalidateParser();
     invalidateCache();
     expect(

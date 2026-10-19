@@ -64,6 +64,7 @@ describe('react-docgen-optional', () => {
     ['react-docgen is declared', {}, { declared: ['react-docgen'] }],
     ['reactDocgen is false', { typescript: { reactDocgen: false } as any }, {}],
     ['docgen server documents the components', {}, { typescript: true }],
+    ['the project declares typescript', {}, { declared: ['typescript'] }],
     ['the renderer is not React', { framework: '@storybook/vue3-vite' }, {}],
   ])('is not offered when %s', async (_name, mainConfig, packages) => {
     expect(await check(mainConfig, packages)).toBeNull();

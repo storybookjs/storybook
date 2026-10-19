@@ -41,9 +41,11 @@ export const reactDocgenOptional: Fix<{}> = {
     ) {
       return null;
     }
+    // A declared `typescript` settles it without probing, which Yarn PnP under npx can't do.
     const usesDocgenServer =
       mainConfig.features?.docgenServer !== false &&
-      reactResolvesTypescript(packageManager.instanceDir, getFrameworkPackageName(mainConfig));
+      (packageManager.isDependencyInstalled('typescript') ||
+        reactResolvesTypescript(packageManager.instanceDir, getFrameworkPackageName(mainConfig)));
     return usesDocgenServer ? null : {};
   },
 

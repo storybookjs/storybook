@@ -1,4 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -38,6 +39,9 @@ describe('rewriteExpoTsconfigBase', () => {
 });
 
 describe('rewriteExpoTsconfigFile', () => {
+  const projectDir = resolve('/app');
+  const tsconfigPath = resolve(projectDir, 'tsconfig.json');
+
   beforeEach(async () => {
     const memfs = await vi.importActual<typeof import('memfs')>('memfs');
     vi.mocked(readFile).mockImplementation(
@@ -54,17 +58,17 @@ describe('rewriteExpoTsconfigFile', () => {
   });
 
   it('rewrites the project tsconfig when it extends expo/tsconfig.base', async () => {
-    vol.fromNestedJSON({ '/app/tsconfig.json': tsconfig });
+    vol.fromNestedJSON({ [tsconfigPath]: tsconfig });
 
-    await rewriteExpoTsconfigFile('/app');
+    await rewriteExpoTsconfigFile(projectDir);
 
-    expect(vol.toJSON()['/app/tsconfig.json']).toContain('"extends": "expo/tsconfig.base.json"');
+    expect(vol.toJSON()[tsconfigPath]).toContain('"extends": "expo/tsconfig.base.json"');
   });
 
   it('does nothing when the project has no tsconfig', async () => {
-    vol.fromNestedJSON({ '/app/package.json': '{}' });
+    vol.fromNestedJSON({ [resolve(projectDir, 'package.json')]: '{}' });
 
-    await expect(rewriteExpoTsconfigFile('/app')).resolves.toBeUndefined();
-    expect(vol.toJSON()['/app/tsconfig.json']).toBeUndefined();
+    await expect(rewriteExpoTsconfigFile(projectDir)).resolves.toBeUndefined();
+    expect(vol.toJSON()[tsconfigPath]).toBeUndefined();
   });
 });

@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+
+import { join } from 'pathe';
 
 // Expo's exports map sends the extensionless path to tsconfig.base.js, which does not exist.
 // Match the quoted path so both `"extends": "expo/tsconfig.base"` and an extends array are covered.

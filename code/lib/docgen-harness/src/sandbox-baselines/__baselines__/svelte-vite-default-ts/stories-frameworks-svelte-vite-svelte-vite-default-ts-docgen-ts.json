@@ -1,0 +1,446 @@
+{
+  "argTypes": {
+    "any": {
+      "control": {
+        "type": "object"
+      },
+      "description": "Any",
+      "name": "any",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "null"
+        },
+        "type": {
+          "summary": "any"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "any"
+      }
+    },
+    "argTypes": {
+      "control": {
+        "type": "object"
+      },
+      "description": "Actual arg types inferred from the component",
+      "name": "argTypes",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "Record<string, any>"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "Record<string, any>"
+      }
+    },
+    "arrayOfNumbers": {
+      "control": {
+        "type": "object"
+      },
+      "description": "Array of numbers",
+      "name": "arrayOfNumbers",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "[1, 20, 300]"
+        },
+        "type": {
+          "summary": "number[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "number[]"
+      }
+    },
+    "boolean": {
+      "control": {
+        "type": "boolean"
+      },
+      "description": "Boolean",
+      "name": "boolean",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "true"
+        },
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean",
+        "required": false
+      }
+    },
+    "children": {
+      "control": false,
+      "description": "Children",
+      "name": "children",
+      "table": {
+        "category": "slots",
+        "defaultValue": {},
+        "type": {
+          "summary": "Snippet<[]>"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "Snippet<[]>"
+      }
+    },
+    "date": {
+      "control": {
+        "type": "object"
+      },
+      "description": "Date",
+      "name": "date",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "new Date('20 Jan 1983')"
+        },
+        "type": {
+          "summary": "Date"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "Date"
+      }
+    },
+    "enumValue": {
+      "control": {
+        "type": "radio"
+      },
+      "description": "Enum",
+      "name": "enumValue",
+      "options": ["foo", "bar"],
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "MyEnum.FOO"
+        },
+        "type": {
+          "summary": "MyEnum.FOO | MyEnum.BAR"
+        }
+      },
+      "type": {
+        "name": "enum",
+        "required": false,
+        "value": ["foo", "bar"]
+      }
+    },
+    "func": {
+      "control": false,
+      "description": "Event callback function",
+      "name": "func",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "function"
+        },
+        "type": {
+          "summary": "(event: MouseEvent) => number"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "(event: MouseEvent) => number"
+      }
+    },
+    "inlineObject": {
+      "control": {
+        "type": "object"
+      },
+      "description": "Inline object",
+      "name": "inlineObject",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "{ foo: string; bar: number; }"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "{ foo: string; bar: number; }"
+      }
+    },
+    "intersection": {
+      "control": {
+        "type": "object"
+      },
+      "description": "Intersection of types",
+      "name": "intersection",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "{ a: number; } & { b: string; }"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "{ a: number; } & { b: string; }"
+      }
+    },
+    "nullValue": {
+      "control": {
+        "type": "object"
+      },
+      "description": "Null",
+      "name": "nullValue",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "null"
+        },
+        "type": {
+          "summary": "null"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "null"
+      }
+    },
+    "number": {
+      "control": {
+        "type": "number"
+      },
+      "description": "Number",
+      "name": "number",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "123"
+        },
+        "type": {
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "number",
+        "required": false
+      }
+    },
+    "object": {
+      "control": {
+        "type": "object"
+      },
+      "description": "Object",
+      "name": "object",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "MyObject"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "MyObject"
+      }
+    },
+    "record": {
+      "control": {
+        "type": "object"
+      },
+      "description": "Record",
+      "name": "record",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "{ a: 1, b: 2 }"
+        },
+        "type": {
+          "summary": "Record<string, number>"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "Record<string, number>"
+      }
+    },
+    "string": {
+      "control": {
+        "type": "text"
+      },
+      "description": "String",
+      "name": "string",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "\"default\""
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "stringRequired": {
+      "control": {
+        "type": "text"
+      },
+      "description": "String (required)",
+      "name": "stringRequired",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": true
+      }
+    },
+    "symbol": {
+      "control": {
+        "type": "object"
+      },
+      "description": "Symbol",
+      "name": "symbol",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "symbol"
+        }
+      },
+      "type": {
+        "name": "symbol",
+        "required": false
+      }
+    },
+    "trueLiteral": {
+      "control": {
+        "type": "object"
+      },
+      "description": "True literal",
+      "name": "trueLiteral",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "true"
+        }
+      },
+      "type": {
+        "name": "literal",
+        "required": false,
+        "value": true
+      }
+    },
+    "undefinedValue": {
+      "control": {
+        "type": "object"
+      },
+      "description": "Undefined",
+      "name": "undefinedValue",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "undefined"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "undefined"
+      }
+    },
+    "unionLiteralNumbers": {
+      "control": {
+        "type": "radio"
+      },
+      "description": "Union of literal numbers",
+      "name": "unionLiteralNumbers",
+      "options": [100, 1000, 10000],
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "100"
+        },
+        "type": {
+          "summary": "100 | 1000 | 10000"
+        }
+      },
+      "type": {
+        "name": "enum",
+        "required": false,
+        "value": [100, 1000, 10000]
+      }
+    },
+    "unionLiteralStrings": {
+      "control": {
+        "type": "radio"
+      },
+      "description": "Union of literal strings",
+      "name": "unionLiteralStrings",
+      "options": ["apple", "grape", "orange"],
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "\"apple\""
+        },
+        "type": {
+          "summary": "\"apple\" | \"grape\" | \"orange\""
+        }
+      },
+      "type": {
+        "name": "enum",
+        "required": false,
+        "value": ["apple", "grape", "orange"]
+      }
+    },
+    "unionTypes": {
+      "control": {
+        "type": "object"
+      },
+      "description": "Union of types",
+      "name": "unionTypes",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "123"
+        },
+        "type": {
+          "summary": "string | number"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "string | number"
+      }
+    }
+  },
+  "id": "stories-frameworks-svelte-vite-svelte-vite-default-ts-docgen-ts",
+  "jsDocTags": {},
+  "name": "TS",
+  "path": "./src/stories/frameworks/svelte-vite_svelte-vite-default-ts/docgen/ts.stories.ts"
+}

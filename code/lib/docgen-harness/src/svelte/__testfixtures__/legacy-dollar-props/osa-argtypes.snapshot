@@ -1,1 +1,77 @@
-{}
+{
+  "kind": {
+    "control": {
+      "type": "radio",
+    },
+    "description": "Button kind.",
+    "name": "kind",
+    "options": [
+      "filled",
+      "outline",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": ""filled"",
+      },
+      "type": {
+        "summary": ""filled" | "outline"",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": false,
+      "value": [
+        "filled",
+        "outline",
+      ],
+    },
+  },
+  "onClick": {
+    "control": false,
+    "description": "Click callback.",
+    "name": "onClick",
+    "table": {
+      "category": "events",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "(e: MouseEvent) => void",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "(e: MouseEvent) => void",
+    },
+  },
+  "size": {
+    "control": {
+      "type": "radio",
+    },
+    "description": "Button size.",
+    "name": "size",
+    "options": [
+      "small",
+      "large",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": ""small"",
+      },
+      "type": {
+        "summary": ""small" | "large"",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": false,
+      "value": [
+        "small",
+        "large",
+      ],
+    },
+  },
+}

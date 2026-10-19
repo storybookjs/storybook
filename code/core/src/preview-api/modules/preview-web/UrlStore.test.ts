@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { global } from '@storybook/global';
 
-import { getSelectionSpecifierFromPath, pathToId, setPath } from './UrlStore.ts';
+import { UrlStore, getSelectionSpecifierFromPath, pathToId, setPath } from './UrlStore.ts';
 
 const { history, document } = global;
 
@@ -128,6 +128,22 @@ describe('UrlStore', () => {
         storySpecifier: 'abc',
         viewMode: 'story',
       });
+    });
+  });
+
+  describe('setSelection', () => {
+    it('writes the path the preview was loaded from, not one a story changed', () => {
+      document.location.pathname = '/iframe.html';
+      document.location.search = '';
+      document.location.hash = '';
+      const store = new UrlStore();
+      document.location.pathname = '/other/path';
+
+      store.setSelection({ storyId: 'story--id', viewMode: 'story' });
+
+      const url = '/iframe.html?id=story--id&viewMode=story';
+      expect(history.replaceState).toHaveBeenLastCalledWith({}, '', url);
+      expect(store.url).toBe(url);
     });
   });
 });

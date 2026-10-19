@@ -19,6 +19,9 @@ export interface SelectionStore {
 
   selection?: Selection;
 
+  /** The URL of the preview that shows the current selection, if the store keeps one. */
+  url?: string;
+
   setSelection(selection: Selection): void;
 
   setQueryParams(queryParams: Record<PropertyKey, unknown>): void;

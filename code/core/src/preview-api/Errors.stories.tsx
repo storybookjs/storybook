@@ -4,6 +4,7 @@ import AnsiToHtml from 'ansi-to-html';
 import { dedent } from 'ts-dedent';
 
 import type { DecoratorFunction } from '../csf/index.ts';
+import { createBlock } from './modules/preview-web/blocks.ts';
 
 const ansiConverter = new AnsiToHtml({
   escapeXML: true,
@@ -21,33 +22,24 @@ const StyleDecorator: DecoratorFunction = (Story) => (
   </>
 );
 
-const Component = ({ id, header, detail }: any) => {
-  const element = document.querySelector('.' + id);
-  if (!element) {
-    throw new Error('Element not found');
-  }
+const Component = ({ mode, header, detail }: any) => {
+  const element = createBlock(mode);
+  const errorMessage = element.querySelector('#error-message');
+  const errorStack = element.querySelector('#error-stack');
 
   if (header) {
-    document.getElementById('error-message')!.innerHTML = ansiConverter.toHtml(header);
+    errorMessage!.innerHTML = ansiConverter.toHtml(header);
   }
 
   if (detail) {
-    document.getElementById('error-stack')!.innerHTML = ansiConverter.toHtml(detail);
+    errorStack!.innerHTML = ansiConverter.toHtml(detail);
   }
 
   // remove the ids, otherwise chromatic will assume the story failed to render
-  const content = element.outerHTML.replace('error-message', '').replace('error-stack', '');
+  errorMessage?.removeAttribute('id');
+  errorStack?.removeAttribute('id');
 
-  // remove the content, otherwise chromatic will assume the story failed to render
-  document.getElementById('error-message')!.innerHTML = '';
-  document.getElementById('error-stack')!.innerHTML = '';
-
-  return (
-    <div
-      className="sb-show-nopreview sb-show-errordisplay"
-      dangerouslySetInnerHTML={{ __html: content }}
-    />
-  );
+  return <div dangerouslySetInnerHTML={{ __html: element.outerHTML }} />;
 };
 
 export default {
@@ -58,10 +50,8 @@ export default {
   globals: { sb_theme: 'light' },
   title: 'Errors',
   args: {
-    id: 'sb-errordisplay',
+    mode: 'ERROR',
   },
-  // This story cannot be properly tested in portable stories as it depends on an element that only exists in Storybook's preview HTML
-  tags: ['!vitest'],
 };
 
 export const MyError = {
@@ -89,7 +79,7 @@ export const MyErrorWithCustomCSS = {
 
 export const Missing = {
   args: {
-    id: 'sb-nopreview',
+    mode: 'NOPREVIEW',
   },
 };
 

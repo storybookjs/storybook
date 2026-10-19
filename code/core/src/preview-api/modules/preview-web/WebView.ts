@@ -8,6 +8,7 @@ import { parse } from 'picoquery';
 import { dedent } from 'ts-dedent';
 
 import type { View } from './View.ts';
+import { createBlock } from './blocks.ts';
 
 const { document } = global;
 
@@ -20,6 +21,7 @@ enum Mode {
   PREPARING_DOCS = 'PREPARING_DOCS',
   ERROR = 'ERROR',
 }
+// Addons, Chromatic and the preview's CSS read these from <body>.
 const classes: Record<Mode, string> = {
   PREPARING_STORY: 'sb-show-preparing-story',
   PREPARING_DOCS: 'sb-show-preparing-docs',
@@ -27,6 +29,8 @@ const classes: Record<Mode, string> = {
   NOPREVIEW: 'sb-show-nopreview',
   ERROR: 'sb-show-errordisplay',
 };
+
+type BlockMode = Exclude<Mode, Mode.MAIN>;
 
 const layoutClassMap = {
   centered: 'sb-main-centered',
@@ -39,12 +43,33 @@ const ansiConverter = new AnsiToHtml({
   escapeXML: true,
 });
 
+const createRoot = (id: string) => {
+  const root = document.createElement('div');
+  root.id = id;
+  return root;
+};
+
+// A story may replace the body, which takes our elements out of the document with it.
+const attach = (element: HTMLElement, position: 'prepend' | 'append' = 'append') => {
+  if (!element.isConnected) {
+    document.body[position](element);
+  }
+  return element;
+};
+
 export class WebView implements View<HTMLElement> {
   private currentLayoutClass?: (typeof layoutClassMap)[keyof typeof layoutClassMap] | null;
 
   private testing = false;
 
   private preparingTimeout?: ReturnType<typeof setTimeout>;
+
+  private storyRootElement?: HTMLElement;
+
+  private docsRootElement?: HTMLElement;
+
+  // Only the block of the current mode is in the document.
+  private blocks = new Map<BlockMode, HTMLElement>();
 
   constructor() {
     // Special code for testing situations
@@ -89,7 +114,9 @@ export class WebView implements View<HTMLElement> {
   }
 
   storyRoot(): HTMLElement {
-    return document.getElementById('storybook-root')!;
+    this.storyRootElement ??=
+      document.getElementById('storybook-root') ?? createRoot('storybook-root');
+    return attach(this.storyRootElement);
   }
 
   prepareForDocs({ scrollReset = true }: { scrollReset?: boolean } = {}) {
@@ -110,7 +137,16 @@ export class WebView implements View<HTMLElement> {
   }
 
   docsRoot(): HTMLElement {
-    return document.getElementById('storybook-docs')!;
+    this.docsRootElement ??=
+      document.getElementById('storybook-docs') ?? createRoot('storybook-docs');
+    return attach(this.docsRootElement);
+  }
+
+  private block(mode: BlockMode) {
+    if (!this.blocks.has(mode)) {
+      this.blocks.set(mode, createBlock(mode));
+    }
+    return this.blocks.get(mode)!;
   }
 
   scrollToAnchor(hash: string) {
@@ -167,6 +203,14 @@ export class WebView implements View<HTMLElement> {
         document.body.classList.remove(classes[otherMode as Mode]);
       }
     });
+    this.blocks.forEach((element, blockMode) => {
+      if (blockMode !== mode) {
+        element.remove();
+      }
+    });
+    if (mode !== Mode.MAIN) {
+      attach(this.block(mode), 'prepend');
+    }
   }
 
   showErrorDisplay({ message = '', stack = '' }) {
@@ -178,8 +222,9 @@ export class WebView implements View<HTMLElement> {
       detail = parts.slice(1).join('\n').replace(/^\n/, '');
     }
 
-    document.getElementById('error-message')!.innerHTML = ansiConverter.toHtml(header);
-    document.getElementById('error-stack')!.innerHTML = ansiConverter.toHtml(detail);
+    const errorDisplay = this.block(Mode.ERROR);
+    errorDisplay.querySelector('#error-message')!.innerHTML = ansiConverter.toHtml(header);
+    errorDisplay.querySelector('#error-stack')!.innerHTML = ansiConverter.toHtml(detail);
 
     this.showMode(Mode.ERROR);
   }
@@ -191,9 +236,8 @@ export class WebView implements View<HTMLElement> {
 
     this.showMode(Mode.NOPREVIEW);
 
-    // In storyshots this can get called and these two can be null
-    this.storyRoot()?.setAttribute('hidden', 'true');
-    this.docsRoot()?.setAttribute('hidden', 'true');
+    this.storyRoot().setAttribute('hidden', 'true');
+    this.docsRoot().setAttribute('hidden', 'true');
   }
 
   showPreparingStory({ immediate = false } = {}) {

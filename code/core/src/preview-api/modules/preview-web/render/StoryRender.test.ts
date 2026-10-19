@@ -663,6 +663,34 @@ describe('StoryRender', () => {
       });
     });
 
+    it('replaces the URL with the URL of the selected story before reloading', async () => {
+      const [playGate] = createGate();
+      const story = buildStory({ playFunction: vi.fn(() => playGate) as any });
+      const replaceState = vi.spyOn(window.history, 'replaceState').mockImplementation(() => {});
+      const storyUrl = '/iframe.html?id=component--b&viewMode=story';
+
+      const render = new StoryRender(
+        new Channel({}),
+        buildStore(),
+        vi.fn() as any,
+        { storyUrl: () => storyUrl } as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        story
+      );
+
+      render.renderToElement({} as any);
+      await vi.waitFor(() => expect(render.phase).toBe('playing'));
+      render.teardown();
+
+      await vi.waitFor(() => expect(window.location.reload).toHaveBeenCalledOnce());
+      expect(replaceState).toHaveBeenCalledWith({}, '', storyUrl);
+      expect(replaceState.mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(window.location.reload).mock.invocationCallOrder[0]
+      );
+    });
+
     it('reloads the page when remounting during loading', async () => {
       // Arrange - setup StoryRender and async gate blocking applyLoaders
       const [loaderGate] = createGate();

@@ -9,7 +9,12 @@ import {
   type ReactDocgenPlanInput,
   getReactDocgenPlan,
   planReactDocgen,
+  readReactDocgenPlan,
 } from './engine.ts';
+
+beforeEach(() => {
+  vi.spyOn(once, 'warn').mockImplementation(() => undefined);
+});
 
 const both = { reactDocgen: true, typescript: true };
 const jsOnly = { reactDocgen: true, typescript: false };
@@ -126,24 +131,20 @@ describe('planReactDocgen', () => {
   });
 });
 
-describe('getReactDocgenPlan', () => {
-  const presetsWith = (typescript: object, features: object = {}) =>
-    ({
-      apply: async (extension: string) => (extension === 'typescript' ? typescript : features),
-    }) as Options['presets'];
+const presetsWith = (typescript: object, features: object = {}) =>
+  ({
+    apply: async (extension: string) => (extension === 'typescript' ? typescript : features),
+  }) as Options['presets'];
 
-  beforeEach(() => {
-    vi.spyOn(once, 'warn').mockImplementation(() => undefined);
-  });
-
+describe('readReactDocgenPlan', () => {
   it('warns about a missing react-docgen, without the deprecation', async () => {
-    await getReactDocgenPlan(presetsWith({ reactDocgen: 'react-docgen' }), () => false);
+    await readReactDocgenPlan(presetsWith({ reactDocgen: 'react-docgen' }), () => false);
 
     expect(vi.mocked(once.warn).mock.calls).toEqual([[MISSING_REACT_DOCGEN]]);
   });
 
   it('prints only the deprecation when builder docgen runs', async () => {
-    await getReactDocgenPlan(presetsWith({ reactDocgen: 'react-docgen' }), () => true);
+    await readReactDocgenPlan(presetsWith({ reactDocgen: 'react-docgen' }), () => true);
 
     expect(once.warn).toHaveBeenCalledOnce();
     expect(vi.mocked(once.warn).mock.calls[0][0]).toContain('Builder docgen');
@@ -153,8 +154,21 @@ describe('getReactDocgenPlan', () => {
     ['reactDocgen is false', presetsWith({ reactDocgen: false })],
     ['docgen server is on', presetsWith({ reactDocgen: 'react-docgen' }, { docgenServer: true })],
   ])('stays silent when %s', async (_name, presets) => {
-    await getReactDocgenPlan(presets, (pkg) => pkg === 'typescript');
+    await readReactDocgenPlan(presets, (pkg) => pkg === 'typescript');
 
     expect(once.warn).not.toHaveBeenCalled();
+  });
+});
+
+describe('getReactDocgenPlan', () => {
+  it('reads presets once per preset list', async () => {
+    const presets = presetsWith({});
+    const apply = vi.spyOn(presets, 'apply');
+    const presetsList: NonNullable<Options['presetsList']> = [];
+
+    await getReactDocgenPlan({ presets, presetsList });
+    await getReactDocgenPlan({ presets: { ...presets }, presetsList });
+
+    expect(apply).toHaveBeenCalledTimes(2);
   });
 });

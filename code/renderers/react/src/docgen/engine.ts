@@ -69,7 +69,7 @@ export function planReactDocgen({
   };
 }
 
-const isInstalled = (pkg: 'react-docgen' | 'typescript') => {
+export const isInstalled = (pkg: 'react-docgen' | 'typescript') => {
   try {
     importMetaResolve(pkg);
     return true;
@@ -85,7 +85,7 @@ export const MISSING_REACT_DOCGEN = dedent`
   https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-react-docgen-is-an-optional-peer-dependency
 `;
 
-export async function getReactDocgenPlan(
+export async function readReactDocgenPlan(
   presets: Options['presets'],
   installed = isInstalled
 ): Promise<ReactDocgenPlan> {
@@ -111,5 +111,23 @@ export async function getReactDocgenPlan(
     );
   }
 
+  return plan;
+}
+
+const plans = new WeakMap<NonNullable<Options['presetsList']>, Promise<ReactDocgenPlan>>();
+
+// `options.presets` is a new object on every preset call, `presetsList` one per Storybook process.
+export function getReactDocgenPlan({
+  presets,
+  presetsList,
+}: Pick<Options, 'presets' | 'presetsList'>): Promise<ReactDocgenPlan> {
+  if (!presetsList) {
+    return readReactDocgenPlan(presets);
+  }
+  let plan = plans.get(presetsList);
+  if (!plan) {
+    plan = readReactDocgenPlan(presets);
+    plans.set(presetsList, plan);
+  }
   return plan;
 }

@@ -23,7 +23,7 @@ export const manifests: PresetPropertyFn<
   const { manifestEntries, presets, watch } = options;
   const typescriptOptions =
     (await presets.apply<Partial<TypescriptOptions>>('typescript', {})) ?? {};
-  const { manifest: docgenEngine } = await getReactDocgenPlan(presets);
+  const { manifest: docgenEngine } = await getReactDocgenPlan(options);
 
   if (docgenEngine === 'server') {
     /**

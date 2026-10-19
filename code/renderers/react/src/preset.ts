@@ -8,11 +8,10 @@ import type { Options, PresetProperty } from 'storybook/internal/types';
 import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
 import { extractArgTypesFromDocgenTypescript } from './componentManifest/reactDocgen/extractReactTypescriptDocgenInfo.ts';
 import type { GetArgTypesDataOptions } from './componentManifest/reactDocgen/utils.ts';
-import { getReactDocgenPlan } from './docgen/engine.ts';
+import { getReactDocgenPlan, isInstalled } from './docgen/engine.ts';
 
-interface InternalGetArgTypesDataOptions extends GetArgTypesDataOptions {
-  presets: Options['presets'];
-}
+interface InternalGetArgTypesDataOptions
+  extends GetArgTypesDataOptions, Pick<Options, 'presets' | 'presetsList'> {}
 
 export { manifests as experimental_manifests } from './componentManifest/generator.ts';
 
@@ -23,14 +22,7 @@ export { experimental_docgenProvider } from './docgen/preset.ts';
 // Turns `features.docgenServer` on by default; read through `presets.apply('isDocgenProviderEnabled')`
 // so the default never has to call the provider, which itself reads `features`. Server docgen runs on
 // the optional `typescript` peer, so a project without it keeps builder docgen.
-export const isDocgenProviderEnabled = () => {
-  try {
-    import.meta.resolve('typescript');
-    return true;
-  } catch {
-    return false;
-  }
-};
+export const isDocgenProviderEnabled = () => isInstalled('typescript');
 
 export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
 
@@ -87,17 +79,17 @@ export const resolvedReact = async (existing: any) => {
 
 // Read by name, so `@storybook/preset-react-webpack` needs no dependency on this package.
 export const internal_reactDocgenPlan = (_: unknown, options: Options) =>
-  getReactDocgenPlan(options.presets);
+  getReactDocgenPlan(options);
 
 export async function internal_getArgTypesData(
   _input: unknown,
-  { componentFilePath, componentExportName, presets }: InternalGetArgTypesDataOptions
+  { componentFilePath, componentExportName, presets, presetsList }: InternalGetArgTypesDataOptions
 ): Promise<ArgTypes | null> {
   if (!componentFilePath) {
     return null;
   }
 
-  const { argTypes } = await getReactDocgenPlan(presets);
+  const { argTypes } = await getReactDocgenPlan({ presets, presetsList });
   const resolvedFilePath = path.isAbsolute(componentFilePath)
     ? componentFilePath
     : join(getProjectRoot(), componentFilePath);

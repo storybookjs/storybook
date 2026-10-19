@@ -7,8 +7,8 @@ import { join } from 'pathe';
 import { getRendererName } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
 
-// Docgen server turns on when `@storybook/react` resolves `typescript`, which npm and pnpm also
-// install as a peer of react-docgen-typescript.
+// Mirrors `isDocgenProviderEnabled` in `@storybook/react`'s preset, which turns docgen server on by
+// default, from the project directory instead of the renderer's own process.
 const reactResolvesTypescript = (projectDir: string) => {
   try {
     const react = createRequire(join(projectDir, 'package.json')).resolve(

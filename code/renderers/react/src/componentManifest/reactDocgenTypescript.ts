@@ -1,4 +1,3 @@
-import { statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 import {
@@ -11,7 +10,7 @@ import type ts from 'typescript';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import { asyncCache, cached, findTsconfigPath, invalidateCache } from './utils.ts';
+import { asyncCache, cached, findTsconfigPath } from './utils.ts';
 
 export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
 
@@ -218,8 +217,8 @@ async function getParser(filePath: string, userOptions?: ParserOptions) {
     } else {
       logger.warn(
         'No tsconfig.json (or tsconfig.base.json / tsconfig.app.json) found. ' +
-          'TypeScript component props will not be documented by react-docgen-typescript. ' +
-          'Create a tsconfig.json in your project root to enable automatic controls.'
+          'react-docgen-typescript reads each component without your compiler options, which is slower and less accurate. ' +
+          'Create a tsconfig.json in your project root.'
       );
     }
 
@@ -321,7 +320,10 @@ export const parseWithReactDocgenTypescript = asyncCache(
     const checker = program.getTypeChecker();
     const sourceFile = program.getSourceFile(filePath);
 
-    const docs = fileParser.parseWithProgramProvider(filePath, () => program);
+    // A file outside the tsconfig's `include` is not in the program.
+    const docs = sourceFile
+      ? fileParser.parseWithProgramProvider(filePath, () => program)
+      : fileParser.parse(filePath);
     // Map from resolved (original) name → public export name.
     // e.g. for `export { Card as RenamedCard }`: "Card" → "RenamedCard"
     const exportNameMap = sourceFile
@@ -347,24 +349,6 @@ export const parseWithReactDocgenTypescript = asyncCache(
   },
   { name: 'parseWithReactDocgenTypescript' }
 );
-
-const parsedMtimes = new Map<string, number>();
-
-// Like `parseWithReactDocgenTypescript`, for callers that no manifest run invalidates: a changed
-// file rebuilds the program first.
-export async function parseLatestWithReactDocgenTypescript(
-  filePath: string,
-  userOptions?: ParserOptions
-): Promise<ComponentDocWithExportName[]> {
-  const { mtimeMs } = statSync(filePath);
-  const parsedMtime = parsedMtimes.get(filePath);
-  if (parsedMtime !== undefined && parsedMtime !== mtimeMs) {
-    invalidateCache();
-    invalidateParser();
-  }
-  parsedMtimes.set(filePath, mtimeMs);
-  return parseWithReactDocgenTypescript(filePath, userOptions);
-}
 
 const findOwningTsconfigPath = cached(
   (typescript: TypeScriptRuntime, cwd: string, filePath: string): string | undefined => {

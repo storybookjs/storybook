@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -502,29 +502,22 @@ describe('extractArgTypesFromDocgenTypescript', () => {
     );
   });
 
-  it('reads a component again after it changes', async () => {
+  it.each([
+    ['outside the tsconfig include', { 'tsconfig.json': JSON.stringify({ include: ['src'] }) }],
+    ['in a project without a tsconfig', {}],
+  ])('reads a component %s', async (_name, files) => {
     const dir = createTempProject({
-      'tsconfig.json': JSON.stringify({
-        compilerOptions: { jsx: 'react-jsx', strict: true, noEmit: true },
-        include: ['src'],
-      }),
-      'src/Button.tsx': `export const Button = ({ label }: { label: string }) => <button>{label}</button>;`,
+      ...files,
+      'lib/Button.tsx': `export const Button = ({ label }: { label: string }) => label;`,
     });
     vi.spyOn(process, 'cwd').mockReturnValue(dir);
-    const componentFilePath = path.join(dir, 'src/Button.tsx');
-    const read = () =>
-      extractArgTypesFromDocgenTypescript({ componentFilePath, componentExportName: 'Button' });
 
-    expect(Object.keys((await read()) ?? {})).toEqual(['label']);
+    const argTypes = await extractArgTypesFromDocgenTypescript({
+      componentFilePath: path.join(dir, 'lib/Button.tsx'),
+      componentExportName: 'Button',
+    });
 
-    writeFileSync(
-      componentFilePath,
-      `export const Button = ({ label, size }: { label: string; size: number }) => <button>{label}{size}</button>;`
-    );
-    // Some filesystems keep the old mtime for a write within the same tick.
-    utimesSync(componentFilePath, new Date(), new Date(Date.now() + 1000));
-
-    expect(Object.keys((await read()) ?? {})).toEqual(['label', 'size']);
+    expect(Object.keys(argTypes ?? {})).toEqual(['label']);
   });
 });
 

@@ -1,17 +1,16 @@
 import { logger } from 'storybook/internal/node-logger';
 
 import { extractArgTypes } from '../../extractArgTypes.ts';
-import { parseLatestWithReactDocgenTypescript } from '../reactDocgenTypescript.ts';
+import { parseWithReactDocgenTypescript } from '../reactDocgenTypescript.ts';
 import type { GetArgTypesDataOptions } from './utils.ts';
 
-/** Extracts component arg types from a file with react-docgen-typescript. */
 export const extractArgTypesFromDocgenTypescript = async ({
   componentFilePath,
   componentExportName,
   reactDocgenTypescriptOptions,
 }: GetArgTypesDataOptions) => {
   try {
-    const docs = await parseLatestWithReactDocgenTypescript(
+    const docs = await parseWithReactDocgenTypescript(
       componentFilePath,
       reactDocgenTypescriptOptions
     );

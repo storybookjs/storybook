@@ -106,10 +106,6 @@ export const ShowChangesButton = () => {
   const excludedStatusFilters = (rawExcludedStatusFilters ?? []) as StatusValue[];
   const isActive = includedStatusFilters.includes(NEW) && includedStatusFilters.includes(MOD);
 
-  if (!globalThis.FEATURES?.changeDetection) {
-    return null;
-  }
-
   // The review widget renders in the same spot and takes precedence over this CTA.
   if (activeReviewStoryCount > 0) {
     return null;
@@ -155,7 +151,7 @@ export const ShowChangesButton = () => {
         onClick={onClick}
       >
         <StyledIcon viewBox="0 0 14 14" width="14" height="14" aria-hidden>
-          <UseSymbol type="modified" />
+          <UseSymbol type="change-modified" />
         </StyledIcon>
         {label}
       </StyledCTA>

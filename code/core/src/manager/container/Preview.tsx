@@ -8,7 +8,7 @@ import memoizerific from 'memoizerific';
 import type { State, StoriesHash } from 'storybook/manager-api';
 import { Consumer } from 'storybook/manager-api';
 
-import { Preview, createCanvasTab, filterTabs } from '../components/preview/Preview.tsx';
+import { Preview } from '../components/preview/Preview.tsx';
 import { filterToolsSide, fullScreenTool } from '../components/preview/Toolbar.tsx';
 import { defaultWrappers } from '../components/preview/Wrappers.tsx';
 import { addonsTool } from '../components/preview/tools/addons.tsx';
@@ -19,7 +19,6 @@ import { isolationModeTool } from '../components/preview/tools/share.tsx';
 import { zoomTool } from '../components/preview/tools/zoom.tsx';
 import type { PreviewProps } from '../components/preview/utils/types.tsx';
 
-const defaultTabs = [createCanvasTab()];
 const defaultTools = [menuTool, remountTool];
 const defaultToolsExtra = [
   isolationModeTool,
@@ -29,28 +28,13 @@ const defaultToolsExtra = [
   openInEditorTool,
 ];
 
-const emptyTabsList: Addon_BaseType[] = [];
-
 type FilterProps = [
   entry: PreviewProps['entry'],
   viewMode: State['viewMode'],
   location: State['location'],
   path: State['path'],
-  tabId: string,
 ];
 
-// memoization to return the same array every time, unless something relevant changes
-const memoizedTabs = memoizerific(1)(
-  (
-    _,
-    tabElements: Addon_Collection<Addon_BaseType>,
-    parameters: Record<string, any> | undefined,
-    showTabs: boolean
-  ) =>
-    showTabs
-      ? filterTabs([...defaultTabs, ...Object.values(tabElements)], parameters)
-      : emptyTabsList
-);
 const memoizedTools = memoizerific(1)(
   (_, toolElements: Addon_Collection<Addon_BaseType>, filterProps: FilterProps) =>
     filterToolsSide([...defaultTools, ...Object.values(toolElements)], ...filterProps)
@@ -89,26 +73,20 @@ const mapper = ({
   const { layout, location, customQueryParams, storyId, refs, viewMode, path, refId } = state;
   const entry = api.getData(storyId, refId);
 
-  const tabsList = Object.values(api.getElements(Addon_TypesEnum.TAB));
   const wrapperList = Object.values(api.getElements(Addon_TypesEnum.PREVIEW));
   const toolsList = Object.values(api.getElements(Addon_TypesEnum.TOOL));
   const toolsExtraList = Object.values(api.getElements(Addon_TypesEnum.TOOLEXTRA));
-
-  const tabId = api.getQueryParam('tab');
 
   const tools = memoizedTools(toolsList.length, api.getElements(Addon_TypesEnum.TOOL), [
     entry,
     viewMode,
     location,
     path,
-    // @ts-expect-error (non strict)
-    tabId,
   ]) as Addon_BaseType[];
   const toolsExtra = memoizedExtra(
     toolsExtraList.length,
     api.getElements(Addon_TypesEnum.TOOLEXTRA),
-    // @ts-expect-error (non strict)
-    [entry, viewMode, location, path, tabId]
+    [entry, viewMode, location, path]
   ) as Addon_BaseType[];
 
   return {
@@ -124,17 +102,10 @@ const mapper = ({
     queryParams: customQueryParams,
     tools: tools,
     toolsExtra: toolsExtra,
-    tabs: memoizedTabs(
-      tabsList.length,
-      api.getElements(Addon_TypesEnum.TAB),
-      entry ? entry.parameters : undefined,
-      layout.showTabs
-    ) as Addon_BaseType[],
     wrappers: memoizedWrapper(
       wrapperList.length,
       api.getElements(Addon_TypesEnum.PREVIEW)
     ) as Addon_WrapperType[],
-    tabId: tabId,
   };
 };
 

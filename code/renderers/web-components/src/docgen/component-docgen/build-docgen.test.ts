@@ -1,4 +1,4 @@
-import type { IndexEntry } from 'storybook/internal/types';
+import type { DocgenError, IndexEntry } from 'storybook/internal/types';
 
 import { readFileSync } from 'node:fs';
 
@@ -8,7 +8,8 @@ import { fs as memfs, vol } from 'memfs';
 
 import type { BuildDocgenContext } from './build-docgen.ts';
 import { buildDocgenPayload } from './build-docgen.ts';
-import type { ManifestLoadResult } from './manifest/load-manifest.ts';
+import { type CemTag, findInSnapshot } from './manifest/cem-manager.ts';
+import type { ManifestDeclaration } from './manifest/types.ts';
 
 vi.mock('node:fs', { spy: true });
 
@@ -33,47 +34,70 @@ const entry: IndexEntry = {
   importPath: './input.stories.ts',
 };
 
-const givenStory = (component: string) => {
+const givenStory = (component: string): void => {
   vol.fromNestedJSON({
     [STORY_PATH]: `export default { title: 'Fixture', component: ${component} };`,
   });
 };
 
-const context = (manifests: ManifestLoadResult[]): BuildDocgenContext => ({
-  manifests,
-});
-
-const manifest = (declaration: Record<string, unknown>): ManifestLoadResult => ({
-  path: 'custom-elements.json',
-  manifest: {
-    modules: [{ declarations: [declaration] }],
+const context = ({
+  tags = [],
+  loadErrors = [],
+  paths = ['custom-elements.json'],
+}: {
+  tags?: [string, CemTag][];
+  loadErrors?: DocgenError[];
+  paths?: string[];
+}): BuildDocgenContext => ({
+  resolver: {
+    find: async (tag) => findInSnapshot({ tags: new Map(tags), errors: loadErrors, paths }, tag),
   },
 });
 
+const tag = (declaration: ManifestDeclaration, warning?: string): [string, CemTag] => [
+  declaration.tagName ?? declaration.name,
+  {
+    declaration,
+    manifestPath: 'custom-elements.json',
+    ...(warning ? { warning } : {}),
+  },
+];
+
 describe('buildDocgenPayload', () => {
-  it('builds a payload from the matching manifest declaration', () => {
+  it('builds a payload from the matching manifest declaration', async () => {
     givenStory("'x-card'");
 
-    expect(
+    await expect(
       buildDocgenPayload(
         { entry },
-        context([
-          manifest({
-            name: 'XCard',
-            tagName: 'x-card',
-            description: '  Card description.  ',
-            summary: '  Card summary.  ',
-            attributes: [{ name: 'label', description: 'Label.', type: { text: 'string' } }],
-          }),
-        ])
+        context({
+          tags: [
+            tag({
+              name: 'XCard',
+              customElement: true,
+              kind: 'class',
+              tagName: 'x-card',
+              description: '  Card description.  ',
+              summary: '  Card summary.  ',
+              attributes: [{ name: 'label', description: 'Label.', type: { text: 'string' } }],
+            }),
+          ],
+        })
       )
-    ).toMatchInlineSnapshot(`
+    ).resolves.toMatchInlineSnapshot(`
       {
+        "apiDescription": "## Attributes
+
+      \`\`\`
+      export type XCardAttributes = {
+        /** Label. */
+        label?: string;
+      }
+      \`\`\`",
         "argTypes": {
           "label": {
             "description": "Label.",
             "name": "label",
-            "required": false,
             "table": {
               "category": "attributes",
               "defaultValue": {
@@ -99,7 +123,9 @@ describe('buildDocgenPayload', () => {
                 },
               },
             ],
+            "customElement": true,
             "description": "  Card description.  ",
+            "kind": "class",
             "name": "XCard",
             "summary": "  Card summary.  ",
             "tagName": "x-card",
@@ -108,7 +134,11 @@ describe('buildDocgenPayload', () => {
         },
         "description": "Card description.",
         "id": "fixture",
-        "jsDocTags": {},
+        "jsDocTags": {
+          "summary": [
+            "Card summary.",
+          ],
+        },
         "name": "x-card",
         "path": "./input.stories.ts",
         "renderer": "web-components",
@@ -117,12 +147,54 @@ describe('buildDocgenPayload', () => {
     `);
   });
 
+  it('combines the story meta docblock with component-level manifest tags', async () => {
+    vol.fromNestedJSON({
+      [STORY_PATH]: `
+        /**
+         * Story-level docs for the card.
+         * @since 1.2.0
+         */
+        const meta = { title: 'Fixture', component: 'x-card' };
+        export default meta;
+      `,
+    });
+
+    await expect(
+      buildDocgenPayload(
+        { entry },
+        context({
+          tags: [
+            tag({
+              name: 'XCard',
+              customElement: true,
+              kind: 'class',
+              tagName: 'x-card',
+              description: 'Card declaration description.',
+              deprecated: 'Use x-panel instead.',
+              summary: 'Card declaration summary.',
+            }),
+          ],
+        })
+      )
+    ).resolves.toMatchObject({
+      description: 'Story-level docs for the card.',
+      summary: 'Card declaration summary.',
+      jsDocTags: {
+        since: ['1.2.0'],
+        deprecated: ['Use x-panel instead.'],
+        summary: ['Card declaration summary.'],
+      },
+    });
+  });
+
   it.each([
     [
       'component-not-a-tag',
       () => {
         givenStory('Button');
-        return context([manifest({ name: 'XCard', tagName: 'x-card' })]);
+        return context({
+          tags: [tag({ name: 'XCard', customElement: true, kind: 'class', tagName: 'x-card' })],
+        });
       },
       {
         id: 'fixture',
@@ -139,16 +211,16 @@ describe('buildDocgenPayload', () => {
       'manifest-invalid',
       () => {
         givenStory("'x-card'");
-        return context([
-          {
-            path: 'custom-elements.json',
-            error: {
+        return context({
+          loadErrors: [
+            {
               name: 'manifest-invalid',
               message:
                 'Invalid Custom Elements Manifest at custom-elements.json: expected a top-level modules array.',
             },
-          },
-        ]);
+          ],
+          paths: ['custom-elements.json'],
+        });
       },
       {
         id: 'fixture',
@@ -166,16 +238,16 @@ describe('buildDocgenPayload', () => {
       'manifest-unsupported',
       () => {
         givenStory("'x-card'");
-        return context([
-          {
-            path: 'custom-elements.json',
-            error: {
+        return context({
+          loadErrors: [
+            {
               name: 'manifest-unsupported',
               message:
                 'custom-elements.json uses the web-component-analyzer manifest shape. The Storybook docgen server reads Custom Elements Manifests only; generate one with @custom-elements-manifest/analyzer.',
             },
-          },
-        ]);
+          ],
+          paths: ['custom-elements.json'],
+        });
       },
       {
         id: 'fixture',
@@ -193,7 +265,16 @@ describe('buildDocgenPayload', () => {
       'tag-not-found',
       () => {
         givenStory("'x-card'");
-        return context([manifest({ name: 'OtherCard', tagName: 'other-card' })]);
+        return context({
+          tags: [
+            tag({
+              name: 'OtherCard',
+              customElement: true,
+              kind: 'class',
+              tagName: 'other-card',
+            }),
+          ],
+        });
       },
       {
         id: 'fixture',
@@ -207,15 +288,108 @@ describe('buildDocgenPayload', () => {
         },
       },
     ],
-  ])('reports %s', (_name, buildContext, expected) => {
-    expect(buildDocgenPayload({ entry }, buildContext())).toEqual(expected);
+    [
+      'load error with no entry',
+      () => {
+        givenStory("'x-card'");
+        return context({
+          loadErrors: [
+            {
+              name: 'manifest-invalid',
+              message: 'Invalid Custom Elements Manifest at custom-elements.json: nope',
+            },
+          ],
+          paths: ['custom-elements.json'],
+        });
+      },
+      {
+        id: 'fixture',
+        name: 'x-card',
+        path: './input.stories.ts',
+        jsDocTags: {},
+        error: {
+          name: 'manifest-invalid',
+          message: 'Invalid Custom Elements Manifest at custom-elements.json: nope',
+        },
+      },
+    ],
+  ])('reports %s', async (_name, buildContext, expected) => {
+    await expect(buildDocgenPayload({ entry }, buildContext())).resolves.toEqual(expected);
   });
 
-  it('falls through when the story has no meta.component', () => {
+  it('asks the resolver for the tag with the absolute story path', async () => {
+    givenStory("'x-card'");
+    const find = vi.fn(async () => ({
+      name: 'tag-not-found',
+      message: 'No declaration for "x-card" was found.',
+    }));
+
+    await buildDocgenPayload({ entry }, { resolver: { find } });
+
+    expect(find).toHaveBeenCalledWith('x-card', { storyFilePath: STORY_PATH });
+  });
+
+  it('copies manifest warnings to resolved payloads', async () => {
+    givenStory("'x-card'");
+
+    await expect(
+      buildDocgenPayload(
+        { entry },
+        context({
+          tags: [
+            tag(
+              { name: 'XCard', customElement: true, kind: 'class', tagName: 'x-card' },
+              'Invalid Custom Elements Manifest at custom-elements.json: Unexpected token; using the last valid version'
+            ),
+          ],
+        })
+      )
+    ).resolves.toMatchObject({
+      warning:
+        'Invalid Custom Elements Manifest at custom-elements.json: Unexpected token; using the last valid version',
+    });
+  });
+
+  it('falls through when the story has no meta.component', async () => {
     vol.fromNestedJSON({ [STORY_PATH]: `export default { title: 'Fixture' };` });
 
-    expect(
-      buildDocgenPayload({ entry }, context([manifest({ name: 'XCard', tagName: 'x-card' })]))
-    ).toBeUndefined();
+    await expect(
+      buildDocgenPayload(
+        { entry },
+        context({
+          tags: [tag({ name: 'XCard', customElement: true, kind: 'class', tagName: 'x-card' })],
+        })
+      )
+    ).resolves.toBeUndefined();
+  });
+
+  it.each([
+    { members: 'bad' },
+    { members: [null] },
+    { members: [{ kind: 'field' }] },
+    { attributes: [{ name: 'value', type: { text: 5 } }] },
+    { events: [{ name: 5 }] },
+    { slots: {} },
+    { cssProperties: 3 },
+    { cssParts: 'bad' },
+  ])('builds a payload for a declaration with malformed %j', async (malformed) => {
+    givenStory("'x-card'");
+
+    await expect(
+      buildDocgenPayload(
+        { entry },
+        context({
+          tags: [
+            tag({
+              name: 'XCard',
+              customElement: true,
+              kind: 'class',
+              tagName: 'x-card',
+              ...malformed,
+            } as unknown as ManifestDeclaration),
+          ],
+        })
+      )
+    ).resolves.toMatchObject({ name: 'x-card', renderer: 'web-components' });
   });
 });

@@ -12,6 +12,6 @@
   },
   "evals": {
     "template": "vite-app",
-    "pinStorybook": false
+    "checkoutRegistry": true
   }
 }

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { NgModule } from '@angular/core';
+import type { NgModule, Type } from '@angular/core';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { describe, expect, it } from 'vitest';
 
@@ -28,10 +28,10 @@ describe('StorybookModule', () => {
       })
       class FooComponent {
         @Input()
-        public input: string;
+        public input?: string;
 
         @Input('inputBindingPropertyName')
-        public localPropertyName: string;
+        public localPropertyName?: string;
 
         @Input()
         public set setter(value: string) {
@@ -44,7 +44,7 @@ describe('StorybookModule', () => {
         @Output('outputBindingPropertyName')
         public localOutput = new EventEmitter<string>();
 
-        public localProperty: string;
+        public localProperty?: string;
 
         public localFunction = () => '';
 
@@ -71,7 +71,7 @@ describe('StorybookModule', () => {
 
         const { fixture } = await configureTestingModule({
           imports: [application],
-          providers: [storyPropsProvider(new BehaviorSubject<ICollection>(props))],
+          providers: [storyPropsProvider(new BehaviorSubject<ICollection | undefined>(props))],
         });
         fixture.detectChanges();
 
@@ -88,8 +88,8 @@ describe('StorybookModule', () => {
       });
 
       it('should initialize outputs', async () => {
-        let expectedOutputValue: string;
-        let expectedOutputBindingValue: string;
+        let expectedOutputValue: string | undefined;
+        let expectedOutputBindingValue: string | undefined;
         const props = {
           output: (value: string) => {
             expectedOutputValue = value;
@@ -111,7 +111,7 @@ describe('StorybookModule', () => {
 
         const { fixture } = await configureTestingModule({
           imports: [application],
-          providers: [storyPropsProvider(new BehaviorSubject<ICollection>(props))],
+          providers: [storyPropsProvider(new BehaviorSubject<ICollection | undefined>(props))],
         });
         fixture.detectChanges();
 
@@ -127,7 +127,7 @@ describe('StorybookModule', () => {
           input: 'input',
           inputBindingPropertyName: '',
         };
-        const storyProps$ = new BehaviorSubject<ICollection>(initialProps);
+        const storyProps$ = new BehaviorSubject<ICollection | undefined>(initialProps);
 
         const analyzedMetadata = new PropertyExtractor({}, FooComponent);
         await analyzedMetadata.init();
@@ -184,7 +184,7 @@ describe('StorybookModule', () => {
             expectedOutputBindingValue = value;
           },
         };
-        const storyProps$ = new BehaviorSubject<ICollection>(initialProps);
+        const storyProps$ = new BehaviorSubject<ICollection | undefined>(initialProps);
 
         const analyzedMetadata = new PropertyExtractor({}, FooComponent);
         await analyzedMetadata.init();
@@ -226,7 +226,7 @@ describe('StorybookModule', () => {
           color: 'red',
           input: 'input',
         };
-        const storyProps$ = new BehaviorSubject<ICollection>(initialProps);
+        const storyProps$ = new BehaviorSubject<ICollection | undefined>(initialProps);
 
         const analyzedMetadata = new PropertyExtractor({}, FooComponent);
         await analyzedMetadata.init();
@@ -265,7 +265,7 @@ describe('StorybookModule', () => {
         const initialProps = {
           setter: 'init',
         };
-        const storyProps$ = new BehaviorSubject<ICollection>(initialProps);
+        const storyProps$ = new BehaviorSubject<ICollection | undefined>(initialProps);
 
         const analyzedMetadata = new PropertyExtractor({}, FooComponent);
         await analyzedMetadata.init();
@@ -297,9 +297,7 @@ describe('StorybookModule', () => {
 
     describe('with component without selector', () => {
       @Component({
-        template: `
-          The content
-        `,
+        template: ` The content `,
       })
       class WithoutSelectorComponent {}
 
@@ -325,7 +323,7 @@ describe('StorybookModule', () => {
 
         const { fixture } = await configureTestingModule({
           imports: [application],
-          providers: [storyPropsProvider(new BehaviorSubject<ICollection>(props))],
+          providers: [storyPropsProvider(new BehaviorSubject<ICollection | undefined>(props))],
         });
         fixture.detectChanges();
 
@@ -336,9 +334,7 @@ describe('StorybookModule', () => {
     it('should keep template with an empty value', async () => {
       @Component({
         selector: 'foo',
-        template: `
-          Should not be displayed
-        `,
+        template: ` Should not be displayed `,
       })
       class FooComponent {}
 
@@ -354,7 +350,7 @@ describe('StorybookModule', () => {
 
       const { fixture } = await configureTestingModule({
         imports: [application],
-        providers: [storyPropsProvider(new BehaviorSubject<ICollection>({}))],
+        providers: [storyPropsProvider(new BehaviorSubject<ICollection | undefined>({}))],
       });
       fixture.detectChanges();
 
@@ -362,10 +358,10 @@ describe('StorybookModule', () => {
     });
   });
 
-  async function configureTestingModule(ngModule: NgModule) {
+  async function configureTestingModule(ngModule: NgModule & { imports: [Type<unknown>] }) {
     await TestBed.configureTestingModule(ngModule).compileComponents();
 
-    const fixture = TestBed.createComponent(ngModule.imports[0] as any);
+    const fixture = TestBed.createComponent(ngModule.imports[0]);
 
     return {
       fixture,

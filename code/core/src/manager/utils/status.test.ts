@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
-import type { StatusByTypeId, StatusValue } from 'storybook/internal/types';
+import type { StatusValue } from 'storybook/internal/types';
 
 import { mockDataset } from '../components/sidebar/mockdata.ts';
-import { getChangeDetectionStatus, getGroupStatus, getMostCriticalStatusValue } from './status.tsx';
+import { getGroupDualStatus, getGroupStatus, getMostCriticalStatusValue } from './status.tsx';
 
 describe('getHighestStatus', () => {
   it('default value', () => {
@@ -81,17 +81,6 @@ describe('getGroupStatus', () => {
     ).toMatchInlineSnapshot(`
       {
         "group-1": "status-value:warning",
-        "group-1--child-b1": "status-value:unknown",
-        "group-1--child-b2": "status-value:unknown",
-        "root-1-child-a1": "status-value:unknown",
-        "root-1-child-a2": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-1": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-1:test1": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-2": "status-value:unknown",
-        "root-3--child-a1": "status-value:unknown",
-        "root-3-child-a2": "status-value:unknown",
-        "root-3-child-a2--grandchild-a1-1": "status-value:unknown",
-        "root-3-child-a2--grandchild-a1-2": "status-value:unknown",
       }
     `);
   });
@@ -118,17 +107,6 @@ describe('getGroupStatus', () => {
     ).toMatchInlineSnapshot(`
       {
         "group-1": "status-value:error",
-        "group-1--child-b1": "status-value:unknown",
-        "group-1--child-b2": "status-value:unknown",
-        "root-1-child-a1": "status-value:unknown",
-        "root-1-child-a2": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-1": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-1:test1": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-2": "status-value:unknown",
-        "root-3--child-a1": "status-value:unknown",
-        "root-3-child-a2": "status-value:unknown",
-        "root-3-child-a2--grandchild-a1-1": "status-value:unknown",
-        "root-3-child-a2--grandchild-a1-2": "status-value:unknown",
       }
     `);
   });
@@ -148,17 +126,6 @@ describe('getGroupStatus', () => {
     ).toMatchInlineSnapshot(`
       {
         "group-1": "status-value:new",
-        "group-1--child-b1": "status-value:unknown",
-        "group-1--child-b2": "status-value:unknown",
-        "root-1-child-a1": "status-value:unknown",
-        "root-1-child-a2": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-1": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-1:test1": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-2": "status-value:unknown",
-        "root-3--child-a1": "status-value:unknown",
-        "root-3-child-a2": "status-value:unknown",
-        "root-3-child-a2--grandchild-a1-1": "status-value:unknown",
-        "root-3-child-a2--grandchild-a1-2": "status-value:unknown",
       }
     `);
   });
@@ -178,87 +145,134 @@ describe('getGroupStatus', () => {
     ).toMatchInlineSnapshot(`
       {
         "group-1": "status-value:affected",
-        "group-1--child-b1": "status-value:unknown",
-        "group-1--child-b2": "status-value:unknown",
-        "root-1-child-a1": "status-value:unknown",
-        "root-1-child-a2": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-1": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-1:test1": "status-value:unknown",
-        "root-1-child-a2--grandchild-a1-2": "status-value:unknown",
-        "root-3--child-a1": "status-value:unknown",
-        "root-3-child-a2": "status-value:unknown",
-        "root-3-child-a2--grandchild-a1-1": "status-value:unknown",
-        "root-3-child-a2--grandchild-a1-2": "status-value:unknown",
       }
     `);
   });
 });
 
-describe('dual-slot status splitting', () => {
-  const makeStatus = (typeId: string, value: StatusValue) => ({
-    storyId: 'story-1',
+describe('getGroupDualStatus', () => {
+  const makeStatus = (storyId: string, typeId: string, value: StatusValue) => ({
+    storyId,
     typeId,
     value,
     title: '',
     description: '',
   });
 
-  it('leaf with only change-detection status', () => {
-    const statuses = {
-      'storybook/change-detection': makeStatus('storybook/change-detection', 'status-value:new'),
+  const data: any = {
+    root: { type: 'root', id: 'root', name: 'Root', depth: 0, children: ['group'] },
+    group: { type: 'group', id: 'group', name: 'G', depth: 1, parent: 'root', children: ['comp'] },
+    comp: {
+      type: 'component',
+      id: 'comp',
+      name: 'C',
+      depth: 2,
+      parent: 'group',
+      children: ['comp--a'],
+    },
+    'comp--a': {
+      type: 'story',
+      subtype: 'story',
+      id: 'comp--a',
+      name: 'A',
+      title: 'C',
+      depth: 3,
+      parent: 'comp',
+      prepared: true,
+      importPath: './x.ts',
+      tags: [],
+      children: [],
+    },
+  };
+
+  it("splits a leaf's statuses into the change slot and the test slot", () => {
+    const dual = getGroupDualStatus(data, {
+      'comp--a': {
+        'storybook/change-detection': makeStatus(
+          'comp--a',
+          'storybook/change-detection',
+          'status-value:modified'
+        ),
+        vitest: makeStatus('comp--a', 'vitest', 'status-value:error'),
+      },
+    });
+    expect(dual['comp--a'].change.value).toBe('status-value:modified');
+    expect(dual['comp--a'].test.value).toBe('status-value:error');
+  });
+
+  it('keeps the review status out of both slots', () => {
+    const dual = getGroupDualStatus(data, {
+      'comp--a': {
+        [REVIEW_STATUS_TYPE_ID]: makeStatus(
+          'comp--a',
+          REVIEW_STATUS_TYPE_ID,
+          'status-value:reviewing'
+        ),
+        vitest: makeStatus('comp--a', 'vitest', 'status-value:success'),
+      },
+    });
+    expect(dual['comp--a'].change.value).toBe('status-value:unknown');
+    expect(dual['comp--a'].test.value).toBe('status-value:success');
+  });
+
+  it('keeps the most critical value inside the change slot: new beats modified beats affected', () => {
+    const dual = getGroupDualStatus(data, {
+      'comp--a': {
+        first: makeStatus('comp--a', 'storybook/change-detection', 'status-value:affected'),
+        second: makeStatus('comp--a', 'storybook/change-detection', 'status-value:modified'),
+        third: makeStatus('comp--a', 'storybook/change-detection', 'status-value:new'),
+      },
+    });
+    expect(dual['comp--a'].change.value).toBe('status-value:new');
+    expect(dual['comp--a'].test.value).toBe('status-value:unknown');
+  });
+
+  it("includes a leaf story's own statuses on its own row", () => {
+    const dual = getGroupDualStatus(data, {
+      'comp--a': { vitest: makeStatus('comp--a', 'vitest', 'status-value:error') },
+    });
+    expect(dual['comp--a'].test.value).toBe('status-value:error');
+    expect(dual['comp--a'].change.value).toBe('status-value:unknown');
+  });
+
+  it('rolls statuses up the ancestor chain but never onto roots', () => {
+    const dual = getGroupDualStatus(data, {
+      'comp--a': {
+        vitest: makeStatus('comp--a', 'vitest', 'status-value:warning'),
+        'storybook/change-detection': makeStatus(
+          'comp--a',
+          'storybook/change-detection',
+          'status-value:new'
+        ),
+      },
+    });
+    for (const id of ['comp--a', 'comp', 'group']) {
+      expect(dual[id].test.value).toBe('status-value:warning');
+      expect(dual[id].change.value).toBe('status-value:new');
+    }
+    expect(dual.root).toBeUndefined();
+  });
+
+  it('keeps the most critical status when multiple stories aggregate', () => {
+    const wideData = {
+      ...data,
+      comp: { ...data.comp, children: ['comp--a', 'comp--b'] },
+      'comp--b': { ...data['comp--a'], id: 'comp--b', name: 'B' },
     };
-    const { changeStatus, testStatus } = getChangeDetectionStatus(statuses);
-    expect(changeStatus).toBe('status-value:new');
-    expect(testStatus).toBe('status-value:unknown');
+    const dual = getGroupDualStatus(wideData, {
+      'comp--a': { vitest: makeStatus('comp--a', 'vitest', 'status-value:warning') },
+      'comp--b': { vitest: makeStatus('comp--b', 'vitest', 'status-value:error') },
+    });
+    expect(dual.comp.test.value).toBe('status-value:error');
+    expect(dual.comp.test.storyId).toBe('comp--b');
   });
 
-  it('leaf with both change-detection and test status', () => {
-    const statuses = {
-      'storybook/change-detection': makeStatus(
-        'storybook/change-detection',
-        'status-value:modified'
-      ),
-      'storybook/vitest': makeStatus('storybook/vitest', 'status-value:error'),
-    };
-    const { changeStatus, testStatus } = getChangeDetectionStatus(statuses);
-    expect(changeStatus).toBe('status-value:modified');
-    expect(testStatus).toBe('status-value:error');
-  });
-
-  it('leaf with only test status', () => {
-    const statuses = {
-      'storybook/vitest': makeStatus('storybook/vitest', 'status-value:warning'),
-    };
-    const { changeStatus, testStatus } = getChangeDetectionStatus(statuses);
-    expect(changeStatus).toBe('status-value:unknown');
-    expect(testStatus).toBe('status-value:warning');
-  });
-
-  it('ignores reviewing status for sidebar test slot', () => {
-    const statuses = {
-      [REVIEW_STATUS_TYPE_ID]: makeStatus(REVIEW_STATUS_TYPE_ID, 'status-value:reviewing'),
-      'storybook/vitest': makeStatus('storybook/vitest', 'status-value:success'),
-    };
-    const { changeStatus, testStatus } = getChangeDetectionStatus(statuses);
-    expect(changeStatus).toBe('status-value:unknown');
-    expect(testStatus).toBe('status-value:success');
-  });
-
-  it('priority within change-detection slot: new beats modified beats affected', () => {
-    const statuses = {
-      first: makeStatus('storybook/change-detection', 'status-value:affected'),
-      second: makeStatus('storybook/change-detection', 'status-value:modified'),
-      third: makeStatus('storybook/change-detection', 'status-value:new'),
-    } as unknown as StatusByTypeId;
-
-    const { changeStatus, testStatus } = getChangeDetectionStatus(statuses);
-    expect(changeStatus).toBe('status-value:new');
-    expect(testStatus).toBe('status-value:unknown');
-  });
-
-  it('branch/group combined priority: error beats new', () => {
-    expect(getMostCriticalStatusValue(['status-value:new', 'status-value:error'])).toBe(
-      'status-value:error'
-    );
+  it('excludes review-typed statuses from both slots', () => {
+    const dual = getGroupDualStatus(data, {
+      'comp--a': {
+        'storybook/review': makeStatus('comp--a', 'storybook/review', 'status-value:reviewing'),
+      },
+    });
+    expect(dual['comp--a']).toBeUndefined();
   });
 });

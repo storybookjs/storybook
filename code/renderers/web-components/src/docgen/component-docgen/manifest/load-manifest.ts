@@ -1,11 +1,12 @@
 import { readFile } from 'node:fs/promises';
 import { relative } from 'node:path';
 
-import type { CustomElementsManifest } from '../../../docs/custom-elements-manifest-types.ts';
+import { errorMessage, isRecord } from '../utils.ts';
+import type { ManifestPackage } from './types.ts';
 
 export interface LoadedManifest {
   path: string;
-  manifest: CustomElementsManifest;
+  manifest: ManifestPackage;
 }
 
 export interface FailedManifest {
@@ -21,10 +22,7 @@ export type ManifestLoadResult = LoadedManifest | FailedManifest;
 export const isFailedManifest = (result: ManifestLoadResult): result is FailedManifest =>
   'error' in result;
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  value !== null && typeof value === 'object';
-
-const isCustomElementsManifest = (value: unknown): value is CustomElementsManifest =>
+const isCustomElementsManifest = (value: unknown): value is ManifestPackage =>
   isRecord(value) && Array.isArray(value.modules);
 
 const unsupportedMessage = (path: string): string =>
@@ -59,12 +57,8 @@ export async function loadManifest(absolutePath: string): Promise<ManifestLoadRe
       path,
       error: {
         name: 'manifest-invalid',
-        message: invalidMessage(path, error instanceof Error ? error.message : String(error)),
+        message: invalidMessage(path, errorMessage(error)),
       },
     };
   }
-}
-
-export async function loadManifests(paths: string[]): Promise<ManifestLoadResult[]> {
-  return Promise.all(paths.map((path) => loadManifest(path)));
 }

@@ -20,7 +20,6 @@ export interface ProviderStrategyConfiguration {
 const pluckThemeFromKeyPairTuple = ([_, themeConfig]: [string, Theme]): Theme => themeConfig;
 
 // TODO check with @kasperpeulen: change the types so they can be correctly inferred from context e.g. <Story extends (...args: any[]) => any>
-// oxlint-disable-next-line react/display-name -- not a component, returns a decorator function
 export const withThemeFromJSXProvider = <TRenderer extends Renderer = any>({
   Provider,
   GlobalStyles,
@@ -32,8 +31,7 @@ export const withThemeFromJSXProvider = <TRenderer extends Renderer = any>({
 
   initializeThemeState(themeNames, initialTheme);
 
-  return (storyFn, context) => {
-    // oxlint-disable-next-line react-classic/destructuring-assignment
+  const decorator: DecoratorFunction<TRenderer> = (storyFn, context) => {
     const { themeOverride } = context.parameters[PARAM_KEY] ?? {};
     const selected = pluckThemeFromContext(context);
 
@@ -60,4 +58,6 @@ export const withThemeFromJSXProvider = <TRenderer extends Renderer = any>({
       </Provider>
     );
   };
+
+  return decorator;
 };

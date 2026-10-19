@@ -4,6 +4,7 @@ import * as cliImports from 'storybook/internal/cli';
 import type { PackageJson } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
+import { checkFix } from '../helpers/fix-test-utils.ts';
 import { makePackageManager } from '../helpers/testing-helpers.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
 
@@ -16,7 +17,7 @@ const defaultHasEslintValues = {
 };
 
 const checkEslint = async ({ packageJson }: { packageJson: PackageJson }) => {
-  return eslintPlugin.check({
+  return checkFix(eslintPlugin, {
     packageManager: makePackageManager(packageJson),
     mainConfig: {} as any,
     storybookVersion: '7.0.0',
@@ -61,7 +62,7 @@ describe('eslint-plugin fix', () => {
   describe('when project does not contain eslint-plugin-storybook but has eslint installed', () => {
     const packageJson = { dependencies: { '@storybook/react': '^6.2.0', eslint: '^7.0.0' } };
 
-    describe('should no-op and warn when', () => {
+    describe('should no-op when', () => {
       it('.eslintrc is not found', async () => {
         const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
@@ -73,7 +74,7 @@ describe('eslint-plugin fix', () => {
           packageJson,
         });
 
-        expect(loggerSpy).toHaveBeenCalledWith('Unable to find eslint config file, skipping');
+        expect(loggerSpy).not.toHaveBeenCalled();
 
         expect(result).toBeFalsy();
         loggerSpy.mockRestore();

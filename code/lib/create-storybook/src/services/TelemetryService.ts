@@ -1,4 +1,4 @@
-import type { ProjectType } from 'storybook/internal/cli';
+import type { ProjectType, SkillsInstallResult } from 'storybook/internal/cli';
 import {
   getProcessAncestry,
   getStorybookVersionSpecifierFromAncestry,
@@ -44,6 +44,14 @@ export class TelemetryService {
     await telemetry('init-step', {
       step: 'playwright-install',
       result,
+    });
+  }
+
+  /** Track the outcome of the official Storybook skills install step */
+  async trackSkills(result: SkillsInstallResult): Promise<void> {
+    await telemetry('init-step', {
+      step: 'skills',
+      ...result,
     });
   }
 

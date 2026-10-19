@@ -17,6 +17,14 @@ const config: BuildEntries = {
         entryPoint: './src/entry-preview-docs.ts',
         dts: false,
       },
+      {
+        exportEntries: ['./internal/svelte-csf/create-runtime-stories'],
+        entryPoint: './src/svelte-csf/runtime/create-runtime-stories.ts',
+      },
+      {
+        exportEntries: ['./internal/svelte-csf/component-helpers'],
+        entryPoint: './src/svelte-csf/runtime/component-helpers.ts',
+      },
     ],
     node: [
       {
@@ -29,6 +37,18 @@ const config: BuildEntries = {
         entryPoint: './src/docgen/docgen-worker.ts',
         dts: false,
       },
+      {
+        exportEntries: ['./internal/svelte-csf/addon-check'],
+        entryPoint: './src/svelte-csf/addon-check.ts',
+      },
+      {
+        exportEntries: ['./internal/svelte-csf/indexer'],
+        entryPoint: './src/svelte-csf/indexer/index.ts',
+      },
+      {
+        exportEntries: ['./internal/svelte-csf/transform'],
+        entryPoint: './src/svelte-csf/compiler/transform.ts',
+      },
     ],
   },
   extraOutputs: {
@@ -36,6 +56,11 @@ const config: BuildEntries = {
     './internal/DecoratorHandler.svelte': './static/DecoratorHandler.svelte',
     './internal/AddStorybookIdDecorator.svelte': './static/AddStorybookIdDecorator.svelte',
     './internal/createReactiveProps': './static/createReactiveProps.svelte.js',
+    './internal/svelte-csf/Story.svelte': './static/svelte-csf/Story.svelte',
+    './internal/svelte-csf/StoriesExtractor.svelte': './static/svelte-csf/StoriesExtractor.svelte',
+    './internal/svelte-csf/StoryRenderer.svelte': './static/svelte-csf/StoryRenderer.svelte',
+    './internal/svelte-csf/contexts/extractor': './static/svelte-csf/contexts/extractor.svelte.js',
+    './internal/svelte-csf/contexts/renderer': './static/svelte-csf/contexts/renderer.svelte.js',
   },
 };
 

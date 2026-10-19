@@ -2,26 +2,8 @@
   "--slot-panel-color": {
     "description": "Panel text color.",
     "name": "--slot-panel-color",
-    "required": false,
     "table": {
       "category": "css custom properties",
-      "defaultValue": {
-        "summary": undefined,
-      },
-      "type": {
-        "summary": undefined,
-      },
-    },
-    "type": {
-      "name": "void",
-    },
-  },
-  "actions": {
-    "description": "Action controls.",
-    "name": "actions",
-    "required": false,
-    "table": {
-      "category": "slots",
       "defaultValue": {
         "summary": undefined,
       },
@@ -33,10 +15,29 @@
       "name": "string",
     },
   },
+  "actions-slot": {
+    "description": "Action controls.",
+    "name": "actions",
+    "table": {
+      "category": "slots",
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "default-slot": {
+    "description": "Default body content.",
+    "name": "default",
+    "table": {
+      "category": "slots",
+    },
+    "type": {
+      "name": "string",
+    },
+  },
   "heading": {
     "description": "Heading above the projected content.",
     "name": "heading",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {
@@ -50,21 +51,14 @@
       "name": "string",
     },
   },
-  "panel": {
+  "panel-part": {
     "description": "Outer panel.",
     "name": "panel",
-    "required": false,
     "table": {
       "category": "css shadow parts",
-      "defaultValue": {
-        "summary": undefined,
-      },
-      "type": {
-        "summary": undefined,
-      },
     },
     "type": {
-      "name": "void",
+      "name": "string",
     },
   },
 }

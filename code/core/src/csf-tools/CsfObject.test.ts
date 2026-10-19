@@ -153,6 +153,16 @@ describe('CsfObject', () => {
     expect(csf.mutationDiagnostics).toEqual([]);
   });
 
+  it('rejects a copy of an expression, whose source it cannot know', () => {
+    const csf = parse(`export default { a: 1 };`);
+    const [meta] = csf.objects({ stories: false });
+
+    expect(() => meta.set(['b'], { ...meta.get(['a'])!, value: 5, raw: '5' })).toThrow(
+      'CsfObject: expressions must come from `get`, `transform` or `parseExpression`, not a Literal node'
+    );
+    expect(printCsf(csf).code).toBe(`export default { a: 1 };`);
+  });
+
   it('wraps a sequence expression unless its own parentheses already enclose it', () => {
     const csf = parse(`export default { b: ((1), 2) };`);
     const [meta] = csf.objects({ stories: false });

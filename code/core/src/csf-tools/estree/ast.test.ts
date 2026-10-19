@@ -1,3 +1,5 @@
+import { inspect } from 'node:util';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { parseSync, rawTransferSupported } from 'oxc-parser';
@@ -5,6 +7,7 @@ import { parseSync, rawTransferSupported } from 'oxc-parser';
 import {
   type E,
   codeFrame,
+  moduleOf,
   parseExpression,
   outerSpan,
   parseModule,
@@ -134,6 +137,15 @@ describe('parseModule', () => {
     expect(() =>
       withRawTransfer(rawTransfer, () => parseModule('const a = 1;\nconst = ;\n', 'a.ts'))
     ).toThrow('Unexpected token (2:6) in a.ts');
+  });
+
+  it('keeps what it records on a node out of its inspection and equality', () => {
+    const [first] = parsePrintable('a;\nb;', 'a.ts').program.body;
+    const [second] = parsePrintable('a;\nc;', 'a.ts').program.body;
+    expect(moduleOf(first)).not.toBe(moduleOf(second));
+    expect(first).toEqual(second);
+    expect(inspect(first)).toBe(inspect(parseModule('a;\nb;', 'a.ts').program.body[0]));
+    expect(moduleOf({ ...first })).toBeUndefined();
   });
 });
 

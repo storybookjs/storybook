@@ -87,7 +87,7 @@ const checkRequiredLabels = (labels: string[]) => {
     }
 
     const foundCILabels = intersection(ciLabels, labels);
-    if (foundCILabels.length === 0) {
+    if (foundCILabels.length === 0 && !danger.github.pr.draft) {
       fail(`PR is not labeled with one of: ${JSON.stringify(ciLabels)}`);
     } else if (foundCILabels.length > 1) {
       fail(`Please choose only one of these labels: ${JSON.stringify(foundCILabels)}`);

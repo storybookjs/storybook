@@ -44,6 +44,24 @@ describe('stories codemod', () => {
       `);
     });
 
+    it('keeps imports of other preview modules', async () => {
+      await expect(
+        transform(dedent`
+            import './preview.css';
+            import { theme } from '../.storybook/preview.theme';
+            const meta = { title: 'Component', parameters: { theme } };
+            export default meta;
+            export const A = {};
+          `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#.storybook/preview";
+        import "./preview.css";
+        import { theme } from "../.storybook/preview.theme";
+        const meta = preview.meta({ title: "Component", parameters: { theme } });
+        export const A = meta.story();
+      `);
+    });
+
     it('should preserve leading comments when adding import', async () => {
       await expect(
         transform(dedent`

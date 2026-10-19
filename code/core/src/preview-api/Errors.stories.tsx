@@ -50,7 +50,7 @@ export default {
   globals: { sb_theme: 'light' },
   title: 'Errors',
   args: {
-    mode: 'ERROR',
+    mode: 'error',
   },
 };
 
@@ -79,7 +79,7 @@ export const MyErrorWithCustomCSS = {
 
 export const Missing = {
   args: {
-    mode: 'NOPREVIEW',
+    mode: 'nopreview',
   },
 };
 

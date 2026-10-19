@@ -86,7 +86,6 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     public channel: Channel,
     public store: StoryStore<TRenderer>,
     private callbacks: RenderContextCallbacks<TRenderer> & {
-      showStoryDuringRender?: () => void;
       storyUrl?: () => string | undefined;
     },
     public id: StoryId,
@@ -264,7 +263,6 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         // Before assigning it to the context, we resolve the context dependency,
         // so that a user can just call it as await mount(...args) in their play function.
         mount: async (...args) => {
-          this.callbacks.showStoryDuringRender?.();
           let mountReturn: Awaited<ReturnType<StoryContext['mount']>> = null!;
           await this.runPhase(abortSignal, 'rendering', async () => {
             mountReturn = await story.mount(context)(...args);
@@ -370,9 +368,6 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
             await this.runPhase(abortSignal, 'played');
           }
         } catch (error) {
-          // Remove the loading screen, even if there was an error before rendering
-          this.callbacks.showStoryDuringRender?.();
-
           await this.runPhase(abortSignal, 'errored', async () => {
             this.channel.emit(PLAY_FUNCTION_THREW_EXCEPTION, serializeError(error));
           });

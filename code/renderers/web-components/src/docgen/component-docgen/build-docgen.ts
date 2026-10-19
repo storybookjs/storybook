@@ -1,35 +1,40 @@
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
+import type { JsDocTagMap } from 'storybook/internal/csf-tools';
+import { extractComponentDescription, extractDescription } from 'storybook/internal/csf-tools';
 import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
 
-import { mapArgTypes } from '../../docs/map-arg-types.ts';
-import { isFailedManifest, type ManifestLoadResult } from './manifest/load-manifest.ts';
-import { resolveDeclarationForTag } from './manifest/resolve-declaration.ts';
-import { resolveStoryComponent } from './resolve-component/resolve-component.ts';
+import { buildApiDescription } from './api-description.ts';
+import { mapArgTypes } from './arg-types/map-arg-types.ts';
+import type { ManifestDeclaration } from './manifest/types.ts';
+import { parseStoryFile, resolveStoryComponent } from './resolve-component/resolve-component.ts';
+import type { TagResolver } from './tag-resolver.ts';
+import { deprecationMessage, trimmedOrUndefined } from './utils.ts';
 
 export interface WebComponentsDocgenOptions {
   manifestPaths: string[];
+  /** Also searched for element registrations when generating from sources. */
+  previewFilePath?: string;
 }
 
 export type WebComponentsDocgenPayload = DocgenPayload & {
+  /** Set while the manifest is served from its last valid version after a failed reload. */
+  warning?: string;
   customElementsManifest?: {
     manifestPath: string;
-    declaration: Record<string, unknown>;
+    declaration: ManifestDeclaration;
   };
 };
 
 export interface BuildDocgenContext {
-  manifests: ManifestLoadResult[];
+  resolver: TagResolver;
 }
 
-const trimmedOrUndefined = (text: unknown): string | undefined =>
-  typeof text === 'string' ? text.trim() || undefined : undefined;
-
-export function buildDocgenPayload(
+export async function buildDocgenPayload(
   input: DocgenProviderInput,
   context: BuildDocgenContext
-): WebComponentsDocgenPayload | undefined {
+): Promise<WebComponentsDocgenPayload | undefined> {
   const storyImportPath = getStoryImportPathFromEntry(input.entry);
   if (!storyImportPath) {
     return undefined;
@@ -44,7 +49,12 @@ export function buildDocgenPayload(
     error,
   });
   const storyFilePath = resolve(process.cwd(), storyImportPath);
-  const resolved = resolveStoryComponent(storyFilePath, input.entry.title);
+  const csf = parseStoryFile(storyFilePath, input.entry.title);
+  if (!csf) {
+    return undefined;
+  }
+
+  const resolved = resolveStoryComponent(csf);
   if ('reason' in resolved) {
     if (resolved.reason === 'no-meta-component') {
       return undefined;
@@ -58,33 +68,44 @@ export function buildDocgenPayload(
   }
 
   const { tag } = resolved;
-
-  const found = resolveDeclarationForTag(context.manifests, tag);
-  if (!found) {
-    return fail(
-      tag,
-      context.manifests.find(isFailedManifest)?.error ?? {
-        name: 'tag-not-found',
-        message:
-          `No declaration for "${tag}" was found in ${context.manifests
-            .map((manifest) => manifest.path)
-            .join(', ')}. ` + 'If the element is new, rerun the custom elements manifest analyzer.',
-      }
-    );
+  const found = await context.resolver.find(tag, { storyFilePath });
+  if (!('declaration' in found)) {
+    return fail(tag, found);
   }
+
+  const { description, summary, jsDocTags } = extractComponentDescription(
+    extractDescription(csf._metaStatement) || undefined,
+    found.declaration.description,
+    declarationTags(found.declaration)
+  );
 
   return {
     id,
     name: tag,
     path,
-    description: trimmedOrUndefined(found.declaration.description),
-    summary: trimmedOrUndefined(found.declaration.summary),
-    jsDocTags: {},
+    description,
+    summary,
+    jsDocTags,
     argTypes: mapArgTypes(found.declaration),
+    apiDescription: buildApiDescription(found.declaration),
     renderer: 'web-components',
+    ...(found.warning ? { warning: found.warning } : {}),
     customElementsManifest: {
       manifestPath: found.manifestPath,
       declaration: found.declaration,
     },
   };
+}
+
+function declarationTags(declaration: ManifestDeclaration): JsDocTagMap {
+  const tags: JsDocTagMap = {};
+  const summary = trimmedOrUndefined(declaration.summary);
+  if (summary) {
+    tags.summary = [summary];
+  }
+  const deprecated = deprecationMessage(declaration.deprecated);
+  if (deprecated) {
+    tags.deprecated = [deprecated];
+  }
+  return tags;
 }

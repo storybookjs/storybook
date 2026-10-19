@@ -225,7 +225,7 @@ const SourceWithStorySnippet = (props: SourceProps) => {
     }
   }, [docsContext, of]);
 
-  if (globalThis.FEATURES?.experimentalDocgenServer && story?.id) {
+  if (globalThis.FEATURES?.docgenServer && story?.id) {
     return (
       <SourceWithStoryDocsSnippet
         {...props}

@@ -217,3 +217,15 @@ describe('createStoryRouter leaf selection by path', () => {
     expect((router as any).routesById['/users/$userId'].options.component).toBeUndefined();
   });
 });
+
+describe('createStoryRouter error handling', () => {
+  it('leaves route errors uncaught so they reach Storybook', () => {
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(createRootRoute()),
+    });
+
+    expect(router.options.disableGlobalCatchBoundary).toBe(true);
+    expect(router.options.defaultErrorComponent).toBeUndefined();
+  });
+});

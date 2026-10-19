@@ -27,6 +27,7 @@ import {
   UPDATE_GLOBALS,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
+import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
 import type { ModuleImportFn, ProjectAnnotations, Renderer } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -505,13 +506,11 @@ describe('PreviewWeb', () => {
               throwPlayFunctionExceptions: false,
             },
             initialArgs: { foo: 'a', one: 1 },
-            argTypes: {
-              foo: { name: 'foo', type: { name: 'string' } },
-              one: { name: 'one', type: { name: 'string' }, mapping: { 1: 'mapped-1' } },
-            },
             args: { foo: 'a', one: 'mapped-1' },
           })
         );
+        const loaderContext = componentOneExports.default.loaders[0].mock.calls[0][0];
+        expect(() => loaderContext.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
       });
 
       it('passes loaded context to renderToCanvas', async () => {
@@ -964,9 +963,30 @@ describe('PreviewWeb', () => {
         mockChannel.emit.mockClear();
         docsRenderer.render.mockClear();
         emitter.emit(UPDATE_GLOBALS, { globals: { a: 'd' } });
-        await waitForEvents([GLOBALS_UPDATED]);
+        await waitForEvents([DOCS_RENDERED]);
 
         expect(docsRenderer.render).toHaveBeenCalled();
+      });
+
+      it('waits for inline stories to rerender before rerendering the docs container', async () => {
+        document.location.search = '?id=component-one--docs&viewMode=docs';
+        const preview = await createAndRenderPreview();
+        const [inlineStoryRerender, finishInlineStoryRerender] = createGate();
+        const rerenderInlineStory = vi.fn(() => inlineStoryRerender);
+        preview.storyRenders.push({
+          rerender: rerenderInlineStory,
+        } as unknown as (typeof preview.storyRenders)[number]);
+        const rerenderDocs = vi.spyOn(preview.currentRender!, 'rerender');
+
+        const updateGlobals = preview.onUpdateGlobals({ globals: { a: 'd' } });
+        await vi.waitFor(() => expect(rerenderInlineStory).toHaveBeenCalled());
+
+        expect(rerenderDocs).not.toHaveBeenCalled();
+
+        finishInlineStoryRerender();
+        await updateGlobals;
+
+        expect(rerenderDocs).toHaveBeenCalledOnce();
       });
     });
   });
@@ -2169,10 +2189,6 @@ describe('PreviewWeb', () => {
               fileName: './src/ComponentOne.stories.js',
             }),
             initialArgs: { foo: 'b', one: 1 },
-            argTypes: {
-              foo: { name: 'foo', type: { name: 'string' } },
-              one: { name: 'one', type: { name: 'string' }, mapping: { 1: 'mapped-1' } },
-            },
             args: { foo: 'b', one: 'mapped-1' },
           })
         );
@@ -2749,10 +2765,6 @@ describe('PreviewWeb', () => {
               fileName: './src/ComponentOne.stories.js',
             }),
             initialArgs: { foo: 'a', one: 1 },
-            argTypes: {
-              foo: { name: 'foo', type: { name: 'string' } },
-              one: { name: 'one', type: { name: 'string' }, mapping: { 1: 'mapped-1' } },
-            },
             args: { foo: 'a', one: 'mapped-1' },
           })
         );
@@ -3094,10 +3106,6 @@ describe('PreviewWeb', () => {
               throwPlayFunctionExceptions: false,
             },
             initialArgs: { foo: 'edited', one: 1 },
-            argTypes: {
-              foo: { name: 'foo', type: { name: 'string' } },
-              one: { name: 'one', type: { name: 'string' }, mapping: { 1: 'mapped-1' } },
-            },
             args: { foo: 'edited', one: 'mapped-1' },
           })
         );

@@ -11,7 +11,7 @@ import type {
   AnnotatedStoryFn,
   Args,
   StoryAnnotations,
-  StoryContext,
+  StoryContextForRender,
   StrictArgTypes,
 } from 'storybook/internal/types';
 
@@ -271,7 +271,7 @@ function getPlainCsfSnippetComponent(
   story: SvelteStory,
   args: Args
 ): ComponentWithDocgen {
-  const context = { args } as StoryContext<SvelteRenderer, Args>;
+  const context = { args } as StoryContextForRender<SvelteRenderer, Args>;
 
   if (typeof story === 'function') {
     const rendered = story(args, context);

@@ -1,7 +1,0 @@
-{
-  "name": "801-create-component-no-launch-config",
-  "type": "module",
-  "evals": {
-    "template": "reshaped-storybook"
-  }
-}

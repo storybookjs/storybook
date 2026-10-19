@@ -1,6 +1,6 @@
 import waitOn from 'wait-on';
 
-import type { Task } from '../task.ts';
+import type { MonorepoDetails, Task } from '../task.ts';
 import { CODE_DIRECTORY } from '../utils/constants.ts';
 import { exec } from '../utils/exec.ts';
 import { isPortUsed } from '../utils/port.ts';
@@ -30,7 +30,7 @@ export async function runRegistry({ dryRun, debug }: { dryRun?: boolean; debug?:
   return controller;
 }
 
-export const runRegistryTask: Task = {
+export const runRegistryTask: Task<MonorepoDetails> = {
   description: 'Run the internal npm server',
   service: true,
   dependsOn: ['publish'],

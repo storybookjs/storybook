@@ -2,12 +2,8 @@
 import type { StorybookConfig } from '@storybook/angular';
 
 const config: StorybookConfig = {
-  stories: [
-    /* ... */
-  ],
-  addons: [
-    /* ... */
-  ],
+  stories: [/* ... */],
+  addons: [/* ... */],
   framework: {
     name: '@storybook/angular',
     options: {
@@ -23,12 +19,8 @@ export default config;
 import { defineMain } from '@storybook/angular/node';
 
 const config = defineMain({
-  stories: [
-    /* ... */
-  ],
-  addons: [
-    /* ... */
-  ],
+  stories: [/* ... */],
+  addons: [/* ... */],
   framework: {
     name: '@storybook/angular',
     options: {

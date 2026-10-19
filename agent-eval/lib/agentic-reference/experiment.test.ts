@@ -22,14 +22,14 @@ describe('providerOf', () => {
 describe('run output provider', () => {
   // The provider cannot be read back out of a transcript, so the hook must
   // record it at collection time from the eval config that ran.
-  it('records the eval config LLM provider in the run result', () => {
+  it('records the eval config LLM provider in the run result', async () => {
     const experiment = agenticRefExperiment({ name: 'provider-probe', evals: [] });
     const context = {
       runData: { result: {} },
       fixture: { path: '/nowhere' },
     } as unknown as RunCompleteContext;
 
-    const runData = experiment.onRunComplete?.(context) as {
+    const runData = (await experiment.onRunComplete?.(context)) as {
       result: { analysis: { provider?: string } };
     };
 

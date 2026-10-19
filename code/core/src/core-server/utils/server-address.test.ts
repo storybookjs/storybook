@@ -4,10 +4,25 @@ import { logger } from 'storybook/internal/node-logger';
 
 import detectPort from 'detect-port';
 
-import { getServerAddresses, getServerChannelUrl, getServerPort } from './server-address.ts';
+import {
+  getReachableNetworkAddresses,
+  getServerAddresses,
+  getServerChannelUrl,
+  getServerPort,
+} from './server-address.ts';
 
 vi.mock('node:os', () => ({
-  default: { release: () => '' },
+  default: {
+    release: () => '',
+    networkInterfaces: () => ({
+      lo: [{ address: '127.0.0.1', family: 'IPv4', internal: true }],
+      eth0: [
+        { address: '192.168.1.100', family: 'IPv4', internal: false },
+        { address: 'fe80::1', family: 'IPv6', internal: false },
+      ],
+      wlan0: [{ address: '192.130.20.4', family: 'IPv4', internal: false }],
+    }),
+  },
   platform: 'darwin',
   constants: {
     signals: {},
@@ -22,7 +37,7 @@ describe('getServerAddresses', () => {
   const proto = 'http';
 
   it('should return server addresses without initial path by default', () => {
-    const expectedAddress = `${proto}://localhost:${port}/`;
+    const expectedAddress = `${proto}://127.0.0.1:${port}/`;
     const expectedNetworkAddress = `${proto}://${host}:${port}/`;
 
     const result = getServerAddresses(port, host, proto);
@@ -34,7 +49,7 @@ describe('getServerAddresses', () => {
   it('should return server addresses with initial path', () => {
     const initialPath = '/foo/bar';
 
-    const expectedAddress = `${proto}://localhost:${port}/?path=/foo/bar`;
+    const expectedAddress = `${proto}://127.0.0.1:${port}/?path=/foo/bar`;
     const expectedNetworkAddress = `${proto}://${host}:${port}/?path=/foo/bar`;
 
     const result = getServerAddresses(port, host, proto, initialPath);
@@ -46,7 +61,7 @@ describe('getServerAddresses', () => {
   it('should return server addresses with initial path and add slash if missing', () => {
     const initialPath = 'foo/bar';
 
-    const expectedAddress = `${proto}://localhost:${port}/?path=/foo/bar`;
+    const expectedAddress = `${proto}://127.0.0.1:${port}/?path=/foo/bar`;
     const expectedNetworkAddress = `${proto}://${host}:${port}/?path=/foo/bar`;
 
     const result = getServerAddresses(port, host, proto, initialPath);
@@ -54,6 +69,22 @@ describe('getServerAddresses', () => {
     expect(result.address).toBe(expectedAddress);
     expect(result.networkAddress).toBe(expectedNetworkAddress);
   });
+});
+
+describe('getReachableNetworkAddresses', () => {
+  it('lists every external IPv4 address of the machine when the host is 0.0.0.0', () => {
+    expect(getReachableNetworkAddresses('http://0.0.0.0:6006/?path=/foo/bar')).toEqual([
+      'http://192.168.1.100:6006/?path=/foo/bar',
+      'http://192.130.20.4:6006/?path=/foo/bar',
+    ]);
+  });
+
+  it.each(['http://192.168.1.100:6006/', 'https://my-host.com:6006/'])(
+    'keeps %s as it is',
+    (networkAddress) => {
+      expect(getReachableNetworkAddresses(networkAddress)).toEqual([networkAddress]);
+    }
+  );
 });
 
 describe('getServerPort', () => {
@@ -114,7 +145,7 @@ describe('getServerChannelUrl', () => {
   const port = 3000;
   it('should return WebSocket URL with HTTP', () => {
     const options = { https: false };
-    const expectedUrl = `ws://localhost:${port}/storybook-server-channel`;
+    const expectedUrl = `ws://127.0.0.1:${port}/storybook-server-channel`;
 
     const result = getServerChannelUrl(port, options);
 
@@ -123,7 +154,7 @@ describe('getServerChannelUrl', () => {
 
   it('should return WebSocket URL with HTTPS', () => {
     const options = { https: true };
-    const expectedUrl = `wss://localhost:${port}/storybook-server-channel`;
+    const expectedUrl = `wss://127.0.0.1:${port}/storybook-server-channel`;
 
     const result = getServerChannelUrl(port, options);
 

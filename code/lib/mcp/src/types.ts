@@ -87,16 +87,22 @@ export type StorybookContext = {
       context: StorybookContext;
       input: { id: string; storybookId?: string };
     } & (
-      | { foundDocumentation: ComponentManifest | Doc; resultText: string }
-      | { foundDocumentation?: never; resultText?: never }
+      | {
+          foundDocumentation: ComponentManifest | Doc;
+          resultText: string;
+          /** The source the documentation came from, set only when it is not `input.storybookId`. */
+          resolvedStorybookId?: string;
+        }
+      | { foundDocumentation?: never; resultText?: never; resolvedStorybookId?: never }
     )
   ) => void | Promise<void>;
   /**
    * Optional in-process resolver for a single component or docs entry, used in
-   * Storybook's dev server when `experimentalDocgenServer` is enabled. When set,
+   * Storybook's dev server when `docgenServer` is enabled. When set,
    * single-entry tools (`docs-show`, `docs-show-story`) call
    * this instead of fetching the (potentially all-component) manifest index, so a
-   * single lookup never triggers docgen extraction for every component.
+   * lookup that finds its entry never triggers docgen extraction for every component.
+   * A `docs-show` miss still reads the index, to suggest close ids.
    *
    * Returns the fully-resolved component or doc in `@storybook/mcp`'s internal
    * shape (already adapted from the open-service payloads), or `undefined` when the
@@ -146,7 +152,7 @@ export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
 
 /**
  * Open-service payload contracts (the "core format") that Storybook's
- * `experimentalDocgenServer` mode produces. `@storybook/mcp` adapts these into its
+ * `docgenServer` mode produces. `@storybook/mcp` adapts these into its
  * internal {@link ComponentManifest}/{@link Doc} shapes in one place
  * (`adaptCoreComponent`/`adaptCoreDoc`). Defined structurally (not as schemas) so
  * the addon can build them in-process without importing Storybook core.

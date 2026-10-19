@@ -3,12 +3,18 @@ import { fileURLToPath } from 'node:url';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import type { ArgTypes } from 'storybook/internal/csf';
+import { once } from 'storybook/internal/node-logger';
 import type { Options, PresetProperty } from 'storybook/internal/types';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
 import { extractArgTypesFromDocgenTypescript } from './componentManifest/reactDocgen/extractReactTypescriptDocgenInfo.ts';
 import type { GetArgTypesDataOptions } from './componentManifest/reactDocgen/utils.ts';
-import { getReactDocgenPlan, isInstalled } from './docgen/engine.ts';
+import {
+  MISSING_REACT_DOCGEN,
+  getArgTypesEngine,
+  getReactDocgenPlan,
+  isInstalled,
+} from './docgen/engine.ts';
 
 interface InternalGetArgTypesDataOptions
   extends GetArgTypesDataOptions, Pick<Options, 'presets' | 'presetsList'> {}
@@ -89,12 +95,13 @@ export async function internal_getArgTypesData(
     return null;
   }
 
-  const { argTypes } = await getReactDocgenPlan({ presets, presetsList });
+  const plan = await getReactDocgenPlan({ presets, presetsList });
   const resolvedFilePath = path.isAbsolute(componentFilePath)
     ? componentFilePath
     : join(getProjectRoot(), componentFilePath);
+  const engine = getArgTypesEngine(plan, resolvedFilePath);
 
-  if (argTypes === 'react-docgen-typescript') {
+  if (engine === 'react-docgen-typescript') {
     const { reactDocgenTypescriptOptions } = await presets.apply<
       Pick<GetArgTypesDataOptions, 'reactDocgenTypescriptOptions'>
     >('typescript', {});
@@ -104,10 +111,14 @@ export async function internal_getArgTypesData(
       reactDocgenTypescriptOptions,
     });
   }
-  if (argTypes === 'react-docgen') {
+  if (engine === 'react-docgen') {
     const { extractArgTypesFromDocgen } =
       await import('./componentManifest/reactDocgen/extractReactDocgenInfo.ts');
     return extractArgTypesFromDocgen({ componentFilePath: resolvedFilePath, componentExportName });
+  }
+  if (engine === 'react-docgen-missing') {
+    // A JavaScript component in a TypeScript project: the plan's own warning did not fire.
+    once.warn(MISSING_REACT_DOCGEN);
   }
   return null;
 }

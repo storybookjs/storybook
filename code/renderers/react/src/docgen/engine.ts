@@ -14,13 +14,22 @@ export type DocgenOffReason = 'disabled' | 'react-docgen-missing';
 
 export type DocgenEngine = ReactDocgenEngine | DocgenOffReason;
 
+export type ArgTypesEngine = Exclude<DocgenEngine, 'react-component-meta'>;
+
 export interface ReactDocgenPlan {
   // What the Vite plugins or webpack loaders inject as `__docgenInfo`.
   builder: { reactDocgen: 'all' | 'js' | false; reactDocgenTypescript: boolean };
   manifest: DocgenEngine | 'server';
-  argTypes: Exclude<DocgenEngine, 'react-component-meta'>;
+  // ArgTypes for components without stories. react-docgen-typescript reads TypeScript files only,
+  // so JavaScript files always go to react-docgen.
+  argTypes: { typescript: ArgTypesEngine; javascript: ArgTypesEngine };
   missingReactDocgen: boolean;
 }
+
+const JAVASCRIPT_FILE = /\.[cm]?jsx?$/;
+
+export const getArgTypesEngine = ({ argTypes }: ReactDocgenPlan, filePath: string) =>
+  JAVASCRIPT_FILE.test(filePath) ? argTypes.javascript : argTypes.typescript;
 
 export interface ReactDocgenPlanInput {
   docgenServer: boolean;
@@ -35,14 +44,13 @@ export function planReactDocgen({
   reactDocgen,
   installed,
 }: ReactDocgenPlanInput): ReactDocgenPlan {
+  const reactDocgenOrMissing = installed.reactDocgen ? 'react-docgen' : 'react-docgen-missing';
   const configured =
     reactDocgen === false
       ? 'disabled'
       : reactDocgen === 'react-docgen-typescript' && installed.typescript
         ? 'react-docgen-typescript'
-        : installed.reactDocgen
-          ? 'react-docgen'
-          : 'react-docgen-missing';
+        : reactDocgenOrMissing;
   // Ghost stories ask for argTypes with docgen server on too; react-docgen-typescript keeps
   // TypeScript projects free of react-docgen there.
   const serverArgTypes = docgenServer && installed.typescript && reactDocgen !== false;
@@ -64,7 +72,10 @@ export function planReactDocgen({
       : experimentalReactComponentMeta
         ? 'react-component-meta'
         : configured,
-    argTypes: serverArgTypes ? 'react-docgen-typescript' : configured,
+    argTypes: {
+      typescript: serverArgTypes ? 'react-docgen-typescript' : configured,
+      javascript: reactDocgen === false ? 'disabled' : reactDocgenOrMissing,
+    },
     missingReactDocgen: configured === 'react-docgen-missing' && !serverArgTypes,
   };
 }

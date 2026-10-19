@@ -172,6 +172,8 @@ type ParserState = { program: ts.Program; fileParser: FileParser };
  * without the cost of a full program rebuild.
  */
 const previousProgramsByConfigKey = new Map<string, ts.Program | undefined>();
+// TypeScript files the tsconfig does not include, but a caller asked for; they stay roots.
+const extraRootFilesByConfigKey = new Map<string, Set<string>>();
 let parserCache = new Map<string, ParserState>();
 let parserBuilds = new Map<string, Promise<ParserState>>();
 
@@ -198,12 +200,12 @@ async function getParser(filePath: string, userOptions?: ParserOptions) {
   const parserKey = `${configKey}::${optionsKey}`;
   const cachedParser = parserCache.get(parserKey);
   if (cachedParser) {
-    return { ...cachedParser, typescript };
+    return { ...cachedParser, typescript, configKey };
   }
 
   const pendingParser = parserBuilds.get(parserKey);
   if (pendingParser) {
-    return { ...(await pendingParser), typescript };
+    return { ...(await pendingParser), typescript, configKey };
   }
 
   const buildParser = (async () => {
@@ -223,7 +225,7 @@ async function getParser(filePath: string, userOptions?: ParserOptions) {
     }
 
     const program = typescript.createProgram(
-      fileNames,
+      [...fileNames, ...(extraRootFilesByConfigKey.get(configKey) ?? [])],
       compilerOptions,
       undefined,
       previousProgramsByConfigKey.get(configKey)
@@ -250,10 +252,29 @@ async function getParser(filePath: string, userOptions?: ParserOptions) {
   parserBuilds.set(parserKey, buildParser);
 
   try {
-    return { ...(await buildParser), typescript };
+    return { ...(await buildParser), typescript, configKey };
   } finally {
     parserBuilds.delete(parserKey);
   }
+}
+
+const TYPESCRIPT_FILE = /\.[cm]?tsx?$/;
+
+/** Rebuild the parsers of a tsconfig with `filePath` as an extra root file. */
+async function getParserIncluding(filePath: string, userOptions?: ParserOptions) {
+  const parser = await getParser(filePath, userOptions);
+  if (parser.program.getSourceFile(filePath) || !TYPESCRIPT_FILE.test(filePath)) {
+    return parser;
+  }
+  const extraRootFiles = extraRootFilesByConfigKey.get(parser.configKey) ?? new Set<string>();
+  extraRootFiles.add(filePath);
+  extraRootFilesByConfigKey.set(parser.configKey, extraRootFiles);
+  for (const parserKey of parserCache.keys()) {
+    if (parserKey.startsWith(`${parser.configKey}::`)) {
+      parserCache.delete(parserKey);
+    }
+  }
+  return getParser(filePath, userOptions);
 }
 
 /** Find the component doc that matches the given import/component name. */
@@ -316,7 +337,7 @@ export function getReactDocgenTypescriptError(
  */
 export const parseWithReactDocgenTypescript = asyncCache(
   async (filePath: string, userOptions?: ParserOptions): Promise<ComponentDocWithExportName[]> => {
-    const { program, fileParser, typescript } = await getParser(filePath, userOptions);
+    const { program, fileParser, typescript } = await getParserIncluding(filePath, userOptions);
     const checker = program.getTypeChecker();
     const sourceFile = program.getSourceFile(filePath);
 

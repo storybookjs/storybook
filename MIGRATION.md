@@ -1010,7 +1010,7 @@ npm install --save-dev react-docgen
 
 - `typescript: { reactDocgen: false }` needs nothing and hides the warning. It now also turns docgen off in the components manifest, which ran `react-docgen` regardless. `storybook build --test` sets it, so the manifest of a test build has no props.
 - With `reactDocgen: 'react-docgen-typescript'`, TypeScript files are unaffected; `.js` and `.jsx` components only get props with `react-docgen` installed.
-- With server-side docgen on, the argTypes the Vitest addon infers for components without stories come from `react-docgen-typescript` instead of `react-docgen`.
+- With server-side docgen on, the argTypes the Vitest addon infers for components without stories come from `react-docgen-typescript` for TypeScript files, also when the tsconfig does not include them. `.js` and `.jsx` components still need `react-docgen` for those argTypes.
 - Every React framework follows these rules: add `react-docgen` to the project's own `package.json`. `@storybook/nextjs` still installs Babel for its own compilation.
 
 ### Node.js 22.12 or higher

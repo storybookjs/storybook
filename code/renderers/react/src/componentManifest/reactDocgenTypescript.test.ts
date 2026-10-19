@@ -56,6 +56,36 @@ describe('parseWithReactDocgenTypescript', () => {
     expect(() => JSON.stringify(docs[0])).not.toThrow();
   });
 
+  test('parses a TypeScript file the tsconfig does not include', async () => {
+    const dir = createTempProject({
+      'tsconfig.json': JSON.stringify({
+        compilerOptions: { jsx: 'react-jsx', strict: true },
+        include: ['src'],
+      }),
+      'src/Included.tsx': 'export const Included = (props: { a: string }) => null;',
+      'stories/Outside.tsx': dedent`
+        export function Outside(props: { label: string; count?: number }) {
+          return null;
+        }
+      `,
+    });
+
+    expect(await parseWithReactDocgenTypescript(path.join(dir, 'src/Included.tsx'))).toHaveLength(
+      1
+    );
+    const docs = await parseWithReactDocgenTypescript(path.join(dir, 'stories/Outside.tsx'));
+
+    expect(docs).toHaveLength(1);
+    expect(docs[0].exportName).toBe('Outside');
+    expect(Object.keys(docs[0].props)).toEqual(['label', 'count']);
+    // The file stays a root after the parsers are rebuilt.
+    invalidateParser();
+    invalidateCache();
+    expect(
+      await parseWithReactDocgenTypescript(path.join(dir, 'stories/Outside.tsx'))
+    ).toHaveLength(1);
+  });
+
   test('parses union and enum prop types', async () => {
     const dir = createTempProject({
       'tsconfig.json': JSON.stringify({

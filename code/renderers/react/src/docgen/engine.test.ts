@@ -7,6 +7,7 @@ import {
   MISSING_REACT_DOCGEN,
   type ReactDocgenPlan,
   type ReactDocgenPlanInput,
+  getArgTypesEngine,
   getReactDocgenPlan,
   planReactDocgen,
 } from './engine.ts';
@@ -31,7 +32,7 @@ describe('planReactDocgen', () => {
       {
         builder: { reactDocgen: 'all', reactDocgenTypescript: false },
         manifest: 'react-docgen',
-        argTypes: 'react-docgen',
+        argTypes: { typescript: 'react-docgen', javascript: 'react-docgen' },
         missingReactDocgen: false,
       },
     ],
@@ -41,7 +42,7 @@ describe('planReactDocgen', () => {
       {
         builder: off,
         manifest: 'react-docgen-missing',
-        argTypes: 'react-docgen-missing',
+        argTypes: { typescript: 'react-docgen-missing', javascript: 'react-docgen-missing' },
         missingReactDocgen: true,
       },
     ],
@@ -51,19 +52,40 @@ describe('planReactDocgen', () => {
       {
         builder: off,
         manifest: 'server',
-        argTypes: 'react-docgen-typescript',
+        // A `.jsx` component without stories still needs react-docgen.
+        argTypes: { typescript: 'react-docgen-typescript', javascript: 'react-docgen-missing' },
+        missingReactDocgen: false,
+      },
+    ],
+    [
+      'TypeScript project with docgen server and react-docgen',
+      { ...base, docgenServer: true, reactDocgen: 'react-docgen', installed: both },
+      {
+        builder: off,
+        manifest: 'server',
+        argTypes: { typescript: 'react-docgen-typescript', javascript: 'react-docgen' },
         missingReactDocgen: false,
       },
     ],
     [
       'docgen server with reactDocgen false',
       { ...base, docgenServer: true, reactDocgen: false, installed: both },
-      { builder: off, manifest: 'server', argTypes: 'disabled', missingReactDocgen: false },
+      {
+        builder: off,
+        manifest: 'server',
+        argTypes: { typescript: 'disabled', javascript: 'disabled' },
+        missingReactDocgen: false,
+      },
     ],
     [
       'docgen server without typescript',
       { ...base, docgenServer: true, reactDocgen: 'react-docgen', installed: jsOnly },
-      { builder: off, manifest: 'server', argTypes: 'react-docgen', missingReactDocgen: false },
+      {
+        builder: off,
+        manifest: 'server',
+        argTypes: { typescript: 'react-docgen', javascript: 'react-docgen' },
+        missingReactDocgen: false,
+      },
     ],
     [
       'TypeScript project that turned docgen server off, without react-docgen',
@@ -71,7 +93,7 @@ describe('planReactDocgen', () => {
       {
         builder: off,
         manifest: 'react-docgen-missing',
-        argTypes: 'react-docgen-missing',
+        argTypes: { typescript: 'react-docgen-missing', javascript: 'react-docgen-missing' },
         missingReactDocgen: true,
       },
     ],
@@ -81,7 +103,7 @@ describe('planReactDocgen', () => {
       {
         builder: { reactDocgen: 'js', reactDocgenTypescript: true },
         manifest: 'react-docgen-typescript',
-        argTypes: 'react-docgen-typescript',
+        argTypes: { typescript: 'react-docgen-typescript', javascript: 'react-docgen' },
         missingReactDocgen: false,
       },
     ],
@@ -91,7 +113,7 @@ describe('planReactDocgen', () => {
       {
         builder: { reactDocgen: false, reactDocgenTypescript: true },
         manifest: 'react-docgen-typescript',
-        argTypes: 'react-docgen-typescript',
+        argTypes: { typescript: 'react-docgen-typescript', javascript: 'react-docgen-missing' },
         missingReactDocgen: false,
       },
     ],
@@ -101,14 +123,19 @@ describe('planReactDocgen', () => {
       {
         builder: { reactDocgen: 'js', reactDocgenTypescript: false },
         manifest: 'react-docgen',
-        argTypes: 'react-docgen',
+        argTypes: { typescript: 'react-docgen', javascript: 'react-docgen' },
         missingReactDocgen: false,
       },
     ],
     [
       'reactDocgen false',
       { ...base, reactDocgen: false, installed: neither },
-      { builder: off, manifest: 'disabled', argTypes: 'disabled', missingReactDocgen: false },
+      {
+        builder: off,
+        manifest: 'disabled',
+        argTypes: { typescript: 'disabled', javascript: 'disabled' },
+        missingReactDocgen: false,
+      },
     ],
     [
       'experimentalReactComponentMeta',
@@ -121,12 +148,31 @@ describe('planReactDocgen', () => {
       {
         builder: { reactDocgen: 'all', reactDocgenTypescript: false },
         manifest: 'react-component-meta',
-        argTypes: 'react-docgen',
+        argTypes: { typescript: 'react-docgen', javascript: 'react-docgen' },
         missingReactDocgen: false,
       },
     ],
   ])('%s', (_name, input, plan) => {
     expect(planReactDocgen(input)).toEqual(plan);
+  });
+});
+
+describe('getArgTypesEngine', () => {
+  const plan = planReactDocgen({
+    ...base,
+    docgenServer: true,
+    reactDocgen: 'react-docgen',
+    installed: both,
+  });
+
+  it.each([
+    ['/app/Button.tsx', 'react-docgen-typescript'],
+    ['/app/Button.mts', 'react-docgen-typescript'],
+    ['/app/Button.jsx', 'react-docgen'],
+    ['/app/Button.js', 'react-docgen'],
+    ['/app/Button.cjs', 'react-docgen'],
+  ])('%s uses %s', (filePath, engine) => {
+    expect(getArgTypesEngine(plan, filePath)).toBe(engine);
   });
 });
 

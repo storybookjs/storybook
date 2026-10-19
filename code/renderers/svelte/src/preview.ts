@@ -52,11 +52,14 @@ export function __definePreview<Addons extends PreviewAddonEntry[]>(
 }
 
 // A component typed as `any` or by the `*.svelte` shim has no known props, so it takes any args.
+// svelte-check types a runes component without `$props()` as `Component<Record<string, never>>`.
 type InferComponentArgs<C> =
   C extends Component<any, any, any>
     ? [keyof ComponentProps<C>] extends [never]
       ? Args
-      : ComponentProps<C>
+      : ComponentProps<C> extends Record<string, never>
+        ? {}
+        : ComponentProps<C>
     : Args;
 
 /**

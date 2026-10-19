@@ -708,16 +708,13 @@ describe('StoryRender', () => {
       });
     });
 
-    it('returns to the URL of the selected story when the teardown changed `location`', async () => {
-      const replaceState = vi.spyOn(window.history, 'replaceState').mockImplementation(() => {});
-      const storyUrl = '/iframe.html?id=component--b&viewMode=story';
-      const teardownRender = vi.fn(() => {
-        window.location.href = 'http://localhost/app/a';
-      });
+    it('reclaims `location` after the teardown of its render', async () => {
+      const callbacks = { reclaimLocation: vi.fn() };
+      const teardownRender = vi.fn();
       const render = new StoryRender(
         new Channel({}),
         buildStore(),
-        { storyUrl: () => storyUrl } as any,
+        callbacks as any,
         entry.id,
         'story',
         { autoplay: true },
@@ -725,39 +722,21 @@ describe('StoryRender', () => {
       );
 
       await render.renderToElement({} as any);
+      expect(callbacks.reclaimLocation).not.toHaveBeenCalled();
       await render.teardown();
 
-      expect(replaceState).toHaveBeenCalledOnce();
-      expect(replaceState).toHaveBeenCalledWith({}, '', storyUrl);
+      expect(callbacks.reclaimLocation).toHaveBeenCalledOnce();
       expect(teardownRender.mock.invocationCallOrder[0]).toBeLessThan(
-        replaceState.mock.invocationCallOrder[0]
+        callbacks.reclaimLocation.mock.invocationCallOrder[0]
       );
     });
 
-    it('leaves the URL alone when the document is at the URL of the selected story', async () => {
-      const replaceState = vi.spyOn(window.history, 'replaceState').mockImplementation(() => {});
+    it('does not reclaim `location` when it keeps the rendered DOM', async () => {
+      const callbacks = { reclaimLocation: vi.fn() };
       const render = new StoryRender(
         new Channel({}),
         buildStore(),
-        { storyUrl: () => '/iframe.html?id=component--a&viewMode=story' } as any,
-        entry.id,
-        'story',
-        { autoplay: true },
-        buildStory()
-      );
-
-      await render.renderToElement({} as any);
-      await render.teardown();
-
-      expect(replaceState).not.toHaveBeenCalled();
-    });
-
-    it('leaves the URL alone when it keeps the rendered DOM', async () => {
-      const replaceState = vi.spyOn(window.history, 'replaceState').mockImplementation(() => {});
-      const render = new StoryRender(
-        new Channel({}),
-        buildStore(),
-        { storyUrl: () => '/iframe.html?id=component--b&viewMode=story' } as any,
+        callbacks as any,
         entry.id,
         'story',
         { autoplay: true },
@@ -767,19 +746,93 @@ describe('StoryRender', () => {
       await render.renderToElement({} as any);
       await render.teardown({ keepRenderedDom: true });
 
-      expect(replaceState).not.toHaveBeenCalled();
+      expect(callbacks.reclaimLocation).not.toHaveBeenCalled();
     });
 
-    it('replaces the URL with the URL of the selected story before reloading', async () => {
+    it('does not reclaim `location` when torn down before it got a canvas', async () => {
+      const callbacks = { reclaimLocation: vi.fn() };
+      const render = new StoryRender(
+        new Channel({}),
+        buildStore(),
+        callbacks as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        buildStory()
+      );
+
+      await render.teardown();
+
+      expect(callbacks.reclaimLocation).not.toHaveBeenCalled();
+    });
+
+    it('lends `location` to a story with layout document until its teardown', async () => {
+      const callbacks = { lendLocation: vi.fn(), reclaimLocation: vi.fn() };
+      const render = new StoryRender(
+        new Channel({}),
+        buildStore(),
+        callbacks as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        buildStory({ parameters: { layout: 'document' } })
+      );
+
+      await render.renderToElement({} as any);
+
+      expect(callbacks.lendLocation).toHaveBeenCalledOnce();
+      expect(callbacks.reclaimLocation).not.toHaveBeenCalled();
+
+      await render.teardown();
+
+      expect(callbacks.reclaimLocation).toHaveBeenCalledOnce();
+    });
+
+    it('does not lend `location` again when it renders after its teardown', async () => {
+      const callbacks = { lendLocation: vi.fn(), reclaimLocation: vi.fn() };
+      const render = new StoryRender(
+        new Channel({}),
+        buildStore(),
+        callbacks as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        buildStory({ parameters: { layout: 'document' } })
+      );
+      await render.renderToElement({} as any);
+      await render.teardown();
+
+      await render.render();
+
+      expect(callbacks.lendLocation).toHaveBeenCalledOnce();
+    });
+
+    it('does not lend `location` to a story with another layout', async () => {
+      const callbacks = { lendLocation: vi.fn() };
+      const render = new StoryRender(
+        new Channel({}),
+        buildStore(),
+        callbacks as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        buildStory({ parameters: { layout: 'fullscreen' } })
+      );
+
+      await render.renderToElement({} as any);
+
+      expect(callbacks.lendLocation).not.toHaveBeenCalled();
+    });
+
+    it('reclaims `location` before reloading', async () => {
       const [playGate] = createGate();
       const story = buildStory({ playFunction: vi.fn(() => playGate) as any });
-      const replaceState = vi.spyOn(window.history, 'replaceState').mockImplementation(() => {});
-      const storyUrl = '/iframe.html?id=component--b&viewMode=story';
+      const callbacks = { reclaimLocation: vi.fn() };
 
       const render = new StoryRender(
         new Channel({}),
         buildStore(),
-        { storyUrl: () => storyUrl } as any,
+        callbacks as any,
         entry.id,
         'story',
         { autoplay: true },
@@ -791,8 +844,8 @@ describe('StoryRender', () => {
       render.teardown();
 
       await vi.waitFor(() => expect(window.location.reload).toHaveBeenCalledOnce());
-      expect(replaceState).toHaveBeenCalledWith({}, '', storyUrl);
-      expect(replaceState.mock.invocationCallOrder[0]).toBeLessThan(
+      expect(callbacks.reclaimLocation).toHaveBeenCalledOnce();
+      expect(callbacks.reclaimLocation.mock.invocationCallOrder[0]).toBeLessThan(
         vi.mocked(window.location.reload).mock.invocationCallOrder[0]
       );
     });

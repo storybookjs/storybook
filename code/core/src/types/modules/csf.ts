@@ -71,7 +71,7 @@ type OrString<T extends string> = T | (string & {});
 
 export type ViewMode = OrString<ViewModeBase | 'settings'> | undefined;
 
-type Layout = 'centered' | 'fullscreen' | 'padded' | 'none';
+type Layout = 'centered' | 'fullscreen' | 'padded' | 'none' | 'document';
 
 export interface StorybookParameters {
   options?: Addon_OptionsParameterV7;

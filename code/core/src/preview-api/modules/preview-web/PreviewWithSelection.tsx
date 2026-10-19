@@ -92,6 +92,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
   private latestSelectionRequest = 0;
 
+  // `embed` is a param of the URL the preview loaded at; a story may move `location` later.
+  private autoplay = shouldAutoplay({ search: globalWindow.location?.search ?? '' });
+
   constructor(
     public importFn: ModuleImportFn,
 
@@ -375,7 +378,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
         this.mainStoryCallbacks(storyId),
         storyId,
         'story',
-        { autoplay: shouldAutoplay({ search: globalWindow.location?.search ?? '' }) }
+        { autoplay: this.autoplay }
       );
     } else if (isMdxEntry(entry)) {
       render = new MdxDocsRender<TRenderer>(
@@ -545,9 +548,10 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     return {
       showStoryDuringRender: () => this.view.showStoryDuringRender(),
       showMain: () => this.view.showMain(),
-      storyUrl: () => this.selectionStore.url,
       showError: (err: { title: string; description: string }) => this.renderError(storyId, err),
       showException: (err: Error) => this.renderException(storyId, err),
+      lendLocation: () => this.selectionStore.lendLocation?.(),
+      reclaimLocation: () => this.selectionStore.reclaimLocation?.(),
     };
   }
 

@@ -19,10 +19,19 @@ export interface SelectionStore {
 
   selection?: Selection;
 
-  /** The URL of the preview that shows the current selection, if the store keeps one. */
-  url?: string;
-
   setSelection(selection: Selection): void;
 
   setQueryParams(queryParams: Record<PropertyKey, unknown>): void;
+
+  /**
+   * Lends `location` to a story that owns the document, while it is mounted: the store neither
+   * reads nor writes `location`, and keeps the selection and query params to itself.
+   */
+  lendLocation?(): void;
+
+  /**
+   * Called after a story's teardown: writes the URL of the selection to `location` if it is not
+   * there, sets the document's title, and reads and writes `location` again.
+   */
+  reclaimLocation?(): void;
 }

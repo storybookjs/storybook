@@ -27,10 +27,31 @@ import { type ScopeInfo, analyzeScopes } from './scope.ts';
 const mapSource = (editor: { fileName: string | undefined }) => editor.fileName ?? 'source';
 
 /** A map whose `sourcesContent` may be unknown for sources an input map did not carry. */
-export type GeneratedMap = Omit<SourceMap, 'sourcesContent'> & {
+export interface GeneratedMap {
+  version: number;
+  file: string | undefined;
+  sources: string[];
   sourcesContent?: (string | null)[];
+  names: string[];
+  mappings: string;
   sourceRoot?: string;
-};
+  /** The map as JSON. */
+  toString(): string;
+  /** The map as a data URI. */
+  toUrl(): string;
+}
+
+/** The pending edits of a `SourceEditor`, addressed by offsets into its `code`. */
+export interface SourceEdits {
+  append(content: string): this;
+  appendLeft(index: number, content: string): this;
+  appendRight(index: number, content: string): this;
+  overwrite(start: number, end: number, content: string): this;
+  remove(start: number, end: number): this;
+  /** The content of a span as edited so far; throws when an edit cuts through its ends. */
+  slice(start: number, end: number): string;
+  toString(): string;
+}
 
 /** A source map from an earlier transform, as the object or the JSON string it was handed over as. */
 export type InputSourceMap =
@@ -54,25 +75,39 @@ export type InputSourceMap =
  * text too.
  */
 export class SourceEditor {
+  /** @internal */
   _module: ParsedModule;
 
+  /** @internal */
   _scopes: ScopeInfo | undefined;
 
+  /** @internal */
   _parents: Map<Node, Node | null> | undefined;
 
+  /** @internal */
   _edits: MagicString;
 
-  // Maps of the edits applied by earlier commits, oldest first, so the output still maps to the
-  // code the editor was created with.
+  /**
+   * Maps of the edits applied by earlier commits, oldest first, so the output still maps to the
+   * code the editor was created with.
+   *
+   * @internal
+   */
   _committed: SourceMap[] = [];
 
-  // The code the editor was created with, line endings included: the content its maps name.
+  /**
+   * The code the editor was created with, line endings included: the content its maps name.
+   *
+   * @internal
+   */
   readonly _originalCode: string;
 
   readonly fileName: string | undefined;
 
+  /** @internal */
   readonly _onCommit: (() => void) | undefined;
 
+  /** @internal */
   _style: Style | undefined;
 
   constructor(code: string, fileName?: string, onCommit?: () => void) {
@@ -122,7 +157,7 @@ export class SourceEditor {
     return undefined;
   }
 
-  get edits() {
+  get edits(): SourceEdits {
     return this._edits;
   }
 

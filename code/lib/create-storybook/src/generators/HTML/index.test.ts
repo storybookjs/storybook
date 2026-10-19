@@ -7,27 +7,37 @@ import htmlGenerator from './index.ts';
 vi.mock('storybook/internal/node-logger', { spy: true });
 
 describe('HTML generator', () => {
+  const packageManager = {
+    getDependencyVersion: vi.fn<(name: string) => string | null>(),
+  };
+
   beforeEach(() => {
     vi.mocked(logger.log).mockImplementation(() => {});
   });
 
-  it('notes that Remix 3 uses the HTML renderer', () => {
-    const packageManager = {
-      getDependencyVersion: vi.fn((name: string) => (name === 'remix' ? '^3.0.0' : null)),
-    } as any;
+  describe('when the project uses Remix 3', () => {
+    beforeEach(() => {
+      packageManager.getDependencyVersion.mockImplementation((name) =>
+        name === 'remix' ? '^3.0.0' : null
+      );
+    });
 
-    htmlGenerator.postConfigure?.({ packageManager });
+    it('notes that Remix 3 uses the HTML renderer', () => {
+      htmlGenerator.postConfigure?.({ packageManager } as any);
 
-    expect(logger.log).toHaveBeenCalledWith('Remix 3 is set up with the HTML renderer.');
+      expect(logger.log).toHaveBeenCalledWith('Remix 3 is set up with the HTML renderer.');
+    });
   });
 
-  it('stays quiet for projects that are not Remix 3', () => {
-    const packageManager = {
-      getDependencyVersion: vi.fn(() => null),
-    } as any;
+  describe('when the project does not use Remix 3', () => {
+    beforeEach(() => {
+      packageManager.getDependencyVersion.mockReturnValue(null);
+    });
 
-    htmlGenerator.postConfigure?.({ packageManager });
+    it('stays quiet', () => {
+      htmlGenerator.postConfigure?.({ packageManager } as any);
 
-    expect(logger.log).not.toHaveBeenCalled();
+      expect(logger.log).not.toHaveBeenCalled();
+    });
   });
 });

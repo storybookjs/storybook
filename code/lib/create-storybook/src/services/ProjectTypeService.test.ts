@@ -232,72 +232,57 @@ describe('ProjectTypeService', () => {
       expect(result).toBe(ProjectType.NUXT);
     });
 
-    it('detects Remix 3 when the dependency is a pnpm catalog specifier', async () => {
-      (pm as any).primaryPackageJson.packageJson = {
-        dependencies: { remix: 'catalog:' },
-      };
-      (pm as any).getDeclaredVersionSpecifier = vi.fn(async () => '3.1.0');
-      const service = new ProjectTypeService(pm);
-      // @ts-expect-error private method spy
-      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
-      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
-      expect(result).toBe(ProjectType.HTML);
-      expect(pm.getDeclaredVersionSpecifier).toHaveBeenCalledWith('remix');
-    });
+    describe('Remix', () => {
+      beforeEach(() => {
+        // @ts-expect-error private method spy
+        vi.spyOn(ProjectTypeService.prototype, 'isNxProject').mockReturnValue(false);
+      });
 
-    it('detects Remix 3 as the HTML renderer', async () => {
-      (pm as any).primaryPackageJson.packageJson = {
-        dependencies: { remix: '^3.0.0' },
+      const detect = (packageJson: Record<string, unknown>) => {
+        (pm as any).primaryPackageJson.packageJson = packageJson;
+        return new ProjectTypeService(pm).autoDetectProjectType({ html: false } as CommandOptions);
       };
-      const service = new ProjectTypeService(pm);
-      // @ts-expect-error private method spy
-      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
-      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
-      expect(result).toBe(ProjectType.HTML);
-    });
 
-    it('detects Remix 3 from devDependencies', async () => {
-      (pm as any).primaryPackageJson.packageJson = {
-        devDependencies: { remix: '3.0.0' },
-      };
-      const service = new ProjectTypeService(pm);
-      // @ts-expect-error private method spy
-      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
-      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
-      expect(result).toBe(ProjectType.HTML);
-    });
+      describe('when remix is a pnpm catalog specifier that resolves to Remix 3', () => {
+        beforeEach(() => {
+          (pm as any).getDeclaredVersionSpecifier = vi.fn(async () => '3.1.0');
+        });
 
-    it('prefers the HTML renderer when Remix 3 is installed next to React', async () => {
-      (pm as any).primaryPackageJson.packageJson = {
-        dependencies: { remix: '^3.0.0', react: '^19.0.0' },
-      };
-      const service = new ProjectTypeService(pm);
-      // @ts-expect-error private method spy
-      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
-      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
-      expect(result).toBe(ProjectType.HTML);
-    });
+        it('detects the HTML renderer', async () => {
+          await expect(detect({ dependencies: { remix: 'catalog:' } })).resolves.toBe(
+            ProjectType.HTML
+          );
+          expect(pm.getDeclaredVersionSpecifier).toHaveBeenCalledWith('remix');
+        });
+      });
 
-    it('does not treat Remix 2 (@remix-run/dev) as Remix 3', async () => {
-      (pm as any).primaryPackageJson.packageJson = {
-        dependencies: { '@remix-run/dev': '^2.15.0', react: '^18.2.0' },
-      };
-      const service = new ProjectTypeService(pm);
-      // @ts-expect-error private method spy
-      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
-      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
-      expect(result).toBe(ProjectType.REACT);
-    });
+      it('detects Remix 3 as the HTML renderer', async () => {
+        await expect(detect({ dependencies: { remix: '^3.0.0' } })).resolves.toBe(ProjectType.HTML);
+      });
 
-    it('does not treat remix@2 as Remix 3', async () => {
-      (pm as any).primaryPackageJson.packageJson = {
-        dependencies: { remix: '^2.0.0', react: '^18.2.0' },
-      };
-      const service = new ProjectTypeService(pm);
-      // @ts-expect-error private method spy
-      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
-      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
-      expect(result).toBe(ProjectType.REACT);
+      it('detects Remix 3 from devDependencies', async () => {
+        await expect(detect({ devDependencies: { remix: '3.0.0' } })).resolves.toBe(
+          ProjectType.HTML
+        );
+      });
+
+      it('prefers the HTML renderer when Remix 3 is installed next to React', async () => {
+        await expect(detect({ dependencies: { remix: '^3.0.0', react: '^19.0.0' } })).resolves.toBe(
+          ProjectType.HTML
+        );
+      });
+
+      it('does not treat Remix 2 (@remix-run/dev) as Remix 3', async () => {
+        await expect(
+          detect({ dependencies: { '@remix-run/dev': '^2.15.0', react: '^18.2.0' } })
+        ).resolves.toBe(ProjectType.REACT);
+      });
+
+      it('does not treat remix@2 as Remix 3', async () => {
+        await expect(detect({ dependencies: { remix: '^2.0.0', react: '^18.2.0' } })).resolves.toBe(
+          ProjectType.REACT
+        );
+      });
     });
 
     it('detects REACT via peerDependencies', async () => {

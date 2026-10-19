@@ -18,7 +18,7 @@ const checkOptions = {
   mainConfig: {},
   storybookVersion: '11.0.0',
   storiesPaths: [],
-} as CheckOptions;
+} as unknown as CheckOptions;
 
 describe('typescript6 fix', () => {
   beforeEach(() => {

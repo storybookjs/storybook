@@ -194,8 +194,8 @@ export interface SubAPI {
   setIndex: (index: API_PreparedStoryIndex) => Promise<void>;
 
   /**
-   * Jumps to the first entry of the next or previous component, or to the next or previous docs
-   * page that is not attached to a component.
+   * Jumps to the first entry of the next or previous component, or to the next or previous
+   * unattached docs page.
    *
    * @param {Direction} direction - The direction to jump. Use -1 to jump backwards and 1 to jump
    *   forwards.
@@ -1147,7 +1147,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         const stateHasSelection = state.viewMode && state.storyId;
         const stateSelectionDifferent = state.viewMode !== viewMode || state.storyId !== storyId;
         const { type } = state.index?.[state.storyId] || {};
-        const isStory = type === 'story' || type === 'docs';
+        const isLeaf = type === 'story' || type === 'docs';
 
         /**
          * When storybook starts, we want to navigate to the first story. But there are a few
@@ -1180,7 +1180,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
             }
           }
 
-          if (stateHasSelection && stateSelectionDifferent && isStory) {
+          if (stateHasSelection && stateSelectionDifferent && isLeaf) {
             // The manager state is correct, the preview state is lagging behind
             provider.channel?.emit(SET_CURRENT_STORY, {
               storyId: state.storyId,

@@ -94,6 +94,7 @@ describe('wrapGetAbsolutePath', () => {
           },
         };
         export default config;
+
         /**
          * This function is used to resolve the absolute path of a package.
          * It is needed in projects that are set up within a monorepo.
@@ -130,6 +131,7 @@ describe('wrapGetAbsolutePath', () => {
           viteFinal: (viteConfig) => ({ ...viteConfig, root: path.resolve(dirname, '..') }),
         };
         export default config;
+
         /**
          * This function is used to resolve the absolute path of a package.
          * It is needed in projects that are set up within a monorepo.
@@ -161,6 +163,7 @@ describe('wrapGetAbsolutePath', () => {
           viteFinal: (viteConfig) => ({ ...viteConfig, root: value(import.meta.url) }),
         };
         export default config;
+
         /**
          * This function is used to resolve the absolute path of a package.
          * It is needed in projects that are set up within a monorepo.
@@ -196,6 +199,7 @@ describe('wrapGetAbsolutePath', () => {
           viteFinal: (viteConfig) => ({ ...viteConfig, root: dirname(import.meta.url) }),
         };
         export default config;
+
         /**
          * This function is used to resolve the absolute path of a package.
          * It is needed in projects that are set up within a monorepo.
@@ -227,6 +231,7 @@ describe('wrapGetAbsolutePath', () => {
           viteFinal: (viteConfig) => ({ ...viteConfig, root: pathDirname(import.meta.url) }),
         };
         export default config;
+
         /**
          * This function is used to resolve the absolute path of a package.
          * It is needed in projects that are set up within a monorepo.
@@ -267,6 +272,7 @@ describe('wrapGetAbsolutePath', () => {
           },
         };
         export default config;
+
         /**
          * This function is used to resolve the absolute path of a package.
          * It is needed in projects that are set up within a monorepo.

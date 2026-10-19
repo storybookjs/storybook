@@ -40,8 +40,9 @@ export const wrapGetAbsolutePath: Fix = {
             dirname: ensureNamedImport(mainConfig, 'dirname', 'node:path'),
             fileURLToPath: ensureNamedImport(mainConfig, 'fileURLToPath', 'node:url'),
           };
+          // On its own paragraph, below the export default.
           mainConfig.setBodyDeclaration(
-            getAbsolutePathWrapperDeclaration(/\.tsx?$/.test(id), names)
+            `\n${getAbsolutePathWrapperDeclaration(mainConfig, /\.tsx?$/.test(id), names)}`
           );
         }
       },

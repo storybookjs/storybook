@@ -122,7 +122,8 @@ export function getFieldsForGetAbsolutePathWrapper(config: ConfigFile): Node[] {
 }
 
 /**
- * Returns the source of the following function, for `ConfigFile#setBodyDeclaration`.
+ * Returns the source of the following function, indented like `config`, for
+ * `ConfigFile#setBodyDeclaration`.
  *
  * @example
  *
@@ -133,6 +134,7 @@ export function getFieldsForGetAbsolutePathWrapper(config: ConfigFile): Node[] {
  * ```
  */
 export function getAbsolutePathWrapperDeclaration(
+  config: ConfigFile,
   isConfigTypescript: boolean,
   names = { dirname: 'dirname', fileURLToPath: 'fileURLToPath' }
 ): string {
@@ -146,7 +148,7 @@ export function getAbsolutePathWrapperDeclaration(
     ' * It is needed in projects that are set up within a monorepo.',
     ' */',
     `function ${PREFERRED_GET_ABSOLUTE_PATH_WRAPPER_NAME}(${parameter}${isConfigTypescript ? ': string' : ''})${isConfigTypescript ? ': any' : ''} {`,
-    `  return ${names.dirname}(${names.fileURLToPath}(import.meta.resolve(\`\${${parameter}}/package.json\`)));`,
+    `${config._editor.indent}return ${names.dirname}(${names.fileURLToPath}(import.meta.resolve(\`\${${parameter}}/package.json\`)));`,
     '}',
   ].join('\n');
 }

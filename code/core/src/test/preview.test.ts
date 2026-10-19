@@ -1,7 +1,14 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import { within } from 'storybook/test';
+
 import { enhanceContext } from './preview.ts';
+
+vi.mock('storybook/test', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('storybook/test')>();
+  return { ...actual, within: vi.fn(actual.within) };
+});
 
 const nativeFocus = HTMLElement.prototype.focus;
 
@@ -43,5 +50,57 @@ describe('focus instrumentation', () => {
 
     expect(() => button.focus()).not.toThrow();
     expect(detachedDocument.activeElement).not.toBe(button);
+  });
+});
+
+describe('canvas', () => {
+  const originalBody = document.body;
+
+  afterEach(() => {
+    if (document.body !== originalBody) {
+      document.body.replaceWith(originalBody);
+    }
+    document.body.innerHTML = '';
+  });
+
+  const element = (html: string) => {
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    document.body.appendChild(container);
+    return container;
+  };
+
+  it('queries the canvasElement a renderer sets after the loaders ran', async () => {
+    const context = { canvasElement: element('<button>Loading</button>') } as any;
+    await enhanceContext(context);
+    const { canvas } = context;
+
+    context.canvasElement = element('<button>Rendered</button>');
+
+    expect(canvas.getByRole('button').textContent).toBe('Rendered');
+  });
+
+  it('queries the body of the document when the body is replaced after the render', async () => {
+    const context = { canvasElement: document.body } as any;
+    await enhanceContext(context);
+    const { canvas } = context;
+
+    const nextBody = document.createElement('body');
+    nextBody.innerHTML = '<h1>Next page</h1>';
+    document.body.replaceWith(nextBody);
+
+    expect(canvas.getByRole('heading').textContent).toBe('Next page');
+  });
+
+  it('does not call within() again while canvasElement stays the same', async () => {
+    const context = { canvasElement: element('<button>Save</button>') } as any;
+    await enhanceContext(context);
+    const { canvas } = context;
+    vi.mocked(within).mockClear();
+
+    canvas.getByRole('button');
+    canvas.queryByText('Save');
+
+    expect(within).not.toHaveBeenCalled();
   });
 });

@@ -1,4 +1,4 @@
-import type { LoaderFunction } from 'storybook/internal/csf';
+import type { Canvas, LoaderFunction, StoryContext } from 'storybook/internal/csf';
 import { definePreviewAddon } from 'storybook/internal/csf';
 import { instrument } from 'storybook/internal/instrumenter';
 
@@ -86,11 +86,36 @@ const nameSpiesAndWrapActionsInSpies: LoaderFunction = ({ initialArgs }) => {
   traverseArgs(initialArgs);
 };
 
+const queryRoot = ({ canvasElement }: StoryContext): HTMLElement =>
+  canvasElement.localName === 'body' ? canvasElement.ownerDocument.body : canvasElement;
+
+// `canvasElement` may change during the render, after the loaders ran, and a story whose
+// `canvasElement` is the document's body may replace that body while it plays.
+const followingCanvas = (context: StoryContext): Canvas => {
+  let root = queryRoot(context);
+  let canvas = within(root);
+  const current = () => {
+    const nextRoot = queryRoot(context);
+    if (nextRoot !== root) {
+      root = nextRoot;
+      canvas = within(root);
+    }
+    return canvas;
+  };
+  return Object.fromEntries(
+    Object.keys(canvas).map((key) => [
+      key,
+      (...args: unknown[]) =>
+        (current()[key as keyof Canvas] as (...args: unknown[]) => unknown)(...args),
+    ])
+  ) as Canvas;
+};
+
 let patchedFocus = false;
 
 export const enhanceContext: LoaderFunction = async (context) => {
   if (globalThis.HTMLElement && context.canvasElement instanceof globalThis.HTMLElement) {
-    context.canvas = within(context.canvasElement);
+    context.canvas = followingCanvas(context);
   }
 
   try {

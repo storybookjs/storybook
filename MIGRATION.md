@@ -1350,6 +1350,7 @@ Storybook no longer bundles Babel or recast to read and write story and config f
 - Code that a migration or `storybook add` inserts follows the file: string quotes and indentation are inferred from it, new imports go after the existing imports in the order they are added, and a statement put first in a file stays below its header comments.
 - The Vitest config that `@storybook/addon-vitest` writes reads the config directory from `import.meta.dirname`.
 - Story files read string-literal keys and ignore computed identifier keys. `export default { 'title': 'X' }` now gives story ids under `X`, where Babel used the automatic title, and `export default { [title]: 'X' }` no longer sets the title.
+- Hosts without a native `oxc-parser` binding, such as StackBlitz WebContainers, must install `@oxc-parser/binding-wasm32-wasi` at the exact version of `oxc-parser` themselves, as the "Cannot find native binding" error does not name it (oxc-parser tries to download it with `pnpm` on WebContainers first).
 
 #### Changes for tooling that imports Storybook's internal entry points
 

@@ -539,6 +539,138 @@ describe('CSF factories', () => {
     `);
   });
 
+  it('names the meta from preview.meta().type<>()', async ({ expect }) => {
+    const output = await transform(dedent`
+      <script module lang="ts">
+        import preview from '#.storybook/preview';
+        import Button from './Button.svelte';
+
+        const { Story } = preview.meta({ component: Button }).type<{ args: { theme: string } }>();
+      </script>
+
+      <Story name="Primary" args={{ label: 'Primary', theme: 'dark' }} />
+    `);
+
+    expect(output).toMatchInlineSnapshot(`
+      "import 'svelte/internal/disclose-version';
+      import 'svelte/internal/flags/legacy';
+
+      Button_stories[$.FILENAME] = 'Button.stories.svelte';
+
+      import preview from '#.storybook/preview';
+      import Button from './Button.svelte';
+      import * as $ from 'svelte/internal/client';
+
+      const $__meta = preview.meta({ component: Button }).type();
+      const { Story } = $__meta;
+
+      function Button_stories($$anchor, $$props) {
+      	$.check_target(new.target);
+      	$.push($$props, false, Button_stories);
+
+      	var $$exports = { ...$.legacy_api() };
+
+      	$.init();
+
+      	$.add_svelte_meta(
+      		() => Story($$anchor, {
+      			name: 'Primary',
+      			args: { label: 'Primary', theme: 'dark' },
+      			parameters: {
+      				__svelteCsf: { rawCode: "<Button {...args} />" }
+      			}
+      		}),
+      		'component',
+      		Button_stories,
+      		8,
+      		0,
+      		{ componentTag: 'Story' }
+      	);
+
+      	return $.pop($$exports);
+      }
+      import { createRuntimeStories } from "@storybook/svelte/internal/svelte-csf/create-runtime-stories";
+
+      const $__stories = createRuntimeStories(Button_stories, $__meta.input);
+
+      export const __namedExportsOrder = ["Primary"];
+
+      const $__Primary = $__meta.story({
+      	...$__stories["Primary"],
+      	tags: ["svelte-csf-v5"]
+      });
+
+      export { $__Primary as Primary };"
+    `);
+  });
+
+  it('keeps the export of an exported meta', async ({ expect }) => {
+    const output = await transform(dedent`
+      <script module>
+        import preview from '#.storybook/preview';
+        import Button from './Button.svelte';
+
+        export const meta = preview.meta({ component: Button });
+        const { Story } = meta;
+      </script>
+
+      <Story name="Primary" args={{ label: 'Primary' }} />
+    `);
+
+    expect(output).toMatchInlineSnapshot(`
+      "import 'svelte/internal/disclose-version';
+      import 'svelte/internal/flags/legacy';
+
+      Button_stories[$.FILENAME] = 'Button.stories.svelte';
+
+      import preview from '#.storybook/preview';
+      import Button from './Button.svelte';
+      import * as $ from 'svelte/internal/client';
+
+      export const meta = preview.meta({ component: Button });
+
+      const { Story } = meta;
+
+      function Button_stories($$anchor, $$props) {
+      	$.check_target(new.target);
+      	$.push($$props, false, Button_stories);
+
+      	var $$exports = { ...$.legacy_api() };
+
+      	$.init();
+
+      	$.add_svelte_meta(
+      		() => Story($$anchor, {
+      			name: 'Primary',
+      			args: { label: 'Primary' },
+      			parameters: {
+      				__svelteCsf: { rawCode: "<Button {...args} />" }
+      			}
+      		}),
+      		'component',
+      		Button_stories,
+      		9,
+      		0,
+      		{ componentTag: 'Story' }
+      	);
+
+      	return $.pop($$exports);
+      }
+      import { createRuntimeStories } from "@storybook/svelte/internal/svelte-csf/create-runtime-stories";
+
+      const $__stories = createRuntimeStories(Button_stories, meta.input);
+
+      export const __namedExportsOrder = ["Primary"];
+
+      const $__Primary = meta.story({
+      	...$__stories["Primary"],
+      	tags: ["svelte-csf-v5"]
+      });
+
+      export { $__Primary as Primary };"
+    `);
+  });
+
   it('creates the stories of the Story components from meta.type<>()', async ({ expect }) => {
     const output = await transform(dedent`
       <script module lang="ts">

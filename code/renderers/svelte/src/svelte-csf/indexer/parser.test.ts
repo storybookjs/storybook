@@ -151,7 +151,9 @@ describe('parseForIndexer', () => {
         import { defineMeta } from '@storybook/svelte';
       `);
 
-      await expect(parseForIndexer(file)).resolves.toBeDefined();
+      await expect(parseForIndexer(file)).rejects.toThrow(
+        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004'
+      );
     });
 
     it('fails without a named defineMeta import', async ({ expect }) => {
@@ -214,6 +216,19 @@ describe('parseForIndexer', () => {
         const { Story } = preview
           .type<{ args: { theme: string } }>()
           .meta({ title: 'Example', tags: ['meta-tag'] });`,
+      ],
+      [
+        'preview.meta().type<>()',
+        `import preview from '#.storybook/preview';
+        const { Story } = preview
+          .meta({ title: 'Example', tags: ['meta-tag'] })
+          .type<{ args: { theme: string } }>();`,
+      ],
+      [
+        'an exported meta variable',
+        `import preview from '#.storybook/preview';
+        export const meta = preview.meta({ title: 'Example', tags: ['meta-tag'] });
+        const { Story } = meta;`,
       ],
     ])('indexes %s', async ([, moduleScript], { expect }) => {
       const file = await writeFactoryStoriesFile(moduleScript);
@@ -327,6 +342,17 @@ describe('parseForIndexer', () => {
 
       await expect(parseForIndexer(file)).rejects.toThrow(
         'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0012'
+      );
+    });
+
+    it('fails when the result of preview.meta() is not stored', async ({ expect }) => {
+      const file = await writeFactoryStoriesFile(`
+        import preview from '#.storybook/preview';
+        preview.meta({ title: 'Example' });
+      `);
+
+      await expect(parseForIndexer(file)).rejects.toThrow(
+        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004'
       );
     });
 

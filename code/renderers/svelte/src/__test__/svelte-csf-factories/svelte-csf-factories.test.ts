@@ -5,15 +5,24 @@ import { isStory } from 'storybook/internal/csf';
 
 import { composeStories } from '../../portable-stories.ts';
 import * as ButtonStories from './button.stories.svelte';
+import * as ExportedMetaStories from './exported-meta.stories.svelte';
 import * as InteractionsStories from './interactions.stories.svelte';
 import * as MetaTypeStories from './meta-type.stories.svelte';
 import * as TemplatingStories from './templating.stories.svelte';
+import * as TypeAfterMetaStories from './type-after-meta.stories.svelte';
 
 afterEach(() => {
   cleanup();
 });
 
-const files = { ButtonStories, InteractionsStories, MetaTypeStories, TemplatingStories };
+const files = {
+  ButtonStories,
+  ExportedMetaStories,
+  InteractionsStories,
+  MetaTypeStories,
+  TemplatingStories,
+  TypeAfterMetaStories,
+};
 
 describe.each(Object.entries(files))('%s', (_name, file) => {
   const stories = Object.entries(file).filter(([, story]) => isStory(story));

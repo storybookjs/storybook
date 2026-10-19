@@ -166,16 +166,6 @@ export interface V3CompatIndexEntry extends Omit<StoryIndexEntry, 'type' | 'tags
   parameters: Parameters;
 }
 
-export interface StoryIndexV2 {
-  v: number;
-  stories: Record<
-    StoryId,
-    Omit<V3CompatIndexEntry, 'title' | 'name' | 'importPath'> & {
-      name?: StoryName;
-    }
-  >;
-}
-
 export interface StoryIndexV3 {
   v: number;
   stories: Record<StoryId, V3CompatIndexEntry>;

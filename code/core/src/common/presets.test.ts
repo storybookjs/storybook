@@ -796,3 +796,34 @@ describe('loadPreset', () => {
     `);
   });
 });
+
+describe('getPresets sequential module loading', () => {
+  afterEach(() => {
+    mockedResolveUtils.importModule.mockReset();
+  });
+
+  it('waits for each preset import to settle before importing the next, so CJS presets can require() ESM entries', async () => {
+    const importOrder: string[] = [];
+    let resolveFirstPreset: (value: Record<string, never>) => void;
+    const firstPresetLoaded = new Promise<Record<string, never>>((resolve) => {
+      resolveFirstPreset = resolve;
+    });
+
+    mockedResolveUtils.safeResolveModule.mockImplementation(({ specifier }) => specifier);
+    mockedResolveUtils.importModule.mockImplementation((path: string) => {
+      importOrder.push(path);
+      return path === 'preset-first' ? firstPresetLoaded : Promise.resolve({});
+    });
+
+    const presetsPromise = getPresets(['preset-first', 'preset-second'], {
+      configDir: '/project/.storybook',
+    } as any);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(importOrder).toEqual(['preset-first']);
+
+    resolveFirstPreset!({});
+    await presetsPromise;
+    expect(importOrder).toEqual(['preset-first', 'preset-second']);
+  });
+});

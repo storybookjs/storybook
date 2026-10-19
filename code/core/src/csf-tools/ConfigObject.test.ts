@@ -36,7 +36,7 @@ describe('ConfigFile mutations', () => {
   it.each([
     'let config; config = definePreview({ parameters: { legacy: true } }); module.exports = config;',
     'export default {}; definePreview({ parameters: { legacy: true } });',
-    'export const parameters = { legacy: true }; export default { parameters: { legacy: true } };',
+    'export const parameters = {}; export default { parameters: { legacy: true } };',
     'export default configure({ parameters: { legacy: true } });',
     'export default Object.assign({ parameters: { legacy: true } }, other);',
     'export default definePreview({ parameters: { legacy: true } }).finalize();',
@@ -46,50 +46,6 @@ describe('ConfigFile mutations', () => {
     expect(config.remove(['parameters', 'legacy']).ok).toBe(false);
     expect(config.changed).toBe(false);
     expect(printConfig(config).code).toBe(source);
-  });
-
-  it('reads and mutates the single owning export of mixed exports', () => {
-    const config = loadConfig(
-      'export const parameters = { legacy: true }; export default { other: 1 };'
-    ).parse();
-
-    expect(config.getValue(['parameters', 'legacy'])).toBe(true);
-    expect(config.remove(['parameters', 'legacy'])).toEqual({ ok: true, changed: true });
-    expect(loadConfig(printConfig(config).code).parse().getValue(['parameters'])).toBeUndefined();
-    expect(printConfig(config).code).toContain('export default { other: 1 };');
-    expect(config.mutationDiagnostics).toEqual([]);
-  });
-
-  it('mutates the default export when mixed exports only define the path there', () => {
-    const config = loadConfig(
-      'export const parameters = {}; export default { parameters: { legacy: true } };'
-    ).parse();
-
-    expect(config.getValue(['parameters', 'legacy'])).toBe(true);
-    expect(config.remove(['parameters', 'legacy'])).toEqual({ ok: true, changed: true });
-    expect(printConfig(config).code).toContain('export const parameters = {};');
-    expect(
-      loadConfig(printConfig(config).code).parse().getValue(['parameters', 'legacy'])
-    ).toBeUndefined();
-    expect(config.mutationDiagnostics).toEqual([]);
-  });
-
-  it('reads the named export when mixed exports only define the path there', () => {
-    const config = loadConfig(
-      'export const parameters = { legacy: true }; export default { parameters: { other: true } };'
-    ).parse();
-
-    expect(config.getValue(['parameters', 'legacy'])).toBe(true);
-    expect(config.mutationDiagnostics).toEqual([]);
-  });
-
-  it('reports mixed exports that both define the read path', () => {
-    const config = loadConfig(
-      'export const parameters = { legacy: true }; export default { parameters: { legacy: true } };'
-    ).parse();
-
-    expect(config.getValue(['parameters', 'legacy'])).toBeUndefined();
-    expect(config.mutationDiagnostics.length).toBeGreaterThan(0);
   });
 
   it('mutates an aliased config factory import', () => {
@@ -440,4 +396,97 @@ describe('ConfigFile mutations', () => {
       expect(loadConfig(printConfig(config).code).parse().getFieldNode([name])).toBeUndefined();
     }
   );
+
+  it.each([
+    'export const parameters = { legacy: true }; export default { parameters: { other: true } };',
+    'export const parameters = { legacy: true }; export default {};',
+  ])('reads only the value the runtime applies from %s', (source) => {
+    const config = loadConfig(source).parse();
+    expect(config.getValue(['parameters', 'legacy'])).toBeUndefined();
+    expect(config.changed).toBe(false);
+    expect(config.mutationDiagnostics).toEqual([]);
+  });
+
+  it.each([
+    'export const parameters = {}; export default { parameters: { legacy: true } };',
+    'export const parameters = { legacy: true }; export default { parameters: { legacy: true } };',
+  ])('reads the default export over the named one in %s', (source) => {
+    const config = loadConfig(source).parse();
+    expect(config.getValue(['parameters', 'legacy'])).toBe(true);
+    expect(config.changed).toBe(false);
+    expect(config.mutationDiagnostics).toEqual([]);
+  });
+
+  it.each([
+    'export const parameters = { legacy: true }; export default {};',
+    'export const parameters = { legacy: true } satisfies Record<string, unknown>; export default {};',
+    'const shared = { legacy: true }; export const parameters = shared; export default {};',
+  ])('refuses mixed-export mutations and never creates a default field in %s', (source) => {
+    const config = loadConfig(source).parse();
+    expect(config.remove(['parameters', 'legacy']).ok).toBe(false);
+    expect(config.set(['parameters', 'a11y'], t.stringLiteral('#app')).ok).toBe(false);
+    expect(config.changed).toBe(false);
+    expect(config.mutationDiagnostics.map(({ code }) => code)).toEqual([
+      'ambiguous-binding',
+      'ambiguous-binding',
+    ]);
+    expect(printConfig(config).code).toBe(source);
+  });
+
+  it('returns undefined without diagnostics for a missing named export', () => {
+    const config = loadConfig('export default {};').parse();
+    expect(config.namedExport('parameters')).toBeUndefined();
+    expect(config.changed).toBe(false);
+    expect(config.mutationDiagnostics).toEqual([]);
+  });
+
+  it('reads a named export through wrappers and identifiers', () => {
+    const config = loadConfig(
+      'const shared = { options: { storySort: { order: ["Intro"] } } }; export const parameters = shared satisfies Record<string, unknown>;'
+    ).parse();
+    const parameters = config.namedExport('parameters');
+    expect(parameters?.getValue(['parameters', 'options', 'storySort'])).toEqual({
+      order: ['Intro'],
+    });
+    expect(parameters?.get(['parameters', 'options', 'storySort'])).toMatchObject({
+      type: 'ObjectExpression',
+    });
+    expect(config.changed).toBe(false);
+    expect(config.mutationDiagnostics).toEqual([]);
+  });
+
+  it('edits a named export and prunes the declaration when a removal empties it', () => {
+    const config = loadConfig(
+      `export const parameters = { options: { storySort: { order: ['Intro'] } } }, tags = ['test'];`
+    ).parse();
+    const parameters = config.namedExport('parameters', 'mutate');
+    expect(parameters?.remove(['parameters', 'options', 'storySort'])).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(config.changed).toBe(true);
+    expect(printConfig(config).code).toBe(`export const tags = ['test'];`);
+  });
+
+  it.each([
+    'export let parameters = {}; parameters = other;',
+    'export const parameters = createParameters();',
+    'export const parameters = undefined;',
+  ])('refuses unsafe named exports in %s', (source) => {
+    const config = loadConfig(source).parse();
+    expect(config.namedExport('parameters', 'mutate')).toBeUndefined();
+    expect(config.mutationDiagnostics.length).toBeGreaterThan(0);
+    expect(config.changed).toBe(false);
+    expect(printConfig(config).code).toBe(source);
+  });
+
+  it('refuses edits through a binding that escapes the export', () => {
+    const source = 'const parameters = {}; use(parameters); export { parameters };';
+    const config = loadConfig(source).parse();
+    expect(config.namedExport('parameters', 'read')).toBeDefined();
+    expect(config.namedExport('parameters', 'mutate')).toBeUndefined();
+    expect(config.mutationDiagnostics.map(({ code }) => code)).toEqual(['ambiguous-binding']);
+    expect(config.changed).toBe(false);
+    expect(printConfig(config).code).toBe(source);
+  });
 });

@@ -109,6 +109,10 @@ export const getStoryProps = <TFramework extends Renderer>(
     return null as any;
   }
 
+  // A story that owns the document would own the docs page's too, so it renders in its own
+  // iframe, by default as tall as a small phone's viewport.
+  const ownsDocument = parameters.layout === 'document';
+
   // prefer block props, then story parameters defined by the framework-specific settings
   // and optionally overridden by users
 
@@ -128,7 +132,11 @@ export const getStoryProps = <TFramework extends Renderer>(
     };
   }
 
-  const height = props.height ?? storyParameters.height ?? storyParameters.iframeHeight ?? '100px';
+  const height =
+    props.height ??
+    storyParameters.height ??
+    storyParameters.iframeHeight ??
+    (ownsDocument ? '667px' : '100px');
   return {
     story: story as any,
     inline: false,

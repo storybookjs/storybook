@@ -907,6 +907,48 @@ describe('PreviewWeb', () => {
     });
   });
 
+  describe('a story that owns the document', () => {
+    const documentImportFn = vi.fn(async (path: string) =>
+      path === './src/ComponentOne.stories.js'
+        ? {
+            ...componentOneExports,
+            a: { ...componentOneExports.a, parameters: { layout: 'document' } },
+          }
+        : importFn(path)
+    );
+    // The real document: the mocked global's has no body.
+    const realDocument = globalThis.document;
+
+    it('passes the body its render left to play, marked as the story root', async () => {
+      document.location.search = '?id=component-one--a';
+      const body = realDocument.createElement('body');
+      projectAnnotations.renderToCanvas.mockImplementationOnce(async () => {
+        realDocument.documentElement.replaceChild(body, realDocument.body);
+        return teardownrenderToCanvas;
+      });
+
+      const preview = await createAndRenderPreview({ importFn: documentImportFn });
+
+      expect(componentOneExports.a.play).toHaveBeenCalledWith(
+        expect.objectContaining({ canvasElement: body })
+      );
+      expect(body.id).toBe('storybook-root');
+      expect(preview.view.showMain).toHaveBeenCalled();
+    });
+
+    it('takes the mark back when another story is selected', async () => {
+      document.location.search = '?id=component-one--a';
+      await createAndRenderPreview({ importFn: documentImportFn });
+      const { body } = realDocument;
+
+      mockChannel.emit.mockClear();
+      emitter.emit(SET_CURRENT_STORY, { storyId: 'component-one--b', viewMode: 'story' });
+      await waitForRender();
+
+      expect(body).not.toHaveAttribute('id');
+    });
+  });
+
   describe('onUpdateGlobals', () => {
     beforeEach(() => {
       mockChannel.emit.mockClear();

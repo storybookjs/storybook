@@ -1,23 +1,27 @@
 <base target="_parent" />
 
 <style>
-  /* While we aren't showing the main block yet, but still preparing, we want everything the user has rendered, which may or may not be in #storybook-root, to be display none */
-  .sb-show-preparing-story:not(.sb-show-main) > :not(.sb-preparing-story) {
-    display: none;
+  /* Storybook's own UI, in the top layer while it shows a block. Undo the popover's default box. */
+  sb-preview {
+    inset: 0;
+    width: auto;
+    height: auto;
+    margin: 0;
+    border: 0;
+    padding: 0;
+    overflow: visible;
+    background: transparent;
+    color: inherit;
   }
 
-  .sb-show-preparing-docs:not(.sb-show-main) > :not(.sb-preparing-docs) {
-    display: none;
-  }
-
-  .sb-show-main.sb-main-centered {
+  .sb-main-centered {
     margin: 0;
     display: flex;
     align-items: center;
     min-height: 100vh;
   }
 
-  .sb-show-main.sb-main-centered #storybook-root {
+  .sb-main-centered #storybook-root {
     box-sizing: border-box;
     margin: auto;
     padding: 1rem;
@@ -27,20 +31,20 @@
 
   /* Vertical centering fix for IE11 */
   @media screen and (-ms-high-contrast: none), (-ms-high-contrast: active) {
-    .sb-show-main.sb-main-centered:after {
+    .sb-main-centered:after {
       content: '';
       min-height: inherit;
       font-size: 0;
     }
   }
 
-  .sb-show-main.sb-main-fullscreen {
+  .sb-main-fullscreen {
     margin: 0;
     padding: 0;
     display: block;
   }
 
-  .sb-show-main.sb-main-padded {
+  .sb-main-padded {
     margin: 0;
     padding: 1rem;
     display: block;
@@ -118,7 +122,6 @@
   .sb-errordisplay {
     background: #f6f9fc;
     color: black;
-    z-index: 999999;
     width: 100vw;
     min-height: 100vh;
     box-sizing: border-box;
@@ -266,13 +269,10 @@
     }
   }
 
-  /* We display the preparing loaders *over* the rendering story */
+  /* The preparing blocks cover the story, which renders underneath */
   .sb-preparing-story,
   .sb-preparing-docs {
     background-color: white;
-    /* Maximum possible z-index. It would be better to use stacking contexts to ensure it's always
-    on top, but this isn't possible as it would require making CSS changes that could affect user code */
-    z-index: 2147483647;
   }
 
   .sb-loader {

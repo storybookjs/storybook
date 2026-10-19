@@ -57,8 +57,8 @@ export function hasMetaImport(imports: MetaImports): boolean {
   return !!imports.defineMetaImport || imports.previewNames.length > 0;
 }
 
-// `const { Story } = defineMeta({ … })`, `const { Story } = preview.meta({ … })`, or
-// `const meta = preview.meta({ … })` followed by `const { Story } = meta` and
+// `const { Story } = defineMeta({ … })`, `const { Story } = preview.meta({ … }).type<…>()`, or
+// `export const meta = preview.meta({ … })` followed by `const { Story } = meta` and
 // `const { Story: IconStory } = meta.type<…>()`
 export interface MetaNodes {
   // `preview.meta()` creates a CSF factories meta
@@ -80,12 +80,15 @@ export function findMeta(
 ): MetaNodes | undefined {
   let meta: MetaNodes | undefined;
 
-  for (const statement of body) {
-    if (statement.type !== 'VariableDeclaration') {
+  for (const node of body) {
+    const statement = node.type === 'ExportNamedDeclaration' ? node.declaration : node;
+
+    if (statement?.type !== 'VariableDeclaration') {
       continue;
     }
 
-    const { id, init } = statement.declarations[0];
+    const { id, init: initWithTypeCalls } = statement.declarations[0];
+    const init = initWithTypeCalls && skipTypeCalls(initWithTypeCalls);
     const functionName =
       init?.type === 'CallExpression' ? getMetaFunctionName(init, imports, filename) : undefined;
 
@@ -168,7 +171,7 @@ function getMetaFunctionName(
 
 // `preview.type<…>()` and `meta.type<…>()` return the same preview or meta with more types, so
 // `preview.type<…>().meta()` is a meta of `preview`, and `meta.type<…>()` is `meta`
-function skipTypeCalls(expression: ESTreeAST.Expression | ESTreeAST.Super) {
+export function skipTypeCalls(expression: ESTreeAST.Expression | ESTreeAST.Super) {
   let current = expression;
 
   while (

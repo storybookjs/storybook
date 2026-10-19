@@ -15,6 +15,7 @@ import {
   DefaultOrNamespaceImportUsedError,
   GetDefineMetaFirstArgumentError,
   MissingDefineMetaImportError,
+  MissingDefineMetaVariableDeclarationError,
   MissingModuleTagError,
   NoStoryComponentDestructuredError,
 } from '../utils/error/parser/extract/svelte.ts';
@@ -101,6 +102,9 @@ export async function parseForIndexer(filename: string): Promise<Results> {
       hasDefaultOrNamespaceImport = imports.hasDefaultOrNamespaceImport;
 
       if (!meta) {
+        if (state.hasMetaImport) {
+          throw new MissingDefineMetaVariableDeclarationError(filename);
+        }
         return;
       }
 

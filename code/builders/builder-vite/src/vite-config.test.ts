@@ -226,6 +226,7 @@ describe('discovery miss reporting', () => {
     expect(loggerWarnMock.mock.calls[0][0]).toContain(
       "core: { builder: { options: { viteConfigPath: '/project/vite.config.mjs' } } }"
     );
+    expect(loggerWarnMock.mock.calls[0][0]).toContain('viteConfigPath: null');
   });
 
   it('stays quiet when no Vite config exists in the project at all', async () => {
@@ -258,6 +259,35 @@ describe('discovery miss reporting', () => {
       },
       'development'
     );
+
+    expect(vi.mocked(find.any)).not.toHaveBeenCalled();
+    expect(loggerWarnMock).not.toHaveBeenCalled();
+  });
+
+  it('loads nothing and stays quiet when viteConfigPath is explicitly null', async () => {
+    loadConfigFromFileMock.mockResolvedValueOnce(null);
+
+    await commonConfig(
+      {
+        ...dummyOptions,
+        configDir: '/project/.storybook',
+        presets: presetsWith({ viteConfigPath: null }),
+      },
+      'development'
+    );
+
+    expect(loadConfigFromFileMock).not.toHaveBeenCalled();
+    expect(vi.mocked(find.any)).not.toHaveBeenCalled();
+    expect(loggerWarnMock).not.toHaveBeenCalled();
+  });
+
+  it('stays quiet when the config dir sits outside the project root', async () => {
+    // The search is bounded by `last: getProjectRoot()`; when the config dir's parent is not
+    // inside the project root the search would run to the filesystem root, so no warning is made.
+    vi.mocked(getProjectRoot).mockReturnValue('/workspace');
+    loadConfigFromFileMock.mockResolvedValueOnce(null);
+
+    await commonConfig({ ...dummyOptions, configDir: '/project/.storybook' }, 'development');
 
     expect(vi.mocked(find.any)).not.toHaveBeenCalled();
     expect(loggerWarnMock).not.toHaveBeenCalled();

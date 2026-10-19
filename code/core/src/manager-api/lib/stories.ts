@@ -13,102 +13,21 @@ import type {
   DocsOptions,
   IndexEntry,
   Parameters,
-  SetStoriesPayload,
-  SetStoriesStoryData,
   StatusesByStoryIdAndTypeId,
   StoryId,
-  StoryIndexV2,
   StoryIndexV3,
 } from 'storybook/internal/types';
 
 import { countBy } from 'es-toolkit/array';
-import { mapValues } from 'es-toolkit/object';
 import memoize from 'memoizerific';
 import { dedent } from 'ts-dedent';
 
 import { Tag } from '../../shared/constants/tags.ts';
-import { type API, type State, combineParameters } from '../root.tsx';
+import { type API, type State } from '../root.tsx';
 import intersect from './intersect.ts';
 import merge from './merge.ts';
 
 const TITLE_PATH_SEPARATOR = /\s*\/\s*/;
-
-export const denormalizeStoryParameters = ({
-  globalParameters,
-  kindParameters,
-  stories,
-}: SetStoriesPayload): SetStoriesStoryData => {
-  return mapValues(stories, (storyData) => ({
-    ...storyData,
-    parameters: combineParameters(
-      globalParameters,
-      kindParameters[storyData.kind],
-      storyData.parameters as unknown as Parameters
-    ),
-  })) as SetStoriesStoryData;
-};
-
-export const transformSetStoriesStoryDataToPreparedStoryIndex = (
-  stories: SetStoriesStoryData
-): API_PreparedStoryIndex => {
-  const entries: API_PreparedStoryIndex['entries'] = Object.entries(stories).reduce(
-    (acc, [id, story]) => {
-      if (!story) {
-        return acc;
-      }
-
-      const { docsOnly, fileName, ...parameters } = story.parameters;
-      const base = {
-        title: story.kind,
-        id,
-        name: story.name,
-        importPath: fileName,
-      };
-      if (docsOnly) {
-        acc[id] = {
-          type: 'docs',
-          tags: ['stories-mdx'],
-          storiesImports: [],
-          ...base,
-        };
-      } else {
-        const { argTypes, args, initialArgs } = story;
-        acc[id] = {
-          type: 'story',
-          subtype: 'story',
-          ...base,
-          parameters,
-          argTypes,
-          args,
-          initialArgs,
-        };
-      }
-      return acc;
-    },
-    {} as API_PreparedStoryIndex['entries']
-  );
-
-  return { v: 5, entries };
-};
-
-export const transformStoryIndexV2toV3 = (index: StoryIndexV2): StoryIndexV3 => {
-  return {
-    v: 3,
-    stories: Object.values(index.stories).reduce(
-      (acc, entry) => {
-        acc[entry.id] = {
-          ...entry,
-          title: entry.kind,
-          name: entry.name || entry.story,
-          importPath: entry.parameters.fileName || '',
-        };
-
-        return acc;
-      },
-      {} as StoryIndexV3['stories']
-    ),
-  };
-};
 
 export const transformStoryIndexV3toV4 = (index: StoryIndexV3): API_PreparedStoryIndex => {
   const countByTitle = countBy(Object.values(index.stories), (item) => item.title);
@@ -175,15 +94,19 @@ type ToStoriesHashOptions = {
 };
 
 export const transformStoryIndexToStoriesHash = (
-  input: API_PreparedStoryIndex | StoryIndexV2 | StoryIndexV3,
+  input: API_PreparedStoryIndex | StoryIndexV3,
   { provider, docsOptions, filters, allStatuses, statusFilterKey }: ToStoriesHashOptions
 ): API_IndexHash => {
   if (!input.v) {
     throw new Error('Composition: Missing stories.json version');
   }
+  if (input.v < 3) {
+    throw new Error(
+      `Unsupported story index version: v${input.v}. Storybook 11 requires index version 3 or later.`
+    );
+  }
 
   let index = input;
-  index = index.v === 2 ? transformStoryIndexV2toV3(index as any) : index;
   index = index.v === 3 ? transformStoryIndexV3toV4(index as any) : index;
   index = index.v === 4 ? transformStoryIndexV4toV5(index as any) : index;
   index = index as API_PreparedStoryIndex;

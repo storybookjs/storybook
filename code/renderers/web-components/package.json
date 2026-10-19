@@ -1,6 +1,6 @@
 {
   "name": "@storybook/web-components",
-  "version": "11.0.0-alpha.4",
+  "version": "11.0.0-alpha.6",
   "description": "Storybook Web Components renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -54,9 +54,12 @@
   ],
   "dependencies": {
     "@storybook/global": "^5.0.0",
+    "@wc-toolkit/cem-generator": "^0.2.1",
+    "@wc-toolkit/cem-generator-lit": "^0.1.16",
     "custom-elements-manifest": "^2.1.0",
     "tiny-invariant": "^1.3.1",
-    "ts-dedent": "^2.0.0"
+    "ts-dedent": "^2.2.0",
+    "typescript": "^6.0.3"
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
@@ -65,8 +68,8 @@
     "cross-spawn": "^7.0.6",
     "es-toolkit": "^1.43.0",
     "lit": "2.3.1",
+    "pathe": "^1.1.2",
     "tmp": "^0.2.3",
-    "typescript": "^6.0.3",
     "web-component-analyzer": "^1.1.6"
   },
   "peerDependencies": {

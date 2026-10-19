@@ -7,6 +7,9 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
   let found = false;
   const args = Object.fromEntries(
     Object.entries(input).map(([k, v]) => {
+      if (!t.isValidIdentifier(k, false)) {
+        throw new SaveStoryError(`Invalid arg name: ${JSON.stringify(k)}`);
+      }
       return [k, valueToAST(v)];
     })
   );

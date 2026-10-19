@@ -53,8 +53,8 @@ describe('useStore', () => {
 
 describe('normalizeOptions', () => {
   it('should apply the default outline style for a selector-only payload', () => {
-    expect(normalizeOptions({ selectors: ['#button'] })).toEqual({
-      id: undefined,
+    expect(normalizeOptions({ id: 'my-highlight', selectors: ['#button'] })).toEqual({
+      id: 'my-highlight',
       priority: 0,
       selectors: ['#button'],
       styles: {
@@ -85,9 +85,9 @@ describe('normalizeOptions', () => {
 
   it('should keep an already two-dimensional menu unchanged', () => {
     const menuItem = { id: 'action', title: 'Action' };
-    expect(normalizeOptions({ selectors: ['#button'], menu: [[menuItem]] })).toEqual(
-      expect.objectContaining({ menu: [[menuItem]] })
-    );
+    expect(
+      normalizeOptions({ id: 'my-highlight', selectors: ['#button'], menu: [[menuItem]] })
+    ).toEqual(expect.objectContaining({ menu: [[menuItem]] }));
   });
 
   it('should set menu to undefined when it is not an array', () => {

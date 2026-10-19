@@ -102,6 +102,27 @@ describe('PNPMProxy catalogs', () => {
     });
   });
 
+  describe('writeCatalogUpgrades', () => {
+    it('keeps an exact prerelease exact when the catalog used a range', () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'catalog:\n  storybook: ^10.6.0\n' });
+
+      const result = pnpmProxy.writeCatalogUpgrades(['storybook@11.0.0-alpha.6'], {
+        storybook: 'catalog:',
+      });
+
+      expect(result).toEqual([]);
+      expect(writtenYaml()).toContain('storybook: 11.0.0-alpha.6');
+    });
+
+    it('keeps the catalog range style for a stable version', () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'catalog:\n  storybook: ^10.6.0\n' });
+
+      pnpmProxy.writeCatalogUpgrades(['storybook@11.0.0'], { storybook: 'catalog:' });
+
+      expect(writtenYaml()).toContain('storybook: ^11.0.0');
+    });
+  });
+
   describe('applyVersionToRelatedPackages', () => {
     it('pins directly when the anchor is not declared through a catalog', () => {
       vi.spyOn(pnpmProxy, 'getAllDependencies').mockReturnValue({ vitest: '^3.2.0' });
@@ -233,6 +254,29 @@ describe('PNPMProxy catalogs', () => {
       );
 
       expect(result).toEqual(['@vitest/coverage-v8@^3.2.0']);
+    });
+  });
+
+  describe('writeCatalogUpgrades', () => {
+    it('upgrades catalog entries in place and leaves only direct dependencies to package.json', () => {
+      vol.fromJSON({
+        [WORKSPACE_YAML]:
+          '# Storybook\ncatalog:\n  storybook: ^10.3.6\ncatalogs:\n  sb:\n    "@storybook/react-vite": 10.3.6\n',
+      });
+
+      const remaining = pnpmProxy.writeCatalogUpgrades(
+        ['storybook@11.0.0', '@storybook/react-vite@11.0.0', '@storybook/addon-docs@^11.0.0'],
+        {
+          storybook: 'catalog:',
+          '@storybook/react-vite': 'catalog:sb',
+          '@storybook/addon-docs': '^10.3.6',
+        }
+      );
+
+      expect(remaining).toEqual(['@storybook/addon-docs@^11.0.0']);
+      expect(writtenYaml()).toBe(
+        '# Storybook\ncatalog:\n  storybook: ^11.0.0\ncatalogs:\n  sb:\n    "@storybook/react-vite": 11.0.0\n'
+      );
     });
   });
 });

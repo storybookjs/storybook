@@ -1,6 +1,6 @@
 import { types as t } from 'storybook/internal/babel';
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
-import { storyNameFromExport } from 'storybook/internal/csf';
+import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import type { CsfFile, StoryArgsResolver, StoryReferences } from 'storybook/internal/csf-tools';
 import {
   buildImportStatements,

@@ -310,9 +310,6 @@ be overridden at `registerService()` time. Static snapshot building is unaffecte
 Public query names are nouns or noun phrases (`docgen`, `status`, `recordFields`) without a `get`
 prefix — callers already use `.get()`, `.loaded()`, and `.subscribe()` on the query handle.
 
-`core/module-graph` keeps deprecated `getStatus` and `getGraphRevision` aliases that delegate to
-`status` and `graphRevision` for backwards compatibility with external consumers.
-
 ### Internal operation naming
 
 Internal queries and commands must use a `_` prefix (for example `_debugState`). `defineService()`

@@ -468,6 +468,31 @@ describe('stories codemod', () => {
       }
     });
 
+    it('uses a relative import for .rnstorybook when subpath imports are off', async () => {
+      await expect(
+        formatFileContent(
+          '/project/src/Button.stories.tsx',
+          await storyToCsfFactory(
+            {
+              source: dedent`
+                export default {};
+                export const A = {};
+              `,
+              path: '/project/src/Button.stories.tsx',
+            },
+            {
+              previewConfigPath: '/project/.rnstorybook/preview.tsx',
+              useSubPathImports: false,
+            }
+          )
+        )
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "../.rnstorybook/preview";
+        const meta = preview.meta({});
+        export const A = meta.story();
+      `);
+    });
+
     it('converts CSF1 into CSF4 with render', async () => {
       await expect(
         transform(dedent`

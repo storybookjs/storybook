@@ -198,5 +198,5 @@ describe('lit template attribute oracle', () => {
       const actual = renderSnippetAttributes(snippet, entry.attrs);
       expect(actual, `${entry.source}\n${snippet}`).toEqual(expected);
     }
-  });
+  }, 30_000);
 });

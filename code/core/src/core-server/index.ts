@@ -55,6 +55,10 @@ export {
   listServices,
   registerService as experimental_registerService,
 } from '../shared/open-service/server.ts';
+export {
+  createWorkerGatedStoryDocsProvider,
+  type WorkerGatedStoryDocsProviderOptions,
+} from '../shared/open-service/services/story-docs/provider.ts';
 
 /**
  * Toolset registration and server-side primitives for addons that host a public toolset.
@@ -118,6 +122,7 @@ export { ChangeDetectionService } from './change-detection/change-detection-serv
 export { resolveChangeDetectionAdapter } from '../shared/open-service/services/module-graph/server.ts';
 export { getBuilders } from './utils/get-builders.ts';
 export { prepareHeadlessUniversalStores } from './utils/get-server-channel.ts';
+export { isValidHost, type HostValidationOptions } from './utils/getHostValidationMiddleware.ts';
 export { resetServicesPresetOnce as experimental_resetServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 export {
   getTestProviderStoreById as experimental_getTestProviderStore,

@@ -205,6 +205,14 @@ test('CSF1', () => {
   );
 });
 
+test('Local function story reference', () => {
+  const input = withCSF3(dedent`
+    const ParagraphStory = () => <Button />;
+    export const Example = ParagraphStory;
+  `);
+  expect(generateExample(input)).toBe('const Example = () => <Button />;');
+});
+
 test('CSF2', () => {
   const input = withCSF3(dedent`
     export const CSF2: StoryFn = (args) => <Button {...args} label="String"></Button>;
@@ -819,6 +827,25 @@ test('an arg naming an imported value keeps the name and reports the import it n
       },
     ]
   `);
+});
+
+test('an imported bound story keeps its helper and resolved args', () => {
+  const input = dedent`
+    import { Button } from '@design-system/button';
+    import { renderMatch as Match } from './match-helper';
+    export default { title: 'Match', component: Button };
+    export const FirstHalf = Match.bind({});
+    FirstHalf.args = { home: 'Arsenal', away: 'Aston Villa' };
+  `;
+
+  expect(generateResolved(input)).toEqual([
+    {
+      snippet:
+        'const FirstHalf = () => Match.bind({})({\n    "home": \'Arsenal\',\n    "away": \'Aston Villa\'\n});',
+      imports: ['renderMatch from ./match-helper'],
+      unresolved: [],
+    },
+  ]);
 });
 
 test('args assembled at runtime are reported rather than dropped', () => {

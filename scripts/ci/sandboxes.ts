@@ -2,11 +2,11 @@ import { join } from 'path';
 
 import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { type TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
-import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../utils/constants.ts';
 import { build_linux } from './common-jobs.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   artifact,
+  npm,
   sandboxArchive,
   server,
   testResults,
@@ -39,9 +39,9 @@ function getDocgenBaselineSteps(templateKey: string) {
   ];
 }
 
-export function getSandboxSetupSteps(template: TemplateKey) {
+function getSandboxSetupSteps(template: string) {
   const extraSteps = [];
-  const templateData = sandboxTemplates.allTemplates[template];
+  const templateData = sandboxTemplates.allTemplates[template as TemplateKey];
 
   if (templateData.extraCiSteps?.ensureMinNodeVersion) {
     extraSteps.push({
@@ -54,75 +54,6 @@ export function getSandboxSetupSteps(template: TemplateKey) {
   }
 
   return extraSteps;
-}
-
-export function getGenerateSandboxSteps(template: TemplateKey) {
-  const data = sandboxTemplates.allTemplates[template];
-
-  if (!('inDevelopment' in data) || !data.inDevelopment) {
-    return [];
-  }
-
-  return [
-    {
-      run: {
-        name: 'Install npm with min-release-age support',
-        command: `sudo npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}`,
-      },
-    },
-    {
-      run: {
-        name: 'Generate Sandbox',
-        command: `yarn task generate --template ${template} --no-link -s generate --debug`,
-        environment: {
-          STORYBOOK_SANDBOX_GENERATE: 1,
-          STORYBOOK_TELEMETRY_DEBUG: 1,
-          STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
-        },
-      },
-    },
-  ];
-}
-
-/** Expects Verdaccio and the event collector to be running. */
-export function getCreateSandboxSteps(template: TemplateKey) {
-  const id = toId(template);
-
-  return [
-    ...getGenerateSandboxSteps(template),
-    {
-      run: {
-        name: `Create sandbox ${template}`,
-        command: `yarn task sandbox --template ${template} --no-link -s sandbox --debug`,
-        environment: {
-          STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: 1,
-          STORYBOOK_TELEMETRY_DEBUG: 1,
-          STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
-        },
-      },
-    },
-    /**
-     * Due to the way we create sandboxes, a unique situation arises where a sveltekit
-     * cache-config-file is missing. This generates it.
-     */
-    ...(id.includes('svelte-kit')
-      ? [
-          {
-            run: {
-              name: 'Run prepare',
-              working_directory: `${LINUX_ROOT_DIR}/${SANDBOX_DIR}/${id}`,
-              command: `yarn prepare`,
-            },
-          },
-        ]
-      : []),
-    {
-      run: {
-        name: `Build sandbox ${template}`,
-        command: `yarn task build --template ${template} --no-link -s build`,
-      },
-    },
-  ];
 }
 
 /**
@@ -152,7 +83,7 @@ function defineSandboxJob_dev({
   directory: string;
   name: string;
   requires: JobOrNoOpJob[];
-  template: TemplateKey;
+  template: string;
   options: {
     e2e: boolean;
     resourceClass: 'large' | 'xlarge';
@@ -219,9 +150,9 @@ function defineSandboxJob_dev({
   );
 }
 
-export function defineSandboxFlow(key: TemplateKey) {
+export function defineSandboxFlow<Key extends string>(key: Key) {
   const id = toId(key);
-  const data = sandboxTemplates.allTemplates[key];
+  const data = sandboxTemplates.allTemplates[key as keyof typeof sandboxTemplates.allTemplates];
   const { skipTasks = [], name } = data;
 
   const path = key.replace('/', '-');
@@ -257,7 +188,56 @@ export function defineSandboxFlow(key: TemplateKey) {
             ].join('\n'),
           },
         },
-        ...getCreateSandboxSteps(key),
+        ...('inDevelopment' in data && data.inDevelopment
+          ? [
+              // Node's bundled npm silently ignores NPM_CONFIG_MIN_RELEASE_AGE during scaffold;
+              // `ensureNpmSupportsMinReleaseAge` fails the generate task on it.
+              npm.installPinnedVersion(),
+              {
+                run: {
+                  name: 'Generate Sandbox',
+                  command: `yarn task generate --template ${key} --no-link -s generate --debug`,
+                  environment: {
+                    STORYBOOK_SANDBOX_GENERATE: 1,
+                    STORYBOOK_TELEMETRY_DEBUG: 1,
+                    STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
+                  },
+                },
+              },
+            ]
+          : []),
+        {
+          run: {
+            name: 'Create Sandbox',
+            command: `yarn task sandbox --template ${key} --no-link -s sandbox --debug`,
+            environment: {
+              STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: 1,
+              STORYBOOK_TELEMETRY_DEBUG: 1,
+              STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
+            },
+          },
+        },
+        /**
+         * Due to the way we create sandboxes, a unique situation arises where a sveltekit
+         * cache-config-file is missing. This generates it.
+         */
+        ...(id.includes('svelte-kit')
+          ? [
+              {
+                run: {
+                  name: 'Run prepare',
+                  working_directory: `${LINUX_ROOT_DIR}/${SANDBOX_DIR}/${id}`,
+                  command: `yarn prepare`,
+                },
+              },
+            ]
+          : []),
+        {
+          run: {
+            name: 'Build storybook',
+            command: `yarn task build --template ${key} --no-link -s build`,
+          },
+        },
         ...getDocgenBaselineSteps(key),
         artifact.persist(`${LINUX_ROOT_DIR}/${SANDBOX_DIR}/${id}/debug-storybook.log`, 'logs'),
         workspace.packSandbox(id),

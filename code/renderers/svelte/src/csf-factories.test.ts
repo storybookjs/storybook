@@ -7,6 +7,7 @@ import type { Component, ComponentProps, Snippet } from 'svelte';
 import { fn, mocked } from 'storybook/test';
 
 import Button from './__test__/Button.svelte';
+import Counter from './__test__/Counter.svelte';
 import Decorator2 from './__test__/Decorator2.svelte';
 import Decorator1 from './__test__/Decorator.svelte';
 import Divider from './__test__/Divider.svelte';
@@ -219,6 +220,18 @@ describe('Svelte components', () => {
   it('a component without props needs no args', () => {
     const meta = preview.meta({ component: Divider });
     const Default = meta.story();
+  });
+
+  it('a runes component without props needs no args', () => {
+    const meta = preview.meta({ component: Counter });
+    const Default = meta.story();
+  });
+
+  it('a runes component without props takes the args of meta.type<>()', () => {
+    const meta = preview.meta({ component: Counter }).type<{ args: { theme: string } }>();
+    // @ts-expect-error theme is required
+    const Default = meta.story();
+    const Dark = meta.story({ args: { theme: 'dark' } });
   });
 
   it('mount accepts a component and its props', () => {

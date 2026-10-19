@@ -100,6 +100,14 @@ const config: BuildEntries = {
         exportEntries: ['./internal/mocking-utils'],
         entryPoint: './src/mocking-utils/index.ts',
       },
+      {
+        exportEntries: ['./internal/tools'],
+        entryPoint: './src/cli/tools/sdk/index.ts',
+      },
+      {
+        exportEntries: ['./internal/tools/child-host'],
+        entryPoint: './src/cli/tools/sdk/child-host.ts',
+      },
     ],
     browser: [
       {
@@ -145,6 +153,10 @@ const config: BuildEntries = {
       {
         exportEntries: ['./internal/csf'],
         entryPoint: './src/csf/index.ts',
+      },
+      {
+        exportEntries: ['./internal/csf/csf-utils'],
+        entryPoint: './src/csf/csf-utils.ts',
       },
       {
         exportEntries: ['./internal/manager-errors'],
@@ -227,11 +239,13 @@ const config: BuildEntries = {
         exportEntries: ['./internal/preview/runtime'],
         entryPoint: './src/preview/runtime.ts',
         dts: false,
+        chunkedRuntime: true,
       },
       {
         exportEntries: ['./internal/manager/globals-runtime'],
         entryPoint: './src/manager/globals-runtime.ts',
         dts: false,
+        chunkedRuntime: true,
       },
       /**
        * It is required to be a runtime entry point, because it is used to inject the mocker runtime

@@ -1,3 +1,5 @@
 <template>
-  <PropSlotNameCollision > <template #icon>pi pi-check</template> </PropSlotNameCollision>
+  <PropSlotNameCollision>
+    <template #icon>pi pi-check</template>
+  </PropSlotNameCollision>
 </template>

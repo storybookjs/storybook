@@ -7,8 +7,8 @@ import { PropertiesMethodsNoiseComponent } from './properties-methods-noise.comp
   template: `
     <sb-properties-methods-noise
         [title]="'Paged results'"
-        (densityChange)="densityChange($event)">
-    </sb-properties-methods-noise>`,
+        (densityChange)="densityChange($event)"
+    />`,
 })
 export class DemoComponent {
   densityChange(event: unknown) {}

@@ -1,6 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+// @vitest-environment happy-dom
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+
+import { logger } from 'storybook/internal/client-logger';
 
 import { init as initShortcuts } from '../modules/shortcuts';
+
+vi.mock('storybook/internal/client-logger');
 
 function createMockStore() {
   let state = {};
@@ -287,5 +292,155 @@ describe('shortcuts api', () => {
         `${mockSecondAddonShortcut.addon}-${mockSecondAddonShortcut.shortcut.actionName}`
       ]
     ).toEqual(['G']);
+  });
+});
+
+describe('addon shortcut matching', () => {
+  const initWithUi = () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'shown' };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: true }, storyId: 'a', refId: undefined });
+    return api;
+  };
+
+  it('addon shortcuts match and fire', async () => {
+    const api = initWithUi();
+    const action = vi.fn();
+    await api.setAddonShortcut('my-addon', {
+      label: 'Do it',
+      defaultShortcut: ['O'],
+      actionName: 'doIt',
+      action,
+    });
+
+    expect(api.handleKeydownEvent({ key: 'O', code: 'KeyO' })).toBe('my-addon-doIt');
+    expect(action).toHaveBeenCalled();
+  });
+
+  it('persisted addon bindings whose addon did not re-register are ignored', () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'shown' };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({
+      ...state,
+      ui: { enableShortcuts: true },
+      shortcuts: { ...state.shortcuts, 'stale-addon-gone': ['ArrowUp'] },
+    });
+
+    expect(() => api.handleKeydownEvent({ key: 'ArrowUp' })).not.toThrow();
+    expect(api.handleKeydownEvent({ key: 'ArrowUp' })).toBeUndefined();
+  });
+
+  it('handleShortcutFeature warns instead of throwing for a feature id with no registered action', () => {
+    const api = initWithUi();
+
+    expect(() => api.handleShortcutFeature('stale-addon-gone', {})).not.toThrow();
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      expect.stringContaining('stale-addon-gone')
+    );
+  });
+});
+
+describe('keydown match gating', () => {
+  it('reports no match when shortcuts are disabled, so the key is not swallowed', () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'shown', toggleFullscreen: vi.fn() };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: false }, storyId: 'a' });
+
+    expect(api.handleKeydownEvent({ key: 'F', altKey: true })).toBeUndefined();
+    expect(fullAPI.toggleFullscreen).not.toHaveBeenCalled();
+  });
+
+  it('reports no match for sidebar shortcuts while the nav is unavailable', () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'unavailable', toggleFullscreen: vi.fn() };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: true }, storyId: 'a' });
+
+    expect(api.handleKeydownEvent({ key: 'S', code: 'KeyS', altKey: true })).toBeUndefined();
+    expect(api.handleKeydownEvent({ key: 'F', altKey: true })).toBe('fullScreen');
+  });
+
+  it('reports no match for an escape binding persisted by an older Storybook, so overlays receive the key', () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'shown' };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({
+      ...state,
+      ui: { enableShortcuts: true },
+      shortcuts: { ...state.shortcuts, escape: ['escape'] },
+    });
+
+    expect(api.handleKeydownEvent({ key: 'Escape' })).toBeUndefined();
+  });
+});
+
+describe('keydown listeners registered by init', () => {
+  let fullAPI;
+
+  const dispatch = (eventInit) => {
+    const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...eventInit });
+    vi.spyOn(event, 'stopPropagation');
+    document.body.dispatchEvent(event);
+    return event;
+  };
+
+  beforeAll(() => {
+    const store = createMockStore();
+    fullAPI = {
+      getNavAvailability: () => 'shown',
+      toggleFullscreen: vi.fn(),
+      getIsFullscreen: vi.fn().mockReturnValue(false),
+    };
+    const { state, init } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({
+      ...state,
+      ui: { enableShortcuts: true },
+      storyId: 'a',
+      shortcuts: { ...state.shortcuts, 'stale-addon-gone': ['alt', 'shift', 'Q'] },
+    });
+    init();
+  });
+
+  it('stops propagation of a matched shortcut at the capture phase and runs its action', () => {
+    const event = dispatch({ key: 'F', code: 'KeyF', altKey: true });
+
+    expect(fullAPI.toggleFullscreen).toHaveBeenCalled();
+    expect(event.stopPropagation).toHaveBeenCalled();
+  });
+
+  it('lets landmark navigation keys through to react-aria', () => {
+    const event = dispatch({ key: 'F6', code: 'F6' });
+
+    expect(event.stopPropagation).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('leaves events untouched when they only match an orphaned persisted addon binding', () => {
+    const event = dispatch({ key: 'Q', code: 'KeyQ', altKey: true, shiftKey: true });
+
+    expect(event.stopPropagation).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('exits fullscreen on a bubbled Escape that no overlay consumed', () => {
+    fullAPI.getIsFullscreen.mockReturnValue(true);
+
+    const event = dispatch({ key: 'Escape' });
+
+    expect(fullAPI.toggleFullscreen).toHaveBeenCalledWith(false);
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  it('does not exit fullscreen when an overlay already consumed Escape', () => {
+    fullAPI.getIsFullscreen.mockReturnValue(true);
+
+    const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    event.preventDefault();
+    document.body.dispatchEvent(event);
+
+    expect(fullAPI.toggleFullscreen).not.toHaveBeenCalled();
   });
 });

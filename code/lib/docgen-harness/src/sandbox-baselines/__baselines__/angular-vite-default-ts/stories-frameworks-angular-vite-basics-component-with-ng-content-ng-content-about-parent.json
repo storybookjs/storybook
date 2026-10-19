@@ -1,0 +1,23 @@
+{
+  "argTypes": {
+    "color": {
+      "name": "color",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": "#5eadf5"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-basics-component-with-ng-content-ng-content-about-parent",
+  "jsDocTags": {},
+  "name": "SbButtonComponent",
+  "path": "./src/stories/frameworks/angular-vite/basics/component-with-ng-content/ng-content-about-parent.stories.ts"
+}

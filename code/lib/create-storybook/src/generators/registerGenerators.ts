@@ -10,7 +10,6 @@ import reactGenerator from './REACT/index.ts';
 import reactNativeGenerator from './REACT_NATIVE/index.ts';
 import reactNativeAndRNWGenerator from './REACT_NATIVE_AND_RNW/index.ts';
 import reactNativeWebGenerator from './REACT_NATIVE_WEB/index.ts';
-import reactScriptsGenerator from './REACT_SCRIPTS/index.ts';
 import serverGenerator from './SERVER/index.ts';
 import solidGenerator from './SOLID/index.ts';
 import svelteGenerator from './SVELTE/index.ts';
@@ -22,7 +21,6 @@ import type { GeneratorModule } from './types.ts';
 
 const setOfGenerators = new Set<GeneratorModule>([
   reactGenerator,
-  reactScriptsGenerator,
   reactNativeGenerator,
   reactNativeWebGenerator,
   reactNativeAndRNWGenerator,

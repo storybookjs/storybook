@@ -21,12 +21,12 @@ import { type TransitionMapOptions, useTransitionMap } from 'react-transition-st
 import { useStorybookApi } from 'storybook/manager-api';
 import { keyframes, styled } from 'storybook/theming';
 
+import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import { Optional } from '../Optional/Optional.tsx';
 import { Particles } from '../Particles/Particles.tsx';
 import { TextFlip } from '../TextFlip.tsx';
 import type { ChecklistItem } from './useChecklist.ts';
 import { useChecklist } from './useChecklist.ts';
-import { useCopyButton } from '../../../shared/useCopyButton.ts';
 
 const fadeScaleIn = keyframes`
   from {
@@ -213,7 +213,7 @@ export const ChecklistWidget = () => {
   useEffect(() => {
     if (ready) {
       // Don't animate anything until the checklist items have settled down.
-      const timeout = setTimeout(setAnimated, 1000, true);
+      const timeout = setTimeout(setAnimated, 500, true);
       return () => clearTimeout(timeout);
     }
   }, [ready]);
@@ -244,6 +244,7 @@ export const ChecklistWidget = () => {
   }, [animated, nextItems, items]);
 
   const hasItems = renderItems.length > 0;
+  const isShown = hasItems && loaded;
   const transitionItems = useTransitionArray(allItems, renderItems, {
     keyFn: (item) => item.id,
     timeout: animated ? 300 : 0,
@@ -254,8 +255,12 @@ export const ChecklistWidget = () => {
   }
 
   return (
-    <CollapsibleWithMargin collapsed={!hasItems || !loaded}>
-      <HoverCard id="storybook-checklist-widget" outlineAnimation="rainbow">
+    <CollapsibleWithMargin collapsed={!isShown}>
+      <HoverCard
+        id="storybook-checklist-widget"
+        outlineAnimation="rainbow"
+        outlineAnimationPaused={!animated || !isShown}
+      >
         <Collapsible
           storageKey="checklist-widget"
           initialCollapsed={!hasItems}

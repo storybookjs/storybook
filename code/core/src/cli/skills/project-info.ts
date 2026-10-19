@@ -1,4 +1,4 @@
-import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
+import type { JsPackageManager } from 'storybook/internal/common';
 import { cache, getPrettyPackageManagerName } from 'storybook/internal/common';
 import type { SupportedRenderer } from 'storybook/internal/types';
 import { SupportedLanguage } from 'storybook/internal/types';
@@ -42,20 +42,11 @@ function parseMajorVersion(version: string): number | undefined {
   return match ? parseInt(match[1], 10) : undefined;
 }
 
-/**
- * Probes the target Storybook configuration and assembles the `ProjectInfo` the setup prompts
- * render from. Returns a discriminated result instead of throwing so callers (the `ai setup` CLI
- * today, `skills get setup` next) render their own failure message instead of duplicating logging.
- */
-export async function getProjectInfo(opts: {
-  configDir?: string;
-  packageManager?: PackageManagerName;
-}): Promise<ProjectInfoResult> {
+// Returns a discriminated result instead of throwing so callers (such as `skills setup`) render
+// their own failure message instead of duplicating logging.
+export async function getProjectInfo(opts: { configDir?: string }): Promise<ProjectInfoResult> {
   try {
-    const data = await getStorybookData({
-      configDir: opts.configDir,
-      packageManagerName: opts.packageManager,
-    });
+    const data = await getStorybookData({ configDir: opts.configDir });
 
     if (!data.frameworkPackage || !data.rendererPackage || !data.builderPackage) {
       return {

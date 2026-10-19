@@ -26,15 +26,14 @@ describe('GlobalsStore', () => {
     });
   });
 
-  it('is initialized to the default values from globalTypes if global is unset', () => {
+  it('is initialized to the values in globals; globalTypes declarations do not seed values', () => {
     const store = new GlobalsStore({
       globals: {
         arg1: 'arg1',
         arg2: 2,
       },
       globalTypes: {
-        arg2: { defaultValue: 'arg2' },
-        arg3: { defaultValue: { complex: { object: ['type'] } } },
+        arg3: {},
       },
     });
 
@@ -42,7 +41,7 @@ describe('GlobalsStore', () => {
       // NOTE: we keep arg1, even though it doesn't have a globalArgType
       arg1: 'arg1',
       arg2: 2,
-      arg3: { complex: { object: ['type'] } },
+      // arg3 is declared but never seeded: initialGlobals is the only seeding source
     });
   });
 
@@ -78,7 +77,7 @@ describe('GlobalsStore', () => {
           arg1: 'arg1',
         },
         globalTypes: {
-          arg2: { defaultValue: 'arg2' },
+          arg2: {},
         },
       });
 
@@ -93,7 +92,7 @@ describe('GlobalsStore', () => {
   });
 
   describe('second call to set', () => {
-    it('is initialized to the (new) default values from globalTypes if the (new) global is unset', () => {
+    it('is initialized to the (new) values in globals on a second set; globalTypes declarations do not seed', () => {
       const store = new GlobalsStore({ globals: {}, globalTypes: {} });
 
       expect(store.get()).toEqual({});
@@ -104,8 +103,7 @@ describe('GlobalsStore', () => {
           arg2: 2,
         },
         globalTypes: {
-          arg2: { defaultValue: 'arg2' },
-          arg3: { defaultValue: { complex: { object: ['type'] } } },
+          arg3: {},
         },
       });
 
@@ -113,7 +111,7 @@ describe('GlobalsStore', () => {
         // NOTE: we keep arg1, even though it doesn't have a globalArgType
         arg1: 'arg1',
         arg2: 2,
-        arg3: { complex: { object: ['type'] } },
+        // arg3 is declared but never seeded: initialGlobals is the only seeding source
       });
     });
 
@@ -126,7 +124,7 @@ describe('GlobalsStore', () => {
             arg3: 'arg3',
           },
           globalTypes: {
-            arg2: { defaultValue: 'arg2' },
+            arg2: {},
           },
         });
 
@@ -144,7 +142,7 @@ describe('GlobalsStore', () => {
             arg1: 'arg1',
           },
           globalTypes: {
-            arg2: { defaultValue: 'arg2' },
+            arg2: {},
           },
         });
         // However undeclared values aren't persisted
@@ -162,7 +160,7 @@ describe('GlobalsStore', () => {
             arg4: 'arg4',
           },
           globalTypes: {
-            arg2: { defaultValue: 'arg2' },
+            arg2: {},
           },
         });
 
@@ -186,14 +184,13 @@ describe('GlobalsStore', () => {
             arg4: 'edited-arg4',
           },
           globalTypes: {
-            arg5: { defaultValue: 'edited-arg5' },
+            arg5: {},
           },
         });
         // However undeclared values aren't persisted
         expect(store.get()).toEqual({
           arg1: 'new-arg1',
           arg4: 'edited-arg4',
-          arg5: 'edited-arg5',
         });
       });
     });

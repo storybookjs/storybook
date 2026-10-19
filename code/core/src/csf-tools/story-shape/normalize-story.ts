@@ -1,6 +1,6 @@
-import { type NodePath, types as t } from 'storybook/internal/babel';
+import type { NodePath, types as t } from 'storybook/internal/babel';
 
-import { resolveIdentifierInit } from './utils.ts';
+import { isCanonicalCsf2BindCall, isCsfFactoryCall, resolveIdentifierInit } from './utils.ts';
 
 export type NormalizedStoryDeclaration =
   | { type: 'config'; path: NodePath<t.ObjectExpression> }
@@ -29,11 +29,35 @@ export function normalizeStoryDeclaration(
   storyDeclaration: NodePath<t.Node>
 ): NormalizedStoryDeclaration {
   const storyPath = declarationExpression(storyDeclaration);
-  const resolvedBindPath = bindInitializer(storyDeclaration, storyPath);
-  const normalizedPath = resolvedBindPath ?? factoryArgumentExpression(storyPath);
+  const resolvedStoryPath = resolveLocalStory(storyDeclaration, storyPath);
+  const resolvedBindPath = bindInitializer(storyDeclaration, resolvedStoryPath);
+  const normalizedPath = resolvedBindPath ?? factoryArgumentExpression(resolvedStoryPath);
   const unwrappedPath = unwrapTypeExpression(normalizedPath);
 
   return classifyStoryPath(unwrappedPath);
+}
+
+function resolveLocalStory(
+  declaration: NodePath<t.Node>,
+  expression: StoryDeclarationExpression
+): StoryDeclarationExpression {
+  const visited = new Set<string>();
+  let current = unwrapTypeExpression(expression);
+
+  while (current.isIdentifier()) {
+    const name = current.node.name;
+    if (visited.has(name) || !current.scope.getBinding(name)?.constant) {
+      break;
+    }
+    visited.add(name);
+    const resolved = resolveIdentifierInit(declaration, current);
+    if (!resolved) {
+      break;
+    }
+    current = unwrapTypeExpression(resolved);
+  }
+
+  return current;
 }
 
 /** Declaration body that can be classified as a story shape. */
@@ -64,18 +88,16 @@ function bindInitializer(
     return null;
   }
 
+  if (!isCanonicalCsf2BindCall(storyPath.node)) {
+    return null;
+  }
+
   const callee = storyPath.get('callee');
   if (!callee.isMemberExpression()) {
     return null;
   }
-
   const obj = callee.get('object');
-  const prop = callee.get('property');
-  const isBind =
-    (prop.isIdentifier() && prop.node.name === 'bind') ||
-    (t.isStringLiteral(prop.node) && prop.node.value === 'bind');
-
-  if (!obj.isIdentifier() || !isBind) {
+  if (!obj.isIdentifier()) {
     return null;
   }
 
@@ -86,7 +108,7 @@ function bindInitializer(
 function factoryArgumentExpression(
   storyPath: StoryDeclarationExpression
 ): StoryDeclarationExpression {
-  if (!storyPath.isCallExpression()) {
+  if (!storyPath.isCallExpression() || !isCsfFactoryCall(storyPath.node)) {
     return storyPath;
   }
 
@@ -131,7 +153,7 @@ function classifyStoryPath(storyPath: StoryDeclarationExpression): NormalizedSto
 
   if (
     storyPath.isCallExpression() &&
-    Array.isArray(storyPath.node.arguments) &&
+    isCsfFactoryCall(storyPath.node) &&
     storyPath.node.arguments.length === 0
   ) {
     return { type: 'emptyConfig', path: storyPath };

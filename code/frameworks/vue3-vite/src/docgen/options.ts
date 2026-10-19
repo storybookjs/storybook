@@ -1,17 +1,18 @@
-import type { Options, StorybookConfigRaw } from 'storybook/internal/types';
+import type { Options } from 'storybook/internal/types';
 
 import type { FrameworkOptions, VueDocgenPlugin } from '../types.ts';
 
 export const VUE_COMPONENT_META = 'vue-component-meta' satisfies VueDocgenPlugin;
 
+export const VUE_BUILDER_DOCGEN_DEPRECATION =
+  `Builder docgen (the \`docgen\` option of \`@storybook/vue3-vite\`, with \`vue-docgen-api\` or \`vue-component-meta\`) is deprecated and will be removed in Storybook 12. ` +
+  `It runs because \`features.docgenServer\` is off. Server-side docgen needs the \`typescript\` package: install it and remove any \`docgenServer: false\` from your \`.storybook/main.ts\`.`;
+
 export type ResolvedDocgenOptions = false | { plugin: VueDocgenPlugin; tsconfig?: string };
 
 export interface DocgenContext {
   docgen: ResolvedDocgenOptions;
-  features: StorybookConfigRaw['features'];
-  /**
-   * Only true if the docgen server is active and the `vue-component-meta` plugin is selected.
-   */
+  /** Whether server-side docgen is active. */
   docgenServerActive: boolean;
 }
 
@@ -24,11 +25,7 @@ export async function resolveDocgenContext(options: Options): Promise<DocgenCont
 
   return {
     docgen,
-    features,
-    docgenServerActive:
-      features?.experimentalDocgenServer === true &&
-      docgen !== false &&
-      docgen.plugin === VUE_COMPONENT_META,
+    docgenServerActive: features?.docgenServer === true,
   };
 }
 

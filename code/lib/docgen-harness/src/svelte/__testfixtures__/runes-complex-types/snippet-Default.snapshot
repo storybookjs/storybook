@@ -1,0 +1,8 @@
+<ComplexTypes 
+  config={{ "id": "panel", "open": true }}
+  items={[ "a", "b" ]}
+  lookup={{ "a": 1 }}
+  pair={[ 1, 2 ]}
+  state={{ "open": false }}
+  when={"2020-01-01T00:00:00.000Z"}
+ />

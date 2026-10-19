@@ -46,17 +46,6 @@ export interface ProjectAnnotations<
 > extends BaseProjectAnnotations<TRenderer> {
   testingLibraryRender?: (...args: never[]) => { unmount: () => void };
   renderToCanvas?: RenderToCanvas<TRenderer>;
-  /**
-   * Load a CSF or MDX file of the index in the preview, for framework authors.
-   *
-   * Return the same object for the same module, e.g. keyed by the module `importFn` returned (a
-   * WeakMap). An MDX file that imports a story file must see the object the hook returns for that
-   * file.
-   */
-  experimental_loadStoryFile?: (
-    importPath: Path,
-    importFn: ModuleImportFn
-  ) => Promise<ModuleExports>;
 }
 
 type NamedExportsOrDefault<TExport> = TExport | { default: TExport };

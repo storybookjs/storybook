@@ -1,11 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type {
-  ModuleExports,
-  ProjectAnnotations,
-  Renderer,
-  StoryIndex,
-} from 'storybook/internal/types';
+import type { ProjectAnnotations, Renderer, StoryIndex } from 'storybook/internal/types';
 
 import { definePreview } from '../../../csf/csf-factories.ts';
 import { getCoreAnnotations } from '../../../csf/core-annotations.ts';
@@ -240,121 +235,6 @@ describe('StoryStore', () => {
       expect(store.preparedMetaFromCSFFile({ csfFile: csf3File }).parameters.layout).toBe(
         'centered'
       );
-    });
-  });
-
-  describe('experimental_loadStoryFile', () => {
-    const clientExports = {
-      default: { title: 'Component One' },
-      a: { args: { foo: 'from the hook' } },
-    };
-
-    const docsIndex: StoryIndex = {
-      v: 5,
-      entries: {
-        ...storyIndex.entries,
-        'component-one--docs': {
-          type: 'docs',
-          id: 'component-one--docs',
-          title: 'Component One',
-          name: 'Docs',
-          importPath: './src/ComponentOne.mdx',
-          storiesImports: ['./src/ComponentOne.stories.js', './src/ComponentTwo.stories.js'],
-          tags: [],
-        },
-      },
-    };
-
-    it('loads the CSF file of a story through the hook of the project annotations', async () => {
-      const experimental_loadStoryFile = vi.fn(async () => clientExports);
-      const store = new StoryStore(
-        storyIndex,
-        importFn,
-        composeConfigs([projectAnnotations, { experimental_loadStoryFile }])
-      );
-
-      const story = await store.loadStory({ storyId: 'component-one--a' });
-
-      expect(experimental_loadStoryFile).toHaveBeenCalledWith(
-        './src/ComponentOne.stories.js',
-        importFn
-      );
-      expect(story.initialArgs).toEqual({ foo: 'from the hook' });
-      expect(story.moduleExport).toBe(clientExports.a);
-    });
-
-    it('loads an MDX docs entry and the story files it imports through the hook', async () => {
-      const mdxExports = { default: () => null };
-      const loaded: Record<string, ModuleExports> = {
-        './src/ComponentOne.mdx': mdxExports,
-        './src/ComponentOne.stories.js': clientExports,
-        './src/ComponentTwo.stories.js': componentTwoExports,
-      };
-      const experimental_loadStoryFile = vi
-        .fn<NonNullable<ProjectAnnotations<Renderer>['experimental_loadStoryFile']>>()
-        .mockImplementation(async (path) => loaded[path]);
-      const store = new StoryStore(
-        docsIndex,
-        importFn,
-        composeConfigs([projectAnnotations, { experimental_loadStoryFile }])
-      );
-
-      const { entryExports, csfFiles } = await store.loadEntry('component-one--docs');
-
-      expect(experimental_loadStoryFile.mock.calls.map(([path]) => path).sort()).toEqual([
-        './src/ComponentOne.mdx',
-        './src/ComponentOne.stories.js',
-        './src/ComponentTwo.stories.js',
-      ]);
-      expect(entryExports).toBe(mdxExports);
-      expect(csfFiles.map((csfFile) => csfFile.moduleExports)).toEqual([
-        clientExports,
-        componentTwoExports,
-      ]);
-    });
-
-    it('gives the same prepared story when the hook returns the same object', async () => {
-      const experimental_loadStoryFile = vi.fn(async () => clientExports);
-      const store = new StoryStore(
-        storyIndex,
-        importFn,
-        composeConfigs([projectAnnotations, { experimental_loadStoryFile }])
-      );
-
-      const story = await store.loadStory({ storyId: 'component-one--a' });
-
-      expect(await store.loadStory({ storyId: 'component-one--a' })).toBe(story);
-      expect(experimental_loadStoryFile).toHaveBeenCalledTimes(2);
-    });
-
-    it('passes the importFn of onStoriesChanged to the hook', async () => {
-      const experimental_loadStoryFile = vi.fn(async () => clientExports);
-      const store = new StoryStore(
-        storyIndex,
-        importFn,
-        composeConfigs([projectAnnotations, { experimental_loadStoryFile }])
-      );
-      const newImportFn = vi.fn(async () => componentOneExports);
-
-      await store.onStoriesChanged({ importFn: newImportFn });
-      await store.loadStory({ storyId: 'component-one--a' });
-
-      expect(experimental_loadStoryFile).toHaveBeenLastCalledWith(
-        './src/ComponentOne.stories.js',
-        newImportFn
-      );
-    });
-
-    it('uses the hook set by setProjectAnnotations', async () => {
-      const store = new StoryStore(storyIndex, importFn, projectAnnotations);
-      const experimental_loadStoryFile = vi.fn(async () => clientExports);
-
-      store.setProjectAnnotations(
-        composeConfigs([projectAnnotations, { experimental_loadStoryFile }])
-      );
-      const story = await store.loadStory({ storyId: 'component-one--a' });
-
-      expect(story.moduleExport).toBe(clientExports.a);
     });
   });
 

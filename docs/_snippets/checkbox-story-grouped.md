@@ -225,6 +225,7 @@ const meta = preview.meta({
   component: Checkbox,
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```ts filename="Checkbox.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"

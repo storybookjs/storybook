@@ -103,6 +103,7 @@ test('Validates form', async () => {
   expect(isFormValid).not.toBeInTheDocument();
 });
 ```
+
 ```js filename="Form.test.js|jsx" renderer="solid" language="js"
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

@@ -199,6 +199,7 @@ const meta = preview.meta({
 // This is the only named export in the file, and it matches the component name
 export const Button = meta.story();
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"

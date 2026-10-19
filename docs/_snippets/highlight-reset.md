@@ -504,6 +504,7 @@ export const ResetHighlight = meta.story({
   ],
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"

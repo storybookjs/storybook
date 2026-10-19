@@ -369,6 +369,7 @@ export default mergeConfig(
   }),
 );
 ```
+
 ```ts filename="vitest.config.ts" renderer="solid" tabTitle="Vitest 4"
 import { defineConfig, mergeConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';

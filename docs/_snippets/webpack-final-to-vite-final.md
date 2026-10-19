@@ -264,6 +264,7 @@ export default defineMain({
   },
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="With Webpack (CSF Next 🧪)"

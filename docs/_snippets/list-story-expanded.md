@@ -782,6 +782,7 @@ export const ManyItems = meta.story({
   ),
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"

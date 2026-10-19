@@ -46,6 +46,7 @@ export default defineMain({
   },
 });
 ```
+
 ```ts filename=".storybook/main.js|ts (CSF Next 🧪)" renderer="solid" language="ts"
 import { defineMain } from 'storybook-solidjs-vite';
 

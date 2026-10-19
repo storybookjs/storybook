@@ -225,6 +225,7 @@ export const Baz = meta.story({
   name: 'Insert name here',
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```ts filename="FooBar.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"

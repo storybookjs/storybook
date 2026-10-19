@@ -378,6 +378,7 @@ export const Basic = meta.story({
   },
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```tsx filename="Page.stories.tsx" renderer="solid" language="ts" tabTitle="CSF 3"

@@ -253,6 +253,7 @@ export const Basic = meta.story({
   },
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```ts filename="components/MyComponent/MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"

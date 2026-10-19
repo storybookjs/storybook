@@ -375,6 +375,7 @@ export const Simple = meta.story({
   },
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```ts filename="YourPage.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"

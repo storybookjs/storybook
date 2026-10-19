@@ -466,6 +466,7 @@ class DocumentScreen extends LitElement {
 
 customElements.define('demo-document-screen', DocumentScreen);
 ```
+
 ```ts filename="YourPage.tsx" renderer="solid" language="ts"
 import { createSignal } from 'solid-js';
 

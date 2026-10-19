@@ -192,6 +192,7 @@ export const Submitted = meta.story({
   },
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```ts filename="MyComponent.stories.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"

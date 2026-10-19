@@ -129,6 +129,7 @@ export default definePreview({
   decorators: [AppDecorator],
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```jsx filename=".storybook/preview.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"

@@ -86,7 +86,7 @@ function hasCoverage(
   snippets: SnippetInfo[],
   language: string | undefined,
   tabTitle: string | undefined,
-  filename: string | undefined,
+  filename: string | undefined
 ) {
   return snippets.some((s) => {
     if (s.attributes.language !== language) return false;
@@ -113,11 +113,11 @@ function reactToSolidSource(source: string, attrs: Record<string, string>): stri
 
   result = result.replace(
     /framework:\s*'@storybook\/[^']+'/g,
-    "framework: 'storybook-solidjs-vite'",
+    "framework: 'storybook-solidjs-vite'"
   );
   result = result.replace(
     /framework:\s*"@storybook\/[^"]+"/g,
-    'framework: "storybook-solidjs-vite"',
+    'framework: "storybook-solidjs-vite"'
   );
 
   if (result.includes('useState')) {
@@ -126,15 +126,12 @@ function reactToSolidSource(source: string, attrs: Record<string, string>): stri
     }
     result = result.replace(
       /import\s*\{[^}]*\buseState\b[^}]*\}\s*from\s*['"]react['"];\n\n?/g,
-      '',
+      ''
     );
-    result = result.replace(
-      /import\s*\{[^}]*\buseState\b[^}]*\}\s*from\s*['"]react['"];\n/g,
-      '',
-    );
+    result = result.replace(/import\s*\{[^}]*\buseState\b[^}]*\}\s*from\s*['"]react['"];\n/g, '');
     result = result.replace(
       /\[\s*(\w+)\s*,\s*(set\w+)\s*\]\s*=\s*useState\(/g,
-      '[$1, $2] = createSignal(',
+      '[$1, $2] = createSignal('
     );
     result = result.replace(/\bif\s*\(\s*!(\w+)\s*\)/g, 'if (!$1())');
     result = result.replace(/\b(\w+)=\{(\w+)\}/g, (match, prop, ident) => {
@@ -150,7 +147,7 @@ function reactToSolidSource(source: string, attrs: Record<string, string>): stri
   if (attrs.filename?.includes('/main.') && attrs.tabTitle?.includes('CSF Next')) {
     result = result.replace(
       /framework:\s*'storybook-solidjs-vite'/,
-      "framework: { name: 'storybook-solidjs-vite' }",
+      "framework: { name: 'storybook-solidjs-vite' }"
     );
   }
 
@@ -230,5 +227,5 @@ for (const file of files.filter((f) => f.endsWith('.md'))) {
 }
 
 console.log(
-  `${dryRun ? 'Would modify' : 'Modified'} ${filesModified} files, ${totalAdded} solid blocks added`,
+  `${dryRun ? 'Would modify' : 'Modified'} ${filesModified} files, ${totalAdded} solid blocks added`
 );

@@ -342,6 +342,7 @@ export const WithAnImage = meta.story({
   render: () => <img src="/image.png" alt="my image" />,
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"

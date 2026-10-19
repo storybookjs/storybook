@@ -116,6 +116,7 @@ export default defineMain({
   },
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
@@ -134,7 +135,7 @@ export default defineMain({
 import { defineMain } from 'storybook-solidjs-vite';
 
 export default defineMain({
-    framework: { name: 'storybook-solidjs-vite' },
+  framework: { name: 'storybook-solidjs-vite' },
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   features: {
     backgrounds: false, // 👈 disable the backgrounds feature

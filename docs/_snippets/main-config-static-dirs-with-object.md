@@ -97,6 +97,7 @@ export default defineMain({
   staticDirs: [{ from: '../my-custom-assets/images', to: '/assets' }],
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"

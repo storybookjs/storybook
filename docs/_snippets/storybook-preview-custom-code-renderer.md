@@ -164,6 +164,7 @@ export default definePreview({
   },
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"

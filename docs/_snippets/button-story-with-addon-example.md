@@ -573,6 +573,7 @@ export const Basic = meta.story({
   render: () => <Button>Hello</Button>,
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"

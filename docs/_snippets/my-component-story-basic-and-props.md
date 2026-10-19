@@ -396,6 +396,7 @@ export const WithProp = meta.story({
   render: () => html`<my-component prop="value" />`,
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"

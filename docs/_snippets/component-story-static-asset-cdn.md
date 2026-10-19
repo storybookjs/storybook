@@ -363,6 +363,7 @@ export const WithAnImage = meta.story({
   ),
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"

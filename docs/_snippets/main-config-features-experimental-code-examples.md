@@ -51,11 +51,12 @@ export default defineMain({
   },
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF 3"
 export default {
-    framework: 'storybook-solidjs-vite',
+  framework: 'storybook-solidjs-vite',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   features: {
     experimentalCodeExamples: true,

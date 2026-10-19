@@ -354,6 +354,7 @@ export const Text = meta.story({
   render: () => html`<custom-button label="Hello" @click=${action('clicked')}></custom-button>`,
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"

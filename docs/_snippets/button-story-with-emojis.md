@@ -684,6 +684,7 @@ export const Tertiary = meta.story({
   render: () => <Button backgroundColor="#ff0" label="📚📕📈🤓" />,
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```jsx filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"

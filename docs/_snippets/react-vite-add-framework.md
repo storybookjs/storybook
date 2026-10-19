@@ -41,6 +41,7 @@ export default defineMain({
   framework: '@storybook/react-vite', // 👈 Add this
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF 3"

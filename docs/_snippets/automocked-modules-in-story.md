@@ -497,6 +497,7 @@ export const LogIn = meta.story({
   },
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```ts filename="AuthButton.stories.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"

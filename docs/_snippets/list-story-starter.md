@@ -368,6 +368,7 @@ const meta = preview.meta({
 // Always an empty list, not super interesting
 export const Empty = meta.story();
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```ts filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"

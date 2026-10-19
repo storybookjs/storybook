@@ -281,6 +281,7 @@ export default definePreview({
   ],
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```jsx filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF 3"

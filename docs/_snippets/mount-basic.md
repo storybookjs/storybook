@@ -208,6 +208,7 @@ export const ChristmasUI = meta.story({
   },
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```ts filename="Page.stories.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"

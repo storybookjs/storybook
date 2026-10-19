@@ -335,6 +335,7 @@ export const Opens = meta.story({
   },
 });
 ```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```ts filename="Dialog.stories.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"

@@ -14,7 +14,8 @@ function normalizeTabTitle(tabTitle?: string) {
 
 function extractBlocks(source: string) {
   const re = /```(?<syntax>[a-zA-Z0-9]+)?(?<attrs>[^\n]*)\n(?<content>[\s\S]*?)```/g;
-  const blocks: { start: number; end: number; attrs: Record<string, string>; source: string }[] = [];
+  const blocks: { start: number; end: number; attrs: Record<string, string>; source: string }[] =
+    [];
   let m;
   while ((m = re.exec(source))) {
     const attrs: Record<string, string> = {};

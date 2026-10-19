@@ -44,7 +44,7 @@ import {
   appendStatement,
   insertStatementAfter,
 } from './estree/editor.ts';
-import { generateUid } from './estree/scope.ts';
+import { generateUid, isDeclared } from './estree/scope.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
 
 type CsfMutationState = {
@@ -237,29 +237,6 @@ const hasMount = (play: Node | undefined) => {
 const MODULE_MOCK_REGEX = /^[.\/#].*\.mock($|\.[^.]*$)/i;
 
 // TS declarations that the scope analysis does not create a binding for.
-const UNBOUND_DECLARATIONS = new Set([
-  'TSTypeAliasDeclaration',
-  'TSInterfaceDeclaration',
-  'TSEnumDeclaration',
-  'TSModuleDeclaration',
-  'TSDeclareFunction',
-]);
-
-const isDeclared = (editor: SourceEditor, local: E.IdentifierReference) =>
-  !!editor.scopes.bindingOf(local) ||
-  editor.program.body.some((statement) => {
-    const declaration =
-      statement.type === 'ExportNamedDeclaration' ? statement.declaration : statement;
-    if (!declaration || !UNBOUND_DECLARATIONS.has(declaration.type)) {
-      return false;
-    }
-    // `namespace A.B {}` declares `A`.
-    let id = (declaration as { id?: Node | null }).id;
-    while (id?.type === 'TSQualifiedName') {
-      id = id.left;
-    }
-    return isIdentifier(id, local.name);
-  });
 
 export interface CsfOptions {
   fileName?: string;

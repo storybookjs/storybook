@@ -19,6 +19,7 @@ import {
 } from './CsfObject.ts';
 import {
   type E,
+  EstreeParseError,
   type Node,
   isIdentifier,
   isStringLiteral,
@@ -44,6 +45,7 @@ import {
   removeStatement,
   setImportSpecifiers,
 } from './estree/editor.ts';
+import { isDeclared } from './estree/scope.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
 
 export interface CallArgumentsOptions {
@@ -455,6 +457,13 @@ export class ConfigFile implements CsfObject {
               spec.exported.type === 'Identifier'
                 ? spec.exported.name
                 : (spec.exported as E.StringLiteral).value;
+            if (isTopLevel && !node.source && !isDeclared(this._editor, spec.local)) {
+              throw new EstreeParseError(
+                `Export '${localName}' is not defined`,
+                this.fileName,
+                locationOf(this._code, spec.local.start, spec.local.start)
+              );
+            }
 
             const decl =
               _findVarDeclarator(localName, this._program) ??

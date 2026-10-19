@@ -1,4 +1,12 @@
-import { TYPE_KEYS, type E, type Node, childEntries, children, isNode } from './ast.ts';
+import {
+  TYPE_KEYS,
+  type E,
+  type Node,
+  childEntries,
+  children,
+  isIdentifier,
+  isNode,
+} from './ast.ts';
 
 export type BindingKind =
   | 'var'
@@ -782,3 +790,32 @@ export const generateUid = (info: ScopeInfo, name: string) => {
   info.names.add(uid);
   return uid;
 };
+
+// Declarations that are no bindings of the scope analysis, yet valid to export by name.
+const UNBOUND_DECLARATIONS = new Set([
+  'TSTypeAliasDeclaration',
+  'TSInterfaceDeclaration',
+  'TSEnumDeclaration',
+  'TSModuleDeclaration',
+  'TSDeclareFunction',
+]);
+
+/** Whether the name an `export { local }` refers to is declared in the module. */
+export const isDeclared = (
+  module: { scopes: ScopeInfo; program: E.Program },
+  local: E.IdentifierReference
+) =>
+  !!module.scopes.bindingOf(local) ||
+  module.program.body.some((statement) => {
+    const declaration =
+      statement.type === 'ExportNamedDeclaration' ? statement.declaration : statement;
+    if (!declaration || !UNBOUND_DECLARATIONS.has(declaration.type)) {
+      return false;
+    }
+    // `namespace A.B {}` declares `A`.
+    let id = (declaration as { id?: Node | null }).id;
+    while (id?.type === 'TSQualifiedName') {
+      id = id.left;
+    }
+    return isIdentifier(id, local.name);
+  });

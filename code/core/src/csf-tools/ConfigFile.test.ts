@@ -2146,6 +2146,22 @@ describe('ConfigFile', () => {
   });
 
   describe('parse', () => {
+    it.each(['export { Missing };', 'export type { Missing };'])(
+      'rejects %s of a name the file never declares',
+      (exported) => {
+        expect(() => loadConfig(`export default {};\n${exported}`, 'main.ts').parse()).toThrow(
+          /^Export 'Missing' is not defined \(2:\d+\) in main\.ts$/
+        );
+      }
+    );
+
+    it.each(['const X = 1;', 'type X = {};', 'import { X } from "x";'])(
+      'accepts export { X } after %s',
+      (declaration) => {
+        expect(() => loadConfig(`${declaration}\nexport { X };`, 'main.ts').parse()).not.toThrow();
+      }
+    );
+
     it("export { X } with X is import { X } from 'another-file'", () => {
       const source = dedent`
           import type { StorybookConfig } from '@storybook/react-webpack5';

@@ -156,7 +156,7 @@ export interface CsfObject {
    * object.transform(['args', 'count'], (value) =>
    *   parseExpression(`${placeableTextOf(value)} + 1`)
    * ); // { ok: true, changed: true }
-   * object.getValue(['args', 'count']); // 2
+   * textOf(object.get(['args', 'count'])!); // '1 + 1'
    * ```
    */
   transform(

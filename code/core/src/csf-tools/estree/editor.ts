@@ -1209,16 +1209,24 @@ export const replaceValue = (editor: SourceEditor, member: Property, text: strin
       methodFromFunction(text, keySource(editor, member)) ??
       `${keySource(editor, member)}: ${text}`;
   }
-  // A text ending in a line comment is written with the comma after the replaced code on its
-  // line, so the comma can go before the comment. Any other text leaves the comma to other edits.
+  // A text ending in a line comment takes the comma after the replaced code on its line before
+  // the comment. The comma is removed as an edit of its own, so a removal of the next member can
+  // still take it. Any other text leaves the comma to other edits.
   const { comments, end } = triviaAfter(editor, span.end, SPACE_ON_LINE);
   const comma = comments.length === 0 && code[end] === ',' ? end + 1 : undefined;
-  const to = comma !== undefined && endsInLineComment(replacement) ? comma : span.end;
+  const takesComma = comma !== undefined && endsInLineComment(replacement);
+  const to = takesComma ? comma : span.end;
   editor.edits.overwrite(
     span.start,
-    to,
-    withComma(replacement, to === comma ? ',' : '', lineBreakAt(code, to))
+    span.end,
+    withComma(replacement, takesComma ? ',' : '', lineBreakAt(code, to))
   );
+  if (takesComma) {
+    if (end > span.end) {
+      editor.edits.remove(span.end, end);
+    }
+    editor.edits.remove(end, comma);
+  }
 };
 
 /** Write `before` and `after` around an expression and the parentheses written around it. */

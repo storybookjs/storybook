@@ -416,6 +416,14 @@ describe('replaceValue', () => {
     expect(editor.toString()).toBe(`export default { a: x, // c\n b: 2 };`);
   });
 
+  it('leaves the next member removable after a text ending in a line comment took its comma', () => {
+    const editor = new SourceEditor(`export default { a: 1 , b: 2 };`);
+    const { object, members } = firstMember(editor);
+    replaceValue(editor, members[0], 'x // c\n');
+    removeMembers(editor, object, [members[1]]);
+    expect(editor.toString()).toBe(`export default { a: x, // c\n };`);
+  });
+
   it('ends a line comment before the member it is appended after on one line', () => {
     const trailingComma = new SourceEditor(`export default { a: 1, };`);
     appendToList(trailingComma, objectList(trailingComma, firstMember(trailingComma).object), [

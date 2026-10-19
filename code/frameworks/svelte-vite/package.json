@@ -56,7 +56,7 @@
     "@storybook/svelte": "workspace:*",
     "magic-string": "^1.1.0",
     "svelte2tsx": "^0.7.55",
-    "typescript": "^5.9.0 || ^6.0.0 || ^7.0.0"
+    "typescript": "^5.9.0 || ^6.0.0"
   },
   "devDependencies": {
     "@rolldown/pluginutils": "^1.0.1",

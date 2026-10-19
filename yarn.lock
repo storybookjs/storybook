@@ -11114,7 +11114,7 @@ __metadata:
     svelte: "npm:^5.39.5"
     svelte2tsx: "npm:^0.7.55"
     sveltedoc-parser: "npm:^4.2.1"
-    typescript: "npm:^5.9.0 || ^6.0.0 || ^7.0.0"
+    typescript: "npm:^5.9.0 || ^6.0.0"
     vite: "npm:^7.0.4"
   peerDependencies:
     "@sveltejs/vite-plugin-svelte": ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0

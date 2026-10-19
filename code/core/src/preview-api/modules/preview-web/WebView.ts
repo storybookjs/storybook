@@ -21,7 +21,8 @@ enum Mode {
   PREPARING_DOCS = 'preparing-docs',
   ERROR = 'error',
 }
-// The mode as classes on <body>, for addons and Chromatic, which read them there. The view never does.
+// The mode as classes on <body>, for addons and Chromatic, which read them there. The view never
+// does, and a story that owns the document gets none.
 const classes: Record<Mode, string> = {
   [Mode.PREPARING_STORY]: 'sb-show-preparing-story',
   [Mode.PREPARING_DOCS]: 'sb-show-preparing-docs',
@@ -37,7 +38,7 @@ const layoutClassMap = {
   fullscreen: 'sb-main-fullscreen',
   padded: 'sb-main-padded',
 } as const;
-type Layout = keyof typeof layoutClassMap | 'none';
+type Layout = keyof typeof layoutClassMap | 'none' | 'document';
 
 const ansiConverter = new AnsiToHtml({
   escapeXML: true,
@@ -67,7 +68,7 @@ const createHost = () => {
 };
 
 export class WebView implements View<HTMLElement> {
-  private currentLayoutClass?: (typeof layoutClassMap)[keyof typeof layoutClassMap] | null;
+  private layout: Layout = 'padded';
 
   private testing = false;
 
@@ -107,7 +108,6 @@ export class WebView implements View<HTMLElement> {
     story: PreparedStory<any>,
     { scrollReset = true }: { scrollReset?: boolean } = {}
   ) {
-    this.showStory();
     this.applyLayout(story.parameters.layout);
 
     // Only reset scroll when navigating to a new story or switching view modes, not on HMR
@@ -118,6 +118,15 @@ export class WebView implements View<HTMLElement> {
       document.documentElement.scrollLeft = 0;
     }
 
+    if (this.layout === 'document') {
+      // The story's render will own the body, so Storybook takes its classes and its roots back from
+      // it. Until the render leaves a body of its own, the story's root is this one.
+      document.body.classList.remove(...Object.values(classes));
+      this.detachRoots();
+      return document.body;
+    }
+
+    this.showStory();
     const storyRoot = this.storyRoot();
     this.applyHtmlLang(storyRoot, story.parameters.htmlLang);
 
@@ -153,6 +162,14 @@ export class WebView implements View<HTMLElement> {
     return attach(this.docsRootElement);
   }
 
+  // Storybook's roots leave a body that a story owns; the next story or docs page attaches them again.
+  private detachRoots() {
+    this.storyRootElement ??= document.getElementById('storybook-root') ?? undefined;
+    this.docsRootElement ??= document.getElementById('storybook-docs') ?? undefined;
+    this.storyRootElement?.remove();
+    this.docsRootElement?.remove();
+  }
+
   private block(mode: BlockMode) {
     if (!this.blocks.has(mode)) {
       this.blocks.set(mode, createBlock(mode));
@@ -168,19 +185,14 @@ export class WebView implements View<HTMLElement> {
   }
 
   applyLayout(layout: Layout = 'padded') {
-    if (layout === 'none') {
-      document.body.classList.remove(this.currentLayoutClass!);
-      this.currentLayoutClass = null;
+    this.layout = layout;
+    document.body.classList.remove(...Object.values(layoutClassMap));
+    if (layout === 'none' || layout === 'document') {
       return;
     }
 
     this.checkIfLayoutExists(layout);
-
-    const layoutClass = layoutClassMap[layout];
-
-    document.body.classList.remove(this.currentLayoutClass!);
-    document.body.classList.add(layoutClass);
-    this.currentLayoutClass = layoutClass;
+    document.body.classList.add(layoutClassMap[layout]);
   }
 
   /**
@@ -199,7 +211,7 @@ export class WebView implements View<HTMLElement> {
       logger.warn(
         dedent`
           The desired layout: ${layout} is not a valid option.
-          The possible options are: ${Object.keys(layoutClassMap).join(', ')}, none.
+          The possible options are: ${Object.keys(layoutClassMap).join(', ')}, none, document.
         `
       );
     }
@@ -207,9 +219,11 @@ export class WebView implements View<HTMLElement> {
 
   showMode(mode: Mode) {
     clearTimeout(this.preparingTimeout);
-    Object.values(Mode).forEach((otherMode) => {
-      document.body.classList.toggle(classes[otherMode], otherMode === mode);
-    });
+    if (this.layout !== 'document') {
+      Object.values(Mode).forEach((otherMode) => {
+        document.body.classList.toggle(classes[otherMode], otherMode === mode);
+      });
+    }
     if (mode === Mode.MAIN) {
       this.hideHost();
     } else {

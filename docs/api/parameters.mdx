@@ -42,7 +42,7 @@ Storybook only accepts a few parameters directly.
 
 ### `layout`
 
-Type: `'centered' | 'fullscreen' | 'padded'`
+Type: `'centered' | 'fullscreen' | 'padded' | 'none' | 'document'`
 
 Default: `'padded'`
 
@@ -51,6 +51,8 @@ Specifies how the canvas should [lay out the story](../configure/story-layout.md
 - **centered**: Center the story within the canvas
 - **padded**: (default) Add padding to the story
 - **fullscreen**: Show the story as-is, without padding
+- **none**: Add no styles
+- **document**: The story renders the whole document, and its root is the `<body>` it leaves (see [Story layout](../configure/story-layout.mdx#a-story-that-renders-the-whole-document))
 
 ### `htmlLang`
 

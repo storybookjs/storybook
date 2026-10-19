@@ -303,6 +303,20 @@ export class NoStoryMountedError extends StorybookError {
   }
 }
 
+export class DocumentBodyHasIdError extends StorybookError {
+  constructor(public data: { storyId: string; id: string }) {
+    super({
+      name: 'DocumentBodyHasIdError',
+      category: Category.PREVIEW_API,
+      code: 18,
+      message: dedent`
+        The story "${data.storyId}" owns the document (\`parameters.layout: 'document'\`), and its <body> has an id of its own: "${data.id}".
+
+        Storybook keeps that id, so this story has no #storybook-root, the element that tools such as visual tests and the test runner look for.`,
+    });
+  }
+}
+
 export class StatusTypeIdMismatchError extends StorybookError {
   constructor(
     public data: {

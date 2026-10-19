@@ -33,14 +33,15 @@ function pathToViewMode(path: string): ViewMode | undefined {
 }
 
 const getQueryString = ({
+  search = document?.location.search,
   selection,
   extraParams,
 }: {
+  search?: string;
   selection?: Selection;
   extraParams?: Record<PropertyKey, unknown>;
 }) => {
-  const search = document?.location.search.slice(1);
-  const { path, selectedKind, selectedStory, ...rest } = parse(search);
+  const { path, selectedKind, selectedStory, ...rest } = parse(search.slice(1));
   const queryStr = stringify({
     ...rest,
     ...extraParams,
@@ -109,6 +110,11 @@ export const getSelectionSpecifierFromPath: () => SelectionSpecifier | null = ()
   return null;
 };
 
+type OwnQuery = { search: string; hash: string };
+
+// Compared as parsed URLs: the browser may encode a query differently than the store wrote it.
+const parseUrl = (url: string) => new URL(url, 'http://localhost');
+
 export class UrlStore implements SelectionStore {
   selectionSpecifier: SelectionSpecifier | null;
 
@@ -119,16 +125,27 @@ export class UrlStore implements SelectionStore {
   // A story may change `location`; the preview stays at the path it was loaded from.
   private pathname = document?.location.pathname;
 
+  // The preview's own query and hash, while `location` is lent to a story.
+  private ownQuery?: OwnQuery;
+
   constructor() {
     this.selectionSpecifier = getSelectionSpecifierFromPath();
   }
 
   setSelection(selection: Selection) {
     this.selection = selection;
+    if (this.ownQuery) {
+      this.updateOwnQuery(this.ownQuery, { selection });
+      return;
+    }
     this.url = setPath(this.selection, this.pathname);
   }
 
   setQueryParams(queryParams: Record<PropertyKey, unknown>) {
+    if (this.ownQuery) {
+      this.updateOwnQuery(this.ownQuery, { extraParams: queryParams });
+      return;
+    }
     const query = getQueryString({ extraParams: queryParams });
     const { hash = '' } = document.location;
     history.replaceState({}, '', `${document.location.pathname}${query}${hash}`);
@@ -137,5 +154,31 @@ export class UrlStore implements SelectionStore {
       const storyQuery = getQueryString({ selection: this.selection, extraParams: queryParams });
       this.url = `${this.pathname}${storyQuery}${hash}`;
     }
+  }
+
+  lendLocation() {
+    if (this.ownQuery || !this.url) {
+      return;
+    }
+    const { search, hash } = parseUrl(this.url);
+    this.ownQuery = { search, hash };
+  }
+
+  // A story, or its teardown, may have moved `location`. After the teardown the document is at the
+  // URL of the selected story, so the next render and a reload start there.
+  reclaimLocation() {
+    this.ownQuery = undefined;
+    const { pathname, search, hash = '' } = document.location;
+    if (this.url && parseUrl(this.url).href !== parseUrl(`${pathname}${search}${hash}`).href) {
+      history.replaceState({}, '', this.url);
+    }
+    if (this.selection) {
+      document.title = this.selection.storyId;
+    }
+  }
+
+  private updateOwnQuery(ownQuery: OwnQuery, params: Parameters<typeof getQueryString>[0]) {
+    ownQuery.search = getQueryString({ ...params, search: ownQuery.search });
+    this.url = `${this.pathname}${ownQuery.search}${ownQuery.hash}`;
   }
 }

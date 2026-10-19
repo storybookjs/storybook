@@ -89,7 +89,8 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     public channel: Channel,
     public store: StoryStore<TRenderer>,
     private callbacks: RenderContextCallbacks<TRenderer> & {
-      storyUrl?: () => string | undefined;
+      lendLocation?: () => void;
+      reclaimLocation?: () => void;
     },
     public id: StoryId,
     public viewMode: StoryContext<TRenderer>['viewMode'],
@@ -214,6 +215,12 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
     if (!canvasElement) {
       throw new Error('cannot render when canvasElement is unset');
+    }
+
+    // Until its teardown, `location` is the story's. A render that was torn down for good (and a
+    // rerender it had enqueued) must not take it again.
+    if (ownsDocument && !this.teardownPromise) {
+      this.callbacks.lendLocation?.();
     }
 
     const {
@@ -534,7 +541,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         // the document, which makes the browser clamp the scroll position to 0 (#22057).
         if (!keepRenderedDom) {
           await this.teardownRender();
-          this.returnToStoryUrl();
+          // A render that never got a canvas never had `location`; another story may still have it.
+          if (this.canvasElement) {
+            this.callbacks.reclaimLocation?.();
+          }
         }
         return;
       }
@@ -545,22 +555,8 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     // If we still haven't completed, reload the page (iframe) to ensure we have a clean slate
     // for the next render. Since the reload can take a brief moment to happen, we want to stop
     // further rendering by awaiting a never-resolving promise (which is destroyed on reload).
-    this.returnToStoryUrl();
+    this.callbacks.reclaimLocation?.();
     window?.location?.reload?.();
     await new Promise(() => {});
-  }
-
-  // A story may have changed `location`, and so may its teardown (e.g. back to where its render
-  // began). After a teardown the document is at the URL of the selected story, so the next render
-  // and a reload start there.
-  private returnToStoryUrl() {
-    const storyUrl = this.callbacks.storyUrl?.();
-    if (!storyUrl) {
-      return;
-    }
-    const { href } = window.location;
-    if (new URL(storyUrl, href).href !== href) {
-      window.history.replaceState({}, '', storyUrl);
-    }
   }
 }

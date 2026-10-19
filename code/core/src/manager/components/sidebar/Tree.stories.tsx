@@ -85,7 +85,6 @@ const meta = {
     chromatic: { viewports: [380] },
   },
   decorators: [
-    // The sidebar gives every tree one shared scroll area; a tree does not scroll itself.
     // The sidebar gives every tree one shared scroll area; a tree does not scroll itself. A story
     // that needs the rows to overflow sets `parameters.scrollAreaHeight` to bound it.
     (storyFn, { parameters }) => (
@@ -142,13 +141,20 @@ export const RowHeightsAndSectionGaps: Story = {
     );
   },
   play: async ({ canvasElement }) => {
-    // Expand the first branch so a later top-level section follows deeper rows and gets the gap.
+    // The first branch is open because it holds the selected story. Collapsing it moves every row
+    // below it, which must land on the new geometry.
     const firstRow = canvasElement.querySelector<HTMLElement>('[data-item-id]')!;
     await waitFor(() => {
       expect(getComputedStyle(firstRow).pointerEvents).not.toBe('none');
     });
     await userEvent.click(firstRow);
+    await waitFor(() => {
+      expect(firstRow).toHaveAttribute('aria-expanded', 'false');
+    });
 
+    // Only the rows near the viewport are rendered, so each check below looks at the rendered
+    // ones. React-aria stops virtualizing when NODE_ENV is 'test', so the Vitest run renders every
+    // row and only builds with virtualization on (Chromatic) exercise the partial rendering.
     await waitFor(() => {
       const rows = Array.from(canvasElement.querySelectorAll<HTMLElement>('[data-item-id]'))
         .map((el) => ({ el, top: el.getBoundingClientRect().top }))
@@ -164,13 +170,24 @@ export const RowHeightsAndSectionGaps: Story = {
         expect(rows[i].top - rows[i - 1].top).toBeCloseTo(TREE_ROW_HEIGHT + gap, 0);
       }
       expect(sawSectionGap).toBe(true);
+    });
 
-      // The tree's reported height must reach exactly to its last row, or the next block in the
-      // sidebar's shared scroll area would overlap the tree.
+    // The tree's reported height must reach exactly to its last row, or the next block in the
+    // sidebar's shared scroll area would overlap the tree. The last row renders only once the
+    // scroll area reaches the end of the tree.
+    const scroller = canvasElement.querySelector<HTMLElement>(
+      '[data-testid="sidebar-scroll-area"]'
+    )!;
+    scroller.scrollTop = scroller.scrollHeight;
+    await waitFor(() => {
       const treeBottom = canvasElement
         .querySelector('[role="treegrid"]')!
         .getBoundingClientRect().bottom;
-      const lastRowBottom = Math.max(...rows.map((r) => r.el.getBoundingClientRect().bottom));
+      const lastRowBottom = Math.max(
+        ...Array.from(canvasElement.querySelectorAll<HTMLElement>('[data-item-id]')).map(
+          (el) => el.getBoundingClientRect().bottom
+        )
+      );
       expect(Math.round(treeBottom - lastRowBottom)).toBe(0);
     });
   },

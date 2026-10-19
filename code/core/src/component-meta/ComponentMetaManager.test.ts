@@ -3,7 +3,6 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  realpathSync,
   rmSync,
   watch,
   writeFileSync,
@@ -11,7 +10,7 @@ import {
 import { tmpdir } from 'node:os';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { join } from 'pathe';
+import { join, normalize } from 'pathe';
 
 import { ComponentMetaManager } from './ComponentMetaManager.ts';
 import type { ComponentMetaProjectBase, FileChange } from './types.ts';
@@ -38,12 +37,12 @@ describe('ComponentMetaManager file watching', () => {
   let project: ReturnType<typeof createProject>;
   let manager: ComponentMetaManager<ReturnType<typeof createProject>>;
   let rawWatcher: FSWatcher;
-  let rawEvents: string[];
+  let rawEvents: { eventType: string; filename: string | null }[];
 
   beforeEach(() => {
     // This uses real FS tests because we're testing the OS's actual file watching behavior.
     // Using mocks would defeat the purpose of the test.
-    root = realpathSync.native(mkdtempSync(join(tmpdir(), 'component-meta-watch-')));
+    root = mkdtempSync(join(tmpdir(), 'component-meta-watch-'));
     const trackedFile = join(root, 'src', 'Button.ts');
     newFile = join(root, 'src', 'Card.ts');
     mkdirSync(join(root, 'src'));
@@ -64,9 +63,7 @@ describe('ComponentMetaManager file watching', () => {
 
     rawEvents = [];
     rawWatcher = watch(root, { recursive: true }, (eventType, filename) => {
-      if (filename?.replaceAll('\\', '/') === 'src/Card.ts') {
-        rawEvents.push(eventType);
-      }
+      rawEvents.push({ eventType, filename });
     });
   });
 
@@ -91,9 +88,13 @@ describe('ComponentMetaManager file watching', () => {
       writeFileSync(newFile, 'export const Card = 1;');
 
       await expectCreatedReported();
-      await vi.waitFor(() =>
-        expect(rawEvents).toEqual(expect.arrayContaining(['rename', 'change']))
-      );
+      await vi.waitFor(() => {
+        // Windows reports `src\Card.ts`.
+        const cardEvents = rawEvents
+          .filter(({ filename }) => filename && normalize(filename) === 'src/Card.ts')
+          .map(({ eventType }) => eventType);
+        expect(cardEvents).toEqual(expect.arrayContaining(['rename', 'change']));
+      });
     }
   );
 
@@ -101,7 +102,10 @@ describe('ComponentMetaManager file watching', () => {
     writeFileSync(newFile, 'export const Card = 1;');
 
     await expectCreatedReported();
-    expect(rawEvents).toContain('rename');
-    expect(rawEvents).not.toContain('change');
+    const cardEvents = rawEvents
+      .filter(({ filename }) => filename === 'src/Card.ts')
+      .map(({ eventType }) => eventType);
+    expect(cardEvents).toContain('rename');
+    expect(cardEvents).not.toContain('change');
   });
 });

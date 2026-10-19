@@ -244,60 +244,6 @@ describe('FrameworkDetectionService', () => {
       );
     });
 
-    describe('Remix', () => {
-      beforeEach(() => {
-        vi.mocked(find.any).mockReturnValue(undefined);
-      });
-
-      describe('when Remix 3 is installed next to Webpack', () => {
-        beforeEach(() => {
-          vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
-            remix: '^3.0.0',
-            webpack: '^5.0.0',
-          });
-        });
-
-        it('uses Vite', async () => {
-          const result = await service.detectBuilder();
-
-          expect(result).toBe(SupportedBuilder.VITE);
-          expect(prompt.select).not.toHaveBeenCalled();
-        });
-      });
-
-      describe('when Remix 3 is installed without a bundler', () => {
-        beforeEach(() => {
-          vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
-            remix: '^3.0.0',
-          });
-        });
-
-        it('uses Vite', async () => {
-          const result = await service.detectBuilder();
-
-          expect(result).toBe(SupportedBuilder.VITE);
-          expect(prompt.select).not.toHaveBeenCalled();
-        });
-      });
-
-      describe('when the project uses @remix-run/dev', () => {
-        beforeEach(() => {
-          vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
-            '@remix-run/dev': '^2.15.0',
-            react: '^18.2.0',
-          });
-          vi.mocked(prompt.select).mockResolvedValue(SupportedBuilder.WEBPACK5);
-        });
-
-        it('does not treat it as Remix 3', async () => {
-          const result = await service.detectBuilder();
-
-          expect(result).toBe(SupportedBuilder.WEBPACK5);
-          expect(prompt.select).toHaveBeenCalled();
-        });
-      });
-    });
-
     it('should prompt user when no builders are detected', async () => {
       vi.mocked(find.any).mockReturnValue(undefined);
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});

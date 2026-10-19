@@ -8,7 +8,6 @@ import { dedent } from 'ts-dedent';
 
 import { createPromptCancelOptions } from '../prompt-cancel.ts';
 import { TelemetryService } from './TelemetryService.ts';
-import { isRemix3VersionRange } from './ProjectTypeService.ts';
 
 const viteConfigFiles = ['vite.config.ts', 'vite.config.js', 'vite.config.mjs'];
 const webpackConfigFiles = ['webpack.config.js'];
@@ -57,17 +56,6 @@ export class FrameworkDetectionService {
 
     if (hasRsbuild) {
       detectedBuilders.push(SupportedBuilder.RSBUILD);
-    }
-
-    // Remix 3 ships no bundler. The HTML renderer has Vite and Rsbuild, not Webpack.
-    if (isRemix3VersionRange(dependencies.remix)) {
-      if (detectedBuilders.includes(SupportedBuilder.VITE)) {
-        return SupportedBuilder.VITE;
-      }
-      if (detectedBuilders.includes(SupportedBuilder.RSBUILD)) {
-        return SupportedBuilder.RSBUILD;
-      }
-      return SupportedBuilder.VITE;
     }
 
     // If exactly one builder is detected, return it

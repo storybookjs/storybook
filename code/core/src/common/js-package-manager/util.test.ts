@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
+import { PackageManagerName } from './JsPackageManager.ts';
+import { NPMProxy } from './NPMProxy.ts';
+import { PNPMProxy } from './PNPMProxy.ts';
 import {
   getAgeInMinutes,
   getErrorLogs,
   getLatestStableVersionAdheringToMinimumAgeGate,
+  getMswInitCommand,
+  getRemotePackageRunnerArgs,
   getStorybookRerunCommand,
   getStorybookRerunInstruction,
+  getVitestStorybookRunCommand,
   hasStorybookMinimumAgeExclusions,
   parsePackageData,
   parsePackageTimeMap,
@@ -45,6 +51,31 @@ describe('js package manager util', () => {
       '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
     });
     expect(parsePackageTimeMap('bad')).toBeNull();
+  });
+
+  it('parses package time maps wrapped in an array', () => {
+    expect(
+      parsePackageTimeMap([
+        {
+          created: '2025-01-01T00:00:00.000Z',
+          '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+          invalid: null,
+        },
+      ])
+    ).toEqual({
+      created: '2025-01-01T00:00:00.000Z',
+      '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+    });
+  });
+
+  it.each([
+    { input: [], description: 'an empty array' },
+    { input: [{}, {}], description: 'multiple time maps' },
+    { input: [[{}]], description: 'a nested array' },
+    { input: [null], description: 'an array containing null' },
+    { input: ['2026-05-11T11:59:00.000Z'], description: 'an array containing a timestamp' },
+  ])('rejects $description as a package time map', ({ input }) => {
+    expect(parsePackageTimeMap(input)).toBeNull();
   });
 
   it('computes package age in minutes', () => {
@@ -87,6 +118,48 @@ describe('js package manager util', () => {
     );
     expect(getStorybookRerunCommand('create', '10.3.2')).toBe('npx create-storybook@10.3.2');
     expect(getStorybookRerunCommand('upgrade', '10.3.2')).toBe('npx storybook@10.3.2 upgrade');
+  });
+
+  it('builds remote package runner args for the active package manager', () => {
+    // npm and Yarn Classic run through npx, which needs --yes to skip the install prompt
+    expect(
+      getRemotePackageRunnerArgs(PackageManagerName.NPM, '@storybook/cli', '10.3.2', ['upgrade'])
+    ).toEqual(['--yes', '@storybook/cli@10.3.2', 'upgrade']);
+    expect(
+      getRemotePackageRunnerArgs(PackageManagerName.YARN1, '@storybook/cli', '10.3.2', ['upgrade'])
+    ).toEqual(['--yes', '@storybook/cli@10.3.2', 'upgrade']);
+    // dlx/bunx-based managers download without prompting, so no --yes
+    expect(
+      getRemotePackageRunnerArgs(PackageManagerName.PNPM, '@storybook/cli', '10.3.2', ['upgrade'])
+    ).toEqual(['@storybook/cli@10.3.2', 'upgrade']);
+    expect(
+      getRemotePackageRunnerArgs(PackageManagerName.YARN2, '@storybook/cli', '10.3.2', ['upgrade'])
+    ).toEqual(['@storybook/cli@10.3.2', 'upgrade']);
+    expect(
+      getRemotePackageRunnerArgs(PackageManagerName.BUN, '@storybook/cli', '10.3.2', ['upgrade'])
+    ).toEqual(['@storybook/cli@10.3.2', 'upgrade']);
+    expect(
+      getRemotePackageRunnerArgs(
+        PackageManagerName.NPM,
+        '@storybook/cli',
+        'https://pkg.pr.new/storybookjs/storybook/@storybook/cli@deadbeef',
+        ['upgrade']
+      )
+    ).toEqual([
+      '--yes',
+      '--allow-remote=all',
+      '@storybook/cli@https://pkg.pr.new/storybookjs/storybook/@storybook/cli@deadbeef',
+      'upgrade',
+    ]);
+  });
+
+  it('builds package-manager-aware setup commands', () => {
+    const npm = new NPMProxy({ cwd: process.cwd(), configDir: '.storybook' });
+    const pnpm = new PNPMProxy({ cwd: process.cwd(), configDir: '.storybook' });
+
+    expect(getVitestStorybookRunCommand(npm)).toBe('npx vitest --project storybook run');
+    expect(getVitestStorybookRunCommand(pnpm)).toBe('pnpm exec vitest --project storybook run');
+    expect(getMswInitCommand(pnpm)).toBe('pnpm exec msw init ./public --save');
   });
 
   it('extracts structured error logs', () => {

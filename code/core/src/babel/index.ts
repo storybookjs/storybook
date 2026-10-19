@@ -22,7 +22,6 @@ export {
   getEffectiveMergeConfigCall,
   getTargetConfigObject,
   canUpdateVitestConfigFile,
-  canUpdateVitestWorkspaceFile,
 } from './vitest-config-helpers.ts';
 
 // @ts-expect-error (needed due to it's use of `exports.default`)

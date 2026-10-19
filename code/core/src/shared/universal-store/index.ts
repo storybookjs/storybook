@@ -1,5 +1,7 @@
 import { dedent } from 'ts-dedent';
 
+import { UniversalStoreFollowerTimeoutError } from '../../manager-errors.ts';
+import { isFirstPartyStoreId } from './first-party-store-ids.ts';
 import { instances } from './instances.ts';
 import type {
   Actor,
@@ -16,7 +18,6 @@ import type {
   StatusType,
   StoreOptions,
 } from './types.ts';
-import { UniversalStoreFollowerTimeoutError } from '../../manager-errors.ts';
 
 const CHANNEL_EVENT_PREFIX = 'UNIVERSAL_STORE:' as const;
 
@@ -106,6 +107,11 @@ export class UniversalStore<
     UNKNOWN: 'UNKNOWN',
     MOCK: 'MOCK',
   } as const;
+
+  /** The environment this realm was prepared as, or `undefined` before `__prepare`. */
+  public static get preparedEnvironment(): EnvironmentType | undefined {
+    return UniversalStore.preparation.environment;
+  }
 
   /**
    * Internal event types used for store synchronization
@@ -211,7 +217,14 @@ export class UniversalStore<
    * hundred milliseconds.
    */
   public untilReady() {
-    return Promise.all([UniversalStore.preparation.promise, this.syncing?.promise]);
+    // A store that already has its own channel and environment is prepared (e.g. an isolated
+    // mock), so its readiness no longer depends on the global preparation. This mirrors the
+    // `status` getter, which is UNPREPARED only while channel/environment are missing. Relying on
+    // the global preparation here would hang for isolated mocks that intentionally do not resolve
+    // it (resolving it would leak their private channel to other stores awaiting preparation).
+    const preparation =
+      this.channel && this.environment ? Promise.resolve() : UniversalStore.preparation.promise;
+    return Promise.all([preparation, this.syncing?.promise]);
   }
 
   /**
@@ -324,7 +337,16 @@ export class UniversalStore<
     this.environment = environmentOverrides?.environment ?? UniversalStore.preparation.environment;
 
     if (this.channel && this.environment) {
-      UniversalStore.preparation.resolve({ channel: this.channel, environment: this.environment });
+      // Only stores using the shared (globally-prepared) channel may resolve the global
+      // preparation. A store with environment overrides is isolated (e.g. a mock with its own
+      // channel); resolving the global preparation would leak its private channel to other
+      // stores still awaiting preparation, causing duplicate leaders to collide on it.
+      if (!environmentOverrides) {
+        UniversalStore.preparation.resolve({
+          channel: this.channel,
+          environment: this.environment,
+        });
+      }
       this.prepareThis({ channel: this.channel, environment: this.environment });
     } else {
       UniversalStore.preparation.promise.then(this.prepareThis);
@@ -338,6 +360,11 @@ export class UniversalStore<
   >(options: StoreOptions<State>): UniversalStore<State, CustomEvent> {
     if (!options || typeof options?.id !== 'string') {
       throw new TypeError('id is required and must be a string, when creating a UniversalStore');
+    }
+    if (!isFirstPartyStoreId(options.id)) {
+      throw new TypeError(
+        `UniversalStore is internal to Storybook and cannot create a store with id "${options.id}"`
+      );
     }
     if (options.debug) {
       console.debug(

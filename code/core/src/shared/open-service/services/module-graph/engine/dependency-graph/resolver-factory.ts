@@ -2,12 +2,12 @@ import { join } from 'pathe';
 
 import { ResolverFactory as OxcResolverFactory } from 'oxc-resolver';
 
+import { defaultResolveConditionNames } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import type { ModuleResolveConfig } from '../adapters/types.ts';
 
 const DEFAULT_EXTENSIONS = ['.tsx', '.ts', '.d.ts', '.jsx', '.js', '.mjs', '.cjs', '.json'];
-const DEFAULT_CONDITIONS = ['storybook', 'import', 'module', 'default'];
 
 /**
  * `ModuleResolveConfig.alias` accepts both Vite shapes:
@@ -95,7 +95,7 @@ export class ChangeDetectionResolverFactory {
 
   constructor(config: ModuleResolveConfig) {
     const alias = this.aliasNormalizer.normalize(config.alias);
-    const conditionNames = config.conditions ?? DEFAULT_CONDITIONS;
+    const conditionNames = config.conditions ?? defaultResolveConditionNames;
 
     this.factory = new OxcResolverFactory({
       tsconfig: 'auto',

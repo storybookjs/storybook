@@ -48,7 +48,7 @@ jobs:
           install-code-deps: true
 
       - name: oxfmt
-        run: cd code && yarn lint:fmt
+        run: cd code && yarn fmt:check
 
   test:
     strategy:
@@ -71,10 +71,10 @@ jobs:
           install-code-deps: true
 
       - name: compile
-        run: yarn task --task compile --start-from=compile
+        run: yarn task --task compile --start-from=compile --no-link
 
       - name: Install Playwright Dependencies
         run: cd code && yarn exec playwright install chromium --with-deps
 
       - name: test
-        run: yarn test
+        run: yarn test --project '!agent-eval'

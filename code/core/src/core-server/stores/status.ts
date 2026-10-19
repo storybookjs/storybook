@@ -1,21 +1,67 @@
-import { optionalEnvToBoolean } from '../../common/utils/envs.ts';
 import { createStatusStore } from '../../shared/status-store/index.ts';
-import { UNIVERSAL_STATUS_STORE_OPTIONS } from '../../shared/status-store/index.ts';
+import {
+  type StatusesByStoryIdAndTypeId,
+  UNIVERSAL_STATUS_STORE_OPTIONS,
+} from '../../shared/status-store/index.ts';
 import { UniversalStore } from '../../shared/universal-store/index.ts';
+import { instances } from '../../shared/universal-store/instances.ts';
+import { getOrRecreateStore } from './server-store-leadership.ts';
 
-const statusStore = createStatusStore({
-  universalStatusStore: UniversalStore.create({
-    ...UNIVERSAL_STATUS_STORE_OPTIONS,
-    /*
-      This is a temporary workaround, to ensure that the store is not created in the
-      vitest sub-process in addon-vitest, even though it imports from core-server
-      If it was created in the sub-process, it would try to connect to the leader in the dev server
-      before it was ready.
-      This will be fixed when we do the planned UniversalStore v0.2.
-    */
-    leader: !optionalEnvToBoolean(process.env.VITEST_CHILD_PROCESS),
-  }),
-  environment: 'server',
-});
+function createServerStatusStore(leader: boolean) {
+  return createStatusStore({
+    universalStatusStore: UniversalStore.create({
+      ...UNIVERSAL_STATUS_STORE_OPTIONS,
+      leader,
+    }),
+    environment: 'server',
+  });
+}
 
-export const { fullStatusStore, getStatusStoreByTypeId, universalStatusStore } = statusStore;
+type StatusStoreBundle = ReturnType<typeof createServerStatusStore>;
+
+const cache: { leader?: boolean; store?: StatusStoreBundle } = {};
+
+function getStatusStoreBundle(): StatusStoreBundle {
+  return getOrRecreateStore(UNIVERSAL_STATUS_STORE_OPTIONS.id, cache, createServerStatusStore);
+}
+
+export const getStatusStoreByTypeId: StatusStoreBundle['getStatusStoreByTypeId'] = (typeId) =>
+  getStatusStoreBundle().getStatusStoreByTypeId(typeId);
+
+// A follower holds its initial (empty) state until the leader answers, so wait for that sync.
+export async function getSyncedStatuses(): Promise<StatusesByStoryIdAndTypeId> {
+  const bundle = getStatusStoreBundle();
+  try {
+    await bundle.universalStatusStore.untilReady();
+  } catch (error) {
+    // A follower that timed out ignores late answers, so the next read has to sync a fresh one.
+    if (cache.store === bundle) {
+      instances.delete(UNIVERSAL_STATUS_STORE_OPTIONS.id);
+      cache.store = undefined;
+    }
+    throw error;
+  }
+  return bundle.fullStatusStore.getAll();
+}
+
+export const fullStatusStore: StatusStoreBundle['fullStatusStore'] = new Proxy(
+  {} as StatusStoreBundle['fullStatusStore'],
+  {
+    get(_target, prop) {
+      const store = getStatusStoreBundle().fullStatusStore;
+      const value = Reflect.get(store, prop, store);
+      return typeof value === 'function' ? value.bind(store) : value;
+    },
+  }
+);
+
+export const universalStatusStore: StatusStoreBundle['universalStatusStore'] = new Proxy(
+  {} as StatusStoreBundle['universalStatusStore'],
+  {
+    get(_target, prop) {
+      const store = getStatusStoreBundle().universalStatusStore;
+      const value = Reflect.get(store, prop, store);
+      return typeof value === 'function' ? value.bind(store) : value;
+    },
+  }
+);

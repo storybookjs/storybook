@@ -2,7 +2,7 @@ import { builtinModules } from 'node:module';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import * as esbuild from 'esbuild';
+import type * as esbuild from 'esbuild';
 
 export type EntryType = 'node' | 'browser' | 'runtime' | 'globalizedRuntime';
 
@@ -11,6 +11,18 @@ export type BuildEntry = {
   entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts",
   external?: string[]; // the list of external dependencies to exclude from the bundle
   dts?: false; // default to generating d.ts files for all entries, except if set to false
+  // Replace the esbuild runtime bundle with a Rolldown build under dist/<entry dir>.
+  chunkedRuntime?: true;
+  /**
+   * Bundle this entry's d.ts in an isolated single-entry pass, producing one flat self-contained
+   * file instead of sharing type chunks with the package's other entries. For entries other
+   * packages bundle into their own dist, where a shared chunk would drag unrelated type surfaces
+   * along. `external` lists the only imports the flat file may keep — packages every consumer of
+   * the entry declares itself (it only affects this d.ts pass, never the JS bundle). A producer-side
+   * test guards each portable artifact: flatness, the import allowlist (kept there as a deliberate
+   * second copy, so widening it is a reviewer-visible edit), and a size budget.
+   */
+  portable?: { external: string[] };
 };
 export type BuildEntriesByPlatform = Partial<Record<EntryType, BuildEntry[]>>;
 
@@ -23,6 +35,13 @@ export type BuildEntries = {
    * Each platform is optional
    */
   entries: BuildEntriesByPlatform;
+  /**
+   * Override the d.ts bundler for this package (defaults to the --dts-bundler
+   * CLI flag). Use 'rolldown' to emit declarations with the TypeScript 6 JS
+   * API instead of the TypeScript 7 native compiler for packages where the
+   * native emit misbehaves.
+   */
+  dtsBundler?: 'rolldown-tsgo' | 'rolldown';
   /**
    * The map of extra outputs to be added to the package.json's exports
    *
@@ -89,6 +108,10 @@ export const getExternal = async (cwd: string) => {
   const typesExternal = [
     ...runtimeExternalInclude,
     'ast-types',
+    // typescript ships CommonJS dts that rolldown-plugin-dts cannot bundle. It is only
+    // reachable through devDep type imports (e.g. react-docgen-typescript); keeping it
+    // external lets treeshaking drop the import when the kept types don't use it.
+    'typescript',
     ...builtinModules.flatMap((m: string) => [m, `node:${m}`]),
   ];
 

@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 import { spawn } from 'node:child_process';
 import { appendFile, writeFileSync } from 'node:fs';

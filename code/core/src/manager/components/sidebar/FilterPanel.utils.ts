@@ -35,11 +35,12 @@ export const BUILT_IN_TAGS = new Set([
   'manifest',
 ]);
 
-/** Only change-detection statuses are shown in the sidebar filter panel. */
+/** Change-detection and review statuses shown in the sidebar filter panel. */
 export const STATUS_DISPLAY_ORDER: StatusValue[] = [
   'status-value:new',
   'status-value:modified',
   'status-value:affected',
+  'status-value:reviewing',
 ];
 
 /**

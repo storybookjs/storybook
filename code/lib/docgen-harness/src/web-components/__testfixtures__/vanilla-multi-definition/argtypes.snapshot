@@ -1,0 +1,36 @@
+{
+  "beta-label": {
+    "description": undefined,
+    "name": "beta-label",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": undefined,
+    },
+  },
+  "betaLabel": {
+    "description": "Beta label.",
+    "name": "betaLabel",
+    "required": false,
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": undefined,
+    },
+  },
+}

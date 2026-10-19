@@ -1,0 +1,411 @@
+{
+  "#secret": {
+    "description": "ES private, excluded.",
+    "name": "#secret",
+    "required": false,
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "'s'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "--toolkit-color": {
+    "description": "Text color.",
+    "name": "--toolkit-color",
+    "required": false,
+    "table": {
+      "category": "css custom properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "<color>",
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "--toolkit-font": {
+    "description": "Font shorthand.",
+    "name": "--toolkit-font",
+    "required": false,
+    "table": {
+      "category": "css custom properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "--toolkit-gap": {
+    "description": "Gap with a default.",
+    "name": "--toolkit-gap",
+    "required": false,
+    "table": {
+      "category": "css custom properties",
+      "defaultValue": {
+        "summary": "4px",
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "--toolkit-scale": {
+    "description": "Scale factor.",
+    "name": "--toolkit-scale",
+    "required": false,
+    "table": {
+      "category": "css custom properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "<number>",
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "base": {
+    "description": "The wrapper.",
+    "name": "base",
+    "required": false,
+    "table": {
+      "category": "css shadow parts",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "click": {
+    "description": "Native click passthrough.",
+    "name": "click",
+    "required": false,
+    "table": {
+      "category": "events",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "computed": {
+    "description": "Read-only computed value.",
+    "name": "computed",
+    "required": false,
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "helper": {
+    "description": "Protected field, excluded.",
+    "name": "helper",
+    "required": false,
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "'h'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "internalCounter": {
+    "description": "Private field, excluded.",
+    "name": "internalCounter",
+    "required": false,
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "0",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "label": {
+    "description": "Rich label content; collides with the `label` attribute.",
+    "name": "label",
+    "required": false,
+    "table": {
+      "category": "slots",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "level": {
+    "description": "Inline literal union with a numeric member.",
+    "name": "level",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "1",
+      },
+      "type": {
+        "summary": "1 | 2 | 3",
+      },
+    },
+    "type": {
+      "name": "1 | 2 | 3",
+    },
+  },
+  "old-size": {
+    "description": "Old size field.",
+    "name": "old-size",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "''",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "oldSize": {
+    "description": "Old size field.",
+    "name": "oldSize",
+    "required": false,
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "''",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "onClick": {
+    "action": {
+      "name": "click",
+    },
+    "name": "onClick",
+    "table": {
+      "disable": true,
+    },
+  },
+  "onSelect": {
+    "description": "Callback property.",
+    "name": "onSelect",
+    "required": false,
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "undefined",
+      },
+      "type": {
+        "summary": "((size: Size) => void) | undefined",
+      },
+    },
+    "type": {
+      "name": "((size: Size) => void) | undefined",
+    },
+  },
+  "onToolkitResize": {
+    "action": {
+      "name": "toolkit-resize",
+    },
+    "name": "onToolkitResize",
+    "table": {
+      "disable": true,
+    },
+  },
+  "pressed": {
+    "description": "Internal reactive state.",
+    "name": "pressed",
+    "required": false,
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
+  "size": {
+    "description": "Named alias union.",
+    "name": "size",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'medium'",
+      },
+      "type": {
+        "summary": "Size",
+      },
+    },
+    "type": {
+      "name": "Size",
+    },
+  },
+  "tagName": {
+    "description": "Static member, excluded.",
+    "name": "tagName",
+    "required": false,
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "'lit-toolkit-shapes'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "tags": {
+    "description": "Array of literals.",
+    "name": "tags",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "['a']",
+      },
+      "type": {
+        "summary": "Array<'a' | 'b'>",
+      },
+    },
+    "type": {
+      "name": "Array<'a' | 'b'>",
+    },
+  },
+  "target": {
+    "description": "Mixed literal/object union.",
+    "name": "target",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'self'",
+      },
+      "type": {
+        "summary": "'self' | { id: string }",
+      },
+    },
+    "type": {
+      "name": "'self' | { id: string }",
+    },
+  },
+  "toolkit-resize": {
+    "description": "Fired when the size changes.",
+    "name": "toolkit-resize",
+    "required": false,
+    "table": {
+      "category": "events",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "CustomEvent<{ size: Size }>",
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "version": {
+    "description": "Readonly field.",
+    "name": "version",
+    "required": false,
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "'1.0.0'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "when": {
+    "description": "Date value.",
+    "name": "when",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "new Date(0)",
+      },
+      "type": {
+        "summary": "Date",
+      },
+    },
+    "type": {
+      "name": "Date",
+    },
+  },
+}

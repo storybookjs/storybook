@@ -4,6 +4,7 @@ import type {
   API_LayoutCustomisations,
   API_PanelPositions,
   API_UI,
+  API_ViewMode,
 } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -11,9 +12,9 @@ import { global } from '@storybook/global';
 import { pick, toMerged } from 'es-toolkit/object';
 import { isEqual as deepEqual } from 'es-toolkit/predicate';
 import type { ThemeVars } from 'storybook/theming';
-import { deprecate } from 'storybook/internal/client-logger';
 import { create } from 'storybook/theming/create';
 
+import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 import merge from '../lib/merge.ts';
 import type { ModuleFn } from '../lib/types.tsx';
 import type { State } from '../root.tsx';
@@ -35,6 +36,16 @@ export interface SubState {
   selectedPanel: string | undefined;
   theme: ThemeVars;
 }
+
+/**
+ * Availability of the sidebar/nav: 'unavailable' means the current route suppresses the nav
+ * entirely (review routes), otherwise it is 'shown' or 'hidden' based on the layout state.
+ */
+export type NavAvailability = 'shown' | 'hidden' | 'unavailable';
+
+/** True when the route renders a full-screen page (e.g. settings) instead of the preview canvas. */
+export const isPagesViewMode = (viewMode: API_ViewMode): boolean =>
+  viewMode !== undefined && viewMode !== 'story' && viewMode !== 'docs' && viewMode !== 'review';
 
 export interface SubAPI {
   /**
@@ -66,6 +77,15 @@ export interface SubAPI {
    */
   toggleNav: (toggled?: boolean) => void;
   /**
+   * Sets the open/closed state of the mobile navigation drawer directly, without going through the
+   * `toggleNav` desktop/mobile branching. Use this to imperatively open or close the drawer (e.g.
+   * resetting it to closed when leaving the mobile layout). `toggleNav` remains the toggle
+   * entry-point.
+   *
+   * @param show - Whether the mobile navigation drawer should be open.
+   */
+  setMobileNavigation: (show: boolean) => void;
+  /**
    * Toggles the visibility of the toolbar in the Storybook UI.
    *
    * @param toggled - Optional boolean value to set the toolbar visibility to. If not provided, it
@@ -88,6 +108,11 @@ export interface SubAPI {
   getIsPanelShown: () => boolean;
   /** GetIsNavShown - Returns the current visibility of the navigation bar in the Storybook UI. */
   getIsNavShown: () => boolean;
+  /**
+   * GetNavAvailability - Returns whether the sidebar/nav is shown, hidden (but can be shown by the
+   * user), or unavailable because the current route suppresses it entirely (review routes).
+   */
+  getNavAvailability: () => NavAvailability;
   /**
    * GetShowToolbarWithCustomisations - Returns the current visibility of the toolbar, taking into
    * account customisations requested by the end user via a layoutCustomisations function.
@@ -144,8 +169,8 @@ export const getDefaultLayoutState: () => SubState = () => {
       panelPosition: 'bottom',
       showNav: true,
       showPanel: true,
-      showTabs: true,
       showToolbar: true,
+      showMobileNavigation: false,
     },
     layoutCustomisations: {
       showPanel: undefined,
@@ -196,36 +221,14 @@ const getRecentVisibleSizes = (layoutState: API_Layout) => {
   };
 };
 
-/**
- * Merges layout options into the existing layout state and translates
- * `showNav` / `showPanel` booleans into the underlying size fields.
- *
- * Layout keys can be provided either at the top level (deprecated) or under
- * `options.layout` (preferred). Nested layout keys take precedence.
- *
- * Numeric sizes are merged in before applying show/hide flags, so
- * `recentVisibleSizes` is captured from the latest size values.
- */
 const applyLayoutOptions = (
   layoutState: API_Layout,
-  options: { layout?: Partial<API_Layout>; [key: string]: any },
+  options: Partial<API_Layout> | undefined,
   singleStory: boolean
 ) => {
-  const layoutKeys = Object.keys(layoutState);
-  const layoutAtTopLevel = pick(options, layoutKeys);
-
-  for (const key of Object.keys(layoutAtTopLevel)) {
-    deprecate(
-      `Calling \`setConfig({ ${key}: ... })\` is deprecated. Please call \`setConfig({ layout: { ${key}: ... } })\` instead.`
-    );
-  }
-
-  const mergedLayoutOptions = toMerged(layoutAtTopLevel, options.layout || {});
-  const { showPanel, showNav } = mergedLayoutOptions;
-
-  // Safety net: drop any unknown keys that aren't part of API_Layout.
-  const typedLayoutKeys = layoutKeys as (keyof API_Layout)[];
-  const nextLayoutState = toMerged(layoutState, pick(mergedLayoutOptions, typedLayoutKeys));
+  const { showPanel, showNav } = options ?? {};
+  const layoutKeys = Object.keys(layoutState) as (keyof API_Layout)[];
+  const nextLayoutState = toMerged(layoutState, pick(options ?? {}, layoutKeys));
 
   // singleStory always hides the sidebar; otherwise honor showSidebar.
   if (showNav === false || singleStory) {
@@ -247,29 +250,16 @@ const applyLayoutOptions = (
   return nextLayoutState;
 };
 
-/**
- * Merges ui options into the existing ui state.
- *
- * Ui keys can be provided either at the top level (deprecated) or under
- * `options.ui` (preferred). Nested ui keys take precedence.
- *
- * Numeric sizes are merged in before applying show/hide flags, so
- * `recentVisibleSizes` is captured from the latest size values.
- */
-const applyUiOptions = (uiState: API_UI, options: { ui?: Partial<API_UI>; [key: string]: any }) => {
-  const uiKeys = Object.keys(uiState);
-  const uiAtTopLevel = pick(options, uiKeys);
-
-  for (const key of Object.keys(uiAtTopLevel)) {
-    deprecate(
-      `Calling \`setConfig({ ${key}: ... })\` is deprecated. Please call \`setConfig({ ui: { ${key}: ... } })\` instead.`
-    );
-  }
-
-  // Safety net: drop any unknown keys that aren't part of API_UI.
-  const typedUiKeys = uiKeys as (keyof API_UI)[];
-  return toMerged(uiState, pick(toMerged(uiAtTopLevel, options.ui || {}), typedUiKeys));
+const applyUiOptions = (uiState: API_UI, options: Partial<API_UI> | undefined) => {
+  const uiKeys = Object.keys(uiState) as (keyof API_UI)[];
+  return toMerged(uiState, pick(options ?? {}, uiKeys));
 };
+
+/**
+ * Whether the viewport is at or above the manager's desktop breakpoint (600px). Below it the
+ * sidebar is rendered as a drawer owned by the manager UI rather than the desktop nav.
+ */
+export const isDesktopViewport = () => global.matchMedia?.('(min-width: 600px)')?.matches ?? true;
 
 export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory }) => {
   const api = {
@@ -358,6 +348,19 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
     },
 
     toggleNav(nextState?: boolean) {
+      // On mobile the sidebar is a drawer owned by the manager UI, not the desktop nav size, so
+      // toggle the drawer's dedicated state instead of resizing the hidden desktop nav. No
+      // persistence option: the drawer is ephemeral UI and must not be written to storage.
+      if (!isDesktopViewport()) {
+        return store.setState((state: State) => ({
+          layout: {
+            ...state.layout,
+            showMobileNavigation:
+              typeof nextState === 'boolean' ? nextState : !state.layout.showMobileNavigation,
+          },
+        }));
+      }
+
       return store.setState(
         (state: State) => {
           if (state.singleStory) {
@@ -389,6 +392,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         },
         { persistence: 'session' }
       );
+    },
+
+    setMobileNavigation(show: boolean) {
+      return store.setState((state: State) => ({
+        layout: { ...state.layout, showMobileNavigation: show },
+      }));
     },
 
     toggleToolbar(toggled?: boolean) {
@@ -525,12 +534,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
 
       return {
         ...defaultLayoutState,
-        layout: applyLayoutOptions(defaultLayoutState.layout, userConfig, !!singleStory),
+        layout: applyLayoutOptions(defaultLayoutState.layout, userConfig.layout, !!singleStory),
         layoutCustomisations: {
           ...defaultLayoutState.layoutCustomisations,
           ...(layoutCustomisations ?? {}),
         },
-        ui: applyUiOptions(defaultLayoutState.ui, userConfig),
+        ui: applyUiOptions(defaultLayoutState.ui, userConfig.ui),
         selectedPanel: selectedPanel || defaultLayoutState.selectedPanel,
         theme: theme || defaultLayoutState.theme,
       };
@@ -544,6 +553,13 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
     },
     getIsNavShown() {
       return getIsNavShown(store.getState());
+    },
+    getNavAvailability(): NavAvailability {
+      const state = store.getState();
+      if (isReviewManagerRoute(state.path, state.customQueryParams)) {
+        return 'unavailable';
+      }
+      return getIsNavShown(state) ? 'shown' : 'hidden';
     },
 
     getShowToolbarWithCustomisations(showToolbar: boolean) {
@@ -588,9 +604,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         return;
       }
 
-      const updatedLayout = applyLayoutOptions(layout, options, !!singleStory);
+      const updatedLayout = applyLayoutOptions(layout, options.layout, !!singleStory);
 
-      const updatedUi = applyUiOptions(ui, options);
+      const updatedUi = applyUiOptions(ui, options.ui);
 
       const updatedTheme = {
         ...theme,
@@ -619,6 +635,11 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
   };
 
   const persisted = pick(store.getState(), ['layout', 'selectedPanel']);
+
+  // The mobile drawer is ephemeral UI: a session that persisted it open must not restore it open.
+  if (persisted.layout) {
+    persisted.layout = { ...persisted.layout, showMobileNavigation: false };
+  }
 
   provider.channel?.on(SET_CONFIG, () => {
     api.setOptions(merge(api.getInitialOptions(), persisted));

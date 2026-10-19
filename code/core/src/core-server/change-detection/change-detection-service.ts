@@ -11,7 +11,6 @@ import type {
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import { getService } from '../../shared/open-service/server.ts';
-import type { ModuleGraphService } from '../../shared/open-service/services/module-graph/definition.ts';
 import { getStoryIdsByAbsolutePath } from '../../shared/open-service/services/module-graph/story-files.ts';
 import type {
   ErrorLike,
@@ -124,12 +123,11 @@ export class ChangeDetectionService {
   private rerunAfterCurrentScan = false;
   private readinessResolved = false;
   private statusPipelineStarted = false;
-  private changeDetectionEnabled = false;
   private previousStatuses = new Map<string, Status>();
   private gitDiffProvider: GitDiffProvider | undefined;
   private indexBaselineService: IndexBaselineService | undefined;
   private unsubscribeModuleGraphStatus: (() => void) | undefined;
-  private unsubscribeModuleGraphRevision: (() => void) | undefined;
+  private unsubscribeFileActivity: (() => void) | undefined;
   private readonly workingDir: string;
   private readonly debounceMs: number;
 
@@ -151,16 +149,15 @@ export class ChangeDetectionService {
   }
 
   private getModuleGraph() {
-    return getService<ModuleGraphService>('core/module-graph');
+    return getService('core/module-graph', { internal: true });
   }
 
-  /** True while the service is live and change-detection status publishing is enabled. */
-  private isActive(): boolean {
-    return !this.disposed && this.changeDetectionEnabled;
+  private getModuleGraphIndex() {
+    return getService('core/module-graph-index', { internal: true });
   }
 
   private onGraphReady(): void {
-    if (!this.isActive()) {
+    if (this.disposed) {
       return;
     }
 
@@ -168,7 +165,7 @@ export class ChangeDetectionService {
   }
 
   private onGraphChange(): void {
-    if (!this.isActive()) {
+    if (this.disposed) {
       return;
     }
 
@@ -176,7 +173,7 @@ export class ChangeDetectionService {
   }
 
   private onGraphError(error: Error): void {
-    if (!this.isActive()) {
+    if (this.disposed) {
       return;
     }
 
@@ -185,7 +182,7 @@ export class ChangeDetectionService {
   }
 
   private onGraphUnavailable(reason: string, error?: Error): void {
-    if (!this.isActive()) {
+    if (this.disposed) {
       return;
     }
 
@@ -195,7 +192,7 @@ export class ChangeDetectionService {
   }
 
   private onModuleGraphStatus(status: ModuleGraphStatus): void {
-    if (!this.isActive()) {
+    if (this.disposed) {
       return;
     }
 
@@ -217,34 +214,28 @@ export class ChangeDetectionService {
     }
   }
 
-  start(enabled: boolean | undefined): void {
-    if (enabled === false) {
-      logger.debug('Change detection disabled.');
-      this.resolveReadiness({
-        status: 'unavailable',
-        reason: 'disabled',
-      });
-      return;
-    }
-
-    logger.debug('Change detection enabled.');
-    this.changeDetectionEnabled = true;
-
+  start(): void {
     const moduleGraph = this.getModuleGraph();
-    this.unsubscribeModuleGraphStatus = moduleGraph.queries.getStatus.subscribe(
+    this.unsubscribeModuleGraphStatus = moduleGraph.queries.status.subscribe(
       undefined,
-      (status) => this.onModuleGraphStatus(status as ModuleGraphStatus)
+      ({ data }) => {
+        if (data !== undefined) {
+          this.onModuleGraphStatus(data as ModuleGraphStatus);
+        }
+      }
     );
-    this.unsubscribeModuleGraphRevision = moduleGraph.queries.getGraphRevision.subscribe(
+    // Watch file activity (not graphRevision): out-of-graph / path-mismatched edits still need a
+    // git rescan, while graphRevision stays in-graph-only for review staleness.
+    this.unsubscribeFileActivity = moduleGraph.queries.fileActivityRevision.subscribe(
       undefined,
-      (revision) => {
-        if (revision > 0) {
+      ({ data }) => {
+        if ((data ?? 0) > 0) {
           this.onGraphChange();
         }
       }
     );
 
-    void moduleGraph.queries.getStatus
+    void moduleGraph.queries.status
       .loaded(undefined)
       .then((status) => {
         this.onModuleGraphStatus(status as ModuleGraphStatus);
@@ -296,8 +287,8 @@ export class ChangeDetectionService {
     this.gitDiffProvider?.dispose();
     this.unsubscribeModuleGraphStatus?.();
     this.unsubscribeModuleGraphStatus = undefined;
-    this.unsubscribeModuleGraphRevision?.();
-    this.unsubscribeModuleGraphRevision = undefined;
+    this.unsubscribeFileActivity?.();
+    this.unsubscribeFileActivity = undefined;
   }
 
   private scheduleScan(delayMs: number): void {
@@ -320,7 +311,7 @@ export class ChangeDetectionService {
     // (between a story's removeStory and the re-walk's recordEdges) reads a transiently empty
     // reverse index and publishes incorrect statuses.
     const moduleGraph = this.getModuleGraph();
-    const status = await moduleGraph.queries.getStatus.loaded(undefined);
+    const status = await moduleGraph.queries.status.loaded(undefined);
 
     if (this.disposed || status.value !== 'ready') {
       return;
@@ -403,8 +394,8 @@ export class ChangeDetectionService {
     const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
     const statuses = new Map<string, Status>();
     const scannedFilesArray = [...scannedFiles];
-    const moduleGraph = this.getModuleGraph();
-    const lookupResults = await moduleGraph.queries.getStoriesForFiles.loaded({
+    const moduleGraphIndex = this.getModuleGraphIndex();
+    const lookupResults = await moduleGraphIndex.queries.storiesForFiles.loaded({
       files: scannedFilesArray,
     });
 

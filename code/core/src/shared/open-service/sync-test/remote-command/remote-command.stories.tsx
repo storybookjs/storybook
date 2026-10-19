@@ -4,37 +4,23 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect, waitFor } from 'storybook/test';
 
+import { OPEN_SERVICE_DEMO_PARAM_KEY } from '../addon/constants.ts';
+import { createDemoStore } from '../demo-store.ts';
 import { remoteCommandSyncService } from './preview.ts';
 
-let currentValue = '';
-const listeners = new Set<() => void>();
-
-function setCurrentValue(value: string) {
-  currentValue = value;
-  for (const listener of listeners) {
-    listener();
-  }
-}
-
-function subscribeToCurrentValue(listener: () => void) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
-
-function getCurrentValue() {
-  return currentValue;
-}
+const store = createDemoStore('');
 
 function RemoteCommandDemo() {
-  const value = useSyncExternalStore(subscribeToCurrentValue, getCurrentValue, getCurrentValue);
+  // Safe to use React 18 API because this is only loaded in our own UI, not in React sandboxes.
+  const value = useSyncExternalStore(store.subscribe, store.get, store.get);
 
   return (
     <main style={{ fontFamily: 'sans-serif', maxWidth: 520, padding: 24 }}>
       <h1 style={{ fontSize: 20, margin: '0 0 12px' }}>Open service remote command sync demo</h1>
       <p style={{ lineHeight: 1.5, margin: '0 0 16px' }}>
-        This story shares one open-service value with the manager toolbar input. Typing here or in
-        the remote-command toolbar input invokes the server-only <code>setValue</code> command
-        remotely, then syncs the updated state back to manager and preview.
+        This story shares one open-service value with the manager Open Service panel. Typing here or
+        in the panel input invokes the server-only <code>setValue</code> command remotely, then
+        syncs the updated state back to manager and preview.
       </p>
       <p style={{ lineHeight: 1.5, margin: '0 0 16px' }}>
         In a built Storybook this variant intentionally does nothing: it depends on the dev server
@@ -52,7 +38,7 @@ function RemoteCommandDemo() {
           aria-label="Remote command story sync input"
           type="text"
           value={value}
-          placeholder="Type to sync with the toolbar"
+          placeholder="Type to sync with the manager panel"
           onChange={(event) => {
             void remoteCommandSyncService.commands.setValue({ value: event.currentTarget.value });
           }}
@@ -63,7 +49,7 @@ function RemoteCommandDemo() {
       <section style={{ marginTop: 16 }}>
         <h2 style={{ fontSize: 14, margin: '0 0 6px' }}>Raw service value</h2>
         <pre
-          aria-label="Remote command raw service state value"
+          data-testid="remote-command-raw-service-state-value"
           style={{
             background: 'rgba(0, 0, 0, 0.06)',
             borderRadius: 4,
@@ -89,14 +75,19 @@ const meta = {
   parameters: {
     chromatic: { disableSnapshot: true },
     layout: 'centered',
+    [OPEN_SERVICE_DEMO_PARAM_KEY]: { enabled: true },
   },
   beforeEach: () => {
-    setCurrentValue(remoteCommandSyncService.queries.getValue());
-    const unsubscribe = remoteCommandSyncService.queries.getValue.subscribe(
-      undefined,
-      setCurrentValue
+    const initialValue = remoteCommandSyncService.queries.value.get();
+    store.set(initialValue);
+    const unsubscribe = remoteCommandSyncService.queries.value.subscribe(undefined, ({ data }) =>
+      store.set(data ?? '')
     );
-    return unsubscribe;
+    return async () => {
+      unsubscribe();
+      store.set(initialValue);
+      await remoteCommandSyncService.commands.setValue({ value: initialValue }).catch(() => {});
+    };
   },
 } satisfies Meta<typeof RemoteCommandDemo>;
 
@@ -114,30 +105,22 @@ export const RemoteCommandPlayFunction: Story = {
   tags: ['!vitest'],
   play: async ({ canvas, userEvent }) => {
     const input = await canvas.findByLabelText('Remote command story sync input');
-    const raw = await canvas.findByLabelText('Remote command raw service state value');
+    const raw = await canvas.findByTestId('remote-command-raw-service-state-value');
     const nextValue = 'play-function-sync-value';
 
-    try {
-      await userEvent.clear(input);
+    await userEvent.clear(input);
 
-      await waitFor(() => {
-        expect(raw).toHaveTextContent(JSON.stringify(''));
-      });
+    await waitFor(() => {
+      expect(raw).toHaveTextContent(JSON.stringify(''));
+    });
 
-      for (const character of nextValue) {
-        await userEvent.type(input, character);
-        await new Promise((resolve) => setTimeout(resolve, 50));
-      }
-
-      await waitFor(() => {
-        expect(raw).toHaveTextContent(JSON.stringify(nextValue));
-      });
-    } finally {
-      await userEvent.clear(input);
-
-      await waitFor(() => {
-        expect(raw).toHaveTextContent(JSON.stringify(''));
-      });
+    for (const character of nextValue) {
+      await userEvent.type(input, character);
+      await new Promise((resolve) => setTimeout(resolve, 50));
     }
+
+    await waitFor(() => {
+      expect(raw).toHaveTextContent(JSON.stringify(nextValue));
+    });
   },
 };

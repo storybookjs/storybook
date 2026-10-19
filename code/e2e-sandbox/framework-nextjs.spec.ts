@@ -78,6 +78,28 @@ test.describe('Next.js', () => {
     testRoutingBehaviour('Replace', 'replace');
   });
 
+  test.describe('next/link', () => {
+    let root: Locator;
+    let sbPage: SbPage;
+
+    test.beforeEach(async ({ page }) => {
+      sbPage = new SbPage(page, expect);
+
+      await sbPage.navigateToStory('stories/frameworks/nextjs/Link', 'triggers-link-action');
+      root = sbPage.previewRoot();
+    });
+
+    test('should log a link action when clicked', async ({ page }) => {
+      await root.locator('a', { hasText: 'Trigger link action' }).click();
+
+      await sbPage.viewAddonPanel('Actions');
+      const logItem = page.locator('#storybook-panel-root [role="tabpanel"]', {
+        hasText: 'next/link::Link',
+      });
+      await expect(logItem).toBeVisible();
+    });
+  });
+
   test.describe('next/router', () => {
     let root: Locator;
     let sbPage: SbPage;

@@ -5,6 +5,8 @@ import { dirname, join } from 'node:path';
 import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
 import type { Options } from 'storybook/internal/types';
 
+import { previewRuntimePath } from '../utils/preview-runtime-path.ts';
+
 import * as pkg from 'empathic/package';
 import { init, parse } from 'es-module-lexer';
 import MagicString from 'magic-string';
@@ -12,6 +14,7 @@ import type { Alias, Plugin } from 'vite';
 
 const escapeKeys = (key: string) => key.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 const defaultImportRegExp = 'import ([^*{}]+) from';
+const emptyImportRegExp = /^import(?:\s*\{\s*\}\s*from)?\s*['"][^'"]+['"]\s*;?$/;
 const replacementMap = new Map([
   ['import ', 'const '],
   ['import{', 'const {'],
@@ -100,17 +103,20 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
 
         const [imports] = parse(code);
         const src = new MagicString(code);
+        let didRewrite = false;
         imports.forEach(({ n: path, ss: startPosition, se: endPosition }) => {
           const packageName = path;
           if (packageName && globalsList.includes(packageName)) {
             const importStatement = src.slice(startPosition, endPosition);
             const transformedImport = rewriteImport(importStatement, externals, packageName);
             src.update(startPosition, endPosition, transformedImport);
+            didRewrite = true;
           }
         });
 
+        const rewritten = src.toString();
         return {
-          code: src.toString(),
+          code: didRewrite ? ensurePreviewRuntimePrecedesGlobals(rewritten, id) : rewritten,
           map: null,
         };
       },
@@ -118,9 +124,29 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
   } satisfies Plugin;
 }
 
+const bundledPreviewRuntimePattern = /[/\\]dist[/\\]preview[/\\]/;
+
+// Call setup() so init still runs when side-effect imports of this package are dropped.
+export function ensurePreviewRuntimePrecedesGlobals(code: string, id: string) {
+  if (bundledPreviewRuntimePattern.test(id.split('?')[0])) {
+    return code;
+  }
+
+  return `import { setup as __sbInitializePreviewGlobals } from ${JSON.stringify(previewRuntimePath)};\n__sbInitializePreviewGlobals();\n${code}`;
+}
+
 function getDefaultImportReplacement(match: string) {
   const matched = match.match(defaultImportRegExp);
   return matched && `const {default: ${matched[1]}} =`;
+}
+
+function getEmptyImportReplacement(importStatement: string, globalReference: string) {
+  if (!emptyImportRegExp.test(importStatement.trim())) {
+    return undefined;
+  }
+
+  const statementTerminator = importStatement.trimEnd().endsWith(';') ? ';' : '';
+  return `void ${globalReference}${statementTerminator}`;
 }
 
 function getSearchRegExp(packageName: string) {
@@ -136,6 +162,12 @@ export function rewriteImport(
   globs: Record<string, string>,
   packageName: string
 ): string {
+  const emptyImportReplacement = getEmptyImportReplacement(importStatement, globs[packageName]);
+
+  if (emptyImportReplacement) {
+    return emptyImportReplacement;
+  }
+
   const search = getSearchRegExp(packageName);
   return importStatement.replace(
     search,

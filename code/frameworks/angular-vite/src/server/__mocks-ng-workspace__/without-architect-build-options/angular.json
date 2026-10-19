@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "projects": {
+    "foo-project": {
+      "architect": {
+        "build": {}
+      }
+    }
+  },
+  "defaultProject": "foo-project"
+}

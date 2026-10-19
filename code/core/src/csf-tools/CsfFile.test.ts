@@ -12,6 +12,7 @@ import {
   isModuleMock,
   isValidPreviewPath,
   loadCsf,
+  printCsf,
 } from './CsfFile.ts';
 
 expect.addSnapshotSerializer({
@@ -35,6 +36,21 @@ const transform = (code: string, options: Partial<CsfOptions> = { makeTitle }) =
 };
 
 describe('CsfFile', () => {
+  it('prints CRLF sources with LF output', async () => {
+    const os = (await import('node:os')).default;
+    const original = os.EOL;
+    Object.defineProperty(os, 'EOL', { value: '\r\n' });
+    try {
+      const source = ['export default { title: "foo/bar" };', '', 'export const Story = {};'].join(
+        '\r\n'
+      );
+      const csf = loadCsf(source, { makeTitle }).parse();
+      expect(printCsf(csf).code).not.toContain('\r');
+    } finally {
+      Object.defineProperty(os, 'EOL', { value: original });
+    }
+  });
+
   describe('basic', () => {
     it('filters out non-story exports', () => {
       const code = `
@@ -1209,6 +1225,23 @@ describe('CsfFile', () => {
       ).toThrow('CSF: missing default export');
     });
 
+    it('reports unresolved factory meta through mutation diagnostics', () => {
+      const source = dedent`
+        import preview from './preview';
+        import config from './config';
+        const meta = preview.meta(config);
+        export const Basic = meta.story({});
+      `;
+      const csf = loadCsf(source, { makeTitle }).parse();
+
+      expect(csf.stories).toHaveLength(1);
+      expect(csf.objects({ meta: true, stories: false })).toEqual([]);
+      expect(csf.mutationDiagnostics).toContainEqual(
+        expect.objectContaining({ code: 'unsupported-initializer', target: { kind: 'meta' } })
+      );
+      expect(formatCsf(csf)).toBe(source);
+    });
+
     it('bad meta', () => {
       expect(() =>
         parse(
@@ -1351,24 +1384,6 @@ describe('CsfFile', () => {
         A.y = 2;
         export const B = () => {};
         B.z = 3;
-    `;
-      const csf = loadCsf(input, { makeTitle }).parse();
-      expect(Object.keys(csf._storyAnnotations.A)).toEqual(['x', 'y']);
-      expect(Object.keys(csf._storyAnnotations.B)).toEqual(['z']);
-    });
-
-    it('v1-style story annotations', () => {
-      const input = dedent`
-        export default { title: 'foo/bar' };
-        export const A = () => {};
-        A.story = {
-          x: 1,
-          y: 2,
-        }
-        export const B = () => {};
-        B.story = {
-          z: 3,
-        }
     `;
       const csf = loadCsf(input, { makeTitle }).parse();
       expect(Object.keys(csf._storyAnnotations.A)).toEqual(['x', 'y']);
@@ -2934,6 +2949,25 @@ describe('CsfFile', () => {
                 mount: false
                 moduleMock: false
         `);
+      });
+
+      it('story typed with meta.type<>()', () => {
+        const parsed = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            export const A = meta.story({})
+            export const B = meta.type<{ args: { icon: string } }>().story({ name: 'Typed' })
+            export const C = meta.type<{ args: { icon: string } }>().type<{ args: { size: number } }>().story()
+          `,
+          { makeTitle }
+        ).parse();
+
+        expect(parsed.stories).toMatchObject([
+          { id: 'default-title--a', name: 'A', __stats: { factory: true } },
+          { id: 'default-title--b', name: 'Typed', __stats: { factory: true } },
+          { id: 'default-title--c', name: 'C', __stats: { factory: true } },
+        ]);
       });
     });
     describe('errors', () => {

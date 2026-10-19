@@ -22,6 +22,9 @@ vi.mock('@storybook/global', () => ({
         origin: 'http://localhost:6006',
       },
     },
+    document: {
+      baseURI: 'http://localhost:6006/',
+    },
     STORYBOOK_NETWORK_ADDRESS: 'http://192.168.1.1:6006/',
   },
 }));
@@ -118,6 +121,36 @@ describe('initial state', () => {
         bottomPanelHeight: 0,
         rightPanelWidth: 0,
       });
+    });
+
+    it('keeps layout params out of customQueryParams, passing through only custom params', () => {
+      const navigate = vi.fn();
+      const location = {
+        search:
+          '?' +
+          new URLSearchParams({
+            // every layout key consumed by the manager (the full LAYOUT_QUERY_PARAM_KEYS set)
+            full: '1',
+            panel: 'right',
+            nav: '0',
+            shortcuts: '0',
+            addonPanel: 'controls',
+            tabs: '0',
+            path: '/story/button--primary',
+            // genuinely custom params that must survive
+            tab: 'my-addon',
+            collection: '2',
+            tags: 'a11y',
+          }).toString(),
+      };
+
+      const {
+        state: { customQueryParams },
+      } = initURL({ navigate, state: { location }, provider: { channel: new EventEmitter() } });
+
+      // Layout params (full/panel/nav/...) are consumed by the manager and must not leak into the
+      // params forwarded to the preview iframe; only genuinely custom params remain.
+      expect(customQueryParams).toEqual({ tab: 'my-addon', collection: '2', tags: 'a11y' });
     });
   });
 });
@@ -294,6 +327,10 @@ describe('getStoryHrefs', () => {
     },
     getState: () => state,
   };
+
+  beforeEach(() => {
+    global.document.baseURI = 'http://localhost:6006/';
+  });
 
   it('returns manager and preview URLs for a story', () => {
     const { api, state } = initURL({
@@ -487,23 +524,6 @@ describe('getStoryHrefs', () => {
     );
   });
 
-  it('supports PREVIEW_URL override', () => {
-    global.PREVIEW_URL = 'https://custom.preview.url/';
-    const { api, state } = initURL({
-      store,
-      provider: { channel: new EventEmitter() },
-      state: { location: { pathname: '/', search: '' } },
-      navigate: vi.fn(),
-      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
-    });
-    store.setState(state);
-
-    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
-    expect(managerHref).toEqual('/?path=/story/test--story');
-    expect(previewHref).toEqual('https://custom.preview.url/?id=test--story&viewMode=story');
-    delete global.PREVIEW_URL;
-  });
-
   it('correctly links from /index.html', () => {
     const { api, state } = initURL({
       store,
@@ -513,28 +533,107 @@ describe('getStoryHrefs', () => {
       fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
     });
     store.setState(state);
+    global.document.baseURI = 'http://localhost:6006/index.html';
 
     const { managerHref, previewHref } = api.getStoryHrefs('test--story');
     expect(managerHref).toEqual('/index.html?path=/story/test--story');
     expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story');
   });
 
-  it('correctly links when hosted at a subpath without trailing slash', () => {
+  it('honors a custom <base href> for subpath hosting, independent of the router pathname (#33848)', () => {
     const { api, state } = initURL({
       store,
       provider: { channel: new EventEmitter() },
-      state: { location: { pathname: '/design-system', search: '' } },
+      state: { location: { pathname: '/', search: '' } },
       navigate: vi.fn(),
       fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
     });
     store.setState(state);
+    global.document.baseURI = 'http://localhost:6006/design-system/';
 
-    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
-    expect(managerHref).toEqual('/design-system?path=/story/test--story');
+    const { previewHref } = api.getStoryHrefs('test--story');
     expect(previewHref).toEqual('/design-system/iframe.html?id=test--story&viewMode=story');
   });
 
-  it('correctly links when hosted at a subpath with trailing slash', () => {
+  it('resolves to the parent directory at a subpath without a trailing slash', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/storybook', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+    global.document.baseURI = 'http://localhost:6006/storybook';
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toEqual('/storybook?path=/story/test--story');
+    expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story');
+  });
+
+  it('correctly links when hosted at a subpath with a trailing slash', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/design-system/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+    global.document.baseURI = 'http://localhost:6006/design-system/';
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toEqual('/design-system/?path=/story/test--story');
+    expect(previewHref).toEqual('/design-system/iframe.html?id=test--story&viewMode=story');
+  });
+
+  it('correctly links when hosted at a subpath served via index.html', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/design-system/index.html', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+    global.document.baseURI = 'http://localhost:6006/design-system/index.html';
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toEqual('/design-system/index.html?path=/story/test--story');
+    expect(previewHref).toEqual('/design-system/iframe.html?id=test--story&viewMode=story');
+  });
+
+  it('keeps the full prefix for a nested subpath with a trailing slash', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/a/b/c/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+    global.document.baseURI = 'http://localhost:6006/a/b/c/';
+
+    const { previewHref } = api.getStoryHrefs('test--story');
+    expect(previewHref).toEqual('/a/b/c/iframe.html?id=test--story&viewMode=story');
+  });
+
+  it('drops only the last segment for a nested subpath without a trailing slash', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/a/b/c', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+    global.document.baseURI = 'http://localhost:6006/a/b/c';
+
+    const { previewHref } = api.getStoryHrefs('test--story');
+    expect(previewHref).toEqual('/a/b/iframe.html?id=test--story&viewMode=story');
+  });
+
+  it('resolves absolute base URLs at a subpath', () => {
     const { api, state } = initURL({
       store,
       provider: { channel: new EventEmitter() },
@@ -544,23 +643,74 @@ describe('getStoryHrefs', () => {
     });
     store.setState(state);
 
-    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
-    expect(managerHref).toEqual('/design-system/?path=/story/test--story');
-    expect(previewHref).toEqual('/design-system/iframe.html?id=test--story&viewMode=story');
+    const origin = api.getStoryHrefs('test--story', { base: 'origin' });
+    expect(origin.previewHref).toContain('http://localhost:6006/design-system/iframe.html');
+
+    const network = api.getStoryHrefs('test--story', { base: 'network' });
+    expect(network.previewHref).toContain('http://192.168.1.1:6006/iframe.html');
   });
 
-  it('correctly links when hosted at a subpath with index.html', () => {
+  it('stays interactive by default (no freeze contract)', () => {
     const { api, state } = initURL({
       store,
       provider: { channel: new EventEmitter() },
-      state: { location: { pathname: '/design-system/index.html', search: '' } },
+      state: { location: { pathname: '/', search: '' } },
       navigate: vi.fn(),
       fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
     });
     store.setState(state);
 
-    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
-    expect(managerHref).toEqual('/design-system/index.html?path=/story/test--story');
-    expect(previewHref).toEqual('/design-system/iframe.html?id=test--story&viewMode=story');
+    const { previewHref } = api.getStoryHrefs('test--story');
+    expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story');
+    expect(previewHref).not.toContain('freeze');
+  });
+
+  it('opts the preview into the freeze contract when freeze is set', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', { freeze: true });
+    expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story&freeze=finished');
+    // Freezing is a preview-only contract; the manager href must be unaffected.
+    expect(managerHref).toEqual('/?path=/story/test--story');
+  });
+
+  it('opts the preview into embed mode when embed is set', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { previewHref } = api.getStoryHrefs('test--story', { embed: true });
+    expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story&embed=true');
+  });
+
+  it('includes both embed and freeze when both are set', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { previewHref } = api.getStoryHrefs('test--story', { embed: true, freeze: true });
+    const url = new URL(previewHref, 'http://localhost');
+    expect(url.pathname).toBe('/iframe.html');
+    expect(url.searchParams.get('id')).toBe('test--story');
+    expect(url.searchParams.get('viewMode')).toBe('story');
+    expect(url.searchParams.get('embed')).toBe('true');
+    expect(url.searchParams.get('freeze')).toBe('finished');
   });
 });

@@ -9,7 +9,6 @@
  * The `process.cwd()` is the root of the current package to be built.
  */
 
-/* eslint-disable local-rules/no-uncategorized-errors */
 import { mkdir, rm } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -18,15 +17,22 @@ import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import prettyTime from 'pretty-hrtime';
 
-import { ROOT_DIRECTORY } from '../utils/constants';
-import { buildEntries, hasPrebuild, isBuildEntries } from './entry-configs';
-import { measure } from './utils/entry-utils';
-import { generateBundle } from './utils/generate-bundle';
-import { generatePackageJsonFile } from './utils/generate-package-json';
-import { generateTypesFiles } from './utils/generate-types';
+import { buildEntries, hasPrebuild, isBuildEntries } from './entry-configs.ts';
+import { measure } from './utils/entry-utils.ts';
+import { generateBundle } from './utils/generate-bundle.ts';
+import { generatePackageJsonFile } from './utils/generate-package-json.ts';
+import { generateTypesFiles } from './utils/generate-types-rolldown.ts';
 
 const {
-  values: { prod, production, optimized, watch, cwd },
+  values: {
+    prod,
+    production,
+    optimized,
+    watch,
+    cwd,
+    'dts-bundler': dtsBundler,
+    'dts-resolver': dtsResolver,
+  },
 } = parseArgs({
   options: {
     prod: { type: 'boolean', default: false },
@@ -34,13 +40,25 @@ const {
     optimized: { type: 'boolean', default: false },
     watch: { type: 'boolean', default: false },
     cwd: { type: 'string' },
+    'dts-bundler': { type: 'string', default: 'rolldown-tsgo' },
+    'dts-resolver': { type: 'string', default: 'hybrid' },
   },
   allowNegative: true,
 });
 
+if (dtsResolver !== 'tsc' && dtsResolver !== 'oxc' && dtsResolver !== 'hybrid') {
+  throw new Error(`Invalid --dts-resolver: ${dtsResolver} (expected 'hybrid', 'tsc' or 'oxc')`);
+}
+const resolvedDtsResolver: 'tsc' | 'oxc' | 'hybrid' = dtsResolver;
+
+if (dtsBundler !== 'rolldown-tsgo' && dtsBundler !== 'rolldown') {
+  throw new Error(`Invalid --dts-bundler: ${dtsBundler} (expected 'rolldown-tsgo' or 'rolldown')`);
+}
+const resolvedDtsBundler: 'rolldown-tsgo' | 'rolldown' = dtsBundler;
+
 async function run() {
   const DIR_ROOT = join(import.meta.dirname, '..', '..');
-  const DIR_CWD = cwd ? join(ROOT_DIRECTORY, cwd) : process.cwd();
+  const DIR_CWD = cwd ? join(DIR_ROOT, cwd) : process.cwd();
   const DIR_DIST = join(DIR_CWD, 'dist');
   const DIR_REL = relative(DIR_ROOT, DIR_CWD);
 
@@ -85,7 +103,10 @@ async function run() {
     measure(async () => generateBundle({ cwd: DIR_CWD, entry, name, isWatch })),
     measure(async () => {
       if (isProduction) {
-        await generateTypesFiles(DIR_CWD, entry);
+        await generateTypesFiles(DIR_CWD, entry, {
+          tsgo: (entry.dtsBundler ?? resolvedDtsBundler) === 'rolldown-tsgo',
+          resolver: resolvedDtsResolver,
+        });
       }
     }),
   ]);

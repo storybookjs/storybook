@@ -1,3 +1,6 @@
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
@@ -38,6 +41,63 @@ describe('NPM Proxy', () => {
   });
 
   describe('installDependencies', () => {
+    it('installs from the workspace root only for a declared workspace package', async () => {
+      const workspaceRoot = await mkdtemp(join(process.cwd(), '.npm-workspace-'));
+      const workspacePackage = join(workspaceRoot, 'packages', 'app');
+      const ignoredPackage = join(workspaceRoot, 'packages', 'ignored');
+      const otherPackage = join(workspaceRoot, 'examples', 'app');
+
+      try {
+        await mkdir(workspacePackage, { recursive: true });
+        await mkdir(ignoredPackage, { recursive: true });
+        await mkdir(otherPackage, { recursive: true });
+        await writeFile(
+          join(workspaceRoot, 'package.json'),
+          JSON.stringify({ workspaces: ['packages/*', '!packages/ignored'] })
+        );
+        await writeFile(
+          join(workspacePackage, 'package.json'),
+          JSON.stringify({ name: 'workspace' })
+        );
+        await writeFile(join(ignoredPackage, 'package.json'), JSON.stringify({ name: 'ignored' }));
+        await writeFile(join(otherPackage, 'package.json'), JSON.stringify({ name: 'other' }));
+
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(async (fn: any) => {
+          await Promise.resolve(fn());
+        });
+        mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+        await new NPMProxy({ cwd: workspacePackage }).installDependencies({ force: true });
+        expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            command: 'npm',
+            args: ['install', '--force'],
+            cwd: workspaceRoot,
+          })
+        );
+
+        await new NPMProxy({ cwd: otherPackage }).installDependencies({ force: true });
+        expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            command: 'npm',
+            args: ['install', '--force'],
+            cwd: otherPackage,
+          })
+        );
+
+        await new NPMProxy({ cwd: ignoredPackage }).installDependencies({ force: true });
+        expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            command: 'npm',
+            args: ['install', '--force'],
+            cwd: ignoredPackage,
+          })
+        );
+      } finally {
+        await rm(workspaceRoot, { recursive: true, force: true });
+      }
+    });
+
     describe('npm6', () => {
       it('should run `npm install`', async () => {
         // sort of un-mock part of the function so executeCommand (also mocked) is called
@@ -164,6 +224,24 @@ describe('NPM Proxy', () => {
         );
       });
     });
+
+    describe('useRemotePkg (npx)', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({ stdout: '' } as never);
+      });
+
+      it('confirms the npx download prompt and keeps the caller env', () => {
+        const args = ['some-package@1.2.3', 'run', '--flag'];
+
+        npmProxy.runPackageCommand({ args, useRemotePkg: true, env: { SOME_VAR: '1' } });
+
+        expect(mockedExecuteCommand).toHaveBeenLastCalledWith({
+          command: 'npx',
+          args,
+          env: { npm_config_yes: 'true', SOME_VAR: '1' },
+        });
+      });
+    });
   });
 
   describe('addDependencies', () => {
@@ -234,6 +312,78 @@ describe('NPM Proxy', () => {
         );
         expect(executeCommandSpy).not.toHaveBeenCalled();
       });
+    });
+  });
+
+  describe('findInstallations', () => {
+    it('parses stdout JSON and ignores npm warnings written to stderr', async () => {
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify({
+          dependencies: {
+            '@storybook/react': { version: '1.2.3' },
+          },
+        }),
+        // npm routinely emits peer-dependency / deprecation warnings on stderr
+        stderr: 'npm warn ERESOLVE overriding peer dependency\nnpm warn deprecated foo@1.0.0',
+      } as any);
+
+      const installations = await npmProxy.findInstallations(['@storybook/*']);
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'npm',
+          args: ['ls', '--json', '--depth=99'],
+          env: { FORCE_COLOR: 'false' },
+          stdio: ['pipe', 'pipe', 'ignore'],
+        })
+      );
+      expect(installations).toMatchObject({
+        dependencies: {
+          '@storybook/react': [{ version: '1.2.3' }],
+        },
+      });
+    });
+
+    it('retries with --depth=0 when the deep listing exits non-zero (e.g. peer dependency issues)', async () => {
+      mockedExecuteCommand.mockReset();
+      mockedExecuteCommand
+        .mockRejectedValueOnce(new Error('npm error code ELSPROBLEMS'))
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            dependencies: {
+              '@storybook/react': { version: '1.2.3' },
+            },
+          }),
+        } as any);
+
+      const installations = await npmProxy.findInstallations(['@storybook/*']);
+
+      expect(mockedExecuteCommand).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ args: ['ls', '--json', '--depth=99'] })
+      );
+      expect(mockedExecuteCommand).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ args: ['ls', '--json', '--depth=0'] })
+      );
+      expect(installations).toMatchObject({
+        dependencies: {
+          '@storybook/react': [{ version: '1.2.3' }],
+        },
+      });
+    });
+
+    it('returns undefined and never treats stderr as the dependency source when stdout is empty', async () => {
+      mockedExecuteCommand.mockReset();
+      // Valid-looking JSON on stderr must never be parsed as the result.
+      const stderrJson = JSON.stringify({
+        dependencies: { '@storybook/react': { version: '9.9.9' } },
+      });
+      mockedExecuteCommand.mockResolvedValue({ stdout: undefined, stderr: stderrJson } as any);
+
+      const installations = await npmProxy.findInstallations(['@storybook/*']);
+
+      expect(installations).toBeUndefined();
     });
   });
 

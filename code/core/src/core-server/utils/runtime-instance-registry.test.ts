@@ -3,13 +3,17 @@ import {
   mkdtempSync,
   readFileSync,
   readdirSync,
+  realpathSync,
   rmSync,
   utimesSync,
   writeFileSync,
 } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { tmpdir, userInfo } from 'node:os';
+import { execFile } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 
-import { join, resolve } from 'pathe';
+import { dirname, join, normalize, resolve } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -100,6 +104,7 @@ async function writeCurrentRecord(registryDir: string) {
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
 
   while (tempDirs.length > 0) {
     rmSync(tempDirs.pop()!, { force: true, recursive: true });
@@ -130,6 +135,54 @@ describe('getMcpMetadataFromMainConfig', () => {
       endpoint: '/custom-mcp',
     });
   });
+
+  it('detects addon-mcp registered as an absolute path via getAbsolutePath()', () => {
+    expect(
+      getMcpMetadataFromMainConfig({
+        addons: ['/Users/me/project/node_modules/@storybook/addon-mcp'],
+      })
+    ).toEqual({
+      status: 'ready',
+      endpoint: '/mcp',
+    });
+  });
+
+  it('detects addon-mcp registered as an object whose name is an absolute path', () => {
+    expect(
+      getMcpMetadataFromMainConfig({
+        addons: [
+          {
+            name: '/Users/me/project/node_modules/@storybook/addon-mcp',
+            options: { endpoint: '/custom-mcp' },
+          },
+        ],
+      })
+    ).toEqual({
+      status: 'ready',
+      endpoint: '/custom-mcp',
+    });
+  });
+
+  it('detects addon-mcp from a Windows-style absolute path', () => {
+    expect(
+      getMcpMetadataFromMainConfig({
+        addons: ['C:\\project\\node_modules\\@storybook\\addon-mcp'],
+      })
+    ).toEqual({
+      status: 'ready',
+      endpoint: '/mcp',
+    });
+  });
+
+  it('does not match unrelated addons that merely contain the addon-mcp name as a substring', () => {
+    expect(
+      getMcpMetadataFromMainConfig({
+        addons: ['@storybook/addon-mcp-extras', 'storybook-addon-mcp'],
+      })
+    ).toEqual({
+      status: 'not-installed',
+    });
+  });
 });
 
 describe('createRuntimeInstanceRecord', () => {
@@ -142,6 +195,11 @@ describe('createRuntimeInstanceRecord', () => {
     storybookVersion: '10.5.0-alpha.0',
   };
 
+  // The package.json named `storybook` above this test file is the monorepo's core package.
+  const corePackageRoot = normalize(
+    realpathSync(resolve(dirname(fileURLToPath(import.meta.url)), '../../..'))
+  );
+
   it('creates a schemaVersion 1 runtime instance record', () => {
     const cwd = join(tmpdir(), 'storybook-project', '..', 'storybook-project');
 
@@ -153,10 +211,48 @@ describe('createRuntimeInstanceRecord', () => {
       url: 'http://localhost:6006',
       port: 6006,
       storybookVersion: '10.5.0-alpha.0',
+      storybookPath: corePackageRoot,
       startedAt: '2026-05-18T12:00:00.000Z',
       updatedAt: '2026-05-18T12:00:00.000Z',
       mcp: { status: 'not-installed' },
     });
+  });
+
+  it('records the realpathed root of the storybook package this process runs, independent of cwd', () => {
+    const record = createRuntimeInstanceRecord({ ...baseOptions, cwd: '/elsewhere' });
+
+    expect(record.storybookPath).toBe(corePackageRoot);
+    expect(record.cwd).toBe(resolve('/elsewhere'));
+  });
+
+  it('preserves a Storybook deployment subpath but drops UI query parameters', () => {
+    const record = createRuntimeInstanceRecord({
+      ...baseOptions,
+      address: 'http://localhost:6006/nested/?path=/docs/button--primary',
+    });
+
+    expect(record.url).toBe('http://localhost:6006/nested');
+  });
+
+  it('stores the configDir resolved against the cwd when provided', () => {
+    const record = createRuntimeInstanceRecord({
+      ...baseOptions,
+      cwd: '/repo',
+      configDir: 'packages/ui/.storybook',
+    });
+
+    expect(record.configDir).toBe(resolve('/repo/packages/ui/.storybook'));
+  });
+
+  it('keeps an absolute configDir as-is', () => {
+    const configDir = join(tmpdir(), 'repo', 'packages', 'ui', '.storybook');
+    const record = createRuntimeInstanceRecord({ ...baseOptions, cwd: '/elsewhere', configDir });
+
+    expect(record.configDir).toBe(resolve(configDir));
+  });
+
+  it('omits configDir when not provided', () => {
+    expect(createRuntimeInstanceRecord(baseOptions)).not.toHaveProperty('configDir');
   });
 
   it('marks MCP as not-installed by default', () => {
@@ -178,6 +274,15 @@ describe('createRuntimeInstanceRecord', () => {
       status: 'ready',
       endpoint: '/storybook-mcp',
     });
+  });
+
+  it('stores provided agent provenance', () => {
+    const record = createRuntimeInstanceRecord({
+      ...baseOptions,
+      agent: 'codex',
+    });
+
+    expect(record.agent).toBe('codex');
   });
 
   it('stores only the Storybook origin in url and excludes initial path query params', () => {
@@ -498,6 +603,54 @@ describe('writeRuntimeInstanceRecord', () => {
 });
 
 describe('writeStorybookRuntimeInstanceRecord', () => {
+  it('records Claude preview provenance from the preview launcher environment', async () => {
+    vi.stubEnv('CLAUDE_AGENT_SDK_VERSION', '0.1.0');
+    vi.stubEnv('AI_AGENT', undefined);
+
+    const registration = await writeStorybookRuntimeInstanceRecord({
+      address: 'http://localhost:6006/',
+      port: 6006,
+      registerCleanup: false,
+      registryDir: makeTempDir(),
+      storybookVersion: '10.5.0-alpha.0',
+      token: 'ws-token',
+    });
+
+    expect(registration.record.agent).toBe('claude-preview');
+  });
+
+  it('records the detected agent provenance outside the Claude preview launcher', async () => {
+    vi.stubEnv('CLAUDE_AGENT_SDK_VERSION', undefined);
+    vi.stubEnv('AI_AGENT', 'codex');
+
+    const registration = await writeStorybookRuntimeInstanceRecord({
+      address: 'http://localhost:6006/',
+      port: 6006,
+      registerCleanup: false,
+      registryDir: makeTempDir(),
+      storybookVersion: '10.5.0-alpha.0',
+      token: 'ws-token',
+    });
+
+    expect(registration.record.agent).toBe('codex');
+  });
+
+  it('prefers explicit AI_AGENT provenance over the Claude preview launcher signal', async () => {
+    vi.stubEnv('CLAUDE_AGENT_SDK_VERSION', '0.1.0');
+    vi.stubEnv('AI_AGENT', 'claude');
+
+    const registration = await writeStorybookRuntimeInstanceRecord({
+      address: 'http://localhost:6006/',
+      port: 6006,
+      registerCleanup: false,
+      registryDir: makeTempDir(),
+      storybookVersion: '10.5.0-alpha.0',
+      token: 'ws-token',
+    });
+
+    expect(registration.record.agent).toBe('claude');
+  });
+
   it('cleans up the written instance record', async () => {
     const registryDir = makeTempDir();
     const registration = await writeStorybookRuntimeInstanceRecord({
@@ -506,6 +659,7 @@ describe('writeStorybookRuntimeInstanceRecord', () => {
       registerCleanup: false,
       registryDir,
       storybookVersion: '10.5.0-alpha.0',
+      token: 'ws-token',
     });
 
     expect(existsSync(registration.recordPath)).toBe(true);
@@ -514,4 +668,23 @@ describe('writeStorybookRuntimeInstanceRecord', () => {
 
     expect(existsSync(registration.recordPath)).toBe(false);
   });
+
+  it.runIf(process.platform === 'win32')(
+    'restricts the record ACL to the current Windows user',
+    async () => {
+      const registryDir = makeTempDir();
+      const registration = await writeStorybookRuntimeInstanceRecord({
+        address: 'http://localhost:6006/',
+        port: 6006,
+        registerCleanup: false,
+        registryDir,
+        storybookVersion: '10.5.0-alpha.0',
+        token: 'ws-token',
+      });
+
+      const { stdout } = await promisify(execFile)('icacls', [registration.recordPath]);
+      expect(stdout).toContain(userInfo().username);
+      expect(stdout).not.toMatch(/Everyone|(BUILTIN\\Users)/i);
+    }
+  );
 });

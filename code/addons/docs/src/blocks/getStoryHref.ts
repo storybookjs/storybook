@@ -3,9 +3,7 @@
  * Unlike the parent util, this one only returns the preview URL.
  */
 export const getStoryHref = (storyId: string, additionalParams: Record<string, string> = {}) => {
-  const baseUrl = globalThis.PREVIEW_URL || 'iframe.html';
-  const [url, paramsStr] = baseUrl.split('?');
-  const params = new URLSearchParams(paramsStr || '');
+  const params = new URLSearchParams();
 
   Object.entries(additionalParams).forEach(([key, value]) => {
     params.set(key, value);
@@ -13,5 +11,5 @@ export const getStoryHref = (storyId: string, additionalParams: Record<string, s
 
   params.set('id', storyId);
 
-  return `${url}?${params.toString()}`;
+  return `iframe.html?${params.toString()}`;
 };

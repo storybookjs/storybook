@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { platform } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
@@ -11,6 +10,8 @@ import {
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
+import { globSync } from 'glob';
 import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
@@ -127,12 +128,21 @@ export class NPMProxy extends JsPackageManager {
     return `npx ${args.join(' ')}`;
   }
 
-  public runPackageCommand(
-    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
-  ): ResultPromise {
+  public getRemoteRunCommand(args: string[]): string {
+    return `npx ${args.join(' ')}`;
+  }
+
+  public runPackageCommand({
+    useRemotePkg = false,
+    ...options
+  }: Omit<ExecuteCommandOptions, 'command'> & {
+    args: string[];
+    useRemotePkg?: boolean;
+  }): ResultPromise {
     return executeCommand({
       command: 'npx',
       ...options,
+      ...(useRemotePkg && { env: { npm_config_yes: 'true', ...options.env } }),
     });
   }
 
@@ -152,14 +162,14 @@ export class NPMProxy extends JsPackageManager {
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
     const exec = ({ packageDepth }: { packageDepth: number }) => {
-      const pipeToNull = platform() === 'win32' ? '2>NUL' : '2>/dev/null';
       return executeCommand({
         command: 'npm',
-        args: ['ls', '--json', `--depth=${packageDepth}`, pipeToNull],
+        args: ['ls', '--json', `--depth=${packageDepth}`],
         env: {
           FORCE_COLOR: 'false',
         },
         cwd: this.instanceDir,
+        stdio: ['pipe', 'pipe', 'ignore'],
       });
     };
 
@@ -185,7 +195,10 @@ export class NPMProxy extends JsPackageManager {
     }
   }
 
-  protected getResolutions(packageJson: PackageJson, versions: Record<string, string>) {
+  protected getResolutions(
+    packageJson: PackageJson,
+    versions: Record<string, string>
+  ): Record<string, any> {
     return {
       overrides: {
         ...packageJson.overrides,
@@ -195,10 +208,32 @@ export class NPMProxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
+    const packageJsonPath = this.packageJsonPaths[0];
+    const workspacePackageJsonPath = this.packageJsonPaths.find((ancestorPath) => {
+      const workspaces = JsPackageManager.getPackageJson(ancestorPath).workspaces;
+      const patterns = Array.isArray(workspaces) ? workspaces : workspaces?.packages;
+      return (
+        packageJsonPath &&
+        patterns?.length &&
+        globSync(
+          patterns
+            .filter((pattern: string) => !pattern.startsWith('!'))
+            .map((pattern: string) => `${pattern}/package.json`),
+          {
+            cwd: dirname(ancestorPath),
+            absolute: true,
+            ignore: patterns
+              .filter((pattern: string) => pattern.startsWith('!'))
+              .map((pattern: string) => `${pattern.slice(1)}/package.json`),
+          }
+        ).includes(packageJsonPath)
+      );
+    });
+
     return executeCommand({
       command: 'npm',
       args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
-      cwd: this.cwd,
+      cwd: workspacePackageJsonPath ? dirname(workspacePackageJsonPath) : this.cwd,
       stdio: prompt.getPreferredStdio(),
     });
   }

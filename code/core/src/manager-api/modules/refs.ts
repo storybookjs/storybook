@@ -2,6 +2,7 @@ import type {
   API_ComposedRef,
   API_ComposedRefUpdate,
   API_IndexHash,
+  API_RefStoryRuntimeData,
   API_Refs,
   API_SetRefData,
   API_StoryMapper,
@@ -103,6 +104,27 @@ const addRefIds = (input: API_IndexHash, ref: API_ComposedRef): API_IndexHash =>
   }, {} as API_IndexHash);
 };
 
+// A composed ref's story/docs entries are enriched at runtime from the preview's STORY_PREPARED /
+// DOCS_PREPARED events (args, argTypes, parameters, prepared) — data that is NOT in the ref's static
+// story index. That enrichment is cached per ref (`ref.storyUpdates`) and re-applied here whenever
+// `setRef` rebuilds the hash from the static index, so it is not wiped by re-composition and is
+// applied even when it arrives before the index is first composed (the deep-link race in #34553).
+const applyRefStoryUpdates = (
+  index: API_IndexHash,
+  storyUpdates: API_RefStoryRuntimeData | undefined
+): API_IndexHash => {
+  if (!storyUpdates) {
+    return index;
+  }
+  Object.entries(storyUpdates).forEach(([id, update]) => {
+    const entry = index[id];
+    if (entry && (entry.type === 'story' || entry.type === 'docs')) {
+      index[id] = { ...entry, ...update } as API_IndexHash[string];
+    }
+  });
+  return index;
+};
+
 async function handleRequest(
   request: Response | Promise<Response | boolean> | boolean
 ): Promise<API_SetRefData> {
@@ -161,6 +183,22 @@ const parseUrl = (url: string): UrlParseResult => {
     url: cleanUrl,
     authorization,
   };
+};
+
+// In dev mode, the manager addresses messages to a ref's iframe by the origin of the ref's URL, so a
+// ref whose index is served from another origin after a redirect is composed from that origin.
+const getRedirectedRefUrl = (refUrl: string, indexResponseUrl: string | undefined): string => {
+  if (!indexResponseUrl) {
+    return refUrl;
+  }
+  const served = new URL(indexResponseUrl);
+  if (
+    served.origin === new URL(refUrl, location.href).origin ||
+    !served.pathname.endsWith('/index.json')
+  ) {
+    return refUrl;
+  }
+  return served.origin + served.pathname.slice(0, -'/index.json'.length);
 };
 
 const map = (
@@ -242,16 +280,20 @@ export const init: ModuleFn<SubAPI, SubState> = (
         });
       }
 
-      const [indexResult, storiesResult] = await Promise.all(
-        ['index.json', 'stories.json'].map(async (file) =>
-          handleRequest(
-            fetch(`${urlParseResult.url}/${file}${query}`, {
-              headers,
-              credentials,
-            })
-          )
-        )
+      const [indexRequest, storiesRequest] = ['index.json', 'stories.json'].map((file) =>
+        fetch(`${urlParseResult.url}/${file}${query}`, {
+          headers,
+          credentials,
+        })
       );
+      const [indexResult, storiesResult] = await Promise.all([
+        handleRequest(indexRequest),
+        handleRequest(storiesRequest),
+      ]);
+      const refUrl =
+        global.CONFIG_TYPE === 'DEVELOPMENT' && indexResult.storyIndex
+          ? getRedirectedRefUrl(urlParseResult.url, (await indexRequest).url)
+          : urlParseResult.url;
 
       if (!indexResult.indexError || !storiesResult.indexError) {
         const metadata = await handleRequest(
@@ -290,7 +332,7 @@ export const init: ModuleFn<SubAPI, SubState> = (
 
       await api.setRef(id!, {
         id,
-        url: urlParseResult.url,
+        url: refUrl,
         ...loadedData,
         ...(versions ? { versions } : {}),
         type: !loadedData.storyIndex ? 'auto-inject' : 'lazy',
@@ -339,9 +381,11 @@ export const init: ModuleFn<SubAPI, SubState> = (
 
       if (index) {
         index = addRefIds(index, ref);
+        index = applyRefStoryUpdates(index, ref?.storyUpdates);
       }
       if (filteredIndex) {
         filteredIndex = addRefIds(filteredIndex, ref);
+        filteredIndex = applyRefStoryUpdates(filteredIndex, ref?.storyUpdates);
       }
       await api.updateRef(id, { ...ref, ...rest, index, filteredIndex, internal_index });
     },

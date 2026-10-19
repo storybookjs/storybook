@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import type { ArgTypes, DocgenPayload } from 'storybook/internal/types';
+import { STORY_FINISHED, STORY_PREPARED } from 'storybook/internal/core-events';
+import type { ArgTypes, DocgenPayload, StoryId } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -9,6 +10,7 @@ import { mergeServiceArgTypes } from '../../docs-tools/argTypes/docgenServiceArg
 import {
   useArgTypes,
   useArgs,
+  useChannel,
   useGlobals,
   useParameter,
   useServiceQuery,
@@ -33,9 +35,16 @@ const clean = (obj: { [key: string]: any }) =>
     {} as typeof obj
   );
 
+// True when at least one row carries an interactive control, i.e. the args table renders rows instead
+// of its "No controls" empty state. Used to decide between showing controls and the loading skeleton
+// while docgen for the story is still pending, so the empty state never flashes before docgen lands.
+const hasAnyControl = (rows: ArgTypes) => Object.values(rows).some((arg) => arg?.control);
+
 const AddonWrapper = styled.div<{ showSaveFromUI: boolean }>(({ showSaveFromUI, theme }) => ({
-  height: '100%',
-  maxHeight: '100vh',
+  // `minHeight` (not `height`) so the wrapper fills a short panel but grows with tall
+  // content; otherwise a fixed height clips the bottom padding into the middle of the
+  // scrolled content and the save bar overlaps the last control (#34531).
+  minHeight: '100%',
   paddingBottom: showSaveFromUI ? 41 : 0,
   backgroundColor: theme.background.content,
 
@@ -90,7 +99,7 @@ function ControlsPanelTable({
   const api = useStorybookApi();
   const storyData = api.getCurrentStoryData();
 
-  const hasControls = Object.values(rows).some((arg) => arg?.control);
+  const hasControls = hasAnyControl(rows);
   const withPresetColors = applyPresetColors(rows, presetColors);
 
   const hasUpdatedArgs = useMemo(
@@ -148,6 +157,61 @@ function LegacyControlsPanel(props: ControlsPanelProps) {
   return <ControlsPanelTable {...props} rows={rows} isLoading={isLoading} />;
 }
 
+// Mounted only once the docgen gate opens, because subscribing starts the load. It reports upward so the
+// table below keeps its position, and its control state, when the gate opens.
+function DocgenQuery({
+  docgenService,
+  id,
+  onChange,
+}: {
+  docgenService: DocgenService;
+  id: string;
+  onChange: (state: { payload?: DocgenPayload; isInitialLoading: boolean }) => void;
+}) {
+  const { data, isInitialLoading } = useServiceQuery(docgenService.queries.docgen, { id });
+  useEffect(() => {
+    onChange({ payload: data, isInitialLoading });
+  }, [data, isInitialLoading, onChange]);
+  return null;
+}
+
+// Tracks whether it is safe to query docgen for the selected story, gating the CPU-bound worker
+// extraction out of the first-render window so it never starves the dev server's bundling or the
+// preview's render/paint. The gate resets on every story change.
+//
+// In a static build there is no bundling to contend with and docgen is precomputed JSON, so the gate
+// is open from the start. In dev it opens once the story reaches a safe point in its lifecycle:
+// STORY_FINISHED by default, or — with the STORYBOOK_DOCGEN_STORY_PREPARED env var — the earlier
+// STORY_PREPARED (the story module has been delivered to the browser, before it mounts and paints),
+// trading a slice of the first-render budget for an earlier Controls population. The server reads the
+// env var and injects it into the manager as the DOCGEN_STORY_PREPARED global so it can be evaluated
+// per project.
+function useStoryDocgenGateReady(storyId: StoryId): boolean {
+  const isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT';
+  const requestAtStoryPrepared = global.DOCGEN_STORY_PREPARED === true;
+  // Key readiness by the story it was opened for (derived during render, not via an effect). On a
+  // story switch this is immediately false for the new id, so we never render one frame with a stale
+  // `ready=true` that would mount the query before the new story emits its gate event.
+  const [readyStoryId, setReadyStoryId] = useState<StoryId | null>(null);
+  const ready = !isDevelopment || readyStoryId === storyId;
+
+  // STORY_PREPARED carries `{ id }`; STORY_FINISHED carries `{ storyId }`.
+  const gateEvent = requestAtStoryPrepared ? STORY_PREPARED : STORY_FINISHED;
+  useChannel(
+    {
+      [gateEvent]: (payload: { id?: StoryId; storyId?: StoryId }) => {
+        const eventStoryId = requestAtStoryPrepared ? payload?.id : payload?.storyId;
+        if (eventStoryId === storyId) {
+          setReadyStoryId(storyId);
+        }
+      },
+    },
+    [storyId, requestAtStoryPrepared, gateEvent]
+  );
+
+  return ready;
+}
+
 function ServiceControlsPanel({
   docgenService,
   ...props
@@ -155,44 +219,40 @@ function ServiceControlsPanel({
   const api = useStorybookApi();
   const storyData = api.getCurrentStoryData();
   const [, , , initialArgs] = useArgs();
-  const [docgenReady, setDocgenReady] = useState(false);
-  // Custom argTypes (project + meta + story, already inferred) for the selected story arrive over
-  // the channel via STORY_PREPARED — the same source the legacy panel reads. The service only needs
-  // to contribute server-extracted component props.
+  // Custom argTypes (project + meta + story annotations) for the selected story arrive over the
+  // channel via STORY_PREPARED. With docgenServer, prepareStory skips second-pass
+  // enhancers so these stay annotation-only; mergeServiceArgTypes layers them on server docgen.
   const customArgTypes = useArgTypes();
   const id = storyData.id.split('--')[0];
-  // `useServiceQuery` mis-infers its types for services with more than one query (it unifies across
-  // queries, breaking both the argument and the result). Cast until the hook's generics are fixed.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const docgenPayload = useServiceQuery(docgenService as any, 'getDocgen', { id }) as
-    | DocgenPayload
-    | undefined;
-  const isStoryPrepared = storyData.type === 'story' ? storyData.prepared : true;
+  const isStory = storyData.type === 'story';
+  // In a static build docgen is precomputed and there is no gate, so the loading decision must not
+  // hang on `prepared` — treat non-development as always prepared. In dev this is unchanged.
+  const isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT';
+  const isStoryPrepared = !isDevelopment || (isStory ? storyData.prepared : true);
+  // Docs entries don't emit the story lifecycle events the gate listens for, so it only applies to
+  // actual stories; everything else queries docgen right away.
+  const gateReady = useStoryDocgenGateReady(storyData.id);
+  const queryReady = !isStory || gateReady;
 
-  useEffect(() => {
-    let active = true;
-    setDocgenReady(false);
-
-    docgenService.queries.getDocgen
-      .loaded({ id })
-      .catch(() => undefined)
-      .finally(() => {
-        if (active) {
-          setDocgenReady(true);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [docgenService, id]);
+  const [docgen, setDocgen] = useState<{
+    id: string;
+    payload?: DocgenPayload;
+    isInitialLoading: boolean;
+  }>();
+  const onDocgenChange = useCallback(
+    (state: { payload?: DocgenPayload; isInitialLoading: boolean }) => setDocgen({ id, ...state }),
+    [id]
+  );
+  const current = queryReady && docgen?.id === id ? docgen : undefined;
+  const docgenPayload = current?.payload;
 
   // The manager Controls panel only ever shows the main component's rows; subcomponent tabs are a
   // docs-blocks-only feature, so this intentionally ignores `payload.subcomponents` to match the
   // legacy panel's behavior.
+  const docgenResolved = !!current && !current.isInitialLoading;
   const rows = useMemo(
     () =>
-      docgenPayload
+      docgenResolved
         ? mergeServiceArgTypes({
             payload: docgenPayload,
             storyId: storyData.id,
@@ -201,10 +261,26 @@ function ServiceControlsPanel({
             customArgTypes,
           })
         : customArgTypes,
-    [docgenPayload, initialArgs, storyData.id, storyData.parameters, customArgTypes]
+    [docgenResolved, docgenPayload, initialArgs, storyData.id, storyData.parameters, customArgTypes]
   );
 
-  return <ControlsPanelTable {...props} rows={rows} isLoading={!isStoryPrepared || !docgenReady} />;
+  // Keep the skeleton up only while there is genuinely nothing to show: the story isn't prepared, or
+  // docgen hasn't resolved yet and there are no annotation controls to fall back on. Once docgen
+  // resolves (even to nothing) the table or its "No controls" empty state is the real answer.
+  const isDocgenLoading = !docgenResolved;
+
+  return (
+    <>
+      {queryReady && (
+        <DocgenQuery docgenService={docgenService} id={id} onChange={onDocgenChange} />
+      )}
+      <ControlsPanelTable
+        {...props}
+        rows={rows}
+        isLoading={!isStoryPrepared || (isDocgenLoading && !hasAnyControl(rows))}
+      />
+    </>
+  );
 }
 
 export const ControlsPanel = ({ docgenService, ...props }: ControlsPanelProps) => {

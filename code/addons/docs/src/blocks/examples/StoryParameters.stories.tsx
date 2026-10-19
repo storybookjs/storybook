@@ -24,3 +24,5 @@ export const InlineFalseWithIframeHeight: Story = {
 export const InlineFalseWithHeight: Story = {
   parameters: { docs: { story: { inline: false, height: '300px' } } },
 };
+
+export const HtmlLang: Story = { parameters: { htmlLang: 'fr' } };

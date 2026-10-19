@@ -1,5 +1,8 @@
 import { gt, prerelease, valid } from 'semver';
 
+import type { JsPackageManager } from './JsPackageManager.ts';
+import { PackageManagerName } from './JsPackageManager.ts';
+
 export type StorybookInstallContext = 'create' | 'upgrade';
 
 export const STORYBOOK_PACKAGE_PATTERNS = [
@@ -66,6 +69,12 @@ export const parseReleaseTime = (value: unknown): Date | null => {
 };
 
 export const parsePackageTimeMap = (value: unknown): Record<string, string> | null => {
+  // pnpm < 11 forwards `view` to npm. With npm 12, the time map is wrapped in an array.
+  // https://github.com/npm/cli/releases/tag/v12.0.0
+  if (Array.isArray(value) && value.length === 1) {
+    value = value[0];
+  }
+
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null;
   }
@@ -109,6 +118,49 @@ export const getLatestStableVersionAdheringToMinimumAgeGate = (
 
   return latestStableVersion;
 };
+
+/**
+ * Args for `runPackageCommand({ useRemotePkg: true })` when bootstrapping a Storybook CLI package
+ * that isn't installed locally.
+ *
+ * npm and Yarn Classic both execute the remote package through `npx`, which prompts "Ok to
+ * proceed?" before downloading and hangs in non-interactive/CI environments. `--yes` auto-confirms
+ * that install. pnpm (`dlx`), Yarn Berry (`dlx`) and Bun (`bunx`) download without prompting, so
+ * they must not receive the npx-only `--yes` flag.
+ */
+export function getRemotePackageRunnerArgs(
+  packageManagerType: PackageManagerName,
+  pkg: string,
+  version: string,
+  args: string[]
+): string[] {
+  const pkgWithVersion = `${pkg}@${version}`;
+  const usesNpx =
+    packageManagerType === PackageManagerName.NPM ||
+    packageManagerType === PackageManagerName.YARN1;
+  if (!usesNpx) {
+    return [pkgWithVersion, ...args];
+  }
+
+  // npm 12 defaults allow-remote to none. pkg.pr.new specifiers are remote URLs.
+  if (/^https?:\/\//.test(version)) {
+    return ['--yes', '--allow-remote=all', pkgWithVersion, ...args];
+  }
+
+  return ['--yes', pkgWithVersion, ...args];
+}
+
+export function getVitestStorybookRunCommand(packageManager: JsPackageManager, file?: string) {
+  const args = ['vitest', '--project', 'storybook', 'run'];
+  if (file) {
+    args.push(file);
+  }
+  return packageManager.getPackageCommand(args);
+}
+
+export function getMswInitCommand(packageManager: JsPackageManager) {
+  return packageManager.getPackageCommand(['msw', 'init', './public', '--save']);
+}
 
 export const getStorybookRerunCommand = (
   installContext: StorybookInstallContext,
@@ -159,4 +211,23 @@ export const getErrorLogs = (error: unknown): string => {
   }
 
   return String(error);
+};
+
+/** Number of trailing output lines surfaced when a package install fails. */
+export const INSTALL_ERROR_TAIL_LINES = 15;
+
+/**
+ * The tail of a failed package install's captured output (see `getErrorLogs`). Output longer than
+ * `lines` lines is truncated to the last `lines` — package managers print their own error summary
+ * (e.g. an npm ERESOLVE explanation) at the end. Returns '' only when there is no captured output
+ * at all; short outputs are returned in full so they are still logged and folded into the error.
+ */
+export const getInstallErrorTail = (error: unknown, lines: number = INSTALL_ERROR_TAIL_LINES) => {
+  const output = getErrorLogs(error).trimEnd();
+  if (!output) {
+    return '';
+  }
+
+  const allLines = output.split('\n');
+  return allLines.slice(-lines).join('\n').trim();
 };

@@ -133,6 +133,36 @@ export const getTargetConfigObject = (
   ) {
     return resolved.arguments[0] as t.ObjectExpression;
   }
+
+  if (
+    resolved.type === 'CallExpression' &&
+    isDefineConfigLike(resolved, target) &&
+    (resolved.arguments[0]?.type === 'ArrowFunctionExpression' ||
+      resolved.arguments[0]?.type === 'FunctionExpression')
+  ) {
+    const callbackArg = resolved.arguments[0];
+
+    // Support simple callbacks that directly return an object literal, e.g.
+    // defineConfig(({ mode }) => ({ ... })) or defineConfig(function () { return { ... }; })
+    if (callbackArg.body.type === 'ObjectExpression') {
+      return callbackArg.body;
+    }
+
+    if (callbackArg.body.type === 'BlockStatement') {
+      // Keep this conservative: only support callbacks that are exactly
+      // `{ return { ... } }` with no additional control flow or statements.
+      if (
+        callbackArg.body.body.length === 1 &&
+        callbackArg.body.body[0]?.type === 'ReturnStatement'
+      ) {
+        const returnedExpr = resolveExpression(callbackArg.body.body[0].argument, target);
+        if (returnedExpr?.type === 'ObjectExpression') {
+          return returnedExpr;
+        }
+      }
+    }
+  }
+
   return null;
 };
 
@@ -152,7 +182,7 @@ export const getTargetConfigObject = (
  *
  * Unsupported patterns (returns `false`):
  *
- * - `export default defineConfig(() => ({ ... }))` (arrow function)
+ * - Callback-based defineConfig with non-literal/dynamic returns that cannot be safely resolved
  * - Completely unrecognizable export shapes
  * - No `export default` declaration at all
  */
@@ -171,67 +201,8 @@ export const canUpdateVitestConfigFile = (fileContent: string): boolean => {
     return false;
   }
 
-  // Reject arrow function pattern: defineConfig(() => ({...}))
-  const effectiveDecl = resolveExpression(exportDefault.declaration, parsedAst);
-  if (
-    effectiveDecl?.type === 'CallExpression' &&
-    isDefineConfigLike(effectiveDecl, parsedAst) &&
-    effectiveDecl.arguments.length > 0 &&
-    effectiveDecl.arguments[0].type === 'ArrowFunctionExpression'
-  ) {
-    return false;
-  }
-
   return (
     getTargetConfigObject(parsedAst, exportDefault) !== null ||
     getEffectiveMergeConfigCall(exportDefault.declaration, parsedAst) !== null
   );
-};
-
-/**
- * Returns `true` when a Vitest workspace file's default export uses a pattern that
- * `updateWorkspaceFile` (from addon-vitest) can auto-update.
- *
- * Supported patterns:
- *
- * - `export default ["project1", "project2"]`
- * - `export default [{...}, "project"]`
- * - `export default defineWorkspace(["project1", "project2"])`
- *
- * Returns `false` for any other shape (e.g. JSON files should be rejected before parsing, CommonJS
- * files, unrecognizable exports).
- */
-export const canUpdateVitestWorkspaceFile = (fileContent: string): boolean => {
-  let parsedAst: AST;
-  try {
-    parsedAst = babelParse(fileContent);
-  } catch {
-    return false;
-  }
-
-  const exportDefault = parsedAst.program.body.find(
-    (n): n is t.ExportDefaultDeclaration => n.type === 'ExportDefaultDeclaration'
-  );
-  if (!exportDefault) {
-    return false;
-  }
-
-  const decl = exportDefault.declaration;
-
-  // export default [...]
-  if (decl.type === 'ArrayExpression') {
-    return true;
-  }
-
-  // export default defineWorkspace([...])
-  if (
-    decl.type === 'CallExpression' &&
-    decl.callee.type === 'Identifier' &&
-    decl.callee.name === 'defineWorkspace' &&
-    decl.arguments[0]?.type === 'ArrayExpression'
-  ) {
-    return true;
-  }
-
-  return false;
 };

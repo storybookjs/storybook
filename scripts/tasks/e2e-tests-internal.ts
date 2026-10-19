@@ -1,12 +1,12 @@
 import waitOn from 'wait-on';
 
-import type { Task } from '../task.ts';
+import type { MonorepoDetails, Task } from '../task.ts';
 import { exec } from '../utils/exec.ts';
 
 const STORYBOOK_PORT = 6006;
 const READY_TIMEOUT_MS = 25_000;
 
-export const e2eTestsInternal: Task = {
+export const e2eTestsInternal: Task<MonorepoDetails> = {
   description: 'Run e2e tests against the internal Storybook UI (code/.storybook)',
   dependsOn: ['compile'],
   junit: true,
@@ -18,6 +18,7 @@ export const e2eTestsInternal: Task = {
     const env = {
       CI: 'true',
       STORYBOOK_URL: storybookUrl,
+      STORYBOOK_TYPE: process.env.STORYBOOK_TYPE || 'dev',
       ...(junitFilename && {
         PLAYWRIGHT_JUNIT_OUTPUT_NAME: junitFilename,
       }),

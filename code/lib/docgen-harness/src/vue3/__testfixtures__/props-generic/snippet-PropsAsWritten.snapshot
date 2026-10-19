@@ -1,0 +1,7 @@
+<script lang="ts" setup>
+const items = ["alpha","beta"];
+</script>
+
+<template>
+  <PropsGeneric :items="items" selected="alpha" />
+</template>

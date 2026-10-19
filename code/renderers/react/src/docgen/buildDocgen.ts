@@ -8,7 +8,7 @@ import type {
 import { getStoryImportPathFromEntry } from 'storybook/internal/common';
 import path from 'pathe';
 
-import { buildReactComponentDocgenFromResolved } from '../componentManifest/buildReactComponentDocgen.ts';
+import { buildComponentDocgenFromResolved } from '../componentManifest/buildReactComponentDocgen.ts';
 import type { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
 import type { ComponentDoc } from '../componentManifest/componentMeta/componentMetaExtractor.ts';
 import type {
@@ -31,13 +31,38 @@ type ReactDocgenPayload = DocgenPayload & {
   subcomponents?: Record<string, DocgenSubcomponent & { reactComponentMeta?: ComponentDoc }>;
 };
 
+const REACT_ATTRIBUTE_INTERFACES = new Set(['Attributes', 'RefAttributes', 'ClassAttributes']);
+
+/** `key` and `ref` that React's own types add to every element, not props the component reads. */
+function isReactAttribute(prop: ComponentDoc['props'][string]) {
+  return (
+    !!prop.parent &&
+    REACT_ATTRIBUTE_INTERFACES.has(prop.parent.name) &&
+    /(^|[\\/])node_modules[\\/]/.test(prop.parent.fileName)
+  );
+}
+
 /** Converts one RCM `ComponentDoc` into the `StrictArgTypes` shape consumed by args tables. */
 function extractArgTypesFromComponentMeta(
   componentMeta: ComponentDoc | undefined
 ): StrictArgTypes | undefined {
-  return componentMeta
-    ? (extractArgTypes({ __docgenInfo: componentMeta }) ?? undefined)
-    : undefined;
+  if (!componentMeta) {
+    return undefined;
+  }
+  // RCM defaults are source text, so a string default already carries its quotes. Without
+  // `computed`, the shared conversion mistakes them for react-docgen-typescript output and quotes
+  // any unquoted value (such as an unresolved identifier) a second time.
+  const props = Object.fromEntries(
+    Object.entries(componentMeta.props)
+      .filter(([, prop]) => !isReactAttribute(prop))
+      .map(([name, prop]) => [
+        name,
+        prop.defaultValue
+          ? { ...prop, defaultValue: { ...prop.defaultValue, computed: false } }
+          : prop,
+      ])
+  );
+  return extractArgTypes({ __docgenInfo: { ...componentMeta, props } }) ?? undefined;
 }
 
 /**
@@ -70,9 +95,9 @@ function addArgTypesFromComponentMeta(payload: ReactDocgenPayload): DocgenPayloa
 /**
  * Build a {@link DocgenPayload} for the component found in one CSF story file.
  *
- * Uses {@link resolveStoryFileComponents} and {@link buildReactComponentDocgenFromResolved} for
- * shared field shaping, runs RCM `batchExtract`, then returns the resolved docgen in the same
- * shape as the experimental component manifest (including `reactComponentMeta` when present).
+ * Uses {@link resolveStoryFileComponents} and {@link buildComponentDocgenFromResolved} for
+ * shared field shaping, runs RCM `batchExtract`, then returns component docgen without story
+ * snippets (those live in `core/story-docs`).
  *
  * Returns `undefined` when the story file cannot be read or parsed — the docgen-service provider
  * chain treats undefined as "no docgen here, fall through to the next provider". Resolution errors
@@ -103,7 +128,7 @@ export async function buildDocgenPayload(
     return undefined;
   }
 
-  const { csf, componentName, component, allComponents, subcomponents, storyFile } = resolved;
+  const { csf, componentName, component, subcomponents, storyFile } = resolved;
 
   const usableSubcomponents = subcomponents.filter(
     (sub): sub is { name: string; component: ComponentRef } => sub.component !== undefined
@@ -117,7 +142,7 @@ export async function buildDocgenPayload(
     context.componentMetaManager.batchExtract(storyRefs);
   }
 
-  const componentDocgen = buildReactComponentDocgenFromResolved({
+  const componentDocgen = buildComponentDocgenFromResolved({
     entry: input.entry,
     storyPath,
     storyFilePath,
@@ -125,7 +150,6 @@ export async function buildDocgenPayload(
     csf,
     componentName,
     component,
-    allComponents,
     subcomponents,
     docgenEngine: 'react-component-meta',
   });

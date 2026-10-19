@@ -1,16 +1,21 @@
-import { ProjectType, copyTemplateFiles, getBabelDependencies } from 'storybook/internal/cli';
+import { join } from 'node:path';
+
+import { ProjectType, copyTemplateFiles } from 'storybook/internal/cli';
 import { executeCommand } from 'storybook/internal/common';
-import { RN_STORYBOOK_DIR } from '../../../../../core/src/shared/constants/config-folder.ts';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import { SupportedBuilder, SupportedLanguage, SupportedRenderer } from 'storybook/internal/types';
+import {
+  applyPreviewImportsMap,
+  RN_STORYBOOK_DIR,
+} from '../../../../../core/src/shared/constants/config-folder.ts';
 
 import { dedent } from 'ts-dedent';
 
-import {
-  type ReactNativeEntrypointTemplateVariant,
-  generateReactNativeEntrypoint,
-} from './generateEntrypoint.ts';
 import { defineGeneratorModule } from '../modules/GeneratorModule.ts';
+import {
+  generateReactNativeEntrypoint,
+  type ReactNativeEntrypointTemplateVariant,
+} from './generateEntrypoint.ts';
 import {
   deriveStorybookPlatformScripts,
   type StorybookPlatformScriptDerivationResult,
@@ -130,11 +135,11 @@ export default defineGeneratorModule({
       'storybook',
     ];
 
-    const versionedPackages = await packageManager.getVersionedPackages(packagesToResolve);
-    const babelDependencies = await getBabelDependencies(packageManager as any);
+    const versionedPackages = await packageManager.getVersionedPackages(packagesToResolve, {
+      storybookVersionSpecifier: context.storybookVersionSpecifier,
+    });
 
     const packages: string[] = [
-      ...babelDependencies,
       ...versionedPackages,
       ...(missingReactDom && reactVersion ? [`react-dom@${reactVersion}`] : []),
     ];
@@ -145,6 +150,16 @@ export default defineGeneratorModule({
     packageManager.addScripts({
       ...scriptDerivationResult.scriptsToAdd,
     });
+
+    // Dual init sets a framework and maps the specifier to `.storybook` itself.
+    if (context.framework == null) {
+      const { packageJson, operationDir } = packageManager.primaryPackageJson;
+      if (
+        applyPreviewImportsMap(packageJson, join(RN_STORYBOOK_DIR, 'preview.tsx'), operationDir)
+      ) {
+        packageManager.writePackageJson(packageJson, operationDir);
+      }
+    }
 
     // Copy React Native templates
     await copyTemplateFiles({

@@ -21,12 +21,15 @@ import {
   SERVICE_COMMAND_ERROR,
   SERVICE_COMMAND_INVOKE,
   SERVICE_COMMAND_RESULT,
-  SERVICE_PATCHES,
+  SERVICE_COMMAND_UNHANDLED,
+  SERVICE_ENTRY,
   type CommandErrorPayload,
   type CommandInvokePayload,
+  type ServiceChannel,
 } from './service-channel.ts';
 import { deserializeError } from './service-error-serialization.ts';
 import { clearRegistry, registerService, unregisterService } from './service-registry.ts';
+import { REMOTE_COMMAND_ACK_TIMEOUT_MS, connectCommandTransport } from './service-transport.ts';
 import { createTestChannel, installTestChannel } from '../../channels/test-channel.ts';
 
 const remoteOnlyServiceDef = defineService({
@@ -66,7 +69,7 @@ const loadInvokesRemoteCommandServiceDef = defineService({
   description: 'Query load calls a command declared without a local handler.',
   initialState: {} as Record<string, string | undefined>,
   queries: {
-    getPreloadedValue: {
+    preloadedValue: {
       description: 'Populates state via a remote-only command inside load.',
       input: entryIdInputSchema,
       output: preloadedValueOutputSchema,
@@ -88,6 +91,7 @@ function emittedCalls(channel: ReturnType<typeof createTestChannel>, event: stri
 }
 
 afterEach(() => {
+  vi.useRealTimers();
   clearRegistry();
   installTestChannel(null);
 });
@@ -98,7 +102,6 @@ describe('remote command requester (no local handler)', () => {
     installTestChannel(channel);
 
     const service = registerService(remoteOnlyServiceDef);
-    // Never settled in this test; swallow the unregister rejection clearRegistry triggers in afterEach.
     service.commands.doThing({ value: 'hi' }).catch(() => {});
 
     const invokes = emittedCalls(channel, SERVICE_COMMAND_INVOKE);
@@ -108,8 +111,10 @@ describe('remote command requester (no local handler)', () => {
       commandName: 'doThing',
       input: { value: 'hi' },
       callId: expect.any(String),
-      clientId: expect.any(String),
+      runtimeId: expect.any(String),
     });
+
+    unregisterService(remoteOnlyServiceDef.id);
   });
 
   it('resolves with the result of the matching command-result reply', async () => {
@@ -124,7 +129,7 @@ describe('remote command requester (no local handler)', () => {
       serviceId: remoteOnlyServiceDef.id,
       callId,
       result: 'done',
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     await expect(promise).resolves.toBe('done');
@@ -141,7 +146,7 @@ describe('remote command requester (no local handler)', () => {
     channel.emitExternal(SERVICE_COMMAND_ERROR, {
       serviceId: remoteOnlyServiceDef.id,
       callId,
-      clientId: 'peer',
+      runtimeId: 'peer',
       error: {
         __openServiceError__: true,
         name: 'OpenServiceValidationError',
@@ -169,7 +174,7 @@ describe('remote command requester (no local handler)', () => {
       serviceId: remoteOnlyServiceDef.id,
       callId,
       result: 'first',
-      clientId: 'peer-1',
+      runtimeId: 'peer-1',
     });
     // A later reply for the same call (a second implementer) must be ignored, not throw.
     expect(() =>
@@ -177,7 +182,7 @@ describe('remote command requester (no local handler)', () => {
         serviceId: remoteOnlyServiceDef.id,
         callId,
         result: 'second',
-        clientId: 'peer-2',
+        runtimeId: 'peer-2',
       })
     ).not.toThrow();
 
@@ -196,22 +201,66 @@ describe('remote command requester (no local handler)', () => {
       serviceId: 'some/other-service',
       callId,
       result: 'wrong-service',
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
     channel.emitExternal(SERVICE_COMMAND_RESULT, {
       serviceId: remoteOnlyServiceDef.id,
       callId: 'unknown-call',
       result: 'wrong-call',
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
     channel.emitExternal(SERVICE_COMMAND_RESULT, {
       serviceId: remoteOnlyServiceDef.id,
       callId,
       result: 'correct',
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     await expect(promise).resolves.toBe('correct');
+  });
+
+  it('rejects when no peer acknowledges the invoke within the timeout', async () => {
+    vi.useFakeTimers();
+
+    const channel = createTestChannel();
+    installTestChannel(channel);
+
+    const service = registerService(remoteOnlyServiceDef);
+    const promise = service.commands.doThing({ value: 'hi' });
+    const assertion = expect(promise).rejects.toThrow(
+      'No runtime acknowledged remote command "internal-fixture/remote-only-command.doThing"; its handler is not implemented in any connected runtime.'
+    );
+
+    await vi.advanceTimersByTimeAsync(REMOTE_COMMAND_ACK_TIMEOUT_MS);
+    await assertion;
+  });
+
+  it('does not reject after a peer acknowledges the invoke', async () => {
+    vi.useFakeTimers();
+
+    const channel = createTestChannel();
+    installTestChannel(channel);
+
+    const service = registerService(remoteOnlyServiceDef);
+    const promise = service.commands.doThing({ value: 'hi' });
+
+    const { callId } = emittedCalls(channel, SERVICE_COMMAND_INVOKE)[0][1] as CommandInvokePayload;
+    channel.emitExternal(SERVICE_COMMAND_ACK, {
+      serviceId: remoteOnlyServiceDef.id,
+      callId,
+      runtimeId: 'peer',
+    });
+
+    await vi.advanceTimersByTimeAsync(REMOTE_COMMAND_ACK_TIMEOUT_MS);
+
+    channel.emitExternal(SERVICE_COMMAND_RESULT, {
+      serviceId: remoteOnlyServiceDef.id,
+      callId,
+      result: 'done',
+      runtimeId: 'peer',
+    });
+
+    await expect(promise).resolves.toBe('done');
   });
 
   it('rejects in-flight remote calls when the service is unregistered', async () => {
@@ -239,7 +288,7 @@ describe('remote command responder (has local handler)', () => {
       commandName: 'assignRecordField',
       input: { entryId: 'a', fieldKey: 'k', fieldValue: 'v' },
       callId: 'call-1',
-      clientId: 'requester',
+      runtimeId: 'requester',
     });
 
     // The ack is emitted synchronously on receipt, before the command runs.
@@ -248,7 +297,7 @@ describe('remote command responder (has local handler)', () => {
       expect.objectContaining({
         serviceId: mutableRecordLookupServiceDef.id,
         callId: 'call-1',
-        clientId: expect.any(String),
+        runtimeId: expect.any(String),
       })
     );
 
@@ -259,8 +308,8 @@ describe('remote command responder (has local handler)', () => {
       )
     );
 
-    expect(service.queries.getRecordFields({ entryId: 'a' })).toEqual({ k: 'v' });
-    expect(emittedCalls(channel, SERVICE_PATCHES).length).toBeGreaterThan(0);
+    expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });
+    expect(emittedCalls(channel, SERVICE_ENTRY).length).toBeGreaterThan(0);
   });
 
   it('replies with a serialized error (including the cause) when the handler throws', async () => {
@@ -274,7 +323,7 @@ describe('remote command responder (has local handler)', () => {
       commandName: 'boom',
       input: {},
       callId: 'call-err',
-      clientId: 'requester',
+      runtimeId: 'requester',
     });
 
     await vi.waitFor(() => expect(emittedCalls(channel, SERVICE_COMMAND_ERROR)).toHaveLength(1));
@@ -287,11 +336,11 @@ describe('remote command responder (has local handler)', () => {
     expect((restored.cause as Error).message).toBe('root cause');
   });
 
-  it('ignores invokes for commands it does not implement', async () => {
+  it('reports an invoke for a hosted command it does not implement instead of acking', async () => {
     const channel = createTestChannel();
     installTestChannel(channel);
 
-    // This runtime has no local handler for `doThing`, so it must not answer the invoke.
+    // This runtime has no local handler for `doThing`, so it must report rather than answer.
     registerService(remoteOnlyServiceDef);
 
     channel.emitExternal(SERVICE_COMMAND_INVOKE, {
@@ -299,13 +348,189 @@ describe('remote command responder (has local handler)', () => {
       commandName: 'doThing',
       input: { value: 'hi' },
       callId: 'call-unhandled',
-      clientId: 'requester',
+      runtimeId: 'requester',
     });
 
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
 
     expect(emittedCalls(channel, SERVICE_COMMAND_ACK)).toHaveLength(0);
     expect(emittedCalls(channel, SERVICE_COMMAND_RESULT)).toHaveLength(0);
+    expect(emittedCalls(channel, SERVICE_COMMAND_UNHANDLED)).toEqual([
+      [
+        SERVICE_COMMAND_UNHANDLED,
+        expect.objectContaining({
+          serviceId: remoteOnlyServiceDef.id,
+          callId: 'call-unhandled',
+        }),
+      ],
+    ]);
+  });
+});
+
+// Models the dev server's channel (`async: true`): every emitted event needs an event-loop turn
+// before it reaches the wire, like a websocket write behind `setImmediate`.
+function createMacrotaskDeliveryChannel(): ServiceChannel {
+  const listeners = new Map<string, Set<(...args: unknown[]) => void>>();
+  return {
+    on: (eventName, listener) => {
+      const existing = listeners.get(eventName) ?? new Set();
+      existing.add(listener);
+      listeners.set(eventName, existing);
+    },
+    off: (eventName, listener) => {
+      listeners.get(eventName)?.delete(listener);
+    },
+    emit: (eventName, ...args) => {
+      setImmediate(() => {
+        listeners.get(eventName)?.forEach((listener) => listener(...args));
+      });
+    },
+  };
+}
+
+describe('ack delivery with a busy responder', () => {
+  // retry: real timers are required here (the starvation is wall-clock), so an extreme scheduler
+  // stall could fire the ack window early; the regression itself fails deterministically.
+  it(
+    'resolves the requester when the responder handler occupies the microtask queue past the ack window',
+    { retry: 3 },
+    async () => {
+      const channel = createMacrotaskDeliveryChannel();
+      const serviceId = 'internal-fixture/busy-responder';
+
+      const requester = connectCommandTransport({
+        serviceId,
+        ownRuntimeId: 'requester',
+        channel,
+        localCommands: {},
+        implementedCommandNames: new Set(),
+        commandNames: ['fanOut'],
+        delegated: false,
+      });
+      const responder = connectCommandTransport({
+        serviceId,
+        ownRuntimeId: 'responder',
+        channel,
+        localCommands: {
+          fanOut: async (input) => {
+            const end = Date.now() + REMOTE_COMMAND_ACK_TIMEOUT_MS + 100;
+            while (Date.now() < end) {
+              await Promise.resolve();
+            }
+            return `fanned-out:${(input as { value: string }).value}`;
+          },
+        },
+        implementedCommandNames: new Set(['fanOut']),
+        commandNames: ['fanOut'],
+        delegated: false,
+      });
+      onTestFinished(() => {
+        requester.disconnect();
+        responder.disconnect();
+      });
+
+      await expect(requester.commands.fanOut({ value: 'all' })).resolves.toBe('fanned-out:all');
+    }
+  );
+});
+
+describe('command-unhandled reporting', () => {
+  it('rejects a delegated requester promptly when the peer reports the command unhandled', async () => {
+    const channel = createMacrotaskDeliveryChannel();
+    const serviceId = 'internal-fixture/drifted-instance';
+
+    const requester = connectCommandTransport({
+      serviceId,
+      ownRuntimeId: 'requester',
+      channel,
+      localCommands: {},
+      implementedCommandNames: new Set(),
+      commandNames: ['fanOut'],
+      delegated: true,
+    });
+    const responder = connectCommandTransport({
+      serviceId,
+      ownRuntimeId: 'responder',
+      channel,
+      localCommands: {},
+      implementedCommandNames: new Set(),
+      commandNames: ['fanOut'],
+      delegated: false,
+    });
+    onTestFinished(() => {
+      requester.disconnect();
+      responder.disconnect();
+    });
+
+    await expect(requester.commands.fanOut({ value: 'all' })).rejects.toThrow(
+      'reported it has no handler for remote command "internal-fixture/drifted-instance.fanOut"'
+    );
+  });
+
+  it('does not report a service id this realm registered earlier', async () => {
+    const channel = createTestChannel();
+    installTestChannel(channel);
+
+    registerService(remoteOnlyServiceDef);
+    unregisterService(remoteOnlyServiceDef.id);
+
+    channel.emitExternal(SERVICE_COMMAND_INVOKE, {
+      serviceId: remoteOnlyServiceDef.id,
+      commandName: 'doThing',
+      input: { value: 'hi' },
+      callId: 'call-mid-hmr',
+      runtimeId: 'requester',
+    });
+
+    expect(emittedCalls(channel, SERVICE_COMMAND_UNHANDLED)).toHaveLength(0);
+  });
+
+  it('still resolves a non-delegated requester when another peer answers after an unhandled report', async () => {
+    const channel = createTestChannel();
+    installTestChannel(channel);
+
+    const service = registerService(remoteOnlyServiceDef);
+    const promise = service.commands.doThing({ value: 'hi' });
+
+    const { callId } = emittedCalls(channel, SERVICE_COMMAND_INVOKE)[0][1] as CommandInvokePayload;
+    channel.emitExternal(SERVICE_COMMAND_UNHANDLED, {
+      serviceId: remoteOnlyServiceDef.id,
+      callId,
+    });
+    channel.emitExternal(SERVICE_COMMAND_RESULT, {
+      serviceId: remoteOnlyServiceDef.id,
+      callId,
+      result: 'done',
+      runtimeId: 'peer-with-handler',
+    });
+
+    await expect(promise).resolves.toBe('done');
+  });
+
+  it('reports an invoke for a service this realm does not register at all', async () => {
+    const channel = createTestChannel();
+    installTestChannel(channel);
+
+    registerService(remoteOnlyServiceDef);
+
+    channel.emitExternal(SERVICE_COMMAND_INVOKE, {
+      serviceId: 'other/never-registered',
+      commandName: 'doThing',
+      input: {},
+      callId: 'call-unknown-service',
+      runtimeId: 'requester',
+    });
+
+    expect(emittedCalls(channel, SERVICE_COMMAND_UNHANDLED)).toEqual([
+      [
+        SERVICE_COMMAND_UNHANDLED,
+        expect.objectContaining({
+          serviceId: 'other/never-registered',
+          callId: 'call-unknown-service',
+        }),
+      ],
+    ]);
+    expect(emittedCalls(channel, SERVICE_COMMAND_UNHANDLED)[0][1]).not.toHaveProperty('runtimeId');
   });
 });
 
@@ -320,12 +545,12 @@ describe('load bodies and command routing', () => {
 
     const service = registerService(awaitedPreloadValueServiceDef);
 
-    await service.queries.getPreloadedValue.loaded({ entryId: 'entry-a' });
+    await service.queries.preloadedValue.loaded({ entryId: 'entry-a' });
 
     expect(handlerSpy).toHaveBeenCalledTimes(1);
     expect(handlerSpy.mock.calls[0]?.[0]).toEqual({ entryId: 'entry-a' });
     expect(emittedCalls(channel, SERVICE_COMMAND_INVOKE)).toHaveLength(0);
-    expect(service.queries.getPreloadedValue({ entryId: 'entry-a' })).toBe('preloaded');
+    expect(service.queries.preloadedValue.get({ entryId: 'entry-a' })).toBe('preloaded');
   });
 
   it('routes a load-body command through command-invoke when no local handler exists', async () => {
@@ -333,7 +558,7 @@ describe('load bodies and command routing', () => {
     installTestChannel(channel);
 
     const service = registerService(loadInvokesRemoteCommandServiceDef);
-    const promise = service.queries.getPreloadedValue.loaded({ entryId: 'entry-a' });
+    const promise = service.queries.preloadedValue.loaded({ entryId: 'entry-a' });
 
     await vi.waitFor(() => expect(emittedCalls(channel, SERVICE_COMMAND_INVOKE)).toHaveLength(1));
 
@@ -342,7 +567,7 @@ describe('load bodies and command routing', () => {
       commandName: 'preloadValue',
       input: { entryId: 'entry-a' },
       callId: expect.any(String),
-      clientId: expect.any(String),
+      runtimeId: expect.any(String),
     });
 
     const { callId } = emittedCalls(
@@ -353,7 +578,7 @@ describe('load bodies and command routing', () => {
       serviceId: loadInvokesRemoteCommandServiceDef.id,
       callId,
       result: undefined,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     await expect(promise).resolves.toBeNull();

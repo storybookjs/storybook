@@ -1,98 +1,105 @@
 /**
  * React hook to subscribe to a service query with fine-grained reactivity.
  *
- * Backed by `useSyncExternalStore`, so it integrates correctly with React 18+ concurrent
- * features and works in both manager and preview contexts without any adapter.
+ * Backed by React's `useSyncExternalStore`, so it integrates correctly with React 18+ concurrent
+ * features. Manager-only: that hook does not exist before React 18, and the preview must keep
+ * supporting React 16/17, so preview docs blocks use the shim-based `useQuerySubscription` instead.
  *
- * Re-renders only when the specific query result changes by value. Signal-level dedup
- * inside the service runtime ensures that a load which rewrites a deeply-equal payload does
- * not re-fire the subscription; `isEqual` in the subscription callback provides an additional
- * referential-stability layer at the React boundary so the component sees a stable object
- * reference across updates that return the same logical value.
- *
- * Object inputs are compared with deep equality when deciding whether to re-subscribe, so inline
- * literals at the call site are safe.
+ * Returns a {@link QueryState}: the current `data` plus the `load` lifecycle (`status`,
+ * `loadStatus`, `error`, and the derived booleans). Re-renders whenever the subscribed query emits
+ * (the runtime already dedupes deeply-equal emissions, so the hook does not). Object inputs are
+ * compared with deep equality when deciding whether to re-subscribe, so inline literals at the call
+ * site are safe; selectors are compared by reference, so memoize them (`useCallback` / module
+ * scope) to avoid re-subscribing every render.
  */
 
 import * as React from 'react';
 
 import { isEqual } from 'es-toolkit/predicate';
 
-import type { Query } from './types.ts';
+import { seedQueryState } from './query-state.ts';
+import type { Query, QueryState } from './types.ts';
 
 /**
- * Subscribe to a service query and receive reactive updates in a React component.
+ * Subscribe to a service query and receive reactive {@link QueryState} updates in a React component.
  *
- * @param service - A service instance from `registerService`.
- * @param queryName - The name of the query to subscribe to.
- * @param args - The query input. Omit entirely for queries whose input type is `void`.
+ * Pass the query directly (e.g. `myService.queries.thing`) so its input/output types infer per
+ * query. The service must exist: if it may be absent (e.g. behind a feature flag), guard at a parent
+ * and conditionally render the component that calls this hook.
+ *
+ * A void-input query needs no input argument. As soon as a selector is involved the input is
+ * positional, so a void-input query passes `undefined` explicitly:
+ * `useServiceQuery(query, undefined, selector)`.
  *
  * @example
  * ```tsx
- * const fields = useServiceQuery(recordService, 'getRecordFields', { entryId: 'a' });
+ * const { data, isInitialLoading, isError } = useServiceQuery(recordService.queries.recordFields, {
+ *   entryId: 'a',
+ * });
  * ```
  */
-// `TInput`/`TOutput` are inferred as direct type parameters from the query's call signature. This is
-// deliberate: a conditional over an indexed access like `Query<TInstance['queries'][TKey]>` is
-// evaluated against the index's *constraint* (`Query<any, any>`, which — being `VoidQuery & InputQuery`
-// — is callable with zero args and so always looks void), collapsing every query to "no input". Typing
-// the query value as a plain `(input: TInput) => TOutput` call signature recovers the concrete input
-// and output, and keeps the void-vs-input branch (`[TInput] extends [void]`) over a real type.
-export function useServiceQuery<TKey extends string, TInput, TOutput>(
-  service: { queries: Record<TKey, (input: TInput) => TOutput> },
-  queryName: TKey,
-  // A rest parameter so the input can be conditionally present: void-input queries take no third
-  // argument, every other query requires exactly one.
-  ...args: [TInput] extends [void] ? [] : [input: TInput]
-): TOutput {
-  const queryFn = service.queries[queryName] as unknown as Query<TInput, TOutput>;
-  const input = args[0] as TInput;
-
-  // Initialise synchronously so `getSnapshot` always returns a value on the first render,
-  // before the service's async first-emission microtask fires. Lazy-init avoids calling
-  // `queryFn(input)` on every render — only when the ref is empty or the subscription changes.
-  // `subscriptionKeyRef` (null until the first run) is the initialisation sentinel, not the
-  // snapshot value: a query whose output is legitimately `undefined` must not look uninitialised.
-  // Compare inputs with `isEqual`, not reference identity, so inline object literals at the
-  // call site do not re-run the handler on every render.
+export function useServiceQuery<TOutput>(query: Query<void, TOutput>): QueryState<TOutput>;
+export function useServiceQuery<TInput, TOutput>(
+  query: Query<TInput, TOutput>,
+  input: TInput
+): QueryState<TOutput>;
+export function useServiceQuery<TInput, TOutput, TSelected>(
+  query: Query<TInput, TOutput>,
+  input: TInput,
+  selector: (value: TOutput) => TSelected
+): QueryState<TSelected>;
+export function useServiceQuery(
+  query: Query<unknown, unknown>,
+  input?: unknown,
+  selector?: (value: unknown) => unknown
+): QueryState<unknown> {
+  // The first render is seeded synchronously: `useSyncExternalStore` reads `getSnapshot` during
+  // render but only runs `subscribe` in a post-paint passive effect, so a snapshot must already
+  // exist. We read the current data with `query.get(input)` (a pure read that fires no load) and
+  // wrap it in a synthetic `pending` state; the real lifecycle arrives moments later from the
+  // subscription's first emission. The seed is recomputed only when the subscription key changes:
+  // `query`/`selector` by reference and `input` by deep equality (so inline object literals are
+  // safe). `subscriptionKeyRef` is null until the first run — the init sentinel, not the snapshot.
   const subscriptionKeyRef = React.useRef<{
-    queryFn: Query<TInput, TOutput>;
-    input: TInput;
+    query: Query<unknown, unknown>;
+    input: unknown;
+    selector: ((value: unknown) => unknown) | undefined;
   } | null>(null);
-  const snapshotRef = React.useRef<TOutput | undefined>(undefined);
+  const snapshotRef = React.useRef<QueryState<unknown> | undefined>(undefined);
 
   if (
     subscriptionKeyRef.current === null ||
-    subscriptionKeyRef.current.queryFn !== queryFn ||
-    !isEqual(subscriptionKeyRef.current.input, input)
+    subscriptionKeyRef.current.query !== query ||
+    !isEqual(subscriptionKeyRef.current.input, input) ||
+    subscriptionKeyRef.current.selector !== selector
   ) {
-    subscriptionKeyRef.current = { queryFn, input };
-    snapshotRef.current = queryFn(input);
+    subscriptionKeyRef.current = { query, input, selector };
+    snapshotRef.current = selector
+      ? seedQueryState(query, input, selector)
+      : seedQueryState(query, input);
   }
 
-  // Stable for deep-equal inputs — only replaced when `queryFn` or the input value changes.
+  // Stable for deep-equal inputs — only replaced when the query, input value, or selector changes.
   const subscriptionKey = subscriptionKeyRef.current!;
 
-  // Re-subscribe when `queryFn` or the input value changes. The service subscribe() fires the
-  // callback immediately (deferred to a microtask) with the current value, then again
-  // whenever tracked state changes.
   const subscribe = React.useCallback(
-    (listener: () => void): (() => void) =>
-      queryFn.subscribe(subscriptionKey.input, (value) => {
-        if (isEqual(value, snapshotRef.current)) {
-          return;
-        }
-        snapshotRef.current = value;
+    (listener: () => void): (() => void) => {
+      const { query: q, input: i, selector: s } = subscriptionKey;
+      const onQueryState = (queryState: QueryState<unknown>) => {
+        snapshotRef.current = queryState;
         listener();
-      }),
-    [queryFn, subscriptionKey]
+      };
+      return s ? q.subscribe(i, s, onQueryState) : q.subscribe(i, onQueryState);
+    },
+    [subscriptionKey]
   );
 
   // React may call getSnapshot multiple times during render/bailout checks, so it must be a pure
-  // ref read. Calling the service query here would be observable for queries with load hooks.
-  const getSnapshot = React.useCallback((): TOutput => {
-    return snapshotRef.current as TOutput;
+  // ref read rather than recomputing the seed (which would re-run the handler) on every call.
+  const getSnapshot = React.useCallback((): QueryState<unknown> => {
+    return snapshotRef.current as QueryState<unknown>;
   }, []);
 
+  // Only runs in manager, so React 18 is available.
   return React.useSyncExternalStore(subscribe, getSnapshot);
 }

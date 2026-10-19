@@ -1,0 +1,14 @@
+{
+  "name": "docgen-harness",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "targets": {
+    "compile": {},
+    "check": {
+      "executor": "nx:run-commands",
+      "dependsOn": [],
+      "options": { "cwd": "{projectRoot}", "command": "vue-tsc --noEmit" }
+    }
+  },
+  "tags": ["library"]
+}

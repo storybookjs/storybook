@@ -12,14 +12,19 @@
  * const service = registerService(myServiceDef);
  *
  * function MyTool() {
- *   const value = useServiceQuery(service, 'getValue');
+ *   const { data } = useServiceQuery(service.queries.value);
  *   const setValue = useServiceCommand(service, 'setValue');
- *   return <button onClick={() => setValue({ value: 'new' })}>{value}</button>;
+ *   return <button onClick={() => setValue({ value: 'new' })}>{data}</button>;
  * }
  * ```
  */
 
-import { getService, registerService as registerServiceCore } from './service-registry.ts';
+import type { ManagerCoreServices, TypedGetService } from './core-service-types.ts';
+import {
+  getService as getServiceCore,
+  registerService as registerServiceCore,
+} from './service-registry.ts';
+import { createBrowserStaticLoader } from './static-fetch.ts';
 import type {
   Commands,
   Queries,
@@ -31,7 +36,8 @@ import type {
 
 export { useServiceCommand } from './use-service-command.ts';
 export { useServiceQuery } from './use-service-query.ts';
-export { getService };
+
+export const getService = getServiceCore as TypedGetService<ManagerCoreServices>;
 
 /**
  * Registers a service in the manager and returns its runtime surface.
@@ -48,5 +54,8 @@ export function registerService<
   definition: ServiceDefinition<TState, TQueries, TCommands>,
   registration?: ServiceRegistrationOptions<TState, TQueries, TCommands>
 ): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
-  return registerServiceCore(definition, registration, { relay: true });
+  return registerServiceCore(definition, registration, {
+    relay: true,
+    staticLoader: createBrowserStaticLoader(),
+  });
 }

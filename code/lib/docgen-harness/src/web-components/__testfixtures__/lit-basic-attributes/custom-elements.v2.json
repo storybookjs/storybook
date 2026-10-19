@@ -1,0 +1,130 @@
+{
+  "schemaVersion": "2.1.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "lit-basic-attributes.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Panel with string, number and boolean attributes.",
+          "name": "LitBasicAttributes",
+          "members": [
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Basic label'",
+              "description": "Text shown in the component.",
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "count",
+              "readonly": true,
+              "type": {
+                "text": "number"
+              },
+              "default": "2",
+              "description": "Number of items to display.",
+              "attribute": "count"
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Whether the panel is disabled.",
+              "attribute": "disabled"
+            },
+            {
+              "kind": "field",
+              "name": "isOpen",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Whether the panel is open.",
+              "attribute": "is-open",
+              "reflects": true
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Basic label'",
+              "description": "Text shown in the component.",
+              "fieldName": "label"
+            },
+            {
+              "name": "count",
+              "type": {
+                "text": "number"
+              },
+              "default": "2",
+              "description": "Number of items to display.",
+              "fieldName": "count"
+            },
+            {
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Whether the panel is disabled.",
+              "fieldName": "disabled"
+            },
+            {
+              "name": "is-open",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Whether the panel is open.",
+              "fieldName": "isOpen"
+            }
+          ],
+          "cssStates": [
+            {
+              "name": "open",
+              "description": "Set while the panel is open."
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "summary": "Attribute fixture.",
+          "tagName": "lit-basic-attributes",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "LitBasicAttributes",
+          "declaration": {
+            "name": "LitBasicAttributes",
+            "module": "lit-basic-attributes.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "lit-basic-attributes",
+          "declaration": {
+            "name": "LitBasicAttributes",
+            "module": "lit-basic-attributes.ts"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -49,9 +49,10 @@ export class ProjectTypeService {
       },
       {
         preset: ProjectType.TANSTACK_REACT,
-        dependencies: ['@tanstack/start', '@tanstack/react-start', '@tanstack/react-router'],
-        matcherFunction: ({ dependencies }) => {
-          return dependencies?.some(Boolean) ?? false;
+        dependencies: ['@tanstack/react-start', '@tanstack/react-router'],
+        peerDependencies: ['@tanstack/react-start', '@tanstack/react-router'],
+        matcherFunction: ({ dependencies, peerDependencies }) => {
+          return (dependencies?.some(Boolean) || peerDependencies?.some(Boolean)) ?? false;
         },
       },
       {
@@ -91,16 +92,6 @@ export class ProjectTypeService {
         peerDependencies: ['react-native', 'react-native-scripts', 'expo'],
         matcherFunction: ({ dependencies, peerDependencies }) => {
           return (dependencies?.some(Boolean) || peerDependencies?.some(Boolean)) ?? false;
-        },
-      },
-      {
-        preset: ProjectType.REACT_SCRIPTS,
-        // For projects using a custom/forked `react-scripts` package.
-        files: ['/node_modules/.bin/react-scripts'],
-        // For standard CRA projects
-        dependencies: ['react-scripts'],
-        matcherFunction: ({ dependencies, files }) => {
-          return (dependencies?.every(Boolean) || files?.every(Boolean)) ?? false;
         },
       },
       {

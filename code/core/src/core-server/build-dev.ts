@@ -18,7 +18,6 @@ import { CLI_COLORS, deprecate, logger, prompt } from 'storybook/internal/node-l
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import { detectAgent, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
-import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 import { global } from '@storybook/global';
 
 import { join, relative, resolve } from 'pathe';
@@ -26,13 +25,13 @@ import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
 import Channel from '../channels/index.ts';
-import { detectPnp } from '../cli/detect.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 import { storybookDevServer } from './dev-server.ts';
 import { getWsToken } from './presets/wsToken.ts';
 import { buildOrThrow } from './utils/build-or-throw.ts';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
 import { getServerChannel } from './utils/get-server-channel.ts';
+import { warnOnDisabledHostValidation } from './utils/host-validation-warning.ts';
 import { outputStartupInformation } from './utils/output-startup-information.ts';
 import { outputStats } from './utils/output-stats.ts';
 import {
@@ -146,26 +145,13 @@ export async function buildDevStandalone(
   options.localAddress = localAddress;
   options.networkAddress = networkAddress;
 
-  // TODO: Remove in SB11
-  options.pnp = await detectPnp();
-  if (options.pnp) {
-    deprecate(dedent`
-      As of Storybook 10.0, PnP is deprecated.
-      If you are using PnP, you can continue to use Storybook 10.0, but we recommend migrating to a different package manager or linker-mode.
-
-      In future versions, PnP compatibility will be removed.
-    `);
-  }
-
   const config = await loadMainConfig(options);
   const { core, framework } = config;
 
   const corePresets = [];
 
   let frameworkName = typeof framework === 'string' ? framework : framework?.name;
-  if (!options.ignorePreview) {
-    validateFrameworkName(frameworkName);
-  }
+  validateFrameworkName(frameworkName);
   if (frameworkName) {
     corePresets.push(join(frameworkName, 'preset'));
   }
@@ -217,18 +203,13 @@ export async function buildDevStandalone(
 
   const { allowedHosts, renderer, builder } = await presets.apply('core', {});
 
-  // '0.0.0.0' binds to all interfaces, which is useful for Docker and other containerized environments.
-  // By default we allow requests from all hosts in this case, but the user should be made aware of the risk.
-  if (
-    options.host === '0.0.0.0' &&
-    (!allowedHosts || (allowedHosts !== true && allowedHosts.length === 0))
-  ) {
-    logger.warn(dedent`
-      --host is set to 0.0.0.0 but no allowedHosts are defined. Allowing all hosts.
-      To restrict allowed hosts, set core.allowedHosts in your main Storybook config.
-      See: https://storybook.js.org/docs/api/main-config/main-config-core
-    `);
-  }
+  await warnOnDisabledHostValidation({
+    host: options.host,
+    allowedHosts,
+    ci: options.ci,
+    smokeTest: options.smokeTest,
+    cacheKey,
+  });
 
   if (!builder) {
     throw new MissingBuilderError();
@@ -296,7 +277,6 @@ export async function buildDevStandalone(
   const features = await presets.apply('features');
   global.FEATURES = features;
 
-  await applyServicesPresetOnce(presets);
   await presets.apply('experimental_serverChannel', channel);
 
   const fullOptions: Options = {
@@ -314,9 +294,11 @@ export async function buildDevStandalone(
 
   await writeStorybookRuntimeInstanceRecord({
     address: localAddress,
+    configDir: options.configDir,
     mcp,
     port,
     storybookVersion,
+    token: getWsToken(),
   }).catch((error: unknown) => {
     logger.warn('Storybook failed to write its runtime instance registry record.');
     logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
@@ -375,6 +357,7 @@ export async function buildDevStandalone(
         version: storybookVersion,
         name,
         address: localAddress,
+        host: options.host,
         networkAddress,
         allowedHosts,
         managerTotalTime,

@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { copyTemplateFiles, getBabelDependencies } from 'storybook/internal/cli';
+import { copyTemplateFiles } from 'storybook/internal/cli';
 import { executeCommand } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
-import { SupportedLanguage } from 'storybook/internal/types';
+import { SupportedFramework, SupportedLanguage } from 'storybook/internal/types';
 
 import { DependencyCollector } from '../../dependency-collector.ts';
 import { TelemetryService } from '../../services/TelemetryService.ts';
@@ -27,7 +27,9 @@ describe('REACT_NATIVE generator module', () => {
       getVersionedPackages: vi.fn().mockResolvedValue([]),
       addScripts: vi.fn(),
       getRunCommand: vi.fn((scriptName: string) => `npm run ${scriptName}`),
+      writePackageJson: vi.fn(),
       primaryPackageJson: {
+        operationDir: process.cwd(),
         packageJson: {
           scripts,
         },
@@ -35,7 +37,6 @@ describe('REACT_NATIVE generator module', () => {
     }) as any;
 
   beforeEach(() => {
-    vi.mocked(getBabelDependencies).mockResolvedValue([]);
     vi.mocked(copyTemplateFiles).mockResolvedValue();
     vi.mocked(generateReactNativeEntrypoint).mockResolvedValue({
       targetPath: '.rnstorybook/index.js',
@@ -70,13 +71,42 @@ describe('REACT_NATIVE generator module', () => {
       language: SupportedLanguage.JAVASCRIPT,
     });
     expect(packageManager.getVersionedPackages).toHaveBeenCalledWith(
-      expect.arrayContaining(['cross-env'])
+      expect.arrayContaining(['cross-env']),
+      { storybookVersionSpecifier: undefined }
     );
     expect(packageManager.addScripts).toHaveBeenCalledWith({
       'storybook:ios': 'cross-env STORYBOOK_ENABLED=true react-native run-ios',
       'storybook:android': 'cross-env STORYBOOK_ENABLED=true react-native run-android',
     });
     expect(runMetroCodemodOrFallback).toHaveBeenCalled();
+    expect(packageManager.writePackageJson).toHaveBeenCalledWith(
+      expect.objectContaining({
+        imports: expect.objectContaining({
+          '#.storybook/preview': './.rnstorybook/preview.tsx',
+        }),
+      }),
+      process.cwd()
+    );
+  });
+
+  it('does not map #.storybook/preview to .rnstorybook during dual RN+RNW init', async () => {
+    const packageManager = createPackageManager({
+      ios: 'react-native run-ios',
+      android: 'react-native run-android',
+    });
+
+    await reactNativeGenerator.configure(packageManager, {
+      framework: SupportedFramework.REACT_NATIVE_WEB_VITE,
+      renderer: reactNativeGenerator.metadata.renderer,
+      builder: reactNativeGenerator.metadata.builderOverride as any,
+      language: SupportedLanguage.TYPESCRIPT,
+      telemetryService,
+      features: new Set(),
+      dependencyCollector: new DependencyCollector(),
+      yes: true,
+    });
+
+    expect(packageManager.writePackageJson).not.toHaveBeenCalled();
   });
 
   it('overwrites existing storybook platform scripts when deriving new values', async () => {
@@ -149,7 +179,8 @@ describe('REACT_NATIVE generator module', () => {
 
     expect(packageManager.addScripts).toHaveBeenCalledWith({});
     expect(packageManager.getVersionedPackages).toHaveBeenCalledWith(
-      expect.not.arrayContaining(['cross-env'])
+      expect.not.arrayContaining(['cross-env']),
+      { storybookVersionSpecifier: undefined }
     );
 
     const logged = String(vi.mocked(logger.log).mock.calls.at(-1)?.[0] ?? '');
@@ -178,7 +209,8 @@ describe('REACT_NATIVE generator module', () => {
     });
 
     expect(packageManager.getVersionedPackages).toHaveBeenCalledWith(
-      expect.not.arrayContaining(['cross-env'])
+      expect.not.arrayContaining(['cross-env']),
+      { storybookVersionSpecifier: undefined }
     );
   });
 });

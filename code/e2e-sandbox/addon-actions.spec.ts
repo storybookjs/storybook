@@ -18,7 +18,7 @@ test.describe('addon-actions', () => {
     );
     await page.goto(storybookUrl);
     const sbPage = new SbPage(page, expect);
-    sbPage.waitUntilLoaded();
+    await sbPage.waitUntilLoaded();
 
     await sbPage.navigateToStory('example/button', 'primary');
     const root = sbPage.previewRoot();
@@ -41,7 +41,7 @@ test.describe('addon-actions', () => {
     );
     await page.goto(storybookUrl);
     const sbPage = new SbPage(page, expect);
-    sbPage.waitUntilLoaded();
+    await sbPage.waitUntilLoaded();
 
     await sbPage.navigateToStory('core/spies', 'show-spy-on-in-actions');
 

@@ -497,8 +497,11 @@ export class ComponentMetaManager<
         if (existing) {
           clearTimeout(existing.timeout);
         }
-        // Windows reports a new file as `rename` then `change`; a `rename` anywhere in the burst
-        // must survive, or the file is treated as an edit and projects never see it was created.
+        // Windows reports writing a new file as `rename` (FILE_ACTION_ADDED) followed by `change`
+        // (FILE_ACTION_MODIFIED). A `rename` anywhere in the burst must survive, or the file is
+        // treated as an edit and projects never see it was created.
+        // https://learn.microsoft.com/en-us/dotnet/api/system.io.filesystemwatcher.created#remarks
+        // https://github.com/libuv/libuv/blob/v1.51.0/src/win/fs-event.c#L540-L548
         const renamed = eventType === 'rename' || (existing?.renamed ?? false);
 
         this.pendingEvents.set(filePath, {

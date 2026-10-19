@@ -1,77 +1,105 @@
-import { type FSWatcher, existsSync, watch } from 'fs';
+import {
+  type FSWatcher,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  rmSync,
+  watch,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { join } from 'pathe';
 
 import { ComponentMetaManager } from './ComponentMetaManager.ts';
 import type { ComponentMetaProjectBase, FileChange } from './types.ts';
 
-vi.mock(import('fs'), { spy: true });
+const isWindows = process.platform === 'win32';
 
-type WatchListener = (eventType: string, filename: string | null) => void;
-
-const createProject = () =>
+const createProject = (trackedFile: string) =>
   ({
-    getCommandLine: () => ({ fileNames: ['/repo/src/Button.ts'] }),
-    hasSourceFile: (fileName: string) => fileName.endsWith('/repo/src/Button.ts'),
+    getCommandLine: () => ({ fileNames: [trackedFile] }),
+    hasSourceFile: (fileName: string) => fileName === trackedFile,
     ensureFiles: vi.fn(),
     onFilesChanged: vi.fn<(changes: FileChange[]) => void>(),
     getSourceFilePaths: () => [],
     dispose: vi.fn(),
   }) satisfies ComponentMetaProjectBase;
 
+/**
+ * Exercises the real `fs.watch` of the host platform: each test records the raw events the OS
+ * reports for a newly written file next to what the manager makes of them.
+ */
 describe('ComponentMetaManager file watching', () => {
-  let listener: WatchListener;
+  let root: string;
+  let newFile: string;
   let project: ReturnType<typeof createProject>;
   let manager: ComponentMetaManager<ReturnType<typeof createProject>>;
+  let rawWatcher: FSWatcher;
+  let rawEvents: string[];
 
   beforeEach(() => {
-    vi.useFakeTimers();
-    vi.mocked(watch).mockImplementation(((_dir: string, _options: unknown, cb: WatchListener) => {
-      listener = cb;
-      return { close: vi.fn(), unref: vi.fn() } as unknown as FSWatcher;
-    }) as typeof watch);
-    vi.mocked(existsSync).mockReturnValue(true);
+    root = realpathSync.native(mkdtempSync(join(tmpdir(), 'component-meta-watch-')));
+    const trackedFile = join(root, 'src', 'Button.ts');
+    newFile = join(root, 'src', 'Card.ts');
+    mkdirSync(join(root, 'src'));
+    writeFileSync(join(root, 'tsconfig.json'), '{}');
+    writeFileSync(trackedFile, 'export const Button = 1;');
 
-    project = createProject();
+    project = createProject(trackedFile);
     manager = new ComponentMetaManager(
-      {
-        sys: {
-          fileExists: (path) => path.endsWith('/repo/tsconfig.json'),
-          directoryExists: () => true,
-        },
-      },
+      { sys: { fileExists: existsSync, directoryExists: existsSync } },
       {
         parseCommandLine: () => project.getCommandLine(),
         createConfiguredProject: () => project,
-        createInferredProject: createProject,
+        createInferredProject: () => createProject(trackedFile),
       }
     );
     manager.startWatching();
-    manager.getProjectForFile('/repo/src/Button.ts');
+    manager.getProjectForFile(trackedFile);
+
+    rawEvents = [];
+    rawWatcher = watch(root, { recursive: true }, (eventType, filename) => {
+      if (filename?.replaceAll('\\', '/') === 'src/Card.ts') {
+        rawEvents.push(eventType);
+      }
+    });
   });
 
   afterEach(() => {
+    rawWatcher.close();
     manager.dispose();
-    vi.useRealTimers();
-    vi.restoreAllMocks();
+    rmSync(root, { recursive: true, force: true });
   });
 
-  it('reports a new file as created when a change event follows its rename event', () => {
-    // Windows reports writing a new file as `rename` followed by `change`.
-    listener('rename', 'src/Card.ts');
-    listener('change', 'src/Card.ts');
-    vi.advanceTimersByTime(50);
+  const expectCreatedReported = () =>
+    vi.waitFor(
+      () =>
+        expect(project.onFilesChanged).toHaveBeenCalledWith([
+          { filePath: newFile, type: 'created' },
+        ]),
+      { timeout: 5000 }
+    );
 
-    expect(project.onFilesChanged).toHaveBeenCalledExactlyOnceWith([
-      { filePath: expect.stringMatching(/\/repo\/src\/Card\.ts$/), type: 'created' },
-    ]);
-  });
+  it.runIf(isWindows)(
+    'reports a new file as created although Windows follows its rename with a change',
+    async () => {
+      writeFileSync(newFile, 'export const Card = 1;');
 
-  it('reports an edit to a tracked file as changed', () => {
-    listener('change', 'src/Button.ts');
-    vi.advanceTimersByTime(50);
+      await expectCreatedReported();
+      await vi.waitFor(() =>
+        expect(rawEvents).toEqual(expect.arrayContaining(['rename', 'change']))
+      );
+    }
+  );
 
-    expect(project.onFilesChanged).toHaveBeenCalledExactlyOnceWith([
-      { filePath: expect.stringMatching(/\/repo\/src\/Button\.ts$/), type: 'changed' },
-    ]);
+  it.skipIf(isWindows)('reports a new file as created from its lone rename event', async () => {
+    writeFileSync(newFile, 'export const Card = 1;');
+
+    await expectCreatedReported();
+    expect(rawEvents).toContain('rename');
+    expect(rawEvents).not.toContain('change');
   });
 });

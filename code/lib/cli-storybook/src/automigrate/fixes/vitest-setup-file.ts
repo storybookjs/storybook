@@ -281,7 +281,9 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
 
     for (const { path: setupFile, transform } of setupFiles) {
       if (transform.kind === 'rewritten') {
-        files.write(setupFile, await formatExistingFile(setupFile, transform.code));
+        // `check` read the file through another `files`; this read lets the commit keep the
+        // file's line endings and notice when it changed on disk since.
+        await files.edit(setupFile, () => formatExistingFile(setupFile, transform.code));
       }
     }
 

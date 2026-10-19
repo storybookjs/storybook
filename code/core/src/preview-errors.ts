@@ -404,6 +404,17 @@ export class InvalidBlockOfPropError extends StorybookError {
   }
 }
 
+export class BlockOfAndIdPropsError extends StorybookError {
+  constructor() {
+    super({
+      name: 'BlockOfAndIdPropsError',
+      category: Category.BLOCKS,
+      code: 2,
+      message: 'A block references a story with `of={}` or with `id=""`, not with both.',
+    });
+  }
+}
+
 export class UnsupportedViewportDimensionError extends StorybookError {
   constructor(public data: { dimension: string; value: string }) {
     super({

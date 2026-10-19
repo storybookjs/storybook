@@ -8,7 +8,7 @@ import type {
   Renderer,
   StoryId,
 } from 'storybook/internal/types';
-import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
+import { BlockOfAndIdPropsError, InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 
 import { Story as PureStory, StorySkeleton } from '../components';
 import type { DocsContextProps } from './DocsContext';
@@ -43,6 +43,22 @@ type StoryRefProps = {
    * ```
    */
   meta?: ModuleExports;
+  /**
+   * Pass the id of a story to render a story whose CSF file this docs file cannot import, such as
+   * a story of another package
+   *
+   * ```jsx
+   * import { Story } from '@storybook/addon-docs/blocks';
+   *
+   * <Story id="example-button--primary" />;
+   * ```
+   *
+   * The id is an unattached reference. Nothing checks it before the docs page renders: renaming
+   * the story or changing its title changes the id, and the page then shows an error. A change to
+   * the story's file does not update an inline story until the docs page renders again. Prefer `of`
+   * when the docs file can import the story.
+   */
+  id?: StoryId;
 };
 
 type StoryParameters = {
@@ -61,9 +77,15 @@ type StoryParameters = {
 export type StoryProps = StoryRefProps & StoryParameters;
 
 export const getStoryId = (props: StoryProps, context: DocsContextProps): StoryId => {
-  const { of, meta } = props as StoryRefProps;
+  const { of, meta, id } = props as StoryRefProps;
   if ('of' in props && of === undefined) {
     throw new InvalidBlockOfPropError();
+  }
+  if (of && id !== undefined) {
+    throw new BlockOfAndIdPropsError();
+  }
+  if (id !== undefined) {
+    return id;
   }
 
   if (meta) {

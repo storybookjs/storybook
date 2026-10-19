@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -500,6 +500,31 @@ describe('extractArgTypesFromDocgenTypescript', () => {
     expect(argTypes?.primary?.description).toBe(
       'Is this the principal call to action on the page?'
     );
+  });
+
+  it('reads a component again after it changes', async () => {
+    const dir = createTempProject({
+      'tsconfig.json': JSON.stringify({
+        compilerOptions: { jsx: 'react-jsx', strict: true, noEmit: true },
+        include: ['src'],
+      }),
+      'src/Button.tsx': `export const Button = ({ label }: { label: string }) => <button>{label}</button>;`,
+    });
+    vi.spyOn(process, 'cwd').mockReturnValue(dir);
+    const componentFilePath = path.join(dir, 'src/Button.tsx');
+    const read = () =>
+      extractArgTypesFromDocgenTypescript({ componentFilePath, componentExportName: 'Button' });
+
+    expect(Object.keys((await read()) ?? {})).toEqual(['label']);
+
+    writeFileSync(
+      componentFilePath,
+      `export const Button = ({ label, size }: { label: string; size: number }) => <button>{label}{size}</button>;`
+    );
+    // Some filesystems keep the old mtime for a write within the same tick.
+    utimesSync(componentFilePath, new Date(), new Date(Date.now() + 1000));
+
+    expect(Object.keys((await read()) ?? {})).toEqual(['label', 'size']);
   });
 });
 

@@ -1,3 +1,4 @@
+import { statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 import {
@@ -10,7 +11,7 @@ import type ts from 'typescript';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import { asyncCache, cached, findTsconfigPath } from './utils.ts';
+import { asyncCache, cached, findTsconfigPath, invalidateCache } from './utils.ts';
 
 export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
 
@@ -346,6 +347,24 @@ export const parseWithReactDocgenTypescript = asyncCache(
   },
   { name: 'parseWithReactDocgenTypescript' }
 );
+
+const parsedMtimes = new Map<string, number>();
+
+// Like `parseWithReactDocgenTypescript`, for callers that no manifest run invalidates: a changed
+// file rebuilds the program first.
+export async function parseLatestWithReactDocgenTypescript(
+  filePath: string,
+  userOptions?: ParserOptions
+): Promise<ComponentDocWithExportName[]> {
+  const { mtimeMs } = statSync(filePath);
+  const parsedMtime = parsedMtimes.get(filePath);
+  if (parsedMtime !== undefined && parsedMtime !== mtimeMs) {
+    invalidateCache();
+    invalidateParser();
+  }
+  parsedMtimes.set(filePath, mtimeMs);
+  return parseWithReactDocgenTypescript(filePath, userOptions);
+}
 
 const findOwningTsconfigPath = cached(
   (typescript: TypeScriptRuntime, cwd: string, filePath: string): string | undefined => {

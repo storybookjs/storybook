@@ -741,6 +741,29 @@ describe('trailing comments', () => {
     `);
   });
 
+  it('keeps a leading comment that shares the line of a moved member in front of it', () => {
+    const csf = parse(dedent`
+      export default {
+        parameters: {
+          // where it goes
+          /* a */ layout: 'centered', // center it
+        },
+        globals: {},
+      };
+    `);
+    const [meta] = csf.objects({ stories: false });
+    meta.move(['parameters', 'layout'], ['globals', 'layout']);
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {
+        globals: {
+          // where it goes
+          // center it
+          /* a */ layout: 'centered',
+        },
+      };
+    `);
+  });
+
   it('removes a member with every comment that trails it on its line', () => {
     const csf = parse(`export default {\n  a: 1, /* a */ // why\n  b: 2,\n};`);
     const [meta] = csf.objects({ stories: false });

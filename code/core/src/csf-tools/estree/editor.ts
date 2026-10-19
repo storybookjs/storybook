@@ -681,18 +681,24 @@ const itemEnd = (editor: SourceEditor, list: List, index: number) => {
 const itemStart = (editor: SourceEditor, list: List, index: number) =>
   index === 0 ? list.open : itemEnd(editor, list, index - 1);
 
-// `itemText` with the item itself printed by `print`, below the comments that lead it and, after
-// those, the ones that trailed it on its line.
+// `itemText` with the item itself printed by `print`. The comments that trailed the item on its
+// line move above it, on a line of their own: below the comments leading it from earlier lines,
+// above the ones sharing its line.
 const itemTextWith = (editor: SourceEditor, list: List, index: number, print: () => string) => {
   const { code } = editor;
   const item = list.items[index];
   const from = itemStart(editor, list, index);
   const leadStart = from + /^\s*/.exec(code.slice(from, item.start))![0].length;
-  const lead = dedentSource(editor, leadStart, item.start, lineIndent(code, item.start));
+  const indent = lineIndent(code, item.start);
   const trailing = trailingComments(editor, separatorAfter(editor, item) ?? item.end);
   const moved =
     trailing.length > 0 ? `${code.slice(trailing[0].start, trailing.at(-1)!.end)}\n` : '';
-  return `${lead}${moved}${print()}`;
+  const onLine =
+    triviaBefore(editor, item.start).comments.find(
+      (comment) => comment.start >= leadStart && !code.slice(comment.end, item.start).includes('\n')
+    )?.start ?? item.start;
+  const above = dedentSource(editor, leadStart, onLine, indent);
+  return `${above}${moved}${dedentSource(editor, onLine, item.start, indent)}${print()}`;
 };
 
 /**

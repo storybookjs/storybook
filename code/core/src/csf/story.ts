@@ -275,6 +275,10 @@ export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Arg
     Required<StoryContextUpdate<TArgs>> {
   loaded: Record<string, any>;
   abortSignal: AbortSignal;
+  /**
+   * The element the story renders into. A renderer may set it during the render, e.g. to the
+   * document's `<body>` at the end of the render of a story that owns the document.
+   */
   canvasElement: TRenderer['canvasElement'];
   hooks: unknown;
   // Declared as a method rather than `originalStoryFn: ArgsStoryFn<TRenderer>`: as a property, the
@@ -287,6 +291,10 @@ export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Arg
   viewMode: ViewMode;
   step: StepFunction<TRenderer, TArgs>;
   context: this;
+  /**
+   * Testing Library queries of `canvasElement` as it is at each query. When `canvasElement` is a
+   * `<body>`, they query the document's current body.
+   */
   canvas: Canvas;
   userEvent: ReturnType<typeof userEvent.setup>;
   mount: TRenderer['mount'];

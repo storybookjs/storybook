@@ -66,7 +66,7 @@ If you register Stencil components using the generated loader, first enable [Ste
 
 If your components still fail to render after `storybook build`, check whether the generated JavaScript chunks are available at the URLs requested by the browser.
 
-For projects using Stencil's lazy-loaded ESM output, you can configure Storybook to copy those chunks into the built preview. Add the following property to your existing `.storybook/main.js|ts` configuration:
+If you can't enable import injection, or the browser still requests missing JavaScript chunks after `storybook build`, you can configure Storybook to copy Stencil's lazy-loaded ESM output into the built preview.
 
 ```ts
 staticDirs: [{ from: '../dist/esm', to: '/assets' }],
@@ -79,6 +79,8 @@ Alternatively, if your Stencil project uses the `dist-custom-elements` output ta
 ```ts
 import '../dist/components/my-component.js';
 ```
+
+This direct import registers the component only when the `dist-custom-elements` output target uses `customElementsExportBehavior: 'auto-define-custom-elements'`. Otherwise, import `defineCustomElement` from the generated component file and call it explicitly.
 
 This lets Vite include the imported component in its production bundle without relying on Storybook's `staticDirs` configuration.
 

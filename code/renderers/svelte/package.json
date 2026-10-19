@@ -34,6 +34,11 @@
     "./internal/AddStorybookIdDecorator.svelte": "./static/AddStorybookIdDecorator.svelte",
     "./internal/createReactiveProps": "./static/createReactiveProps.svelte.js",
     "./internal/DecoratorHandler.svelte": "./static/DecoratorHandler.svelte",
+    "./internal/docgen-engine": {
+      "types": "./dist/docgen/component-docgen/svelte2tsx/generate-docgen.d.ts",
+      "code": "./src/docgen/component-docgen/svelte2tsx/generate-docgen.ts",
+      "default": "./dist/docgen/component-docgen/svelte2tsx/generate-docgen.js"
+    },
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./internal/PreviewRender.svelte": "./static/PreviewRender.svelte",
     "./internal/svelte-csf/addon-check": {
@@ -80,6 +85,7 @@
   ],
   "dependencies": {
     "es-toolkit": "^1.43.0",
+    "svelte2tsx": "^0.7.55",
     "ts-dedent": "^2.2.0",
     "type-fest": "^5.6.0"
   },

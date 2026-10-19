@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as memfs from 'memfs';
 import { vol } from 'memfs';
 
-import { disableNpmMinimalAgeGate } from './disable-npm-minimal-age-gate.js';
+import { disableNpmMinimalAgeGate } from './disable-npm-minimal-age-gate.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 

@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 
-import { disableNpmMinimalAgeGate } from './disable-npm-minimal-age-gate.js';
+import { disableNpmMinimalAgeGate } from './disable-npm-minimal-age-gate.ts';
 import { EXISTING_RESOLUTIONS } from './existing-resolutions.js';
 
 const filename = fileURLToPath(import.meta.url);

@@ -35,7 +35,6 @@ import type {
   PreparedStory,
   ProjectAnnotations,
   RenderContextCallbacks,
-  RenderToCanvas,
   Renderer,
   SetGlobalsPayload,
   StoryId,
@@ -71,8 +70,6 @@ export type MaybePromise<T> = Promise<T> | T;
 
 export class Preview<TRenderer extends Renderer> {
   protected storyStoreValue?: StoryStore<TRenderer>;
-
-  renderToCanvas?: RenderToCanvas<TRenderer>;
 
   storyRenders: StoryRender<TRenderer>[] = [];
 
@@ -178,9 +175,7 @@ export class Preview<TRenderer extends Renderer> {
         await this.getProjectAnnotations(),
       ]);
 
-      this.renderToCanvas = projectAnnotations.renderToCanvas;
-
-      if (!this.renderToCanvas) {
+      if (!projectAnnotations.renderToCanvas) {
         throw new MissingRenderToCanvasError();
       }
 
@@ -455,7 +450,7 @@ export class Preview<TRenderer extends Renderer> {
     callbacks: RenderContextCallbacks<TRenderer>,
     options: StoryRenderOptions
   ) {
-    if (!this.renderToCanvas || !this.storyStoreValue) {
+    if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({
         methodName: 'renderStoryToElement',
       });
@@ -464,7 +459,6 @@ export class Preview<TRenderer extends Renderer> {
     const render = new StoryRender<TRenderer>(
       this.channel,
       this.storyStoreValue,
-      this.renderToCanvas,
       callbacks,
       story.id,
       'docs',

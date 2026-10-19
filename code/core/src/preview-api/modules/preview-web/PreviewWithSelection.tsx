@@ -307,9 +307,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   // - a story selected in "docs" viewMode,
   //     in which case we render the docsPage for that story
   protected async renderSelection({ persistedArgs }: { persistedArgs?: Args } = {}) {
-    const { renderToCanvas } = this;
-
-    if (!this.storyStoreValue || !renderToCanvas) {
+    if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'renderSelection' });
     }
 
@@ -374,7 +372,6 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       render = new StoryRender<TRenderer>(
         this.channel,
         this.storyStoreValue,
-        renderToCanvas,
         this.mainStoryCallbacks(storyId),
         storyId,
         'story',

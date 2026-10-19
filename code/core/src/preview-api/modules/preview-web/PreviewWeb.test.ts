@@ -34,6 +34,7 @@ import { global } from '@storybook/global';
 
 import { toMerged } from 'es-toolkit/object';
 
+import { definePreview } from '../../../csf/csf-factories.ts';
 import { addons } from '../addons/index.ts';
 import type { StoryStore } from '../store/index.ts';
 import { Preview } from './Preview.tsx';
@@ -832,6 +833,77 @@ describe('PreviewWeb', () => {
 
         expect(mockChannel.emit).toHaveBeenCalledWith(DOCS_RENDERED, 'component-one--docs');
       });
+    });
+  });
+
+  describe('a CSF Next file with its own preview', () => {
+    const fileRenderToCanvas = vi.fn();
+    const fileMeta = definePreview({ render: vi.fn(), renderToCanvas: fileRenderToCanvas }).meta({
+      title: 'Component One',
+    });
+    const fileExports = { default: fileMeta, a: fileMeta.story() };
+    const csfNextImportFn = vi.fn(async (path: string) =>
+      path === './src/ComponentOne.stories.js' ? fileExports : importFn(path)
+    );
+
+    beforeEach(() => {
+      fileRenderToCanvas.mockReset();
+    });
+
+    it("renders a story in the canvas with its preview's renderToCanvas", async () => {
+      document.location.search = '?id=component-one--a';
+
+      await createAndRenderPreview({ importFn: csfNextImportFn });
+
+      expect(fileRenderToCanvas).toHaveBeenCalledOnce();
+      expect(fileRenderToCanvas.mock.calls[0][0].storyContext.id).toBe('component-one--a');
+      expect(projectAnnotations.renderToCanvas).not.toHaveBeenCalled();
+    });
+
+    it("renders a story in docs with its preview's renderToCanvas", async () => {
+      document.location.search = '?id=component-two--c';
+      const preview = await createAndRenderPreview({ importFn: csfNextImportFn });
+      projectAnnotations.renderToCanvas.mockClear();
+
+      // @ts-expect-error Ignore protected property
+      const story = await (preview.storyStoreValue as StoryStore<Renderer>).loadStory({
+        storyId: 'component-one--a',
+      });
+      const callbacks = { showMain: vi.fn(), showError: vi.fn(), showException: vi.fn() };
+      preview.renderStoryToElement(story, 'story-element' as any, callbacks, {});
+
+      await vi.waitFor(() => {
+        expect(fileRenderToCanvas).toHaveBeenCalledWith(
+          expect.objectContaining({ id: 'component-one--a' }),
+          'story-element'
+        );
+      });
+      expect(projectAnnotations.renderToCanvas).not.toHaveBeenCalled();
+    });
+
+    it("renders a CSF 3 story with the project's renderToCanvas", async () => {
+      document.location.search = '?id=component-two--c';
+
+      await createAndRenderPreview({ importFn: csfNextImportFn });
+
+      expect(projectAnnotations.renderToCanvas).toHaveBeenCalledOnce();
+      expect(fileRenderToCanvas).not.toHaveBeenCalled();
+    });
+
+    it("renders with the project's renderToCanvas when its preview has none", async () => {
+      document.location.search = '?id=component-one--a';
+      const bareMeta = definePreview({ render: vi.fn() }).meta({ title: 'Component One' });
+      const bareExports = { default: bareMeta, a: bareMeta.story() };
+
+      await createAndRenderPreview({
+        importFn: async (path: string) =>
+          path === './src/ComponentOne.stories.js' ? bareExports : importFn(path),
+      });
+
+      expect(projectAnnotations.renderToCanvas).toHaveBeenCalledOnce();
+      expect(projectAnnotations.renderToCanvas.mock.calls[0][0].storyContext.id).toBe(
+        'component-one--a'
+      );
     });
   });
 
@@ -3844,6 +3916,23 @@ describe('PreviewWeb', () => {
       await waitForRender();
 
       expect(teardownrenderToCanvas).not.toHaveBeenCalled();
+    });
+
+    it('rerenders the current story with the new renderToCanvas', async () => {
+      document.location.search = '?id=component-one--a';
+      const preview = await createAndRenderPreview();
+      const newRenderToCanvas = vi.fn();
+
+      projectAnnotations.renderToCanvas.mockClear();
+      preview.onGetProjectAnnotationsChanged({
+        getProjectAnnotations: () => ({ ...projectAnnotations, renderToCanvas: newRenderToCanvas }),
+      });
+
+      await vi.waitFor(() => {
+        expect(newRenderToCanvas).toHaveBeenCalledOnce();
+      });
+      expect(newRenderToCanvas.mock.calls[0][0].storyContext.id).toBe('component-one--a');
+      expect(projectAnnotations.renderToCanvas).not.toHaveBeenCalled();
     });
 
     it('rerenders the current story with new global meta-generated context', async () => {

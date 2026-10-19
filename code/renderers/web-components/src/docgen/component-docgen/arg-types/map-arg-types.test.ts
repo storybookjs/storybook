@@ -76,7 +76,7 @@ function orderInvariantCases(): MapArgTypesCase[] {
       },
     })),
     ...permutations(collidingFields).map((members, index): MapArgTypesCase => ({
-      name: `attribute key wins over same-name field ${index + 1}`,
+      name: `attribute named like an unrelated field gets the -attr key ${index + 1}`,
       declaration: declaration({
         attributes: [{ name: 'b', fieldName: 'a' }],
         members,
@@ -93,6 +93,16 @@ function orderInvariantCases(): MapArgTypesCase[] {
           },
         },
         b: {
+          name: 'b',
+          description: undefined,
+          type: { name: 'number' },
+          table: {
+            category: 'properties',
+            type: { summary: 'number' },
+            defaultValue: { summary: undefined },
+          },
+        },
+        'b-attr': {
           name: 'b',
           description: undefined,
           type: { name: 'boolean' },
@@ -133,6 +143,24 @@ describe('mapArgTypes', () => {
             category: 'attributes',
             type: { summary: 'string' },
             defaultValue: { summary: '"Label"' },
+          },
+        },
+      },
+    },
+    {
+      name: 'attribute without fieldName + field with the same name',
+      declaration: declaration({
+        attributes: [{ name: 'label', type: { text: 'string' } }],
+        members: [{ kind: 'field', name: 'label', type: { text: 'string' } }],
+      }),
+      expected: {
+        label: {
+          name: 'label',
+          type: { name: 'string' },
+          table: {
+            category: 'attributes',
+            type: { summary: 'string' },
+            defaultValue: { summary: undefined },
           },
         },
       },
@@ -888,5 +916,70 @@ describe('mapArgTypes', () => {
     expected: Record<string, unknown>;
   }[])('$name', ({ declaration, expected }) => {
     expect(mapArgTypes(declaration)).toEqual(expected);
+  });
+
+  it('keeps a property named like an attribute backed by another field', () => {
+    expect(
+      mapArgTypes(
+        declaration({
+          attributes: [{ name: 'value', fieldName: 'defaultValue', type: { text: 'string' } }],
+          members: [
+            { kind: 'field', name: 'defaultValue', type: { text: 'string' }, default: "''" },
+            { kind: 'field', name: 'value', type: { text: 'string' } },
+          ],
+        })
+      )
+    ).toMatchInlineSnapshot(`
+      {
+        "defaultValue": {
+          "description": undefined,
+          "name": "defaultValue",
+          "table": {
+            "category": "properties",
+            "defaultValue": {
+              "summary": "''",
+            },
+            "type": {
+              "summary": "string",
+            },
+          },
+          "type": {
+            "name": "string",
+          },
+        },
+        "value": {
+          "description": undefined,
+          "name": "value",
+          "table": {
+            "category": "properties",
+            "defaultValue": {
+              "summary": undefined,
+            },
+            "type": {
+              "summary": "string",
+            },
+          },
+          "type": {
+            "name": "string",
+          },
+        },
+        "value-attr": {
+          "description": undefined,
+          "name": "value",
+          "table": {
+            "category": "attributes",
+            "defaultValue": {
+              "summary": "''",
+            },
+            "type": {
+              "summary": "string",
+            },
+          },
+          "type": {
+            "name": "string",
+          },
+        },
+      }
+    `);
   });
 });

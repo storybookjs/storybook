@@ -8,13 +8,25 @@ import { bindArgs } from './bind-args.ts';
 const X_DEMO_TAG = 'x-demo';
 
 class XDemo extends HTMLElement {
-  static observedAttributes = ['label', 'count', 'is-open', 'disabled', 'has-slot', 'open'];
+  static observedAttributes = [
+    'label',
+    'count',
+    'is-open',
+    'disabled',
+    'has-slot',
+    'open',
+    'value',
+  ];
+
+  defaultValue = '';
 
   items: string[] = [];
 
   open = true;
 
   text = 'initial';
+
+  value = '';
 }
 
 if (!customElements.get(X_DEMO_TAG)) {
@@ -115,6 +127,23 @@ describe('bindArgs', () => {
       args: { 'reset-method': vi.fn() },
       expected: '<x-demo></x-demo>',
       expectedProperties: { reset: undefined, 'reset-method': undefined },
+    },
+    {
+      name: 'binds -attr keys as attributes while the bare key stays the same-named property',
+      args: { value: 'from property', 'value-attr': 'from attribute' },
+      expected: '<x-demo value="from attribute"></x-demo>',
+      expectedProperties: { value: 'from property', defaultValue: '' },
+    },
+    {
+      name: 'skips non-primitive and unset -attr values',
+      args: { 'value-attr': { text: 'Demo' }, 'label-attr': null },
+      expected: '<x-demo></x-demo>',
+      expectedProperties: { 'value-attr': undefined },
+    },
+    {
+      name: 'binds an undeclared -attr key to its stem attribute',
+      args: { 'data-attr': 'x' },
+      expected: '<x-demo data="x"></x-demo>',
     },
     {
       name: 'binds suffix-looking observed attributes before slots',

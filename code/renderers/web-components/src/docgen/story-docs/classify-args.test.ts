@@ -17,8 +17,11 @@ const declaration = {
     { name: 'count', fieldName: 'count' },
     { name: 'active', fieldName: 'active' },
     { name: 'has-slot' },
+    { name: 'value', fieldName: 'defaultValue', default: "''" },
   ],
   members: [
+    { kind: 'field', name: 'defaultValue', default: "'initial'" },
+    { kind: 'field', name: 'value' },
     { kind: 'field', name: 'count' },
     { kind: 'field', name: 'active', default: 'true' },
     { kind: 'field', name: 'items' },
@@ -87,6 +90,17 @@ describe('classifyArg', () => {
       key: 'has-slot',
       isFunction: false,
       expected: { kind: 'attribute', name: 'has-slot', viaField: false },
+    },
+    { key: 'value', isFunction: false, expected: { kind: 'property', name: 'value' } },
+    {
+      key: 'value-attr',
+      isFunction: false,
+      expected: { kind: 'attribute', name: 'value', viaField: false, defaultValue: "'initial'" },
+    },
+    {
+      key: 'defaultValue',
+      isFunction: false,
+      expected: { kind: 'attribute', name: 'value', viaField: true, defaultValue: "'initial'" },
     },
     { key: 'nope', isFunction: false, expected: { kind: 'unknown' } },
   ])('$key', ({ key, isFunction, expected }) => {

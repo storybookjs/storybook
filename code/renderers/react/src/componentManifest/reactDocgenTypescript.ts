@@ -219,7 +219,7 @@ async function getParser(filePath: string, userOptions?: ParserOptions) {
     } else {
       logger.warn(
         'No tsconfig.json (or tsconfig.base.json / tsconfig.app.json) found. ' +
-          'react-docgen-typescript reads each component without your compiler options, which is slower and less accurate. ' +
+          'react-docgen-typescript reads your components with default compiler options, which is less accurate. ' +
           'Create a tsconfig.json in your project root.'
       );
     }
@@ -341,7 +341,7 @@ export const parseWithReactDocgenTypescript = asyncCache(
     const checker = program.getTypeChecker();
     const sourceFile = program.getSourceFile(filePath);
 
-    // A file outside the tsconfig's `include` is not in the program.
+    // TypeScript files joined the program as extra roots; anything else is parsed on its own.
     const docs = sourceFile
       ? fileParser.parseWithProgramProvider(filePath, () => program)
       : fileParser.parse(filePath);

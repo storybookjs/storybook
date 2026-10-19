@@ -8,7 +8,7 @@ import { transformSync } from 'esbuild';
 import { walk } from 'estree-walker';
 import { basename, normalize } from 'pathe';
 
-import { parseModule } from '../csf-tools/estree/ast.ts';
+import { type E, parseModule } from '../csf-tools/estree/ast.ts';
 import { SourceEditor } from '../csf-tools/estree/editor.ts';
 import { resolveMock } from './resolve.ts';
 
@@ -46,7 +46,8 @@ export type LegacyParser = (code: string, ...rest: any[]) => unknown;
  *   now parse the code themselves and ignore it. Parse with `parseModule` from
  *   `storybook/internal/csf-tools` instead. Removed in Storybook 12.
  */
-export const babelParser: LegacyParser = (code, fileName) => parseModule(code, fileName).program;
+export const babelParser = (code: string, fileName?: string): E.Program =>
+  parseModule(code, fileName).program;
 
 const isStringLiteral = (node: any): boolean =>
   node?.type === 'Literal' && typeof node.value === 'string';

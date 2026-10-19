@@ -236,8 +236,6 @@ const hasMount = (play: Node | undefined) => {
 
 const MODULE_MOCK_REGEX = /^[.\/#].*\.mock($|\.[^.]*$)/i;
 
-// TS declarations that the scope analysis does not create a binding for.
-
 export interface CsfOptions {
   fileName?: string;
   makeTitle: (userTitle: string) => string;

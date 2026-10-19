@@ -66,7 +66,7 @@
     "@storybook/builder-vite": "workspace:*",
     "@storybook/global": "^5.0.0",
     "telejson": "8.0.0",
-    "ts-dedent": "^2.0.0",
+    "ts-dedent": "^2.2.0",
     "vite": ">=8.0.0"
   },
   "devDependencies": {

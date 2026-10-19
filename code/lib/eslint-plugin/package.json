@@ -59,7 +59,7 @@
     "eslint-plugin-node": "^11.1.0",
     "prompts": "^2.4.0",
     "storybook": "workspace:*",
-    "ts-dedent": "^2.0.0",
+    "ts-dedent": "^2.2.0",
     "typescript": "^6.0.3"
   },
   "peerDependencies": {

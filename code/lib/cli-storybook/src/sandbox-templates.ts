@@ -618,13 +618,8 @@ export const baseTemplates = {
   },
   'svelte-kit/skeleton-ts': {
     name: 'SvelteKit Latest (Vite | TypeScript)',
-    // TODO: Remove `--min-release-age=0`, `minAgeGateExemptions` and `inDevelopment` once the
-    // published sandbox has SvelteKit 3. SvelteKit 3 and the `sv` release that scaffolds it are
-    // younger than the sandbox age gate, and npx ignores `minAgeGateExemptions`.
     script:
-      'npx --min-release-age=0 sv@latest create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
-    minAgeGateExemptions: ['@sveltejs/kit', '@sveltejs/adapter-auto'],
-    inDevelopment: true,
+      'npx sv@latest create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
     expected: {
       framework: '@storybook/sveltekit',
       renderer: '@storybook/svelte',
@@ -723,6 +718,8 @@ export const baseTemplates = {
     name: 'Lit Latest (Vite | JavaScript)',
     script:
       'npm create vite --yes {{beforeDir}} -- --template lit && cd {{beforeDir}} && echo "export default {}" > vite.config.js',
+    // TODO: remove after oct 21 2026
+    minAgeGateExemptions: ['@wc-toolkit/*'],
     expected: {
       framework: '@storybook/web-components-vite',
       renderer: '@storybook/web-components',
@@ -748,6 +745,7 @@ export const baseTemplates = {
     name: 'Lit Latest (Vite | TypeScript)',
     script:
       'npm create vite --yes {{beforeDir}} -- --template lit-ts && cd {{beforeDir}} && echo "export default {}" > vite.config.js',
+    minAgeGateExemptions: ['@wc-toolkit/*'],
     expected: {
       framework: '@storybook/web-components-vite',
       renderer: '@storybook/web-components',
@@ -778,6 +776,7 @@ export const baseTemplates = {
   'lit-rsbuild/default-ts': {
     name: 'Web Components Latest (RsBuild | TypeScript)',
     script: 'npx create-rsbuild -d {{beforeDir}} -t lit-ts --tools eslint',
+    minAgeGateExemptions: ['@wc-toolkit/*'],
     expected: {
       framework: 'storybook-web-components-rsbuild',
       renderer: '@storybook/web-components',

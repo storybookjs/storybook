@@ -342,6 +342,7 @@ export type {
   API_ComponentEntry as ComponentEntry,
   API_DocsEntry as DocsEntry,
   API_StoryEntry as StoryEntry,
+  API_TestEntry as TestEntry,
   API_HashEntry as HashEntry,
   API_LeafEntry as LeafEntry,
   API_ComposedRef as ComposedRef,

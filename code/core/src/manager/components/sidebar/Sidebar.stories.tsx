@@ -209,8 +209,8 @@ export const Simple: Story = {
 
 export const ArrowKeysCollapseAndExpand: Story = {
   play: async ({ canvasElement }) => {
-    const component = canvasElement.querySelector('button#root-1-child-a2')!;
-    const selected = canvasElement.querySelector<HTMLElement>(`[data-item-id="${storyId}"] a`)!;
+    const component = canvasElement.querySelector<HTMLElement>('[data-item-id="root-1-child-a2"]')!;
+    const selected = canvasElement.querySelector<HTMLElement>(`[data-item-id="${storyId}"]`)!;
     await expect(component).toHaveAttribute('aria-expanded', 'true');
 
     selected.focus();
@@ -569,7 +569,8 @@ export const Scrolled: Story = {
   play: async ({ canvasElement, step }) => {
     await waitForChecklistWidget();
     const canvas = await within(canvasElement);
-    const scrollable = await canvasElement.querySelector('[data-radix-scroll-area-viewport]');
+    // The tree is the scroll container. The sidebar has no outer scroll container.
+    const scrollable = await canvasElement.querySelector('[role="treegrid"]');
     await step('expand component', async () => {
       const componentNode = await canvas.queryAllByText('Child A2')[1];
       await userEvent.click(componentNode);

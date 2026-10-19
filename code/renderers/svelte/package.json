@@ -80,7 +80,7 @@
   ],
   "dependencies": {
     "es-toolkit": "^1.43.0",
-    "ts-dedent": "^2.0.0",
+    "ts-dedent": "^2.2.0",
     "type-fest": "^5.6.0"
   },
   "devDependencies": {

@@ -41,6 +41,8 @@ describe('ComponentMetaManager file watching', () => {
   let rawEvents: string[];
 
   beforeEach(() => {
+    // This uses real FS tests because we're testing the OS's actual file watching behavior.
+    // Using mocks would defeat the purpose of the test.
     root = realpathSync.native(mkdtempSync(join(tmpdir(), 'component-meta-watch-')));
     const trackedFile = join(root, 'src', 'Button.ts');
     newFile = join(root, 'src', 'Card.ts');

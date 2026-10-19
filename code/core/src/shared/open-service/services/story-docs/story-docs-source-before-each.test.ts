@@ -1,11 +1,14 @@
-import { SourceType } from 'storybook/internal/docs-tools';
+import { logger } from 'storybook/internal/client-logger';
+import { SourceType, UnprintableArgError } from 'storybook/internal/docs-tools';
 import type { StoryContext } from 'storybook/internal/types';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
+import { printValue } from '../../../../docs-tools/snippetTemplate.ts';
 import type { StoryDocsService } from './definition.ts';
+import { getFillTemplate, selectLiveSnippetForStory } from './live-snippet.ts';
 import { prependImportToSnippet, selectSnippetForStory, selectWarningForStory } from './snippet.ts';
 import {
   shouldSkipStoryDocsEmit,
@@ -16,6 +19,9 @@ import type { StoryDocsPayload } from './types.ts';
 vi.mock('storybook/preview-api', { spy: true });
 
 const mockedEmitTransformCode = vi.mocked(emitTransformCode);
+
+// Lets the story docs load and the emit after it run.
+const settled = () => new Promise((resolve) => setTimeout(resolve));
 const mockedGetService = vi.mocked(getService);
 
 const storyId = 'button--primary';
@@ -40,14 +46,45 @@ const payloadWithWarning: StoryDocsPayload = {
   stories: { [storyId]: { ...payload.stories[storyId]!, warning } },
 };
 const serviceSnippet = 'import { Button } from \'./Button\';\n\n<Button label="hi" />';
+const payloadWithTemplate: StoryDocsPayload = {
+  ...payload,
+  stories: {
+    [storyId]: { ...payload.stories[storyId]!, template: '<Button label={args.label} />', warning },
+  },
+};
+const templateWarning = 'Button needs the NgModule that declares it, which the snippet leaves out.';
+const payloadWithTemplateWarning: StoryDocsPayload = {
+  ...payloadWithTemplate,
+  stories: { [storyId]: { ...payloadWithTemplate.stories[storyId]!, templateWarning } },
+};
+const fillTemplate = (template: string, args: Record<string, unknown>) =>
+  template.replace('{args.label}', `"${String(args.label)}"`);
+// The story's args once `label` changed to `Go` from the `hi` it is written with.
+const changed = {
+  args: { label: 'Go' },
+  unmappedArgs: { label: 'Go' },
+  initialArgs: { label: 'hi' },
+};
 
-/** Builds a minimal `core/story-docs` service mock whose `storyDocs.loaded` returns `loaded`. */
+/**
+ * Builds a minimal `core/story-docs` service mock whose `storyDocs.loaded` resolves with `loaded`,
+ * which `storyDocs.get` reads from then on.
+ */
 function mockStoryDocsService(loaded: () => Promise<StoryDocsPayload>) {
-  mockedGetService.mockReturnValue({
-    queries: {
-      storyDocs: Object.assign(() => payload, { loaded }),
-    },
-  } as unknown as StoryDocsService);
+  let state: StoryDocsPayload | undefined;
+  const storyDocs = {
+    loaded: vi.fn(() => loaded().then((value) => (state = value))),
+    get: () => state,
+  };
+  mockedGetService.mockReturnValue({ queries: { storyDocs } } as unknown as StoryDocsService);
+  return storyDocs;
+}
+
+/** Runs the hook for one render and lets its snippet load settle before the story is torn down. */
+async function render(context: StoryContext) {
+  const cleanup = storyDocsSourceBeforeEach(context);
+  await new Promise((resolve) => setTimeout(resolve));
+  await cleanup?.();
 }
 
 describe('snippet helpers', () => {
@@ -67,6 +104,139 @@ describe('snippet helpers', () => {
 
   it('selects no warning for a story that does not carry one', () => {
     expect(selectWarningForStory(payload, storyId)).toBeUndefined();
+  });
+});
+
+describe('selectLiveSnippetForStory', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('fills the template with the args, without the static warning', () => {
+    expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, changed, fillTemplate)).toEqual({
+      snippet: 'import { Button } from \'./Button\';\n\n<Button label="Go" />',
+    });
+  });
+
+  it('fills the template with the args, with its templateWarning', () => {
+    expect(
+      selectLiveSnippetForStory(payloadWithTemplateWarning, storyId, changed, fillTemplate)
+    ).toEqual({
+      snippet: 'import { Button } from \'./Button\';\n\n<Button label="Go" />',
+      warning: templateWarning,
+    });
+  });
+
+  it('selects the static snippet and its warning without a filler', () => {
+    expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, changed, undefined)).toEqual({
+      snippet: serviceSnippet,
+      warning,
+    });
+  });
+
+  it('selects the static snippet and its warning without a template', () => {
+    expect(selectLiveSnippetForStory(payloadWithWarning, storyId, changed, fillTemplate)).toEqual({
+      snippet: serviceSnippet,
+      warning,
+    });
+  });
+
+  it('selects the static snippet and warns once when the filler throws', () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    const throwing = () => {
+      throw new Error('unexpected value');
+    };
+    for (const label of ['Go', 'Stop']) {
+      const args = { ...changed, args: { label }, unmappedArgs: { label } };
+      expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, args, throwing)).toEqual({
+        snippet: serviceSnippet,
+        warning,
+      });
+    }
+    expect(warn).toHaveBeenCalledOnce();
+    expect(warn).toHaveBeenCalledWith(
+      'Could not fill the snippet of button--primary with its args: Error: unexpected value'
+    );
+  });
+
+  it('selects the static snippet without a warning for an arg value it cannot show', () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    const unprintable = () => {
+      throw new UnprintableArgError('label');
+    };
+    expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, changed, unprintable)).toEqual({
+      snippet: serviceSnippet,
+      warning,
+    });
+    expect(warn).not.toHaveBeenCalled();
+  });
+});
+
+describe('selectLiveSnippetForStory with written args', () => {
+  const shout = (text: string) => text.toUpperCase();
+  const initialArgs = { label: 'hi', formatter: shout };
+  const payloadWithArgCode: StoryDocsPayload = {
+    ...payload,
+    stories: {
+      [storyId]: {
+        ...payload.stories[storyId]!,
+        template: '<Button ⟦value label⟧ ⟦value formatter⟧ />',
+        argCode: { label: "'hi'", formatter: 'shout' },
+      },
+    },
+  };
+  const fill = (template: string, args: Record<string, unknown>) =>
+    template.replace(/⟦value (\w+)⟧/g, (_, name: string) => printValue(args[name], name));
+
+  it('fills nothing while the story has the args it is written with', () => {
+    expect(
+      selectLiveSnippetForStory(
+        payloadWithArgCode,
+        storyId,
+        { args: { ...initialArgs }, unmappedArgs: { ...initialArgs }, initialArgs },
+        fill
+      )
+    ).toEqual({ snippet: serviceSnippet, warning: undefined });
+  });
+
+  it('prints an arg that still holds its written value as its code, and a changed one as its value', () => {
+    const args = { ...initialArgs, label: 'Go' };
+    expect(
+      selectLiveSnippetForStory(
+        payloadWithArgCode,
+        storyId,
+        { args, unmappedArgs: args, initialArgs },
+        fill
+      ).snippet
+    ).toBe('import { Button } from \'./Button\';\n\n<Button "Go" shout />');
+  });
+
+  it('fills the args after mapping, comparing those before mapping', () => {
+    const icon = { mapped: true };
+    expect(
+      selectLiveSnippetForStory(
+        {
+          ...payloadWithArgCode,
+          stories: {
+            [storyId]: { ...payloadWithArgCode.stories[storyId]!, template: '⟦value icon⟧' },
+          },
+        },
+        storyId,
+        { args: { icon }, unmappedArgs: { icon: 'star' }, initialArgs: { icon: 'none' } },
+        fill
+      ).snippet
+    ).toContain('{ mapped: true }');
+  });
+});
+
+describe('getFillTemplate', () => {
+  it('reads the filler the renderer sets on the docs source parameters', () => {
+    expect(getFillTemplate({ docs: { source: { fillTemplate } } })).toBe(fillTemplate);
+  });
+
+  it('ignores a missing or invalid filler', () => {
+    expect(getFillTemplate(undefined)).toBeUndefined();
+    expect(getFillTemplate({ docs: { source: { fillTemplate: 'nope' } } })).toBeUndefined();
   });
 });
 
@@ -118,11 +288,126 @@ describe('storyDocsSourceBeforeEach', () => {
     } as unknown as StoryContext;
 
     const cleanup = storyDocsSourceBeforeEach(context);
-    await Promise.resolve();
-    await Promise.resolve();
+    await settled();
 
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context, undefined);
     await cleanup?.();
+  });
+
+  it('emits the static snippet while the story has the args it is written with', async () => {
+    mockStoryDocsService(() => Promise.resolve(payloadWithTemplate));
+    const context = {
+      id: storyId,
+      args: { label: 'hi' },
+      unmappedArgs: { label: 'hi' },
+      initialArgs: { label: 'hi' },
+      parameters: { __isArgsStory: true, docs: { source: { fillTemplate } } },
+    } as unknown as StoryContext;
+
+    await render(context);
+
+    expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context, warning);
+  });
+
+  it('fills the template once the args change, loading the story docs once', async () => {
+    const storyDocs = mockStoryDocsService(() => Promise.resolve(payloadWithTemplate));
+    const parameters = { __isArgsStory: true, docs: { source: { fillTemplate } } };
+    const withLabel = (label: string) =>
+      ({
+        id: storyId,
+        args: { label },
+        unmappedArgs: { label },
+        initialArgs: { label: 'hi' },
+        parameters,
+      }) as unknown as StoryContext;
+
+    for (const label of ['Go', 'Stop']) {
+      const context = withLabel(label);
+      await render(context);
+      expect(mockedEmitTransformCode).toHaveBeenLastCalledWith(
+        `import { Button } from './Button';\n\n<Button label="${label}" />`,
+        context,
+        undefined
+      );
+    }
+    expect(storyDocs.loaded).toHaveBeenCalledOnce();
+  });
+
+  it('emits the filled template with its templateWarning', async () => {
+    mockStoryDocsService(() => Promise.resolve(payloadWithTemplateWarning));
+    const context = {
+      id: storyId,
+      args: { label: 'Go' },
+      unmappedArgs: { label: 'Go' },
+      initialArgs: { label: 'hi' },
+      parameters: { __isArgsStory: true, docs: { source: { fillTemplate } } },
+    } as unknown as StoryContext;
+
+    await render(context);
+
+    expect(mockedEmitTransformCode).toHaveBeenCalledWith(
+      `import { Button } from './Button';\n\n<Button label="Go" />`,
+      context,
+      templateWarning
+    );
+  });
+
+  it('emits every args change in order, even when an emit before it is not done', async () => {
+    mockStoryDocsService(() => Promise.resolve(payloadWithTemplate));
+    let finishTransform = () => {};
+    mockedEmitTransformCode.mockReturnValueOnce(
+      new Promise<void>((resolve) => (finishTransform = resolve))
+    );
+    const parameters = { __isArgsStory: true, docs: { source: { fillTemplate } } };
+    const withLabel = (label: string) =>
+      ({
+        id: storyId,
+        args: { label },
+        unmappedArgs: { label },
+        initialArgs: { label: 'hi' },
+        parameters,
+      }) as unknown as StoryContext;
+
+    storyDocsSourceBeforeEach(withLabel('Go'));
+    await settled();
+    storyDocsSourceBeforeEach(withLabel('Stop'));
+    storyDocsSourceBeforeEach(withLabel('Wait'));
+    await settled();
+    expect(mockedEmitTransformCode).toHaveBeenCalledOnce();
+
+    finishTransform();
+    await settled();
+    expect(mockedEmitTransformCode).toHaveBeenCalledTimes(3);
+    expect(mockedEmitTransformCode).toHaveBeenLastCalledWith(
+      `import { Button } from './Button';\n\n<Button label="Wait" />`,
+      expect.anything(),
+      undefined
+    );
+  });
+
+  it('loads the story docs again after a failed load', async () => {
+    const storyDocs = mockStoryDocsService(() => Promise.reject(new Error('offline')));
+    const context = { id: storyId, parameters: { __isArgsStory: true } } as unknown as StoryContext;
+    await render(context);
+    await render(context);
+    expect(storyDocs.loaded).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps a loaded payload when emitting its snippet fails', async () => {
+    const storyDocs = mockStoryDocsService(() => Promise.resolve(payload));
+    mockedEmitTransformCode.mockRejectedValue(new Error('transform failed'));
+    const context = { id: storyId, parameters: { __isArgsStory: true } } as unknown as StoryContext;
+    await render(context);
+    await render(context);
+    expect(storyDocs.loaded).toHaveBeenCalledOnce();
+  });
+
+  it('loads the story docs again for a hot-updated story', async () => {
+    const storyDocs = mockStoryDocsService(() => Promise.resolve(payload));
+    for (const parameters of [{ __isArgsStory: true }, { __isArgsStory: true }]) {
+      await render({ id: storyId, parameters } as unknown as StoryContext);
+    }
+    expect(storyDocs.loaded).toHaveBeenCalledTimes(2);
   });
 
   it('emits the story warning alongside the service snippet', async () => {
@@ -133,8 +418,7 @@ describe('storyDocsSourceBeforeEach', () => {
     } as unknown as StoryContext;
 
     const cleanup = storyDocsSourceBeforeEach(context);
-    await Promise.resolve();
-    await Promise.resolve();
+    await settled();
 
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context, warning);
     await cleanup?.();
@@ -156,8 +440,7 @@ describe('storyDocsSourceBeforeEach', () => {
     } as unknown as StoryContext;
 
     const cleanup = storyDocsSourceBeforeEach(context);
-    await Promise.resolve();
-    await Promise.resolve();
+    await settled();
 
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(
       'export const Primary = {};',
@@ -184,8 +467,7 @@ describe('storyDocsSourceBeforeEach', () => {
     } as unknown as StoryContext;
 
     const cleanup = storyDocsSourceBeforeEach(context);
-    await Promise.resolve();
-    await Promise.resolve();
+    await settled();
 
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(
       'export const Primary = {};',
@@ -211,8 +493,7 @@ describe('storyDocsSourceBeforeEach', () => {
     } as unknown as StoryContext;
 
     const cleanup = storyDocsSourceBeforeEach(context);
-    await Promise.resolve();
-    await Promise.resolve();
+    await settled();
 
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(
       'export const Primary = {};',

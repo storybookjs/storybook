@@ -4,6 +4,7 @@ export {
   type ComponentImportRef,
   type ImportRef,
 } from './import-statements.ts';
+export { argCode, fillStoryTemplate, fillWithStoryArgs, type StoryTemplate } from './arg-code.ts';
 export { authoredSource, type AuthoredSource } from './authored-source.ts';
 export {
   collectImportBindings,
@@ -38,6 +39,7 @@ export {
   type ResolvedStoryArgs,
   type StoryArgsResolver,
 } from './resolve-story-args.ts';
+export { rebaseSpecifier, resolveSpreadMeta, type SpreadMeta } from './spread-meta.ts';
 export {
   resolveEffectiveRender,
   resolveRenderFunction,
@@ -61,3 +63,4 @@ export {
   withoutTypeCalls,
   type TemplateParts,
 } from './utils.ts';
+export { isOperand } from './operand.ts';

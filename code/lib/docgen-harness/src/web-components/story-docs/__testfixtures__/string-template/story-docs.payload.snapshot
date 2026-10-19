@@ -4,19 +4,25 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsstorydocs-string-template--default": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-string-template--default",
       "name": "Default",
       "snippet": "<string-template label="Default"></string-template>",
+      "template": "<string-template ⟦attr label label field⟧></string-template>",
     },
     "webcomponentsstorydocs-string-template--plain-string": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-string-template--plain-string",
       "name": "Plain String",
       "snippet": "<string-template label="static"></string-template>",
+      "template": "<string-template label="static"></string-template>",
     },
     "webcomponentsstorydocs-string-template--untagged": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-string-template--untagged",
       "name": "Untagged",
       "snippet": "<string-template label="Untagged" ?fake="true"></string-template>",
+      "template": "<string-template label="⟦quoted label⟧" ?fake="⟦quoted flag⟧"></string-template>",
     },
   },
 }

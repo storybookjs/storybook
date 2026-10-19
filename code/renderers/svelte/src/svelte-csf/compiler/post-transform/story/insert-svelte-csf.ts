@@ -7,6 +7,10 @@ import type {
   extractSvelteASTNodes,
 } from '../../../parser/extract/svelte/nodes.ts';
 import { getStoryContentRawCode } from '../../../parser/analyse/story/content.ts';
+import { getStoryContentTemplate } from '../../../parser/analyse/story/template.ts';
+import { getStoryArgNodes } from '../../../parser/analyse/story/arg-nodes.ts';
+import { argCode } from 'storybook/internal/csf-tools';
+import type { ESTreeAST } from '../../../parser/ast.ts';
 import {
   appendASTProperty,
   createASTObjectExpression,
@@ -58,6 +62,17 @@ export function insertSvelteCSFToStoryParameters(params: Params) {
     },
     originalCode,
   });
+  const args = getStoryArgNodes({
+    component: component.svelte.component,
+    defineMeta: svelte.defineMetaVariableDeclaration,
+    originalCode,
+  });
+  const template = getStoryContentTemplate(rawCode, args);
+  // The code each arg is written with, which the snippet shows while the arg keeps that value.
+  const code = Object.entries(argCode(args)).map(([name, value]) => ({
+    ...createASTProperty(name, { type: 'Literal', value }),
+    key: { type: 'Literal', value: name } as ESTreeAST.Literal,
+  }));
 
   appendASTProperty(
     getParametersPropertyValue({
@@ -72,6 +87,12 @@ export function insertSvelteCSFToStoryParameters(params: Params) {
           type: 'Literal',
           value: rawCode,
         }),
+        ...(template
+          ? [
+              createASTProperty('template', { type: 'Literal', value: template }),
+              createASTProperty('argCode', createASTObjectExpression(code)),
+            ]
+          : []),
       ])
     )
   );

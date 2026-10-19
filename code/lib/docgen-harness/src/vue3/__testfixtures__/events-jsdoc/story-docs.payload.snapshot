@@ -4,6 +4,10 @@
   "path": "__PATH__",
   "stories": {
     "forms-events-jsdoc--with-handlers": {
+      "argCode": {
+        "onCancel": "() => {}",
+        "onSave": "() => {}",
+      },
       "description": undefined,
       "id": "forms-events-jsdoc--with-handlers",
       "name": "With Handlers",
@@ -19,6 +23,17 @@ const onSave = () => {};
   <EventsJsdoc label="Save" @cancel="onCancel" @save="onSave" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import EventsJsdoc from './EventsJsdoc.vue';
+
+const onCancel = ⟦value onCancel script⟧;
+
+const onSave = ⟦value onSave script⟧;
+</script>
+
+<template>
+  <EventsJsdoc ⟦attr label label⟧ ⟦props -label -onCancel -onSave⟧ @cancel="onCancel" @save="onSave"⟦slots EventsJsdoc⟧
+</template>",
     },
   },
 }

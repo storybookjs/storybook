@@ -4,20 +4,26 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsfixtures-lit-inheritance-mixin--args-default-render": {
+      "argCode": {},
       "id": "webcomponentsfixtures-lit-inheritance-mixin--args-default-render",
       "name": "Args Default Render",
       "snippet": "<lit-inheritance-mixin base-label="Default base" mixed-active count="2"></lit-inheritance-mixin>",
+      "template": "<lit-inheritance-mixin ⟦attr base-label baseLabel field⟧ ⟦attr mixed-active mixedActive field⟧ ⟦attr count count field⟧></lit-inheritance-mixin>",
     },
     "webcomponentsfixtures-lit-inheritance-mixin--dom-node": {
+      "argCode": {},
       "id": "webcomponentsfixtures-lit-inheritance-mixin--dom-node",
       "name": "Dom Node",
       "snippet": "<lit-inheritance-mixin base-label="Inherited" mixed-active count="5"></lit-inheritance-mixin>",
+      "template": "<lit-inheritance-mixin ⟦attr base-label baseLabel field⟧ ⟦attr mixed-active mixedActive field⟧ ⟦attr count count field⟧></lit-inheritance-mixin>",
       "warning": "Incomplete snippet: `args => { const el = document.createElement('lit-inheritance-mixin'); el.setAttribute('base-label', String(args.baseLabel)); if (args.mixedActive) { el.setAttribute('mixed-active', ''); } el.setAttribute('count', String(args.count)); return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-lit-inheritance-mixin--lit-template": {
+      "argCode": {},
       "id": "webcomponentsfixtures-lit-inheritance-mixin--lit-template",
       "name": "Lit Template",
       "snippet": "<lit-inheritance-mixin base-label="Inherited" mixed-active count="5"></lit-inheritance-mixin>",
+      "template": "<lit-inheritance-mixin base-label="⟦quoted baseLabel⟧" ⟦bool mixed-active mixedActive⟧ count="⟦quoted count⟧"></lit-inheritance-mixin>",
     },
   },
 }

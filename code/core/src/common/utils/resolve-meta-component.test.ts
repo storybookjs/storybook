@@ -137,6 +137,54 @@ describe('createMetaComponentResolver', () => {
   // against that module rather than the one the chain lands in. Rather than track a scope per
   // member, a value carrying free names is refused once it crosses a module boundary: the caller
   // reports an unreadable expression, which is visible, instead of a class it guessed at.
+  it('resolves an import named by the JavaScript file its TypeScript source compiles to', () => {
+    expect(
+      resolveInFixtures(`import { ButtonComponent } from './button.component.js';
+                         export default { component: ButtonComponent };`)
+    ).toEqual({
+      component: {
+        localName: 'ButtonComponent',
+        importId: './button.component.js',
+        exportName: 'ButtonComponent',
+        path: join(FIXTURES, 'button.component.ts'),
+      },
+    });
+  });
+
+  describe('a meta that spreads the meta of another story file', () => {
+    const fromButtonStories = {
+      component: {
+        localName: 'ButtonComponent',
+        importId: '../button.component',
+        exportName: 'ButtonComponent',
+        path: join(FIXTURES, 'button.component.ts'),
+      },
+    };
+
+    it('finds the component in the module the spread meta names it in', () => {
+      expect(
+        resolveInFixtures(`import meta from './meta-spread/button.stories';
+                           export default { ...meta, title: 'Button/Interactions' };`)
+      ).toEqual(fromButtonStories);
+    });
+
+    it('looks past a later spread that knowably holds no component', () => {
+      expect(
+        resolveInFixtures(`import meta from './meta-spread/button.stories';
+                           import tags from './meta-spread/tags';
+                           export default { ...meta, ...tags } as Meta;`)
+      ).toEqual(fromButtonStories);
+    });
+
+    it('stops at a later spread it cannot read, whose component would win', () => {
+      expect(
+        resolveInFixtures(`import meta from './meta-spread/button.stories';
+                           import other from 'some-unresolvable-package-xyz';
+                           export default { ...meta, ...other };`)
+      ).toEqual({ reason: 'no-meta-component' });
+    });
+  });
+
   describe('a spread copies a component from a third module', () => {
     it('refuses rather than picking the spreading module same-named import', () => {
       // internal2.ts spreads `base` (which owns `component: ButtonComponent` from ./lib/button)

@@ -1,4 +1,3 @@
-import { recast } from 'storybook/internal/babel';
 import { extractDeclaredSubcomponents } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import type { ImportRef, StoryReferences } from 'storybook/internal/csf-tools';
@@ -8,6 +7,8 @@ import {
   loadCsf,
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
+
+import type { StoryDoc } from 'storybook/internal/types';
 
 import { getCodeSnippet } from './generateCodeSnippet.ts';
 import {
@@ -135,16 +136,7 @@ export async function resolveStoryFileComponents(options: {
 }
 
 /** Snippet + metadata for one story, before output-specific shaping. */
-export interface ResolvedStory {
-  id: string;
-  name: string;
-  snippet?: string;
-  description?: string;
-  summary?: string;
-  /** Why the snippet is an incomplete example; see `StoryDoc.warning`. */
-  warning?: string;
-  error?: { name: string; message: string };
-}
+export type ResolvedStory = StoryDoc;
 
 /** Every story's snippet, plus the imports they need beyond the components in the file. */
 export interface ExtractedStorySnippets {
@@ -174,14 +166,18 @@ export function extractStorySnippets(
       const name = story.name ?? storyNameFromExport(storyExport);
       try {
         const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[storyExport]);
-        const snippet = getCodeSnippet(csf, storyExport, componentName, resolver);
-        imports.push(...snippet.imports);
-        const warning = unresolvedWarning(snippet.unresolved);
+        const {
+          imports: needs,
+          unresolved,
+          ...snippet
+        } = getCodeSnippet(csf, storyExport, componentName, resolver);
+        imports.push(...needs);
+        const warning = unresolvedWarning(unresolved);
 
         return {
           id: story.id,
           name,
-          snippet: recast.print(snippet.node).code,
+          ...snippet,
           description,
           summary,
           ...(warning ? { warning } : {}),

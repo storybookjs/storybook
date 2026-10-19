@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-local-component--primary": {
+      "argCode": {},
       "id": "storydocs-local-component--primary",
       "name": "Primary",
       "snippet": "import { Component } from '@angular/core';
@@ -14,6 +15,15 @@
   template: `<sb-local-component [heading]="'Declared here'" />`,
 })
 export class DemoComponent {}",
+      "template": "import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-demo',
+  imports: [LocalComponent],
+  template: `<sb-local-component ⟦props = heading⟧ />`,
+})
+export class DemoComponent {}",
+      "templateWarning": "LocalComponent is declared in the story file, so the snippet references it without importing it.",
       "warning": "LocalComponent is declared in the story file, so the snippet references it without importing it.",
     },
   },

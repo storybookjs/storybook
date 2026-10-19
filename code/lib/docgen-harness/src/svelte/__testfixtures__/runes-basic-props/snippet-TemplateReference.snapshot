@@ -1,4 +1,4 @@
-<Panel title={"Reference title"}>
+<Panel title="Reference title">
   <h1>Reference title</h1>
   Reference label
 </Panel>

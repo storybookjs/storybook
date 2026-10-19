@@ -65,14 +65,13 @@ describe('legacy snippet gaps (red until a re-recorded baseline closes them)', (
     expect(baseline('defaultSnippet')).not.toContain('count={0}');
     expect(baseline('defaultSnippet')).not.toContain('primary={false}');
   });
-
-  gapTest('attribute string values keep args references literal', () => {
-    // The addon substitutes `args.x` references inside attribute string values too.
-    expect(baseline('argsInValueSnippet')).toContain('error="code args.open done"');
-  });
 });
 
 describe('legacy behavior locked by the current recordings', () => {
+  test('attribute string values keep args references literal', () => {
+    expect(baseline('argsInValueSnippet')).toContain('error="code args.open done"');
+  });
+
   test('text-content args references are emitted without JSON quotes', () => {
     expect(baseline('templateReferenceSnippet')).toContain('<h1>Reference title</h1>');
   });
@@ -95,8 +94,8 @@ describe('legacy behavior locked by the current recordings', () => {
     expect(namesOf(baseline('basicSvelteSnippet'))).toEqual(namesOf(baseline('basicPlainSnippet')));
   });
 
-  test('Svelte CSF and plain CSF record function args with their current mock spellings', () => {
-    expect(baseline('callbacksSvelteSnippet')).toContain('onclick={onclick}');
+  test('Svelte CSF records function args as written, and plain CSF as a mock spelling', () => {
+    expect(baseline('callbacksSvelteSnippet')).toContain('onclick={fn()}');
     expect(baseline('callbacksPlainSnippet')).toContain('onclick={<handler>}');
   });
 

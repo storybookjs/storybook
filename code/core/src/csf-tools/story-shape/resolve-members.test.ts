@@ -399,6 +399,76 @@ describe('write order', () => {
   });
 });
 
+describe('spreads of a call', () => {
+  it('reports a spread of what a helper returns, as the helper is not run', () => {
+    const code = dedent`
+      const createStory = (variant) => ({ args: { variant, label: 'Go' } });
+      export const Primary = { ...createStory('primary'), args: { size: 'md' } };
+      export const Declared = createStory('primary');
+    `;
+    expect(argsOf(code, 'Primary')).toEqual({
+      args: { size: "'md'" },
+      unresolved: ["...createStory('primary')"],
+    });
+    expect(argsOf(code, 'Declared').unresolved).toEqual(["createStory('primary')"]);
+  });
+});
+
+describe('an import from a module with export *', () => {
+  const labelOf = (files: Record<string, string>) =>
+    argsOf(
+      '',
+      'S',
+      contextOf({
+        ...files,
+        'entry.ts': `import { base } from './a'; export const S = { ...base };`,
+      })
+    );
+  const exported = (label: string) => `export const base = { args: { label: '${label}' } };`;
+
+  it('reads the module it re-exports from, past a local the module does not export', () => {
+    expect(
+      labelOf({
+        'a.ts': `const base = { args: { label: 'local' } }; export * from './b';`,
+        'b.ts': exported('star'),
+      })
+    ).toEqual({ args: { label: "'star'" }, unresolved: [] });
+  });
+
+  it('reads an export of the module itself over one it re-exports', () => {
+    expect(
+      labelOf({ 'a.ts': `export * from './b'; ${exported('own')}`, 'b.ts': exported('star') })
+    ).toEqual({ args: { label: "'own'" }, unresolved: [] });
+  });
+
+  it('reports a name two modules it re-exports both export', () => {
+    expect(
+      labelOf({
+        'a.ts': `export * from './b'; export * from './c';`,
+        'b.ts': exported('b'),
+        'c.ts': exported('c'),
+      })
+    ).toEqual({ args: {}, unresolved: ['...base'] });
+  });
+});
+
+it.each([
+  ['re-exports', `export { base } from './b';`, `export { base } from './a';`],
+  [
+    'imports it re-exports',
+    `import { base } from './b'; export { base };`,
+    `import { base } from './a'; export { base };`,
+  ],
+  ['star exports', `export * from './b';`, `export * from './a';`],
+])('reports a spread of a value whose %s lead back to themselves', (_, a, b) => {
+  const ctx = contextOf({
+    'a.ts': a,
+    'b.ts': b,
+    'entry.ts': `import { base } from './a'; export const S = { ...base };`,
+  });
+  expect(resolveBindingMembers(ctx, 'S')?.unresolved).toEqual(['...base']);
+});
+
 describe('story initializers', () => {
   it('reports opaque calls while retaining members assigned after the call', () => {
     const code = dedent`

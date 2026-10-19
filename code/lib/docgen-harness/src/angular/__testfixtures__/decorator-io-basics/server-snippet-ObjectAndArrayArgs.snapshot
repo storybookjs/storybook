@@ -7,7 +7,7 @@ import { DecoratorIoBasicsComponent } from './decorator-io-basics.component.ts';
   template: `
     <sb-decorator-io-basics
         [label]="'Save'"
-        [data]="{id: 7, tags: ['a', 'b'], nested: {deep: true}}"
+        [data]="{ id: 7, tags: ['a', 'b'], nested: { deep: true } }"
         (clicked)="clicked($event)"
     />`,
 })

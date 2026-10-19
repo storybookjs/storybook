@@ -1,0 +1,5 @@
+{
+  "ArgsDefaultRender": "<lit-property-only label="Default render"></lit-property-only>",
+  "DomNode": "<lit-property-only label="Configured"></lit-property-only>",
+  "LitTemplate": "<lit-property-only label="Configured"></lit-property-only>",
+}

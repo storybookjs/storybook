@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-slots-with-events--string-child": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-slots-with-events--string-child",
       "name": "String Child",
@@ -20,6 +21,13 @@ import SlotsWithEvents from './SlotsWithEvents.vue';
   </SlotsWithEvents>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import SlotsWithEvents from './SlotsWithEvents.vue';
+</script>
+
+<template>
+  <SlotsWithEvents ⟦attr title title⟧ ⟦props -default -leading -title⟧⟦slots SlotsWithEvents default leading⟧
+</template>",
     },
   },
 }

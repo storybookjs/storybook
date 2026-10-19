@@ -1,0 +1,75 @@
+{
+  "id": "meta-actions",
+  "name": "MetaActionsComponent",
+  "path": "__PATH__",
+  "stories": {
+    "storydocs-meta-actions--imported-label": {
+      "argCode": {
+        "label": "SHARED_LABEL",
+      },
+      "id": "storydocs-meta-actions--imported-label",
+      "name": "Imported Label",
+      "snippet": "import { Component } from '@angular/core';
+import { MetaActionsComponent } from './meta-actions.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [MetaActionsComponent],
+  template: `<sb-meta-actions [label]="SHARED_LABEL" (onClick)="onClick($event)" />`,
+})
+export class DemoComponent {
+  onClick(event: unknown) {}
+}",
+      "template": "import { Component } from '@angular/core';
+import { MetaActionsComponent } from './meta-actions.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [MetaActionsComponent],
+  template: `<sb-meta-actions ⟦props = label primary⟧ (onClick)="onClick($event)" />`,
+})
+export class DemoComponent {
+  onClick(event: unknown) {}
+}",
+      "templateWarning": "Incomplete snippet: `SHARED_LABEL` could not be resolved statically.",
+      "warning": "Incomplete snippet: `fn()`, `SHARED_LABEL` could not be resolved statically.",
+    },
+    "storydocs-meta-actions--primary": {
+      "argCode": {},
+      "id": "storydocs-meta-actions--primary",
+      "name": "Primary",
+      "snippet": "import { Component } from '@angular/core';
+import { MetaActionsComponent } from './meta-actions.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [MetaActionsComponent],
+  template: `
+    <sb-meta-actions
+        [primary]="true"
+        [label]="'Button'"
+        (onClick)="onClick($event)"
+    />`,
+})
+export class DemoComponent {
+  onClick(event: unknown) {}
+}",
+      "template": "import { Component } from '@angular/core';
+import { MetaActionsComponent } from './meta-actions.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [MetaActionsComponent],
+  template: `
+    <sb-meta-actions
+        ⟦props = primary label⟧
+        (onClick)="onClick($event)"
+    />`,
+})
+export class DemoComponent {
+  onClick(event: unknown) {}
+}",
+      "warning": "Incomplete snippet: `fn()` could not be resolved statically.",
+    },
+  },
+}

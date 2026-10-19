@@ -1,5 +1,10 @@
 import { types as t } from 'storybook/internal/babel';
-import { keyOf, unwrapExpression, type ImportBinding } from 'storybook/internal/csf-tools';
+import {
+  isOperand,
+  keyOf,
+  unwrapExpression,
+  type ImportBinding,
+} from 'storybook/internal/csf-tools';
 
 import {
   collectPatternNames,
@@ -35,6 +40,11 @@ export interface ArgsRead {
   start: number;
   end: number;
   name: string;
+  /**
+   * Whether code in its place needs parentheses, given the node the story writes the arg with; see
+   * `isOperand`.
+   */
+  operand: (written?: t.Node) => boolean;
 }
 
 export type ForwardableSetupResolution =
@@ -70,7 +80,7 @@ type SetupBody = { statements: t.Statement[]; returned?: t.Node };
 
 type SourcePosition = NonNullable<t.Node['loc']>['start'];
 type SourceRange = { start: SourcePosition; end: SourcePosition };
-type ArgsReadLocation = SourceRange & { name: string };
+type ArgsReadLocation = SourceRange & Pick<ArgsRead, 'name' | 'operand'>;
 
 type ArgsReadsResult = { ok: true; reads: ArgsReadLocation[] } | { ok: false; reference: string };
 
@@ -223,6 +233,7 @@ export function readForwardableSetup(
         start: readStart - start,
         end: readEnd - start,
         name: read.name,
+        operand: read.operand,
       });
     }
     statements.push({
@@ -298,23 +309,13 @@ function collectArgsReads(statement: t.Statement, argsParam: string | undefined)
   const reads: ArgsReadLocation[] = [];
   let blocked: string | undefined;
 
-  const visit = (node: t.Node, parent?: t.Node): void => {
+  const visit = (node: t.Node, ancestors: t.Node[] = []): void => {
     if (blocked) {
       return;
     }
 
-    // A mutation whose target roots at the args parameter has no substitutable value form.
-    const mutationTarget = t.isAssignmentExpression(node)
-      ? node.left
-      : t.isUpdateExpression(node) || (t.isUnaryExpression(node) && node.operator === 'delete')
-        ? node.argument
-        : undefined;
-    if (mutationTarget && rootIdentifierName(mutationTarget) === argsParam) {
-      blocked = argsParam;
-      return;
-    }
-
     if (t.isIdentifier(node, { name: argsParam })) {
+      const [parent, ...around] = ancestors;
       const member =
         parent &&
         (t.isMemberExpression(parent) || t.isOptionalMemberExpression(parent)) &&
@@ -326,7 +327,21 @@ function collectArgsReads(statement: t.Statement, argsParam: string | undefined)
         blocked = argsParam;
         return;
       }
-      reads.push({ start: member.loc.start, end: member.loc.end, name: member.property.name });
+      // The target of a write, as in `args.count++`, is no read and stays as written.
+      const [above] = around;
+      if (
+        t.isAssignmentExpression(above, { left: member }) ||
+        t.isUpdateExpression(above) ||
+        t.isUnaryExpression(above, { operator: 'delete' })
+      ) {
+        return;
+      }
+      reads.push({
+        start: member.loc.start,
+        end: member.loc.end,
+        name: member.property.name,
+        operand: (written) => isOperand(member, around, written),
+      });
       return;
     }
 
@@ -338,26 +353,17 @@ function collectArgsReads(statement: t.Statement, argsParam: string | undefined)
       if (Array.isArray(child)) {
         child.forEach((entry) => {
           if (t.isNode(entry)) {
-            visit(entry, node);
+            visit(entry, [node, ...ancestors]);
           }
         });
       } else if (t.isNode(child)) {
-        visit(child, node);
+        visit(child, [node, ...ancestors]);
       }
     }
   };
   visit(statement);
 
   return blocked ? { ok: false, reference: blocked } : { ok: true, reads };
-}
-
-// args.theme.color -> 'args'
-function rootIdentifierName(node: t.Node): string | undefined {
-  let current: t.Node = node;
-  while (t.isMemberExpression(current) || t.isOptionalMemberExpression(current)) {
-    current = current.object;
-  }
-  return t.isIdentifier(current) ? current.name : undefined;
 }
 
 // args.label -> 'label' and { label: 1 } -> 'label' are name positions, not references

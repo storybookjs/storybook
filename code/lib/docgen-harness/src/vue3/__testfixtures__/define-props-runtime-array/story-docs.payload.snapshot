@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-define-props-runtime-array--props-as-written": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-define-props-runtime-array--props-as-written",
       "name": "Props As Written",
@@ -15,6 +16,13 @@ import RuntimeArrayProps from './RuntimeArrayProps.vue';
   <RuntimeArrayProps appearance="primary" label="Go" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import RuntimeArrayProps from './RuntimeArrayProps.vue';
+</script>
+
+<template>
+  <RuntimeArrayProps ⟦attr appearance appearance⟧ ⟦attr label label⟧ ⟦props -appearance -label⟧⟦slots RuntimeArrayProps⟧
+</template>",
     },
   },
 }

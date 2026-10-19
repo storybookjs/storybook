@@ -1,0 +1,5 @@
+{
+  "Default": "<string-template label="Default"></string-template>",
+  "PlainString": "<string-template label="static"></string-template>",
+  "Untagged": "<string-template label="Untagged" ?fake="true"></string-template>",
+}

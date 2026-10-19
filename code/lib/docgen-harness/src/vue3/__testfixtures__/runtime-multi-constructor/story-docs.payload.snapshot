@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-runtime-multi-constructor--props-as-written": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-runtime-multi-constructor--props-as-written",
       "name": "Props As Written",
@@ -15,6 +16,13 @@ import RuntimeMultiConstructor from './RuntimeMultiConstructor.vue';
   <RuntimeMultiConstructor :width="200" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import RuntimeMultiConstructor from './RuntimeMultiConstructor.vue';
+</script>
+
+<template>
+  <RuntimeMultiConstructor ⟦attr width width⟧ ⟦props -width⟧⟦slots RuntimeMultiConstructor⟧
+</template>",
     },
   },
 }

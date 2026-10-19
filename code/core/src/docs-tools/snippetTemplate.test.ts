@@ -1,0 +1,177 @@
+import { describe, expect, it } from 'vitest';
+
+import {
+  UnprintableArgError,
+  asOperand,
+  dedentStoryCode,
+  defaultCode,
+  defaultWord,
+  fillHoles,
+  hole,
+  holeWord,
+  printValue,
+  spreadArgs,
+  writtenArg,
+} from './snippetTemplate.ts';
+
+describe('fillHoles', () => {
+  it('fills every hole with what the filler prints for its kind and words', () => {
+    const template = `<Button${hole('attr', 'label', 'text')}>${hole('text', 'children')}</Button>`;
+    expect(fillHoles(template, (kind, words) => `[${kind}:${words.join(',')}]`)).toBe(
+      '<Button[attr:label,text]>[text:children]</Button>'
+    );
+  });
+
+  it('keeps the code between the holes as written', () => {
+    expect(fillHoles(`a ? ${hole('value', 'x')} : b`, () => '1')).toBe('a ? 1 : b');
+  });
+
+  it('drops the whitespace before an attribute hole that prints nothing', () => {
+    const template = `<Button ${hole('attr', 'size', 'size')}\n  ${hole('props')} />`;
+    expect(fillHoles(template, () => '')).toBe('<Button />');
+  });
+
+  it('keeps the whitespace on its line before any other hole that prints nothing', () => {
+    expect(fillHoles(`Hello ${hole('text', 'name')}!`, () => '')).toBe('Hello !');
+    expect(fillHoles(`f(a, ${hole('value', 'b')})`, () => '')).toBe('f(a, )');
+  });
+
+  it('drops the line of any other hole that prints nothing on a line of its own', () => {
+    const template = `<Button>\n  ${hole('text', 'children')}\n</Button>`;
+    expect(fillHoles(template, () => '')).toBe('<Button>\n</Button>');
+  });
+
+  it('fills a template with a long run of whitespace in linear time', () => {
+    const template = `${' '.repeat(200_000)}x${hole('attr', 'a', 'a')}`;
+    expect(fillHoles(template, () => '')).toBe(`${' '.repeat(200_000)}x`);
+  });
+
+  it('passes a word holeWord encoded as the text it was given', () => {
+    const template = hole('attr', 'showHeader', holeWord('Render header?'), holeWord('%x'));
+    expect(template).toBe('⟦attr showHeader %Render%20header%3F %%25x⟧');
+    expect(fillHoles(template, (_, words) => words.join('|'))).toBe('showHeader|Render header?|%x');
+  });
+
+  it('passes a default word on as written, for defaultCode to read', () => {
+    const template = hole('value', 'size', defaultWord("'50 %'"));
+    expect(fillHoles(template, (_, [, word]) => defaultCode(word)!)).toBe("'50 %'");
+  });
+});
+
+describe('holeWord', () => {
+  it('writes a word that can stand in a hole as it is', () => {
+    expect(['label', '-children', '^size', 'a%b', '?x', 'label=label'].map(holeWord)).toEqual([
+      'label',
+      '-children',
+      '^size',
+      'a%b',
+      '?x',
+      'label=label',
+    ]);
+  });
+
+  it('encodes a word with a space, a hole bracket or a leading percent sign', () => {
+    expect(['a b', 'x⟧', '%'].map(holeWord)).toEqual(['%a%20b', '%x%E2%9F%A7', '%%25']);
+  });
+});
+
+describe('defaultWord', () => {
+  it('writes code after a question mark, URI-encoded, which defaultCode reads back', () => {
+    expect(defaultWord("{ size: 'md' }")).toBe("?%7B%20size%3A%20'md'%20%7D");
+    expect(defaultCode(defaultWord("{ size: 'md' }"))).toBe("{ size: 'md' }");
+  });
+
+  it('reads no code from any other word', () => {
+    expect(defaultCode('label')).toBeUndefined();
+    expect(defaultCode(undefined)).toBeUndefined();
+  });
+});
+
+describe('spreadArgs', () => {
+  it('passes every arg but those the element writes', () => {
+    expect(spreadArgs({ a: 1, b: 2 }, ['-b'])).toEqual([['a', 1]]);
+  });
+});
+
+describe('asOperand', () => {
+  it('leaves a name, a chain of names, a string or code one pair of brackets encloses', () => {
+    for (const code of [
+      'args',
+      'icons.arrow',
+      'a?.b',
+      'null',
+      '"a"',
+      "'it\\'s'",
+      '["a)", [1]]',
+      '(MB * 5)',
+    ]) {
+      expect(asOperand(code)).toBe(code);
+    }
+  });
+
+  it('wraps any other value or code', () => {
+    for (const code of [
+      '5',
+      '-1',
+      '{ a: 1 }',
+      '() => null',
+      'MB * 5',
+      '"a" + "b"',
+      '(a) + (b)',
+      'fn()',
+    ]) {
+      expect(asOperand(code)).toBe(`(${code})`);
+    }
+    // Brackets a template literal, a regex or JSX text holds are not counted.
+    for (const code of ['[`]`]', '[/]/]', '[<p>]</p>]']) {
+      expect(asOperand(code)).toBe(`(${code})`);
+    }
+  });
+});
+
+describe('dedentStoryCode', () => {
+  it('keeps the indentation lines have past the column the cut starts at', () => {
+    expect(dedentStoryCode('a\n      ? b\n      : c', 4)).toBe('a\n  ? b\n  : c');
+    expect(dedentStoryCode('{\n      b\n    }', 20)).toBe('{\n  b\n}');
+  });
+});
+
+describe('printValue', () => {
+  it('prints a written arg as its code, whatever the value would print as', () => {
+    expect(printValue(writtenArg('fn((o) => o.name)'), 'select')).toBe('fn((o) => o.name)');
+    expect(printValue(writtenArg(`new FormControl('x')`), 'control', { quote: "'" })).toBe(
+      `new FormControl('x')`
+    );
+  });
+
+  it('prints primitives as literals', () => {
+    expect(printValue('Go', 'label')).toBe('"Go"');
+    expect(printValue('it\'s "x"\n', 'label', { quote: "'" })).toBe("'it\\'s \"x\"\\n'");
+    expect(printValue(3, 'n')).toBe('3');
+    expect(printValue(false, 'b')).toBe('false');
+    expect(printValue(null, 'x')).toBe('null');
+    expect(printValue(undefined, 'x')).toBe('undefined');
+  });
+
+  it('prints plain data as array and object literals', () => {
+    expect(printValue({ a: 1, 'b-c': ['x'], d: undefined, e: {} }, 'data')).toBe(
+      '{ a: 1, "b-c": ["x"], e: {} }'
+    );
+  });
+
+  it('prints a literal of any length', () => {
+    expect(printValue('x'.repeat(5000), 'text')).toHaveLength(5002);
+  });
+
+  it('throws for a value with no literal', () => {
+    expect(() => printValue(() => {}, 'onClick')).toThrow(new UnprintableArgError('onClick'));
+    expect(() => printValue([new Date(0)], 'dates')).toThrow(UnprintableArgError);
+  });
+
+  it('throws for a value opaque matches, at any depth', () => {
+    const opaque = (value: unknown) => Object(value).secret === true;
+    expect(() => printValue({ a: [{ secret: true }] }, 'data', { opaque })).toThrow(
+      new UnprintableArgError('data')
+    );
+  });
+});

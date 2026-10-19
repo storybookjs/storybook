@@ -4,6 +4,11 @@
   "path": "__PATH__",
   "stories": {
     "forms-event-listener--primary": {
+      "argCode": {
+        "default": "Submit now",
+        "formatter": "(value: string) => value.toUpperCase()",
+        "onSubmit": "(payload: { value: string }) => console.log(payload)",
+      },
       "description": undefined,
       "id": "forms-event-listener--primary",
       "name": "Primary",
@@ -21,6 +26,17 @@ const onSubmit = (payload: { value: string }) => console.log(payload);
   </EventListenerForm>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import EventListenerForm from './EventListenerForm.vue';
+
+const formatter = ⟦value formatter script⟧;
+
+const onSubmit = ⟦value onSubmit script⟧;
+</script>
+
+<template>
+  <EventListenerForm :formatter="formatter" ⟦attr label label⟧ ⟦props -default -formatter -label -onSubmit⟧ @submit="onSubmit"⟦slots EventListenerForm default⟧
+</template>",
     },
   },
 }

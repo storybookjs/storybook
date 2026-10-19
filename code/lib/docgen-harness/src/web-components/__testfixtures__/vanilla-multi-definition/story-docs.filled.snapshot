@@ -1,0 +1,5 @@
+{
+  "ArgsDefaultRender": "<multi-beta></multi-beta>",
+  "DomNode": "<multi-beta></multi-beta>",
+  "LitTemplate": "<multi-beta beta-label="Beta"></multi-beta>",
+}

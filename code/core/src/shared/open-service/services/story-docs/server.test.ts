@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { printValue } from '../../../../docs-tools/snippetTemplate.ts';
+import type { Args } from '../../../../types/modules/csf.ts';
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
 import { clearRegistry, getService } from '../../server.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
+import { selectLiveSnippetForStory } from './live-snippet.ts';
 import { registerStoryDocsService, subscribeStoryDocsToModuleGraphChanges } from './server.ts';
 import type { StoryDocsPayload, StoryDocsProvider } from './types.ts';
 
@@ -40,6 +43,26 @@ function makeGetIndex(entries: IndexEntry[]) {
 }
 
 describe('story-docs open service', () => {
+  it('updates a subscription that started before the payload was stored', async () => {
+    const entry = makeStoryEntry('button--primary', 'Button');
+    const payload = makeStoryDocsPayload();
+    const service = registerStoryDocsService({
+      getIndex: makeGetIndex([entry]),
+      storyDocsProvider: async () => payload,
+    });
+    const selected: unknown[] = [];
+    const unsubscribe = service.queries.storyDocs.subscribe(
+      { id: 'button' },
+      (value) => value?.name,
+      (state) => selected.push(state.data)
+    );
+
+    await service.commands.extractStoryDocs({ id: 'button' });
+    unsubscribe();
+
+    expect(selected.at(-1)).toBe('Button');
+  });
+
   it('stores and returns story-docs payloads from the provider', async () => {
     const entry = makeStoryEntry('button--primary', 'Button');
     const payload = makeStoryDocsPayload({
@@ -59,6 +82,43 @@ describe('story-docs open service', () => {
     expect(provider).toHaveBeenCalledWith({ entry });
   });
 
+  it('keeps the template warning and the arg code through the query, so the filled snippet shows them', async () => {
+    const entry = makeStoryEntry('button--primary', 'Button');
+    const payload = makeStoryDocsPayload({
+      stories: {
+        'button--primary': {
+          id: 'button--primary',
+          name: 'Primary',
+          snippet: '<Button />',
+          template: '<Button ⟦label⟧ ⟦onClick⟧ />',
+          argCode: { onClick: 'fn()' },
+          warning: 'label could not be resolved',
+          templateWarning: 'Add the NgModule',
+        },
+      },
+    });
+    const service = registerStoryDocsService({
+      getIndex: makeGetIndex([entry]),
+      storyDocsProvider: async () => payload,
+    });
+    await service.commands.extractStoryDocs({ id: 'button' });
+    const fill = (template: string, args: Args) =>
+      template
+        .replace('⟦label⟧', `label="${args.label}"`)
+        .replace('⟦onClick⟧', `onClick={${printValue(args.onClick, 'onClick')}}`);
+    const initialArgs = { label: 'Hi', onClick: () => {} };
+    const args = { ...initialArgs, label: 'Go' };
+
+    expect(
+      selectLiveSnippetForStory(
+        service.queries.storyDocs.get({ id: 'button' }),
+        'button--primary',
+        { args, unmappedArgs: args, initialArgs },
+        fill
+      )
+    ).toEqual({ snippet: '<Button label="Go" onClick={fn()} />', warning: 'Add the NgModule' });
+  });
+
   describe('a component with several story files', () => {
     const chart = './chart.stories.tsx';
     const ranges = './ranges.stories.tsx';
@@ -76,7 +136,10 @@ describe('story-docs open service', () => {
       stories: Object.fromEntries(
         entries
           .filter((story) => story.importPath === entry.importPath)
-          .map((story) => [story.id, { id: story.id, name: story.name, snippet: '<Vega />' }])
+          .map((story) => [
+            story.id,
+            { id: story.id, name: story.name, snippet: '<Vega />', template: '<Vega {...args} />' },
+          ])
       ),
     });
 
@@ -97,7 +160,7 @@ describe('story-docs open service', () => {
       expect(payload).toMatchObject({ id: 'vega', name: 'Vega', path: chart });
     });
 
-    it('gives every snippet the import block of its own file', async () => {
+    it('gives every snippet and template the import block of its own file', async () => {
       const service = registerStoryDocsService({
         getIndex: makeGetIndex(entries),
         storyDocsProvider: extractFile,
@@ -111,6 +174,9 @@ describe('story-docs open service', () => {
       );
       expect(payload!.stories['vega--heatmap']!.snippet).toBe(
         `import { Vega } from '${ranges}';\n\n<Vega />`
+      );
+      expect(payload!.stories['vega--heatmap']!.template).toBe(
+        `import { Vega } from '${ranges}';\n\n<Vega {...args} />`
       );
     });
 

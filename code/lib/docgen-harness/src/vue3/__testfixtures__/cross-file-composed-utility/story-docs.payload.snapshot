@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-cross-file-composed-utility--props-as-written": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-cross-file-composed-utility--props-as-written",
       "name": "Props As Written",
@@ -15,6 +16,13 @@ import UtilityComposedProps from './UtilityComposedProps.vue';
   <UtilityComposedProps label="Picked" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import UtilityComposedProps from './UtilityComposedProps.vue';
+</script>
+
+<template>
+  <UtilityComposedProps ⟦attr label label⟧ ⟦props -label⟧⟦slots UtilityComposedProps⟧
+</template>",
     },
   },
 }

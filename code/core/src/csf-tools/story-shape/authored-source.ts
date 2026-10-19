@@ -95,10 +95,9 @@ const memberOf = (members: ResolvedMembers, key: string): MemberPathResolution =
   if (node !== undefined && !members.shadowed.includes(key)) {
     return { kind: 'value', node };
   }
-  if (members.unresolved.length > 0) {
-    return { kind: 'unresolvable', source: members.unresolved.at(-1)! };
-  }
-  return { kind: 'missing' };
+  // A member shadowed with nothing left unresolved names things in another file than this one.
+  const source = members.unresolved.at(-1) ?? (node && sourceOf(node));
+  return source === undefined ? { kind: 'missing' } : { kind: 'unresolvable', source };
 };
 
 const isOpaqueValue = (node: t.Node): boolean =>

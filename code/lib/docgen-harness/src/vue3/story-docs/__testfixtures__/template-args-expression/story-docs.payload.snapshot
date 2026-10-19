@@ -4,6 +4,10 @@
   "path": "__PATH__",
   "stories": {
     "forms-template-args-expression--collapsed": {
+      "argCode": {
+        "release": "{ tag: 'v1.2.3', name: 'Release 1.2.3' }",
+        "status": "{ state: 'available', version: '1.2.3' }",
+      },
       "description": undefined,
       "id": "forms-template-args-expression--collapsed",
       "name": "Collapsed",
@@ -27,8 +31,31 @@ const status = { state: 'available', version: '1.2.3' };
   </div>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import TemplateArgsExpression from './TemplateArgsExpression.vue';
+
+const release = ⟦value release script⟧;
+
+const status = ⟦value status script⟧;
+</script>
+
+<template>
+  <div
+    :style="{
+      '--sidebar-width-collapsed': '52px',
+      width: ⟦value isCollapsed⟧ ? '52px' : '176px',
+      overflow: 'hidden'
+    }"
+  >
+    <TemplateArgsExpression ⟦attr isCollapsed isCollapsed⟧ :release="release" :status="status" ⟦attr updateProgressInfo updateProgressInfo⟧ ⟦props -isCollapsed -release -status -updateProgressInfo⟧ />
+  </div>
+</template>",
     },
     "forms-template-args-expression--primary": {
+      "argCode": {
+        "release": "{ tag: 'v1.2.3', name: 'Release 1.2.3' }",
+        "status": "{ state: 'available', version: '1.2.3' }",
+      },
       "description": undefined,
       "id": "forms-template-args-expression--primary",
       "name": "Primary",
@@ -52,6 +79,25 @@ const status = { state: 'available', version: '1.2.3' };
   </div>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import TemplateArgsExpression from './TemplateArgsExpression.vue';
+
+const release = ⟦value release script⟧;
+
+const status = ⟦value status script⟧;
+</script>
+
+<template>
+  <div
+    :style="{
+      '--sidebar-width-collapsed': '52px',
+      width: ⟦value isCollapsed⟧ ? '52px' : '176px',
+      overflow: 'hidden'
+    }"
+  >
+    <TemplateArgsExpression ⟦attr isCollapsed isCollapsed⟧ :release="release" :status="status" ⟦attr updateProgressInfo updateProgressInfo⟧ ⟦props -isCollapsed -release -status -updateProgressInfo⟧ />
+  </div>
+</template>",
     },
   },
 }

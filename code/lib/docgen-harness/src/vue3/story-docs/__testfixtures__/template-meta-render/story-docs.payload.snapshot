@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-template-meta-render--primary": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-template-meta-render--primary",
       "name": "Primary",
@@ -15,8 +16,16 @@ import MetaRenderButton from './MetaRenderButton.vue';
   <section class="preview"><MetaRenderButton label="Primary" variant="primary" /></section>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import MetaRenderButton from './MetaRenderButton.vue';
+</script>
+
+<template>
+  <section class="preview"><MetaRenderButton ⟦attr label label⟧ ⟦attr variant variant⟧ ⟦props -label -variant⟧ /></section>
+</template>",
     },
     "forms-template-meta-render--secondary": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-template-meta-render--secondary",
       "name": "Secondary",
@@ -28,6 +37,13 @@ import MetaRenderButton from './MetaRenderButton.vue';
   <section class="preview"><MetaRenderButton label="Secondary" variant="secondary" /></section>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import MetaRenderButton from './MetaRenderButton.vue';
+</script>
+
+<template>
+  <section class="preview"><MetaRenderButton ⟦attr label label⟧ ⟦attr variant variant⟧ ⟦props -label -variant⟧ /></section>
+</template>",
     },
   },
 }

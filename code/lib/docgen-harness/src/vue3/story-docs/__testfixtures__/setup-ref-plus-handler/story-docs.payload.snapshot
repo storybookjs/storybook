@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-setup-ref-plus-handler--primary": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-setup-ref-plus-handler--primary",
       "name": "Primary",
@@ -21,6 +22,19 @@ const increment = () => {
   <SetupRefPlusHandler label="Count" :count="count" @increment="increment" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import { ref } from "vue";
+import SetupRefPlusHandler from './SetupRefPlusHandler.vue';
+
+const count = ref(0);
+const increment = () => {
+  count.value += 1;
+};
+</script>
+
+<template>
+  <SetupRefPlusHandler ⟦attr label label⟧ :count="count" @increment="increment" />
+</template>",
     },
   },
 }

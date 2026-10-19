@@ -1,12 +1,13 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
-import type { StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
+import type { PreparedStory, StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
 
 import {
   type QueryState,
-  selectSnippetForStory,
+  type StoryArgs,
+  getFillTemplate,
+  selectLiveSnippetForStory,
   selectStoryDoc,
-  selectWarningForStory,
 } from 'storybook/open-service';
 import { getService } from 'storybook/preview-api';
 
@@ -53,12 +54,29 @@ export function useServiceStoryDoc(storyId: string): QueryState<StoryDoc | undef
   return useServiceStory(storyId, selectStoryDoc);
 }
 
-/** Convenience hook returning one story's display snippet (with its CSF import block prepended). */
-export function useServiceStorySnippet(storyId: string): QueryState<string | undefined> {
-  return useServiceStory(storyId, selectSnippetForStory);
+/**
+ * One story's display snippet with its `args` filled into its template by the story's renderer, or
+ * its static snippet and warning while it has the args it is written with or no template.
+ */
+export function useServiceStoryLiveSnippet(
+  story: PreparedStory,
+  args: StoryArgs | undefined
+): QueryState<{ snippet?: string; warning?: string }> {
+  // The selector is stable, so an args change fills the template again without a new subscription,
+  // which would load the story docs again.
+  const state = useServiceStory(story.id, selectStoryPayload);
+  const fill = getFillTemplate(story.parameters);
+  const data = useMemo(
+    () => selectLiveSnippetForStory(state.data, story.id, args, fill),
+    [state.data, story.id, args, fill]
+  );
+  return useMemo(() => ({ ...state, data }), [state, data]);
 }
 
-/** Convenience hook returning why one story's snippet is an incomplete example, when it is one. */
-export function useServiceStoryWarning(storyId: string): QueryState<string | undefined> {
-  return useServiceStory(storyId, selectWarningForStory);
+// A plain copy of the payload with only this story's docs. The subscription compares what the
+// selector returns with what it returned before, and the payload itself is state that changes in
+// place, so it would always compare equal.
+function selectStoryPayload(payload: StoryDocsPayload | undefined, storyId: string) {
+  const story = payload?.stories[storyId];
+  return payload && { ...payload, stories: story ? { [storyId]: { ...story } } : {} };
 }

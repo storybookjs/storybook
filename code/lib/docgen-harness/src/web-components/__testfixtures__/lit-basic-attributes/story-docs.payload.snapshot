@@ -4,20 +4,26 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsfixtures-lit-basic-attributes--args-default-render": {
+      "argCode": {},
       "id": "webcomponentsfixtures-lit-basic-attributes--args-default-render",
       "name": "Args Default Render",
       "snippet": "<lit-basic-attributes label="Default render" count="3" disabled is-open></lit-basic-attributes>",
+      "template": "<lit-basic-attributes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr is-open isOpen field⟧></lit-basic-attributes>",
     },
     "webcomponentsfixtures-lit-basic-attributes--dom-node": {
+      "argCode": {},
       "id": "webcomponentsfixtures-lit-basic-attributes--dom-node",
       "name": "Dom Node",
       "snippet": "<lit-basic-attributes label="Open panel" count="7" is-open></lit-basic-attributes>",
+      "template": "<lit-basic-attributes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr is-open isOpen field⟧></lit-basic-attributes>",
       "warning": "Incomplete snippet: `args => { const el = document.createElement('lit-basic-attributes'); el.setAttribute('label', String(args.label)); el.setAttribute('count', String(args.count)); if (args.disabled) { el.setAttribute('disabled', ''); } if (args.isOpen) { el.setAttribute('is-open', ''); } return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-lit-basic-attributes--lit-template": {
+      "argCode": {},
       "id": "webcomponentsfixtures-lit-basic-attributes--lit-template",
       "name": "Lit Template",
       "snippet": "<lit-basic-attributes label="Open panel" count="7" is-open></lit-basic-attributes>",
+      "template": "<lit-basic-attributes label="⟦quoted label⟧" count="⟦quoted count⟧" ⟦bool disabled disabled⟧ ⟦bool is-open isOpen⟧></lit-basic-attributes>",
     },
   },
 }

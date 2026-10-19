@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-import-alias--primary": {
+      "argCode": {},
       "id": "storydocs-import-alias--primary",
       "name": "Primary",
       "snippet": "import { Component } from '@angular/core';
@@ -13,6 +14,15 @@ import { ImportAliasComponent as Alias } from './aliased.component.ts';
   selector: 'app-demo',
   imports: [Alias],
   template: `<sb-import-alias [heading]="'Aliased'" />`,
+})
+export class DemoComponent {}",
+      "template": "import { Component } from '@angular/core';
+import { ImportAliasComponent as Alias } from './aliased.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [Alias],
+  template: `<sb-import-alias ⟦props = heading⟧ />`,
 })
 export class DemoComponent {}",
     },

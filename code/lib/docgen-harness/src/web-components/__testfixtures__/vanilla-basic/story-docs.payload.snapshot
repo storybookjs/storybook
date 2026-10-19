@@ -4,20 +4,26 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsfixtures-vanilla-basic--args-default-render": {
+      "argCode": {},
       "id": "webcomponentsfixtures-vanilla-basic--args-default-render",
       "name": "Args Default Render",
       "snippet": "<vanilla-basic label="Default vanilla" count="1"></vanilla-basic>",
+      "template": "<vanilla-basic ⟦attr label label⟧ ⟦attr count count⟧ ⟦attr disabled disabled⟧ ⟦attr legacy-label legacy-label⟧></vanilla-basic>",
     },
     "webcomponentsfixtures-vanilla-basic--dom-node": {
+      "argCode": {},
       "id": "webcomponentsfixtures-vanilla-basic--dom-node",
       "name": "Dom Node",
       "snippet": "<vanilla-basic label="Vanilla" count="4" disabled></vanilla-basic>",
+      "template": "<vanilla-basic ⟦attr label label⟧ ⟦attr count count⟧ ⟦attr disabled disabled⟧ ⟦attr legacy-label legacy-label⟧></vanilla-basic>",
       "warning": "Incomplete snippet: `args => { const el = document.createElement('vanilla-basic'); el.setAttribute('label', String(args.label)); el.setAttribute('count', String(args.count)); if (args.disabled) { el.setAttribute('disabled', ''); } return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-vanilla-basic--lit-template": {
+      "argCode": {},
       "id": "webcomponentsfixtures-vanilla-basic--lit-template",
       "name": "Lit Template",
       "snippet": "<vanilla-basic label="Vanilla" count="4" disabled></vanilla-basic>",
+      "template": "<vanilla-basic label="⟦quoted label⟧" count="⟦quoted count⟧" ⟦bool disabled disabled⟧></vanilla-basic>",
     },
   },
 }

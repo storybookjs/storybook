@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-render-function--args-member": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-render-function--args-member",
       "name": "Args Member",
@@ -17,8 +18,18 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
   </div>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
+  <div>
+    <RenderFunctionButton ⟦attr label label⟧ />
+  </div>
+</template>",
     },
     "forms-render-function--args-on-wrapper-and-component": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-render-function--args-on-wrapper-and-component",
       "name": "Args On Wrapper And Component",
@@ -32,8 +43,18 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
   </section>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
+  <section class="toolbar" ⟦attr label label⟧ ⟦props ^class -label⟧>
+    <RenderFunctionButton ⟦attr label label⟧ ⟦props -label⟧ />
+  </section>
+</template>",
     },
     "forms-render-function--nested": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-render-function--nested",
       "name": "Nested",
@@ -49,8 +70,20 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
   </section>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
+  <section class="toolbar">
+    <h2>Actions</h2>
+    <RenderFunctionButton ⟦attr label label⟧ ⟦props -label⟧ />
+    <RenderFunctionButton label="Cancel" />
+  </section>
+</template>",
     },
     "forms-render-function--primary": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-render-function--primary",
       "name": "Primary",
@@ -62,8 +95,16 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
   <RenderFunctionButton label="Render" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
+  <RenderFunctionButton ⟦attr label label⟧ ⟦props -label⟧ />
+</template>",
     },
     "forms-render-function--slot-children": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-render-function--slot-children",
       "name": "Slot Children",
@@ -80,8 +121,21 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
   </RenderFunctionButton>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
+  <RenderFunctionButton ⟦attr label label⟧ ⟦props -label⟧>
+    <span>Extra</span>
+    <template #footer>
+      <strong>Note</strong>
+    </template>
+  </RenderFunctionButton>
+</template>",
     },
     "forms-render-function--spread-override": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-render-function--spread-override",
       "name": "Spread Override",
@@ -93,6 +147,13 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
   <RenderFunctionButton label="Overridden" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
+  <RenderFunctionButton ⟦props -label⟧ label="Overridden" />
+</template>",
     },
   },
 }

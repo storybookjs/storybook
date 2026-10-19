@@ -4,6 +4,11 @@
   "path": "__PATH__",
   "stories": {
     "forms-args-formatting--primary": {
+      "argCode": {
+        "items": "['one', 'two']",
+        "onSubmit": "() => undefined",
+        "options": "{ tone: 'neutral', compact: true }",
+      },
       "description": undefined,
       "id": "forms-args-formatting--primary",
       "name": "Primary",
@@ -18,11 +23,25 @@ const quotationLabel = 'She said "hi" and it\'s fine';
 </script>
 
 <template>
-  <ArgsFormattingButton :count="3" :disabled="false" enabled :items="items" label="Formatted" :options="options" :quotationLabel="quotationLabel" />
+  <ArgsFormattingButton :count="3" :disabled="false" emptyLabel="" enabled :items="items" label="Formatted" :onSubmit="() => undefined" :options="options" :quotationLabel="quotationLabel" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import ArgsFormattingButton from './ArgsFormattingButton.vue';
+
+const items = ⟦value items script⟧;
+
+const options = ⟦value options script⟧;
+
+const quotationLabel = ⟦value quotationLabel script⟧;
+</script>
+
+<template>
+  <ArgsFormattingButton ⟦attr count count⟧ ⟦attr disabled disabled⟧ ⟦attr emptyLabel emptyLabel⟧ ⟦attr enabled enabled⟧ :items="items" ⟦attr label label⟧ ⟦attr onSubmit onSubmit⟧ :options="options" :quotationLabel="quotationLabel" ⟦props -count -disabled -emptyLabel -enabled -items -label -onSubmit -options -quotationLabel⟧⟦slots ArgsFormattingButton⟧
+</template>",
     },
     "forms-args-formatting--unset-arg": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-args-formatting--unset-arg",
       "name": "Unset Arg",
@@ -34,6 +53,13 @@ import ArgsFormattingButton from './ArgsFormattingButton.vue';
   <ArgsFormattingButton :count="3" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import ArgsFormattingButton from './ArgsFormattingButton.vue';
+</script>
+
+<template>
+  <ArgsFormattingButton ⟦attr count count⟧ ⟦attr label label⟧ ⟦props -count -label⟧⟦slots ArgsFormattingButton⟧
+</template>",
     },
   },
 }

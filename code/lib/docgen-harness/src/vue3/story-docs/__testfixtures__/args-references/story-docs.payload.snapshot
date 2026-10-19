@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-args-references--identifier-arg": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-args-references--identifier-arg",
       "name": "Identifier Arg",
@@ -15,8 +16,21 @@ import ArgsReferencesButton from './ArgsReferencesButton.vue';
   <ArgsReferencesButton label="Declared label" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import ArgsReferencesButton from './ArgsReferencesButton.vue';
+</script>
+
+<template>
+  <ArgsReferencesButton ⟦attr label label⟧ ⟦props -label⟧⟦slots ArgsReferencesButton⟧
+</template>",
     },
     "forms-args-references--spread-object-arg": {
+      "argCode": {
+        "options": "{
+    size: 'md',
+    tone: 'neutral'
+}",
+      },
       "description": undefined,
       "id": "forms-args-references--spread-object-arg",
       "name": "Spread Object Arg",
@@ -24,8 +38,8 @@ import ArgsReferencesButton from './ArgsReferencesButton.vue';
 import ArgsReferencesButton from './ArgsReferencesButton.vue';
 
 const options = {
-  size: 'md',
-  tone: 'neutral'
+    size: 'md',
+    tone: 'neutral'
 };
 </script>
 
@@ -33,6 +47,15 @@ const options = {
   <ArgsReferencesButton :options="options" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import ArgsReferencesButton from './ArgsReferencesButton.vue';
+
+const options = ⟦value options script⟧;
+</script>
+
+<template>
+  <ArgsReferencesButton :options="options" ⟦props -options⟧⟦slots ArgsReferencesButton⟧
+</template>",
     },
     "forms-args-references--unreadable-spread-arg": {
       "description": undefined,

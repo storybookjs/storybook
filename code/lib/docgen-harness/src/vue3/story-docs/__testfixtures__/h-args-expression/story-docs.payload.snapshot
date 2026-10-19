@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-h-args-expression--primary": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-h-args-expression--primary",
       "name": "Primary",
@@ -15,6 +16,13 @@ import HArgsExpression from './HArgsExpression.vue';
   <HArgsExpression :count="2 + 1" :label="`${2} items`" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import HArgsExpression from './HArgsExpression.vue';
+</script>
+
+<template>
+  <HArgsExpression :count="⟦value count⟧ + 1" :label="`${⟦value count⟧} items`" />
+</template>",
     },
   },
 }

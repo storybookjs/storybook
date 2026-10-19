@@ -12,7 +12,11 @@ Storybook for Web components & Vite is a [framework](../../contribute/framework.
 
 To install Storybook in an existing project, run this command in your project's root directory:
 
-<CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
+<CodeSnippets
+  path="create-command.md"
+  variant="new-users"
+  copyEvent="CreateCommandCopy"
+/>
 
 You can then get started [writing stories](../whats-a-story.mdx), [running tests](../../writing-tests/index.mdx) and [documenting your components](../../writing-docs/index.mdx). For more control over the installation process, refer to the [installation guide](../install.mdx).
 
@@ -21,9 +25,9 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
 <GetStartedVersions
   versions={[
     {
-      name: 'Vite',
-      range: '≥ 5',
-      icon: '/images/logos/builders/vite.svg',
+      name: "Vite",
+      range: "≥ 5",
+      icon: "/images/logos/builders/vite.svg",
     },
   ]}
 />
@@ -42,41 +46,43 @@ You will find the output in the configured `outputDir` (default is `storybook-st
 
 ## Configure
 
-Storybook for Web components with Vite works without extra configuration. It reads your elements from your sources, so your JSDoc comments become controls and documentation. The sections below cover how to write stories for an element and the framework options.
+Storybook for Web components with Vite needs no extra configuration. It reads your custom elements from your source code and turns their JSDoc comments into controls and documentation.
 
 ### Writing stories
 
-Set `component` to the element's tag name and import the module that defines it. Storybook reads the element's attributes, properties, events, slots, CSS custom properties, CSS parts and CSS states, and turns them into controls and [automatic documentation](../../writing-docs/autodocs.mdx), with your JSDoc comments as descriptions.
+In your story file, set `component` to the element's tag name and import the module that defines the element. Storybook then finds the element's attributes, properties, events, slots, CSS custom properties, CSS parts, and CSS states. It uses them to create controls and [automatic documentation](../../writing-docs/autodocs.mdx), and it shows your JSDoc comments as descriptions.
 
-Args stories render the element from its args:
+By default, Storybook renders the element from the story's args:
 
 <CodeSnippets path="web-components-story-snippet-args.md" />
 
-Args map to the element by key. Event, slot, part and state keys carry a suffix so they never collide with attributes:
+Each arg key tells Storybook which part of the element to set. Keys for events, slots, CSS parts, and CSS states end in a suffix, so they do not conflict with attribute names:
 
-| Element API         | Arg key                                       | Example                                      | Rendered as                                              |
-| ------------------- | --------------------------------------------- | -------------------------------------------- | -------------------------------------------------------- |
-| Attribute           | the attribute name                            | `heading: 'Hello'`                           | `heading="Hello"`; `true` sets it bare, `false` omits it |
-| Property            | the property name                             | `items: ['a', 'b']`                          | `element.items = ['a', 'b']`                             |
-| Event               | `<name>-event`                                | `'my-change-event': () => {}`                | a listener for `my-change`                               |
-| Slot                | `<name>-slot`, `default-slot` for the default | `'actions-slot': '<button>Confirm</button>'` | children with `slot="actions"`                           |
-| CSS part            | `<name>-part`                                 | `'panel-part': 'color: rebeccapurple;'`      | a `::part(panel)` rule                                   |
-| CSS state           | `<name>-state`                                | `'active-state': 'opacity: 0.5;'`            | a `:state(active)` rule                                  |
-| CSS custom property | `--name`                                      | `'--panel-color': 'teal'`                    | `style="--panel-color: teal"`                            |
+| Element API         | Arg key                                               | Example                                      | Result                                                          |
+| ------------------- | ----------------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------- |
+| Attribute           | The attribute name                                    | `heading: 'Hello'`                           | `heading="Hello"`. `true` adds the attribute, `false` omits it. |
+| Property            | The property name                                     | `items: ['a', 'b']`                          | `element.items = ['a', 'b']`                                    |
+| Event               | `<name>-event`                                        | `'my-change-event': () => {}`                | A listener for the `my-change` event                            |
+| Slot                | `<name>-slot`, or `default-slot` for the default slot | `'actions-slot': '<button>Confirm</button>'` | Child content with `slot="actions"`                             |
+| CSS part            | `<name>-part`                                         | `'panel-part': 'color: rebeccapurple;'`      | A `::part(panel)` rule                                          |
+| CSS state           | `<name>-state`                                        | `'active-state': 'opacity: 0.5;'`            | A `:state(active)` rule                                         |
+| CSS custom property | `--<name>`                                            | `'--panel-color': 'teal'`                    | `style="--panel-color: teal"`                                   |
 
-To control the markup yourself, write a `render` function with Lit's `html`:
+To write the markup yourself, add a `render` function that returns a Lit `html` template:
 
 <CodeSnippets path="web-components-story-snippet-template.md" />
 
-To listen to an event, pass a function as the event arg:
+To listen to an event, set its arg to a function:
 
 <CodeSnippets path="web-components-story-snippet-listeners.md" />
 
-Storybook finds the element through the imports of your story file and preview file. If it cannot find or read one, it says so in the Controls table and in `npx storybook tools docs show`; the build still passes. Metas without `component`, such as the template-function `Button`, `Header` and `Page` the starter generates, get no controls from docgen and show the story source in the Code panel.
+Storybook finds your elements by following the imports in your story files and preview file. If it cannot find or read an element, the Controls table shows a message, and so does `npx storybook tools docs show`. The build does not fail.
+
+A story file without `component` gets no automatic controls. The `Button`, `Header`, and `Page` example stories that Storybook adds to a new project work this way: they render through a template function, and the Code panel shows the story's source code.
 
 ### Code snippets
 
-Autodocs and the Code panel show HTML generated from your story. An args story becomes one element with its attributes, slot content and a `<style>` block; the Args story above prints as:
+Autodocs and the Code panel show HTML that Storybook generates from your story. For a story that uses args, the snippet is one element with its attributes and slot content, plus a `<style>` block when needed. For example, the `Args` story above becomes:
 
 ```html
 <style>
@@ -90,17 +96,21 @@ Autodocs and the Code panel show HTML generated from your story. An args story b
 </lit-slots-and-css>
 ```
 
-A `render` story prints its Lit template with the args filled in, and event args add a `<script>` that attaches the listeners. Snippets show the story as you wrote it; changing a control updates the rendered element but not the snippet.
+For a story with a `render` function, the snippet is the Lit template with the arg values filled in. If the story has event args, the snippet also includes a `<script>` that adds the listeners.
 
-When a snippet cannot represent something, such as a Lit directive or a property with no matching attribute, Storybook shows a warning above it instead. Set `parameters.docs.source.code` to write the snippet yourself, or set it to `null` to hide it. See the [Source block](../../api/doc-blocks/doc-block-source.mdx) page for the full API.
+Snippets show the story as you wrote it. When you change a control, the rendered element updates, but the snippet does not.
+
+Some things cannot be shown as HTML, such as a Lit directive or a property that has no matching attribute. In those cases, Storybook shows a warning above the snippet. To write the snippet yourself, set `parameters.docs.source.code`. To hide it, set that parameter to `null`. For all options, see the [Source block](../../api/doc-blocks/doc-block-source.mdx) API.
 
 ### Custom Elements Manifest
 
-You do not need one. If your project already ships a [Custom Elements Manifest](https://github.com/webcomponents/custom-elements-manifest), point Storybook at it and it is used instead of your sources for the elements it declares:
+A [Custom Elements Manifest](https://github.com/webcomponents/custom-elements-manifest) is optional. If your project already has one, you can tell Storybook where to find it. Storybook then reads the elements in the manifest from the manifest instead of from your source code:
 
 <CodeSnippets path="web-components-main-config-custom-elements-manifest.md" />
 
-Storybook also picks up the `customElements` field of your `package.json`. Generate the manifest with the plugin that matches your library, such as `--litelement` for Lit, or decorator-declared attributes are missing from it.
+If you do not set this option, Storybook uses the `customElements` field in your `package.json`, if it exists.
+
+If you generate the manifest with `@custom-elements-manifest/analyzer`, enable the plugin for your library, such as `--litelement` for Lit. Without it, the manifest does not include attributes that you declare with decorators.
 
 ## FAQ
 
@@ -111,7 +121,7 @@ If you register Stencil components with `defineCustomElements()` from the genera
 For Stencil 4.26 and later:
 
 ```ts title="stencil.config.ts"
-import type { Config } from '@stencil/core';
+import type { Config } from "@stencil/core";
 
 export const config: Config = {
   extras: {
@@ -146,9 +156,9 @@ The available options are:
 
 Type: `string | string[]`
 
-Default: the `customElements` field of your `package.json`, else none; elements are generated from sources
+Default: The `customElements` field in your `package.json`. If that field does not exist, Storybook reads all elements from your source code.
 
-Optional. Path or paths to Custom Elements Manifest files, relative to the Storybook config directory. Use it to bring a manifest from the generator of your choice; elements it does not declare are still read from your sources.
+The path to one or more Custom Elements Manifest files, relative to the Storybook configuration directory. Storybook reads the elements in these files from the manifest. It reads all other elements from your source code.
 
 #### `builder`
 

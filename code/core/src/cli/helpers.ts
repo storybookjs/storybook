@@ -1,5 +1,6 @@
 import { cpSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { cp, readFile, writeFile } from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- module under test mocks path
 import { join, resolve } from 'node:path';
 
 import {

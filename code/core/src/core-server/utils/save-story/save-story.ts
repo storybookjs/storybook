@@ -1,4 +1,5 @@
 import { writeFile } from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- checks containment with case-insensitive relative() against the native project root
 import { basename, isAbsolute, join, relative } from 'node:path';
 
 import { types as t } from 'storybook/internal/babel';

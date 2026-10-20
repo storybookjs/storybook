@@ -2,7 +2,7 @@
 This script updates `lib/*.js` files from rule's meta data.
 */
 import fs from 'fs/promises';
-import path from 'path';
+import path from 'pathe';
 
 import { update as updateLegacyConfigs } from './update-lib-configs.ts';
 import { update as updateFlatConfigs } from './update-lib-flat-configs.ts';

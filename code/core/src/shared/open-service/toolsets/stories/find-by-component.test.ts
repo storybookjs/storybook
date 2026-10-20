@@ -1,4 +1,5 @@
 import { existsSync, realpathSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- feeds native component paths to exercise the resolver's normalization
 import path from 'node:path';
 
 import type { StoryIndex } from 'storybook/internal/types';

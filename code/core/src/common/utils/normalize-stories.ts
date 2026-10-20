@@ -1,4 +1,5 @@
 import { lstatSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- basename must handle story entries with a trailing slash
 import { basename, dirname, relative, resolve } from 'node:path';
 
 import { InvalidStoriesEntryError } from 'storybook/internal/server-errors';

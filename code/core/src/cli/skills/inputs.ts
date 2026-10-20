@@ -1,4 +1,4 @@
-import { relative } from 'node:path';
+import { relative } from 'pathe';
 
 import type { Options } from '../../types/index.ts';
 import { extractFrameworkPackageName } from '../../common/utils/get-framework-name.ts';
@@ -34,7 +34,7 @@ async function resolvePreview(configDir = '.storybook') {
   return {
     csfFactories,
     typescript,
-    previewFile: relative(process.cwd(), path).replaceAll('\\', '/') || path,
+    previewFile: relative(process.cwd(), path) || path,
   };
 }
 

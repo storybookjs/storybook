@@ -7,7 +7,7 @@ import 'zone.js';
 import 'zone.js/testing';
 
 import { readdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 import { TestBed, getTestBed } from '@angular/core/testing';

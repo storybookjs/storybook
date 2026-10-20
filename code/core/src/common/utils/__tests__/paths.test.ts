@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- builds expected paths with path.sep
 import { join, sep } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';

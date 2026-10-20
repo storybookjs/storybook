@@ -1,4 +1,6 @@
+// eslint-disable-next-line no-restricted-imports -- mocks node:path with its win32 and posix implementations
 import * as path from 'node:path';
+// eslint-disable-next-line no-restricted-imports -- mocks node:path with its win32 and posix implementations
 import { posix, win32 } from 'node:path';
 
 import { vi } from 'vitest';

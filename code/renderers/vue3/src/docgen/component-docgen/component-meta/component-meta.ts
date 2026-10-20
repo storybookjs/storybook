@@ -8,7 +8,7 @@
  * lives here rather than in either caller.
  */
 import { readFile, stat } from 'node:fs/promises';
-import { join, parse } from 'node:path';
+import { join, parse } from 'pathe';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import {

@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- compares with empathic's native find.up result
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

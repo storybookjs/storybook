@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { readFile, readdir, rename, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { isNotNil } from 'es-toolkit/predicate';
 import { format } from 'oxfmt';

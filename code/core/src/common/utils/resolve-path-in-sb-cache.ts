@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- callers match its result against native static dir paths
 import { join } from 'node:path';
 
 import * as pkg from 'empathic/package';

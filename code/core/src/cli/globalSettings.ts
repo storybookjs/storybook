@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 
 import { dedent } from 'ts-dedent';
 import { z } from 'zod';

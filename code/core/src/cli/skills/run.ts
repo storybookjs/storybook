@@ -1,4 +1,4 @@
-import { relative } from 'node:path';
+import { relative } from 'pathe';
 
 import type { Options } from '../../types/index.ts';
 

@@ -1,4 +1,4 @@
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'pathe';
 
 import {
   type ComponentDoc,
@@ -434,8 +434,8 @@ function isSameFileName(typescript: TypeScriptRuntime, left: string, right: stri
 }
 
 function normalizeFileName(typescript: TypeScriptRuntime, fileName: string) {
-  // TypeScript's parsed `fileNames` use `/` even on Windows; Node `path` APIs use `\`.
-  // Normalize both before comparing so project-reference ownership checks work cross-platform.
-  const normalized = resolve(fileName).replace(/\\/g, '/');
+  // TypeScript's parsed `fileNames` use `/` even on Windows, as does `resolve`, so both sides
+  // compare as absolute `/`-separated paths and project-reference ownership checks work cross-platform.
+  const normalized = resolve(fileName);
   return typescript.sys.useCaseSensitiveFileNames ? normalized : normalized.toLowerCase();
 }

@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 
 import { logger } from 'storybook/internal/node-logger';
 import type { PackageJson } from 'storybook/internal/types';

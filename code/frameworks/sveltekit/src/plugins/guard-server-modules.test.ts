@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 
 import { build } from 'vite';
 import { describe, expect, it } from 'vitest';

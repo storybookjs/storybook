@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 
 // eslint-disable-next-line depend/ban-dependencies
 import glob from 'fast-glob';

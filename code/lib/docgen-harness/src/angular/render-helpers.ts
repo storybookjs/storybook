@@ -2,7 +2,7 @@
 // and angular-component-meta-baselines.test.ts (ACM engine, `acm-` prefixed snapshots). Everything
 // here feeds committed snapshot files, so changes must keep recordings byte-identical for both.
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { expect } from 'vitest';
 

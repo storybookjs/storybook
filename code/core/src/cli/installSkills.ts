@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 import { getProjectRoot, isCI, versions } from 'storybook/internal/common';

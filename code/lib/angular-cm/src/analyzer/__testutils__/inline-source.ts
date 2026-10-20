@@ -6,7 +6,7 @@
  * back to disk for everything else, so `lib.d.ts` and the real `@angular/core` resolve normally and
  * the analyzer sees the types a user's project would give it.
  */
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 import ts from 'typescript';

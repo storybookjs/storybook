@@ -1,4 +1,4 @@
-import { join, relative, resolve } from 'node:path';
+import { join, relative, resolve } from 'pathe';
 import { parseArgs } from 'node:util';
 import pc from 'picocolors';
 import { x } from 'tinyexec';

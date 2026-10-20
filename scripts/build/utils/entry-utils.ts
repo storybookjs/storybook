@@ -1,5 +1,5 @@
 import { builtinModules } from 'node:module';
-import { join } from 'node:path';
+import { join } from 'pathe';
 import { pathToFileURL } from 'node:url';
 
 import type * as esbuild from 'esbuild';

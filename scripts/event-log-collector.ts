@@ -29,7 +29,7 @@
 
 import { createServer } from 'node:http';
 import { writeFile, mkdir } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 
 const args = process.argv.slice(2);
 const getFlag = (flag: string): string | undefined => {

@@ -1,5 +1,6 @@
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { existsSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- splits PATH with path.delimiter
 import { delimiter, join } from 'node:path';
 
 // eslint-disable-next-line depend/ban-dependencies

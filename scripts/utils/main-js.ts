@@ -1,5 +1,5 @@
 import { existsSync } from 'fs';
-import { join, resolve } from 'path';
+import { join, resolve } from 'pathe';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 

@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { type DetectResult, detect } from 'package-manager-detector';
 import { parse as parseYaml } from 'yaml';

@@ -16,7 +16,7 @@
 import { logger, once } from 'storybook/internal/node-logger';
 
 import { type FSWatcher, existsSync, watch } from 'fs';
-import * as path from 'path';
+import * as path from 'pathe';
 import { dedent } from 'ts-dedent';
 import * as v8 from 'v8';
 

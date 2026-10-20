@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 
 import { type Template } from '../code/lib/cli-storybook/src/sandbox-templates.ts';
 import * as templates from '../code/lib/cli-storybook/src/sandbox-templates.ts';

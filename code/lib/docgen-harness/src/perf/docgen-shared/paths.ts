@@ -5,7 +5,7 @@
  * `ReferenceError: __dirname is not defined in ES module scope`.
  */
 import { createRequire } from 'node:module';
-import { dirname, isAbsolute, join } from 'node:path';
+import { dirname, isAbsolute, join } from 'pathe';
 
 const require = createRequire(import.meta.url);
 

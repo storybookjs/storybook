@@ -1,6 +1,7 @@
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import type { DocgenJsDocTags, DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
 
+// eslint-disable-next-line no-restricted-imports -- hands the analyzer story paths alongside oxc-resolver's native component paths
 import { resolve } from 'node:path';
 
 import type {

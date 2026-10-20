@@ -103,6 +103,7 @@
     "github-slugger": "^2.0.0",
     "markdown-to-jsx": "^7.7.2",
     "memoizerific": "^1.11.3",
+    "pathe": "^2.0.3",
     "polished": "^4.2.2",
     "react": "^18.2.0",
     "react-aria": "^3.52.1",

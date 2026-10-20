@@ -1,6 +1,6 @@
 import { access } from 'node:fs/promises';
 
-import { resolve } from 'path';
+import { resolve } from 'pathe';
 
 import type { MonorepoDetails, Task } from '../task.ts';
 import { exec } from '../utils/exec.ts';

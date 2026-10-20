@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

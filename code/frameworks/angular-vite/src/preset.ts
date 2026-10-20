@@ -15,6 +15,7 @@ import type { Options, PresetProperty, StorybookConfigRaw } from 'storybook/inte
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
+// eslint-disable-next-line no-restricted-imports -- its existsSync and createRequire paths are matched against native node:path results in tests
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

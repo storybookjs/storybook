@@ -1,5 +1,6 @@
 import { stripVTControlCharacters } from 'node:util';
 import { existsSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- converts native paths to posix with path.sep
 import { join, resolve, sep } from 'node:path';
 import pc from 'picocolors';
 import { x } from 'tinyexec';

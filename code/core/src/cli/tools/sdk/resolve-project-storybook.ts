@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 const CHILD_HOST_ENTRY = 'storybook/internal/tools/child-host';
 

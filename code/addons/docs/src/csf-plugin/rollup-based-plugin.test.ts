@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { readFile } from 'node:fs/promises';
 import { SourceMap, type SourceMapPayload } from 'node:module';
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 
 import { formatCsf, loadCsf } from 'storybook/internal/csf-tools';
 import type { CsfEnricher } from 'storybook/internal/types';

@@ -1,6 +1,6 @@
 import { spawn } from 'child_process';
 import { existsSync } from 'fs';
-import { join } from 'path';
+import { join } from 'pathe';
 
 import { ROOT_DIRECTORY } from './constants.ts';
 

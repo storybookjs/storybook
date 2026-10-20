@@ -1,5 +1,6 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
+// eslint-disable-next-line no-restricted-imports -- normalizes native output with path.sep
 import path from 'node:path';
 
 import { SupportedLanguage } from 'storybook/internal/types';

@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 import { pathToFileURL } from 'node:url';
 
 /**

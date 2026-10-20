@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';

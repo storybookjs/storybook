@@ -1,7 +1,7 @@
 import type { Options } from 'storybook/internal/types';
 
 import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

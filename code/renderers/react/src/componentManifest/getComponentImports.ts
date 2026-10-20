@@ -1,4 +1,4 @@
-import { dirname } from 'node:path';
+import { dirname } from 'pathe';
 
 import { type NodePath, types as t } from 'storybook/internal/babel';
 import {

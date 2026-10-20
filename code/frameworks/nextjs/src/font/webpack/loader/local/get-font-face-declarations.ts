@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- strips webpack's native rootContext from produced paths
 import { dirname, join } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';

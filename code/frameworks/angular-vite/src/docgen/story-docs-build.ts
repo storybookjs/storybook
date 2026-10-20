@@ -17,6 +17,7 @@ import {
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
+// eslint-disable-next-line no-restricted-imports -- story file path is matched against natively resolved import targets
 import { resolve } from 'node:path';
 
 import type { AngularComponentSnippetMeta, AngularDocgenPayload } from './build-docgen.ts';

@@ -24,7 +24,7 @@ import {
   createLanguageServiceHost,
   resolveFileLanguageId,
 } from '@volar/typescript';
-import * as path from 'path';
+import * as path from 'pathe';
 import type ts from 'typescript';
 
 import type { StoryRef } from '../getComponentImports.ts';

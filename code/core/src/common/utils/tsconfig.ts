@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- returns tsconfig paths that webpack integrations use as resolver base urls
 import { basename, dirname, extname, relative, resolve } from 'node:path';
 
 import * as find from 'empathic/find';

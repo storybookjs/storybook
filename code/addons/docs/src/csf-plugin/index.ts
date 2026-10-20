@@ -1,4 +1,4 @@
-import { dirname, resolve } from 'node:path';
+import { dirname, resolve } from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 import type { EnrichCsfOptions } from 'storybook/internal/csf-tools';

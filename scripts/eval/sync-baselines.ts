@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'pathe';
 import { parseArgs } from 'node:util';
 import pc from 'picocolors';
 import { x } from 'tinyexec';

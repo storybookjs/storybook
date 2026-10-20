@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { basename, join, parse, relative } from 'node:path';
+import { basename, join, parse, relative } from 'pathe';
 
 import * as find from 'empathic/find';
 import * as walk from 'empathic/walk';

@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 import { pathToFileURL } from 'node:url';
 
 import { resolvePackageDir } from 'storybook/internal/common';

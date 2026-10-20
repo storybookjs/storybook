@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import fs from 'node:fs/promises';
-import path from 'path';
+import path from 'pathe';
 import os from 'os';
 import {
   checkRelativeLinks,

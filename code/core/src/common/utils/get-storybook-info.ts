@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- basename must handle config dirs with a trailing slash
 import { basename, dirname, join } from 'node:path';
 
 import type {

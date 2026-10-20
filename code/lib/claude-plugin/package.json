@@ -37,6 +37,7 @@
     "validate": "claude plugin validate . && claude plugin validate .claude-plugin/plugin.json"
   },
   "devDependencies": {
+    "pathe": "^2.0.3",
     "tinyexec": "^1.0.2"
   }
 }

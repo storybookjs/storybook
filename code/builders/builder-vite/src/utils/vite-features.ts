@@ -1,4 +1,4 @@
-import { basename } from 'node:path';
+import { basename } from 'pathe';
 
 import type { UserConfig } from 'vite';
 import { version } from 'vite';

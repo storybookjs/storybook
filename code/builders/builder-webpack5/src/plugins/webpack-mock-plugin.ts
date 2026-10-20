@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- adds context dependencies that webpack's watcher matches as native paths
 import { dirname, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

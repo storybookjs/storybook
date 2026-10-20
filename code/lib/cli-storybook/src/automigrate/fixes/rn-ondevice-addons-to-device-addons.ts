@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { basename, dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'pathe';
 
 import { findConfigFile, loadMainConfig } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';

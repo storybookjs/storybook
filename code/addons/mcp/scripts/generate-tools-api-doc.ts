@@ -10,7 +10,7 @@
  * Defaults to writing <repo-root>/tools-api.md (gitignored).
  */
 import fs from 'node:fs/promises';
-import path from 'node:path';
+import path from 'pathe';
 import { fileURLToPath } from 'node:url';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { buildServerInstructions } from 'storybook/internal/skills';

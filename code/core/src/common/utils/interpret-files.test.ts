@@ -1,5 +1,6 @@
 import { mkdtempSync, mkdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+// eslint-disable-next-line no-restricted-imports -- compares with the module resolver's native results
 import { join } from 'node:path';
 
 import { afterAll, describe, expect, it } from 'vitest';

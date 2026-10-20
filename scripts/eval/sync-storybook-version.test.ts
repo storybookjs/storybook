@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { skipWindows } from '../../code/vitest.helpers.ts';
 import type { Project } from './lib/projects.ts';

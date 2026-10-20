@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- compares with configDir values the cli resolves with node:path
 import { resolve } from 'node:path';
 
 import { cache } from 'storybook/internal/common';

@@ -1,5 +1,5 @@
 import { createWriteStream } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { logger } from 'storybook/internal/node-logger';
 import type { Stats } from 'storybook/internal/types';

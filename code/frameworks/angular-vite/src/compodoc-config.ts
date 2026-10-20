@@ -1,6 +1,7 @@
 // `viteFinal` and the Compodoc run must agree here, or a redirected output regenerates every start.
 import type { Preset } from 'storybook/internal/types';
 
+// eslint-disable-next-line no-restricted-imports -- returns tsconfig paths interchangeably with empathic's native find.up results
 import { resolve } from 'node:path';
 
 import { findTsconfigUp } from './find-tsconfig.ts';

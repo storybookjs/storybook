@@ -6,7 +6,7 @@
 // bindings and carries a `warning` naming what could not be read; the warning is recorded with the
 // snippet so a silently disappearing caveat can never hide behind an unchanged recording.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, describe, expect, it } from 'vitest';

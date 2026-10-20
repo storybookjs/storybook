@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 import { pathToFileURL } from 'node:url';
 
 // Prettier interface definition

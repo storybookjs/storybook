@@ -1,4 +1,4 @@
-import path, { join } from 'node:path';
+import path, { join } from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 import { getProjectRoot } from 'storybook/internal/common';

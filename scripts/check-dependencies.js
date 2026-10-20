@@ -4,6 +4,7 @@
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- runs before dependencies are installed, so pathe may be missing
 import { join } from 'node:path';
 import * as url from 'node:url';
 

@@ -31,7 +31,7 @@
  *     --components 800 --props 10 --saves 1 --mode live --heavy --no-force-gc --recycle on    # → survives
  */
 import * as fs from 'node:fs';
-import * as path from 'node:path';
+import * as path from 'pathe';
 
 import ts from 'typescript';
 

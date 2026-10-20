@@ -1,6 +1,7 @@
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { readFileSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- expects analyzer calls with oxc-resolver's native paths
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

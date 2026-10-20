@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { relative } from 'node:path';
+import { relative } from 'pathe';
 
 import { errorMessage, isRecord } from '../utils.ts';
 import type { ManifestPackage } from './types.ts';

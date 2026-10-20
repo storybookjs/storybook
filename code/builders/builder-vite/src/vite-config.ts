@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { relative, resolve } from 'node:path';
+import { relative, resolve } from 'pathe';
 
 import {
   getBuilderOptions,

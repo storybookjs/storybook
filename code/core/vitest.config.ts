@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 
 import { defineConfig, mergeConfig } from 'vitest/config';
 

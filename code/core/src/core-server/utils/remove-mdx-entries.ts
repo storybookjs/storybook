@@ -1,4 +1,4 @@
-import { isAbsolute, join, relative } from 'node:path';
+import { isAbsolute, join, relative } from 'pathe';
 
 import { commonGlobOptions, normalizeStories } from 'storybook/internal/common';
 import type { Options, StoriesEntry } from 'storybook/internal/types';

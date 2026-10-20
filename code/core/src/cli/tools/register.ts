@@ -1,5 +1,5 @@
 import { writeFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 
 import { sendTelemetryError, withTelemetry } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';

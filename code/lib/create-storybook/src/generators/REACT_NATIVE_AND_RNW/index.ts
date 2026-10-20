@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { ProjectType } from 'storybook/internal/cli';
 import {

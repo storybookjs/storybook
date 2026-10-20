@@ -55,6 +55,7 @@
   },
   "devDependencies": {
     "ember-source": "~3.28.1",
+    "pathe": "^2.0.3",
     "typescript": "^6.0.3"
   },
   "peerDependencies": {

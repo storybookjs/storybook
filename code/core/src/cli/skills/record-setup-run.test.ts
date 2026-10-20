@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- expects record-setup-run's node:path resolved configDir
 import { resolve } from 'node:path';
 
 import { cache, PackageManagerName } from 'storybook/internal/common';

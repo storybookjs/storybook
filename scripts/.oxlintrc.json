@@ -6,5 +6,24 @@
       "version": "18.2.0"
     }
   },
-  "ignorePatterns": ["**/*.vue", "**/*.svelte", "storage", "repros-generator"]
+  "ignorePatterns": ["**/*.vue", "**/*.svelte", "storage", "repros-generator"],
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "node:path",
+            "message": "Use `pathe`, which returns `/`-separated paths on every platform, so separators never need rewriting by hand. Keep `node:path` only where a value must stay platform-native (`sep`, `delimiter`, `win32`, `posix`, or comparisons with native paths from fs, glob or webpack), and state that reason in the disable comment.",
+            "allowTypeImports": true
+          },
+          {
+            "name": "path",
+            "message": "Use `pathe`, which returns `/`-separated paths on every platform, so separators never need rewriting by hand. Keep `node:path` only where a value must stay platform-native (`sep`, `delimiter`, `win32`, `posix`, or comparisons with native paths from fs, glob or webpack), and state that reason in the disable comment.",
+            "allowTypeImports": true
+          }
+        ]
+      }
+    ]
+  }
 }

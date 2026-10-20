@@ -1,4 +1,4 @@
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 import { defineMain } from '@storybook/react-vite/node';

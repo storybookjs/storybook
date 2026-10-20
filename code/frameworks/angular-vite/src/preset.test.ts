@@ -9,6 +9,7 @@ import {
 
 import { existsSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
+// eslint-disable-next-line no-restricted-imports -- builds expected path prefixes with path.sep
 import { dirname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- passes dirs into git pathspecs that append native path.sep
 import { dirname, resolve } from 'node:path';
 
 import {

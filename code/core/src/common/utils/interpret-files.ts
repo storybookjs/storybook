@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { extname } from 'node:path';
+import { extname } from 'pathe';
 
 import { storybookConfigExtensions } from '../../shared/constants/extensions.ts';
 import { createModuleResolver } from './module-resolver.ts';

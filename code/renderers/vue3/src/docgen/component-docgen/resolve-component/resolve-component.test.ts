@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- expects oxc-resolver's native resolved paths
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

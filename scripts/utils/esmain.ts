@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { extname } from 'node:path';
+import { extname } from 'pathe';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 

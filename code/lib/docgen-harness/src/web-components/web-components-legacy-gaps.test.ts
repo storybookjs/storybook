@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it, test, vi } from 'vitest';

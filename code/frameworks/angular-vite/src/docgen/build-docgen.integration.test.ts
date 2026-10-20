@@ -1,6 +1,6 @@
 import type { IndexEntry } from 'storybook/internal/types';
 
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative } from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 import { expect, it, vi } from 'vitest';

@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- checks path.sep and its tests mock node:path
 import * as path from 'node:path';
 
 function canonicalizeProjectPath(value: string): string {

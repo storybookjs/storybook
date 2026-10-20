@@ -1,4 +1,4 @@
-import { relative } from 'node:path';
+import { relative } from 'pathe';
 
 import { normalizeStories, normalizeStoryPath } from 'storybook/internal/common';
 import { sanitize, storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';

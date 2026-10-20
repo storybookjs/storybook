@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'pathe';
 
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';

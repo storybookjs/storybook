@@ -1,4 +1,4 @@
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 
 import { getProjectRoot } from 'storybook/internal/common';
 

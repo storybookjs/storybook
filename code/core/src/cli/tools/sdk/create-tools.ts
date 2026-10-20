@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- passes on a resolved cwd that callers expect to equal process.cwd()
 import { resolve } from 'node:path';
 
 import { versions } from 'storybook/internal/common';

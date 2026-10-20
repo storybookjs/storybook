@@ -2,7 +2,7 @@ import { spawn as spawnChild, type SpawnOptions } from 'node:child_process';
 import { once } from 'node:events';
 import { createWriteStream } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { join, resolve } from 'pathe';
 import type { Readable } from 'node:stream';
 import { parseArgs } from 'node:util';
 

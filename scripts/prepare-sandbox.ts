@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { cp, rm } from 'node:fs/promises';
 
-import { join } from 'path';
+import { join } from 'pathe';
 import waitOn from 'wait-on';
 
 import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants.ts';

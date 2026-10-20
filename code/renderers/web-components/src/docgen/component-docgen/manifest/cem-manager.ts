@@ -2,7 +2,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { DocgenError } from 'storybook/internal/types';
 
 import { stat } from 'node:fs/promises';
-import { relative } from 'node:path';
+import { relative } from 'pathe';
 
 import type { TagResolver } from '../tag-resolver.ts';
 import { errorMessage } from '../utils.ts';

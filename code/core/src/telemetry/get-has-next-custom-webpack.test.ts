@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { beforeEach, expect, it, vi } from 'vitest';
 

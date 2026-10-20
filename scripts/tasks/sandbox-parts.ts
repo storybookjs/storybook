@@ -3,11 +3,13 @@
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { access, cp, lstat, mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- builds preview annotation paths with path.sep
 import { dirname } from 'node:path';
 
 import { isFunction } from 'es-toolkit/predicate';
 import JSON5 from 'json5';
 import { createRequire } from 'module';
+// eslint-disable-next-line no-restricted-imports -- builds preview annotation paths with path.sep
 import { join, relative, resolve, sep } from 'path';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';

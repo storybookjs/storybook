@@ -1,5 +1,5 @@
 import { readFile, rm } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { join, resolve } from 'pathe';
 
 import type { MonorepoDetails, Task } from '../task.ts';
 import { ROOT_DIRECTORY } from '../utils/constants.ts';

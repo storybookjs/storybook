@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import type { Preset } from 'storybook/internal/types';
 

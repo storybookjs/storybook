@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { join } from 'pathe';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import type { ReadableStream } from 'node:stream/web';

@@ -1,6 +1,6 @@
 import { access } from 'node:fs/promises';
 
-import { join } from 'path';
+import { join } from 'pathe';
 
 const pathExists = async (path: string) => {
   try {

@@ -9,7 +9,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { randomUUID } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { DOCUMENTATION_JSON } from '../compodoc-config.ts';
 import { generateDocumentation } from './generate-documentation.ts';

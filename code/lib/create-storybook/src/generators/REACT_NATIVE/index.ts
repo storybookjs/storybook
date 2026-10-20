@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { ProjectType, copyTemplateFiles } from 'storybook/internal/cli';
 import { executeCommand } from 'storybook/internal/common';

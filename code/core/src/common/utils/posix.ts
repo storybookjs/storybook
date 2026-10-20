@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- converts native paths using path.sep
 import { posix as posixPath, sep } from 'node:path';
 
 /** Replaces the path separator with forward slashes */

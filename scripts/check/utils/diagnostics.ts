@@ -1,4 +1,4 @@
-import { isAbsolute, relative, resolve } from 'node:path';
+import { isAbsolute, relative, resolve } from 'pathe';
 
 // Head line of a tsc `--pretty false` diagnostic: `path(line,col): error TSxxxx:`.
 const DIAGNOSTIC_HEAD = /^(.+?)\(\d+,\d+\): (?:error|warning) TS\d+:/;

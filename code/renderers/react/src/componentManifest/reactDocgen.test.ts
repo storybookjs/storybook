@@ -1,5 +1,6 @@
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+// eslint-disable-next-line no-restricted-imports -- expects tsconfig-paths' native match results
 import { dirname, join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';

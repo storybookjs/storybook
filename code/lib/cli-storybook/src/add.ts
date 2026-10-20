@@ -1,4 +1,4 @@
-import { relative } from 'node:path';
+import { relative } from 'pathe';
 
 import { type PackageManagerName, setupAddonInConfig, versions } from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';

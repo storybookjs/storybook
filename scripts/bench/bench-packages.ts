@@ -1,4 +1,4 @@
-import path from 'node:path';
+import path from 'pathe';
 
 import { BigQuery } from '@google-cloud/bigquery';
 import { InvalidArgumentError, program } from 'commander';

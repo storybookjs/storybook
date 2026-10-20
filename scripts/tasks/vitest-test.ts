@@ -1,6 +1,6 @@
 import { createWriteStream } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execa } from 'execa';

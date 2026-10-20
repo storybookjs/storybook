@@ -8,7 +8,7 @@ import {
 } from 'storybook/internal/common';
 
 import jscodeshift from 'jscodeshift';
-import path from 'path';
+import path from 'pathe';
 import picocolors from 'picocolors';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';

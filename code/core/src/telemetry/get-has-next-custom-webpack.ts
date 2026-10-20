@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 const NEXT_CONFIG_FILES = [
   'next.config.js',

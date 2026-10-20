@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import type { PackageJson } from 'storybook/internal/types';

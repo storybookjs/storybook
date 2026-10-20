@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- passes the cache dir to next's native swc binding
 import { join } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';

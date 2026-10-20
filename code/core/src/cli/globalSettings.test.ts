@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import { dirname } from 'node:path';
+import { dirname } from 'pathe';
 import { afterEach } from 'node:test';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';

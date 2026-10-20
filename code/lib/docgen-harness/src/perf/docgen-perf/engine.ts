@@ -2,7 +2,7 @@
  * What the orchestrator knows about an engine. Engines differ only in how one repetition is
  * produced; everything downstream (aggregation, member counts) follows from that choice.
  */
-import * as path from 'node:path';
+import * as path from 'pathe';
 
 import { resolvePin } from '../docgen-shared/pin.ts';
 import type { SeriesResult } from '../docgen-shared/series.ts';

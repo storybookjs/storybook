@@ -7,7 +7,7 @@
  * to add extra snippets to more renderers.
  */
 import os from 'node:os';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { program } from 'commander';
 import { promises as fs } from 'fs';

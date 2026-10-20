@@ -1,6 +1,6 @@
 import { accessSync } from 'node:fs';
 import { cp, rm } from 'node:fs/promises';
-import path, { join } from 'node:path';
+import path, { join } from 'pathe';
 import { promisify } from 'node:util';
 
 import dirSize from 'fast-folder-size';

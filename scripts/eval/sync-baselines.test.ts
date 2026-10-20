@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { onlyWindows, skipWindows } from '../../code/vitest.helpers.ts';
 import { BASELINE_STORYBOOK_FILES } from './lib/baseline-template-files.ts';

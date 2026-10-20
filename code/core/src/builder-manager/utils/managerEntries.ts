@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- replaces path.sep in cache directory names
 import { dirname, join, parse, relative, sep } from 'node:path';
 
 import { resolvePathInStorybookCache } from 'storybook/internal/common';

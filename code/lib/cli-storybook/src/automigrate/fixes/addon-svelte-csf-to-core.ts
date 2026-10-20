@@ -1,4 +1,4 @@
-import { relative, resolve } from 'node:path';
+import { relative, resolve } from 'pathe';
 
 import { parser, traverse, types as t } from 'storybook/internal/babel';
 import { getProjectRoot, normalizeAddonName, removeAddon } from 'storybook/internal/common';

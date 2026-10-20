@@ -14,7 +14,7 @@ import {
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 
 import type { WebComponentsDocgenPayload } from '../component-docgen/build-docgen.ts';
 import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';

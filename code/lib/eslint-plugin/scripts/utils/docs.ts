@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'fs/promises';
-import { resolve } from 'path';
+import { resolve } from 'pathe';
 
 import { minimatch } from 'minimatch';
 import { format } from 'oxfmt';

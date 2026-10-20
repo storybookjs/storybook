@@ -1,7 +1,7 @@
 import type { Options } from 'storybook/internal/types';
 
 import { existsSync } from 'node:fs';
-import { isAbsolute } from 'node:path';
+import { isAbsolute } from 'pathe';
 
 import { expect, test } from 'vitest';
 

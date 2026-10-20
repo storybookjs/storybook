@@ -5,7 +5,7 @@
  * the root package.json.
  */
 import { writeFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { dirname, resolve } from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 // eslint-disable-next-line depend/ban-dependencies

@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as os from 'node:os';
-import * as path from 'node:path';
+import * as path from 'pathe';
 
 /** Resolve the real node_modules directory (may be hoisted to the workspace root). */
 const NODE_MODULES_DIR = path.resolve(require.resolve('react/package.json'), '../..');

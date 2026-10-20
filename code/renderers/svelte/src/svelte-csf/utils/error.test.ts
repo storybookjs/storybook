@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import path from 'node:path';
+import path from 'pathe';
 import url from 'node:url';
 
 import { describe, expect, it } from 'vitest';

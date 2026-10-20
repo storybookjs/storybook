@@ -1,4 +1,4 @@
-import { isAbsolute } from 'node:path';
+import { isAbsolute } from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 import type { StoryIndexGenerator } from 'storybook/internal/core-server';

@@ -7,7 +7,7 @@
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { x } from 'tinyexec';
-import { resolve, dirname } from 'node:path';
+import { resolve, dirname } from 'pathe';
 import { fileURLToPath } from 'node:url';
 import type { ChildProcess } from 'node:child_process';
 

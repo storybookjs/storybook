@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, resolve } from 'pathe';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

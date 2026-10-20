@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
 

@@ -5,7 +5,7 @@
  * package-manager-aware install step.
  */
 import { existsSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'pathe';
 import { x } from 'tinyexec';
 import type { Logger } from './utils.ts';
 

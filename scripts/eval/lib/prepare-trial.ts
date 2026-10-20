@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { mkdir, rm } from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- workspace paths are combined with native paths from eval utils
 import { dirname, join } from 'node:path';
 import type { Logger } from './utils.ts';
 import type { Project } from './projects.ts';

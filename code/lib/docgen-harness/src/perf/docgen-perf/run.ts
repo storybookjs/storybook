@@ -8,7 +8,7 @@
  *   yarn bench:docgen-perf --engine react-legacy --engine react-osa
  */
 import * as fs from 'node:fs';
-import * as path from 'node:path';
+import * as path from 'pathe';
 
 import { SANDBOX_DIRECTORY } from '../docgen-shared/paths.ts';
 import { parseCliOptions } from './cli.ts';

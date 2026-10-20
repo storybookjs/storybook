@@ -1,4 +1,4 @@
-import { join, relative } from 'node:path';
+import { join, relative } from 'pathe';
 import { pathToFileURL } from 'node:url';
 
 // eslint-disable-next-line depend/ban-dependencies

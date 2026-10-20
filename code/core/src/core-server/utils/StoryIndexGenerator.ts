@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- formats error paths with path.sep
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
 import {

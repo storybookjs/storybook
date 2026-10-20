@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { join, relative } from 'pathe';
 import { x } from 'tinyexec';
 
 const GITHUB_LABEL_MAX_LENGTH = 50;

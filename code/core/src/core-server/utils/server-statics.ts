@@ -1,5 +1,6 @@
 import { existsSync, statSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- parses windows static dirs with sep, posix and win32
 import { basename, dirname, isAbsolute, join, posix, resolve, sep, win32 } from 'node:path';
 
 import {

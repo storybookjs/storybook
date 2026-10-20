@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 import type { PresetProperty, PresetPropertyFn } from 'storybook/internal/types';

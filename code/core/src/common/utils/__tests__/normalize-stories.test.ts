@@ -1,4 +1,5 @@
 /// <reference types="@testing-library/jest-dom" />
+// eslint-disable-next-line no-restricted-imports -- expects native separators via path.sep
 import { sep } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';

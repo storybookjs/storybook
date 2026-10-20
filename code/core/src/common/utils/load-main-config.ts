@@ -1,5 +1,5 @@
 import { readFile, rm, writeFile } from 'node:fs/promises';
-import { join, parse, relative, resolve } from 'node:path';
+import { join, parse, relative, resolve } from 'pathe';
 
 import { logger } from 'storybook/internal/node-logger';
 import { MainFileEvaluationError } from 'storybook/internal/server-errors';

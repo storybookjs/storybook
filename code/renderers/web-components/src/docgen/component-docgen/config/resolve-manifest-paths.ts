@@ -1,7 +1,7 @@
 import { findFilesUp } from 'storybook/internal/common';
 
 import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, resolve } from 'pathe';
 
 import type { WebComponentsFrameworkOptions } from '../../../types.ts';
 

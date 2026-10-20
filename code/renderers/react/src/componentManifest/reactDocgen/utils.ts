@@ -1,7 +1,7 @@
 import type { SBType } from 'storybook/internal/csf';
 import { findTsconfigPathForFile } from 'storybook/internal/common';
 
-import { dirname } from 'node:path';
+import { dirname } from 'pathe';
 import type {
   ElementsType,
   LiteralType,

@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import type { DocgenPayload } from '../../../../core/src/shared/open-service/services/docgen/types.ts';
 

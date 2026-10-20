@@ -1,5 +1,5 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 import { tmpdir } from 'node:os';
 
 import { SupportedRenderer } from 'storybook/internal/types';

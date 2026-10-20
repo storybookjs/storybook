@@ -2,6 +2,7 @@ import { deepStrictEqual } from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+// eslint-disable-next-line no-restricted-imports -- passes marketplace roots to the codex executable and matches them in its config
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { x } from 'tinyexec';

@@ -9,7 +9,7 @@ import {
   unlinkSync,
   watch,
 } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import type { MonorepoDetails, Task } from '../task.ts';
 import { ask } from '../utils/ask.ts';

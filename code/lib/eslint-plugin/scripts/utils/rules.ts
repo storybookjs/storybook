@@ -1,5 +1,5 @@
 import fs from 'fs';
-import path from 'path';
+import path from 'pathe';
 
 import type { StorybookRuleMeta } from '../../src/types/index.ts';
 import type { createStorybookRule } from '../../src/utils/create-storybook-rule.ts';

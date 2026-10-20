@@ -1,6 +1,6 @@
 import { access, rm } from 'node:fs/promises';
 
-import { join } from 'path';
+import { join } from 'pathe';
 
 import type { Task } from '../task.ts';
 import { REPROS_DIRECTORY } from '../utils/constants.ts';

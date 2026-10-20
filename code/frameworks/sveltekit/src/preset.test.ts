@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 
 import { vol, fs as memfs } from 'memfs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

@@ -20,6 +20,7 @@ import { DOCS_TOOLSET_INSTRUCTIONS as serverInstructions } from 'storybook/inter
 import type { StorybookContext } from './src/types.ts';
 import { parseArgs } from 'node:util';
 import * as fs from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- checks manifest containment with path.sep
 import { resolve, dirname, sep } from 'node:path';
 
 function resolveManifestFile(base: string, rel: string): string {

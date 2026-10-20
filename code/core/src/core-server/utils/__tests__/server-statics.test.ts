@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- builds expected staticPath values for server-statics, which resolves with node:path
 import { resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';

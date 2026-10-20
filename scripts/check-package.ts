@@ -1,13 +1,11 @@
 // This script makes sure that we can support type checking,
 // without having to build dts files for all packages in the monorepo.
 // It is not implemented yet for angular, svelte and vue.
-import { join } from 'node:path';
-import { relative } from 'node:path';
+import { join, relative, resolve } from 'pathe';
 
 import { program } from 'commander';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
-import { resolve } from 'path';
 import picocolors from 'picocolors';
 import prompts from 'prompts';
 import Watchpack from 'watchpack';

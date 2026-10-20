@@ -5,6 +5,7 @@ export type { E };
 
 export type Node = E.Node;
 
+/** The start and end of a span, as 1-based lines, 0-based columns and offsets. */
 export interface SourceLocation {
   start: { line: number; column: number; index: number };
   end: { line: number; column: number; index: number };
@@ -224,6 +225,10 @@ const position = (code: string, index: number) => {
   return { line: low + 1, column: index - starts[low], index };
 };
 
+/**
+ * The 1-based line and 0-based column of the offsets `start` and `end` in `code`, which must be the
+ * normalized code the offsets index, such as `parseModule(...).code` or `editor.code`.
+ */
 export const locationOf = (code: string, start: number, end: number): SourceLocation => ({
   start: position(code, start),
   end: position(code, end),
@@ -311,7 +316,11 @@ export const isNullLiteral = (node: unknown): node is E.NullLiteral =>
 export const isRegExpLiteral = (node: unknown): node is E.RegExpLiteral =>
   isNode(node) && node.type === 'Literal' && 'regex' in node && !!(node as E.RegExpLiteral).regex;
 
-export const isIdentifier = (node: unknown, name?: string): node is E.IdentifierReference =>
+/** Whether `node` is an identifier, and one named `name` when given. */
+export const isIdentifier = (
+  node: unknown,
+  name?: string
+): node is E.IdentifierReference | E.BindingIdentifier | E.IdentifierName =>
   isNode(node) &&
   node.type === 'Identifier' &&
   (name === undefined || (node as E.IdentifierReference).name === name);
@@ -369,6 +378,10 @@ export const staticKey = (member: Node): string | undefined => {
   return undefined;
 };
 
+/**
+ * The first property of `object` whose `staticKey` is `name`, a method or accessor included: the
+ * first, not the one that wins at runtime.
+ */
 export const objectProperty = (object: E.ObjectExpression, name: string): Property | undefined =>
   object.properties.find(
     (member): member is Property => member.type === 'Property' && staticKey(member) === name

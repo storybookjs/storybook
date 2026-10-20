@@ -67,7 +67,9 @@ for (const story of csf.objects()) {
 }
 ```
 
-`textOf` gives a node's source as written, and `placeableTextOf` that source ready to place as a value. Both take the nodes of an editor's `program`, `parseExpression` and `parseModule`. `detachedTextOf` also dedents it as if the node's line had no indent, to place a value from a file at another indent, such as in a generated snippet.
+`textOf` gives a node's source as written, and `placeableTextOf` that source ready to place as a value. `detachedTextOf` also dedents it as if the node's line had no indent, to place a value from a file at another indent, such as in a generated snippet. All three take the nodes of an editor's `program`, `parseExpression` and `parseModule`.
+
+To read a tree, `walk` visits its nodes depth-first, `staticKey` reads an object member's key, `objectProperty(object, name)` finds a property by that key, `isIdentifier(node, name)` checks for an identifier and its name, and `locationOf(code, start, end)` gives the lines and columns of two offsets.
 
 ## Transforming preview and main configuration
 

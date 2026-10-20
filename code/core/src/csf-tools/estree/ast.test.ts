@@ -7,7 +7,10 @@ import { parseSync } from 'oxc-parser';
 import {
   type E,
   codeFrame,
+  isIdentifier,
+  locationOf,
   moduleOf,
+  objectProperty,
   parseExpression,
   outerSpan,
   parseModule,
@@ -210,5 +213,34 @@ describe('codeFrame', () => {
     expect(codeFrame('Button.stories.ts', 'const a = 1;\nconst b = ;', 23)).toBe(
       'Button.stories.ts: (2:10)\n> 2 | const b = ;\n    |           ^'
     );
+  });
+});
+
+describe('locationOf', () => {
+  it('gives 1-based lines and 0-based columns of both offsets', () => {
+    expect(locationOf('a;\nconst b = 1;', 3, 8)).toEqual({
+      start: { line: 2, column: 0, index: 3 },
+      end: { line: 2, column: 5, index: 8 },
+    });
+  });
+});
+
+describe('isIdentifier', () => {
+  it('checks the name only when one is given', () => {
+    const node = parseExpression('story');
+    expect(isIdentifier(node)).toBe(true);
+    expect(isIdentifier(node, 'story')).toBe(true);
+    expect(isIdentifier(node, 'meta')).toBe(false);
+    expect(isIdentifier(parseExpression("'story'"))).toBe(false);
+  });
+});
+
+describe('objectProperty', () => {
+  it('finds the first property with a static key, skipping spreads and dynamic keys', () => {
+    const object = parseExpression(
+      "{ ...base, [key]: 0, ['args']: 1, args() {}, args: 3 }"
+    ) as E.ObjectExpression;
+    expect(textOf(objectProperty(object, 'args')!)).toBe("['args']: 1");
+    expect(objectProperty(object, 'key')).toBeUndefined();
   });
 });

@@ -72,7 +72,7 @@ describe('remove-experimental-review', () => {
   });
 
   it('does not apply to a main config without the flag', async () => {
-    expect(await check(mainWith('features: { changeDetection: true },'))).toBeNull();
+    expect(await check(mainWith('features: { experimentalTestSyntax: true },'))).toBeNull();
   });
 
   it.each(['11.0.0-alpha.1', '11.0.0', '11.1.0'])('applies on Storybook %s', async (version) => {
@@ -89,7 +89,7 @@ describe('remove-experimental-review', () => {
     'removes the flag set to %s and keeps the other features',
     async (value) => {
       const source = mainWith(
-        `features: { changeDetection: true, experimentalReview: ${value}, experimentalTestSyntax: true },`
+        `features: { controls: true, experimentalReview: ${value}, experimentalTestSyntax: true },`
       );
 
       expect(await migrate(source)).toMatchInlineSnapshot(`
@@ -99,7 +99,7 @@ describe('remove-experimental-review', () => {
           stories: ['../src/**/*.stories.@(ts|tsx)'],
           framework: '@storybook/react-vite',
           features: {
-            changeDetection: true,
+            controls: true,
             experimentalTestSyntax: true
           },
         };

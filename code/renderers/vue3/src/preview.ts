@@ -8,7 +8,7 @@ import type {
   TypedMetaArgKeys,
   WithRenderArgs,
   Preview,
-  PreviewAddon,
+  PreviewAddonEntry,
   Story,
 } from 'storybook/internal/csf';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
@@ -45,7 +45,7 @@ import { type VueTypes } from './types.ts';
  * });
  * ```
  */
-export function __definePreview<Addons extends PreviewAddon<never>[]>(
+export function __definePreview<Addons extends PreviewAddonEntry[]>(
   input: { addons: Addons } & ProjectAnnotations<VueTypes & InferTypes<Addons>>
 ): VuePreview<VueTypes & InferTypes<Addons>> {
   const preview = definePreviewBase({

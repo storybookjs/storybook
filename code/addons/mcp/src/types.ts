@@ -87,11 +87,4 @@ export type AddonContext = DocsServingContext & {
   a11yEnabled?: boolean;
 
   toolsets?: NonNullable<AddonOptionsOutput>['toolsets'];
-
-  /**
-   * Whether this request came through the `storybook ai` CLI channel (marked by
-   * {@link STORYBOOK_MCP_PROXY_HEADER}) rather than from a direct MCP client. Telemetry reports it
-   * as the `transport` field.
-   */
-  cliClient?: boolean;
 };

@@ -9,11 +9,7 @@ import { vol } from 'memfs';
 
 import { runFix } from '../helpers/fix-test-utils.ts';
 import type { CheckOptions, RunOptions } from '../types.ts';
-import {
-  createExperimentalFeatureFix,
-  enableExperimentalDocgenServer,
-  resolveRequestedFeatures,
-} from './experimental-features.ts';
+import { createExperimentalFeatureFix, resolveRequestedFeatures } from './experimental-features.ts';
 
 // Spy-only mock, redirected to memfs per test and restored afterwards so Vitest can still write
 // inline snapshots to the real test file.
@@ -49,6 +45,15 @@ const checkOptions = (overrides: Partial<CheckOptions> = {}): CheckOptions =>
 const withFeatures = (features: StorybookConfigRaw['features']): StorybookConfigRaw =>
   ({ ...REACT_MAIN_CONFIG, features }) as StorybookConfigRaw;
 
+// No experimental flag ships an enable-fix right now, so the factory is exercised through one.
+const exampleFlag = createExperimentalFeatureFix({
+  id: 'enable-experimental-code-examples',
+  name: 'experimentalCodeExamples',
+  introducedIn: '10.5.0',
+  link: 'https://example.com',
+  prompt: 'Enable experimentalCodeExamples.',
+});
+
 const runOptions = { mainConfigPath: MAIN_CONFIG_PATH, storiesPaths: [] } as unknown as Omit<
   RunOptions<object>,
   'files'
@@ -72,11 +77,11 @@ describe('experimental feature flag automigrations', () => {
 
   describe('check', () => {
     // Each flag carries its own `introducedIn`, so a flag added in a later minor must stay hidden
-    // on an upgrade that does not reach it. The shipped flag is 10.5, so this needs its own fix.
+    // on an upgrade that does not reach it. The example flag is 10.5, so this needs its own fix.
     describe('per-feature introducedIn', () => {
       const futureFlag = createExperimentalFeatureFix({
         id: 'enable-future-flag',
-        name: 'experimentalDocgenServer',
+        name: 'experimentalCodeExamples',
         introducedIn: '10.7.0',
         link: 'https://example.com',
         prompt: 'Enable a flag introduced in 10.7.',
@@ -112,28 +117,24 @@ describe('experimental feature flag automigrations', () => {
       ['already past the boundary', '10.5.0', '10.6.0', false],
       ['not reaching the boundary', '10.3.0', '10.4.0', false],
     ])('%s', async (_label, beforeVersion, storybookVersion, expected) => {
-      const result = await enableExperimentalDocgenServer.check!(
-        checkOptions({ beforeVersion, storybookVersion })
-      );
+      const result = await exampleFlag.check!(checkOptions({ beforeVersion, storybookVersion }));
       expect(result !== null).toBe(expected);
     });
 
     it('is not offered outside an upgrade unless the fix was requested by name', async () => {
-      const result = await enableExperimentalDocgenServer.check!(
-        checkOptions({ beforeVersion: undefined })
-      );
+      const result = await exampleFlag.check!(checkOptions({ beforeVersion: undefined }));
       expect(result).toBeNull();
     });
 
     it('is offered outside an upgrade when the fix was requested by name', async () => {
-      const result = await enableExperimentalDocgenServer.check!(
+      const result = await exampleFlag.check!(
         checkOptions({ beforeVersion: undefined, requested: true })
       );
       expect(result).not.toBeNull();
     });
 
     it('is offered on a project already past the boundary when requested by name', async () => {
-      const result = await enableExperimentalDocgenServer.check!(
+      const result = await exampleFlag.check!(
         checkOptions({ beforeVersion: '10.5.0', storybookVersion: '10.6.0', requested: true })
       );
       expect(result).not.toBeNull();
@@ -142,7 +143,7 @@ describe('experimental feature flag automigrations', () => {
     it.each(['10.4.0', '9.1.0'])(
       'is never offered against Storybook %s, even when requested by name',
       async (storybookVersion) => {
-        const result = await enableExperimentalDocgenServer.check!(
+        const result = await exampleFlag.check!(
           checkOptions({ storybookVersion, beforeVersion: undefined, requested: true })
         );
         expect(result).toBeNull();
@@ -150,48 +151,23 @@ describe('experimental feature flag automigrations', () => {
     );
 
     it.each([true, false])('is not offered when already explicitly set to %s', async (value) => {
-      const result = await enableExperimentalDocgenServer.check!(
-        checkOptions({ mainConfig: withFeatures({ experimentalDocgenServer: value }) })
+      const result = await exampleFlag.check!(
+        checkOptions({ mainConfig: withFeatures({ experimentalCodeExamples: value }) })
       );
       expect(result).toBeNull();
     });
   });
 
-  describe('docgen provider requirement', () => {
-    it.each([
-      ['@storybook/react-vite', true],
-      ['@storybook/nextjs', true],
-      ['@storybook/react-webpack5', true],
-      ['@storybook/vue3-vite', true],
-      ['@storybook/angular-vite', true],
-      ['@storybook/svelte-vite', false],
-      ['@storybook/web-components-vite', false],
-      ['@storybook/preact-vite', false],
-      ['@storybook/angular', false],
-    ])('%s offers enable-experimental-docgen-server: %s', async (framework, expected) => {
-      const result = await enableExperimentalDocgenServer.check!(
-        checkOptions({ mainConfig: { framework: { name: framework } } as StorybookConfigRaw })
-      );
-      expect(result !== null).toBe(expected);
-    });
-  });
-
   describe('resolveRequestedFeatures', () => {
-    it('maps supported flag names onto their fixes', () => {
-      expect(resolveRequestedFeatures(' experimentalDocgenServer ,')).toEqual([
-        { name: 'experimentalDocgenServer', fixId: enableExperimentalDocgenServer.id },
-      ]);
-    });
-
     it('returns nothing when no flags were requested', () => {
       expect(resolveRequestedFeatures(undefined)).toEqual([]);
     });
 
-    it.each(['experimentalReview', 'constructor', 'toString', '__proto__'])(
+    it.each(['experimentalDocgenServer', 'experimentalReview', 'constructor', '__proto__'])(
       'rejects %s',
       (name) => {
         expect(() => resolveRequestedFeatures(name)).toThrow(
-          `Unknown feature flag(s): ${name}. Available: experimentalDocgenServer.`
+          `Unknown feature flag(s): ${name}. Available: none.`
         );
       }
     );
@@ -201,7 +177,7 @@ describe('experimental feature flag automigrations', () => {
     it('writes the flag while preserving the rest of the file', async () => {
       vol.fromJSON({ [MAIN_CONFIG_PATH]: FIXTURE_MAIN_TS });
 
-      await runFix(enableExperimentalDocgenServer, runOptions);
+      await runFix(exampleFlag, runOptions);
 
       expect(memfs.fs.readFileSync(MAIN_CONFIG_PATH, 'utf-8')).toMatchInlineSnapshot(`
         "import type { StorybookConfig } from '@storybook/react-vite';
@@ -216,7 +192,7 @@ describe('experimental feature flag automigrations', () => {
           },
 
           features: {
-            experimentalDocgenServer: true
+            experimentalCodeExamples: true
           }
         };
         export default config;

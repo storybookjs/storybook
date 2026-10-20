@@ -105,6 +105,23 @@ describe('presets', () => {
     await expect(getPresets(['preset-foo'], { isCritical: true })).rejects.toThrow();
   });
 
+  it('loads a framework preset from the project config directory', async () => {
+    mockedResolveUtils.safeResolveModule.mockImplementation(({ specifier, parent }) =>
+      specifier === '@storybook/web-components-vite/preset' && parent === '/project/.storybook'
+        ? '/project/node_modules/@storybook/web-components-vite/preset.js'
+        : undefined
+    );
+    mockedResolveUtils.importModule.mockResolvedValue({});
+
+    await loadPreset('@storybook/web-components-vite/preset', 0, {
+      configDir: '/project/.storybook',
+    } as any);
+
+    expect(mockedResolveUtils.importModule).toHaveBeenCalledWith(
+      '/project/node_modules/@storybook/web-components-vite/preset.js'
+    );
+  });
+
   it('loads and applies presets when they are combined in another preset', async () => {
     mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
       if (path === 'preset-first') {
@@ -777,5 +794,36 @@ describe('loadPreset', () => {
         },
       ]
     `);
+  });
+});
+
+describe('getPresets sequential module loading', () => {
+  afterEach(() => {
+    mockedResolveUtils.importModule.mockReset();
+  });
+
+  it('waits for each preset import to settle before importing the next, so CJS presets can require() ESM entries', async () => {
+    const importOrder: string[] = [];
+    let resolveFirstPreset: (value: Record<string, never>) => void;
+    const firstPresetLoaded = new Promise<Record<string, never>>((resolve) => {
+      resolveFirstPreset = resolve;
+    });
+
+    mockedResolveUtils.safeResolveModule.mockImplementation(({ specifier }) => specifier);
+    mockedResolveUtils.importModule.mockImplementation((path: string) => {
+      importOrder.push(path);
+      return path === 'preset-first' ? firstPresetLoaded : Promise.resolve({});
+    });
+
+    const presetsPromise = getPresets(['preset-first', 'preset-second'], {
+      configDir: '/project/.storybook',
+    } as any);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(importOrder).toEqual(['preset-first']);
+
+    resolveFirstPreset!({});
+    await presetsPromise;
+    expect(importOrder).toEqual(['preset-first', 'preset-second']);
   });
 });

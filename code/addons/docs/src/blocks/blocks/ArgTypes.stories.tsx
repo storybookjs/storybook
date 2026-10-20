@@ -1,5 +1,5 @@
 /** Custom docs page: {@link ./ArgTypes.mdx} (attached via `<Meta of={...} />`). */
-import type { PlayFunctionContext } from 'storybook/internal/csf';
+import type { StoryContext } from 'storybook/internal/csf';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
@@ -69,7 +69,7 @@ export const OfComponentWithoutAStory: Story = {
   beforeEach: async () => {
     // The block only consults the docgen service behind this feature, which is off by default here.
     const previousFeatures = globalThis.FEATURES;
-    globalThis.FEATURES = { ...previousFeatures, experimentalDocgenServer: true };
+    globalThis.FEATURES = { ...previousFeatures, docgenServer: true };
     return () => {
       globalThis.FEATURES = previousFeatures;
     };
@@ -128,15 +128,18 @@ export const Categories: Story = {
   },
 };
 
+// Service docgen loads argTypes asynchronously, which can outlast the default one-second wait.
+const DOCGEN_TIMEOUT = { timeout: 5000 };
+
 const findSubcomponentTabs = async (
   canvas: Parameters<NonNullable<Story['play']>>[0]['canvas'],
-  step: PlayFunctionContext['step']
+  step: StoryContext['step']
 ) => {
   let subcomponentATab: HTMLElement | null = null;
   let subcomponentBTab: HTMLElement | null = null;
   await step('should have tabs for the subcomponents', async () => {
-    subcomponentATab = await canvas.findByText('SubcomponentA');
-    subcomponentBTab = await canvas.findByText('SubcomponentB');
+    subcomponentATab = await canvas.findByText('SubcomponentA', {}, DOCGEN_TIMEOUT);
+    subcomponentBTab = await canvas.findByText('SubcomponentB', {}, DOCGEN_TIMEOUT);
   });
   return { subcomponentATab, subcomponentBTab };
 };

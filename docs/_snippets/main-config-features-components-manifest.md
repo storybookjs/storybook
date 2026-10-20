@@ -86,7 +86,6 @@ export default {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   features: {
     componentsManifest: true,
-    experimentalDocgenServer: true,
   },
 };
 ```
@@ -99,7 +98,6 @@ const config: StorybookConfig = {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   features: {
     componentsManifest: true,
-    experimentalDocgenServer: true,
   },
 };
 
@@ -114,7 +112,6 @@ export default defineMain({
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   features: {
     componentsManifest: true,
-    experimentalDocgenServer: true,
   },
 });
 ```
@@ -129,7 +126,6 @@ export default defineMain({
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   features: {
     componentsManifest: true,
-    experimentalDocgenServer: true,
   },
 });
 ```

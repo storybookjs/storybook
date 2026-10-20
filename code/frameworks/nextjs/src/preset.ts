@@ -13,7 +13,7 @@ import nextBabelPreset from './babel/preset.ts';
 import { configureConfig } from './config/webpack.ts';
 import TransformFontImports from './font/babel/index.ts';
 import type { FrameworkOptions, StorybookConfig } from './types.ts';
-import { isNextVersionGte } from './utils.ts';
+import { isNextVersionGte, resolveNextConfig } from './utils.ts';
 
 // Soft-deprecated in Storybook 11, removed in Storybook 12. `deprecate` warns once per process,
 // so calling it at module scope is safe even when the preset module gets re-evaluated.
@@ -33,10 +33,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   // (see next/dist/server/config-utils.js) before @storybook/builder-webpack5
   // starts to use it. Without this, webpack's file system cache (fsCache: true)
   // does not work.
-  await configureConfig({
-    // Pass in a dummy webpack config object for now, since we don't want to
-    // modify the real one yet. We pass in the real one in webpackFinal.
-    baseConfig: {},
+  await resolveNextConfig({
     nextConfigPath: typeof framework === 'string' ? undefined : framework.options.nextConfigPath,
   });
 
@@ -150,9 +147,12 @@ export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOption
 
 export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, options) => {
   const { nextConfigPath } = await options.presets.apply<FrameworkOptions>('frameworkOptions');
+  const { executor } = await import('@storybook/builder-webpack5');
+  const webpackInstance = await executor.get(options);
   const nextConfig = await configureConfig({
     baseConfig,
     nextConfigPath,
+    webpackInstance,
   });
 
   // Use dynamic imports to ensure these modules that use webpack load after
@@ -182,7 +182,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   configureCss(baseConfig, nextConfig);
   configureImages(baseConfig, nextConfig);
   configureStyledJsx(baseConfig);
-  configureNodePolyfills(baseConfig);
+  configureNodePolyfills(baseConfig, webpackInstance);
   configureAliases(baseConfig);
 
   if (isDevelopment) {

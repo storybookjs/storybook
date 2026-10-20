@@ -10,7 +10,6 @@ import {
   SET_CURRENT_STORY,
   SET_FILTER,
   SET_INDEX,
-  SET_STORIES,
   SIDEBAR_FILTER_CHANGED,
   STORY_ARGS_UPDATED,
   STORY_CHANGED,
@@ -38,11 +37,10 @@ import type {
   Args,
   ComponentTitle,
   DocsPreparedPayload,
-  SetStoriesPayload,
+  SelectStoryPayload,
   StatusValue,
   StoryId,
   StoryIndex,
-  StoryKind,
   StoryName,
   StoryPreparedPayload,
   Tag,
@@ -58,7 +56,6 @@ import { countStatusesByValue } from '../../shared/status-store/index.ts';
 import { getEventMetadata } from '../lib/events.ts';
 import {
   addPreparedStories,
-  denormalizeStoryParameters,
   getComponentLookupList,
   getStoriesLookupList,
   transformStoryIndexToStoriesHash,
@@ -75,6 +72,34 @@ import {
   parseTagsParam,
   serializeTagsParam,
 } from './tags.ts';
+
+/** Sent by composed Storybooks built with 10.x or earlier (their addon-links). */
+type LegacySelectStoryPayload = {
+  /** @deprecated Use `title`. */
+  kind?: ComponentTitle;
+  /** @deprecated Use `name`. */
+  story?: StoryName;
+  viewMode?: API_ViewMode;
+  scrollTo?: string;
+};
+
+/**
+ * Accepts the deprecated `kind`/`story` keys so cross-story links inside composed
+ * Storybooks built with 10.x or earlier keep navigating; everything downstream is modern-only.
+ */
+type SelectStoryEvent = SelectStoryPayload | LegacySelectStoryPayload;
+
+const normalizeSelectStoryPayload = (payload: SelectStoryEvent): SelectStoryPayload => {
+  if ('storyId' in payload) {
+    return payload;
+  }
+  const { viewMode, scrollTo } = payload;
+  const title =
+    ('title' in payload && payload.title) || ('kind' in payload ? payload.kind : undefined);
+  const name =
+    ('name' in payload && payload.name) || ('story' in payload ? payload.story : undefined);
+  return { title, name, viewMode, scrollTo };
+};
 
 const { fetch } = global;
 const STORY_INDEX_PATH = './index.json';
@@ -169,13 +194,14 @@ export interface SubAPI {
   setIndex: (index: API_PreparedStoryIndex) => Promise<void>;
 
   /**
-   * Jumps to the next or previous component in the index.
+   * Jumps to the first entry of the next or previous component, or to the next or previous
+   * unattached docs page.
    *
-   * @param {Direction} direction - The direction to jump. Use -1 to jump to the previous component,
-   *   and 1 to jump to the next component.
+   * @param {Direction} direction - The direction to jump. Use -1 to jump backwards and 1 to jump
+   *   forwards.
    * @returns {void}
    */
-  jumpToComponent: (direction: Direction) => void;
+  jumpToSubtree: (direction: Direction) => void;
   /**
    * Jumps to the next or previous story in the story index.
    *
@@ -470,9 +496,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     const includedTags = (state.includedTagFilters ?? []).filter((id) => BUILT_IN_TAG_IDS.has(id));
     const excludedTags = (state.excludedTagFilters ?? []).filter((id) => BUILT_IN_TAG_IDS.has(id));
 
-    const changeDetectionEnabled = !!globalThis?.FEATURES?.changeDetection;
-    const includedStatuses = changeDetectionEnabled ? (state.includedStatusFilters ?? []) : [];
-    const excludedStatuses = changeDetectionEnabled ? (state.excludedStatusFilters ?? []) : [];
+    const includedStatuses = state.includedStatusFilters ?? [];
+    const excludedStatuses = state.excludedStatusFilters ?? [];
 
     const storyCounts: Record<string, number> = {};
     const entries = state.internal_index ? Object.values(state.internal_index.entries) : [];
@@ -557,7 +582,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       // so this strange logic needs to be here until various client code is updated.
       return parameters || undefined;
     },
-    jumpToComponent: (direction) => {
+    jumpToSubtree: (direction) => {
       const { filteredIndex, storyId, refs, refId } = store.getState();
       const story = api.getData(storyId, refId);
 
@@ -651,7 +676,14 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
       if (!name) {
         // Find the entry (group, component, story or docs) that is referred to
-        const entry = titleOrId ? hash[titleOrId] || hash[sanitize(titleOrId)] : hash[kindSlug];
+        const entry = titleOrId
+          ? hash[titleOrId] ||
+            hash[sanitize(titleOrId)] ||
+            // Unattached docs pages have no entry keyed by their title
+            Object.values(hash).find(
+              (e) => e.type === 'docs' && sanitize(e.title) === sanitize(titleOrId)
+            )
+          : hash[kindSlug];
 
         if (!entry) {
           throw new Error(`Unknown id or title: '${titleOrId}'`);
@@ -770,12 +802,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         }
 
         const storyIndex = (await result.json()) as StoryIndex;
-
-        // We can only do this if the stories.json is a proper storyIndex
-        if (storyIndex.v < 3) {
-          logger.warn(`Skipping story index with version v${storyIndex.v}, awaiting SET_STORIES.`);
-          return;
-        }
 
         await api.setIndex(storyIndex);
       } catch (err: any) {
@@ -1121,7 +1147,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         const stateHasSelection = state.viewMode && state.storyId;
         const stateSelectionDifferent = state.viewMode !== viewMode || state.storyId !== storyId;
         const { type } = state.index?.[state.storyId] || {};
-        const isStory = !(type === 'root' || type === 'component' || type === 'group');
+        const isLeaf = type === 'story' || type === 'docs';
 
         /**
          * When storybook starts, we want to navigate to the first story. But there are a few
@@ -1154,7 +1180,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
             }
           }
 
-          if (stateHasSelection && stateSelectionDifferent && isStory) {
+          if (stateHasSelection && stateSelectionDifferent && isLeaf) {
             // The manager state is correct, the preview state is lagging behind
             provider.channel?.emit(SET_CURRENT_STORY, {
               storyId: state.storyId,
@@ -1247,47 +1273,20 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     }
   });
 
-  // For composition back-compatibilty
-  provider.channel?.on(SET_STORIES, function handler(this: any, data: SetStoriesPayload) {
+  provider.channel?.on(SELECT_STORY, function handler(this: any, rawPayload: SelectStoryEvent) {
     const { ref } = getEventMetadata(this, fullAPI)!;
-    const setStoriesData = data.v ? denormalizeStoryParameters(data) : data.stories;
+    const payload = normalizeSelectStoryPayload(rawPayload);
 
-    if (!ref) {
-      throw new Error('Cannot call SET_STORIES for local frame');
+    if ('storyId' in payload) {
+      const { storyId, viewMode, scrollTo } = payload;
+      fullAPI.selectStory(storyId, undefined, { viewMode, scrollTo, ref: ref?.id });
+    } else if (payload.title || payload.name) {
+      const { title, name, viewMode, scrollTo } = payload;
+      fullAPI.selectStory(title, name, { viewMode, scrollTo, ref: ref?.id });
     } else {
-      fullAPI.setRef(ref.id, { ...ref, setStoriesData }, true);
+      logger.warn('Received a SELECT_STORY event without storyId, title or name; ignoring it.');
     }
   });
-
-  provider.channel?.on(
-    SELECT_STORY,
-    function handler(
-      this: any,
-      {
-        kind,
-        title = kind,
-        story,
-        name = story,
-        storyId,
-        ...rest
-      }: {
-        kind?: StoryKind;
-        title?: ComponentTitle;
-        story?: StoryName;
-        name?: StoryName;
-        storyId: string;
-        viewMode: API_ViewMode;
-      }
-    ) {
-      const { ref } = getEventMetadata(this, fullAPI)!;
-
-      if (!ref) {
-        fullAPI.selectStory(storyId || title, name, rest);
-      } else {
-        fullAPI.selectStory(storyId || title, name, { ...rest, ref: ref.id });
-      }
-    }
-  );
 
   provider.channel?.on(
     STORY_ARGS_UPDATED,
@@ -1382,10 +1381,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       const hasBuiltInTagFilters =
         initialIncluded.some((id) => BUILT_IN_TAG_IDS.has(id)) ||
         initialExcluded.some((id) => BUILT_IN_TAG_IDS.has(id));
-      const changeDetectionEnabled = !!globalThis?.FEATURES?.changeDetection;
       const hasStatusFilters =
-        changeDetectionEnabled &&
-        (initialIncludedStatuses.length > 0 || initialExcludedStatuses.length > 0);
+        initialIncludedStatuses.length > 0 || initialExcludedStatuses.length > 0;
 
       if (hasBuiltInTagFilters || hasStatusFilters) {
         emitFilterTelemetry('url');

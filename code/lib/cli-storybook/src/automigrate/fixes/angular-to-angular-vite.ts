@@ -27,8 +27,9 @@ import { automigrationLogger } from '../helpers/automigration-logger.ts';
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import type { FixTransform } from '../pipeline.ts';
 import { assertMainConfigNamesFramework } from '../helpers/main-config-framework.ts';
+import { readJsonFile } from '../helpers/workspace-files.ts';
 import type { Fix } from '../types.ts';
-import { findWorkspaceJsonFiles, getTargetGroups, readJsonFile } from './angular-workspace.ts';
+import { findWorkspaceJsonFiles, getTargetGroups } from './angular-workspace.ts';
 import {
   compodocTransforms,
   findCompodocSetup,

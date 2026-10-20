@@ -160,7 +160,7 @@ describe('initializeChecklist', () => {
     expect(state.items.aiSetup.status).toBe('open');
   });
 
-  it('does NOT mark aiSetup done just because `storybook ai setup` ran (no agent work yet)', async () => {
+  it('does NOT mark aiSetup done just because `storybook skills setup` ran (no agent work yet)', async () => {
     const { get: getEventCacheEntry } = await import('../../telemetry/event-cache.ts');
     vi.mocked(getEventCacheEntry).mockResolvedValue(undefined);
     await setAiFlags({ setupRan: true });

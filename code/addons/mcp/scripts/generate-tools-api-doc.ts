@@ -1,7 +1,7 @@
 /**
  * Generates a markdown reference of everything an agent sees from the Storybook
- * AI surface: MCP server instructions and tool definitions (with review on and off),
- * the plugin skills, and the `storybook ai` CLI help output.
+ * AI surface: MCP server instructions and tool definitions,
+ * and the plugin skills.
  *
  * Run from the repo root (bunfig.toml there maps .md/.html imports to text):
  *
@@ -9,30 +9,22 @@
  *
  * Defaults to writing <repo-root>/tools-api.md (gitignored).
  */
-import { execFile } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { promisify } from 'node:util';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { buildServerInstructions } from 'storybook/internal/skills';
 import type { ToolAvailability } from 'storybook/internal/core-server';
 import { registerCoreToolsetsForTest } from '../src/test-support/register-core-toolsets.ts';
 import { getAddonToolMetadata, type ToolMetadata } from '../src/tools/tool-registry.ts';
 
-const execFileAsync = promisify(execFile);
-
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
 const outputPath = path.resolve(repoRoot, process.argv[2] ?? 'tools-api.md');
-const internalStorybookDir = path.join(repoRoot, 'test-storybooks/mcp');
 
 const adapter = new ValibotJsonSchemaAdapter();
 
-// Review builds on change detection, so the two switch together.
-const availability = (changeDetectionEnabled: boolean): ToolAvailability => ({
+const availability: ToolAvailability = {
   moduleGraphSupported: true,
-  changeDetectionEnabled,
-  reviewEnabled: changeDetectionEnabled,
   docsEnabled: true,
   docsEnabledForCli: true,
   docsHasManifests: true,
@@ -40,26 +32,21 @@ const availability = (changeDetectionEnabled: boolean): ToolAvailability => ({
   testSupported: true,
   a11yEnabled: true,
   docgenServer: false,
-});
+};
 
-/**
- * Metadata is resolved from the live toolset registry, so each rendered mode registers the real
- * toolsets first — review-off and review-on descriptions genuinely differ per registration.
- */
-function toolMetadataFor(changeDetectionEnabled: boolean): ToolMetadata[] {
-  registerCoreToolsetsForTest({ reviewEnabled: changeDetectionEnabled });
-  return getAddonToolMetadata({ availability: availability(changeDetectionEnabled) });
+// Metadata is resolved from the live toolset registry, so the real toolsets are registered first.
+function toolMetadata(): ToolMetadata[] {
+  registerCoreToolsetsForTest();
+  return getAddonToolMetadata({ availability });
 }
 
-const instructions = (changeDetectionEnabled: boolean) =>
+const instructions = () =>
   buildServerInstructions({
     transport: 'mcp',
     devEnabled: true,
     testSupported: true,
     docsEnabled: true,
-    changeDetectionEnabled,
     moduleGraphSupported: true,
-    reviewEnabled: changeDetectionEnabled,
   });
 
 async function toJsonSchema(schema: unknown): Promise<Record<string, unknown>> {
@@ -228,18 +215,15 @@ async function renderTool(tool: ToolMetadata): Promise<string> {
   return lines.join('\n');
 }
 
-async function renderServerSection(
-  title: string,
-  changeDetectionEnabled: boolean
-): Promise<string> {
-  const tools = toolMetadataFor(changeDetectionEnabled);
+async function renderServerSection(): Promise<string> {
+  const tools = toolMetadata();
   const toolSections = await Promise.all(tools.map(renderTool));
   return [
-    `## ${title}`,
+    '## MCP server',
     '',
     '### Server instructions',
     '',
-    fence(instructions(changeDetectionEnabled), 'md'),
+    fence(instructions(), 'md'),
     '',
     `### Tools (${tools.length})`,
     '',
@@ -247,28 +231,6 @@ async function renderServerSection(
     '',
     toolSections.join('\n'),
   ].join('\n');
-}
-
-function diffSummary(): string {
-  const off = new Map(toolMetadataFor(false).map((t) => [t.name, t]));
-  const on = new Map(toolMetadataFor(true).map((t) => [t.name, t]));
-  const added = [...on.keys()].filter((name) => !off.has(name));
-  const removed = [...off.keys()].filter((name) => !on.has(name));
-  const changed = [...on.keys()].filter(
-    (name) => off.has(name) && off.get(name)!.description !== on.get(name)!.description
-  );
-  const lines = ['## Change detection off vs on — summary', ''];
-  lines.push(
-    `- Tools added with change detection on: ${added.map((n) => `\`${n}\``).join(', ') || '(none)'}`
-  );
-  lines.push(
-    `- Tools removed with change detection on: ${removed.map((n) => `\`${n}\``).join(', ') || '(none)'}`
-  );
-  lines.push(
-    `- Tools with a different description: ${changed.map((n) => `\`${n}\``).join(', ') || '(none)'}`
-  );
-  lines.push('- The server instructions differ between the two modes (see the sections below).');
-  return lines.join('\n') + '\n';
 }
 
 async function renderSkills(): Promise<string> {
@@ -298,51 +260,6 @@ async function renderSkills(): Promise<string> {
   return sections.join('\n');
 }
 
-function stripAnsi(text: string): string {
-  return text.replace(/\[[0-9;]*m/g, '');
-}
-
-async function runCliHelp(args: string[]): Promise<string> {
-  try {
-    const { stdout, stderr } = await execFileAsync('npx', ['storybook', 'ai', ...args, '--help'], {
-      cwd: internalStorybookDir,
-      env: { ...process.env, STORYBOOK_FEATURE_AI_CLI: '1' },
-      maxBuffer: 10 * 1024 * 1024,
-    });
-    return stripAnsi([stdout, stderr].filter(Boolean).join('\n'));
-  } catch (error) {
-    return `(command failed)\n${stripAnsi(String(error))}`;
-  }
-}
-
-async function renderCliSection(): Promise<string> {
-  const toolNames = toolMetadataFor(true).map((t) => t.name);
-  const commands = ['setup', ...toolNames];
-  const [topLevel, ...commandHelps] = await Promise.all([
-    runCliHelp([]),
-    ...commands.map((command) => runCliHelp([command])),
-  ]);
-  const sections = [
-    '## `storybook ai` CLI (`STORYBOOK_FEATURE_AI_CLI=1`)',
-    '',
-    'Captured against `test-storybooks/mcp` (review enabled in its `.storybook` config). The top-level help embeds the same server instructions the MCP server serves.',
-    '',
-    '### `npx storybook ai --help`',
-    '',
-    fence(topLevel),
-    '',
-  ];
-  commands.forEach((command, index) => {
-    sections.push(
-      `### \`npx storybook ai ${command} --help\``,
-      '',
-      fence(commandHelps[index]!),
-      ''
-    );
-  });
-  return sections.join('\n');
-}
-
 const generatedAt = new Date().toISOString().slice(0, 10);
 const document = [
   '# Storybook MCP / AI tools API',
@@ -350,15 +267,12 @@ const document = [
   `> Generated ${generatedAt} by \`code/addons/mcp/scripts/generate-tools-api-doc.ts\` — do not edit by hand.`,
   '> Regenerate from the repo root with `bun code/addons/mcp/scripts/generate-tools-api-doc.ts`.',
   '',
-  'Assumed configuration: all toolsets enabled (`dev`, `test`, `docs`), component manifests available, `@storybook/addon-vitest` installed, `@storybook/addon-a11y` enabled, module graph supported, single source. The only variable is the `changeDetection` feature flag, which review builds on.',
+  'Assumed configuration: all toolsets enabled (`dev`, `test`, `docs`), component manifests available, `@storybook/addon-vitest` installed, `@storybook/addon-a11y` enabled, module graph supported, single source.',
   '',
   'Tool inputs and outputs are rendered as TypeScript types derived from the JSON Schemas the server actually serves; field docs, defaults, and constraints are preserved as doc comments.',
   '',
-  diffSummary(),
-  await renderServerSection('MCP server — review ON (default)', true),
-  await renderServerSection('MCP server — review OFF (`features.changeDetection: false`)', false),
+  await renderServerSection(),
   await renderSkills(),
-  await renderCliSection(),
 ].join('\n');
 
 await fs.writeFile(outputPath, wrapMarkdown(document));

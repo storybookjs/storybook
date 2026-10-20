@@ -130,6 +130,12 @@ test.describe('addon-docs', () => {
 
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/basic', 'docs');
+    test.skip(
+      await page.evaluate(() =>
+        Boolean((globalThis as { FEATURES?: { docgenServer?: boolean } }).FEATURES?.docgenServer)
+      ),
+      'Server docgen renders static source snippets'
+    );
     const root = sbPage.previewRoot();
     const toggles = root.locator('.docblock-code-toggle');
 

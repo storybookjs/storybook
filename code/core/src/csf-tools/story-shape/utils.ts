@@ -11,6 +11,11 @@ type CsfFactoryCall = t.CallExpression & {
   callee: t.MemberExpression & { property: t.Identifier };
 };
 
+export interface TemplateParts {
+  quasis: string[];
+  expressions: t.Node[];
+}
+
 /** Peels TS assertion/satisfies wrappers and parentheses off an expression node. */
 export const unwrapExpression = (node: t.Node): t.Node =>
   t.isTSAsExpression(node) ||
@@ -53,6 +58,28 @@ export const isCsfFactoryCall = (node: t.Node): node is CsfFactoryCall =>
 /** Identifier a CSF factory call is made on: `meta` in `meta.type<T>().story()`. */
 export const csfFactoryReceiver = (node: CsfFactoryCall): t.Identifier =>
   withoutTypeCalls(node.callee.object) as t.Identifier;
+
+export const templateParts = (node: t.Node): TemplateParts | undefined => {
+  if (t.isTemplateLiteral(node)) {
+    return {
+      quasis: node.quasis.map((quasi) => quasi.value.cooked ?? ''),
+      expressions: node.expressions,
+    };
+  }
+  if (!t.isTaggedTemplateExpression(node) || !isStringRawTag(node.tag)) {
+    return undefined;
+  }
+  return {
+    quasis: node.quasi.quasis.map((quasi) => quasi.value.raw),
+    expressions: node.quasi.expressions,
+  };
+};
+
+const isStringRawTag = (tag: t.Expression): boolean =>
+  t.isMemberExpression(tag) &&
+  !tag.computed &&
+  t.isIdentifier(tag.object, { name: 'String' }) &&
+  t.isIdentifier(tag.property, { name: 'raw' });
 
 /**
  * Static key of an object member, or `null` when it is computed from something else.

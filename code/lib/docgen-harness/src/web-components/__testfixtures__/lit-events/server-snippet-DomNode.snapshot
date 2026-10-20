@@ -1,0 +1,10 @@
+<lit-events value="changed"></lit-events>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('my-change', () => {});
+    host.addEventListener('my-close', () => {});
+  }
+</script>
+
+warning: Incomplete snippet: `args => { const el = document.createElement('lit-events'); el.setAttribute('value', String(args.value)); el.addEventListener('my-change', args['my-change-event'] as EventListener); el.addEventListener('my-close', args['my-close-event'] as EventListener); return el; }` could not be resolved statically.

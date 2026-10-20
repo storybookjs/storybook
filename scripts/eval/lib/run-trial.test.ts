@@ -41,7 +41,7 @@ vi.mock('./utils', async (importOriginal) => {
     loadPrompt: vi
       .fn()
       .mockReturnValue(
-        'Run `node /repo/code/core/dist/bin/dispatcher.js ai setup` and follow its instructions precisely.'
+        'Run `node /repo/code/core/dist/bin/dispatcher.js skills setup` and follow its instructions precisely.'
       ),
   };
 });
@@ -172,7 +172,7 @@ describe('runTrial pipeline', () => {
 
     const params = vi.mocked(claudeAgent.execute).mock.calls[0][0];
     expect(params).toMatchObject({
-      prompt: expect.stringMatching(/node .+dispatcher\.js ai setup/),
+      prompt: expect.stringMatching(/node .+dispatcher\.js skills setup/),
       projectPath: TMP,
       variant: { agent: 'claude', model: 'sonnet-4.6', effort: 'high' },
       resultsDir: join(TMP, '.storybook', 'eval-results'),
@@ -182,7 +182,7 @@ describe('runTrial pipeline', () => {
 
     expect(vi.mocked(x)).toHaveBeenCalledWith(
       'node',
-      ['/repo/code/core/dist/bin/dispatcher.js', 'ai', 'setup'],
+      ['/repo/code/core/dist/bin/dispatcher.js', 'skills', 'setup'],
       expect.objectContaining({
         nodeOptions: expect.objectContaining({
           cwd: TMP,
@@ -265,7 +265,7 @@ describe('runTrial pipeline', () => {
     expect(data).not.toHaveProperty('artifacts.screenshotOutput');
 
     const promptContent = readFileSync(join(resultsDir, 'prompt.md'), 'utf-8');
-    expect(promptContent).toMatch(/node .+dispatcher\.js ai setup/);
+    expect(promptContent).toMatch(/node .+dispatcher\.js skills setup/);
 
     const setupPromptContent = readFileSync(join(resultsDir, 'setup-prompt.md'), 'utf-8');
     expect(setupPromptContent).toContain('Full project-aware instructions');

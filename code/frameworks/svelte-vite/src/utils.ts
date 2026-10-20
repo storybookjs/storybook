@@ -20,7 +20,6 @@ export async function handleSvelteKit(plugins: PluginOption[], options: Options)
   const framework = typeof frameworkPreset === 'string' ? frameworkPreset : frameworkPreset.name;
 
   const hasSvelteKitPlugins = await hasVitePlugins(plugins, [
-    'vite-plugin-svelte-kit',
     'vite-plugin-sveltekit-setup',
     'vite-plugin-sveltekit-compile',
   ]);

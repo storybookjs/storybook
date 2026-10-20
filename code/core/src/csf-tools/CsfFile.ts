@@ -380,7 +380,7 @@ export class CsfFile {
   }
 
   /**
-   * Discover editors for the meta and stories, including CSF2 parameter assignments. Unsupported
+   * Discover editors for the meta and stories, including CSF2 parameter and argTypes assignments. Unsupported
    * targets are skipped and reported in `mutationDiagnostics`.
    *
    * @example
@@ -777,7 +777,19 @@ export class CsfFile {
                   }
                 } else {
                   const annotations = {} as Record<string, t.Node>;
-                  const storyNode = decl;
+                  let storyNode: t.Node | undefined = decl;
+                  let storyIsFactory = false;
+                  const unwrappedDecl = decl && unwrapExpression(decl);
+                  if (self._metaIsFactory && unwrappedDecl && isCsfFactoryCall(unwrappedDecl)) {
+                    storyIsFactory = true;
+                    storyNode = unwrappedDecl.arguments[0];
+                  }
+                  // A story from another file is kept: its declaration isn't in this file
+                  const isImported =
+                    !!node.source || path.scope.getBinding(localName)?.kind === 'module';
+                  if (self._metaIsFactory && !storyIsFactory && !isImported) {
+                    return;
+                  }
                   if (t.isObjectExpression(storyNode)) {
                     (storyNode.properties as t.ObjectProperty[]).forEach((p) => {
                       if (t.isIdentifier(p.key)) {
@@ -793,7 +805,7 @@ export class CsfFile {
                     name: exportName,
                     localName,
                     parameters: {},
-                    __stats: {},
+                    __stats: storyIsFactory ? { factory: true } : {},
                   };
                 }
               }
@@ -816,19 +828,8 @@ export class CsfFile {
             const annotationKey = expression.left.property.name;
             const annotationValue = expression.right;
 
-            // v1-style annotation
-            // A.story = { parameters: ..., decorators: ... }
-
             if (self._storyAnnotations[exportName]) {
-              if (annotationKey === 'story' && t.isObjectExpression(annotationValue)) {
-                (annotationValue.properties as t.ObjectProperty[]).forEach((prop) => {
-                  if (t.isIdentifier(prop.key)) {
-                    self._storyAnnotations[exportName][prop.key.name] = prop.value;
-                  }
-                });
-              } else {
-                self._storyAnnotations[exportName][annotationKey] = annotationValue;
-              }
+              self._storyAnnotations[exportName][annotationKey] = annotationValue;
             }
 
             if (annotationKey === 'storyName' && t.isStringLiteral(annotationValue)) {
@@ -884,7 +885,7 @@ export class CsfFile {
             throw new Error(dedent`
               Unexpected \`storiesOf\` usage: ${formatLocation(node, self._options.fileName)}.
 
-              SB8 does not support \`storiesOf\`.
+              \`storiesOf\` was removed in Storybook 8.0. Write stories in CSF instead.
             `);
           }
           if (

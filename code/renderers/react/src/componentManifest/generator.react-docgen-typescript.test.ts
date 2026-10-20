@@ -18,34 +18,38 @@ type ManifestComponentWithReactDocgenTypescript = {
   reactDocgenTypescript?: ComponentDocWithExportName;
 };
 
-test.sequential('manifests uses the referenced app tsconfig for react-docgen-typescript in Vite-style projects', async () => {
-  invalidateCache();
-  invalidateParser();
-
-  const tempDir = createTempProject();
-  const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
-
-  try {
-    const result = await manifests(undefined, createManifestOptions());
-    const button = result?.components?.components?.['example-button'] as
-      | ManifestComponentWithReactDocgenTypescript
-      | undefined;
-
-    expect(button?.error).toBeUndefined();
-    expect(button?.reactDocgenTypescript?.displayName).toBe('Button');
-    expect(button?.reactDocgenTypescript?.props.label).toMatchObject({
-      required: true,
-    });
-    expect(button?.reactDocgenTypescript?.props.primary).toMatchObject({
-      required: false,
-    });
-  } finally {
-    cwdSpy.mockRestore();
+test(
+  'manifests uses the referenced app tsconfig for react-docgen-typescript in Vite-style projects',
+  { concurrent: false },
+  async () => {
     invalidateCache();
     invalidateParser();
-    rmSync(tempDir, { recursive: true, force: true });
+
+    const tempDir = createTempProject();
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
+
+    try {
+      const result = await manifests(undefined, createManifestOptions());
+      const button = result?.components?.components?.['example-button'] as
+        | ManifestComponentWithReactDocgenTypescript
+        | undefined;
+
+      expect(button?.error).toBeUndefined();
+      expect(button?.reactDocgenTypescript?.displayName).toBe('Button');
+      expect(button?.reactDocgenTypescript?.props.label).toMatchObject({
+        required: true,
+      });
+      expect(button?.reactDocgenTypescript?.props.primary).toMatchObject({
+        required: false,
+      });
+    } finally {
+      cwdSpy.mockRestore();
+      invalidateCache();
+      invalidateParser();
+      rmSync(tempDir, { recursive: true, force: true });
+    }
   }
-});
+);
 
 function createManifestOptions() {
   const manifestEntries: IndexEntry[] = [

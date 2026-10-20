@@ -87,6 +87,12 @@ describe('VueComponentMetaManager', () => {
     expect(() => structuredClone(payload)).not.toThrow();
   });
 
+  it('leaves out props, events and slots marked @ignore, like builder docgen did', async () => {
+    const payload = await docgenForFixture('./IgnoredMembers.stories.ts', 'Example/IgnoredMembers');
+
+    expect(Object.keys(payload?.argTypes ?? {}).sort()).toEqual(['change', 'default', 'label']);
+  });
+
   it('uses the title-derived name when meta.component is null', async () => {
     const payload = await docgenForFixture('./NullComponent.stories.ts', 'Example/NullComponent');
 

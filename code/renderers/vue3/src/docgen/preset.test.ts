@@ -12,19 +12,15 @@ const optionsWith = (features: Record<string, boolean> = {}): Options =>
   }) as unknown as Options;
 
 const existing: DocgenProviderDescriptor[] = [{ moduleSpecifier: '/addon/docgen-worker.js' }];
-const docgenServerOn = { experimentalDocgenServer: true };
+const docgenServerOn = { docgenServer: true };
 
 describe('experimental_docgenProvider', () => {
   it('appends the renderer worker', async () => {
-    const descriptors = await experimental_docgenProvider(existing, optionsWith(docgenServerOn));
+    const descriptors = await experimental_docgenProvider(existing);
 
     expect(descriptors).toHaveLength(2);
     expect(descriptors[0]).toBe(existing[0]);
     expect(descriptors[1].moduleSpecifier).toMatch(/docgen-worker\.js$/);
-  });
-
-  it('registers nothing when the docgen server is off', async () => {
-    await expect(experimental_docgenProvider(existing, optionsWith())).resolves.toEqual(existing);
   });
 });
 

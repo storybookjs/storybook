@@ -1,7 +1,9 @@
 import invariant from 'tiny-invariant';
 
+import { getComponentIdFromEntry } from '../../../common/utils/component-id.ts';
 import {
   getStoryImportPathFromEntry,
+  isEligibleStoryEntry,
   selectComponentEntriesByComponentId,
 } from '../../../common/utils/select-component-entry.ts';
 import { OpenServiceDocgenMissingComponentError } from '../../../server-errors.ts';
@@ -28,12 +30,19 @@ type ExtractionServiceState = { components: Record<string, unknown> };
  */
 type ComponentPayloadQuery = { get(input: { id: string }): unknown };
 
-type ExtractionProvider<TPayload> = (input: { entry: IndexEntry }) => Promise<TPayload | undefined>;
+export type ExtractionInput = {
+  /** The entry {@link selectComponentEntriesByComponentId} picks for the component. */
+  entry: IndexEntry;
+  /** Every story of the component, which spans several CSF files when they share a title. */
+  storyEntries: IndexEntry[];
+};
+
+type ExtractionProvider<TPayload> = (input: ExtractionInput) => Promise<TPayload | undefined>;
 
 /** The `{ name, message }` shape both extraction payloads carry under `error`. */
 export type ExtractionError = { name: string; message: string };
 
-const toExtractionError = (error: unknown): ExtractionError =>
+export const toExtractionError = (error: unknown): ExtractionError =>
   error instanceof Error
     ? { name: error.name, message: error.message }
     : { name: 'Error', message: String(error) };
@@ -62,7 +71,8 @@ export type RegisterExtractionServiceOptions<TPayload, TQueries, TCommands> = {
  * `latestStoryChanges` reports `{ revision, storyFiles }`. The revision is the authoritative
  * "something changed" trigger; `storyFiles` is an optimization hint that is sometimes legitimately
  * empty (e.g. after a story-index invalidation). When the hint is empty we refresh every
- * already-extracted component; when populated we refresh only those mapped from the bumped files.
+ * already-extracted component; when populated we refresh only those with a story file among the
+ * bumped files.
  */
 export function subscribeExtractionServiceToModuleGraphChanges<
   TState extends ExtractionServiceState,
@@ -101,42 +111,20 @@ export function subscribeExtractionServiceToModuleGraphChanges<
       return;
     }
 
-    const { storyFiles } = data;
+    const changedStoryFiles = new Set(data.storyFiles);
+    const entries = Object.values((await options.getIndex()).entries);
+    const affectedEntries =
+      changedStoryFiles.size === 0
+        ? entries
+        : entries.filter((entry) => {
+            const storyFilePath = getStoryImportPathFromEntry(entry);
+            return (
+              storyFilePath &&
+              changedStoryFiles.has(toStoryIndexPath(storyFilePath, options.workingDir))
+            );
+          });
 
-    const componentEntries = selectComponentEntriesByComponentId(
-      Object.values((await options.getIndex()).entries)
-    );
-
-    if (storyFiles.length === 0) {
-      await refreshExtracted(componentEntries.keys());
-      return;
-    }
-
-    const componentEntryCandidates = Array.from(componentEntries)
-      .map(([id, entry]) => {
-        const storyFilePath = getStoryImportPathFromEntry(entry);
-        if (!storyFilePath) {
-          return undefined;
-        }
-        return {
-          id,
-          storyIndexPath: toStoryIndexPath(storyFilePath, options.workingDir),
-        };
-      })
-      .filter((candidate) => candidate !== undefined);
-
-    const bumpedComponentIds = new Set<string>();
-    for (const storyFile of storyFiles) {
-      const componentEntry = componentEntryCandidates.find(
-        (candidate) => candidate.storyIndexPath === storyFile
-      );
-      if (!componentEntry) {
-        continue;
-      }
-      bumpedComponentIds.add(componentEntry.id);
-    }
-
-    await refreshExtracted(bumpedComponentIds);
+    await refreshExtracted(new Set(affectedEntries.map(getComponentIdFromEntry)));
   });
 }
 
@@ -172,17 +160,25 @@ export function registerExtractionService<
     `Extraction service "${definition.id}" is missing command "${extractCommand}" or "${extractAllCommand}".`
   );
 
-  const resolveComponentEntries = async () =>
-    selectComponentEntriesByComponentId(Object.values((await getIndex()).entries));
+  const resolveInputs = async (): Promise<Map<string, ExtractionInput>> => {
+    const entries = Object.values((await getIndex()).entries);
+    const storyEntries = Map.groupBy(entries.filter(isEligibleStoryEntry), getComponentIdFromEntry);
+    return new Map(
+      Array.from(selectComponentEntriesByComponentId(entries), ([id, entry]) => [
+        id,
+        { entry, storyEntries: storyEntries.get(id) ?? [] },
+      ])
+    );
+  };
 
-  const resolveEntry = async (id: string) => {
-    const entry = (await resolveComponentEntries()).get(id);
+  const resolveInput = async (id: string) => {
+    const input = (await resolveInputs()).get(id);
 
-    if (!entry) {
+    if (!input) {
       throw new OpenServiceDocgenMissingComponentError({ id });
     }
 
-    return entry;
+    return input;
   };
 
   const writePayload = (
@@ -201,15 +197,15 @@ export function registerExtractionService<
     queries: {
       [queryName]: {
         staticInputs: async () => {
-          const eligible = await resolveComponentEntries();
-          return Array.from(eligible.keys(), (id) => ({ id }));
+          const inputs = await resolveInputs();
+          return Array.from(inputs.keys(), (id) => ({ id }));
         },
       },
     },
     commands: {
       [extractCommand]: {
         handler: async (input: { id: string }, ctx: CommandCtx<TState>) => {
-          const payload = await provider({ entry: await resolveEntry(input.id) });
+          const payload = await provider(await resolveInput(input.id));
           ctx.self.setState((state) => writePayload(state, input.id, payload));
           return payload;
         },
@@ -218,17 +214,17 @@ export function registerExtractionService<
         // Every component is resolved first and the state written once: one sync entry for the
         // whole extraction instead of one per component.
         handler: async (_input: undefined, ctx: CommandCtx<TState>) => {
-          const componentEntries = await resolveComponentEntries();
+          const inputs = await resolveInputs();
           const results = await Promise.all(
-            Array.from(componentEntries, async ([id, entry]) => {
+            Array.from(inputs, async ([id, input]) => {
               try {
-                return [id, await provider({ entry })] as const;
+                return [id, await provider(input)] as const;
               } catch (error) {
                 // A provider is not required to be total, so one component's failure must not
                 // discard every other component's payload.
                 return [
                   id,
-                  buildErrorPayload({ id, entry, error: toExtractionError(error) }),
+                  buildErrorPayload({ id, entry: input.entry, error: toExtractionError(error) }),
                 ] as const;
               }
             })

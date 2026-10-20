@@ -104,6 +104,5 @@ async function startChangeDetectionInProcess(options: Options): Promise<void> {
     workingDir: process.cwd(),
   });
 
-  const features = await options.presets.apply('features');
-  changeDetectionService.start(features?.changeDetection !== false);
+  changeDetectionService.start();
 }

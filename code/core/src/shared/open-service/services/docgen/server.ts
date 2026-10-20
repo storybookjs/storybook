@@ -21,7 +21,7 @@ export type RegisterDocgenServiceOptions = {
 export function registerDocgenService(options: RegisterDocgenServiceOptions) {
   return registerExtractionService(docgenServiceDef, {
     getIndex: options.getIndex,
-    provider: options.docgenProvider,
+    provider: ({ entry }) => options.docgenProvider({ entry }),
     buildErrorPayload: ({ id, entry, error }) => ({
       id,
       name: entry.title,

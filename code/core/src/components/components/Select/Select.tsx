@@ -460,6 +460,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
 
         if (e.key === 'Escape') {
           handleClose();
+          e.stopPropagation();
         } else if (e.key === 'ArrowDown') {
           moveActiveOptionDown();
         } else if (e.key === 'ArrowUp') {

@@ -1,0 +1,3 @@
+<demo-wc-card header="my header" rows="[]">
+  <span slot="prefix">prefix:</span>A simple card
+</demo-wc-card>

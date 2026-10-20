@@ -75,17 +75,16 @@ In addition to running the command, we also recommend checking the [MIGRATION.md
 
 ### Experimental feature flags
 
-When an upgrade crosses into Storybook 10.5, the automigration step additionally offers to enable the experimental [`experimentalDocgenServer`](../api/main-config/main-config-features.mdx#experimentaldocgenserver) feature flag.
+Storybook 11 currently has no experimental feature flag that the upgrade offers to enable.
+When one is added, the automigration step offers it on the upgrade that crosses its version.
 It is strictly opt-in and is never enabled on your behalf: it appears unchecked in the automigration prompt, and, unless you name it with `--features`, `--yes` skips it along with the other migrations that require a deliberate choice.
-If your configuration already sets it, to either `true` or `false`, that choice is left untouched and the flag is not offered.
+If your configuration already sets it to either `true` or `false`, that choice is left untouched and the flag is not offered.
 
 To preselect it, including on a project that is already on 10.5 or later, name it with the [`--features` flag](../api/cli-options.mdx#upgrade):
 
 ```bash
-storybook@latest upgrade --features experimentalDocgenServer
+storybook@latest upgrade --features <flag>
 ```
-
-`experimentalDocgenServer` is only offered on frameworks that provide server-side docgen.
 
 ### Automatic health check
 

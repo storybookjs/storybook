@@ -1,8 +1,6 @@
 import fs from 'node:fs/promises';
 
-import { findDefineMetaImport } from '../utils/import-source.ts';
-import { preprocess } from 'svelte/compiler';
-import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
+import { findMeta, findMetaImports, hasMetaImport } from '../utils/import-source.ts';
 import type { IndexInput } from 'storybook/internal/types';
 
 import { getSvelteAST, type ESTreeAST, type SvelteAST } from '../parser/ast.ts';
@@ -17,6 +15,7 @@ import {
   DefaultOrNamespaceImportUsedError,
   GetDefineMetaFirstArgumentError,
   MissingDefineMetaImportError,
+  MissingDefineMetaVariableDeclarationError,
   MissingModuleTagError,
   NoStoryComponentDestructuredError,
 } from '../utils/error/parser/extract/svelte.ts';
@@ -33,50 +32,37 @@ interface Results {
   stories: Array<Pick<IndexInput, 'exportName' | 'name' | 'tags'>>;
 }
 
-/**
- * The indexer runs once per `*.stories.svelte` file, while the Svelte config is per-project state.
- * Cache the lookup so the config-file scan runs once per process instead of once per story file —
- * without this, projects without a `svelte.config.js` get one
- * "no Svelte config found ... using default configuration" log line per story file.
- * Trade-off: adding or changing a svelte.config file while `storybook dev` runs requires a restart to be picked up.
- */
-let svelteConfigPromise: Promise<Partial<SvelteConfig> | undefined> | undefined;
+// Script blocks and comments are matched first, as they can contain "<style"
+const styleBlocks =
+  /<script(?:\s(?:"[^"]*"|'[^']*'|[^>"'])*)?>[\s\S]*?<\/script\s*>|<!--[\s\S]*?-->|(<style(?:\s(?:"[^"]*"|'[^']*'|[^>"'])*)?>)([\s\S]*?)(<\/style\s*>)/g;
 
-async function loadCachedSvelteConfig(): Promise<Partial<SvelteConfig> | undefined> {
-  svelteConfigPromise ??= import('@sveltejs/vite-plugin-svelte')
-    .then(({ loadSvelteConfig }) => loadSvelteConfig())
-    .catch((error) => {
-      // Don't cache failures (e.g. a broken svelte.config.js), so the next indexing run retries.
-      svelteConfigPromise = undefined;
-      throw error;
-    });
-  return svelteConfigPromise;
+// Preprocessors don't run here, so a style block in SCSS and similar fails to compile. Then the
+// style content is blanked. Newlines stay, so error positions stay correct.
+function getIndexableAST(code: string, filename: string) {
+  try {
+    return getSvelteAST({ code, filename });
+  } catch {
+    const blanked = code.replace(styleBlocks, (match, open?: string, content = '', close = '') =>
+      open === undefined ? match : open + content.replace(/[^\r\n]/g, ' ') + close
+    );
+    return getSvelteAST({ code: blanked, filename });
+  }
 }
 
 export async function parseForIndexer(filename: string): Promise<Results> {
-  const [rawCode, { walk }, svelteConfig] = await Promise.all([
+  const [code, { walk }] = await Promise.all([
     fs.readFile(filename, { encoding: 'utf8' }),
     import('zimmerframe'),
-    loadCachedSvelteConfig(),
   ]);
 
-  let code = rawCode;
-
-  if (svelteConfig?.preprocess) {
-    code = (
-      await preprocess(code, svelteConfig.preprocess, {
-        filename: filename,
-      })
-    ).code;
-  }
-
-  const svelteAST = getSvelteAST({ code, filename });
+  const svelteAST = getIndexableAST(code, filename);
   const results: Results & {
-    defineMetaImport?: ESTreeAST.ImportSpecifier;
-    defineMetaStory?: ESTreeAST.Identifier;
+    hasMetaImport?: boolean;
+    storyNames: string[];
   } = {
     meta: {},
     stories: [],
+    storyNames: [],
   };
 
   let hasDefaultOrNamespaceImport = false;
@@ -109,64 +95,48 @@ export async function parseForIndexer(filename: string): Promise<Results> {
     Program(node, context) {
       const { body } = node;
       const { state, visit } = context;
-      const imports = findDefineMetaImport(body);
+      const imports = findMetaImports(body);
+      const meta = findMeta(body, imports, filename);
 
-      state.defineMetaImport = imports.defineMetaImport;
+      state.hasMetaImport = hasMetaImport(imports);
       hasDefaultOrNamespaceImport = imports.hasDefaultOrNamespaceImport;
 
-      for (const statement of body) {
-        if (statement.type === 'VariableDeclaration') {
-          visit(statement, state);
+      if (!meta) {
+        if (state.hasMetaImport) {
+          throw new MissingDefineMetaVariableDeclarationError(filename);
         }
+        return;
       }
+
+      const [declarator] = meta.declaration.declarations;
+
+      if (!meta.isFactory && declarator.id.type !== 'ObjectPattern') {
+        throw new NoDestructuredDefineMetaCallError({
+          defineMetaVariableDeclarator: declarator,
+          filename,
+        });
+      }
+
+      if (meta.storyNames.length === 0) {
+        throw new NoStoryComponentDestructuredError({
+          filename,
+          metaFunctionName: meta.functionName,
+        });
+      }
+
+      state.storyNames = meta.storyNames;
+
+      if (meta.call.arguments[0]?.type !== 'ObjectExpression') {
+        throw new GetDefineMetaFirstArgumentError({
+          filename,
+          defineMetaVariableDeclaration: meta.declaration,
+        });
+      }
+
+      visit(meta.call.arguments[0], state);
     },
 
-    VariableDeclaration(node, context) {
-      const { declarations } = node;
-      const { state, visit } = context;
-      const { id, init } = declarations[0];
-
-      if (init?.type === 'CallExpression') {
-        const { arguments: arguments_, callee } = init;
-
-        if (callee.type === 'Identifier' && callee.name === state.defineMetaImport?.local.name) {
-          if (id?.type !== 'ObjectPattern') {
-            throw new NoDestructuredDefineMetaCallError({
-              defineMetaVariableDeclarator: declarations[0],
-              filename,
-            });
-          }
-
-          const { properties } = id;
-          const destructuredStoryIdentifier = properties.find(
-            (property) =>
-              property.type === 'Property' &&
-              property.key.type === 'Identifier' &&
-              property.key.name === 'Story'
-          ) as ESTreeAST.Property | undefined;
-
-          if (!destructuredStoryIdentifier) {
-            throw new NoStoryComponentDestructuredError({
-              filename,
-              defineMetaImport: state.defineMetaImport,
-            });
-          }
-
-          state.defineMetaStory = destructuredStoryIdentifier.value as ESTreeAST.Identifier;
-
-          if (arguments_[0].type !== 'ObjectExpression') {
-            throw new GetDefineMetaFirstArgumentError({
-              filename,
-              defineMetaVariableDeclaration: node,
-            });
-          }
-
-          visit(arguments_[0], state);
-        }
-      }
-    },
-
-    // NOTE: We assume this one is value of first argument passed to `defineMeta({ ... })` call
+    // NOTE: We assume this one is value of first argument passed to `defineMeta({ ... })` or `preview.meta({ ... })` call
     ObjectExpression(node, context) {
       const { properties } = node;
       const { state, visit } = context;
@@ -216,7 +186,7 @@ export async function parseForIndexer(filename: string): Promise<Results> {
       const { name } = node;
       const { state } = context;
 
-      if (state.defineMetaStory?.name === name) {
+      if (state.storyNames.includes(name)) {
         const storyAttributes = extractStoryAttributesNodes({
           component: node,
           attributes: ['exportName', 'name', 'tags', 'template', 'asChild', 'children', 'play'],
@@ -265,7 +235,7 @@ export async function parseForIndexer(filename: string): Promise<Results> {
     },
   });
 
-  if (!results.defineMetaImport) {
+  if (!results.hasMetaImport) {
     if (hasDefaultOrNamespaceImport) {
       throw new DefaultOrNamespaceImportUsedError(filename);
     }

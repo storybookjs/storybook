@@ -31,13 +31,38 @@ type ReactDocgenPayload = DocgenPayload & {
   subcomponents?: Record<string, DocgenSubcomponent & { reactComponentMeta?: ComponentDoc }>;
 };
 
+const REACT_ATTRIBUTE_INTERFACES = new Set(['Attributes', 'RefAttributes', 'ClassAttributes']);
+
+/** `key` and `ref` that React's own types add to every element, not props the component reads. */
+function isReactAttribute(prop: ComponentDoc['props'][string]) {
+  return (
+    !!prop.parent &&
+    REACT_ATTRIBUTE_INTERFACES.has(prop.parent.name) &&
+    /(^|[\\/])node_modules[\\/]/.test(prop.parent.fileName)
+  );
+}
+
 /** Converts one RCM `ComponentDoc` into the `StrictArgTypes` shape consumed by args tables. */
 function extractArgTypesFromComponentMeta(
   componentMeta: ComponentDoc | undefined
 ): StrictArgTypes | undefined {
-  return componentMeta
-    ? (extractArgTypes({ __docgenInfo: componentMeta }) ?? undefined)
-    : undefined;
+  if (!componentMeta) {
+    return undefined;
+  }
+  // RCM defaults are source text, so a string default already carries its quotes. Without
+  // `computed`, the shared conversion mistakes them for react-docgen-typescript output and quotes
+  // any unquoted value (such as an unresolved identifier) a second time.
+  const props = Object.fromEntries(
+    Object.entries(componentMeta.props)
+      .filter(([, prop]) => !isReactAttribute(prop))
+      .map(([name, prop]) => [
+        name,
+        prop.defaultValue
+          ? { ...prop, defaultValue: { ...prop.defaultValue, computed: false } }
+          : prop,
+      ])
+  );
+  return extractArgTypes({ __docgenInfo: { ...componentMeta, props } }) ?? undefined;
 }
 
 /**

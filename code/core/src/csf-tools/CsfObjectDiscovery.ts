@@ -301,11 +301,15 @@ const NON_SHARING_PARENTS = new Set([
   'JSXClosingElement',
 ]);
 
+type StoryAssignments =
+  | { ok: true; assignments: Assignment[]; shared?: Rejection }
+  | { ok: false; write: Rejection };
+
 // The `Story.name = value` statements of a story, found through the references to its binding.
 // Any other write to it, such as a nested or a compound one, is a `write` rejection. A reference
 // that could share the story, such as an alias or a call that receives it, is a `shared` one: it
 // only matters for a story whose assignments are edited, as it could add them to another story.
-const assignmentsOf = (csf: CsfFile, binding: StoryBinding) => {
+const assignmentsOf = (csf: CsfFile, binding: StoryBinding): StoryAssignments => {
   const editor = csf.editor;
   const parentOf = (node: Node) => editor.parentOf(node);
   const assignments: Assignment[] = [];
@@ -362,7 +366,7 @@ const assignmentsOf = (csf: CsfFile, binding: StoryBinding) => {
         path: [],
         message: `Cannot mutate ${binding.exportName} because ${binding.localName} is written to outside its top-level annotations`,
       };
-      return { assignments, write };
+      return { ok: false, write };
     }
     const name = annotationName(parent);
     if (name === undefined) {
@@ -372,7 +376,7 @@ const assignmentsOf = (csf: CsfFile, binding: StoryBinding) => {
         path: [],
         message: `Cannot mutate ${binding.exportName} because an annotation name is computed at runtime`,
       };
-      return { assignments, write };
+      return { ok: false, write };
     }
     if (user.operator !== '=') {
       const write: Rejection = {
@@ -381,13 +385,13 @@ const assignmentsOf = (csf: CsfFile, binding: StoryBinding) => {
         path: [name],
         message: `Cannot mutate ${binding.localName}.${name} because it uses ${user.operator} assignment`,
       };
-      return { assignments, write };
+      return { ok: false, write };
     }
     const property = detachedMember(parent.property, user.right, parent.computed, statement);
     assignments.push({ statement, left: parent, property });
   }
   assignments.sort((a, b) => a.statement.start - b.statement.start);
-  return { assignments, shared };
+  return { ok: true, assignments, shared };
 };
 
 // Own properties of a function that throw when a strict-mode module assigns them.
@@ -539,14 +543,15 @@ const discoverStories = (
       return [];
     }
     const object = node?.type === 'ObjectExpression' ? node : undefined;
-    const { assignments, write, shared } = assignmentsOf(csf, binding);
+    const found = assignmentsOf(csf, binding);
     const reject = ({ code, node: at, path, message }: Rejection): Discovered[] => {
       report({ code, target: storyTarget(binding), path, message, ...loc(csf, at) });
       return [];
     };
-    if (write) {
-      return reject(write);
+    if (!found.ok) {
+      return reject(found.write);
     }
+    const { assignments, shared } = found;
     if (assignments.length === 0 && object) {
       return [{ target: storyTarget(binding), root: literalRoot(csf.editor, object) }];
     }

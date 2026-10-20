@@ -83,22 +83,6 @@ const findImports = (editor: SourceEditor, fromImport: string) =>
       node.type === 'ImportDeclaration' && isSource(node.source.value, fromImport)
   );
 
-// Removes the matching specifiers of a module's imports, and each import left without any.
-const removeImportSpecifiers = (
-  editor: SourceEditor,
-  fromImport: string,
-  matches: (declaration: E.ImportDeclaration, specifier: ImportSpecifierNode) => boolean
-) => {
-  for (const declaration of findImports(editor, fromImport)) {
-    const kept = declaration.specifiers.filter((specifier) => !matches(declaration, specifier));
-    if (kept.length === 0 && declaration.specifiers.length > 0) {
-      removeStatement(editor, declaration);
-    } else if (kept.length < declaration.specifiers.length) {
-      setImportSpecifiers(editor, declaration, kept);
-    }
-  }
-};
-
 // Each edit commits, and returns whether it changed the code.
 export const setRequireImport = (
   editor: SourceEditor,
@@ -144,76 +128,120 @@ export const setRequireImport = (
   return editor.commit();
 };
 
-export const setImport = (
+// Edits planned on the code as it is. A removal commits before the edits after it are planned, as
+// where they go depends on the code it leaves.
+type ImportPlan =
+  | {
+      kind: 'remove';
+      removedStatements: Node[];
+      keptSpecifiers: Map<E.ImportDeclaration, ImportSpecifierNode[]>;
+      removedProperties: Map<E.ObjectPattern, Node[]>;
+    }
+  | { kind: 'merge'; into: E.ImportDeclaration; specifiers: { default?: string; named?: string[] } }
+  // Without a statement to follow, it goes after all imports.
+  | { kind: 'declare'; statement: string; after: E.ImportDeclaration | undefined };
+
+type RemovalPlan = Extract<ImportPlan, { kind: 'remove' }>;
+
+const removalPlan = (): RemovalPlan => ({
+  kind: 'remove',
+  removedStatements: [],
+  keptSpecifiers: new Map(),
+  removedProperties: new Map(),
+});
+
+const planSpecifierRemoval = (
+  imports: readonly E.ImportDeclaration[],
+  matches: (declaration: E.ImportDeclaration, specifier: ImportSpecifierNode) => boolean
+) => {
+  const plan = removalPlan();
+  for (const declaration of imports) {
+    const kept = declaration.specifiers.filter((specifier) => !matches(declaration, specifier));
+    if (kept.length === 0 && declaration.specifiers.length > 0) {
+      plan.removedStatements.push(declaration);
+    } else if (kept.length < declaration.specifiers.length) {
+      plan.keptSpecifiers.set(declaration, kept);
+    }
+  }
+  return plan;
+};
+
+const commitImportPlan = (editor: SourceEditor, plan: ImportPlan | undefined) => {
+  switch (plan?.kind) {
+    case 'remove':
+      plan.removedStatements.forEach((statement) => removeStatement(editor, statement));
+      for (const [pattern, properties] of plan.removedProperties) {
+        removeFromList(editor, objectList(editor, pattern), properties);
+      }
+      for (const [declaration, kept] of plan.keptSpecifiers) {
+        setImportSpecifiers(editor, declaration, kept);
+      }
+      break;
+    case 'merge':
+      setImportSpecifiers(editor, plan.into, plan.into.specifiers, plan.specifiers);
+      break;
+    case 'declare':
+      if (plan.after) {
+        insertStatementAfter(editor, plan.after, plan.statement);
+      } else {
+        insertAfterImports(editor, plan.statement);
+      }
+      break;
+    default:
+      plan satisfies undefined;
+  }
+  return editor.commit();
+};
+
+const hasSpecifier = (declaration: E.ImportDeclaration, type: ImportSpecifierNode['type']) =>
+  declaration.specifiers.some((specifier) => specifier.type === type);
+
+// Plans what the module's value imports do not already bind. A default goes into the first value
+// import without a default, and named imports into the first without `* as`, which they cannot
+// share a clause with. Otherwise, as a namespace import always does, it gets a declaration of its
+// own after the module's value imports, which keeps the module evaluation order. A side-effect
+// import is only added to a module without value imports.
+const planAddition = (
   editor: SourceEditor,
   importSpecifier: ImportBindings,
-  fromImport: string
-) => {
-  const names = Array.isArray(importSpecifier) ? importNames(importSpecifier) : [];
-  const spelled = findImports(editor, fromImport)[0]?.source.value ?? fromImport;
-  // A type-only binding of a name to import as a value would clash with it, so it goes.
-  removeImportSpecifiers(
-    editor,
-    fromImport,
-    (declaration, specifier) =>
-      isTypeOnly(declaration, specifier) &&
-      (specifier.type === 'ImportSpecifier'
-        ? names.some((name) => bindsImport(name, specifier.imported, specifier.local))
-        : specifier.type === 'ImportDefaultSpecifier' && specifier.local.name === importSpecifier)
-  );
-  const removed = editor.commit();
-
+  fromImport: string,
+  spelled: string
+): ImportPlan | undefined => {
   const values = findImports(editor, fromImport).filter(
     (declaration) => declaration.importKind !== 'type'
   );
-  const source = printString(spelled, editor.quote);
-  const end = editor.semicolons ? ';' : '';
   const specifiers = values.flatMap((declaration) =>
     declaration.specifiers.filter((specifier) => !isTypeOnly(declaration, specifier))
   );
-  // A clause goes into the first value import without a specifier that blocks it. Otherwise it
-  // gets a declaration of its own after the module's value imports, or after all imports, which
-  // keeps the module evaluation order.
-  const addImport = (
-    clause: string,
-    merged?: { blockedBy: string; specifiers: { default?: string; named?: string[] } }
-  ) => {
-    const target =
-      merged &&
-      values.find(
-        (declaration) =>
-          !declaration.specifiers.some((specifier) => specifier.type === merged.blockedBy)
-      );
-    if (target) {
-      setImportSpecifiers(editor, target, target.specifiers, merged.specifiers);
-    } else if (values.length > 0) {
-      insertStatementAfter(editor, values.at(-1)!, `import ${clause} from ${source}${end}`);
-    } else {
-      insertAfterImports(editor, `import ${clause} from ${source}${end}`);
-    }
-  };
-
+  const source = printString(spelled, editor.quote);
+  const end = editor.semicolons ? ';' : '';
+  const declare = (clause?: string): ImportPlan => ({
+    kind: 'declare',
+    statement: `import ${clause ? `${clause} from ` : ''}${source}${end}`,
+    after: values.at(-1),
+  });
   // Handle side-effect imports (e.g., import 'foo')
   if (importSpecifier === null) {
-    if (values.length === 0) {
-      insertAfterImports(editor, `import ${source}${end}`);
-    }
-    // Handle default imports e.g. import foo from 'bar'
-  } else if (typeof importSpecifier === 'string') {
+    return values.length === 0 ? declare() : undefined;
+  }
+  // Handle default imports e.g. import foo from 'bar'
+  if (typeof importSpecifier === 'string') {
     if (
-      !specifiers.some(
+      specifiers.some(
         (specifier) =>
           specifier.type === 'ImportDefaultSpecifier' && specifier.local.name === importSpecifier
       )
     ) {
-      addImport(importSpecifier, {
-        blockedBy: 'ImportDefaultSpecifier',
-        specifiers: { default: importSpecifier },
-      });
+      return undefined;
     }
-    // Handle named imports e.g. import { foo } from 'bar'
-  } else if (Array.isArray(importSpecifier)) {
-    const texts = names
+    const into = values.find((declaration) => !hasSpecifier(declaration, 'ImportDefaultSpecifier'));
+    return into
+      ? { kind: 'merge', into, specifiers: { default: importSpecifier } }
+      : declare(importSpecifier);
+  }
+  // Handle named imports e.g. import { foo } from 'bar'
+  if (Array.isArray(importSpecifier)) {
+    const texts = importNames(importSpecifier)
       .filter(
         (name) =>
           !specifiers.some(
@@ -223,38 +251,63 @@ export const setImport = (
           )
       )
       .map((name) => printImportName(name, ' as '));
-    if (texts.length > 0) {
-      addImport(`{ ${texts.join(', ')} }`, {
-        blockedBy: 'ImportNamespaceSpecifier',
-        specifiers: { named: texts },
-      });
+    if (texts.length === 0) {
+      return undefined;
     }
-    // Handle namespace imports e.g. import * as foo from 'bar'
-  } else if (
-    importSpecifier.namespace &&
-    !specifiers.some(
-      (specifier) =>
-        specifier.type === 'ImportNamespaceSpecifier' &&
-        specifier.local.name === importSpecifier.namespace
-    )
-  ) {
-    addImport(`* as ${importSpecifier.namespace}`);
+    const into = values.find(
+      (declaration) => !hasSpecifier(declaration, 'ImportNamespaceSpecifier')
+    );
+    return into
+      ? { kind: 'merge', into, specifiers: { named: texts } }
+      : declare(`{ ${texts.join(', ')} }`);
   }
-  return editor.commit() || removed;
+  // Handle namespace imports e.g. import * as foo from 'bar'
+  const { namespace } = importSpecifier;
+  const bound = specifiers.some(
+    (specifier) =>
+      specifier.type === 'ImportNamespaceSpecifier' && specifier.local.name === namespace
+  );
+  return namespace && !bound ? declare(`* as ${namespace}`) : undefined;
 };
 
-const removeRequireImport = (
+export const setImport = (
   editor: SourceEditor,
   importSpecifier: ImportBindings,
   fromImport: string
 ) => {
-  // require() has no side-effect only or namespace forms, so those are skipped.
+  const names = Array.isArray(importSpecifier) ? importNames(importSpecifier) : [];
+  const imports = findImports(editor, fromImport);
+  const spelled = imports[0]?.source.value ?? fromImport;
+  // A type-only binding of a name to import as a value would clash with it, so it goes.
+  const clashes = planSpecifierRemoval(
+    imports,
+    (declaration, specifier) =>
+      isTypeOnly(declaration, specifier) &&
+      (specifier.type === 'ImportSpecifier'
+        ? names.some((name) => bindsImport(name, specifier.imported, specifier.local))
+        : specifier.type === 'ImportDefaultSpecifier' && specifier.local.name === importSpecifier)
+  );
+  const removed = commitImportPlan(editor, clashes);
+  const added = commitImportPlan(
+    editor,
+    planAddition(editor, importSpecifier, fromImport, spelled)
+  );
+  return added || removed;
+};
+
+// require() has no side-effect only or namespace forms, so those are skipped.
+const planRequireRemoval = (
+  editor: SourceEditor,
+  importSpecifier: ImportBindings,
+  fromImport: string
+) => {
+  const plan = removalPlan();
   const names = Array.isArray(importSpecifier) ? importNames(importSpecifier) : undefined;
   for (const declaration of findRequires(editor, fromImport)) {
     const { id } = declaration.declarations[0];
     // Handle default requires e.g. const foo = require('bar')
     if (typeof importSpecifier === 'string' && isIdentifier(id, importSpecifier)) {
-      removeStatement(editor, declaration);
+      plan.removedStatements.push(declaration);
     }
     // Handle named requires e.g. const { foo, bar } = require('baz')
     if (!names || id.type !== 'ObjectPattern') {
@@ -266,29 +319,29 @@ const removeRequireImport = (
         names.some((name) => removesImport(name, property.key, property.value))
     );
     if (removed.length === id.properties.length) {
-      removeStatement(editor, declaration);
+      plan.removedStatements.push(declaration);
     } else if (removed.length > 0) {
-      removeFromList(editor, objectList(editor, id), removed);
+      plan.removedProperties.set(id, removed);
     }
   }
+  return plan;
 };
 
-const removeModuleImport = (
+const planImportRemoval = (
   editor: SourceEditor,
   importSpecifier: ImportBindings,
   fromImport: string
 ) => {
+  const imports = findImports(editor, fromImport);
   // Remove side-effect imports (e.g., import 'foo') if exact match, else do nothing.
   if (importSpecifier === null) {
-    for (const declaration of findImports(editor, fromImport)) {
-      if (declaration.specifiers.length === 0) {
-        removeStatement(editor, declaration);
-      }
-    }
-    return;
+    return {
+      ...removalPlan(),
+      removedStatements: imports.filter((declaration) => declaration.specifiers.length === 0),
+    };
   }
   const names = Array.isArray(importSpecifier) ? importNames(importSpecifier) : [];
-  removeImportSpecifiers(editor, fromImport, (declaration, specifier) => {
+  return planSpecifierRemoval(imports, (declaration, specifier) => {
     if (isTypeOnly(declaration, specifier)) {
       return false;
     }
@@ -318,8 +371,10 @@ export const removeImport = (
   importSpecifier: ImportBindings,
   fromImport: string
 ) => {
-  removeRequireImport(editor, importSpecifier, fromImport);
-  const requires = editor.commit();
-  removeModuleImport(editor, importSpecifier, fromImport);
-  return editor.commit() || requires;
+  const requires = commitImportPlan(
+    editor,
+    planRequireRemoval(editor, importSpecifier, fromImport)
+  );
+  const imports = commitImportPlan(editor, planImportRemoval(editor, importSpecifier, fromImport));
+  return imports || requires;
 };

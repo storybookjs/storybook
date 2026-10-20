@@ -654,6 +654,35 @@ describe('replaceValue', () => {
 });
 
 describe('removeStatement', () => {
+  it.each([
+    ['inserted after imports', "import a from 'a';\nfoo();\n", 'const b = 1;\nfoo();\n'],
+    [
+      'inserted after imports, above a blank line',
+      "import a from 'a';\n\nfoo();\n",
+      'const b = 1;\nfoo();\n',
+    ],
+    ['appended', "import a from 'a';\n", 'const b = 1;\n'],
+  ])(
+    'keeps a statement %s next to a removed one in the same batch, in either order',
+    (how, code, output) => {
+      for (const removeFirst of [false, true]) {
+        const editor = new SourceEditor(code);
+        const add = () =>
+          how === 'appended'
+            ? appendStatement(editor, 'const b = 1;')
+            : insertAfterImports(editor, 'const b = 1;');
+        if (!removeFirst) {
+          add();
+        }
+        removeStatement(editor, editor.program.body[0]);
+        if (removeFirst) {
+          add();
+        }
+        expect(editor.toString()).toBe(output);
+      }
+    }
+  );
+
   it('removes the leading comments with the statement', () => {
     const editor = new SourceEditor(dedent`
       import a from 'a';
@@ -849,6 +878,29 @@ describe('insertStatementAfter', () => {
         insert();
       }
       expect(editor.toString()).toBe('const Primary = wrap(fn)\nPrimary.args = {}\nfoo()\n');
+    }
+  );
+
+  it.each([true, false])(
+    'keeps edits of the next statement to that statement, inserting first: %s',
+    (insertFirst) => {
+      const editor = new SourceEditor('const Primary = fn\nfoo()\nbar()\n');
+      const [declaration, foo, bar] = editor.program.body as E.ExpressionStatement[];
+      const insert = () => {
+        insertStatementAfter(editor, declaration, 'Primary.args = {}');
+        insertStatementAfter(editor, foo, 'x = 1');
+      };
+      if (insertFirst) {
+        insert();
+      }
+      wrapExpression(editor, foo.expression, 'wrap(', ')');
+      editor.edits.overwrite(bar.start, bar.end, 'baz()');
+      if (!insertFirst) {
+        insert();
+      }
+      expect(editor.toString()).toBe(
+        'const Primary = fn\nPrimary.args = {}\nwrap(foo())\nx = 1\nbaz()\n'
+      );
     }
   );
 });

@@ -1306,10 +1306,22 @@ export const insertStatementAfter = (editor: SourceEditor, statement: Span, text
   const terminator =
     !endsStatement(body) && CONTINUES_STATEMENT.test(code.slice(next).trimStart()) ? ';' : '';
   const written = `\n${lead}${separator}${body}${terminator}`;
-  // To the right of the statement's end, which can be its last expression's end: text written
-  // there later belongs to the expression and goes before the statement.
-  if (next === code.length || code[next] === '\n') {
+  // At the start of the next line: not at the statement's end, which can be its last expression's
+  // end, where later text belongs to the expression, and left of the next statement, where text
+  // belongs to that one. A removal of the statement keeps text at the start of the next line.
+  if (next === code.length) {
     edits.appendRight(next, written);
+    return;
+  }
+  if (code[next] === '\n') {
+    const at = next + 1;
+    edits.appendLeft(at, `${written.slice(1)}\n`);
+    let points = insertedAt.get(edits);
+    if (!points) {
+      points = new Set();
+      insertedAt.set(edits, points);
+    }
+    points.add(at);
     return;
   }
   edits.appendLeft(end, written);
@@ -1367,6 +1379,23 @@ const isRemoved = (editor: SourceEditor, span: Span) => {
     return editor.edits.slice(span.start, span.end) === '';
   } catch {
     return true;
+  }
+};
+
+// Where `insertStatementAfter` wrote statements at the start of a line, per batch of edits, which
+// a removal around them keeps.
+const insertedAt = new WeakMap<SourceEdits, Set<number>>();
+
+// `remove`, split around the statements inserted inside the range, as removing a range clears what
+// other edits wrote inside it.
+const removeKeeping = (editor: SourceEditor, start: number, end: number) => {
+  const inside = [...(insertedAt.get(editor.edits) ?? [])]
+    .filter((at) => start < at && at < end)
+    .sort((a, b) => a - b);
+  let from = start;
+  for (const at of [...inside, end]) {
+    editor.edits.remove(from, at);
+    from = at;
   }
 };
 
@@ -1476,7 +1505,7 @@ export const removeStatement = (editor: SourceEditor, statement: Span, atTop?: b
       from = lineStart(code, from - 1);
     }
   }
-  editor.edits.remove(from, to);
+  removeKeeping(editor, from, to);
 };
 
 /** Remove top-level statements, each with a `;` that directly follows it. */

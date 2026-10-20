@@ -226,22 +226,21 @@ describe('experimental_storyInput', () => {
   });
 
   test('derives the input of extend from the inputs the user gave', () => {
-    const story = derivingMeta.story({ parameters: {} });
-    const extended = story.extend({ args: { label: 'foo' }, parameters: {} });
-    expect(story.input.parameters).toEqual({ argless: true });
-    expect(extended.input.parameters).toEqual({});
-  });
-
-  test('keeps a value the user gave that equals a derived one', () => {
-    const story = derivingMeta.story({ parameters: { argless: true } });
-    const extended = story.extend({ args: { label: 'foo' }, parameters: {} });
-    expect(extended.input.parameters).toEqual({ argless: true });
+    const derived = derivingMeta.story({ parameters: {} });
+    const given = derivingMeta.story({ parameters: { argless: true } });
+    const args = { label: 'foo' };
+    expect(derived.input.parameters).toEqual({ argless: true });
+    expect(derived.extend({ args, parameters: {} }).input.parameters).toEqual({});
+    expect(given.extend({ args, parameters: {} }).input.parameters).toEqual({ argless: true });
   });
 
   test('derives the input of a test', () => {
     const story = derivingMeta.story();
     story.test('a test', () => {});
-    expect(getStoryChildren(story)[0].input.parameters).toMatchObject({ argless: true });
+    story.test('a test with args', { args: { label: 'foo' } }, () => {});
+    const [test, testWithArgs] = getStoryChildren(story);
+    expect(test.input.parameters).toMatchObject({ argless: true });
+    expect(testWithArgs.input.parameters).not.toHaveProperty('argless');
   });
 
   test('is typed by the addons of the preview and does not change its type', () => {

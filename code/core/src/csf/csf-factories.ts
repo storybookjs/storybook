@@ -68,7 +68,8 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
      * Derive the input of each factory story when it is defined, before anything composes it.
      *
      * Keep it pure. It runs on every `meta.story()`, `extend()` and `test()`, on the inputs the user
-     * gave, never on a parent's derived input. Leave `name` and `tags`: the index reads them.
+     * gave, never on a parent's derived input. Leave `name` and `tags`: the index reads them from
+     * the file.
      */
     experimental_storyInput?: StoryInputHook<NoInfer<TRenderer & InferTypes<Addons>>>;
   }
@@ -336,7 +337,7 @@ function defineStory<
       overridesOrTestFn: StoryAnnotations<TRenderer, TRenderer['args']> | TestFunction<TRenderer>,
       testFn?: TestFunction<TRenderer, TRenderer['args']>
     ) {
-      const annotations = typeof overridesOrTestFn !== 'function' ? overridesOrTestFn : {};
+      const overrides = typeof overridesOrTestFn !== 'function' ? overridesOrTestFn : {};
       const testFunction = typeof overridesOrTestFn !== 'function' ? testFn! : overridesOrTestFn;
 
       const play =
@@ -353,9 +354,9 @@ function defineStory<
             };
 
       const test = this.extend({
-        ...annotations,
+        ...overrides,
         name,
-        tags: [Tag.TEST_FN, `!${Tag.AUTODOCS}`, ...(annotations.tags ?? [])],
+        tags: [Tag.TEST_FN, `!${Tag.AUTODOCS}`, ...(overrides.tags ?? [])],
         play,
       });
       __children.push(test);

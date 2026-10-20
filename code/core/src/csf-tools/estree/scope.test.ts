@@ -1,8 +1,18 @@
 import { visitorKeys } from 'oxc-parser';
 import { describe, expect, it } from 'vitest';
 
-import { type E, parseModule } from './ast.ts';
+import { type E, type Node, parseModule, walk } from './ast.ts';
 import { TS_EXPRESSIONS, TS_TYPES, analyzeScopes, generateUid } from './scope.ts';
+
+const identifiersNamed = (program: E.Program, name: string) => {
+  const found: Node[] = [];
+  walk(program, (node) => {
+    if (node.type === 'Identifier' && node.name === name) {
+      found.push(node);
+    }
+  });
+  return found;
+};
 
 const programBindings = (code: string) => {
   const { program } = parseModule(code, 'file.tsx');
@@ -162,6 +172,30 @@ describe('analyzeScopes', () => {
     const call = (statement.expression as E.CallExpression).callee;
     expect(info.bindingOf(call)).toMatchObject({ name: 'f', constant: false });
   });
+
+  it.each([
+    'function f(a) { if (a) { var a = 1; } return a; }',
+    'const f = (a) => { if (a) { var a = 1; } return a; };',
+    'const o = { m(a) { if (a) { var a = 1; } return a; } };',
+  ])('keeps one binding for a body `var` that redeclares a parameter: %s', (code) => {
+    const { program } = parseModule(code, 'file.ts');
+    const info = analyzeScopes(program);
+    const [param, test, declared, returned] = identifiersNamed(program, 'a');
+    const binding = info.bindingOf(param);
+    expect(info.bindingOf(declared)).toBe(binding);
+    expect(binding).toMatchObject({ kind: 'param', constant: false, references: [test, returned] });
+  });
+
+  it.each(['(a) => (a) => a', '(a) => class a {}', '(a) => function a() { return a; }'])(
+    'keeps a parameter apart from the function or class an arrow returns: %s',
+    (code) => {
+      const { program } = parseModule(code, 'file.ts');
+      const info = analyzeScopes(program);
+      const [outer, inner] = identifiersNamed(program, 'a');
+      expect(info.bindingOf(outer)).toMatchObject({ constant: true, references: [] });
+      expect(info.bindingOf(inner)).not.toBe(info.bindingOf(outer));
+    }
+  );
 
   it('does not bind TS enums or `declare global` vars at the top level', () => {
     expect(programBindings('enum E { A } declare global { var X: number }')).toEqual({});

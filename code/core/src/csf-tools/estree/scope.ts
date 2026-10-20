@@ -292,7 +292,15 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
     declaration?: Node
   ) => {
     names.add(identifier.name);
-    const existing = scope.bindings.get(identifier.name);
+    // A body declaration that redeclares a parameter or the function's own name reuses its binding,
+    // like Babel.
+    const owner =
+      scope.node.type === 'BlockStatement' &&
+      scope.parent?.isFunctionScope &&
+      (scope.parent.node as E.Function).body === scope.node
+        ? scope.parent
+        : undefined;
+    const existing = scope.bindings.get(identifier.name) ?? owner?.bindings.get(identifier.name);
     if (existing) {
       existing.constant = false;
       identifierBindings.set(identifier, existing);

@@ -5,9 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
+import * as find from 'empathic/find';
 import { fs as memfs, vol } from 'memfs';
 
 import { executeCommand, executeCommandSync } from '../utils/command.ts';
+import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { PNPMProxy } from './PNPMProxy.ts';
 
@@ -27,6 +29,8 @@ vi.mock('storybook/internal/node-logger', () => ({
 
 vi.mock(import('../utils/command.ts'), { spy: true });
 vi.mock('node:fs', { spy: true });
+vi.mock('empathic/find', { spy: true });
+vi.mock('../utils/paths.ts', { spy: true });
 const mockedExecuteCommand = vi.mocked(executeCommand);
 const mockedExecuteCommandSync = vi.mocked(executeCommandSync);
 
@@ -55,8 +59,9 @@ describe('PNPM Proxy', () => {
   const workspaceYaml = () => vol.toJSON()[WORKSPACE_YAML];
 
   const useMemfsProject = (proxy: PNPMProxy, packageJson: Record<string, unknown> = {}) => {
-    vi.spyOn(proxy as any, 'findWorkspaceYamlPath').mockImplementation(() =>
-      vol.existsSync(WORKSPACE_YAML) ? WORKSPACE_YAML : undefined
+    vi.mocked(getProjectRoot).mockReturnValue(PROJECT_DIR);
+    vi.mocked(find.up).mockImplementation((name) =>
+      name === 'pnpm-workspace.yaml' && vol.existsSync(WORKSPACE_YAML) ? WORKSPACE_YAML : undefined
     );
     vi.spyOn(proxy, 'primaryPackageJson', 'get').mockReturnValue({
       operationDir: PROJECT_DIR,
@@ -379,14 +384,20 @@ describe('PNPM Proxy', () => {
       );
     });
 
-    it('does nothing on pnpm < 10.26, which has no allowBuilds setting', async () => {
-      mockPnpmVersion('10.25.0');
+    it.each([
+      ['pnpm 9, which runs build scripts without approval', '9.15.9'],
+      ['pnpm < 10.26, which has no allowBuilds setting', '10.25.0'],
+    ])('neither reads nor writes the workspace file on %s', async (_, version) => {
+      mockPnpmVersion(version);
       pnpmProxy = new PNPMProxy();
       useMemfsProject(pnpmProxy);
+      vol.fromJSON({ [WORKSPACE_YAML]: 'packages:\n  - "packages/*"\n' });
 
       await install();
 
-      expect(workspaceYaml()).toBeUndefined();
+      expect(readFileSync).not.toHaveBeenCalledWith(WORKSPACE_YAML, expect.anything());
+      expect(writeFileSync).not.toHaveBeenCalled();
+      expect(workspaceYaml()).toBe('packages:\n  - "packages/*"\n');
     });
   });
 

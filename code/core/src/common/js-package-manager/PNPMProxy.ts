@@ -287,7 +287,7 @@ export class PNPMProxy extends JsPackageManager {
         /^[~^]/.test(version) || prerelease(version) ? '' : (current.match(/^[~^]/)?.[0] ?? '');
       workspace.doc.setIn(keyPath, `${modifier}${version}`);
     }
-    writeFileSync(workspace.path, workspace.doc.toString(), 'utf8');
+    this.#writeWorkspaceYaml(workspace);
     return upgrades.filter(({ catalog }) => catalog === null).map(({ specifier }) => specifier);
   }
 
@@ -317,14 +317,6 @@ export class PNPMProxy extends JsPackageManager {
   #getCatalogName(specifier: string | undefined): string | null {
     const match = specifier?.match(/^catalog:(.*)$/);
     return match ? match[1].trim() : null;
-  }
-
-  /** Looks for a `pnpm-workspace.yaml` all the way down to the project root. */
-  protected findWorkspaceYamlPath(): string | undefined {
-    return find.up('pnpm-workspace.yaml', {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
   }
 
   // From pnpm 11, an unreviewed build script fails a non-interactive install outright, and
@@ -368,7 +360,7 @@ export class PNPMProxy extends JsPackageManager {
       for (const pkg of pending) {
         doc.setIn(['allowBuilds', pkg], true);
       }
-      writeFileSync(path, doc.toString(), 'utf8');
+      this.#writeWorkspaceYaml({ path, doc });
     } catch (e) {
       logger.warn(
         `Could not allow build scripts of ${STORYBOOK_BUILD_SCRIPT_PACKAGES.join(', ')} in ${path}: ${String(e)}`
@@ -376,12 +368,20 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
+  #writeWorkspaceYaml({ path, doc }: { path: string; doc: Document }): void {
+    logger.debug(`Writing pnpm workspace file ${path}`);
+    writeFileSync(path, doc.toString(), 'utf8');
+  }
+
   // Null when the file is malformed, or missing without `createIfMissing`; with it, a missing file
   // yields an empty document addressed next to the package.json we operate on.
   #readWorkspaceYaml(options?: {
     createIfMissing: boolean;
   }): { path: string; doc: Document } | null {
-    const path = this.findWorkspaceYamlPath();
+    const path = find.up('pnpm-workspace.yaml', {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
     if (!path) {
       return options?.createIfMissing
         ? {
@@ -456,7 +456,7 @@ export class PNPMProxy extends JsPackageManager {
       }
 
       if (changed) {
-        writeFileSync(workspace.path, workspace.doc.toString(), 'utf8');
+        this.#writeWorkspaceYaml(workspace);
       }
       return true;
     } catch (e) {

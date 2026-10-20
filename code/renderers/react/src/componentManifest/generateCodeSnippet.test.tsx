@@ -975,3 +975,27 @@ test('an arg value keeps a shorthand property shorthand', () => {
   `
   );
 });
+
+test('a string arg prints as an attribute only when JSX reads it back unchanged', () => {
+  const input = withCSF3(dedent`
+    export const Strings: Story = {
+      args: { quote: 'say "hi"', entity: 'a &amp; b', lines: 'a\\nb', path: 'C:\\\\temp' },
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Strings = () => <Button quote={'say "hi"'} entity={'a &amp; b'} lines={'a\\nb'} path="C:\\temp">Click me</Button>;"`
+  );
+});
+
+test('children that JSX text cannot hold stay an expression', () => {
+  const input = withCSF3(dedent`
+    export const Braces: Story = { args: { children: 'a {b} <c>' } };
+    export const Entity: Story = { args: { children: 'a &amp; b' } };
+    export const Lines: Story = { args: { children: 'a\\nb' } };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Braces = () => <Button>{'a {b} <c>'}</Button>;
+    const Entity = () => <Button>{'a &amp; b'}</Button>;
+    const Lines = () => <Button>{'a\\nb'}</Button>;"
+  `);
+});

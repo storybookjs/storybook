@@ -259,7 +259,9 @@ const toAttr = (key: string, value: Node) => {
   if (value.type === 'Literal' && typeof value.value === 'boolean') {
     return value.value ? key : `${key}={false}`;
   }
-  if (isStringLiteral(value) && !value.value.includes('"')) {
+  // A JSX attribute string has no escapes, decodes entities and folds line breaks, so a value it
+  // cannot hold as written stays an expression.
+  if (isStringLiteral(value) && !/["&\r\n]/.test(value.value)) {
     return `${key}="${value.value}"`;
   }
   return `${key}={${placeableTextOf(value)}}`;
@@ -279,10 +281,11 @@ function injectedAttributes(merged: Args, existing: ReadonlySet<string>): string
   return attrs;
 }
 
+// JSX text cannot hold braces or tags, decodes entities and folds line breaks.
 const toJsxChildren = (node: Node | null | undefined) =>
   !node
     ? ''
-    : isStringLiteral(node)
+    : isStringLiteral(node) && !/[{}<>&\r\n]/.test(node.value)
       ? node.value
       : isJsx(node)
         ? textOf(node)

@@ -299,6 +299,19 @@ const after = 1
 `);
     });
 
+    it('writes an annotation named by a reserved word as a member access', () => {
+      const csf = parse(`export default { title: 'Example' };
+export const Primary = () => null;
+`);
+      const [story] = csf.objects({ meta: false });
+
+      expect(story.set(['default'], true)).toEqual({ ok: true, changed: true });
+      expect(printCsf(csf).code).toBe(`export default { title: 'Example' };
+export const Primary = () => null;
+Primary.default = true;
+`);
+    });
+
     it('ends an annotation with a semicolon before a statement that would continue it', () => {
       const csf = parse(`export default { title: 'Example' }
 export function Primary() {}

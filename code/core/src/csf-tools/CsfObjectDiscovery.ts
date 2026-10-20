@@ -20,7 +20,6 @@ import {
   isFunction,
   isIdentifier,
   isStringLiteral,
-  isValidIdentifier,
   locationOf,
   outerSpan,
   staticKey,
@@ -29,8 +28,8 @@ import {
 import {
   insertStatementAfter,
   printKey,
+  printMemberAccess,
   printMembers,
-  printString,
   removeStatements,
 } from './estree/editor.ts';
 import { placeableValueSource } from './estree/values.ts';
@@ -392,15 +391,17 @@ const storyRoot = (
     (statement) =>
       statement.start <= binding.declaration.start && binding.declaration.end <= statement.end
   )!;
-  const accessor = (key: string) =>
-    isValidIdentifier(key) ? `.${key}` : `[${printString(key, editor.quote)}]`;
   // `removed` are statements the same edits remove, which the new ones cannot follow.
   const assign = (members: MemberInsert[], removed: ReadonlySet<Node> = new Set()) => {
     const after =
       assignments.findLast(({ statement }) => !removed.has(statement))?.statement ?? declaration;
     const end = editor.semicolons ? ';' : '';
     for (const { key, value } of members) {
-      insertStatementAfter(editor, after, `${binding.localName}${accessor(key)} = ${value}${end}`);
+      insertStatementAfter(
+        editor,
+        after,
+        `${binding.localName}${printMemberAccess(key, editor.quote)} = ${value}${end}`
+      );
     }
   };
   const statementsOf = (members: readonly Property[]) =>
@@ -448,7 +449,7 @@ const storyRoot = (
         return;
       }
       const { left } = assignment.expression;
-      editor.edits.overwrite(left.object.end, left.end, accessor(key));
+      editor.edits.overwrite(left.object.end, left.end, printMemberAccess(key, editor.quote));
     },
     // `CsfObject` refuses a group of members from both the object and the assignments.
     group: (members, key) => {

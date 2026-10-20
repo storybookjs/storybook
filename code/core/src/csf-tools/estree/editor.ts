@@ -461,6 +461,12 @@ const blockIndent = (code: string, node: Node) => {
 export const printKey = (name: string, quote: string) =>
   isValidIdentifier(name, false) ? name : printString(name, quote);
 
+// `.key`, or `['key']` for a key that is no identifier; with `?.` when `optional`.
+export const printMemberAccess = (key: string, quote: string, optional = false) =>
+  isValidIdentifier(key, false)
+    ? `${optional ? '?.' : '.'}${key}`
+    : `${optional ? '?.' : ''}[${printString(key, quote)}]`;
+
 export const printString = (value: string, quote: string) => {
   const json = JSON.stringify(value);
   return quote === '"'

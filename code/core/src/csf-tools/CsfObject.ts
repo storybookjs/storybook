@@ -4,7 +4,6 @@ import {
   type Property,
   type SourceLocation,
   type Span,
-  isValidIdentifier,
   locationOf,
   parseExpression,
   staticKey,
@@ -18,8 +17,8 @@ import {
   keySource,
   prependMembers,
   printKey,
+  printMemberAccess,
   printMembers,
-  printString,
   printValue,
   removeMembers,
   renameKey,
@@ -441,11 +440,6 @@ const carriedSpreads = (
   return { ok: true, spreads };
 };
 
-const memberAccess = (key: string, optional: boolean, quote: string) =>
-  isValidIdentifier(key, false)
-    ? `${optional ? '?.' : '.'}${key}`
-    : `${optional ? '?.' : ''}[${printString(key, quote)}]`;
-
 // What an object literal is known to hold at `key`: no member, the value of one, or unknown.
 const literalMember = (literal: E.ObjectExpression, key: string) => {
   const lookup = lookupProperty(literal.properties, key);
@@ -476,7 +470,7 @@ const carriedValue = (
       continue;
     }
     candidates.push({
-      expression: `${spread.source}${memberAccess(first, false, quote)}`,
+      expression: `${spread.source}${printMemberAccess(first, quote)}`,
       literal: member?.kind === 'value' ? member.literal : undefined,
     });
     if (member?.kind === 'value') {
@@ -491,7 +485,7 @@ const carriedValue = (
     return rest.length === 0
       ? { expression: either, alternatives: true }
       : {
-          expression: `(${either})${rest.map((key) => memberAccess(key, true, quote)).join('')}`,
+          expression: `(${either})${rest.map((key) => printMemberAccess(key, quote, true)).join('')}`,
           alternatives: false,
         };
   }
@@ -501,7 +495,7 @@ const carriedValue = (
     if (member?.kind === 'missing') {
       return undefined;
     }
-    expression += memberAccess(key, !literal, quote);
+    expression += printMemberAccess(key, quote, !literal);
     literal = member?.kind === 'value' ? member.literal : undefined;
   }
   return { expression, alternatives: false };

@@ -13,8 +13,8 @@ import {
   type CsfMutationDiagnostic,
   type CsfMutationResult,
   type CsfObject,
-  type CsfObjectEditor,
   type CsfObjectHost,
+  type CsfPath,
   type CsfValue,
   createCsfObject,
 } from './CsfObject.ts';
@@ -27,7 +27,6 @@ import {
   isStringLiteral,
   locationOf,
   parseExpression,
-  placeableTextOf,
   staticKey,
   unwrapExpression,
   walk,
@@ -36,7 +35,6 @@ import {
   SourceEditor,
   appendStatement,
   appendToList,
-  arrayList,
   printValue,
   removeFromList,
 } from './estree/editor.ts';
@@ -194,9 +192,10 @@ export class ConfigFile implements CsfObject {
   }
 
   /**
-   * Read a detached copy of the expression at a property path. Missing fields return `undefined`;
-   * so does a path through a value that is not an object literal, or one a spread, computed key, or
-   * duplicate field leaves unproven. `inspect` tells these apart.
+   * Read a detached copy of the expression at a path of keys and indexes, such as `['addons', 0]`.
+   * Missing fields return `undefined`; so does a path that does not fit a value, such as a key into
+   * an array, or one a spread, computed key, or duplicate field leaves unproven. `inspect` tells
+   * these apart.
    *
    * @example
    * ```ts
@@ -205,13 +204,13 @@ export class ConfigFile implements CsfObject {
    * object.get(['missing']); // undefined
    * ```
    */
-  get(path: readonly string[]): CsfExpression | undefined {
+  get(path: CsfPath): CsfExpression | undefined {
     const reader = this._reader();
     return reader.ok ? reader.object.get(path) : undefined;
   }
 
   /**
-   * Read the expression at a property path like `get`, telling a missing field from one that cannot
+   * Read the expression at a path like `get`, telling a missing field from one that cannot
    * be read statically, and why.
    *
    * @example
@@ -222,7 +221,7 @@ export class ConfigFile implements CsfObject {
    * config.inspect(['args', 'size']).kind; // 'unreadable'
    * ```
    */
-  inspect(path: readonly string[]): CsfInspection {
+  inspect(path: CsfPath): CsfInspection {
     const reader = this._reader();
     return reader.ok
       ? reader.object.inspect(path)
@@ -241,14 +240,14 @@ export class ConfigFile implements CsfObject {
    * object.getValue(['missing']); // undefined
    * ```
    */
-  getValue(path: readonly string[]): CsfValue {
+  getValue(path: CsfPath): CsfValue {
     const reader = this._reader();
     return reader.ok ? reader.object.getValue(path) : undefined;
   }
 
   /**
    * Set a plain value or an expression from `get`, `parseExpression` or `parseModule`, creating
-   * missing parents.
+   * missing parents at keys. An index replaces the element or argument it addresses.
    *
    * @example
    * ```ts
@@ -258,7 +257,7 @@ export class ConfigFile implements CsfObject {
    * object.getValue(['parameters']); // { a11y: { test: 'todo', enabled: true } }
    * ```
    */
-  set(path: readonly string[], value: CsfValue<CsfExpression>): CsfMutationResult {
+  set(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
     return this._mutate((object) => object.set(path, value));
   }
 
@@ -276,14 +275,17 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   transform(
-    path: readonly string[],
+    path: CsfPath,
     derive: (value: CsfExpression) => CsfExpression | undefined
   ): CsfMutationResult {
     return this._mutate((object) => object.transform(path, derive));
   }
 
   /**
-   * Remove a property and recursively clean up empty parents. Missing fields are a no-op.
+   * Remove a property and recursively clean up the objects it leaves empty. At an index, remove
+   * that one element or argument and keep the list, also when it is left empty. Missing fields are
+   * a no-op. An index on a field that holds a call addresses the call's arguments, whatever the
+   * callee, such as `filter` in `[...].filter(Boolean)`.
    *
    * @example
    * ```ts
@@ -293,7 +295,7 @@ export class ConfigFile implements CsfObject {
    * object.remove(['parameters']); // { ok: true, changed: false }
    * ```
    */
-  remove(path: readonly string[]): CsfMutationResult {
+  remove(path: CsfPath): CsfMutationResult {
     return this._mutate((object) => object.remove(path));
   }
 
@@ -308,7 +310,7 @@ export class ConfigFile implements CsfObject {
    * object.getValue(['a11y']); // { context: '#root' }
    * ```
    */
-  rename(path: readonly string[], name: string): CsfMutationResult {
+  rename(path: CsfPath, name: string): CsfMutationResult {
     return this._mutate((object) => object.rename(path, name));
   }
 
@@ -325,7 +327,7 @@ export class ConfigFile implements CsfObject {
    * object.getValue(['globals']); // undefined
    * ```
    */
-  move(from: readonly string[], to: readonly string[]): CsfMutationResult {
+  move(from: CsfPath, to: CsfPath): CsfMutationResult {
     return this._mutate((object) => object.move(from, to));
   }
 
@@ -341,7 +343,7 @@ export class ConfigFile implements CsfObject {
    * object.getValue(['showNav']); // undefined
    * ```
    */
-  group(path: readonly string[], names: readonly string[]): CsfMutationResult {
+  group(path: CsfPath, names: readonly string[]): CsfMutationResult {
     return this._mutate((object) => object.group(path, names));
   }
 
@@ -374,7 +376,40 @@ export class ConfigFile implements CsfObject {
     }
   }
 
-  _mutate(operation: (object: CsfObjectEditor) => CsfMutationResult): CsfMutationResult {
+  /**
+   * Add a plain value or an expression after the last element of the array, or the last argument
+   * of the call, at a path. A missing array is created, carrying the spreads before it forward
+   * like a missing parent. A field that holds a call gets an argument, whatever the callee: on
+   * `[...].filter(Boolean)` that is an argument of `filter`. A method, such as `addons() {}`, is
+   * refused as the `Property` it is written as.
+   *
+   * @example
+   * ```ts
+   * const config = loadConfig("export default { addons: ['a'] };").parse();
+   * config.append(['addons'], 'b'); // { ok: true, changed: true }
+   * config.getValue(['addons']); // ['a', 'b']
+   * ```
+   */
+  append(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
+    return this._mutate((object) => object.append(path, value));
+  }
+
+  /**
+   * Add a plain value or an expression before the first element of the array, or the first
+   * argument of the call, at a path. A missing array is created like for `append`.
+   *
+   * @example
+   * ```ts
+   * const config = loadConfig("export default { addons: ['a'] };").parse();
+   * config.prepend(['addons'], 'b'); // { ok: true, changed: true }
+   * config.getValue(['addons']); // ['b', 'a']
+   * ```
+   */
+  prepend(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
+    return this._mutate((object) => object.prepend(path, value));
+  }
+
+  _mutate(operation: (object: CsfObject) => CsfMutationResult): CsfMutationResult {
     const editor = createConfigObject(
       this,
       'mutate',
@@ -383,12 +418,13 @@ export class ConfigFile implements CsfObject {
         this._markChanged();
       }
     );
-    if (editor.ok === true) {
-      return operation(editor.object);
-    }
-    this._mutationDiagnostics.push(editor.diagnostic);
+    return editor.ok === true ? operation(editor.object) : this._reject(editor.diagnostic);
+  }
+
+  _reject(diagnostic: CsfMutationDiagnostic): CsfMutationResult {
+    this._mutationDiagnostics.push(diagnostic);
     this.editor._refuse();
-    return { ok: false, changed: false, diagnostic: editor.diagnostic };
+    return { ok: false, changed: false, diagnostic };
   }
 
   _reader() {
@@ -743,69 +779,86 @@ export class ConfigFile implements CsfObject {
     return value;
   }
 
-  /** Append a plain value to the array literal at a path, creating the field when it is missing. */
+  /**
+   * @deprecated Use `append`, which takes a plain value too, and adds to a call's arguments as
+   * well as to an array.
+   */
   appendValueToArray(path: string[], value: any): CsfMutationResult {
     return this.appendNodeToArray(path, this.valueToNode(value));
   }
 
-  /** Append an expression to the array literal at a path, creating the field when it is missing. */
+  /**
+   * @deprecated Use `append`, which adds to a call's arguments as well as to an array.
+   */
   appendNodeToArray(path: string[], node: CsfExpression): CsfMutationResult {
-    const current = this.getFieldNode(path);
-    const source = placeableTextOf(node);
-    if (!current) {
-      return this._mutate((object) => object.createArray(path, [source]));
-    }
-    if (current.type !== 'ArrayExpression') {
-      return this._notAnArray(path, current);
-    }
-    appendToList(this.editor, arrayList(this.editor, current), [source]);
-    this.editor.commit();
-    this._markChanged();
-    return { ok: true, changed: true };
+    const array = this._arrayAt(path);
+    return array.kind === 'other' ? this._reject(array.diagnostic) : this.append(path, node);
   }
 
   /**
    * Remove the first entry of the array literal at a path that names `value`: a string, a
    * `{ name }` object, or a call like `getAbsolutePath(value)`. A missing field or entry is a no-op.
+   *
+   * @deprecated Find the entry's index and `remove([...path, index])` it. `get(path)` returns the
+   * field as written, so the index is that of `get(path).elements` for an array literal written
+   * at the field, not for a constant it names.
    */
   removeEntryFromArray(path: string[], value: string): CsfMutationResult {
-    const current = this.getFieldNode(path);
-    if (!current) {
-      return { ok: true, changed: false };
+    const current = this.inspect(path);
+    if (current.kind === 'unreadable') {
+      return this._reject(current.diagnostic);
     }
-    if (current.type !== 'ArrayExpression') {
-      return this._notAnArray(path, current);
+    const array = this._arrayAt(path);
+    if (array.kind === 'other') {
+      return this._reject(array.diagnostic);
     }
-    const element = current.elements.find((element) => {
-      if (isStringLiteral(element)) {
-        return element.value === value;
-      }
-      if (element?.type === 'ObjectExpression') {
-        const name = this._getPresetValue(element, 'name');
-        return name === value;
-      }
-      return element ? this._getWrappedValue(element) === value : false;
-    });
-    if (!element) {
-      return { ok: true, changed: false };
-    }
-    removeFromList(this.editor, arrayList(this.editor, current), [element]);
-    this.editor.commit();
-    this._markChanged();
-    return { ok: true, changed: true };
+    const index =
+      array.kind === 'missing'
+        ? -1
+        : array.node.elements.findIndex((element) => {
+            if (isStringLiteral(element)) {
+              return element.value === value;
+            }
+            if (element?.type === 'ObjectExpression') {
+              const name = this._getPresetValue(element, 'name');
+              return name === value;
+            }
+            return element ? this._getWrappedValue(element) === value : false;
+          });
+    return index < 0 ? { ok: true, changed: false } : this.remove([...path, index]);
   }
 
-  _notAnArray(path: string[], node: Node): CsfMutationResult {
-    const diagnostic: CsfMutationDiagnostic = {
-      code: 'unsupported-value',
-      target: this.target,
-      path,
-      message: `Expected an array literal at '${path.join('.')}', got '${node.type}'`,
-      loc: locationOf(this._code, node.start, node.end),
+  // The array literal at a path as `getFieldNode` resolves it, through local constants and type
+  // assertions. `getFieldNode` follows a constant only at the root, so below one the field as
+  // `inspect` reads it decides. A field holding anything else, such as a call, comes with the
+  // diagnostic of the array helpers, which refuse it.
+  _arrayAt(
+    path: string[]
+  ):
+    | { kind: 'missing' }
+    | { kind: 'array'; node: E.ArrayExpression }
+    | { kind: 'other'; diagnostic: CsfMutationDiagnostic } {
+    const field = this.getFieldNode(path);
+    const inspected = field ? undefined : this.inspect(path);
+    const node = field ?? (inspected?.kind === 'value' ? inspected.node : undefined);
+    if (!node) {
+      return { kind: 'missing' };
+    }
+    const value = unwrapExpression(node);
+    if (value.type === 'ArrayExpression') {
+      return { kind: 'array', node: value };
+    }
+    return {
+      kind: 'other',
+      diagnostic: {
+        code: 'unsupported-value',
+        target: this.target,
+        path,
+        message: `Expected an array literal at '${path.join('.')}', got '${value.type}'`,
+        // A node `inspect` read is a copy, whose offsets are not the file's.
+        ...(field ? { loc: locationOf(this._code, field.start, field.end) } : {}),
+      },
     };
-    this._mutationDiagnostics.push(diagnostic);
-    this.editor._refuse();
-    return { ok: false, changed: false, diagnostic };
   }
 
   valueToNode(value: any): CsfExpression {

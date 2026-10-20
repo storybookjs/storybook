@@ -773,6 +773,34 @@ describe('ConfigFile', () => {
     });
   });
 
+  describe('element paths', () => {
+    it('addresses the elements of a named export like those of a default export field', () => {
+      const config = loadConfig("export const addons = ['a', 'b', 'c'];").parse();
+
+      expect(config.getValue(['addons', 1])).toBe('b');
+      expect(config.set(['addons', 0], 'x')).toEqual({ ok: true, changed: true });
+      expect(config.remove(['addons', 1])).toEqual({ ok: true, changed: true });
+      expect(printConfig(config).code).toBe("export const addons = ['x', 'c'];");
+    });
+
+    it('edits the elements of a constant that only the config refers to', () => {
+      const single = loadConfig("const addons = ['a'];\nexport default { addons };").parse();
+
+      expect(single.set(['addons', 0], 'x')).toEqual({ ok: true, changed: true });
+      expect(printConfig(single).code).toBe("const addons = ['x'];\nexport default { addons };");
+
+      const source = "const addons = ['a'];\nexport default { addons, other: addons };";
+      const shared = loadConfig(source).parse();
+
+      expect(shared.getValue(['addons', 0])).toBe('a');
+      expect(shared.set(['addons', 0], 'x')).toMatchObject({
+        ok: false,
+        diagnostic: { code: 'unsupported-member', path: ['addons', 0] },
+      });
+      expect(printConfig(shared).code).toBe(source);
+    });
+  });
+
   describe('appendToArray', () => {
     it('missing export', () => {
       expect(
@@ -787,6 +815,49 @@ describe('ConfigFile', () => {
         `export default { core: { builder: 'webpack5' }, addons: ['docs'] };`
       );
     });
+    it('reports a field that holds a call, which append would add an argument to', () => {
+      const source = "export default { addons: ['a'].filter(Boolean) };";
+      const config = loadConfig(source).parse();
+
+      expect(config.appendValueToArray(['addons'], 'b')).toMatchObject({
+        ok: false,
+        diagnostic: {
+          code: 'unsupported-value',
+          message: "Expected an array literal at 'addons', got 'CallExpression'",
+        },
+      });
+      expect(config.removeEntryFromArray(['addons'], 'a')).toMatchObject({ ok: false });
+      expect(printConfig(config).code).toBe(source);
+    });
+
+    it('refuses a call below a constant, and appends to an array there', () => {
+      const source =
+        "const opts = { list: ['a'].filter(Boolean) };\nexport default { framework: { options: opts } };";
+      const config = loadConfig(source).parse();
+
+      expect(config.appendValueToArray(['framework', 'options', 'list'], 'z')).toMatchObject({
+        ok: false,
+        diagnostic: {
+          code: 'unsupported-value',
+          message: "Expected an array literal at 'framework.options.list', got 'CallExpression'",
+        },
+      });
+      expect(printConfig(config).code).toBe(source);
+      expect(
+        appendToArray(
+          ['framework', 'options', 'list'],
+          'z',
+          "const opts = { list: ['a'] };\nexport default { framework: { options: opts } };"
+        ).split('\n')[0]
+      ).toBe("const opts = { list: ['a', 'z'] };");
+    });
+
+    it('appends to an array a constant holds', () => {
+      expect(
+        appendToArray(['addons'], 'b', "const addons = ['a'];\nexport default { addons };")
+      ).toBe("const addons = ['a', 'b'];\nexport default { addons };");
+    });
+
     it('reports a field that is not an array literal and leaves it as written', () => {
       const config = loadConfig(`export default { addons: 5 };`).parse();
       const result = config.appendValueToArray(['addons'], 'docs');
@@ -914,6 +985,22 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.appendNodeToArray(['addons'], parseExpression(expression));
 
+      expect(printConfig(config).code).toBe(output);
+    });
+
+    it('re-indents a multi-line node from its own line, at the indent of the array', () => {
+      const source = 'export default {\n  a: [\n    [\n      1,\n    ],\n  ],\n  list: [],\n};';
+      const output =
+        'export default {\n  a: [\n    [\n      1,\n    ],\n  ],\n  list: [\n    [\n      1,\n    ],\n  ],\n};';
+      const config = loadConfig(source).parse();
+      const array = config.get(['a']);
+      expect(array?.type).toBe('ArrayExpression');
+      const child = array?.type === 'ArrayExpression' ? array.elements[0] : undefined;
+
+      expect(config.appendNodeToArray(['list'], child as CsfExpression)).toEqual({
+        ok: true,
+        changed: true,
+      });
       expect(printConfig(config).code).toBe(output);
     });
   });
@@ -2108,6 +2195,43 @@ describe('ConfigFile', () => {
       expect(config.removeEntryFromArray(['stories'], 'x')).toEqual({ ok: true, changed: false });
       expect(config.removeEntryFromArray(['addons'], 'a')).toEqual({ ok: true, changed: true });
       expect(config.changed).toBe(true);
+    });
+
+    it.each([
+      [
+        'a constant',
+        "const addons = ['a', 'b'];\nexport default { addons };",
+        "const addons = ['a'];",
+      ],
+      [
+        'an `as const` export',
+        "export const addons = ['a', 'b'] as const;",
+        "export const addons = ['a'] as const;",
+      ],
+      [
+        'an export of a constant',
+        "const list = ['a', 'b'];\nexport const addons = list;",
+        "const list = ['a'];",
+      ],
+    ])('removes an entry of the array %s holds', (_case, source, line) => {
+      const config = loadConfig(source).parse();
+
+      expect(config.removeEntryFromArray(['addons'], 'b')).toEqual({ ok: true, changed: true });
+      expect(printConfig(config).code.split('\n')[0]).toBe(line);
+    });
+
+    it('reports an array a later spread could replace, like append', () => {
+      const source = "export default { addons: ['a'], ...base };";
+      const config = loadConfig(source).parse();
+
+      expect(config.removeEntryFromArray(['addons'], 'a')).toMatchObject({
+        ok: false,
+        diagnostic: { code: 'spread-field', path: ['addons'] },
+      });
+      expect(config.appendValueToArray(['addons'], 'b')).toMatchObject({
+        diagnostic: { code: 'spread-field' },
+      });
+      expect(printConfig(config).code).toBe(source);
     });
 
     it('reports a field that is not an array literal', () => {

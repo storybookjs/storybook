@@ -1451,10 +1451,12 @@ If your custom migration tooling imports `ConfigFile` from `storybook/internal/c
 | `getFieldValue`, `getSafeFieldValue` | `getValue`               |
 | `setFieldNode`, `setFieldValue`      | `set`                    |
 | `removeField`                        | `remove`, which also removes a parent it leaves empty: `export const core = { builder: 'webpack4' }` loses the export instead of becoming `export const core = {}` |
+| `appendValueToArray`, `appendNodeToArray` | `append`, which takes a plain value or an expression. `append` also adds an argument to a field that holds a call, which these refuse. Both remain deprecated. |
+| `removeEntryFromArray`               | `remove([...path, index])`, with the entry's `index` in `get(path).elements` for an array literal written at the field; `get` returns a field as written, not the constant it names. It remains as a deprecated alias. |
 | `findNamedImportMethodCalls`         | `callArguments`          |
 | `FindNamedImportMethodCallsOptions`  | `CallArgumentsOptions`   |
 
-`getValue` reads static values without executing source code, following any local constant. When it cannot resolve a value, it returns `undefined`; reads add no diagnostics, so they never stop a later write. Use `inspect` to tell a missing field from one that cannot be read statically. Mutation methods return a result that reports whether the edit succeeded and changed the file. `callArguments` returns `CsfObject` editors instead of Babel call expressions, so apply the same `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, and `group` methods you use for story and config objects.
+`getValue` reads static values without executing source code, following any local constant. When it cannot resolve a value, it returns `undefined`; reads add no diagnostics, so they never stop a later write. Use `inspect` to tell a missing field from one that cannot be read statically. Mutation methods return a result that reports whether the edit succeeded and changed the file. `callArguments` returns `CsfObject` editors instead of Babel call expressions, so apply the same `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, `group`, `append`, and `prepend` methods you use for story and config objects. A path addresses an element of an array or an argument of a call by its index in the source, such as `['addons', 0]` or `['framework', 0]`.
 
 Before writing a transformed file, check `changed` and `mutationDiagnostics`. `writeConfig` also rejects files with mutation diagnostics to prevent partial edits.
 

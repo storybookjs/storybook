@@ -38,9 +38,23 @@ export async function syncPreviewAddonsWithMainConfig(
   if (!isCsfFactory) {
     return previewConfig;
   }
-  const existingAddons = previewConfig.getFieldNode(['addons']);
+  const inspected = previewConfig.inspect(['addons']);
+  const existingAddons = previewConfig._arrayAt(['addons']);
+  if (existingAddons.kind === 'other') {
+    logger.debug(`Not synchronizing the preview addons: ${existingAddons.diagnostic.message}`);
+    return previewConfig;
+  }
+  // A spread can provide a missing `addons`, which `append` carries forward, but it could replace
+  // one the preview writes.
+  if (
+    inspected.kind === 'unreadable' &&
+    !(existingAddons.kind === 'missing' && inspected.diagnostic.code === 'spread-field')
+  ) {
+    logger.debug(`Not synchronizing the preview addons: ${inspected.diagnostic.message}`);
+    return previewConfig;
+  }
 
-  if (!existingAddons) {
+  if (inspected.kind === 'missing') {
     previewConfig.set(['addons'], []);
   }
 
@@ -66,9 +80,9 @@ export async function syncPreviewAddonsWithMainConfig(
       }
 
       if (
-        !existingAddons ||
-        (existingAddons.type === 'ArrayExpression' &&
-          !existingAddons.elements.some(
+        existingAddons.kind === 'missing' ||
+        (existingAddons.kind === 'array' &&
+          !existingAddons.node.elements.some(
             (element) => element?.type === 'Identifier' && element.name === annotations.importName
           ))
       ) {
@@ -77,14 +91,11 @@ export async function syncPreviewAddonsWithMainConfig(
         if (annotations.isCoreAddon) {
           // import addonName from 'addon'; + addonName()
           previewConfig.setImport(annotations.importName, annotations.importPath);
-          previewConfig.appendNodeToArray(
-            ['addons'],
-            parseExpression(`${annotations.importName}()`)
-          );
+          previewConfig.append(['addons'], parseExpression(`${annotations.importName}()`));
         } else {
           // import * as addonName from 'addon/preview'; + addonName
           previewConfig.setImport({ namespace: annotations.importName }, annotations.importPath);
-          previewConfig.appendNodeToArray(['addons'], parseExpression(annotations.importName));
+          previewConfig.append(['addons'], parseExpression(annotations.importName));
         }
       }
     }

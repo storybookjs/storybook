@@ -1030,6 +1030,14 @@ const appendFirst = (editor: SourceEditor, list: List, texts: string[]): Appende
     // Only comments can be inside an empty list, and the items go after them.
     const inner = code.slice(list.open, list.close);
     const end = list.open + inner.trimEnd().length;
+    const oneLine = { right: false, indent: undefined, trailingComma: '', lineBreakFollows: false };
+    // A formatter hugs the parentheses of a call around its arguments: `f(() => {…})`.
+    if (code[list.open - 1] === '(' && end === list.open && !texts.some(endsInLineComment)) {
+      if (list.close > list.open) {
+        edits.remove(list.open, list.close);
+      }
+      return write({ ...oneLine, at: list.open }, inline(editor, list, texts, '', false));
+    }
     if ((inner.includes('\n') && end > list.open) || texts.some((text) => text.includes('\n'))) {
       // Multi-line items, or comments on lines of their own: lay the items out one per line, lined
       // up with the last comment when that starts a line.
@@ -1046,7 +1054,6 @@ const appendFirst = (editor: SourceEditor, list: List, texts: string[]): Appende
       const layout = { at: end, right: false, indent, trailingComma: ',', lineBreakFollows: true };
       return write(layout, itemLines(texts, indent, ',', true));
     }
-    const oneLine = { right: false, indent: undefined, trailingComma: '', lineBreakFollows: false };
     if (end > list.open) {
       if (end === list.close) {
         close(padding);
@@ -1614,18 +1621,25 @@ export const replaceValue = (editor: SourceEditor, member: Property, text: strin
       methodFromFunction(indented, keySource(editor, member)) ??
       `${keySource(editor, member)}: ${indented}`;
   }
-  // A text ending in a line comment takes the comma after the replaced code on its line before
-  // the comment. The comma is removed as an edit of its own, so a removal of the next member can
-  // still take it. Any other text leaves the comma to other edits.
+  replaceSpan(editor, span, replacement);
+};
+
+// A text ending in a line comment takes the comma after the replaced code on its line before the
+// comment. The comma is removed as an edit of its own, so a removal of the next item can still
+// take it. Any other text leaves the comma to other edits.
+export const replaceSpan = (editor: SourceEditor, span: Span, text: string) => {
+  const { code } = editor;
   const { comments, end } = triviaAfter(editor, span.end, SPACE_ON_LINE);
   const comma = comments.length === 0 && code[end] === ',' ? end + 1 : undefined;
-  const takesComma = comma !== undefined && endsInLineComment(replacement);
+  const takesComma = comma !== undefined && endsInLineComment(text);
   const to = takesComma ? comma : span.end;
-  editor.edits.overwrite(
-    span.start,
-    span.end,
-    withComma(replacement, takesComma ? ',' : '', lineBreakAt(code, to))
-  );
+  const replacement = withComma(text, takesComma ? ',' : '', lineBreakAt(code, to));
+  if (span.start === span.end) {
+    // A hole, which the text fills in front of its comma.
+    editor.edits.appendLeft(span.start, replacement);
+  } else {
+    editor.edits.overwrite(span.start, span.end, replacement);
+  }
   if (takesComma) {
     if (end > span.end) {
       editor.edits.remove(span.end, end);

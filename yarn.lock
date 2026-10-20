@@ -11111,6 +11111,7 @@ __metadata:
     "@types/estree": "npm:^1.0.6"
     "@types/node": "npm:^22.19.1"
     magic-string: "npm:^1.1.0"
+    rollup: "npm:^4.43.0"
     svelte: "npm:^5.39.5"
     svelte2tsx: "npm:^0.7.55"
     sveltedoc-parser: "npm:^4.2.1"

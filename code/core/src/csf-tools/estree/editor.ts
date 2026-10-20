@@ -1159,6 +1159,12 @@ export const statementEnd = (editor: SourceEditor, statement: Span) => {
 // Text that would continue a statement not ended by `;` on the line before, such as `[1].map(f)`.
 const CONTINUES_STATEMENT = /^[([`+\-/]/;
 
+// Whether a text ends its statement with `;`, before a line comment that ends it.
+const endsStatement = (text: string) => {
+  const { body, at } = trailingLineComment(`${text}\n`);
+  return body.slice(0, at).trimEnd().endsWith(';');
+};
+
 /**
  * Insert a statement on its own line right after a statement and the comments it owns. What else
  * shares that line moves below the inserted statements.
@@ -1170,15 +1176,21 @@ export const insertStatementAfter = (editor: SourceEditor, statement: Span, text
     inserted = new Map();
     lastInserted.set(edits, inserted);
   }
+  // The new text follows the text inserted after the statement earlier in the batch, if any.
+  const before = inserted.get(statement) ?? editor.source(statement);
   inserted.set(statement, text);
   const end = statementEnd(editor, statement);
   const next = end + /^[^\S\n]*/.exec(code.slice(end))![0].length;
-  const separator = code[statement.end - 1] !== ';' && CONTINUES_STATEMENT.test(text) ? ';' : '';
+  // The separator goes after the line breaks that lead the text.
+  const lead = /^\s*/.exec(text)![0];
+  const body = text.slice(lead.length);
+  const separator = !endsStatement(before) && CONTINUES_STATEMENT.test(body) ? ';' : '';
+  const written = `\n${lead}${separator}${body}`;
   if (next === code.length || code[next] === '\n') {
-    edits.appendLeft(next, `\n${separator}${text}`);
+    edits.appendLeft(next, written);
     return;
   }
-  edits.appendLeft(end, `\n${separator}${text}`);
+  edits.appendLeft(end, written);
   // The same line break for every statement inserted here.
   if (next > end) {
     edits.overwrite(end, next, '\n');

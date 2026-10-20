@@ -845,6 +845,37 @@ describe('appendStatement', () => {
     );
   });
 
+  it.each([
+    [
+      'a multi-line statement',
+      'export default {\n  title: "X"\n}\n',
+      'export default {\n  title: "X"\n}\n\n;(a.b).c = 1;\n',
+    ],
+    [
+      'a one-line statement',
+      'export default { title: "X" }\n',
+      'export default { title: "X" }\n;(a.b).c = 1;\n',
+    ],
+  ])('separates a statement that would continue %s without a semicolon', (_case, code, output) => {
+    const editor = new SourceEditor(code);
+    appendStatement(editor, '(a.b).c = 1;');
+    expect(editor.toString()).toBe(output);
+  });
+
+  it('separates a statement that would continue the one appended before it', () => {
+    const editor = new SourceEditor('const a = 1;\n');
+    appendStatement(editor, 'f()');
+    appendStatement(editor, '(a.b).c = 1;');
+    expect(editor.toString()).toBe('const a = 1;\nf()\n;(a.b).c = 1;\n');
+  });
+
+  it('separates a statement from one whose line comment ends in a semicolon', () => {
+    const editor = new SourceEditor('const a = 1;\n');
+    appendStatement(editor, 'f() // done;');
+    appendStatement(editor, '(a.b).c = 1;');
+    expect(editor.toString()).toBe('const a = 1;\nf() // done;\n;(a.b).c = 1;\n');
+  });
+
   it('appends to the end of a file whose statements are all removed', () => {
     const editor = new SourceEditor(`const a = 1;\nconst b = 2;\n`);
     removeStatements(editor, new Set(editor.program.body));

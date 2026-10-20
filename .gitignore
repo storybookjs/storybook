@@ -54,6 +54,7 @@ coverage/
 /**/LICENSE
 code/docs/public
 package-lock.json
+!.github/vercel-cli/package-lock.json
 storybook-static
 .jest-test-results.json
 *.jar

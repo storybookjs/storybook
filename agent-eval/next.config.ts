@@ -8,6 +8,8 @@ const projectRoot = dirname(fileURLToPath(import.meta.url));
 const playgroundRoot = dirname(require.resolve('@vercel/agent-eval-playground/package.json'));
 
 const nextConfig: NextConfig = {
+  // `next dev` would otherwise write an AGENTS.md into this workspace.
+  agentRules: false,
   outputFileTracingRoot: projectRoot,
   outputFileTracingIncludes: {
     '/**': ['./evals/**/*', './results/**/*'],

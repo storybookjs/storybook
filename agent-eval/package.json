@@ -18,7 +18,7 @@
     "gen:agentic-ref": "node scripts/generate-agentic-ref-experiments.ts",
     "judge:ds-misuse": "node --env-file-if-exists=.env.local ./scripts/judge-ds-misuse.ts",
     "judge:ds-misuse:dry": "node --env-file-if-exists=.env.local ./scripts/judge-ds-misuse.ts --dry",
-    "playground": "agent-eval-playground --results-dir ./results --evals-dir ./evals",
+    "playground": "next dev --webpack",
     "playground:build": "next build --webpack",
     "playground:check-routes": "node ./scripts/check-playground-routes.mjs",
     "results:analyze": "yarn gen:agentic-ref && node ./scripts/analyze-results.ts",
@@ -33,30 +33,27 @@
     "test:run": "vitest run",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "vercel": "^54.18.5"
-  },
   "devDependencies": {
-    "@anthropic-ai/sdk": "^0.117.1",
-    "@tailwindcss/postcss": "^4.3.2",
+    "@anthropic-ai/sdk": "^0.133.0",
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^22.19.1",
     "@types/picomatch": "^4.0.3",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "@types/yargs": "^17.0.35",
     "@vercel/agent-eval": "1.2.0",
-    "@vercel/agent-eval-playground": "0.1.3",
-    "@vitejs/plugin-react-swc": "4.2.2",
-    "@vitest/coverage-v8": "^5.0.0",
-    "diff": "^8.0.4",
-    "memfs": "^4.68.0",
-    "next": "16.1.6",
-    "picomatch": "^4.0.5",
-    "postcss": "^8.5.16",
-    "tailwindcss": "^4.3.2",
+    "@vercel/agent-eval-playground": "0.1.4",
+    "@vitejs/plugin-react-swc": "^4.3.3",
+    "@vitest/coverage-v8": "^5.0.3",
+    "diff": "^9.0.0",
+    "memfs": "^4.80.0",
+    "next": "^16.4.0",
+    "picomatch": "^4.0.7",
+    "postcss": "^8.5.29",
+    "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.0",
-    "yargs": "^17.7.3"
+    "vitest": "^5.0.3",
+    "yargs": "^18.2.0"
   },
   "installConfig": {
     "hoistingLimits": "workspaces"

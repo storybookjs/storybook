@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
 
 import { parser, traverse, types as t } from 'storybook/internal/babel';
+import { logger } from 'storybook/internal/node-logger';
+
+import { dirname, resolve } from 'pathe';
 
 import type { FileInfo } from '../../automigrate/codemod.ts';
 import {
@@ -63,6 +65,12 @@ export function svelteCsfToCsfFactory(info: FileInfo, options: PreviewImportOpti
  */
 export function findSvelteCsfNonStoryExports(importer: string, source: string): string[] {
   if (!source.endsWith('.svelte')) {
+    return [];
+  }
+  if (!source.startsWith('.')) {
+    logger.warn(
+      `Can't read ${source}, imported by ${importer}: the codemod doesn't follow builder aliases. It treats every export of that file as a story. Check the references to exports that aren't stories, such as data.`
+    );
     return [];
   }
   let code;

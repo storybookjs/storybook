@@ -1,21 +1,28 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { formatFileContent } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import path, { join } from 'path';
+import { readFileSync } from 'node:fs';
+
+import { fs, vol } from 'memfs';
+import path from 'path';
 import { dedent } from 'ts-dedent';
 
 import { storyToCsfFactory } from './story-to-csf-factory.ts';
 
+vi.mock('node:fs', { spy: true });
 vi.mock('storybook/internal/node-logger', () => ({
   logger: {
     log: vi.fn(),
     warn: vi.fn(),
   },
 }));
+
+// Vitest reads its own modules through `node:fs` too, so only the tests that seed memfs read from it
+afterEach(() => {
+  vi.mocked(readFileSync).mockReset();
+});
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -296,20 +303,20 @@ describe('stories codemod', () => {
     });
 
     it('keeps the exports of an imported Svelte CSF file that are not stories', async () => {
-      const dir = mkdtempSync(join(tmpdir(), 'svelte-csf-'));
-      writeFileSync(
-        join(dir, 'Task.stories.svelte'),
-        dedent`
+      vol.reset();
+      vol.fromJSON({
+        '/project/src/Task.stories.svelte': dedent`
           <script module>
             export const TaskData = { task: { id: '1' } };
           </script>
-        `
-      );
+        `,
+      });
+      vi.mocked(readFileSync).mockImplementation(fs.readFileSync as typeof readFileSync);
 
       await expect(
         storyToCsfFactory(
           {
-            path: join(dir, 'TaskList.stories.ts'),
+            path: '/project/src/TaskList.stories.ts',
             source: dedent`
               import * as TaskStories from './Task.stories.svelte';
 

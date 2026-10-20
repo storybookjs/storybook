@@ -1,12 +1,26 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { logger } from 'storybook/internal/node-logger';
+
+import { fs, vol } from 'memfs';
+import { join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { svelteCsfToCsfFactory } from './svelte-csf-to-csf-factory.ts';
+
+vi.mock('node:fs', { spy: true });
+vi.mock('storybook/internal/node-logger', { spy: true });
+
+beforeEach(() => {
+  vi.mocked(logger.warn).mockImplementation(() => {});
+});
+
+// Vitest reads its own modules through `node:fs` too, so only the tests that seed memfs read from it
+afterEach(() => {
+  vi.mocked(readFileSync).mockReset();
+});
 
 // The Svelte renderer type-checks the files written there with `svelte-check`
 const TYPE_FIXTURES_DIR = join(
@@ -136,10 +150,10 @@ describe('svelteCsfToCsfFactory', () => {
   });
 
   it('keeps the exports of an imported Svelte CSF file that are not stories', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'svelte-csf-'));
-    writeFileSync(
-      join(dir, 'Task.stories.svelte'),
-      dedent`
+    vol.reset();
+    vi.mocked(readFileSync).mockImplementation(fs.readFileSync as typeof readFileSync);
+    vol.fromJSON({
+      '/project/src/stories/Task.stories.svelte': dedent`
         <script module>
           import { defineMeta } from '@storybook/svelte';
           export const TaskData = { task: { id: '1' }, events: {} };
@@ -147,8 +161,8 @@ describe('svelteCsfToCsfFactory', () => {
         </script>
 
         <Story name="Default" />
-      `
-    );
+      `,
+    });
 
     expect(
       transform(
@@ -163,7 +177,7 @@ describe('svelteCsfToCsfFactory', () => {
 
           <Story name="Default" args={{ ...TaskStories.Default.args, events: TaskData.events }} />
         `,
-        join(dir, 'TaskList.stories.svelte')
+        '/project/src/stories/TaskList.stories.svelte'
       )
     ).toMatchInlineSnapshot(`
       "<script module>
@@ -175,6 +189,26 @@ describe('svelteCsfToCsfFactory', () => {
       </script>
 
       <Story name="Default" args={{ ...TaskStories.Default.input.args, events: TaskData.events }} />"
+    `);
+  });
+
+  it('warns that it does not follow builder aliases', () => {
+    expect(
+      transform(dedent`
+        <script module>
+          import { defineMeta } from '@storybook/svelte';
+          import * as TaskStories from '$lib/Task.stories.svelte';
+
+          const { Story } = defineMeta({ args: { ...TaskStories.Default.args } });
+        </script>
+      `)
+    ).toContain('TaskStories.Default.input.args');
+    expect(vi.mocked(logger.warn).mock.calls).toMatchInlineSnapshot(`
+      [
+        [
+          "Can't read $lib/Task.stories.svelte, imported by /project/src/stories/Button.stories.svelte: the codemod doesn't follow builder aliases. It treats every export of that file as a story. Check the references to exports that aren't stories, such as data.",
+        ],
+      ]
     `);
   });
 

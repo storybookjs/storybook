@@ -977,7 +977,7 @@ The manager resolves `SELECT_STORY` payloads from `storyId` or `title`/`name`, a
 ### `docgenServer` is stable and enabled by default
 
 The `experimentalDocgenServer` feature is now `docgenServer`, and Storybook no longer reads the old name.
-Server-side component metadata extraction is enabled by default for every React and Vue 3 framework, including Webpack-based ones, for `@storybook/angular-vite`, and for `@storybook/web-components-vite`.
+Server-side component metadata extraction is enabled by default for every React and Vue 3 framework, including Webpack-based ones, for `@storybook/angular-vite`, for `@storybook/web-components-vite`, and for `@storybook/svelte-vite` and `@storybook/sveltekit`.
 React and Vue 3 extract component metadata with TypeScript, so for them the default is only on when the `typescript` package is installed; a JavaScript project without it keeps builder docgen.
 Other frameworks keep builder docgen.
 
@@ -994,9 +994,23 @@ For Angular-Vite, `framework.options.compodoc: false` does not disable the docge
 ### Builder docgen is deprecated
 
 Client-side docgen that runs in the builder is deprecated and will be removed in Storybook 12.
-This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`.
+This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`, and the Svelte `docgen` framework option in `@storybook/svelte-vite` and `@storybook/sveltekit` (including the sveltedoc-shaped `__docgen`).
 Builder docgen only runs when `features.docgenServer` is `false`, and Storybook now prints a deprecation warning when it does.
 Remove `docgenServer: false` to use server-side docgen.
+
+#### Svelte
+
+Server-side docgen is enabled by default for `@storybook/svelte-vite` and `@storybook/sveltekit`. It brings its own TypeScript 6 to read components, so it does not need `typescript` in your project, and it works in projects on TypeScript 7. Setting `framework.options.docgen: false` still disables builder docgen without a warning. The deprecated APIs stay available until Storybook 12.
+
+The server output changes the Controls panel:
+
+- `Snippet` props are in the slots category, and callback props are in the events category. Both have no control.
+- Callback props have the type `function`, with their signature as `raw`.
+- Literal unions get an enum control with options. A prop that can also be `null` or `undefined` gets the control of its other type.
+- Props that a component inherits from a whole attribute interface, such as `HTMLButtonAttributes`, are not listed. Props it picks from one, such as `Pick<HTMLButtonAttributes, 'disabled'>`, are.
+- JSDoc tags, the `@component` description and `$bindable` metadata are included.
+
+The Code panel snippet starts with a `<script>` block that imports the components and values it uses, from the paths in the story file. It also copies the story file declarations that the markup reads. Args are printed as you wrote them, for example `onclick={fn()}`.
 
 ### Node.js 22.12 or higher
 

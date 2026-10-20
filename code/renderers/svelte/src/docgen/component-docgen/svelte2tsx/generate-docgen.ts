@@ -300,11 +300,24 @@ function largeDeclarationSources(props: ts.Symbol[]): Set<object | string> {
   );
 }
 
+// TypeScript 7's `typescript` package exports only its version, without the compiler API.
+function assertCompilerApi() {
+  if (typeof ts.createProgram !== 'function') {
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    throw new Error(
+      `Svelte docgen needs the TypeScript compiler API, which \`typescript@${ts.version}\` does not have. ` +
+        'Install TypeScript 6 next to TypeScript 7, as described in ' +
+        'https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0'
+    );
+  }
+}
+
 export function generateDocgen(
   targetFileName: string,
   cache: DocgenCache,
   options: { server?: boolean; documentationSource?: string } = {}
 ): Docgen {
+  assertCompilerApi();
   if (targetFileName.endsWith('.svelte')) {
     targetFileName = targetFileName + '.tsx';
   }

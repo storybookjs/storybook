@@ -1,6 +1,6 @@
 import type { Channel } from 'storybook/internal/channels';
 import { findConfigFile, loadMainConfig } from 'storybook/internal/common';
-import type { WhatsNewCache, WhatsNewData } from 'storybook/internal/core-events';
+import type { WhatsNewCache, WhatsNewData, WhatsNewRequest } from 'storybook/internal/core-events';
 import {
   REQUEST_WHATS_NEW_DATA,
   RESULT_WHATS_NEW_DATA,
@@ -40,7 +40,7 @@ export function initializeWhatsNew(channel: Channel, options: OptionsWithRequire
     await options.cache.set(WHATS_NEW_CACHE, { ...cache, ...data });
   });
 
-  channel.on(REQUEST_WHATS_NEW_DATA, async (payload?: { force?: boolean }) => {
+  channel.on(REQUEST_WHATS_NEW_DATA, async (payload?: WhatsNewRequest) => {
     try {
       const main = await loadMainConfig({ configDir: options.configDir });
       const disableWhatsNewNotifications =

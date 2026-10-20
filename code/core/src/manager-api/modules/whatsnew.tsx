@@ -6,7 +6,7 @@ import {
   SET_WHATS_NEW_CACHE,
   TOGGLE_WHATS_NEW_NOTIFICATIONS,
 } from 'storybook/internal/core-events';
-import type { WhatsNewCache, WhatsNewData } from 'storybook/internal/core-events';
+import type { WhatsNewCache, WhatsNewData, WhatsNewRequest } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
 
@@ -20,8 +20,12 @@ export type SubAPI = {
   isWhatsNewUnread(): boolean;
   whatsNewHasBeenRead(): void;
   toggleWhatsNewNotifications(): void;
-  /** Load the latest post when startup skipped it because notifications are disabled. */
-  loadWhatsNewPost(): Promise<void>;
+  /**
+   * Load the latest post when startup skipped it because notifications are disabled.
+   *
+   * Resolves to whether the post is available.
+   */
+  loadWhatsNewPost(): Promise<boolean>;
 };
 
 const WHATS_NEW_NOTIFICATION_ID = 'whats-new';
@@ -57,7 +61,7 @@ export const init: ModuleFn = ({ fullAPI, store, provider }) => {
   const state: SubState = {
     whatsNewData: undefined,
   };
-  let pendingLoad: Promise<void> | undefined;
+  let pendingLoad: Promise<boolean> | undefined;
 
   function setWhatsNewState(newState: WhatsNewData) {
     store.setState({ whatsNewData: newState });
@@ -88,10 +92,17 @@ export const init: ModuleFn = ({ fullAPI, store, provider }) => {
     },
     loadWhatsNewPost() {
       if (state.whatsNewData?.status !== 'DISABLED') {
-        return Promise.resolve();
+        return Promise.resolve(state.whatsNewData?.status === 'SUCCESS');
       }
       pendingLoad ??= getLatestWhatsNewPost(true)
-        .then(setWhatsNewState)
+        .then((data) => {
+          // Staying 'DISABLED' on failure keeps the What's New page reachable, so it can retry.
+          if (data.status !== 'SUCCESS') {
+            return false;
+          }
+          setWhatsNewState(data);
+          return true;
+        })
         .finally(() => {
           pendingLoad = undefined;
         });
@@ -100,7 +111,7 @@ export const init: ModuleFn = ({ fullAPI, store, provider }) => {
   };
 
   function getLatestWhatsNewPost(force = false): Promise<WhatsNewData> {
-    provider.channel?.emit(REQUEST_WHATS_NEW_DATA, { force });
+    provider.channel?.emit(REQUEST_WHATS_NEW_DATA, { force } satisfies WhatsNewRequest);
 
     return new Promise((resolve) => {
       // Results are broadcast to every connected manager, so a forced request must not settle on

@@ -25,13 +25,30 @@ const meta = preview.meta({
     ),
   ],
   beforeEach: () => {
-    loadWhatsNewPost.mockClear();
+    loadWhatsNewPost.mockReset();
   },
 });
 
 export const DisabledLoadsOnOpen = meta.story({
+  beforeEach: () => {
+    loadWhatsNewPost.mockReturnValue(new Promise(() => {}));
+  },
   play: async ({ canvas }) => {
     await expect(canvas.getByText('Loading...')).toBeVisible();
     await waitFor(() => expect(loadWhatsNewPost).toHaveBeenCalledOnce());
+  },
+});
+
+export const DisabledLoadFails = meta.story({
+  beforeEach: () => {
+    loadWhatsNewPost.mockResolvedValue(false);
+  },
+  play: async ({ canvas }) => {
+    await expect(
+      await canvas.findByText(
+        "The page couldn't be loaded. Check your internet connection and try again."
+      )
+    ).toBeVisible();
+    await expect(canvas.queryByText('Loading...')).not.toBeInTheDocument();
   },
 });

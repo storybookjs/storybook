@@ -1,3 +1,7 @@
+export interface WhatsNewRequest {
+  force?: boolean;
+}
+
 export interface WhatsNewCache {
   lastDismissedPost?: string;
   lastReadPost?: string;

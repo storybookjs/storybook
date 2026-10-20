@@ -1,5 +1,5 @@
 import { Channel } from 'storybook/internal/channels';
-import type { WhatsNewData } from 'storybook/internal/core-events';
+import type { WhatsNewData, WhatsNewRequest } from 'storybook/internal/core-events';
 import { REQUEST_WHATS_NEW_DATA, RESULT_WHATS_NEW_DATA } from 'storybook/internal/core-events';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -21,12 +21,12 @@ const post = {
 const respond = (channel: Channel, data: WhatsNewData) =>
   setTimeout(() => channel.emit(RESULT_WHATS_NEW_DATA, { data }));
 
-const setup = () => {
+const setup = ({ forcedResult = post }: { forcedResult?: WhatsNewData } = {}) => {
   const channel = new Channel({});
-  const requests: unknown[] = [];
-  channel.on(REQUEST_WHATS_NEW_DATA, (payload: { force?: boolean }) => {
+  const requests: WhatsNewRequest[] = [];
+  channel.on(REQUEST_WHATS_NEW_DATA, (payload: WhatsNewRequest) => {
     requests.push(payload);
-    respond(channel, payload.force ? post : { status: 'DISABLED' });
+    respond(channel, payload.force ? forcedResult : { status: 'DISABLED' });
   });
   const fullAPI = {
     getUrlState: vi.fn(() => ({ path: '/story/a--b', queryParams: {} })),
@@ -62,9 +62,20 @@ describe('whatsnew API', () => {
     expect(state.whatsNewData).toEqual({ status: 'DISABLED' });
     expect(fullAPI.addNotification).not.toHaveBeenCalled();
 
-    await api.loadWhatsNewPost();
+    expect(await api.loadWhatsNewPost()).toBe(true);
     expect(requests).toEqual([{ force: false }, { force: true }]);
     expect(state.whatsNewData).toEqual(post);
+  });
+
+  it('stays DISABLED when loading on demand fails, so the page can retry', async () => {
+    const { requests, api, state, init } = setup({ forcedResult: { status: 'ERROR' } });
+    await init();
+
+    expect(await api.loadWhatsNewPost()).toBe(false);
+    expect(state.whatsNewData).toEqual({ status: 'DISABLED' });
+
+    expect(await api.loadWhatsNewPost()).toBe(false);
+    expect(requests.filter((r) => r.force)).toHaveLength(2);
   });
 
   it('sends a single forced request for concurrent loads', async () => {
@@ -72,7 +83,7 @@ describe('whatsnew API', () => {
     await init();
 
     await Promise.all([api.loadWhatsNewPost(), api.loadWhatsNewPost()]);
-    expect(requests.filter((r) => (r as { force: boolean }).force)).toHaveLength(1);
+    expect(requests.filter((r) => r.force)).toHaveLength(1);
   });
 
   it('ignores DISABLED results broadcast for another manager while loading on demand', async () => {

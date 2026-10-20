@@ -138,6 +138,19 @@ describe('success', () => {
       await expect(() => duplicateStoryWithNewName(parsed, name, name + 'Duplicated')).toThrow();
     }
   });
+  test('refuses a CSF2 story wrapped in a type assertion', () => {
+    const parsed = loadCsf(
+      [
+        `export default { title: 'A' };`,
+        `export const A = ((args) => null) as Story;`,
+        `A.parameters = { layout: 'centered' };`,
+      ].join('\n'),
+      { makeTitle }
+    ).parse();
+    expect(() => duplicateStoryWithNewName(parsed, 'A', 'B')).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Creating a new story based on a CSF2 story is not supported]`
+    );
+  });
   test('Typescript Constructs', async () => {
     const before = await format(await readFile(FILES.typescriptConstructs, 'utf-8'), {
       parser: 'typescript',

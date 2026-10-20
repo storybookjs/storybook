@@ -1,7 +1,7 @@
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import type { CsfFile } from 'storybook/internal/csf-tools';
 
-import type { Node } from '../../../csf-tools/estree/ast.ts';
+import { type Node, unwrapExpression } from '../../../csf-tools/estree/ast.ts';
 import { SaveStoryError, assertApplied, findStory } from './utils.ts';
 
 // Adds `newStoryName` as a copy of `storyName`, without its own `name` and with its `args` emptied.
@@ -15,15 +15,20 @@ export const duplicateStoryWithNewName = (
     throw new SaveStoryError(`cannot clone Node`);
   }
   const init = node.init as Node;
+  // `as` and `satisfies` stay on the copy, but do not hide a CSF2 story from the check.
+  const story = unwrapExpression(init);
 
   const isCsf4Story =
-    init.type === 'CallExpression' &&
-    init.callee.type === 'MemberExpression' &&
-    init.callee.property.type === 'Identifier' &&
-    init.callee.property.name === 'story';
+    story.type === 'CallExpression' &&
+    story.callee.type === 'MemberExpression' &&
+    story.callee.property.type === 'Identifier' &&
+    story.callee.property.name === 'story';
 
   // detect CSF2 and throw
-  if (!isCsf4Story && (init.type === 'ArrowFunctionExpression' || init.type === 'CallExpression')) {
+  if (
+    !isCsf4Story &&
+    (story.type === 'ArrowFunctionExpression' || story.type === 'CallExpression')
+  ) {
     throw new SaveStoryError(`Creating a new story based on a CSF2 story is not supported`);
   }
 

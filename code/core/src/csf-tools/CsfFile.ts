@@ -19,7 +19,12 @@ import { dedent } from 'ts-dedent';
 
 import { Tag } from '../shared/constants/tags.ts';
 import type { PrintResultType } from './PrintResultType.ts';
-import { type CsfMutationDiagnostic, type CsfObject, type CsfObjectOptions } from './CsfObject.ts';
+import {
+  type CsfMutationDiagnostic,
+  type CsfMutationResult,
+  type CsfObject,
+  type CsfObjectOptions,
+} from './CsfObject.ts';
 import { discoverCsfObjects } from './CsfObjectDiscovery.ts';
 import {
   type E,
@@ -44,6 +49,7 @@ import {
   appendStatement,
   insertStatementAfter,
 } from './estree/editor.ts';
+import { type ImportBindings, removeImport, setImport } from './estree/imports.ts';
 import { generateUid, isDeclared } from './estree/scope.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
 
@@ -421,7 +427,7 @@ export class CsfFile {
   }
 
   /**
-   * Report whether any object editor has changed this story file.
+   * Report whether a mutation has changed this story file.
    *
    * @example
    * ```ts
@@ -456,17 +462,89 @@ export class CsfFile {
       this,
       options,
       (diagnostic) => state.diagnostics.push(diagnostic),
-      () => {
-        // The transaction running, if any, resets the flag when it rolls back, also when it was
-        // started on `editor` directly.
-        if (!state.changed) {
-          state.changed = true;
-          this.editor._onRollback(() => {
-            state.changed = false;
-          });
-        }
-      }
+      () => this._markChanged()
     );
+  }
+
+  // The transaction running, if any, resets the flag when it rolls back, also when it was started
+  // on `editor` directly.
+  _markChanged() {
+    const state = mutationStates.get(this)!;
+    if (!state.changed) {
+      state.changed = true;
+      this.editor._onRollback(() => {
+        state.changed = false;
+      });
+    }
+  }
+
+  /**
+   * Add import bindings of a module, like `ConfigFile.setImport`: a string as the default import,
+   * an array of names or `'name as alias'` as named imports, `{ namespace }` as a namespace import
+   * and `null` as a side-effect import. A binding a value import of the module has already is
+   * skipped; one only a type-only import has becomes a value import. An edit that leaves a file the
+   * CSF indexer rejects is refused with an `invalid-csf` diagnostic.
+   *
+   * @example
+   * ```ts
+   * csf.setImport(['expect', 'userEvent'], 'storybook/test'); // { ok: true, changed: true }
+   * csf.setImport(['expect'], 'storybook/test'); // { ok: true, changed: false }
+   * ```
+   *
+   * @throws When a name is neither an identifier nor `'name as alias'`.
+   */
+  setImport(importSpecifier: ImportBindings, fromImport: string): CsfMutationResult {
+    return this._editImports(fromImport, (editor) =>
+      setImport(editor, importSpecifier, fromImport)
+    );
+  }
+
+  /**
+   * Remove import and `require` bindings of a module, like `ConfigFile.removeImport`. A removal
+   * that leaves a file the CSF indexer rejects, such as one whose `export { Button }` loses its
+   * binding, is refused with an `invalid-csf` diagnostic.
+   *
+   * @example
+   * ```ts
+   * csf.removeImport(['fn'], 'storybook/test'); // { ok: true, changed: true }
+   * ```
+   *
+   * @throws When a name is neither an identifier nor `'name as alias'`.
+   */
+  removeImport(importSpecifier: ImportBindings, fromImport: string): CsfMutationResult {
+    return this._editImports(fromImport, (editor) =>
+      removeImport(editor, importSpecifier, fromImport)
+    );
+  }
+
+  // Runs in a transaction of its own, so a refused or throwing edit leaves the file as it was.
+  _editImports(fromImport: string, edit: (editor: SourceEditor) => boolean): CsfMutationResult {
+    let result: CsfMutationResult = { ok: true, changed: false };
+    this.editor.transaction(() => {
+      try {
+        result = { ok: true, changed: edit(this.editor) };
+      } catch (error) {
+        if (error !== this._indexError) {
+          throw error;
+        }
+        const reason = error instanceof Error ? error.message : String(error);
+        const diagnostic: CsfMutationDiagnostic = {
+          code: 'invalid-csf',
+          target: { kind: 'file' },
+          path: [],
+          message: `Edited the imports of '${fromImport}', but the result is not valid CSF: ${reason}`,
+        };
+        mutationStates.get(this)!.diagnostics.push(diagnostic);
+        result = { ok: false, changed: false, diagnostic };
+        return false;
+      }
+    });
+    if (!result.ok) {
+      this.editor._refuse();
+    } else if (result.changed) {
+      this._markChanged();
+    }
+    return result;
   }
 
   /**

@@ -48,9 +48,12 @@ export type CsfMutationDiagnosticCode =
   | 'evaluation-order'
   | 'invalid-csf';
 
+/** What a diagnostic is about: an editor's object, or the whole file for an edit of its imports. */
+export type CsfMutationTarget = CsfObjectTarget | { kind: 'file' };
+
 export interface CsfMutationDiagnostic {
   code: CsfMutationDiagnosticCode;
-  target: CsfObjectTarget;
+  target: CsfMutationTarget;
   path: readonly string[];
   message: string;
   loc?: SourceLocation;

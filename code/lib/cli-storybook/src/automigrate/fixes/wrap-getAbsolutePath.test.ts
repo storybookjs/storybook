@@ -118,8 +118,7 @@ describe('wrapGetAbsolutePath', () => {
 
       expect(() => parseModule(output, 'main.js')).not.toThrow();
       expect(output).toMatchInlineSnapshot(`
-        "import { dirname as pathDirname } from 'node:path';
-        import path from 'node:path';
+        "import path, { dirname as pathDirname } from 'node:path';
         import { fileURLToPath } from 'node:url';
 
         const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -187,8 +186,7 @@ describe('wrapGetAbsolutePath', () => {
 
       expect(() => parseModule(output, 'main.js')).not.toThrow();
       expect(output).toMatchInlineSnapshot(`
-        "import { dirname as pathDirname } from 'node:path';
-        import path from 'node:path';
+        "import path, { dirname as pathDirname } from 'node:path';
         import { fileURLToPath } from 'node:url';
 
         const { dirname } = path;

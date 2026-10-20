@@ -170,7 +170,9 @@ export type PresetConfig =
       /**
        * Whether a load failure for this preset should abort startup with a `CriticalPresetLoadError`
        * instead of being downgraded to a warning and an empty result. The all-or-nothing
-       * `isCritical` flag of a `loadAllPresets` pass still applies to every preset in it.
+       * `isCritical` flag of a `loadAllPresets` pass still applies to every preset in it. Covers
+       * only this entry's own module import and evaluation: nested `presets`/`addons` it declares
+       * keep the pass-level behavior.
        */
       critical?: boolean;
     };

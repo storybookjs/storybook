@@ -281,12 +281,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     ...(await withoutVitePlugins(viteConfigFromStorybook.plugins ?? [], pluginsToIgnore)),
   ];
 
-  // The injected `setup-file-with-project-annotations` setup file imports the project-annotations
-  // virtual module, which only the builder's `storybookProjectAnnotationsPlugin` serves. That
-  // plugin normally reaches this list through the builder's `viteCorePlugins` preset. If it is
-  // missing here, the builder preset failed to load and was silently dropped by the preset
-  // loader (non-critical passes return []) — running with a partial plugin list would produce
-  // wrong results without any hint why, so fail loudly instead of substituting one plugin.
+  // The injected setup file imports the project-annotations virtual module, so its provider
+  // must be in the composed plugin list.
   if (!(await hasVitePlugins(plugins, ['storybook:project-annotations-plugin']))) {
     throw new MissingProjectAnnotationsProviderError();
   }

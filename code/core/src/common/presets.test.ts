@@ -112,6 +112,22 @@ describe('presets', () => {
     ).rejects.toThrow(CriticalPresetLoadError);
   });
 
+  it('does not escalate the pass when a critical preset succeeds and another preset fails', async () => {
+    mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
+      if (path === 'preset-foo') {
+        return {};
+      }
+      throw new Error(`Cannot load preset ${path}`);
+    });
+
+    await expect(
+      getPresets([{ name: 'preset-foo', critical: true }, 'preset-bar'], {
+        configDir: '/project/.storybook',
+      })
+    ).resolves.toBeDefined();
+    expect(logger.warn).toHaveBeenCalledWith('  Failed to load preset: "preset-bar"');
+  });
+
   it('loads a framework preset from the project config directory', async () => {
     mockedResolveUtils.safeResolveModule.mockImplementation(({ specifier, parent }) =>
       specifier === '@storybook/web-components-vite/preset' && parent === '/project/.storybook'

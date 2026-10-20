@@ -113,3 +113,23 @@ if (manager.changed && manager.mutationDiagnostics.length === 0) {
 ```
 
 These editors share the file's change tracking and diagnostics and expose the same read and mutation methods as configs and stories.
+
+## Printing with source maps
+
+`formatCsf(csf)` returns the printed code as a string. `formatCsf(csf, { sourceMaps: true })` returns `{ code, map }`, and is typed that way, so the result needs no cast. `map` is a hi-res map from the code `loadCsf` was given to the output, with the source named `sourceFileName`, or else the file name the CSF was loaded with. When that code came from an earlier transform, pass its map, as an object or as JSON, as `inputSourceMap`: the result then maps to the original, and its sources keep the names and the content the input map gave them. An entry of `sourcesContent` is `null` for a source whose content the input map did not carry.
+
+A webpack loader chains its incoming map like this, and names the module in `file`, which webpack's map type requires and `formatCsf` leaves unset:
+
+```ts
+const csf = loadCsf(content, { makeTitle, fileName: this.resourcePath }).parse();
+// Edit `csf`, for example with `enrichCsf`.
+const { code, map } = formatCsf(csf, { sourceMaps: true, inputSourceMap: sourceMap });
+callback(null, code, { ...map, file: this.resourcePath });
+```
+
+`rewriteSbMockImportCalls(code, fileName, { inputSourceMap })` in `storybook/internal/mocking-utils` maps the preview file through `inputSourceMap` the same way, and sets `file` to `fileName` itself. An input map it cannot read only costs the mapping through it: the calls are still rewritten. Its map is `null` when the file has no `sb.mock(import(...))` call to rewrite, so a loader passes its incoming map on in that case:
+
+```ts
+const result = rewriteSbMockImportCalls(source, this.resourcePath, { inputSourceMap: sourceMap });
+callback(null, result.code, result.map ?? sourceMap, meta);
+```

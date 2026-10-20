@@ -66,8 +66,9 @@ const constInitializer = (csf: CsfFile, name: string) => {
 /**
  * Discover the meta and stories, as `csf.objects()` does, for an edit that applies alike to every
  * object it returns. A story declared as another story, such as `export const Secondary = Primary`,
- * shares that story's object, so editing that story covers it: discovery reports it as an
- * `unsupported-initializer`, which does not fail the file.
+ * or exported under a second name, such as `export { Primary as Secondary }`, shares that story's
+ * object, so editing that story covers it: the diagnostic discovery reports for it does not fail
+ * the file.
  */
 export const everyCsfObject = (csf: CsfFile): readonly CsfObject[] => {
   const diagnosticsBefore = csf.mutationDiagnostics.length;
@@ -75,9 +76,12 @@ export const everyCsfObject = (csf: CsfFile): readonly CsfObject[] => {
   const edited = new Set(
     objects.flatMap(({ target }) => (target.kind === 'story' ? [target.localName] : []))
   );
-  const aliases = csf.mutationDiagnostics.slice(diagnosticsBefore).flatMap((diagnostic) => {
-    const { code, path, target } = diagnostic;
-    if (code !== 'unsupported-initializer' || path.length > 0 || target.kind !== 'story') {
+  const reported = csf.mutationDiagnostics
+    .slice(diagnosticsBefore)
+    .filter(({ path, target }) => path.length === 0 && target.kind === 'story');
+  const aliases = reported.flatMap((diagnostic) => {
+    const { code, target } = diagnostic;
+    if (code !== 'unsupported-initializer' || target.kind !== 'story') {
       return [];
     }
     const init = constInitializer(csf, target.localName);
@@ -94,6 +98,12 @@ export const everyCsfObject = (csf: CsfFile): readonly CsfObject[] => {
         edited.add(name);
         found = true;
       }
+    }
+  }
+  for (const diagnostic of reported) {
+    const { code, target } = diagnostic;
+    if (code === 'ambiguous-binding' && target.kind === 'story' && edited.has(target.localName)) {
+      covered.add(diagnostic);
     }
   }
   return objects;

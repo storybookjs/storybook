@@ -176,6 +176,34 @@ describe('CsfObject discovery', () => {
     });
   });
 
+  it.each([
+    ['two export specifiers', `const L = { args: {} };\nexport { L as A, L as B };`, 'A', 'B'],
+    [
+      'a declaration and a specifier',
+      `export const L = { args: {} };\nexport { L as A };`,
+      'L',
+      'A',
+    ],
+  ])(
+    'edits a story exported by %s under its first export and reports the other',
+    (_kind, code, first, other) => {
+      const csf = parse(`export default { title: 'Example' };\n${code}`);
+      const stories = csf.objects({ meta: false });
+
+      expect(csf.stories.map(({ name }) => name).sort()).toEqual([first, other].sort());
+      expect(stories.map((story) => story.target)).toEqual([
+        { kind: 'story', exportName: first, localName: 'L' },
+      ]);
+      expect(csf.mutationDiagnostics).toEqual([
+        expect.objectContaining({
+          code: 'ambiguous-binding',
+          target: { kind: 'story', exportName: other, localName: 'L' },
+          message: `Cannot mutate ${other} without changing ${first}: both export L`,
+        }),
+      ]);
+    }
+  );
+
   it('does not diagnose excluded direct exports or re-exports', () => {
     const direct = parse(`
       export default { title: 'Example', includeStories: ['Basic'] };

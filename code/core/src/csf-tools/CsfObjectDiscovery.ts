@@ -45,6 +45,8 @@ type StoryBinding = {
   exportName: string;
   localName: string;
   declaration: E.VariableDeclarator | E.Function;
+  // Where it is exported.
+  node: Node;
 };
 
 // The object an editor works on, before it is wrapped into a `CsfObject`.
@@ -98,6 +100,7 @@ const addQualifiedBinding = (
       exportName,
       localName,
       declaration: binding.node as E.VariableDeclarator | E.Function,
+      node,
     });
   }
 };
@@ -160,11 +163,21 @@ const storyBindings = (csf: CsfFile, report: ReportDiagnostic): StoryBinding[] =
     }
   }
   const candidates = [...bindings.values()].filter((binding) => binding.exportName in csf._stories);
+  // A story exported under two names is one object, edited under its first export only.
   const unique = new Map<Node, StoryBinding>();
   for (const candidate of candidates) {
-    if (!unique.has(candidate.declaration)) {
+    const first = unique.get(candidate.declaration);
+    if (!first) {
       unique.set(candidate.declaration, candidate);
+      continue;
     }
+    report({
+      code: 'ambiguous-binding',
+      target: storyTarget(candidate),
+      path: [],
+      message: `Cannot mutate ${candidate.exportName} without changing ${first.exportName}: both export ${candidate.localName}`,
+      ...loc(csf, candidate.node),
+    });
   }
   return [...unique.values()];
 };

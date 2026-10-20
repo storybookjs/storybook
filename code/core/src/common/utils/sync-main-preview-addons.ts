@@ -40,9 +40,16 @@ export async function syncPreviewAddonsWithMainConfig(
   }
   const inspected = previewConfig.inspect(['addons']);
   const existingAddons = previewConfig._arrayAt(['addons']);
+  if (existingAddons.kind === 'other') {
+    logger.debug(`Not synchronizing the preview addons: ${existingAddons.diagnostic.message}`);
+    return previewConfig;
+  }
   // A spread can provide a missing `addons`, which `append` carries forward, but it could replace
   // one the preview writes.
-  if (inspected.kind === 'unreadable' && existingAddons.kind !== 'missing') {
+  if (
+    inspected.kind === 'unreadable' &&
+    !(existingAddons.kind === 'missing' && inspected.diagnostic.code === 'spread-field')
+  ) {
     logger.debug(`Not synchronizing the preview addons: ${inspected.diagnostic.message}`);
     return previewConfig;
   }

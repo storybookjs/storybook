@@ -432,7 +432,8 @@ export class ConfigFile implements CsfObject {
    * Add a plain value or an expression after the last element of the array, or the last argument
    * of the call, at a path. A missing array is created, carrying the spreads before it forward
    * like a missing parent. A field that holds a call gets an argument, whatever the callee: on
-   * `[...].filter(Boolean)` that is an argument of `filter`.
+   * `[...].filter(Boolean)` that is an argument of `filter`. A method, such as `addons() {}`, is
+   * refused as the `Property` it is written as.
    *
    * @example
    * ```ts
@@ -880,15 +881,18 @@ export class ConfigFile implements CsfObject {
   }
 
   // The array literal at a path as `getFieldNode` resolves it, through local constants and type
-  // assertions, which `append` and `remove` reach as well. A field holding anything else, such as
-  // a call, comes with the diagnostic of the array helpers, which refuse it.
+  // assertions. `getFieldNode` follows a constant only at the root, so below one the field as
+  // `inspect` reads it decides. A field holding anything else, such as a call, comes with the
+  // diagnostic of the array helpers, which refuse it.
   _arrayAt(
     path: string[]
   ):
     | { kind: 'missing' }
     | { kind: 'array'; node: E.ArrayExpression }
     | { kind: 'other'; diagnostic: CsfMutationDiagnostic } {
-    const node = this.getFieldNode(path);
+    const field = this.getFieldNode(path);
+    const inspected = field ? undefined : this.inspect(path);
+    const node = field ?? (inspected?.kind === 'value' ? inspected.node : undefined);
     if (!node) {
       return { kind: 'missing' };
     }
@@ -902,8 +906,9 @@ export class ConfigFile implements CsfObject {
         code: 'unsupported-value',
         target: this.target,
         path,
-        message: `Expected an array literal at '${path.join('.')}', got '${node.type}'`,
-        loc: locationOf(this._code, node.start, node.end),
+        message: `Expected an array literal at '${path.join('.')}', got '${value.type}'`,
+        // A node `inspect` read is a copy, whose offsets are not the file's.
+        ...(field ? { loc: locationOf(this._code, field.start, field.end) } : {}),
       },
     };
   }

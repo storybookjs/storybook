@@ -275,7 +275,8 @@ export interface CsfObject {
    * Add a plain value or an expression after the last element of the array, or the last argument
    * of the call, at a path. A missing array is created, carrying the spreads before it forward
    * like a missing parent. A field that holds a call gets an argument, whatever the callee: on
-   * `[...].filter(Boolean)` that is an argument of `filter`.
+   * `[...].filter(Boolean)` that is an argument of `filter`. A method, such as `addons() {}`, is
+   * refused as the `Property` it is written as.
    *
    * @example
    * ```ts
@@ -329,7 +330,8 @@ const invalidated = () => new Error('CsfObject mutation preflight was invalidate
 type ArrayInsert = { items: string[]; first: boolean };
 
 // Where a path ends: a property or an item, which is `null` for a hole, or the first segment the
-// source lacks, a key at `missing` of the path or an item past the end of its list or at a hole.
+// source lacks, a key at `missing` of the path or an item past the end of its list or at a hole
+// before the last segment.
 type Located =
   | { ok: true; kind: 'property'; parent: ObjectRoot; key: string; property: Property }
   | { ok: true; kind: 'item'; parent: ListRoot; index: number; element: E.Expression | null }
@@ -339,7 +341,8 @@ type Located =
 
 type Found = Extract<Located, { ok: true }>;
 
-// The value at a property or an item: `node` is the property or the element.
+// The value at a property or an item, as `get` reads it: `node` is the property or the element,
+// and `expression` the value to evaluate, which a method lacks.
 type Slot = { node: Property | E.Expression; source: string; expression?: Node };
 
 // The next segment of a path with the container it addresses.
@@ -474,8 +477,6 @@ class Editor implements CsfObject {
     return slot ? { kind: 'value', ...slot } : { kind: 'missing' };
   }
 
-  // The value a path located, as `get` reads it, and the expression to evaluate, which a method
-  // lacks. `node` is the property or the element, to report.
   private valueAt(located: Found): Slot | undefined {
     if (located.kind === 'item' && located.element) {
       const { element } = located;
@@ -576,7 +577,7 @@ class Editor implements CsfObject {
         path,
         node,
         shared
-          ? `Cannot add to ${printCsfPath(path)}, a constant that other code refers to as well`
+          ? `Cannot add to '${printCsfPath(path)}', a constant that other code refers to as well`
           : `Expected an array literal or a call at '${printCsfPath(path)}', got '${node.type}'`
       );
     }
@@ -703,7 +704,7 @@ class Editor implements CsfObject {
     if (destination.kind === 'property') {
       return this.failure('occupied-destination', to, destination.property);
     }
-    // A key ends the path, so only a missing key can be the destination.
+    // A read refuses a missing key next to a spread or computed key, so there is none to carry.
     const creatable = this.creatable(destination, to, () => false);
     if (!creatable.ok) {
       return creatable;
@@ -951,8 +952,8 @@ class Editor implements CsfObject {
   // `access` applies to the last field of the path, and to its parents for a `set`, which creates
   // missing ones; other parents are read. Only a lookup for a read follows a shared constant.
   private locate(path: CsfPath, access: Access = 'read', edits = true): Located {
-    const first = path[0] ?? 0;
-    if (!isKey(first)) {
+    const [first] = path;
+    if (typeof first !== 'string') {
       return { ok: false, code: 'unsupported-member', node: this.anchor() };
     }
     let step: Step = { kind: 'object', parent: this.root(), key: first };

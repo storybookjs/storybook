@@ -830,6 +830,28 @@ describe('ConfigFile', () => {
       expect(printConfig(config).code).toBe(source);
     });
 
+    it('refuses a call below a constant, and appends to an array there', () => {
+      const source =
+        "const opts = { list: ['a'].filter(Boolean) };\nexport default { framework: { options: opts } };";
+      const config = loadConfig(source).parse();
+
+      expect(config.appendValueToArray(['framework', 'options', 'list'], 'z')).toMatchObject({
+        ok: false,
+        diagnostic: {
+          code: 'unsupported-value',
+          message: "Expected an array literal at 'framework.options.list', got 'CallExpression'",
+        },
+      });
+      expect(printConfig(config).code).toBe(source);
+      expect(
+        appendToArray(
+          ['framework', 'options', 'list'],
+          'z',
+          "const opts = { list: ['a'] };\nexport default { framework: { options: opts } };"
+        ).split('\n')[0]
+      ).toBe("const opts = { list: ['a', 'z'] };");
+    });
+
     it('appends to an array a constant holds', () => {
       expect(
         appendToArray(['addons'], 'b', "const addons = ['a'];\nexport default { addons };")

@@ -1510,6 +1510,34 @@ describe('ConfigFile', () => {
     });
   });
 
+  describe('import results', () => {
+    it('reports whether an import helper changed the file, and sets changed', () => {
+      const config = loadConfig(`import { a } from 'x';\nexport default {};`).parse();
+
+      expect(config.setImport(['a'], 'x')).toEqual({ ok: true, changed: false });
+      expect(config.removeImport(['b'], 'x')).toEqual({ ok: true, changed: false });
+      expect(config.changed).toBe(false);
+      expect(config.setRequireImport(['b'], 'y')).toEqual({ ok: true, changed: true });
+      expect(config.changed).toBe(true);
+      expect(config.removeImport(['a'], 'x')).toEqual({ ok: true, changed: true });
+      expect(printConfig(config).code).toBe(`const { b } = require('y');\nexport default {};`);
+    });
+
+    it('rolls back an import and changed with the transaction it runs in', () => {
+      const source = `export default { tags: 'a' };`;
+      const config = loadConfig(source).parse();
+
+      const kept = config.transaction(() => {
+        config.setImport(['a'], 'x');
+        config.appendValueToArray(['tags'], 'b');
+      });
+
+      expect(kept).toBe(false);
+      expect(printConfig(config).code).toBe(source);
+      expect(config.changed).toBe(false);
+    });
+  });
+
   describe('setRequireImport', () => {
     it(`supports setting a default import for a field that does not exist`, () => {
       const source = dedent`

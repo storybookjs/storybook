@@ -797,3 +797,219 @@ Primary.args = {};
     });
   });
 });
+
+describe('CsfFile.storyObject', () => {
+  it('finds a CSF2 story, whose annotation assignments are its fields', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      const Template = (args) => null;
+      export const Basic = Template.bind({});
+      Basic.args = { label: 'Hi' };
+    `);
+
+    const found = csf.storyObject('Basic');
+
+    expect(found).toEqual({ ok: true, object: expect.anything() });
+    const story = found?.ok ? found.object : undefined;
+    expect(story?.target).toEqual({ kind: 'story', exportName: 'Basic', localName: 'Basic' });
+    expect(story?.set(['args', 'label'], 'Bye')).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toContain(`Basic.args = { label: 'Bye' };`);
+    expect(csf.changed).toBe(true);
+  });
+
+  it('finds a factory story', () => {
+    const csf = parse(`
+      import preview from './preview';
+      const meta = preview.meta({ title: 'Example' });
+      export const Basic = meta.story({ args: { label: 'Hi' } });
+    `);
+
+    const found = csf.storyObject('Basic');
+
+    expect(found?.ok && found.object.getValue(['args'])).toEqual({ label: 'Hi' });
+  });
+
+  it('finds a story by its export name, not its local name', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      const Local = { args: { label: 'Hi' } };
+      export { Local as Basic };
+    `);
+
+    expect(csf.stories.map(({ exportName, localName }) => ({ exportName, localName }))).toEqual([
+      { exportName: 'Basic', localName: 'Local' },
+    ]);
+    expect(csf.storyObject('Local')).toBeUndefined();
+    const found = csf.storyObject('Basic');
+    expect(found?.ok && found.object.target).toEqual({
+      kind: 'story',
+      exportName: 'Basic',
+      localName: 'Local',
+    });
+  });
+
+  it('returns the diagnostic of a story it cannot edit, and adds only that one', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      export const Made = makeStory();
+      export const Other = makeStory();
+      export const Basic = {};
+    `);
+
+    const found = csf.storyObject('Made');
+
+    expect(found).toEqual({
+      ok: false,
+      diagnostic: expect.objectContaining({
+        code: 'unsupported-initializer',
+        target: { kind: 'story', exportName: 'Made', localName: 'Made' },
+      }),
+    });
+    expect(csf.mutationDiagnostics).toEqual([found?.ok === false && found.diagnostic]);
+    expect(csf.storyObject('Basic')?.ok).toBe(true);
+  });
+
+  describe('a story exported under a second name', () => {
+    const refusal = (exportName: string, localName: string, owner: string) => ({
+      ok: false,
+      diagnostic: expect.objectContaining({
+        code: 'aliased-story',
+        target: { kind: 'story', exportName, localName },
+        path: [],
+        message: `Cannot mutate ${exportName} without changing ${owner}, which exports the same story`,
+      }),
+    });
+
+    it.each([
+      [
+        'a declaration and a specifier',
+        'Primary',
+        `export const Primary = { args: { label: 'Hi' } };\nexport { Primary as Secondary };`,
+      ],
+      [
+        'two export specifiers',
+        'Local',
+        `const Local = { args: { label: 'Hi' } };\nexport { Local as Primary, Local as Secondary };`,
+      ],
+    ])(
+      'refuses the second name of %s, as objects() does, and edits the story under its first',
+      (_kind, localName, code) => {
+        const csf = parse(`export default { title: 'Example' };\n${code}`);
+
+        const found = csf.storyObject('Secondary');
+
+        expect(found).toEqual(refusal('Secondary', localName, 'Primary'));
+        expect(csf.mutationDiagnostics).toEqual([found?.ok === false && found.diagnostic]);
+        const primary = csf.storyObject('Primary');
+        const story = primary?.ok ? primary.object : undefined;
+        expect(story?.target).toEqual({ kind: 'story', exportName: 'Primary', localName });
+        expect(story?.set(['args', 'label'], 'Bye')).toEqual({ ok: true, changed: true });
+        const printed = printCsf(csf).code;
+        expect(printed).toContain(`{ args: { label: 'Bye' } }`);
+        expect(
+          parse(printed)
+            .stories.map(({ name }) => name)
+            .sort()
+        ).toEqual(['Primary', 'Secondary']);
+      }
+    );
+
+    it('refuses the second name as an alias also when the first export cannot be edited', () => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        export const Primary = makeStory();
+        export { Primary as Secondary };
+      `);
+
+      expect(csf.storyObject('Secondary')).toEqual(refusal('Secondary', 'Primary', 'Primary'));
+      expect(csf.storyObject('Primary')).toEqual({
+        ok: false,
+        diagnostic: expect.objectContaining({
+          code: 'unsupported-initializer',
+          target: { kind: 'story', exportName: 'Primary', localName: 'Primary' },
+        }),
+      });
+    });
+
+    it('refuses a second name of an alias declaration as an alias of that declaration', () => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        export const Primary = { args: {} };
+        export const Secondary = Primary;
+        export { Secondary as Third };
+      `);
+
+      expect(csf.storyObject('Third')).toEqual(refusal('Third', 'Secondary', 'Secondary'));
+      expect(csf.storyObject('Secondary')).toEqual({
+        ok: false,
+        diagnostic: expect.objectContaining({
+          code: 'aliased-story',
+          target: { kind: 'story', exportName: 'Secondary', localName: 'Secondary' },
+          message: 'Cannot mutate story Secondary because it is an alias of story Primary',
+        }),
+      });
+    });
+
+    it('refuses the second name of a CSF2 story with assignments', () => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        const Template = (args) => null;
+        export const Primary = Template.bind({});
+        Primary.args = { label: 'Hi' };
+        export { Primary as Secondary };
+      `);
+
+      expect(csf.storyObject('Secondary')).toEqual(refusal('Secondary', 'Primary', 'Primary'));
+      expect(csf.storyObject('Primary')?.ok).toBe(true);
+    });
+
+    it('refuses the second name of a factory story', () => {
+      const csf = parse(`
+        import preview from './preview';
+        const meta = preview.meta({ title: 'Example' });
+        export const Primary = meta.story({ args: {} });
+        export { Primary as Secondary };
+      `);
+
+      expect(csf.storyObject('Secondary')).toEqual(refusal('Secondary', 'Primary', 'Primary'));
+      expect(csf.storyObject('Primary')?.ok).toBe(true);
+    });
+  });
+
+  it.each(['Primary', 'Primary as Story', 'Primary satisfies Story'])(
+    'refuses a story initialized with %s, an alias of another story',
+    (initializer) => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        export const Primary = { args: {} };
+        export const Secondary = ${initializer};
+      `);
+
+      const found = csf.storyObject('Secondary');
+
+      expect(found).toEqual({
+        ok: false,
+        diagnostic: expect.objectContaining({
+          code: 'aliased-story',
+          target: { kind: 'story', exportName: 'Secondary', localName: 'Secondary' },
+          message: 'Cannot mutate story Secondary because it is an alias of story Primary',
+        }),
+      });
+      expect(csf.mutationDiagnostics).toEqual([found?.ok === false && found.diagnostic]);
+      expect(csf.storyObject('Primary')?.ok).toBe(true);
+    }
+  );
+
+  it('returns undefined for an export that is not a story', () => {
+    const csf = parse(`
+      export default { title: 'Example', excludeStories: ['helper'] };
+      export const helper = {};
+      export const Basic = {};
+    `);
+
+    expect(csf.storyObject('helper')).toBeUndefined();
+    expect(csf.storyObject('Missing')).toBeUndefined();
+    expect(csf.storyObject('toString')).toBeUndefined();
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+});

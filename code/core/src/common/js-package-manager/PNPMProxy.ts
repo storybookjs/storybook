@@ -119,6 +119,12 @@ function hasAllowBuildsDecision(settings: unknown, pkg: string): boolean {
   );
 }
 
+/**
+ * Reads an existing `onlyBuiltDependenciesFile` and returns its contents as an array of package names or pins.
+ * @param file The path to the `onlyBuiltDependenciesFile`.
+ * @param dir The directory containing the `onlyBuiltDependenciesFile`.
+ * @returns An array of package names listed in the file, or an empty array if the file does not exist or is invalid.
+ */
 function readOnlyBuiltDependenciesFile(file: unknown, dir: string): unknown[] {
   if (typeof file !== 'string') {
     return [];
@@ -131,13 +137,23 @@ function readOnlyBuiltDependenciesFile(file: unknown, dir: string): unknown[] {
   }
 }
 
-// pnpm 10 refuses to combine `neverBuiltDependencies` with any allow list, so its presence alone
-// is a decision.
+/**
+ * Checks whether there is any user setting that indicates we cannot decide for them to
+ * preallow a package. This can be because they made an explicit decision, or because us
+ * setting `allowBuilds` in a `pnpm-workspace.yaml` file would lead to invalid config
+ * or unwanted side effects.
+ * @param settings The PNPM settings object to check.
+ * @param pkg The package name to check for an existing decision.
+ * @param dir The directory containing the `onlyBuiltDependenciesFile`.
+ * @returns `true` if there is an existing decision that prevents preallowing the package, `false` otherwise.
+ */
 function hasPnpm10ListDecision(settings: unknown, pkg: string, dir: string): boolean {
   if (!isRecord(settings)) {
     return false;
   }
   return (
+    // pnpm 10 refuses to combine `neverBuiltDependencies` with any allow list,
+    // so its presence alone is a decision.
     Array.isArray(settings.neverBuiltDependencies) ||
     listsPackage(settings.onlyBuiltDependencies, pkg) ||
     listsPackage(settings.ignoredBuiltDependencies, pkg) ||

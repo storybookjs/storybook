@@ -589,7 +589,7 @@ describe('removeFromList', () => {
 
   it('keeps what follows a removed item off the line of the comment before it', () => {
     expect(removeElement(`export default { addons: ['a', /* x */ // l\n  'b', 'c'] };`, 1)).toBe(
-      `export default { addons: ['a', /* x */ // l\n 'c'] };`
+      `export default { addons: ['a', /* x */ // l\n  'c'] };`
     );
     expect(removeElement(`export default { addons: ['a', // l\n  'b'] };`, 1)).toBe(
       `export default { addons: ['a' // l\n] };`
@@ -602,6 +602,35 @@ describe('removeFromList', () => {
     );
   });
 
+  it.each([
+    [
+      'shares the line of the removed item after a line comment',
+      `({\n    render: () => null, // custom render\n    name() { return 1; } })`,
+      `({\n    render: () => null // custom render\n})`,
+    ],
+    [
+      'is on a line of its own after a line comment',
+      `({\n    render: () => null, // custom render\n    name() { return 1; }\n})`,
+      `({\n    render: () => null // custom render\n})`,
+    ],
+    [
+      'follows a trailing comma after a line comment',
+      `({\n    render: () => null, // custom render\n    name() { return 1; }, })`,
+      `({\n    render: () => null, // custom render\n})`,
+    ],
+    [
+      'is on the line of a one-line list',
+      `({ render: () => null, name() { return 1; } })`,
+      `({ render: () => null })`,
+    ],
+  ])('puts the closing token at the indent of the list when it %s', (_, code, result) => {
+    const editor = new SourceEditor(code);
+    const object = (editor.program.body[0] as E.ExpressionStatement)
+      .expression as E.ObjectExpression;
+    removeFromList(editor, objectList(editor, object), [object.properties[1]]);
+    expect(editor.toString()).toBe(result);
+  });
+
   it.each(['\n', '\r\n'])(
     'keeps what follows adjacent removed items off the line of the comment before them',
     (eol) => {
@@ -609,7 +638,7 @@ describe('removeFromList', () => {
       const array = (editor.program.body[0] as E.ExportDefaultDeclaration)
         .declaration as E.ArrayExpression;
       removeFromList(editor, arrayList(editor, array), array.elements.slice(1, 3) as E.Node[]);
-      expect(editor.toString()).toBe(`export default [1, /* k */ // k${eol} 4,${eol}];`);
+      expect(editor.toString()).toBe(`export default [1, /* k */ // k${eol}4,${eol}];`);
     }
   );
 });

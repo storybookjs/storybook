@@ -1179,12 +1179,17 @@ export const removeFromList = (editor: SourceEditor, list: List, removedItems: r
       const item = items[0].start;
       edits.remove(start, item - /\s*$/.exec(code.slice(start, item))![0].length);
       edits.remove(item, end + /^\s*/.exec(code.slice(end))![0].length);
+    } else if (
+      commentAt(editor, start, 'end')?.type === 'Line' &&
+      code.slice(end, lineEnd(code, end)).trim()
+    ) {
+      // Code after the run on its line must not join the line of a line comment before it, so it
+      // starts the next line, where the run's first item started or at the list's indent.
+      const next = end + /^\s*/.exec(code.slice(end))![0].length;
+      const indent = lineIndent(code, last === items.length - 1 ? list.open : items[first].start);
+      edits.update(lineEnd(code, start) + 1, next, indent);
     } else {
-      // Code after the run on its line must not join the line of a line comment before it.
-      const joins =
-        commentAt(editor, start, 'end')?.type === 'Line' &&
-        code.slice(end, lineEnd(code, end)).trim();
-      edits.remove(joins ? lineEnd(code, start) + 1 : start, end);
+      edits.remove(start, end);
     }
     first = last;
   }

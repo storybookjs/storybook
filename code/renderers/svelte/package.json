@@ -25,8 +25,8 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "code": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./entry-preview": "./dist/entry-preview.js",
@@ -37,33 +37,33 @@
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./internal/PreviewRender.svelte": "./static/PreviewRender.svelte",
     "./internal/svelte-csf/addon-check": {
-      "types": "./dist/svelte-csf/addon-check.d.ts",
       "code": "./src/svelte-csf/addon-check.ts",
+      "types": "./dist/svelte-csf/addon-check.d.ts",
       "default": "./dist/svelte-csf/addon-check.js"
     },
     "./internal/svelte-csf/component-helpers": {
-      "types": "./dist/svelte-csf/runtime/component-helpers.d.ts",
       "code": "./src/svelte-csf/runtime/component-helpers.ts",
+      "types": "./dist/svelte-csf/runtime/component-helpers.d.ts",
       "default": "./dist/svelte-csf/runtime/component-helpers.js"
     },
     "./internal/svelte-csf/contexts/extractor": "./static/svelte-csf/contexts/extractor.svelte.js",
     "./internal/svelte-csf/contexts/renderer": "./static/svelte-csf/contexts/renderer.svelte.js",
     "./internal/svelte-csf/create-runtime-stories": {
-      "types": "./dist/svelte-csf/runtime/create-runtime-stories.d.ts",
       "code": "./src/svelte-csf/runtime/create-runtime-stories.ts",
+      "types": "./dist/svelte-csf/runtime/create-runtime-stories.d.ts",
       "default": "./dist/svelte-csf/runtime/create-runtime-stories.js"
     },
     "./internal/svelte-csf/indexer": {
-      "types": "./dist/svelte-csf/indexer/index.d.ts",
       "code": "./src/svelte-csf/indexer/index.ts",
+      "types": "./dist/svelte-csf/indexer/index.d.ts",
       "default": "./dist/svelte-csf/indexer/index.js"
     },
     "./internal/svelte-csf/StoriesExtractor.svelte": "./static/svelte-csf/StoriesExtractor.svelte",
     "./internal/svelte-csf/Story.svelte": "./static/svelte-csf/Story.svelte",
     "./internal/svelte-csf/StoryRenderer.svelte": "./static/svelte-csf/StoryRenderer.svelte",
     "./internal/svelte-csf/transform": {
-      "types": "./dist/svelte-csf/compiler/transform.d.ts",
       "code": "./src/svelte-csf/compiler/transform.ts",
+      "types": "./dist/svelte-csf/compiler/transform.d.ts",
       "default": "./dist/svelte-csf/compiler/transform.js"
     },
     "./package.json": "./package.json",

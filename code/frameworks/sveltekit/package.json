@@ -29,8 +29,8 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "code": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./internal/MockProvider.svelte": "./static/MockProvider.svelte",
@@ -38,8 +38,8 @@
     "./internal/mocks/app/navigation": "./dist/mocks/app/navigation.js",
     "./internal/mocks/app/state.svelte.js": "./static/app-state-mock.svelte.js",
     "./node": {
-      "types": "./dist/node/index.d.ts",
       "code": "./src/node/index.ts",
+      "types": "./dist/node/index.d.ts",
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",

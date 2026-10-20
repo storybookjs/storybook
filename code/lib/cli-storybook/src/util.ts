@@ -306,7 +306,7 @@ const processProject = async ({
       storiesPaths,
       versionSpecifier,
       versionInstalled,
-    } = await getStorybookData({ configDir });
+    } = await getStorybookData({ configDir, packageManagerName: options.packageManager });
 
     // Validate version and upgrade compatibility
     logger.debug(`${name} - Validating before version... ${versionInstalled}`);
@@ -443,6 +443,7 @@ export const generateUpgradeSpecs = async (
     isCLIExactPrerelease,
     isCLIExactLatest,
   } = config;
+  const prereleaseModifier = isCLIExactPrerelease && !isCanary ? '^' : '';
 
   // Filter for monorepo dependencies
   const monorepoDependencies = Object.keys(dependencies).filter(
@@ -468,9 +469,11 @@ export const generateUpgradeSpecs = async (
 
     const { modifier } = getVersionModifier(versionSpec);
 
-    // Use fixed version for outdated CLI or canary versions
-    const shouldUseFixed = isCLIOutdated || isCanary;
-    const finalModifier = shouldUseFixed ? '' : modifier;
+    const finalModifier = isCLIPrerelease
+      ? prereleaseModifier
+      : isCLIOutdated || isCanary
+        ? ''
+        : modifier;
 
     return `${dependency}@${finalModifier}${versions[dependency]}`;
   });
@@ -478,7 +481,10 @@ export const generateUpgradeSpecs = async (
   // Generate satellite addon upgrades if applicable
   let storybookSatelliteUpgrades: string[] = [];
   if (isCLIExactPrerelease || isCLIExactLatest) {
-    const satelliteDependencies = Object.keys(dependencies).filter(isSatelliteAddon);
+    const satelliteDependencies = Object.keys(dependencies).filter(
+      (dependency) =>
+        isSatelliteAddon(dependency) && !dependencies[dependency]?.startsWith('workspace:')
+    );
 
     if (satelliteDependencies.length > 0) {
       try {
@@ -493,7 +499,9 @@ export const generateUpgradeSpecs = async (
               return null;
             }
             const { modifier } = getVersionModifier(dependencies[dependency] ?? '');
-            return `${dependency}@${modifier}${mostRecentVersion}`;
+            const finalModifier =
+              isCLIPrerelease && prerelease(mostRecentVersion) ? prereleaseModifier : modifier;
+            return `${dependency}@${finalModifier}${mostRecentVersion}`;
           } catch {
             return null;
           }

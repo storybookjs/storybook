@@ -10,7 +10,7 @@ import {
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
-import { coerce, gte } from 'semver';
+import { coerce, gte, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
 import { type Document, parseDocument } from 'yaml';
 
@@ -170,14 +170,14 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   public async getRegistryURL() {
-    // pnpm 10.7.1+ falls back to npm for certain config keys (including registry)
-    // https://github.com/pnpm/pnpm/pull/9346
-    // "npm config" commands are not allowed in workspaces per default
-    // https://github.com/npm/cli/issues/6099#issuecomment-1847584792
+    // pnpm 10.7.1 added npm forwarding: https://github.com/pnpm/pnpm/pull/9346
+    // pnpm 11.0.0 removed it: https://github.com/pnpm/pnpm/pull/11146
+    // --location=project bypasses that fallback to avoid npm's workspace error:
+    // https://github.com/npm/cli/issues/6099
     const childProcess = await executeCommand({
-      command: 'npm',
+      command: 'pnpm',
       cwd: this.cwd,
-      args: ['config', 'get', 'registry', '--workspaces=false', '--include-workspace-root'],
+      args: ['config', 'get', 'registry', '--location=project'],
     });
     const url = (typeof childProcess.stdout === 'string' ? childProcess.stdout : '').trim();
     return url === 'undefined' ? undefined : url;
@@ -275,7 +275,8 @@ export class PNPMProxy extends JsPackageManager {
     for (const { name, version, catalog } of catalogued) {
       const keyPath = [...this.#catalogKeyPath(workspace.doc, catalog!), name];
       const current = String(workspace.doc.getIn(keyPath) ?? '');
-      const modifier = /^[~^]/.test(version) ? '' : (current.match(/^[~^]/)?.[0] ?? '');
+      const modifier =
+        /^[~^]/.test(version) || prerelease(version) ? '' : (current.match(/^[~^]/)?.[0] ?? '');
       workspace.doc.setIn(keyPath, `${modifier}${version}`);
     }
     writeFileSync(workspace.path, workspace.doc.toString(), 'utf8');

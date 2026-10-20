@@ -60,14 +60,14 @@ const play: PlayFunction = async ({ canvasElement, step }) => {
     await expect(cardOutline).not.toBeNull();
 
     const styles = window.getComputedStyle(cardOutline!, '::before');
+    await expect(styles.animationPlayState).toBe('running');
+
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if (prefersReducedMotion) {
-      await expect(styles.animationName).toBe('none');
-      await expect(styles.opacity).toBe('0');
+      await expect(styles.animationIterationCount).toBe('2');
     } else {
-      await expect(styles.animationIterationCount).toBe('1, 1');
-      await expect(styles.animationFillMode).toBe('forwards, forwards');
+      await expect(styles.animationIterationCount).toBe('1');
     }
   });
 

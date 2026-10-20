@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 
 import { Channel } from 'storybook/internal/channels';
 import type { Options, Presets } from 'storybook/internal/types';

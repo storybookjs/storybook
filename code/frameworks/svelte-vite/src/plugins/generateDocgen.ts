@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- matches TypeScript host file names with path.sep
 import path from 'node:path';
 
 import svelte2tsx, { internalHelpers } from 'svelte2tsx';

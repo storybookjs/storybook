@@ -1,5 +1,6 @@
 import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+// eslint-disable-next-line no-restricted-imports -- mocks process.cwd() with the project root, which must stay native
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

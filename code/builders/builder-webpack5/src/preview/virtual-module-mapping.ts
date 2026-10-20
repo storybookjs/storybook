@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- keys virtual modules and entries that webpack matches against native resource paths
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

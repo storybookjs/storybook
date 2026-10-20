@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- sets webpack's output.path, which webpack and its dev middleware treat as a native path
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

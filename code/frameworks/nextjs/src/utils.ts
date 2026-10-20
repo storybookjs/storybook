@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- rewrites module ids with path.sep
 import { dirname, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

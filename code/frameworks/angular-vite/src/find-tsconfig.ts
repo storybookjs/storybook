@@ -1,6 +1,6 @@
 import { getProjectRoot } from 'storybook/internal/common';
 
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 
 import * as find from 'empathic/find';
 

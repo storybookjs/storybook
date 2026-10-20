@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- matches resolved module paths with path.sep
 import { dirname, relative, sep } from 'node:path';
 
 import { findTsconfigPathForFile, getTsconfigPathsBaseDir } from 'storybook/internal/common';

@@ -18,6 +18,7 @@ import {
   statSync,
 } from 'node:fs';
 import { createRequire } from 'node:module';
+// eslint-disable-next-line no-restricted-imports -- joins onto createRequire().resolve's native result, compared with realpathSync
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 

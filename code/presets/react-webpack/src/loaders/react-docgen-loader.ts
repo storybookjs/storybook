@@ -1,4 +1,4 @@
-import { dirname } from 'node:path';
+import { dirname } from 'pathe';
 
 import { findTsconfigPathForFile, getTsconfigPathsBaseDir } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';

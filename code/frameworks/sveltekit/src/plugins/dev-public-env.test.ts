@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { createServer } from 'vite';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

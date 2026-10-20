@@ -1,5 +1,5 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
-import { dirname } from 'node:path';
+import { dirname } from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 import type { PresetProperty } from 'storybook/internal/types';

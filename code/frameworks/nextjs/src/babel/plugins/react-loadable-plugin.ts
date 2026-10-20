@@ -2,6 +2,7 @@
  * Source:
  * https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/react-loadable-plugin.ts
  */
+// eslint-disable-next-line no-restricted-imports -- keys must match next's react-loadable manifest, built from native paths
 import { relative as relativePath } from 'node:path';
 
 import type { types as BabelTypes, NodePath, PluginObj } from '@babel/core';

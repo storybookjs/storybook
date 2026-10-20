@@ -1,6 +1,6 @@
 import { readdirSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { describe, expect, it } from 'vitest';
 

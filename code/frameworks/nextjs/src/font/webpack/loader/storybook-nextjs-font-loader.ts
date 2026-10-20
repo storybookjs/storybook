@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- matches webpack resource paths with path.sep
 import { sep } from 'node:path';
 
 import { getFontFaceDeclarations as getGoogleFontFaceDeclarations } from './google/get-font-face-declarations.ts';

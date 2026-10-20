@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- node's relative keeps tsconfig paths on another drive absolute
 import { isAbsolute, relative } from 'node:path';
 
 import { JsPackageManagerFactory } from 'storybook/internal/common';

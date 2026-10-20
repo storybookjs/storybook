@@ -1,4 +1,4 @@
-import { basename, relative } from 'node:path';
+import { basename, relative } from 'pathe';
 
 import type AST from 'estree';
 import MagicString from 'magic-string';

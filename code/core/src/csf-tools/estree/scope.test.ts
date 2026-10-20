@@ -177,6 +177,27 @@ describe('analyzeScopes', () => {
     expect(generateUid(info, 'meta')).toBe('_meta2');
   });
 
+  it('counts export statements and top-level overload signatures as references', () => {
+    const code = [
+      'export const a = 1;',
+      'type T = typeof a;',
+      'function f(x: string): void;',
+      'function f(x) {}',
+      'export function h(x: string): void;',
+      'export function h(x) {}',
+      'export default function g() {}',
+      'const X = 1;',
+      'export type X = number;',
+    ].join('\n');
+    const { bindings } = analyzeScopes(parseModule(code, 'file.ts').program).program;
+    const types = (name: string) => bindings.get(name)!.references.map((node) => node.type);
+    expect(types('a')).toEqual(['Identifier', 'ExportNamedDeclaration']);
+    expect(types('f')).toEqual(['TSDeclareFunction']);
+    expect(types('h')).toEqual(['ExportNamedDeclaration', 'ExportNamedDeclaration']);
+    expect(types('X')).toEqual(['ExportNamedDeclaration']);
+    expect(types('g')).toEqual(['ExportDefaultDeclaration']);
+  });
+
   it('lists the top-level names of TypeScript declarations', () => {
     const code = [
       'type Story = {};',

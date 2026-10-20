@@ -21,6 +21,13 @@ export interface Binding {
   scope: Scope;
   /** False when the binding is declared twice or written after its declaration. */
   constant: boolean;
+  /**
+   * The identifiers that read or write the binding, in code or in a type such as `typeof Button`,
+   * and statements too. The `ExportNamedDeclaration` or `ExportDefaultDeclaration` of an exported
+   * declaration is one, as in Babel's `referencePaths`, also for an exported type of the binding's
+   * name. A top-level overload signature of a function is one as well: its `TSDeclareFunction`, or
+   * its export statement when it is exported.
+   */
   references: Node[];
 }
 

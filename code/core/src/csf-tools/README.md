@@ -71,6 +71,8 @@ for (const story of csf.objects()) {
 
 To read a tree, `walk` visits its nodes depth-first, `staticKey` reads an object member's key, `objectProperty(object, name)` finds a property by that key, `isIdentifier(node, name)` checks for an identifier and its name, and `locationOf(code, start, end)` gives the lines and columns of two offsets.
 
+`editor.scopes` is the file's scope analysis: `scopes.program.bindings` maps each top-level name to its `Binding`, and `scopes.tsDeclarationNames` holds the top-level names of type aliases, interfaces, enums, namespaces and bodiless functions, which bind none. A binding's `references` holds the identifiers that read or write it, and statements too: the `export` statement of an exported declaration, as in Babel, also of an exported type of the same name, and a top-level overload signature of a function, or its `export` statement. Filter on `type` when only identifiers count.
+
 ## Transforming preview and main configuration
 
 `ConfigFile` implements `CsfObject` directly, exposing the same methods and mutation results as the editors returned by `CsfFile.objects()`. Config files use `{ kind: 'config' }` as their target. Default-exported objects, identifier-backed objects, `definePreview` configurations, and CommonJS `module.exports` use their config object as the root.

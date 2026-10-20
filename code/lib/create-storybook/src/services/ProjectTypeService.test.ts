@@ -78,6 +78,35 @@ describe('ProjectTypeService', () => {
       expect(result).toBe(ProjectType.VUE3);
     });
 
+    it('detects VUE3 when pnpm resolves a Vue catalog range to version 3', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { vue: 'catalog:' },
+      };
+      (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => '3.5.44');
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+
+      expect(result).toBe(ProjectType.VUE3);
+      expect(pm.getDeclaredVersionSpecifier).toHaveBeenCalledWith('vue');
+    });
+
+    it('does not detect VUE3 when the Vue catalog resolves to version 2', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { vue: 'catalog:legacy' },
+      };
+      (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => '2.7.16');
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+
+      await expect(
+        service.autoDetectProjectType({ html: false } as CommandOptions)
+      ).rejects.toThrowError('Storybook failed to detect your project type');
+    });
+
     it('detects SVELTEKIT via @sveltejs/kit', async () => {
       (pm as any).primaryPackageJson.packageJson = {
         dependencies: { '@sveltejs/kit': '^2.0.0' },

@@ -38,7 +38,7 @@ export class ProjectTypeService {
   constructor(private readonly jsPackageManager: JsPackageManager) {}
 
   /** Sorted configuration to match a Storybook preset template */
-  getSupportedTemplates(): TemplateConfiguration[] {
+  getSupportedTemplates(vueVersion?: string): TemplateConfiguration[] {
     return [
       {
         preset: ProjectType.NUXT,
@@ -59,7 +59,8 @@ export class ProjectTypeService {
         preset: ProjectType.VUE3,
         dependencies: {
           // This Vue template works with Vue 3
-          vue: (versionRange) => versionRange === 'next' || this.eqMajor(versionRange, 3),
+          vue: (versionRange) =>
+            versionRange === 'next' || this.eqMajor(vueVersion ?? versionRange, 3),
         },
         matcherFunction: ({ dependencies }) => {
           return dependencies?.some(Boolean) ?? false;
@@ -233,12 +234,17 @@ export class ProjectTypeService {
     }
   }
 
-  private detectFrameworkPreset(packageJson: PackageJsonWithMaybeDeps): ProjectType | null {
-    const result = [...this.getSupportedTemplates(), this.getUnsupportedTemplate()].find(
-      (framework) => {
-        return this.getProjectType(packageJson, framework) !== null;
-      }
-    );
+  private async detectFrameworkPreset(packageJson: PackageJsonWithMaybeDeps): Promise<ProjectType> {
+    const vueVersion = packageJson.dependencies?.vue || packageJson.devDependencies?.vue;
+    const versionForDetection = vueVersion?.startsWith('catalog:')
+      ? ((await this.jsPackageManager.getDeclaredVersionSpecifier('vue')) ?? vueVersion)
+      : vueVersion;
+    const result = [
+      ...this.getSupportedTemplates(versionForDetection),
+      this.getUnsupportedTemplate(),
+    ].find((framework) => {
+      return this.getProjectType(packageJson, framework) !== null;
+    });
     return result ? result.preset : ProjectType.UNDETECTED;
   }
 

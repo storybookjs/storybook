@@ -70,28 +70,51 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 /**
  * Matches a package name, including pinned versions of that package.
- * For instance, if `matcher` is `esbuild@0.25.0 || 0.25.1`, it matches `pkg` `esbuild`.
+ * For instance, if `value` is `esbuild@0.25.0 || 0.25.1`, it matches `pkg` `esbuild`.
+ * @param value The package name or pinned version to match against.
+ * @param pkg The package name to check against the value.
+ * @returns whether the package matches the given value.
  */
-const matchesPackage = (matcher: unknown, pkg: string): boolean =>
-  typeof matcher === 'string' && (matcher === pkg || matcher.startsWith(`${pkg}@`));
+const matchesPackage = (value: unknown, pkg: string): boolean =>
+  typeof value === 'string' && (value === pkg || value.startsWith(`${pkg}@`));
 
+/**
+ * Checks if a list of packages matches a given package name, including if the
+ * list contains pinned versions of that package.
+ * @param list List of package names to check.
+ * @param pkg The package name to check against the list of matchers.
+ * @returns whether the package matches any of the entries in the list.
+ */
 const listsPackage = (list: unknown, pkg: string): boolean =>
-  Array.isArray(list) && list.some((matcher) => matchesPackage(matcher, pkg));
+  Array.isArray(list) && list.some((value) => matchesPackage(value, pkg));
 
-// The bare key only counts once it holds a boolean, so the placeholder pnpm 12 writes still gets
-// resolved; a pinned matcher counts whatever its value, as a bare entry would widen it.
+/**
+ * Checks if PNPM settings contain an `allowBuilds` decision for the given package.
+ * Does not check whether it's allowed or refused, we only care to not modify `allowBuilds`
+ * when a pre-existing user decision exists.
+ *
+ * Note however that PNPM 12 inserts placeholder keys in `allowBuilds` for package names
+ * where the user has not made a decision. This does not happen for pinned versions but
+ * only for exact matches. So we verify we do have a boolean value for exact matches.
+ *
+ * @param settings The PNPM settings object to check.
+ * @param pkg The package name to check for an `allowBuilds` decision.
+ * @returns `true` if there is an existing `allowBuilds` decision for the package, `false` otherwise.
+ */
 function hasAllowBuildsDecision(settings: unknown, pkg: string): boolean {
   if (!isRecord(settings)) {
     return false;
   }
+
   if (settings.dangerouslyAllowAllBuilds === true) {
     return true;
   }
+
   const { allowBuilds } = settings;
   return (
     isRecord(allowBuilds) &&
-    Object.entries(allowBuilds).some(([matcher, value]) =>
-      matcher === pkg ? typeof value === 'boolean' : matchesPackage(matcher, pkg)
+    Object.keys(allowBuilds).some(
+      (matcher) => matchesPackage(matcher, pkg) && typeof allowBuilds[matcher] === 'boolean'
     )
   );
 }

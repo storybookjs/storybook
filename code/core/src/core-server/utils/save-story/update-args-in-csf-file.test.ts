@@ -146,7 +146,7 @@ describe('success', () => {
     expect(printCsf(parsed).code).toBe(source);
     expect(parsed.changed).toBe(false);
   });
-  test('story exported under two names', () => {
+  test('story exported under two names is saved through its first export', () => {
     const parsed = loadCsf(
       [
         `export default { title: 'X' };`,
@@ -156,13 +156,29 @@ describe('success', () => {
       { makeTitle }
     ).parse();
 
-    updateArgsInCsfFile(parsed, 'Secondary', { a: 2 });
+    updateArgsInCsfFile(parsed, 'Primary', { a: 2 });
 
     expect(printCsf(parsed).code).toMatchInlineSnapshot(`
       "export default { title: 'X' };
       export const Primary = { args: { a: 2 } };
       export { Primary as Secondary };"
     `);
+  });
+  test('refuses the second export of a story, leaving the file as it was', () => {
+    const source = [
+      `export default { title: 'X' };`,
+      `export const Primary = { args: { a: 1 } };`,
+      `export { Primary as Secondary };`,
+    ].join('\n');
+    const parsed = loadCsf(source, { makeTitle }).parse();
+
+    expect(() =>
+      updateArgsInCsfFile(parsed, 'Secondary', { a: 2 })
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Cannot mutate Secondary without changing Primary, which exports the same story]`
+    );
+    expect(printCsf(parsed).code).toBe(source);
+    expect(parsed.changed).toBe(false);
   });
   test('arg value shaped like an AST node is written as data', () => {
     const parsed = loadCsf(`export default { title: 'X' };\nexport const A = {};`, {

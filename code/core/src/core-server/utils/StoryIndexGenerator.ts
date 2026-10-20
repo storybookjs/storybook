@@ -232,8 +232,8 @@ export class StoryIndexGenerator {
       this.specifierToCache.set(specifier, cache)
     );
 
-    const previewCode = await this.getPreviewCode();
-    const projectTags = this.getProjectTags(previewCode);
+    const preview = await this.getPreviewConfig();
+    const projectTags = this.getProjectTags(preview?.code, preview?.fileName);
 
     // Extract stories for each file
     await this.ensureExtracted({ projectTags });
@@ -751,8 +751,8 @@ export class StoryIndexGenerator {
       throw this.lastError;
     }
 
-    const previewCode = await this.getPreviewCode();
-    const projectTags = this.getProjectTags(previewCode);
+    const preview = await this.getPreviewConfig();
+    const projectTags = this.getProjectTags(preview?.code, preview?.fileName);
 
     // Extract any entries that are currently missing
     // Pull out each file's stories into a list of stories, to be composed and sorted
@@ -876,20 +876,22 @@ export class StoryIndexGenerator {
     };
   }
 
-  async getPreviewCode() {
+  async getPreviewConfig() {
     const previewFile = ['js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'mts']
       .map((ext) => join(this.options.configDir, `preview.${ext}`))
       .find((fname) => existsSync(fname));
 
-    return previewFile && (await readFile(previewFile, { encoding: 'utf8' })).toString();
+    return previewFile
+      ? { code: await readFile(previewFile, { encoding: 'utf8' }), fileName: previewFile }
+      : undefined;
   }
 
-  getProjectTags(previewCode?: string) {
+  getProjectTags(previewCode?: string, fileName?: string) {
     let projectTags = [] as Tag[];
     const defaultTags = [Tag.DEV, Tag.TEST, Tag.MANIFEST];
     if (previewCode) {
       try {
-        const projectAnnotations = loadConfig(previewCode).parse();
+        const projectAnnotations = loadConfig(previewCode, fileName).parse();
         const tags = projectAnnotations.getValue(['tags']) ?? [];
         invariant(
           !projectAnnotations.mutationDiagnostics.some(

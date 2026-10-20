@@ -1,11 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as babelParser from '@babel/parser';
 import { babelPrint, parserOptions } from 'storybook/internal/babel';
+import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
 import { ConfigFile, formatConfig, loadConfig, printConfig } from './ConfigFile.ts';
+
+vi.mock('storybook/internal/node-logger');
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -36,6 +39,92 @@ const removeField = (path: string[], source: string) => {
 };
 
 describe('ConfigFile', () => {
+  describe('imported default export diagnostics', () => {
+    beforeEach(() => {
+      vi.mocked(logger.debug).mockClear();
+      vi.mocked(logger.warn).mockClear();
+    });
+
+    it.each([
+      "import { config } from './shared'; export default config;",
+      "import { config as preview } from './shared'; export default preview;",
+      "import config from './shared'; export default config;",
+      "import * as config from './shared'; export default config;",
+      "import config from './shared'; export default config as object;",
+      "import config from './shared'; export default config satisfies object;",
+      "import config from './shared'; export default config!;",
+      "import config from './shared'; export { config as default };",
+      "import config from './shared'; export { config as 'default' };",
+      "export { config as default } from './shared';",
+      "export { default } from './shared';",
+    ])('explains the source without resolving or mutating %s', (source) => {
+      const config = loadConfig(source, 'preview.ts');
+      const before = printConfig(config).code;
+      config.parse();
+
+      expect(logger.debug).toHaveBeenCalledExactlyOnceWith(dedent`
+        Cannot statically read the default export in 'preview.ts': its value comes from './shared'.
+        Define the configuration object in this file so Storybook can read it statically.
+      `);
+      expect(logger.warn).not.toHaveBeenCalled();
+      expect(config.mutationDiagnostics).toEqual([]);
+      expect(config.getValue(['tags'])).toBeUndefined();
+      expect(config.set(['tags'], ['audit'])).toMatchObject({ ok: false, changed: false });
+      expect(config.changed).toBe(false);
+      expect(printConfig(config).code).toBe(before);
+    });
+
+    it('uses a generic file description when no file name is available', () => {
+      loadConfig("import config from './shared'; export default config;").parse();
+      expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('in a config file:'));
+    });
+
+    it.each([
+      "import type { config } from './shared'; export default config;",
+      "import { type config } from './shared'; export default config;",
+      "import type { config } from './shared'; export { config as default };",
+      "export type { config as default } from './shared';",
+      "export { type config as default } from './shared';",
+      "const config = {}; export type { config as default } from './shared';",
+      'export default unknownConfig;',
+      "import * as config from './shared'; export default config.preview;",
+      "import config from './shared'; export default definePreview(config);",
+      "import config from './shared'; const local = config; export { local as default };",
+    ])('does not classify unsupported or type-only expressions as direct imports: %s', (source) => {
+      loadConfig(source).parse();
+      expect(logger.debug).not.toHaveBeenCalledWith(
+        expect.stringContaining('its value comes from')
+      );
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('identifies a re-export even when a local object has the same name', () => {
+      const source =
+        "const config = { tags: ['local'] }; export { config as default } from './shared';";
+      const config = loadConfig(source).parse();
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringContaining("its value comes from './shared'")
+      );
+      expect(config.hasDefaultExport).toBe(true);
+      expect(config.mutationDiagnostics).toEqual([]);
+      expect(config.getValue(['tags'])).toBeUndefined();
+      expect(config.set(['tags'], ['audit'])).toMatchObject({ ok: false, changed: false });
+      expect(config.mutationDiagnostics).toEqual(
+        expect.arrayContaining([expect.objectContaining({ code: 'ambiguous-binding' })])
+      );
+      expect(printConfig(config).code).toBe(source);
+    });
+
+    it('does not interpret an arbitrary function argument as its return value', () => {
+      const source =
+        "const config = { tags: ['autodocs'] }; function erase(value) { return {}; } export default erase(config);";
+      const config = loadConfig(source).parse();
+      expect(config.getValue(['tags'])).toBeUndefined();
+      expect(config.set(['tags'], ['audit'])).toMatchObject({ ok: false, changed: false });
+      expect(printConfig(config).code).toBe(source);
+    });
+  });
+
   it.each([
     `export default { parameters: { viewport: { disable: true } } };`,
     `export default definePreview({ parameters: { viewport: { disable: true } } });`,

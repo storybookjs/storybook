@@ -187,8 +187,8 @@ const config: BuildEntries = {
         entryPoint: './src/theming/create.ts',
       },
       {
-        exportEntries: ['./theming/internal'],
-        entryPoint: './src/theming/internal.ts',
+        exportEntries: ['./theming/emotion'],
+        entryPoint: './src/theming/emotion.ts',
       },
       {
         exportEntries: ['./internal/components'],

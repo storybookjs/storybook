@@ -259,10 +259,10 @@
       "code": "./src/theming/create.ts",
       "default": "./dist/theming/create.js"
     },
-    "./theming/internal": {
-      "types": "./dist/theming/internal.d.ts",
-      "code": "./src/theming/internal.ts",
-      "default": "./dist/theming/internal.js"
+    "./theming/emotion": {
+      "types": "./dist/theming/emotion.d.ts",
+      "code": "./src/theming/emotion.ts",
+      "default": "./dist/theming/emotion.js"
     },
     "./viewport": {
       "types": "./dist/viewport/index.d.ts",

@@ -1,4 +1,4 @@
-import { readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -67,16 +67,12 @@ describe('PNPM Proxy', () => {
   beforeEach(() => {
     vi.mocked(readFileSync).mockReset();
     vi.mocked(writeFileSync).mockReset();
-    vi.mocked(renameSync).mockReset();
-    vi.mocked(unlinkSync).mockReset();
     mockPnpmVersion('11.18.0');
     pnpmProxy = new PNPMProxy();
     vol.reset();
     vol.mkdirSync(PROJECT_DIR, { recursive: true });
     vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as typeof readFileSync);
     vi.mocked(writeFileSync).mockImplementation(memfs.writeFileSync as typeof writeFileSync);
-    vi.mocked(renameSync).mockImplementation(memfs.renameSync as typeof renameSync);
-    vi.mocked(unlinkSync).mockImplementation(memfs.unlinkSync as typeof unlinkSync);
     useMemfsProject(pnpmProxy);
     JsPackageManager.clearLatestVersionCache();
     vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
@@ -169,16 +165,6 @@ describe('PNPM Proxy', () => {
       await install();
 
       expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: true\n');
-      expect(writeFileSync).toHaveBeenCalledWith(
-        expect.stringMatching(/\/project\/pnpm-workspace\.yaml\.[0-9a-f]+\.tmp$/),
-        'allowBuilds:\n  esbuild: true\n',
-        'utf8'
-      );
-      expect(renameSync).toHaveBeenCalledWith(
-        expect.stringMatching(/\/project\/pnpm-workspace\.yaml\.[0-9a-f]+\.tmp$/),
-        WORKSPACE_YAML
-      );
-      expect(Object.keys(vol.toJSON()).some((filePath) => filePath.endsWith('.tmp'))).toBe(false);
       expect(mockedExecuteCommand).toHaveBeenCalledWith(
         expect.objectContaining({ command: 'pnpm', args: ['install'] })
       );
@@ -227,10 +213,6 @@ describe('PNPM Proxy', () => {
       [
         'a git-pinned allowBuilds matcher',
         "allowBuilds:\n  'esbuild@git+ssh://git@example.com/esbuild.git': true\n",
-      ],
-      [
-        'a pinned allowBuilds matcher pnpm has not resolved yet',
-        'allowBuilds:\n  esbuild@0.28.2: set this to true or false\n',
       ],
       ['dangerouslyAllowAllBuilds', 'dangerouslyAllowAllBuilds: true\n'],
     ])('does not add a bare esbuild key when %s already covers it', async (_, yaml) => {

@@ -1298,10 +1298,22 @@ export interface FormatCsfOptions {
  * Print the file with its pending edits. With `sourceMaps`, returns the code and a hi-res source map
  * from the loaded code to the output.
  */
-export const formatCsf = (
+export function formatCsf(
+  csf: CsfFile,
+  options: FormatCsfOptions & { sourceMaps: true }
+): { code: string; map: CsfSourceMap };
+export function formatCsf(
+  csf: CsfFile,
+  options?: FormatCsfOptions & { sourceMaps?: false }
+): string;
+export function formatCsf(
+  csf: CsfFile,
+  options?: FormatCsfOptions
+): { code: string; map: CsfSourceMap } | string;
+export function formatCsf(
   csf: CsfFile,
   options: FormatCsfOptions = { sourceMaps: false }
-): { code: string; map: CsfSourceMap } | string => {
+): { code: string; map: CsfSourceMap } | string {
   const code = csf.editor.toString();
   if (!options.sourceMaps) {
     return code;
@@ -1313,7 +1325,7 @@ export const formatCsf = (
       inputSourceMap: options.inputSourceMap,
     }) as unknown as CsfSourceMap,
   };
-};
+}
 
 /**
  * Print the file with its pending edits. Untouched code is kept as written, except that every line

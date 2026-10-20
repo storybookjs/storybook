@@ -9,7 +9,13 @@ import {
   type CsfObjectTarget,
   createCsfObject,
 } from './CsfObject.ts';
-import { type MemberInsert, type ObjectRoot, detachedMember, literalRoot } from './ObjectRoot.ts';
+import {
+  type MemberInsert,
+  type ObjectRoot,
+  argumentRoot,
+  detachedMember,
+  literalRoot,
+} from './ObjectRoot.ts';
 import {
   type E,
   type Node,
@@ -26,7 +32,7 @@ import {
   insertStatementAfter,
   printKey,
   printMemberAccess,
-  printMembers,
+  printObject,
   removeStatements,
 } from './estree/editor.ts';
 import { placeableValueSource } from './estree/values.ts';
@@ -39,6 +45,8 @@ type StoryBinding = {
   exportName: string;
   localName: string;
   declaration: E.VariableDeclarator | E.Function;
+  // Where it is exported.
+  node: Node;
 };
 
 // The object an editor works on, before it is wrapped into a `CsfObject`.
@@ -92,6 +100,7 @@ const addQualifiedBinding = (
       exportName,
       localName,
       declaration: binding.node as E.VariableDeclarator | E.Function,
+      node,
     });
   }
 };
@@ -154,11 +163,21 @@ const storyBindings = (csf: CsfFile, report: ReportDiagnostic): StoryBinding[] =
     }
   }
   const candidates = [...bindings.values()].filter((binding) => binding.exportName in csf._stories);
+  // A story exported under two names is one object, edited under its first export only.
   const unique = new Map<Node, StoryBinding>();
   for (const candidate of candidates) {
-    if (!unique.has(candidate.declaration)) {
+    const first = unique.get(candidate.declaration);
+    if (!first) {
       unique.set(candidate.declaration, candidate);
+      continue;
     }
+    report({
+      code: 'aliased-story',
+      target: storyTarget(candidate),
+      path: [],
+      message: `Cannot mutate ${candidate.exportName} without changing ${first.exportName}, which exports the same story`,
+      ...loc(csf, candidate.node),
+    });
   }
   return [...unique.values()];
 };
@@ -239,7 +258,14 @@ const discoverMeta = (csf: CsfFile, report: ReportDiagnostic): Discovered[] => {
     });
     return [];
   }
-  if (csf._metaNode && !csf._metaNodeIsSynthetic) {
+  const call = csf._metaIsFactory ? csf._metaFactoryCall : undefined;
+  const root =
+    csf._metaNode && !csf._metaNodeIsSynthetic
+      ? literalRoot(csf.editor, csf._metaNode)
+      : call?.arguments.length === 0
+        ? argumentRoot(csf.editor, call)
+        : undefined;
+  if (root) {
     const binding = csf._metaVariableName
       ? csf.editor.scopes.program.bindings.get(csf._metaVariableName)
       : undefined;
@@ -253,7 +279,7 @@ const discoverMeta = (csf: CsfFile, report: ReportDiagnostic): Discovered[] => {
       });
       return [];
     }
-    return [{ target: { kind: 'meta' }, root: literalRoot(csf.editor, csf._metaNode) }];
+    return [{ target: { kind: 'meta' }, root }];
   }
   if (csf._metaIsFactory && csf._metaFactoryCall) {
     report({
@@ -462,9 +488,7 @@ const storyRoot = (
         return;
       }
       const texts = members.map((member) => take(member, staticKey(member)!).text);
-      const value = texts.some((text) => text.includes('\n'))
-        ? printMembers(texts, editor.indent)
-        : `{ ${texts.join(', ')} }`;
+      const value = printObject(texts, editor.indent);
       const statements = statementsOf(members);
       removeStatements(editor, statements);
       assign([{ key, value, text: '' }], statements);
@@ -477,6 +501,26 @@ const storyRoot = (
             ? `Cannot add ${binding.localName}.${key} because a function's ${key} cannot be assigned${key === 'name' ? '; set storyName instead' : ''}`
             : undefined,
   };
+};
+
+// The story an alias such as `export const Secondary = Primary` shares its object with, through
+// other stories that alias it.
+const aliasedStory = (csf: CsfFile, stories: StoryBinding[], node: Node | undefined) => {
+  const seen = new Set<string>();
+  for (let current = node; current?.type === 'Identifier' && !seen.has(current.name);) {
+    const { name } = current;
+    seen.add(name);
+    const story = stories.find(({ localName }) => localName === name);
+    if (!story) {
+      return undefined;
+    }
+    const init = variableInit(csf.editor.scopes.program.bindings.get(name));
+    current = init ? unwrapExpression(init) : undefined;
+    if (current?.type !== 'Identifier') {
+      return story;
+    }
+  }
+  return undefined;
 };
 
 // A story without an object literal is a function or a bound template, which its assignments
@@ -502,13 +546,13 @@ const discoverStories = (
       const argument = node.type === 'CallExpression' ? node.arguments[0] : undefined;
       const argumentNode =
         argument && argument.type !== 'SpreadElement' ? unwrapExpression(argument) : undefined;
-      if (
-        node.type === 'CallExpression' &&
-        isFactoryStory(csf, node) &&
-        node.arguments.length === 1 &&
-        argumentNode?.type === 'ObjectExpression'
-      ) {
-        return [{ target: storyTarget(binding), root: literalRoot(csf.editor, argumentNode) }];
+      if (node.type === 'CallExpression' && isFactoryStory(csf, node)) {
+        if (node.arguments.length === 0) {
+          return [{ target: storyTarget(binding), root: argumentRoot(csf.editor, node) }];
+        }
+        if (node.arguments.length === 1 && argumentNode?.type === 'ObjectExpression') {
+          return [{ target: storyTarget(binding), root: literalRoot(csf.editor, argumentNode) }];
+        }
       }
       report({
         code: 'unsupported-initializer',
@@ -532,6 +576,15 @@ const discoverStories = (
       return [{ target: storyTarget(binding), root: literalRoot(csf.editor, object) }];
     }
     if (assignments.length === 0 && !isAnnotatable(node)) {
+      const aliased = aliasedStory(csf, bindings, node);
+      if (aliased) {
+        return reject({
+          code: 'aliased-story',
+          node: node!,
+          path: [],
+          message: `Cannot mutate story ${binding.exportName} because it is an alias of story ${aliased.exportName}`,
+        });
+      }
       return reject({
         code: 'unsupported-initializer',
         node: node ?? declaration,

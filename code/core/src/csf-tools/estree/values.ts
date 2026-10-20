@@ -45,9 +45,21 @@ const BABEL_ONLY_TYPES = new Set([
   'TSExpressionWithTypeArguments',
 ]);
 
-/** An object that is an AST node rather than data: a node type OXC or Babel produces. */
-export const isAstLike = (value: unknown): value is Node =>
-  isNode(value) && (Object.hasOwn(visitorKeys, value.type) || BABEL_ONLY_TYPES.has(value.type));
+// A node some parser made: a node type with a position, as offsets, `loc` or `range`, which a copy
+// of it keeps. An object built by hand has no position, so it is data, whatever its `type`.
+const isParsedNode = (value: unknown): value is Node => {
+  if (
+    !isNode(value) ||
+    !(Object.hasOwn(visitorKeys, value.type) || BABEL_ONLY_TYPES.has(value.type))
+  ) {
+    return false;
+  }
+  return (
+    (typeof value.start === 'number' && typeof value.end === 'number') ||
+    ('loc' in value && typeof value.loc === 'object' && value.loc !== null) ||
+    ('range' in value && Array.isArray(value.range))
+  );
+};
 
 // A member's value as `detachedSource`; methods become function expressions.
 export const valueSource = (editor: SourceEditor, member: Property) =>
@@ -75,12 +87,12 @@ export type CsfValue<Expression = never> =
   | readonly CsfValue<Expression>[]
   | { readonly [key: string]: CsfValue<Expression> };
 
-// The first node in `value` that no parse produced, which `printValue` would print as its fields.
+// The first node in `value` without the parse tag, which `printValue` would print as data.
 export const nodeWithoutParse = (value: unknown): Node | undefined => {
   if (typeof value !== 'object' || value === null || moduleOf(value)) {
     return undefined;
   }
-  if (isAstLike(value)) {
+  if (isParsedNode(value)) {
     return value;
   }
   for (const item of Object.values(value)) {

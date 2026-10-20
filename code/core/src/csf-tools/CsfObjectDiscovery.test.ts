@@ -94,6 +94,116 @@ describe('CsfObject discovery', () => {
     expect(csf.mutationDiagnostics).toEqual([]);
   });
 
+  describe('a CSF4 factory call without an argument', () => {
+    const source = [
+      `import preview from './preview';`,
+      `const meta = preview.meta();`,
+      `export const A = meta.story();`,
+      `export const B = A.extend();`,
+      ``,
+    ].join('\n');
+
+    it('is an empty object whose first write adds the argument', () => {
+      const csf = parse(source);
+      const [meta, a, b] = csf.objects();
+
+      expect(csf.mutationDiagnostics).toEqual([]);
+      expect(a.target).toEqual({ kind: 'story', exportName: 'A', localName: 'A' });
+      expect(a.node).toBeUndefined();
+      expect(a.inspect(['args', 'a'])).toEqual({ kind: 'missing' });
+      expect(a.set(['args', 'a'], 1)).toEqual({ ok: true, changed: true });
+      expect(b.set(['tags'], ['b'])).toEqual({ ok: true, changed: true });
+      expect(meta.set(['title'], 'Example')).toEqual({ ok: true, changed: true });
+      expect(a.getValue(['args'])).toEqual({ a: 1 });
+      expect(printCsf(csf).code).toBe(
+        [
+          `import preview from './preview';`,
+          `const meta = preview.meta({ title: 'Example' });`,
+          `export const A = meta.story({ args: { a: 1 } });`,
+          `export const B = A.extend({ tags: ['b'] });`,
+          ``,
+        ].join('\n')
+      );
+    });
+
+    it('lays the argument out one field per line when a field spans lines', () => {
+      const csf = parse(source);
+      const [, a] = csf.objects();
+
+      expect(a.set(['play'], parseExpression('async () => {\n  await step();\n}'))).toEqual({
+        ok: true,
+        changed: true,
+      });
+      expect(printCsf(csf).code).toContain(
+        [
+          `export const A = meta.story({`,
+          `  play: async () => {`,
+          `    await step();`,
+          `  },`,
+          `});`,
+        ].join('\n')
+      );
+    });
+
+    it('appends a second write in the same transaction to the argument the first one added', () => {
+      const csf = parse(source);
+      const [, a] = csf.objects();
+
+      const kept = csf.transaction(() => {
+        a.set(['args', 'a'], 1);
+        a.set(['parameters', 'layout'], 'centered');
+      });
+
+      expect(kept).toBe(true);
+      expect(printCsf(csf).code).toContain(
+        `export const A = meta.story({ args: { a: 1 }, parameters: { layout: 'centered' } });`
+      );
+    });
+
+    it('is left without an argument when the transaction that added it rolls back', () => {
+      const csf = parse(source);
+      const [, a] = csf.objects();
+
+      const kept = csf.transaction(() => {
+        a.set(['args', 'a'], 1);
+        return false;
+      });
+
+      expect(kept).toBe(false);
+      expect(csf.changed).toBe(false);
+      expect(a.inspect(['args'])).toEqual({ kind: 'missing' });
+      expect(printCsf(csf).code).toBe(source);
+    });
+  });
+
+  it.each([
+    ['two export specifiers', `const L = { args: {} };\nexport { L as A, L as B };`, 'A', 'B'],
+    [
+      'a declaration and a specifier',
+      `export const L = { args: {} };\nexport { L as A };`,
+      'L',
+      'A',
+    ],
+  ])(
+    'edits a story exported by %s under its first export and reports the other',
+    (_kind, code, first, other) => {
+      const csf = parse(`export default { title: 'Example' };\n${code}`);
+      const stories = csf.objects({ meta: false });
+
+      expect(csf.stories.map(({ name }) => name).sort()).toEqual([first, other].sort());
+      expect(stories.map((story) => story.target)).toEqual([
+        { kind: 'story', exportName: first, localName: 'L' },
+      ]);
+      expect(csf.mutationDiagnostics).toEqual([
+        expect.objectContaining({
+          code: 'aliased-story',
+          target: { kind: 'story', exportName: other, localName: 'L' },
+          message: `Cannot mutate ${other} without changing ${first}, which exports the same story`,
+        }),
+      ]);
+    }
+  );
+
   it('does not diagnose excluded direct exports or re-exports', () => {
     const direct = parse(`
       export default { title: 'Example', includeStories: ['Basic'] };
@@ -236,6 +346,114 @@ describe('CsfObject discovery', () => {
       ]);
     }
   );
+
+  describe('a story that is an alias of another story', () => {
+    const aliasDiagnostic = (exportName: string, aliased: string) =>
+      expect.objectContaining({
+        code: 'aliased-story',
+        target: { kind: 'story', exportName, localName: exportName },
+        path: [],
+        message: `Cannot mutate story ${exportName} because it is an alias of story ${aliased}`,
+      });
+
+    it.each(['Primary', 'Primary as Story', 'Primary satisfies Story'])(
+      'reports a story initialized with %s as an alias of Primary',
+      (initializer) => {
+        const csf = parse(`
+          export default { title: 'Example' };
+          export const Primary = { args: {} };
+          export const Secondary = ${initializer};
+        `);
+
+        csf.objects();
+
+        expect(csf.mutationDiagnostics).toEqual([aliasDiagnostic('Secondary', 'Primary')]);
+      }
+    );
+
+    it('reports every story of a chain of aliases as an alias of the story that holds the object', () => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        export const Primary = { args: {} };
+        export const Secondary = Primary;
+        export const Tertiary = Secondary as Story;
+      `);
+      csf.objects();
+
+      expect(csf.mutationDiagnostics).toEqual([
+        aliasDiagnostic('Secondary', 'Primary'),
+        aliasDiagnostic('Tertiary', 'Primary'),
+      ]);
+    });
+
+    it('names the export of the story it aliases', () => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        const Primary = { args: {} };
+        export { Primary as Main };
+        export const Secondary = Primary;
+      `);
+      csf.objects();
+
+      expect(csf.mutationDiagnostics).toEqual([aliasDiagnostic('Secondary', 'Main')]);
+    });
+
+    it('returns the aliased story once, as the story it aliases', () => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        export const Primary = { args: { label: 'Primary' } };
+        export const Secondary = Primary;
+        export const Tertiary = Secondary;
+      `);
+      const objects = csf.objects();
+
+      expect(objects.map(({ target }) => target)).toEqual([
+        { kind: 'meta' },
+        { kind: 'story', exportName: 'Primary', localName: 'Primary' },
+      ]);
+      expect(objects[1].set(['args', 'label'], 'Changed')).toEqual({ ok: true, changed: true });
+    });
+
+    it('does not follow a constant that is not a story, which could write to the story unseen', () => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        export const Primary = { args: {} };
+        const Shared = Primary;
+        Shared.args.label = 'A';
+        export const Secondary = Shared;
+      `);
+      csf.objects({ meta: false });
+
+      expect(csf.mutationDiagnostics).toEqual([
+        expect.objectContaining({
+          code: 'unsupported-initializer',
+          target: { kind: 'story', exportName: 'Secondary', localName: 'Secondary' },
+        }),
+      ]);
+    });
+
+    it.each([
+      ['a constant that is not a story', 'const base = { args: {} };', 'base'],
+      [
+        'an alias of a constant that is not a story',
+        'const base = {};\nconst Shared = base;',
+        'Shared',
+      ],
+      ['an imported story', "import { Primary } from './other.stories';", 'Primary'],
+      ['a reassigned binding', 'let Shared = {};\nShared = {};', 'Shared'],
+    ])('keeps unsupported-initializer for an initializer that names %s', (_kind, code, name) => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        ${code}
+        export const Basic = ${name};
+      `);
+
+      expect(csf.objects({ meta: false })).toEqual([]);
+      expect(csf.mutationDiagnostics).toEqual([
+        expect.objectContaining({ code: 'unsupported-initializer', path: [] }),
+      ]);
+    });
+  });
 
   describe('CSF2 annotation assignments', () => {
     const legacy = `export default { title: 'Example' };

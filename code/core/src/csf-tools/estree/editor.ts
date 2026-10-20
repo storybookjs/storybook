@@ -495,6 +495,10 @@ type ValueLayout = { indent: string };
 
 const spansLines = (texts: string[]) => texts.some((text) => text.includes('\n'));
 
+// A new object literal: on one line, unless a member spans lines.
+export const printObject = (members: string[], indent: string) =>
+  spansLines(members) ? printMembers(members, indent) : `{ ${members.join(', ')} }`;
+
 // A JS value as source, and a node of `get`, `parseExpression` or a file in it as `detachedTextOf`.
 export const printValue = (value: unknown, quote: string, layout?: ValueLayout): string => {
   if (value === undefined) {

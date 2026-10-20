@@ -1358,7 +1358,7 @@ describe('CsfObject', () => {
   });
 
   it.each([
-    ['meta without an argument', `const meta = preview.meta();`, { kind: 'meta' }],
+    ['meta with a call argument', `const meta = preview.meta(makeMeta());`, { kind: 'meta' }],
     [
       'identifier-backed story argument',
       `const meta = preview.meta({});\nconst config = { args: {} };\nexport const Basic = meta.story(config);`,
@@ -1441,15 +1441,14 @@ describe('CsfObject', () => {
     );
   });
 
-  it('reports a standalone CSF4 meta call without changing the source', () => {
-    const source = `import preview from './preview';\npreview.meta();`;
-    const csf = parse(source);
+  it('edits a standalone CSF4 meta call without an argument', () => {
+    const csf = parse(`import preview from './preview';\npreview.meta();`);
+    const [meta] = csf.objects({ meta: true, stories: false });
 
-    expect(csf.objects({ meta: true, stories: false })).toHaveLength(0);
-    expect(csf.mutationDiagnostics).toContainEqual(
-      expect.objectContaining({ code: 'unsupported-initializer', target: { kind: 'meta' } })
+    expect(meta.set(['title'], 'Example')).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(
+      `import preview from './preview';\npreview.meta({ title: 'Example' });`
     );
-    expect(printCsf(csf).code).toBe(source);
   });
 
   it('ignores non-story factory-shaped exports', () => {

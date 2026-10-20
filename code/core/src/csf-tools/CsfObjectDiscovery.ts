@@ -9,7 +9,13 @@ import {
   type CsfObjectTarget,
   createCsfObject,
 } from './CsfObject.ts';
-import { type MemberInsert, type ObjectRoot, detachedMember, literalRoot } from './ObjectRoot.ts';
+import {
+  type MemberInsert,
+  type ObjectRoot,
+  argumentRoot,
+  detachedMember,
+  literalRoot,
+} from './ObjectRoot.ts';
 import {
   type E,
   type Node,
@@ -26,7 +32,7 @@ import {
   insertStatementAfter,
   printKey,
   printMemberAccess,
-  printMembers,
+  printObject,
   removeStatements,
 } from './estree/editor.ts';
 import { placeableValueSource } from './estree/values.ts';
@@ -239,7 +245,14 @@ const discoverMeta = (csf: CsfFile, report: ReportDiagnostic): Discovered[] => {
     });
     return [];
   }
-  if (csf._metaNode && !csf._metaNodeIsSynthetic) {
+  const call = csf._metaIsFactory ? csf._metaFactoryCall : undefined;
+  const root =
+    csf._metaNode && !csf._metaNodeIsSynthetic
+      ? literalRoot(csf.editor, csf._metaNode)
+      : call?.arguments.length === 0
+        ? argumentRoot(csf.editor, call)
+        : undefined;
+  if (root) {
     const binding = csf._metaVariableName
       ? csf.editor.scopes.program.bindings.get(csf._metaVariableName)
       : undefined;
@@ -253,7 +266,7 @@ const discoverMeta = (csf: CsfFile, report: ReportDiagnostic): Discovered[] => {
       });
       return [];
     }
-    return [{ target: { kind: 'meta' }, root: literalRoot(csf.editor, csf._metaNode) }];
+    return [{ target: { kind: 'meta' }, root }];
   }
   if (csf._metaIsFactory && csf._metaFactoryCall) {
     report({
@@ -462,9 +475,7 @@ const storyRoot = (
         return;
       }
       const texts = members.map((member) => take(member, staticKey(member)!).text);
-      const value = texts.some((text) => text.includes('\n'))
-        ? printMembers(texts, editor.indent)
-        : `{ ${texts.join(', ')} }`;
+      const value = printObject(texts, editor.indent);
       const statements = statementsOf(members);
       removeStatements(editor, statements);
       assign([{ key, value, text: '' }], statements);
@@ -502,13 +513,13 @@ const discoverStories = (
       const argument = node.type === 'CallExpression' ? node.arguments[0] : undefined;
       const argumentNode =
         argument && argument.type !== 'SpreadElement' ? unwrapExpression(argument) : undefined;
-      if (
-        node.type === 'CallExpression' &&
-        isFactoryStory(csf, node) &&
-        node.arguments.length === 1 &&
-        argumentNode?.type === 'ObjectExpression'
-      ) {
-        return [{ target: storyTarget(binding), root: literalRoot(csf.editor, argumentNode) }];
+      if (node.type === 'CallExpression' && isFactoryStory(csf, node)) {
+        if (node.arguments.length === 0) {
+          return [{ target: storyTarget(binding), root: argumentRoot(csf.editor, node) }];
+        }
+        if (node.arguments.length === 1 && argumentNode?.type === 'ObjectExpression') {
+          return [{ target: storyTarget(binding), root: literalRoot(csf.editor, argumentNode) }];
+        }
       }
       report({
         code: 'unsupported-initializer',

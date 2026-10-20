@@ -14,7 +14,7 @@ import {
   type SourceEditor,
   detachedTextOf,
   printKey,
-  printMembers,
+  printObject,
   printValue,
 } from './estree/editor.ts';
 import {
@@ -106,7 +106,8 @@ export interface CsfObject {
   /**
    * Find the object literal this editor edits in the current parse. It is `undefined` for a config
    * made of named exports, for a story without an object literal, whose fields are all
-   * `Story.name = value` assignments, and once the object is gone. It is the file's own node, not
+   * `Story.name = value` assignments, for a CSF factory call without an argument until a write adds
+   * it, and once the object is gone. It is the file's own node, not
    * a copy: do not change it, and read it again after a mutation, which parses the file again.
    *
    * @example
@@ -841,21 +842,21 @@ class Editor implements CsfObjectEditor {
         const missing = containers.slice(index);
         const texts =
           'members' in content ? content.members.map((member) => member.text) : content.items;
-        // Comments travel with moved members; a line comment needs the object to span lines.
-        const multiline = texts.some((text) => text.includes('\n'));
-        const block = (members: string[]) =>
-          multiline ? printMembers(members, indent) : `{ ${members.join(', ')} }`;
         const forward = (depth: number, into: 'object' | 'array' = 'object') => {
           const spread = carriedSpread(carried.spread, missing.slice(0, depth + 1), quote, into);
           return spread ? [spread] : [];
         };
         const last = missing.length - 1;
+        // Comments travel with moved members; a line comment makes the object span lines.
         let nested =
           'members' in content
-            ? block([...forward(last), ...texts])
+            ? printObject([...forward(last), ...texts], indent)
             : `[${[...forward(last, 'array'), ...texts].join(', ')}]`;
         for (let depth = last - 1; depth >= 0; depth--) {
-          nested = block([...forward(depth), `${printKey(missing[depth + 1], quote)}: ${nested}`]);
+          nested = printObject(
+            [...forward(depth), `${printKey(missing[depth + 1], quote)}: ${nested}`],
+            indent
+          );
         }
         parent.append([{ key: name, value: nested, text: `${printKey(name, quote)}: ${nested}` }]);
         return;

@@ -5,7 +5,10 @@ import {
   appendMembers,
   groupMembers,
   prependMembers,
+  lineIndent,
   printKey,
+  printObject,
+  reindent,
   removeMembers,
   renameKey,
   renamedMemberText,
@@ -86,3 +89,32 @@ export const literalRoot = (editor: SourceEditor, object: E.ObjectExpression): O
     text: renamedMemberText(editor, object, member, printKey(key, editor.quote)),
   }),
 });
+
+const noMembers = (): never => {
+  throw new Error('CsfObject: a call without an argument has no members');
+};
+
+// The missing object argument of a call such as `meta.story()`. Its first member writes the object,
+// which the next parse finds as the call's argument.
+export const argumentRoot = (editor: SourceEditor, call: E.CallExpression): ObjectRoot => {
+  const write = (members: MemberInsert[]) => {
+    editor.assertCurrent(call);
+    const object = printObject(
+      members.map((member) => member.text),
+      editor.indent
+    );
+    const close = call.end - 1;
+    editor.edits.appendLeft(close, reindent(object, '', lineIndent(editor.code, close)));
+  };
+  return {
+    properties: [],
+    detached: false,
+    append: write,
+    prepend: write,
+    remove: noMembers,
+    replaceValue: noMembers,
+    rename: noMembers,
+    group: noMembers,
+    take: noMembers,
+  };
+};

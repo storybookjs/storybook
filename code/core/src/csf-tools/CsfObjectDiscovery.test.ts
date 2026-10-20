@@ -94,6 +94,88 @@ describe('CsfObject discovery', () => {
     expect(csf.mutationDiagnostics).toEqual([]);
   });
 
+  describe('a CSF4 factory call without an argument', () => {
+    const source = [
+      `import preview from './preview';`,
+      `const meta = preview.meta();`,
+      `export const A = meta.story();`,
+      `export const B = A.extend();`,
+      ``,
+    ].join('\n');
+
+    it('is an empty object whose first write adds the argument', () => {
+      const csf = parse(source);
+      const [meta, a, b] = csf.objects();
+
+      expect(csf.mutationDiagnostics).toEqual([]);
+      expect(a.target).toEqual({ kind: 'story', exportName: 'A', localName: 'A' });
+      expect(a.node).toBeUndefined();
+      expect(a.inspect(['args', 'a'])).toEqual({ kind: 'missing' });
+      expect(a.set(['args', 'a'], 1)).toEqual({ ok: true, changed: true });
+      expect(b.set(['tags'], ['b'])).toEqual({ ok: true, changed: true });
+      expect(meta.set(['title'], 'Example')).toEqual({ ok: true, changed: true });
+      expect(a.getValue(['args'])).toEqual({ a: 1 });
+      expect(printCsf(csf).code).toBe(
+        [
+          `import preview from './preview';`,
+          `const meta = preview.meta({ title: 'Example' });`,
+          `export const A = meta.story({ args: { a: 1 } });`,
+          `export const B = A.extend({ tags: ['b'] });`,
+          ``,
+        ].join('\n')
+      );
+    });
+
+    it('lays the argument out one field per line when a field spans lines', () => {
+      const csf = parse(source);
+      const [, a] = csf.objects();
+
+      expect(a.set(['play'], parseExpression('async () => {\n  await step();\n}'))).toEqual({
+        ok: true,
+        changed: true,
+      });
+      expect(printCsf(csf).code).toContain(
+        [
+          `export const A = meta.story({`,
+          `  play: async () => {`,
+          `    await step();`,
+          `  },`,
+          `});`,
+        ].join('\n')
+      );
+    });
+
+    it('appends a second write in the same transaction to the argument the first one added', () => {
+      const csf = parse(source);
+      const [, a] = csf.objects();
+
+      const kept = csf.transaction(() => {
+        a.set(['args', 'a'], 1);
+        a.set(['parameters', 'layout'], 'centered');
+      });
+
+      expect(kept).toBe(true);
+      expect(printCsf(csf).code).toContain(
+        `export const A = meta.story({ args: { a: 1 }, parameters: { layout: 'centered' } });`
+      );
+    });
+
+    it('is left without an argument when the transaction that added it rolls back', () => {
+      const csf = parse(source);
+      const [, a] = csf.objects();
+
+      const kept = csf.transaction(() => {
+        a.set(['args', 'a'], 1);
+        return false;
+      });
+
+      expect(kept).toBe(false);
+      expect(csf.changed).toBe(false);
+      expect(a.inspect(['args'])).toEqual({ kind: 'missing' });
+      expect(printCsf(csf).code).toBe(source);
+    });
+  });
+
   it('does not diagnose excluded direct exports or re-exports', () => {
     const direct = parse(`
       export default { title: 'Example', includeStories: ['Basic'] };

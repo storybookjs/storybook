@@ -53,7 +53,7 @@ export const ArgTypeInference = {
     // runs that second pass in `mergeServiceArgTypes`, so the preview canvas never sees types
     // inferred from args.
     if (globalThis.FEATURES?.docgenServer) {
-      expect(argTypes.a).toBeUndefined();
+      await expect(argTypes.a).toBeUndefined();
       await expect(argTypes).toMatchObject({
         componentArg: { type: { name: 'string' } },
         storyArg: { type: { name: 'string' } },
@@ -73,7 +73,7 @@ export const ArgTypeInference = {
 
 export const HiddenFromPlay = {
   play: async (context: PlayFunctionContext<any>) => {
-    expect('argTypes' in context).toBe(false);
-    expect(() => context.argTypes).toThrow(/no longer part of the story context/);
+    await expect('argTypes' in context).toBe(false);
+    await expect(() => context.argTypes).toThrow(/no longer part of the story context/);
   },
 };

@@ -188,6 +188,16 @@ describe('CsfObject', () => {
     }
   );
 
+  it.each(['toString', 'hasOwnProperty', 'constructor'])(
+    'writes a config value whose type %s is an Object.prototype key as data',
+    (type) => {
+      const config = loadConfig(`export default { a: 'x' };`).parse();
+
+      expect(config.set(['b'], { type })).toEqual({ ok: true, changed: true });
+      expect(printConfig(config).code).toBe(`export default { a: 'x', b: { type: '${type}' } };`);
+    }
+  );
+
   it('places copied expressions so the surrounding code survives', () => {
     const csf = parse(`export default { a: (1, 2) };\nexport const B = { b: 0 };`);
     const [meta, story] = csf.objects();
@@ -962,6 +972,33 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toBe(source);
   });
 
+  it.each([
+    {
+      reason: 'into a value that is not an object',
+      code: 'unsupported-member',
+      source: `export default { parameters: { docs: true, subtitle: 'New' } };`,
+    },
+    {
+      reason: 'past a spread of a call',
+      code: 'spread-field',
+      source: `export default { parameters: { ...getBase(), subtitle: 'New' } };`,
+    },
+    {
+      reason: 'past a computed key',
+      code: 'dynamic-key',
+      source: `export default { parameters: { [key]: {}, subtitle: 'New' } };`,
+    },
+  ])('leaves the file byte-identical when a move $reason is refused', ({ source, code }) => {
+    const csf = parse(source);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.move(['parameters', 'subtitle'], ['parameters', 'docs', 'subtitle'])).toMatchObject(
+      { ok: false, changed: false, diagnostic: { code } }
+    );
+    expect(csf.changed).toBe(false);
+    expect(printCsf(csf).code).toBe(source);
+  });
+
   it('rejects moving a field below itself without changing the source', () => {
     const source = `export default { parameters: { docs: { source: true } } };`;
     const csf = parse(source);
@@ -1005,6 +1042,19 @@ describe('CsfObject', () => {
 
     expect(meta.remove(['parameters', '1'])).toEqual({ ok: true, changed: true });
     expect(printCsf(csf).code).not.toContain(`1: 'one'`);
+  });
+
+  it('reads and writes a non-ASCII key of a story as an identifier key', () => {
+    const csf = parse(`export default {};\nexport const A = { args: { ñame: 'a' } };`);
+    const [story] = csf.objects({ meta: false });
+
+    expect(story.getValue(['args', 'ñame'])).toBe('a');
+    expect(story.set(['args', 'ñandú'], 'b')).toEqual({ ok: true, changed: true });
+    expect(story.set(['parameters'], { ñame: 1, 'a-b': 2 })).toEqual({ ok: true, changed: true });
+    expect(textOf(story.get(['args'])!)).toBe(`{ ñame: 'a', ñandú: 'b' }`);
+    expect(printCsf(csf).code).toBe(
+      `export default {};\nexport const A = { args: { ñame: 'a', ñandú: 'b' }, parameters: { ñame: 1, 'a-b': 2 } };`
+    );
   });
 
   it('rejects reassigned direct exports', () => {

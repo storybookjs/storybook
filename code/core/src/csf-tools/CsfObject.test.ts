@@ -2266,6 +2266,20 @@ describe('CsfObject append and prepend', () => {
     ).toBe("export default {\n  addons: [\n    'b',\n    'a',\n  ],\n};");
   });
 
+  it('re-indents a multi-line node from its own line, at the indent of the array', () => {
+    const source = 'export default {\n  a: [\n    [\n      1,\n    ],\n  ],\n  list: [],\n};';
+    const output =
+      'export default {\n  a: [\n    [\n      1,\n    ],\n  ],\n  list: [\n    [\n      1,\n    ],\n  ],\n};';
+    // A child of a `get` node keeps the indent of its line in that node.
+    const childOfGet = (config: ConfigFile) => {
+      const array = config.get(['a']);
+      return (array?.type === 'ArrayExpression' ? array.elements[0] : array) as CsfExpression;
+    };
+
+    expect(edit(source, (config) => config.append(['list'], config.get(['a', 0])!))).toBe(output);
+    expect(edit(source, (config) => config.append(['list'], childOfGet(config)))).toBe(output);
+  });
+
   it('adds an element next to a spread, which keeps its place', () => {
     const source = "export default { addons: [...base.addons], framework: 'f' };";
 

@@ -987,6 +987,22 @@ describe('ConfigFile', () => {
 
       expect(printConfig(config).code).toBe(output);
     });
+
+    it('re-indents a multi-line node from its own line, at the indent of the array', () => {
+      const source = 'export default {\n  a: [\n    [\n      1,\n    ],\n  ],\n  list: [],\n};';
+      const output =
+        'export default {\n  a: [\n    [\n      1,\n    ],\n  ],\n  list: [\n    [\n      1,\n    ],\n  ],\n};';
+      const config = loadConfig(source).parse();
+      const array = config.get(['a']);
+      expect(array?.type).toBe('ArrayExpression');
+      const child = array?.type === 'ArrayExpression' ? array.elements[0] : undefined;
+
+      expect(config.appendNodeToArray(['list'], child as CsfExpression)).toEqual({
+        ok: true,
+        changed: true,
+      });
+      expect(printConfig(config).code).toBe(output);
+    });
   });
 
   it('removes a field of a multi-declarator export through remove, keeping its siblings', () => {

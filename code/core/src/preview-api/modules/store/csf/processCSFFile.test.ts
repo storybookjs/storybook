@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { hasCoreAnnotations } from '../../../../csf/core-annotations.ts';
-import { definePreview } from '../../../../csf/csf-factories.ts';
+import { definePreview, getStoryChildren } from '../../../../csf/csf-factories.ts';
 import { processCSFFile } from './processCSFFile.ts';
 
 it('returns a CSFFile object with meta and stories', () => {
@@ -154,6 +154,32 @@ describe('CSF4 factory files', () => {
     // them bypass the (potentially doubled) store-level projectAnnotations.
     expect(csfFile.projectAnnotations).toBe(preview.composed);
     expect(hasCoreAnnotations(csfFile.projectAnnotations)).toBe(true);
+  });
+
+  it('reads the inputs that experimental_storyInput derives', () => {
+    const preview = definePreview({
+      addons: [],
+      renderToCanvas: () => {},
+      experimental_storyInput: (input) => ({
+        ...input,
+        parameters: { ...input.parameters, derived: true },
+      }),
+    });
+    const meta = preview.meta({ title: 'Component' });
+    const Primary = meta.story();
+    Primary.test('a test', () => {});
+
+    const { stories } = processCSFFile(
+      { default: meta, Primary },
+      './path/to/component.js',
+      'Component'
+    );
+
+    expect(stories['component--primary'].parameters).toMatchObject({ derived: true });
+    expect(stories['component--primary:a-test'].parameters).toMatchObject({ derived: true });
+    expect(getStoryChildren(Primary)[0].input.parameters).toMatchObject({
+      __id: 'component--primary:a-test',
+    });
   });
 });
 

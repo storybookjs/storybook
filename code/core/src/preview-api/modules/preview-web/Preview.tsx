@@ -35,7 +35,6 @@ import type {
   PreparedStory,
   ProjectAnnotations,
   RenderContextCallbacks,
-  RenderToCanvas,
   Renderer,
   SetGlobalsPayload,
   StoryId,
@@ -55,12 +54,22 @@ const { fetch } = global;
 
 const STORY_INDEX_PATH = './index.json';
 
+function resolveStoryIndexUrl() {
+  // No document to resolve against, like in React Native
+  if (typeof document === 'undefined') {
+    return STORY_INDEX_PATH;
+  }
+  try {
+    return new URL(STORY_INDEX_PATH, document.baseURI).href;
+  } catch {
+    return STORY_INDEX_PATH;
+  }
+}
+
 export type MaybePromise<T> = Promise<T> | T;
 
 export class Preview<TRenderer extends Renderer> {
   protected storyStoreValue?: StoryStore<TRenderer>;
-
-  renderToCanvas?: RenderToCanvas<TRenderer>;
 
   storyRenders: StoryRender<TRenderer>[] = [];
 
@@ -77,6 +86,9 @@ export class Preview<TRenderer extends Renderer> {
   protected resolveStoreInitializationPromise!: () => void;
 
   protected rejectStoreInitializationPromise!: (err: Error) => void;
+
+  // Resolved once, because a story can change the URL of the preview to a page of the app
+  private storyIndexUrl = resolveStoryIndexUrl();
 
   constructor(
     public importFn: ModuleImportFn,
@@ -163,9 +175,7 @@ export class Preview<TRenderer extends Renderer> {
         await this.getProjectAnnotations(),
       ]);
 
-      this.renderToCanvas = projectAnnotations.renderToCanvas;
-
-      if (!this.renderToCanvas) {
+      if (!projectAnnotations.renderToCanvas) {
         throw new MissingRenderToCanvasError();
       }
 
@@ -201,7 +211,7 @@ export class Preview<TRenderer extends Renderer> {
   }
 
   async getStoryIndexFromServer() {
-    const result = await fetch(STORY_INDEX_PATH);
+    const result = await fetch(this.storyIndexUrl);
     if (result.status === 200) {
       return result.json() as any as StoryIndex;
     }
@@ -440,7 +450,7 @@ export class Preview<TRenderer extends Renderer> {
     callbacks: RenderContextCallbacks<TRenderer>,
     options: StoryRenderOptions
   ) {
-    if (!this.renderToCanvas || !this.storyStoreValue) {
+    if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({
         methodName: 'renderStoryToElement',
       });
@@ -449,7 +459,6 @@ export class Preview<TRenderer extends Renderer> {
     const render = new StoryRender<TRenderer>(
       this.channel,
       this.storyStoreValue,
-      this.renderToCanvas,
       callbacks,
       story.id,
       'docs',

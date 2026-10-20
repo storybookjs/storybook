@@ -1,6 +1,6 @@
 import { basename } from 'node:path';
 
-import type { UserConfig } from 'vite';
+import type { DepOptimizationOptions, UserConfig } from 'vite';
 import { version } from 'vite';
 
 // TODO: Remove once support for Vite < 8 is dropped
@@ -29,6 +29,41 @@ export function ensureRolldownOptions(config: UserConfig) {
   const rolldown = (config.build.rolldownOptions ??= {});
   const output = (rolldown.output ??= {});
   output.strictExecutionOrder = true;
+}
+
+type EsbuildPlugin = NonNullable<
+  NonNullable<DepOptimizationOptions['esbuildOptions']>['plugins']
+>[number];
+
+/**
+ * Dependency optimizer options that resolve the ids `filter` matches with `resolve`. Pre-bundling
+ * runs esbuild before Vite 8 and Rolldown from Vite 8, and resolves with `resolve.alias` and the
+ * optimizer's own plugins, not with the environment's Vite plugins.
+ */
+// TODO: Remove the esbuild plugin once support for Vite < 8 is dropped
+export function depOptimizerResolveOptions(
+  name: string,
+  filter: RegExp,
+  resolve: (id: string) => string | undefined
+): DepOptimizationOptions {
+  if (shouldUseRolldownOptions()) {
+    return {
+      // @ts-expect-error - rolldownOptions will only exist with Vite 8+
+      rolldownOptions: {
+        plugins: [{ name, resolveId: { filter: { id: filter }, handler: resolve } }],
+      },
+    };
+  }
+  const plugin: EsbuildPlugin = {
+    name,
+    setup(build) {
+      build.onResolve({ filter }, ({ path }) => {
+        const resolved = resolve(path);
+        return resolved ? { path: resolved } : undefined;
+      });
+    },
+  };
+  return { esbuildOptions: { plugins: [plugin] } };
 }
 
 // Headroom under the ~1MB response limit.

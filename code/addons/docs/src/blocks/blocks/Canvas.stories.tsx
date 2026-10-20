@@ -50,6 +50,14 @@ export const OfUnattached: Story = {
   parameters: { attached: false },
 };
 
+// The story's CSF file is not one this docs entry imports (see `relativeCsfPaths`).
+export const ById: Story = {
+  args: {
+    id: 'addons-docs-examples-stories-for-the-story-block--inline-false',
+    sourceState: 'shown',
+  },
+};
+
 export const OfError: Story = {
   args: {
     of: ButtonStories.ErrorStory,

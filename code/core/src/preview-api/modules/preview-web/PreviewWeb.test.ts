@@ -18,13 +18,16 @@ import {
   STORY_ARGS_UPDATED,
   STORY_CHANGED,
   STORY_ERRORED,
+  STORY_HOT_UPDATED,
   STORY_MISSING,
   STORY_PREPARED,
   STORY_RENDERED,
+  STORY_RENDER_PHASE_CHANGED,
   STORY_SPECIFIED,
   STORY_THREW_EXCEPTION,
   STORY_UNCHANGED,
   UPDATE_GLOBALS,
+  UPDATE_QUERY_PARAMS,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
 import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
@@ -34,8 +37,10 @@ import { global } from '@storybook/global';
 
 import { toMerged } from 'es-toolkit/object';
 
+import { definePreview } from '../../../csf/csf-factories.ts';
 import { addons } from '../addons/index.ts';
 import type { StoryStore } from '../store/index.ts';
+import { Preview } from './Preview.tsx';
 import { PreviewWeb } from './PreviewWeb.tsx';
 import {
   componentOneExports,
@@ -71,7 +76,7 @@ vi.mock('@storybook/global', async (importOriginal) => ({
         search: '?id=*',
       },
     },
-    fetch: async () => mockFetchResult,
+    fetch: vi.fn(async () => mockFetchResult),
   },
 }));
 
@@ -682,6 +687,19 @@ describe('PreviewWeb', () => {
         expect(componentOneExports.a.play).toHaveBeenCalled();
       });
 
+      it('does not execute playFunction when the URL says autoplay=false', async () => {
+        document.location.search = '?id=component-one--a&autoplay=false';
+        window.history.replaceState({}, '', `/iframe.html${document.location.search}`);
+        try {
+          await createAndRenderPreview();
+        } finally {
+          window.history.replaceState({}, '', '/');
+        }
+
+        expect(projectAnnotations.renderToCanvas).toHaveBeenCalled();
+        expect(componentOneExports.a.play).not.toHaveBeenCalled();
+      });
+
       it('emits STORY_RENDERED', async () => {
         document.location.search = '?id=component-one--a';
         await createAndRenderPreview();
@@ -831,6 +849,244 @@ describe('PreviewWeb', () => {
 
         expect(mockChannel.emit).toHaveBeenCalledWith(DOCS_RENDERED, 'component-one--docs');
       });
+    });
+  });
+
+  describe('a CSF Next file with its own preview', () => {
+    const fileRenderToCanvas = vi.fn();
+    const fileMeta = definePreview({ render: vi.fn(), renderToCanvas: fileRenderToCanvas }).meta({
+      title: 'Component One',
+    });
+    const fileExports = { default: fileMeta, a: fileMeta.story() };
+    const csfNextImportFn = vi.fn(async (path: string) =>
+      path === './src/ComponentOne.stories.js' ? fileExports : importFn(path)
+    );
+
+    beforeEach(() => {
+      fileRenderToCanvas.mockReset();
+    });
+
+    it("renders a story in the canvas with its preview's renderToCanvas", async () => {
+      document.location.search = '?id=component-one--a';
+
+      await createAndRenderPreview({ importFn: csfNextImportFn });
+
+      expect(fileRenderToCanvas).toHaveBeenCalledOnce();
+      expect(fileRenderToCanvas.mock.calls[0][0].storyContext.id).toBe('component-one--a');
+      expect(projectAnnotations.renderToCanvas).not.toHaveBeenCalled();
+    });
+
+    it("renders a story in docs with its preview's renderToCanvas", async () => {
+      document.location.search = '?id=component-two--c';
+      const preview = await createAndRenderPreview({ importFn: csfNextImportFn });
+      projectAnnotations.renderToCanvas.mockClear();
+
+      // @ts-expect-error Ignore protected property
+      const story = await (preview.storyStoreValue as StoryStore<Renderer>).loadStory({
+        storyId: 'component-one--a',
+      });
+      const callbacks = { showMain: vi.fn(), showError: vi.fn(), showException: vi.fn() };
+      preview.renderStoryToElement(story, 'story-element' as any, callbacks, {});
+
+      await vi.waitFor(() => {
+        expect(fileRenderToCanvas).toHaveBeenCalledWith(
+          expect.objectContaining({ id: 'component-one--a' }),
+          'story-element'
+        );
+      });
+      expect(projectAnnotations.renderToCanvas).not.toHaveBeenCalled();
+    });
+
+    it("renders a CSF 3 story with the project's renderToCanvas", async () => {
+      document.location.search = '?id=component-two--c';
+
+      await createAndRenderPreview({ importFn: csfNextImportFn });
+
+      expect(projectAnnotations.renderToCanvas).toHaveBeenCalledOnce();
+      expect(fileRenderToCanvas).not.toHaveBeenCalled();
+    });
+
+    it("renders with the project's renderToCanvas when its preview has none", async () => {
+      document.location.search = '?id=component-one--a';
+      const bareMeta = definePreview({ render: vi.fn() }).meta({ title: 'Component One' });
+      const bareExports = { default: bareMeta, a: bareMeta.story() };
+
+      await createAndRenderPreview({
+        importFn: async (path: string) =>
+          path === './src/ComponentOne.stories.js' ? bareExports : importFn(path),
+      });
+
+      expect(projectAnnotations.renderToCanvas).toHaveBeenCalledOnce();
+      expect(projectAnnotations.renderToCanvas.mock.calls[0][0].storyContext.id).toBe(
+        'component-one--a'
+      );
+    });
+  });
+
+  describe('a story that owns the document', () => {
+    const documentImportFn = vi.fn(async (path: string) =>
+      path === './src/ComponentOne.stories.js'
+        ? {
+            ...componentOneExports,
+            a: { ...componentOneExports.a, parameters: { layout: 'document' } },
+          }
+        : importFn(path)
+    );
+    // The real document: the mocked global's has no body.
+    const realDocument = globalThis.document;
+
+    it('passes the body its render left to play, marked as the story root', async () => {
+      document.location.search = '?id=component-one--a';
+      const body = realDocument.createElement('body');
+      projectAnnotations.renderToCanvas.mockImplementationOnce(async () => {
+        realDocument.documentElement.replaceChild(body, realDocument.body);
+        return teardownrenderToCanvas;
+      });
+
+      await createAndRenderPreview({ importFn: documentImportFn });
+
+      expect(componentOneExports.a.play).toHaveBeenCalledWith(
+        expect.objectContaining({ canvasElement: body })
+      );
+      expect(body.id).toBe('storybook-root');
+    });
+
+    it('keeps the preparing block until its renderer shows main', async () => {
+      document.location.search = '?id=component-one--a';
+      const [gate, openGate] = createGate();
+      projectAnnotations.renderToCanvas.mockImplementationOnce(async ({ showMain }) => {
+        await gate;
+        showMain();
+        return teardownrenderToCanvas;
+      });
+
+      const preview = new PreviewWeb(documentImportFn, getProjectAnnotations);
+      await preview.ready();
+      await waitForRenderPhase('rendering');
+      expect(preview.view.showPreparingStory).toHaveBeenCalled();
+      expect(preview.view.showMain).not.toHaveBeenCalled();
+
+      openGate();
+      await waitForRender();
+      expect(preview.view.showMain).toHaveBeenCalledOnce();
+    });
+
+    describe('when another story is selected', () => {
+      const importLayouts = (layouts: { a?: string; b?: string }) =>
+        vi.fn(async (path: string) =>
+          path === './src/ComponentOne.stories.js'
+            ? toMerged(componentOneExports, {
+                a: { parameters: { layout: layouts.a } },
+                b: { parameters: { layout: layouts.b } },
+              })
+            : importFn(path)
+        );
+
+      // The preparing blocks, the teardown and the error display, in order, from selecting a story
+      // until it rendered.
+      const select = async (
+        preview: PreviewWeb<Renderer>,
+        storyId = 'component-one--b',
+        viewMode = 'story'
+      ) => {
+        const { showPreparingStory, showPreparingDocs, showErrorDisplay } = vi.mocked(preview.view);
+        [showPreparingStory, showPreparingDocs, showErrorDisplay].forEach((fn) => fn.mockClear());
+        mockChannel.emit.mockClear();
+
+        emitter.emit(SET_CURRENT_STORY, { storyId, viewMode });
+        await waitForRender();
+
+        const named = (
+          { mock }: { mock: { calls: unknown[][]; invocationCallOrder: number[] } },
+          name: (args: any[]) => string
+        ) =>
+          mock.calls.map((args, i): [number, string] => [mock.invocationCallOrder[i], name(args)]);
+        const delay = ([options]: any[]) => (options?.immediate ? 'at once' : 'after the delay');
+        return [
+          ...named(showPreparingStory, (args) => `preparing story ${delay(args)}`),
+          ...named(showPreparingDocs, (args) => `preparing docs ${delay(args)}`),
+          ...named(teardownrenderToCanvas, () => 'teardown'),
+          ...named(showErrorDisplay, () => 'error'),
+        ]
+          .sort(([x], [y]) => x - y)
+          .map(([, event]) => event);
+      };
+
+      it.each([
+        ['a page to a page', { a: 'document', b: 'document' }],
+        ['a component to a page', { b: 'document' }],
+        ['a page to a component', { a: 'document' }],
+      ])('shows the preparing block at once before the teardown, from %s', async (_, layouts) => {
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview({ importFn: importLayouts(layouts) });
+
+        expect(await select(preview)).toEqual([
+          'preparing story after the delay',
+          'preparing story at once',
+          'teardown',
+        ]);
+      });
+
+      it('keeps the delay from a component to a component', async () => {
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview({ importFn: importLayouts({}) });
+
+        expect(await select(preview)).toEqual(['preparing story after the delay', 'teardown']);
+      });
+
+      it('shows the docs block, not the story block, from a page to docs', async () => {
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview({
+          importFn: importLayouts({ a: 'document' }),
+        });
+
+        expect(await select(preview, 'component-one--docs', 'docs')).toEqual([
+          'preparing docs at once',
+          'teardown',
+        ]);
+      });
+
+      it('ends on the error display when the page fails to render', async () => {
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview({
+          importFn: importLayouts({ b: 'document' }),
+        });
+        projectAnnotations.renderToCanvas.mockRejectedValueOnce(new Error('render failed'));
+
+        expect(await select(preview)).toEqual([
+          'preparing story after the delay',
+          'preparing story at once',
+          'teardown',
+          'error',
+        ]);
+      });
+
+      it('shows no preparing block when the same story renders again', async () => {
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview({
+          importFn: importLayouts({ a: 'document' }),
+        });
+        vi.mocked(preview.view.showPreparingStory).mockClear();
+        mockChannel.emit.mockClear();
+
+        preview.onStoriesChanged({ importFn: importLayouts({ a: 'document' }) });
+        await waitForRender();
+
+        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(2);
+        expect(preview.view.showPreparingStory).not.toHaveBeenCalled();
+      });
+    });
+
+    it('takes the mark back when another story is selected', async () => {
+      document.location.search = '?id=component-one--a';
+      await createAndRenderPreview({ importFn: documentImportFn });
+      const { body } = realDocument;
+
+      mockChannel.emit.mockClear();
+      emitter.emit(SET_CURRENT_STORY, { storyId: 'component-one--b', viewMode: 'story' });
+      await waitForRender();
+
+      expect(body).not.toHaveAttribute('id');
     });
   });
 
@@ -1704,6 +1960,255 @@ describe('PreviewWeb', () => {
     });
   });
 
+  describe('a story with layout document', () => {
+    const documentStoryImportFn = vi.fn(async (path: string) =>
+      path === './src/ComponentOne.stories.js'
+        ? {
+            ...componentOneExports,
+            a: { ...componentOneExports.a, parameters: { layout: 'document' } },
+          }
+        : importFn(path)
+    );
+    // While it is mounted, the story has moved `location` to a page of its own.
+    const openPage = () =>
+      Object.assign(document.location, { pathname: '/notes', search: '?q=page', hash: '#page' });
+
+    let windowReplaceState: ReturnType<typeof vi.spyOn>;
+    beforeEach(() => {
+      windowReplaceState = vi.spyOn(window.history, 'replaceState').mockImplementation(() => {});
+    });
+    afterEach(() => {
+      windowReplaceState.mockRestore();
+      vi.unstubAllGlobals();
+      Object.assign(document.location, { pathname: 'pathname', search: '', hash: undefined });
+    });
+
+    it('writes its URL at the first render', async () => {
+      document.location.search = '?id=component-one--a';
+      await createAndRenderPreview({ importFn: documentStoryImportFn });
+
+      expect(history.replaceState).toHaveBeenCalledWith(
+        {},
+        '',
+        'pathname?id=component-one--a&viewMode=story'
+      );
+    });
+
+    it('writes no URL on an args change or a globals change while it is mounted', async () => {
+      document.location.search = '?id=component-one--a';
+      await createAndRenderPreview({ importFn: documentStoryImportFn });
+      openPage();
+      vi.mocked(history.replaceState).mockClear();
+      mockChannel.emit.mockClear();
+
+      emitter.emit(UPDATE_STORY_ARGS, { storyId: 'component-one--a', updatedArgs: { foo: 'x' } });
+      emitter.emit(UPDATE_QUERY_PARAMS, { args: 'foo:x' });
+      await waitForRender();
+      mockChannel.emit.mockClear();
+      emitter.emit(UPDATE_GLOBALS, { globals: { a: 'c' } });
+      emitter.emit(UPDATE_QUERY_PARAMS, { globals: 'a:c' });
+      await waitForRender();
+
+      expect(history.replaceState).not.toHaveBeenCalled();
+      expect(windowReplaceState).not.toHaveBeenCalled();
+    });
+
+    it("writes the selected story's URL once after its teardown, without the page's query and hash", async () => {
+      document.location.search = '?id=component-one--a';
+      await createAndRenderPreview({ importFn: documentStoryImportFn });
+      openPage();
+      vi.mocked(history.replaceState).mockClear();
+      mockChannel.emit.mockClear();
+      const [gate, openGate] = createGate();
+      teardownrenderToCanvas.mockImplementation(() => gate);
+
+      emitter.emit(SET_CURRENT_STORY, { storyId: 'component-one--b', viewMode: 'story' });
+      emitter.emit(UPDATE_QUERY_PARAMS, { args: 'foo:x', globals: 'a:c' });
+      await vi.waitFor(() => expect(teardownrenderToCanvas).toHaveBeenCalled());
+
+      expect(history.replaceState).not.toHaveBeenCalled();
+      expect(windowReplaceState).not.toHaveBeenCalled();
+      expect(document.title).toBe('component-one--a');
+
+      openGate();
+      await waitForRender();
+
+      // The store is the one writer of `location`.
+      expect(windowReplaceState).not.toHaveBeenCalled();
+      expect(history.replaceState).toHaveBeenCalledOnce();
+      expect(history.replaceState).toHaveBeenCalledWith(
+        {},
+        '',
+        'pathname?id=component-one--b&viewMode=story&args=foo%3Ax&globals=a%3Ac'
+      );
+      expect(document.title).toBe('component-one--b');
+    });
+
+    it('writes nothing while it is mounted when a selection is replaced while it prepares', async () => {
+      document.location.search = '?id=component-one--a';
+      const [importGate, openImportGate] = createGate();
+      const gatedImportFn = vi.fn(async (path: string) => {
+        if (path === './src/ComponentTwo.stories.js') {
+          await importGate;
+        }
+        return documentStoryImportFn(path);
+      });
+      await createAndRenderPreview({ importFn: gatedImportFn });
+      openPage();
+      vi.mocked(history.replaceState).mockClear();
+      mockChannel.emit.mockClear();
+      const [teardownGate, openTeardownGate] = createGate();
+      teardownrenderToCanvas.mockImplementation(() => teardownGate);
+
+      emitter.emit(SET_CURRENT_STORY, { storyId: 'component-two--c', viewMode: 'story' });
+      await vi.waitFor(() =>
+        expect(gatedImportFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js')
+      );
+      emitter.emit(SET_CURRENT_STORY, { storyId: 'component-one--b', viewMode: 'story' });
+      await vi.waitFor(() => expect(teardownrenderToCanvas).toHaveBeenCalled());
+
+      expect(history.replaceState).not.toHaveBeenCalled();
+      expect(windowReplaceState).not.toHaveBeenCalled();
+
+      openTeardownGate();
+      openImportGate();
+      await waitForRender();
+
+      expect(windowReplaceState).not.toHaveBeenCalled();
+      expect(history.replaceState).toHaveBeenCalledOnce();
+      expect(history.replaceState).toHaveBeenCalledWith(
+        {},
+        '',
+        'pathname?id=component-one--b&viewMode=story'
+      );
+    });
+
+    it('keeps `location` lent across an HMR re-render of the story', async () => {
+      document.location.search = '?id=component-one--a';
+      const preview = await createAndRenderPreview({ importFn: documentStoryImportFn });
+      openPage();
+      vi.mocked(history.replaceState).mockClear();
+      mockChannel.emit.mockClear();
+
+      const editedImportFn = vi.fn(async (path: string) =>
+        path === './src/ComponentOne.stories.js'
+          ? {
+              ...componentOneExports,
+              a: {
+                ...componentOneExports.a,
+                args: { foo: 'edited' },
+                parameters: { layout: 'document' },
+              },
+            }
+          : importFn(path)
+      );
+      preview.onStoriesChanged({ importFn: editedImportFn });
+      await waitForRender();
+      mockChannel.emit.mockClear();
+      emitter.emit(UPDATE_STORY_ARGS, { storyId: 'component-one--a', updatedArgs: { foo: 'x' } });
+      emitter.emit(UPDATE_QUERY_PARAMS, { args: 'foo:x' });
+      await waitForRender();
+
+      expect(projectAnnotations.renderToCanvas).toHaveBeenCalledWith(
+        expect.objectContaining({
+          storyContext: expect.objectContaining({
+            args: expect.objectContaining({ foo: 'edited' }),
+          }),
+        }),
+        globalThis.document.body
+      );
+      expect(history.replaceState).not.toHaveBeenCalled();
+      expect(windowReplaceState).not.toHaveBeenCalled();
+    });
+
+    it('writes once on a remount, and lends `location` to the story again', async () => {
+      document.location.search = '?id=component-one--a';
+      await createAndRenderPreview({ importFn: documentStoryImportFn });
+      openPage();
+      vi.mocked(history.replaceState).mockClear();
+      mockChannel.emit.mockClear();
+
+      emitter.emit(FORCE_REMOUNT, { storyId: 'component-one--a' });
+      await waitForRender();
+
+      expect(history.replaceState).toHaveBeenCalledOnce();
+      expect(history.replaceState).toHaveBeenCalledWith(
+        {},
+        '',
+        'pathname?id=component-one--a&viewMode=story'
+      );
+
+      openPage();
+      vi.mocked(history.replaceState).mockClear();
+      mockChannel.emit.mockClear();
+      emitter.emit(UPDATE_STORY_ARGS, { storyId: 'component-one--a', updatedArgs: { foo: 'x' } });
+      emitter.emit(UPDATE_QUERY_PARAMS, { args: 'foo:x' });
+      await waitForRender();
+
+      expect(history.replaceState).not.toHaveBeenCalled();
+    });
+
+    it("writes the selected story's URL before the reload when its teardown cannot finish", async () => {
+      const reload = vi.fn();
+      vi.stubGlobal('location', { href: window.location.href, reload });
+      const [playGate] = createGate();
+      componentOneExports.a.play.mockImplementationOnce(async () => playGate);
+      document.location.search = '?id=component-one--a';
+      await new PreviewWeb(documentStoryImportFn, getProjectAnnotations).ready();
+      await waitForRenderPhase('playing');
+      openPage();
+      vi.mocked(history.replaceState).mockClear();
+
+      emitter.emit(SET_CURRENT_STORY, { storyId: 'component-one--b', viewMode: 'story' });
+      await vi.waitFor(() => expect(reload).toHaveBeenCalled());
+
+      expect(windowReplaceState).not.toHaveBeenCalled();
+      expect(history.replaceState).toHaveBeenCalledOnce();
+      expect(history.replaceState).toHaveBeenCalledWith(
+        {},
+        '',
+        'pathname?id=component-one--b&viewMode=story'
+      );
+      expect(vi.mocked(history.replaceState).mock.invocationCallOrder[0]).toBeLessThan(
+        reload.mock.invocationCallOrder[0]
+      );
+      expect(document.title).toBe('component-one--b');
+    });
+
+    it('does not autoplay the next story in embed mode after the story moved location', async () => {
+      vi.stubGlobal(
+        'location',
+        new URL('http://localhost/iframe.html?id=component-one--a&embed=true')
+      );
+      document.location.search = '?id=component-one--a&embed=true';
+      await createAndRenderPreview({ importFn: documentStoryImportFn });
+      openPage();
+      vi.stubGlobal('location', new URL('http://localhost/notes?q=page#page'));
+      vi.mocked(componentOneExports.b.play).mockClear();
+      mockChannel.emit.mockClear();
+
+      emitter.emit(SET_CURRENT_STORY, { storyId: 'component-one--b', viewMode: 'story' });
+      await waitForSetCurrentStory();
+      await waitForRender();
+
+      expect(componentOneExports.b.play).not.toHaveBeenCalled();
+    });
+
+    it('is selected with its URL written at once after a docs render', async () => {
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      await createAndRenderPreview({ importFn: documentStoryImportFn });
+      vi.mocked(history.replaceState).mockClear();
+
+      emitter.emit(SET_CURRENT_STORY, { storyId: 'component-one--a', viewMode: 'story' });
+
+      expect(history.replaceState).toHaveBeenCalledWith(
+        {},
+        '',
+        'pathname?id=component-one--a&viewMode=story'
+      );
+    });
+  });
+
   describe('onSetCurrentStory', () => {
     beforeEach(() => {
       vi.useFakeTimers();
@@ -2380,14 +2885,12 @@ describe('PreviewWeb', () => {
           delete (window as Partial<Window>).location;
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore-error
-          window.location = { ...originalLocation, reload: vi.fn() };
+          window.location = { ...originalLocation, href: originalLocation.href, reload: vi.fn() };
         });
 
         afterEach(() => {
           delete (window as Partial<Window>).location;
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore-error
-          window.location = { ...originalLocation, reload: originalLocation.reload };
+          (window as { location: Location }).location = originalLocation;
         });
 
         it('aborts render for initial story', async () => {
@@ -2902,6 +3405,39 @@ describe('PreviewWeb', () => {
     });
   });
 
+  describe('getStoryIndexFromServer', () => {
+    const setBaseUrl = (href: string) => {
+      globalThis.document.head.querySelector('base')?.remove();
+      const base = globalThis.document.createElement('base');
+      base.href = href;
+      globalThis.document.head.append(base);
+    };
+
+    afterEach(() => {
+      globalThis.document.head.querySelector('base')?.remove();
+    });
+
+    it('fetches the index next to the URL the preview loaded at, after a story changed the URL', async () => {
+      setBaseUrl('http://localhost:6006/iframe.html?id=component-one--a');
+      const preview = await createAndRenderPreview();
+      setBaseUrl('http://localhost:6006/notes/7');
+
+      await preview.getStoryIndexFromServer();
+
+      expect(global.fetch).toHaveBeenLastCalledWith('http://localhost:6006/index.json');
+    });
+
+    it('fetches the relative index path without a document', async () => {
+      vi.stubGlobal('document', undefined);
+      const preview = new Preview(importFn, getProjectAnnotations, undefined, false);
+      vi.unstubAllGlobals();
+
+      await preview.getStoryIndexFromServer();
+
+      expect(global.fetch).toHaveBeenLastCalledWith('./index.json');
+    });
+  });
+
   describe('onStoriesChanged', () => {
     describe('if stories.json endpoint 500s initially', () => {
       it('recovers and renders the story', async () => {
@@ -2960,18 +3496,20 @@ describe('PreviewWeb', () => {
         document.location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
         mockChannel.emit.mockClear();
+        projectAnnotations.renderToCanvas.mockClear();
 
         preview.onStoriesChanged({ importFn: newImportFn });
         await importFnCalledGate;
         preview.onStoriesChanged({ importFn });
 
         openBlockImportFnGate();
-        await waitForRender();
+        await waitForEvents([STORY_UNCHANGED]);
 
         expect(preview.storyRenders.length).toEqual(1);
+        expect(projectAnnotations.renderToCanvas).not.toHaveBeenCalled();
       });
 
-      it('renders the second importFn', async () => {
+      it('loads the second importFn', async () => {
         const [importGate, openImportGate] = createGate();
         const [importedGate, openImportedGate] = createGate();
         const secondImportFn = vi.fn(async (path) => {
@@ -2995,9 +3533,98 @@ describe('PreviewWeb', () => {
         preview.onStoriesChanged({ importFn: thirdImportFn });
 
         openImportGate();
-        await waitForRender();
+        await waitForEvents([STORY_UNCHANGED]);
 
         expect(thirdImportFn).toHaveBeenCalled();
+      });
+    });
+
+    describe('when a newer change supersedes one in flight', () => {
+      const setup = () => {
+        const [cleanupGate, openCleanupGate] = createGate();
+        const [cleanupCalledGate, openCleanupCalledGate] = createGate();
+        const abortedAtCleanup: boolean[] = [];
+        const beforeEachHook = vi.fn(({ abortSignal }: { abortSignal: AbortSignal }) => {
+          return async () => {
+            abortedAtCleanup.push(abortSignal.aborted);
+            openCleanupCalledGate();
+            await cleanupGate;
+          };
+        });
+        const exportsWith = (args: object) =>
+          toMerged(componentOneExports, { a: { args, beforeEach: beforeEachHook } });
+        const importFnFor =
+          (componentOne: object): ModuleImportFn =>
+          async (path) =>
+            path === './src/ComponentOne.stories.js' ? componentOne : importFn(path);
+
+        return {
+          initialImportFn: importFnFor(exportsWith({})),
+          editedImportFn: importFnFor(exportsWith({ foo: 'edited' })),
+          abortedAtCleanup,
+          cleanupCalledGate,
+          openCleanupGate,
+        };
+      };
+
+      it('lets the newer change replace the story once, after its cleanup', async () => {
+        const {
+          initialImportFn,
+          editedImportFn,
+          abortedAtCleanup,
+          cleanupCalledGate,
+          openCleanupGate,
+        } = setup();
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview({ importFn: initialImportFn });
+        mockChannel.emit.mockClear();
+        projectAnnotations.renderToCanvas.mockClear();
+
+        preview.onStoriesChanged({ importFn: editedImportFn });
+        await cleanupCalledGate;
+        preview.onStoriesChanged({ importFn: editedImportFn });
+        await waitForQuiescence();
+
+        expect(projectAnnotations.renderToCanvas).not.toHaveBeenCalled();
+
+        openCleanupGate();
+        await waitForRender();
+        await waitForQuiescence();
+
+        expect(abortedAtCleanup).toEqual([true]);
+        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(1);
+        expect(preview.storyRenders).toHaveLength(1);
+        expect(
+          mockChannel.emit.mock.calls.filter(([event]) => event === STORY_PREPARED)
+        ).toHaveLength(1);
+        expect(mockChannel.emit).not.toHaveBeenCalledWith(STORY_UNCHANGED, 'component-one--a');
+        expect(mockChannel.emit).not.toHaveBeenCalledWith(STORY_CHANGED, 'component-one--a');
+      });
+
+      it('leaves the story on screen alone when the newer change does not change it', async () => {
+        const { initialImportFn, editedImportFn, abortedAtCleanup, openCleanupGate } = setup();
+        openCleanupGate();
+        const [importGate, openImportGate] = createGate();
+        const [importCalledGate, openImportCalledGate] = createGate();
+        const blockedImportFn: ModuleImportFn = async (path) => {
+          openImportCalledGate();
+          await importGate;
+          return editedImportFn(path);
+        };
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview({ importFn: initialImportFn });
+        mockChannel.emit.mockClear();
+        projectAnnotations.renderToCanvas.mockClear();
+
+        preview.onStoriesChanged({ importFn: blockedImportFn });
+        await importCalledGate;
+        preview.onStoriesChanged({ importFn: initialImportFn });
+        openImportGate();
+        await waitForQuiescence();
+
+        expect(abortedAtCleanup).toEqual([]);
+        expect(projectAnnotations.renderToCanvas).not.toHaveBeenCalled();
+        expect(mockChannel.emit).toHaveBeenCalledWith(STORY_UNCHANGED, 'component-one--a');
       });
     });
 
@@ -3238,6 +3865,26 @@ describe('PreviewWeb', () => {
         expect(componentOneExports.a.play).toHaveBeenCalled();
       });
 
+      it('does not execute playFunction when the preview was opened with autoplay=false', async () => {
+        document.location.search = '?id=component-one--a&autoplay=false';
+        window.history.replaceState({}, '', `/iframe.html${document.location.search}`);
+        try {
+          const preview = await createAndRenderPreview();
+          // A story that changes `location` does not turn play back on.
+          window.history.replaceState({}, '', '/elsewhere');
+
+          componentOneExports.a.play.mockClear();
+          mockChannel.emit.mockClear();
+          preview.onStoriesChanged({ importFn: newImportFn });
+          await waitForRender();
+        } finally {
+          window.history.replaceState({}, '', '/');
+        }
+
+        expect(mockChannel.emit).toHaveBeenCalledWith(STORY_RENDERED, 'component-one--a');
+        expect(componentOneExports.a.play).not.toHaveBeenCalled();
+      });
+
       it('emits STORY_RENDERED', async () => {
         document.location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
@@ -3381,6 +4028,69 @@ describe('PreviewWeb', () => {
 
         expect(projectAnnotations.renderToCanvas).not.toHaveBeenCalled();
         expect(mockChannel.emit).not.toHaveBeenCalledWith(STORY_RENDERED, 'component-one--a');
+      });
+
+      describe('and a hot update cancelled its play', () => {
+        const phases = () =>
+          mockChannel.emit.mock.calls
+            .filter(([event]) => event === STORY_RENDER_PHASE_CHANGED)
+            .map(([, { newPhase }]) => newPhase);
+
+        // A hot update gives the preview the new stories first, then the hot update event.
+        const hotUpdate = async (playGate: Promise<void>) => {
+          componentOneExports.a.play.mockImplementationOnce(async () => playGate);
+          document.location.search = '?id=component-one--a';
+          const preview = new PreviewWeb(importFn, getProjectAnnotations);
+          await preview.ready();
+          await waitForRenderPhase('playing');
+
+          mockChannel.emit.mockClear();
+          projectAnnotations.renderToCanvas.mockClear();
+          preview.onStoriesChanged({ importFn: newImportFn });
+          emitter.emit(STORY_HOT_UPDATED);
+          return preview;
+        };
+
+        it('renders the story again', async () => {
+          const [playGate, openPlayGate] = createGate();
+          await hotUpdate(playGate);
+          openPlayGate();
+          await waitForRender();
+
+          expect(mockChannel.emit).not.toHaveBeenCalledWith(STORY_UNCHANGED, 'component-one--a');
+          expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(1);
+          expect(componentOneExports.a.play).toHaveBeenCalledTimes(2);
+          expect(phases()).toEqual([
+            'aborted',
+            'preparing',
+            'loading',
+            'rendering',
+            'playing',
+            'played',
+            'completing',
+            'completed',
+            'afterEach',
+            'finished',
+          ]);
+          expect(
+            mockChannel.emit.mock.calls.filter(([event]) => event === STORY_RENDERED)
+          ).toHaveLength(1);
+        });
+
+        it('reports nothing when the cancelled play ends after the story rendered again', async () => {
+          const [playGate, openPlayGate] = createGate();
+          const preview = await hotUpdate(playGate);
+          await waitForRender();
+
+          mockChannel.emit.mockClear();
+          openPlayGate();
+          await waitForQuiescence();
+
+          expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(1);
+          expect(mockChannel.emit).not.toHaveBeenCalled();
+          expect(preview.storyRenders).toHaveLength(1);
+          expect(preview.storyRenders[0].phase).toBe('finished');
+        });
       });
     });
 
@@ -3740,6 +4450,23 @@ describe('PreviewWeb', () => {
       await waitForRender();
 
       expect(teardownrenderToCanvas).not.toHaveBeenCalled();
+    });
+
+    it('rerenders the current story with the new renderToCanvas', async () => {
+      document.location.search = '?id=component-one--a';
+      const preview = await createAndRenderPreview();
+      const newRenderToCanvas = vi.fn();
+
+      projectAnnotations.renderToCanvas.mockClear();
+      preview.onGetProjectAnnotationsChanged({
+        getProjectAnnotations: () => ({ ...projectAnnotations, renderToCanvas: newRenderToCanvas }),
+      });
+
+      await vi.waitFor(() => {
+        expect(newRenderToCanvas).toHaveBeenCalledOnce();
+      });
+      expect(newRenderToCanvas.mock.calls[0][0].storyContext.id).toBe('component-one--a');
+      expect(projectAnnotations.renderToCanvas).not.toHaveBeenCalled();
     });
 
     it('rerenders the current story with new global meta-generated context', async () => {

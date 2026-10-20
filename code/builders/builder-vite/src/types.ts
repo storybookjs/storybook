@@ -16,6 +16,23 @@ export type ViteFinal = (
 
 export type StorybookConfigVite = {
   viteFinal?: ViteFinal;
+  /**
+   * A module that loads the project's files in the preview, meant for frameworks: every file of the
+   * story index (CSF and MDX) and the project's preview file, not other preview annotations. An
+   * absolute path or a package specifier.
+   *
+   * The module exports `load(importPath, importFn)`, where `importPath` is the path as in the
+   * story index (for the preview file the same form, e.g. `./.storybook/preview.ts`) and
+   * `importFn(importPath)` imports the file as Vite would. For the preview file, which the
+   * generated code imports statically, `importFn` returns that already evaluated module. `load`
+   * returns the module to use, or throws. It is asked again after an HMR update. Return the same
+   * object for the same module: the store caches by it, and an MDX file that imports a story file
+   * must see the object `load` returns for that file.
+   *
+   * Addon Vitest shares the project annotations, so there `load` is asked for the preview file
+   * too; it imports story files from the test file.
+   */
+  experimental_moduleLoader?: string;
 };
 
 export type BuilderOptions = {

@@ -1,9 +1,10 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { genDynamicImport, genObjectFromRawEntries } from 'knitwork';
-import { join, normalize, relative } from 'pathe';
+import { genDynamicImport, genImport, genObjectFromRawEntries } from 'knitwork';
+import { join, normalize } from 'pathe';
 import { dedent } from 'ts-dedent';
 
+import { toImportPath } from './utils/import-path.ts';
 import { getUniqueImportPaths } from './utils/unique-import-paths.ts';
 
 /**
@@ -11,11 +12,14 @@ import { getUniqueImportPaths } from './utils/unique-import-paths.ts';
  * the working directory and their dynamic imports. The import is done in an asynchronous function
  * to delay loading and to allow Vite to split the code into smaller chunks. It then creates a
  * function, `importFn(path)`, which resolves a path to an import function and this is called by
- * Storybook to fetch a story dynamically when needed.
+ * Storybook to fetch a story dynamically when needed. With a `moduleLoader`, `importFn` asks its
+ * `load(path, importFn)` for every file. The files are listed in path order, so the code depends on
+ * the set of story files only, not on the order of the index.
  */
-export function generateImportFnScriptCode(index: StoryIndex): string {
-  const objectEntries: [path: string, importStatement: string][] = getUniqueImportPaths(index).map(
-    (importPath) => {
+export function generateImportFnScriptCode(index: StoryIndex, moduleLoader?: string): string {
+  const objectEntries: [path: string, importStatement: string][] = getUniqueImportPaths(index)
+    .sort()
+    .map((importPath) => {
       if (importPath.startsWith('virtual:')) {
         return [importPath, genDynamicImport(importPath)];
       }
@@ -25,22 +29,22 @@ export function generateImportFnScriptCode(index: StoryIndex): string {
        * a leading '../', e.g. '../src/Foo.stories.js'. We want to deal in importPaths relative to
        * the working dir, so we normalize
        */
-      const relativePath = normalize(relative(process.cwd(), importPath));
-      const normalizedRelativePath = relativePath.startsWith('../')
-        ? relativePath
-        : `./${relativePath}`;
-
       const absolutePath = normalize(join(process.cwd(), importPath));
 
-      return [normalizedRelativePath, genDynamicImport(absolutePath)];
-    }
-  );
+      return [toImportPath(importPath), genDynamicImport(absolutePath)];
+    });
 
-  return dedent`
+  const importModule = moduleLoader
+    ? 'load(path, (path) => importers[path]())'
+    : 'importers[path]()';
+
+  const code = dedent`
     const importers = ${genObjectFromRawEntries(objectEntries)};
 
     export async function importFn(path) {
-      return await importers[path]();
+      return await ${importModule};
     }
   `;
+
+  return moduleLoader ? `${genImport(moduleLoader, ['load'])}\n\n${code}` : code;
 }

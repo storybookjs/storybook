@@ -8,11 +8,12 @@ import type {
   Renderer,
   StoryId,
 } from 'storybook/internal/types';
-import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
+import { BlockOfAndIdPropsError, InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 
 import { Story as PureStory, StorySkeleton } from '../components';
 import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
+import { rendersInline } from './rendersInline.ts';
 import { useStory } from './useStory';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
@@ -43,6 +44,22 @@ type StoryRefProps = {
    * ```
    */
   meta?: ModuleExports;
+  /**
+   * Pass the id of a story to render a story whose CSF file this docs file cannot import, such as
+   * a story of another package
+   *
+   * ```jsx
+   * import { Story } from '@storybook/addon-docs/blocks';
+   *
+   * <Story id="example-button--primary" />;
+   * ```
+   *
+   * The id is an unattached reference. Nothing checks it before the docs page renders: renaming
+   * the story or changing its title changes the id, and the page then shows an error. A change to
+   * the story's file does not update an inline story until the docs page renders again. Prefer `of`
+   * when the docs file can import the story.
+   */
+  id?: StoryId;
 };
 
 type StoryParameters = {
@@ -61,9 +78,15 @@ type StoryParameters = {
 export type StoryProps = StoryRefProps & StoryParameters;
 
 export const getStoryId = (props: StoryProps, context: DocsContextProps): StoryId => {
-  const { of, meta } = props as StoryRefProps;
+  const { of, meta, id } = props as StoryRefProps;
   if ('of' in props && of === undefined) {
     throw new InvalidBlockOfPropError();
+  }
+  if (of && id !== undefined) {
+    throw new BlockOfAndIdPropsError();
+  }
+  if (id !== undefined) {
+    return id;
   }
 
   if (meta) {
@@ -86,14 +109,18 @@ export const getStoryProps = <TFramework extends Renderer>(
     return null as any;
   }
 
+  // A story that owns the document would own the docs page's too, so it renders in its own
+  // iframe, by default as tall as a small phone's viewport.
+  const ownsDocument = parameters.layout === 'document';
+
   // prefer block props, then story parameters defined by the framework-specific settings
   // and optionally overridden by users
 
-  const inline = props.inline ?? storyParameters.inline ?? false;
+  const inline = rendersInline(story, props.inline);
+  const autoplay = props.autoplay ?? storyParameters.autoplay ?? false;
 
   if (inline) {
     const height = props.height ?? storyParameters.height;
-    const autoplay = props.autoplay ?? storyParameters.autoplay ?? false;
     return {
       story: story as any,
       inline: true,
@@ -105,12 +132,16 @@ export const getStoryProps = <TFramework extends Renderer>(
     };
   }
 
-  const height = props.height ?? storyParameters.height ?? storyParameters.iframeHeight ?? '100px';
+  const height =
+    props.height ??
+    storyParameters.height ??
+    storyParameters.iframeHeight ??
+    (ownsDocument ? '667px' : '100px');
   return {
     story: story as any,
     inline: false,
     height,
-
+    autoplay,
     primary: !!props.__primary,
   };
 };

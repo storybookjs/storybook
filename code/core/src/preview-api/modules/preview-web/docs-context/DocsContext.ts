@@ -325,7 +325,13 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
     };
   };
 
-  loadStory = (id: StoryId) => {
-    return this.store.loadStory({ storyId: id });
+  // A story loaded by id is referenced like the stories of the CSF files the docs entry imports,
+  // so blocks can then resolve it synchronously, by id or by its export.
+  loadStory = async (id: StoryId) => {
+    const csfFile = await this.store.loadCSFFileByStoryId(id);
+    if (!this.exportsToCSFFile.has(csfFile.moduleExports)) {
+      this.referenceCSFFile(csfFile);
+    }
+    return this.store.storyFromCSFFile({ storyId: id, csfFile });
   };
 }

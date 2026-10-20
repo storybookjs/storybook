@@ -44,6 +44,18 @@ export const OfWithMetaUnattached: Story = {
   },
 };
 
+// The story's CSF file is not one this docs entry imports (see `relativeCsfPaths`).
+export const ById: Story = {
+  args: {
+    id: 'addons-docs-examples-stories-for-the-canvas-block--with-toolbar',
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(canvasElement).toHaveTextContent('This component is not intended to render anything')
+    );
+  },
+};
+
 export const OfError: Story = {
   args: {
     of: ButtonStories.ErrorStory,
@@ -182,6 +194,44 @@ export const WithInteractionsAutoplayInParameters: Story = {
   },
   parameters: {
     chromatic: { delay: 500 },
+  },
+};
+
+export const IFrameWithDefaultInteractions: Story = {
+  name: 'IFrame With Default Interactions',
+  args: {
+    of: ButtonStories.Clicking,
+    inline: false,
+    height: '120px',
+  },
+  play: async ({ canvasElement }) => {
+    const iframe = canvasElement.querySelector('iframe')!;
+    await expect(new URL(iframe.src).searchParams.get('autoplay')).toBe('false');
+    // Once the story in the iframe has finished, a play that ran would have clicked.
+    await waitFor(
+      () =>
+        expect((iframe.contentWindow as any)?.__STORYBOOK_PREVIEW__?.currentRender?.phase).toBe(
+          'finished'
+        ),
+      { timeout: 10000 }
+    );
+    await expect(iframe.contentDocument!.body).toHaveTextContent('Click count: 0');
+  },
+};
+
+export const IFrameWithInteractionsAutoplayInProps: Story = {
+  name: 'IFrame With Interactions Autoplay In Props',
+  args: {
+    of: ButtonStories.Clicking,
+    inline: false,
+    height: '120px',
+    autoplay: true,
+  },
+  play: async ({ canvasElement }) => {
+    const iframe = canvasElement.querySelector('iframe')!;
+    await waitFor(() => expect(iframe.contentDocument!.body).toHaveTextContent('Click count: 1'), {
+      timeout: 10000,
+    });
   },
 };
 

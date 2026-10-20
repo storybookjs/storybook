@@ -11,17 +11,8 @@ export function getPreviewBodyTemplate(
   configDirPath: string,
   interpolations?: Record<string, string>
 ) {
-  const base = readFileSync(
-    join(resolvePackageDir('storybook'), 'assets/server/base-preview-body.html'),
-    'utf8'
-  );
-
   const bodyHtmlPath = resolve(configDirPath, 'preview-body.html');
-  let result = base;
-
-  if (existsSync(bodyHtmlPath)) {
-    result = readFileSync(bodyHtmlPath, 'utf8') + result;
-  }
+  const result = existsSync(bodyHtmlPath) ? readFileSync(bodyHtmlPath, 'utf8') : '';
 
   return interpolate(result, interpolations);
 }

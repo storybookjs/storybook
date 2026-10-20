@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { global } from '@storybook/global';
 
-import { getSelectionSpecifierFromPath, pathToId, setPath } from './UrlStore.ts';
+import { UrlStore, getSelectionSpecifierFromPath, pathToId, setPath } from './UrlStore.ts';
 
 const { history, document } = global;
 
@@ -128,6 +128,139 @@ describe('UrlStore', () => {
         storySpecifier: 'abc',
         viewMode: 'story',
       });
+    });
+  });
+
+  describe('setSelection', () => {
+    it('writes the path the preview was loaded from, not one a story changed', () => {
+      document.location.pathname = '/iframe.html';
+      document.location.search = '';
+      document.location.hash = '';
+      const store = new UrlStore();
+      document.location.pathname = '/other/path';
+
+      store.setSelection({ storyId: 'story--id', viewMode: 'story' });
+
+      const url = '/iframe.html?id=story--id&viewMode=story';
+      expect(history.replaceState).toHaveBeenLastCalledWith({}, '', url);
+      expect(store.url).toBe(url);
+    });
+  });
+
+  describe('setQueryParams', () => {
+    it('keeps the params in the URL of the selected story', () => {
+      document.location.pathname = '/iframe.html';
+      document.location.search = '';
+      document.location.hash = '';
+      const store = new UrlStore();
+      store.setSelection({ storyId: 'story--id', viewMode: 'story' });
+      document.location.search = '?id=story--id&viewMode=story';
+
+      store.setQueryParams({ args: 'a:1' });
+
+      const url = '/iframe.html?id=story--id&viewMode=story&args=a%3A1';
+      expect(history.replaceState).toHaveBeenLastCalledWith({}, '', url);
+      expect(store.url).toBe(url);
+    });
+  });
+
+  describe('lendLocation', () => {
+    const lendingStore = () => {
+      Object.assign(document.location, { pathname: '/iframe.html', search: '', hash: '#sb' });
+      const store = new UrlStore();
+      store.setSelection({ storyId: 'page--a', viewMode: 'story' });
+      Object.assign(document.location, { search: '?id=page--a&viewMode=story' });
+      store.lendLocation();
+      vi.mocked(history.replaceState).mockClear();
+      // The story moves `location` to a page of its own.
+      Object.assign(document.location, { pathname: '/notes', search: '?q=page', hash: '#page' });
+      return store;
+    };
+
+    it('keeps a selection and query params in the store without writing them', () => {
+      const store = lendingStore();
+
+      store.setQueryParams({ args: 'a:1' });
+      store.setSelection({ storyId: 'page--b', viewMode: 'story' });
+      store.setQueryParams({ globals: 'g:1' });
+
+      expect(history.replaceState).not.toHaveBeenCalled();
+      expect(store.url).toBe('/iframe.html?id=page--b&viewMode=story&args=a%3A1&globals=g%3A1#sb');
+    });
+
+    it('writes the URL of the selection once on reclaim, sets the title, and writes directly again', () => {
+      const store = lendingStore();
+      store.setSelection({ storyId: 'page--b', viewMode: 'story' });
+      store.setQueryParams({ args: 'a:1' });
+
+      store.reclaimLocation();
+
+      const url = '/iframe.html?id=page--b&viewMode=story&args=a%3A1#sb';
+      expect(history.replaceState).toHaveBeenCalledOnce();
+      expect(history.replaceState).toHaveBeenCalledWith({}, '', url);
+      expect(document.title).toBe('page--b');
+
+      Object.assign(document.location, {
+        pathname: '/iframe.html',
+        search: '?id=page--b&viewMode=story&args=a%3A1',
+        hash: '#sb',
+      });
+      store.setQueryParams({ args: 'a:2' });
+
+      expect(history.replaceState).toHaveBeenLastCalledWith(
+        {},
+        '',
+        '/iframe.html?id=page--b&viewMode=story&args=a%3A2#sb'
+      );
+    });
+  });
+
+  describe('reclaimLocation', () => {
+    it('returns to the URL of the selected story when a story moved `location`', () => {
+      Object.assign(document.location, { pathname: '/iframe.html', search: '', hash: '' });
+      const store = new UrlStore();
+      store.setSelection({ storyId: 'story--b', viewMode: 'story' });
+      vi.mocked(history.replaceState).mockClear();
+      Object.assign(document.location, { pathname: '/app/a', search: '', hash: '' });
+
+      store.reclaimLocation();
+
+      expect(history.replaceState).toHaveBeenCalledOnce();
+      expect(history.replaceState).toHaveBeenCalledWith(
+        {},
+        '',
+        '/iframe.html?id=story--b&viewMode=story'
+      );
+    });
+
+    it('leaves the URL alone when the document is at the URL of the selected story', () => {
+      Object.assign(document.location, { pathname: '/iframe.html', search: '', hash: '' });
+      const store = new UrlStore();
+      store.setSelection({ storyId: 'story--b', viewMode: 'story' });
+      vi.mocked(history.replaceState).mockClear();
+      Object.assign(document.location, { search: '?id=story--b&viewMode=story' });
+
+      store.reclaimLocation();
+
+      expect(history.replaceState).not.toHaveBeenCalled();
+      expect(document.title).toBe('story--b');
+    });
+
+    it('leaves the URL alone when the browser encoded the same query differently', () => {
+      Object.assign(document.location, { pathname: '/iframe.html', search: '', hash: '' });
+      const store = new UrlStore();
+      store.setSelection({ storyId: 'story--b', viewMode: 'story' });
+      Object.assign(document.location, { search: '?id=story--b&viewMode=story' });
+      store.setQueryParams({ args: "text:it's" });
+      vi.mocked(history.replaceState).mockClear();
+      Object.assign(document.location, {
+        search: '?id=story--b&viewMode=story&args=text%3Ait%27s',
+      });
+
+      store.reclaimLocation();
+
+      expect(store.url).toBe("/iframe.html?id=story--b&viewMode=story&args=text%3Ait's");
+      expect(history.replaceState).not.toHaveBeenCalled();
     });
   });
 });

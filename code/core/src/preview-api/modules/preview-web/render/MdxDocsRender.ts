@@ -8,6 +8,7 @@ import type { RenderContextCallbacks } from 'storybook/internal/types';
 import { Tag } from '../../../../shared/constants/tags.ts';
 import { isMdxEntry } from '../../../../shared/utils/story-index-filters.ts';
 import type { StoryStore } from '../../store/index.ts';
+import { combineParameters } from '../../store/parameters.ts';
 import { DocsContext } from '../docs-context/DocsContext.ts';
 import type { DocsContextProps } from '../docs-context/DocsContextProps.ts';
 import type { DocsRenderFunction } from '../docs-context/DocsRenderFunction.ts';
@@ -135,10 +136,14 @@ export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRender
 
     const docsContext = this.docsContext(renderStoryToElement);
 
-    const { docs } = this.store.projectAnnotations.parameters ?? ({} as { docs: any });
-    const baseDocsParameter = this.attachedStory?.parameters?.docs ?? docs;
+    // The project's docs parameters sit underneath the attached story's, which for a CSF Next
+    // file come from its own preview; see `CsfDocsRender`.
+    const baseDocsParameter = combineParameters(
+      this.store.projectAnnotations.parameters?.docs,
+      this.attachedStory?.parameters?.docs
+    );
 
-    if (!baseDocsParameter) {
+    if (!baseDocsParameter.renderer) {
       throw new Error(
         `Cannot render a story in viewMode=docs if \`@storybook/addon-docs\` is not installed`
       );

@@ -200,7 +200,7 @@ export class StoryStore<TRenderer extends Renderer> {
 
     return this.prepareMetaWithCache(
       componentAnnotations,
-      this.projectAnnotations,
+      csfFile.projectAnnotations ?? this.projectAnnotations,
       csfFile.moduleExports.default
     );
   }
@@ -293,15 +293,14 @@ export class StoryStore<TRenderer extends Renderer> {
   async cleanupStory(story: PreparedStory<TRenderer>): Promise<void> {
     this.hooks[story.id].clean();
 
-    const callbacks = this.cleanupCallbacks[story.id];
-
-    if (callbacks) {
-      for (const callback of [...callbacks].reverse()) {
-        await callback();
-      }
-    }
-
+    // Taken before awaiting: a concurrent cleanup must not run these again, and a callback
+    // registered meanwhile belongs to the next cleanup.
+    const callbacks = this.cleanupCallbacks[story.id] ?? [];
     delete this.cleanupCallbacks[story.id];
+
+    for (const callback of callbacks.reverse()) {
+      await callback();
+    }
   }
 
   extract(

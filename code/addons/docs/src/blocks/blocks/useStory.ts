@@ -19,6 +19,7 @@ export function useStories<TRenderer extends Renderer = Renderer>(
   // Legacy docs pages can reference any story by id. Those stories will need to be
   // asynchronously loaded; we use the state for this
   const [storiesById, setStories] = useState<Record<StoryId, PreparedStory<TRenderer>>>({});
+  const [errorsById, setErrors] = useState<Record<StoryId, unknown>>({});
 
   useEffect(() => {
     // deepscan-disable-next-line NO_EFFECT_CALL
@@ -30,10 +31,16 @@ export function useStories<TRenderer extends Renderer = Renderer>(
         // will be a no-op once the story has loaded. Furthermore, the `story` will
         // have an exact equality when the story hasn't changed, so it won't trigger
         // any unnecessary re-renders
-        const story = await context.loadStory(storyId);
-        setStories((current) =>
-          current[storyId] === story ? current : { ...current, [storyId]: story }
-        );
+        try {
+          const story = await context.loadStory(storyId);
+          setStories((current) =>
+            current[storyId] === story ? current : { ...current, [storyId]: story }
+          );
+        } catch (error) {
+          setErrors((current) =>
+            current[storyId] === error ? current : { ...current, [storyId]: error }
+          );
+        }
       })
     );
   });
@@ -47,6 +54,11 @@ export function useStories<TRenderer extends Renderer = Renderer>(
       // If we are allowed to load this story id synchonously, this will work
       return context.storyById(storyId);
     } catch (err) {
+      // A story that failed to load, such as one named by an id that no story has, throws so the
+      // docs page shows the error instead of a story that never arrives.
+      if (storyId in errorsById) {
+        throw errorsById[storyId];
+      }
       return undefined;
     }
   });

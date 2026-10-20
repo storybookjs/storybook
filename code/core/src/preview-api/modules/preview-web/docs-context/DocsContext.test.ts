@@ -394,3 +394,21 @@ describe('resolveOf', () => {
     });
   });
 });
+
+describe('loadStory', () => {
+  it('references the CSF file of a story the docs entry does not import', async () => {
+    const { story, storyExport, csfFile } = csfFileParts('other-meta--story', 'other-meta');
+    const store = {
+      loadCSFFileByStoryId: async () => csfFile,
+      storyFromCSFFile: () => story,
+      componentStoriesFromCSFFile: () => [story],
+    } as unknown as StoryStore<Renderer>;
+    const context = new DocsContext(channel, store, renderStoryToElement, []);
+
+    expect(() => context.storyById('other-meta--story')).toThrow(/never loaded/);
+
+    expect(await context.loadStory('other-meta--story')).toBe(story);
+    expect(context.storyById('other-meta--story')).toBe(story);
+    expect(context.resolveOf(storyExport, ['story'])).toEqual({ type: 'story', story });
+  });
+});

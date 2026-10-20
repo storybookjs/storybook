@@ -8,43 +8,80 @@ import { parse } from 'picoquery';
 import { dedent } from 'ts-dedent';
 
 import type { View } from './View.ts';
+import { createBlock } from './blocks.ts';
 
 const { document } = global;
 
 const PREPARING_DELAY = 100;
 
 enum Mode {
-  MAIN = 'MAIN',
-  NOPREVIEW = 'NOPREVIEW',
-  PREPARING_STORY = 'PREPARING_STORY',
-  PREPARING_DOCS = 'PREPARING_DOCS',
-  ERROR = 'ERROR',
+  MAIN = 'main',
+  NOPREVIEW = 'nopreview',
+  PREPARING_STORY = 'preparing-story',
+  PREPARING_DOCS = 'preparing-docs',
+  ERROR = 'error',
 }
+// The mode as classes on <body>, for addons and Chromatic, which read them there. The view never
+// does, and a story that owns the document gets none.
 const classes: Record<Mode, string> = {
-  PREPARING_STORY: 'sb-show-preparing-story',
-  PREPARING_DOCS: 'sb-show-preparing-docs',
-  MAIN: 'sb-show-main',
-  NOPREVIEW: 'sb-show-nopreview',
-  ERROR: 'sb-show-errordisplay',
+  [Mode.PREPARING_STORY]: 'sb-show-preparing-story',
+  [Mode.PREPARING_DOCS]: 'sb-show-preparing-docs',
+  [Mode.MAIN]: 'sb-show-main',
+  [Mode.NOPREVIEW]: 'sb-show-nopreview',
+  [Mode.ERROR]: 'sb-show-errordisplay',
 };
+
+type BlockMode = Exclude<Mode, Mode.MAIN>;
 
 const layoutClassMap = {
   centered: 'sb-main-centered',
   fullscreen: 'sb-main-fullscreen',
   padded: 'sb-main-padded',
 } as const;
-type Layout = keyof typeof layoutClassMap | 'none';
+type Layout = keyof typeof layoutClassMap | 'none' | 'document';
 
 const ansiConverter = new AnsiToHtml({
   escapeXML: true,
 });
 
+const createRoot = (id: string) => {
+  const root = document.createElement('div');
+  root.id = id;
+  return root;
+};
+
+// A story may replace the body, which takes our elements out of the document with it.
+const attach = (element: HTMLElement) => {
+  if (!element.isConnected) {
+    document.body.append(element);
+  }
+  return element;
+};
+
+// Storybook's own UI: a child of <html> after <body>, in the top layer while it shows a block and out
+// of the document otherwise, so a story that replaces, clears or covers the body takes nothing of it
+// away.
+const createHost = () => {
+  const host = document.createElement('sb-preview');
+  host.setAttribute('popover', 'manual');
+  return host;
+};
+
 export class WebView implements View<HTMLElement> {
-  private currentLayoutClass?: (typeof layoutClassMap)[keyof typeof layoutClassMap] | null;
+  private layout: Layout = 'padded';
 
   private testing = false;
 
   private preparingTimeout?: ReturnType<typeof setTimeout>;
+
+  private storyRootElement?: HTMLElement;
+
+  private docsRootElement?: HTMLElement;
+
+  private hostElement?: HTMLElement;
+
+  // Only the block of the current mode is in the host.
+  private blocks = new Map<BlockMode, HTMLElement>();
 
   constructor() {
     // Special code for testing situations
@@ -71,7 +108,6 @@ export class WebView implements View<HTMLElement> {
     story: PreparedStory<any>,
     { scrollReset = true }: { scrollReset?: boolean } = {}
   ) {
-    this.showStory();
     this.applyLayout(story.parameters.layout);
 
     // Only reset scroll when navigating to a new story or switching view modes, not on HMR
@@ -82,6 +118,15 @@ export class WebView implements View<HTMLElement> {
       document.documentElement.scrollLeft = 0;
     }
 
+    if (this.layout === 'document') {
+      // The story's render will own the body, so Storybook takes its classes and its roots back from
+      // it. Until the render leaves a body of its own, the story's root is this one.
+      document.body.classList.remove(...Object.values(classes));
+      this.detachRoots();
+      return document.body;
+    }
+
+    this.showStory();
     const storyRoot = this.storyRoot();
     this.applyHtmlLang(storyRoot, story.parameters.htmlLang);
 
@@ -89,7 +134,9 @@ export class WebView implements View<HTMLElement> {
   }
 
   storyRoot(): HTMLElement {
-    return document.getElementById('storybook-root')!;
+    this.storyRootElement ??=
+      document.getElementById('storybook-root') ?? createRoot('storybook-root');
+    return attach(this.storyRootElement);
   }
 
   prepareForDocs({ scrollReset = true }: { scrollReset?: boolean } = {}) {
@@ -110,7 +157,24 @@ export class WebView implements View<HTMLElement> {
   }
 
   docsRoot(): HTMLElement {
-    return document.getElementById('storybook-docs')!;
+    this.docsRootElement ??=
+      document.getElementById('storybook-docs') ?? createRoot('storybook-docs');
+    return attach(this.docsRootElement);
+  }
+
+  // Storybook's roots leave a body that a story owns; the next story or docs page attaches them again.
+  private detachRoots() {
+    this.storyRootElement ??= document.getElementById('storybook-root') ?? undefined;
+    this.docsRootElement ??= document.getElementById('storybook-docs') ?? undefined;
+    this.storyRootElement?.remove();
+    this.docsRootElement?.remove();
+  }
+
+  private block(mode: BlockMode) {
+    if (!this.blocks.has(mode)) {
+      this.blocks.set(mode, createBlock(mode));
+    }
+    return this.blocks.get(mode)!;
   }
 
   scrollToAnchor(hash: string) {
@@ -121,19 +185,14 @@ export class WebView implements View<HTMLElement> {
   }
 
   applyLayout(layout: Layout = 'padded') {
-    if (layout === 'none') {
-      document.body.classList.remove(this.currentLayoutClass!);
-      this.currentLayoutClass = null;
+    this.layout = layout;
+    document.body.classList.remove(...Object.values(layoutClassMap));
+    if (layout === 'none' || layout === 'document') {
       return;
     }
 
     this.checkIfLayoutExists(layout);
-
-    const layoutClass = layoutClassMap[layout];
-
-    document.body.classList.remove(this.currentLayoutClass!);
-    document.body.classList.add(layoutClass);
-    this.currentLayoutClass = layoutClass;
+    document.body.classList.add(layoutClassMap[layout]);
   }
 
   /**
@@ -152,7 +211,7 @@ export class WebView implements View<HTMLElement> {
       logger.warn(
         dedent`
           The desired layout: ${layout} is not a valid option.
-          The possible options are: ${Object.keys(layoutClassMap).join(', ')}, none.
+          The possible options are: ${Object.keys(layoutClassMap).join(', ')}, none, document.
         `
       );
     }
@@ -160,13 +219,39 @@ export class WebView implements View<HTMLElement> {
 
   showMode(mode: Mode) {
     clearTimeout(this.preparingTimeout);
-    Object.keys(Mode).forEach((otherMode) => {
-      if (otherMode === mode) {
-        document.body.classList.add(classes[otherMode]);
-      } else {
-        document.body.classList.remove(classes[otherMode as Mode]);
-      }
-    });
+    if (this.layout !== 'document') {
+      Object.values(Mode).forEach((otherMode) => {
+        document.body.classList.toggle(classes[otherMode], otherMode === mode);
+      });
+    }
+    if (mode === Mode.MAIN) {
+      this.hideHost();
+    } else {
+      this.showHost(mode);
+    }
+  }
+
+  private showHost(mode: BlockMode) {
+    this.hostElement ??= createHost();
+    const host = this.hostElement;
+    // A render that clears <html> removes the host, which also closes it.
+    if (!host.isConnected) {
+      document.documentElement.append(host);
+    }
+    host.dataset.mode = mode;
+    const block = this.block(mode);
+    // The block that is shown stays in place, so its spinner does not start over.
+    if (host.firstElementChild !== block) {
+      host.replaceChildren(block);
+    }
+    if (!host.matches(':popover-open')) {
+      host.showPopover();
+    }
+  }
+
+  // Leaving the document also closes it.
+  private hideHost() {
+    this.hostElement?.remove();
   }
 
   showErrorDisplay({ message = '', stack = '' }) {
@@ -178,8 +263,9 @@ export class WebView implements View<HTMLElement> {
       detail = parts.slice(1).join('\n').replace(/^\n/, '');
     }
 
-    document.getElementById('error-message')!.innerHTML = ansiConverter.toHtml(header);
-    document.getElementById('error-stack')!.innerHTML = ansiConverter.toHtml(detail);
+    const errorDisplay = this.block(Mode.ERROR);
+    errorDisplay.querySelector('#error-message')!.innerHTML = ansiConverter.toHtml(header);
+    errorDisplay.querySelector('#error-stack')!.innerHTML = ansiConverter.toHtml(detail);
 
     this.showMode(Mode.ERROR);
   }
@@ -191,9 +277,8 @@ export class WebView implements View<HTMLElement> {
 
     this.showMode(Mode.NOPREVIEW);
 
-    // In storyshots this can get called and these two can be null
-    this.storyRoot()?.setAttribute('hidden', 'true');
-    this.docsRoot()?.setAttribute('hidden', 'true');
+    this.storyRoot().setAttribute('hidden', 'true');
+    this.docsRoot().setAttribute('hidden', 'true');
   }
 
   showPreparingStory({ immediate = false } = {}) {
@@ -230,14 +315,5 @@ export class WebView implements View<HTMLElement> {
   showStory() {
     this.docsRoot().setAttribute('hidden', 'true');
     this.storyRoot().removeAttribute('hidden');
-  }
-
-  showStoryDuringRender() {
-    // When 'showStory' is called (at the start of rendering) we get rid of our display:none
-    // from all children of the root (but keep the preparing spinner visible). This may mean
-    // that very weird and high z-index stories are briefly visible.
-    // See https://github.com/storybookjs/storybook/issues/16847 and
-    //   http://localhost:9011/?path=/story/core-rendering--auto-focus (official SB)
-    document.body.classList.add(classes.MAIN);
   }
 }

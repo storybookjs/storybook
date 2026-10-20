@@ -47,7 +47,6 @@ import { shouldAutoplay } from './embedMode.ts';
 import { getEmbedResizeViewport } from './getEmbedResizeViewport.ts';
 import { CsfDocsRender } from './render/CsfDocsRender.ts';
 import { MdxDocsRender } from './render/MdxDocsRender.ts';
-import { PREPARE_ABORTED } from './render/Render.ts';
 import { StoryRender } from './render/StoryRender.ts';
 import { setupContentResizeBroadcast } from './setupContentResizeBroadcast.ts';
 import { setupStoryFreezer } from './setupStoryFreezer.ts';
@@ -86,6 +85,15 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   currentSelection?: Selection;
 
   currentRender?: PossibleRender<TRenderer>;
+
+  // The render that owns the canvas. A new request replaces this render, not `currentRender`,
+  // which can belong to a request that was superseded before it got the canvas.
+  mountedRender?: PossibleRender<TRenderer>;
+
+  private latestSelectionRequest = 0;
+
+  // Read from the URL the preview was opened with: a story may change `location` later.
+  private autoplay = shouldAutoplay({ search: globalWindow.location?.search ?? '' });
 
   constructor(
     public importFn: ModuleImportFn,
@@ -302,9 +310,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   // - a story selected in "docs" viewMode,
   //     in which case we render the docsPage for that story
   protected async renderSelection({ persistedArgs }: { persistedArgs?: Args } = {}) {
-    const { renderToCanvas } = this;
-
-    if (!this.storyStoreValue || !renderToCanvas) {
+    if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'renderSelection' });
     }
 
@@ -314,20 +320,30 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       throw new Error('Cannot call renderSelection as no selection was made');
     }
 
+    // After every await, a call that a newer one superseded stops: the newer one owns the canvas.
+    const request = ++this.latestSelectionRequest;
+    const isSuperseded = () => request !== this.latestSelectionRequest;
+
     const { storyId } = selection;
     let entry;
     try {
       entry = await this.storyStoreValue.storyIdToEntry(storyId);
     } catch (err) {
-      if (this.currentRender) {
-        await this.teardownRender(this.currentRender);
+      if (isSuperseded()) {
+        return;
+      }
+      if (this.mountedRender) {
+        await this.teardownRender(this.mountedRender);
       }
       this.renderStoryLoadingException(storyId, err as Error);
       return;
     }
+    if (isSuperseded()) {
+      return;
+    }
 
     const storyIdChanged = this.currentSelection?.storyId !== storyId;
-    const viewModeChanged = this.currentRender?.type !== entry.type;
+    const viewModeChanged = this.mountedRender?.type !== entry.type;
 
     // Show a spinner while we load the next story, but only when actually changing story or
     // view mode. On a same-story re-render (e.g. after an HMR update) the previous content
@@ -349,6 +365,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     //  even though the storyId is the same, the story itself is not).
     if (this.currentRender?.isPreparing()) {
       await this.teardownRender(this.currentRender);
+      if (isSuperseded()) {
+        return;
+      }
     }
 
     let render: PossibleRender<TRenderer>;
@@ -356,11 +375,10 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       render = new StoryRender<TRenderer>(
         this.channel,
         this.storyStoreValue,
-        renderToCanvas,
         this.mainStoryCallbacks(storyId),
         storyId,
         'story',
-        { autoplay: shouldAutoplay({ search: globalWindow.location?.search ?? '' }) }
+        { autoplay: this.autoplay }
       );
     } else if (isMdxEntry(entry)) {
       render = new MdxDocsRender<TRenderer>(
@@ -383,19 +401,24 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     const lastSelection = this.currentSelection;
     this.currentSelection = selection;
 
-    const lastRender = this.currentRender;
+    const lastRender = this.mountedRender;
     this.currentRender = render;
 
     try {
       await render.prepare();
     } catch (err) {
+      // Only a newer request aborts a preparing render, so this also covers PREPARE_ABORTED.
+      if (isSuperseded()) {
+        return;
+      }
       if (lastRender) {
         await this.teardownRender(lastRender);
       }
+      this.renderStoryLoadingException(storyId, err as Error);
+      return;
+    }
 
-      if (err !== PREPARE_ABORTED) {
-        this.renderStoryLoadingException(storyId, err as Error);
-      }
+    if (isSuperseded()) {
       return;
     }
 
@@ -406,10 +429,12 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       this.storyStoreValue.args.updateFromPersisted(render.story, persistedArgs);
     }
 
-    // Don't re-render the story if nothing has changed to justify it
+    // Don't re-render the story if nothing has changed to justify it. A story whose play a hot
+    // update cancelled stays aborted, so it renders again even if the story itself is unchanged.
     if (
       lastRender &&
       !lastRender.torndown &&
+      !(isStoryRender(lastRender) && lastRender.phase === 'aborted') &&
       !storyIdChanged &&
       !implementationChanged &&
       !viewModeChanged
@@ -423,12 +448,27 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     // Wait for the previous render to leave the page. NOTE: this will wait to ensure anything async
     // is properly aborted, which (in some cases) can lead to the whole screen being refreshed.
     if (lastRender) {
+      // The preparing block waits a short delay, so a fast switch does not flash it. Around a story
+      // that owns the document the whole document changes hands, which seldom happens within the
+      // delay, so the block shows at once, before the teardown. A change of view mode showed it at
+      // once already (above).
+      const ownsDocument = (r: PossibleRender<TRenderer>) => isStoryRender(r) && r.ownsDocument;
+      if (
+        storyIdChanged &&
+        !viewModeChanged &&
+        (ownsDocument(lastRender) || ownsDocument(render))
+      ) {
+        this.view.showPreparingStory({ immediate: true });
+      }
       await this.teardownRender(lastRender, {
         viewModeChanged,
         // On a same-story re-render, the previous DOM stays mounted until the new render
         // replaces it in place, so the document never collapses and scroll is preserved.
         keepRenderedDom: !storyIdChanged && !viewModeChanged,
       });
+      if (isSuperseded()) {
+        return;
+      }
     }
 
     // If we are rendering something new (as opposed to re-rendering the same or first story), emit
@@ -488,16 +528,17 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       });
     }
 
+    this.mountedRender = render;
     if (isStoryRender(render)) {
       invariant(!!render.story);
-      this.storyRenders.push(render as StoryRender<TRenderer>);
-      (this.currentRender as StoryRender<TRenderer>).renderToElement(
+      this.storyRenders.push(render);
+      render.renderToElement(
         this.view.prepareForStory(render.story, {
           scrollReset: storyIdChanged || viewModeChanged,
         })
       );
     } else {
-      this.currentRender.renderToElement(
+      render.renderToElement(
         this.view.prepareForDocs({ scrollReset: storyIdChanged || viewModeChanged }),
         // This argument is used for docs, which is currently only compatible with HTMLElements
         this.renderStoryToElement.bind(this) as any
@@ -519,10 +560,11 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   // UTILITIES
   mainStoryCallbacks(storyId: StoryId) {
     return {
-      showStoryDuringRender: () => this.view.showStoryDuringRender(),
       showMain: () => this.view.showMain(),
       showError: (err: { title: string; description: string }) => this.renderError(storyId, err),
       showException: (err: Error) => this.renderException(storyId, err),
+      lendLocation: () => this.selectionStore.lendLocation?.(),
+      reclaimLocation: () => this.selectionStore.reclaimLocation?.(),
     };
   }
 

@@ -8,6 +8,7 @@ import {
   UNHANDLED_ERRORS_WHILE_PLAYING,
 } from 'storybook/internal/core-events';
 import {
+  MissingRenderToCanvasError,
   MountMustBeDestructuredError,
   NoStoryMountedError,
 } from 'storybook/internal/preview-errors';
@@ -16,7 +17,6 @@ import type {
   PreparedStory,
   RenderContext,
   RenderContextCallbacks,
-  RenderToCanvas,
   Renderer,
   StoryContext,
   StoryContextForRender,
@@ -31,6 +31,7 @@ import { type StoryStore, hideArgTypes } from '../../store/index.ts';
 import type { Render, RenderType } from './Render.ts';
 import { PREPARE_ABORTED } from './Render.ts';
 import { isTestEnvironment, pauseAnimations, waitForAnimations } from './animation-utils.ts';
+import { markDocumentRoot } from './documentRoot.ts';
 
 const { AbortController } = globalThis;
 
@@ -78,13 +79,19 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
   private teardownRender: TeardownRenderToCanvas = () => {};
 
+  private releaseDocumentRoot = () => {};
+
   public torndown = false;
+
+  private teardownPromise?: Promise<void>;
 
   constructor(
     public channel: Channel,
     public store: StoryStore<TRenderer>,
-    private renderToScreen: RenderToCanvas<TRenderer>,
-    private callbacks: RenderContextCallbacks<TRenderer> & { showStoryDuringRender?: () => void },
+    private callbacks: RenderContextCallbacks<TRenderer> & {
+      lendLocation?: () => void;
+      reclaimLocation?: () => void;
+    },
     public id: StoryId,
     public viewMode: StoryContext<TRenderer>['viewMode'],
     public renderOptions: StoryRenderOptions = { autoplay: true, forceInitialArgs: false },
@@ -103,7 +110,17 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     }
   }
 
+  // Only the story the preview shows owns the document; in a docs page it renders to its block.
+  get ownsDocument() {
+    return this.viewMode === 'story' && this.story?.parameters.layout === 'document';
+  }
+
   private async runPhase(signal: AbortSignal, phase: RenderPhase, phaseFn?: () => Promise<void>) {
+    // An aborted render has ended, though its code may still run: it reports `aborted` once, and
+    // nothing after it.
+    if (this.checkIfAborted(signal)) {
+      return;
+    }
     this.phase = phase;
     this.channel.emit(STORY_RENDER_PHASE_CHANGED, {
       newPhase: this.phase,
@@ -134,12 +151,14 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   }
 
   async prepare() {
-    await this.runPhase(this.abortController.signal, 'preparing', async () => {
-      this.story = await this.store.loadStory({ storyId: this.id });
-    });
+    const { signal } = this.abortController;
+    await this.runPhase(signal, 'preparing');
+    this.story = await this.store.loadStory({ storyId: this.id });
 
-    if (this.abortController.signal.aborted) {
-      await this.store.cleanupStory(this.story as PreparedStory<TRenderer>);
+    // A render dropped while preparing has acquired nothing, so it releases nothing. It never
+    // mounted either, so it reports no end: the story's last phase stays that of the render shown.
+    if (signal.aborted) {
+      this.phase = 'aborted';
       throw PREPARE_ABORTED;
     }
   }
@@ -189,15 +208,26 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     initial?: boolean;
     forceRemount?: boolean;
   } = {}) {
-    const { canvasElement } = this;
-
     if (!this.story) {
       throw new Error('cannot render when not prepared');
     }
     const story = this.story;
 
+    const { ownsDocument } = this;
+    // Such a story renders to the <body> the document has now, which an earlier render may have left.
+    if (ownsDocument && this.canvasElement) {
+      this.canvasElement = document.body as TRenderer['canvasElement'];
+    }
+    const { canvasElement } = this;
+
     if (!canvasElement) {
       throw new Error('cannot render when canvasElement is unset');
+    }
+
+    // Until its teardown, `location` is the story's. A render that was torn down for good (and a
+    // rerender it had enqueued) must not take it again.
+    if (ownsDocument && !this.teardownPromise) {
+      this.callbacks.lendLocation?.();
     }
 
     const {
@@ -213,6 +243,11 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       playFunction,
       runStep,
     } = story;
+
+    // A story renders with the project annotations it was prepared with: a CSF Next file carries
+    // the annotations of its own preview. A preview without a renderToCanvas leaves it to the
+    // project's, as the store does for every annotation a file does not carry.
+    const renderStory = story.renderToCanvas ?? this.store.projectAnnotations.renderToCanvas;
 
     if (forceRemount && !initial) {
       // NOTE: we don't check the cancel actually worked here, so the previous
@@ -242,9 +277,19 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         canvas: {} as Canvas,
         userEvent: {} as UserEventObject,
         renderToCanvas: async () => {
-          const teardown = await this.renderToScreen(renderContext, canvasElement);
+          if (!renderStory) {
+            throw new MissingRenderToCanvasError();
+          }
+          const teardown = await renderStory(renderContext, canvasElement);
           this.teardownRender = teardown || (() => {});
           mounted = true;
+          // A render that a teardown aborted marks nothing: the document is the next story's.
+          if (ownsDocument && !abortSignal.aborted) {
+            // Its root is the <body> the render left, which may be a new one after every render.
+            this.releaseDocumentRoot();
+            this.releaseDocumentRoot = markDocumentRoot(id);
+            context.canvasElement = document.body as TRenderer['canvasElement'];
+          }
         },
         // The story provides (set in a renderer) a mount function that is a higher order function
         // (context) => (...args) => Canvas
@@ -252,7 +297,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         // Before assigning it to the context, we resolve the context dependency,
         // so that a user can just call it as await mount(...args) in their play function.
         mount: async (...args) => {
-          this.callbacks.showStoryDuringRender?.();
+          // An aborted render mounts nothing; like any mount, it resolves to the play's canvas.
+          if (this.checkIfAborted(abortSignal)) {
+            return context.canvas;
+          }
           let mountReturn: Awaited<ReturnType<StoryContext['mount']>> = null!;
           await this.runPhase(abortSignal, 'rendering', async () => {
             mountReturn = await story.mount(context)(...args);
@@ -298,7 +346,17 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       }
 
       const cleanupCallbacks = await applyBeforeEach(hookContext);
-      this.store.addCleanupCallbacks(story, ...cleanupCallbacks);
+
+      // The teardown that aborted this render ran the story's cleanups before these were returned,
+      // so this render runs them itself; the story's list may hold another render's of the same id.
+      // They run before the phase report below, so that teardown waits for them.
+      if (abortSignal.aborted) {
+        for (const cleanup of cleanupCallbacks.reverse()) {
+          await cleanup();
+        }
+      } else {
+        this.store.addCleanupCallbacks(story, ...cleanupCallbacks);
+      }
 
       if (this.checkIfAborted(abortSignal)) {
         return;
@@ -356,9 +414,6 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
             await this.runPhase(abortSignal, 'played');
           }
         } catch (error) {
-          // Remove the loading screen, even if there was an error before rendering
-          this.callbacks.showStoryDuringRender?.();
-
           await this.runPhase(abortSignal, 'errored', async () => {
             this.channel.emit(PLAY_FUNCTION_THREW_EXCEPTION, serializeError(error));
           });
@@ -366,13 +421,9 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
           if (this.story.parameters.throwPlayFunctionExceptions !== false) {
             throw error;
           }
-          console.error(error);
-        }
-        if (!ignoreUnhandledErrors && unhandledErrors.size > 0) {
-          this.channel.emit(
-            UNHANDLED_ERRORS_WHILE_PLAYING,
-            Array.from(unhandledErrors).map(serializeError)
-          );
+          if (!abortSignal.aborted) {
+            console.error(error);
+          }
         }
         this.disableKeyListeners = false;
         window?.removeEventListener?.('unhandledrejection', onUnhandledRejection);
@@ -380,6 +431,12 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
         if (abortSignal.aborted) {
           return;
+        }
+        if (!ignoreUnhandledErrors && unhandledErrors.size > 0) {
+          this.channel.emit(
+            UNHANDLED_ERRORS_WHILE_PLAYING,
+            Array.from(unhandledErrors).map(serializeError)
+          );
         }
       }
 
@@ -421,6 +478,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         } as StoryFinishedPayload)
       );
     } catch (err) {
+      // What an aborted render throws is not the story's error: the render has ended.
+      if (this.checkIfAborted(abortSignal)) {
+        return;
+      }
       this.phase = 'errored';
       this.callbacks.showException(err as Error);
 
@@ -455,7 +516,11 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   }
 
   async remount() {
-    await this.teardown();
+    await this.runTeardown({});
+    // A teardown that started meanwhile is for good, so this render must not mount again.
+    if (this.teardownPromise) {
+      return;
+    }
     return this.render({ forceRemount: true });
   }
 
@@ -471,16 +536,25 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   cancelPlayFunction() {
     if (this.phase === 'playing') {
       this.abortController.abort();
-      this.runPhase(this.abortController.signal, 'aborted');
+      this.checkIfAborted(this.abortController.signal);
     }
   }
 
-  async teardown({ keepRenderedDom = false }: { keepRenderedDom?: boolean } = {}) {
+  // Callers share one teardown, so cleanups run once and every caller waits for them. A remount
+  // tears down for itself, since it mounts again afterwards.
+  teardown(options: { keepRenderedDom?: boolean } = {}) {
+    this.teardownPromise ??= this.runTeardown(options);
+    return this.teardownPromise;
+  }
+
+  private async runTeardown({ keepRenderedDom = false }: { keepRenderedDom?: boolean }) {
     this.torndown = true;
     this.cancelRender();
+    this.releaseDocumentRoot();
+    this.releaseDocumentRoot = () => {};
 
-    // If the story has loaded, we need to clean up
-    if (this.story) {
+    // A render that never got a canvas registered no cleanups: the story's list is another's.
+    if (this.story && this.canvasElement) {
       await this.store.cleanupStory(this.story);
     }
 
@@ -494,6 +568,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         // the document, which makes the browser clamp the scroll position to 0 (#22057).
         if (!keepRenderedDom) {
           await this.teardownRender();
+          // A render that never got a canvas never had `location`; another story may still have it.
+          if (this.canvasElement) {
+            this.callbacks.reclaimLocation?.();
+          }
         }
         return;
       }
@@ -504,6 +582,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     // If we still haven't completed, reload the page (iframe) to ensure we have a clean slate
     // for the next render. Since the reload can take a brief moment to happen, we want to stop
     // further rendering by awaiting a never-resolving promise (which is destroyed on reload).
+    this.callbacks.reclaimLocation?.();
     window?.location?.reload?.();
     await new Promise(() => {});
   }

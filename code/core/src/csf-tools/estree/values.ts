@@ -63,7 +63,7 @@ export const placeableValueSource = (editor: SourceEditor, member: Property) =>
 
 /**
  * A plain value, as `getValue` reads it. `CsfValue<CsfExpression>`, which `set` takes, can also hold
- * expressions from `get` or `parseExpression`, at any depth.
+ * expressions from `get`, `parseExpression` or `parseModule`, at any depth.
  */
 export type CsfValue<Expression = never> =
   | string

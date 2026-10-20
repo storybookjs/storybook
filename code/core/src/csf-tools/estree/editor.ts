@@ -15,7 +15,6 @@ import {
   normalizeLineEndings,
   outerSpan,
   parseModule,
-  parsePrintable,
   placeableTextOf,
   restoreLineEndings,
   sourceOf,
@@ -136,7 +135,7 @@ export class SourceEditor {
     this.fileName = fileName;
     this._onCommit = onCommit;
     this._originalCode = code;
-    this._module = parsePrintable(code, fileName);
+    this._module = parseModule(code, fileName);
     this._batch = newBatch(this.code, fileName);
   }
 
@@ -204,7 +203,7 @@ export class SourceEditor {
     const what = 'type' in value ? `${value.type} node` : 'list';
     if (module) {
       throw new Error(
-        `Cannot edit a ${what} of another parse: stale after \`commit()\`, or from \`parseExpression\`/\`get()\`; use \`textOf\` for those`
+        `Cannot edit a ${what} of another parse: stale after \`commit()\`, or from \`parseModule\`, \`parseExpression\` or \`get()\`; use \`textOf\` for those`
       );
     }
     if ('type' in value) {
@@ -222,7 +221,7 @@ export class SourceEditor {
     if (!this.pending) {
       return false;
     }
-    let module = parsePrintable(this.edits.toString(), this.fileName);
+    let module = parseModule(this.edits.toString(), this.fileName);
     this._style ??= inferStyle(this._module);
     this._committed.push(this.edits);
     let appended = this._appendedWithoutBlankLine
@@ -235,7 +234,7 @@ export class SourceEditor {
       for (const statement of apart) {
         spacing.appendLeft(ownLineStart(module, statement), '\n');
       }
-      module = parsePrintable(spacing.toString(), this.fileName);
+      module = parseModule(spacing.toString(), this.fileName);
       this._committed.push(spacing);
       appended = appended
         .filter((statement) => !apart.includes(statement))
@@ -496,7 +495,8 @@ type ValueLayout = { indent: string; expand: 'objects' | 'multiline' };
 
 const spansLines = (texts: string[]) => texts.some((text) => text.includes('\n'));
 
-// A JS value as source, and a node of `get`, `parseExpression` or a file in it as `detachedTextOf`.
+// A JS value as source, and a node of `get`, `parseExpression`, `parseModule` or a file in it as
+// `detachedTextOf`.
 export const printValue = (value: unknown, quote: string, layout?: ValueLayout): string => {
   if (value === undefined) {
     return 'undefined';
@@ -859,7 +859,7 @@ export const detachedSource = (editor: SourceEditor, span: Span) => {
 
 /**
  * `placeableTextOf` dedented as if the node's line had no indent, to place a node of `get`,
- * `parseExpression` or a `SourceEditor` at another indent.
+ * `parseExpression`, `parseModule` or a `SourceEditor` at another indent.
  */
 export const detachedTextOf = (node: Node) =>
   reindent(placeableTextOf(node), lineIndent(moduleOf(node)!.code, node.start), '');

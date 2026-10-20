@@ -149,16 +149,9 @@ export const restoreLineEndings = (code: string, original: string) => {
  * be shorter than the code passed in. Lines and columns are the same in both.
  *
  * The tree has no parenthesized nodes: `outerSpan` gives the span of the parentheses around one.
+ * `textOf` and `placeableTextOf` print its nodes, and `CsfObject#set` accepts its expressions.
  */
 export const parseModule = (code: string, fileName?: string): ParsedModule => {
-  const module = parseWithParentheses(code, fileName);
-  normalize(module.program, undefined);
-  return module;
-};
-
-// `parseModule`, but `textOf` can print every node of the tree and `moduleOf` finds its parse,
-// also for its comments.
-export const parsePrintable = (code: string, fileName?: string): ParsedModule => {
   const module = parseWithParentheses(code, fileName);
   normalize(module.program, module);
   for (const comment of module.comments) {
@@ -442,7 +435,7 @@ class Tag extends Stamp {
   }
 }
 
-/** The parse a node of `parsePrintable` or `parseExpression` came from. */
+/** The parse a node of `parseModule` or `parseExpression` came from. */
 export const moduleOf = (node: object): ParsedModule | undefined => Tag.get(node, 'module');
 
 /** Mark `value` as derived from the nodes of `module`, so `moduleOf` finds that parse for it. */
@@ -470,16 +463,14 @@ const withoutParentheses = (node: Node): Node => {
 const childKeys = new Map<string, readonly string[]>(Object.entries(visitorKeys));
 
 // Replaces every parenthesized node under `root` by the node inside it, in one pass that also
-// records the parse each node came from, if given. It keeps its own stack, so a deeply nested
+// records the parse each node came from. It keeps its own stack, so a deeply nested
 // expression cannot overflow the call stack; tracking the size itself is faster than push and pop.
-const normalize = (root: Node, module: ParsedModule | undefined) => {
+const normalize = (root: Node, module: ParsedModule) => {
   const stack = [root];
   let size = 1;
   while (size > 0) {
     const node = stack[--size];
-    if (module !== undefined) {
-      Tag.set(node, 'module', module);
-    }
+    Tag.set(node, 'module', module);
     const keys = childKeys.get(node.type);
     if (keys === undefined) {
       continue;
@@ -508,15 +499,15 @@ const codeOf = (node: Node) => {
   const code = moduleOf(node)?.code;
   if (code === undefined) {
     throw new Error(
-      `Cannot print a ${node.type} node whose source is unknown: expressions must come from \`get\`, \`transform\` or \`parseExpression\``
+      `Cannot print a ${node.type} node whose source is unknown: expressions must come from \`get\`, \`transform\`, \`parseExpression\` or \`parseModule\``
     );
   }
   return code;
 };
 
 /**
- * Source text of a node from `SourceEditor` or `parseExpression`, as written. Throws for any
- * other node, such as one from `parseModule`.
+ * Source text of a node from `parseModule`, `SourceEditor` or `parseExpression`, as written.
+ * Throws for any other node, such as a copy.
  */
 export const textOf = (node: Node): string =>
   Tag.get(node, 'fragment')?.text ?? sourceOf(codeOf(node), node);

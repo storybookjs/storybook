@@ -11,7 +11,7 @@ import {
   parseExpression,
   outerSpan,
   parseModule,
-  parsePrintable,
+  placeableTextOf,
   rawTransferAvailable,
   textOf,
   walk,
@@ -101,11 +101,19 @@ describe('parseModule', () => {
     expect(() => parseModule(['const a = 1;', 'const b = ;', ''].join(eol))).toThrow(/\(2:10\)$/);
   });
 
-  it('serializes a printable parse like the parser output, with its text available', () => {
-    const code = 'export const a = (1);\n';
-    const { program } = parsePrintable(code, 'a.ts');
-    expect(textOf(program.body[0])).toBe('export const a = (1);');
-    expect(JSON.stringify(program)).toBe(JSON.stringify(parseModule(code, 'a.ts').program));
+  it('records its parse on a node without adding a key, with its text available', () => {
+    const { program } = parseModule('export const a = (1);\n', 'a.ts');
+    const [statement] = program.body;
+    expect(textOf(statement)).toBe('export const a = (1);');
+    expect(Reflect.ownKeys(statement)).toEqual(Object.keys(JSON.parse(JSON.stringify(statement))));
+  });
+
+  it('gives nodes and comments whose source text prints', () => {
+    const { program, comments } = parseModule("import a from 'a';\nconst b = (a, 1); // end\n");
+    expect(textOf(program.body[0])).toBe("import a from 'a';");
+    const [declarator] = (program.body[1] as E.VariableDeclaration).declarations;
+    expect(placeableTextOf(declarator.init!)).toBe('(a, 1)');
+    expect(moduleOf(comments[0])?.program).toBe(program);
   });
 
   it.each(transfers)(
@@ -141,11 +149,11 @@ describe('parseModule', () => {
   });
 
   it('keeps what it records on a node out of its inspection and equality', () => {
-    const [first] = parsePrintable('a;\nb;', 'a.ts').program.body;
-    const [second] = parsePrintable('a;\nc;', 'a.ts').program.body;
+    const [first] = parseModule('a;\nb;', 'a.ts').program.body;
+    const [second] = parseModule('a;\nc;', 'a.ts').program.body;
     expect(moduleOf(first)).not.toBe(moduleOf(second));
     expect(first).toEqual(second);
-    expect(inspect(first)).toBe(inspect(parseModule('a;\nb;', 'a.ts').program.body[0]));
+    expect(inspect(first)).toBe(inspect(structuredClone(first)));
     expect(moduleOf({ ...first })).toBeUndefined();
   });
 });

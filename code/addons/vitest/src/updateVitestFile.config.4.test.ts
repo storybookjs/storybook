@@ -71,23 +71,26 @@ describe('updateConfigFile', () => {
         
       -           projects: ['packages/*']
       - 
-      +           projects: ['packages/*', {
-      +             extends: true,
-      +             plugins: [
-      +               // The plugin will run tests for the stories defined in your Storybook config
-      +               // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +               storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
-      +             ],
-      +             test: {
-      +               name: 'storybook',
-      +               browser: {
-      +                 enabled: true,
-      +                 headless: true,
-      +                 provider: playwright({}),
-      +                 instances: [{ browser: 'chromium' }],
+      +           projects: [
+      +             'packages/*',
+      +             {
+      +               extends: true,
+      +               plugins: [
+      +                 // The plugin will run tests for the stories defined in your Storybook config
+      +                 // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +                 storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
+      +               ],
+      +               test: {
+      +                 name: 'storybook',
+      +                 browser: {
+      +                   enabled: true,
+      +                   headless: true,
+      +                   provider: playwright({}),
+      +                   instances: [{ browser: 'chromium' }],
+      +                 },
       +               },
-      +             },
-      +           }]
+      +             }
+      +           ]
       + 
                 },
               })
@@ -145,23 +148,26 @@ describe('updateConfigFile', () => {
         
       -           projects: ['packages/*']
       - 
-      +           projects: ['packages/*', {
-      +             extends: true,
-      +             plugins: [
-      +               // The plugin will run tests for the stories defined in your Storybook config
-      +               // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +               storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
-      +             ],
-      +             test: {
-      +               name: 'storybook',
-      +               browser: {
-      +                 enabled: true,
-      +                 headless: true,
-      +                 provider: playwright({}),
-      +                 instances: [{ browser: 'chromium' }],
+      +           projects: [
+      +             'packages/*',
+      +             {
+      +               extends: true,
+      +               plugins: [
+      +                 // The plugin will run tests for the stories defined in your Storybook config
+      +                 // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +                 storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
+      +               ],
+      +               test: {
+      +                 name: 'storybook',
+      +                 browser: {
+      +                   enabled: true,
+      +                   headless: true,
+      +                   provider: playwright({}),
+      +                   instances: [{ browser: 'chromium' }],
+      +                 },
       +               },
-      +             },
-      +           }]
+      +             }
+      +           ]
       + 
                 },
               }
@@ -608,23 +614,27 @@ b'],
         
       -           projects: ['packages/*', {some: 'config'}]
       - 
-      +           projects: ['packages/*', {some: 'config'}, {
-      +             extends: true,
-      +             plugins: [
-      +               // The plugin will run tests for the stories defined in your Storybook config
-      +               // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +               storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
-      +             ],
-      +             test: {
-      +               name: 'storybook',
-      +               browser: {
-      +                 enabled: true,
-      +                 headless: true,
-      +                 provider: playwright({}),
-      +                 instances: [{ browser: 'chromium' }],
+      +           projects: [
+      +             'packages/*',
+      +             {some: 'config'},
+      +             {
+      +               extends: true,
+      +               plugins: [
+      +                 // The plugin will run tests for the stories defined in your Storybook config
+      +                 // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +                 storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
+      +               ],
+      +               test: {
+      +                 name: 'storybook',
+      +                 browser: {
+      +                   enabled: true,
+      +                   headless: true,
+      +                   provider: playwright({}),
+      +                   instances: [{ browser: 'chromium' }],
+      +                 },
       +               },
-      +             },
-      +           }]
+      +             }
+      +           ]
       + 
                 }
               })

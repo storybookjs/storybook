@@ -1424,9 +1424,10 @@ describe('CsfObject', () => {
   describe('an edit the CSF indexer rejects', () => {
     const load = (code: string) =>
       loadCsf(code, { fileName: 'B.stories.ts', makeTitle: (title) => title ?? 'B' }).parse();
+    const source = "export default { title: 'B', tags: ['docs'] };\nexport const A = {};\n";
 
-    it('keeps the edit and reports it instead of throwing', () => {
-      const csf = load("export default { title: 'B', tags: ['docs'] };\nexport const A = {};\n");
+    it('refuses the edit and leaves the file as it was', () => {
+      const csf = load(source);
       const [meta] = csf.objects({ stories: false });
 
       const result = meta.transform(['tags'], (value) =>
@@ -1435,52 +1436,76 @@ describe('CsfObject', () => {
 
       expect(result).toEqual({
         ok: false,
-        changed: true,
+        changed: false,
         diagnostic: expect.objectContaining({
           code: 'invalid-csf',
           path: ['tags'],
           message: expect.stringContaining('CSF: Expected tag to be string literal'),
         }),
       });
-      expect(printCsf(csf).code).toBe(
-        "export default { title: 'B', tags: [...['docs'], 'autodocs'] };\nexport const A = {};\n"
-      );
-      expect(csf.changed).toBe(true);
-      expect(meta.changed).toBe(true);
-      expect(csf._editor._committed).toHaveLength(1);
+      expect(printCsf(csf).code).toBe(source);
+      expect(csf.changed).toBe(false);
+      expect(meta.changed).toBe(false);
+      expect(csf.meta?.tags).toEqual(['docs']);
+      expect(csf.stories).toHaveLength(1);
+      expect(csf.objects()).toHaveLength(2);
       expect(csf.mutationDiagnostics).toEqual([
         expect.objectContaining({ code: 'invalid-csf', target: { kind: 'meta' } }),
       ]);
     });
 
-    it('throws for code that does not parse, leaving the edits pending and the index as it was', () => {
+    it('rolls back a move whose insertion the indexer rejects before its source is removed', () => {
+      const csf = load(
+        "export default { title: 'B', parameters: { a: 1 } };\nexport const A = {};\n"
+      );
+      const [meta] = csf.objects({ stories: false });
+
+      expect(meta.move(['parameters'], ['tags'])).toMatchObject({
+        ok: false,
+        changed: false,
+        diagnostic: { code: 'invalid-csf' },
+      });
+      expect(printCsf(csf).code).toBe(
+        "export default { title: 'B', parameters: { a: 1 } };\nexport const A = {};\n"
+      );
+      expect(csf.changed).toBe(false);
+    });
+
+    it('throws for code that does not parse, leaving earlier edits and the index as they were', () => {
       const csf = load("export default { title: 'B' };\nexport const A = {};\n");
       const [meta] = csf.objects({ stories: false });
       csf._editor.edits.appendLeft(0, '(');
 
       expect(() => meta.set(['tags'], ['docs'])).toThrow(/B\.stories\.ts$/);
-      expect(csf._editor.pending).toBe(true);
+      expect(csf._editor.edits.toString()).toBe(
+        "(export default { title: 'B' };\nexport const A = {};\n"
+      );
       expect(csf._editor._committed).toEqual([]);
       expect(csf.meta?.title).toBe('B');
+      expect(csf.changed).toBe(false);
       expect(csf.mutationDiagnostics).toEqual([]);
     });
 
     it.each([
       { path: ['title'], expression: '`B`', error: 'CSF: unexpected dynamic title' },
       { path: ['includeStories'], expression: 'fn()', error: 'Unknown include/exclude' },
-    ])('throws for the index after setting $path to $expression', ({ path, expression, error }) => {
-      const csf = load("export default { title: 'B' };\nexport const A = {};\n");
-      const [meta] = csf.objects({ stories: false });
+    ])(
+      'refuses setting $path to $expression, keeping the index readable',
+      ({ path, expression, error }) => {
+        const csf = load("export default { title: 'B' };\nexport const A = {};\n");
+        const [meta] = csf.objects({ stories: false });
 
-      expect(meta.set(path, parseExpression(expression)).ok).toBe(false);
-      expect(printCsf(csf).code).toContain(`${path[0]}: ${expression}`);
-      expect(() => csf.meta).toThrow(error);
-      expect(() => csf.stories).toThrow(error);
-      expect(() => csf.indexInputs).toThrow(error);
-      expect(() => csf.getStoryExport('A')).toThrow(error);
-      expect(() => csf.getStoryTests('A')).toThrow(error);
-      expect(() => csf.objects()).toThrow(error);
-    });
+        expect(meta.set(path, parseExpression(expression))).toMatchObject({
+          ok: false,
+          changed: false,
+          diagnostic: { code: 'invalid-csf', message: expect.stringContaining(error) },
+        });
+        expect(printCsf(csf).code).toBe("export default { title: 'B' };\nexport const A = {};\n");
+        expect(csf.meta?.title).toBe('B');
+        expect(csf.indexInputs).toHaveLength(1);
+        expect(csf.objects()).toHaveLength(2);
+      }
+    );
   });
 
   describe('transaction', () => {

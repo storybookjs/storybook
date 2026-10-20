@@ -50,7 +50,7 @@ A story is also left untouched when it is written to other than by a top-level `
 
 `CsfFile.changed` is true once any mutation has been applied, which is the signal for whether the file needs to be written back.
 
-Each mutation is applied on its own. To apply several as one, run them in `transaction(fn)` on `CsfFile` or `ConfigFile`: when `fn` throws, returns `false`, or any mutation in it returns `{ ok: false }`, every edit made in it is rolled back, and `changed` with it. Mutations inside return their results as usual, and the diagnostics of refused ones stay on `mutationDiagnostics`. `transaction` returns whether the edits were kept. `fn` runs synchronously; one that returns a promise throws. A transaction inside another rolls back on its own, and with the outer one.
+Each mutation is applied on its own, and a refused one leaves the file as it was, also when its edit would leave a file the CSF indexer rejects (`invalid-csf`). To apply several as one, run them in `transaction(fn)` on `CsfFile` or `ConfigFile`: when `fn` throws, returns `false`, or any mutation in it returns `{ ok: false }`, every edit made in it is rolled back, and `changed` with it. Mutations inside return their results as usual, and the diagnostics of refused ones stay on `mutationDiagnostics`. `transaction` returns whether the edits were kept. `fn` runs synchronously; one that returns a promise throws. A transaction inside another rolls back on its own, and with the outer one.
 
 ```ts
 for (const story of csf.objects()) {

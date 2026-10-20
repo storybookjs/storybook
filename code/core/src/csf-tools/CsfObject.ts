@@ -66,12 +66,12 @@ export type CsfInspection =
   | { kind: 'unreadable'; diagnostic: CsfMutationDiagnostic };
 
 /**
- * Outcome of a mutation. `ok: false` with `changed: true` means the edit was applied but left a file
- * the CSF indexer rejects, such as a meta `tags` that is no longer an array of string literals.
+ * Outcome of a mutation. A refused one leaves the file as it was, also when its edit would leave a
+ * file the CSF indexer rejects, such as a meta `tags` that is no longer an array of string literals.
  */
 export type CsfMutationResult =
   | { ok: true; changed: boolean }
-  | { ok: false; changed: boolean; diagnostic: CsfMutationDiagnostic };
+  | { ok: false; changed: false; diagnostic: CsfMutationDiagnostic };
 
 /**
  * An expression detached from any file, as returned by `get` and accepted by `set` and
@@ -356,6 +356,10 @@ class Editor implements CsfObjectEditor {
   }
 
   set(path: readonly string[], value: CsfValue<CsfExpression>): CsfMutationResult {
+    return this.atomic(() => this.setValue(path, value));
+  }
+
+  private setValue(path: readonly string[], value: CsfValue<CsfExpression>): CsfMutationResult {
     if (path.length === 0 || unsafePath(path)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
@@ -400,6 +404,10 @@ class Editor implements CsfObjectEditor {
   // `set` of an array of `items` at a missing path, which carries the spreads before it forward
   // like a missing parent, for appending to the array a spread may provide.
   createArray(path: readonly string[], items: string[]): CsfMutationResult {
+    return this.atomic(() => this.insertArray(path, items));
+  }
+
+  private insertArray(path: readonly string[], items: string[]): CsfMutationResult {
     if (path.length === 0 || unsafePath(path)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
@@ -426,6 +434,13 @@ class Editor implements CsfObjectEditor {
     path: readonly string[],
     derive: (value: CsfExpression) => CsfExpression | undefined
   ): CsfMutationResult {
+    return this.atomic(() => this.transformValue(path, derive));
+  }
+
+  private transformValue(
+    path: readonly string[],
+    derive: (value: CsfExpression) => CsfExpression | undefined
+  ): CsfMutationResult {
     if (path.length === 0 || unsafePath(path)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
@@ -447,6 +462,10 @@ class Editor implements CsfObjectEditor {
   }
 
   remove(path: readonly string[]): CsfMutationResult {
+    return this.atomic(() => this.removeValue(path));
+  }
+
+  private removeValue(path: readonly string[]): CsfMutationResult {
     if (path.length === 0 || unsafePath(path)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
@@ -475,6 +494,10 @@ class Editor implements CsfObjectEditor {
   }
 
   move(from: readonly string[], to: readonly string[]): CsfMutationResult {
+    return this.atomic(() => this.moveValue(from, to));
+  }
+
+  private moveValue(from: readonly string[], to: readonly string[]): CsfMutationResult {
     if (from.length === 0 || to.length === 0 || unsafePath(from) || unsafePath(to)) {
       return this.failure('unsupported-member', from.length === 0 ? from : to, this.anchor());
     }
@@ -520,8 +543,7 @@ class Editor implements CsfObjectEditor {
     }
 
     const moved = source.parent.take(source.property, key);
-    // Insert first: if that throws, nothing has been committed. The source is removed afterwards,
-    // looked up again since the insertion moved its spans.
+    // The source is removed after the insertion, looked up again since the insertion moved its spans.
     this.insert(to.slice(0, -1), { members: [{ ...moved, key }] });
     const inserted = this.commit(from);
     if (!inserted.ok) {
@@ -540,6 +562,10 @@ class Editor implements CsfObjectEditor {
   }
 
   group(path: readonly string[], names: readonly string[]): CsfMutationResult {
+    return this.atomic(() => this.groupValues(path, names));
+  }
+
+  private groupValues(path: readonly string[], names: readonly string[]): CsfMutationResult {
     if (path.length === 0 || unsafePath(path) || unsafePath(names)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
@@ -870,17 +896,31 @@ class Editor implements CsfObjectEditor {
     return { ok: false as const, changed: false as const, diagnostic };
   }
 
-  // The edit stays applied when the file's indexer rejects the committed code: the file is valid
-  // JS, so that is a diagnostic rather than an error. Code that does not parse is left pending by
-  // the editor, and the error is the caller's.
-  private commit(path: readonly string[]): CsfMutationResult {
-    if (!this.#changed) {
-      this.#changed = true;
-      this.editor._transaction?.rollbacks.push(() => {
-        this.#changed = false;
-      });
+  // Runs a mutation in a transaction of its own, so a refused or throwing one leaves the file as
+  // it was, also after some of its edits were committed. A refusal still rolls back the
+  // transaction around it.
+  private atomic(mutation: () => CsfMutationResult): CsfMutationResult {
+    let result = { ok: true, changed: false } as CsfMutationResult;
+    this.editor.transaction(() => {
+      result = mutation();
+    });
+    if (!result.ok) {
+      this.editor._refuse();
+    } else if (result.changed) {
+      if (!this.#changed) {
+        this.#changed = true;
+        this.editor._transaction?.rollbacks.push(() => {
+          this.#changed = false;
+        });
+      }
+      this.markChanged();
     }
-    this.markChanged();
+    return result;
+  }
+
+  // A file the indexer rejects is valid JS, so that is a diagnostic rather than an error. Code that
+  // does not parse throws, and the error is the caller's.
+  private commit(path: readonly string[]): CsfMutationResult {
     try {
       this.editor.commit();
     } catch (error) {
@@ -888,13 +928,12 @@ class Editor implements CsfObjectEditor {
         throw error;
       }
       const reason = error instanceof Error ? error.message : String(error);
-      const rejected = this.failure(
+      return this.failure(
         'invalid-csf',
         path,
         this.anchor(),
         `Edited ${path.join('.')}, but the result is not valid CSF: ${reason}`
       );
-      return { ...rejected, changed: true };
     }
     return { ok: true, changed: true };
   }

@@ -247,8 +247,8 @@ export class SourceEditor {
   /**
    * Run `fn`, keeping its edits only when it does not throw, does not return `false` and no
    * mutation in it was refused. Otherwise the code, the tree and the pending and committed edits
-   * are put back as they were and indexed again, as a commit would, and `onRollback` runs. Returns
-   * whether they were kept.
+   * are put back as they were, indexed again as a commit would when `fn` committed, and
+   * `onRollback` runs. Returns whether they were kept.
    */
   transaction(fn: () => boolean | void, onRollback?: () => void): boolean {
     const { _module, _style, _transaction: outer } = this;
@@ -272,17 +272,19 @@ export class SourceEditor {
         outer?.rollbacks.push(...transaction.rollbacks);
       } else {
         transaction.rollbacks.reverse().forEach((rollback) => rollback());
-        this._module = _module;
-        this._style = _style;
-        this._committed.length = committed;
         this._batch = batch;
         this._appendedWithoutBlankLine = appended;
-        this._scopes = undefined;
-        this._parents = undefined;
-        try {
-          this._onCommit?.();
-        } catch {
-          // The code before `fn` indexed, or failed to, the same way.
+        if (this._module !== _module) {
+          this._module = _module;
+          this._style = _style;
+          this._committed.length = committed;
+          this._scopes = undefined;
+          this._parents = undefined;
+          try {
+            this._onCommit?.();
+          } catch {
+            // The code before `fn` indexed, or failed to, the same way.
+          }
         }
       }
     }

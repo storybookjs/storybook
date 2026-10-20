@@ -46,9 +46,11 @@ if (config.changed && config.mutationDiagnostics.length === 0) {
 }
 ```
 
-`ConfigFile.changed` and `ConfigFile.mutationDiagnostics` track these editor operations. Existing `getFieldNode` reads reflect editor changes. Array and import helpers remain available; their edits are not tracked by `changed`. `writeConfig` rejects files with mutation diagnostics to avoid writing partial edits.
+`ConfigFile.changed` and `ConfigFile.mutationDiagnostics` track these editor operations. Existing `getFieldNode` reads reflect editor changes. `writeConfig` rejects files with mutation diagnostics to avoid writing partial edits.
 
-`setImport`, `setRequireImport`, and `removeImport` look at every import or top-level `require` of the module, and take a named binding as `'name'` or `'name as alias'`. `setImport` and `setRequireImport` skip a binding the module already provides under that local name. A binding that only an `import type` provides becomes a value import; other type-only imports are left alone. `removeImport` removes every import of a plain name, whatever its local name, but only the matching import of an alias. Added statements follow the file's quotes and semicolons.
+`appendValueToArray`, `appendNodeToArray`, and `removeEntryFromArray` return a `CsfMutationResult` like the editor operations. A field that is not an array literal leaves the file as it is and adds an `unsupported-value` diagnostic; a missing field or entry is a no-op for `removeEntryFromArray`.
+
+`setImport`, `setRequireImport`, and `removeImport` look at every import or top-level `require` of the module, and take a named binding as `'name'` or `'name as alias'`. `setImport` and `setRequireImport` skip a binding the module already provides under that local name. A binding that only an `import type` provides becomes a value import; other type-only imports are left alone. `removeImport` removes every import of a plain name, whatever its local name, but only the matching import of an alias. Added statements follow the file's quotes and semicolons. Import helper edits are not tracked by `changed`.
 
 Discovery rejects shared or reassigned bindings, unresolved re-exports, and conditional or repeated CommonJS assignments. Inline object methods and exported function declarations can be transformed as function expressions while retaining their declaration form. Path edits use the same spread, duplicate-key, occupied-destination, and dynamic-value checks as story edits. Unsupported input produces diagnostics without rewriting that input.
 

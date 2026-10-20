@@ -756,60 +756,71 @@ export class ConfigFile implements CsfObject {
     }
   }
 
-  appendValueToArray(path: string[], value: any) {
-    const node = this.valueToNode(value);
-
-    if (node) {
-      this.appendNodeToArray(path, node);
-    }
+  /** Append a plain value to the array literal at a path, creating the field when it is missing. */
+  appendValueToArray(path: string[], value: any): CsfMutationResult {
+    return this.appendNodeToArray(path, this.valueToNode(value));
   }
 
-  appendNodeToArray(path: string[], node: CsfExpression) {
+  /** Append an expression to the array literal at a path, creating the field when it is missing. */
+  appendNodeToArray(path: string[], node: CsfExpression): CsfMutationResult {
     const current = this.getFieldNode(path);
     const source = placeableTextOf(node);
     if (!current) {
-      this.set(path, parseExpression(`[${source}]`));
-    } else if (current.type === 'ArrayExpression') {
-      appendToList(this._editor, arrayList(this._editor, current), [source]);
-      this._editor.commit();
-    } else {
-      throw new Error(`Expected array at '${path.join('.')}', got '${current.type}'`);
+      return this.set(path, parseExpression(`[${source}]`));
     }
+    if (current.type !== 'ArrayExpression') {
+      return this._notAnArray(path, current);
+    }
+    appendToList(this._editor, arrayList(this._editor, current), [source]);
+    this._editor.commit();
+    this._changed = true;
+    return { ok: true, changed: true };
   }
 
   /**
-   * Specialized helper to remove addons or other array entries that can either be strings or
-   * objects with a name property.
+   * Remove the first entry of the array literal at a path that names `value`: a string, a
+   * `{ name }` object, or a call like `getAbsolutePath(value)`. A missing field or entry is a no-op.
    */
-  removeEntryFromArray(path: string[], value: string) {
+  removeEntryFromArray(path: string[], value: string): CsfMutationResult {
     const current = this.getFieldNode(path);
-
     if (!current) {
-      return;
+      return { ok: true, changed: false };
     }
-    if (current.type === 'ArrayExpression') {
-      const element = current.elements.find((element) => {
-        if (isStringLiteral(element)) {
-          return element.value === value;
-        }
-        if (element?.type === 'ObjectExpression') {
-          const name = this._getPresetValue(element, 'name');
-          return name === value;
-        }
-        return element ? this._getWrappedValue(element) === value : false;
-      });
-      if (element) {
-        removeFromList(this._editor, arrayList(this._editor, current), [element]);
-        this._editor.commit();
-      } else {
-        throw new Error(`Could not find '${value}' in array at '${path.join('.')}'`);
+    if (current.type !== 'ArrayExpression') {
+      return this._notAnArray(path, current);
+    }
+    const element = current.elements.find((element) => {
+      if (isStringLiteral(element)) {
+        return element.value === value;
       }
-    } else {
-      throw new Error(`Expected array at '${path.join('.')}', got '${current.type}'`);
+      if (element?.type === 'ObjectExpression') {
+        const name = this._getPresetValue(element, 'name');
+        return name === value;
+      }
+      return element ? this._getWrappedValue(element) === value : false;
+    });
+    if (!element) {
+      return { ok: true, changed: false };
     }
+    removeFromList(this._editor, arrayList(this._editor, current), [element]);
+    this._editor.commit();
+    this._changed = true;
+    return { ok: true, changed: true };
   }
 
-  valueToNode(value: any): CsfExpression | undefined {
+  _notAnArray(path: string[], node: Node): CsfMutationResult {
+    const diagnostic: CsfMutationDiagnostic = {
+      code: 'unsupported-value',
+      target: this.target,
+      path,
+      message: `Expected an array literal at '${path.join('.')}', got '${node.type}'`,
+      loc: locationOf(this._code, node.start, node.end),
+    };
+    this._mutationDiagnostics.push(diagnostic);
+    return { ok: false, changed: false, diagnostic };
+  }
+
+  valueToNode(value: any): CsfExpression {
     return parseExpression(printValue(value, this._editor.quote));
   }
 

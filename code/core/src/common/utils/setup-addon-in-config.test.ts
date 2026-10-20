@@ -25,8 +25,8 @@ describe('setupAddonInConfig', () => {
       _editor: { quote: "'" },
       getBodyDeclarations: () => [],
       getFieldNode: vi.fn(),
-      appendNodeToArray: vi.fn(),
-      appendValueToArray: vi.fn(),
+      appendNodeToArray: vi.fn(() => ({ ok: true, changed: true })),
+      appendValueToArray: vi.fn(() => ({ ok: true, changed: true })),
     } as any;
 
     mockMainConfig = {
@@ -102,6 +102,25 @@ describe('setupAddonInConfig', () => {
 
     expect(mockMain.appendValueToArray).toHaveBeenCalledWith(['addons'], '@storybook/addon-docs');
     expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain);
+  });
+
+  it('throws without writing when the addons field is not an array', async () => {
+    const diagnostic = { message: "Expected an array literal at 'addons', got 'Identifier'" };
+    vi.mocked(mockMain.appendValueToArray).mockReturnValue({
+      ok: false,
+      changed: false,
+      diagnostic,
+    } as any);
+
+    await expect(
+      setupAddonInConfig({
+        addonName: '@storybook/addon-docs',
+        mainConfigCSFFile: mockMain,
+        previewConfigPath: undefined,
+        configDir: '.storybook',
+      })
+    ).rejects.toThrow(diagnostic.message);
+    expect(csfTools.writeConfig).not.toHaveBeenCalled();
   });
 
   it('should handle sync errors gracefully', async () => {

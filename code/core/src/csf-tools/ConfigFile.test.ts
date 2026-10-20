@@ -781,16 +781,28 @@ describe('ConfigFile', () => {
         `export default { core: { builder: 'webpack5' }, addons: ['docs'] };`
       );
     });
-    it('found scalar', () => {
-      expect(() =>
-        appendToArray(
-          ['addons'],
-          'docs',
-          dedent`
-              export default { addons: 5 };
-            `
-        )
-      ).toThrowErrorMatchingInlineSnapshot(`Error: Expected array at 'addons', got 'Literal'`);
+    it('reports a field that is not an array literal and leaves it as written', () => {
+      const config = loadConfig(`export default { addons: 5 };`).parse();
+      const result = config.appendValueToArray(['addons'], 'docs');
+
+      expect(result).toEqual({
+        ok: false,
+        changed: false,
+        diagnostic: expect.objectContaining({ code: 'unsupported-value', path: ['addons'] }),
+      });
+      expect(config.mutationDiagnostics).toHaveLength(1);
+      expect(config.appendNodeToArray(['addons'], parseExpression('docs'))).toMatchObject({
+        ok: false,
+      });
+      expect(config.changed).toBe(false);
+      expect(printConfig(config).code).toBe(`export default { addons: 5 };`);
+    });
+
+    it('reports a change like the other mutations', () => {
+      const config = loadConfig(`export default { addons: [] };`).parse();
+
+      expect(config.appendValueToArray(['addons'], 'docs')).toEqual({ ok: true, changed: true });
+      expect(config.changed).toBe(true);
     });
     it('array of simple values', () => {
       expect(
@@ -2299,28 +2311,25 @@ describe('ConfigFile', () => {
       );
     });
 
-    it('throws when entry is missing', () => {
-      const source = dedent`
-        export default {
-          addons: ['a', { name: 'b', options: {} }, 'c'],
-        }
-      `;
-      const config = loadConfig(source).parse();
-      expect(() => config.removeEntryFromArray(['addons'], 'x')).toThrowErrorMatchingInlineSnapshot(
-        `Error: Could not find 'x' in array at 'addons'`
-      );
+    it('leaves an array without the entry unchanged, like a missing field', () => {
+      const config = loadConfig(`export default { addons: ['a'] };`).parse();
+
+      expect(config.removeEntryFromArray(['addons'], 'x')).toEqual({ ok: true, changed: false });
+      expect(config.removeEntryFromArray(['stories'], 'x')).toEqual({ ok: true, changed: false });
+      expect(config.removeEntryFromArray(['addons'], 'a')).toEqual({ ok: true, changed: true });
+      expect(config.changed).toBe(true);
     });
 
-    it('throws when target array is not an arral', () => {
-      const source = dedent`
-        export default {
-          addons: {},
-        }
-      `;
-      const config = loadConfig(source).parse();
-      expect(() => config.removeEntryFromArray(['addons'], 'x')).toThrowErrorMatchingInlineSnapshot(
-        `Error: Expected array at 'addons', got 'ObjectExpression'`
-      );
+    it('reports a field that is not an array literal', () => {
+      const config = loadConfig(`export default { addons: {} };`).parse();
+      const result = config.removeEntryFromArray(['addons'], 'x');
+
+      expect(result).toEqual({
+        ok: false,
+        changed: false,
+        diagnostic: expect.objectContaining({ code: 'unsupported-value', path: ['addons'] }),
+      });
+      expect(config.mutationDiagnostics).toHaveLength(1);
     });
   });
 

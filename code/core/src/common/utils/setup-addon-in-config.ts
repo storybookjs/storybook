@@ -25,13 +25,15 @@ export async function setupAddonInConfig({
   mainConfigCSFFile,
 }: SetupAddonInConfigOptions): Promise<void> {
   const mainConfigAddons = mainConfigCSFFile.getFieldNode(['addons']);
-  if (mainConfigAddons && getAbsolutePathWrapperName(mainConfigCSFFile) !== null) {
-    mainConfigCSFFile.appendNodeToArray(
-      ['addons'],
-      parseExpression(getAbsolutePathCall(mainConfigCSFFile, addonName))
-    );
-  } else {
-    mainConfigCSFFile.appendValueToArray(['addons'], addonName);
+  const result =
+    mainConfigAddons && getAbsolutePathWrapperName(mainConfigCSFFile) !== null
+      ? mainConfigCSFFile.appendNodeToArray(
+          ['addons'],
+          parseExpression(getAbsolutePathCall(mainConfigCSFFile, addonName))
+        )
+      : mainConfigCSFFile.appendValueToArray(['addons'], addonName);
+  if (!result.ok) {
+    throw new Error(result.diagnostic.message);
   }
 
   await writeConfig(mainConfigCSFFile);

@@ -1184,6 +1184,94 @@ describe('StoryRender', () => {
       });
     });
   });
+
+  describe('a teardown that keeps the rendered DOM', () => {
+    // A render whose beforeEach keeps the story's signal.
+    const renderWithSignal = (overrides: Partial<PreparedStory> = {}) => {
+      let signal!: AbortSignal;
+      const rendered = renderStory({
+        applyBeforeEach: vi.fn(async ({ abortSignal }: StoryContext) => {
+          signal = abortSignal;
+          return [];
+        }) as any,
+        ...overrides,
+      });
+      return { ...rendered, signal: () => signal };
+    };
+
+    it('ends a finished render once the render that replaces it has mounted', async () => {
+      const previous = renderWithSignal();
+      await previous.render.renderToElement({} as any);
+      expect(previous.render.phase).toBe('finished');
+
+      await previous.render.teardown({ keepRenderedDom: true });
+      expect(previous.signal().aborted).toBe(false);
+
+      const [mountGate, openMountGate] = createGate();
+      const next = renderStory({ renderToCanvas: vi.fn(() => mountGate) as any });
+      next.render.replace(previous.render);
+      const rendering = next.render.renderToElement({} as any);
+      await vi.waitFor(() => expect(next.render.phase).toBe('rendering'));
+      expect(previous.signal().aborted).toBe(false);
+
+      openMountGate();
+      await rendering;
+      expect(previous.signal().aborted).toBe(true);
+      expect(previous.phases()).not.toContain('aborted');
+    });
+
+    it('ends the render it replaces when it ends without mounting', async () => {
+      const previous = renderWithSignal();
+      await previous.render.renderToElement({} as any);
+      await previous.render.teardown({ keepRenderedDom: true });
+
+      const next = renderStory({
+        applyLoaders: vi.fn(async () => {
+          throw new Error('loader');
+        }) as any,
+      });
+      next.render.replace(previous.render);
+      await next.render.renderToElement({} as any);
+
+      expect(next.callbacks.showException).toHaveBeenCalled();
+      expect(previous.signal().aborted).toBe(true);
+    });
+
+    it('ends the render it replaces at its own teardown', async () => {
+      const previous = renderWithSignal();
+      await previous.render.renderToElement({} as any);
+      await previous.render.teardown({ keepRenderedDom: true });
+
+      const next = renderStory({ applyLoaders: vi.fn(rejectsOnAbort) as any });
+      next.render.replace(previous.render);
+      next.render.renderToElement({} as any);
+      await vi.waitFor(() => expect(next.render.phase).toBe('loading'));
+      await next.render.teardown();
+
+      expect(previous.signal().aborted).toBe(true);
+    });
+
+    it('aborts a render that still runs at once', async () => {
+      const previous = renderWithSignal({ playFunction: vi.fn(rejectsOnAbort) as any });
+      previous.render.renderToElement({} as any);
+      await vi.waitFor(() => expect(previous.render.phase).toBe('playing'));
+
+      await previous.render.teardown({ keepRenderedDom: true });
+
+      expect(previous.signal().aborted).toBe(true);
+      expect(previous.render.phase).toBe('aborted');
+    });
+
+    it('ends the render when a later teardown does not keep its DOM', async () => {
+      const previous = renderWithSignal();
+      await previous.render.renderToElement({} as any);
+      await previous.render.teardown({ keepRenderedDom: true });
+
+      await previous.render.teardown();
+
+      expect(previous.signal().aborted).toBe(true);
+    });
+  });
 });
 
 describe('StoryRender of a story that owns the document', () => {

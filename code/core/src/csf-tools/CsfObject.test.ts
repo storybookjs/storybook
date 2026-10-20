@@ -2522,6 +2522,23 @@ export const Secondary = { args: {} };
     );
   });
 
+  it('reads a constant a spread copies with the edits pending inside it', () => {
+    const csf = parse(`export default { title: 'A' };
+export const Primary = { args: {} };
+export const Composed = { ...Primary, name: 'Composed' };
+`);
+    const [primary, composed] = csf.objects({ meta: false });
+
+    expect(primary.set(['parameters', 'layout'], 'centered')).toEqual({ ok: true, changed: true });
+    expect(csf.editor.pending).toBe(true);
+
+    expect(composed.inspect(['parameters'])).toMatchObject({ kind: 'unreadable' });
+    expect(composed.rename(['parameters'], 'renamed')).toMatchObject({
+      ok: false,
+      diagnostic: { code: 'spread-field', path: ['parameters'] },
+    });
+  });
+
   describe('a factory call without an argument', () => {
     const source = `import preview from './preview';\nconst meta = preview.meta();\nexport const A = meta.story();\n`;
 

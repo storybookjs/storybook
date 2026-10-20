@@ -1185,12 +1185,14 @@ class Editor implements CsfObject {
           this.editor
         );
         const property = lookup.ok ? lookup.property : undefined;
+        // The lookup reads the constants of the spreads among the members, which a pending edit
+        // may have given the key or taken it from.
+        const spreads = this.spreads(parent);
         if (!property) {
-          // A pending edit may have added the key; one that creates it reads the spreads too.
-          const creates = lookup.ok && purpose !== 'read' && purpose !== 'remove';
+          // A pending edit may have added the key.
           const about = this.about(parent, key);
           const keyed = this.members(parent).map(({ start, end }) => ({ start, end, about }));
-          if (isPendingAt(this.editor, [...keyed, ...(creates ? this.spreads(parent) : [])])) {
+          if (isPendingAt(this.editor, [...keyed, ...spreads])) {
             return CROSSED;
           }
           return lookup.ok ? { ok: true, kind: 'missing-key', parent, missing: index } : lookup;
@@ -1202,7 +1204,9 @@ class Editor implements CsfObject {
           value: property.method ? property : outerSpan(property.value),
         };
         const gaps = purpose === 'remove' ? this.gaps(parent.members?.().gaps) : [];
-        if (isPendingAt(this.editor, this.dependencies(at, purpose, gaps, resolved))) {
+        if (
+          isPendingAt(this.editor, [...this.dependencies(at, purpose, gaps, resolved), ...spreads])
+        ) {
           return CROSSED;
         }
         if (last) {

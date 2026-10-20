@@ -4,7 +4,7 @@ import { getSnippetFiles, readFileLines, sortCsfSegments } from './utils';
 import { esMain } from '../utils/esmain.ts';
 
 /**
- * Moves each CSF Next snippet before its CSF 3 counterpart in all snippet files.
+ * Moves each CSF 4 snippet before its CSF 3 counterpart in all snippet files.
  * Returns the paths of the files it changed.
  */
 export async function fixSnippetCsfOrder(docsDir: string): Promise<string[]> {

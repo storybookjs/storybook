@@ -27,7 +27,10 @@ import { getCoreAnnotations, markAsComposedWithCoreAnnotations } from './core-an
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';
-  input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddonEntry[] };
+  input: ProjectAnnotations<TRenderer> & {
+    addons?: PreviewAddonEntry[];
+    experimental_storyInput?: StoryInputHook<TRenderer>;
+  };
   composed: NormalizedProjectAnnotations<TRenderer>;
 
   meta<TArgs = Args, TMetaArgKeys extends PropertyKey = never>(
@@ -39,6 +42,11 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
 
   type<T>(): Preview<TRenderer & T>;
 }
+
+export type StoryInputHook<TRenderer extends Renderer> = (
+  input: StoryAnnotations<TRenderer, TRenderer['args']>,
+  meta: Meta<TRenderer>
+) => StoryAnnotations<TRenderer, TRenderer['args']>;
 
 /**
  * A typed addon created with `definePreviewAddon`, or a legacy preview annotations module namespace
@@ -54,7 +62,16 @@ export type InferTypes<T extends PreviewAddonEntry[]> = Extract<
   : never;
 
 export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddonEntry[]>(
-  input: ProjectAnnotations<TRenderer> & { addons?: Addons }
+  input: ProjectAnnotations<TRenderer> & {
+    addons?: Addons;
+    /**
+     * Derive the input of each factory story once, when it is defined, before anything composes it.
+     *
+     * Return a new object. `extend()` and `test()` call it again with the parent's derived input, so
+     * remove what no longer applies. Leave `name` and `tags`: the index reads them from the file.
+     */
+    experimental_storyInput?: StoryInputHook<NoInfer<TRenderer & InferTypes<Addons>>>;
+  }
 ): Preview<TRenderer & InferTypes<Addons>> {
   type TPreviewRenderer = TRenderer & InferTypes<Addons>;
   let composed: NormalizedProjectAnnotations<TPreviewRenderer>;
@@ -65,7 +82,7 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
       if (composed) {
         return composed;
       }
-      const { addons, ...rest } = input;
+      const { addons, experimental_storyInput: _storyInput, ...rest } = input;
       // The composed result already includes the core annotations. Mark it so that downstream
       // consumers (StoryStore / portable setProjectAnnotations) don't prepend them a second time.
       composed = markAsComposedWithCoreAnnotations(
@@ -274,12 +291,14 @@ function defineStory<
   TRenderer extends Renderer,
   TInput extends StoryAnnotations<TRenderer, TRenderer['args']>,
 >(
-  input: TInput,
+  annotations: TInput,
   meta: Meta<TRenderer>
 ): Story<TRenderer, TInput> & {
   __compose: () => ComposedStoryFn<TRenderer>;
   __children: Story<TRenderer>[];
 } {
+  const input = (meta.preview.input.experimental_storyInput?.(annotations, meta) ??
+    annotations) as TInput;
   let composed: ComposedStoryFn<TRenderer>;
   const compose = () => {
     if (!composed) {

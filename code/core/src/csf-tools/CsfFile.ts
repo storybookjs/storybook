@@ -23,9 +23,10 @@ import {
   type CsfMutationDiagnostic,
   type CsfMutationResult,
   type CsfObject,
+  type CsfObjectLookup,
   type CsfObjectOptions,
 } from './CsfObject.ts';
-import { discoverCsfObjects } from './CsfObjectDiscovery.ts';
+import { discoverCsfObjects, discoverStory } from './CsfObjectDiscovery.ts';
 import {
   type E,
   EstreeParseError,
@@ -305,6 +306,8 @@ export interface StaticMeta extends Pick<
 }
 
 export interface StaticStory extends Pick<StoryAnnotations, 'name' | 'parameters' | 'tags'> {
+  /** The name the story is exported as: `B` for `export { A as B }`. */
+  exportName: string;
   id: string;
   localName?: string;
   __stats: IndexInputStats;
@@ -461,6 +464,32 @@ export class CsfFile {
     return discoverCsfObjects(
       this,
       options,
+      (diagnostic) => state.diagnostics.push(diagnostic),
+      () => this._markChanged()
+    );
+  }
+
+  /**
+   * Find the editor of the story exported as `exportName`, as `objects()` would give it, or the
+   * diagnostic that says why it has none, which is added to `mutationDiagnostics` as well. Returns
+   * `undefined` when the file has no story of that name.
+   *
+   * @example
+   * ```ts
+   * const csf = loadCsf('export default {}; export const Primary = {};', {
+   *   makeTitle: () => 'Example',
+   * }).parse();
+   * const found = csf.storyObject('Primary');
+   * if (found?.ok) {
+   *   found.object.set(['args', 'disabled'], true);
+   * }
+   * ```
+   */
+  storyObject(exportName: string): CsfObjectLookup | undefined {
+    const state = mutationStates.get(this)!;
+    return discoverStory(
+      this,
+      exportName,
       (diagnostic) => state.diagnostics.push(diagnostic),
       () => this._markChanged()
     );
@@ -908,6 +937,7 @@ export class CsfFile {
           parameters.__isArgsStory = storyNode ? isArgsStory(storyNode, isTopLevel, this) : false;
         }
         this._stories[exportName] = {
+          exportName,
           id: 'FIXME',
           name,
           parameters,
@@ -968,6 +998,7 @@ export class CsfFile {
           this._storyAnnotations[exportName] = annotations;
           this._storyStatements[exportName] = decl as Node;
           this._stories[exportName] = {
+            exportName,
             id: 'FIXME',
             name: exportName,
             localName,

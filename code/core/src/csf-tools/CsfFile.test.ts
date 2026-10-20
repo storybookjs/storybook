@@ -27,7 +27,10 @@ const makeTitle = (userTitle?: string) => {
 
 const parse = (code: string, includeParameters?: boolean) => {
   const { stories, meta } = loadCsf(code, { makeTitle }).parse();
-  const filtered = includeParameters ? stories : stories.map(({ parameters, ...rest }) => rest);
+  const filtered = stories.map(({ exportName, ...story }) => {
+    const { parameters, ...rest } = story;
+    return includeParameters ? story : rest;
+  });
   return { meta, stories: filtered };
 };
 

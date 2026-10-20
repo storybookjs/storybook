@@ -76,6 +76,11 @@ export type CsfMutationResult =
   | { ok: true; changed: boolean }
   | { ok: false; changed: false; diagnostic: CsfMutationDiagnostic };
 
+/** A story's editor, or the diagnostic that says why it has none. */
+export type CsfObjectLookup =
+  | { ok: true; object: CsfObject }
+  | { ok: false; diagnostic: CsfMutationDiagnostic };
+
 /**
  * An expression detached from any file, as returned by `get` and accepted by `set` and
  * `transform`. It is a plain OXC ESTree node; its source is kept alongside it, so a value read from

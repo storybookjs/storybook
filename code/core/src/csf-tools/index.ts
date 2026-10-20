@@ -6,6 +6,7 @@ export type {
   CsfMutationResult,
   CsfMutationTarget,
   CsfObject,
+  CsfObjectLookup,
   CsfObjectOptions,
   CsfObjectTarget,
   CsfValue,

@@ -15,6 +15,15 @@ It can parse MDX into CSF.
 
 `CsfFile.objects()` returns one `CsfObject` editor per mutable object it can prove safe to edit: the meta and each story export.
 `{ meta, stories }` narrows what is discovered; both are included by default.
+`CsfFile.storyObject(exportName)` finds one story: `{ ok: true, object }` with its editor, or `{ ok: false, diagnostic }` with the discovery diagnostic that says why it has none, which is added to `mutationDiagnostics` like those of `objects()`. It is `undefined` when the file has no story of that name. Each of `CsfFile.stories` has its `exportName`, `B` for `export { A as B }`. A story exported twice, such as `export { Basic as Copy }` next to `export const Basic`, is edited through its first export, so `storyObject('Copy')` is refused: an edit would change `Basic` too.
+
+```ts
+const found = csf.storyObject('Primary');
+if (!found?.ok) {
+  throw new Error(found?.diagnostic.message ?? 'No story Primary');
+}
+found.object.set(['args', 'label'], 'Hi');
+```
 
 Each editor reads and writes static property paths with `get`, `getValue`, `inspect`, `set`, `transform`, `remove`, `rename`, `move`, and `group`.
 `get` returns an AST expression; `getValue` reads plain values from literals, nested arrays and objects, and local constants without executing code. Reads never return a partially decoded object.

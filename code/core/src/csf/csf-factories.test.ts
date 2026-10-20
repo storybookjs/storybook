@@ -202,14 +202,10 @@ describe('experimental_storyInput', () => {
   const derivingPreview = definePreview({
     addons: [],
     renderToCanvas: () => {},
-    experimental_storyInput: (input, meta) => {
-      const { argless: _argless, ...parameters } = input.parameters ?? {};
-      const args = { ...meta.input.args, ...input.args };
-      return {
-        ...input,
-        parameters: Object.keys(args).length ? parameters : { ...parameters, argless: true },
-      };
-    },
+    experimental_storyInput: (input, meta) =>
+      Object.keys({ ...meta.input.args, ...input.args }).length
+        ? input
+        : { ...input, parameters: { ...input.parameters, argless: true } },
   });
   const derivingMeta = derivingPreview.meta({ render: () => 'hello' });
 
@@ -229,12 +225,17 @@ describe('experimental_storyInput', () => {
     expect(annotations).toEqual({ parameters: { theme: 'dark' } });
   });
 
-  test('derives the input again on extend, which may undo the parent value', () => {
+  test('derives the input of extend from the inputs the user gave', () => {
     const story = derivingMeta.story({ parameters: {} });
     const extended = story.extend({ args: { label: 'foo' }, parameters: {} });
     expect(story.input.parameters).toEqual({ argless: true });
     expect(extended.input.parameters).toEqual({});
-    expect(extended.composed.parameters).not.toHaveProperty('argless');
+  });
+
+  test('keeps a value the user gave that equals a derived one', () => {
+    const story = derivingMeta.story({ parameters: { argless: true } });
+    const extended = story.extend({ args: { label: 'foo' }, parameters: {} });
+    expect(extended.input.parameters).toEqual({ argless: true });
   });
 
   test('derives the input of a test', () => {

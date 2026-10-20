@@ -65,10 +65,10 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
   input: ProjectAnnotations<TRenderer> & {
     addons?: Addons;
     /**
-     * Derive the input of each factory story once, when it is defined, before anything composes it.
+     * Derive the input of each factory story when it is defined, before anything composes it.
      *
-     * Return a new object. `extend()` and `test()` call it again with the parent's derived input, so
-     * remove what no longer applies. Leave `name` and `tags`: the index reads them from the file.
+     * Keep it pure. It runs on every `meta.story()`, `extend()` and `test()`, on the inputs the user
+     * gave, never on a parent's derived input. Leave `name` and `tags`: the index reads them.
      */
     experimental_storyInput?: StoryInputHook<NoInfer<TRenderer & InferTypes<Addons>>>;
   }
@@ -365,29 +365,29 @@ function defineStory<
     extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
       return defineStory(
         {
-          ...this.input,
+          ...annotations,
           ...input,
-          args: { ...(this.input.args || {}), ...input.args },
-          argTypes: combineParameters(this.input.argTypes, input.argTypes),
+          args: { ...(annotations.args || {}), ...input.args },
+          argTypes: combineParameters(annotations.argTypes, input.argTypes),
           afterEach: [
-            ...normalizeArrays(this.input?.afterEach ?? []),
+            ...normalizeArrays(annotations.afterEach ?? []),
             ...normalizeArrays(input.afterEach ?? []),
           ],
           beforeEach: [
-            ...normalizeArrays(this.input?.beforeEach ?? []),
+            ...normalizeArrays(annotations.beforeEach ?? []),
             ...normalizeArrays(input.beforeEach ?? []),
           ],
           decorators: [
-            ...normalizeArrays(this.input?.decorators ?? []),
+            ...normalizeArrays(annotations.decorators ?? []),
             ...normalizeArrays(input.decorators ?? []),
           ],
-          globals: { ...this.input.globals, ...input.globals },
+          globals: { ...annotations.globals, ...input.globals },
           loaders: [
-            ...normalizeArrays(this.input?.loaders ?? []),
+            ...normalizeArrays(annotations.loaders ?? []),
             ...normalizeArrays(input.loaders ?? []),
           ],
-          parameters: combineParameters(this.input.parameters, input.parameters),
-          tags: combineTags(...(this.input.tags ?? []), ...(input.tags ?? [])),
+          parameters: combineParameters(annotations.parameters, input.parameters),
+          tags: combineTags(...(annotations.tags ?? []), ...(input.tags ?? [])),
         },
         this.meta
       );

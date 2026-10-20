@@ -559,6 +559,33 @@ describe('PreviewWeb', () => {
         expect(preview.view.showErrorDisplay).toHaveBeenCalledWith(error);
       });
 
+      it('renders exception if a beforeEach throws, after cleaning up the hooks that ran', async () => {
+        const error = new Error('error');
+        const cleanup = vi.fn();
+        const exports = toMerged(componentOneExports, {
+          default: { beforeEach: () => cleanup },
+          a: {
+            beforeEach: () => {
+              throw error;
+            },
+          },
+        });
+
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview({
+          importFn: async (path) =>
+            path === './src/ComponentOne.stories.js' ? exports : importFn(path),
+        });
+
+        expect(cleanup).toHaveBeenCalledOnce();
+        expect(cleanup.mock.invocationCallOrder[0]).toBeLessThan(
+          vi.mocked(preview.view.showErrorDisplay).mock.invocationCallOrder[0]
+        );
+        expect(mockChannel.emit).toHaveBeenCalledWith(STORY_THREW_EXCEPTION, serializeError(error));
+        expect(preview.view.showErrorDisplay).toHaveBeenCalledWith(error);
+        expect(projectAnnotations.renderToCanvas).not.toHaveBeenCalled();
+      });
+
       it('renders exception if renderToCanvas throws', async () => {
         const error = new Error('error');
         projectAnnotations.renderToCanvas.mockImplementation(() => {

@@ -413,6 +413,27 @@ describe('composeStory', () => {
     expect(cleanupSpy).toHaveBeenNthCalledWith(3, 'cleanup from project');
   });
 
+  it('should run the cleanups of the beforeEach hooks that ran when a later one throws', async () => {
+    const error = new Error('story beforeEach');
+    const cleanupSpy = vi.fn();
+
+    const Story: Story = {
+      render: () => 'foo',
+      beforeEach: async () => {
+        throw error;
+      },
+    };
+
+    const composedStory = composeStory(Story, { beforeEach: async () => cleanupSpy });
+
+    await expect(composedStory.load()).rejects.toBe(error);
+    expect(cleanupSpy).toHaveBeenCalledOnce();
+
+    // the next story's load has nothing left to clean up
+    await composeStory({ render: () => 'bar' }, {}).load();
+    expect(cleanupSpy).toHaveBeenCalledOnce();
+  });
+
   it('should call beforeEach after loaders', async () => {
     const spyFn = vi.fn();
 

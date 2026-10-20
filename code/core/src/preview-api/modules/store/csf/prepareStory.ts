@@ -70,19 +70,28 @@ export function prepareStory<TRenderer extends Renderer>(
 
   const applyBeforeEach = async (context: StoryContext<TRenderer>): Promise<CleanupCallback[]> => {
     const cleanupCallbacks = new Array<() => unknown>();
-    for (const beforeEach of [
-      ...normalizeArrays(projectAnnotations.beforeEach),
-      ...normalizeArrays(componentAnnotations.beforeEach),
-      ...normalizeArrays(storyAnnotations.beforeEach),
-    ]) {
-      if (context.abortSignal.aborted) {
-        return cleanupCallbacks;
-      }
-      const cleanup = await beforeEach(context);
+    try {
+      for (const beforeEach of [
+        ...normalizeArrays(projectAnnotations.beforeEach),
+        ...normalizeArrays(componentAnnotations.beforeEach),
+        ...normalizeArrays(storyAnnotations.beforeEach),
+      ]) {
+        if (context.abortSignal.aborted) {
+          return cleanupCallbacks;
+        }
+        const cleanup = await beforeEach(context);
 
-      if (cleanup) {
-        cleanupCallbacks.push(cleanup);
+        if (cleanup) {
+          cleanupCallbacks.push(cleanup);
+        }
       }
+    } catch (error) {
+      // A caller gets no cleanups when a hook throws, so the hooks that ran before it are cleaned
+      // up here, in reverse, before the error surfaces.
+      for (const cleanup of cleanupCallbacks.reverse()) {
+        await cleanup();
+      }
+      throw error;
     }
     return cleanupCallbacks;
   };

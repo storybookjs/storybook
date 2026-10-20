@@ -26,6 +26,25 @@ export function isRemix3VersionRange(versionRange: string | null | undefined): b
   return (semver.minVersion(versionRange)?.major ?? 0) >= 3;
 }
 
+/** `catalog:` and `workspace:` are not ranges. Resolve those before the version check. */
+export async function dependsOnRemix3(
+  rawSpecifier: string | null | undefined,
+  resolveNonSemver: () => Promise<string | null>
+): Promise<boolean> {
+  if (isRemix3VersionRange(rawSpecifier)) {
+    return true;
+  }
+  if (!rawSpecifier || semver.validRange(rawSpecifier)) {
+    return false;
+  }
+
+  try {
+    return isRemix3VersionRange(await resolveNonSemver());
+  } catch {
+    return false;
+  }
+}
+
 type TemplateMatcher = {
   files?: boolean[];
   dependencies?: boolean[];

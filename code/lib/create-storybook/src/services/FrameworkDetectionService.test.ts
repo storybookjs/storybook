@@ -37,6 +37,7 @@ describe('FrameworkDetectionService', () => {
     vi.clearAllMocks();
     mockPackageManager = {
       getAllDependencies: vi.fn(() => ({})),
+      getDeclaredVersionSpecifier: vi.fn(async () => null),
     } as unknown as JsPackageManager;
     mockTelemetryService = {
       trackPromptCancel: vi.fn().mockResolvedValue(undefined),
@@ -257,10 +258,17 @@ describe('FrameworkDetectionService', () => {
           });
         });
 
-        it('uses Vite', async () => {
-          const result = await service.detectBuilder();
+        it('uses Vite for the HTML renderer', async () => {
+          const result = await service.detectBuilder(SupportedRenderer.HTML);
 
           expect(result).toBe(SupportedBuilder.VITE);
+          expect(prompt.select).not.toHaveBeenCalled();
+        });
+
+        it('keeps Webpack when the renderer is React', async () => {
+          const result = await service.detectBuilder(SupportedRenderer.REACT);
+
+          expect(result).toBe(SupportedBuilder.WEBPACK5);
           expect(prompt.select).not.toHaveBeenCalled();
         });
       });
@@ -272,11 +280,28 @@ describe('FrameworkDetectionService', () => {
           });
         });
 
-        it('uses Vite', async () => {
-          const result = await service.detectBuilder();
+        it('uses Vite for the HTML renderer', async () => {
+          const result = await service.detectBuilder(SupportedRenderer.HTML);
 
           expect(result).toBe(SupportedBuilder.VITE);
           expect(prompt.select).not.toHaveBeenCalled();
+        });
+      });
+
+      describe('when a catalog specifier resolves to Remix 3', () => {
+        beforeEach(() => {
+          vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+            remix: 'catalog:',
+            webpack: '^5.0.0',
+          });
+          vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue('3.1.0');
+        });
+
+        it('uses Vite for the HTML renderer', async () => {
+          const result = await service.detectBuilder(SupportedRenderer.HTML);
+
+          expect(result).toBe(SupportedBuilder.VITE);
+          expect(mockPackageManager.getDeclaredVersionSpecifier).toHaveBeenCalledWith('remix');
         });
       });
 

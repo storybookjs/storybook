@@ -2034,6 +2034,31 @@ describe('CsfObject element and argument paths', () => {
     expect(config.changed).toBe(false);
   });
 
+  it.each([-1, 0.5, Number.NaN])(
+    'reads the index %s, which is no position, as unsupported',
+    (index) => {
+      const config = loadConfig("export default { addons: ['a'] };").parse();
+
+      expect(config.inspect(['addons', index])).toMatchObject({
+        kind: 'unreadable',
+        diagnostic: { code: 'unsupported-member' },
+      });
+      expect(config.get(['addons', index])).toBeUndefined();
+    }
+  );
+
+  it('addresses the arguments of an optional call', () => {
+    const source = "export default { framework: getAbsolutePath?.('react') };";
+
+    expect(loadConfig(source).parse().getValue(['framework', 0])).toBe('react');
+    expect(edit(source, (config) => config.append(['framework'], 'x'))).toBe(
+      "export default { framework: getAbsolutePath?.('react', 'x') };"
+    );
+    expect(edit(source, (config) => config.set(['framework', 0], 'vue'))).toBe(
+      "export default { framework: getAbsolutePath?.('vue') };"
+    );
+  });
+
   it('replaces an element in place, keeping the layout of its array', () => {
     expect(
       edit("export default {\n  addons: [\n    'a',\n    'b',\n  ],\n};", (config) =>
@@ -2068,6 +2093,14 @@ describe('CsfObject element and argument paths', () => {
         config.set(['addons', array.startsWith('[,') ? 0 : 1], parseExpression('x'))
       )
     ).toBe(`export default { addons: ${filled} };`);
+  });
+
+  it('fills a hole with a text ending in a line comment, taking the comma of the hole', () => {
+    expect(
+      edit("export default {\n  addons: [\n    'a',\n    ,\n    'b',\n  ],\n};", (config) =>
+        config.set(['addons', 1], parseExpression("'x' // c"))
+      )
+    ).toBe("export default {\n  addons: [\n    'a',\n    'x', // c\n    'b',\n  ],\n};");
   });
 
   it('takes the comma after an element for a text ending in a line comment, like a field', () => {
@@ -2306,6 +2339,19 @@ describe('CsfObject append and prepend', () => {
       diagnostic: { code: 'unsupported-member' },
     });
     expect(config.changed).toBe(false);
+    expect(printConfig(config).code).toBe(source);
+  });
+
+  it('refuses to add to a constant that other code refers to as well', () => {
+    const source = "const addons = ['a'];\nexport default { addons, other: addons };";
+    const config = loadConfig(source).parse();
+
+    expect(config.append(['addons'], 'b')).toMatchObject({
+      diagnostic: {
+        code: 'unsupported-value',
+        message: 'Cannot add to addons, a constant that other code refers to as well',
+      },
+    });
     expect(printConfig(config).code).toBe(source);
   });
 

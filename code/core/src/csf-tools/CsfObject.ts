@@ -344,9 +344,11 @@ type Step =
   | { kind: 'object'; parent: ObjectRoot; key: string }
   | { kind: 'list'; parent: ListRoot; index: number };
 
-// An array literal or a call.
-const listNode = (value: Node | undefined) =>
-  value?.type === 'ArrayExpression' || value?.type === 'CallExpression' ? value : undefined;
+// An array literal, or a call, also an optional one: `f?.(a)`.
+const listNode = (value: Node | undefined) => {
+  const node = value?.type === 'ChainExpression' ? value.expression : value;
+  return node?.type === 'ArrayExpression' || node?.type === 'CallExpression' ? node : undefined;
+};
 
 // A key addresses a property of an object literal, an index an element of an array or an
 // argument of a call.
@@ -455,6 +457,12 @@ class Editor implements CsfObject {
     if (path.length === 0) {
       return { kind: 'missing' };
     }
+    if (path.some(isInvalidIndex)) {
+      return {
+        kind: 'unreadable',
+        diagnostic: this.diagnostic('unsupported-member', path, this.anchor()),
+      };
+    }
     const found = this.locate(path, 'read', false);
     if (found.ok === false) {
       return { kind: 'unreadable', diagnostic: this.diagnostic(found.code, path, found.node) };
@@ -558,11 +566,15 @@ class Editor implements CsfObject {
     const list = slot.expression && listNode(resolveExpression(scopes, slot.expression));
     if (!list) {
       const node = slot.expression ?? slot.node;
+      const shared =
+        slot.expression && listNode(resolveExpression(scopes, slot.expression, 'read'));
       return this.failure(
         'unsupported-value',
         path,
         node,
-        `Expected an array literal or a call at '${printCsfPath(path)}', got '${node.type}'`
+        shared
+          ? `Cannot add to ${printCsfPath(path)}, a constant that other code refers to as well`
+          : `Expected an array literal or a call at '${printCsfPath(path)}', got '${node.type}'`
       );
     }
     listRoot(this.editor, list)[end]([text()]);

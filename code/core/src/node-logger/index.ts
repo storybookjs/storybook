@@ -133,7 +133,6 @@ interface LegacyLogger {
   eventNames(): (string | symbol)[];
   getMaxListeners(): number;
   setMaxListeners(n: number): this;
-  [key: string]: any;
 }
 
 export const instance = npmLog as LegacyLogger;

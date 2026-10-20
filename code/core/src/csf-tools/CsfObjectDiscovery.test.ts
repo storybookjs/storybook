@@ -277,6 +277,43 @@ Primary.beforeEach = mockHandlers;
 `);
     });
 
+    it('writes an annotation without a semicolon in a file without semicolons', () => {
+      const csf = parse(`export default { title: 'Example' }
+const Template = (args) => args
+export const Primary = Template.bind({})
+Primary.args = { label: 'Primary' }
+const after = 1
+`);
+      const [story] = csf.objects({ meta: false });
+
+      expect(story.set(['beforeEach'], parseExpression('mockHandlers'))).toEqual({
+        ok: true,
+        changed: true,
+      });
+      expect(printCsf(csf).code).toBe(`export default { title: 'Example' }
+const Template = (args) => args
+export const Primary = Template.bind({})
+Primary.args = { label: 'Primary' }
+Primary.beforeEach = mockHandlers
+const after = 1
+`);
+    });
+
+    it('ends an annotation with a semicolon before a statement that would continue it', () => {
+      const csf = parse(`export default { title: 'Example' }
+export function Primary() {}
+[1].forEach(f)
+`);
+      const [story] = csf.objects({ meta: false });
+
+      expect(story.set(['args', 'a'], 1)).toEqual({ ok: true, changed: true });
+      expect(printCsf(csf).code).toBe(`export default { title: 'Example' }
+export function Primary() {}
+Primary.args = { a: 1 };
+[1].forEach(f)
+`);
+    });
+
     it('adds the first annotation of a story after its declaration', () => {
       const csf = parse(`export default { title: 'Example' };
 const Local = () => null;

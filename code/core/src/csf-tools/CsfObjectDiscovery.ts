@@ -398,8 +398,9 @@ const storyRoot = (
   const assign = (members: MemberInsert[], removed: ReadonlySet<Node> = new Set()) => {
     const after =
       assignments.findLast(({ statement }) => !removed.has(statement))?.statement ?? declaration;
+    const end = editor.semicolons ? ';' : '';
     for (const { key, value } of members) {
-      insertStatementAfter(editor, after, `${binding.localName}${accessor(key)} = ${value};`);
+      insertStatementAfter(editor, after, `${binding.localName}${accessor(key)} = ${value}${end}`);
     }
   };
   const statementsOf = (members: readonly Property[]) =>

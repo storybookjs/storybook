@@ -1302,7 +1302,10 @@ export const insertStatementAfter = (editor: SourceEditor, statement: Span, text
   const lead = /^\s*/.exec(text)![0];
   const body = text.slice(lead.length);
   const separator = !endsStatement(before) && CONTINUES_STATEMENT.test(body) ? ';' : '';
-  const written = `\n${lead}${separator}${body}`;
+  // A statement without `;` ends before code that would continue it, such as `[1].map(f)`.
+  const terminator =
+    !endsStatement(body) && CONTINUES_STATEMENT.test(code.slice(next).trimStart()) ? ';' : '';
+  const written = `\n${lead}${separator}${body}${terminator}`;
   if (next === code.length || code[next] === '\n') {
     edits.appendLeft(next, written);
     return;

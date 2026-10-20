@@ -1403,6 +1403,18 @@ These packages read `storybook/internal/babel` or Babel-shaped `csf-tools` field
 - The nodes exposed by `storybook/internal/csf-tools` are ESTree (OXC) nodes instead of Babel nodes, for example `Literal` instead of `StringLiteral` and `Property` instead of `ObjectProperty`/`ObjectMethod`. `CsfFile._ast` and the `NodePath` fields are removed; use `CsfFile.program` and `CsfFile.editor`. `ConfigFile._ast` is removed as well; use `ConfigFile.program` and `ConfigFile.editor`. Both `editor`s are a `SourceEditor`: call `editor.commit()` to apply pending edits, after which the file parses the result again. `_program` and `_editor` remain as deprecated aliases in Storybook 11. The editing functions and `source()` throw for nodes of another parse, such as nodes from before a commit; offsets passed to `editor.edits` are not checked.
 - `CsfObject#get` returns an ESTree expression, and `set`/`transform` accept expressions from `get()` or `parseExpression(code)`. Use `textOf(node)` to read an expression's source, and `placeableTextOf(node)` to build new code around it. The expressions `get`, `inspect` and `transform` give are frozen snapshots: where a Babel node could be changed in place before passing it to `set`, assigning to an ESTree node's fields throws, as `set` prints a node from its source. Pass a plain value or `parseExpression(text)` instead.
 - An `experimental_enrichCsf` function receives the new `CsfFile`. Add code with `csf.appendStatement(code)` instead of pushing Babel nodes onto `csf._ast`; `_appendStatement` remains as a deprecated alias.
+- `extractSource(node)` is `extractSource(node, code)`, and returns the story's source as written instead of a Babel reprint. Pass the file's `editor.code`, the normalized code its node offsets index. `extractDescription(node)` is `extractDescription(node, editor)`: ESTree nodes carry no `leadingComments`, so it reads the comments before the node from the file's `editor`.
+
+  ```ts
+  // Storybook 10
+  extractSource(csf.getStoryExport('Primary'));
+  extractDescription(csf._storyStatements.Primary);
+
+  // Storybook 11
+  extractSource(csf.getStoryExport('Primary'), csf.editor.code);
+  extractDescription(csf._storyStatements.Primary, csf.editor);
+  ```
+
 - `babelParse` is removed; use `parseModule(code, fileName)` from `storybook/internal/csf-tools`, which returns the ESTree `program` and `comments`. `babelParseFile` is removed as well; read CSF with `loadCsf(code, options)` or `readCsf(fileName, options)`.
 - Parsing normalizes line endings to `\n`. Node offsets from `parseModule`, `CsfFile.program` and `ConfigFile.program` index the normalized `code`/`_code`, not the string you passed in; lines and columns are unchanged.
 - `getHeaderComments(statement)` is removed. The editor keeps a file's header comments in place: `prependStatement` inserts below them, also in a file without statements, and `appendStatement` separates a multi-line statement from its neighbour with a blank line.

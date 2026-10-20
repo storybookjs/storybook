@@ -1,6 +1,5 @@
-import type { types as t } from 'storybook/internal/babel';
 import { createMetaComponentResolver } from 'storybook/internal/common';
-import type { CsfFile } from 'storybook/internal/csf-tools';
+import type { CsfFile, ESTreeNode } from 'storybook/internal/csf-tools';
 
 /** The component a story file documents, located on disk. */
 export interface ResolvedVueComponent {
@@ -33,7 +32,7 @@ const resolveComponent = createMetaComponentResolver({ extensions: ['.vue'] });
 export function resolveMetaComponent(
   csf: CsfFile,
   storyPath: string,
-  componentNode?: t.Node
+  componentNode?: ESTreeNode
 ): { component: ResolvedVueComponent } | { reason: UnresolvedComponentReason } {
   const resolved = resolveComponent(csf, storyPath, componentNode);
   if ('reason' in resolved) {

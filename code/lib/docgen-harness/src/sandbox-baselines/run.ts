@@ -16,6 +16,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- sandbox dir must match native paths inside docgen payloads
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

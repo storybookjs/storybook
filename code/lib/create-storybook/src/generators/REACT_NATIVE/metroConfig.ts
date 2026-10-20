@@ -1,5 +1,5 @@
 import { access, readFile, writeFile } from 'node:fs/promises';
-import path from 'node:path';
+import path from 'pathe';
 
 import { parser, recast, types as t } from 'storybook/internal/babel';
 import type { JsPackageManager } from 'storybook/internal/common';

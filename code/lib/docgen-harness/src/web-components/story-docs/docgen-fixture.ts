@@ -1,6 +1,6 @@
 import type { IndexEntry } from 'storybook/internal/types';
 
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import type { WebComponentsDocgenPayload } from '../../../../../renderers/web-components/src/docgen/component-docgen/build-docgen.ts';
 import { buildDocgenPayload } from '../../../../../renderers/web-components/src/docgen/component-docgen/build-docgen.ts';

@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- cached configDir is compared with node:path resolve in ai-checklist-flags
 import { resolve } from 'node:path';
 
 import {

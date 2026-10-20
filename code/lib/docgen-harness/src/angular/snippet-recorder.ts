@@ -1,7 +1,7 @@
 // Snapshot gating shared by every Angular snippet recorder. Free of the client renderer, so the
 // server-side recorder can use it without loading `@angular/core`.
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 import { expect } from 'vitest';

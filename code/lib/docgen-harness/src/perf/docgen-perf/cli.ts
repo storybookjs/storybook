@@ -1,5 +1,5 @@
 /** Command line for the docgen perf suite. */
-import * as path from 'node:path';
+import * as path from 'pathe';
 
 import { z } from 'zod';
 

@@ -2,7 +2,7 @@
 // the committed legacy runtime recordings. The recorder helpers come from snippet-recorder.ts
 // rather than render-helpers.ts: this file must not load the client renderer modules.
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { afterAll, describe, expect, it } from 'vitest';
 

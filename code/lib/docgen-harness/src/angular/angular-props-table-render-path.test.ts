@@ -4,7 +4,7 @@
 // Every other test stops at `extractArgTypesFromData`; this one gates the seam where an unfiltered
 // Compodoc extraction would resurrect the filtered members in the rendered table.
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { afterAll, describe, expect, it, vi } from 'vitest';
 

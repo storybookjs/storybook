@@ -2,7 +2,7 @@
 // ones, gating every extraction against both. Unlike angular-baselines.test.ts it needs no happy-dom
 // environment: nothing in its import graph instantiates DOMParser.
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { afterAll, describe, expect, it } from 'vitest';
 

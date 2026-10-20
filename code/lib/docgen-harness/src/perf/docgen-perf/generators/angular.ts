@@ -8,7 +8,7 @@
  *   node src/perf/docgen-perf/generators/angular.ts --components 100
  */
 import * as fs from 'node:fs';
-import * as path from 'node:path';
+import * as path from 'pathe';
 import { pathToFileURL } from 'node:url';
 
 import { z } from 'zod';

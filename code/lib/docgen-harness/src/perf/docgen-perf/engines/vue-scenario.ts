@@ -11,7 +11,7 @@
  *   base-type-touch  workspace layout, but every save touches the widely-imported base type instead
  *                    of a component, so each sample pays a wide invalidation.
  */
-import * as path from 'node:path';
+import * as path from 'pathe';
 
 import { z } from 'zod';
 

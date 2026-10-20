@@ -13,7 +13,7 @@
  *     --parser react-docgen --components 300 --saves 20 --json /tmp/result.json
  */
 import * as fs from 'node:fs';
-import * as path from 'node:path';
+import * as path from 'pathe';
 
 import { z } from 'zod';
 

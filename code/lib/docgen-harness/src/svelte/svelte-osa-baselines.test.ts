@@ -2,7 +2,7 @@ import type { DocgenPayload, IndexEntry } from 'storybook/internal/types';
 import { toId } from 'storybook/internal/csf';
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';

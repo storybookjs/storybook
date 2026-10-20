@@ -3,7 +3,7 @@ import { toId } from 'storybook/internal/csf';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

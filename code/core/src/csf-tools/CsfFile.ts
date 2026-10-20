@@ -777,7 +777,19 @@ export class CsfFile {
                   }
                 } else {
                   const annotations = {} as Record<string, t.Node>;
-                  const storyNode = decl;
+                  let storyNode: t.Node | undefined = decl;
+                  let storyIsFactory = false;
+                  const unwrappedDecl = decl && unwrapExpression(decl);
+                  if (self._metaIsFactory && unwrappedDecl && isCsfFactoryCall(unwrappedDecl)) {
+                    storyIsFactory = true;
+                    storyNode = unwrappedDecl.arguments[0];
+                  }
+                  // A story from another file is kept: its declaration isn't in this file
+                  const isImported =
+                    !!node.source || path.scope.getBinding(localName)?.kind === 'module';
+                  if (self._metaIsFactory && !storyIsFactory && !isImported) {
+                    return;
+                  }
                   if (t.isObjectExpression(storyNode)) {
                     (storyNode.properties as t.ObjectProperty[]).forEach((p) => {
                       if (t.isIdentifier(p.key)) {
@@ -793,7 +805,7 @@ export class CsfFile {
                     name: exportName,
                     localName,
                     parameters: {},
-                    __stats: {},
+                    __stats: storyIsFactory ? { factory: true } : {},
                   };
                 }
               }

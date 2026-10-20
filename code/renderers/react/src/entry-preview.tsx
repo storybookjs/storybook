@@ -5,6 +5,7 @@ import { Tag } from 'storybook/internal/preview-api';
 import { global } from '@storybook/global';
 
 import { configure } from 'storybook/test';
+import type { getConfig } from 'storybook/test';
 
 import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat.ts';
 import type { Decorator } from './public-types.ts';
@@ -46,13 +47,31 @@ export const parameters = {
   renderer: 'react',
 };
 
-export const beforeAll = async () => {
+let actPromise: ReturnType<typeof getAct> | undefined;
+
+// The act wrappers belong to the stories React renders: they stay set while one of them is set up
+// (a docs page sets up several and leaves them in page order, not in reverse), and a story of
+// another renderer gets back the wrappers it would have had without React.
+let activeStoryCount = 0;
+let wrappersWithoutReact: Partial<ReturnType<typeof getConfig>> = {};
+
+export const beforeEach = async () => {
   try {
+    actPromise ??= getAct();
+    const act = await actPromise;
+
+    if (activeStoryCount === 0) {
+      // The function form passes Testing Library's own config. The instrumented `getConfig` of
+      // storybook/test would track the functions of that config object for every later call.
+      configure(({ unstable_advanceTimersWrapper, asyncWrapper, eventWrapper }) => {
+        // `configure` merges, so the cleanup puts back only the keys React sets.
+        wrappersWithoutReact = { unstable_advanceTimersWrapper, asyncWrapper, eventWrapper };
+        return {};
+      });
+    }
+
     // copied from
     // https://github.com/testing-library/react-testing-library/blob/3dcd8a9649e25054c0e650d95fca2317b7008576/src/pure.js
-
-    const act = await getAct();
-
     configure({
       unstable_advanceTimersWrapper: (cb) => {
         return act(cb);
@@ -92,6 +111,14 @@ export const beforeAll = async () => {
         return result;
       },
     });
+    activeStoryCount += 1;
+
+    return () => {
+      activeStoryCount -= 1;
+      if (activeStoryCount === 0) {
+        configure(wrappersWithoutReact);
+      }
+    };
   } catch (e) {
     // no-op
     // storybook/test might not be available

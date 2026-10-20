@@ -5,6 +5,22 @@ import { SaveStoryError } from './utils.ts';
 
 type In = ReturnType<CsfFile['parse']>;
 
+const getStoryObjectExpression = (
+  init: t.VariableDeclarator['init'],
+  isCsf4Story: boolean
+): t.ObjectExpression | undefined => {
+  if (isCsf4Story && t.isCallExpression(init) && t.isObjectExpression(init.arguments[0])) {
+    return init.arguments[0];
+  }
+
+  let node = init;
+  while (t.isTSSatisfiesExpression(node) || t.isTSAsExpression(node)) {
+    node = node.expression;
+  }
+
+  return t.isObjectExpression(node) ? node : undefined;
+};
+
 export const duplicateStoryWithNewName = (csfFile: In, storyName: string, newStoryName: string) => {
   const node = csfFile._storyExports[storyName];
   const cloned = t.cloneNode(node) as t.VariableDeclarator;
@@ -47,6 +63,20 @@ export const duplicateStoryWithNewName = (csfFile: In, storyName: string, newSto
     (t.isArrowFunctionExpression(cloned.init) || t.isCallExpression(cloned.init))
   ) {
     throw new SaveStoryError(`Creating a new story based on a CSF2 story is not supported`);
+  }
+
+  // Remove the story's own `name` so the duplicate doesn't inherit the original's
+  // display name. Nested `name` keys (parameters, argTypes) must be left untouched.
+  const storyObject = getStoryObjectExpression(cloned.init, isCsf4Story);
+  if (storyObject) {
+    storyObject.properties = storyObject.properties.filter(
+      (prop) =>
+        !(
+          t.isObjectProperty(prop) &&
+          ((t.isIdentifier(prop.key) && !prop.computed && prop.key.name === 'name') ||
+            (t.isStringLiteral(prop.key) && prop.key.value === 'name'))
+        )
+    );
   }
 
   traverse(csfFile._ast, {

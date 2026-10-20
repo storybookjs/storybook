@@ -3,12 +3,20 @@ import type { E, Property, Span } from './estree/ast.ts';
 import {
   type SourceEditor,
   appendMembers,
+  appendToList,
+  argumentList,
+  arrayList,
   groupMembers,
+  lineIndent,
   prependMembers,
+  prependToList,
   printKey,
+  reindent,
+  removeFromList,
   removeMembers,
   renameKey,
   renamedMemberText,
+  replaceSpan,
   replaceValue,
 } from './estree/editor.ts';
 import { placeableValueSource } from './estree/values.ts';
@@ -86,3 +94,40 @@ export const literalRoot = (editor: SourceEditor, object: E.ObjectExpression): O
     text: renamedMemberText(editor, object, member, printKey(key, editor.quote)),
   }),
 });
+
+// The elements of an array or the arguments of a call, by their position in the source.
+export interface ListRoot {
+  readonly node: E.ArrayExpression | E.CallExpression;
+  // `null` is a hole.
+  readonly items: readonly (E.Expression | E.SpreadElement | null)[];
+  append(texts: string[]): void;
+  prepend(texts: string[]): void;
+  remove(index: number): void;
+  replace(index: number, text: string): void;
+}
+
+export type Container = ObjectRoot | ListRoot;
+
+export const isListRoot = (container: Container): container is ListRoot => 'items' in container;
+
+export const listRoot = (
+  editor: SourceEditor,
+  node: E.ArrayExpression | E.CallExpression
+): ListRoot => {
+  const list = () =>
+    node.type === 'ArrayExpression' ? arrayList(editor, node) : argumentList(editor, node);
+  return {
+    node,
+    items: node.type === 'ArrayExpression' ? node.elements : node.arguments,
+    append: (texts) => appendToList(editor, list(), texts),
+    prepend: (texts) => prependToList(editor, list(), texts),
+    remove: (index) => {
+      const current = list();
+      removeFromList(editor, current, [current.items[index]]);
+    },
+    replace: (index, text) => {
+      const span = list().items[index];
+      replaceSpan(editor, span, reindent(text, '', lineIndent(editor.code, span.start)));
+    },
+  };
+};

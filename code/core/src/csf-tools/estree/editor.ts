@@ -1610,17 +1610,22 @@ export const replaceValue = (editor: SourceEditor, member: Property, text: strin
       methodFromFunction(indented, keySource(editor, member)) ??
       `${keySource(editor, member)}: ${indented}`;
   }
-  // A text ending in a line comment takes the comma after the replaced code on its line before
-  // the comment. The comma is removed as an edit of its own, so a removal of the next member can
-  // still take it. Any other text leaves the comma to other edits.
+  replaceSpan(editor, span, replacement);
+};
+
+// A text ending in a line comment takes the comma after the replaced code on its line before the
+// comment. The comma is removed as an edit of its own, so a removal of the next item can still
+// take it. Any other text leaves the comma to other edits.
+export const replaceSpan = (editor: SourceEditor, span: Span, text: string) => {
+  const { code } = editor;
   const { comments, end } = triviaAfter(editor, span.end, SPACE_ON_LINE);
   const comma = comments.length === 0 && code[end] === ',' ? end + 1 : undefined;
-  const takesComma = comma !== undefined && endsInLineComment(replacement);
+  const takesComma = comma !== undefined && endsInLineComment(text);
   const to = takesComma ? comma : span.end;
   editor.edits.overwrite(
     span.start,
     span.end,
-    withComma(replacement, takesComma ? ',' : '', lineBreakAt(code, to))
+    withComma(text, takesComma ? ',' : '', lineBreakAt(code, to))
   );
   if (takesComma) {
     if (end > span.end) {

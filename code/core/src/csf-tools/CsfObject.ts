@@ -1,5 +1,12 @@
 import { type Access, carriedSpread, carriedSpreads, lookupProperty } from './ObjectMembers.ts';
-import { type MemberInsert, type ObjectRoot, literalRoot } from './ObjectRoot.ts';
+import {
+  type Container,
+  type MemberInsert,
+  type ObjectRoot,
+  isListRoot,
+  listRoot,
+  literalRoot,
+} from './ObjectRoot.ts';
 import {
   type E,
   type Node,
@@ -47,6 +54,20 @@ export type CsfMutationDiagnosticCode =
   | 'cyclic-move'
   | 'evaluation-order'
   | 'invalid-csf';
+
+/**
+ * A path to a value: a string addresses a property of an object, a number an element of an array
+ * or an argument of a call, by its position in the source.
+ */
+export type CsfPath = readonly (string | number)[];
+
+/** Print a path as `parameters.msw.handlers[0]`. */
+export const printPath = (path: CsfPath) =>
+  path
+    .map((segment, index) =>
+      typeof segment === 'number' ? `[${segment}]` : index === 0 ? segment : `.${segment}`
+    )
+    .join('');
 
 export interface CsfMutationDiagnostic {
   code: CsfMutationDiagnosticCode;
@@ -261,6 +282,21 @@ type ReportDiagnostic = (diagnostic: CsfMutationDiagnostic) => void;
 type MarkChanged = () => void;
 
 const unsafePath = (path: readonly string[]) => path.includes('__proto__');
+
+// What the segment after a value addresses into it: an object literal's property for a key, an
+// array's element or a call's argument for an index.
+const containerFor = (
+  editor: SourceEditor,
+  value: Node | undefined,
+  segment: string | number
+): Container | undefined => {
+  if (typeof segment === 'string') {
+    return value?.type === 'ObjectExpression' ? literalRoot(editor, value) : undefined;
+  }
+  return value?.type === 'ArrayExpression' || value?.type === 'CallExpression'
+    ? listRoot(editor, value)
+    : undefined;
+};
 
 // `set` prints a node from its source, so a change to its fields would be lost: it throws instead.
 const readOnly = <T extends object>(node: T): T => {
@@ -568,7 +604,7 @@ class Editor implements CsfObjectEditor {
     }
     const remaining = this.locate(from);
     if (remaining.ok === false || !remaining.property) {
-      throw new Error(`CsfObject: ${from.join('.')} was not found again after moving it`);
+      throw new Error(`CsfObject: ${printPath(from)} was not found again after moving it`);
     }
     remaining.parent.remove([remaining.property]);
     const removed = this.commit(from);
@@ -781,16 +817,23 @@ class Editor implements CsfObjectEditor {
   // `access` applies to the last field of the path, and to its parents for a `set`, which creates
   // missing ones; other parents are read. Only a lookup for a read follows a shared constant.
   private locate(
-    path: readonly string[],
+    path: CsfPath,
     access: Access = 'read',
     edits = true
   ):
     | { ok: true; parent: ObjectRoot; property?: Property; missing?: number }
     | { ok: false; code: CsfMutationDiagnosticCode; node: Node } {
-    let parent = this.root();
+    let parent: Container = this.root();
     let property: Property | undefined;
 
     for (const [index, name] of path.entries()) {
+      if (isListRoot(parent) || typeof name !== 'string') {
+        return {
+          ok: false,
+          code: 'unsupported-member',
+          node: isListRoot(parent) ? parent.node : this.anchor(),
+        };
+      }
       const lookup = lookupProperty(
         parent.properties,
         name,
@@ -810,13 +853,14 @@ class Editor implements CsfObjectEditor {
         return { ok: false, code: 'unsupported-member', node: property };
       }
       const value = resolveExpression(this.editor.scopes, property.value, edits ? 'write' : 'read');
-      if (value?.type !== 'ObjectExpression') {
+      const container = containerFor(this.editor, value, path[index + 1]);
+      if (!container) {
         return { ok: false, code: 'unsupported-member', node: property.value };
       }
-      parent = literalRoot(this.editor, value);
+      parent = container;
     }
 
-    return { ok: true, parent, property };
+    return { ok: true, parent: this.root() };
   }
 
   // Writes `content` into the object at `containers`, creating the missing ones, which carry the
@@ -882,7 +926,7 @@ class Editor implements CsfObjectEditor {
           'unsupported-value',
           path,
           this.anchor(),
-          `Cannot set ${path.join('.')} to a ${node.type} node that did not come from \`get\`, \`transform\` or \`parseExpression\``
+          `Cannot set ${printPath(path)} to a ${node.type} node that did not come from \`get\`, \`transform\` or \`parseExpression\``
         )
       : undefined;
   }
@@ -900,7 +944,7 @@ class Editor implements CsfObjectEditor {
     code: CsfMutationDiagnosticCode,
     path: readonly string[],
     node: Node,
-    message = `Cannot mutate ${path.join('.')} because the target contains ${code.replaceAll('-', ' ')}`
+    message = `Cannot mutate ${printPath(path)} because the target contains ${code.replaceAll('-', ' ')}`
   ): CsfMutationDiagnostic {
     return {
       code,
@@ -962,7 +1006,7 @@ class Editor implements CsfObjectEditor {
         'invalid-csf',
         path,
         this.anchor(),
-        `Edited ${path.join('.')}, but the result is not valid CSF: ${reason}`
+        `Edited ${printPath(path)}, but the result is not valid CSF: ${reason}`
       );
     }
     return { ok: true, changed: true };

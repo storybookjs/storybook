@@ -1423,6 +1423,7 @@ If your custom migration tooling imports `ConfigFile` from `storybook/internal/c
 | ------------------------------------ | ------------------------ |
 | `getFieldValue`, `getSafeFieldValue` | `getValue`               |
 | `setFieldNode`, `setFieldValue`      | `set`                    |
+| `removeField`                        | `remove`                 |
 | `findNamedImportMethodCalls`         | `callArguments`          |
 | `FindNamedImportMethodCallsOptions`  | `CallArgumentsOptions`   |
 

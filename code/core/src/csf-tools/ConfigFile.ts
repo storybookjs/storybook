@@ -774,52 +774,6 @@ export class ConfigFile implements CsfObject {
     return value;
   }
 
-  removeField(path: string[]) {
-    const editor = this._editor;
-    const removeProperty = (object: E.ObjectExpression, prop: string) => {
-      const member = object.properties.find((p) => staticKey(p) === prop);
-      if (member) {
-        removeFromList(editor, objectList(editor, object), [member]);
-      }
-    };
-    // the structure of this._exports doesn't work for this use case
-    // so we have to manually bypass it here
-    if (path.length === 1) {
-      let removedRootProperty = false;
-      // removing the root export
-      for (const node of this._program.body) {
-        // named export
-        if (
-          node.type === 'ExportNamedDeclaration' &&
-          node.declaration?.type === 'VariableDeclaration'
-        ) {
-          const decl = node.declaration.declarations[0];
-          if (isIdentifier(decl.id, path[0])) {
-            removeStatement(editor, node);
-            removedRootProperty = true;
-          }
-        }
-      }
-      // The config object `parse` found, unwrapped from factory calls like `defineMain({})`.
-      if (this._exportsObject) {
-        removeProperty(this._exportsObject, path[0]);
-        removedRootProperty = true;
-      }
-
-      if (removedRootProperty) {
-        this._editor.commit();
-        return;
-      }
-    }
-
-    const [root, ...rest] = path;
-    const parentNode = _getPath(rest.slice(0, -1), this._exports[root]);
-    if (this._exports[root] && parentNode?.type === 'ObjectExpression') {
-      removeProperty(parentNode, path.at(-1)!);
-      this._editor.commit();
-    }
-  }
-
   /** Append a plain value to the array literal at a path, creating the field when it is missing. */
   appendValueToArray(path: string[], value: any): CsfMutationResult {
     return this.appendNodeToArray(path, this.valueToNode(value));

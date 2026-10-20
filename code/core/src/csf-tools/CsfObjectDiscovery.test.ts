@@ -217,6 +217,26 @@ describe('CsfObject discovery', () => {
     );
   });
 
+  it.each(['base', 'base as Story', 'makeStory()'])(
+    'reports a story initialized with %s instead of leaving it out silently',
+    (initializer) => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        const base = { args: {} };
+        export const Basic = ${initializer};
+      `);
+
+      expect(csf.objects({ meta: false })).toEqual([]);
+      expect(csf.mutationDiagnostics).toEqual([
+        expect.objectContaining({
+          code: 'unsupported-initializer',
+          target: { kind: 'story', exportName: 'Basic', localName: 'Basic' },
+          path: [],
+        }),
+      ]);
+    }
+  );
+
   describe('CSF2 annotation assignments', () => {
     const legacy = `export default { title: 'Example' };
 const Template = (args) => args;

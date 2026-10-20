@@ -528,10 +528,16 @@ const discoverStories = (
     if (write) {
       return reject(write);
     }
-    if (assignments.length === 0 && (object || !isAnnotatable(node))) {
-      return object
-        ? [{ target: storyTarget(binding), root: literalRoot(csf._editor, object) }]
-        : [];
+    if (assignments.length === 0 && object) {
+      return [{ target: storyTarget(binding), root: literalRoot(csf._editor, object) }];
+    }
+    if (assignments.length === 0 && !isAnnotatable(node)) {
+      return reject({
+        code: 'unsupported-initializer',
+        node: node ?? declaration,
+        path: [],
+        message: `Cannot mutate story ${binding.exportName} because it is not a story object, function or bound template`,
+      });
     }
     if (shared) {
       return reject(shared);

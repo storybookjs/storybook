@@ -2,7 +2,7 @@ import type { CsfObject, ESTree as E } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 
-import { readForEdit } from '../helpers/edit-parsed-file.ts';
+import { everyCsfObject, readForEdit } from '../helpers/edit-parsed-file.ts';
 import type { Fix } from '../types.ts';
 
 const argName = (property: E.ObjectProperty): string | undefined => {
@@ -44,7 +44,7 @@ export const argtypesDefaultValue: Fix = {
       filter: { kind: ['preview', 'story'], code: 'defaultValue' },
       editConfig: strip,
       editCsf: (csf) => {
-        csf.objects().forEach(strip);
+        everyCsfObject(csf).forEach(strip);
       },
     },
   ],

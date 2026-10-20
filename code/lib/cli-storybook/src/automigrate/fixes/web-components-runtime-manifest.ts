@@ -101,10 +101,10 @@ export const webComponentsRuntimeManifest: Fix<WebComponentsRuntimeManifestOptio
       filter: { kind: ['main'] },
       editConfig: (main): void => {
         if (typeof result.manifestPath === 'string') {
-          const framework = main.getValue(['framework']);
-          if (typeof framework === 'string') {
+          const expression = main.get(['framework']);
+          if (t.isStringLiteral(expression)) {
             main.set(['framework'], {
-              name: framework,
+              name: expression.value,
               options: { customElementsManifest: result.manifestPath },
             });
           } else {

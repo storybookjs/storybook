@@ -151,12 +151,8 @@ class DocgenWorker implements DocgenWorkerClient {
     if (!pending || msg.id !== pending.id) {
       return;
     }
-    if (pending.timer) {
-      clearTimeout(pending.timer);
-    }
-    this.current = undefined;
     this.served = true;
-    this.keepProcessAliveWhileBusy();
+    this.takeCurrent();
     if (msg.error) {
       pending.reject(errorLikeToError(msg.error));
     } else {
@@ -172,21 +168,18 @@ class DocgenWorker implements DocgenWorkerClient {
     this.death = error;
     // Without this, an `extract` awaiting `ready` hangs when the worker dies before `init`.
     this.rejectReady(error);
-    this.rejectAllPending(error);
+    this.takeCurrent()?.reject(error);
     this.worker.terminate().catch(() => 0);
   }
 
-  private rejectAllPending(error: Error): void {
+  private takeCurrent(): Pending | undefined {
     const pending = this.current;
-    if (!pending) {
-      return;
-    }
-    if (pending.timer) {
+    if (pending?.timer) {
       clearTimeout(pending.timer);
     }
     this.current = undefined;
-    pending.reject(error);
-    this.worker.unref();
+    this.keepProcessAliveWhileBusy();
+    return pending;
   }
 }
 

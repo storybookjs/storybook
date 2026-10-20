@@ -327,9 +327,8 @@ export const locateConfigRoot = (
 const exportedName = (node: E.ModuleExportName) =>
   node.type === 'Identifier' ? node.name : (node as E.StringLiteral).value;
 
-// A config made of named exports, edited as if it were one object literal. Each member's key is the
-// node that carries the exported name and its value the declaration's initializer, so every span a
-// shared helper could read is a real one; the member itself only exists in memory.
+// A config made of named exports, edited as if it were one object literal of `detachedMember`s: the
+// exported name is the key and the declaration's initializer the value.
 const namedExportsRoot = (editor: SourceEditor, entries: NamedEntry[]): ObjectRoot => {
   const quote = editor.quote;
   const byProperty = new Map<Property, NamedEntry>();

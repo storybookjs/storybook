@@ -14,7 +14,6 @@ import {
   appendMembers,
   detachedTextOf,
   groupMembers,
-  keySource,
   prependMembers,
   printKey,
   printMemberAccess,
@@ -453,18 +452,20 @@ const literalMember = (literal: E.ObjectExpression, key: string) => {
   return { kind: 'value' as const, literal: value.type === 'ObjectExpression' ? value : undefined };
 };
 
-// The spread that carries the member the spreads give at `keys` into an object, or an `array`,
-// created there; `undefined` when none gives it one. The last spread with the first key replaces
-// what earlier ones give it, which are only read when it may lack it, after `??`. A member below
-// the spread's own is read with `?.`, as it may be missing; one a local literal lacks is left out.
+// The spread that writes the member at `keys` of `spreads` into a new object or array, or
+// `undefined` when none can have it. The last spread that may have the first key wins, earlier ones
+// follow after `??` in case it lacks it; a local literal known to have it ends that list, and one
+// known to lack it is skipped. A member below a spread's own is read with `?.`.
 const carriedSpread = (
   spreads: readonly CarriedSpread[],
   keys: readonly string[],
   quote: string,
-  array: boolean
+  into: 'object' | 'array'
 ) => {
   const spreadOf = (expression: string, alternatives = false) =>
-    array ? `...(${expression} ?? [])` : `...${alternatives ? `(${expression})` : expression}`;
+    into === 'array'
+      ? `...(${expression} ?? [])`
+      : `...${alternatives ? `(${expression})` : expression}`;
   const [first, ...rest] = keys;
   const candidates: { expression: string; literal: E.ObjectExpression | undefined }[] = [];
   for (const spread of [...spreads].reverse()) {
@@ -1033,15 +1034,15 @@ class CsfObjectEditor implements CsfObject {
         const multiline = texts.some((text) => text.includes('\n'));
         const block = (members: string[]) =>
           multiline ? printMembers(members, indent) : `{ ${members.join(', ')} }`;
-        const forward = (depth: number, array = false) => {
-          const spread = carriedSpread(carried.spreads, missing.slice(0, depth + 1), quote, array);
+        const forward = (depth: number, into: 'object' | 'array' = 'object') => {
+          const spread = carriedSpread(carried.spreads, missing.slice(0, depth + 1), quote, into);
           return spread ? [spread] : [];
         };
         const last = missing.length - 1;
         let nested =
           'members' in content
             ? block([...forward(last), ...texts])
-            : `[${[...forward(last, true), ...texts].join(', ')}]`;
+            : `[${[...forward(last, 'array'), ...texts].join(', ')}]`;
         for (let depth = last - 1; depth >= 0; depth--) {
           nested = block([...forward(depth), `${printKey(missing[depth + 1], quote)}: ${nested}`]);
         }
@@ -1134,5 +1135,3 @@ export const createCsfObject = (
 ) => new CsfObjectEditor(target, host, report, markChanged);
 
 export type { CsfObjectEditor };
-
-export { keySource };

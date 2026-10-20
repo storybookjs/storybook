@@ -259,8 +259,8 @@ export class SourceEditor {
     this._transaction = transaction;
     let kept = false;
     try {
-      const result = fn();
-      if (typeof (result as unknown as PromiseLike<unknown> | undefined)?.then === 'function') {
+      const result: unknown = fn();
+      if (typeof (result as PromiseLike<unknown> | undefined)?.then === 'function') {
         throw new Error(
           'A transaction cannot wait for a promise: its edits would be made after it'
         );
@@ -356,7 +356,7 @@ export class SourceEditor {
     return this._style.indent;
   }
 
-  /** Whether generated statements end with `;`: unless most statements of the file omit it. */
+  /** Whether generated statements end with `;`, as they do unless most of the file's omit it. */
   get semicolons() {
     this._style ??= inferStyle(this._module);
     return this._style.semicolons;
@@ -460,7 +460,6 @@ const blockIndent = (code: string, node: Node) => {
 export const printKey = (name: string, quote: string) =>
   isValidIdentifier(name, false) ? name : printString(name, quote);
 
-// `.key`, or `['key']` for a key that is no identifier; with `?.` when `optional`.
 export const printMemberAccess = (key: string, quote: string, optional = false) =>
   isValidIdentifier(key, false)
     ? `${optional ? '?.' : '.'}${key}`
@@ -961,7 +960,7 @@ const itemLines = (
     .join('');
 
 // A line comment ending the last item puts the comma for the next one on the next line.
-const appended = (
+const withSeparator = (
   layout: Omit<Appended, 'separator'>,
   written: string,
   lastItem: string
@@ -1003,7 +1002,7 @@ const appendFirst = (editor: SourceEditor, list: List, texts: string[]): Appende
   const { items, padding } = list;
   const write = (layout: Omit<Appended, 'separator'>, text: string) => {
     insert(edits, layout, text);
-    return appended(layout, text, texts.at(-1)!);
+    return withSeparator(layout, text, texts.at(-1)!);
   };
   // The text after the items goes to the right of the list's end, so later items go before it.
   const close = (text: string) => {
@@ -1031,18 +1030,18 @@ const appendFirst = (editor: SourceEditor, list: List, texts: string[]): Appende
       const layout = { at: end, right: false, indent, trailingComma: ',', lineBreakFollows: true };
       return write(layout, itemLines(texts, indent, ',', true));
     }
-    const inline = { right: false, indent: undefined, trailingComma: '', lineBreakFollows: false };
+    const oneLine = { right: false, indent: undefined, trailingComma: '', lineBreakFollows: false };
     if (end > list.open) {
       if (end === list.close) {
         close(padding);
       }
-      return write({ ...inline, at: end }, ` ${texts.join(', ')}`);
+      return write({ ...oneLine, at: end }, ` ${texts.join(', ')}`);
     }
     if (list.close > list.open) {
       edits.remove(list.open, list.close);
     }
     close(padding);
-    return write({ ...inline, at: list.open }, `${padding}${texts.join(', ')}`);
+    return write({ ...oneLine, at: list.open }, `${padding}${texts.join(', ')}`);
   }
   const last = items.at(-1)!;
   const comma = separatorAfter(editor, last);
@@ -1087,7 +1086,7 @@ const appendAfter = (editor: SourceEditor, list: List, previous: Appended, texts
       ? ` ${inline(editor, list, texts, trailingComma, lineBreakFollows)}`
       : itemLines(texts, indent, trailingComma, lineBreakFollows);
   insert(editor.edits, previous, `${separator}${text}`);
-  return appended(previous, text, texts.at(-1)!);
+  return withSeparator(previous, text, texts.at(-1)!);
 };
 
 /**
@@ -1429,8 +1428,7 @@ export const appendStatement = (editor: SourceEditor, text: string) => {
   insertStatementAfter(editor, last, `${multiline ? '\n' : ''}${text}`);
 };
 
-// The statement of `module`, the parse of `edits`, that a statement of the code they edit became,
-// or whose source is a text they appended.
+// Where a statement, or a text appended as one, is in `module`, the code `edits` produced.
 const committedStatement = (
   edits: SourceEdits,
   { code, program }: ParsedModule,

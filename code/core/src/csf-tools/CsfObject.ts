@@ -17,19 +17,31 @@ import {
   type Node,
   type Property,
   type SourceLocation,
-  locationOf,
+  type Span,
+  outerSpan,
   parseExpression,
+  parseModule,
   staticKey,
   unwrapExpression,
 } from './estree/ast.ts';
 import {
+  type Added,
+  type Dependency,
   type SourceEditor,
+  type Written,
+  adding,
   detachedSource,
   detachedTextOf,
+  isPendingAt,
+  isRemoved,
+  locationIn,
+  markStaged,
+  objectList,
   printKey,
   printObject,
   printValue,
 } from './estree/editor.ts';
+import type { ScopeInfo } from './estree/scope.ts';
 import {
   type CsfValue,
   UNRESOLVED,
@@ -319,6 +331,9 @@ export interface CsfObjectHost {
   readonly editor: SourceEditor;
   // Located again after every commit.
   root(): ObjectRoot | undefined;
+  // What the file's index reads, so that a mutation of it commits to be checked: the values at
+  // some paths, and the calls of some names wherever they are.
+  readonly index?: { reads(path: CsfPath): boolean; callees: readonly string[] };
 }
 
 type ReportDiagnostic = (diagnostic: CsfMutationDiagnostic) => void;
@@ -335,6 +350,33 @@ const unsafePath = (path: CsfPath) =>
 const isKey = (segment: string | number): segment is string => typeof segment === 'string';
 
 const invalidated = () => new Error('CsfObject mutation preflight was invalidated');
+
+// A commit of pending edits that leaves a file the index rejects, or, outside a mutation, one that
+// fails at all.
+class Unindexable extends Error {
+  constructor(readonly reason: unknown) {
+    super(reason instanceof Error ? reason.message : String(reason));
+  }
+}
+
+// What a lookup is for, which picks the spans its last step depends on: a read and a replacement
+// depend on the whole value, a removal on the gaps of the list it removes from, and a write into
+// the value on its ends alone.
+type Intent = 'read' | 'replace' | 'remove' | 'into';
+
+// A dependency on the ends of a span, which an edit inside it leaves alone.
+const ends = ({ start, end }: Span): Dependency[] => [
+  { start, end: start },
+  { start: end, end },
+];
+
+// A lookup that crossed a pending edit, so the edits are committed and it is made again.
+const CROSSED = Symbol('crossed');
+
+const IDENTIFIER = /[\p{ID_Start}$_][\p{ID_Continue}$\u200c\u200d]*/gu;
+
+// The raw writes the reference rule found to mention no binding, so they are not read again.
+const cleared = new WeakSet<Written>();
 
 // A new array: its items go after the spread it carries forward, or before it when `first`.
 type ArrayInsert = { items: string[]; first: boolean };
@@ -395,6 +437,14 @@ const readOnly = <T extends object>(node: T): T => {
 class Editor implements CsfObject {
   #changed = false;
 
+  // Whether a mutation is running, and the first of the batch's writes it made.
+  #mutating = false;
+
+  #from = 0;
+
+  // The batch `#from` counts in; another one, such as a commit by other code, starts at 0.
+  #batch: unknown;
+
   readonly target: CsfObjectTarget;
 
   private readonly host: CsfObjectHost;
@@ -420,6 +470,18 @@ class Editor implements CsfObject {
   }
 
   get node() {
+    const node = this.host.root()?.node;
+    if (!node || !isPendingAt(this.editor, [node])) {
+      return node;
+    }
+    try {
+      this.settle();
+    } catch (error) {
+      if (!(error instanceof Unindexable)) {
+        throw error;
+      }
+      return node;
+    }
     return this.host.root()?.node;
   }
 
@@ -460,7 +522,32 @@ class Editor implements CsfObject {
     if (found.kind !== 'value' || !found.expression) {
       return undefined;
     }
-    const value = readValue(this.editor.scopes, found.expression);
+    // The constants it follows may hold pending edits too.
+    const { scopes } = this.editor;
+    const followed: Node[] = [];
+    const tracking: ScopeInfo = Object.create(scopes, {
+      bindingOf: {
+        value: (node: Node) => {
+          const binding = scopes.bindingOf(node);
+          if (binding) {
+            followed.push(binding.node);
+          }
+          return binding;
+        },
+      },
+    });
+    const value = readValue(tracking, found.expression);
+    if (isPendingAt(this.editor, followed)) {
+      try {
+        this.settle();
+      } catch (error) {
+        if (!(error instanceof Unindexable)) {
+          throw error;
+        }
+        return undefined;
+      }
+      return this.getValue(path);
+    }
     return value === UNRESOLVED ? undefined : value;
   }
 
@@ -479,7 +566,20 @@ class Editor implements CsfObject {
         diagnostic: this.diagnostic('unsupported-member', path, this.anchor()),
       };
     }
-    const found = this.locate(path, 'read', false);
+    let found: Located;
+    try {
+      this.settleRaw();
+      found = this.locate(path, 'read', false);
+    } catch (error) {
+      if (!(error instanceof Unindexable)) {
+        throw error;
+      }
+      const message = `Cannot read ${printCsfPath(path)} because the pending edits do not commit: ${error.message}`;
+      return {
+        kind: 'unreadable',
+        diagnostic: this.diagnostic('invalid-csf', path, this.anchor(), message),
+      };
+    }
     if (found.ok === false) {
       return { kind: 'unreadable', diagnostic: this.diagnostic(found.code, path, found.node) };
     }
@@ -504,7 +604,7 @@ class Editor implements CsfObject {
   }
 
   set(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
-    return this.atomic(() => this.setValue(path, value));
+    return this.atomic(path, () => this.setValue(path, value));
   }
 
   private setValue(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
@@ -515,7 +615,7 @@ class Editor implements CsfObject {
     if (unprintable) {
       return unprintable;
     }
-    const inspected = this.locate(path, 'set');
+    const inspected = this.locate(path, 'set', true, 'replace');
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
@@ -523,11 +623,11 @@ class Editor implements CsfObject {
     const text = () => printValue(value, quote, { indent, expand: 'multiline' });
     if (inspected.kind === 'item') {
       inspected.parent.replace(inspected.index, text());
-      return this.commit(path);
+      return this.stage(path);
     }
     if (inspected.kind === 'property') {
       inspected.parent.replaceValue(inspected.property, text());
-      return this.commit(path);
+      return this.stage(path);
     }
     const creatable = this.creatable(inspected, path, (keys) => keys.length > 1);
     if (!creatable.ok) {
@@ -538,15 +638,15 @@ class Editor implements CsfObject {
     this.insert(path.slice(0, -1), {
       members: [{ key, value: printed, text: `${printKey(key, quote)}: ${printed}` }],
     });
-    return this.commit(path);
+    return this.stage(path);
   }
 
   append(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
-    return this.atomic(() => this.addItem(path, value, 'append'));
+    return this.atomic(path, () => this.addItem(path, value, 'append'));
   }
 
   prepend(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
-    return this.atomic(() => this.addItem(path, value, 'prepend'));
+    return this.atomic(path, () => this.addItem(path, value, 'prepend'));
   }
 
   private addItem(
@@ -561,7 +661,7 @@ class Editor implements CsfObject {
     if (unprintable) {
       return unprintable;
     }
-    const inspected = this.locate(path, 'set');
+    const inspected = this.locate(path, 'set', true, 'into');
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
@@ -574,7 +674,7 @@ class Editor implements CsfObject {
         return creatable;
       }
       this.insert(path, { items: [text()], first: end === 'prepend' });
-      return this.commit(path);
+      return this.stage(path);
     }
     const { scopes } = this.editor;
     const list = slot.expression && listNode(resolveExpression(scopes, slot.expression));
@@ -591,15 +691,26 @@ class Editor implements CsfObject {
           : `Expected an array literal or a call at '${printCsfPath(path)}', got '${node.type}'`
       );
     }
-    listRoot(this.editor, list)[end]([text()]);
-    return this.commit(path);
+    const items = listRoot(this.editor, list);
+    const texts = [text()];
+    const added = end === 'append' ? { into: list, key: Symbol('item') } : undefined;
+    if (isPendingAt(this.editor, [...ends(list), ...this.gaps(items.gaps(), added, texts)])) {
+      this.settle();
+      return this.addItem(path, value, end);
+    }
+    if (added) {
+      adding(this.editor, added, () => items.append(texts));
+    } else {
+      items.prepend(texts);
+    }
+    return this.stage(path);
   }
 
   transform(
     path: CsfPath,
     derive: (value: CsfExpression) => CsfExpression | undefined
   ): CsfMutationResult {
-    return this.atomic(() => this.transformValue(path, derive));
+    return this.atomic(path, () => this.transformValue(path, derive));
   }
 
   private transformValue(
@@ -609,7 +720,7 @@ class Editor implements CsfObject {
     if (path.length === 0 || unsafePath(path)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
-    const inspected = this.locate(path);
+    const inspected = this.locate(path, 'read', true, 'read');
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
@@ -618,6 +729,7 @@ class Editor implements CsfObject {
       return { ok: true, changed: false };
     }
     const value = readOnly(parseExpression(slot.source));
+    const parsed = this.editor._module;
     const derived = derive(value);
     if (!derived || derived === value) {
       return { ok: true, changed: false };
@@ -626,30 +738,36 @@ class Editor implements CsfObject {
     if (unprintable) {
       return unprintable;
     }
-    if (inspected.kind === 'item') {
-      inspected.parent.replace(inspected.index, detachedTextOf(derived));
-    } else if (inspected.kind === 'property') {
-      inspected.parent.replaceValue(inspected.property, detachedTextOf(derived));
+    // `derive` can read the file, which can commit it.
+    const target =
+      this.editor._module === parsed ? inspected : this.locate(path, 'read', true, 'read');
+    if (target.ok === false || !this.valueAt(target)) {
+      throw invalidated();
     }
-    return this.commit(path);
+    if (target.kind === 'item') {
+      target.parent.replace(target.index, detachedTextOf(derived));
+    } else if (target.kind === 'property') {
+      target.parent.replaceValue(target.property, detachedTextOf(derived));
+    }
+    return this.stage(path);
   }
 
   remove(path: CsfPath): CsfMutationResult {
-    return this.atomic(() => this.removeValue(path));
+    return this.atomic(path, () => this.removeValue(path));
   }
 
   private removeValue(path: CsfPath): CsfMutationResult {
     if (path.length === 0 || unsafePath(path)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
-    const inspected = this.locate(path);
+    const inspected = this.locate(path, 'read', true, 'remove');
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
     if (inspected.kind === 'item') {
       // An emptied list stays: `tags: []` is not a missing `tags`.
       inspected.parent.remove(inspected.index);
-      return this.commit(path);
+      return this.stage(path);
     }
     if (inspected.kind !== 'property') {
       return { ok: true, changed: false };
@@ -664,11 +782,8 @@ class Editor implements CsfObject {
       return this.failure(removal.code, path, removal.node);
     }
     inspected.parent.remove([inspected.property]);
-    const removed = this.commit(path);
-    if (!removed.ok) {
-      return removed;
-    }
-    return this.removeEmptyParents(path) ?? removed;
+    this.removeEmptyParents(path);
+    return this.stage(path);
   }
 
   rename(path: CsfPath, name: string): CsfMutationResult {
@@ -677,7 +792,7 @@ class Editor implements CsfObject {
   }
 
   move(from: CsfPath, to: CsfPath): CsfMutationResult {
-    return this.atomic(() => this.moveValue(from, to));
+    return this.atomic(from, () => this.moveValue(from, to));
   }
 
   private moveValue(from: CsfPath, to: CsfPath): CsfMutationResult {
@@ -701,7 +816,9 @@ class Editor implements CsfObject {
       return this.failure('cyclic-move', to, this.anchor());
     }
 
-    const source = this.locate(from);
+    // A lookup that commits leaves the nodes of the lookups before it stale.
+    const parsed = this.editor._module;
+    const source = this.locate(from, 'read', true, 'read');
     if (source.ok === false) {
       return this.failure(source.code, from, source.node);
     }
@@ -712,7 +829,10 @@ class Editor implements CsfObject {
     if (!removal.ok) {
       return this.failure(removal.code, from, removal.node);
     }
-    const destination = this.locate(to);
+    const destination = this.locate(to, 'read', true, 'into');
+    if (this.editor._module !== parsed) {
+      return this.moveValue(from, to);
+    }
     if (destination.ok === false) {
       return this.failure(destination.code, to, destination.node);
     }
@@ -732,30 +852,24 @@ class Editor implements CsfObject {
       sourceParent.every((part, index) => destinationParent[index] === part)
     ) {
       source.parent.rename(source.property, key);
-      return this.commit(from);
+      return this.stage(from, [from, to]);
     }
 
     const moved = source.parent.take(source.property, key);
-    // The source is removed after the insertion, looked up again since the insertion moved its spans.
+    // The source is removed after the insertion, looked up again in case the insertion went into
+    // its list, which commits the insertion first.
     this.insert(to.slice(0, -1), { members: [{ ...moved, key }] });
-    const inserted = this.commit(from);
-    if (!inserted.ok) {
-      return inserted;
-    }
-    const remaining = this.locate(from);
+    const remaining = this.locate(from, 'read', true, 'remove');
     if (remaining.ok === false || remaining.kind !== 'property') {
       throw new Error(`CsfObject: ${printCsfPath(from)} was not found again after moving it`);
     }
     remaining.parent.remove([remaining.property]);
-    const removed = this.commit(from);
-    if (!removed.ok) {
-      return removed;
-    }
-    return this.removeEmptyParents(from) ?? removed;
+    this.removeEmptyParents(from);
+    return this.stage(from, [from, to]);
   }
 
   group(path: CsfPath, names: readonly string[]): CsfMutationResult {
-    return this.atomic(() => this.groupValues(path, names));
+    return this.atomic(path, () => this.groupValues(path, names));
   }
 
   private groupValues(path: CsfPath, names: readonly string[]): CsfMutationResult {
@@ -776,7 +890,7 @@ class Editor implements CsfObject {
     }
     let parent: ObjectRoot = this.root();
     if (path.length > 1) {
-      const inspected = this.locate(path.slice(0, -1));
+      const inspected = this.locate(path.slice(0, -1), 'read', true, 'into');
       if (inspected.ok === false) {
         return this.failure(inspected.code, path, inspected.node);
       }
@@ -794,6 +908,14 @@ class Editor implements CsfObject {
       (property): property is Property =>
         property.type !== 'SpreadElement' && names.includes(staticKey(property) ?? '')
     );
+    // The members and the destination are read as parsed, so pending edits of them commit first.
+    const read = parent.properties.filter(
+      (property) => property.type !== 'SpreadElement' && staticKey(property) === group
+    );
+    if (isPendingAt(this.editor, [...this.members(parent), ...moved, ...read])) {
+      this.settle();
+      return this.groupValues(path, names);
+    }
     if (moved.length === 0) {
       return { ok: true, changed: false };
     }
@@ -895,9 +1017,12 @@ class Editor implements CsfObject {
           );
         }
       }
-      literalRoot(this.editor, value).prepend(
-        moved.map((property) => parent.take(property, staticKey(property)!))
-      );
+      const into = literalRoot(this.editor, value);
+      if (isPendingAt(this.editor, this.members(into))) {
+        this.settle();
+        return this.groupValues(path, names);
+      }
+      into.prepend(moved.map((property) => parent.take(property, staticKey(property)!)));
       parent.remove(moved);
     } else {
       const refused = this.refusedKey(parent, group, path);
@@ -937,36 +1062,81 @@ class Editor implements CsfObject {
       }
       parent.group(moved, group);
     }
-    return this.commit(path);
+    return this.stage(path, [path, ...names.map((name) => [...path.slice(0, -1), name])]);
   }
 
-  // Returns the result of a rejected commit, which ends the clean-up.
   // Stops at an element or argument: the list keeps it, as it keeps an emptied list.
-  private removeEmptyParents(path: CsfPath): CsfMutationResult | undefined {
+  private removeEmptyParents(path: CsfPath) {
     for (let depth = path.length - 1; depth > 0; depth--) {
-      const ancestor = this.locate(path.slice(0, depth));
+      const ancestor = this.locate(path.slice(0, depth), 'read', true, 'into');
       if (ancestor.ok === false || ancestor.kind !== 'property' || ancestor.property.method) {
         return;
       }
       const value = resolveExpression(this.editor.scopes, ancestor.property.value);
-      if (value?.type !== 'ObjectExpression' || value.properties.length > 0) {
+      if (value?.type !== 'ObjectExpression' || !this.emptied(value)) {
         return;
       }
       if (!lookupProperty(ancestor.parent.properties, ancestor.key, 'remove', this.editor).ok) {
         return;
       }
-      ancestor.parent.remove([ancestor.property]);
-      const committed = this.commit(path);
-      if (!committed.ok) {
-        return committed;
+      if (
+        isPendingAt(this.editor, [
+          ancestor.property.key,
+          ...this.gaps(ancestor.parent.members?.().gaps),
+        ])
+      ) {
+        // Committed, the emptied object is looked up again at the same depth.
+        this.settle();
+        depth++;
+        continue;
       }
+      ancestor.parent.remove([ancestor.property]);
     }
-    return undefined;
+  }
+
+  // Whether pending edits removed every member of an object and inserted no other in it. An
+  // insert inside a removed span is removed with it.
+  private emptied(object: E.ObjectExpression) {
+    const { open, close } = objectList(this.editor, object);
+    const { touched } = this.editor._batch;
+    const inserted = touched.some(
+      (written) =>
+        written.start === written.end &&
+        written.text.trim() !== '' &&
+        open <= written.start &&
+        written.start <= close &&
+        !touched.some((other) => other.start < written.start && written.start < other.end)
+    );
+    return !inserted && object.properties.every((property) => isRemoved(this.editor, property));
   }
 
   // `access` applies to the last field of the path, and to its parents for a `set`, which creates
-  // missing ones; other parents are read. Only a lookup for a read follows a shared constant.
-  private locate(path: CsfPath, access: Access = 'read', edits = true): Located {
+  // missing ones; other parents are read. Only a lookup for a read follows a shared constant. A
+  // lookup that crosses a pending edit commits the edits and looks up again.
+  private locate(
+    path: CsfPath,
+    access: Access = 'read',
+    edits = true,
+    intent: Intent = 'read'
+  ): Located {
+    const located = this.locateOnce(path, access, edits, intent);
+    if (located !== CROSSED) {
+      return located;
+    }
+    this.settle();
+    const again = this.locateOnce(path, access, edits, intent);
+    if (again === CROSSED) {
+      throw new Error(`CsfObject: ${printCsfPath(path)} crossed a pending edit after a commit`);
+    }
+    return again;
+  }
+
+  private locateOnce(
+    path: CsfPath,
+    access: Access,
+    edits: boolean,
+    intent: Intent
+  ): Located | typeof CROSSED {
     const [first] = path;
     if (typeof first !== 'string') {
       return { ok: false, code: 'unsupported-member', node: this.anchor() };
@@ -975,16 +1145,32 @@ class Editor implements CsfObject {
 
     for (let index = 0; ; index++) {
       const last = index === path.length - 1;
+      // A step before the last one only goes into the value.
+      const purpose = last ? intent : 'into';
+      const follow = (node: Node) =>
+        resolveExpression(this.editor.scopes, node, edits ? 'write' : 'read');
       let value: Node;
+      let resolved: Node | undefined;
       if (step.kind === 'list') {
         const { parent, index: position } = step;
         const lookup = lookupElement(parent.items, position);
+        const element = lookup.ok ? lookup.element : undefined;
+        resolved = !last && element ? follow(element) : undefined;
+        // An item added or removed before it moves a position, so a list's gaps always count.
+        const at = element && { whole: outerSpan(element), value: outerSpan(element) };
+        if (
+          isPendingAt(this.editor, [
+            ...parent.gaps(),
+            ...this.dependencies(at, purpose, [], resolved),
+          ])
+        ) {
+          return CROSSED;
+        }
         if (lookup.ok === false) {
           return lookup;
         }
-        const { element } = lookup;
-        if (last && element !== undefined) {
-          return { ok: true, kind: 'item', parent, index: position, element };
+        if (last && lookup.element !== undefined) {
+          return { ok: true, kind: 'item', parent, index: position, element: lookup.element };
         }
         if (!element) {
           return { ok: true, kind: 'missing-item', parent, index: position };
@@ -998,12 +1184,26 @@ class Editor implements CsfObject {
           last || access === 'set' ? access : 'read',
           this.editor
         );
-        if (lookup.ok === false) {
-          return lookup;
-        }
-        const { property } = lookup;
+        const property = lookup.ok ? lookup.property : undefined;
         if (!property) {
-          return { ok: true, kind: 'missing-key', parent, missing: index };
+          // A pending edit may have added the key; one that creates it reads the spreads too.
+          const creates = lookup.ok && purpose !== 'read' && purpose !== 'remove';
+          const about = { into: this.owner(parent), key };
+          const keyed = this.members(parent).map(({ start, end }) => ({ start, end, about }));
+          if (isPendingAt(this.editor, [...keyed, ...(creates ? this.spreads(parent) : [])])) {
+            return CROSSED;
+          }
+          return lookup.ok ? { ok: true, kind: 'missing-key', parent, missing: index } : lookup;
+        }
+        resolved = !last && !property.method ? follow(property.value) : undefined;
+        const at = {
+          key: property.key,
+          whole: property,
+          value: property.method ? property : outerSpan(property.value),
+        };
+        const gaps = purpose === 'remove' ? this.gaps(parent.members?.().gaps) : [];
+        if (isPendingAt(this.editor, this.dependencies(at, purpose, gaps, resolved))) {
+          return CROSSED;
         }
         if (last) {
           return { ok: true, kind: 'property', parent, key, property };
@@ -1013,7 +1213,6 @@ class Editor implements CsfObject {
         }
         value = property.value;
       }
-      const resolved = resolveExpression(this.editor.scopes, value, edits ? 'write' : 'read');
       const next = stepInto(this.editor, resolved, path[index + 1]);
       if (!next) {
         return { ok: false, code: 'unsupported-member', node: value };
@@ -1054,12 +1253,16 @@ class Editor implements CsfObject {
 
   // Writes `content` into the object at `containers`, creating the missing ones, which carry the
   // spreads before them forward; the last one is an array for `items`. The caller has validated it.
-  private insert(containers: CsfPath, content: { members: MemberInsert[] } | ArrayInsert) {
+  // A write that would not compose with the pending edits of its list commits them first.
+  private insert(containers: CsfPath, content: { members: MemberInsert[] } | ArrayInsert): void {
     let object: ObjectRoot | undefined = containers.length === 0 ? this.root() : undefined;
     if (!object) {
-      const located = this.locate(containers, 'set');
+      const located = this.locate(containers, 'set', true, 'into');
       if (located.ok && located.kind === 'missing-key') {
-        this.create(located.parent, containers.slice(located.missing), content);
+        if (!this.create(located.parent, containers.slice(located.missing), content)) {
+          this.settle();
+          this.insert(containers, content);
+        }
         return;
       }
       const slot = located.ok ? this.valueAt(located) : undefined;
@@ -1069,11 +1272,19 @@ class Editor implements CsfObject {
     if (!object || !('members' in content)) {
       throw invalidated();
     }
-    object.append(content.members);
+    const [member] = content.members;
+    const added = { into: this.owner(object), key: member.key };
+    if (isPendingAt(this.editor, this.gaps(object.members?.().gaps, added, [member.text]))) {
+      this.settle();
+      this.insert(containers, content);
+      return;
+    }
+    adding(this.editor, added, () => object.append([member]));
   }
 
   // Writes the missing containers at `missing` into `parent`, the first one a member of it, which
-  // carry the spreads before them forward.
+  // carry the spreads before them forward. Returns `false`, writing nothing, when the write would
+  // not compose with the pending edits of `parent`.
   private create(
     parent: ObjectRoot,
     missing: CsfPath,
@@ -1109,7 +1320,13 @@ class Editor implements CsfObject {
         indent
       );
     }
-    parent.append([{ key: name, value: nested, text: `${printKey(name, quote)}: ${nested}` }]);
+    const text = `${printKey(name, quote)}: ${nested}`;
+    const added = { into: this.owner(parent), key: name };
+    if (isPendingAt(this.editor, this.gaps(parent.members?.().gaps, added, [text]))) {
+      return false;
+    }
+    adding(this.editor, added, () => parent.append([{ key: name, value: nested, text }]));
+    return true;
   }
 
   // `printValue` would print a node no parse produced as its fields.
@@ -1145,9 +1362,7 @@ class Editor implements CsfObject {
       target: this.target,
       path: [...path],
       message,
-      ...(node !== this.editor.program
-        ? { loc: locationOf(this.editor.code, node.start, node.end) }
-        : {}),
+      ...(node !== this.editor.program ? { loc: locationIn(this.editor, node) } : {}),
     };
   }
 
@@ -1162,11 +1377,30 @@ class Editor implements CsfObject {
   // Runs a mutation in a transaction of its own, so a refused or throwing one leaves the file as
   // it was, also after some of its edits were committed. A refusal still rolls back the
   // transaction around it.
-  private atomic(mutation: () => CsfMutationResult): CsfMutationResult {
+  private atomic(path: CsfPath, mutation: () => CsfMutationResult): CsfMutationResult {
     let result = { ok: true, changed: false } as CsfMutationResult;
-    this.editor.transaction(() => {
-      result = mutation();
-    });
+    const mutating = this.#mutating;
+    this.#mutating = true;
+    try {
+      this.editor.transaction(() => {
+        this.settleRaw();
+        this.#batch = this.editor._batch;
+        this.#from = this.editor._batch.touched.length;
+        result = mutation();
+      });
+    } catch (error) {
+      if (!(error instanceof Unindexable)) {
+        throw error;
+      }
+      result = this.failure(
+        'invalid-csf',
+        path,
+        this.anchor(),
+        `Edited ${printCsfPath(path)}, but the result is not valid CSF: ${error.message}`
+      );
+    } finally {
+      this.#mutating = mutating;
+    }
     if (!result.ok) {
       this.editor._refuse();
     } else if (result.changed) {
@@ -1179,6 +1413,174 @@ class Editor implements CsfObject {
       this.markChanged();
     }
     return result;
+  }
+
+  // Leaves the mutation's edits pending, unless the index reads a path it changed, `paths`, it
+  // declares or removes bindings, its text mentions a binding the proofs count references of or a
+  // callee the index reads, it writes lines while an appended statement waits for a commit to be
+  // set apart, or the statements it edited no longer parse; then it commits.
+  private stage(path: CsfPath, paths: readonly CsfPath[] = [path]): CsfMutationResult {
+    const from = this.editor._batch === this.#batch ? this.#from : 0;
+    const own = this.editor._batch.touched.slice(from);
+    const ownNames = this.target.kind === 'story' ? [this.target.localName] : [];
+    if (
+      paths.some((changed) => this.host.index?.reads(changed)) ||
+      this.host.root()?.declares ||
+      (this.editor._appendedWithoutBlankLine.length > 0 &&
+        own.some((written) => written.text.includes('\n'))) ||
+      this.mentions(own, ownNames) ||
+      !this.parses(own)
+    ) {
+      return this.commit(path);
+    }
+    markStaged(this.editor, from);
+    return { ok: true, changed: true };
+  }
+
+  // Whether text written or removed names a module binding other than an import, or a callee the
+  // index reads. Proofs such as `onlyRead` count the references of bindings in the tree, which the
+  // pending edits are not in. One of `ownNames` heading the text, as in `Story.args = …`, is the
+  // object's own assignment, which the lookup of its key finds pending instead.
+  private mentions(writes: readonly Written[], ownNames: readonly string[]) {
+    if (writes.length === 0) {
+      return false;
+    }
+    const { code } = this.editor;
+    const { bindings } = this.editor.scopes.program;
+    const callees = this.host.index?.callees ?? [];
+    const assigned = (text: string, name: string, index: number) =>
+      ownNames.includes(name) &&
+      /^[\s;]*$/.test(text.slice(0, index)) &&
+      /^\s*[.[]/.test(text.slice(index + name.length));
+    return writes.some((written) =>
+      [written.text, code.slice(written.start, written.end)].some((text) =>
+        [...text.matchAll(IDENTIFIER)].some(({ 0: name, index }) => {
+          const binding = bindings.get(name);
+          return (
+            callees.includes(name) ||
+            (!!binding && binding.kind !== 'import' && !assigned(text, name, index))
+          );
+        })
+      )
+    );
+  }
+
+  // Whether the top-level statements the writes are in parse as edited. One that does not commits,
+  // which throws the parse error a commit throws.
+  private parses(writes: readonly Written[]) {
+    if (writes.length === 0) {
+      return true;
+    }
+    let start = Math.min(...writes.map((written) => written.start));
+    let end = Math.max(...writes.map((written) => written.end));
+    for (const statement of this.editor.program.body) {
+      if (statement.start <= end && start <= statement.end) {
+        start = Math.min(start, statement.start);
+        end = Math.max(end, statement.end);
+      }
+    }
+    try {
+      parseModule(this.editor.edits.slice(start, end), this.editor.fileName);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // Commits the pending edits when the edits made on the editor since the last read or mutation
+  // name a binding, which changes what discovery and the proofs read.
+  private settleRaw() {
+    const raw = this.editor._batch.touched.filter(
+      (written) => !written.staged && !cleared.has(written)
+    );
+    if (this.mentions(raw, [])) {
+      this.settle();
+    } else {
+      raw.forEach((written) => cleared.add(written));
+    }
+  }
+
+  // Commits the pending edits, so lookups see them. Outside a mutation, a commit that fails leaves
+  // the editor as it was.
+  private settle() {
+    if (this.#mutating) {
+      try {
+        this.editor.commit();
+      } catch (error) {
+        if (this.editor.pending) {
+          throw error;
+        }
+        throw new Unindexable(error);
+      }
+    } else {
+      try {
+        this.editor.transaction(() => {
+          this.editor.commit();
+        });
+      } catch (error) {
+        throw new Unindexable(error);
+      }
+    }
+    this.#batch = this.editor._batch;
+    this.#from = 0;
+  }
+
+  // The spans a step depends on, given the field or item it reaches: its key, and what of it the
+  // purpose reads. A read and a replacement depend on all of the value, a removal on the gaps of
+  // its list, and a step into the value, also through the constant it follows, on their ends.
+  private dependencies(
+    at: { key?: Span; whole: Span; value: Span } | null | undefined,
+    purpose: Intent,
+    gaps: readonly Dependency[],
+    resolved: Node | undefined
+  ): Dependency[] {
+    if (!at) {
+      return [];
+    }
+    const reads = {
+      read: [at.whole],
+      replace: [at.value],
+      remove: gaps,
+      into: ends(at.value),
+    }[purpose];
+    return [...(at.key ? [at.key] : []), ...reads, ...(resolved ? ends(resolved) : [])];
+  }
+
+  // The gaps a write to a list writes to, or the whole file for a root that cannot tell. An append
+  // depends on them as about the member it adds, so it composes with appends of other members to
+  // the same object, unless its text spans lines, which lays the list out again.
+  private gaps(
+    gaps: readonly Span[] | undefined,
+    about?: Added,
+    texts: readonly string[] = []
+  ): Dependency[] {
+    const spans = gaps ?? [{ start: 0, end: this.editor.code.length }];
+    const keyed = about && !texts.some((text) => text.includes('\n'));
+    return spans.map(({ start, end }) => (keyed ? { start, end, about } : { start, end }));
+  }
+
+  // Where a root's members are written: their keys and the gaps around them.
+  private members(root: ObjectRoot): Dependency[] {
+    const members = root.members?.();
+    return members ? [...members.keys, ...members.gaps] : this.gaps(undefined);
+  }
+
+  // The object a root's appends name, or the root itself for one that cannot tell.
+  private owner(root: ObjectRoot): object {
+    return root.members?.().owner ?? root;
+  }
+
+  // The constants the spreads among a root's members read, which tell what a member created after
+  // them carries forward.
+  private spreads(root: ObjectRoot): Dependency[] {
+    return root.properties.flatMap((property) => {
+      const reference = property.type === 'SpreadElement' && unwrapExpression(property.argument);
+      const binding =
+        reference && reference.type === 'Identifier'
+          ? this.editor.scopes.bindingOf(reference)
+          : undefined;
+      return binding ? [binding.node] : [];
+    });
   }
 
   // A file the indexer rejects is valid JS, so that is a diagnostic rather than an error. Code that

@@ -400,6 +400,7 @@ const namedExportsRoot = (editor: SourceEditor, entries: NamedEntry[]): ObjectRo
   return {
     properties,
     detached: true,
+    declares: true,
     append: declare,
     prepend: declare,
     remove: (members) => removeEntries(members.map(entryOf)),

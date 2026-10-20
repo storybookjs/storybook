@@ -8,6 +8,8 @@ import {
   arrayList,
   groupMembers,
   lineIndent,
+  listGaps,
+  objectList,
   prependMembers,
   prependToList,
   printKey,
@@ -47,6 +49,18 @@ export interface ObjectRoot {
   take(member: Property, key: string): MemberInsert;
   // Why the root cannot take a new member named `key`, when it cannot.
   refuseKey?(key: string): string | undefined;
+  // Whether its members are declarations, so adding, removing or renaming one changes the bindings.
+  readonly declares?: boolean;
+  // Where its members are written: their keys, and the gaps around them that adding or removing
+  // one writes to. A root without it is written anywhere in the file.
+  members?(): MemberSpans;
+}
+
+// `owner` is the object the members are added to, which records of appends name.
+export interface MemberSpans {
+  owner: object;
+  keys: readonly Span[];
+  gaps: readonly Span[];
 }
 
 // A member of an `ObjectRoot` that is not written as one, such as a named export or a
@@ -94,6 +108,11 @@ export const literalRoot = (editor: SourceEditor, object: E.ObjectExpression): O
     value: placeableValueSource(editor, member),
     text: renamedMemberText(editor, object, member, printKey(key, editor.quote)),
   }),
+  members: () => ({
+    owner: object,
+    keys: object.properties.map((member) => (member.type === 'Property' ? member.key : member)),
+    gaps: listGaps(objectList(editor, object)),
+  }),
 });
 
 const noMembers = (): never => {
@@ -134,6 +153,8 @@ export interface ListRoot {
   prepend(texts: string[]): void;
   remove(index: number): void;
   replace(index: number, text: string): void;
+  // The gaps around its items, which adding or removing one writes to.
+  gaps(): Span[];
 }
 
 export const listRoot = (
@@ -155,5 +176,6 @@ export const listRoot = (
       const span = list().items[index];
       replaceSpan(editor, span, reindent(text, '', lineIndent(editor.code, span.start)));
     },
+    gaps: () => listGaps(list()),
   };
 };

@@ -6,7 +6,7 @@ import { dedent } from 'ts-dedent';
 import invariant from 'tiny-invariant';
 
 import type { PrintResultType } from './PrintResultType.ts';
-import { createConfigObject, locateConfigRoot } from './ConfigObject.ts';
+import { createConfigObject } from './ConfigObject.ts';
 import {
   type CsfExpression,
   type CsfInspection,
@@ -162,7 +162,7 @@ export class ConfigFile implements CsfObject {
   /**
    * Find the config object literal in the current parse, or `undefined` for a config made of named
    * exports or one whose config object cannot be located. It is the file's own node, not a copy: do
-   * not change it, and read it again after a mutation, which parses the file again.
+   * not change it, and read it again after a mutation, as reading it commits the mutation's edits.
    *
    * @example
    * ```ts
@@ -171,8 +171,8 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   get node(): E.ObjectExpression | undefined {
-    const located = locateConfigRoot(this, 'read');
-    return located.ok ? located.root.node : undefined;
+    const reader = this._reader();
+    return reader.ok ? reader.object.node : undefined;
   }
 
   /**
@@ -657,7 +657,20 @@ export class ConfigFile implements CsfObject {
     return this;
   }
 
+  // The fields read the exports of the last parse, so the edits mutations left pending commit first.
+  // A raw edit stays pending, as it would without the mutations.
+  _settle() {
+    if (this.editor._batch.touched.some((written) => written.staged)) {
+      try {
+        this.editor.commit();
+      } catch {
+        // Raw edits that do not parse, which the next commit reports.
+      }
+    }
+  }
+
   getFieldNode(path: string[]) {
+    this._settle();
     const [root, ...rest] = path;
     const exported = this._exports[root];
 
@@ -668,6 +681,7 @@ export class ConfigFile implements CsfObject {
   }
 
   getFieldProperties(path: string[]): ReturnType<typeof _getPathProperties> {
+    this._settle();
     const [root, ...rest] = path;
     const exported = this._exports[root];
 
@@ -902,7 +916,8 @@ export class ConfigFile implements CsfObject {
       const host: CsfObjectHost = {
         editor: this.editor,
         root: () => {
-          // Edits re-parse the file, so the argument is found again by its position among calls.
+          // A commit parses the file again, so the argument is found again by its position among
+          // calls.
           const node = findCallArguments(this, options, () => {})[index];
           return node && literalRoot(this.editor, node);
         },

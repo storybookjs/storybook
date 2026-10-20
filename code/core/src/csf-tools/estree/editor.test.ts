@@ -13,6 +13,7 @@ import type { E } from './ast.ts';
 import { parseExpression, parseModule } from './ast.ts';
 import {
   SourceEditor,
+  adding,
   appendStatement,
   appendToList,
   argumentList,
@@ -20,6 +21,10 @@ import {
   declaratorList,
   insertAfterImports,
   insertStatementAfter,
+  isOverwritten,
+  isPendingAt,
+  listGaps,
+  markStaged,
   objectList,
   prependStatement,
   prependToList,
@@ -185,6 +190,101 @@ describe('transaction', () => {
     editor.transaction(() => false);
     removeStatement(editor, anchor);
     expect(editor.toString()).toBe('const b = 1;\nfoo();\n');
+  });
+});
+
+describe('batch records', () => {
+  const objectOf = (editor: SourceEditor) =>
+    (editor.program.body[0] as E.ExportDefaultDeclaration).declaration as E.ObjectExpression;
+
+  it('records every write, also one made on the edits directly', () => {
+    const editor = new SourceEditor('const a = 1;\nconst b = 2;\n');
+    editor.edits.overwrite(10, 11, '3');
+    editor.edits.appendLeft(12, '\n// c');
+    editor.edits.remove(13, 26);
+    editor.edits.append('x();\n');
+    expect(editor._batch.touched).toEqual([
+      { start: 10, end: 11, text: '3' },
+      { start: 12, end: 12, text: '\n// c', side: 'left' },
+      { start: 13, end: 26, text: '' },
+      { start: 26, end: 26, text: 'x();\n', side: 'left' },
+    ]);
+    expect(editor.toString()).toBe('const a = 3;\n// c\nx();\n');
+  });
+
+  it('counts a write it cannot locate, such as a move, as one over the whole code', () => {
+    const editor = new SourceEditor('a();\nb();\n');
+    (editor.edits as unknown as MagicString).move(0, 5, 10);
+    expect(editor._batch.touched).toEqual([{ start: 0, end: 10, text: '' }]);
+  });
+
+  it('puts the records back with the edits when a transaction rolls back', () => {
+    const editor = new SourceEditor('export default { a: 1 };\n');
+    const added = { into: objectOf(editor), key: 'b' };
+    adding(editor, added, () =>
+      appendToList(editor, objectList(editor, objectOf(editor)), ['b: 2'])
+    );
+    editor.transaction(() => {
+      appendToList(editor, objectList(editor, objectOf(editor)), ['c: 3']);
+      removeMembers(editor, objectOf(editor), [objectOf(editor).properties[0]]);
+      return false;
+    });
+    expect(editor._batch.touched).toEqual([
+      { start: 21, end: 21, text: ', b: 2', side: 'right', adds: added },
+    ]);
+    expect(editor.toString()).toBe('export default { a: 1, b: 2 };\n');
+  });
+
+  it('records the rest of a line a write breaks, unless the write ends a line it starts', () => {
+    const editor = new SourceEditor('const a = { b: 1, c: 2 };\nfoo();\n');
+    editor.edits.update(17, 18, '\n  ');
+    insertStatementAfter(editor, editor.program.body[0], 'bar();');
+    expect(editor._batch.touched.map(({ reach }) => reach)).toEqual([
+      { start: 18, end: 25 },
+      undefined,
+    ]);
+  });
+
+  it('tells a span a write meets, one an edit inside leaves alone, and an append of another key', () => {
+    const editor = new SourceEditor('export default { a: [1, 2], b: 3 };\n');
+    const [a, b] = objectOf(editor).properties as E.ObjectProperty[];
+    const [one, two] = (a.value as E.ArrayExpression).elements as E.Expression[];
+    editor.edits.overwrite(one.start, one.end, '4');
+    expect(isOverwritten(editor, one)).toBe(true);
+    expect(isOverwritten(editor, a)).toBe(false);
+    expect(isPendingAt(editor, [a])).toBe(true);
+    expect(isPendingAt(editor, [a.key, { start: a.value.end, end: a.value.end }])).toBe(false);
+    expect(isPendingAt(editor, [two, b])).toBe(false);
+
+    const object = objectOf(editor);
+    const gaps = listGaps(objectList(editor, object));
+    const about = (into: object, key: string) =>
+      gaps.map((gap) => ({ ...gap, about: { into, key } }));
+    adding(editor, { into: object, key: 'c' }, () =>
+      appendToList(editor, objectList(editor, object), ['c: 5'])
+    );
+    expect(isPendingAt(editor, gaps)).toBe(true);
+    expect(isPendingAt(editor, about(object, 'd'))).toBe(false);
+    expect(isPendingAt(editor, about(object, 'c'))).toBe(true);
+    expect(isPendingAt(editor, about(a.value, 'd'))).toBe(true);
+    appendToList(editor, objectList(editor, object), ['d: 6']);
+    expect(isPendingAt(editor, about(object, 'e'))).toBe(true);
+  });
+
+  it('throws for a node a staged edit wrote over, and keeps the nodes around and beside it', () => {
+    const editor = new SourceEditor('export default { a: { x: 1 }, b: 2 };\n');
+    const [a, b] = objectOf(editor).properties as E.ObjectProperty[];
+    const x = (a.value as E.ObjectExpression).properties[0] as E.ObjectProperty;
+    replaceValue(editor, x, '3');
+    expect(editor.source(x.value)).toBe('1');
+    markStaged(editor, 0);
+    expect(() => editor.source(x.value)).toThrow('that a pending edit wrote over');
+    expect(() => wrapExpression(editor, x.value, '(', ')')).toThrow(
+      'that a pending edit wrote over'
+    );
+    replaceValue(editor, b, '5');
+    appendToList(editor, objectList(editor, a.value as E.ObjectExpression), ['y: 6']);
+    expect(editor.toString()).toBe('export default { a: { x: 3, y: 6 }, b: 5 };\n');
   });
 });
 

@@ -1,5 +1,11 @@
 import type { CsfFile } from './CsfFile.ts';
-import { csfFactoryReceiver, isCsfFactoryCall, withoutTypeCalls } from './CsfFile.ts';
+import {
+  INDEXED_CALLEES,
+  csfFactoryReceiver,
+  indexedPath,
+  isCsfFactoryCall,
+  withoutTypeCalls,
+} from './CsfFile.ts';
 import {
   type CsfMutationDiagnostic,
   type CsfMutationDiagnosticCode,
@@ -24,14 +30,16 @@ import {
   type Property,
   isFunction,
   isIdentifier,
+  type ParsedModule,
+  type SourceLocation,
   isStringLiteral,
-  locationOf,
   outerSpan,
   staticKey,
   unwrapExpression,
 } from './estree/ast.ts';
 import {
   insertStatementAfter,
+  locationIn,
   printKey,
   printMemberAccess,
   printObject,
@@ -63,7 +71,14 @@ type Assignment = {
 
 type Rejection = { code: CsfMutationDiagnosticCode; node: Node; path: string[]; message: string };
 
-const loc = (csf: CsfFile, node: Node) => ({ loc: locationOf(csf._code, node.start, node.end) });
+// The node each diagnostic location was read from, so a repeated diagnostic is located again.
+const located = new WeakMap<SourceLocation, Node>();
+
+const loc = (csf: CsfFile, node: Node) => {
+  const at = locationIn(csf.editor, node);
+  located.set(at, node);
+  return { loc: at };
+};
 
 const storyTarget = ({ exportName, localName }: StoryBinding): CsfObjectTarget => ({
   kind: 'story',
@@ -511,6 +526,29 @@ const storyRoot = (
       assign([{ key, value, text: '' }], statements);
     },
     take,
+    // Assignments are added after the last one, or after the declaration, and removed with the
+    // space after the statement before them.
+    members: () => {
+      const { body } = csf.program;
+      const after = assignments.at(-1)?.statement ?? declaration;
+      const next = body.find((statement) => statement.start >= after.end);
+      const inLiteral = literal?.members?.() ?? { owner: binding.declaration, keys: [], gaps: [] };
+      const before = assignments.map(({ statement }) => {
+        const previous = body[body.indexOf(statement) - 1];
+        return { start: previous?.end ?? 0, end: statement.start };
+      });
+      return {
+        owner: inLiteral.owner,
+        keys: [...inLiteral.keys, ...assignments.map(({ left }) => left.property)],
+        gaps: [
+          ...inLiteral.gaps,
+          ...before,
+          ...(literal && assignments.length === 0
+            ? []
+            : [{ start: after.end, end: next?.start ?? csf._code.length }]),
+        ],
+      };
+    },
     refuseKey: object
       ? undefined
       : (key) =>
@@ -624,22 +662,46 @@ const discoverStories = (
     return [{ target: storyTarget(binding), root: storyRoot(csf, binding, object, assignments) }];
   });
 
-const discover = (
-  csf: CsfFile,
-  options: CsfObjectOptions,
-  report: ReportDiagnostic
-): Discovered[] => {
+// What discovery found in a parse: the objects by their targets, and the diagnostics it reported.
+type Discovery = {
+  objects: Discovered[];
+  roots: Map<string, ObjectRoot>;
+  diagnostics: CsfMutationDiagnostic[];
+};
+
+// Discovery reads only the parse and the index derived from it, so it is kept per parse. A
+// commit makes a new parse and a rollback puts back the old one, whose discovery still holds.
+const discoveries = new WeakMap<ParsedModule, Map<string, Discovery>>();
+
+const discover = (csf: CsfFile, options: CsfObjectOptions): Discovery => {
   csf._assertIndexed();
+  const module = csf.editor._module;
+  const byOptions = discoveries.get(module) ?? new Map<string, Discovery>();
+  discoveries.set(module, byOptions);
+  const key = `${options.meta ?? true}:${options.stories ?? true}`;
+  const cached = byOptions.get(key);
+  if (cached) {
+    return cached;
+  }
+  const diagnostics: CsfMutationDiagnostic[] = [];
+  const report = (diagnostic: CsfMutationDiagnostic) => diagnostics.push(diagnostic);
   const includeStories = options.stories ?? true;
   const bindings = includeStories ? storyBindings(csf, report) : [];
-  return [
+  const objects = [
     ...((options.meta ?? true) ? discoverMeta(csf, report) : []),
     ...(includeStories ? discoverStories(csf, bindings, report) : []),
   ];
+  const roots = new Map(objects.map(({ target, root }) => [JSON.stringify(target), root]));
+  const discovery = { objects, roots, diagnostics };
+  byOptions.set(key, discovery);
+  return discovery;
 };
 
-const sameTarget = (a: CsfObjectTarget, b: CsfObjectTarget) =>
-  JSON.stringify(a) === JSON.stringify(b);
+// A diagnostic reported again is located in the code as edited now.
+const relocated = (csf: CsfFile, diagnostic: CsfMutationDiagnostic): CsfMutationDiagnostic => {
+  const node = diagnostic.loc && located.get(diagnostic.loc);
+  return node ? { ...diagnostic, ...loc(csf, node) } : diagnostic;
+};
 
 const editorOf = (
   csf: CsfFile,
@@ -648,12 +710,12 @@ const editorOf = (
   report: ReportDiagnostic,
   markChanged: MarkChanged
 ): CsfObject => {
+  const key = JSON.stringify(target);
   const host: CsfObjectHost = {
     editor: csf.editor,
-    root: () =>
-      // Edits re-parse the file, so the object is found again by its target.
-      discover(csf, options, () => {}).find((candidate) => sameTarget(candidate.target, target))
-        ?.root,
+    index: { reads: (path) => indexedPath(target, path), callees: INDEXED_CALLEES },
+    // A commit parses the file again, so the object is found again by its target.
+    root: () => discover(csf, options).roots.get(key),
   };
   return createCsfObject(target, host, report, markChanged);
 };
@@ -663,13 +725,15 @@ export const discoverCsfObjects = (
   options: CsfObjectOptions,
   report: ReportDiagnostic,
   markChanged: MarkChanged
-): readonly CsfObject[] =>
-  discover(csf, options, report).map(({ target }) =>
-    editorOf(csf, options, target, report, markChanged)
-  );
+): readonly CsfObject[] => {
+  const { objects, diagnostics } = discover(csf, options);
+  diagnostics.forEach((diagnostic) => report(relocated(csf, diagnostic)));
+  return objects.map(({ target }) => editorOf(csf, options, target, report, markChanged));
+};
 
 // The answer of `objects()` for this one story, so a name is mapped to its object only by
-// `discover`. Reports only the diagnostics of this story, as no other story was asked for.
+// `discover`. Reports only the diagnostics of this story, as
+// no other story was asked for.
 export const discoverStory = (
   csf: CsfFile,
   exportName: string,
@@ -682,23 +746,24 @@ export const discoverStory = (
   }
   const isOwn = (target: CsfMutationTarget) =>
     'exportName' in target && target.exportName === exportName;
-  const diagnostics: CsfMutationDiagnostic[] = [];
-  const found = discover(csf, { meta: false }, (diagnostic) => diagnostics.push(diagnostic)).find(
-    ({ target }) => isOwn(target)
-  );
+  const { objects, diagnostics } = discover(csf, { meta: false });
+  const found = objects.find(({ target }) => isOwn(target));
   if (found) {
     return { ok: true, object: editorOf(csf, { meta: false }, found.target, report, markChanged) };
   }
-  const diagnostic = diagnostics.find(({ target }) => isOwn(target)) ?? {
-    code: 'unsupported-initializer',
-    target: {
-      kind: 'story',
-      exportName,
-      localName: csf._stories[exportName].localName ?? exportName,
-    },
-    path: [],
-    message: `Cannot mutate story ${exportName} automatically`,
-  };
+  const own = diagnostics.find(({ target }) => isOwn(target));
+  const diagnostic: CsfMutationDiagnostic = own
+    ? relocated(csf, own)
+    : {
+        code: 'unsupported-initializer',
+        target: {
+          kind: 'story',
+          exportName,
+          localName: csf._stories[exportName].localName ?? exportName,
+        },
+        path: [],
+        message: `Cannot mutate story ${exportName} automatically`,
+      };
   report(diagnostic);
   return { ok: false, diagnostic };
 };

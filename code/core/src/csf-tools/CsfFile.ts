@@ -25,6 +25,8 @@ import {
   type CsfObject,
   type CsfObjectLookup,
   type CsfObjectOptions,
+  type CsfObjectTarget,
+  type CsfPath,
 } from './CsfObject.ts';
 import { discoverCsfObjects, discoverStory } from './CsfObjectDiscovery.ts';
 import {
@@ -328,6 +330,46 @@ export interface CsfComponentImport {
   imported: string;
   local: string;
 }
+
+/**
+ * The fields of the meta and of a story that `parse()` reads, so that changing one can make the
+ * indexer reject the file or index it differently. A story's `parameters` is read only as a whole
+ * and at `__id`.
+ */
+export const INDEX_FIELDS = {
+  meta: [
+    'title',
+    'id',
+    'component',
+    'includeStories',
+    'excludeStories',
+    'tags',
+    'play',
+    'render',
+    'loaders',
+    'beforeEach',
+    'globals',
+  ],
+  story: ['name', 'storyName', 'tags', 'play', 'render', 'loaders', 'beforeEach', 'globals'],
+} as const;
+
+/** Names whose calls `parse()` reads wherever they are: `storiesOf()`, `x.meta()` and `Story.test()`. */
+export const INDEXED_CALLEES: readonly string[] = ['storiesOf', 'meta', 'test'];
+
+/** Whether `parse()` reads the value at a path of the meta or a story, or one inside it. */
+export const indexedPath = (target: CsfObjectTarget, path: CsfPath) => {
+  const [key, next] = path;
+  if (target.kind === 'meta') {
+    return (INDEX_FIELDS.meta as readonly unknown[]).includes(key);
+  }
+  if (target.kind !== 'story') {
+    return false;
+  }
+  return (
+    (INDEX_FIELDS.story as readonly unknown[]).includes(key) ||
+    (key === 'parameters' && (path.length === 1 || next === '__id'))
+  );
+};
 
 export class CsfFile {
   /**

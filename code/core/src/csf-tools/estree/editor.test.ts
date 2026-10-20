@@ -72,6 +72,12 @@ describe('reindent', () => {
     expect(reindent('{\n    a: 1,\n  }', '  ', '')).toBe('{\n  a: 1,\n}');
   });
 
+  it('leaves empty lines empty', () => {
+    expect(reindent('() => {\n  a();\n\n  b();\n}', '', '  ')).toBe(
+      '() => {\n    a();\n\n    b();\n  }'
+    );
+  });
+
   it('re-indents CRLF text with LF line endings, leaving its template literals alone', () => {
     expect(reindent('{\r\n  a: `x\r\ny`,\r\n}', '', '  ')).toBe('{\n    a: `x\ny`,\n  }');
   });

@@ -822,8 +822,8 @@ const reindentLines = (text: string, from: string, to: string, literals: readonl
     cursor = lineBreak + 1;
     const inLiteral = literals.some((span) => span.start < lineBreak && lineBreak < span.end);
     if (!inLiteral && text.startsWith(from, cursor)) {
-      result += to;
       cursor += from.length;
+      result += text[cursor] === '\n' ? '' : to;
     }
   }
   return result + text.slice(cursor);

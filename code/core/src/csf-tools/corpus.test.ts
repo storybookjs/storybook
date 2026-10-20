@@ -188,6 +188,7 @@ const replay = (file: string, code: string, seed: number, eager: boolean) => {
   };
   const read = (object: CsfObject) => {
     const target = path();
+    op('read', JSON.stringify(object.target), target);
     return pick([
       () => object.getValue(target),
       () => object.inspect(target),

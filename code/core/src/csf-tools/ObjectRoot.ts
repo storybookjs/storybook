@@ -1,18 +1,16 @@
 // The object a `CsfObject` edits: an object literal, or members written as separate statements.
 import type { E, Property, Span } from './estree/ast.ts';
 import {
-  type Shape,
   type SourceEditor,
-  addsLines,
-  appendNamedMembers,
+  appendMembers,
   appendToList,
   argumentList,
   arrayList,
   groupMembers,
   lineIndent,
-  nameMembers,
+  listGaps,
   objectList,
-  prependNamedMembers,
+  prependMembers,
   prependToList,
   printKey,
   reindent,
@@ -22,7 +20,6 @@ import {
   renamedMemberText,
   replaceSpan,
   replaceValue,
-  shapeOf,
 } from './estree/editor.ts';
 import { placeableValueSource } from './estree/values.ts';
 
@@ -53,33 +50,15 @@ export interface ObjectRoot {
   refuseKey?(key: string): string | undefined;
   // Whether its members are declarations, so adding, removing or renaming one changes the bindings.
   readonly declares?: boolean;
-  // Whether pending edits may have added a member at `key`, which `properties` would not show. A
-  // root without it counts any pending edit as one.
-  added?(key: string): boolean;
-  // Whether pending edits of its members keep an edit of this kind, adding `texts` when it adds,
-  // from composing with them. A root without it counts any pending edit as one.
-  conflicts?(change: Change, texts?: readonly string[]): boolean;
+  // Where its members are written: their keys, and the gaps around them that adding or removing
+  // one writes to. A root without it is written anywhere in the file.
+  members?(): MemberSpans;
 }
 
-// What an edit does to the items of a list.
-export type Change = 'append' | 'prepend' | 'remove';
-
-// Appends compose with earlier appends alone, through the layout the batch keeps for the list,
-// unless they would break a list laid out on one line into lines, and with edits inside items.
-// Anything else is laid out from the code as parsed, without the pending edits.
-export const conflicting = (
-  shape: Shape | undefined,
-  change: Change,
-  texts: readonly string[] = []
-) =>
-  !!shape &&
-  (change !== 'append' ||
-    shape.removed ||
-    shape.prepended ||
-    (!!shape.inline && texts.some((text) => text.includes('\n'))));
-
-const addedTo = (shape: Shape | undefined, key: string) =>
-  !!shape && (shape.appended || shape.prepended) && (!shape.keys || shape.keys.has(key));
+export interface MemberSpans {
+  keys: readonly Span[];
+  gaps: readonly Span[];
+}
 
 // A member of an `ObjectRoot` that is not written as one, such as a named export or a
 // `Story.name = value` assignment. Its key and value are nodes of the file, so every span read from
@@ -105,28 +84,31 @@ export const literalRoot = (editor: SourceEditor, object: E.ObjectExpression): O
   properties: object.properties,
   detached: false,
   node: object,
-  append: (members) => appendNamedMembers(editor, object, members),
-  prepend: (members) => prependNamedMembers(editor, object, members),
+  append: (members) =>
+    appendMembers(
+      editor,
+      object,
+      members.map((member) => member.text)
+    ),
+  prepend: (members) =>
+    prependMembers(
+      editor,
+      object,
+      members.map((member) => member.text)
+    ),
   remove: (members) => removeMembers(editor, object, members),
   replaceValue: (member, text) => replaceValue(editor, member, text),
-  rename: (member, key) => {
-    renameKey(editor, member, printKey(key, editor.quote));
-    nameMembers(editor, object, [key]);
-  },
+  rename: (member, key) => renameKey(editor, member, printKey(key, editor.quote)),
   group: (members, key) => groupMembers(editor, object, members, key),
   take: (member, key) => ({
     key,
     value: placeableValueSource(editor, member),
     text: renamedMemberText(editor, object, member, printKey(key, editor.quote)),
   }),
-  added: (key) => addedTo(shapeOf(editor, objectList(editor, object)), key),
-  conflicts: (change, texts) => {
-    const list = objectList(editor, object);
-    return (
-      conflicting(shapeOf(editor, list), change, texts) ||
-      (change !== 'remove' && addsLines(editor, list))
-    );
-  },
+  members: () => ({
+    keys: object.properties.map((member) => (member.type === 'Property' ? member.key : member)),
+    gaps: listGaps(objectList(editor, object)),
+  }),
 });
 
 // The elements of an array or the arguments of a call, by their position in the source.
@@ -138,7 +120,8 @@ export interface ListRoot {
   prepend(texts: string[]): void;
   remove(index: number): void;
   replace(index: number, text: string): void;
-  conflicts(change: Change, texts?: readonly string[]): boolean;
+  // The gaps around its items, which adding or removing one writes to.
+  gaps(): Span[];
 }
 
 export const listRoot = (
@@ -160,8 +143,6 @@ export const listRoot = (
       const span = list().items[index];
       replaceSpan(editor, span, reindent(text, '', lineIndent(editor.code, span.start)));
     },
-    conflicts: (change, texts) =>
-      conflicting(shapeOf(editor, list()), change, texts) ||
-      (change !== 'remove' && addsLines(editor, list())),
+    gaps: () => listGaps(list()),
   };
 };

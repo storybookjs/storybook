@@ -6,7 +6,6 @@ import {
   lookupProperty,
 } from './ObjectMembers.ts';
 import {
-  type Change,
   type ListRoot,
   type MemberInsert,
   type ObjectRoot,
@@ -26,20 +25,20 @@ import {
   unwrapExpression,
 } from './estree/ast.ts';
 import {
+  type Dependency,
   type SourceEditor,
   type Written,
+  adding,
   detachedSource,
   detachedTextOf,
-  isOverwritten,
+  isPendingAt,
   isRemoved,
-  isWrittenAt,
   locationIn,
   markStaged,
+  objectList,
   printKey,
   printMembers,
   printValue,
-  shapeOf,
-  objectList,
 } from './estree/editor.ts';
 import type { ScopeInfo } from './estree/scope.ts';
 import {
@@ -349,10 +348,16 @@ class Unindexable extends Error {
   }
 }
 
-// What a lookup is for, which decides the pending edits it cannot be made over: a read sees edits
-// inside the value, a replacement clears what was written at its ends, a removal and an edit into
-// the value have to compose with the list edits of the batch.
+// What a lookup is for, which picks the spans its last step depends on: a read and a replacement
+// depend on the whole value, a removal on the gaps of the list it removes from, and a write into
+// the value on its ends alone.
 type Intent = 'read' | 'replace' | 'remove' | 'into';
+
+// A dependency on the ends of a span, which an edit inside it leaves alone.
+const ends = ({ start, end }: Span): Dependency[] => [
+  { start, end: start },
+  { start: end, end },
+];
 
 // A lookup that crossed a pending edit, so the edits are committed and it is made again.
 const CROSSED = Symbol('crossed');
@@ -455,7 +460,7 @@ class Editor implements CsfObject {
 
   get node() {
     const node = this.host.root()?.node;
-    if (!node || !isWrittenAt(this.editor, node)) {
+    if (!node || !this.pending([node])) {
       return node;
     }
     try {
@@ -521,7 +526,7 @@ class Editor implements CsfObject {
       },
     });
     const value = readValue(tracking, found.expression);
-    if (followed.some((node) => isWrittenAt(this.editor, node))) {
+    if (this.pending(followed)) {
       try {
         this.settle();
       } catch (error) {
@@ -552,6 +557,7 @@ class Editor implements CsfObject {
     }
     let found: Located;
     try {
+      this.settleRaw();
       found = this.locate(path, 'read', false);
     } catch (error) {
       if (!(error instanceof Unindexable)) {
@@ -676,16 +682,17 @@ class Editor implements CsfObject {
     }
     const items = listRoot(this.editor, list);
     const texts = [text()];
-    if (
-      isOverwritten(this.editor, list) ||
-      items.conflicts(end, texts) ||
-      this.relined(list.start) ||
-      this.relined(items.items.at(-1)?.start)
-    ) {
+    const item = Symbol('item');
+    const key = end === 'append' ? item : undefined;
+    if (this.pending([...ends(list), ...this.gaps(items.gaps(), key, texts)])) {
       this.settle();
       return this.addItem(path, value, end);
     }
-    items[end](texts);
+    if (key) {
+      adding(key, () => items.append(texts));
+    } else {
+      items.prepend(texts);
+    }
     return this.stage(path);
   }
 
@@ -890,11 +897,7 @@ class Editor implements CsfObject {
     const read = parent.properties.filter(
       (property) => property.type !== 'SpreadElement' && staticKey(property) === group
     );
-    if (
-      [group, ...names].some((name) => this.addedTo(parent, name)) ||
-      [...moved, ...read].some((property) => isWrittenAt(this.editor, property)) ||
-      this.conflictsWith(parent, 'remove')
-    ) {
+    if (this.pending([...this.members(parent), ...moved, ...read])) {
       this.settle();
       return this.groupValues(path, names);
     }
@@ -1000,7 +1003,7 @@ class Editor implements CsfObject {
         }
       }
       const into = literalRoot(this.editor, value);
-      if (this.conflictsWith(into, 'prepend')) {
+      if (this.pending(this.members(into))) {
         this.settle();
         return this.groupValues(path, names);
       }
@@ -1061,7 +1064,7 @@ class Editor implements CsfObject {
       if (!lookupProperty(ancestor.parent.properties, ancestor.key, 'remove').ok) {
         return;
       }
-      if (this.conflictsWith(ancestor.parent, 'remove')) {
+      if (this.pending([ancestor.property.key, ...this.gaps(ancestor.parent.members?.().gaps)])) {
         // Committed, the emptied object is looked up again at the same depth.
         this.settle();
         depth++;
@@ -1071,14 +1074,20 @@ class Editor implements CsfObject {
     }
   }
 
-  // Whether pending edits removed every member of an object and added none.
+  // Whether pending edits removed every member of an object and inserted no other in it. An
+  // insert inside a removed span is removed with it.
   private emptied(object: E.ObjectExpression) {
-    const shape = shapeOf(this.editor, objectList(this.editor, object));
-    return (
-      !shape?.appended &&
-      !shape?.prepended &&
-      object.properties.every((property) => isRemoved(this.editor, property))
+    const { open, close } = objectList(this.editor, object);
+    const { touched } = this.editor._batch;
+    const inserted = touched.some(
+      (written) =>
+        written.start === written.end &&
+        written.text.trim() !== '' &&
+        open <= written.start &&
+        written.start <= close &&
+        !touched.some((other) => other.start < written.start && written.start < other.end)
     );
+    return !inserted && object.properties.every((property) => isRemoved(this.editor, property));
   }
 
   // `access` applies to the last field of the path, and to its parents for a `set`, which creates
@@ -1116,30 +1125,27 @@ class Editor implements CsfObject {
 
     for (let index = 0; ; index++) {
       const last = index === path.length - 1;
+      // A step before the last one only goes into the value.
+      const purpose = last ? intent : 'into';
+      const follow = (node: Node) =>
+        resolveExpression(this.editor.scopes, node, edits ? 'write' : 'read');
       let value: Node;
+      let resolved: Node | undefined;
       if (step.kind === 'list') {
         const { parent, index: position } = step;
-        // An item added or removed before it moves a position.
-        if (this.conflictsWith(parent, 'remove')) {
+        const lookup = lookupElement(parent.items, position);
+        const element = lookup.ok ? lookup.element : undefined;
+        resolved = !last && element ? follow(element) : undefined;
+        // An item added or removed before it moves a position, so a list's gaps always count.
+        const at = element && { whole: outerSpan(element), value: outerSpan(element) };
+        if (this.pending([...parent.gaps(), ...this.dependencies(at, purpose, [], resolved)])) {
           return CROSSED;
         }
-        const lookup = lookupElement(parent.items, position);
         if (lookup.ok === false) {
           return lookup;
         }
-        const { element } = lookup;
-        if (element && this.overwritten(outerSpan(element))) {
-          return CROSSED;
-        }
-        if (last && element !== undefined) {
-          if (
-            element &&
-            ((intent !== 'read' && this.relined(outerSpan(element).start)) ||
-              this.crossesAt(outerSpan(element), parent, intent))
-          ) {
-            return CROSSED;
-          }
-          return { ok: true, kind: 'item', parent, index: position, element };
+        if (last && lookup.element !== undefined) {
+          return { ok: true, kind: 'item', parent, index: position, element: lookup.element };
         }
         if (!element) {
           return { ok: true, kind: 'missing-item', parent, index: position };
@@ -1152,47 +1158,33 @@ class Editor implements CsfObject {
           key,
           last || access === 'set' ? access : 'read'
         );
-        if (lookup.ok === false) {
-          return this.addedTo(parent, key) ? CROSSED : lookup;
-        }
-        const { property } = lookup;
+        const property = lookup.ok ? lookup.property : undefined;
         if (!property) {
-          if (
-            this.addedTo(parent, key) ||
-            (intent !== 'read' &&
-              intent !== 'remove' &&
-              (this.conflictsWith(parent, 'append') ||
-                this.relined(parent.node?.start) ||
-                this.relined(parent.properties.at(-1)?.start) ||
-                this.spreadsWritten(parent.properties)))
-          ) {
+          // A pending edit may have added the key; one that creates it reads the spreads too.
+          const creates = lookup.ok && purpose !== 'read' && purpose !== 'remove';
+          const keyed = this.members(parent).map(({ start, end }) => ({ start, end, about: key }));
+          if (this.pending([...keyed, ...(creates ? this.spreads(parent) : [])])) {
             return CROSSED;
           }
-          return { ok: true, kind: 'missing-key', parent, missing: index };
+          return lookup.ok ? { ok: true, kind: 'missing-key', parent, missing: index } : lookup;
         }
-        if (this.overwritten(property) || this.overwritten(property.key)) {
+        resolved = !last && !property.method ? follow(property.value) : undefined;
+        const at = {
+          key: property.key,
+          whole: property,
+          value: property.method ? property : outerSpan(property.value),
+        };
+        const gaps = this.gaps(parent.members?.().gaps);
+        if (this.pending(this.dependencies(at, purpose, gaps, resolved))) {
           return CROSSED;
         }
         if (last) {
-          const value = property.method ? property : outerSpan(property.value);
-          if (
-            (intent !== 'replace' && this.overwritten(value)) ||
-            (intent !== 'read' && this.relined(property.start)) ||
-            this.crossesAt(property, parent, intent) ||
-            this.crossesAt(value, parent, intent)
-          ) {
-            return CROSSED;
-          }
           return { ok: true, kind: 'property', parent, key, property };
         }
         if (property.method) {
           return { ok: false, code: 'unsupported-member', node: property };
         }
         value = property.value;
-      }
-      const resolved = resolveExpression(this.editor.scopes, value, edits ? 'write' : 'read');
-      if (this.overwritten(value) || (resolved && this.overwritten(resolved))) {
-        return CROSSED;
       }
       const next = stepInto(this.editor, resolved, path[index + 1]);
       if (!next) {
@@ -1253,18 +1245,14 @@ class Editor implements CsfObject {
     if (!object || !('members' in content)) {
       throw invalidated();
     }
-    if (
-      this.conflictsWith(
-        object,
-        'append',
-        content.members.map((member) => member.text)
-      )
-    ) {
+    const [member] = content.members;
+    const texts = content.members.map(({ text }) => text);
+    if (this.pending(this.gaps(object.members?.().gaps, member.key, texts))) {
       this.settle();
       this.insert(containers, content);
       return;
     }
-    object.append(content.members);
+    adding(member.key, () => object.append(content.members));
   }
 
   // Writes the missing containers at `missing` into `parent`, the first one a member of it, which
@@ -1306,10 +1294,10 @@ class Editor implements CsfObject {
       nested = block([...forward(depth), `${printKey(missing[depth + 1], quote)}: ${nested}`]);
     }
     const text = `${printKey(name, quote)}: ${nested}`;
-    if (this.conflictsWith(parent, 'append', [text])) {
+    if (this.pending(this.gaps(parent.members?.().gaps, name, [text]))) {
       return false;
     }
-    parent.append([{ key: name, value: nested, text }]);
+    adding(name, () => parent.append([{ key: name, value: nested, text }]));
     return true;
   }
 
@@ -1367,15 +1355,7 @@ class Editor implements CsfObject {
     this.#mutating = true;
     try {
       this.editor.transaction(() => {
-        // Edits made on the editor since the last mutation may change what it reads.
-        const raw = this.editor._batch.touched.filter(
-          (written) => !written.staged && !cleared.has(written)
-        );
-        if (this.mentions(raw, [])) {
-          this.settle();
-        } else {
-          raw.forEach((written) => cleared.add(written));
-        }
+        this.settleRaw();
         this.#batch = this.editor._batch;
         this.#from = this.editor._batch.touched.length;
         result = mutation();
@@ -1479,6 +1459,19 @@ class Editor implements CsfObject {
     }
   }
 
+  // Commits the pending edits when the edits made on the editor since the last read or mutation
+  // name a binding, which changes what discovery and the proofs read.
+  private settleRaw() {
+    const raw = this.editor._batch.touched.filter(
+      (written) => !written.staged && !cleared.has(written)
+    );
+    if (this.mentions(raw, [])) {
+      this.settle();
+    } else {
+      raw.forEach((written) => cleared.add(written));
+    }
+  }
+
   // Commits the pending edits, so lookups see them. Outside a mutation, a commit that fails leaves
   // the editor as it was.
   private settle() {
@@ -1504,63 +1497,62 @@ class Editor implements CsfObject {
     this.#from = 0;
   }
 
-  // Whether pending edits keep a lookup for `intent` from ending at `span`, a member of `parent`:
-  // a read sees the edits inside it, and a replacement clears what was inserted at its ends.
-  private crossesAt(span: Span, parent: ObjectRoot | ListRoot, intent: Intent) {
-    if (intent === 'read') {
-      return isWrittenAt(this.editor, span);
-    }
-    if (intent === 'remove') {
-      return this.conflictsWith(parent, 'remove');
-    }
-    return (
-      intent === 'replace' &&
-      this.editor._batch.touched.some(
-        (written) =>
-          written.start === written.end &&
-          ((written.side === 'right' && written.start === span.start) ||
-            (written.side === 'left' && written.start === span.end))
-      )
-    );
+  // The one check of a lookup: whether a span its step depends on meets a pending edit.
+  private pending(dependencies: readonly Dependency[]) {
+    return isPendingAt(this.editor, dependencies);
   }
 
-  // Whether pending edits broke the line `at` is on before it, which edits there indent by.
-  private relined(at: number | undefined) {
-    if (at === undefined) {
-      return false;
+  // The spans a step depends on, given the field or item it reaches: its key, and what of it the
+  // purpose reads. A read and a replacement depend on all of the value, a removal on the gaps of
+  // its list, and a step into the value, also through the constant it follows, on their ends.
+  private dependencies(
+    at: { key?: Span; whole: Span; value: Span } | null | undefined,
+    purpose: Intent,
+    gaps: readonly Dependency[],
+    resolved: Node | undefined
+  ): Dependency[] {
+    if (!at) {
+      return [];
     }
-    const start = this.editor.code.lastIndexOf('\n', at - 1) + 1;
-    return this.editor._batch.touched.some(
-      (written) =>
-        written.start <= at &&
-        (written.end > start || (written.end === start && !written.text.endsWith('\n'))) &&
-        written.text.includes('\n')
-    );
+    const reads = {
+      read: [at.whole],
+      replace: [at.value],
+      remove: gaps,
+      into: ends(at.value),
+    }[purpose];
+    return [...(at.key ? [at.key] : []), ...reads, ...(resolved ? ends(resolved) : [])];
   }
 
-  // Whether pending edits wrote into a constant a member spreads, whose members tell which spread a
-  // created member carries forward.
-  private spreadsWritten(properties: readonly E.ObjectPropertyKind[]) {
-    return properties.some((property) => {
+  // The gaps a write to a list writes to, or the whole file for a root that cannot tell. An append
+  // depends on them as about `key`, so it composes with appends of other keys, unless its text spans
+  // lines, which lays the list out again.
+  private gaps(
+    gaps: readonly Span[] | undefined,
+    key?: string | symbol,
+    texts: readonly string[] = []
+  ): Dependency[] {
+    const spans = gaps ?? [{ start: 0, end: this.editor.code.length }];
+    const keyed = key !== undefined && !texts.some((text) => text.includes('\n'));
+    return spans.map(({ start, end }) => (keyed ? { start, end, about: key } : { start, end }));
+  }
+
+  // Where a root's members are written: their keys and the gaps around them.
+  private members(root: ObjectRoot): Dependency[] {
+    const members = root.members?.();
+    return members ? [...members.keys, ...members.gaps] : this.gaps(undefined);
+  }
+
+  // The constants the spreads among a root's members read, which tell what a member created after
+  // them carries forward.
+  private spreads(root: ObjectRoot): Dependency[] {
+    return root.properties.flatMap((property) => {
       const reference = property.type === 'SpreadElement' && unwrapExpression(property.argument);
       const binding =
         reference && reference.type === 'Identifier'
           ? this.editor.scopes.bindingOf(reference)
           : undefined;
-      return !!binding && isWrittenAt(this.editor, binding.node);
+      return binding ? [binding.node] : [];
     });
-  }
-
-  private overwritten(span: Span) {
-    return isOverwritten(this.editor, span);
-  }
-
-  private addedTo(root: ObjectRoot, key: string) {
-    return root.added ? root.added(key) : this.editor._batch.touched.length > 0;
-  }
-
-  private conflictsWith(root: ObjectRoot | ListRoot, change: Change, texts?: readonly string[]) {
-    return root.conflicts ? root.conflicts(change, texts) : this.editor._batch.touched.length > 0;
   }
 
   // A file the indexer rejects is valid JS, so that is a diagnostic rather than an error. Code that

@@ -15,13 +15,7 @@ import {
   type CsfObjectTarget,
   createCsfObject,
 } from './CsfObject.ts';
-import {
-  type MemberInsert,
-  type ObjectRoot,
-  conflicting,
-  detachedMember,
-  literalRoot,
-} from './ObjectRoot.ts';
+import { type MemberInsert, type ObjectRoot, detachedMember, literalRoot } from './ObjectRoot.ts';
 import {
   type E,
   type Node,
@@ -36,15 +30,12 @@ import {
   unwrapExpression,
 } from './estree/ast.ts';
 import {
-  addKeys,
-  addedKeys,
   insertStatementAfter,
   locationIn,
   printKey,
   printMemberAccess,
   printMembers,
   removeStatements,
-  shapeOf,
 } from './estree/editor.ts';
 import { placeableValueSource } from './estree/values.ts';
 import type { Binding } from './estree/scope.ts';
@@ -427,11 +418,6 @@ const storyRoot = (
         `${binding.localName}${printMemberAccess(key, editor.quote)} = ${value}${end}`
       );
     }
-    addKeys(
-      editor,
-      declaration,
-      members.map((member) => member.key)
-    );
   };
   const statementsOf = (members: readonly Property[]) =>
     new Set<Node>(members.flatMap((member) => byProperty.get(member)?.statement ?? []));
@@ -483,7 +469,6 @@ const storyRoot = (
         left.end,
         printMemberAccess(key, editor.quote)
       );
-      addKeys(editor, declaration, [key]);
     },
     // `CsfObject` refuses a group of members from both the object and the assignments.
     group: (members, key) => {
@@ -500,25 +485,27 @@ const storyRoot = (
       assign([{ key, value, text: '' }], statements);
     },
     take,
-    // The members written as statements are added after the declaration, or after an assignment.
-    added: (key) => literal?.added?.(key) || !!addedKeys(editor, declaration)?.has(key),
-    // An assignment goes after the text inserted after the statement it follows, which has to be
-    // another assignment of the story to keep the order a commit between them would give.
-    conflicts: (change, texts) => {
-      if (literal?.conflicts?.(change, texts)) {
-        return true;
-      }
-      if (assignments.length === 0 && literal) {
-        return false;
-      }
+    // Assignments are added after the last one, or after the declaration, and removed with the
+    // space after the statement before them.
+    members: () => {
+      const { body } = csf.program;
       const after = assignments.at(-1)?.statement ?? declaration;
-      const inserted = editor._batch.lastInsertedAfter.get(after);
-      return (
-        conflicting(shapeOf(editor), change) ||
-        (!literal &&
-          inserted !== undefined &&
-          !new RegExp(`^${binding.localName.replaceAll('$', '\\$')}[.[]`).test(inserted))
-      );
+      const next = body.find((statement) => statement.start >= after.end);
+      const inLiteral = literal?.members?.() ?? { keys: [], gaps: [] };
+      const before = assignments.map(({ statement }) => {
+        const previous = body[body.indexOf(statement) - 1];
+        return { start: previous?.end ?? 0, end: statement.start };
+      });
+      return {
+        keys: [...inLiteral.keys, ...assignments.map(({ left }) => left.property)],
+        gaps: [
+          ...inLiteral.gaps,
+          ...before,
+          ...(literal && assignments.length === 0
+            ? []
+            : [{ start: after.end, end: next?.start ?? csf._code.length }]),
+        ],
+      };
     },
     refuseKey: object
       ? undefined

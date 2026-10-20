@@ -9,6 +9,7 @@ import { argtypesDefaultValue } from './argtypes-default-value.ts';
 import { componentSubtitle } from './component-subtitle.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
 import { docgenServer } from './docgen-server.ts';
+import { nextjsBabelConfig } from './nextjs-babel-config.ts';
 import { nextjsToNextjsVite } from './nextjs-to-nextjs-vite.ts';
 import { reactViteToTanstackReact } from './react-vite-to-tanstack-react.ts';
 import { removeChangeDetectionFlag } from './remove-change-detection-flag.ts';
@@ -34,6 +35,7 @@ export const allFixes: Fix[] = [
   argtypesDefaultValue,
   rnOndeviceAddonsToDeviceAddons,
   nextjsToNextjsVite,
+  nextjsBabelConfig,
   angularToAngularVite,
   angularViteRemoveCompodoc,
   webComponentsRuntimeManifest,

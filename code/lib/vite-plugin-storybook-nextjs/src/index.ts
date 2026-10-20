@@ -1,6 +1,9 @@
 import { dirname, resolve } from 'pathe';
 
 import { createRequire } from 'node:module';
+
+import { once } from 'storybook/internal/node-logger';
+
 import type { NextConfigComplete } from 'next/dist/server/config-shared.js';
 import type { PluginOption } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
@@ -25,6 +28,7 @@ import {
   getViteMajorVersion,
   isVitestEnv,
 } from './utils.ts';
+import { babelConfigWarning } from './utils/babel-config-warning.ts';
 import { loadNextConfig } from './utils/next-config.ts';
 
 const require = createRequire(import.meta.url);
@@ -83,6 +87,11 @@ function VitePlugin({ dir = process.cwd(), image }: PluginOptions = {}): PluginO
       async config(config) {
         const isNext16orNewer = getNextjsMajorVersion() >= 16;
         const nextConfig = await nextConfigResolver.promise;
+
+        const babelWarning = babelConfigWarning(resolvedDir, nextConfig);
+        if (babelWarning) {
+          once.warn(babelWarning);
+        }
 
         const executionEnvironment = getExecutionEnvironment(config);
         const resolveConfig = {

@@ -9,11 +9,11 @@ Javascript compilers are essential in optimizing and transforming code, enhancin
 
 ## SWC
 
-SWC is a fast, highly extensible tool for compiling and bundling modern JavaScript applications. Powered by [Rust](https://www.rust-lang.org/), it improves performance and reduces build times. Storybook includes a built-in integration with SWC, allowing zero-configuration setup and built-in types for APIs. If you've initialized Storybook in a Webpack-based project with any of the supported [frameworks](./frameworks.mdx), except Angular, Ember.js and Next.js, it will automatically use SWC as its default, providing you with faster loading time.
+SWC is a fast, highly extensible tool for compiling and bundling modern JavaScript applications. Powered by [Rust](https://www.rust-lang.org/), it improves performance and reduces build times. Storybook includes a built-in integration with SWC, allowing zero-configuration setup and built-in types for APIs. If you've initialized Storybook in a Webpack-based project with any of the supported [frameworks](./frameworks.mdx), except Angular and Ember.js, it will automatically use SWC as its default, providing you with faster loading time.
 
 <Callout variant="info">
 
-Support for the SWC builder is currently experimental for Next.js projects, and it's not enabled by default. It requires you to opt in to use it. For more information on configuring SWC with the supported frameworks, see the [SWC API](../../api/main-config/main-config-swc.mdx) documentation.
+The Next.js frameworks always compile with SWC, using the options in your `next.config.js`, and ignore Babel config files. See Babel for [`@storybook/nextjs`](../../get-started/frameworks/nextjs.mdx#babel) and [`@storybook/nextjs-vite`](../../get-started/frameworks/nextjs-vite.mdx#babel) for details.
 
 </Callout>
 

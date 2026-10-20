@@ -16,25 +16,13 @@ type FontFaceDeclaration = {
 };
 
 export default async function storybookNextjsFontLoader(this: any) {
-  const loaderOptions = this.getOptions() as LoaderOptions;
-  let swcMode = false;
-  let options;
-
-  if (Object.keys(loaderOptions).length > 0) {
-    // handles Babel mode
-    options = loaderOptions;
-  } else {
-    // handles SWC mode
-    const importQuery = JSON.parse(this.resourceQuery.slice(1));
-    swcMode = true;
-
-    options = {
-      filename: importQuery.path,
-      fontFamily: importQuery.import,
-      props: importQuery.arguments[0],
-      source: this.context.replace(this.rootContext, ''),
-    };
-  }
+  const importQuery = JSON.parse(this.resourceQuery.slice(1));
+  const options: LoaderOptions = {
+    filename: importQuery.path,
+    fontFamily: importQuery.import,
+    props: importQuery.arguments[0],
+    source: this.context.replace(this.rootContext, ''),
+  };
 
   // get execution context
   const rootCtx = this.rootContext;
@@ -54,7 +42,7 @@ export default async function storybookNextjsFontLoader(this: any) {
     options.source.endsWith(`next${pathSep}font${pathSep}local`) ||
     options.source.endsWith(`@next${pathSep}font${pathSep}local`)
   ) {
-    fontFaceDeclaration = await getLocalFontFaceDeclarations(options, rootCtx, swcMode);
+    fontFaceDeclaration = await getLocalFontFaceDeclarations(options, rootCtx);
   }
 
   if (typeof fontFaceDeclaration !== 'undefined') {

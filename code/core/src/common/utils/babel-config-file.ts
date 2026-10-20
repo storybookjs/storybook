@@ -1,12 +1,9 @@
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 
-/**
- * The Babel config file names Next.js checks, in the same order
- * (`next/dist/build/get-babel-config-file.js`). Storybook switches from SWC to Babel exactly when
- * `next build` would.
- */
-export const BABEL_CONFIG_FILES = [
+import { join } from 'pathe';
+
+// File-relative configs first, then project-wide ones.
+const BABEL_CONFIG_FILES = [
   '.babelrc',
   '.babelrc.json',
   '.babelrc.js',
@@ -16,8 +13,9 @@ export const BABEL_CONFIG_FILES = [
   'babel.config.json',
   'babel.config.mjs',
   'babel.config.cjs',
-] as const;
+];
 
+/** Return the path of the first Babel config file in `dir`, or `undefined` if there is none. */
 export function findBabelConfigFile(dir: string): string | undefined {
   return BABEL_CONFIG_FILES.map((file) => join(dir, file)).find((path) => existsSync(path));
 }

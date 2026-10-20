@@ -21,7 +21,6 @@ Storybook for Next.js (Webpack) is a [framework](../../contribute/framework.mdx)
 Use this Webpack-based framework (`@storybook/nextjs`) only if:
 
 - Your project has custom Webpack configurations that are incompatible with Vite
-- Your project has custom Babel configurations that require Webpack
 - You need specific Webpack features not available in Vite
 
 </Callout>
@@ -376,23 +375,7 @@ The built-in CSS-in-JS solution for Next.js is [styled-jsx](https://nextjs.org/d
 
 <CodeSnippets path="nextjs-styling-styled-jsx-component.md" />
 
-You can use your own Babel config, too. This is an example of how you can customize styled-jsx.
-
-```jsonc
-// .babelrc (or whatever config file you use)
-{
-  "presets": [
-    [
-      "next/babel",
-      {
-        "styled-jsx": {
-          "plugins": ["@styled-jsx/plugin-sass"],
-        },
-      },
-    ],
-  ],
-}
-```
+Like Next.js without a Babel config, Storybook compiles styled-jsx with SWC, so styled-jsx options in a Babel config don't apply (see [Babel](#babel)).
 
 ### Tailwind
 
@@ -558,6 +541,14 @@ Note: Not all Webpack modifications are copy/paste-able between `next.config.js`
 Below is an example of how to add SVGR support to Storybook with this framework.
 
 <CodeSnippets path="nextjs-configure-svgr.md" />
+
+### Babel
+
+This framework compiles your code with SWC and ignores `.babelrc` and `babel.config.*` files. When it finds one, it logs a warning naming the file. To hide the warning, set `experimental.forceSwcTransforms: true` in `next.config.js`, which also makes webpack builds of your Next.js app compile with SWC. Turbopack does not read this flag.
+
+Most Babel plugins used with Next.js have an SWC equivalent in `next.config.js`, and Storybook applies it: the [`compiler` options](https://nextjs.org/docs/architecture/nextjs-compiler) (`styledComponents`, `emotion`, `relay`, `reactRemoveProperties`, `removeConsole`) and `experimental.swcPlugins`. For a plugin without an equivalent, add a `babel-loader` rule in [`webpackFinal`](../../builders/webpack.mdx#override-the-default-configuration) that runs only that plugin before SWC, with `babel-loader` and `@babel/core` installed in your project. The [migration guide](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-storybooknextjs-always-compiles-with-swc) shows the rule.
+
+For StyleX, use that rule with `@stylexjs/babel-plugin`, and `@stylexjs/postcss-plugin` for the CSS, as in [StyleX's Next.js guide](https://stylexjs.com/docs/learn/installation/nextjs). With its default options, `@stylexjs/unplugin` does not work with this framework, because Storybook injects CSS with `style-loader` and the plugin needs an emitted `.css` file.
 
 ### Typescript
 

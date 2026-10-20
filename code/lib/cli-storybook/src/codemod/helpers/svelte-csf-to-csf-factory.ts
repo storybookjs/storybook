@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-import { parser, traverse, types as t } from 'storybook/internal/babel';
+import { type ESTree as E, SourceEditor, walk } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
 import { dirname, resolve } from 'pathe';
@@ -22,12 +22,6 @@ const SCRIPT_BLOCK = /(<script\b(?:[^>"']|"[^"]*"|'[^']*')*>)([\s\S]*?)(<\/scrip
 // `<script module>`, or `<script context="module">` from Svelte 4
 const MODULE_SCRIPT_TAG = /\smodule[\s>=]|\scontext=["']module["']/;
 const STORIES_FILE = /\.stories(\.(svelte|ts|tsx|js|jsx|mjs|mts))?$/;
-
-interface Edit {
-  start: number;
-  end: number;
-  text: string;
-}
 
 interface StoryImports {
   // `X` in `import * as X from './Button.stories.svelte'`, for `X.Primary.args`. `X.data` is not a
@@ -84,19 +78,24 @@ export function findSvelteCsfNonStoryExports(importer: string, source: string): 
       return [];
     }
     try {
-      const { body } = parser.parse(content, {
-        sourceType: 'module',
-        plugins: ['typescript'],
-      }).program;
-      return body.flatMap((node) => {
-        if (!t.isExportNamedDeclaration(node)) {
+      return new SourceEditor(content, source).program.body.flatMap((node) => {
+        if (node.type !== 'ExportNamedDeclaration') {
           return [];
         }
-        const names = node.specifiers.map((specifier) =>
-          t.isIdentifier(specifier.exported) ? specifier.exported.name : specifier.exported.value
+        const names = node.specifiers.map(({ exported }) =>
+          exported.type === 'Identifier' ? exported.name : String(exported.value)
         );
-        const declared = node.declaration ? t.getBindingIdentifiers(node.declaration) : {};
-        return [...names, ...Object.keys(declared)];
+        const { declaration } = node;
+        if (declaration?.type === 'VariableDeclaration') {
+          names.push(
+            ...declaration.declarations.flatMap(({ id }) =>
+              id.type === 'Identifier' ? id.name : []
+            )
+          );
+        } else if (declaration && 'id' in declaration && declaration.id?.type === 'Identifier') {
+          names.push(declaration.id.name);
+        }
+        return names;
       });
     } catch {
       return [];
@@ -120,31 +119,32 @@ function readStoryInputs(source: string, { namespaces, stories }: StoryImports) 
   ].reduce((result, pattern) => result.replace(pattern, '$1.input.$2'), source);
 }
 
-const importedName = (specifier: t.ImportSpecifier) =>
-  t.isIdentifier(specifier.imported) ? specifier.imported.name : specifier.imported.value;
+const importedName = (specifier: E.ImportSpecifier) =>
+  specifier.imported.type === 'Identifier' ? specifier.imported.name : specifier.imported.value;
 
 const isDefineMetaSpecifier = (
-  specifier: t.ImportDeclaration['specifiers'][number]
-): specifier is t.ImportSpecifier =>
-  t.isImportSpecifier(specifier) &&
+  specifier: E.ImportDeclaration['specifiers'][number]
+): specifier is E.ImportSpecifier =>
+  specifier.type === 'ImportSpecifier' &&
   specifier.importKind !== 'type' &&
-  t.isIdentifier(specifier.imported, { name: 'defineMeta' });
+  importedName(specifier) === 'defineMeta';
 
 function transformModuleScript(
-  code: string,
+  content: string,
   filePath: string,
   previewPath: string
 ): { code: string; storyImports: StoryImports } | undefined {
-  let ast;
+  let editor;
   try {
-    ast = parser.parse(code, { sourceType: 'module', plugins: ['typescript'] });
+    editor = new SourceEditor(content, filePath);
   } catch {
     return undefined;
   }
+  const { code, program } = editor;
 
-  const svelteCsfImport = ast.program.body.find(
-    (node): node is t.ImportDeclaration =>
-      t.isImportDeclaration(node) &&
+  const svelteCsfImport = program.body.find(
+    (node): node is E.ImportDeclaration =>
+      node.type === 'ImportDeclaration' &&
       SVELTE_CSF_IMPORT_SOURCES.includes(node.source.value) &&
       node.specifiers.some(isDefineMetaSpecifier)
   );
@@ -153,56 +153,49 @@ function transformModuleScript(
     return undefined;
   }
 
-  let previewName = 'preview';
-  const edits: Edit[] = [];
-  traverse(ast, {
-    Program(path) {
-      if (path.scope.hasBinding(previewName)) {
-        previewName = 'storybookPreview';
-      }
-    },
-    CallExpression({ node }) {
-      if (t.isIdentifier(node.callee, { name: defineMetaSpecifier.local.name })) {
-        edits.push({
-          start: node.callee.start!,
-          end: node.callee.end!,
-          text: `${previewName}.meta`,
-        });
-      }
-    },
+  const previewName = editor.scopes.program.bindings.has('preview')
+    ? 'storybookPreview'
+    : 'preview';
+  let migrated = false;
+  walk(program, (node) => {
+    if (
+      node.type === 'CallExpression' &&
+      node.callee.type === 'Identifier' &&
+      node.callee.name === defineMetaSpecifier.local.name
+    ) {
+      editor.edits.overwrite(node.callee.start, node.callee.end, `${previewName}.meta`);
+      migrated = true;
+    }
   });
-  if (edits.length === 0) {
+  if (!migrated) {
     return undefined;
   }
 
   const { start, end, source, specifiers } = svelteCsfImport;
-  const quote = code[source.start!];
-  const semicolon = code[end! - 1] === ';' ? ';' : '';
+  const quote = code[source.start];
+  const semicolon = code[end - 1] === ';' ? ';' : '';
   const previewImport = `import ${previewName} from ${quote}${previewPath}${quote}${semicolon}`;
   const otherSpecifiers = specifiers.filter((specifier) => specifier !== defineMetaSpecifier);
 
   if (otherSpecifiers.length === 0) {
-    edits.push({ start: start!, end: end!, text: previewImport });
+    editor.edits.overwrite(start, end, previewImport);
   } else {
-    const indentation = code.slice(code.lastIndexOf('\n', start! - 1) + 1, start!);
-    edits.push(
-      {
-        start: specifiers[0].start!,
-        end: specifiers.at(-1)!.end!,
-        text: otherSpecifiers
-          .map((specifier) => code.slice(specifier.start!, specifier.end!))
-          .join(', '),
-      },
-      { start: end!, end: end!, text: `\n${indentation}${previewImport}` }
-    );
+    const indentation = code.slice(code.lastIndexOf('\n', start - 1) + 1, start);
+    editor.edits
+      .overwrite(
+        specifiers[0].start,
+        specifiers.at(-1)!.end,
+        otherSpecifiers.map((specifier) => code.slice(specifier.start, specifier.end)).join(', ')
+      )
+      .appendLeft(end, `\n${indentation}${previewImport}`);
   }
 
   const storyImports: StoryImports = { namespaces: [], stories: [] };
-  for (const node of ast.program.body) {
-    if (t.isImportDeclaration(node) && STORIES_FILE.test(node.source.value)) {
+  for (const node of program.body) {
+    if (node.type === 'ImportDeclaration' && STORIES_FILE.test(node.source.value)) {
       const nonStories = findSvelteCsfNonStoryExports(filePath, node.source.value);
       for (const specifier of node.specifiers) {
-        if (!t.isImportSpecifier(specifier)) {
+        if (specifier.type !== 'ImportSpecifier') {
           storyImports.namespaces.push({ name: specifier.local.name, nonStories });
         } else if (!nonStories.includes(importedName(specifier))) {
           storyImports.stories.push(specifier.local.name);
@@ -211,13 +204,5 @@ function transformModuleScript(
     }
   }
 
-  return {
-    code: edits
-      .sort((a, b) => b.start - a.start)
-      .reduce(
-        (result, edit) => result.slice(0, edit.start) + edit.text + result.slice(edit.end),
-        code
-      ),
-    storyImports,
-  };
+  return { code: editor.toString(), storyImports };
 }

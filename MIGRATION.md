@@ -41,6 +41,7 @@
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
   - [Next.js: `@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
   - [Create React App support removed](#create-react-app-support-removed)
+  - [`storybook/internal/babel` removed; `csf-tools` uses ESTree](#storybookinternalbabel-removed-csf-tools-uses-estree)
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
   - [Internal CSF tools use the unified mutation API](#internal-csf-tools-use-the-unified-mutation-api)
   - [Internal WebSocket heartbeat controls removed](#internal-websocket-heartbeat-controls-removed)
@@ -1367,6 +1368,70 @@ The webpack-based `@storybook/nextjs` framework is deprecated and will be remove
 
 Migrate to [`@storybook/nextjs-vite`](https://www.npmjs.com/package/@storybook/nextjs-vite), which builds with Vite instead of webpack. The `nextjs-to-nextjs-vite` automigration does the work for you: run `storybook upgrade` and accept the fix, or run `storybook automigrate nextjs-to-nextjs-vite` directly.
 
+### `storybook/internal/babel` removed; `csf-tools` uses ESTree
+
+Storybook no longer bundles Babel or recast to read and write story and config files. Both are parsed with OXC, and edits are applied to the source text, so code a migration does not touch keeps its formatting.
+
+#### Behavior that changes for every project
+
+- **Flow syntax is no longer supported in story files.** Babel parsed `// @flow` files with its Flow plugin; OXC does not parse Flow. A `// @flow` file whose syntax is also valid TypeScript still indexes, but Flow-only syntax such as variance (`+readOnly`) or type casts (`(value: Type)`) is a parse error, and the error names Flow. Convert such files to TypeScript or plain JavaScript.
+- `parameters.docs.source.originalSource` is now the story's source text exactly as written, where Babel reprinted it with its own formatting. "Show code" and `docs.source.transform` functions receive the authored text, with line endings normalized to `\n`.
+- Parse errors use OXC's wording, and end with ` in <file>` when the file name is known. Duplicate declarations and legacy octal literals are still rejected.
+- A parse error in a module that `sb.mock()` automocks is no longer recovered from, where Babel used to mock whatever it could parse. Under Vite the error is logged and the real module loads unmocked; under webpack the module's build fails.
+- Code that a migration or `storybook add` inserts follows the file: string quotes and indentation are inferred from it, new imports go after the existing imports in the order they are added, and a statement put first in a file stays below its header comments.
+- The Vitest config that `@storybook/addon-vitest` writes reads the config directory from `import.meta.dirname`.
+- Story files read string-literal keys and ignore computed identifier keys. `export default { 'title': 'X' }` now gives story ids under `X`, where Babel used the automatic title, and `export default { [title]: 'X' }` no longer sets the title.
+- On StackBlitz WebContainers, which have no native `oxc-parser` binding, `oxc-parser` downloads `@oxc-parser/binding-wasm32-wasi` itself with `pnpm`. On any other host without a native binding, Storybook fails with a "Cannot find native binding" error whose cause names the missing packages; install `@oxc-parser/binding-wasm32-wasi` in the project at the exact version of `oxc-parser`.
+
+#### Community packages that need a release
+
+These packages read `storybook/internal/babel` or Babel-shaped `csf-tools` fields such as `_ast`, so they stop loading on Storybook 11 until they publish a release for it. No release with the fix is known yet; upgrade each once it ships:
+
+- `storybook-solidjs-vite`
+- `msw-storybook-addon`, for its migration CLI
+- `storybook-addon-test-codegen`
+- `@storybook/experimental-devtools`
+- `storybook-addon-metadata`
+- `storybook-detox-test-runner`
+- `@parcel/transformer-storybook`, used by `storybook-builder-parcel`
+- `storybook-builder-rsbuild`, which passes the removed `babelParser` to Storybook's mocking utilities
+
+#### Changes for tooling that imports Storybook's internal entry points
+
+An addon that supports both Storybook 10 and 11 can detect the new API with `typeof csfTools.parseModule === 'function'`, where `csfTools` is `import * as csfTools from 'storybook/internal/csf-tools'`.
+
+- `storybook/internal/babel` is removed. Import Babel from your own `@babel/*` dependencies if you still need it.
+- `getBabelDependencies` is removed from `storybook/internal/cli`.
+- The nodes exposed by `storybook/internal/csf-tools` are ESTree (OXC) nodes instead of Babel nodes, for example `Literal` instead of `StringLiteral` and `Property` instead of `ObjectProperty`/`ObjectMethod`. `CsfFile._ast` and the `NodePath` fields are removed; use `CsfFile.program` and `CsfFile.editor`. `ConfigFile._ast` is removed as well; use `ConfigFile.program` and `ConfigFile.editor`. Both `editor`s are a `SourceEditor`: call `editor.commit()` to apply pending edits, after which the file parses the result again. `_program` and `_editor` remain as deprecated aliases in Storybook 11. The editing functions and `source()` throw for nodes of another parse, such as nodes from before a commit; offsets passed to `editor.edits` are not checked.
+- `CsfObject#get` returns an ESTree expression, and `set`/`transform` accept expressions from `get()` or `parseExpression(code)`. Use `textOf(node)` to read an expression's source, and `placeableTextOf(node)` to build new code around it. The expressions `get`, `inspect` and `transform` give are frozen snapshots: where a Babel node could be changed in place before passing it to `set`, assigning to an ESTree node's fields throws, as `set` prints a node from its source. Pass a plain value or `parseExpression(text)` instead.
+- An `experimental_enrichCsf` function receives the new `CsfFile`. Add code with `csf.appendStatement(code)` instead of pushing Babel nodes onto `csf._ast`; `_appendStatement` remains as a deprecated alias.
+- `extractSource(node)` is `extractSource(node, code)`, and returns the story's source as written instead of a Babel reprint. Pass the file's `editor.code`, the normalized code its node offsets index. `extractDescription(node)` is `extractDescription(node, editor)`: ESTree nodes carry no `leadingComments`, so it reads the comments before the node from the file's `editor`.
+
+  ```ts
+  // Storybook 10
+  extractSource(csf.getStoryExport('Primary'));
+  extractDescription(csf._storyStatements.Primary);
+
+  // Storybook 11
+  extractSource(csf.getStoryExport('Primary'), csf.editor.code);
+  extractDescription(csf._storyStatements.Primary, csf.editor);
+  ```
+
+- `babelParse` is removed; use `parseModule(code, fileName)` from `storybook/internal/csf-tools`, which returns the ESTree `program` and `comments`. `babelParseFile` is removed as well; read CSF with `loadCsf(code, options)` or `readCsf(fileName, options)`.
+- Parsing normalizes line endings to `\n`. Node offsets from `parseModule`, `CsfFile.program` and `ConfigFile.program` index the normalized `code`/`_code`, not the string you passed in; lines and columns are unchanged.
+- `getHeaderComments(statement)` is removed. The editor keeps a file's header comments in place: `prependStatement` inserts below them, also in a file without statements, and `appendStatement` separates a multi-line statement from its neighbour with a blank line.
+- `CsfObject` mutations index the story file again after every edit, where they used to leave the index as it was and return `{ ok: true }`. An edit whose result is valid JavaScript but not valid CSF, for example a meta `tags` that is no longer an array of string literals, is rolled back and returns `{ ok: false, changed: false, diagnostic }` with code `'invalid-csf'`. A refused mutation always leaves the file as it was, so the index stays readable. An edit whose result does not parse throws, and is rolled back too. The `ok: false` arm of `CsfMutationResult` now carries `changed: false`.
+- `SourceEditor#edits`, the pending edits of an `editor`, is a `SourceEdits`: text edits addressed by offsets into `code`, with `append`, `appendLeft`, `appendRight`, `overwrite`, `remove`, `slice`, `hasChanged`, `generateMap` and `toString`. `SourceEditor#generateMap()` returns a `GeneratedMap`.
+- `getAutomockCode(code, isSpy, fileName)` and `extractMockCalls(options, root, findMockRedirect)` in `storybook/internal/mocking-utils` parse the code themselves and no longer take a parser: drop the parser argument and pass the module's file name to `getAutomockCode`. `rewriteSbMockImportCalls(code, fileName)` requires the file name as well. `babelParser` is no longer exported; builders that passed it, such as `storybook-builder-rsbuild` 3.6, need a release that drops the argument. `automockModule` is no longer exported.
+- The story-shape helpers no longer take Babel paths: `jsDocTagsForPath` is `jsDocTagsForNode`, `metaObjectPath` is `metaObject`, `RenderFunctionPath` is `RenderFunction`, and `pathForNode` and `returnedExpressionPath` are removed in favor of `returnedExpression` and plain nodes. `keyOf` is `staticKey`, which returns `undefined` instead of `null` for a key it cannot read, and reads numeric and template-literal keys as well. `sourceOf` is `oneLineTextOf`: the node's source text with its line breaks collapsed and its comments kept, where `sourceOf` was a concise Babel reprint without comments; it takes nodes of `CsfFile.program`, `ConfigFile.program` or `parseExpression`, not of `parseModule`.
+- The `getAbsolutePath` wrapper helpers in `storybook/internal/common` produce source text instead of Babel nodes. `getAbsolutePathWrapperAsCallExpression(isTs, names)`, which returned the wrapper's function declaration, is replaced by `getAbsolutePathWrapperDeclaration(config, isTs, names)`, which returns the declaration's source, indented like `config`, for `ConfigFile#setBodyDeclaration`. `getAbsolutePathCall(config, value)` returns the source of a call to the config's wrapper. `wrapValueWithGetAbsolutePathWrapper(config, node)` is replaced by `wrapValuesWithGetAbsolutePathWrapper(config, nodes)`, which wraps every node in the array and commits the edits to `config`.
+- `new CsfFile(code, options)` and `new ConfigFile(code, fileName)` take source code instead of a Babel AST.
+- `formatCsf(csf, { sourceMaps, sourceFileName, inputSourceMap })` replaces the Babel generator options; `printCsf` and `printConfig` take no options, and all three print a file whose first line ends in CRLF with CRLF line endings, and any other file with `\n`. A file that mixes line endings is printed with its first line's ending throughout, and a file with lone CR line endings with `\n`.
+- `ConfigFile#setBodyDeclaration(code)` takes the declaration's source text instead of a Babel node.
+- The Vitest config helpers `canUpdateVitestConfigFile`, `getTargetConfigObject`, `getEffectiveMergeConfigCall`, `getConfigObjectFromMergeArg` and `resolveExpression` moved from `storybook/internal/babel` to `storybook/internal/cli`. `canUpdateVitestConfigFile` still takes the file's source; the others take an ESTree `Program`, such as `parseModule(code, fileName).program`, instead of a Babel `File`, and return ESTree nodes. `isDefineConfigLike` and `isImportedDefineConfigLikeIdentifier` are no longer exported. `unwrapTSExpression` is now `unwrapExpression` in `storybook/internal/csf-tools`, and also unwraps non-null assertions (`value!`).
+
+Babel itself is still used where it compiles your code, for example by `@storybook/nextjs` and the webpack Babel compiler addon.
+
 ### Create React App support removed
 
 Storybook 11 no longer publishes `@storybook/preset-create-react-app`, so Storybook setups that render Create React App projects through the CRA preset stop working, and `storybook upgrade` blocks upgrading while `@storybook/preset-create-react-app` is installed.
@@ -1385,10 +1450,11 @@ If your custom migration tooling imports `ConfigFile` from `storybook/internal/c
 | ------------------------------------ | ------------------------ |
 | `getFieldValue`, `getSafeFieldValue` | `getValue`               |
 | `setFieldNode`, `setFieldValue`      | `set`                    |
+| `removeField`                        | `remove`, which also removes a parent it leaves empty: `export const core = { builder: 'webpack4' }` loses the export instead of becoming `export const core = {}` |
 | `findNamedImportMethodCalls`         | `callArguments`          |
 | `FindNamedImportMethodCallsOptions`  | `CallArgumentsOptions`   |
 
-`getValue` reads static values without executing source code. When it cannot resolve a value, it returns `undefined` and adds a diagnostic. Mutation methods return a result that reports whether the edit succeeded and changed the file. `callArguments` returns `CsfObject` editors instead of Babel call expressions, so apply the same `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, and `group` methods you use for story and config objects.
+`getValue` reads static values without executing source code, following any local constant. When it cannot resolve a value, it returns `undefined`; reads add no diagnostics, so they never stop a later write. Use `inspect` to tell a missing field from one that cannot be read statically. Mutation methods return a result that reports whether the edit succeeded and changed the file. `callArguments` returns `CsfObject` editors instead of Babel call expressions, so apply the same `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, and `group` methods you use for story and config objects.
 
 Before writing a transformed file, check `changed` and `mutationDiagnostics`. `writeConfig` also rejects files with mutation diagnostics to prevent partial edits.
 

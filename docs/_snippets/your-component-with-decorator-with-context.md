@@ -2,7 +2,8 @@
 <script module>
   import { setContext } from 'svelte';
 
-  import { defineMeta } from '@storybook/svelte-vite';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import YourComponent from './YourComponent.svelte';
   import MarginDecorator from './MarginDecorator.svelte';
@@ -61,7 +62,8 @@
 <script module lang="ts">
   import { setContext } from 'svelte';
 
-  import { defineMeta } from '@storybook/svelte-vite';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import YourComponent from './YourComponent.svelte';
   import MarginDecorator from './MarginDecorator.svelte';

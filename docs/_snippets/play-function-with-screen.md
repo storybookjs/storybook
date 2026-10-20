@@ -46,7 +46,8 @@ export const Open = meta.story({
 
 ```svelte filename="Dialog.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/svelte-vite';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
   import { screen } from 'storybook/test';
 
   import Dialog from './Dialog.svelte';
@@ -112,7 +113,8 @@ export const Open = {
 
 ```svelte filename="Dialog.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/svelte-vite';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
   import { screen } from 'storybook/test';
 
   import Dialog from './Dialog.svelte';

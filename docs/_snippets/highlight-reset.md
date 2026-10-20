@@ -115,7 +115,8 @@ export const ResetHighlight: Story = {
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/svelte-vite';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import { useChannel } from 'storybook/preview-api';
   import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
@@ -175,7 +176,8 @@ export const ResetHighlight: Story = {
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/svelte-vite';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import { useChannel } from 'storybook/preview-api';
   import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';

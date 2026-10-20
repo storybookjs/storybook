@@ -64,10 +64,19 @@ const svelteMigrationSnippetFiles = new Set([
 // These groups document SvelteKit-only features, so their Svelte CSF fences import from the SvelteKit framework
 const sveltekitSnippetFiles = new Set(['sveltekit-mock-features.md', 'sveltekit-mock-links.md']);
 
+// Shared Svelte CSF fences use the @storybook/your-framework placeholder: the docs site shows
+// them to every Svelte reader, and a literal @storybook/svelte-vite import fails for SvelteKit
+// projects, which don't depend on that package (pnpm's strict linking). The two SvelteKit-only
+// groups keep a literal SvelteKit import instead.
+const yourFrameworkPackage = '@storybook/your-framework';
+const yourFrameworkComment =
+  '// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite';
 const defineMetaAddonImportPattern =
   /^(\s*)import\s*\{\s*defineMeta\s*\}\s*from\s*(['"])@storybook\/addon-svelte-csf\2(;?)$/;
+const defineMetaSharedImportPattern =
+  /^(\s*)import\s*\{\s*defineMeta\s*\}\s*from\s*(['"])(?:@storybook\/addon-svelte-csf|@storybook\/svelte-vite)\2(;?)$/;
 const defineMetaImportPattern =
-  /^(\s*)import\s*\{\s*defineMeta\s*\}\s*from\s*(['"])(@storybook\/addon-svelte-csf|@storybook\/svelte-vite|@storybook\/sveltekit)\2(;?)$/;
+  /^(\s*)import\s*\{\s*defineMeta\s*\}\s*from\s*(['"])(@storybook\/addon-svelte-csf|@storybook\/svelte-vite|@storybook\/sveltekit|@storybook\/your-framework)\2(;?)$/;
 
 export function findFences(lines: string[]): SvelteFence[] {
   const fences: SvelteFence[] = [];
@@ -96,12 +105,28 @@ export function findFences(lines: string[]): SvelteFence[] {
   return fences;
 }
 
-function rewriteDefineMetaImport(line: string, frameworkPackage: string): string {
-  return line.replace(
+function rewriteSvelteKitDefineMetaImport(line: string): string[] {
+  const rewritten = line.replace(
     defineMetaAddonImportPattern,
     (_match, indent: string, quote: string, semicolon: string) =>
-      `${indent}import { defineMeta } from ${quote}${frameworkPackage}${quote}${semicolon}`
+      `${indent}import { defineMeta } from ${quote}@storybook/sveltekit${quote}${semicolon}`
   );
+  return [rewritten];
+}
+
+// Shared fences get the placeholder import plus the replace comment above it, matching the
+// convention the removed CSF 3 fences used.
+function rewriteSharedDefineMetaImport(line: string): string[] {
+  const rewritten = line.replace(
+    defineMetaSharedImportPattern,
+    (_match, indent: string, quote: string, semicolon: string) =>
+      `${indent}import { defineMeta } from ${quote}${yourFrameworkPackage}${quote}${semicolon}`
+  );
+  if (rewritten === line) {
+    return [line];
+  }
+  const indent = /^\s*/.exec(line)?.[0] ?? '';
+  return [`${indent}${yourFrameworkComment}`, rewritten];
 }
 
 // Derives the "Svelte CSF Next 🧪" fence content from its "Svelte CSF" mirror: the defineMeta
@@ -170,17 +195,12 @@ export function transformSvelteCsfNextFile(
 ): { source: string; changed: boolean; stopReason?: string } {
   const fileName = basename(filePath);
   const lines = source.split('\n');
-  const rewritten = [...lines];
-
   // Kept Svelte CSF fences import defineMeta from the framework package their reader uses.
-  if (!svelteMigrationSnippetFiles.has(fileName)) {
-    const frameworkPackage = sveltekitSnippetFiles.has(fileName)
-      ? '@storybook/sveltekit'
-      : '@storybook/svelte-vite';
-    for (let i = 0; i < rewritten.length; i++) {
-      rewritten[i] = rewriteDefineMetaImport(rewritten[i], frameworkPackage);
-    }
-  }
+  const rewritten = svelteMigrationSnippetFiles.has(fileName)
+    ? [...lines]
+    : sveltekitSnippetFiles.has(fileName)
+      ? lines.flatMap((line) => rewriteSvelteKitDefineMetaImport(line))
+      : lines.flatMap((line) => rewriteSharedDefineMetaImport(line));
 
   const svelteFences = findFences(rewritten).filter(
     (fence) => fence.attributes.renderer === 'svelte'
@@ -229,8 +249,10 @@ export function transformSvelteCsfNextFile(
     // Insert the new fence right after its mirror, and delete the CSF 3 fence plus one adjacent
     // blank line (before preferred) so no double blank line is left at the seam.
     const victim = victims[0];
-    const beforeBlank = lines[victim.openIndex - 1] === '';
-    const afterBlank = !beforeBlank && lines[victim.closeIndex + 1] === '';
+    // Blank-line lookups use the same array the fence indices were computed against, since the
+    // import rewrite can change the line count relative to the original source.
+    const beforeBlank = rewritten[victim.openIndex - 1] === '';
+    const afterBlank = !beforeBlank && rewritten[victim.closeIndex + 1] === '';
     const deleteStart = beforeBlank ? victim.openIndex - 1 : victim.openIndex;
     const deleteCount = victim.closeIndex - deleteStart + 1 + (afterBlank ? 1 : 0);
 
@@ -242,7 +264,8 @@ export function transformSvelteCsfNextFile(
     });
   }
 
-  const importFixed = rewritten.some((line, index) => line !== lines[index]);
+  const importFixed =
+    rewritten.length !== lines.length || rewritten.some((line, index) => line !== lines[index]);
 
   if (operations.length === 0) {
     return { source: rewritten.join('\n'), changed: importFixed };

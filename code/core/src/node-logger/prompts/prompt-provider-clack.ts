@@ -3,7 +3,7 @@ import { stripVTControlCharacters } from 'node:util';
 import * as clack from '@clack/prompts';
 
 import { logTracker } from '../logger/log-tracker.ts';
-import { wrapTextForClackHint } from '../wrap-utils.ts';
+import { protectUrls } from '../wrap-utils.ts';
 import type {
   ConfirmPromptOptions,
   MultiSelectPromptOptions,
@@ -73,10 +73,7 @@ export class ClackPromptProvider extends PromptProvider {
   }
 
   async confirm(options: ConfirmPromptOptions, promptOptions?: PromptOptions): Promise<boolean> {
-    const result = await clack.confirm({
-      ...options,
-      message: wrapTextForClackHint(options.message, undefined, undefined, 2),
-    });
+    const result = await clack.confirm({ ...options, message: protectUrls(options.message) });
     await this.handleCancel(result, promptOptions);
     logTracker.addLog('prompt', options.message, { choice: result });
     return Boolean(result);
@@ -85,7 +82,9 @@ export class ClackPromptProvider extends PromptProvider {
   async select<T>(options: SelectPromptOptions<T>, promptOptions?: PromptOptions): Promise<T> {
     const result = await clack.select<T>({
       ...options,
-      message: wrapTextForClackHint(options.message, undefined, undefined, 2),
+      message: protectUrls(options.message),
+      // Clack's key-hint footer wraps outside the guide bar on narrow terminals.
+      showInstructions: false,
     });
     await this.handleCancel(result, promptOptions);
     logTracker.addLog('prompt', options.message, { choice: result });
@@ -99,6 +98,7 @@ export class ClackPromptProvider extends PromptProvider {
     const result = await clack.multiselect<T>({
       ...options,
       required: options.required,
+      showInstructions: false,
     });
     await this.handleCancel(result, promptOptions);
     logTracker.addLog('prompt', options.message, { choice: result });

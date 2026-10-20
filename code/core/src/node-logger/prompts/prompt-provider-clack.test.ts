@@ -61,6 +61,21 @@ describe('ClackPromptProvider', () => {
     expect(task.message).toHaveBeenCalledWith(`${short}\n${'x'.repeat(51)} .storybook/preview`);
   });
 
+  // Clack wraps prompt messages with its own guide bar; a pre-wrapped message renders the bar twice.
+  it('leaves wrapping prompt messages to clack', async () => {
+    const message = `Do you want to run the 'component-subtitle' migration on your project? ${'word '.repeat(20)}`;
+    confirmMock.mockResolvedValue(true);
+    selectMock.mockResolvedValue('a');
+
+    await provider.confirm({ message });
+    await provider.select({ message, options: [{ label: 'A', value: 'a' }] });
+
+    expect(confirmMock).toHaveBeenCalledWith({ message });
+    expect(selectMock).toHaveBeenCalledWith(
+      expect.objectContaining({ message, showInstructions: false })
+    );
+  });
+
   it('awaits an async onCancel handler before returning', async () => {
     const stepOrder: string[] = [];
     const release = Promise.withResolvers<void>();

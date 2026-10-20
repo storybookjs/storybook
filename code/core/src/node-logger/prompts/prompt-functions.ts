@@ -1,5 +1,5 @@
 import { error, log, shouldLog } from '../logger/index.ts';
-import { getTerminalWidth, wrapTextForClack, wrapTextForClackHint } from '../wrap-utils.ts';
+import { getTerminalWidth, protectUrls, wrapTextForClack } from '../wrap-utils.ts';
 import { getPromptProvider } from './prompt-config.ts';
 import type {
   BasePromptOptions,
@@ -110,9 +110,7 @@ export const multiselect = async <T>(
       ...options,
       options: options.options.map((opt) => ({
         ...opt,
-        hint: opt.hint
-          ? wrapTextForClackHint(opt.hint, undefined, opt.label || String(opt.value), 0)
-          : undefined,
+        hint: opt.hint ? protectUrls(opt.hint) : undefined,
       })),
     },
     promptOptions

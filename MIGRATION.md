@@ -1451,7 +1451,7 @@ If your custom migration tooling imports `ConfigFile` from `storybook/internal/c
 | `getFieldValue`, `getSafeFieldValue` | `getValue`               |
 | `setFieldNode`, `setFieldValue`      | `set`                    |
 | `removeField`                        | `remove`, which also removes a parent it leaves empty: `export const core = { builder: 'webpack4' }` loses the export instead of becoming `export const core = {}` |
-| `appendValueToArray`, `appendNodeToArray` | `append`, which takes a plain value or an expression. Both remain as deprecated aliases. |
+| `appendValueToArray`, `appendNodeToArray` | `append`, which takes a plain value or an expression. `append` also adds an argument to a field that holds a call, which these refuse. Both remain deprecated. |
 | `removeEntryFromArray`               | `remove([...path, index])`, with the entry's `index` in `get(path).elements` for an array literal written at the field; `get` returns a field as written, not the constant it names. It remains as a deprecated alias. |
 | `findNamedImportMethodCalls`         | `callArguments`          |
 | `FindNamedImportMethodCallsOptions`  | `CallArgumentsOptions`   |

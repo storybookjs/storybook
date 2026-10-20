@@ -93,7 +93,8 @@ export class SourceEditor {
 
   _parents: Map<Node, Node | null> | undefined;
 
-  _edits: SourceEdits;
+  // The pending edits, with what they wrote that later edits of the same batch build on.
+  _batch: Batch;
 
   // The edits each earlier commit applied, oldest first. Their maps are only generated when one
   // is requested, so the output still maps to the code the editor was created with.
@@ -129,7 +130,7 @@ export class SourceEditor {
     this._onCommit = onCommit;
     this._originalCode = code;
     this._module = parsePrintable(code, fileName);
-    this._edits = new MagicString(this.code, { filename: fileName });
+    this._batch = newBatch(this.code, fileName);
   }
 
   get code() {
@@ -172,11 +173,11 @@ export class SourceEditor {
   }
 
   get edits() {
-    return this._edits;
+    return this._batch.edits;
   }
 
   get pending() {
-    return this._edits.hasChanged();
+    return this.edits.hasChanged();
   }
 
   source(node: Span) {
@@ -214,11 +215,11 @@ export class SourceEditor {
     if (!this.pending) {
       return false;
     }
-    let module = parsePrintable(this._edits.toString(), this.fileName);
+    let module = parsePrintable(this.edits.toString(), this.fileName);
     this._style ??= inferStyle(this._module);
-    this._committed.push(this._edits);
+    this._committed.push(this.edits);
     let appended = this._appendedWithoutBlankLine
-      .map((statement) => committedStatement(this._edits, module, statement))
+      .map((statement) => committedStatement(this.edits, module, statement))
       .filter((statement) => statement !== undefined);
     // The blank lines go in as edits of their own, over the code just parsed.
     const apart = appended.filter((statement) => setsApart(module, statement));
@@ -238,7 +239,7 @@ export class SourceEditor {
     this._module = module;
     this._scopes = undefined;
     this._parents = undefined;
-    this._edits = new MagicString(this.code, { filename: this.fileName });
+    this._batch = newBatch(this.code, this.fileName);
     this._onCommit?.();
     return true;
   }
@@ -252,10 +253,7 @@ export class SourceEditor {
   transaction(fn: () => boolean | void, onRollback?: () => void): boolean {
     const { _module, _style, _transaction: outer } = this;
     const committed = this._committed.length;
-    const edits = this._edits.clone();
-    lastInserted.set(edits, new Map(lastInserted.get(this._edits)));
-    appendedTo.set(edits, new Map(appendedTo.get(this._edits)));
-    insertedAt.set(edits, new Set(insertedAt.get(this._edits)));
+    const batch = copyBatch(this._batch);
     const appended = [...this._appendedWithoutBlankLine];
     const transaction = { refused: false, rollbacks: onRollback ? [onRollback] : [] };
     this._transaction = transaction;
@@ -277,7 +275,7 @@ export class SourceEditor {
         this._module = _module;
         this._style = _style;
         this._committed.length = committed;
-        this._edits = edits;
+        this._batch = batch;
         this._appendedWithoutBlankLine = appended;
         this._scopes = undefined;
         this._parents = undefined;
@@ -298,7 +296,7 @@ export class SourceEditor {
    */
   generateMap(options: { source?: string; inputSourceMap?: InputSourceMap } = {}): GeneratedMap {
     const source = options.source ?? this.fileName ?? '';
-    const chain = [this._edits, ...this._committed.slice().reverse()].map((edits) =>
+    const chain = [this.edits, ...this._committed.slice().reverse()].map((edits) =>
       edits.generateMap({ hires: true, includeContent: true, source: mapSource(this) })
     );
     const [current] = chain;
@@ -343,7 +341,7 @@ export class SourceEditor {
   }
 
   toString() {
-    return restoreLineEndings(this._edits.toString(), this._originalCode);
+    return restoreLineEndings(this.edits.toString(), this._originalCode);
   }
 
   /** Quote for generated strings: the one most string literals of the file use. */
@@ -366,6 +364,30 @@ export class SourceEditor {
 }
 
 type Style = { quote: "'" | '"'; indent: string; semicolons: boolean };
+
+interface Batch {
+  edits: SourceEdits;
+  // What the appends to each list wrote, by the list's span.
+  lists: Map<string, Appended>;
+  // The text inserted last after each statement.
+  lastInsertedAfter: Map<Span, string>;
+  // The line starts statements were inserted at, which a removal around them keeps.
+  insertedAt: Set<number>;
+}
+
+const newBatch = (code: string, fileName: string | undefined): Batch => ({
+  edits: new MagicString(code, { filename: fileName }),
+  lists: new Map(),
+  lastInsertedAfter: new Map(),
+  insertedAt: new Set(),
+});
+
+const copyBatch = ({ edits, lists, lastInsertedAfter, insertedAt }: Batch): Batch => ({
+  edits: edits.clone(),
+  lists: new Map(lists),
+  lastInsertedAfter: new Map(lastInsertedAfter),
+  insertedAt: new Set(insertedAt),
+});
 
 // Statements and class fields that end with an optional `;`. A declaration in a `for` head has none;
 // an exported declaration ends with the `;` of its `export`.
@@ -917,8 +939,6 @@ interface Appended {
   separator: string;
 }
 
-const appendedTo = new WeakMap<SourceEdits, Map<string, Appended>>();
-
 const insert = (edits: SourceEdits, { at, right }: Pick<Appended, 'at' | 'right'>, text: string) =>
   right ? edits.appendRight(at, text) : edits.appendLeft(at, text);
 
@@ -1074,11 +1094,7 @@ const appendAfter = (editor: SourceEditor, list: List, previous: Appended, texts
  */
 export const appendToList = (editor: SourceEditor, list: List, texts: string[]) => {
   editor.assertCurrent(list);
-  let lists = appendedTo.get(editor.edits);
-  if (!lists) {
-    lists = new Map();
-    appendedTo.set(editor.edits, lists);
-  }
+  const { lists } = editor._batch;
   const key = `${list.open}:${list.close}`;
   const previous = lists.get(key);
   lists.set(
@@ -1289,15 +1305,10 @@ const endsStatement = (text: string) => {
  * shares that line moves below the inserted statements.
  */
 export const insertStatementAfter = (editor: SourceEditor, statement: Span, text: string) => {
-  const { code, edits } = editor;
-  let inserted = lastInserted.get(edits);
-  if (!inserted) {
-    inserted = new Map();
-    lastInserted.set(edits, inserted);
-  }
+  const { code, edits, _batch: batch } = editor;
   // The new text follows the text inserted after the statement earlier in the batch, if any.
-  const before = inserted.get(statement) ?? editor.source(statement);
-  inserted.set(statement, text);
+  const before = batch.lastInsertedAfter.get(statement) ?? editor.source(statement);
+  batch.lastInsertedAfter.set(statement, text);
   const end = statementEnd(editor, statement);
   const next = end + /^[^\S\n]*/.exec(code.slice(end))![0].length;
   // The separator goes after the line breaks that lead the text.
@@ -1318,12 +1329,7 @@ export const insertStatementAfter = (editor: SourceEditor, statement: Span, text
   if (code[next] === '\n') {
     const at = next + 1;
     edits.appendLeft(at, `${written.slice(1)}\n`);
-    let points = insertedAt.get(edits);
-    if (!points) {
-      points = new Set();
-      insertedAt.set(edits, points);
-    }
-    points.add(at);
+    batch.insertedAt.add(at);
     return;
   }
   edits.appendLeft(end, written);
@@ -1384,14 +1390,10 @@ const isRemoved = (editor: SourceEditor, span: Span) => {
   }
 };
 
-// Where `insertStatementAfter` wrote statements at the start of a line, per batch of edits, which
-// a removal around them keeps.
-const insertedAt = new WeakMap<SourceEdits, Set<number>>();
-
 // `remove`, split around the statements inserted inside the range, as removing a range clears what
 // other edits wrote inside it.
 const removeKeeping = (editor: SourceEditor, start: number, end: number) => {
-  const inside = [...(insertedAt.get(editor.edits) ?? [])]
+  const inside = [...editor._batch.insertedAt]
     .filter((at) => start < at && at < end)
     .sort((a, b) => a - b);
   let from = start;
@@ -1400,9 +1402,6 @@ const removeKeeping = (editor: SourceEditor, start: number, end: number) => {
     from = at;
   }
 };
-
-// The text `insertStatementAfter` added last after each statement, per batch of edits.
-const lastInserted = new WeakMap<SourceEdits, Map<Span, string>>();
 
 /**
  * Insert a statement after the last statement that pending edits did not remove. A blank line
@@ -1418,7 +1417,7 @@ export const appendStatement = (editor: SourceEditor, text: string) => {
     return;
   }
   // The text inserted last may lead with the blank line that set it apart.
-  const before = lastInserted.get(editor.edits)?.get(last)?.trim() ?? editor.source(last);
+  const before = editor._batch.lastInsertedAfter.get(last)?.trim() ?? editor.source(last);
   const multiline = text.includes('\n') || before.includes('\n');
   if (!multiline) {
     editor._appendedWithoutBlankLine.push(text);

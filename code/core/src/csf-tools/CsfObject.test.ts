@@ -561,15 +561,25 @@ describe('CsfObject', () => {
     });
   });
 
-  it('does not expose mutable AST nodes through get or set', () => {
-    const csf = parse(`export default { title: 'Original' };`);
+  it('does not expose mutable AST nodes through get, inspect or set', () => {
+    const csf = parse(`export default { title: 'Original', args: { size: { value: 'small' } } };`);
     const [meta] = csf.objects({ meta: true, stories: false });
-    const value = meta.get(['title']);
+    const value = meta.get(['title']) as ESTree.StringLiteral;
+    const inspected = meta.inspect(['args']);
     const replacement = parseExpression('"Replacement"');
 
-    if (value?.type === 'Literal') {
+    expect(() => {
       value.value = 'Mutated';
-    }
+    }).toThrow(TypeError);
+    expect(inspected.kind === 'value' && Object.isFrozen(inspected.node)).toBe(true);
+    expect(
+      inspected.kind === 'value' &&
+        Object.isFrozen((inspected.node as ESTree.ObjectExpression).properties[0])
+    ).toBe(true);
+    meta.transform(['title'], (current) => {
+      expect(Object.isFrozen(current)).toBe(true);
+      return undefined;
+    });
     expect(meta.set(['title'], replacement)).toEqual({ ok: true, changed: true });
     (replacement as { value: unknown }).value = 'Mutated replacement';
 

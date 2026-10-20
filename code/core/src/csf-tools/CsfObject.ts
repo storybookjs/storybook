@@ -262,6 +262,16 @@ type MarkChanged = () => void;
 
 const unsafePath = (path: readonly string[]) => path.includes('__proto__');
 
+// `set` prints a node from its source, so a change to its fields would be lost: it throws instead.
+const readOnly = <T extends object>(node: T): T => {
+  for (const value of Object.values(node)) {
+    if (typeof value === 'object' && value !== null && !Object.isFrozen(value)) {
+      readOnly(value);
+    }
+  }
+  return Object.freeze(node);
+};
+
 class Editor implements CsfObjectEditor {
   #changed = false;
 
@@ -307,7 +317,7 @@ class Editor implements CsfObjectEditor {
 
   get(path: readonly string[]): CsfExpression | undefined {
     const property = this.getProperty(path);
-    return property && parseExpression(valueSource(this.editor, property));
+    return property && readOnly(parseExpression(valueSource(this.editor, property)));
   }
 
   // Unlike `get`, which reads the object itself as missing, `inspect` reports it.
@@ -321,7 +331,7 @@ class Editor implements CsfObjectEditor {
     }
     const found = this.find(path);
     return found.kind === 'property'
-      ? { kind: 'value', node: parseExpression(valueSource(this.editor, found.property)) }
+      ? { kind: 'value', node: readOnly(parseExpression(valueSource(this.editor, found.property))) }
       : found;
   }
 
@@ -455,7 +465,7 @@ class Editor implements CsfObjectEditor {
     if (!property) {
       return { ok: true, changed: false };
     }
-    const value = parseExpression(valueSource(this.editor, property));
+    const value = readOnly(parseExpression(valueSource(this.editor, property)));
     const derived = derive(value);
     if (!derived || derived === value) {
       return { ok: true, changed: false };

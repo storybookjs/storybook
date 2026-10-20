@@ -19,7 +19,7 @@ import { executeCommand, executeCommandSync } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
-import { hasAllowBuildsDecision, hasPnpm10ListDecision } from './pnpm-build-scripts.ts';
+import { hasAllowBuildsDecision, hasPnpm10ListDecision } from './pnpm-build-approvals.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
 import {
   getAgeInMinutes,
@@ -325,7 +325,12 @@ export class PNPMProxy extends JsPackageManager {
     if (!this.#pnpmGte(PNPM_ALLOW_BUILDS_MIN)) {
       return;
     }
-    const workspace = this.#readWorkspaceYaml({ createIfMissing: true });
+    const workspace = this.#findWorkspaceYamlPath()
+      ? this.#readWorkspaceYaml()
+      : {
+          path: join(this.primaryPackageJson.operationDir, 'pnpm-workspace.yaml'),
+          doc: new Document(),
+        };
     if (!workspace) {
       logger.warn(
         `Could not allow build scripts of ${STORYBOOK_BUILD_SCRIPT_PACKAGES.join(', ')}: pnpm-workspace.yaml is unreadable`
@@ -361,6 +366,7 @@ export class PNPMProxy extends JsPackageManager {
         doc.setIn(['allowBuilds', pkg], true);
       }
       this.#writeWorkspaceYaml({ path, doc });
+      logger.info(`Approved build scripts for ${pending.join(', ')} in ${path}`);
     } catch (e) {
       logger.warn(
         `Could not allow build scripts of ${STORYBOOK_BUILD_SCRIPT_PACKAGES.join(', ')} in ${path}: ${String(e)}`
@@ -373,22 +379,18 @@ export class PNPMProxy extends JsPackageManager {
     writeFileSync(path, doc.toString(), 'utf8');
   }
 
-  // Null when the file is malformed, or missing without `createIfMissing`; with it, a missing file
-  // yields an empty document addressed next to the package.json we operate on.
-  #readWorkspaceYaml(options?: {
-    createIfMissing: boolean;
-  }): { path: string; doc: Document } | null {
-    const path = find.up('pnpm-workspace.yaml', {
+  #findWorkspaceYamlPath(): string | undefined {
+    return find.up('pnpm-workspace.yaml', {
       cwd: this.primaryPackageJson.operationDir,
       last: getProjectRoot(),
     });
+  }
+
+  // Null when the file is missing or malformed.
+  #readWorkspaceYaml(): { path: string; doc: Document } | null {
+    const path = this.#findWorkspaceYamlPath();
     if (!path) {
-      return options?.createIfMissing
-        ? {
-            path: join(this.primaryPackageJson.operationDir, 'pnpm-workspace.yaml'),
-            doc: new Document(),
-          }
-        : null;
+      return null;
     }
     try {
       const doc = parseDocument(readFileSync(path, 'utf8'));

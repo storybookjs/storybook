@@ -10,7 +10,7 @@ import {
   listsPackage,
   matchesPackage,
   readOnlyBuiltDependenciesFile,
-} from './pnpm-build-scripts.ts';
+} from './pnpm-build-approvals.ts';
 
 vi.mock('node:fs', { spy: true });
 

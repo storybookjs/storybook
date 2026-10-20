@@ -285,7 +285,7 @@ describe('PNPMProxy catalogs', () => {
     });
   });
 
-  describe('allowStorybookBuildScripts (workspace reader with createIfMissing)', () => {
+  describe('allowStorybookBuildScripts', () => {
     const allowBuildScripts = () => (pnpmProxy as any).allowStorybookBuildScripts();
     // The package.json being installed lives below the workspace root, on memfs.
     const PROJECT_DIR = '/root/packages/app';

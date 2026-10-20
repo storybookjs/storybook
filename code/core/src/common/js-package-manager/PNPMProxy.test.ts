@@ -170,6 +170,9 @@ describe('PNPM Proxy', () => {
       await install();
 
       expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: true\n');
+      expect(logger.info).toHaveBeenCalledWith(
+        'Approved build scripts for esbuild in /project/pnpm-workspace.yaml'
+      );
       expect(mockedExecuteCommand).toHaveBeenCalledWith(
         expect.objectContaining({ command: 'pnpm', args: ['install'] })
       );
@@ -203,6 +206,7 @@ describe('PNPM Proxy', () => {
 
       expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: false\n');
       expect(writeFileSync).not.toHaveBeenCalled();
+      expect(logger.info).not.toHaveBeenCalled();
     });
 
     it('resolves the placeholder pnpm 12 writes for unreviewed packages', async () => {

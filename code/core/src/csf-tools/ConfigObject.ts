@@ -26,8 +26,10 @@ import {
   type SourceEditor,
   appendStatement,
   declaratorList,
+  lineIndent,
   printKey,
   printString,
+  reindent,
   removeFromList,
   removeStatement,
   specifierList,
@@ -414,24 +416,26 @@ const namedExportsRoot = (editor: SourceEditor, entries: NamedEntry[]): ObjectRo
     remove: (members) => removeEntries(members.map(entryOf)),
     replaceValue: (member, text) => {
       const { declaration } = entryOf(member);
+      const span =
+        declaration.type === 'VariableDeclarator' ? outerSpan(declaration.init!) : declaration;
+      const indented = reindent(text, '', lineIndent(editor.code, span.start));
       if (declaration.type === 'VariableDeclarator') {
-        const value = outerSpan(declaration.init!);
-        editor.edits.overwrite(value.start, value.end, text);
+        editor.edits.overwrite(span.start, span.end, indented);
         return;
       }
       const id = declaration.id!.name;
-      const fn = /^(async\s+)?function\s*(\*)?\s*([\w$]*)\s*(?=[(<])/.exec(text);
+      const fn = /^(async\s+)?function\s*(\*)?\s*([\w$]*)\s*(?=[(<])/.exec(indented);
       if (fn && (!fn[3] || fn[3] === id)) {
         // Keep `export function name() {}` when the replacement is a compatible function.
         const prefix = `${fn[1] ? 'async ' : ''}function${fn[2] ? '*' : ''} ${id}`;
         editor.edits.overwrite(
           declaration.start,
           declaration.end,
-          prefix + text.slice(fn[0].length)
+          prefix + indented.slice(fn[0].length)
         );
         return;
       }
-      editor.edits.overwrite(declaration.start, declaration.end, `const ${id} = ${text};`);
+      editor.edits.overwrite(declaration.start, declaration.end, `const ${id} = ${indented};`);
     },
     rename: (member, key) => {
       const entry = entryOf(member);

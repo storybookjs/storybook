@@ -15,6 +15,7 @@ import {
   outerSpan,
   parseModule,
   parsePrintable,
+  placeableTextOf,
   restoreLineEndings,
   sourceOf,
   walk,
@@ -675,6 +676,16 @@ export const reindent = (source: string, from: string, to: string) => {
   return literals ? reindentLines(text, from, to, literals) : text;
 };
 
+// `text`, the source of a node at `start` in `code`, indented as if the node's line had no indent.
+export const detachedText = (code: string, start: number, text: string) =>
+  reindent(text, lineIndent(code, start), '');
+
+// `placeableTextOf` as `detachedText`, for a node of `get`, `parseExpression` or a file.
+export const detachedTextOf = (node: Node) => {
+  const text = placeableTextOf(node);
+  return detachedText(moduleOf(node)!.code, node.start, text);
+};
+
 const dedentSource = (editor: SourceEditor, start: number, end: number, from: string) => {
   const text = editor.code.slice(start, end);
   return from === '' || !text.includes('\n')
@@ -1206,19 +1217,20 @@ export const setImportSpecifiers = (
   }
 };
 
+// The lines of `text` are indented like the line of the code it replaces.
 export const replaceValue = (editor: SourceEditor, member: Property, text: string) => {
   editor.assertCurrent(member);
   const { code } = editor;
-  let span: Span = outerSpan(member.value);
-  let replacement = text;
+  const replacesMember = member.shorthand || member.method || member.kind !== 'init';
+  const span: Span = replacesMember ? member : outerSpan(member.value);
+  const indented = reindent(text, '', lineIndent(code, span.start));
+  let replacement = indented;
   if (member.shorthand) {
-    span = member;
-    replacement = `${editor.source(member.key)}: ${text}`;
-  } else if (member.method || member.kind !== 'init') {
-    span = member;
+    replacement = `${editor.source(member.key)}: ${indented}`;
+  } else if (replacesMember) {
     replacement =
-      methodFromFunction(text, keySource(editor, member)) ??
-      `${keySource(editor, member)}: ${text}`;
+      methodFromFunction(indented, keySource(editor, member)) ??
+      `${keySource(editor, member)}: ${indented}`;
   }
   // A text ending in a line comment takes the comma after the replaced code on its line before
   // the comment. The comma is removed as an edit of its own, so a removal of the next member can

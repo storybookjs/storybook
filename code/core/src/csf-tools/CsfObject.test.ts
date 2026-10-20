@@ -656,6 +656,60 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toBe(source);
   });
 
+  it('indents a replaced value like the member, keeping the comment above it', () => {
+    const csf = parse(
+      'export default {};\nexport const A = {\n  // Records the steps.\n  play: async () => {},\n};'
+    );
+    const [story] = csf.objects({ meta: false });
+
+    expect(story.set(['play'], parseExpression('async () => {\n  await x();\n}'))).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toBe(
+      'export default {};\nexport const A = {\n  // Records the steps.\n  play: async () => {\n    await x();\n  },\n};'
+    );
+  });
+
+  it('indents a value from get like the place it is set', () => {
+    const source = [
+      'export default {};',
+      'export const A = {',
+      '  play: async () => {',
+      '    await step(`one',
+      '  two`);',
+      '  },',
+      '};',
+      'export const B = { args: {} };',
+    ].join('\n');
+    const csf = parse(source);
+    const [a, b] = csf.objects({ meta: false });
+
+    expect(a.set(['play'], a.get(['play'])!)).toEqual({ ok: true, changed: true });
+    expect(a.transform(['play'], (value) => parseExpression(textOf(value)))).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toBe(source);
+
+    expect(b.set(['args', 'play'], a.get(['play'])!)).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toContain(
+      'export const B = { args: {\n  play: async () => {\n    await step(`one\n  two`);\n  },\n} };'
+    );
+  });
+
+  it('indents a value from the line it starts on, below its key', () => {
+    const csf = parse(
+      'export default {};\nexport const A = {\n  play:\n    async () => {\n      x();\n    },\n};\nexport const B = {\n  play: 1,\n};'
+    );
+    const [a, b] = csf.objects({ meta: false });
+
+    expect(b.set(['play'], a.get(['play'])!)).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toContain(
+      'export const B = {\n  play: async () => {\n    x();\n  },\n};'
+    );
+  });
+
   it('keeps the original source of nodes reused by a transformed value', () => {
     const csf = parse(`
       export default {

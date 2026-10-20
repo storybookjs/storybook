@@ -69,6 +69,34 @@ describe('ConfigFile mutations', () => {
     }
   );
 
+  it('keeps the layout of named exports that are copied, transformed or moved', () => {
+    const source =
+      'export const a = 1,\n  b = {\n    x: 1,\n  };\nexport const parameters = {\n  docs: {\n    a: 1,\n  },\n  other: 1,\n};';
+    const config = loadConfig(source).parse();
+
+    expect(config.set(['b'], config.get(['b'])!)).toEqual({ ok: true, changed: true });
+    expect(config.transform(['b'], (value) => parseExpression(textOf(value)))).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printConfig(config).code).toBe(source);
+
+    expect(config.move(['parameters', 'docs'], ['docs'])).toEqual({ ok: true, changed: true });
+    expect(printConfig(config).code).toContain('const _docs = {\n  a: 1,\n};');
+  });
+
+  it('indents a node of the file like the place it is set', () => {
+    const config = loadConfig('export default {\n  a: {\n    x: 1,\n  },\n  b: 1,\n};').parse();
+
+    expect(config.set(['b'], config.getFieldNode(['a']) as E.Expression)).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printConfig(config).code).toBe(
+      'export default {\n  a: {\n    x: 1,\n  },\n  b: {\n    x: 1,\n  },\n};'
+    );
+  });
+
   it('infers quotes and keeps the line endings of CRLF sources', () => {
     const source = [
       "import { definePreview } from '@storybook/react';",

@@ -420,6 +420,12 @@ describe('replaceValue', () => {
     expect(removedFirst.toString()).toBe(result);
   });
 
+  it('indents the lines of the text like the member, except inside literals', () => {
+    const editor = new SourceEditor(`export default {\n  a: 1,\n};`);
+    replaceValue(editor, firstMember(editor).members[0], 'f(() => {\n  x(`\n`);\n})');
+    expect(editor.toString()).toBe(`export default {\n  a: f(() => {\n    x(\`\n\`);\n  }),\n};`);
+  });
+
   it('takes the comma after the value before a line comment that ends the text', () => {
     const editor = new SourceEditor(`export default { a: 1, b: 2 };`);
     replaceValue(editor, firstMember(editor).members[0], 'x // c\n');

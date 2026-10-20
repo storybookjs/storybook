@@ -14,6 +14,8 @@ import {
 import {
   type SourceEditor,
   appendMembers,
+  detachedText,
+  detachedTextOf,
   groupMembers,
   keySource,
   prependMembers,
@@ -385,7 +387,7 @@ class CsfObjectEditor implements CsfObject {
   get(path: readonly string[]): CsfExpression | undefined {
     const root = this.rootNodeFor(path);
     if (root) {
-      return parseExpression(this.editor.source(root));
+      return parseExpression(detachedText(this.editor.code, root.start, this.editor.source(root)));
     }
     const found = this.getProperty(path);
     return found ? parseExpression(valueSource(this.editor, found)) : undefined;
@@ -439,7 +441,7 @@ class CsfObjectEditor implements CsfObject {
 
   private sourceFor(value: CsfValue | CsfExpression) {
     if (isNode(value) && moduleOf(value)) {
-      return placeableTextOf(value);
+      return detachedTextOf(value);
     }
     if (isAstLike(value)) {
       throw new Error(
@@ -494,7 +496,7 @@ class CsfObjectEditor implements CsfObject {
     if (!derived || derived === value) {
       return { ok: true, changed: false };
     }
-    parent.root.replaceValue(property, placeableTextOf(derived));
+    parent.root.replaceValue(property, detachedTextOf(derived));
     return this.commit(path);
   }
 

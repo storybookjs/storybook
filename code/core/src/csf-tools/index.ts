@@ -10,7 +10,7 @@ export type {
   CsfPath,
   CsfValue,
 } from './CsfObject.ts';
-export { printPath } from './CsfObject.ts';
+export { printCsfPath } from './CsfObject.ts';
 export * from './ConfigFile.ts';
 export * from './jsdoc.ts';
 export * from './enrichCsf.ts';

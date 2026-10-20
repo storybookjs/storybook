@@ -106,10 +106,6 @@ export interface ListRoot {
   replace(index: number, text: string): void;
 }
 
-export type Container = ObjectRoot | ListRoot;
-
-export const isListRoot = (container: Container): container is ListRoot => 'items' in container;
-
 export const listRoot = (
   editor: SourceEditor,
   node: E.ArrayExpression | E.CallExpression

@@ -113,7 +113,7 @@ for (const story of csf.objects()) {
 
 ### Elements and arguments
 
-A path is a list of keys and indexes. A string is a key of an object literal; a number is an item of the array or call the path reaches, an element or an argument, at its position in the source, where spreads and holes count. That is its index in `get(path).elements` or `get(path).arguments`, so a consumer finds an item with its own predicate and addresses it. `printPath` prints a path as diagnostics do, `parameters.msw.handlers[0]`, and a path of keys alone as `path.join('.')`.
+A path is a list of keys and indexes. A string is a key of an object literal; a number is an item of the array or call the path reaches, an element or an argument, at its position in the source, where spreads and holes count. That is its index in `get(path).elements` or `get(path).arguments`, so a consumer finds an item with its own predicate and addresses it. `printCsfPath` prints a path as diagnostics do, `parameters.msw.handlers[0]`, and a path of keys alone as `path.join('.')`.
 
 ```ts
 const addons = main.get(['addons']);

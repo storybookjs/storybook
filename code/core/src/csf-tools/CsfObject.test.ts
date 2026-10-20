@@ -12,7 +12,7 @@ import {
   type CsfMutationResult,
   type CsfObject,
   type CsfValue,
-  printPath,
+  printCsfPath,
 } from './CsfObject.ts';
 import {
   type E as ESTree,
@@ -1969,9 +1969,9 @@ describe('CsfObject element and argument paths', () => {
   };
 
   it('prints a path with its indexes', () => {
-    expect(printPath(['parameters', 'msw', 'handlers', 0])).toBe('parameters.msw.handlers[0]');
-    expect(printPath(['loaders', 0, 0])).toBe('loaders[0][0]');
-    expect(printPath(['parameters', 'a11y'])).toBe('parameters.a11y');
+    expect(printCsfPath(['parameters', 'msw', 'handlers', 0])).toBe('parameters.msw.handlers[0]');
+    expect(printCsfPath(['loaders', 0, 0])).toBe('loaders[0][0]');
+    expect(printCsfPath(['parameters', 'a11y'])).toBe('parameters.a11y');
   });
 
   it('reads an element at its position in the source, which spreads and holes take too', () => {

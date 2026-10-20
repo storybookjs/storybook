@@ -3,7 +3,7 @@ npx storybook@latest remove @storybook/addon-a11y
 ```
 
 ```shell renderer="common" packageManager="pnpm"
-pnpm --allow-build=esbuild dlx storybook@latest remove @storybook/addon-a11y
+pnpm dlx storybook@latest remove @storybook/addon-a11y
 ```
 
 ```shell renderer="common" packageManager="yarn"

@@ -3,7 +3,7 @@ npx storybook@latest doctor
 ```
 
 ```shell renderer="common" packageManager="pnpm"
-pnpm --allow-build=esbuild dlx storybook@latest doctor
+pnpm dlx storybook@latest doctor
 ```
 
 ```shell renderer="common" packageManager="yarn"

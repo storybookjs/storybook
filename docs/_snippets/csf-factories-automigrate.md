@@ -3,7 +3,7 @@ npx storybook automigrate csf-factories
 ```
 
 ```shell renderer="common" packageManager="pnpm"
-pnpm --allow-build=esbuild dlx storybook automigrate csf-factories
+pnpm dlx storybook automigrate csf-factories
 ```
 
 ```shell renderer="common" packageManager="yarn"

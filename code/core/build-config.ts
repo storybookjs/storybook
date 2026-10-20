@@ -187,6 +187,10 @@ const config: BuildEntries = {
         entryPoint: './src/theming/create.ts',
       },
       {
+        exportEntries: ['./theming/internal'],
+        entryPoint: './src/theming/internal.ts',
+      },
+      {
         exportEntries: ['./internal/components'],
         entryPoint: './src/components/index.ts',
       },

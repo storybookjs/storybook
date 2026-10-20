@@ -259,6 +259,11 @@
       "code": "./src/theming/create.ts",
       "default": "./dist/theming/create.js"
     },
+    "./theming/internal": {
+      "types": "./dist/theming/internal.d.ts",
+      "code": "./src/theming/internal.ts",
+      "default": "./dist/theming/internal.js"
+    },
     "./viewport": {
       "types": "./dist/viewport/index.d.ts",
       "code": "./src/viewport/index.ts",

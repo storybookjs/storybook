@@ -37,6 +37,7 @@ export type CsfObjectTarget =
 
 export type CsfMutationDiagnosticCode =
   | 'unsupported-initializer'
+  | 'aliased-story'
   | 'ambiguous-binding'
   | 'duplicate-field'
   | 'spread-field'

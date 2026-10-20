@@ -503,6 +503,26 @@ const storyRoot = (
   };
 };
 
+// The story an alias such as `export const Secondary = Primary` shares its object with, through
+// other stories that alias it.
+const aliasedStory = (csf: CsfFile, stories: StoryBinding[], node: Node | undefined) => {
+  const seen = new Set<string>();
+  for (let current = node; current?.type === 'Identifier' && !seen.has(current.name);) {
+    const { name } = current;
+    seen.add(name);
+    const story = stories.find(({ localName }) => localName === name);
+    if (!story) {
+      return undefined;
+    }
+    const init = variableInit(csf.editor.scopes.program.bindings.get(name));
+    current = init ? unwrapExpression(init) : undefined;
+    if (current?.type !== 'Identifier') {
+      return story;
+    }
+  }
+  return undefined;
+};
+
 // A story without an object literal is a function or a bound template, which its assignments
 // annotate. Any other value may be shared, so annotating it could change other stories.
 const isAnnotatable = (node: Node | undefined) =>
@@ -556,6 +576,15 @@ const discoverStories = (
       return [{ target: storyTarget(binding), root: literalRoot(csf.editor, object) }];
     }
     if (assignments.length === 0 && !isAnnotatable(node)) {
+      const aliased = aliasedStory(csf, bindings, node);
+      if (aliased) {
+        return reject({
+          code: 'aliased-story',
+          node: node!,
+          path: [],
+          message: `Cannot mutate story ${binding.exportName} because it is an alias of story ${aliased.exportName}`,
+        });
+      }
       return reject({
         code: 'unsupported-initializer',
         node: node ?? declaration,

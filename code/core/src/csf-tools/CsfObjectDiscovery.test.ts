@@ -797,3 +797,105 @@ Primary.args = {};
     });
   });
 });
+
+describe('CsfFile.storyObject', () => {
+  it('finds a CSF2 story, whose annotation assignments are its fields', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      const Template = (args) => null;
+      export const Basic = Template.bind({});
+      Basic.args = { label: 'Hi' };
+    `);
+
+    const found = csf.storyObject('Basic');
+
+    expect(found).toEqual({ ok: true, object: expect.anything() });
+    const story = found?.ok ? found.object : undefined;
+    expect(story?.target).toEqual({ kind: 'story', exportName: 'Basic', localName: 'Basic' });
+    expect(story?.set(['args', 'label'], 'Bye')).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toContain(`Basic.args = { label: 'Bye' };`);
+    expect(csf.changed).toBe(true);
+  });
+
+  it('finds a factory story', () => {
+    const csf = parse(`
+      import preview from './preview';
+      const meta = preview.meta({ title: 'Example' });
+      export const Basic = meta.story({ args: { label: 'Hi' } });
+    `);
+
+    const found = csf.storyObject('Basic');
+
+    expect(found?.ok && found.object.getValue(['args'])).toEqual({ label: 'Hi' });
+  });
+
+  it('finds a story by its export name, not its local name', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      const Local = { args: { label: 'Hi' } };
+      export { Local as Basic };
+    `);
+
+    expect(csf.stories.map(({ exportName, localName }) => ({ exportName, localName }))).toEqual([
+      { exportName: 'Basic', localName: 'Local' },
+    ]);
+    expect(csf.storyObject('Local')).toBeUndefined();
+    const found = csf.storyObject('Basic');
+    expect(found?.ok && found.object.target).toEqual({
+      kind: 'story',
+      exportName: 'Basic',
+      localName: 'Local',
+    });
+  });
+
+  it('returns the diagnostic of a story it cannot edit, and adds only that one', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      export const Made = makeStory();
+      export const Other = makeStory();
+      export const Basic = {};
+    `);
+
+    const found = csf.storyObject('Made');
+
+    expect(found).toEqual({
+      ok: false,
+      diagnostic: expect.objectContaining({
+        code: 'unsupported-initializer',
+        target: { kind: 'story', exportName: 'Made', localName: 'Made' },
+      }),
+    });
+    expect(csf.mutationDiagnostics).toEqual([found?.ok === false && found.diagnostic]);
+    expect(csf.storyObject('Basic')?.ok).toBe(true);
+  });
+
+  it('refuses a second export of the same story, which would change both', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      export const Basic = { args: { label: 'Hi' } };
+      export { Basic as Copy };
+    `);
+
+    expect(csf.storyObject('Basic')?.ok).toBe(true);
+    expect(csf.storyObject('Copy')).toEqual({
+      ok: false,
+      diagnostic: expect.objectContaining({
+        code: 'ambiguous-binding',
+        message: 'Cannot mutate Copy without changing Basic, which exports the same story',
+      }),
+    });
+  });
+
+  it('returns undefined for an export that is not a story', () => {
+    const csf = parse(`
+      export default { title: 'Example', excludeStories: ['helper'] };
+      export const helper = {};
+      export const Basic = {};
+    `);
+
+    expect(csf.storyObject('helper')).toBeUndefined();
+    expect(csf.storyObject('Missing')).toBeUndefined();
+    expect(csf.storyObject('toString')).toBeUndefined();
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+});

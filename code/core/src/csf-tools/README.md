@@ -15,6 +15,15 @@ It can parse MDX into CSF.
 
 `CsfFile.objects()` returns one `CsfObject` editor per mutable object it can prove safe to edit: the meta and each story export.
 `{ meta, stories }` narrows what is discovered; both are included by default.
+`CsfFile.storyObject(exportName)` finds one story: `{ ok: true, object }` with its editor, or `{ ok: false, diagnostic }` with the discovery diagnostic that says why it has none, which is added to `mutationDiagnostics` like those of `objects()`. It is `undefined` when the file has no story of that name. Each of `CsfFile.stories` has its `exportName`, `B` for `export { A as B }`. A story exported twice, such as `export { Basic as Copy }` next to `export const Basic`, is edited through its first export, so `storyObject('Copy')` is refused: an edit would change `Basic` too.
+
+```ts
+const found = csf.storyObject('Primary');
+if (!found?.ok) {
+  throw new Error(found?.diagnostic.message ?? 'No story Primary');
+}
+found.object.set(['args', 'label'], 'Hi');
+```
 
 Each editor reads and writes static property paths with `get`, `getValue`, `inspect`, `set`, `transform`, `remove`, `rename`, `move`, and `group`.
 `get` returns an AST expression; `getValue` reads plain values from literals, nested arrays and objects, and local constants without executing code. Reads never return a partially decoded object.
@@ -91,9 +100,19 @@ if (config.changed && config.mutationDiagnostics.length === 0) {
 
 `appendValueToArray`, `appendNodeToArray`, and `removeEntryFromArray` return a `CsfMutationResult` like the editor operations. A field that is not an array literal leaves the file as it is and adds an `unsupported-value` diagnostic; a missing field or entry is a no-op for `removeEntryFromArray`.
 
-`setImport`, `setRequireImport`, and `removeImport` look at every import or top-level `require` of the module, and take a named binding as `'name'` or `'name as alias'`. `setImport` and `setRequireImport` skip a binding the module already provides under that local name. A binding that only an `import type` provides becomes a value import; other type-only imports are left alone. `removeImport` removes every import of a plain name, whatever its local name, but only the matching import of an alias. Added statements follow the file's quotes and semicolons. Import helper edits are not tracked by `changed`.
-
 Discovery rejects shared or reassigned bindings, unresolved re-exports, and conditional or repeated CommonJS assignments. Inline object methods and exported function declarations can be transformed as function expressions while retaining their declaration form. Path edits use the same spread, duplicate-key, occupied-destination, and dynamic-value checks as story edits. Unsupported input produces diagnostics without rewriting that input.
+
+## Editing imports
+
+`CsfFile` and `ConfigFile` both have `setImport` and `removeImport`, and `ConfigFile` also `setRequireImport`. They look at every import or top-level `require` of the module, and take a named binding as `'name'` or `'name as alias'`. `setImport` and `setRequireImport` skip a binding the module already provides under that local name. A binding that only an `import type` provides becomes a value import; other type-only imports are left alone. `removeImport` removes every import of a plain name, whatever its local name, but only the matching import of an alias. Added statements follow the file's quotes and semicolons.
+
+They return a `CsfMutationResult`, set `changed` when they edit the file, and roll back with the transaction they run in. A removal that leaves a story file the CSF indexer rejects, such as `export { Primary }` without the import of `Primary`, is refused with an `invalid-csf` diagnostic whose target is `{ kind: 'file' }`.
+
+```ts
+const csf = loadCsf(source, { makeTitle }).parse();
+csf.setImport(['expect', 'userEvent'], 'storybook/test');
+// import { expect, userEvent } from 'storybook/test';
+```
 
 ## Transforming method call arguments
 

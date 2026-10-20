@@ -20,4 +20,6 @@ export const frameworkToRendererMap: Record<string, string> = {
   '@storybook/web-components-vite': '@storybook/web-components',
 
   '@storybook/html-vite': '@storybook/html',
+
+  'storybook-solidjs-vite': 'storybook-solidjs-vite',
 };

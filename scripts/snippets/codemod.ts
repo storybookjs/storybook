@@ -144,6 +144,10 @@ function buildSvelteCsfNextFence(mirror: SvelteFence, language: string): string[
 
   for (const line of mirror.contentLines) {
     let next = line;
+    // The placeholder comment belongs to the kept Svelte CSF fence only, not the generated one
+    if (next.trim() === yourFrameworkComment) {
+      continue;
+    }
     if (!scriptTagFound && /^\s*<script module( lang="ts")?>$/.test(next)) {
       scriptTagFound = true;
       if (language === 'ts') {

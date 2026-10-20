@@ -94,7 +94,8 @@ Unlike regular CSF, when using Svelte CSF, you cannot use [`args`](./args.mdx) f
 
 ```svelte title="Alert.stories.svelte"
 <script module>
-  import { defineMeta } from '@storybook/svelte-vite';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Alert from './Alert.svelte';
 
@@ -167,7 +168,8 @@ You can re-use the same render function across stories by applying it at the met
 
 ```svelte title="Button.stories.svelte"
 <script module>
-  import { defineMeta } from '@storybook/svelte-vite';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
   import Button from './Button.svelte';
 
   const { Story } = defineMeta({

@@ -255,3 +255,17 @@ export const carriedSpread = (
     rest.map((key, index) => printMemberAccess(key, quote, index > 0 || !spread.object)).join('');
   return into === 'array' ? `...(${expression} ?? [])` : `...${expression}`;
 };
+
+// The element or argument at a position of a list: `null` for a hole, `undefined` past its end.
+// What a spread's position holds is only known at runtime.
+export const lookupElement = (
+  items: readonly (E.Expression | E.SpreadElement | null)[],
+  index: number
+):
+  | { ok: true; element?: E.Expression | null }
+  | { ok: false; code: CsfMutationDiagnosticCode; node: Node } => {
+  const item = items[index];
+  return item?.type === 'SpreadElement'
+    ? { ok: false, code: 'spread-field', node: item }
+    : { ok: true, element: item };
+};

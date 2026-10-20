@@ -5,13 +5,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadCsf, printCsf } from './CsfFile.ts';
 import type { ConfigFile } from './ConfigFile.ts';
 import { loadConfig, printConfig } from './ConfigFile.ts';
-import type {
-  CsfExpression,
-  CsfInspection,
-  CsfMutationDiagnosticCode,
-  CsfMutationResult,
-  CsfObject,
-  CsfValue,
+import {
+  type CsfExpression,
+  type CsfInspection,
+  type CsfMutationDiagnosticCode,
+  type CsfMutationResult,
+  type CsfObject,
+  type CsfValue,
+  printPath,
 } from './CsfObject.ts';
 import {
   type E as ESTree,
@@ -1957,5 +1958,250 @@ describe('CsfObject.node', () => {
 
     expect(config.node).toBeUndefined();
     expect(config.mutationDiagnostics).toEqual([]);
+  });
+});
+
+describe('CsfObject element and argument paths', () => {
+  const edit = (source: string, mutate: (config: ConfigFile) => unknown) => {
+    const config = loadConfig(source).parse();
+    expect(mutate(config)).toEqual({ ok: true, changed: true });
+    return printConfig(config).code;
+  };
+
+  it('prints a path with its indexes', () => {
+    expect(printPath(['parameters', 'msw', 'handlers', 0])).toBe('parameters.msw.handlers[0]');
+    expect(printPath(['loaders', 0, 0])).toBe('loaders[0][0]');
+    expect(printPath(['parameters', 'a11y'])).toBe('parameters.a11y');
+  });
+
+  it('reads an element at its position in the source, which spreads and holes take too', () => {
+    const config = loadConfig(
+      "export default { addons: [...base, 'a', , getAbsolutePath('b')] };"
+    ).parse();
+    const addons = config.get(['addons']) as ESTree.ArrayExpression;
+
+    expect(addons.elements.map((element) => element && textOf(element))).toEqual([
+      '...base',
+      "'a'",
+      null,
+      "getAbsolutePath('b')",
+    ]);
+    expect(config.inspect(['addons', 0])).toMatchObject({
+      kind: 'unreadable',
+      diagnostic: { code: 'spread-field', path: ['addons', 0] },
+    });
+    expect(textOf(config.get(['addons', 1])!)).toBe("'a'");
+    expect(config.inspect(['addons', 2])).toEqual({ kind: 'missing' });
+    expect(config.getValue(['addons', 2])).toBeUndefined();
+    expect(textOf(config.get(['addons', 3])!)).toBe("getAbsolutePath('b')");
+    expect(config.getValue(['addons', 3, 0])).toBe('b');
+    expect(config.inspect(['addons', 4])).toEqual({ kind: 'missing' });
+    expect(config.inspect(['addons', 4, 0])).toEqual({ kind: 'missing' });
+    expect(config.mutationDiagnostics).toEqual([]);
+  });
+
+  it('reads the arguments of a story loader and the members of an element', () => {
+    const csf = parse(
+      "export default {};\nexport const A = { loaders: [mswLoader({ quiet: true })], args: { items: [{ id: 'a' }] } };"
+    );
+    const [story] = csf.objects({ meta: false });
+
+    expect(story.getValue(['loaders', 0, 0, 'quiet'])).toBe(true);
+    expect(story.getValue(['args', 'items', 0, 'id'])).toBe('a');
+    expect(story.inspect(['loaders', 0, 1])).toEqual({ kind: 'missing' });
+  });
+
+  it('refuses an index into an object and a key into a list', () => {
+    const config = loadConfig("export default { parameters: { a: 1 }, addons: ['a'] };").parse();
+
+    expect(config.inspect([0])).toMatchObject({ diagnostic: { code: 'unsupported-member' } });
+    expect(config.inspect(['parameters', 0])).toMatchObject({
+      diagnostic: { code: 'unsupported-member' },
+    });
+    expect(config.inspect(['addons', 'length'])).toMatchObject({
+      diagnostic: { code: 'unsupported-member' },
+    });
+    expect(config.set(['parameters', 0], 'x')).toMatchObject({
+      ok: false,
+      diagnostic: { code: 'unsupported-member', path: ['parameters', 0] },
+    });
+    expect(config.set(['addons', -1], 'x')).toMatchObject({
+      diagnostic: { code: 'unsupported-member' },
+    });
+    expect(config.remove(['addons', 0.5])).toMatchObject({
+      diagnostic: { code: 'unsupported-member' },
+    });
+    expect(config.changed).toBe(false);
+  });
+
+  it('replaces an element in place, keeping the layout of its array', () => {
+    expect(
+      edit("export default {\n  addons: [\n    'a',\n    'b',\n  ],\n};", (config) =>
+        config.set(['addons', 1], { name: 'b', options: { x: 1 } })
+      )
+    ).toBe(
+      "export default {\n  addons: [\n    'a',\n    { name: 'b', options: { x: 1 } },\n  ],\n};"
+    );
+    expect(
+      edit("export default { framework: getAbsolutePath('react') };", (config) =>
+        config.set(['framework', 0], '@storybook/react-vite')
+      )
+    ).toBe("export default { framework: getAbsolutePath('@storybook/react-vite') };");
+  });
+
+  it('indents a multi-line element like the line of the element it replaces', () => {
+    expect(
+      edit('export default {\n  loaders: [\n    a,\n  ],\n};', (config) =>
+        config.set(['loaders', 0], parseExpression('async () => {\n  await a();\n}'))
+      )
+    ).toBe('export default {\n  loaders: [\n    async () => {\n      await a();\n    },\n  ],\n};');
+  });
+
+  it.each([
+    ['[a, , b]', '[a, x, b]'],
+    ['[a,,b]', '[a,x,b]'],
+    ['[, b]', '[x, b]'],
+    ['[a, ,]', '[a, x,]'],
+  ])('fills the hole of %s without a stray space', (array, filled) => {
+    expect(
+      edit(`export default { addons: ${array} };`, (config) =>
+        config.set(['addons', array.startsWith('[,') ? 0 : 1], parseExpression('x'))
+      )
+    ).toBe(`export default { addons: ${filled} };`);
+  });
+
+  it('takes the comma after an element for a text ending in a line comment, like a field', () => {
+    const value = parseExpression("'x' // c");
+
+    expect(
+      edit("export default {\n  addons: [\n    'a',\n    'b',\n  ],\n};", (config) =>
+        config.set(['addons', 0], value)
+      )
+    ).toBe("export default {\n  addons: [\n    'x', // c\n    'b',\n  ],\n};");
+    expect(
+      edit("export default {\n  a: 'a',\n  b: 'b',\n};", (config) => config.set(['a'], value))
+    ).toBe("export default {\n  a: 'x', // c\n  b: 'b',\n};");
+    expect(
+      edit("export default {\n  addons: [\n    'a',\n    'b',\n  ],\n};", (config) =>
+        config.transform(['addons', 0], () => value)
+      )
+    ).toBe("export default {\n  addons: [\n    'x', // c\n    'b',\n  ],\n};");
+  });
+
+  it('transforms an argument from its current expression', () => {
+    expect(
+      edit('export default { loaders: [mswLoader(setup)] };', (config) =>
+        config.transform(['loaders', 0, 0], (setup) =>
+          parseExpression(`{ ...${placeableTextOf(setup)}, quiet: true }`)
+        )
+      )
+    ).toBe('export default { loaders: [mswLoader({ ...setup, quiet: true })] };');
+  });
+
+  it('leaves a missing element alone on transform and remove, and refuses to set it', () => {
+    const source = "export default { addons: ['a'] };";
+    const config = loadConfig(source).parse();
+
+    expect(config.transform(['addons', 1], () => parseExpression('x'))).toEqual({
+      ok: true,
+      changed: false,
+    });
+    expect(config.remove(['addons', 1])).toEqual({ ok: true, changed: false });
+    expect(config.remove(['addons', 1, 'name'])).toEqual({ ok: true, changed: false });
+    expect(config.set(['addons', 1], 'x')).toMatchObject({
+      ok: false,
+      diagnostic: {
+        code: 'unsupported-member',
+        message: 'Cannot create addons[1]: an index addresses an element or argument that exists',
+      },
+    });
+    expect(config.set(['addons', 1, 'name'], 'x')).toMatchObject({
+      diagnostic: { code: 'unsupported-member' },
+    });
+    expect(config.set(['loaders', 0], 'x')).toMatchObject({
+      diagnostic: { code: 'unsupported-member', path: ['loaders', 0] },
+    });
+    expect(config.set(['parameters', 'loaders', 0, 'name'], 'x')).toMatchObject({
+      diagnostic: { code: 'unsupported-member' },
+    });
+    expect(config.changed).toBe(false);
+    expect(printConfig(config).code).toBe(source);
+  });
+
+  it('removes one element, keeping an array it empties', () => {
+    expect(
+      edit("export default { addons: ['a', 'b', 'c'] };", (config) => config.remove(['addons', 1]))
+    ).toBe("export default { addons: ['a', 'c'] };");
+    expect(
+      edit("export default { parameters: { tags: ['a'] } };", (config) =>
+        config.remove(['parameters', 'tags', 0])
+      )
+    ).toBe('export default { parameters: { tags: [] } };');
+    expect(
+      edit('export default { loaders: [{ quiet: true }] };', (config) =>
+        config.remove(['loaders', 0, 'quiet'])
+      )
+    ).toBe('export default { loaders: [{}] };');
+    expect(
+      edit("export default { framework: getAbsolutePath('react') };", (config) =>
+        config.remove(['framework', 0])
+      )
+    ).toBe('export default { framework: getAbsolutePath() };');
+  });
+
+  it('removes a hole with its slot', () => {
+    expect(
+      edit('export default { addons: [a, , b] };', (config) => config.remove(['addons', 1]))
+    ).toBe('export default { addons: [a, b] };');
+  });
+
+  it('edits the elements before and after a spread, but not the spread', () => {
+    const source = 'export default { addons: [a, ...base, b] };';
+
+    expect(edit(source, (config) => config.set(['addons', 0], parseExpression('x')))).toBe(
+      'export default { addons: [x, ...base, b] };'
+    );
+    expect(edit(source, (config) => config.remove(['addons', 2]))).toBe(
+      'export default { addons: [a, ...base] };'
+    );
+    expect(
+      edit(source, (config) => config.transform(['addons', 2], () => parseExpression('y')))
+    ).toBe('export default { addons: [a, ...base, y] };');
+
+    const config = loadConfig(source).parse();
+    expect(config.set(['addons', 1], 'x')).toMatchObject({
+      diagnostic: { code: 'spread-field', path: ['addons', 1] },
+    });
+    expect(config.remove(['addons', 1])).toMatchObject({ diagnostic: { code: 'spread-field' } });
+    expect(printConfig(config).code).toBe(source);
+  });
+
+  it('renames, moves and groups only properties, also inside an element', () => {
+    const source = 'export default { loaders: [{ a: 1 }], b: 2 };';
+    const config = loadConfig(source).parse();
+
+    expect(config.rename(['loaders', 0], 'first')).toMatchObject({
+      diagnostic: { code: 'unsupported-member', path: ['loaders', 0] },
+    });
+    expect(config.move(['b'], ['loaders', 1])).toMatchObject({
+      diagnostic: { code: 'unsupported-member', path: ['loaders', 1] },
+    });
+    expect(config.move(['b'], ['missing', 0, 'b'])).toMatchObject({
+      diagnostic: { code: 'unsupported-member' },
+    });
+    expect(config.group(['loaders', 0], ['b'])).toMatchObject({
+      diagnostic: { code: 'unsupported-member' },
+    });
+    expect(printConfig(config).code).toBe(source);
+
+    expect(edit(source, (config) => config.rename(['loaders', 0, 'a'], 'c'))).toBe(
+      'export default { loaders: [{ c: 1 }], b: 2 };'
+    );
+    expect(edit(source, (config) => config.move(['b'], ['loaders', 0, 'b']))).toBe(
+      'export default { loaders: [{ a: 1, b: 2 }] };'
+    );
+    expect(edit(source, (config) => config.group(['loaders', 0, 'g'], ['a']))).toBe(
+      'export default { loaders: [{ g: { a: 1 } }], b: 2 };'
+    );
   });
 });

@@ -15,6 +15,7 @@ import {
   type CsfObject,
   type CsfObjectEditor,
   type CsfObjectHost,
+  type CsfPath,
   type CsfValue,
   createCsfObject,
 } from './CsfObject.ts';
@@ -257,7 +258,7 @@ export class ConfigFile implements CsfObject {
    * object.get(['missing']); // undefined
    * ```
    */
-  get(path: readonly string[]): CsfExpression | undefined {
+  get(path: CsfPath): CsfExpression | undefined {
     const reader = this._reader();
     return reader.ok ? reader.object.get(path) : undefined;
   }
@@ -274,7 +275,7 @@ export class ConfigFile implements CsfObject {
    * config.inspect(['args', 'size']).kind; // 'unreadable'
    * ```
    */
-  inspect(path: readonly string[]): CsfInspection {
+  inspect(path: CsfPath): CsfInspection {
     const reader = this._reader();
     return reader.ok
       ? reader.object.inspect(path)
@@ -293,7 +294,7 @@ export class ConfigFile implements CsfObject {
    * object.getValue(['missing']); // undefined
    * ```
    */
-  getValue(path: readonly string[]): CsfValue {
+  getValue(path: CsfPath): CsfValue {
     const reader = this._reader();
     return reader.ok ? reader.object.getValue(path) : undefined;
   }
@@ -309,7 +310,7 @@ export class ConfigFile implements CsfObject {
    * object.getValue(['parameters']); // { a11y: { test: 'todo', enabled: true } }
    * ```
    */
-  set(path: readonly string[], value: CsfValue<CsfExpression>): CsfMutationResult {
+  set(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
     return this._mutate((object) => object.set(path, value));
   }
 
@@ -327,7 +328,7 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   transform(
-    path: readonly string[],
+    path: CsfPath,
     derive: (value: CsfExpression) => CsfExpression | undefined
   ): CsfMutationResult {
     return this._mutate((object) => object.transform(path, derive));
@@ -344,7 +345,7 @@ export class ConfigFile implements CsfObject {
    * object.remove(['parameters']); // { ok: true, changed: false }
    * ```
    */
-  remove(path: readonly string[]): CsfMutationResult {
+  remove(path: CsfPath): CsfMutationResult {
     return this._mutate((object) => object.remove(path));
   }
 
@@ -359,7 +360,7 @@ export class ConfigFile implements CsfObject {
    * object.getValue(['a11y']); // { context: '#root' }
    * ```
    */
-  rename(path: readonly string[], name: string): CsfMutationResult {
+  rename(path: CsfPath, name: string): CsfMutationResult {
     return this._mutate((object) => object.rename(path, name));
   }
 
@@ -376,7 +377,7 @@ export class ConfigFile implements CsfObject {
    * object.getValue(['globals']); // undefined
    * ```
    */
-  move(from: readonly string[], to: readonly string[]): CsfMutationResult {
+  move(from: CsfPath, to: CsfPath): CsfMutationResult {
     return this._mutate((object) => object.move(from, to));
   }
 
@@ -392,7 +393,7 @@ export class ConfigFile implements CsfObject {
    * object.getValue(['showNav']); // undefined
    * ```
    */
-  group(path: readonly string[], names: readonly string[]): CsfMutationResult {
+  group(path: CsfPath, names: readonly string[]): CsfMutationResult {
     return this._mutate((object) => object.group(path, names));
   }
 

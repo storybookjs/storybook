@@ -773,6 +773,34 @@ describe('ConfigFile', () => {
     });
   });
 
+  describe('element paths', () => {
+    it('addresses the elements of a named export like those of a default export field', () => {
+      const config = loadConfig("export const addons = ['a', 'b', 'c'];").parse();
+
+      expect(config.getValue(['addons', 1])).toBe('b');
+      expect(config.set(['addons', 0], 'x')).toEqual({ ok: true, changed: true });
+      expect(config.remove(['addons', 1])).toEqual({ ok: true, changed: true });
+      expect(printConfig(config).code).toBe("export const addons = ['x', 'c'];");
+    });
+
+    it('edits the elements of a constant that only the config refers to', () => {
+      const single = loadConfig("const addons = ['a'];\nexport default { addons };").parse();
+
+      expect(single.set(['addons', 0], 'x')).toEqual({ ok: true, changed: true });
+      expect(printConfig(single).code).toBe("const addons = ['x'];\nexport default { addons };");
+
+      const source = "const addons = ['a'];\nexport default { addons, other: addons };";
+      const shared = loadConfig(source).parse();
+
+      expect(shared.getValue(['addons', 0])).toBe('a');
+      expect(shared.set(['addons', 0], 'x')).toMatchObject({
+        ok: false,
+        diagnostic: { code: 'unsupported-member', path: ['addons', 0] },
+      });
+      expect(printConfig(shared).code).toBe(source);
+    });
+  });
+
   describe('appendToArray', () => {
     it('missing export', () => {
       expect(

@@ -1622,11 +1622,13 @@ export const replaceSpan = (editor: SourceEditor, span: Span, text: string) => {
   const comma = comments.length === 0 && code[end] === ',' ? end + 1 : undefined;
   const takesComma = comma !== undefined && endsInLineComment(text);
   const to = takesComma ? comma : span.end;
-  editor.edits.overwrite(
-    span.start,
-    span.end,
-    withComma(text, takesComma ? ',' : '', lineBreakAt(code, to))
-  );
+  const replacement = withComma(text, takesComma ? ',' : '', lineBreakAt(code, to));
+  if (span.start === span.end) {
+    // A hole, which the text fills in front of its comma.
+    editor.edits.appendLeft(span.start, replacement);
+  } else {
+    editor.edits.overwrite(span.start, span.end, replacement);
+  }
   if (takesComma) {
     if (end > span.end) {
       editor.edits.remove(span.end, end);

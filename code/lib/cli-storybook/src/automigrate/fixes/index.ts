@@ -5,6 +5,7 @@ import { angularViteRemoveCompodoc } from './angular-vite-remove-compodoc.ts';
 import { webComponentsRuntimeManifest } from './web-components-runtime-manifest.ts';
 import { csfNextMockedArgs } from './csf-next-mocked-args.ts';
 import { addonSvelteCsfToCore } from './addon-svelte-csf-to-core.ts';
+import { addonThemesJsxProvider } from './addon-themes-jsx-provider.ts';
 import { argtypesDefaultValue } from './argtypes-default-value.ts';
 import { componentSubtitle } from './component-subtitle.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
@@ -39,6 +40,7 @@ export const allFixes: Fix[] = [
   webComponentsRuntimeManifest,
   reactViteToTanstackReact,
   addonSvelteCsfToCore,
+  addonThemesJsxProvider,
   wrapGetAbsolutePath,
   storybookPackageNameConflict,
   storySortToMain,

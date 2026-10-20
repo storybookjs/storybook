@@ -777,6 +777,8 @@ Install the React package beside the addon and change the import:
 +import { withThemeFromJSXProvider } from '@storybook/addon-themes-react';
 ```
 
+`storybook automigrate` rewrites named imports, `export { ... } from` re-exports, `require` destructuring, and `import('@storybook/addon-themes').withThemeFromJSXProvider` type queries for `withThemeFromJSXProvider` and `ProviderStrategyConfiguration`. It adds `@storybook/addon-themes-react` as a devDependency and does not add the package to `addons`. A default or namespace import is left unchanged, so `addonThemes.withThemeFromJSXProvider` still has to become a named import by hand.
+
 An import that also names `withThemeByClassName`, `withThemeByDataAttribute`, or `DecoratorHelpers` keeps those names on `@storybook/addon-themes`. `export * from '@storybook/addon-themes'` no longer re-exports the provider decorator. Add a named re-export from `@storybook/addon-themes-react` when a barrel still needs it.
 
 CSF Next code that called `addonThemes.withThemeFromJSXProvider` imports the decorator by name. The default export of `@storybook/addon-themes` is the preview factory:

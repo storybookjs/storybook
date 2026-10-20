@@ -25,6 +25,7 @@ import {
   unwrapExpression,
 } from './estree/ast.ts';
 import {
+  type Added,
   type Dependency,
   type SourceEditor,
   type Written,
@@ -460,7 +461,7 @@ class Editor implements CsfObject {
 
   get node() {
     const node = this.host.root()?.node;
-    if (!node || !this.pending([node])) {
+    if (!node || !isPendingAt(this.editor, [node])) {
       return node;
     }
     try {
@@ -526,7 +527,7 @@ class Editor implements CsfObject {
       },
     });
     const value = readValue(tracking, found.expression);
-    if (this.pending(followed)) {
+    if (isPendingAt(this.editor, followed)) {
       try {
         this.settle();
       } catch (error) {
@@ -682,14 +683,13 @@ class Editor implements CsfObject {
     }
     const items = listRoot(this.editor, list);
     const texts = [text()];
-    const item = Symbol('item');
-    const key = end === 'append' ? item : undefined;
-    if (this.pending([...ends(list), ...this.gaps(items.gaps(), key, texts)])) {
+    const added = end === 'append' ? { into: list, key: Symbol('item') } : undefined;
+    if (isPendingAt(this.editor, [...ends(list), ...this.gaps(items.gaps(), added, texts)])) {
       this.settle();
       return this.addItem(path, value, end);
     }
-    if (key) {
-      adding(key, () => items.append(texts));
+    if (added) {
+      adding(this.editor, added, () => items.append(texts));
     } else {
       items.prepend(texts);
     }
@@ -897,7 +897,7 @@ class Editor implements CsfObject {
     const read = parent.properties.filter(
       (property) => property.type !== 'SpreadElement' && staticKey(property) === group
     );
-    if (this.pending([...this.members(parent), ...moved, ...read])) {
+    if (isPendingAt(this.editor, [...this.members(parent), ...moved, ...read])) {
       this.settle();
       return this.groupValues(path, names);
     }
@@ -1003,7 +1003,7 @@ class Editor implements CsfObject {
         }
       }
       const into = literalRoot(this.editor, value);
-      if (this.pending(this.members(into))) {
+      if (isPendingAt(this.editor, this.members(into))) {
         this.settle();
         return this.groupValues(path, names);
       }
@@ -1064,7 +1064,12 @@ class Editor implements CsfObject {
       if (!lookupProperty(ancestor.parent.properties, ancestor.key, 'remove').ok) {
         return;
       }
-      if (this.pending([ancestor.property.key, ...this.gaps(ancestor.parent.members?.().gaps)])) {
+      if (
+        isPendingAt(this.editor, [
+          ancestor.property.key,
+          ...this.gaps(ancestor.parent.members?.().gaps),
+        ])
+      ) {
         // Committed, the emptied object is looked up again at the same depth.
         this.settle();
         depth++;
@@ -1138,7 +1143,12 @@ class Editor implements CsfObject {
         resolved = !last && element ? follow(element) : undefined;
         // An item added or removed before it moves a position, so a list's gaps always count.
         const at = element && { whole: outerSpan(element), value: outerSpan(element) };
-        if (this.pending([...parent.gaps(), ...this.dependencies(at, purpose, [], resolved)])) {
+        if (
+          isPendingAt(this.editor, [
+            ...parent.gaps(),
+            ...this.dependencies(at, purpose, [], resolved),
+          ])
+        ) {
           return CROSSED;
         }
         if (lookup.ok === false) {
@@ -1162,8 +1172,9 @@ class Editor implements CsfObject {
         if (!property) {
           // A pending edit may have added the key; one that creates it reads the spreads too.
           const creates = lookup.ok && purpose !== 'read' && purpose !== 'remove';
-          const keyed = this.members(parent).map(({ start, end }) => ({ start, end, about: key }));
-          if (this.pending([...keyed, ...(creates ? this.spreads(parent) : [])])) {
+          const about = { into: this.owner(parent), key };
+          const keyed = this.members(parent).map(({ start, end }) => ({ start, end, about }));
+          if (isPendingAt(this.editor, [...keyed, ...(creates ? this.spreads(parent) : [])])) {
             return CROSSED;
           }
           return lookup.ok ? { ok: true, kind: 'missing-key', parent, missing: index } : lookup;
@@ -1174,8 +1185,8 @@ class Editor implements CsfObject {
           whole: property,
           value: property.method ? property : outerSpan(property.value),
         };
-        const gaps = this.gaps(parent.members?.().gaps);
-        if (this.pending(this.dependencies(at, purpose, gaps, resolved))) {
+        const gaps = purpose === 'remove' ? this.gaps(parent.members?.().gaps) : [];
+        if (isPendingAt(this.editor, this.dependencies(at, purpose, gaps, resolved))) {
           return CROSSED;
         }
         if (last) {
@@ -1246,13 +1257,13 @@ class Editor implements CsfObject {
       throw invalidated();
     }
     const [member] = content.members;
-    const texts = content.members.map(({ text }) => text);
-    if (this.pending(this.gaps(object.members?.().gaps, member.key, texts))) {
+    const added = { into: this.owner(object), key: member.key };
+    if (isPendingAt(this.editor, this.gaps(object.members?.().gaps, added, [member.text]))) {
       this.settle();
       this.insert(containers, content);
       return;
     }
-    adding(member.key, () => object.append(content.members));
+    adding(this.editor, added, () => object.append([member]));
   }
 
   // Writes the missing containers at `missing` into `parent`, the first one a member of it, which
@@ -1294,10 +1305,11 @@ class Editor implements CsfObject {
       nested = block([...forward(depth), `${printKey(missing[depth + 1], quote)}: ${nested}`]);
     }
     const text = `${printKey(name, quote)}: ${nested}`;
-    if (this.pending(this.gaps(parent.members?.().gaps, name, [text]))) {
+    const added = { into: this.owner(parent), key: name };
+    if (isPendingAt(this.editor, this.gaps(parent.members?.().gaps, added, [text]))) {
       return false;
     }
-    adding(name, () => parent.append([{ key: name, value: nested, text }]));
+    adding(this.editor, added, () => parent.append([{ key: name, value: nested, text }]));
     return true;
   }
 
@@ -1412,7 +1424,7 @@ class Editor implements CsfObject {
   // Whether text written or removed names a module binding other than an import, or a callee the
   // index reads. Proofs such as `onlyRead` count the references of bindings in the tree, which the
   // pending edits are not in. One of `ownNames` heading the text, as in `Story.args = …`, is the
-  // object's own assignment, which its shape records instead.
+  // object's own assignment, which the lookup of its key finds pending instead.
   private mentions(writes: readonly Written[], ownNames: readonly string[]) {
     if (writes.length === 0) {
       return false;
@@ -1497,11 +1509,6 @@ class Editor implements CsfObject {
     this.#from = 0;
   }
 
-  // The one check of a lookup: whether a span its step depends on meets a pending edit.
-  private pending(dependencies: readonly Dependency[]) {
-    return isPendingAt(this.editor, dependencies);
-  }
-
   // The spans a step depends on, given the field or item it reaches: its key, and what of it the
   // purpose reads. A read and a replacement depend on all of the value, a removal on the gaps of
   // its list, and a step into the value, also through the constant it follows, on their ends.
@@ -1524,22 +1531,27 @@ class Editor implements CsfObject {
   }
 
   // The gaps a write to a list writes to, or the whole file for a root that cannot tell. An append
-  // depends on them as about `key`, so it composes with appends of other keys, unless its text spans
-  // lines, which lays the list out again.
+  // depends on them as about the member it adds, so it composes with appends of other members to
+  // the same object, unless its text spans lines, which lays the list out again.
   private gaps(
     gaps: readonly Span[] | undefined,
-    key?: string | symbol,
+    about?: Added,
     texts: readonly string[] = []
   ): Dependency[] {
     const spans = gaps ?? [{ start: 0, end: this.editor.code.length }];
-    const keyed = key !== undefined && !texts.some((text) => text.includes('\n'));
-    return spans.map(({ start, end }) => (keyed ? { start, end, about: key } : { start, end }));
+    const keyed = about && !texts.some((text) => text.includes('\n'));
+    return spans.map(({ start, end }) => (keyed ? { start, end, about } : { start, end }));
   }
 
   // Where a root's members are written: their keys and the gaps around them.
   private members(root: ObjectRoot): Dependency[] {
     const members = root.members?.();
     return members ? [...members.keys, ...members.gaps] : this.gaps(undefined);
+  }
+
+  // The object a root's appends name, or the root itself for one that cannot tell.
+  private owner(root: ObjectRoot): object {
+    return root.members?.().owner ?? root;
   }
 
   // The constants the spreads among a root's members read, which tell what a member created after

@@ -205,7 +205,7 @@ describe('batch records', () => {
     editor.edits.append('x();\n');
     expect(editor._batch.touched).toEqual([
       { start: 10, end: 11, text: '3' },
-      { start: 12, end: 12, text: '\n// c', side: 'left', reach: { start: 12, end: 12 } },
+      { start: 12, end: 12, text: '\n// c', side: 'left' },
       { start: 13, end: 26, text: '' },
       { start: 26, end: 26, text: 'x();\n', side: 'left' },
     ]);
@@ -220,14 +220,17 @@ describe('batch records', () => {
 
   it('puts the records back with the edits when a transaction rolls back', () => {
     const editor = new SourceEditor('export default { a: 1 };\n');
-    adding('b', () => appendToList(editor, objectList(editor, objectOf(editor)), ['b: 2']));
+    const added = { into: objectOf(editor), key: 'b' };
+    adding(editor, added, () =>
+      appendToList(editor, objectList(editor, objectOf(editor)), ['b: 2'])
+    );
     editor.transaction(() => {
       appendToList(editor, objectList(editor, objectOf(editor)), ['c: 3']);
       removeMembers(editor, objectOf(editor), [objectOf(editor).properties[0]]);
       return false;
     });
     expect(editor._batch.touched).toEqual([
-      { start: 21, end: 21, text: ', b: 2', side: 'right', adds: 'b' },
+      { start: 21, end: 21, text: ', b: 2', side: 'right', adds: added },
     ]);
     expect(editor.toString()).toBe('export default { a: 1, b: 2 };\n');
   });
@@ -253,28 +256,19 @@ describe('batch records', () => {
     expect(isPendingAt(editor, [a.key, { start: a.value.end, end: a.value.end }])).toBe(false);
     expect(isPendingAt(editor, [two, b])).toBe(false);
 
-    const gaps = listGaps(objectList(editor, objectOf(editor)));
-    adding('c', () => appendToList(editor, objectList(editor, objectOf(editor)), ['c: 5']));
+    const object = objectOf(editor);
+    const gaps = listGaps(objectList(editor, object));
+    const about = (into: object, key: string) =>
+      gaps.map((gap) => ({ ...gap, about: { into, key } }));
+    adding(editor, { into: object, key: 'c' }, () =>
+      appendToList(editor, objectList(editor, object), ['c: 5'])
+    );
     expect(isPendingAt(editor, gaps)).toBe(true);
-    expect(
-      isPendingAt(
-        editor,
-        gaps.map((gap) => ({ ...gap, about: 'd' }))
-      )
-    ).toBe(false);
-    expect(
-      isPendingAt(
-        editor,
-        gaps.map((gap) => ({ ...gap, about: 'c' }))
-      )
-    ).toBe(true);
-    appendToList(editor, objectList(editor, objectOf(editor)), ['d: 6']);
-    expect(
-      isPendingAt(
-        editor,
-        gaps.map((gap) => ({ ...gap, about: 'e' }))
-      )
-    ).toBe(true);
+    expect(isPendingAt(editor, about(object, 'd'))).toBe(false);
+    expect(isPendingAt(editor, about(object, 'c'))).toBe(true);
+    expect(isPendingAt(editor, about(a.value, 'd'))).toBe(true);
+    appendToList(editor, objectList(editor, object), ['d: 6']);
+    expect(isPendingAt(editor, about(object, 'e'))).toBe(true);
   });
 
   it('throws for a node a staged edit wrote over, and keeps the nodes around and beside it', () => {

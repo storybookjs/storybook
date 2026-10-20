@@ -55,7 +55,9 @@ export interface ObjectRoot {
   members?(): MemberSpans;
 }
 
+// `owner` is the object the members are added to, which records of appends name.
 export interface MemberSpans {
+  owner: object;
   keys: readonly Span[];
   gaps: readonly Span[];
 }
@@ -106,6 +108,7 @@ export const literalRoot = (editor: SourceEditor, object: E.ObjectExpression): O
     text: renamedMemberText(editor, object, member, printKey(key, editor.quote)),
   }),
   members: () => ({
+    owner: object,
     keys: object.properties.map((member) => (member.type === 'Property' ? member.key : member)),
     gaps: listGaps(objectList(editor, object)),
   }),

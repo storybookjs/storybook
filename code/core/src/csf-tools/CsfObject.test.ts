@@ -2521,6 +2521,17 @@ export const Secondary = { args: {} };
     );
   });
 
+  it('adds the assignments of two stories of one declaration in the order of commits between them', () => {
+    const csf = parse(`export default {};\nexport const A = () => 1, B = () => 2;\n`);
+    const [a, b] = csf.objects({ meta: false });
+    a.set(['args'], { a: 1 });
+    b.set(['parameters'], { p: 1 });
+
+    expect(printCsf(csf).code).toBe(
+      'export default {};\nexport const A = () => 1, B = () => 2;\nB.parameters = { p: 1 };\nA.args = { a: 1 };\n'
+    );
+  });
+
   it('throws for a value that does not parse, as a commit does', () => {
     const csf = parse(stories);
     const [primary] = csf.objects({ meta: false });

@@ -408,8 +408,8 @@ export interface Written {
   side?: 'left' | 'right';
   // The rest of the line after a write that breaks it, whose indent the break changes.
   reach?: Span;
-  // What an append made the write for added, a key or an item, as `adding` names it.
-  adds?: string | symbol;
+  // For a write of an append, the member it adds, as `adding` records it.
+  adds?: Added;
   // Whether a `CsfObject` mutation made it and left it pending.
   staged?: boolean;
 }
@@ -437,19 +437,22 @@ const UNSPANNED_WRITES = [
   'trimLines',
 ] as const;
 
-// What the writes made in `adding` add.
-let added: string | symbol | undefined;
+// A member an append adds to an object or a list: `into` names the object or list, and `key` the
+// member, or is a symbol of its own for an item.
+export interface Added {
+  into: object;
+  key: string | symbol;
+}
 
-// Run `write`, its writes recorded as adding `key`: the key of a member, or a symbol of its own for
-// an item, so a lookup of another key can tell them apart.
-export const adding = <T>(key: string | symbol, write: () => T): T => {
-  const outer = added;
-  added = key;
-  try {
-    return write();
-  } finally {
-    added = outer;
+// Run `append`, recording its writes as adding `added`, so a lookup about another key of the same
+// object can tell they leave it alone.
+export const adding = <T>(editor: SourceEditor, added: Added, append: () => T): T => {
+  const from = editor._batch.touched.length;
+  const result = append();
+  for (const written of editor._batch.touched.slice(from)) {
+    written.adds = added;
   }
+  return result;
 };
 
 // `edits` recording each write into `touched` once it is made, so a write that throws leaves no
@@ -460,17 +463,18 @@ const recording = (edits: MagicString, touched: Written[]): MagicString => {
   const offset = (index: number) => (index < 0 ? Math.max(0, index + length) : index);
   const write = <T>(start: number, end: number, text: string, side: Written['side'], made: T) => {
     const span = { start: offset(start), end: offset(end) };
-    // Text ending in a line break, inserted at a line start, leaves the line after it as it was.
+    const rest = { start: span.end, end: lineEnd(code, span.end) };
+    // Text ending in a line break, inserted at a line start, leaves the line after it as it was,
+    // and a break before the end of a line moves nothing.
     const breaks =
       text.includes('\n') &&
-      !(text.endsWith('\n') && span.start === span.end && code[span.start - 1] === '\n');
-    touched.push({
-      ...span,
-      text,
-      ...(side ? { side } : {}),
-      ...(breaks ? { reach: { start: span.end, end: lineEnd(code, span.end) } } : {}),
-      ...(added !== undefined ? { adds: added } : {}),
-    });
+      code.slice(rest.start, rest.end).trim() !== '' &&
+      !(
+        text.endsWith('\n') &&
+        span.start === span.end &&
+        lineStart(code, span.start) === span.start
+      );
+    touched.push({ ...span, text, ...(side ? { side } : {}), ...(breaks ? { reach: rest } : {}) });
     return made;
   };
   const base = MagicString.prototype;
@@ -534,12 +538,12 @@ const isSpan = (value: object): value is Span =>
   typeof (value as Partial<Span>).start === 'number' &&
   typeof (value as Partial<Span>).end === 'number';
 
-// A span a lookup depends on. With `about`, it depends on what is at that key alone, so an append
-// of another key does not change it.
+// A span a lookup depends on. With `about`, it depends on one member of an object alone, so an
+// append of another member to that object leaves it alone.
 export interface Dependency {
   start: number;
   end: number;
-  about?: string | symbol;
+  about?: Added;
 }
 
 // Spans with text meet when they overlap; an empty span meets a span it is in or at an end of.
@@ -548,16 +552,19 @@ const meets = (written: Span, dependency: Span) =>
     ? written.start < dependency.end && dependency.start < written.end
     : written.start <= dependency.end && dependency.start <= written.end;
 
-// Whether a span a lookup depends on meets a write of the batch, unless the write appended
-// another key than the one the span is about, or meets the rest of a line a write broke.
+const appendsAnother = (written: Written, dependency: Dependency) =>
+  !!written.adds &&
+  !!dependency.about &&
+  written.adds.into === dependency.about.into &&
+  written.adds.key !== dependency.about.key;
+
+// Whether a span a lookup depends on meets a write of the batch, unless the write appended another
+// member to the object the span is about, or meets the rest of a line a write broke.
 export const isPendingAt = (editor: SourceEditor, dependencies: readonly Dependency[]) =>
   editor._batch.touched.some((written) =>
     dependencies.some(
       (dependency) =>
-        ((dependency.about === undefined ||
-          written.adds === undefined ||
-          written.adds === dependency.about) &&
-          meets(written, dependency)) ||
+        (!appendsAnother(written, dependency) && meets(written, dependency)) ||
         (!!written.reach && meets(written.reach, dependency))
     )
   );

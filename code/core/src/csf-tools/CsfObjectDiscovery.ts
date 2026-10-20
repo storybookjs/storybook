@@ -491,12 +491,13 @@ const storyRoot = (
       const { body } = csf.program;
       const after = assignments.at(-1)?.statement ?? declaration;
       const next = body.find((statement) => statement.start >= after.end);
-      const inLiteral = literal?.members?.() ?? { keys: [], gaps: [] };
+      const inLiteral = literal?.members?.() ?? { owner: binding.declaration, keys: [], gaps: [] };
       const before = assignments.map(({ statement }) => {
         const previous = body[body.indexOf(statement) - 1];
         return { start: previous?.end ?? 0, end: statement.start };
       });
       return {
+        owner: inLiteral.owner,
         keys: [...inLiteral.keys, ...assignments.map(({ left }) => left.property)],
         gaps: [
           ...inLiteral.gaps,

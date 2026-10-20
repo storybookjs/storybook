@@ -315,7 +315,6 @@ export async function buildDocgenPayload(
   const { component } = resolved;
   const metaJsDoc = extractDescription(csf._metaStatement, csf.editor) || undefined;
 
-
   // The primary and its declared subcomponents share one extraction chain and run concurrently:
   // the children are independent and every failure stays isolated to its own entry, while
   // Promise.all keeps the CSF declaration order in the record. The key is omitted entirely when

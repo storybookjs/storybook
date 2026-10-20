@@ -16,6 +16,7 @@ Type:
   checkOptions?: CheckOptions;
   reactDocgen?: 'react-docgen' | 'react-docgen-typescript' | false;
   reactDocgenTypescriptOptions?: ReactDocgenTypescriptOptions;
+  componentManifestLargePropSourceAllowlist?: string[];
   skipCompiler?: boolean;
 }
 ```
@@ -83,6 +84,14 @@ Configures the options to pass to `react-docgen-typescript-plugin` if `react-doc
 
 Server-side docgen does not translate these options.
 Like [`reactDocgen`](#reactdocgen), this option is deprecated and will be removed in Storybook 12.
+
+<CodeSnippets path="main-config-typescript-react-docgen-typescript-options.md" />
+
+## `componentManifestLargePropSourceAllowlist`
+
+Type: `string[]`
+
+Package names or normalized source path suffixes whose large prop sets should remain in the React component manifest. This option applies when `reactDocgen: 'react-docgen-typescript'` and `docgenServer` is off. For example, use `['react-select']` to retain props from that package while the large-source heuristic continues filtering other declaration files.
 
 <CodeSnippets path="main-config-typescript-react-docgen-typescript-options.md" />
 

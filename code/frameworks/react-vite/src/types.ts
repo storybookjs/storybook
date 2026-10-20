@@ -55,6 +55,13 @@ type TypescriptOptions = TypescriptOptionsBase & {
    * @deprecated Builder docgen is removed in Storybook 12. Use `features.docgenServer`.
    */
   reactDocgenTypescriptOptions: Parameters<typeof docgenTypescript>[0];
+  /**
+   * Package names or source path suffixes whose large prop sets should be retained in the
+   * components manifest.
+   *
+   * @default []
+   */
+  componentManifestLargePropSourceAllowlist?: string[];
 };
 
 /** The interface for Storybook configuration in `main.ts` files. */

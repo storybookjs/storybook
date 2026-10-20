@@ -26,19 +26,7 @@ const loadTypeScript = () =>
 const loadReactDocgenTypescript = () =>
   (reactDocgenTypescriptPromise ??= import('react-docgen-typescript'));
 
-/**
- * Auto-detect bulk props contributed by a single non-user source file and filter them out.
- *
- * This catches:
- *
- * - React built-in props (HTMLAttributes, DOMAttributes, AriaAttributes from @types/react)
- * - DOM built-in props (HTMLElement, GlobalEventHandlers from lib.dom.d.ts)
- * - CSS-in-JS system props (Panda CSS, styled-system, Stitches style props)
- *
- * The heuristic: when a single source file in `node_modules` or ending in `.d.ts` contributes more
- * than {@link LARGE_NON_USER_SOURCE_THRESHOLD} props, all props from that source are filtered.
- * User-authored `.ts` files are never filtered.
- */
+/** Auto-detect and filter bulk props contributed by a single non-user declaration source. */
 const LARGE_NON_USER_SOURCE_THRESHOLD = 30;
 
 const getPropSource = (prop: PropItem): string | undefined =>
@@ -59,6 +47,19 @@ const getLargeNonUserPropSources = (props: Record<string, PropItem>): Set<string
     }
   }
   return largeNonUserSources;
+};
+
+/** Check whether a source path matches an allowlisted package name or path suffix. */
+const isLargePropSourceAllowlisted = (source: string, allowlist: string[]) => {
+  const normalizedSource = `/${source.replaceAll('\\', '/')}`;
+  return allowlist.some((entry) => {
+    const normalizedEntry = entry.replaceAll('\\', '/').replace(/^\/+|\/+$/g, '');
+    return (
+      normalizedEntry.length > 0 &&
+      (normalizedSource.includes(`/node_modules/${normalizedEntry}/`) ||
+        normalizedSource.endsWith(`/${normalizedEntry}`))
+    );
+  });
 };
 
 /**
@@ -182,12 +183,16 @@ export function invalidateParser() {
   previousProgramsByConfigKey.clear();
 }
 
-async function getParser(filePath: string, userOptions?: ParserOptions) {
+async function getParser(
+  filePath: string,
+  userOptions?: ParserOptions,
+  largePropSourceAllowlist: string[] = []
+) {
   const [typescript, reactDocgenTypescript] = await Promise.all([
     loadTypeScript(),
     loadReactDocgenTypescript(),
   ]);
-  const optionsKey = JSON.stringify(userOptions ?? {});
+  const optionsKey = JSON.stringify({ userOptions, largePropSourceAllowlist });
 
   // Mirror the Volar-inspired project selection we already use in react-component-meta:
   // if the nearest root tsconfig is only a project-references shell, follow references and pick
@@ -230,10 +235,26 @@ async function getParser(filePath: string, userOptions?: ParserOptions) {
     );
     previousProgramsByConfigKey.set(configKey, program);
 
+    const propFilter = userOptions?.propFilter;
+    const canAllowLargeSources =
+      largePropSourceAllowlist.length > 0 &&
+      typeof propFilter === 'function' &&
+      '__storybookDefaultReactDocgenTypescriptPropFilter' in propFilter;
     const parserOptions: ParserOptions = {
       shouldExtractLiteralValuesFromEnum: true,
       shouldRemoveUndefinedFromOptional: true,
       ...userOptions,
+      ...(canAllowLargeSources
+        ? {
+            propFilter: (prop, component) => {
+              const source = getPropSource(prop);
+              if (source && isLargePropSourceAllowlisted(source, largePropSourceAllowlist)) {
+                return true;
+              }
+              return propFilter(prop, component);
+            },
+          }
+        : {}),
       // Always force savePropValueAsString so default values are in a consistent format
       savePropValueAsString: true,
     };
@@ -315,8 +336,16 @@ export function getReactDocgenTypescriptError(
  * `invalidateCache()`. The underlying TS program is a long-lived singleton.
  */
 export const parseWithReactDocgenTypescript = asyncCache(
-  async (filePath: string, userOptions?: ParserOptions): Promise<ComponentDocWithExportName[]> => {
-    const { program, fileParser, typescript } = await getParser(filePath, userOptions);
+  async (
+    filePath: string,
+    userOptions?: ParserOptions,
+    largePropSourceAllowlist: string[] = []
+  ): Promise<ComponentDocWithExportName[]> => {
+    const { program, fileParser, typescript } = await getParser(
+      filePath,
+      userOptions,
+      largePropSourceAllowlist
+    );
     const checker = program.getTypeChecker();
     const sourceFile = program.getSourceFile(filePath);
 
@@ -334,11 +363,15 @@ export const parseWithReactDocgenTypescript = asyncCache(
         // Use name-based lookup: displayName is the resolved symbol name, so look it up in the
         // export map to get the public export name. Falls back to displayName when not aliased.
         exportName: exportNameMap.get(doc.displayName) ?? doc.displayName,
-        // Filter out bulk props from non-user sources (React built-ins, DOM, CSS-in-JS system props)
+        // Filter bulk props from large node_modules or declaration sources unless allowlisted.
         props: Object.fromEntries(
           Object.entries(doc.props).filter(([, prop]) => {
             const source = getPropSource(prop);
-            return !source || !largeNonUserSources.has(source);
+            return (
+              !source ||
+              isLargePropSourceAllowlisted(source, largePropSourceAllowlist) ||
+              !largeNonUserSources.has(source)
+            );
           })
         ),
       };

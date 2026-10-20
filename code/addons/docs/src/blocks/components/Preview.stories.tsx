@@ -4,7 +4,7 @@ import React from 'react';
 import { Button, Spaced } from 'storybook/internal/components';
 import type { DocsContextProps, ModuleExport } from 'storybook/internal/types';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import * as ButtonStories from '../examples/Button.stories';
 import { Preview, PreviewSkeleton } from './Preview';

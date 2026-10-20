@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import type { API_Layout } from '../../../types/index.ts';
 import { Drag } from './Drag.tsx';

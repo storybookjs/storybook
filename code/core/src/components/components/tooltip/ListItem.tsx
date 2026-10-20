@@ -3,7 +3,7 @@ import React, { type ComponentProps, type ReactNode, type SyntheticEvent, forwar
 import { deprecate } from 'storybook/internal/client-logger';
 
 import memoize from 'memoizerific';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 export interface TitleProps {
   children?: ReactNode;

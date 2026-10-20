@@ -3,7 +3,7 @@ import React from 'react';
 import { internal_checklistStore as checklistStore } from '#manager-stores';
 import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import preview from '../../../../../.storybook/preview.tsx';
 import { checklistData } from '../../../shared/checklist-store/checklistData.tsx';

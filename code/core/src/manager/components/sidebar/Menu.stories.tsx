@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { initialState } from '../../../shared/checklist-store/checklistData.state.ts';
 import { useMenu } from '../../container/Menu.tsx';

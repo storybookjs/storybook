@@ -1,4 +1,4 @@
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 export const HR = styled.hr(({ theme }) => ({
   border: '0 none',

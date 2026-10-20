@@ -3,7 +3,7 @@ import React from 'react';
 
 import { TabsView } from 'storybook/internal/components';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import type { ArgsTableProps } from './ArgsTable';
 import { ArgsTable } from './ArgsTable';

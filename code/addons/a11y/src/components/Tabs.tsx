@@ -5,7 +5,7 @@ import { Button, TabsView } from 'storybook/internal/components';
 import { CollapseIcon, ExpandAltIcon, EyeCloseIcon, EyeIcon, SyncIcon } from '@storybook/icons';
 
 import type { Result } from 'axe-core';
-import { styled, useTheme } from 'storybook/theming/internal';
+import { styled, useTheme } from 'storybook/theming/emotion';
 
 import type { RuleType } from '../types.ts';
 import { useA11yContext } from './A11yContext.tsx';

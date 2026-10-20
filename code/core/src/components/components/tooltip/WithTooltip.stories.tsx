@@ -4,7 +4,7 @@ import React from 'react';
 import type { StoryObj } from '@storybook/react-vite';
 
 import { expect, screen } from 'storybook/test';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { TooltipMessage } from './TooltipMessage.tsx';
 import { WithToolTipState as WithTooltip } from './WithTooltip.tsx';

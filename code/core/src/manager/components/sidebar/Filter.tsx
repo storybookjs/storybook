@@ -7,7 +7,7 @@ import type { StatusValue } from 'storybook/internal/types';
 import { FilterIcon } from '@storybook/icons';
 
 import { type API, type Combo, Consumer, experimental_useStatusStore } from 'storybook/manager-api';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { getActiveFilterCount } from '../../../shared/utils/story-index-filters.ts';
 import { FilterPanel } from './FilterPanel.tsx';

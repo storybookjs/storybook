@@ -9,7 +9,7 @@ import { startCase } from 'es-toolkit/string';
 import { action } from 'storybook/actions';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { isChromatic } from '../../../../../.storybook/isChromatic.ts';
 import {

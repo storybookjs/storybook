@@ -14,7 +14,7 @@ import { Button as AriaButton } from 'react-aria-components/Button';
 import { TreeItem, TreeItemContent } from 'react-aria-components/Tree';
 import type { API } from 'storybook/manager-api';
 import { shortcutToHumanString } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming/internal';
+import { styled, useTheme } from 'storybook/theming/emotion';
 
 import { getStatus } from '../../utils/status.tsx';
 import { isBranch, type TreeEntry } from '../../utils/tree.ts';

@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import React, { useEffect, useRef } from 'react';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { ScrollArea } from '../ScrollArea/ScrollArea.tsx';
 

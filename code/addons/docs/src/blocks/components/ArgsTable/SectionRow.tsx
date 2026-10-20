@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ChevronDownIcon, ChevronRightIcon } from '@storybook/icons';
 
 import { lighten, transparentize } from 'polished';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 type Level = 'section' | 'subsection';
 

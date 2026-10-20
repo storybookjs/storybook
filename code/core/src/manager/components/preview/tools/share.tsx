@@ -10,7 +10,7 @@ import { PopOutIcon } from '@storybook/icons';
 
 import { Consumer, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming/internal';
+import { styled, useTheme } from 'storybook/theming/emotion';
 
 const mapper = ({ api, state }: Combo) => {
   const { storyId, refId } = state;

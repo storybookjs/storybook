@@ -5,7 +5,7 @@ import { logger } from 'storybook/internal/client-logger';
 
 import { ChevronSmallDownIcon } from '@storybook/icons';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 import type { CSSObject } from 'storybook/theming';
 
 import { getControlId } from '../helpers';

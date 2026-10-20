@@ -3,7 +3,7 @@ import React from 'react';
 import { FaceHappyIcon } from '@storybook/icons';
 
 import { expect, fn, screen, waitFor } from 'storybook/test';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import preview from '../../../../../.storybook/preview.tsx';
 import { Button } from './Button.tsx';

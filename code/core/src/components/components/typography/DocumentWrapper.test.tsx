@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import React from 'react';
 
-import { ThemeProvider, convert, themes } from 'storybook/theming/internal';
+import { ThemeProvider, convert, themes } from 'storybook/theming/emotion';
 
 import { DocumentWrapper } from './DocumentWrapper.tsx';
 

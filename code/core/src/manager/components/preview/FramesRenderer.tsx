@@ -5,7 +5,7 @@ import { Button } from 'storybook/internal/components';
 
 import type { Combo } from 'storybook/manager-api';
 import { Consumer } from 'storybook/manager-api';
-import { Global, styled } from 'storybook/theming/internal';
+import { Global, styled } from 'storybook/theming/emotion';
 import type { CSSObject } from 'storybook/theming';
 
 import { Viewport } from './Viewport.tsx';

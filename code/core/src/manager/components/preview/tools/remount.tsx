@@ -9,7 +9,7 @@ import { SyncIcon } from '@storybook/icons';
 
 import { Consumer, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 interface AnimatedButtonProps {
   animating?: boolean;

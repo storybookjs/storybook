@@ -3,7 +3,7 @@ import type { ChangeEvent, FC } from 'react';
 
 import { Form } from 'storybook/internal/components';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { getControlId } from './helpers';
 import type { ControlProps } from './types';

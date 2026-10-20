@@ -1,7 +1,7 @@
 import type { API_StoryEntry } from 'storybook/internal/types';
 
 import Filter from 'ansi-to-html';
-import { type StorybookTheme, useTheme } from 'storybook/theming/internal';
+import { type StorybookTheme, useTheme } from 'storybook/theming/emotion';
 // eslint-disable-next-line depend/ban-dependencies
 import stripAnsi from 'strip-ansi';
 

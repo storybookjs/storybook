@@ -2,7 +2,7 @@ import type { FC, ReactNode } from 'react';
 import React from 'react';
 
 import { TabPanel } from 'react-aria-components/Tabs';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { ScrollArea } from '../ScrollArea/ScrollArea.tsx';
 

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import React from 'react';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { IconSymbols, UseSymbol } from './IconSymbols.tsx';
 import { TypeIcon } from './TypeIcon.tsx';

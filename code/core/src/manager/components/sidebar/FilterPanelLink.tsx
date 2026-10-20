@@ -4,7 +4,7 @@ import { ActionList, Form } from 'storybook/internal/components';
 
 import { DeleteIcon } from '@storybook/icons';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
 import type { FilterItem } from './FilterPanel.utils.ts';

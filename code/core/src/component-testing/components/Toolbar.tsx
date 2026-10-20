@@ -12,7 +12,7 @@ import {
 } from '@storybook/icons';
 
 import { type API } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming/internal';
+import { styled, useTheme } from 'storybook/theming/emotion';
 
 import { type ControlStates } from '../../instrumenter/types.ts';
 import type { Controls } from './InteractionsPanel.tsx';

@@ -15,7 +15,7 @@ import type { Addon_BaseType } from 'storybook/internal/types';
 import { BottomBarIcon, CloseIcon, DocumentIcon, SidebarAltIcon } from '@storybook/icons';
 
 import type { State } from 'storybook/manager-api';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { focusableUIElements } from '../../../manager-api/modules/layout.ts';
 import { useLandmark } from '../../hooks/useLandmark.ts';

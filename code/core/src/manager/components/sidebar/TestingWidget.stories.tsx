@@ -12,7 +12,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fireEvent, fn, waitFor } from 'storybook/test';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { internal_fullTestProviderStore } from '../../manager-stores.mock.ts';
 import { TestingWidget } from './TestingWidget.tsx';

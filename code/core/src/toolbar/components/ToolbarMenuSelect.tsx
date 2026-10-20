@@ -4,7 +4,7 @@ import React from 'react';
 import { Select } from 'storybook/internal/components';
 
 import { useGlobals, useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { Icons } from '../../components/components/icon/icon.tsx';
 import type { ToolbarMenuProps } from '../types.ts';

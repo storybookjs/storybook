@@ -4,7 +4,7 @@ import React, { Children } from 'react';
 import { deprecate } from 'storybook/internal/client-logger';
 import type { Addon_RenderOptions } from 'storybook/internal/types';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import type { TabsProps } from './Tabs.tsx';
 

@@ -1,7 +1,7 @@
 import type { MouseEvent, ReactElement } from 'react';
 import React from 'react';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 const Container = styled.div<{ $flexLayout?: boolean }>(({ theme, $flexLayout = false }) => [
   {

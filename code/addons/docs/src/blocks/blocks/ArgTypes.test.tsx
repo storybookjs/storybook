@@ -7,7 +7,7 @@ import React from 'react';
 
 import type { DocsContextProps } from 'storybook/internal/types';
 
-import { ThemeProvider, convert, themes } from 'storybook/theming/internal';
+import { ThemeProvider, convert, themes } from 'storybook/theming/emotion';
 
 import { ArgTypes } from './ArgTypes.tsx';
 import { DocsContext } from './DocsContext.ts';

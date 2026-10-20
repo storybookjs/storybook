@@ -4,7 +4,7 @@ import React from 'react';
 import { Item } from 'react-stately/Item';
 import { useTabListState, type TabListState } from 'react-stately/useTabListState';
 import type { Key } from '@react-types/shared';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { Bar } from '../Bar/Bar.tsx';
 import { EmptyTabContent } from './EmptyTabContent.tsx';

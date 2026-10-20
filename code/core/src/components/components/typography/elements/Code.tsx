@@ -2,7 +2,7 @@ import type { ComponentProps } from 'react';
 import React, { Children } from 'react';
 
 import type { CSSObject } from 'storybook/theming';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { SyntaxHighlighter } from '../../syntaxhighlighter/lazy-syntaxhighlighter.tsx';
 import type { SupportedLanguage } from '../../syntaxhighlighter/syntaxhighlighter-types.ts';

@@ -9,7 +9,7 @@ import type {
 import { global } from '@storybook/global';
 
 import { useStorybookApi, type State } from 'storybook/manager-api';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { focusableUIElements, isPagesViewMode } from '../../../manager-api/modules/layout.ts';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';

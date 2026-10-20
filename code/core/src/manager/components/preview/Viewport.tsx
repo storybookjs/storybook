@@ -4,7 +4,7 @@ import { ActionList } from 'storybook/internal/components';
 
 import { TransferIcon, UndoIcon } from '@storybook/icons';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import {
   VIEWPORT_MIN_HEIGHT,

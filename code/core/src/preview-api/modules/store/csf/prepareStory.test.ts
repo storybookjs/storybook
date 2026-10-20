@@ -462,6 +462,54 @@ describe('prepareStory', () => {
     });
   });
 
+  describe('applyBeforeEach', () => {
+    const abortSignal = new AbortController().signal;
+
+    it('runs the cleanups of the hooks that ran, in reverse, when a later hook throws', async () => {
+      const calls: string[] = [];
+      const error = new Error('story beforeEach');
+      const laterHook = vi.fn();
+
+      const { applyBeforeEach } = prepareStory(
+        {
+          id,
+          name,
+          beforeEach: [
+            () => {
+              throw error;
+            },
+            laterHook,
+          ],
+          moduleExport,
+        },
+        { id, title, beforeEach: [() => () => void calls.push('component cleanup')] },
+        { render, beforeEach: [() => () => void calls.push('project cleanup')] }
+      );
+
+      await expect(applyBeforeEach({ abortSignal } as StoryContext)).rejects.toBe(error);
+      expect(calls).toEqual(['component cleanup', 'project cleanup']);
+      expect(laterHook).not.toHaveBeenCalled();
+    });
+
+    it('returns the cleanups in the order the hooks ran, without running them', async () => {
+      const projectCleanup = vi.fn();
+      const storyCleanup = vi.fn();
+
+      const { applyBeforeEach } = prepareStory(
+        { id, name, beforeEach: [() => storyCleanup], moduleExport },
+        { id, title, beforeEach: [() => {}] },
+        { render, beforeEach: [() => projectCleanup] }
+      );
+
+      expect(await applyBeforeEach({ abortSignal } as StoryContext)).toEqual([
+        projectCleanup,
+        storyCleanup,
+      ]);
+      expect(projectCleanup).not.toHaveBeenCalled();
+      expect(storyCleanup).not.toHaveBeenCalled();
+    });
+  });
+
   describe('undecoratedStoryFn', () => {
     it('args are mapped by argTypes[x].mapping', () => {
       const renderMock = vi.fn();

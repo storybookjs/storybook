@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'pathe';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {

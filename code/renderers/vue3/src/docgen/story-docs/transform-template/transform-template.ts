@@ -7,12 +7,17 @@ import {
   type TemplateChildNode,
 } from '@vue/compiler-dom';
 
-import { babelParseExpression, types as t } from 'storybook/internal/babel';
 import {
-  keyOf,
+  type ESTree as E,
+  type ESTreeNode as Node,
+  type ImportBinding,
+  isStringLiteral,
+  staticKey,
+  normalizeLineEndings,
+  parseModule,
   propertyValue,
   unwrapExpression,
-  type ImportBinding,
+  walk,
 } from 'storybook/internal/csf-tools';
 
 import type { ClassifiedArg } from '../classify-args/classify-args.ts';
@@ -139,7 +144,7 @@ const COMPONENTS_UNREADABLE_WARNING =
 
 /** Read a transformable template-render object without resolving the render function itself. */
 export function readTemplateRenderConfig(
-  renderObject: t.ObjectExpression,
+  renderObject: E.ObjectExpression,
   importBindings: Map<string, ImportBinding>,
   options: ReadTemplateRenderConfigOptions = {}
 ): TemplateRenderResolution {
@@ -199,8 +204,10 @@ export function readTemplateRenderConfig(
 export function transformTemplate(
   input: TransformTemplateInput
 ): TransformTemplateResult | undefined {
+  // `parseModule` normalizes line endings, so template expressions must already use `\n`.
+  const template = normalizeLineEndings(input.template);
   let invalid = false;
-  const ast = parse(input.template, { onError: () => (invalid = true) });
+  const ast = parse(template, { onError: () => (invalid = true) });
   if (invalid) {
     return undefined;
   }
@@ -213,7 +220,7 @@ export function transformTemplate(
     componentImports: input.componentImports,
     componentName: input.componentName,
     importBindings: input.importBindings ?? new Map(),
-    template: input.template,
+    template,
   };
 
   if (input.setup && !seedForwardedSetup(input.setup, state)) {
@@ -234,7 +241,7 @@ export function transformTemplate(
 
   return {
     snippet: renderPreparedSfcSnippet({
-      templateCode: applyEdits(input.template, state.edits),
+      templateCode: applyEdits(template, state.edits),
       ctx: state.ctx,
     }),
   };
@@ -279,7 +286,6 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
       const wrapped = wrapSubstitution(rendered, text.slice(read.end));
       text = text.slice(0, read.start) + wrapped + text.slice(read.end);
     }
-    text = text.replace(/\r\n?/g, '\n');
     state.ctx.statements.push(dedentBy(text, statement.column));
   }
   return true;
@@ -636,10 +642,8 @@ function substituteArgsExpression(
     return undefined;
   }
 
-  let ast: t.Expression;
-  try {
-    ast = babelParseExpression(exp.content);
-  } catch {
+  const ast = parseTemplateExpression(exp.content);
+  if (!ast) {
     return undefined;
   }
 
@@ -718,24 +722,69 @@ function bindingPatternForDirective(directive: DirectiveNode): string | undefine
 }
 
 function addBindingPattern(pattern: string, ctx: RenderContext): boolean {
-  let ast: t.Expression;
-  try {
-    ast = babelParseExpression(`${arrowParamsForPattern(pattern)} => 0`);
-  } catch {
-    return false;
-  }
-
-  if (!t.isArrowFunctionExpression(ast)) {
+  const ast = parseTemplateExpression(`${arrowParamsForPattern(pattern)} => 0`);
+  if (ast?.type !== 'ArrowFunctionExpression') {
     return false;
   }
 
   for (const param of ast.params) {
-    for (const name of Object.keys(t.getBindingIdentifiers(param))) {
-      ctx.bindings.add(name);
-    }
+    addBindingNames(param, ctx.bindings);
   }
 
   return true;
+}
+
+// ({ a, b: [c] }, ...rest) -> a, c, rest
+function addBindingNames(pattern: Node, into: Set<string>): void {
+  switch (pattern.type) {
+    case 'Identifier':
+      into.add(pattern.name);
+      break;
+    case 'AssignmentPattern':
+      addBindingNames(pattern.left, into);
+      break;
+    case 'RestElement':
+      addBindingNames(pattern.argument, into);
+      break;
+    case 'ObjectPattern':
+      for (const property of pattern.properties) {
+        addBindingNames(property.type === 'RestElement' ? property.argument : property.value, into);
+      }
+      break;
+    case 'ArrayPattern':
+      for (const element of pattern.elements) {
+        if (element) {
+          addBindingNames(element, into);
+        }
+      }
+      break;
+  }
+}
+
+// Offsets index into `code`; `undefined` unless `code` is exactly one expression.
+function parseTemplateExpression(code: string): E.Expression | undefined {
+  let program: E.Program;
+  try {
+    ({ program } = parseModule(`(${code}\n)`));
+  } catch {
+    return undefined;
+  }
+  const [statement, ...rest] = program.body;
+  // An expression that closed the wrapping paren, as in `a) + (b`, starts at the paren itself.
+  // Whitespace and outer parentheses (which the parser drops) make a valid expression start later.
+  if (
+    rest.length > 0 ||
+    statement?.type !== 'ExpressionStatement' ||
+    (statement.expression as E.Expression & { start: number }).start === 0
+  ) {
+    return undefined;
+  }
+  walk(statement.expression, (node) => {
+    const span = node as Node & { start: number; end: number };
+    span.start -= 1;
+    span.end -= 1;
+  });
+  return statement.expression;
 }
 
 function arrowParamsForPattern(pattern: string): string {
@@ -751,22 +800,22 @@ function surroundingAttributeQuote(
   return quote === '"' || quote === "'" ? quote : undefined;
 }
 
-function collectArgsReferences(expression: t.Expression): ArgsReference[] | undefined {
+function collectArgsReferences(expression: E.Expression): ArgsReference[] | undefined {
   const references: ArgsReference[] = [];
   let invalid = false;
 
-  const visit = (node: t.Node | null | undefined, parent?: t.Node): void => {
-    if (!node || invalid) {
-      return;
+  walk(expression, (node, parent) => {
+    if (invalid) {
+      return false;
     }
 
     if (
-      t.isAssignmentExpression(node) ||
-      t.isUpdateExpression(node) ||
-      (t.isUnaryExpression(node) && node.operator === 'delete')
+      node.type === 'AssignmentExpression' ||
+      node.type === 'UpdateExpression' ||
+      (node.type === 'UnaryExpression' && node.operator === 'delete')
     ) {
       invalid = true;
-      return;
+      return false;
     }
 
     const reference = argsReference(node);
@@ -774,48 +823,36 @@ function collectArgsReferences(expression: t.Expression): ArgsReference[] | unde
       references.push(reference);
     }
 
-    if (t.isIdentifier(node, { name: ARGS_NAME }) && !isAllowedArgsObject(node, parent)) {
+    if (
+      node.type === 'Identifier' &&
+      node.name === ARGS_NAME &&
+      !isAllowedArgsObject(node, parent)
+    ) {
       invalid = true;
-      return;
+      return false;
     }
-
-    for (const key of t.VISITOR_KEYS[node.type] ?? []) {
-      const value = node[key as keyof typeof node];
-      if (Array.isArray(value)) {
-        value.forEach((child) => {
-          if (t.isNode(child)) {
-            visit(child, node);
-          }
-        });
-      } else if (t.isNode(value)) {
-        visit(value, node);
-      }
-    }
-  };
-
-  visit(expression);
+  });
 
   return invalid ? undefined : references;
 }
 
-function argsReference(node: t.Node): ArgsReference | undefined {
-  const member =
-    t.isMemberExpression(node) || t.isOptionalMemberExpression(node) ? node : undefined;
-  if (!member || member.computed || !t.isIdentifier(member.object, { name: ARGS_NAME })) {
-    return undefined;
-  }
-  if (!t.isIdentifier(member.property) || member.start == null || member.end == null) {
+function argsReference(node: Node): ArgsReference | undefined {
+  if (
+    node.type !== 'MemberExpression' ||
+    node.computed ||
+    node.object.type !== 'Identifier' ||
+    node.object.name !== ARGS_NAME ||
+    node.property.type !== 'Identifier'
+  ) {
     return undefined;
   }
 
-  return { start: member.start, end: member.end, name: member.property.name };
+  const { start, end } = node as E.MemberExpression & { start: number; end: number };
+  return { start, end, name: node.property.name };
 }
 
-function isAllowedArgsObject(node: t.Identifier, parent: t.Node | undefined): boolean {
-  if (!parent || (!t.isMemberExpression(parent) && !t.isOptionalMemberExpression(parent))) {
-    return false;
-  }
-  return parent.object === node && !parent.computed;
+function isAllowedArgsObject(node: Node, parent: Node | null): boolean {
+  return parent?.type === 'MemberExpression' && parent.object === node && !parent.computed;
 }
 
 function replacementForArgsReference(
@@ -861,13 +898,8 @@ function replacementFor(prop: { loc: ElementProp['loc'] }, text: string, templat
 
   const lineStart = blankRunStart(template, start);
   const lineEnd = blankRunEnd(template, end);
-  const lineTerminator = lineTerminatorAt(template, lineEnd);
-  if (template[lineStart - 1] === '\n' && lineTerminator) {
-    return {
-      start: previousLineTerminatorStart(template, lineStart),
-      end: lineTerminator.start,
-      text,
-    };
+  if (template[lineStart - 1] === '\n' && template[lineEnd] === '\n') {
+    return { start: lineStart - 1, end: lineEnd, text };
   }
   return { start: lineStart, end, text };
 }
@@ -886,17 +918,6 @@ function blankRunEnd(template: string, index: number): number {
     cursor += 1;
   }
   return cursor;
-}
-
-function lineTerminatorAt(template: string, index: number): { start: number } | undefined {
-  if (template[index] === '\r' && template[index + 1] === '\n') {
-    return { start: index };
-  }
-  return template[index] === '\n' ? { start: index } : undefined;
-}
-
-function previousLineTerminatorStart(template: string, index: number): number {
-  return template[index - 2] === '\r' ? index - 2 : index - 1;
 }
 
 /**
@@ -1037,25 +1058,25 @@ function valueReferencesArgs(value: string): boolean {
 }
 
 // '<MyButton />' or `<MyButton />` without substitutions
-function staticTemplateSource(node: t.Node | undefined): string | undefined {
-  if (t.isStringLiteral(node)) {
+function staticTemplateSource(node: Node | undefined): string | undefined {
+  if (isStringLiteral(node)) {
     return node.value;
   }
-  if (t.isTemplateLiteral(node) && node.expressions.length === 0) {
-    return node.quasis[0]?.value.cooked;
+  if (node?.type === 'TemplateLiteral' && node.expressions.length === 0) {
+    return node.quasis[0]?.value.cooked ?? undefined;
   }
   return undefined;
 }
 
 // { components: { Button }, setup: () => ({ args }), template: '<Button />' }
-function hasOnlySupportedRenderProperties(renderObject: t.ObjectExpression): boolean {
+function hasOnlySupportedRenderProperties(renderObject: E.ObjectExpression): boolean {
   return renderObject.properties.every((property) => {
     // { ...baseRender, template: '<Button />' }
-    if (t.isSpreadElement(property)) {
+    if (property.type === 'SpreadElement') {
       return false;
     }
 
-    const key = keyOf(property);
+    const key = staticKey(property);
     // `inheritAttrs` only tunes runtime attribute fallthrough; the markup stays faithful without it.
     return (
       key === 'components' || key === SETUP_PROPERTY || key === 'template' || key === 'inheritAttrs'
@@ -1065,7 +1086,7 @@ function hasOnlySupportedRenderProperties(renderObject: t.ObjectExpression): boo
 
 // { Button, 'my-button': Button }
 function readComponentImports(
-  value: t.Node | undefined,
+  value: Node | undefined,
   importBindings: Map<string, ImportBinding>,
   options: ReadTemplateRenderConfigOptions
 ): Map<string, string> | undefined {
@@ -1076,18 +1097,18 @@ function readComponentImports(
   if (!value) {
     return componentImports;
   }
-  if (!t.isObjectExpression(value)) {
+  if (value.type !== 'ObjectExpression') {
     return undefined;
   }
 
   for (const property of value.properties) {
-    if (!t.isObjectProperty(property)) {
+    if (property.type !== 'Property' || property.method || property.kind !== 'init') {
       return undefined;
     }
 
-    const tagName = keyOf(property);
+    const tagName = staticKey(property);
     const component = unwrapExpression(property.value);
-    if (!tagName || !t.isIdentifier(component)) {
+    if (!tagName || component.type !== 'Identifier') {
       return undefined;
     }
 
@@ -1106,13 +1127,9 @@ function readComponentImports(
 }
 
 // setup() { return { args }; }
-function setupProperty(
-  renderObject: t.ObjectExpression
-): t.ObjectMethod | t.ObjectProperty | undefined {
-  return renderObject.properties.find((property): property is t.ObjectMethod | t.ObjectProperty => {
-    if (!t.isObjectMethod(property) && !t.isObjectProperty(property)) {
-      return false;
-    }
-    return keyOf(property) === SETUP_PROPERTY;
-  });
+function setupProperty(renderObject: E.ObjectExpression): E.ObjectProperty | undefined {
+  return renderObject.properties.find(
+    (property): property is E.ObjectProperty =>
+      property.type === 'Property' && staticKey(property) === SETUP_PROPERTY
+  );
 }

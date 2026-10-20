@@ -428,7 +428,13 @@ export const baseTemplates = {
       renderer: 'storybook-solidjs-vite',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
+    // `chromatic` is skipped: the published storybook-solidjs-vite imports
+    // `storybook/internal/babel`, which Storybook 11 removed, so its preset fails to load and
+    // the built Storybook renders no stories ("Expected your framework's preset to export a
+    // `renderToCanvas` field"). Creating and building the sandbox still pass.
+    // Fix: https://github.com/solidjs-community/storybook/pull/76
+    // Re-enable once storybook-solidjs-vite releases a version that works with Storybook 11.
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration', 'chromatic'],
   },
   'tanstack-react-router/default-ts': {
     name: 'TanStack React Router Latest (Vite | TypeScript)',
@@ -1065,7 +1071,11 @@ export const normal: TemplateKey[] = [
   'bench/react-vite-default-ts-test-build',
   'bench/react-webpack-18-ts-test-build',
   // 'ember/default-js',
-  'react-rsbuild/default-ts',
+  // Disabled in CI: the published storybook-builder-rsbuild imports `babelParser` from
+  // `storybook/internal/mocking-utils`, which Storybook 11 removed, so the sandbox cannot be
+  // created. Fix: https://github.com/rstackjs/storybook-rsbuild/pull/603
+  // Re-enable once storybook-builder-rsbuild releases a version that works with Storybook 11.
+  // 'react-rsbuild/default-ts',
   'tanstack-react-router/default-ts',
   'tanstack-react-start/default-ts',
 ];
@@ -1078,7 +1088,11 @@ export const merged: TemplateKey[] = [
   'preact-vite/default-ts',
   'html-vite/default-ts',
   'solid-vite/default-ts',
-  'vue3-rsbuild/default-ts',
+  // Disabled in CI: the published storybook-builder-rsbuild imports `babelParser` from
+  // `storybook/internal/mocking-utils`, which Storybook 11 removed, so the sandbox cannot be
+  // created. Fix: https://github.com/rstackjs/storybook-rsbuild/pull/603
+  // Re-enable once storybook-builder-rsbuild releases a version that works with Storybook 11.
+  // 'vue3-rsbuild/default-ts',
 ];
 
 export const daily: TemplateKey[] = [
@@ -1097,8 +1111,12 @@ export const daily: TemplateKey[] = [
   'html-vite/default-js',
   'internal/react18-webpack-babel',
   'react-native-web-vite/expo-ts',
-  'lit-rsbuild/default-ts',
-  'html-rsbuild/default-ts',
+  // Disabled in CI: the published storybook-builder-rsbuild imports `babelParser` from
+  // `storybook/internal/mocking-utils`, which Storybook 11 removed, so the sandbox cannot be
+  // created. Fix: https://github.com/rstackjs/storybook-rsbuild/pull/603
+  // Re-enable once storybook-builder-rsbuild releases a version that works with Storybook 11.
+  // 'lit-rsbuild/default-ts',
+  // 'html-rsbuild/default-ts',
   // 'react-native-web-vite/rn-cli-ts',
 ];
 

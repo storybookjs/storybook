@@ -33,7 +33,7 @@ export function parseSvelteSnippet(snippet: string): ParsedSvelteSnippet | undef
 }
 
 function parseSvelteRoot(snippet: string): { tag: string; attrText: string } | undefined {
-  snippet = snippet.replace(/^\s*<script\b[^>]*>[\s\S]*?<\/script\s*>\s*/, '');
+  snippet = snippet.replace(/^(?:\s*<script\b[^>]*>[\s\S]*?<\/script\s*>\s*)+/, '');
   const match = /<([A-Z][\w$.]*)\b/.exec(snippet);
   if (match === null) {
     return undefined;

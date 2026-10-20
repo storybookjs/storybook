@@ -20,7 +20,7 @@ export type AcceptedRule =
 
 const markup = (snippet: string) =>
   snippet
-    .replace(/^\s*<script\b[^>]*>[\s\S]*?<\/script\s*>\s*/, '')
+    .replace(/^(?:\s*<script\b[^>]*>[\s\S]*?<\/script\s*>\s*)+/, '')
     .replace(/\s+/g, ' ')
     .trim();
 

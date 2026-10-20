@@ -7,7 +7,10 @@
     }
   },
   "jsPlugins": [
-    { "name": "local-rules", "specifier": "../scripts/eslint-plugin-local-rules/index.js" },
+    {
+      "name": "local-rules",
+      "specifier": "../scripts/eslint-plugin-local-rules/index.js"
+    },
     "eslint-plugin-storybook",
     "eslint-plugin-playwright",
     "eslint-plugin-compat"
@@ -36,6 +39,16 @@
       {
         "paths": [
           {
+            "name": "node:path",
+            "message": "Use `pathe`, which returns `/`-separated paths on every platform, so separators never need rewriting by hand. Keep `node:path` only where a value must stay platform-native (`sep`, `delimiter`, `win32`, `posix`, or comparisons with native paths from fs, glob or webpack), and state that reason in the disable comment.",
+            "allowTypeImports": true
+          },
+          {
+            "name": "path",
+            "message": "Use `pathe`, which returns `/`-separated paths on every platform, so separators never need rewriting by hand. Keep `node:path` only where a value must stay platform-native (`sep`, `delimiter`, `win32`, `posix`, or comparisons with native paths from fs, glob or webpack), and state that reason in the disable comment.",
+            "allowTypeImports": true
+          },
+          {
             "name": "react-aria",
             "message": "Don't import from the react-aria root, but use the react-aria/HookOrComponent entrypoints which are optimised for tree-shaking",
             "allowTypeImports": false
@@ -60,7 +73,9 @@
     ],
     "react/no-unknown-property": [
       "error",
-      { "ignore": ["jsx", "global", "popovertarget", "popovertargetaction"] }
+      {
+        "ignore": ["jsx", "global", "popovertarget", "popovertargetaction"]
+      }
     ],
     "react/react-in-jsx-scope": "off",
     "react/rules-of-hooks": "off",
@@ -105,6 +120,18 @@
                 "group": ["**/core-server/**"],
                 "message": "`cli/skills/content` is the pure `storybook/internal/skills` entry; probing and anything server-side belongs in `cli/skills/` outside `content/`."
               }
+            ],
+            "paths": [
+              {
+                "name": "node:path",
+                "message": "Use `pathe`, which returns `/`-separated paths on every platform, so separators never need rewriting by hand. Keep `node:path` only where a value must stay platform-native (`sep`, `delimiter`, `win32`, `posix`, or comparisons with native paths from fs, glob or webpack), and state that reason in the disable comment.",
+                "allowTypeImports": true
+              },
+              {
+                "name": "path",
+                "message": "Use `pathe`, which returns `/`-separated paths on every platform, so separators never need rewriting by hand. Keep `node:path` only where a value must stay platform-native (`sep`, `delimiter`, `win32`, `posix`, or comparisons with native paths from fs, glob or webpack), and state that reason in the disable comment.",
+                "allowTypeImports": true
+              }
             ]
           }
         ]
@@ -117,6 +144,16 @@
           "error",
           {
             "paths": [
+              {
+                "name": "node:path",
+                "message": "Use `pathe`, which returns `/`-separated paths on every platform, so separators never need rewriting by hand. Keep `node:path` only where a value must stay platform-native (`sep`, `delimiter`, `win32`, `posix`, or comparisons with native paths from fs, glob or webpack), and state that reason in the disable comment.",
+                "allowTypeImports": true
+              },
+              {
+                "name": "path",
+                "message": "Use `pathe`, which returns `/`-separated paths on every platform, so separators never need rewriting by hand. Keep `node:path` only where a value must stay platform-native (`sep`, `delimiter`, `win32`, `posix`, or comparisons with native paths from fs, glob or webpack), and state that reason in the disable comment.",
+                "allowTypeImports": true
+              },
               {
                 "name": "node:fs",
                 "allowImportNames": ["existsSync"],
@@ -147,7 +184,23 @@
     {
       "files": ["lib/cli-storybook/src/automigrate/fixes/**/*.test.ts"],
       "rules": {
-        "no-restricted-imports": "off"
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "node:path",
+                "message": "Use `pathe`, which returns `/`-separated paths on every platform, so separators never need rewriting by hand. Keep `node:path` only where a value must stay platform-native (`sep`, `delimiter`, `win32`, `posix`, or comparisons with native paths from fs, glob or webpack), and state that reason in the disable comment.",
+                "allowTypeImports": true
+              },
+              {
+                "name": "path",
+                "message": "Use `pathe`, which returns `/`-separated paths on every platform, so separators never need rewriting by hand. Keep `node:path` only where a value must stay platform-native (`sep`, `delimiter`, `win32`, `posix`, or comparisons with native paths from fs, glob or webpack), and state that reason in the disable comment.",
+                "allowTypeImports": true
+              }
+            ]
+          }
+        ]
       }
     },
     {
@@ -242,7 +295,12 @@
         "playwright/no-nested-step": "warn",
         "playwright/no-networkidle": "error",
         "playwright/no-page-pause": "warn",
-        "playwright/no-skipped-test": ["warn", { "allowConditional": true }],
+        "playwright/no-skipped-test": [
+          "warn",
+          {
+            "allowConditional": true
+          }
+        ],
         "playwright/no-standalone-expect": "error",
         "playwright/no-unsafe-references": "error",
         "playwright/no-useless-await": "warn",

@@ -1,5 +1,6 @@
 export * from './CsfFile.ts';
 export type {
+  CsfInspection,
   CsfMutationDiagnostic,
   CsfMutationDiagnosticCode,
   CsfMutationResult,

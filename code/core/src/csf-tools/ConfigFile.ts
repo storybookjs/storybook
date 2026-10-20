@@ -9,6 +9,7 @@ import type { PrintResultType } from './PrintResultType.ts';
 import { createConfigObject, locateConfigRoot } from './ConfigObject.ts';
 import {
   type CsfExpression,
+  type CsfInspection,
   type CsfMutationDiagnostic,
   type CsfMutationResult,
   type CsfObject,
@@ -258,6 +259,32 @@ export class ConfigFile implements CsfObject {
   get(path: readonly string[]): CsfExpression | undefined {
     const editor = this._objectEditor('read');
     return editor.ok ? editor.object.get(path) : undefined;
+  }
+
+  /**
+   * Read the expression at a property path like `get`, telling a missing field from one that cannot
+   * be read statically, without adding a mutation diagnostic. Use it for reads that only inform;
+   * `get` and `getValue` record why a read failed, which stops `writeConfig`.
+   *
+   * @example
+   * ```ts
+   * const config = loadConfig('export default { tags: [], args: { ...base } };').parse();
+   * config.inspect(['tags']).kind; // 'value'
+   * config.inspect(['missing']); // { kind: 'missing' }
+   * config.inspect(['args', 'size']).kind; // 'unreadable'
+   * config.mutationDiagnostics; // []
+   * ```
+   */
+  inspect(path: readonly string[]): CsfInspection {
+    const editor = createConfigObject(
+      this,
+      'read',
+      () => {},
+      () => {}
+    );
+    return editor.ok
+      ? editor.object.inspect(path)
+      : { kind: 'unreadable', diagnostic: { ...editor.diagnostic, path: [...path] } };
   }
 
   /**

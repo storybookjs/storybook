@@ -97,6 +97,19 @@ describe('ConfigFile mutations', () => {
     );
   });
 
+  it('inspects a config without recording a diagnostic, also when its root is unreadable', () => {
+    const config = loadConfig("export default { tags: ['docs'] };").parse();
+    const tags = config.inspect(['tags']);
+    expect(tags.kind === 'value' && textOf(tags.node)).toBe("['docs']");
+
+    const unreadable = loadConfig('export default createConfig();').parse();
+    expect(unreadable.inspect(['tags'])).toMatchObject({
+      kind: 'unreadable',
+      diagnostic: { code: 'unsupported-initializer', path: ['tags'] },
+    });
+    expect(unreadable.mutationDiagnostics).toEqual([]);
+  });
+
   it('infers quotes and keeps the line endings of CRLF sources', () => {
     const source = [
       "import { definePreview } from '@storybook/react';",

@@ -16,23 +16,23 @@ It can parse MDX into CSF.
 `CsfFile.objects()` returns one `CsfObject` editor per mutable object it can prove safe to edit: the meta, each story export, and each CSF2 `Story.parameters` / `Story.argTypes` annotation assignment.
 `{ meta, stories }` narrows what is discovered; both are included by default. Story discovery also includes separate CSF2 parameter assignments, so callers use the same paths regardless of the source format.
 
-Each editor reads and writes static property paths with `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, and `group`.
+Each editor reads and writes static property paths with `get`, `getValue`, `inspect`, `set`, `transform`, `remove`, `rename`, `move`, and `group`.
 `get` returns an AST expression; `getValue` reads plain values from literals, nested arrays and objects, and local constants without executing code. Reads never return a partially decoded object.
 
-`get` and `getValue` return `undefined` both for a field that is missing and for one that cannot be read statically. Only the second adds a `CsfMutationDiagnostic` to `mutationDiagnostics`. For `get` that is a path whose parent is not an object literal, or that a spread, a computed key, or a duplicate field leaves unproven; `getValue` also reports a value it cannot evaluate, such as a call or a function. A field written as `undefined` is `undefined` without a diagnostic too, but `get` returns its expression. Compare the diagnostics before and after a read to tell the cases apart:
+`get` and `getValue` return `undefined` both for a field that is missing and for one that cannot be read statically. Only the second adds a `CsfMutationDiagnostic` to `mutationDiagnostics`. For `get` that is a path whose parent is not an object literal, or that a spread, a computed key, or a duplicate field leaves unproven; `getValue` also reports a value it cannot evaluate, such as a call or a function. A field written as `undefined` is `undefined` without a diagnostic too, but `get` returns its expression. `inspect` tells the cases apart without recording a diagnostic. It reads the expression like `get`, without evaluating it:
 
 ```ts
-const before = csf.mutationDiagnostics.length;
-const size = story.getValue(['args', 'size']);
-const [unreadable] = csf.mutationDiagnostics.slice(before);
-if (size === undefined && unreadable) {
-  // `args.size` may be set to a value that cannot be read statically: see `unreadable.code`
-} else if (size === undefined) {
-  // `args.size` is missing, or written as `undefined`
+const size = story.inspect(['args', 'size']);
+if (size.kind === 'value') {
+  // `size.node` is the expression, `undefined` included
+} else if (size.kind === 'unreadable') {
+  // `args.size` may be set where it cannot be read statically: see `size.diagnostic.code`
+} else {
+  // `args.size` is missing
 }
 ```
 
-Read diagnostics count like mutation ones, so `writeConfig` refuses a config after a read that added one.
+Read diagnostics count like mutation ones, so `writeConfig` refuses a config after a read that added one. Use `get` and `getValue` for the reads an edit depends on, so a file whose shape was not proven is not written, and `inspect` for reads that only inform, such as an addon showing a field.
 
 `set` accepts an expression from `get` or `parseExpression`, or plain strings, numbers, booleans, `null`, `undefined`, and nested arrays or objects of those values and expressions. An object whose `type` names an AST node is rejected with a diagnostic unless it came from `get` or `parseExpression`. Plain values are printed into the source, so later changes to the input do not affect the file.
 An expression from `get` is indented as if its line had no indent, and `set` and `transform` indent a value's lines like the line of the field it is written to, so a value copied between fields keeps its layout.

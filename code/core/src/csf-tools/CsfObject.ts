@@ -71,6 +71,15 @@ export interface CsfMutationDiagnostic {
 }
 
 /**
+ * What `inspect` found at a path. A path that is not a field of the object, such as one outside a
+ * CSF2 annotation editor's annotation, is unreadable.
+ */
+export type CsfInspection =
+  | { kind: 'value'; node: CsfExpression }
+  | { kind: 'missing' }
+  | { kind: 'unreadable'; diagnostic: CsfMutationDiagnostic };
+
+/**
  * Outcome of a mutation. `ok: false` with `changed: true` means the edit was applied but left a file
  * the CSF indexer rejects, such as a meta `tags` that is no longer an array of string literals.
  */
@@ -138,6 +147,21 @@ export interface CsfObject {
    * ```
    */
   get(path: readonly string[]): CsfExpression | undefined;
+  /**
+   * Read the expression at a property path like `get`, telling a missing field from one that cannot
+   * be read statically, without adding a mutation diagnostic. Use it for reads that only inform;
+   * `get` and `getValue` record why a read failed, which stops `writeConfig`.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig('export default { tags: [], args: { ...base } };').parse();
+   * object.inspect(['tags']).kind; // 'value'
+   * object.inspect(['missing']); // { kind: 'missing' }
+   * object.inspect(['args', 'size']).kind; // 'unreadable'
+   * object.mutationDiagnostics; // []
+   * ```
+   */
+  inspect(path: readonly string[]): CsfInspection;
   /**
    * Read plain values without executing code. Missing fields return `undefined`; unresolved
    * expressions also return `undefined` and add a mutation diagnostic.
@@ -405,12 +429,37 @@ class CsfObjectEditor implements CsfObject {
   }
 
   get(path: readonly string[]): CsfExpression | undefined {
+    const read = this.read(path);
+    if (read.kind === 'unreadable') {
+      this.reportDiagnostic(read.diagnostic);
+    }
+    return read.kind === 'value' ? read.node : undefined;
+  }
+
+  inspect(path: readonly string[]): CsfInspection {
+    const read = this.read(path);
+    if (read.kind !== 'outside') {
+      return read;
+    }
+    const name = path.length > 0 ? path.join('.') : 'the object itself';
+    const message = `Cannot read ${name}, which is not a field of this ${this.target.kind} object`;
+    return {
+      kind: 'unreadable',
+      diagnostic: this.diagnostic('unsupported-member', path, this.anchor(), message),
+    };
+  }
+
+  // `get` reads a path outside the object as missing, without a diagnostic.
+  private read(path: readonly string[]): CsfInspection | { kind: 'outside' } {
     const root = this.rootNodeFor(path);
     if (root) {
-      return parseExpression(detachedText(this.editor.code, root.start, this.editor.source(root)));
+      const source = detachedText(this.editor.code, root.start, this.editor.source(root));
+      return { kind: 'value', node: parseExpression(source) };
     }
-    const found = this.getProperty(path);
-    return found ? parseExpression(valueSource(this.editor, found)) : undefined;
+    const found = this.find(path);
+    return found.kind === 'property'
+      ? { kind: 'value', node: parseExpression(valueSource(this.editor, found.property)) }
+      : found;
   }
 
   getValue(path: readonly string[]): CsfValue {
@@ -446,17 +495,30 @@ class CsfObjectEditor implements CsfObject {
       : undefined;
   }
 
-  private getProperty(path: readonly string[]): Property | undefined {
+  private find(
+    path: readonly string[]
+  ):
+    | { kind: 'property'; property: Property }
+    | { kind: 'missing' }
+    | { kind: 'outside' }
+    | { kind: 'unreadable'; diagnostic: CsfMutationDiagnostic } {
     const logicalPath = this.normalizePath(path);
-    if (!logicalPath) {
-      return undefined;
+    if (!logicalPath || logicalPath.length === 0) {
+      return { kind: 'outside' };
     }
-    const found = this.inspect(logicalPath);
+    const found = this.locate(logicalPath);
     if (found.ok === false) {
-      this.failure(found.code, path, found.node);
-      return undefined;
+      return { kind: 'unreadable', diagnostic: this.diagnostic(found.code, path, found.node) };
     }
-    return found.property;
+    return found.property ? { kind: 'property', property: found.property } : { kind: 'missing' };
+  }
+
+  private getProperty(path: readonly string[]): Property | undefined {
+    const found = this.find(path);
+    if (found.kind === 'unreadable') {
+      this.reportDiagnostic(found.diagnostic);
+    }
+    return found.kind === 'property' ? found.property : undefined;
   }
 
   set(path: readonly string[], value: CsfValue<CsfExpression>): CsfMutationResult {
@@ -473,7 +535,7 @@ class CsfObjectEditor implements CsfObject {
         `Cannot set ${path.join('.')} to a ${unprintable.type} node that did not come from \`get\`, \`transform\` or \`parseExpression\``
       );
     }
-    const inspected = this.inspect(logicalPath, 'set');
+    const inspected = this.locate(logicalPath, 'set');
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
@@ -501,7 +563,7 @@ class CsfObjectEditor implements CsfObject {
     if (!logicalPath || logicalPath.length === 0 || unsafePath(logicalPath)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
-    const inspected = this.inspect(logicalPath);
+    const inspected = this.locate(logicalPath);
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
@@ -523,7 +585,7 @@ class CsfObjectEditor implements CsfObject {
     if (!logicalPath || logicalPath.length === 0 || unsafePath(logicalPath)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
-    const inspected = this.inspect(logicalPath);
+    const inspected = this.locate(logicalPath);
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
@@ -573,7 +635,7 @@ class CsfObjectEditor implements CsfObject {
       return this.failure('cyclic-move', to, this.anchor());
     }
 
-    const source = this.inspect(sourcePath);
+    const source = this.locate(sourcePath);
     if (source.ok === false) {
       return this.failure(source.code, from, source.node);
     }
@@ -584,7 +646,7 @@ class CsfObjectEditor implements CsfObject {
     if (!removal.ok) {
       return this.failure(removal.code, from, removal.node);
     }
-    const destination = this.inspect(destinationPath);
+    const destination = this.locate(destinationPath);
     if (destination.ok === false) {
       return this.failure(destination.code, to, destination.node);
     }
@@ -611,7 +673,7 @@ class CsfObjectEditor implements CsfObject {
     if (!inserted.ok) {
       return inserted;
     }
-    const remaining = this.inspect(sourcePath);
+    const remaining = this.locate(sourcePath);
     if (remaining.ok === false || !remaining.property || !remaining.parent) {
       throw new Error(`CsfObject: ${sourcePath.join('.')} was not found again after moving it`);
     }
@@ -634,7 +696,7 @@ class CsfObjectEditor implements CsfObject {
     }
     let parent: ObjectRoot = this.root();
     if (logicalPath.length > 1) {
-      const inspected = this.inspect(logicalPath.slice(0, -1));
+      const inspected = this.locate(logicalPath.slice(0, -1));
       if (inspected.ok === false) {
         return this.failure(inspected.code, path, inspected.node);
       }
@@ -789,7 +851,7 @@ class CsfObjectEditor implements CsfObject {
     reported: readonly string[]
   ): CsfMutationResult | undefined {
     for (let depth = path.length - 1; depth > 0; depth--) {
-      const ancestor = this.inspect(path.slice(0, depth));
+      const ancestor = this.locate(path.slice(0, depth));
       if (
         ancestor.ok === false ||
         !ancestor.property ||
@@ -828,7 +890,7 @@ class CsfObjectEditor implements CsfObject {
   }
 
   // `access` applies to the last field of the path; its parents are read.
-  private inspect(
+  private locate(
     path: readonly string[],
     access: Access = 'read'
   ):
@@ -903,13 +965,13 @@ class CsfObjectEditor implements CsfObject {
     return this.editor.program;
   }
 
-  private failure(
+  private diagnostic(
     code: CsfMutationDiagnosticCode,
     path: readonly string[],
     node: Node,
     message = `Cannot mutate ${path.join('.')} because the target contains ${code.replaceAll('-', ' ')}`
-  ) {
-    const diagnostic: CsfMutationDiagnostic = {
+  ): CsfMutationDiagnostic {
+    return {
       code,
       target: this.target,
       path: [...path],
@@ -918,6 +980,15 @@ class CsfObjectEditor implements CsfObject {
         ? { loc: locationOf(this.editor.code, node.start, node.end) }
         : {}),
     };
+  }
+
+  private failure(
+    code: CsfMutationDiagnosticCode,
+    path: readonly string[],
+    node: Node,
+    message?: string
+  ) {
+    const diagnostic = this.diagnostic(code, path, node, message);
     this.reportDiagnostic(diagnostic);
     return { ok: false as const, changed: false as const, diagnostic };
   }

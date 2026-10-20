@@ -61,6 +61,43 @@ describe('CsfObject', () => {
     expect(csf.mutationDiagnostics).toEqual([]);
   });
 
+  it('tells a field from a missing and an unreadable one without recording a diagnostic', () => {
+    const csf = parse(
+      'export default {};\nexport const A = { args: { ...base }, parameters: { a: 1 } };'
+    );
+    const [story] = csf.objects({ meta: false });
+
+    const value = story.inspect(['parameters', 'a']);
+    expect(value.kind === 'value' && textOf(value.node)).toBe('1');
+    expect(story.inspect(['missing'])).toEqual({ kind: 'missing' });
+    expect(story.inspect(['args', 'size'])).toMatchObject({
+      kind: 'unreadable',
+      diagnostic: { code: 'spread-field', path: ['args', 'size'] },
+    });
+    expect(csf.mutationDiagnostics).toEqual([]);
+
+    expect(story.get(['args', 'size'])).toBeUndefined();
+    expect(csf.mutationDiagnostics).toMatchObject([{ code: 'spread-field' }]);
+  });
+
+  it('inspects a path a CSF2 annotation editor does not hold, and the object itself, as unreadable', () => {
+    const csf = parse(
+      'export default {};\nexport const A = Template.bind({});\nA.args = { size: "l" };\nA.parameters = { a: 1 };'
+    );
+    const [parameters] = csf.objects({ meta: false });
+    const [meta] = csf.objects({ stories: false });
+
+    expect(parameters.target).toMatchObject({ kind: 'story-annotation', annotation: 'parameters' });
+    expect(parameters.inspect(['parameters']).kind).toBe('value');
+    expect(parameters.inspect(['args', 'size'])).toMatchObject({
+      kind: 'unreadable',
+      diagnostic: { code: 'unsupported-member', path: ['args', 'size'] },
+    });
+    expect(meta.inspect([])).toMatchObject({ kind: 'unreadable' });
+    expect(parameters.get(['args', 'size'])).toBeUndefined();
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
   it('keeps local bindings readable after replacing a story expression', () => {
     const csf = parse(`
       const params = { a11y: { element: '#app' } };

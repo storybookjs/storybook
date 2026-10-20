@@ -421,8 +421,8 @@ export class CsfFile {
   }
 
   /**
-   * Discover editors for the meta and stories, including CSF2 parameter and argTypes assignments. Unsupported
-   * targets are skipped and reported in `mutationDiagnostics`.
+   * Discover editors for the meta and stories; a story's CSF2 annotation assignments are its fields.
+   * Unsupported targets are skipped and reported in `mutationDiagnostics`.
    *
    * @example
    * ```ts

@@ -935,7 +935,7 @@ export class ConfigFile implements CsfObject {
           return node && literalRoot(this._editor, node);
         },
       };
-      return createCsfObject(target, host, [], report, () => {
+      return createCsfObject(target, host, report, () => {
         this._changed = true;
       });
     });

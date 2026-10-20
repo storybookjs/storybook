@@ -80,21 +80,22 @@ describe('CsfObject', () => {
     expect(csf.mutationDiagnostics).toMatchObject([{ code: 'spread-field' }]);
   });
 
-  it('inspects a path a CSF2 annotation editor does not hold, and the object itself, as unreadable', () => {
+  it('inspects every annotation of a CSF2 story, and the object itself as unreadable', () => {
     const csf = parse(
       'export default {};\nexport const A = Template.bind({});\nA.args = { size: "l" };\nA.parameters = { a: 1 };'
     );
-    const [parameters] = csf.objects({ meta: false });
+    const [story] = csf.objects({ meta: false });
     const [meta] = csf.objects({ stories: false });
 
-    expect(parameters.target).toMatchObject({ kind: 'story-annotation', annotation: 'parameters' });
-    expect(parameters.inspect(['parameters']).kind).toBe('value');
-    expect(parameters.inspect(['args', 'size'])).toMatchObject({
+    expect(story.target).toEqual({ kind: 'story', exportName: 'A', localName: 'A' });
+    expect(story.inspect(['parameters']).kind).toBe('value');
+    expect(story.inspect(['args', 'size']).kind).toBe('value');
+    expect(story.inspect([])).toMatchObject({
       kind: 'unreadable',
-      diagnostic: { code: 'unsupported-member', path: ['args', 'size'] },
+      diagnostic: { code: 'unsupported-member', path: [] },
     });
     expect(meta.inspect([])).toMatchObject({ kind: 'unreadable' });
-    expect(parameters.get(['args', 'size'])).toBeUndefined();
+    expect(story.get([])).toBeUndefined();
     expect(csf.mutationDiagnostics).toEqual([]);
   });
 
@@ -427,19 +428,24 @@ describe('CsfObject', () => {
     expect(csf.changed).toBe(false);
   });
 
-  it('stops cleanup at a CSF2 annotation root', () => {
+  it('removes a CSF2 annotation that cleanup empties', () => {
     const csf = parse(`
       export default { title: 'Example' };
       export const Basic = () => null;
       Basic.parameters = { viewport: { disable: true } };
+      Basic.args = {};
     `);
-    const [parameters] = csf.objects({ meta: false });
+    const [story] = csf.objects({ meta: false });
 
-    expect(parameters.remove(['parameters', 'viewport', 'disable'])).toEqual({
+    expect(story.remove(['parameters', 'viewport', 'disable'])).toEqual({
       ok: true,
       changed: true,
     });
-    expect(printCsf(csf).code).toContain('Basic.parameters = {};');
+    expect(story.remove(['args'])).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(`
+      export default { title: 'Example' };
+      export const Basic = () => null;
+    `);
     expect(csf.mutationDiagnostics).toEqual([]);
   });
 
@@ -595,15 +601,17 @@ describe('CsfObject', () => {
       export const Basic = () => null;
       Basic.parameters = { first: true };
       Basic.parameters = { second: true };
+      Basic.args = {};
     `);
+    const [story] = csf.objects({ meta: false });
 
-    expect(csf.objects({ meta: false })).toEqual([]);
-    expect(csf.mutationDiagnostics).toContainEqual(
-      expect.objectContaining({
-        code: 'ambiguous-binding',
-        target: expect.objectContaining({ kind: 'story-annotation', exportName: 'Basic' }),
-      })
-    );
+    expect(story.get(['parameters'])).toBeUndefined();
+    expect(story.remove(['parameters', 'first']).ok).toBe(false);
+    expect(story.set(['args', 'label'], 'Label').ok).toBe(true);
+    expect(csf.mutationDiagnostics).toEqual([
+      expect.objectContaining({ code: 'duplicate-field', path: ['parameters'] }),
+      expect.objectContaining({ code: 'duplicate-field', path: ['parameters', 'first'] }),
+    ]);
   });
 
   it.each([
@@ -1380,13 +1388,14 @@ describe('CsfObject.node', () => {
     expect(textOf(story.node!)).toBe('{ args: { disabled: true } }');
   });
 
-  it('returns the assigned object of a CSF2 annotation and the argument of a factory', () => {
+  it('returns the object of a story with assignments, nothing without one, and the argument of a factory', () => {
     const csf = parse(
-      `export default {};\nexport const Primary = () => null;\nPrimary.parameters = { a: 1 };`
+      `export default {};\nexport const Primary = () => null;\nPrimary.parameters = { a: 1 };\nexport const Secondary = { args: {} };\nSecondary.parameters = { a: 1 };`
     );
-    const [annotation] = csf.objects({ meta: false });
+    const [primary, secondary] = csf.objects({ meta: false });
 
-    expect(textOf(annotation.node!)).toBe('{ a: 1 }');
+    expect(primary.node).toBeUndefined();
+    expect(textOf(secondary.node!)).toBe('{ args: {} }');
 
     const config = loadConfig(`export default definePreview({ tags: [] });`).parse();
     expect(textOf(config.node!)).toBe('{ tags: [] }');

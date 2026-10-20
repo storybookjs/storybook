@@ -3,6 +3,7 @@ import {
   type Node,
   type Property,
   type SourceLocation,
+  type Span,
   locationOf,
   parseExpression,
   staticKey,
@@ -11,7 +12,6 @@ import {
 import {
   type SourceEditor,
   appendMembers,
-  detachedText,
   detachedTextOf,
   groupMembers,
   keySource,
@@ -41,13 +41,7 @@ export type CsfObjectTarget =
   | { kind: 'config' }
   | { kind: 'call-argument'; importedName: string; methodName: string }
   | { kind: 'meta' }
-  | { kind: 'story'; exportName: string; localName: string }
-  | {
-      kind: 'story-annotation';
-      exportName: string;
-      localName: string;
-      annotation: 'parameters' | 'argTypes';
-    };
+  | { kind: 'story'; exportName: string; localName: string };
 
 export type CsfMutationDiagnosticCode =
   | 'unsupported-initializer'
@@ -71,8 +65,8 @@ export interface CsfMutationDiagnostic {
 }
 
 /**
- * What `inspect` found at a path. A path that is not a field of the object, such as one outside a
- * CSF2 annotation editor's annotation, is unreadable.
+ * What `inspect` found at a path. A path that is not a field of the object, the empty path, is
+ * unreadable.
  */
 export type CsfInspection =
   | { kind: 'value'; node: CsfExpression }
@@ -96,7 +90,7 @@ export type CsfExpression = E.Expression;
 
 export interface CsfObject {
   /**
-   * Identify the config, meta, story, annotation, or call argument this editor represents.
+   * Identify the config, meta, story, or call argument this editor represents.
    *
    * @example
    * ```ts
@@ -118,9 +112,9 @@ export interface CsfObject {
    */
   readonly changed: boolean;
   /**
-   * Find the object literal this editor edits in the current parse; for a CSF2 annotation editor,
-   * the object its annotation path names. It is `undefined` for a config made of named exports and
-   * once the object is gone. It is the file's own node, not a copy: do not change it, and read it
+   * Find the object literal this editor edits in the current parse. It is `undefined` for a config
+   * made of named exports, for a story without an object literal, whose fields are all
+   * `Story.name = value` assignments, and once the object is gone. It is the file's own node, not a copy: do not change it, and read it
    * again after a mutation, which parses the file again.
    *
    * @example
@@ -134,8 +128,7 @@ export interface CsfObject {
    */
   readonly node: E.ObjectExpression | undefined;
   /**
-   * Read a detached copy of the expression at a property path. For a CSF2 annotation, its
-   * annotation path returns the whole object. Missing fields return `undefined`; so does a path
+   * Read a detached copy of the expression at a property path. Missing fields return `undefined`; so does a path
    * through a value that is not an object literal, or one a spread, computed key, or duplicate field
    * leaves unproven, which also adds a mutation diagnostic.
    *
@@ -288,6 +281,24 @@ export interface ObjectRoot {
   take(member: Property, key: string): MemberInsert;
 }
 
+/**
+ * A member of an `ObjectRoot` that is not written as one, such as a named export or a
+ * `Story.name = value` assignment. Its key and value are real nodes, so every span a shared helper
+ * reads is a real one; the member itself only exists in memory, spanning `statement`.
+ */
+export const detachedMember = (key: Node, value: Node, computed: boolean, statement: Span) =>
+  ({
+    type: 'Property',
+    kind: 'init',
+    method: false,
+    shorthand: false,
+    computed,
+    key,
+    value,
+    start: statement.start,
+    end: statement.end,
+  }) as unknown as Property;
+
 export interface CsfObjectHost {
   readonly editor: SourceEditor;
   // Located again after every commit.
@@ -388,8 +399,6 @@ class CsfObjectEditor implements CsfObject {
 
   private readonly host: CsfObjectHost;
 
-  private readonly prefix: readonly string[];
-
   private readonly reportDiagnostic: ReportDiagnostic;
 
   private readonly markChanged: MarkChanged;
@@ -397,13 +406,11 @@ class CsfObjectEditor implements CsfObject {
   constructor(
     target: CsfObjectTarget,
     host: CsfObjectHost,
-    prefix: readonly string[],
     reportDiagnostic: ReportDiagnostic,
     markChanged: MarkChanged
   ) {
     this.target = target;
     this.host = host;
-    this.prefix = prefix;
     this.reportDiagnostic = reportDiagnostic;
     this.markChanged = markChanged;
   }
@@ -451,11 +458,6 @@ class CsfObjectEditor implements CsfObject {
 
   // `get` reads a path outside the object as missing, without a diagnostic.
   private read(path: readonly string[]): CsfInspection | { kind: 'outside' } {
-    const root = this.rootNodeFor(path);
-    if (root) {
-      const source = detachedText(this.editor.code, root.start, this.editor.source(root));
-      return { kind: 'value', node: parseExpression(source) };
-    }
     const found = this.find(path);
     return found.kind === 'property'
       ? { kind: 'value', node: parseExpression(valueSource(this.editor, found.property)) }
@@ -463,15 +465,6 @@ class CsfObjectEditor implements CsfObject {
   }
 
   getValue(path: readonly string[]): CsfValue {
-    const root = this.rootNodeFor(path);
-    if (root) {
-      const value = readValue(this.editor.scopes, root);
-      if (value === UNRESOLVED) {
-        this.reportDiagnostic(this.diagnostic('unsupported-value', path, root));
-        return undefined;
-      }
-      return value;
-    }
     const property = this.getProperty(path);
     if (!property) {
       return undefined;
@@ -488,13 +481,6 @@ class CsfObjectEditor implements CsfObject {
     return value;
   }
 
-  // A CSF2 annotation editor answers its own annotation path with the whole assigned object.
-  private rootNodeFor(path: readonly string[]): E.ObjectExpression | undefined {
-    return this.prefix.length > 0 && this.normalizePath(path)?.length === 0
-      ? this.root().node
-      : undefined;
-  }
-
   private find(
     path: readonly string[]
   ):
@@ -502,11 +488,10 @@ class CsfObjectEditor implements CsfObject {
     | { kind: 'missing' }
     | { kind: 'outside' }
     | { kind: 'unreadable'; diagnostic: CsfMutationDiagnostic } {
-    const logicalPath = this.normalizePath(path);
-    if (!logicalPath || logicalPath.length === 0) {
+    if (path.length === 0) {
       return { kind: 'outside' };
     }
-    const found = this.locate(logicalPath);
+    const found = this.locate(path);
     if (found.ok === false) {
       return { kind: 'unreadable', diagnostic: this.diagnostic(found.code, path, found.node) };
     }
@@ -522,8 +507,7 @@ class CsfObjectEditor implements CsfObject {
   }
 
   set(path: readonly string[], value: CsfValue<CsfExpression>): CsfMutationResult {
-    const logicalPath = this.normalizePath(path);
-    if (!logicalPath || logicalPath.length === 0 || unsafePath(logicalPath)) {
+    if (path.length === 0 || unsafePath(path)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
     const unprintable = nodeWithoutParse(value);
@@ -535,7 +519,7 @@ class CsfObjectEditor implements CsfObject {
         `Cannot set ${path.join('.')} to a ${unprintable.type} node that did not come from \`get\`, \`transform\` or \`parseExpression\``
       );
     }
-    const inspected = this.locate(logicalPath, 'set');
+    const inspected = this.locate(path, 'set');
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
@@ -544,11 +528,11 @@ class CsfObjectEditor implements CsfObject {
     if (inspected.property && inspected.parent) {
       inspected.parent.root.replaceValue(inspected.property, text);
     } else {
-      this.insert(logicalPath, [
+      this.insert(path, [
         {
-          key: logicalPath.at(-1)!,
+          key: path.at(-1)!,
           value: text,
-          text: `${printKey(logicalPath.at(-1)!, this.editor.quote)}: ${text}`,
+          text: `${printKey(path.at(-1)!, this.editor.quote)}: ${text}`,
         },
       ]);
     }
@@ -559,11 +543,10 @@ class CsfObjectEditor implements CsfObject {
     path: readonly string[],
     derive: (value: CsfExpression) => CsfExpression | undefined
   ): CsfMutationResult {
-    const logicalPath = this.normalizePath(path);
-    if (!logicalPath || logicalPath.length === 0 || unsafePath(logicalPath)) {
+    if (path.length === 0 || unsafePath(path)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
-    const inspected = this.locate(logicalPath);
+    const inspected = this.locate(path);
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
@@ -581,18 +564,17 @@ class CsfObjectEditor implements CsfObject {
   }
 
   remove(path: readonly string[]): CsfMutationResult {
-    const logicalPath = this.normalizePath(path);
-    if (!logicalPath || logicalPath.length === 0 || unsafePath(logicalPath)) {
+    if (path.length === 0 || unsafePath(path)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
-    const inspected = this.locate(logicalPath);
+    const inspected = this.locate(path);
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
     if (!inspected.property || !inspected.parent) {
       return { ok: true, changed: false };
     }
-    const removal = lookupProperty(inspected.parent.root.properties, logicalPath.at(-1)!, 'remove');
+    const removal = lookupProperty(inspected.parent.root.properties, path.at(-1)!, 'remove');
     if (!removal.ok) {
       return this.failure(removal.code, path, removal.node);
     }
@@ -601,7 +583,7 @@ class CsfObjectEditor implements CsfObject {
     if (!removed.ok) {
       return removed;
     }
-    return this.removeEmptyParents(logicalPath, path) ?? removed;
+    return this.removeEmptyParents(path) ?? removed;
   }
 
   rename(path: readonly string[], name: string): CsfMutationResult {
@@ -610,43 +592,28 @@ class CsfObjectEditor implements CsfObject {
   }
 
   move(from: readonly string[], to: readonly string[]): CsfMutationResult {
-    const sourcePath = this.normalizePath(from);
-    const destinationPath = this.normalizePath(to);
-    if (
-      !sourcePath ||
-      !destinationPath ||
-      sourcePath.length === 0 ||
-      destinationPath.length === 0 ||
-      unsafePath(sourcePath) ||
-      unsafePath(destinationPath)
-    ) {
-      return this.failure('unsupported-member', !sourcePath ? from : to, this.anchor());
+    if (from.length === 0 || to.length === 0 || unsafePath(from) || unsafePath(to)) {
+      return this.failure('unsupported-member', from.length === 0 ? from : to, this.anchor());
     }
-    if (
-      sourcePath.length === destinationPath.length &&
-      sourcePath.every((part, index) => destinationPath[index] === part)
-    ) {
+    if (from.length === to.length && from.every((part, index) => to[index] === part)) {
       return { ok: true, changed: false };
     }
-    if (
-      destinationPath.length > sourcePath.length &&
-      sourcePath.every((part, index) => destinationPath[index] === part)
-    ) {
+    if (to.length > from.length && from.every((part, index) => to[index] === part)) {
       return this.failure('cyclic-move', to, this.anchor());
     }
 
-    const source = this.locate(sourcePath);
+    const source = this.locate(from);
     if (source.ok === false) {
       return this.failure(source.code, from, source.node);
     }
     if (!source.property || !source.parent) {
       return { ok: true, changed: false };
     }
-    const removal = lookupProperty(source.parent.root.properties, sourcePath.at(-1)!, 'remove');
+    const removal = lookupProperty(source.parent.root.properties, from.at(-1)!, 'remove');
     if (!removal.ok) {
       return this.failure(removal.code, from, removal.node);
     }
-    const destination = this.locate(destinationPath);
+    const destination = this.locate(to);
     if (destination.ok === false) {
       return this.failure(destination.code, to, destination.node);
     }
@@ -654,9 +621,9 @@ class CsfObjectEditor implements CsfObject {
       return this.failure('occupied-destination', to, destination.property);
     }
 
-    const key = destinationPath.at(-1)!;
-    const sourceParent = sourcePath.slice(0, -1);
-    const destinationParent = destinationPath.slice(0, -1);
+    const key = to.at(-1)!;
+    const sourceParent = from.slice(0, -1);
+    const destinationParent = to.slice(0, -1);
     if (
       sourceParent.length === destinationParent.length &&
       sourceParent.every((part, index) => destinationParent[index] === part)
@@ -668,35 +635,34 @@ class CsfObjectEditor implements CsfObject {
     const moved = source.parent.root.take(source.property, key);
     // Insert first: if that throws, nothing has been committed. The source is removed afterwards,
     // looked up again since the insertion moved its spans.
-    this.insert(destinationPath, [{ ...moved, key }]);
+    this.insert(to, [{ ...moved, key }]);
     const inserted = this.commit(from);
     if (!inserted.ok) {
       return inserted;
     }
-    const remaining = this.locate(sourcePath);
+    const remaining = this.locate(from);
     if (remaining.ok === false || !remaining.property || !remaining.parent) {
-      throw new Error(`CsfObject: ${sourcePath.join('.')} was not found again after moving it`);
+      throw new Error(`CsfObject: ${from.join('.')} was not found again after moving it`);
     }
     remaining.parent.root.remove([remaining.property]);
     const removed = this.commit(from);
     if (!removed.ok) {
       return removed;
     }
-    return this.removeEmptyParents(sourcePath, from) ?? removed;
+    return this.removeEmptyParents(from) ?? removed;
   }
 
   group(path: readonly string[], names: readonly string[]): CsfMutationResult {
-    const logicalPath = this.normalizePath(path);
-    if (!logicalPath || logicalPath.length === 0 || unsafePath(logicalPath) || unsafePath(names)) {
+    if (path.length === 0 || unsafePath(path) || unsafePath(names)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
-    const group = logicalPath.at(-1)!;
+    const group = path.at(-1)!;
     if (names.includes(group)) {
       return this.failure('cyclic-move', path, this.anchor());
     }
     let parent: ObjectRoot = this.root();
-    if (logicalPath.length > 1) {
-      const inspected = this.locate(logicalPath.slice(0, -1));
+    if (path.length > 1) {
+      const inspected = this.locate(path.slice(0, -1));
       if (inspected.ok === false) {
         return this.failure(inspected.code, path, inspected.node);
       }
@@ -830,6 +796,16 @@ class CsfObjectEditor implements CsfObject {
           );
         }
       }
+      // The members a root adds after its object literal, like a story's assignments, run later.
+      const inLiteral = (property: Property) => parent.node?.properties.includes(property);
+      if (moved.some(inLiteral) && !moved.every(inLiteral)) {
+        return this.failure(
+          'evaluation-order',
+          path,
+          moved.find((property) => !inLiteral(property))!,
+          `the ${group} options are written both in the object and after it, so grouping them could change expression evaluation order`
+        );
+      }
       const first = parent.properties.indexOf(moved[0]);
       const last = parent.properties.indexOf(moved.at(-1)!);
       if (last - first + 1 !== moved.length) {
@@ -846,10 +822,7 @@ class CsfObjectEditor implements CsfObject {
   }
 
   // Returns the result of a rejected commit, which ends the clean-up.
-  private removeEmptyParents(
-    path: readonly string[],
-    reported: readonly string[]
-  ): CsfMutationResult | undefined {
+  private removeEmptyParents(path: readonly string[]): CsfMutationResult | undefined {
     for (let depth = path.length - 1; depth > 0; depth--) {
       const ancestor = this.locate(path.slice(0, depth));
       if (
@@ -868,25 +841,12 @@ class CsfObjectEditor implements CsfObject {
         return;
       }
       ancestor.parent.root.remove([ancestor.property]);
-      const committed = this.commit(reported);
+      const committed = this.commit(path);
       if (!committed.ok) {
         return committed;
       }
     }
     return undefined;
-  }
-
-  private normalizePath(path: readonly string[]) {
-    if (this.prefix.length === 0) {
-      return [...path];
-    }
-    if (
-      path.length < this.prefix.length ||
-      this.prefix.some((part, index) => path[index] !== part)
-    ) {
-      return undefined;
-    }
-    return path.slice(this.prefix.length);
   }
 
   // `access` applies to the last field of the path; its parents are read.
@@ -1028,9 +988,8 @@ class CsfObjectEditor implements CsfObject {
 export const createCsfObject = (
   target: CsfObjectTarget,
   host: CsfObjectHost,
-  prefix: readonly string[],
   report: ReportDiagnostic,
   markChanged: MarkChanged
-): CsfObject => new CsfObjectEditor(target, host, prefix, report, markChanged);
+): CsfObject => new CsfObjectEditor(target, host, report, markChanged);
 
 export { keySource };

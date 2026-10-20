@@ -6,6 +6,7 @@ import {
   type MemberInsert,
   type ObjectRoot,
   createCsfObject,
+  detachedMember,
   literalRoot,
 } from './CsfObject.ts';
 import {
@@ -337,17 +338,7 @@ const namedExportsRoot = (editor: SourceEditor, entries: NamedEntry[]): ObjectRo
       entry.declaration.type === 'VariableDeclarator' ? entry.declaration.init : entry.declaration
     ) as E.Expression;
     const key = entry.specifier ? entry.specifier.specifier.exported : entry.declaration.id!;
-    const property = {
-      type: 'Property',
-      kind: 'init',
-      method: false,
-      shorthand: false,
-      computed: false,
-      key,
-      value,
-      start: entry.declaration.start,
-      end: entry.declaration.end,
-    } as unknown as Property;
+    const property = detachedMember(key, value, false, entry.declaration);
     byProperty.set(property, entry);
     return property;
   });
@@ -496,5 +487,5 @@ export function createConfigObject(
       return current.ok ? current.root : undefined;
     },
   };
-  return { ok: true, object: createCsfObject({ kind: 'config' }, host, [], report, markChanged) };
+  return { ok: true, object: createCsfObject({ kind: 'config' }, host, report, markChanged) };
 }

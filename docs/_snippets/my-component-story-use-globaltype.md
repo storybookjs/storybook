@@ -240,7 +240,7 @@ export const StoryWithLocale = {
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
 <script module>
-  import preview from "../.storybook/preview";
+  import preview from '../.storybook/preview';
 
   import MyComponent from "./MyComponent.svelte";
 
@@ -316,7 +316,7 @@ export const StoryWithLocale = {
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
 <script module lang="ts">
-  import preview from "../.storybook/preview";
+  import preview from '../.storybook/preview';
 
   import MyComponent from "./MyComponent.svelte";
 

@@ -128,8 +128,10 @@ function buildSvelteCsfNextFence(mirror: SvelteFence, language: string): string[
     if (!importReplaced) {
       const rewritten = next.replace(
         defineMetaImportPattern,
-        (_match, indent: string, quote: string, _source: string, semicolon: string) =>
-          `${indent}import preview from ${quote}${sveltePreviewImportSpecifier}${quote}${semicolon}`
+        (_match, indent: string, _quote: string, _source: string, semicolon: string) =>
+          // The transform rule pins the generated import to single quotes, regardless of
+          // the quote style the source fence's defineMeta import uses.
+          `${indent}import preview from '${sveltePreviewImportSpecifier}'${semicolon}`
       );
       if (rewritten !== next) {
         importReplaced = true;

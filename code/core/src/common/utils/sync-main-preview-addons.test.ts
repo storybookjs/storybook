@@ -152,6 +152,52 @@ describe('syncPreviewAddonsWithMainConfig', () => {
     expect(transformedCode).toMatch(originalCode);
   });
 
+  it('adds an addon to an addons constant that only the preview refers to', async () => {
+    const originalCode = dedent`
+      import { definePreview } from "@storybook/react/preview";
+
+      const addons = [];
+      export default definePreview({ addons });
+    `;
+    const preview = loadConfig(originalCode).parse();
+
+    (getAddonAnnotations as Mock).mockImplementation(() => {
+      return { importName: 'addonA11yAnnotations', importPath: '@storybook/addon-a11y/preview' };
+    });
+
+    const result = await syncPreviewAddonsWithMainConfig(mainConfig, preview, configDir);
+    expect(printConfig(result).code).toMatchInlineSnapshot(`
+      import { definePreview } from "@storybook/react/preview";
+      import * as addonA11yAnnotations from "@storybook/addon-a11y/preview";
+
+      const addons = [addonA11yAnnotations];
+      export default definePreview({ addons });
+    `);
+  });
+
+  it('carries forward the addons of a spread when the preview writes none', async () => {
+    const originalCode = dedent`
+      import { definePreview } from "@storybook/react/preview";
+      import shared from "./shared";
+
+      export default definePreview({ ...shared });
+    `;
+    const preview = loadConfig(originalCode).parse();
+
+    (getAddonAnnotations as Mock).mockImplementation(() => {
+      return { importName: 'addonA11yAnnotations', importPath: '@storybook/addon-a11y/preview' };
+    });
+
+    const result = await syncPreviewAddonsWithMainConfig(mainConfig, preview, configDir);
+    expect(printConfig(result).code).toMatchInlineSnapshot(`
+      import { definePreview } from "@storybook/react/preview";
+      import shared from "./shared";
+      import * as addonA11yAnnotations from "@storybook/addon-a11y/preview";
+
+      export default definePreview({ ...shared, addons: [...(shared.addons ?? []), addonA11yAnnotations] });
+    `);
+  });
+
   it('leaves an addons array alone that a later spread could replace', async () => {
     const originalCode = dedent`
       import { definePreview } from "@storybook/react/preview";

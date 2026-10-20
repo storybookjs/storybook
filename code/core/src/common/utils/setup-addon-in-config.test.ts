@@ -24,7 +24,7 @@ describe('setupAddonInConfig', () => {
     mockMain = {
       editor: { quote: "'" },
       getBodyDeclarations: () => [],
-      get: vi.fn(),
+      _arrayAt: vi.fn(() => ({ kind: 'missing' })),
       append: vi.fn(() => ({ ok: true, changed: true })),
     } as any;
 
@@ -38,7 +38,7 @@ describe('setupAddonInConfig', () => {
   });
 
   it('should add addon to main config when no getAbsolutePath wrapper exists', async () => {
-    vi.mocked(mockMain.get).mockReturnValue({} as any);
+    vi.mocked(mockMain._arrayAt).mockReturnValue({ kind: 'array', node: {} as any });
     vi.mocked(wrapUtils.getAbsolutePathWrapperName).mockReturnValue(null);
 
     await setupAddonInConfig({
@@ -62,7 +62,7 @@ describe('setupAddonInConfig', () => {
   });
 
   it('should add addon with getAbsolutePath wrapper when wrapper exists', async () => {
-    vi.mocked(mockMain.get).mockReturnValue({} as any);
+    vi.mocked(mockMain._arrayAt).mockReturnValue({ kind: 'array', node: {} as any });
     vi.mocked(wrapUtils.getAbsolutePathWrapperName).mockReturnValue('getAbsolutePath');
 
     await setupAddonInConfig({
@@ -90,7 +90,7 @@ describe('setupAddonInConfig', () => {
   });
 
   it('should write config even when addon field does not exist', async () => {
-    vi.mocked(mockMain.get).mockReturnValue(undefined);
+    vi.mocked(mockMain._arrayAt).mockReturnValue({ kind: 'missing' });
 
     await setupAddonInConfig({
       addonName: '@storybook/addon-docs',
@@ -124,8 +124,25 @@ describe('setupAddonInConfig', () => {
     expect(csfTools.writeConfig).not.toHaveBeenCalled();
   });
 
+  it('throws without writing for an addons field that holds a call, not an array', async () => {
+    const main = csfTools.loadConfig("export default { addons: ['a'].filter(Boolean) };").parse();
+
+    await expect(
+      setupAddonInConfig({
+        addonName: '@storybook/addon-docs',
+        mainConfigCSFFile: main,
+        previewConfigPath: undefined,
+        configDir: '.storybook',
+      })
+    ).rejects.toThrow("Expected an array literal at 'addons', got 'CallExpression'");
+    expect(csfTools.writeConfig).not.toHaveBeenCalled();
+    expect(csfTools.printConfig(main).code).toBe(
+      "export default { addons: ['a'].filter(Boolean) };"
+    );
+  });
+
   it('should handle sync errors gracefully', async () => {
-    vi.mocked(mockMain.get).mockReturnValue(undefined);
+    vi.mocked(mockMain._arrayAt).mockReturnValue({ kind: 'missing' });
     vi.mocked(syncModule.syncStorybookAddons).mockRejectedValue(new Error('Sync failed'));
 
     await expect(
@@ -142,7 +159,7 @@ describe('setupAddonInConfig', () => {
   });
 
   it('should handle undefined previewConfigPath', async () => {
-    vi.mocked(mockMain.get).mockReturnValue(undefined);
+    vi.mocked(mockMain._arrayAt).mockReturnValue({ kind: 'missing' });
 
     await setupAddonInConfig({
       addonName: '@storybook/addon-docs',

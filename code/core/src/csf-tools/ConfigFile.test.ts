@@ -815,6 +815,27 @@ describe('ConfigFile', () => {
         `export default { core: { builder: 'webpack5' }, addons: ['docs'] };`
       );
     });
+    it('reports a field that holds a call, which append would add an argument to', () => {
+      const source = "export default { addons: ['a'].filter(Boolean) };";
+      const config = loadConfig(source).parse();
+
+      expect(config.appendValueToArray(['addons'], 'b')).toMatchObject({
+        ok: false,
+        diagnostic: {
+          code: 'unsupported-value',
+          message: "Expected an array literal at 'addons', got 'CallExpression'",
+        },
+      });
+      expect(config.removeEntryFromArray(['addons'], 'a')).toMatchObject({ ok: false });
+      expect(printConfig(config).code).toBe(source);
+    });
+
+    it('appends to an array a constant holds', () => {
+      expect(
+        appendToArray(['addons'], 'b', "const addons = ['a'];\nexport default { addons };")
+      ).toBe("const addons = ['a', 'b'];\nexport default { addons };");
+    });
+
     it('reports a field that is not an array literal and leaves it as written', () => {
       const config = loadConfig(`export default { addons: 5 };`).parse();
       const result = config.appendValueToArray(['addons'], 'docs');
@@ -2108,6 +2129,29 @@ describe('ConfigFile', () => {
       expect(config.removeEntryFromArray(['stories'], 'x')).toEqual({ ok: true, changed: false });
       expect(config.removeEntryFromArray(['addons'], 'a')).toEqual({ ok: true, changed: true });
       expect(config.changed).toBe(true);
+    });
+
+    it.each([
+      [
+        'a constant',
+        "const addons = ['a', 'b'];\nexport default { addons };",
+        "const addons = ['a'];",
+      ],
+      [
+        'an `as const` export',
+        "export const addons = ['a', 'b'] as const;",
+        "export const addons = ['a'] as const;",
+      ],
+      [
+        'an export of a constant',
+        "const list = ['a', 'b'];\nexport const addons = list;",
+        "const list = ['a'];",
+      ],
+    ])('removes an entry of the array %s holds', (_case, source, line) => {
+      const config = loadConfig(source).parse();
+
+      expect(config.removeEntryFromArray(['addons'], 'b')).toEqual({ ok: true, changed: true });
+      expect(printConfig(config).code.split('\n')[0]).toBe(line);
     });
 
     it('reports an array a later spread could replace, like append', () => {

@@ -827,51 +827,82 @@ export class ConfigFile implements CsfObject {
     return value;
   }
 
-  /** @deprecated Use `append`, which takes a plain value too. */
+  /**
+   * @deprecated Use `append`, which takes a plain value too, and adds to a call's arguments as
+   * well as to an array.
+   */
   appendValueToArray(path: string[], value: any): CsfMutationResult {
-    return this.append(path, this.valueToNode(value));
+    return this.appendNodeToArray(path, this.valueToNode(value));
   }
 
-  /** @deprecated Use `append`. */
+  /**
+   * @deprecated Use `append`, which adds to a call's arguments as well as to an array.
+   */
   appendNodeToArray(path: string[], node: CsfExpression): CsfMutationResult {
-    return this.append(path, node);
+    const array = this._arrayAt(path);
+    return array.kind === 'other' ? this._reject(array.diagnostic) : this.append(path, node);
   }
 
   /**
    * Remove the first entry of the array literal at a path that names `value`: a string, a
    * `{ name }` object, or a call like `getAbsolutePath(value)`. A missing field or entry is a no-op.
    *
-   * @deprecated Find the entry in `get(path).elements` and `remove([...path, index])` it.
+   * @deprecated Find the entry's index and `remove([...path, index])` it. `get(path)` returns the
+   * field as written, so the index is that of `get(path).elements` for an array literal written
+   * at the field, not for a constant it names.
    */
   removeEntryFromArray(path: string[], value: string): CsfMutationResult {
     const current = this.inspect(path);
-    if (current.kind === 'missing') {
-      return { ok: true, changed: false };
-    }
     if (current.kind === 'unreadable') {
       return this._reject(current.diagnostic);
     }
-    if (current.node.type !== 'ArrayExpression') {
-      const field = this.getFieldNode(path);
-      return this._reject({
+    const array = this._arrayAt(path);
+    if (array.kind === 'other') {
+      return this._reject(array.diagnostic);
+    }
+    const index =
+      array.kind === 'missing'
+        ? -1
+        : array.node.elements.findIndex((element) => {
+            if (isStringLiteral(element)) {
+              return element.value === value;
+            }
+            if (element?.type === 'ObjectExpression') {
+              const name = this._getPresetValue(element, 'name');
+              return name === value;
+            }
+            return element ? this._getWrappedValue(element) === value : false;
+          });
+    return index < 0 ? { ok: true, changed: false } : this.remove([...path, index]);
+  }
+
+  // The array literal at a path as `getFieldNode` resolves it, through local constants and type
+  // assertions, which `append` and `remove` reach as well. A field holding anything else, such as
+  // a call, comes with the diagnostic of the array helpers, which refuse it.
+  _arrayAt(
+    path: string[]
+  ):
+    | { kind: 'missing' }
+    | { kind: 'array'; node: E.ArrayExpression }
+    | { kind: 'other'; diagnostic: CsfMutationDiagnostic } {
+    const node = this.getFieldNode(path);
+    if (!node) {
+      return { kind: 'missing' };
+    }
+    const value = unwrapExpression(node);
+    if (value.type === 'ArrayExpression') {
+      return { kind: 'array', node: value };
+    }
+    return {
+      kind: 'other',
+      diagnostic: {
         code: 'unsupported-value',
         target: this.target,
         path,
-        message: `Expected an array literal at '${path.join('.')}', got '${current.node.type}'`,
-        ...(field ? { loc: locationOf(this._code, field.start, field.end) } : {}),
-      });
-    }
-    const index = current.node.elements.findIndex((element) => {
-      if (isStringLiteral(element)) {
-        return element.value === value;
-      }
-      if (element?.type === 'ObjectExpression') {
-        const name = this._getPresetValue(element, 'name');
-        return name === value;
-      }
-      return element ? this._getWrappedValue(element) === value : false;
-    });
-    return index < 0 ? { ok: true, changed: false } : this.remove([...path, index]);
+        message: `Expected an array literal at '${path.join('.')}', got '${node.type}'`,
+        loc: locationOf(this._code, node.start, node.end),
+      },
+    };
   }
 
   valueToNode(value: any): CsfExpression {

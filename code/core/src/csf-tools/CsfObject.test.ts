@@ -1187,3 +1187,38 @@ describe('CsfObject', () => {
     });
   });
 });
+
+describe('CsfObject.node', () => {
+  it('returns the object literal of the current parse, found again after an edit', () => {
+    const csf = parse(`export default { title: 'A' };\nexport const Primary = { args: {} };`);
+    const [meta, story] = csf.objects();
+    const before = story.node!;
+
+    expect(textOf(before)).toBe('{ args: {} }');
+    expect(meta.node).toBe(csf._metaNode);
+
+    story.set(['args', 'disabled'], true);
+
+    expect(story.node).not.toBe(before);
+    expect(textOf(story.node!)).toBe('{ args: { disabled: true } }');
+  });
+
+  it('returns the assigned object of a CSF2 annotation and the argument of a factory', () => {
+    const csf = parse(
+      `export default {};\nexport const Primary = () => null;\nPrimary.parameters = { a: 1 };`
+    );
+    const [annotation] = csf.objects({ meta: false });
+
+    expect(textOf(annotation.node!)).toBe('{ a: 1 }');
+
+    const config = loadConfig(`export default definePreview({ tags: [] });`).parse();
+    expect(textOf(config.node!)).toBe('{ tags: [] }');
+  });
+
+  it('returns undefined for a config made of named exports, without a diagnostic', () => {
+    const config = loadConfig(`export const tags = [];`).parse();
+
+    expect(config.node).toBeUndefined();
+    expect(config.mutationDiagnostics).toEqual([]);
+  });
+});

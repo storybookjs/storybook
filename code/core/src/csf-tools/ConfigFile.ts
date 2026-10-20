@@ -6,7 +6,7 @@ import { dedent } from 'ts-dedent';
 import invariant from 'tiny-invariant';
 
 import type { PrintResultType } from './PrintResultType.ts';
-import { createConfigObject } from './ConfigObject.ts';
+import { createConfigObject, locateConfigRoot } from './ConfigObject.ts';
 import {
   type CsfExpression,
   type CsfMutationDiagnostic,
@@ -209,6 +209,22 @@ export class ConfigFile implements CsfObject {
    */
   get changed() {
     return this._changed;
+  }
+
+  /**
+   * Find the config object literal in the current parse, or `undefined` for a config made of named
+   * exports or one whose config object cannot be located. It is the file's own node, not a copy: do
+   * not change it, and read it again after a mutation, which parses the file again.
+   *
+   * @example
+   * ```ts
+   * const config = loadConfig('export default definePreview({ tags: [] });').parse();
+   * textOf(config.node!); // '{ tags: [] }'
+   * ```
+   */
+  get node(): E.ObjectExpression | undefined {
+    const located = locateConfigRoot(this, 'read');
+    return located.ok ? located.root.node : undefined;
   }
 
   /**

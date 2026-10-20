@@ -109,6 +109,22 @@ export interface CsfObject {
    */
   readonly changed: boolean;
   /**
+   * Find the object literal this editor edits in the current parse; for a CSF2 annotation editor,
+   * the object its annotation path names. It is `undefined` for a config made of named exports and
+   * once the object is gone. It is the file's own node, not a copy: do not change it, and read it
+   * again after a mutation, which parses the file again.
+   *
+   * @example
+   * ```ts
+   * const csf = loadCsf('export default {}; export const Primary = { args: {} };', {
+   *   makeTitle: () => 'Example',
+   * }).parse();
+   * const [story] = csf.objects({ meta: false });
+   * textOf(story.node!); // '{ args: {} }'
+   * ```
+   */
+  readonly node: E.ObjectExpression | undefined;
+  /**
    * Read a detached copy of the expression at a property path. For a CSF2 annotation, its
    * annotation path returns the whole object. Missing fields return `undefined`.
    *
@@ -368,6 +384,10 @@ class CsfObjectEditor implements CsfObject {
 
   get changed() {
     return this.#changed;
+  }
+
+  get node() {
+    return this.host.root()?.node;
   }
 
   private get editor() {

@@ -13,11 +13,13 @@ import { getUniqueImportPaths } from './utils/unique-import-paths.ts';
  * to delay loading and to allow Vite to split the code into smaller chunks. It then creates a
  * function, `importFn(path)`, which resolves a path to an import function and this is called by
  * Storybook to fetch a story dynamically when needed. With a `moduleLoader`, `importFn` asks its
- * `load(path, importFn)` for every file.
+ * `load(path, importFn)` for every file. The files are listed in path order, so the code depends on
+ * the set of story files only, not on the order of the index.
  */
 export function generateImportFnScriptCode(index: StoryIndex, moduleLoader?: string): string {
-  const objectEntries: [path: string, importStatement: string][] = getUniqueImportPaths(index).map(
-    (importPath) => {
+  const objectEntries: [path: string, importStatement: string][] = getUniqueImportPaths(index)
+    .sort()
+    .map((importPath) => {
       if (importPath.startsWith('virtual:')) {
         return [importPath, genDynamicImport(importPath)];
       }
@@ -30,8 +32,7 @@ export function generateImportFnScriptCode(index: StoryIndex, moduleLoader?: str
       const absolutePath = normalize(join(process.cwd(), importPath));
 
       return [toImportPath(importPath), genDynamicImport(absolutePath)];
-    }
-  );
+    });
 
   const importModule = moduleLoader
     ? 'load(path, (path) => importers[path]())'

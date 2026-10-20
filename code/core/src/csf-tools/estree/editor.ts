@@ -50,6 +50,7 @@ export interface SourceEdits {
   prependRight(index: number, content: string): this;
   overwrite(start: number, end: number, content: string): this;
   remove(start: number, end: number): this;
+  clone(): SourceEdits;
   /** The content of a span as edited so far; throws when an edit cuts through its ends. */
   slice(start: number, end: number): string;
   hasChanged(): boolean;
@@ -104,6 +105,17 @@ export class SourceEditor {
   readonly _onCommit: (() => void) | undefined;
 
   _style: Style | undefined;
+
+  // The transaction running, if any: whether a mutation in it was refused, so it rolls back, and
+  // how to undo state kept outside the editor, such as a `changed` flag.
+  _transaction: { refused: boolean; rollbacks: (() => void)[] } | undefined;
+
+  /** Mark a mutation as refused, so the transaction it runs in rolls back. */
+  _refuse() {
+    if (this._transaction) {
+      this._transaction.refused = true;
+    }
+  }
 
   constructor(code: string, fileName?: string, onCommit?: () => void) {
     this.fileName = fileName;
@@ -204,6 +216,49 @@ export class SourceEditor {
     this._edits = new MagicString(this.code, { filename: this.fileName });
     this._onCommit?.();
     return true;
+  }
+
+  /**
+   * Run `fn`, keeping its edits only when it does not throw, does not return `false` and no
+   * mutation in it was refused. Otherwise the code, the tree and the pending and committed edits
+   * are put back as they were and indexed again, as a commit would, and `onRollback` runs. Returns
+   * whether they were kept.
+   */
+  transaction(fn: () => boolean | void, onRollback?: () => void): boolean {
+    const { _module, _style, _transaction: outer } = this;
+    const committed = this._committed.length;
+    const edits = this._edits.clone();
+    const transaction = { refused: false, rollbacks: onRollback ? [onRollback] : [] };
+    this._transaction = transaction;
+    let kept = false;
+    try {
+      const result = fn();
+      if (typeof (result as unknown as PromiseLike<unknown> | undefined)?.then === 'function') {
+        throw new Error(
+          'A transaction cannot wait for a promise: its edits would be made after it'
+        );
+      }
+      kept = result !== false && !transaction.refused;
+    } finally {
+      this._transaction = outer;
+      if (kept) {
+        outer?.rollbacks.push(...transaction.rollbacks);
+      } else {
+        transaction.rollbacks.reverse().forEach((rollback) => rollback());
+        this._module = _module;
+        this._style = _style;
+        this._committed.length = committed;
+        this._edits = edits;
+        this._scopes = undefined;
+        this._parents = undefined;
+        try {
+          this._onCommit?.();
+        } catch {
+          // The code before `fn` indexed, or failed to, the same way.
+        }
+      }
+    }
+    return kept;
   }
 
   /**

@@ -402,11 +402,34 @@ export class ConfigFile implements CsfObject {
     return this._mutate((object) => object.group(path, names));
   }
 
+  /**
+   * Apply mutations together: when `fn` throws, returns `false`, or any mutation in it returns
+   * `{ ok: false }`, every edit made in it is rolled back, those of array and import helpers too.
+   * Its diagnostics stay, to report why. Returns whether the edits were kept.
+   *
+   * @example
+   * ```ts
+   * const config = loadConfig("export default { layout: 'centered', tags: ['a'] };").parse();
+   * config.transaction(() => {
+   *   config.remove(['layout']);
+   *   config.set(['tags', 'value'], 'b');
+   * }); // false: `tags` is an array, so the removal is rolled back too
+   * ```
+   */
+  transaction(fn: () => boolean | void): boolean {
+    const changed = this._changed;
+    return this._editor.transaction(fn, () => {
+      this._changed = changed;
+    });
+  }
+
   _mutate(operation: (object: CsfObject) => CsfMutationResult): CsfMutationResult {
     const editor = this._objectEditor('mutate');
-    return editor.ok === true
-      ? operation(editor.object)
-      : { ok: false, changed: false, diagnostic: editor.diagnostic };
+    if (editor.ok === true) {
+      return operation(editor.object);
+    }
+    this._editor._refuse();
+    return { ok: false, changed: false, diagnostic: editor.diagnostic };
   }
 
   _objectEditor(mode: 'read' | 'mutate') {
@@ -862,6 +885,7 @@ export class ConfigFile implements CsfObject {
       loc: locationOf(this._code, node.start, node.end),
     };
     this._mutationDiagnostics.push(diagnostic);
+    this._editor._refuse();
     return { ok: false, changed: false, diagnostic };
   }
 

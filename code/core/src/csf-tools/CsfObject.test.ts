@@ -1223,6 +1223,146 @@ describe('CsfObject', () => {
       expect(() => csf.objects()).toThrow(error);
     });
   });
+
+  describe('transaction', () => {
+    const source = `export default { title: 'B' };
+export const A = {
+  beforeEach: setup,
+  ...shared,
+  parameters: { msw: { handlers: [] }, layout: 'centered' },
+};
+`;
+
+    it('rolls every edit back when a mutation in it is refused', () => {
+      const csf = parse(source);
+      const [story] = csf.objects({ meta: false });
+
+      const kept = csf.transaction(() => {
+        expect(story.remove(['parameters', 'msw'])).toEqual({ ok: true, changed: true });
+        expect(story.set(['beforeEach'], parseExpression('mockHandlers')).ok).toBe(false);
+      });
+
+      expect(kept).toBe(false);
+      expect(printCsf(csf).code).toBe(source);
+      expect(story.getValue(['parameters', 'layout'])).toBe('centered');
+      expect(story.get(['parameters', 'msw'])).toBeDefined();
+      expect(csf.changed).toBe(false);
+      expect(story.changed).toBe(false);
+      expect(csf.mutationDiagnostics).toEqual([
+        expect.objectContaining({ code: 'spread-field', path: ['beforeEach'] }),
+      ]);
+    });
+
+    it('keeps the edits when every mutation in it succeeds', () => {
+      const csf = parse(source);
+      const [story] = csf.objects({ meta: false });
+
+      const kept = csf.transaction(() => {
+        story.remove(['parameters', 'msw']);
+        story.set(['parameters', 'layout'], 'fullscreen');
+      });
+
+      expect(kept).toBe(true);
+      expect(printCsf(csf).code).toContain("parameters: { layout: 'fullscreen' },");
+      expect(csf.changed).toBe(true);
+      expect(story.changed).toBe(true);
+    });
+
+    it('rolls back when the function returns false or throws, and rethrows', () => {
+      const csf = parse(source);
+      const [story] = csf.objects({ meta: false });
+
+      expect(csf.transaction(() => (story.remove(['parameters']), false))).toBe(false);
+      expect(() =>
+        csf.transaction(() => {
+          story.remove(['parameters']);
+          throw new Error('codemod bug');
+        })
+      ).toThrow('codemod bug');
+
+      expect(printCsf(csf).code).toBe(source);
+      expect(csf.stories.map(({ name }) => name)).toEqual(['A']);
+    });
+
+    it('rolls back an edit the CSF indexer rejects, so the file indexes again', () => {
+      const csf = parse("export default { title: 'B', tags: ['docs'] };\nexport const A = {};\n");
+      const [meta] = csf.objects({ stories: false });
+
+      const kept = csf.transaction(() => {
+        meta.set(['tags'], parseExpression("[...['docs'], 'autodocs']"));
+      });
+
+      expect(kept).toBe(false);
+      expect(csf.meta?.tags).toEqual(['docs']);
+      expect(meta.set(['tags'], ['docs', 'autodocs'])).toEqual({ ok: true, changed: true });
+    });
+
+    it('rolls back an inner transaction on its own', () => {
+      const csf = parse(source);
+      const [story] = csf.objects({ meta: false });
+
+      const kept = csf.transaction(() => {
+        story.remove(['parameters', 'msw']);
+        expect(csf.transaction(() => story.set(['beforeEach'], 'x').ok)).toBe(false);
+      });
+
+      expect(kept).toBe(true);
+      expect(printCsf(csf).code).toContain("parameters: { layout: 'centered' },");
+      expect(printCsf(csf).code).toContain('beforeEach: setup,');
+    });
+
+    it('rolls back a kept inner transaction with the outer one', () => {
+      const csf = parse(source);
+      const [story] = csf.objects({ meta: false });
+
+      const kept = csf.transaction(() => {
+        expect(csf.transaction(() => story.remove(['parameters', 'msw']).ok)).toBe(true);
+        story.set(['beforeEach'], 'x');
+      });
+
+      expect(kept).toBe(false);
+      expect(printCsf(csf).code).toBe(source);
+      expect(story.changed).toBe(false);
+    });
+
+    it('rolls back what a function returning a promise did before throwing', () => {
+      const csf = parse(source);
+      const [story] = csf.objects({ meta: false });
+
+      // @ts-expect-error A transaction runs synchronously.
+      expect(() => csf.transaction(async () => story.remove(['parameters']))).toThrow('promise');
+      expect(printCsf(csf).code).toBe(source);
+    });
+
+    it('rolls back when an array helper is refused', () => {
+      const code = "export default { layout: 'centered', tags: 'a' };";
+      const config = loadConfig(code).parse();
+
+      const kept = config.transaction(() => {
+        config.remove(['layout']);
+        config.appendValueToArray(['tags'], 'b');
+      });
+
+      expect(kept).toBe(false);
+      expect(printConfig(config).code).toBe(code);
+    });
+
+    it('rolls back config edits, named exports included', () => {
+      const code =
+        "export const parameters = { layout: 'centered' };\nexport const tags = ['a'];\n";
+      const config = loadConfig(code).parse();
+
+      const kept = config.transaction(() => {
+        config.remove(['parameters', 'layout']);
+        config.set(['tags', 'nested'], 1);
+      });
+
+      expect(kept).toBe(false);
+      expect(printConfig(config).code).toBe(code);
+      expect(config.changed).toBe(false);
+      expect(config.getValue(['parameters'])).toEqual({ layout: 'centered' });
+    });
+  });
 });
 
 describe('CsfObject.node', () => {

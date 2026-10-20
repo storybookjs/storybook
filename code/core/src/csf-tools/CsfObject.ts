@@ -467,7 +467,7 @@ class CsfObjectEditor implements CsfObject {
     if (root) {
       const value = readValue(this.editor.scopes, root);
       if (value === UNRESOLVED) {
-        this.failure('unsupported-value', path, root);
+        this.reportDiagnostic(this.diagnostic('unsupported-value', path, root));
         return undefined;
       }
       return value;
@@ -477,12 +477,12 @@ class CsfObjectEditor implements CsfObject {
       return undefined;
     }
     if (property.method) {
-      this.failure('unsupported-value', path, property);
+      this.reportDiagnostic(this.diagnostic('unsupported-value', path, property));
       return undefined;
     }
     const value = readValue(this.editor.scopes, property.value);
     if (value === UNRESOLVED) {
-      this.failure('unsupported-value', path, property.value);
+      this.reportDiagnostic(this.diagnostic('unsupported-value', path, property.value));
       return undefined;
     }
     return value;
@@ -990,6 +990,8 @@ class CsfObjectEditor implements CsfObject {
   ) {
     const diagnostic = this.diagnostic(code, path, node, message);
     this.reportDiagnostic(diagnostic);
+    // Unlike a read, a refused mutation rolls back the transaction it runs in.
+    this.editor._refuse();
     return { ok: false as const, changed: false as const, diagnostic };
   }
 
@@ -997,7 +999,12 @@ class CsfObjectEditor implements CsfObject {
   // JS, so that is a diagnostic rather than an error. Code that does not parse is left pending by
   // the editor, and the error is the caller's.
   private commit(path: readonly string[]): CsfMutationResult {
-    this.#changed = true;
+    if (!this.#changed) {
+      this.#changed = true;
+      this.editor._transaction?.rollbacks.push(() => {
+        this.#changed = false;
+      });
+    }
     this.markChanged();
     try {
       this.editor.commit();

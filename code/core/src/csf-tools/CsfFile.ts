@@ -447,6 +447,29 @@ export class CsfFile {
     );
   }
 
+  /**
+   * Apply mutations together: when `fn` throws, returns `false`, or any mutation in it returns
+   * `{ ok: false }`, every edit made in it is rolled back. Its diagnostics stay, to report why.
+   * Returns whether the edits were kept.
+   *
+   * @example
+   * ```ts
+   * const [story] = csf.objects({ meta: false });
+   * const migrated = csf.transaction(() => {
+   *   story.remove(['parameters', 'msw']);
+   *   story.set(['beforeEach'], parseExpression('mockHandlers'));
+   * });
+   * // false, and the file as it was, when `beforeEach` cannot be set
+   * ```
+   */
+  transaction(fn: () => boolean | void): boolean {
+    const state = mutationStates.get(this)!;
+    const { changed } = state;
+    return this._editor.transaction(fn, () => {
+      state.changed = changed;
+    });
+  }
+
   // Not committed: `formatCsf` prints it with the other pending edits.
   _appendStatement(code: string) {
     appendStatement(this._editor, code);

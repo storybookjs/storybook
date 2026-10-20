@@ -49,6 +49,20 @@ Unproven shapes include story or meta bindings that are reassigned or aliased, a
 
 `CsfFile.changed` is true once any mutation has been applied, which is the signal for whether the file needs to be written back.
 
+Each mutation is applied on its own. To apply several as one, run them in `transaction(fn)` on `CsfFile` or `ConfigFile`: when `fn` throws, returns `false`, or any mutation in it returns `{ ok: false }`, every edit made in it is rolled back, and `changed` with it. Mutations inside return their results as usual, and the diagnostics of refused ones stay on `mutationDiagnostics`. `transaction` returns whether the edits were kept. `fn` runs synchronously; one that returns a promise throws. A transaction inside another rolls back on its own, and with the outer one.
+
+```ts
+for (const story of csf.objects()) {
+  const handlers = story.get(['parameters', 'msw', 'handlers']);
+  if (handlers) {
+    csf.transaction(() => {
+      story.remove(['parameters', 'msw']);
+      story.set(['beforeEach'], parseExpression(`() => worker.use(...${placeableTextOf(handlers)})`));
+    });
+  }
+}
+```
+
 ## Transforming preview and main configuration
 
 `ConfigFile` implements `CsfObject` directly, exposing the same methods and mutation results as the editors returned by `CsfFile.objects()`. Config files use `{ kind: 'config' }` as their target. Default-exported objects, identifier-backed objects, `definePreview` configurations, and CommonJS `module.exports` use their config object as the root.

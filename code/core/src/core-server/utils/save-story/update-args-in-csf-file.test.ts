@@ -7,9 +7,9 @@ import { loadCsf, parseExpression, printCsf, readCsf } from 'storybook/internal/
 
 import { format } from 'prettier';
 
+import { duplicateStoryWithNewName } from './duplicate-story-with-new-name.ts';
 import { getDiff } from './getDiff.ts';
 import { updateArgsInCsfFile } from './update-args-in-csf-file.ts';
-import { SaveStoryError } from './utils.ts';
 
 const makeTitle = (userTitle: string) => userTitle;
 
@@ -146,12 +146,63 @@ describe('success', () => {
     expect(printCsf(parsed).code).toBe(source);
     expect(parsed.changed).toBe(false);
   });
-  test('reports why a story cannot be edited', () => {
+  test('arg value shaped like an AST node is written as data', () => {
+    const parsed = loadCsf(`export default { title: 'X' };\nexport const A = {};`, {
+      makeTitle,
+    }).parse();
+
+    updateArgsInCsfFile(parsed, 'A', { node: { type: 'Identifier', name: 'x' } });
+
+    expect(printCsf(parsed).code).toMatchInlineSnapshot(`
+      "export default { title: 'X' };
+      export const A = { args: { node: { type: 'Identifier', name: 'x' } } };"
+    `);
+  });
+  test('factory story without an argument', () => {
     const parsed = loadCsf(
       [
         `import preview from '#.storybook/preview';`,
         `const meta = preview.meta({ title: 'X' });`,
         `export const A = meta.story();`,
+      ].join('\n'),
+      { makeTitle }
+    ).parse();
+
+    updateArgsInCsfFile(parsed, 'A', { a: 1, b: 'x' });
+
+    expect(printCsf(parsed).code).toMatchInlineSnapshot(`
+      "import preview from '#.storybook/preview';
+      const meta = preview.meta({ title: 'X' });
+      export const A = meta.story({ args: { a: 1, b: 'x' } });"
+    `);
+  });
+  test('new story from a factory story without an argument', () => {
+    const parsed = loadCsf(
+      [
+        `import preview from '#.storybook/preview';`,
+        `const meta = preview.meta({ title: 'X' });`,
+        `export const A = meta.story();`,
+      ].join('\n'),
+      { makeTitle }
+    ).parse();
+
+    duplicateStoryWithNewName(parsed, 'A', 'B');
+    updateArgsInCsfFile(parsed, 'B', { a: 1 });
+
+    expect(printCsf(parsed).code).toMatchInlineSnapshot(`
+      "import preview from '#.storybook/preview';
+      const meta = preview.meta({ title: 'X' });
+      export const A = meta.story();
+      export const B = meta.story({ args: { a: 1 } });"
+    `);
+  });
+  test('reports why a story cannot be edited', () => {
+    const parsed = loadCsf(
+      [
+        `import preview from '#.storybook/preview';`,
+        `const meta = preview.meta({ title: 'X' });`,
+        `const config = {};`,
+        `export const A = meta.story(config);`,
       ].join('\n'),
       { makeTitle }
     ).parse();

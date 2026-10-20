@@ -1398,6 +1398,8 @@ These packages read `storybook/internal/babel` or Babel-shaped `csf-tools` field
 
 #### Changes for tooling that imports Storybook's internal entry points
 
+An addon that supports both Storybook 10 and 11 can detect the new API with `typeof csfTools.parseModule === 'function'`, where `csfTools` is `import * as csfTools from 'storybook/internal/csf-tools'`.
+
 - `storybook/internal/babel` is removed. Import Babel from your own `@babel/*` dependencies if you still need it.
 - `getBabelDependencies` is removed from `storybook/internal/cli`.
 - The nodes exposed by `storybook/internal/csf-tools` are ESTree (OXC) nodes instead of Babel nodes, for example `Literal` instead of `StringLiteral` and `Property` instead of `ObjectProperty`/`ObjectMethod`. `CsfFile._ast` and the `NodePath` fields are removed; use `CsfFile.program` and `CsfFile.editor`. `ConfigFile._ast` is removed as well; use `ConfigFile.program` and `ConfigFile.editor`. Both `editor`s are a `SourceEditor`: call `editor.commit()` to apply pending edits, after which the file parses the result again. `_program` and `_editor` remain as deprecated aliases in Storybook 11. The editing functions and `source()` throw for nodes of another parse, such as nodes from before a commit; offsets passed to `editor.edits` are not checked.
@@ -1448,7 +1450,7 @@ If your custom migration tooling imports `ConfigFile` from `storybook/internal/c
 | ------------------------------------ | ------------------------ |
 | `getFieldValue`, `getSafeFieldValue` | `getValue`               |
 | `setFieldNode`, `setFieldValue`      | `set`                    |
-| `removeField`                        | `remove`                 |
+| `removeField`                        | `remove`, which also removes a parent it leaves empty: `export const core = { builder: 'webpack4' }` loses the export instead of becoming `export const core = {}` |
 | `findNamedImportMethodCalls`         | `callArguments`          |
 | `FindNamedImportMethodCallsOptions`  | `CallArgumentsOptions`   |
 

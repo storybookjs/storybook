@@ -398,7 +398,8 @@ export const MockedError: Story = {
 
 ```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/svelte-vite';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import { graphql, HttpResponse, delay } from 'msw';
 
@@ -469,6 +470,7 @@ export const MockedError: Story = {
       }),
     );
   }}
+/>
 ```
 
 ```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
@@ -544,6 +546,7 @@ export const MockedError: Story = {
       }),
     );
   }}
+/>
 ```
 
 ```svelte filename="MockApolloWrapperClient.svelte" renderer="svelte" language="js" tabTitle="apollo-wrapper-component"
@@ -572,7 +575,8 @@ export const MockedError: Story = {
 
 ```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/svelte-vite';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import { graphql, HttpResponse, delay } from 'msw';
 

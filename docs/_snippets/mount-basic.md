@@ -51,7 +51,8 @@ export const ChristmasUI = meta.story({
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/svelte-vite';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Page from './Page.svelte';
 
@@ -62,7 +63,7 @@ export const ChristmasUI = meta.story({
 
 <Story
   name="ChristmasUI"
-  play={async ({ mount }) {
+  play={async ({ mount }) => {
     MockDate.set('2024-12-25');
     // 👇 Render the component with the mocked date
     await mount();
@@ -84,7 +85,7 @@ export const ChristmasUI = meta.story({
 
 <Story
   name="ChristmasUI"
-  play={async ({ mount }) {
+  play={async ({ mount }) => {
     MockDate.set('2024-12-25');
     // 👇 Render the component with the mocked date
     await mount();
@@ -95,7 +96,8 @@ export const ChristmasUI = meta.story({
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/svelte-vite';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Page from './Page.svelte';
 
@@ -106,7 +108,7 @@ export const ChristmasUI = meta.story({
 
 <Story
   name="ChristmasUI"
-  play={async ({ mount }) {
+  play={async ({ mount }) => {
     MockDate.set('2024-12-25');
     // 👇 Render the component with the mocked date
     await mount();
@@ -128,7 +130,7 @@ export const ChristmasUI = meta.story({
 
 <Story
   name="ChristmasUI"
-  play={async ({ mount }) {
+  play={async ({ mount }) => {
     MockDate.set('2024-12-25');
     // 👇 Render the component with the mocked date
     await mount();

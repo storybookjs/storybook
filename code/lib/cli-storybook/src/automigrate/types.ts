@@ -77,6 +77,10 @@ type PromptType<ResultType = any, T = Prompt> =
 
 export type TransformOptions<ResultType> = Omit<CheckOptions, 'files' | 'requested'> & {
   result: ResultType;
+  /**
+   * Skip prompts and use defaults (from --yes flag): explicit consent is unavailable.
+   */
+  yes?: boolean;
 };
 
 /**

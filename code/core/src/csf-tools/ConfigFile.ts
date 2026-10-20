@@ -14,7 +14,7 @@ import { dedent } from 'ts-dedent';
 import invariant from 'tiny-invariant';
 
 import type { PrintResultType } from './PrintResultType.ts';
-import { createConfigObject } from './ConfigObject.ts';
+import { createConfigNamedExport, createConfigObject } from './ConfigObject.ts';
 import {
   type CsfMutationDiagnostic,
   type CsfMutationResult,
@@ -345,6 +345,43 @@ export class ConfigFile implements CsfObject {
    */
   group(path: readonly string[], names: readonly string[]): CsfMutationResult {
     return this._mutate((object) => object.group(path, names));
+  }
+
+  /**
+   * Edit one named export as its own config, for example a `parameters` export that the default
+   * export shadows. Paths address the full config but reach only that export, and a removal that
+   * empties it prunes the declaration. Returns `undefined` when the export is not declared;
+   * unsupported exports add a mutation diagnostic.
+   *
+   * @example
+   * ```ts
+   * const config = loadConfig("export const parameters = { legacy: true }; export default { other: 1 };").parse();
+   * const parameters = config.namedExport('parameters', 'mutate');
+   * parameters?.remove(['parameters', 'legacy']);
+   * config.changed; // true
+   * ```
+   */
+  namedExport(name: string, mode: 'read' | 'mutate' = 'read'): CsfObject | undefined {
+    if (!Object.hasOwn(this._exportDecls, name)) {
+      return undefined;
+    }
+    const editor = createConfigNamedExport(
+      this,
+      name,
+      mode,
+      (diagnostic) => this._mutationDiagnostics.push(diagnostic),
+      () => {
+        this._changed = true;
+        this._exports = {};
+        this._exportDecls = {};
+        this.parse();
+      }
+    );
+    if (editor.ok === false) {
+      this._mutationDiagnostics.push(editor.diagnostic);
+      return undefined;
+    }
+    return editor.object;
   }
 
   _mutate(operation: (object: CsfObject) => CsfMutationResult): CsfMutationResult {

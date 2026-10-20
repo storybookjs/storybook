@@ -3,6 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { formatExistingFile, type JsPackageManager } from 'storybook/internal/common';
+import { generate, types as t } from 'storybook/internal/babel';
 import { loadConfig } from 'storybook/internal/csf-tools';
 
 import { fs, vol } from 'memfs';
@@ -26,10 +27,10 @@ const options = {
   storiesPaths: [],
 };
 
-const migrate = async (main: string, preview: string) => {
+const migrate = async (main: string, preview: string, extra: { yes?: boolean } = {}) => {
   vol.fromJSON({ [mainConfigPath]: main, [previewConfigPath]: preview });
   const result = await checkFix(storySortToMain, options);
-  const failures = result ? await runFix(storySortToMain, { ...options, result }) : [];
+  const failures = result ? await runFix(storySortToMain, { ...options, ...extra, result }) : [];
   return {
     applies: result !== null,
     failures,
@@ -42,6 +43,19 @@ const expectMoved = async (main: string, preview: string, storySort: unknown) =>
   const migrated = await migrate(main, preview);
   expect(migrated.failures).toEqual([]);
   expect(loadConfig(migrated.main).parse().getValue(['storySorts'])).toEqual([storySort]);
+  expect(
+    loadConfig(migrated.preview).parse().get(['parameters', 'options', 'storySort'])
+  ).toBeUndefined();
+  return migrated;
+};
+
+const expectMovedFunction = async (main: string, preview: string, expectedSource: string) => {
+  const migrated = await migrate(main, preview);
+  expect(migrated.failures).toEqual([]);
+  const sorters = loadConfig(migrated.main).parse().get(['storySorts']);
+  expect(t.isArrayExpression(sorters)).toBe(true);
+  const [first] = (sorters as t.ArrayExpression).elements;
+  expect(generate(first as t.Expression).code).toBe(expectedSource);
   expect(
     loadConfig(migrated.preview).parse().get(['parameters', 'options', 'storySort'])
   ).toBeUndefined();
@@ -222,16 +236,16 @@ describe('story-sort-to-main', () => {
       `const config = { parameters: { options: { storySort: { order: ['Intro'] } } } }; module['exports'] = config`,
     ],
     [
-      'an options computed property',
-      `export default { parameters: { options: { [key]: legacy, storySort: { order: ['Intro'] } } } }`,
-    ],
-    [
       'a root spread after parameters',
       `export default { parameters: { options: { storySort: { order: ['Intro'] } } }, ...shared }`,
     ],
     [
       'a parameters spread after options',
       `export default { parameters: { options: { storySort: { order: ['Intro'] } }, ...shared } }`,
+    ],
+    [
+      'an options computed property before storySort',
+      `export default { parameters: { options: { [key]: legacy, storySort: { order: ['Intro'] } } } }`,
     ],
     [
       'an options spread before storySort',
@@ -260,18 +274,6 @@ describe('story-sort-to-main', () => {
     [
       'a computed options key',
       `export default { parameters: { [key]: { storySort: { order: ['Intro'] } } } }`,
-    ],
-    [
-      'both default and named exports',
-      `export const parameters = { options: { storySort: { order: ['Named'] } } }; export default { parameters: { options: { storySort: { order: ['Default'] } } } }`,
-    ],
-    [
-      'mixed default and named parameters roots',
-      `export const parameters = { docs: {} }; export default { parameters: { options: { storySort: { order: ['Intro'] } } } }`,
-    ],
-    [
-      'a storySort method',
-      `export default { parameters: { options: { storySort(a, b) { return 0 } } } }`,
     ],
     [
       'a storySort getter',
@@ -333,10 +335,6 @@ describe('story-sort-to-main', () => {
       'a computed duplicate storySort',
       `export default { parameters: { options: { storySort: { order: ['First'] }, ['storySort']: { order: ['Second'] } } } }`,
     ],
-    [
-      'a comparator function',
-      `export default { parameters: { options: { storySort: (a, b) => a.title.localeCompare(b.title) } } }`,
-    ],
     ['an identifier', `export default { parameters: { options: { storySort } } }`],
     ['a call', `export default { parameters: { options: { storySort: createSort() } } }`],
     [
@@ -391,5 +389,237 @@ describe('story-sort-to-main', () => {
     });
 
     expect((await migrate(main, preview)).applies).toBe(false);
+  });
+
+  it('moves a comparator function with its source intact', async () => {
+    await expectMovedFunction(
+      `export default { stories: [] }`,
+      `export default { parameters: { options: { storySort: (a, b) => a.title.localeCompare(b.title) } } }`,
+      `(a, b) => a.title.localeCompare(b.title)`
+    );
+  });
+
+  it('moves a storySort method as a function', async () => {
+    const { main } = await expectMovedFunction(
+      `export default { stories: [] }`,
+      `export default { parameters: { options: { storySort(a, b) { return 0 } } } }`,
+      `function (a, b) {\n  return 0;\n}`
+    );
+
+    expect(main).toContain('storySorts');
+  });
+
+  it('moves a comparator that only reaches the global undefined', async () => {
+    await expectMovedFunction(
+      `export default { stories: [] }`,
+      `export default { parameters: { options: { storySort: (a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }) } } }`,
+      `(a, b) => a.title.localeCompare(b.title, undefined, {\n  numeric: true\n})`
+    );
+  });
+
+  it('leaves both files untouched when the comparator references a preview binding', async () => {
+    await expectUntouched(
+      `export default { stories: [] }`,
+      `const order = ['Intro']; export default { parameters: { options: { storySort: (a, b) => order.indexOf(a) - order.indexOf(b) } } }`
+    );
+  });
+
+  it('leaves both files untouched when the default and the named parameters export both define storySort', async () => {
+    await expectUntouched(
+      `export default { stories: [] }`,
+      `export const parameters = { options: { storySort: { order: ['Named'] } } }; export default { parameters: { options: { storySort: { order: ['Default'] } } } }`
+    );
+  });
+
+  it('leaves both files untouched when a mixed file owns storySort in the default export', async () => {
+    // csf-tools refuses mutations on files with mixed default and named config exports; only the
+    // named parameters export is reachable for edits, so a default-owned comparator needs manual
+    // steps instead of a partial migration.
+    await expectUntouched(
+      `export default { stories: [] }`,
+      `export const parameters = { docs: {} }; export default { parameters: { options: { storySort: { order: ['Intro'] } } } }`
+    );
+  });
+
+  it('moves storySort shadowed by a later default export that also defines parameters', async () => {
+    const { main, preview, failures } = await migrate(
+      `import type { StorybookConfig } from '@storybook/nextjs-vite';\n\nconst config: StorybookConfig = {\n  stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],\n};\n\nexport default config;\n`,
+      `export const parameters = {\n  options: {\n    storySort: (a, b) =>\n      a.title.localeCompare(b.title, undefined, { numeric: true }),\n  },\n};\n\nexport default {\n  parameters: {\n    layout: 'fullscreen',\n  },\n};\n`
+    );
+
+    expect(failures).toEqual([]);
+    const sorters = loadConfig(main).parse().get(['storySorts']);
+    expect(t.isArrayExpression(sorters)).toBe(true);
+    expect(generate((sorters as t.ArrayExpression).elements[0] as t.Expression).code).toContain(
+      'localeCompare'
+    );
+    expect(main).toContain(`stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)']`);
+    expect(preview).not.toContain('storySort');
+    expect(preview).toContain(`layout: 'fullscreen'`);
+  });
+
+  it('moves storySort when the shadowing default export resolves to a const', async () => {
+    const { main, preview, failures } = await migrate(
+      `import type { StorybookConfig } from '@storybook/nextjs-vite';\n\nconst config: StorybookConfig = {\n  stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],\n};\n\nexport default config;\n`,
+      `export const parameters = {\n  options: {\n    storySort: (a: any, b: any) =>\n      a.title.localeCompare(b.title, undefined, { numeric: true }),\n  },\n};\n\nconst defaultParameters = {\n  parameters: {\n    layout: 'fullscreen',\n  },\n};\n\nexport default defaultParameters;\n`
+    );
+
+    expect(failures).toEqual([]);
+    const sorters = loadConfig(main).parse().get(['storySorts']);
+    expect(t.isArrayExpression(sorters)).toBe(true);
+    expect(generate((sorters as t.ArrayExpression).elements[0] as t.Expression).code).toContain(
+      'localeCompare'
+    );
+    expect(preview).not.toContain('storySort');
+    expect(preview).toContain(`layout: 'fullscreen'`);
+  });
+
+  it('moves a function-expression storySort shadowed by a later default export', async () => {
+    const { main, preview, failures } = await migrate(
+      `export default { stories: [] }`,
+      `export const parameters = {\n  options: {\n    storySort: function (a, b) {\n      return a.title.localeCompare(b.title);\n    },\n  },\n};\n\nexport default {\n  parameters: {\n    layout: 'fullscreen',\n  },\n};\n`
+    );
+
+    expect(failures).toEqual([]);
+    const sorters = loadConfig(main).parse().get(['storySorts']);
+    expect(t.isArrayExpression(sorters)).toBe(true);
+    expect(generate((sorters as t.ArrayExpression).elements[0] as t.Expression).code).toContain(
+      'localeCompare'
+    );
+    expect(preview).not.toContain('storySort');
+    expect(preview).toContain(`layout: 'fullscreen'`);
+  });
+
+  it('moves a statically readable storySort shadowed by a later default export', async () => {
+    const { main, preview, failures } = await migrate(
+      `export default { stories: [] }`,
+      `export const parameters = { options: { storySort: { order: ['Intro'] } } };\n\nexport default {\n  parameters: {\n    layout: 'fullscreen',\n  },\n};\n`
+    );
+
+    expect(failures).toEqual([]);
+    expect(loadConfig(main).parse().getValue(['storySorts'])).toEqual([{ order: ['Intro'] }]);
+    expect(preview).not.toContain('storySort');
+    expect(preview).toContain(`layout: 'fullscreen'`);
+  });
+
+  it('leaves both files untouched when a spread after storySort can override it in the shadowed export', async () => {
+    const { main, preview, failures } = await migrate(
+      `export default { stories: [] }`,
+      `export const parameters = { options: { storySort: { order: ['Intro'] }, ...shared } }; export default { parameters: { other: 1 } }`
+    );
+
+    expect(failures).toEqual([
+      {
+        file: mainConfigPath,
+        kind: 'main',
+        message: expect.stringContaining('Cannot automigrate storySort'),
+      },
+    ]);
+    expect(loadConfig(main).parse().get(['storySorts'])).toBeUndefined();
+    expect(preview).toContain('storySort');
+  });
+
+  it('migrates the reported shape: imports-plus-default main and a mixed preview with a comparator', async () => {
+    const { main, preview, failures } = await migrate(
+      `import type { StorybookConfig } from '@storybook/nextjs-vite';\n\nconst config: StorybookConfig = {\n  stories: ['../src/**/*.stories.*'],\n};\n\nexport default config;\n`,
+      `import type { Preview } from '@storybook/nextjs-vite'\n\nconst preview: Preview = {\n  parameters: {\n    layout: 'centered',\n  },\n};\n\nexport default preview;\n\nexport const globalTypes = {\n  theme: { defaultValue: 'light' },\n};\n\nexport const parameters = {\n  layout: 'centered',\n  options: {\n    storySort: (a: any, b: any) =>\n      a.title.localeCompare(b.title, undefined, { numeric: true }),\n  },\n};\n`
+    );
+
+    expect(failures).toEqual([]);
+    const sorters = loadConfig(main).parse().get(['storySorts']);
+    const [first] = (sorters as t.ArrayExpression).elements;
+    expect(generate(first as t.Expression).code).toContain('localeCompare');
+    expect(generate(first as t.Expression).code).toContain('numeric');
+    expect(main).toContain('storySorts');
+    expect(main).toContain(`stories: ['../src/**/*.stories.*']`);
+    expect(preview).not.toContain('storySort');
+    expect(preview).toContain('globalTypes');
+    expect(preview).toContain('layout');
+  });
+
+  it('flags a shadowed named storySort and prompts that it was ignored until now', async () => {
+    vol.fromJSON({
+      [mainConfigPath]: `export default { stories: [] }`,
+      [previewConfigPath]: `export const parameters = { options: { storySort: { order: ['Named'] } } }; export default { parameters: { layout: 'fullscreen' } }`,
+    });
+    const result = await checkFix(storySortToMain, options);
+
+    expect(result).toMatchObject({ namedOwner: true, shadowed: true });
+    const { prompt } = storySortToMain;
+    const message = result && typeof prompt === 'function' ? prompt(result) : prompt;
+    expect(message).toContain(
+      'Storybook ignores it today because the default export defines parameters'
+    );
+    expect(message).toContain('activates a sort that has not run and changes the story order');
+  });
+
+  it('moves a shadowed named storySort after consent and lands the resulting order in main', async () => {
+    const { main, preview } = await expectMoved(
+      `export default { stories: [] }`,
+      `export const parameters = { options: { storySort: { order: ['Named', '*'], method: 'alphabetical' } } }; export default { parameters: { layout: 'fullscreen' } }`,
+      { order: ['Named', '*'], method: 'alphabetical' }
+    );
+
+    expect(preview).not.toContain('storySort');
+    expect(preview).toContain(`layout: 'fullscreen'`);
+  });
+
+  it('leaves both files unchanged when a shadowed storySort cannot be activated non-interactively', async () => {
+    const { applies, main, preview, failures } = await migrate(
+      `export default { stories: [] }`,
+      `export const parameters = { options: { storySort: { order: ['Named'] } } }; export default { parameters: { layout: 'fullscreen' } }`,
+      { yes: true }
+    );
+
+    expect(applies).toBe(true);
+    expect(failures).toEqual([
+      {
+        file: mainConfigPath,
+        kind: 'main',
+        message: expect.stringContaining('needs an interactive confirmation'),
+      },
+    ]);
+    expect(main).not.toContain('storySorts');
+    expect(preview).toContain(`order: ['Named']`);
+  });
+
+  it.each([
+    ['a null parameters field', `export default { parameters: null }`],
+    ['an undefined parameters field', `export default { parameters: undefined }`],
+  ])(
+    'activates the named storySort without consent when the default export has %s',
+    async (_name, defaultExport) => {
+      await expectMoved(
+        `export default { stories: [] }`,
+        `export const parameters = { options: { storySort: { order: ['Named'] } } }; ${defaultExport}`,
+        { order: ['Named'] }
+      );
+    }
+  );
+
+  it('moves a shadowed named storySort wrapped with satisfies after consent', async () => {
+    await expectMoved(
+      `export default { stories: [] }`,
+      `export const parameters = { options: { storySort: { order: ['Named'] } } } satisfies Record<string, unknown>; export default { parameters: { layout: 'fullscreen' } }`,
+      { order: ['Named'] }
+    );
+  });
+
+  it('moves a shadowed named storySort bound to a constant after consent', async () => {
+    await expectMoved(
+      `export default { stories: [] }`,
+      `const params = { options: { storySort: { order: ['Named'] } } }; export { params as parameters }; export default { parameters: { layout: 'fullscreen' } }`,
+      { order: ['Named'] }
+    );
+  });
+
+  it('flags a named storySort as shadowed when the default export hides it behind an unresolved spread', async () => {
+    vol.fromJSON({
+      [mainConfigPath]: `export default { stories: [] }`,
+      [previewConfigPath]: `export const parameters = { options: { storySort: { order: ['Named'] } } }; export default { ...shared }`,
+    });
+    const result = await checkFix(storySortToMain, options);
+
+    expect(result).toMatchObject({ namedOwner: true, shadowed: true });
   });
 });

@@ -47,6 +47,117 @@ const isExportReference = (reference: NodePath): boolean => {
   );
 };
 
+// Keeps a synthetic named-export root in sync with its declarations: removes pruned exports,
+// writes replaced values back, and declares new root properties.
+const createExportsSync =
+  (
+    program: NodePath<t.Program>,
+    virtualRoot: t.ObjectExpression,
+    named: Map<t.ObjectProperty, NamedExport>,
+    markChanged: () => void
+  ) =>
+  () => {
+    for (const [property, entry] of named) {
+      if (!virtualRoot.properties.includes(property)) {
+        if (entry.specifier) {
+          entry.specifier.remove();
+        } else {
+          entry.declaration.remove();
+        }
+        named.delete(property);
+      }
+    }
+    for (const property of virtualRoot.properties) {
+      if (!t.isObjectProperty(property) || !t.isExpression(property.value)) {
+        continue;
+      }
+      const name = t.isIdentifier(property.key)
+        ? property.key.name
+        : t.isStringLiteral(property.key)
+          ? property.key.value
+          : undefined;
+      if (name === undefined) {
+        continue;
+      }
+      const entry = named.get(property);
+      if (entry) {
+        if (entry.declaration.isFunctionDeclaration()) {
+          if (
+            t.isFunctionExpression(property.value) &&
+            (!property.value.id || property.value.id.name === entry.declaration.node.id?.name)
+          ) {
+            const { params, body, async, generator, returnType, typeParameters } = property.value;
+            Object.assign(entry.declaration.node, {
+              params,
+              body,
+              async,
+              generator,
+              returnType,
+              typeParameters,
+            });
+          } else {
+            const id = entry.declaration.node.id;
+            if (!id) {
+              continue;
+            }
+            const variable = t.variableDeclarator(id, property.value);
+            entry.declaration.replaceWith(t.variableDeclaration('const', [variable]));
+            const path = pathForNode(program, variable);
+            if (path) {
+              entry.declaration = path;
+            }
+          }
+        } else if (entry.declaration.isVariableDeclarator()) {
+          entry.declaration.node.init = property.value;
+        }
+        if (entry.specifier) {
+          entry.specifier.node.exported = t.isValidIdentifier(name)
+            ? t.identifier(name)
+            : t.stringLiteral(name);
+          continue;
+        }
+        if (
+          t.isValidIdentifier(name) &&
+          (t.isIdentifier(entry.declaration.node.id, { name }) || !program.scope.hasBinding(name))
+        ) {
+          entry.declaration.node.id = t.identifier(name);
+          continue;
+        }
+        entry.declaration.remove();
+      }
+      const id =
+        t.isValidIdentifier(name) && !program.scope.hasBinding(name)
+          ? t.identifier(name)
+          : program.scope.generateUidIdentifier(name);
+      const declaration = t.variableDeclarator(id, property.value);
+      const variable = t.variableDeclaration('const', [declaration]);
+      if (id.name === name) {
+        program.pushContainer('body', t.exportNamedDeclaration(variable));
+      } else {
+        const specifier = t.exportSpecifier(
+          id,
+          t.isValidIdentifier(name) ? t.identifier(name) : t.stringLiteral(name)
+        );
+        program.pushContainer('body', [variable, t.exportNamedDeclaration(null, [specifier])]);
+      }
+      const declarationPath = pathForNode(program, declaration);
+      if (declarationPath) {
+        const specifierPath = program
+          .get('body')
+          .flatMap((statement) =>
+            statement.isExportNamedDeclaration() ? statement.get('specifiers') : []
+          )
+          .find((specifier) => specifier.isExportSpecifier() && specifier.node.local === id);
+        named.set(property, {
+          declaration: declarationPath,
+          ...(specifierPath?.isExportSpecifier() ? { specifier: specifierPath } : {}),
+        });
+      }
+    }
+    program.scope.crawl();
+    markChanged();
+  };
+
 export function createConfigObject(
   config: ConfigFile,
   mode: 'read' | 'mutate',
@@ -291,109 +402,7 @@ export function createConfigObject(
         });
       }
 
-      const syncExports = () => {
-        for (const [property, entry] of named) {
-          if (!virtualRoot.properties.includes(property)) {
-            if (entry.specifier) {
-              entry.specifier.remove();
-            } else {
-              entry.declaration.remove();
-            }
-            named.delete(property);
-          }
-        }
-        for (const property of virtualRoot.properties) {
-          if (!t.isObjectProperty(property) || !t.isExpression(property.value)) {
-            continue;
-          }
-          const name = t.isIdentifier(property.key)
-            ? property.key.name
-            : t.isStringLiteral(property.key)
-              ? property.key.value
-              : undefined;
-          if (name === undefined) {
-            continue;
-          }
-          const entry = named.get(property);
-          if (entry) {
-            if (entry.declaration.isFunctionDeclaration()) {
-              if (
-                t.isFunctionExpression(property.value) &&
-                (!property.value.id || property.value.id.name === entry.declaration.node.id?.name)
-              ) {
-                const { params, body, async, generator, returnType, typeParameters } =
-                  property.value;
-                Object.assign(entry.declaration.node, {
-                  params,
-                  body,
-                  async,
-                  generator,
-                  returnType,
-                  typeParameters,
-                });
-              } else {
-                const id = entry.declaration.node.id;
-                if (!id) {
-                  continue;
-                }
-                const variable = t.variableDeclarator(id, property.value);
-                entry.declaration.replaceWith(t.variableDeclaration('const', [variable]));
-                const path = pathForNode(program, variable);
-                if (path) {
-                  entry.declaration = path;
-                }
-              }
-            } else if (entry.declaration.isVariableDeclarator()) {
-              entry.declaration.node.init = property.value;
-            }
-            if (entry.specifier) {
-              entry.specifier.node.exported = t.isValidIdentifier(name)
-                ? t.identifier(name)
-                : t.stringLiteral(name);
-              continue;
-            }
-            if (
-              t.isValidIdentifier(name) &&
-              (t.isIdentifier(entry.declaration.node.id, { name }) ||
-                !program.scope.hasBinding(name))
-            ) {
-              entry.declaration.node.id = t.identifier(name);
-              continue;
-            }
-            entry.declaration.remove();
-          }
-          const id =
-            t.isValidIdentifier(name) && !program.scope.hasBinding(name)
-              ? t.identifier(name)
-              : program.scope.generateUidIdentifier(name);
-          const declaration = t.variableDeclarator(id, property.value);
-          const variable = t.variableDeclaration('const', [declaration]);
-          if (id.name === name) {
-            program.pushContainer('body', t.exportNamedDeclaration(variable));
-          } else {
-            const specifier = t.exportSpecifier(
-              id,
-              t.isValidIdentifier(name) ? t.identifier(name) : t.stringLiteral(name)
-            );
-            program.pushContainer('body', [variable, t.exportNamedDeclaration(null, [specifier])]);
-          }
-          const declarationPath = pathForNode(program, declaration);
-          if (declarationPath) {
-            const specifierPath = program
-              .get('body')
-              .flatMap((statement) =>
-                statement.isExportNamedDeclaration() ? statement.get('specifiers') : []
-              )
-              .find((specifier) => specifier.isExportSpecifier() && specifier.node.local === id);
-            named.set(property, {
-              declaration: declarationPath,
-              ...(specifierPath?.isExportSpecifier() ? { specifier: specifierPath } : {}),
-            });
-          }
-        }
-        program.scope.crawl();
-        markChanged();
-      };
+      const syncExports = createExportsSync(program, virtualRoot, named, markChanged);
 
       result = {
         ok: true,
@@ -408,6 +417,115 @@ export function createConfigObject(
           [],
           report,
           syncExports
+        ),
+      };
+    },
+  });
+  return result;
+}
+
+// One named export behind a synthetic one-property root: reads and edits resolve like the
+// named-only editor, and the sync prunes the declaration when an edit empties the export.
+export function createConfigNamedExport(
+  config: ConfigFile,
+  name: string,
+  mode: 'read' | 'mutate',
+  report: (diagnostic: CsfMutationDiagnostic) => void,
+  markChanged: () => void
+): { ok: true; object: CsfObject } | { ok: false; diagnostic: CsfMutationDiagnostic } {
+  let result: { ok: true; object: CsfObject } | { ok: false; diagnostic: CsfMutationDiagnostic } = {
+    ok: false,
+    diagnostic: {
+      code: 'unsupported-initializer',
+      target: { kind: 'config' },
+      path: [],
+      message: `Cannot find the ${name} export`,
+    },
+  };
+  const reject = (node: t.Node, code: CsfMutationDiagnostic['code'], message: string) => {
+    result = {
+      ok: false,
+      diagnostic: {
+        code,
+        target: { kind: 'config' },
+        path: [],
+        message,
+        ...(node.loc ? { loc: node.loc } : {}),
+      },
+    };
+  };
+
+  traverse(config._ast, {
+    Program(program) {
+      program.stop();
+      const declaration = pathForNode(program, config._exportDecls[name]);
+      if (!declaration?.isVariableDeclarator()) {
+        reject(
+          config._ast.program,
+          'unsupported-initializer',
+          `Cannot edit the ${name} export without a variable initializer`
+        );
+        return;
+      }
+      if (!t.isIdentifier(declaration.node.id)) {
+        reject(
+          declaration.node,
+          'unsupported-initializer',
+          `Cannot edit the ${name} export without a variable initializer`
+        );
+        return;
+      }
+      const binding = declaration.scope.getBinding(declaration.node.id.name);
+      if (
+        !binding?.constant ||
+        (mode === 'mutate' && !binding.referencePaths.every(isExportReference))
+      ) {
+        reject(
+          declaration.node,
+          'ambiguous-binding',
+          `Cannot edit the shared or reassigned ${name} export`
+        );
+        return;
+      }
+      const value = declaration.node.init;
+      if (!value || !t.isObjectExpression(config._resolveDeclaration(value))) {
+        reject(
+          declaration.node,
+          'unsupported-initializer',
+          `Cannot edit the ${name} export because its value is not a static object`
+        );
+        return;
+      }
+      const property = t.objectProperty(t.stringLiteral(name), value);
+      const virtualRoot = t.objectExpression([property]);
+      const reference = binding.referencePaths.find((path) => path.parentPath?.isExportSpecifier());
+      const specifier = reference?.parentPath;
+      result = {
+        ok: true,
+        object: createCsfObject(
+          { kind: 'config' },
+          {
+            node: virtualRoot,
+            detached: true,
+            scope: program.scope,
+            buildCodeFrameError: program.buildCodeFrameError.bind(program),
+          },
+          [],
+          report,
+          createExportsSync(
+            program,
+            virtualRoot,
+            new Map([
+              [
+                property,
+                {
+                  declaration,
+                  ...(specifier?.isExportSpecifier() ? { specifier } : {}),
+                },
+              ],
+            ]),
+            markChanged
+          )
         ),
       };
     },

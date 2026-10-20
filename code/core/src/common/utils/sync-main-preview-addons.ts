@@ -38,7 +38,11 @@ export async function syncPreviewAddonsWithMainConfig(
   if (!isCsfFactory) {
     return previewConfig;
   }
-  const existingAddons = previewConfig.getFieldNode(['addons']);
+  const inspected = previewConfig.inspect(['addons']);
+  if (inspected.kind === 'unreadable') {
+    return previewConfig;
+  }
+  const existingAddons = inspected.kind === 'value' ? inspected.node : undefined;
 
   if (!existingAddons) {
     previewConfig.set(['addons'], []);
@@ -77,14 +81,11 @@ export async function syncPreviewAddonsWithMainConfig(
         if (annotations.isCoreAddon) {
           // import addonName from 'addon'; + addonName()
           previewConfig.setImport(annotations.importName, annotations.importPath);
-          previewConfig.appendNodeToArray(
-            ['addons'],
-            parseExpression(`${annotations.importName}()`)
-          );
+          previewConfig.append(['addons'], parseExpression(`${annotations.importName}()`));
         } else {
           // import * as addonName from 'addon/preview'; + addonName
           previewConfig.setImport({ namespace: annotations.importName }, annotations.importPath);
-          previewConfig.appendNodeToArray(['addons'], parseExpression(annotations.importName));
+          previewConfig.append(['addons'], parseExpression(annotations.importName));
         }
       }
     }

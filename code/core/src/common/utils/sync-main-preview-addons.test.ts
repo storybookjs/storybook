@@ -152,6 +152,28 @@ describe('syncPreviewAddonsWithMainConfig', () => {
     expect(transformedCode).toMatch(originalCode);
   });
 
+  it('leaves an addons array alone that a later spread could replace', async () => {
+    const originalCode = dedent`
+      import { definePreview } from "@storybook/react/preview";
+      import shared from "./shared";
+
+      export default definePreview({
+        addons: [],
+        ...shared,
+      });
+    `;
+    const preview = loadConfig(originalCode).parse();
+
+    (getAddonAnnotations as Mock).mockImplementation(() => {
+      return { importName: 'addonA11yAnnotations', importPath: '@storybook/addon-a11y/preview' };
+    });
+
+    const result = await syncPreviewAddonsWithMainConfig(mainConfig, preview, configDir);
+
+    expect(printConfig(result).code).toBe(originalCode);
+    expect(result.mutationDiagnostics).toEqual([]);
+  });
+
   it('should add an empty addons array if no addons are installed', async () => {
     const originalCode = dedent`
       import { definePreview } from "@storybook/react/preview";

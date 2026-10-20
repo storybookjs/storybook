@@ -3,7 +3,7 @@ import type { JsDocTagMap } from 'storybook/internal/csf-tools';
 import { extractComponentDescription, extractDescription } from 'storybook/internal/csf-tools';
 import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
 
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 
 import { buildApiDescription } from './api-description.ts';
 import { mapArgTypes } from './arg-types/map-arg-types.ts';
@@ -61,6 +61,14 @@ export async function buildDocgenPayload(
     }
 
     const componentName = input.entry.title.slice(input.entry.title.lastIndexOf('/') + 1);
+    if (resolved.reason === 'unresolvable-meta-spread') {
+      return fail(componentName, {
+        name: 'unresolvable-meta-spread',
+        message:
+          `\`meta.component\` could not be read because \`${resolved.spread}\` is not a local object literal. ` +
+          "Set `component: '<tag-name>'` on the default export.",
+      });
+    }
     return fail(componentName, {
       name: 'component-not-a-tag',
       message: `\`meta.component\` must be the element's tag name as a string, got \`${resolved.expression}\``,

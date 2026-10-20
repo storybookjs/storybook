@@ -16,11 +16,21 @@ class XDemo extends HTMLElement {
     'has-slot',
     'open',
     'value',
+    'name',
   ];
 
   defaultValue = '';
 
   items: string[] = [];
+
+  /** Reflects like a Lit `@property({ reflect: true })` that stringifies its value. */
+  get name(): string | null {
+    return this.getAttribute('name');
+  }
+
+  set name(value: unknown) {
+    this.setAttribute('name', String(value));
+  }
 
   open = true;
 
@@ -77,10 +87,31 @@ describe('bindArgs', () => {
       expectedProperties: { open: false },
     },
     {
-      name: 'assigns an empty string to a string property',
-      args: { text: '' },
+      name: 'leaves undefined and null declared properties unset and assigns empty strings',
+      args: { name: undefined, items: null, text: '' },
       expected: '<x-demo></x-demo>',
-      expectedProperties: { text: '' },
+      expectedProperties: { name: null, items: [], text: '' },
+    },
+    {
+      name: 'omits an empty observed attribute',
+      args: { label: '' },
+      expected: '<x-demo></x-demo>',
+    },
+    {
+      name: 'leaves a null reflecting property unset',
+      args: { name: null },
+      expected: '<x-demo></x-demo>',
+    },
+    {
+      name: 'assigns a set reflecting property',
+      args: { name: 'demo' },
+      expected: '<x-demo name="demo"></x-demo>',
+    },
+    {
+      name: 'leaves unset unknown keys unassigned',
+      args: { customValue: null },
+      expected: '<x-demo></x-demo>',
+      expectedProperties: { customValue: undefined },
     },
     {
       name: 'assigns unknown arg keys as properties',
@@ -112,15 +143,20 @@ describe('bindArgs', () => {
       expectedRules: ['x-demo::part(panel) { color: red; }', 'x-demo:state(active) { border: 0; }'],
     },
     {
-      name: 'skips null and empty slot, CSS custom property, part and state args',
+      name: 'skips unset slot, CSS custom property, part, state and event args',
       args: {
         'default-slot': null,
         'actions-slot': '',
+        'footer-slot': undefined,
         '--panel-color': null,
+        '--panel-gap': '',
+        '--panel-width': undefined,
         'panel-part': null,
         'active-state': '',
+        'my-change-event': undefined,
       },
       expected: '<x-demo></x-demo>',
+      expectedProperties: { 'my-change-event': undefined },
     },
     {
       name: 'does not assign method args',

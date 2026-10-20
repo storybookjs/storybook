@@ -36,6 +36,8 @@ export interface ObjectRoot {
   group(members: Property[], key: string): void;
   // The member as text to insert elsewhere under another key.
   take(member: Property, key: string): MemberInsert;
+  // Why the root cannot take a new member named `key`, when it cannot.
+  refuseKey?(key: string): string | undefined;
 }
 
 // A member of an `ObjectRoot` that is not written as one, such as a named export or a

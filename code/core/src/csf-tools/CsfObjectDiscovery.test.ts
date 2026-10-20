@@ -357,6 +357,62 @@ Primary.args = { label: 'Primary' };
 `);
     });
 
+    it.each([
+      ['an arrow function', 'export const Primary = () => null;'],
+      [
+        'a bound template',
+        'const Template = () => null;\nexport const Primary = Template.bind({});',
+      ],
+    ])(
+      'refuses to give a story declared as %s an own function property that cannot be assigned',
+      (_case, story) => {
+        const source = `export default { title: 'Example' };\n${story}\nPrimary.storyName = 'Old';\n`;
+        const csf = parse(source);
+        const [primary] = csf.objects({ meta: false });
+        const refusal = (key: string, path = [key]) => ({
+          ok: false,
+          changed: false,
+          diagnostic: {
+            code: 'unsupported-member',
+            path,
+            message: expect.stringContaining(
+              `Cannot add Primary.${key} because a function's ${key} cannot be assigned`
+            ),
+          },
+        });
+
+        for (const key of ['name', 'length', 'caller', 'arguments']) {
+          expect(primary.set([key], 'Pretty')).toMatchObject(refusal(key));
+          expect(primary.set([key, 'nested'], 'Pretty')).toMatchObject(
+            refusal(key, [key, 'nested'])
+          );
+          expect(primary.rename(['storyName'], key)).toMatchObject(refusal(key));
+          expect(primary.move(['storyName'], [key])).toMatchObject(refusal(key));
+          expect(primary.group([key], ['storyName'])).toMatchObject(refusal(key));
+        }
+        expect(primary.set(['name'], 'Pretty')).toMatchObject({
+          diagnostic: { message: expect.stringContaining('; set storyName instead') },
+        });
+        expect(printCsf(csf).code).toBe(source);
+
+        expect(primary.set(['storyName'], 'Pretty')).toEqual({ ok: true, changed: true });
+        expect(printCsf(csf).code).toBe(source.replace(`'Old'`, `'Pretty'`));
+      }
+    );
+
+    it('sets name and length in a story object', () => {
+      const csf = parse(
+        `export default { title: 'Example' };\nexport const Primary = { args: {} };\n`
+      );
+      const [story] = csf.objects({ meta: false });
+
+      expect(story.set(['name'], 'Pretty')).toEqual({ ok: true, changed: true });
+      expect(story.set(['length'], 2)).toEqual({ ok: true, changed: true });
+      expect(printCsf(csf).code).toBe(
+        `export default { title: 'Example' };\nexport const Primary = { args: {}, name: 'Pretty', length: 2 };\n`
+      );
+    });
+
     it('edits the object of a story and its assignments as one object', () => {
       const csf = parse(`export default { title: 'Example' };
 export const Primary = { args: { label: 'Primary' } };

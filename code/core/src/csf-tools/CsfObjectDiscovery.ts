@@ -371,6 +371,9 @@ const assignmentsOf = (csf: CsfFile, binding: StoryBinding) => {
   return { assignments, shared };
 };
 
+// Own properties of a function that throw when a strict-mode module assigns them.
+const FUNCTION_OWN_KEYS = new Set(['name', 'length', 'caller', 'arguments']);
+
 // A story edited as one object: the members of its object literal, if it has one, then its
 // `Story.name = value` assignments, which run after it. A missing member goes into the object
 // literal, or else into a new assignment after the story's last one.
@@ -467,6 +470,12 @@ const storyRoot = (
       assign([{ key, value, text: '' }], statements);
     },
     take,
+    refuseKey: object
+      ? undefined
+      : (key) =>
+          FUNCTION_OWN_KEYS.has(key)
+            ? `Cannot add ${binding.localName}.${key} because a function's ${key} cannot be assigned${key === 'name' ? '; set storyName instead' : ''}`
+            : undefined,
   };
 };
 

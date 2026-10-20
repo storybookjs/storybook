@@ -385,6 +385,12 @@ class Editor implements CsfObjectEditor {
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
+    if (inspected.missing !== undefined) {
+      const refused = this.refusedKey(inspected.parent, path[inspected.missing], path);
+      if (refused) {
+        return refused;
+      }
+    }
     if (inspected.missing !== undefined && inspected.missing < path.length - 1) {
       const carried = carriedSpreads(this.editor, inspected.parent.properties);
       if (carried.ok === false) {
@@ -416,6 +422,10 @@ class Editor implements CsfObjectEditor {
     }
     if (inspected.property) {
       return this.failure('occupied-destination', path, inspected.property);
+    }
+    const refused = this.refusedKey(inspected.parent, path[inspected.missing!], path);
+    if (refused) {
+      return refused;
     }
     const carried = carriedSpreads(this.editor, inspected.parent.properties);
     if (carried.ok === false) {
@@ -505,6 +515,10 @@ class Editor implements CsfObjectEditor {
     }
     if (destination.property) {
       return this.failure('occupied-destination', to, destination.property);
+    }
+    const refused = this.refusedKey(destination.parent, to[destination.missing!], to);
+    if (refused) {
+      return refused;
     }
 
     const key = to.at(-1)!;
@@ -671,6 +685,10 @@ class Editor implements CsfObjectEditor {
       );
       parent.remove(moved);
     } else {
+      const refused = this.refusedKey(parent, group, path);
+      if (refused) {
+        return refused;
+      }
       if (parent.detached) {
         const effectful = moved.find((property) => !isEvaluationInert(property.value));
         if (effectful) {
@@ -823,6 +841,11 @@ class Editor implements CsfObjectEditor {
       throw invalidated();
     }
     parent.append(content.members);
+  }
+
+  private refusedKey(parent: ObjectRoot, key: string, path: readonly string[]) {
+    const refusal = parent.refuseKey?.(key);
+    return refusal ? this.failure('unsupported-member', path, this.anchor(), refusal) : undefined;
   }
 
   private anchor(): Node {

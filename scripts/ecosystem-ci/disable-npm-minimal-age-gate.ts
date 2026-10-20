@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 const AGE_GATE_KEY = /^[ \t]*npmMinimalAgeGate[ \t]*:/m;
 const AGE_GATE_LINE = /^([ \t]*npmMinimalAgeGate[ \t]*:)[^\r\n]*$/gm;

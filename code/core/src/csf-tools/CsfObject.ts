@@ -566,7 +566,7 @@ class Editor implements CsfObject {
       return this.failure(inspected.code, path, inspected.node);
     }
     const { quote, indent } = this.editor;
-    const text = () => printValue(value, quote, { indent, expand: 'multiline' });
+    const text = () => printValue(value, quote, { indent });
     const slot = this.valueAt(inspected);
     if (!slot) {
       const creatable = this.creatable(inspected, path, () => true);

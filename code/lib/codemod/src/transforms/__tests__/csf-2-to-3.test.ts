@@ -21,6 +21,20 @@ const tsTransform = async (source: string) =>
   ).trim();
 
 describe('csf-2-to-3', () => {
+  it('leaves Svelte CSF files unchanged', async () => {
+    const source = dedent`
+      <script module>
+        import { defineMeta } from '@storybook/svelte';
+        const { Story } = defineMeta({});
+      </script>
+
+      <Story name="Primary" args={{ primary: true }} />
+    `;
+    await expect(
+      _transform({ source, path: 'Button.stories.svelte' }, {} as API, {})
+    ).resolves.toBe(source);
+  });
+
   describe('javascript', () => {
     it('should replace non-simple function exports with objects', async () => {
       await expect(

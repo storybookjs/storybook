@@ -429,10 +429,12 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       this.storyStoreValue.args.updateFromPersisted(render.story, persistedArgs);
     }
 
-    // Don't re-render the story if nothing has changed to justify it
+    // Don't re-render the story if nothing has changed to justify it. A story whose play a hot
+    // update cancelled stays aborted, so it renders again even if the story itself is unchanged.
     if (
       lastRender &&
       !lastRender.torndown &&
+      !(isStoryRender(lastRender) && lastRender.phase === 'aborted') &&
       !storyIdChanged &&
       !implementationChanged &&
       !viewModeChanged

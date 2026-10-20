@@ -18,9 +18,11 @@ import {
   STORY_ARGS_UPDATED,
   STORY_CHANGED,
   STORY_ERRORED,
+  STORY_HOT_UPDATED,
   STORY_MISSING,
   STORY_PREPARED,
   STORY_RENDERED,
+  STORY_RENDER_PHASE_CHANGED,
   STORY_SPECIFIED,
   STORY_THREW_EXCEPTION,
   STORY_UNCHANGED,
@@ -4026,6 +4028,69 @@ describe('PreviewWeb', () => {
 
         expect(projectAnnotations.renderToCanvas).not.toHaveBeenCalled();
         expect(mockChannel.emit).not.toHaveBeenCalledWith(STORY_RENDERED, 'component-one--a');
+      });
+
+      describe('and a hot update cancelled its play', () => {
+        const phases = () =>
+          mockChannel.emit.mock.calls
+            .filter(([event]) => event === STORY_RENDER_PHASE_CHANGED)
+            .map(([, { newPhase }]) => newPhase);
+
+        // A hot update gives the preview the new stories first, then the hot update event.
+        const hotUpdate = async (playGate: Promise<void>) => {
+          componentOneExports.a.play.mockImplementationOnce(async () => playGate);
+          document.location.search = '?id=component-one--a';
+          const preview = new PreviewWeb(importFn, getProjectAnnotations);
+          await preview.ready();
+          await waitForRenderPhase('playing');
+
+          mockChannel.emit.mockClear();
+          projectAnnotations.renderToCanvas.mockClear();
+          preview.onStoriesChanged({ importFn: newImportFn });
+          emitter.emit(STORY_HOT_UPDATED);
+          return preview;
+        };
+
+        it('renders the story again', async () => {
+          const [playGate, openPlayGate] = createGate();
+          await hotUpdate(playGate);
+          openPlayGate();
+          await waitForRender();
+
+          expect(mockChannel.emit).not.toHaveBeenCalledWith(STORY_UNCHANGED, 'component-one--a');
+          expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(1);
+          expect(componentOneExports.a.play).toHaveBeenCalledTimes(2);
+          expect(phases()).toEqual([
+            'aborted',
+            'preparing',
+            'loading',
+            'rendering',
+            'playing',
+            'played',
+            'completing',
+            'completed',
+            'afterEach',
+            'finished',
+          ]);
+          expect(
+            mockChannel.emit.mock.calls.filter(([event]) => event === STORY_RENDERED)
+          ).toHaveLength(1);
+        });
+
+        it('reports nothing when the cancelled play ends after the story rendered again', async () => {
+          const [playGate, openPlayGate] = createGate();
+          const preview = await hotUpdate(playGate);
+          await waitForRender();
+
+          mockChannel.emit.mockClear();
+          openPlayGate();
+          await waitForQuiescence();
+
+          expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(1);
+          expect(mockChannel.emit).not.toHaveBeenCalled();
+          expect(preview.storyRenders).toHaveLength(1);
+          expect(preview.storyRenders[0].phase).toBe('finished');
+        });
       });
     });
 

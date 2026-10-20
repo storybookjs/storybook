@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { join } from 'path';
+import { join } from 'pathe';
 
 import yml from 'yaml';
 

@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join } from 'pathe';
 import { x } from 'tinyexec';
 import { getComponentCandidates } from '../../../code/core/src/core-server/utils/ghost-stories/get-candidates.ts';
 import { parseVitestResults } from '../../../code/core/src/core-server/utils/ghost-stories/parse-vitest-report.ts';

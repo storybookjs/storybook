@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'pathe';
 import fs from 'node:fs/promises';
 import { getMdxFiles, readFileLines, getHeadingSlugs, getLineContexts } from './utils';
 import { esMain } from '../utils/esmain.ts';

@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 
-import { join } from 'path';
+import { join } from 'pathe';
 import type { Page } from 'playwright-core';
 
 import type { BenchResults } from './types.ts';

@@ -8,6 +8,7 @@
  */
 import { gh, ghJson } from '../utils/gh.ts';
 import { mkdirSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- compares the resolved script path with fileURLToPath
 import { dirname, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';

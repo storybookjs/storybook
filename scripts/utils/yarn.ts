@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 // TODO -- should we generate this file a second time outside of CLI?
 import storybookVersions from '../../code/core/src/common/versions.ts';

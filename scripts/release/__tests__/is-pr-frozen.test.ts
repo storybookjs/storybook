@@ -1,5 +1,5 @@
 import * as fspImp from 'node:fs/promises';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { describe, expect, it, vi } from 'vitest';
 

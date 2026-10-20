@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- expects workspace paths built by eval utils with node:path
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 

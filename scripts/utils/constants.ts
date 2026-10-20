@@ -1,5 +1,7 @@
+// eslint-disable-next-line no-restricted-imports -- exported directories are interpolated into shell commands by consumers
 import path from 'node:path';
 
+// eslint-disable-next-line no-restricted-imports -- exported directories are interpolated into shell commands by consumers
 import { join } from 'path';
 
 export const AFTER_DIR_NAME = 'after-storybook';

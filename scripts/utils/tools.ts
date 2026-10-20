@@ -1,5 +1,5 @@
 import { access, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join } from 'pathe';
 import * as process from 'node:process';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';

@@ -1,6 +1,6 @@
 import { readFile, rm, writeFile } from 'node:fs/promises';
 
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';

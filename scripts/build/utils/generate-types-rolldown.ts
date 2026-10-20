@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
+// eslint-disable-next-line no-restricted-imports -- matches rolldown's native module ids with path.sep
 import { sep } from 'node:path';
 
 import { basename, dirname, join, relative } from 'pathe';

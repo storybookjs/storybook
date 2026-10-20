@@ -1,5 +1,6 @@
 import { cp, mkdir, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { readFile } from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- interpolates the create-storybook binary path into a shell command
 import { join, relative } from 'node:path';
 
 import * as ghActions from '@actions/core';

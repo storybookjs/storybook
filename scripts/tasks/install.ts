@@ -1,6 +1,6 @@
 import { access } from 'node:fs/promises';
 
-import { join } from 'path';
+import { join } from 'pathe';
 
 import type { MonorepoDetails, Task } from '../task.ts';
 import { checkDependencies } from '../utils/cli-utils.ts';

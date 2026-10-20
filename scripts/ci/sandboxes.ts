@@ -1,4 +1,4 @@
-import { join } from 'path';
+import { join } from 'pathe';
 
 import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { type TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';

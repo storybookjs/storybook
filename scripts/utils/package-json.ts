@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { join } from 'path';
+import { join } from 'pathe';
 
 export async function updatePackageScripts({ cwd, prefix }: { cwd: string; prefix: string }) {
   const packageJsonPath = join(cwd, 'package.json');

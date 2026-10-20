@@ -1,6 +1,6 @@
 import { readFile, rename, rm, writeFile } from 'node:fs/promises';
 
-import { join } from 'path';
+import { join } from 'pathe';
 
 import semver from 'semver';
 

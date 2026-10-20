@@ -6,7 +6,7 @@ import { execaCommand } from 'execa';
 import { existsSync } from 'fs';
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
-import { dirname, join, relative } from 'path';
+import { dirname, join, relative } from 'pathe';
 
 import { temporaryDirectory } from '../../code/core/src/common/utils/cli.ts';
 import { REPROS_DIRECTORY } from '../utils/constants.ts';

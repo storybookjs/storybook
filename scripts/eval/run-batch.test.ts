@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 import { tmpdir } from 'node:os';
 import { PassThrough } from 'node:stream';
 

@@ -15,7 +15,7 @@
  *   node scripts/eval/eval.ts --list-prompts
  */
 import { writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join } from 'pathe';
 import { parseArgs } from 'node:util';
 import { z } from 'zod';
 import pc from 'picocolors';

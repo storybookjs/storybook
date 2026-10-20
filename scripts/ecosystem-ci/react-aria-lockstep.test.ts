@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { satisfies } from 'semver';
 import { describe, expect, it } from 'vitest';

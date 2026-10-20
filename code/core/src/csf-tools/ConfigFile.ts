@@ -411,10 +411,18 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   transaction(fn: () => boolean | void): boolean {
-    const changed = this._changed;
-    return this.editor.transaction(fn, () => {
-      this._changed = changed;
-    });
+    return this.editor.transaction(fn);
+  }
+
+  // The transaction running, if any, resets the flag when it rolls back, also when it was started
+  // on `editor` directly.
+  _markChanged() {
+    if (!this._changed) {
+      this._changed = true;
+      this.editor._onRollback(() => {
+        this._changed = false;
+      });
+    }
   }
 
   _mutate(operation: (object: CsfObjectEditor) => CsfMutationResult): CsfMutationResult {
@@ -423,7 +431,7 @@ export class ConfigFile implements CsfObject {
       'mutate',
       (diagnostic) => this._mutationDiagnostics.push(diagnostic),
       () => {
-        this._changed = true;
+        this._markChanged();
       }
     );
     if (editor.ok === true) {
@@ -803,7 +811,7 @@ export class ConfigFile implements CsfObject {
     }
     appendToList(this.editor, arrayList(this.editor, current), [source]);
     this.editor.commit();
-    this._changed = true;
+    this._markChanged();
     return { ok: true, changed: true };
   }
 
@@ -834,7 +842,7 @@ export class ConfigFile implements CsfObject {
     }
     removeFromList(this.editor, arrayList(this.editor, current), [element]);
     this.editor.commit();
-    this._changed = true;
+    this._markChanged();
     return { ok: true, changed: true };
   }
 
@@ -898,7 +906,7 @@ export class ConfigFile implements CsfObject {
         },
       };
       return createCsfObject(target, host, report, () => {
-        this._changed = true;
+        this._markChanged();
       });
     });
   }

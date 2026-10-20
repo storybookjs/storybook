@@ -457,7 +457,14 @@ export class CsfFile {
       options,
       (diagnostic) => state.diagnostics.push(diagnostic),
       () => {
-        state.changed = true;
+        // The transaction running, if any, resets the flag when it rolls back, also when it was
+        // started on `editor` directly.
+        if (!state.changed) {
+          state.changed = true;
+          this.editor._onRollback(() => {
+            state.changed = false;
+          });
+        }
       }
     );
   }
@@ -478,11 +485,7 @@ export class CsfFile {
    * ```
    */
   transaction(fn: () => boolean | void): boolean {
-    const state = mutationStates.get(this)!;
-    const { changed } = state;
-    return this.editor.transaction(fn, () => {
-      state.changed = changed;
-    });
+    return this.editor.transaction(fn);
   }
 
   /**

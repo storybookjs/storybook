@@ -1649,6 +1649,26 @@ export const A = {
       expect(kept).toBe(false);
       expect(printCsf(csf).code).toBe(source);
       expect(story.changed).toBe(false);
+      expect(csf.changed).toBe(false);
+    });
+
+    it('resets changed when a transaction started on the editor rolls back', () => {
+      const csf = parse(source);
+      const [meta, story] = csf.objects();
+
+      const kept = csf.editor.transaction(() => {
+        meta.set(['parameters', 'a'], 1);
+        return false;
+      });
+
+      expect(kept).toBe(false);
+      expect(printCsf(csf).code).toBe(source);
+      expect(meta.changed).toBe(false);
+      expect(csf.changed).toBe(false);
+
+      story.remove(['parameters', 'msw']);
+      expect(csf.editor.transaction(() => (meta.set(['parameters', 'a'], 1), false))).toBe(false);
+      expect(csf.changed).toBe(true);
     });
 
     it('rolls back what a function returning a promise did before throwing', () => {
@@ -1687,6 +1707,21 @@ export const A = {
       expect(printConfig(config).code).toBe(code);
       expect(config.changed).toBe(false);
       expect(config.getValue(['parameters'])).toEqual({ layout: 'centered' });
+    });
+
+    it('resets the config changed when a transaction started on the editor rolls back', () => {
+      const code = "export default { layout: 'centered', tags: ['a'] };";
+      const config = loadConfig(code).parse();
+
+      const kept = config.editor.transaction(() => {
+        config.remove(['layout']);
+        config.appendValueToArray(['tags'], 'b');
+        return false;
+      });
+
+      expect(kept).toBe(false);
+      expect(printConfig(config).code).toBe(code);
+      expect(config.changed).toBe(false);
     });
   });
 });

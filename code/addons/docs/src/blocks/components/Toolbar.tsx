@@ -16,6 +16,7 @@ interface ZoomProps {
 
 interface EjectProps {
   storyId?: string;
+  globals?: string;
 }
 
 interface ReloadProps {
@@ -62,6 +63,7 @@ const IconPlaceholder = styled.div(({ theme }) => ({
 export const Toolbar: FC<ToolbarProps> = ({
   isLoading,
   storyId,
+  globals,
   zoom,
   resetZoom,
   onReloadStory,
@@ -149,7 +151,11 @@ export const Toolbar: FC<ToolbarProps> = ({
             key="opener"
             ariaLabel="Open canvas in new tab"
           >
-            <a href={getStoryHref(storyId)} target="_blank" rel="noopener noreferrer">
+            <a
+              href={getStoryHref(storyId, globals ? { globals } : {})}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <ShareAltIcon />
             </a>
           </Button>

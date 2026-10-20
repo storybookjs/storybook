@@ -87,25 +87,13 @@ export function useTagFilterEntries(indexJson: StoryIndex) {
 
 export function useStatusFilterEntries(allStatuses: StatusesByStoryIdAndTypeId) {
   return useMemo(() => {
-    const changeDetectionEnabled = !!globalThis?.FEATURES?.changeDetection;
     const counts = countStatusesByValue(allStatuses);
-    const reviewingCount = counts['status-value:reviewing'] ?? 0;
 
-    if (!changeDetectionEnabled && reviewingCount === 0) {
-      return [];
-    }
-
-    const displayOrder = changeDetectionEnabled
-      ? STATUS_DISPLAY_ORDER
-      : (['status-value:reviewing'] as StatusValue[]);
-
-    return displayOrder
-      .map((statusValue) => ({
-        statusValue,
-        shortName: statusValueShortName(statusValue),
-        description: statusValueDescription(statusValue),
-        count: counts[statusValue] ?? 0,
-      }))
-      .filter((entry) => entry.statusValue !== 'status-value:reviewing' || entry.count > 0);
+    return STATUS_DISPLAY_ORDER.map((statusValue) => ({
+      statusValue,
+      shortName: statusValueShortName(statusValue),
+      description: statusValueDescription(statusValue),
+      count: counts[statusValue] ?? 0,
+    })).filter((entry) => entry.statusValue !== 'status-value:reviewing' || entry.count > 0);
   }, [allStatuses]);
 }

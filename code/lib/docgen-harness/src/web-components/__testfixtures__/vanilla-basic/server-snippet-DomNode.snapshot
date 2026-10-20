@@ -1,0 +1,3 @@
+<vanilla-basic label="Vanilla" count="4" disabled></vanilla-basic>
+
+warning: Incomplete snippet: `args => { const el = document.createElement('vanilla-basic'); el.setAttribute('label', String(args.label)); el.setAttribute('count', String(args.count)); if (args.disabled) { el.setAttribute('disabled', ''); } return el; }` could not be resolved statically.

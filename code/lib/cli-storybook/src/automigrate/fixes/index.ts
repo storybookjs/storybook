@@ -2,6 +2,7 @@ import { csfFactories } from '../../codemod/csf-factories.ts';
 import type { CommandFix, Fix } from '../types.ts';
 import { angularToAngularVite } from './angular-to-angular-vite.ts';
 import { angularViteRemoveCompodoc } from './angular-vite-remove-compodoc.ts';
+import { webComponentsRuntimeManifest } from './web-components-runtime-manifest.ts';
 import { csfNextMockedArgs } from './csf-next-mocked-args.ts';
 import { addonSvelteCsfToCore } from './addon-svelte-csf-to-core.ts';
 import { argtypesDefaultValue } from './argtypes-default-value.ts';
@@ -10,6 +11,7 @@ import { eslintPlugin } from './eslint-plugin.ts';
 import { docgenServer } from './docgen-server.ts';
 import { nextjsToNextjsVite } from './nextjs-to-nextjs-vite.ts';
 import { reactViteToTanstackReact } from './react-vite-to-tanstack-react.ts';
+import { removeChangeDetectionFlag } from './remove-change-detection-flag.ts';
 import { removeExperimentalReview } from './remove-experimental-review.ts';
 import { rnOndeviceAddonsToDeviceAddons } from './rn-ondevice-addons-to-device-addons.ts';
 import { storybookPackageNameConflict } from './storybook-package-name-conflict.ts';
@@ -34,6 +36,7 @@ export const allFixes: Fix[] = [
   nextjsToNextjsVite,
   angularToAngularVite,
   angularViteRemoveCompodoc,
+  webComponentsRuntimeManifest,
   reactViteToTanstackReact,
   addonSvelteCsfToCore,
   wrapGetAbsolutePath,
@@ -44,6 +47,7 @@ export const allFixes: Fix[] = [
   sidebarFilters,
   csfNextMockedArgs,
   removeExperimentalReview,
+  removeChangeDetectionFlag,
   skills,
   docgenServer,
 ];

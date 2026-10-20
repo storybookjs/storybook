@@ -10,7 +10,7 @@ import {
   PreviewNotImportedError,
 } from './error/parser/extract/svelte.ts';
 
-export function isSvelteCsfImportSource(source: unknown): boolean {
+function isSvelteCsfImportSource(source: unknown): boolean {
   return typeof source === 'string' && isOneOf(SVELTE_CSF_IMPORT_SOURCES, source);
 }
 
@@ -57,7 +57,7 @@ export function hasMetaImport(imports: MetaImports): boolean {
   return !!imports.defineMetaImport || imports.previewNames.length > 0;
 }
 
-// `const { Story } = defineMeta({ … })`, `const { Story } = preview.meta({ … })`, or
+// `const { Story } = defineMeta({ … })`, `const { Story } = preview.meta({ … }).type<…>()`, or
 // `const meta = preview.meta({ … })` followed by `const { Story } = meta` and
 // `const { Story: IconStory } = meta.type<…>()`
 export interface MetaNodes {
@@ -85,7 +85,8 @@ export function findMeta(
       continue;
     }
 
-    const { id, init } = statement.declarations[0];
+    const { id, init: initWithTypeCalls } = statement.declarations[0];
+    const init = initWithTypeCalls && skipTypeCalls(initWithTypeCalls);
     const functionName =
       init?.type === 'CallExpression' ? getMetaFunctionName(init, imports, filename) : undefined;
 
@@ -168,7 +169,7 @@ function getMetaFunctionName(
 
 // `preview.type<…>()` and `meta.type<…>()` return the same preview or meta with more types, so
 // `preview.type<…>().meta()` is a meta of `preview`, and `meta.type<…>()` is `meta`
-function skipTypeCalls(expression: ESTreeAST.Expression | ESTreeAST.Super) {
+export function skipTypeCalls(expression: ESTreeAST.Expression | ESTreeAST.Super) {
   let current = expression;
 
   while (

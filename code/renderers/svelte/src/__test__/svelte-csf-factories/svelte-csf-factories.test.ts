@@ -9,6 +9,7 @@ import * as GenericComponentStories from './generic-component.stories.svelte';
 import * as InteractionsStories from './interactions.stories.svelte';
 import * as MetaTypeStories from './meta-type.stories.svelte';
 import * as TemplatingStories from './templating.stories.svelte';
+import * as TypeAfterMetaStories from './type-after-meta.stories.svelte';
 
 afterEach(() => {
   cleanup();
@@ -20,6 +21,7 @@ const files = {
   InteractionsStories,
   MetaTypeStories,
   TemplatingStories,
+  TypeAfterMetaStories,
 };
 
 describe.each(Object.entries(files))('%s', (_name, file) => {

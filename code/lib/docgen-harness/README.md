@@ -66,14 +66,17 @@ src/
 ├── web-components/
 │   ├── web-components-osa-baselines.test.ts
 │   ├── web-components-baselines.test.ts
+│   ├── web-components-story-docs.test.ts
 │   ├── web-components-legacy-gaps.test.ts
 │   ├── web-components-render.test.ts
+│   ├── story-docs/
 │   └── __testfixtures__/<case>/  # component, input.stories.ts, custom-elements.json,
 │                                 # optional custom-elements.v2.json/custom-elements.wca.json,
 │                                 # argtypes.snapshot, description.snapshot, optional v2-/wca- prefixed snapshots,
 │                                 # osa-argtypes.snapshot, osa-payload.snapshot, osa-api-description.snapshot,
 │                                 # optional osa-v2-argtypes.snapshot and osa-v2-payload.snapshot,
-│                                 # snippet-<story>.snapshot, osa-snippet-<story>.snapshot
+│                                 # snippet-<story>.snapshot, osa-snippet-<story>.snapshot,
+│                                 # server-snippet-<story>.snapshot, story-docs.payload.snapshot
 └── perf/                         # the performance bench, see below
     ├── PERF-METHODOLOGY.md       # the measurement contract
     ├── docgen-perf/              # per-engine latency and memory suite, plus its engines/ and generators/
@@ -213,6 +216,8 @@ The server mapper has no `on<Name>` action twins because events bind from `<name
 The OSA recordings self-ratchet against themselves. When the server mapper changes shape on purpose (dropping members, re-keying args), delete the affected `osa-*argtypes.snapshot` files and re-record; `-u` cannot pass the self-ratchet.
 The `legacyManifestRuntime` and `waivedArgs` waivers apply to the legacy gate only.
 The OSA payload may carry `warning` when a manifest fails to reload and the worker serves its last valid version; `lit-schema-warning` keeps a member without `kind` to show that a manifest with schema deviations still loads, without a warning. To reproduce a reload locally, enable the feature flag, edit the manifest while the dev server runs and open or reload a docs page; the worker re-reads a manifest whose mtime changed and logs it at debug level.
+
+`web-components-story-docs.test.ts` drives the Web Components story-docs provider directly in Node. It records `server-snippet-<story>.snapshot` and `story-docs.payload.snapshot` for legacy fixtures and fixtures under `story-docs/__testfixtures__/`; legacy fixtures are gated against both their committed `server-snippet-` recordings and the runtime `snippet-` baseline, while story-docs-only fixtures self-ratchet against `server-snippet-`. A story without a static snippet records `(no snippet: the Code panel falls back to the story source)`, followed by `warning: ...` lines when the payload carries static-analysis caveats.
 
 ## Known legacy gaps (vue3)
 

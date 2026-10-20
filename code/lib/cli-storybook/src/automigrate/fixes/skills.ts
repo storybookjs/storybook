@@ -13,7 +13,8 @@ export const skills: Fix<{ afterAngularViteMigration?: boolean }> = {
   id: 'skills',
   link: 'https://github.com/storybookjs/skills',
 
-  prompt: () => 'Install the official Storybook skills for AI agents into this project',
+  prompt: () =>
+    'Install the official Storybook skills for AI agents into this project, and add a section to AGENTS.md that tells agents when to use them',
 
   async check({ packageManager, mainConfig, beforeVersion, storybookVersion, requested }) {
     // `installSkills` skips CI anyway; returning here keeps the no-op out of the list and the report.

@@ -1,12 +1,6 @@
-import type {
-  Canvas,
-  StoryContext as StoryContextBase,
-  WebRenderer,
-} from 'storybook/internal/types';
+import type { Canvas, WebRenderer } from 'storybook/internal/types';
 
 import type { Component, ComponentProps } from 'svelte';
-
-export type StoryContext = StoryContextBase<SvelteRenderer>;
 
 export interface SvelteRenderer<
   C extends Component<any, any, any> = Component<any, any, any>,

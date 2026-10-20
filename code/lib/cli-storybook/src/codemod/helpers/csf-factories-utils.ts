@@ -2,6 +2,8 @@ import { types as t, traverse } from 'storybook/internal/babel';
 
 import path from 'path';
 
+import { DOCUMENTED_PREVIEW_IMPORT } from '../../../../../core/src/shared/constants/config-folder.ts';
+
 const projectAnnotationNames = [
   'decorators',
   'parameters',
@@ -160,7 +162,7 @@ export function getPreviewImportPath(
   { useSubPathImports, previewConfigPath }: PreviewImportOptions
 ) {
   if (useSubPathImports) {
-    return '#.storybook/preview';
+    return DOCUMENTED_PREVIEW_IMPORT;
   }
 
   const relativePath = path.relative(path.dirname(storiesFilePath), previewConfigPath);

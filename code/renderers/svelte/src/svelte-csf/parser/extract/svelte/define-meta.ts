@@ -1,6 +1,7 @@
 import type { ESTreeAST } from '../../ast.ts';
 import type { SvelteASTNodes } from './nodes.ts';
 import { isOneOf } from '../../../utils/is-one-of.ts';
+import { skipTypeCalls } from '../../../utils/import-source.ts';
 import type { CompiledASTNodes } from '../compiled/nodes.ts';
 
 import { GetDefineMetaFirstArgumentError } from '../../../utils/error/parser/extract/svelte.ts';
@@ -52,7 +53,7 @@ export function getDefineMetaFirstArgumentObjectExpression(
   const { defineMetaVariableDeclaration } = nodes;
   const { declarations } = defineMetaVariableDeclaration;
   const declaration = declarations[0];
-  const { init } = declaration;
+  const init = declaration.init && skipTypeCalls(declaration.init);
 
   if (
     init?.type === 'CallExpression' &&

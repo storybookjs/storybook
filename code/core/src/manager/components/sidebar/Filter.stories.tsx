@@ -448,14 +448,3 @@ export const Empty: Story = {
     expect(learnButton).toBeInTheDocument();
   },
 };
-
-export const EmptyNoChangeDetection: Story = {
-  ...Empty,
-  beforeEach: () => {
-    const features = global.FEATURES;
-    global.FEATURES = { ...features, changeDetection: false };
-    return () => {
-      global.FEATURES = features;
-    };
-  },
-};

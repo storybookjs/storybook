@@ -32,6 +32,7 @@ import {
 } from '../utils/browser-target-options.ts';
 import { errorSummary, printErrorDetails } from '../utils/error-handler.ts';
 import type { StandaloneOptions } from '../utils/standalone-options.ts';
+import { normalizeStatsJson } from '../utils/stats-json.ts';
 import { Channel } from 'storybook/internal/channels';
 import { resolveTsconfig } from '../../find-tsconfig.ts';
 
@@ -158,7 +159,7 @@ export const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
     angularBuilderContext: context,
     angularBuilderOptions,
     tsConfig,
-    statsJson,
+    statsJson: normalizeStatsJson(statsJson),
   };
 
   // Bridge angularBuilderOptions to the addon-vitest child process

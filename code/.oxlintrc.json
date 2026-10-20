@@ -23,7 +23,6 @@
     "renderers/svelte/src/svelte-csf/__tests__/__compiled__",
     "core/assets",
     "core/report",
-    "core/src/core-server/utils/__search-files-tests__",
     "lib/cli-storybook/test/default/cli.test.cjs",
     "sandbox"
   ],

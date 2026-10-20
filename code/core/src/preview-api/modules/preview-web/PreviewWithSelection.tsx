@@ -445,6 +445,10 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       return;
     }
 
+    // On a same-story re-render, the previous DOM stays mounted until the new render
+    // replaces it in place, so the document never collapses and scroll is preserved.
+    const keepRenderedDom = !storyIdChanged && !viewModeChanged;
+
     // Wait for the previous render to leave the page. NOTE: this will wait to ensure anything async
     // is properly aborted, which (in some cases) can lead to the whole screen being refreshed.
     if (lastRender) {
@@ -460,12 +464,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       ) {
         this.view.showPreparingStory({ immediate: true });
       }
-      await this.teardownRender(lastRender, {
-        viewModeChanged,
-        // On a same-story re-render, the previous DOM stays mounted until the new render
-        // replaces it in place, so the document never collapses and scroll is preserved.
-        keepRenderedDom: !storyIdChanged && !viewModeChanged,
-      });
+      await this.teardownRender(lastRender, { viewModeChanged, keepRenderedDom });
       if (isSuperseded()) {
         return;
       }
@@ -532,6 +531,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     if (isStoryRender(render)) {
       invariant(!!render.story);
       this.storyRenders.push(render);
+      if (keepRenderedDom && lastRender && isStoryRender(lastRender)) {
+        render.replace(lastRender);
+      }
       render.renderToElement(
         this.view.prepareForStory(render.story, {
           scrollReset: storyIdChanged || viewModeChanged,

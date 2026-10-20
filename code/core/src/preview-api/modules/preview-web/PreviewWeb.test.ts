@@ -3591,7 +3591,9 @@ describe('PreviewWeb', () => {
         await waitForRender();
         await waitForQuiescence();
 
-        expect(abortedAtCleanup).toEqual([true]);
+        // The story on screen had finished: its cleanups ran at once, its signal aborts once the new
+        // render has mounted.
+        expect(abortedAtCleanup).toEqual([false]);
         expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(1);
         expect(preview.storyRenders).toHaveLength(1);
         expect(
@@ -3625,6 +3627,45 @@ describe('PreviewWeb', () => {
         expect(abortedAtCleanup).toEqual([]);
         expect(projectAnnotations.renderToCanvas).not.toHaveBeenCalled();
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_UNCHANGED, 'component-one--a');
+      });
+    });
+
+    describe('when the story on screen renders again in place', () => {
+      it('ends its render once the new render has mounted, after its cleanups', async () => {
+        const order: string[] = [];
+        const signals: AbortSignal[] = [];
+        const beforeEachHook = vi.fn(({ abortSignal }: { abortSignal: AbortSignal }) => {
+          const render = signals.push(abortSignal);
+          order.push(`beforeEach ${render}`);
+          return () => {
+            order.push(`cleanup ${render}`);
+          };
+        });
+        const importFnWith =
+          (args: object): ModuleImportFn =>
+          async (path) =>
+            path === './src/ComponentOne.stories.js'
+              ? toMerged(componentOneExports, { a: { args, beforeEach: beforeEachHook } })
+              : importFn(path);
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview({ importFn: importFnWith({}) });
+        projectAnnotations.renderToCanvas.mockImplementation(() => {
+          order.push(`mount, first render aborted: ${signals[0].aborted}`);
+          return teardownrenderToCanvas;
+        });
+        mockChannel.emit.mockClear();
+
+        preview.onStoriesChanged({ importFn: importFnWith({ foo: 'edited' }) });
+        await waitForRender();
+
+        expect(order).toEqual([
+          'beforeEach 1',
+          'cleanup 1',
+          'beforeEach 2',
+          'mount, first render aborted: false',
+        ]);
+        expect(signals[0].aborted).toBe(true);
+        expect(signals[1].aborted).toBe(false);
       });
     });
 

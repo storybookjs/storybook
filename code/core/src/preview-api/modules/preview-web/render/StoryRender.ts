@@ -85,6 +85,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
   private teardownPromise?: Promise<void>;
 
+  // The render of the same story whose DOM this one replaces in place. Its DOM stays on screen until
+  // this render mounts, so it ends then, or when this render ends without mounting or is torn down.
+  private replaced?: StoryRender<TRenderer>;
+
   constructor(
     public channel: Channel,
     public store: StoryStore<TRenderer>,
@@ -283,6 +287,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
           const teardown = await renderStory(renderContext, canvasElement);
           this.teardownRender = teardown || (() => {});
           mounted = true;
+          this.endReplaced();
           // A render that a teardown aborted marks nothing: the document is the next story's.
           if (ownsDocument && !abortSignal.aborted) {
             // Its root is the <body> the render left, which may be a new one after every render.
@@ -492,6 +497,8 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
           reporters: [],
         } as StoryFinishedPayload)
       );
+    } finally {
+      this.endReplaced();
     }
 
     // If a rerender was enqueued during the render, clear the queue and render again
@@ -516,6 +523,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   }
 
   async remount() {
+    this.cancelRender();
     await this.runTeardown({});
     // A teardown that started meanwhile is for good, so this render must not mount again.
     if (this.teardownPromise) {
@@ -533,6 +541,19 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     this.abortController.abort();
   }
 
+  /**
+   * Takes over the DOM of a render of the same story that a teardown kept on screen: that render
+   * ends, and aborts its signal if it has not yet, once this one has mounted in its place.
+   */
+  replace(render: StoryRender<TRenderer>) {
+    this.replaced = render;
+  }
+
+  private endReplaced() {
+    this.replaced?.cancelRender();
+    this.replaced = undefined;
+  }
+
   cancelPlayFunction() {
     if (this.phase === 'playing') {
       this.abortController.abort();
@@ -542,14 +563,23 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
   // Callers share one teardown, so cleanups run once and every caller waits for them. A remount
   // tears down for itself, since it mounts again afterwards.
+  //
+  // A finished render whose DOM stays on screen has not ended: the render that replaces it ends it
+  // (`replace()`), so what the story holds until its signal aborts stays as long as its DOM. One
+  // that still runs stops now. Its cleanups run at the teardown either way, before the next
+  // render's `beforeEach`. A later teardown that does not keep the DOM ends a render that an earlier
+  // one kept (it does not unmount that DOM: the first teardown decided that).
   teardown(options: { keepRenderedDom?: boolean } = {}) {
+    if (!options.keepRenderedDom || this.phase !== 'finished') {
+      this.cancelRender();
+    }
     this.teardownPromise ??= this.runTeardown(options);
     return this.teardownPromise;
   }
 
   private async runTeardown({ keepRenderedDom = false }: { keepRenderedDom?: boolean }) {
     this.torndown = true;
-    this.cancelRender();
+    this.endReplaced();
     this.releaseDocumentRoot();
     this.releaseDocumentRoot = () => {};
 

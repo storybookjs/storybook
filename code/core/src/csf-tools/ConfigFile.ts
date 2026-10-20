@@ -129,15 +129,56 @@ const _findVarDeclarator = (
   return undefined;
 };
 
-const namesToAdd = (names: readonly string[], has: (name: string) => boolean) =>
-  [...new Set(names)].filter((name) => !has(name));
-
 const isRequireOf = (node: Node | null | undefined, fromImport: string) =>
   node?.type === 'CallExpression' &&
   isIdentifier(node.callee, 'require') &&
   isStringLiteral(node.arguments[0]) &&
-  (node.arguments[0].value === fromImport ||
-    node.arguments[0].value === fromImport.split('node:')[1]);
+  isSource(node.arguments[0].value, fromImport);
+
+// `node:path` also finds an import of `path`.
+const isSource = (value: string, fromImport: string) =>
+  value === fromImport || value === fromImport.split('node:')[1];
+
+interface ImportName {
+  imported: string;
+  local: string;
+}
+
+// `'a as b'` imports `a` under the local name `b`.
+const IMPORT_NAME = /^\s*([\p{L}\p{N}_$]+)(?:\s+as\s+([\p{L}\p{N}_$]+))?\s*$/u;
+
+const importNames = (specifiers: readonly string[]) => {
+  const names = new Map<string, ImportName>();
+  for (const specifier of specifiers) {
+    const match = IMPORT_NAME.exec(specifier);
+    if (!match) {
+      throw new Error(`Expected an import name like 'a' or 'a as b', got '${specifier}'`);
+    }
+    const [, imported, local = imported] = match;
+    names.set(`${imported} as ${local}`, { imported, local });
+  }
+  return [...names.values()];
+};
+
+const printImportName = ({ imported, local }: ImportName, separator: string) =>
+  imported === local ? imported : `${imported}${separator}${local}`;
+
+const bindsImport = (name: ImportName, imported: Node, local: Node) =>
+  isIdentifier(imported, name.imported) &&
+  // `{ a = 1 }` binds `a` too.
+  isIdentifier(local.type === 'AssignmentPattern' ? local.left : local, name.local);
+
+// A plain name removes every import of that export, an alias only the import under that name.
+const removesImport = (name: ImportName, imported: Node, local: Node) =>
+  name.imported === name.local
+    ? isIdentifier(imported, name.imported)
+    : bindsImport(name, imported, local);
+
+type ImportSpecifierNode = E.ImportDeclaration['specifiers'][number];
+
+const isTypeOnly = (declaration: E.ImportDeclaration, specifier: ImportSpecifierNode) =>
+  declaration.importKind === 'type' ||
+  (specifier.type === 'ImportSpecifier' && specifier.importKind === 'type');
 
 export class ConfigFile implements CsfObject {
   /**
@@ -827,62 +868,65 @@ export class ConfigFile implements CsfObject {
   }
 
   /**
-   * Import specifiers for a specific require import
+   * Add `require` bindings of a module: a string as `const name = require(…)`, an array of names or
+   * `'name as alias'` as destructured properties. A binding a top-level `require` of the module has
+   * already is skipped. Statements end with `;` unless most statements of the file omit it.
    *
    * @example
    *
    * ```ts
-   * // const { foo } = require('bar');
-   * setRequireImport(['foo'], 'bar');
+   * // const { foo, bar: baz } = require('bar');
+   * setRequireImport(['foo', 'bar as baz'], 'bar');
    *
    * // const foo = require('bar');
    * setRequireImport('foo', 'bar');
    * ```
    *
-   * @param importSpecifiers - The import specifiers to set. If a string is passed in, a default
-   *   import will be set. Otherwise, an array of named imports will be set
-   * @param fromImport - The module to import from
+   * @throws When a name is neither an identifier nor `'name as alias'`.
    */
   setRequireImport(importSpecifier: string[] | string, fromImport: string) {
-    const requireDeclaration = this._findRequire(fromImport);
-    if (requireDeclaration) {
-      fromImport = (
-        (requireDeclaration.declarations[0].init as E.CallExpression)
-          .arguments[0] as E.StringLiteral
-      ).value;
-    }
-    const source = printString(fromImport, this._editor.quote);
+    const requires = this._findRequires(fromImport);
+    const call = requires[0]?.declarations[0].init as E.CallExpression | undefined;
+    const source = printString(
+      call ? (call.arguments[0] as E.StringLiteral).value : fromImport,
+      this._editor.quote
+    );
+    const end = this._editor.semicolons ? ';' : '';
     const editor = this._editor;
+    const ids = requires.map((declaration) => declaration.declarations[0].id);
 
-    // if the import specifier is a string, we're dealing with default imports
     if (typeof importSpecifier === 'string') {
-      const declarator = requireDeclaration?.declarations[0];
-      if (!declarator || !isIdentifier(declarator.id, importSpecifier)) {
-        // If the import declaration hasn't the specified default identifier, we add a new variable declaration
-        prependStatement(editor, `const ${importSpecifier} = require(${source});`);
+      if (!ids.some((id) => isIdentifier(id, importSpecifier))) {
+        prependStatement(editor, `const ${importSpecifier} = require(${source})${end}`);
       }
-      // if the import specifier is an array, we're dealing with named imports
     } else {
-      const pattern = requireDeclaration?.declarations[0].id;
-      const names = namesToAdd(
-        importSpecifier,
-        (name) =>
-          pattern?.type === 'ObjectPattern' &&
-          pattern.properties.some(
-            (property) => property.type === 'Property' && isIdentifier(property.key, name)
-          )
+      const patterns = ids.filter((id): id is E.ObjectPattern => id.type === 'ObjectPattern');
+      const texts = importNames(importSpecifier)
+        .filter(
+          (name) =>
+            !patterns.some((pattern) =>
+              pattern.properties.some(
+                (property) =>
+                  property.type === 'Property' && bindsImport(name, property.key, property.value)
+              )
+            )
+        )
+        .map((name) => printImportName(name, ': '));
+      // Nothing may follow a rest element.
+      const pattern = patterns.find((id) =>
+        id.properties.every((property) => property.type === 'Property')
       );
-      if (!pattern) {
-        prependStatement(editor, `const { ${names.join(', ')} } = require(${source});`);
-      } else if (pattern.type === 'ObjectPattern' && names.length > 0) {
-        appendToList(editor, objectList(editor, pattern), names);
+      if (texts.length > 0 && pattern) {
+        appendToList(editor, objectList(editor, pattern), texts);
+      } else if (texts.length > 0) {
+        prependStatement(editor, `const { ${texts.join(', ')} } = require(${source})${end}`);
       }
     }
     this._editor.commit();
   }
 
-  _findRequire(fromImport: string) {
-    return this._program.body.find(
+  _findRequires(fromImport: string) {
+    return this._program.body.filter(
       (node): node is E.VariableDeclaration =>
         node.type === 'VariableDeclaration' &&
         node.declarations.length === 1 &&
@@ -890,24 +934,24 @@ export class ConfigFile implements CsfObject {
     );
   }
 
-  _findImport(fromImport: string) {
-    return this._program.body.find(
+  _findImports(fromImport: string) {
+    return this._program.body.filter(
       (node): node is E.ImportDeclaration =>
-        node.type === 'ImportDeclaration' &&
-        (node.source.value === fromImport || node.source.value === fromImport.split('node:')[1])
+        node.type === 'ImportDeclaration' && isSource(node.source.value, fromImport)
     );
   }
 
   /**
-   * Set import specifiers for a given import statement.
-   *
-   * Does not support setting type imports (yet)
+   * Add import bindings of a module: a string as the default import, an array of names or
+   * `'name as alias'` as named imports. A binding a value import of the module has already is
+   * skipped; one only a type-only import has becomes a value import. Statements end with `;` unless
+   * most statements of the file omit it.
    *
    * @example
    *
    * ```ts
-   * // import { foo } from 'bar';
-   * setImport(['foo'], 'bar');
+   * // import { foo, bar as baz } from 'bar';
+   * setImport(['foo', 'bar as baz'], 'bar');
    *
    * // import foo from 'bar';
    * setImport('foo', 'bar');
@@ -919,104 +963,144 @@ export class ConfigFile implements CsfObject {
    * setImport(null, 'bar');
    * ```
    *
-   * @param importSpecifiers - The import specifiers to set. If a string is passed in, a default
-   *   import will be set. Otherwise, an array of named imports will be set
-   * @param fromImport - The module to import from
+   * @throws When a name is neither an identifier nor `'name as alias'`.
    */
   setImport(importSpecifier: string[] | string | { namespace: string } | null, fromImport: string) {
-    const importDeclaration = this._findImport(fromImport);
-    if (importDeclaration) {
-      fromImport = importDeclaration.source.value;
-    }
+    const names = Array.isArray(importSpecifier) ? importNames(importSpecifier) : [];
+    const spelled = this._findImports(fromImport)[0]?.source.value ?? fromImport;
+    // A type-only binding of a name to import as a value would clash with it, so it goes.
+    this._removeImportSpecifiers(
+      fromImport,
+      (declaration, specifier) =>
+        isTypeOnly(declaration, specifier) &&
+        (specifier.type === 'ImportSpecifier'
+          ? names.some((name) => bindsImport(name, specifier.imported, specifier.local))
+          : specifier.type === 'ImportDefaultSpecifier' && specifier.local.name === importSpecifier)
+    );
+    this._editor.commit();
+
+    const values = this._findImports(fromImport).filter(
+      (declaration) => declaration.importKind !== 'type'
+    );
     const editor = this._editor;
-    const source = printString(fromImport, this._editor.quote);
-    const has = (type: string, name?: string) =>
-      !!importDeclaration?.specifiers.some(
-        (specifier) =>
-          specifier.type === type &&
-          (name === undefined ||
-            (type === 'ImportSpecifier'
-              ? isIdentifier((specifier as E.ImportSpecifier).imported, name)
-              : specifier.local.name === name))
-      );
-    // A new import goes after the existing ones, and a clause the declaration cannot take gets a
-    // declaration of its own right after it, which keeps the module evaluation order.
-    const addImport = (clause: string, merged?: { default?: string; named?: string[] }) => {
-      if (!importDeclaration) {
-        insertAfterImports(editor, `import ${clause} from ${source};`);
-      } else if (merged) {
-        setImportSpecifiers(editor, importDeclaration, importDeclaration.specifiers, merged);
+    const source = printString(spelled, this._editor.quote);
+    const end = this._editor.semicolons ? ';' : '';
+    const specifiers = values.flatMap((declaration) =>
+      declaration.specifiers.filter((specifier) => !isTypeOnly(declaration, specifier))
+    );
+    // A clause goes into the first value import without a specifier that blocks it. Otherwise it
+    // gets a declaration of its own after the module's value imports, or after all imports, which
+    // keeps the module evaluation order.
+    const addImport = (
+      clause: string,
+      merged?: { blockedBy: string; specifiers: { default?: string; named?: string[] } }
+    ) => {
+      const target =
+        merged &&
+        values.find(
+          (declaration) =>
+            !declaration.specifiers.some((specifier) => specifier.type === merged.blockedBy)
+        );
+      if (target) {
+        setImportSpecifiers(editor, target, target.specifiers, merged.specifiers);
+      } else if (values.length > 0) {
+        insertStatementAfter(editor, values.at(-1)!, `import ${clause} from ${source}${end}`);
       } else {
-        insertStatementAfter(editor, importDeclaration, `import ${clause} from ${source};`);
+        insertAfterImports(editor, `import ${clause} from ${source}${end}`);
       }
     };
 
     // Handle side-effect imports (e.g., import 'foo')
     if (importSpecifier === null) {
-      if (!importDeclaration) {
-        insertAfterImports(editor, `import ${source};`);
+      if (values.length === 0) {
+        insertAfterImports(editor, `import ${source}${end}`);
       }
       // Handle default imports e.g. import foo from 'bar'
     } else if (typeof importSpecifier === 'string') {
-      if (!has('ImportDefaultSpecifier', importSpecifier)) {
-        addImport(
-          importSpecifier,
-          has('ImportDefaultSpecifier') ? undefined : { default: importSpecifier }
-        );
+      if (
+        !specifiers.some(
+          (specifier) =>
+            specifier.type === 'ImportDefaultSpecifier' && specifier.local.name === importSpecifier
+        )
+      ) {
+        addImport(importSpecifier, {
+          blockedBy: 'ImportDefaultSpecifier',
+          specifiers: { default: importSpecifier },
+        });
       }
       // Handle named imports e.g. import { foo } from 'bar'
     } else if (Array.isArray(importSpecifier)) {
-      const names = namesToAdd(importSpecifier, (name) => has('ImportSpecifier', name));
-      if (names.length > 0) {
-        addImport(
-          `{ ${names.join(', ')} }`,
-          has('ImportNamespaceSpecifier') ? undefined : { named: names }
-        );
+      const texts = names
+        .filter(
+          (name) =>
+            !specifiers.some(
+              (specifier) =>
+                specifier.type === 'ImportSpecifier' &&
+                bindsImport(name, specifier.imported, specifier.local)
+            )
+        )
+        .map((name) => printImportName(name, ' as '));
+      if (texts.length > 0) {
+        addImport(`{ ${texts.join(', ')} }`, {
+          blockedBy: 'ImportNamespaceSpecifier',
+          specifiers: { named: texts },
+        });
       }
       // Handle namespace imports e.g. import * as foo from 'bar'
     } else if (
       importSpecifier.namespace &&
-      !has('ImportNamespaceSpecifier', importSpecifier.namespace)
+      !specifiers.some(
+        (specifier) =>
+          specifier.type === 'ImportNamespaceSpecifier' &&
+          specifier.local.name === importSpecifier.namespace
+      )
     ) {
       addImport(`* as ${importSpecifier.namespace}`);
     }
     this._editor.commit();
   }
 
+  // Removes the matching specifiers of a module's imports, and each import left without any.
+  _removeImportSpecifiers(
+    fromImport: string,
+    matches: (declaration: E.ImportDeclaration, specifier: ImportSpecifierNode) => boolean
+  ) {
+    for (const declaration of this._findImports(fromImport)) {
+      const kept = declaration.specifiers.filter((specifier) => !matches(declaration, specifier));
+      if (kept.length === 0 && declaration.specifiers.length > 0) {
+        removeStatement(this._editor, declaration);
+      } else if (kept.length < declaration.specifiers.length) {
+        setImportSpecifiers(this._editor, declaration, kept);
+      }
+    }
+  }
+
   _removeRequireImport(
     importSpecifier: string[] | string | { namespace: string } | null,
     fromImport: string
   ) {
-    const requireDeclaration = this._findRequire(fromImport);
-    // require() has no side-effect only or namespace forms, so those are skipped.
-    if (!requireDeclaration || importSpecifier === null) {
-      return;
-    }
-    const declarator = requireDeclaration.declarations[0];
     const editor = this._editor;
-
-    // Handle default requires e.g. const foo = require('bar')
-    if (typeof importSpecifier === 'string') {
-      // For default requires, if the identifier matches, remove the entire declaration
-      if (isIdentifier(declarator.id, importSpecifier)) {
-        removeStatement(editor, requireDeclaration);
+    // require() has no side-effect only or namespace forms, so those are skipped.
+    const names = Array.isArray(importSpecifier) ? importNames(importSpecifier) : undefined;
+    for (const declaration of this._findRequires(fromImport)) {
+      const { id } = declaration.declarations[0];
+      // Handle default requires e.g. const foo = require('bar')
+      if (typeof importSpecifier === 'string' && isIdentifier(id, importSpecifier)) {
+        removeStatement(editor, declaration);
       }
-      return;
-    }
-
-    // Handle named requires e.g. const { foo, bar } = require('baz')
-    if (Array.isArray(importSpecifier) && declarator.id.type === 'ObjectPattern') {
-      const pattern = declarator.id;
-      const removed = pattern.properties.filter(
+      // Handle named requires e.g. const { foo, bar } = require('baz')
+      if (!names || id.type !== 'ObjectPattern') {
+        continue;
+      }
+      const removed = id.properties.filter(
         (property) =>
           property.type === 'Property' &&
-          importSpecifier.some((specifier) => isIdentifier(property.key, specifier))
+          names.some((name) => removesImport(name, property.key, property.value))
       );
-      // If no properties left in the destructuring, remove the entire declaration
-      if (removed.length === pattern.properties.length) {
-        removeStatement(editor, requireDeclaration);
+      if (removed.length === id.properties.length) {
+        removeStatement(editor, declaration);
       } else if (removed.length > 0) {
-        removeFromList(editor, objectList(editor, pattern), removed);
+        removeFromList(editor, objectList(editor, id), removed);
       }
     }
   }
@@ -1025,27 +1109,19 @@ export class ConfigFile implements CsfObject {
     importSpecifier: string[] | string | { namespace: string } | null,
     fromImport: string
   ) {
-    const importDeclaration = this._findImport(fromImport);
-    if (!importDeclaration) {
-      return;
-    }
-    const editor = this._editor;
-
     // Remove side-effect imports (e.g., import 'foo') if exact match, else do nothing.
     if (importSpecifier === null) {
-      if (importDeclaration.specifiers.length === 0) {
-        removeStatement(editor, importDeclaration);
+      for (const declaration of this._findImports(fromImport)) {
+        if (declaration.specifiers.length === 0) {
+          removeStatement(this._editor, declaration);
+        }
       }
       return;
     }
-
-    const removed = importDeclaration.specifiers.filter((specifier) => {
-      // Handle namespace imports e.g. import * as foo from 'bar'
-      if (typeof importSpecifier === 'object' && 'namespace' in importSpecifier) {
-        return (
-          specifier.type === 'ImportNamespaceSpecifier' &&
-          specifier.local.name === importSpecifier.namespace
-        );
+    const names = Array.isArray(importSpecifier) ? importNames(importSpecifier) : [];
+    this._removeImportSpecifiers(fromImport, (declaration, specifier) => {
+      if (isTypeOnly(declaration, specifier)) {
+        return false;
       }
       // Handle default imports e.g. import foo from 'bar'
       if (typeof importSpecifier === 'string') {
@@ -1054,51 +1130,41 @@ export class ConfigFile implements CsfObject {
         );
       }
       // Handle named imports e.g. import { foo } from 'bar'
+      if (Array.isArray(importSpecifier)) {
+        return (
+          specifier.type === 'ImportSpecifier' &&
+          names.some((name) => removesImport(name, specifier.imported, specifier.local))
+        );
+      }
+      // Handle namespace imports e.g. import * as foo from 'bar'
       return (
-        specifier.type === 'ImportSpecifier' &&
-        importSpecifier.some((name) => isIdentifier(specifier.imported, name))
+        specifier.type === 'ImportNamespaceSpecifier' &&
+        specifier.local.name === importSpecifier.namespace
       );
     });
-    if (removed.length === 0) {
-      return;
-    }
-
-    // If the import declaration has no specifiers left, remove it.
-    if (removed.length === importDeclaration.specifiers.length) {
-      removeStatement(editor, importDeclaration);
-      return;
-    }
-    setImportSpecifiers(
-      editor,
-      importDeclaration,
-      importDeclaration.specifiers.filter((specifier) => !removed.includes(specifier))
-    );
   }
 
   /**
-   * Remove import specifiers for a given import statement.
-   *
-   * Does not support removing type imports (yet)
+   * Remove import and `require` bindings of a module: a string removes the default import, an
+   * array named imports. A name removes every import of that export, whatever its local name;
+   * `'name as alias'` removes only the import under that alias. Type-only imports are left as they
+   * are.
    *
    * @example
    *
    * ```ts
    * // import { foo } from 'bar';
-   * setImport(['foo'], 'bar');
+   * removeImport(['foo'], 'bar');
    *
    * // import foo from 'bar';
-   * setImport('foo', 'bar');
+   * removeImport('foo', 'bar');
    *
    * // import * as foo from 'bar';
-   * setImport({ namespace: 'foo' }, 'bar');
+   * removeImport({ namespace: 'foo' }, 'bar');
    *
    * // import 'bar';
-   * setImport(null, 'bar');
+   * removeImport(null, 'bar');
    * ```
-   *
-   * @param importSpecifiers - The import specifiers to remove. If a string is passed in, will only
-   *   remove the default import. Otherwise, named imports matching the array will be removed.
-   * @param fromImport - The module to import from
    */
   removeImport(
     importSpecifier: string[] | string | { namespace: string } | null,

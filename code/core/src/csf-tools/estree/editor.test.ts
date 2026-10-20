@@ -175,6 +175,22 @@ describe('style', () => {
     expect(new SourceEditor('const a = 1;').quote).toBe('"');
   });
 
+  it('ends statements with a semicolon unless most statements of the file omit it', () => {
+    expect(new SourceEditor("import a from 'a'\nconst b = 1\nexport default b;").semicolons).toBe(
+      false
+    );
+    expect(
+      new SourceEditor("import a from 'a';\nfor (let i = 0; i < 1; i++) a(i)").semicolons
+    ).toBe(true);
+    expect(new SourceEditor('export function f() {}').semicolons).toBe(true);
+    expect(
+      new SourceEditor(
+        'export type A = 1\ntype B = 2\nclass C { d = 1 }\nexport const e = 1;',
+        'a.ts'
+      ).semicolons
+    ).toBe(false);
+  });
+
   it('keeps the style of the code it was created with after a commit', () => {
     const editor = new SourceEditor("const a = 'a';\n");
     editor.edits.overwrite(10, 13, '1');
@@ -624,6 +640,12 @@ describe('prependStatement', () => {
     expect(editor.toString()).toBe(`\uFEFF// @ts-nocheck\nimport a from 'a';\n`);
   });
 
+  it('ends the statement when the first statement would continue it', () => {
+    const editor = new SourceEditor(`[1].map(f)\n`);
+    prependStatement(editor, `const a = require('a')`);
+    expect(editor.toString()).toBe(`const a = require('a');\n[1].map(f)\n`);
+  });
+
   it('inserts right after the BOM of a file with nothing else', () => {
     const editor = new SourceEditor('\uFEFF');
     prependStatement(editor, `import a from 'a';`);
@@ -791,6 +813,11 @@ describe('setImportSpecifiers', () => {
     setImportSpecifiers(editor, first, first.specifiers, { named: ['c'] });
     setImportSpecifiers(editor, second, second.specifiers, { default: 'D', named: ['e'] });
     expect(editor.toString()).toBe(`import A, { c } from 'x';\nimport D, { b, e } from 'y';`);
+
+    const aliased = new SourceEditor(`import { a } from 'x';`);
+    const imported = aliased.program.body[0] as E.ImportDeclaration;
+    setImportSpecifiers(aliased, imported, imported.specifiers, { named: ['b as c'] });
+    expect(aliased.toString()).toBe(`import { a, b as c } from 'x';`);
 
     const replaced = new SourceEditor(`import { a, b } from 'x';`);
     const declaration = replaced.program.body[0] as E.ImportDeclaration;

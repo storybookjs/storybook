@@ -1,7 +1,7 @@
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 
 import { type Node, isStringLiteral } from '../../csf-tools/estree/ast.ts';
-import { prependStatement, printString } from '../../csf-tools/estree/editor.ts';
+import { printString } from '../../csf-tools/estree/editor.ts';
 
 const PREFERRED_GET_ABSOLUTE_PATH_WRAPPER_NAME = 'getAbsolutePath';
 const ALTERNATIVE_GET_ABSOLUTE_PATH_WRAPPER_NAME = 'wrapForPnp';
@@ -203,10 +203,6 @@ export function ensureNamedImport(config: ConfigFile, imported: string, source: 
   while (taken.has(local)) {
     local = `_${local}`;
   }
-  prependStatement(
-    config._editor,
-    `import { ${imported} as ${local} } from ${printString(source, config._editor.quote)};`
-  );
-  config._editor.commit();
+  config.setImport([`${imported} as ${local}`], source);
   return local;
 }

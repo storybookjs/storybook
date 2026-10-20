@@ -1619,6 +1619,104 @@ describe('ConfigFile', () => {
       expect(printConfig(config).code).toBe(output);
     });
 
+    it.each([
+      {
+        source: `import type { A } from 'x';\nexport default {};`,
+        specifier: ['b'],
+        output: `import type { A } from 'x';\nimport { b } from 'x';\nexport default {};`,
+      },
+      {
+        source: `import type A from 'x';`,
+        specifier: 'b',
+        output: `import type A from 'x';\nimport b from 'x';`,
+      },
+      {
+        source: `import type { A } from 'x';\nimport { b } from 'x';`,
+        specifier: ['c'],
+        output: `import type { A } from 'x';\nimport { b, c } from 'x';`,
+      },
+      {
+        source: `import * as ns from 'x';\nimport { a } from 'x';`,
+        specifier: ['a', 'b'],
+        output: `import * as ns from 'x';\nimport { a, b } from 'x';`,
+      },
+      {
+        source: `import { a } from 'x';\nimport d from 'x';`,
+        specifier: 'd',
+        output: `import { a } from 'x';\nimport d from 'x';`,
+      },
+    ])('adds value specifiers $specifier to $source', ({ source, specifier, output }) => {
+      const config = loadConfig(source).parse();
+      config.setImport(specifier, 'x');
+
+      expect(printConfig(config).code).toBe(output);
+    });
+
+    it.each([
+      { source: ``, output: `import { a as b } from "x";\n` },
+      { source: `import { a } from 'x';`, output: `import { a, a as b } from 'x';` },
+      { source: `import { a as b } from 'x';`, output: `import { a as b } from 'x';` },
+    ])('adds the alias `a as b` to $source', ({ source, output }) => {
+      const config = loadConfig(source).parse();
+      config.setImport(['a as b'], 'x');
+
+      expect(printConfig(config).code).toBe(output);
+    });
+
+    it.each([
+      {
+        source: `import type { A } from 'x';\nexport default {};`,
+        specifier: ['A'],
+        output: `import { A } from 'x';\nexport default {};`,
+      },
+      {
+        source: `import { type A, b } from 'x';`,
+        specifier: ['A'],
+        output: `import { b, A } from 'x';`,
+      },
+      {
+        source: `import type { A as B, C } from 'x';`,
+        specifier: ['A as B'],
+        output: `import type { C } from 'x';\nimport { A as B } from 'x';`,
+      },
+      {
+        source: `import type A from 'x';\nexport default {};`,
+        specifier: 'A',
+        output: `import A from 'x';\nexport default {};`,
+      },
+    ])(
+      'turns the type-only binding of $specifier in $source into a value import',
+      ({ source, specifier, output }) => {
+        const config = loadConfig(source).parse();
+        config.setImport(specifier, 'x');
+
+        expect(printConfig(config).code).toBe(output);
+      }
+    );
+
+    it.each(['a-b', 'a as b as c', ''])('rejects the import name %j', (name) => {
+      const config = loadConfig('').parse();
+
+      expect(() => config.setImport([name], 'x')).toThrow('import name');
+    });
+
+    it('adds a name that the file only imports under an alias', () => {
+      const config = loadConfig(`import { a as b } from 'x';`).parse();
+      config.setImport(['a'], 'x');
+
+      expect(printConfig(config).code).toBe(`import { a as b, a } from 'x';`);
+    });
+
+    it('ends the statements it adds like the file does', () => {
+      const config = loadConfig(`import a from 'a'\nexport default {}\n`).parse();
+      config.setImport(['b'], 'b');
+      config.setImport(null, 'c');
+
+      expect(printConfig(config).code).toBe(
+        `import a from 'a'\nimport { b } from 'b'\nimport 'c'\nexport default {}\n`
+      );
+    });
+
     it(`supports setting a namespaced import`, () => {
       const config = loadConfig('').parse();
       config.setImport({ namespace: 'path' }, 'path');
@@ -1727,6 +1825,49 @@ describe('ConfigFile', () => {
     ])('adds a repeated name once to $source', ({ source, output }) => {
       const config = loadConfig(source).parse();
       config.setRequireImport(['a', 'a'], 'x');
+
+      expect(printConfig(config).code).toBe(output);
+    });
+
+    it.each([
+      {
+        source: `const a = require('x');`,
+        specifier: ['b'],
+        output: `const { b } = require('x');\nconst a = require('x');`,
+      },
+      {
+        source: `const a = require('x');\nconst { b } = require('x');`,
+        specifier: ['c'],
+        output: `const a = require('x');\nconst { b, c } = require('x');`,
+      },
+      {
+        source: `const { b } = require('x');\nconst a = require('x');`,
+        specifier: 'a',
+        output: `const { b } = require('x');\nconst a = require('x');`,
+      },
+      {
+        source: `const { b } = require('x');`,
+        specifier: ['a as c', 'b'],
+        output: `const { b, a: c } = require('x');`,
+      },
+      {
+        source: `const { a: c } = require('x');`,
+        specifier: ['a as c', 'a'],
+        output: `const { a: c, a } = require('x');`,
+      },
+      {
+        source: `const { a = 1, b: c = 2 } = require('x');`,
+        specifier: ['a', 'b as c'],
+        output: `const { a = 1, b: c = 2 } = require('x');`,
+      },
+      {
+        source: `module.exports = {}`,
+        specifier: 'a',
+        output: `const a = require("x")\nmodule.exports = {}`,
+      },
+    ])('adds $specifier to $source', ({ source, specifier, output }) => {
+      const config = loadConfig(source).parse();
+      config.setRequireImport(specifier, 'x');
 
       expect(printConfig(config).code).toBe(output);
     });
@@ -2022,6 +2163,44 @@ describe('ConfigFile', () => {
       const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(source);
+    });
+
+    it.each([
+      {
+        source: `import type { A } from 'x';\nimport { b } from 'x';\nimport { c, d } from 'x';`,
+        specifier: ['A', 'c'],
+        output: `import type { A } from 'x';\nimport { b } from 'x';\nimport { d } from 'x';`,
+      },
+      {
+        source: `import { a as b, a } from 'x';`,
+        specifier: ['a as b'],
+        output: `import { a } from 'x';`,
+      },
+      {
+        source: `import { a as b } from 'x';\nimport { a } from 'x';`,
+        specifier: ['a'],
+        output: ``,
+      },
+      {
+        source: `import 'x';\nimport { a } from 'x';\nimport 'x';`,
+        specifier: null,
+        output: `import { a } from 'x';\n`,
+      },
+      {
+        source: `const a = require('x');\nconst { b, c } = require('x');`,
+        specifier: ['b'],
+        output: `const a = require('x');\nconst { c } = require('x');`,
+      },
+      {
+        source: `const { a: b = 1, c } = require('x');`,
+        specifier: ['a as b'],
+        output: `const { c } = require('x');`,
+      },
+    ])('removes $specifier from $source', ({ source, specifier, output }) => {
+      const config = loadConfig(source).parse();
+      config.removeImport(specifier, 'x');
+
+      expect(printConfig(config).code).toBe(output);
     });
 
     it(`removes ES6 import while preserving require import`, () => {

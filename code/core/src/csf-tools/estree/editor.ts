@@ -271,17 +271,51 @@ export class SourceEditor {
     this._style ??= inferStyle(this._module);
     return this._style.indent;
   }
+
+  /** Whether statements to generate end with `;`: false only when most statements of the file omit it. */
+  get semicolons() {
+    this._style ??= inferStyle(this._module);
+    return this._style.semicolons;
+  }
 }
 
-type Style = { quote: "'" | '"'; indent: string };
+type Style = { quote: "'" | '"'; indent: string; semicolons: boolean };
+
+// Statements and class fields that end with an optional `;`. A declaration in a `for` head has none;
+// an exported declaration ends with the `;` of its `export`.
+const endsWithOptionalSemicolon = (node: Node, parent: Node | null) => {
+  switch (node.type) {
+    case 'ImportDeclaration':
+    case 'ExportAllDeclaration':
+    case 'ExpressionStatement':
+    case 'ReturnStatement':
+    case 'ThrowStatement':
+      return true;
+    case 'TSTypeAliasDeclaration':
+    case 'PropertyDefinition':
+      return true;
+    case 'ExportNamedDeclaration':
+      return !node.declaration;
+    case 'ExportDefaultDeclaration':
+      return !/Declaration$/.test(node.declaration.type);
+    case 'VariableDeclaration':
+      return !parent?.type.startsWith('For');
+    default:
+      return false;
+  }
+};
 
 // The style of the code the editor was created with, so edits do not change it. A tie between
 // quotes goes to the first literal; JSX attributes are left out, as they keep double quotes.
 const inferStyle = ({ code, program }: ParsedModule): Style => {
   const counts = { "'": 0, '"': 0 };
+  const endings = { with: 0, without: 0 };
   let first: "'" | '"' | undefined;
   let indent: string | undefined;
   walk(program, (node, parent) => {
+    if (endsWithOptionalSemicolon(node, parent)) {
+      endings[code[node.end - 1] === ';' ? 'with' : 'without']++;
+    }
     if (isStringLiteral(node) && parent?.type !== 'JSXAttribute') {
       const quote = node.raw?.[0];
       if (quote === "'" || quote === '"') {
@@ -293,7 +327,7 @@ const inferStyle = ({ code, program }: ParsedModule): Style => {
   });
   const quote =
     counts["'"] === counts['"'] ? (first ?? '"') : counts["'"] > counts['"'] ? "'" : '"';
-  return { quote, indent: indent ?? '  ' };
+  return { quote, indent: indent ?? '  ', semicolons: endings.without <= endings.with };
 };
 
 // The indent step from a block's line to the line of its first item, if that is a deeper one.
@@ -1098,7 +1132,12 @@ export const prependStatement = (editor: SourceEditor, text: string) => {
     appendStatement(editor, text);
     return;
   }
-  editor.edits.appendRight((leadingComments(editor, first)[0] ?? first).start, `${text}\n`);
+  const separator =
+    !text.endsWith(';') && CONTINUES_STATEMENT.test(editor.code.slice(first.start)) ? ';' : '';
+  editor.edits.appendRight(
+    (leadingComments(editor, first)[0] ?? first).start,
+    `${text}${separator}\n`
+  );
 };
 
 // Whether pending edits removed a span; one cutting through either end of it counts as that.
@@ -1187,7 +1226,7 @@ export const removeStatements = (editor: SourceEditor, statements: ReadonlySet<N
 
 /**
  * Rewrite an import's specifiers to `kept` plus `added`, keeping each kept specifier as written,
- * comments and layout included.
+ * comments and layout included. A named specifier is its source text, such as `a` or `a as b`.
  */
 export const setImportSpecifiers = (
   editor: SourceEditor,

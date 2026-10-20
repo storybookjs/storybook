@@ -3,11 +3,8 @@ import {
   type Node,
   type Property,
   type SourceLocation,
-  isNode,
   locationOf,
-  moduleOf,
   parseExpression,
-  placeableTextOf,
   staticKey,
   unwrapExpression,
 } from './estree/ast.ts';
@@ -30,8 +27,8 @@ import {
 import {
   type CsfValue,
   UNRESOLVED,
-  isAstLike,
   isEvaluationInert,
+  nodeWithoutParse,
   placeableValueSource,
   readValue,
   resolveExpression,
@@ -138,6 +135,7 @@ export interface CsfObject {
   getValue(path: readonly string[]): CsfValue;
   /**
    * Set a plain value or an expression from `get` / `parseExpression`, creating missing parents.
+   * Expressions can also be nested in the arrays and objects of a plain value.
    *
    * @example
    * ```ts
@@ -147,7 +145,7 @@ export interface CsfObject {
    * object.getValue(['parameters']); // { a11y: { test: 'todo', enabled: true } }
    * ```
    */
-  set(path: readonly string[], value: CsfValue | CsfExpression): CsfMutationResult;
+  set(path: readonly string[], value: CsfValue<CsfExpression>): CsfMutationResult;
   /**
    * Replace a value derived from its current expression. Return a new expression, or `undefined`
    * (or the input) to leave the value unchanged.
@@ -439,28 +437,26 @@ class CsfObjectEditor implements CsfObject {
     return found.property;
   }
 
-  private sourceFor(value: CsfValue | CsfExpression) {
-    if (isNode(value) && moduleOf(value)) {
-      return detachedTextOf(value);
-    }
-    if (isAstLike(value)) {
-      throw new Error(
-        `CsfObject: expressions must come from \`get\`, \`transform\` or \`parseExpression\`, not a ${value.type} node`
-      );
-    }
-    return printValue(value, this.editor.quote);
-  }
-
-  set(path: readonly string[], value: CsfValue | CsfExpression): CsfMutationResult {
+  set(path: readonly string[], value: CsfValue<CsfExpression>): CsfMutationResult {
     const logicalPath = this.normalizePath(path);
     if (!logicalPath || logicalPath.length === 0 || unsafePath(logicalPath)) {
       return this.failure('unsupported-member', path, this.anchor());
+    }
+    const unprintable = nodeWithoutParse(value);
+    if (unprintable) {
+      return this.failure(
+        'unsupported-value',
+        path,
+        this.anchor(),
+        `Cannot set ${path.join('.')} to a ${unprintable.type} node that did not come from \`get\`, \`transform\` or \`parseExpression\``
+      );
     }
     const inspected = this.inspect(logicalPath, 'set');
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
-    const text = this.sourceFor(value);
+    const { quote, indent } = this.editor;
+    const text = printValue(value, quote, { indent, expand: 'multiline' });
     if (inspected.property && inspected.parent) {
       inspected.parent.root.replaceValue(inspected.property, text);
     } else {

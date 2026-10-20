@@ -229,7 +229,7 @@ export class ConfigFile implements CsfObject {
    * object.getValue(['parameters']); // { a11y: { test: 'todo', enabled: true } }
    * ```
    */
-  set(path: readonly string[], value: CsfValue | CsfExpression): CsfMutationResult {
+  set(path: readonly string[], value: CsfValue<CsfExpression>): CsfMutationResult {
     return this._mutate((object) => object.set(path, value));
   }
 

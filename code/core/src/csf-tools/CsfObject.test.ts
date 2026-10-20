@@ -3,7 +3,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadCsf, printCsf } from './CsfFile.ts';
 import { loadConfig, printConfig } from './ConfigFile.ts';
 import type { CsfExpression, CsfValue } from './CsfObject.ts';
-import { parseExpression, placeableTextOf, textOf } from './estree/ast.ts';
+import {
+  type E as ESTree,
+  parseExpression,
+  parseModule,
+  placeableTextOf,
+  textOf,
+} from './estree/ast.ts';
 
 const parse = (source: string) =>
   loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();
@@ -120,9 +126,13 @@ describe('CsfObject', () => {
     const csf = parse(`export default { title: 'X' };`);
     const [meta] = csf.objects({ stories: false });
 
-    expect(() => meta.set(['framework'], { type: 'StringLiteral', value: 'x' } as any)).toThrow(
-      'StringLiteral node'
-    );
+    expect(meta.set(['framework'], { type: 'StringLiteral', value: 'x' } as any)).toMatchObject({
+      ok: false,
+      diagnostic: { code: 'unsupported-value', message: expect.stringContaining('StringLiteral') },
+    });
+    expect(
+      meta.set(['control'], { type: 'button', data: { type: 'Identifier', name: 'plainData' } })
+    ).toMatchObject({ ok: false, diagnostic: { code: 'unsupported-value' } });
     expect(meta.set(['control'], { type: 'button', label: 'Save' })).toEqual({
       ok: true,
       changed: true,
@@ -158,9 +168,15 @@ describe('CsfObject', () => {
     const [meta] = csf.objects({ stories: false });
 
     const copy = { ...meta.get(['a'])!, value: 5, raw: '5' } as CsfExpression;
-    expect(() => meta.set(['b'], copy)).toThrow(
-      'CsfObject: expressions must come from `get`, `transform` or `parseExpression`, not a Literal node'
-    );
+    expect(meta.set(['b'], copy)).toMatchObject({
+      ok: false,
+      changed: false,
+      diagnostic: {
+        code: 'unsupported-value',
+        message:
+          'Cannot set b to a Literal node that did not come from `get`, `transform` or `parseExpression`',
+      },
+    });
     expect(printCsf(csf).code).toBe(`export default { a: 1 };`);
   });
 
@@ -428,7 +444,6 @@ describe('CsfObject', () => {
     { value: [1, false, 'autodocs', null] },
     { value: {} },
     { value: { nested: { enabled: true, 'font-size': 12 }, levels: [0, ['dark', false]] } },
-    { value: { type: 'button', data: { type: 'Identifier', name: 'plainData' } } },
   ] satisfies { value: CsfValue }[])('sets the literal value $value', ({ value }) => {
     const csf = parse('export default { parameters: { existing: true } };');
     const [meta] = csf.objects({ stories: false });
@@ -708,6 +723,58 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toContain(
       'export const B = {\n  play: async () => {\n    x();\n  },\n};'
     );
+  });
+
+  it('writes expressions nested in a plain value as their source', () => {
+    const csf = parse("export default {};\nexport const A = {\n  name: 'A',\n};");
+    const [story] = csf.objects({ meta: false });
+
+    expect(
+      story.set(['args'], {
+        onClick: parseExpression('() => {}'),
+        items: [parseExpression('first'), { label: 'x' }],
+      })
+    ).toEqual({ ok: true, changed: true });
+    expect(
+      story.set(['play'], {
+        run: parseExpression('async () => {\n  await x();\n}'),
+        steps: [parseExpression('() => {\n  a();\n}'), 'b'],
+      })
+    ).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(
+      [
+        'export default {};',
+        'export const A = {',
+        "  name: 'A',",
+        "  args: { onClick: () => {}, items: [first, { label: 'x' }] },",
+        '  play: {',
+        '    run: async () => {',
+        '      await x();',
+        '    },',
+        '    steps: [',
+        '      () => {',
+        '        a();',
+        '      },',
+        "      'b',",
+        '    ],',
+        '  },',
+        '};',
+      ].join('\n')
+    );
+  });
+
+  it('rejects a node without a parse nested in a value', () => {
+    const source = 'export default {};\nexport const A = {};';
+    const csf = parse(source);
+    const [story] = csf.objects({ meta: false });
+    const statement = parseModule('() => {}').program.body[0] as ESTree.ExpressionStatement;
+
+    expect(story.set(['args'], { onClick: statement.expression })).toMatchObject({
+      ok: false,
+      changed: false,
+      diagnostic: { code: 'unsupported-value' },
+    });
+    expect(printCsf(csf).code).toBe(source);
   });
 
   it('keeps the original source of nodes reused by a transformed value', () => {

@@ -7,6 +7,7 @@ import {
   type ParsedModule,
   type Property,
   type Span,
+  isNode,
   isStringLiteral,
   isValidIdentifier,
   derivedFrom,
@@ -325,18 +326,23 @@ export const printString = (value: string, quote: string) => {
     : `'${json.slice(1, -1).replaceAll('\\"', '"').replaceAll("'", "\\'")}'`;
 };
 
+const printLines = (items: string[], indent: string, open: string, close: string) =>
+  items.length === 0
+    ? `${open}${close}`
+    : `${open}\n${items.map((item) => `${indent}${withComma(reindent(item, '', indent), ',', true)}`).join('\n')}\n${close}`;
+
 /** An object literal laid out one member per line, so formatters keep it expanded. */
 export const printMembers = (members: string[], indent: string) =>
-  members.length === 0
-    ? '{}'
-    : `{\n${members.map((member) => `${indent}${withComma(reindent(member, '', indent), ',', true)}`).join('\n')}\n}`;
+  printLines(members, indent, '{', '}');
 
-/** Print a JS value as source. With an `indent`, objects are laid out one member per line. */
-export const printValue = (
-  value: unknown,
-  quote: string,
-  options: { indent?: string } = {}
-): string => {
+// Objects, or with `multiline` only objects and arrays with an item that spans lines, are laid out
+// one item per line.
+type ValueLayout = { indent: string; expand: 'objects' | 'multiline' };
+
+const spansLines = (texts: string[]) => texts.some((text) => text.includes('\n'));
+
+// A JS value as source, and a node of `get`, `parseExpression` or a file in it as `detachedTextOf`.
+export const printValue = (value: unknown, quote: string, layout?: ValueLayout): string => {
   if (value === undefined) {
     return 'undefined';
   }
@@ -364,18 +370,24 @@ export const printValue = (
   if (typeof value === 'boolean') {
     return String(value);
   }
+  if (isNode(value) && moduleOf(value)) {
+    return detachedTextOf(value);
+  }
   if (value instanceof RegExp) {
     return value.toString();
   }
   if (Array.isArray(value)) {
-    return `[${Array.from(value, (item) => printValue(item, quote, options)).join(', ')}]`;
+    const items = Array.from(value, (item) => printValue(item, quote, layout));
+    return layout?.expand === 'multiline' && spansLines(items)
+      ? printLines(items, layout.indent, '[', ']')
+      : `[${items.join(', ')}]`;
   }
   if (typeof value === 'object') {
     const members = Object.entries(value as Record<string, unknown>).map(
-      ([key, item]) => `${printKey(key, quote)}: ${printValue(item, quote, options)}`
+      ([key, item]) => `${printKey(key, quote)}: ${printValue(item, quote, layout)}`
     );
-    if (options.indent) {
-      return printMembers(members, options.indent);
+    if (layout && (layout.expand === 'objects' || spansLines(members))) {
+      return printMembers(members, layout.indent);
     }
     return members.length === 0 ? '{}' : `{ ${members.join(', ')} }`;
   }

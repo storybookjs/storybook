@@ -7,6 +7,7 @@ import {
   isIdentifier,
   isNode,
   isNumericLiteral,
+  moduleOf,
   staticKey,
   unwrapExpression,
 } from './ast.ts';
@@ -60,14 +61,36 @@ export const placeableValueSource = (editor: SourceEditor, member: Property) =>
     ? detachedText(editor.code, member.start, functionFromMethod(editor, member))
     : detachedTextOf(member.value);
 
-export type CsfValue =
+/**
+ * A plain value, as `getValue` reads it. `CsfValue<CsfExpression>`, which `set` takes, can also hold
+ * expressions from `get` or `parseExpression`, at any depth.
+ */
+export type CsfValue<Expression = never> =
   | string
   | number
   | boolean
   | null
   | undefined
-  | readonly CsfValue[]
-  | { readonly [key: string]: CsfValue };
+  | Expression
+  | readonly CsfValue<Expression>[]
+  | { readonly [key: string]: CsfValue<Expression> };
+
+// The first node in `value` that no parse produced, which `printValue` would print as its fields.
+export const nodeWithoutParse = (value: unknown): Node | undefined => {
+  if (typeof value !== 'object' || value === null || moduleOf(value)) {
+    return undefined;
+  }
+  if (isAstLike(value)) {
+    return value;
+  }
+  for (const item of Object.values(value)) {
+    const node = nodeWithoutParse(item);
+    if (node) {
+      return node;
+    }
+  }
+  return undefined;
+};
 
 export const UNRESOLVED = Symbol('unresolved');
 

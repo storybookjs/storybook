@@ -24,4 +24,4 @@ const withoutUndefined = (value: unknown): unknown => {
 
 /** Print an arg value as source in the editor's style, objects one member per line. */
 export const valueToSource = (value: unknown, { quote, indent }: SourceEditor): string =>
-  printValue(withoutUndefined(value), quote, { indent });
+  printValue(withoutUndefined(value), quote, { indent, expand: 'objects' });

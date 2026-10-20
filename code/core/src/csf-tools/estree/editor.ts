@@ -1306,8 +1306,10 @@ export const insertStatementAfter = (editor: SourceEditor, statement: Span, text
   const terminator =
     !endsStatement(body) && CONTINUES_STATEMENT.test(code.slice(next).trimStart()) ? ';' : '';
   const written = `\n${lead}${separator}${body}${terminator}`;
+  // To the right of the statement's end, which can be its last expression's end: text written
+  // there later belongs to the expression and goes before the statement.
   if (next === code.length || code[next] === '\n') {
-    edits.appendLeft(next, written);
+    edits.appendRight(next, written);
     return;
   }
   edits.appendLeft(end, written);

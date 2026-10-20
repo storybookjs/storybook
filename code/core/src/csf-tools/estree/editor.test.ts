@@ -18,6 +18,7 @@ import {
   arrayList,
   declaratorList,
   insertAfterImports,
+  insertStatementAfter,
   objectList,
   prependStatement,
   prependToList,
@@ -831,6 +832,25 @@ describe('prependStatement', () => {
     prependStatement(editor, `import a from 'a';`);
     expect(editor.toString()).toBe(`\uFEFFimport a from 'a';\n`);
   });
+});
+
+describe('insertStatementAfter', () => {
+  it.each([true, false])(
+    'keeps a wrapper of the last expression of a statement without a semicolon around it alone, inserting first: %s',
+    (insertFirst) => {
+      const editor = new SourceEditor('const Primary = fn\nfoo()\n');
+      const [declaration] = editor.program.body as E.VariableDeclaration[];
+      const insert = () => insertStatementAfter(editor, declaration, 'Primary.args = {}');
+      if (insertFirst) {
+        insert();
+      }
+      wrapExpression(editor, declaration.declarations[0].init!, 'wrap(', ')');
+      if (!insertFirst) {
+        insert();
+      }
+      expect(editor.toString()).toBe('const Primary = wrap(fn)\nPrimary.args = {}\nfoo()\n');
+    }
+  );
 });
 
 describe('insertAfterImports', () => {

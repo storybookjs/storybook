@@ -1,4 +1,5 @@
 import os from 'node:os';
+// eslint-disable-next-line no-restricted-imports -- splits and rebuilds paths with path.sep
 import path from 'node:path';
 
 export interface IErrorWithStdErrAndStdOut {

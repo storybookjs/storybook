@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- passes the dir into git pathspecs joined with native path.sep
 import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';

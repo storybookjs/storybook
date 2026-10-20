@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { readFileSync } from 'node:fs';
 import * as os from 'node:os';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { isCI } from 'storybook/internal/common';
 

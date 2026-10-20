@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { isAbsolute, join } from 'node:path';
+import { isAbsolute, join } from 'pathe';
 import { pathToFileURL } from 'node:url';
 
 import { MissingBuilderError } from 'storybook/internal/server-errors';

@@ -1,6 +1,6 @@
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -30,9 +30,7 @@ describe('getPreviewBuilder', () => {
 
     await getPreviewBuilder(dir);
 
-    expect(vi.mocked(importModule)).toHaveBeenCalledWith(
-      join(dir, 'dist', 'index.js').replace(/\\/g, '/')
-    );
+    expect(vi.mocked(importModule)).toHaveBeenCalledWith(join(dir, 'dist', 'index.js'));
   });
 
   it('imports any other builder reference as given', async () => {

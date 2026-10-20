@@ -1,5 +1,5 @@
 import { writeFile } from 'node:fs/promises';
-import { basename } from 'node:path';
+import { basename } from 'pathe';
 
 import type { ChannelLike } from 'storybook/internal/channels';
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';

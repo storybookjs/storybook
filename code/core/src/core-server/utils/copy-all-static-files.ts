@@ -1,5 +1,5 @@
 import { cp } from 'node:fs/promises';
-import { join, relative, resolve } from 'node:path';
+import { join, relative, resolve } from 'pathe';
 
 import { logger } from 'storybook/internal/node-logger';
 

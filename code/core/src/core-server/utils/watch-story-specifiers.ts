@@ -1,4 +1,5 @@
 import { type Dirent, lstatSync, readdirSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- hands paths to watchpack, which matches native paths
 import { basename, join, relative, resolve } from 'node:path';
 
 import { commonGlobOptions } from 'storybook/internal/common';

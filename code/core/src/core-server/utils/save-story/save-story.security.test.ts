@@ -1,4 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- expects writeFile paths that save-story joins with node:path
 import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

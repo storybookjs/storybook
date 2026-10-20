@@ -1,4 +1,4 @@
-import { basename } from 'node:path';
+import { basename } from 'pathe';
 
 import type { Path } from 'storybook/internal/types';
 

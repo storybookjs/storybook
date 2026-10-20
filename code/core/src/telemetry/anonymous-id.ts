@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- hashes a case-insensitive relative() of the native project root and process.cwd()
 import { relative } from 'node:path';
 
 import { executeCommandSync, getProjectRoot } from 'storybook/internal/common';

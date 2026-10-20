@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- uses path.posix for import-path math
 import path from 'node:path';
 
 import { normalizeStoryPath } from 'storybook/internal/common';

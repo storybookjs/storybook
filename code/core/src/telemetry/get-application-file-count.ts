@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- builds git pathspecs with path.sep
 import { sep } from 'node:path';
 
 import { execCommandCountLines } from './exec-command-count-lines.ts';

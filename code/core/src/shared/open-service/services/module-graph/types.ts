@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- uses the win32 and posix path variants
 import { posix, win32 } from 'node:path';
 
 import { normalize } from 'pathe';

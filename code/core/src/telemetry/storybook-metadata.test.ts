@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- overrides path.sep to simulate windows
 import path from 'node:path';
 
 import type { MockInstance } from 'vitest';

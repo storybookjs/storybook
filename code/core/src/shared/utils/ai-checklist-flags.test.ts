@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- builds cached configDir values the module matches via node:path resolve
 import { resolve } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

@@ -15,7 +15,7 @@ import {
   STORY_RENDERED,
 } from 'storybook/internal/core-events';
 import { storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
-import { printCsf, readCsf } from 'storybook/internal/csf-tools';
+import { parseExpression, printCsf, readCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { isExampleStoryId, telemetry } from 'storybook/internal/telemetry';
 import type { Options } from 'storybook/internal/types';
@@ -24,10 +24,11 @@ import { isValidIdentifier } from '../../../csf-tools/estree/ast.ts';
 import { duplicateStoryWithNewName } from './duplicate-story-with-new-name.ts';
 import { updateArgsInCsfFile } from './update-args-in-csf-file.ts';
 import { SaveStoryError } from './utils.ts';
-import { emptyFunction } from './valueToSource.ts';
 
 const parseArgs = (args: string): Record<string, any> =>
-  JSON.parse(args, (_, value) => (value === '__sb_empty_function_arg__' ? emptyFunction : value));
+  JSON.parse(args, (_, value) =>
+    value === '__sb_empty_function_arg__' ? parseExpression('() => {}') : value
+  );
 
 export function initializeSaveStory(channel: Channel, options: Options) {
   channel.on(SAVE_STORY_REQUEST, async ({ id, payload }: RequestData<SaveStoryRequestPayload>) => {
@@ -77,11 +78,10 @@ export function initializeSaveStory(channel: Channel, options: Options) {
 
       sourceStoryName = storyNameFromExport(storyName);
 
-      await updateArgsInCsfFile(
-        parsed,
-        name ? duplicateStoryWithNewName(parsed, storyName, name) : csf.getStoryExport(storyName),
-        args ? parseArgs(args) : {}
-      );
+      if (name) {
+        duplicateStoryWithNewName(parsed, storyName, name);
+      }
+      updateArgsInCsfFile(parsed, name || storyName, args ? parseArgs(args) : {});
 
       const code = await formatFileContent(sourceFilePath, printCsf(csf).code);
 

@@ -520,7 +520,7 @@ class Editor implements CsfObject {
       return this.failure(inspected.code, path, inspected.node);
     }
     const { quote, indent } = this.editor;
-    const text = () => printValue(value, quote, { indent, expand: 'multiline' });
+    const text = () => printValue(value, quote, { indent });
     if (inspected.kind === 'item') {
       inspected.parent.replace(inspected.index, text());
       return this.commit(path);

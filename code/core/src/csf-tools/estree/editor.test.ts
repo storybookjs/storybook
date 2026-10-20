@@ -870,6 +870,55 @@ describe('removeStatement', () => {
     removeStatement(editor, editor.program.body[1]);
     expect(editor.toString()).toBe(`import a from 'a'; /* a */`);
   });
+
+  it.each([
+    ['a line comment', 'const a = 1 // c\n;[1].map(f)\n', 'const a = 1; // c\n'],
+    ['a block comment', 'const a = 1 /* c */\n;[1].map(f)\n', 'const a = 1; /* c */\n'],
+    ['comment lines', 'const a = 1 // c\n// d\n;[1].map(f)\n', 'const a = 1; // c\n// d\n'],
+    ['a blank line', 'const a = 1\n\n;[1].map(f)\n', 'const a = 1;\n'],
+    ['a multi-line value', 'a = {\n  b: 1,\n} // c\n;[1].map(f)\n', 'a = {\n  b: 1,\n}; // c\n'],
+    ['a removed statement', 'const a = 1 // c\n;b(); [1].map(f)\n', 'const a = 1; // c\n'],
+  ])('puts the `;` the statement before ends with back on its line, past %s', (_, code, output) => {
+    const editor = new SourceEditor(code);
+    removeStatements(editor, new Set(editor.program.body.slice(1)));
+    expect(editor.toString()).toBe(output);
+  });
+
+  it('leaves a `;` alone on its line when it is a statement of its own or code still follows it', () => {
+    const empty = new SourceEditor('a();\n;[1].map(f)\n');
+    removeStatement(empty, empty.program.body[2]);
+    expect(empty.toString()).toBe('a();\n;\n');
+
+    const kept = new SourceEditor('const a = 1 // c\n;b(); [1].map(f)\n');
+    removeStatement(kept, kept.program.body[2]);
+    expect(kept.toString()).toBe('const a = 1 // c\n;b();\n');
+  });
+
+  it.each([false, true])(
+    'removes a statement ending with a `;` on the next line, and the code after that `;`, the statement first: %s',
+    (statementFirst) => {
+      const editor = new SourceEditor('const a = 1 // c\n;[1].map(f)\nfoo();\n');
+      const [a, map] = editor.program.body;
+      for (const statement of statementFirst ? [a, map] : [map, a]) {
+        removeStatement(editor, statement);
+      }
+      expect(editor.toString()).toBe('foo();\n');
+    }
+  );
+
+  it('appends below a statement whose `;` was put back on its line without a blank line', () => {
+    const editor = new SourceEditor('const a = 1 // c\n;[1].map(f)\n');
+    removeStatement(editor, editor.program.body[1]);
+    appendStatement(editor, 'const x = 1;');
+    expect(editor.toString()).toBe('const a = 1; // c\nconst x = 1;\n');
+  });
+
+  it('removes the line of statements that shared it with a removed one', () => {
+    const editor = new SourceEditor('a(); b();\nc();\n');
+    removeStatement(editor, editor.program.body[0]);
+    removeStatement(editor, editor.program.body[1]);
+    expect(editor.toString()).toBe('c();\n');
+  });
 });
 
 describe('prependStatement', () => {
@@ -964,6 +1013,61 @@ describe('insertStatementAfter', () => {
       expect(editor.toString()).toBe(
         'const Primary = fn\nPrimary.args = {}\nwrap(foo())\nx = 1\nbaz()\n'
       );
+    }
+  );
+
+  it.each([true, false])(
+    'keeps a statement inserted after one sharing its line when that one is removed, inserting first: %s',
+    (insertFirst) => {
+      const editor = new SourceEditor('a(); b();\nc();\n');
+      const [a] = editor.program.body;
+      const insert = () => insertStatementAfter(editor, a, 'x();');
+      if (insertFirst) {
+        insert();
+      }
+      removeStatement(editor, a);
+      if (!insertFirst) {
+        insert();
+      }
+      expect(editor.toString()).toBe('x();\nb();\nc();\n');
+    }
+  );
+
+  it('keeps a statement inserted after one sharing its line on its own line when the code after is removed', () => {
+    const editor = new SourceEditor('a(); b();\nc();\n');
+    const [a, b] = editor.program.body;
+    insertStatementAfter(editor, a, 'x();');
+    insertStatementAfter(editor, b, 'y();');
+    removeStatement(editor, b);
+    expect(editor.toString()).toBe('a();\nx();\ny();\nc();\n');
+  });
+
+  it('puts the `;` the statement ends with back on its line when its line is broken', () => {
+    const editor = new SourceEditor('const a = 1 // c\n;[1].map(f)\n');
+    insertStatementAfter(editor, editor.program.body[0], 'const x = 1;');
+    expect(editor.toString()).toBe('const a = 1; // c\nconst x = 1;\n[1].map(f)\n');
+  });
+
+  it('keeps a statement inserted after one ending with a `;` on the next line when that one is removed', () => {
+    const editor = new SourceEditor('const a = 1 // c\n;[1].map(f)\n');
+    const [a] = editor.program.body;
+    insertStatementAfter(editor, a, 'x();');
+    removeStatement(editor, a);
+    expect(editor.toString()).toBe('x();\n[1].map(f)\n');
+  });
+
+  it.each([
+    ['a(); b();\nc();\n', 'a();\nx();\nc();\n'],
+    ['a(); b();', 'a();\nx();'],
+    ['const a = 1 // c\n;[1].map(f)\n', 'const a = 1; // c\nx();\n'],
+  ])(
+    'inserts on the next line after a statement whose line had code removed: %j',
+    (code, output) => {
+      const editor = new SourceEditor(code);
+      const [a, b] = editor.program.body;
+      removeStatement(editor, b);
+      insertStatementAfter(editor, a, 'x();');
+      expect(editor.toString()).toBe(output);
     }
   );
 });

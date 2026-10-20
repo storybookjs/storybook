@@ -881,6 +881,28 @@ describe('CsfObject', () => {
         result: { writes: '{ ...Base, args: { ...Base.args, a: 1 } }' },
       },
       {
+        before: 'const Base = { setup() { this.args = { x: 1 }; } }; Base.setup();',
+        object: '{ ...Base }',
+        edit: "set(['args', 'a'], 1)",
+        result: { writes: '{ ...Base, args: { ...Base.args, a: 1 } }' },
+      },
+      {
+        before: 'const Base = { async play() {} };',
+        object: '{ ...Base, play: async (c) => { await Base.play(c); } }',
+        edit: "set(['args', 'a'], 1)",
+        result: {
+          writes:
+            '{ ...Base, play: async (c) => { await Base.play(c); }, args: { ...Base.args, a: 1 } }',
+        },
+      },
+      {
+        before:
+          'const Base = { *[Symbol.iterator]() { this.args = undefined; }, args: {} }; [...Base];',
+        object: '{ ...Base }',
+        edit: "set(['args', 'b', 'a'], 1)",
+        result: { writes: '{ ...Base, args: { ...Base.args, b: { ...Base.args?.b, a: 1 } } }' },
+      },
+      {
         before: "import shared from './shared';",
         object: '{ ...shared }',
         edit: "appendValueToArray(['addons'], 'x')",
@@ -1089,6 +1111,18 @@ describe('CsfObject', () => {
       'const Base = { render: () => null };\n({ args: Base.args } = source);',
     ],
     ['an alias', 'const Base = { render: () => null };\nconst Alias = Base;'],
+    [
+      'a method called in a function that runs at the top level',
+      'const Base = { render: () => null, setup() { this.args = { x: 1 }; } };\n(() => Base.setup())();',
+    ],
+    [
+      'a method called through a tagged template',
+      'const Base = { render: () => null, setup() { this.args = { x: 1 }; } };\nBase.setup``;',
+    ],
+    [
+      'a getter',
+      'const Base = { render: () => null, get ready() { this.args = { x: 1 }; return true; } };',
+    ],
   ])(
     'reads through a spread whose base gets members from %s after its declaration',
     (_case, base) => {

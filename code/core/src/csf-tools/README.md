@@ -69,6 +69,9 @@ A story whose initializer is not an object literal, a function or a bound templa
 | `const Base = { play: async () => {} };` | `{ ...Base, play: async (c) => { await Base.play(c); } }` | `set(['args', 'a'], 1)` | `{ ...Base, play: async (c) => { await Base.play(c); }, args: { a: 1 } }` |
 | `const Base = { title: 'B' }; Base.args = { x: 1 };` | `{ ...Base }` | `set(['args', 'a'], 1)` | `{ ...Base, args: { ...Base.args, a: 1 } }` |
 | `const Base = { title: 'B' }; mutate(Base);` | `{ ...Base }` | `set(['args', 'a'], 1)` | `{ ...Base, args: { ...Base.args, a: 1 } }` |
+| `const Base = { setup() { this.args = { x: 1 }; } }; Base.setup();` | `{ ...Base }` | `set(['args', 'a'], 1)` | `{ ...Base, args: { ...Base.args, a: 1 } }` |
+| `const Base = { async play() {} };` | `{ ...Base, play: async (c) => { await Base.play(c); } }` | `set(['args', 'a'], 1)` | `{ ...Base, play: async (c) => { await Base.play(c); }, args: { ...Base.args, a: 1 } }` |
+| `const Base = { *[Symbol.iterator]() { this.args = undefined; }, args: {} }; [...Base];` | `{ ...Base }` | `set(['args', 'b', 'a'], 1)` | `{ ...Base, args: { ...Base.args, b: { ...Base.args?.b, a: 1 } } }` |
 | `import shared from './shared';` | `{ ...shared }` | `appendValueToArray(['addons'], 'x')` | `{ ...shared, addons: [...(shared.addons ?? []), 'x'] }` |
 | `import { Base } from './base';` | `{ ...Base, label: 'a' }` | `set(['label'], 'b')` | `{ ...Base, label: 'b' }` |
 | `import { Base } from './base';` | `{ label: 'a', ...Base }` | `set(['label'], 'b')` | refused, `spread-field` |
@@ -86,7 +89,7 @@ The spread's own member is read with `.`, as a story spreading a value that is n
 When more than one spread may provide the member, which one does depends on whether a later one has it as its own `undefined`, so creating the parent is refused.
 Changing a field that a later spread or computed key could override is refused, and so is removing or renaming a field after them, which could reveal what they provide.
 A local object literal is trusted for its own members only, not those of the objects it holds, and only when every reference to it reads it.
-An assignment, `Object.assign`, an alias or a call it is passed to makes it unknown.
+An assignment, `Object.assign`, an alias or a call it is passed to makes it unknown. So does code that can run with `this` bound to it: an accessor, spreading it into an array or arguments, or a call of a member it does not hold as an arrow function.
 
 For edits that no path addresses, `CsfFile.editor` and `ConfigFile.editor` are the file's `SourceEditor`, and `program` its current parse; `CsfFile.appendStatement(code)` adds a statement that `formatCsf` prints. A commit parses and indexes the file again. The underscored `_editor`, `_program` and `_appendStatement` are deprecated aliases.
 

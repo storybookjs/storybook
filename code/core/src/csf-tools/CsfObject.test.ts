@@ -2112,7 +2112,8 @@ describe('CsfObject element and argument paths', () => {
       ok: false,
       diagnostic: {
         code: 'unsupported-member',
-        message: 'Cannot create addons[1]: an index addresses an element or argument that exists',
+        message:
+          'Cannot create addons[1]: an index addresses an element or argument that exists, and append or prepend adds one',
       },
     });
     expect(config.set(['addons', 1, 'name'], 'x')).toMatchObject({
@@ -2203,5 +2204,143 @@ describe('CsfObject element and argument paths', () => {
     expect(edit(source, (config) => config.group(['loaders', 0, 'g'], ['a']))).toBe(
       'export default { loaders: [{ g: { a: 1 } }], b: 2 };'
     );
+  });
+});
+
+describe('CsfObject append and prepend', () => {
+  const edit = (source: string, mutate: (config: ConfigFile) => unknown) => {
+    const config = loadConfig(source).parse();
+    expect(mutate(config)).toEqual({ ok: true, changed: true });
+    return printConfig(config).code;
+  };
+
+  it('adds an element at either end of an array, in its layout', () => {
+    expect(
+      edit("export default { addons: ['a'] };", (config) => config.append(['addons'], 'b'))
+    ).toBe("export default { addons: ['a', 'b'] };");
+    expect(
+      edit("export default { addons: ['a'] };", (config) => config.prepend(['addons'], 'b'))
+    ).toBe("export default { addons: ['b', 'a'] };");
+    expect(
+      edit("export default {\n  addons: [\n    'a',\n  ],\n};", (config) =>
+        config.append(['addons'], { name: 'b', options: {} })
+      )
+    ).toBe("export default {\n  addons: [\n    'a',\n    { name: 'b', options: {} },\n  ],\n};");
+    expect(
+      edit("export default {\n  addons: [\n    'a',\n  ],\n};", (config) =>
+        config.prepend(['addons'], 'b')
+      )
+    ).toBe("export default {\n  addons: [\n    'b',\n    'a',\n  ],\n};");
+  });
+
+  it('adds an element next to a spread, which keeps its place', () => {
+    const source = "export default { addons: [...base.addons], framework: 'f' };";
+
+    expect(edit(source, (config) => config.append(['addons'], 'x'))).toBe(
+      "export default { addons: [...base.addons, 'x'], framework: 'f' };"
+    );
+    expect(edit(source, (config) => config.prepend(['addons'], 'x'))).toBe(
+      "export default { addons: ['x', ...base.addons], framework: 'f' };"
+    );
+  });
+
+  it('creates a missing array on either side of the spread it carries forward', () => {
+    const source = "const shared = { addons: ['a'] };\nexport default { ...shared };";
+
+    expect(edit(source, (config) => config.append(['addons'], 'x')).split('\n')[1]).toBe(
+      "export default { ...shared, addons: [...(shared.addons ?? []), 'x'] };"
+    );
+    expect(edit(source, (config) => config.prepend(['addons'], 'x')).split('\n')[1]).toBe(
+      "export default { ...shared, addons: ['x', ...(shared.addons ?? [])] };"
+    );
+    expect(
+      edit('export default {};', (config) => config.append(['parameters', 'docs', 'tags'], 'x'))
+    ).toBe('export default { parameters: { docs: { tags: ["x"] } } };');
+  });
+
+  it('adds an argument to a call, hugging the parentheses of an empty one', () => {
+    expect(
+      edit('export default { loaders: [mswLoader(a)] };', (config) =>
+        config.append(['loaders', 0], parseExpression('b'))
+      )
+    ).toBe('export default { loaders: [mswLoader(a, b)] };');
+    expect(
+      edit('export default {\n  loaders: [mswLoader()],\n};', (config) =>
+        config.append(['loaders', 0], parseExpression('async () => {\n  await setup();\n}'))
+      )
+    ).toBe('export default {\n  loaders: [mswLoader(async () => {\n    await setup();\n  })],\n};');
+    expect(
+      edit('export default { loaders: [mswLoader( )] };', (config) =>
+        config.prepend(['loaders', 0], parseExpression('setup'))
+      )
+    ).toBe('export default { loaders: [mswLoader(setup)] };');
+  });
+
+  it('keeps the line of a line comment it appends to an empty call', () => {
+    expect(
+      edit('export default { framework: getAbsolutePath() };', (config) =>
+        config.append(['framework'], parseExpression("'react' // c"))
+      )
+    ).toBe("export default { framework: getAbsolutePath(\n  'react', // c\n) };");
+  });
+
+  it('refuses a field that holds neither an array nor a call, and an item it would create', () => {
+    const source = "export default { addons: 5, framework: { name: 'x' }, loaders: [] };";
+    const config = loadConfig(source).parse();
+
+    expect(config.append(['addons'], 'x')).toMatchObject({
+      ok: false,
+      diagnostic: {
+        code: 'unsupported-value',
+        path: ['addons'],
+        message: "Expected an array literal or a call at 'addons', got 'Literal'",
+      },
+    });
+    expect(config.prepend(['framework'], 'x')).toMatchObject({
+      diagnostic: { code: 'unsupported-value' },
+    });
+    expect(config.append(['loaders', 0], 'x')).toMatchObject({
+      diagnostic: { code: 'unsupported-member', path: ['loaders', 0] },
+    });
+    expect(config.append(['missing', 0], 'x')).toMatchObject({
+      diagnostic: { code: 'unsupported-member' },
+    });
+    expect(config.changed).toBe(false);
+    expect(printConfig(config).code).toBe(source);
+  });
+
+  it('refuses to append to an array a later spread could replace', () => {
+    const source = "export default { addons: ['a'], ...base };";
+    const config = loadConfig(source).parse();
+
+    expect(config.append(['addons'], 'x')).toMatchObject({
+      diagnostic: { code: 'spread-field', path: ['addons'] },
+    });
+    expect(printConfig(config).code).toBe(source);
+  });
+
+  it('rolls back an append and `changed` with a transaction a later edit refuses', () => {
+    const source = "export default { addons: ['a'], tags: ['b'] };";
+    const config = loadConfig(source).parse();
+
+    expect(
+      config.transaction(() => {
+        expect(config.append(['addons'], 'x')).toEqual({ ok: true, changed: true });
+        expect(config.changed).toBe(true);
+        config.set(['tags', 'value'], 'c');
+      })
+    ).toBe(false);
+    expect(config.changed).toBe(false);
+    expect(printConfig(config).code).toBe(source);
+
+    const csf = parse("export default { tags: ['a'] };");
+    const [meta] = csf.objects({ stories: false });
+    csf.transaction(() => {
+      meta.prepend(['tags'], 'x');
+      meta.set(['tags', 'value'], 'c');
+    });
+    expect(meta.changed).toBe(false);
+    expect(csf.changed).toBe(false);
+    expect(printCsf(csf).code).toBe("export default { tags: ['a'] };");
   });
 });

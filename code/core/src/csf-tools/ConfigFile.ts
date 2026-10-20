@@ -13,7 +13,6 @@ import {
   type CsfMutationDiagnostic,
   type CsfMutationResult,
   type CsfObject,
-  type CsfObjectEditor,
   type CsfObjectHost,
   type CsfPath,
   type CsfValue,
@@ -28,7 +27,6 @@ import {
   isStringLiteral,
   locationOf,
   parseExpression,
-  placeableTextOf,
   staticKey,
   unwrapExpression,
   walk,
@@ -37,7 +35,6 @@ import {
   SourceEditor,
   appendStatement,
   appendToList,
-  arrayList,
   insertAfterImports,
   insertStatementAfter,
   objectList,
@@ -426,7 +423,38 @@ export class ConfigFile implements CsfObject {
     }
   }
 
-  _mutate(operation: (object: CsfObjectEditor) => CsfMutationResult): CsfMutationResult {
+  /**
+   * Add a plain value or an expression after the last element of the array, or the last argument
+   * of the call, at a path. A missing array is created, carrying the spreads before it forward
+   * like a missing parent.
+   *
+   * @example
+   * ```ts
+   * const config = loadConfig("export default { addons: ['a'] };").parse();
+   * config.append(['addons'], 'b'); // { ok: true, changed: true }
+   * config.getValue(['addons']); // ['a', 'b']
+   * ```
+   */
+  append(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
+    return this._mutate((object) => object.append(path, value));
+  }
+
+  /**
+   * Add a plain value or an expression before the first element of the array, or the first
+   * argument of the call, at a path. A missing array is created like for `append`.
+   *
+   * @example
+   * ```ts
+   * const config = loadConfig("export default { addons: ['a'] };").parse();
+   * config.prepend(['addons'], 'b'); // { ok: true, changed: true }
+   * config.getValue(['addons']); // ['b', 'a']
+   * ```
+   */
+  prepend(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
+    return this._mutate((object) => object.prepend(path, value));
+  }
+
+  _mutate(operation: (object: CsfObject) => CsfMutationResult): CsfMutationResult {
     const editor = createConfigObject(
       this,
       'mutate',
@@ -435,12 +463,13 @@ export class ConfigFile implements CsfObject {
         this._markChanged();
       }
     );
-    if (editor.ok === true) {
-      return operation(editor.object);
-    }
-    this._mutationDiagnostics.push(editor.diagnostic);
+    return editor.ok === true ? operation(editor.object) : this._reject(editor.diagnostic);
+  }
+
+  _reject(diagnostic: CsfMutationDiagnostic): CsfMutationResult {
+    this._mutationDiagnostics.push(diagnostic);
     this.editor._refuse();
-    return { ok: false, changed: false, diagnostic: editor.diagnostic };
+    return { ok: false, changed: false, diagnostic };
   }
 
   _reader() {
@@ -795,40 +824,41 @@ export class ConfigFile implements CsfObject {
     return value;
   }
 
-  /** Append a plain value to the array literal at a path, creating the field when it is missing. */
+  /** @deprecated Use `append`, which takes a plain value too. */
   appendValueToArray(path: string[], value: any): CsfMutationResult {
-    return this.appendNodeToArray(path, this.valueToNode(value));
+    return this.append(path, this.valueToNode(value));
   }
 
-  /** Append an expression to the array literal at a path, creating the field when it is missing. */
+  /** @deprecated Use `append`. */
   appendNodeToArray(path: string[], node: CsfExpression): CsfMutationResult {
-    const current = this.getFieldNode(path);
-    const source = placeableTextOf(node);
-    if (!current) {
-      return this._mutate((object) => object.createArray(path, [source]));
-    }
-    if (current.type !== 'ArrayExpression') {
-      return this._notAnArray(path, current);
-    }
-    appendToList(this.editor, arrayList(this.editor, current), [source]);
-    this.editor.commit();
-    this._markChanged();
-    return { ok: true, changed: true };
+    return this.append(path, node);
   }
 
   /**
    * Remove the first entry of the array literal at a path that names `value`: a string, a
    * `{ name }` object, or a call like `getAbsolutePath(value)`. A missing field or entry is a no-op.
+   *
+   * @deprecated Find the entry in `get(path).elements` and `remove([...path, index])` it.
    */
   removeEntryFromArray(path: string[], value: string): CsfMutationResult {
-    const current = this.getFieldNode(path);
-    if (!current) {
+    const current = this.inspect(path);
+    if (current.kind === 'missing') {
       return { ok: true, changed: false };
     }
-    if (current.type !== 'ArrayExpression') {
-      return this._notAnArray(path, current);
+    if (current.kind === 'unreadable') {
+      return this._reject(current.diagnostic);
     }
-    const element = current.elements.find((element) => {
+    if (current.node.type !== 'ArrayExpression') {
+      const field = this.getFieldNode(path);
+      return this._reject({
+        code: 'unsupported-value',
+        target: this.target,
+        path,
+        message: `Expected an array literal at '${path.join('.')}', got '${current.node.type}'`,
+        ...(field ? { loc: locationOf(this._code, field.start, field.end) } : {}),
+      });
+    }
+    const index = current.node.elements.findIndex((element) => {
       if (isStringLiteral(element)) {
         return element.value === value;
       }
@@ -838,26 +868,7 @@ export class ConfigFile implements CsfObject {
       }
       return element ? this._getWrappedValue(element) === value : false;
     });
-    if (!element) {
-      return { ok: true, changed: false };
-    }
-    removeFromList(this.editor, arrayList(this.editor, current), [element]);
-    this.editor.commit();
-    this._markChanged();
-    return { ok: true, changed: true };
-  }
-
-  _notAnArray(path: string[], node: Node): CsfMutationResult {
-    const diagnostic: CsfMutationDiagnostic = {
-      code: 'unsupported-value',
-      target: this.target,
-      path,
-      message: `Expected an array literal at '${path.join('.')}', got '${node.type}'`,
-      loc: locationOf(this._code, node.start, node.end),
-    };
-    this._mutationDiagnostics.push(diagnostic);
-    this.editor._refuse();
-    return { ok: false, changed: false, diagnostic };
+    return index < 0 ? { ok: true, changed: false } : this.remove([...path, index]);
   }
 
   valueToNode(value: any): CsfExpression {

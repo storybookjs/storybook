@@ -2110,6 +2110,20 @@ describe('ConfigFile', () => {
       expect(config.changed).toBe(true);
     });
 
+    it('reports an array a later spread could replace, like append', () => {
+      const source = "export default { addons: ['a'], ...base };";
+      const config = loadConfig(source).parse();
+
+      expect(config.removeEntryFromArray(['addons'], 'a')).toMatchObject({
+        ok: false,
+        diagnostic: { code: 'spread-field', path: ['addons'] },
+      });
+      expect(config.appendValueToArray(['addons'], 'b')).toMatchObject({
+        diagnostic: { code: 'spread-field' },
+      });
+      expect(printConfig(config).code).toBe(source);
+    });
+
     it('reports a field that is not an array literal', () => {
       const config = loadConfig(`export default { addons: {} };`).parse();
       const result = config.removeEntryFromArray(['addons'], 'x');

@@ -268,11 +268,31 @@ export interface CsfObject {
    * ```
    */
   group(path: CsfPath, names: readonly string[]): CsfMutationResult;
-}
-
-// `CsfObject` with the mutation `ConfigFile` adds: a new array at a missing field.
-export interface CsfObjectEditor extends CsfObject {
-  createArray(path: readonly string[], items: string[]): CsfMutationResult;
+  /**
+   * Add a plain value or an expression after the last element of the array, or the last argument
+   * of the call, at a path. A missing array is created, carrying the spreads before it forward
+   * like a missing parent.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig("export default { addons: ['a'] };").parse();
+   * object.append(['addons'], 'b'); // { ok: true, changed: true }
+   * object.getValue(['addons']); // ['a', 'b']
+   * ```
+   */
+  append(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult;
+  /**
+   * Add a plain value or an expression before the first element of the array, or the first
+   * argument of the call, at a path. A missing array is created like for `append`.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig("export default { addons: ['a'] };").parse();
+   * object.prepend(['addons'], 'b'); // { ok: true, changed: true }
+   * object.getValue(['addons']); // ['b', 'a']
+   * ```
+   */
+  prepend(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult;
 }
 
 export interface CsfObjectOptions {
@@ -300,6 +320,9 @@ const unsafePath = (path: CsfPath) =>
 const isKey = (segment: string | number): segment is string => typeof segment === 'string';
 
 const invalidated = () => new Error('CsfObject mutation preflight was invalidated');
+
+// A new array: its items go after the spread it carries forward, or before it when `first`.
+type ArrayInsert = { items: string[]; first: boolean };
 
 // `missing` is the first segment of the path the source lacks. An item is `null` for a hole and
 // `undefined` past the end of its list.
@@ -333,7 +356,7 @@ const readOnly = <T extends object>(node: T): T => {
   return Object.freeze(node);
 };
 
-class Editor implements CsfObjectEditor {
+class Editor implements CsfObject {
   #changed = false;
 
   readonly target: CsfObjectTarget;
@@ -492,39 +515,66 @@ class Editor implements CsfObjectEditor {
     return this.commit(path);
   }
 
-  // `set` of an array of `items` at a missing path, which carries the spreads before it forward
-  // like a missing parent, for appending to the array a spread may provide.
-  createArray(path: readonly string[], items: string[]): CsfMutationResult {
-    return this.atomic(() => this.insertArray(path, items));
+  append(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
+    return this.atomic(() => this.addItem(path, value, 'append'));
   }
 
-  private insertArray(path: readonly string[], items: string[]): CsfMutationResult {
+  prepend(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
+    return this.atomic(() => this.addItem(path, value, 'prepend'));
+  }
+
+  private addItem(
+    path: CsfPath,
+    value: CsfValue<CsfExpression>,
+    end: 'append' | 'prepend'
+  ): CsfMutationResult {
     if (path.length === 0 || unsafePath(path)) {
       return this.failure('unsupported-member', path, this.anchor());
+    }
+    const unprintable = this.unprintable(path, value);
+    if (unprintable) {
+      return unprintable;
     }
     const inspected = this.locate(path, 'set');
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
-    if ('index' in inspected) {
-      return this.cannotCreate(path, inspected.parent.node);
+    const { quote, indent } = this.editor;
+    const text = () => printValue(value, quote, { indent, expand: 'multiline' });
+    const holder = 'index' in inspected ? inspected.element : inspected.property;
+    if (!holder) {
+      if ('index' in inspected) {
+        return this.cannotCreate(path, inspected.parent.node);
+      }
+      const created = path.slice(inspected.missing);
+      if (!created.every(isKey)) {
+        return this.cannotCreate(path, inspected.parent.node ?? this.anchor());
+      }
+      const refused = this.refusedKey(inspected.parent, created[0], path);
+      if (refused) {
+        return refused;
+      }
+      const carried = carriedSpreads(this.editor, inspected.parent.properties, created[0]);
+      if (carried.ok === false) {
+        return this.failure(carried.code, path, carried.node);
+      }
+      this.insert(path, { items: [text()], first: end === 'prepend' });
+      return this.commit(path);
     }
-    if (inspected.property) {
-      return this.failure('occupied-destination', path, inspected.property);
+    const node = holder.type === 'Property' ? holder.value : holder;
+    const list =
+      holder.type === 'Property' && holder.method
+        ? undefined
+        : resolveExpression(this.editor.scopes, node);
+    if (list?.type !== 'ArrayExpression' && list?.type !== 'CallExpression') {
+      return this.failure(
+        'unsupported-value',
+        path,
+        node,
+        `Expected an array literal or a call at '${printPath(path)}', got '${(list ?? node).type}'`
+      );
     }
-    const refused = this.refusedKey(inspected.parent, path[inspected.missing!], path);
-    if (refused) {
-      return refused;
-    }
-    const carried = carriedSpreads(
-      this.editor,
-      inspected.parent.properties,
-      path[inspected.missing!]
-    );
-    if (carried.ok === false) {
-      return this.failure(carried.code, path, carried.node);
-    }
-    this.insert(path, { items });
+    listRoot(this.editor, list)[end]([text()]);
     return this.commit(path);
   }
 
@@ -971,7 +1021,7 @@ class Editor implements CsfObjectEditor {
 
   // Writes `content` into the object at `containers`, creating the missing ones, which carry the
   // spreads before them forward; the last one is an array for `items`. The caller has validated it.
-  private insert(containers: CsfPath, content: { members: MemberInsert[] } | { items: string[] }) {
+  private insert(containers: CsfPath, content: { members: MemberInsert[] } | ArrayInsert) {
     let parent: Container = this.root();
     for (const [index, segment] of containers.entries()) {
       let value: Node | undefined;
@@ -1016,7 +1066,7 @@ class Editor implements CsfObjectEditor {
   private create(
     parent: ObjectRoot,
     missing: CsfPath,
-    content: { members: MemberInsert[] } | { items: string[] }
+    content: { members: MemberInsert[] } | ArrayInsert
   ) {
     const { quote, indent } = this.editor;
     if (!missing.every(isKey)) {
@@ -1038,10 +1088,13 @@ class Editor implements CsfObjectEditor {
       return spread ? [spread] : [];
     };
     const last = missing.length - 1;
-    let nested =
-      'members' in content
-        ? block([...forward(last), ...texts])
-        : `[${[...forward(last, 'array'), ...texts].join(', ')}]`;
+    let nested: string;
+    if ('members' in content) {
+      nested = block([...forward(last), ...texts]);
+    } else {
+      const spread = forward(last, 'array');
+      nested = `[${(content.first ? [...texts, ...spread] : [...spread, ...texts]).join(', ')}]`;
+    }
     for (let depth = last - 1; depth >= 0; depth--) {
       nested = block([...forward(depth), `${printKey(missing[depth + 1], quote)}: ${nested}`]);
     }
@@ -1067,7 +1120,7 @@ class Editor implements CsfObjectEditor {
       'unsupported-member',
       path,
       node,
-      `Cannot create ${printPath(path)}: an index addresses an element or argument that exists`
+      `Cannot create ${printPath(path)}: an index addresses an element or argument that exists, and append or prepend adds one`
     );
   }
 
@@ -1153,4 +1206,4 @@ export const createCsfObject = (
   host: CsfObjectHost,
   report: ReportDiagnostic,
   markChanged: MarkChanged
-): CsfObjectEditor => new Editor(target, host, report, markChanged);
+): CsfObject => new Editor(target, host, report, markChanged);

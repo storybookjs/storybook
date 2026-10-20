@@ -5,9 +5,11 @@ import { Channel } from 'storybook/internal/channels';
 import { logger } from 'storybook/internal/client-logger';
 import type { CleanupCallback } from 'storybook/internal/csf';
 import {
+  PLAY_FUNCTION_THREW_EXCEPTION,
   STORY_FINISHED,
   STORY_RENDERED,
   STORY_RENDER_PHASE_CHANGED,
+  UNHANDLED_ERRORS_WHILE_PLAYING,
 } from 'storybook/internal/core-events';
 import {
   ArgTypesRemovedFromStoryContextError,
@@ -486,7 +488,160 @@ describe('StoryRender', () => {
     });
   });
 
+  const renderStory = (overrides: Partial<PreparedStory> = {}) => {
+    const channel = new Channel({});
+    const emitSpy = vi.spyOn(channel, 'emit');
+    const callbacks = { showError: vi.fn(), showException: vi.fn() };
+    const render = new StoryRender(
+      channel,
+      buildStore(),
+      callbacks as any,
+      entry.id,
+      'story',
+      { autoplay: true },
+      buildStory(overrides)
+    );
+    const phases = () =>
+      emitSpy.mock.calls
+        .filter(([event]) => event === STORY_RENDER_PHASE_CHANGED)
+        .map(([, { newPhase }]) => newPhase);
+    return { render, emitSpy, callbacks, phases };
+  };
+  const renderWithPlay = (playFunction: (context: StoryContext) => Promise<unknown>) =>
+    renderStory({ playFunction: vi.fn(playFunction) as any });
+  const rejectsOnAbort = ({ abortSignal }: StoryContext) =>
+    new Promise<never>((_, reject) =>
+      abortSignal.addEventListener('abort', () => reject(abortSignal.reason))
+    );
+
+  describe('cancelPlayFunction', () => {
+    it('reports nothing after the abort when the cancelled play ends later', async () => {
+      const [playGate, openPlayGate] = createGate();
+      const { render, emitSpy, phases } = renderWithPlay(() => playGate);
+
+      const rendering = render.renderToElement({} as any);
+      await vi.waitFor(() => expect(render.phase).toBe('playing'));
+      render.cancelPlayFunction();
+      openPlayGate();
+      await rendering;
+
+      expect(render.phase).toBe('aborted');
+      expect(phases()).toEqual(['loading', 'rendering', 'playing', 'aborted']);
+      expect(emitSpy).not.toHaveBeenCalledWith(STORY_RENDERED, expect.anything());
+      expect(emitSpy).not.toHaveBeenCalledWith(STORY_FINISHED, expect.anything());
+    });
+
+    it('shows no exception when the cancelled play throws later', async () => {
+      const [playGate, openPlayGate] = createGate();
+      const { render, emitSpy, callbacks, phases } = renderWithPlay(async () => {
+        await playGate;
+        throw new Error('play failed after its render was aborted');
+      });
+
+      const rendering = render.renderToElement({} as any);
+      await vi.waitFor(() => expect(render.phase).toBe('playing'));
+      render.cancelPlayFunction();
+      openPlayGate();
+      await rendering;
+
+      expect(render.phase).toBe('aborted');
+      expect(phases()).toEqual(['loading', 'rendering', 'playing', 'aborted']);
+      expect(callbacks.showException).not.toHaveBeenCalled();
+      expect(emitSpy).not.toHaveBeenCalledWith(PLAY_FUNCTION_THREW_EXCEPTION, expect.anything());
+      expect(emitSpy).not.toHaveBeenCalledWith(STORY_FINISHED, expect.anything());
+    });
+
+    it('reports no unhandled errors of the cancelled play', async () => {
+      const [playGate, openPlayGate] = createGate();
+      const { render, emitSpy } = renderWithPlay(() => playGate);
+
+      const rendering = render.renderToElement({} as any);
+      await vi.waitFor(() => expect(render.phase).toBe('playing'));
+      render.cancelPlayFunction();
+      window.dispatchEvent(new ErrorEvent('error', { error: new Error('unhandled') }));
+      openPlayGate();
+      await rendering;
+
+      expect(emitSpy).not.toHaveBeenCalledWith(UNHANDLED_ERRORS_WHILE_PLAYING, expect.anything());
+    });
+
+    it('renders nothing when the cancelled play mounts later', async () => {
+      const [playGate, openPlayGate] = createGate();
+      const renderToCanvas = vi.fn();
+      const playFunction = vi.fn(async ({ mount }: StoryContext) => {
+        await mount();
+        await playGate;
+        // A play may mount again, after it is cancelled.
+        return mount();
+      });
+      const { render } = renderStory({ playFunction, renderToCanvas, usesMount: true } as any);
+
+      const rendering = render.renderToElement({} as any);
+      await vi.waitFor(() => expect(render.phase).toBe('playing'));
+      render.cancelPlayFunction();
+      openPlayGate();
+      await rendering;
+
+      expect(renderToCanvas).toHaveBeenCalledTimes(1);
+      const [{ canvas }] = playFunction.mock.calls[0];
+      await expect(playFunction.mock.results[0].value).resolves.toBe(canvas);
+      expect(render.phase).toBe('aborted');
+    });
+  });
+
   describe('teardown', () => {
+    it.each([
+      ['loading', { applyLoaders: vi.fn(rejectsOnAbort) }],
+      ['rendering', { renderToCanvas: vi.fn((context) => rejectsOnAbort(context.storyContext)) }],
+      ['playing', { playFunction: vi.fn(rejectsOnAbort) }],
+    ])(
+      'ends aborted, with no reload and no exception, when its %s rejects on the abort',
+      async (phase, overrides) => {
+        vi.mocked(window.location.reload).mockClear();
+        const { render, emitSpy, callbacks, phases } = renderStory(overrides as any);
+
+        render.renderToElement({} as any);
+        await vi.waitFor(() => expect(render.phase).toBe(phase));
+        await render.teardown();
+
+        expect(render.phase).toBe('aborted');
+        expect(phases().slice(-2)).toEqual([phase, 'aborted']);
+        expect(window.location.reload).not.toHaveBeenCalled();
+        expect(callbacks.showException).not.toHaveBeenCalled();
+        expect(emitSpy).not.toHaveBeenCalledWith(STORY_FINISHED, expect.anything());
+      }
+    );
+
+    it('reports no end when torn down during prepare', async () => {
+      const [importGate, openImportGate] = createGate();
+      const channel = new Channel({});
+      const emitSpy = vi.spyOn(channel, 'emit');
+      const render = new StoryRender(
+        channel,
+        buildStore({
+          loadStory: vi.fn(async () => {
+            await importGate;
+            return buildStory();
+          }) as any,
+        }),
+        {} as any,
+        entry.id,
+        'story'
+      );
+
+      const preparing = render.prepare();
+      render.teardown();
+      openImportGate();
+      await expect(preparing).rejects.toThrowError(PREPARE_ABORTED);
+
+      const phases = emitSpy.mock.calls
+        .filter(([event]) => event === STORY_RENDER_PHASE_CHANGED)
+        .map(([, { newPhase }]) => newPhase);
+      expect(phases).toEqual(['preparing']);
+      expect(render.phase).toBe('aborted');
+      expect(render.isPreparing()).toBe(false);
+    });
+
     it('throws PREPARE_ABORTED if torndown during prepare', async () => {
       const [importGate, openImportGate] = createGate();
       const mockStore = buildStore({

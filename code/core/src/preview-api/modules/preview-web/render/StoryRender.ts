@@ -116,6 +116,11 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   }
 
   private async runPhase(signal: AbortSignal, phase: RenderPhase, phaseFn?: () => Promise<void>) {
+    // An aborted render has ended, though its code may still run: it reports `aborted` once, and
+    // nothing after it.
+    if (this.checkIfAborted(signal)) {
+      return;
+    }
     this.phase = phase;
     this.channel.emit(STORY_RENDER_PHASE_CHANGED, {
       newPhase: this.phase,
@@ -146,12 +151,14 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   }
 
   async prepare() {
-    await this.runPhase(this.abortController.signal, 'preparing', async () => {
-      this.story = await this.store.loadStory({ storyId: this.id });
-    });
+    const { signal } = this.abortController;
+    await this.runPhase(signal, 'preparing');
+    this.story = await this.store.loadStory({ storyId: this.id });
 
-    // A render dropped while preparing has acquired nothing, so it releases nothing.
-    if (this.abortController.signal.aborted) {
+    // A render dropped while preparing has acquired nothing, so it releases nothing. It never
+    // mounted either, so it reports no end: the story's last phase stays that of the render shown.
+    if (signal.aborted) {
+      this.phase = 'aborted';
       throw PREPARE_ABORTED;
     }
   }
@@ -290,6 +297,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         // Before assigning it to the context, we resolve the context dependency,
         // so that a user can just call it as await mount(...args) in their play function.
         mount: async (...args) => {
+          // An aborted render mounts nothing; like any mount, it resolves to the play's canvas.
+          if (this.checkIfAborted(abortSignal)) {
+            return context.canvas;
+          }
           let mountReturn: Awaited<ReturnType<StoryContext['mount']>> = null!;
           await this.runPhase(abortSignal, 'rendering', async () => {
             mountReturn = await story.mount(context)(...args);
@@ -410,13 +421,9 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
           if (this.story.parameters.throwPlayFunctionExceptions !== false) {
             throw error;
           }
-          console.error(error);
-        }
-        if (!ignoreUnhandledErrors && unhandledErrors.size > 0) {
-          this.channel.emit(
-            UNHANDLED_ERRORS_WHILE_PLAYING,
-            Array.from(unhandledErrors).map(serializeError)
-          );
+          if (!abortSignal.aborted) {
+            console.error(error);
+          }
         }
         this.disableKeyListeners = false;
         window?.removeEventListener?.('unhandledrejection', onUnhandledRejection);
@@ -424,6 +431,12 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
         if (abortSignal.aborted) {
           return;
+        }
+        if (!ignoreUnhandledErrors && unhandledErrors.size > 0) {
+          this.channel.emit(
+            UNHANDLED_ERRORS_WHILE_PLAYING,
+            Array.from(unhandledErrors).map(serializeError)
+          );
         }
       }
 
@@ -465,6 +478,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         } as StoryFinishedPayload)
       );
     } catch (err) {
+      // What an aborted render throws is not the story's error: the render has ended.
+      if (this.checkIfAborted(abortSignal)) {
+        return;
+      }
       this.phase = 'errored';
       this.callbacks.showException(err as Error);
 
@@ -519,7 +536,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   cancelPlayFunction() {
     if (this.phase === 'playing') {
       this.abortController.abort();
-      this.runPhase(this.abortController.signal, 'aborted');
+      this.checkIfAborted(this.abortController.signal);
     }
   }
 

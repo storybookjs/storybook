@@ -999,3 +999,14 @@ test('children that JSX text cannot hold stay an expression', () => {
     const Lines = () => <Button>{'a\\nb'}</Button>;"
   `);
 });
+
+test('a read of a name every object inherits is not an arg', () => {
+  const input = withCSF3(dedent`
+    export const Inherited: Story = {
+      render: (args) => <Button title={args.constructor} />,
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Inherited = (args) => <Button title={args.constructor} />;"`
+  );
+});

@@ -369,7 +369,7 @@ function rewriteJsx(
         continue;
       }
       const key = getArgsMemberKey(a.value.expression);
-      if (key && key in merged) {
+      if (key !== null && Object.hasOwn(merged, key)) {
         edits.push({ start: a.start, end: a.end, text: toAttr(a.name.name, merged[key]) });
         changed = true;
       }

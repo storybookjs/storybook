@@ -76,18 +76,26 @@ A story whose initializer is not an object literal, a function or a bound templa
 | `import { Base } from './base';` | `{ ...Base, label: 'a' }` | `set(['label'], 'b')` | `{ ...Base, label: 'b' }` |
 | `import { Base } from './base';` | `{ label: 'a', ...Base }` | `set(['label'], 'b')` | refused, `spread-field` |
 | `import { Base } from './base';` | `{ args: {}, ...Base }` | `set(['args', 'a'], 1)` | refused, `spread-field` |
+| `const Base = { title: 'B' };` | `{ args: { a: 1 }, ...Base }` | `set(['args', 'a'], 2)` | `{ args: { a: 2 }, ...Base }` |
+| `const Base = { args: {} };` | `{ args: { a: 1 }, ...Base }` | `set(['args', 'a'], 2)` | refused, `spread-field` |
+| `const Base = { title: 'B' }; Base.args = {};` | `{ args: { a: 1 }, ...Base }` | `set(['args', 'a'], 2)` | refused, `spread-field` |
 | `import { Base } from './base';` | `{ ...Base, label: 'a' }` | `remove(['label'])` | refused, `spread-field` |
 | `import { Base } from './base';` | `{ ...Base, label: 'a' }` | `rename(['label'], 'name')` | refused, `spread-field` |
+| `const Base = { title: 'B' };` | `{ label: 'a', ...Base }` | `remove(['label'])` | `{ ...Base }` |
+| `const Base = { label: 'b' };` | `{ label: 'a', ...Base }` | `remove(['label'])` | refused, `spread-field` |
+| `const Base = { title: 'B' };` | `{ ...Base, label: 'a' }` | `remove(['label'])` | `{ ...Base }` |
+| `const Base = { title: 'B' };` | `{ ...Base, label: 'a' }` | `rename(['label'], 'name')` | `{ ...Base, name: 'a' }` |
 | `import { base } from './base';` | `{ label: 'a', args: { ...base } }` | `move(['label'], ['args', 'label'])` | refused, `spread-field` |
 | `import { Base } from './base';` | `{ ...Base, a: 1, b: 2 }` | `group(['args'], ['a', 'b'])` | refused, `spread-field` |
 | `import { Base } from './base';` | `{ ...Base, label: 'a' }` | `inspect(['label'])` | `value` |
 | `import { Base } from './base';` | `{ label: 'a', ...Base }` | `inspect(['label'])` | `unreadable`, `spread-field` |
 | `import { Base } from './base';` | `{ ...Base }` | `inspect(['args'])` | `unreadable`, `spread-field` |
+| `const Base = { title: 'B' };` | `{ args: { a: 1 }, ...Base }` | `inspect(['args'])` | `value` |
 
 A carried member is read again where the parent is created, so a getter or a binding reassigned in between can give another value than the spread did.
 The spread's own member is read with `.`, as a story spreading a value that is not an object is broken already, and a deeper one with `?.`, as it may be missing, unless a trusted local object literal holds it as an object literal.
 When more than one spread may provide the member, which one does depends on whether a later one has it as its own `undefined`, so creating the parent is refused.
-Changing a field that a later spread or computed key could override is refused, and so is removing or renaming a field after them, which could reveal what they provide.
+Changing a field that a later spread or computed key could override is refused, and so is removing or renaming a field after them, which could reveal what they provide. A spread of a trusted local object literal known to lack the field is the exception: it neither overrides nor provides the field, so these edits and reads proceed (`group` still refuses any spread).
 A local object literal is trusted for its own members only, not those of the objects it holds, and only when every reference to it reads it.
 An assignment, `Object.assign`, an alias or a call it is passed to makes it unknown. So does code that can run with `this` bound to it: an accessor, spreading it into an array or arguments, or a call of a member it does not hold as an arrow function.
 

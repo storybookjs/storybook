@@ -20,16 +20,22 @@ type PropertyLookup =
 // a removal could reveal what an earlier member provides.
 export type Access = 'read' | 'set' | 'remove';
 
+// With an `editor`, a spread of a trusted local object literal known to lack `name` is skipped: it
+// can neither override the field nor provide it.
 export const lookupProperty = (
   properties: readonly E.ObjectPropertyKind[],
   name: string,
-  access: Access = 'read'
+  access: Access = 'read',
+  editor?: SourceEditor
 ): PropertyLookup => {
   const matches: Property[] = [];
   let unknown: { code: CsfMutationDiagnosticCode; node: Node } | undefined;
   let unknownAfterMatch: { code: CsfMutationDiagnosticCode; node: Node } | undefined;
 
   for (const member of properties) {
+    if (member.type === 'SpreadElement' && editor && lacks(editor, member, name)) {
+      continue;
+    }
     const key = member.type === 'SpreadElement' ? undefined : staticKey(member);
     if (key === undefined) {
       unknown = {
@@ -188,6 +194,12 @@ const literalMember = (literal: E.ObjectExpression, key: string) => {
   }
   const value = unwrapExpression(lookup.property.value);
   return { kind: 'value' as const, object: value.type === 'ObjectExpression' };
+};
+
+// Whether `spread` is of a trusted local object literal known to lack `key`.
+const lacks = (editor: SourceEditor, spread: E.SpreadElement, key: string) => {
+  const literal = trustedLiteral(editor, unwrapExpression(spread.argument));
+  return literal !== undefined && literalMember(literal, key).kind === 'missing';
 };
 
 // The spread among `properties` whose member `key` a new parent at `key` carries forward: the last

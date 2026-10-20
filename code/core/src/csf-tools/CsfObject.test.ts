@@ -739,6 +739,7 @@ describe('CsfObject', () => {
     const storyEdits = {
       "set(['args'], { a: 1 })": (story) => story.set(['args'], { a: 1 }),
       "set(['args', 'a'], 1)": (story) => story.set(['args', 'a'], 1),
+      "set(['args', 'a'], 2)": (story) => story.set(['args', 'a'], 2),
       "set(['args', 'b', 'a'], 1)": (story) => story.set(['args', 'b', 'a'], 1),
       "set(['parameters', 'docs', 'a'], 1)": (story) => story.set(['parameters', 'docs', 'a'], 1),
       "set(['label'], 'b')": (story) => story.set(['label'], 'b'),
@@ -927,6 +928,24 @@ describe('CsfObject', () => {
         result: { refused: 'spread-field' },
       },
       {
+        before: "const Base = { title: 'B' };",
+        object: '{ args: { a: 1 }, ...Base }',
+        edit: "set(['args', 'a'], 2)",
+        result: { writes: '{ args: { a: 2 }, ...Base }' },
+      },
+      {
+        before: 'const Base = { args: {} };',
+        object: '{ args: { a: 1 }, ...Base }',
+        edit: "set(['args', 'a'], 2)",
+        result: { refused: 'spread-field' },
+      },
+      {
+        before: "const Base = { title: 'B' }; Base.args = {};",
+        object: '{ args: { a: 1 }, ...Base }',
+        edit: "set(['args', 'a'], 2)",
+        result: { refused: 'spread-field' },
+      },
+      {
         before: "import { Base } from './base';",
         object: "{ ...Base, label: 'a' }",
         edit: "remove(['label'])",
@@ -937,6 +956,30 @@ describe('CsfObject', () => {
         object: "{ ...Base, label: 'a' }",
         edit: "rename(['label'], 'name')",
         result: { refused: 'spread-field' },
+      },
+      {
+        before: "const Base = { title: 'B' };",
+        object: "{ label: 'a', ...Base }",
+        edit: "remove(['label'])",
+        result: { writes: '{ ...Base }' },
+      },
+      {
+        before: "const Base = { label: 'b' };",
+        object: "{ label: 'a', ...Base }",
+        edit: "remove(['label'])",
+        result: { refused: 'spread-field' },
+      },
+      {
+        before: "const Base = { title: 'B' };",
+        object: "{ ...Base, label: 'a' }",
+        edit: "remove(['label'])",
+        result: { writes: '{ ...Base }' },
+      },
+      {
+        before: "const Base = { title: 'B' };",
+        object: "{ ...Base, label: 'a' }",
+        edit: "rename(['label'], 'name')",
+        result: { writes: "{ ...Base, name: 'a' }" },
       },
       {
         before: "import { base } from './base';",
@@ -967,6 +1010,12 @@ describe('CsfObject', () => {
         object: '{ ...Base }',
         edit: "inspect(['args'])",
         result: { inspects: 'unreadable', code: 'spread-field' },
+      },
+      {
+        before: "const Base = { title: 'B' };",
+        object: '{ args: { a: 1 }, ...Base }',
+        edit: "inspect(['args'])",
+        result: { inspects: 'value' },
       },
     ];
     const cells = ({ before, object, edit, result }: Row) => [

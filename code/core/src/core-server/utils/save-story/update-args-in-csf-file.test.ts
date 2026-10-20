@@ -146,6 +146,24 @@ describe('success', () => {
     expect(printCsf(parsed).code).toBe(source);
     expect(parsed.changed).toBe(false);
   });
+  test('story exported under two names', () => {
+    const parsed = loadCsf(
+      [
+        `export default { title: 'X' };`,
+        `export const Primary = { args: { a: 1 } };`,
+        `export { Primary as Secondary };`,
+      ].join('\n'),
+      { makeTitle }
+    ).parse();
+
+    updateArgsInCsfFile(parsed, 'Secondary', { a: 2 });
+
+    expect(printCsf(parsed).code).toMatchInlineSnapshot(`
+      "export default { title: 'X' };
+      export const Primary = { args: { a: 2 } };
+      export { Primary as Secondary };"
+    `);
+  });
   test('arg value shaped like an AST node is written as data', () => {
     const parsed = loadCsf(`export default { title: 'X' };\nexport const A = {};`, {
       makeTitle,

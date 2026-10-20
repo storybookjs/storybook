@@ -23,7 +23,8 @@ import {
 } from './ast.ts';
 import { type ScopeInfo, analyzeScopes } from './scope.ts';
 
-// Maps in a chain are matched by source name, so every map of an editor uses the same one.
+// Maps in a chain are matched by source name, so every map of an editor uses the same one. A
+// private member would make the class nominal and break assignability between `src` and `dist`.
 const mapSource = (editor: { fileName: string | undefined }) => editor.fileName ?? 'source';
 
 /** A map whose `sourcesContent` may be unknown for sources an input map did not carry. */
@@ -86,14 +87,16 @@ export type InputSourceMap =
  * text too.
  */
 export class SourceEditor {
-  private _module: ParsedModule;
+  // The underscored members are not API, and none is `private`: a private member would make the
+  // class nominal and break assignability between `src` and `dist`.
+  _module: ParsedModule;
 
   _scopes: ScopeInfo | undefined;
 
   _parents: Map<Node, Node | null> | undefined;
 
   // The pending edits, with what they wrote that later edits of the same batch build on.
-  private _batch: Batch;
+  _batch: Batch;
 
   // The edits each earlier commit applied, oldest first. Their maps are only generated when one
   // is requested, so the output still maps to the code the editor was created with.
@@ -110,7 +113,7 @@ export class SourceEditor {
 
   // The transaction running, if any: whether a mutation in it was refused, so it rolls back, and
   // how to undo state kept outside the editor, such as a `changed` flag.
-  private _transaction: { refused: boolean; rollbacks: (() => void)[] } | undefined;
+  _transaction: { refused: boolean; rollbacks: (() => void)[] } | undefined;
 
   // Marks a mutation as refused, so the transaction it runs in rolls back.
   _refuse() {
@@ -636,7 +639,7 @@ export interface List {
 }
 
 // A list indexes the code of the parse it was read from, so it goes stale with its nodes.
-const listOf = (editor: SourceEditor, list: List) => derivedFrom(list, editor['_module']);
+const listOf = (editor: SourceEditor, list: List) => derivedFrom(list, editor._module);
 
 /** The `{ … }` of an import or export with at least one named specifier. */
 export const specifierList = (
@@ -1106,7 +1109,7 @@ const appendAfter = (editor: SourceEditor, list: List, previous: Appended, texts
  */
 export const appendToList = (editor: SourceEditor, list: List, texts: string[]) => {
   editor.assertCurrent(list);
-  const { lists } = editor['_batch'];
+  const { lists } = editor._batch;
   const key = `${list.open}:${list.close}`;
   const previous = lists.get(key);
   lists.set(
@@ -1323,7 +1326,7 @@ const endsStatement = (text: string) => {
  */
 export const insertStatementAfter = (editor: SourceEditor, statement: Span, text: string) => {
   const { code, edits } = editor;
-  const batch = editor['_batch'];
+  const batch = editor._batch;
   // The new text follows the text inserted after the statement earlier in the batch, if any.
   const before = batch.lastInsertedAfter.get(statement) ?? editor.source(statement);
   batch.lastInsertedAfter.set(statement, text);
@@ -1411,7 +1414,7 @@ const isRemoved = (editor: SourceEditor, span: Span) => {
 // `remove`, split around the statements inserted inside the range, as removing a range clears what
 // other edits wrote inside it.
 const removeKeeping = (editor: SourceEditor, start: number, end: number) => {
-  const inside = [...editor['_batch'].insertedAt]
+  const inside = [...editor._batch.insertedAt]
     .filter((at) => start < at && at < end)
     .sort((a, b) => a - b);
   let from = start;
@@ -1435,7 +1438,7 @@ export const appendStatement = (editor: SourceEditor, text: string) => {
     return;
   }
   // The text inserted last may lead with the blank line that set it apart.
-  const before = editor['_batch'].lastInsertedAfter.get(last)?.trim() ?? editor.source(last);
+  const before = editor._batch.lastInsertedAfter.get(last)?.trim() ?? editor.source(last);
   const multiline = text.includes('\n') || before.includes('\n');
   if (!multiline) {
     editor._appendedWithoutBlankLine.push(text);

@@ -68,7 +68,10 @@ const STORYBOOK_BUILD_SCRIPT_PACKAGES = ['esbuild'];
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-// A matcher is a bare name, or a name pinned to versions or a source: `esbuild@0.25.0 || 0.25.1`.
+/**
+ * Matches a package name, including pinned versions of that package.
+ * For instance, if `matcher` is `esbuild@0.25.0 || 0.25.1`, it matches `pkg` `esbuild`.
+ */
 const matchesPackage = (matcher: unknown, pkg: string): boolean =>
   typeof matcher === 'string' && (matcher === pkg || matcher.startsWith(`${pkg}@`));
 

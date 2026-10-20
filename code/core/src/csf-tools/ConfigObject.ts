@@ -3,12 +3,9 @@ import {
   type CsfMutationDiagnostic,
   type CsfObjectEditor,
   type CsfObjectHost,
-  type MemberInsert,
-  type ObjectRoot,
   createCsfObject,
-  detachedMember,
-  literalRoot,
 } from './CsfObject.ts';
+import { type MemberInsert, type ObjectRoot, detachedMember, literalRoot } from './ObjectRoot.ts';
 import {
   type E,
   type Node,

@@ -7,12 +7,9 @@ import {
   type CsfObjectHost,
   type CsfObjectOptions,
   type CsfObjectTarget,
-  type MemberInsert,
-  type ObjectRoot,
   createCsfObject,
-  detachedMember,
-  literalRoot,
 } from './CsfObject.ts';
+import { type MemberInsert, type ObjectRoot, detachedMember, literalRoot } from './ObjectRoot.ts';
 import {
   type E,
   type Node,

@@ -17,8 +17,8 @@ import {
   type CsfObjectHost,
   type CsfValue,
   createCsfObject,
-  literalRoot,
 } from './CsfObject.ts';
+import { literalRoot } from './ObjectRoot.ts';
 import {
   type E,
   EstreeParseError,

@@ -1,9 +1,10 @@
+import { type Access, carriedSpread, carriedSpreads, lookupProperty } from './ObjectMembers.ts';
+import { type MemberInsert, type ObjectRoot, literalRoot } from './ObjectRoot.ts';
 import {
   type E,
   type Node,
   type Property,
   type SourceLocation,
-  type Span,
   locationOf,
   parseExpression,
   staticKey,
@@ -11,25 +12,16 @@ import {
 } from './estree/ast.ts';
 import {
   type SourceEditor,
-  appendMembers,
   detachedTextOf,
-  groupMembers,
-  prependMembers,
   printKey,
-  printMemberAccess,
   printMembers,
   printValue,
-  removeMembers,
-  renameKey,
-  renamedMemberText,
-  replaceValue,
 } from './estree/editor.ts';
 import {
   type CsfValue,
   UNRESOLVED,
   isEvaluationInert,
   nodeWithoutParse,
-  placeableValueSource,
   readValue,
   resolveExpression,
   valueSource,
@@ -261,251 +253,16 @@ export interface CsfObjectOptions {
   stories?: boolean;
 }
 
-// `text` is the whole member, including its leading comments.
-export interface MemberInsert {
-  key: string;
-  value: string;
-  text: string;
-}
-
-// Object literals edit their braces; a config made of named exports edits export declarations.
-export interface ObjectRoot {
-  readonly properties: readonly E.ObjectPropertyKind[];
-  readonly detached: boolean;
-  // The object literal itself, when the root is one.
-  readonly node?: E.ObjectExpression;
-  append(members: MemberInsert[]): void;
-  prepend(members: MemberInsert[]): void;
-  remove(members: Property[]): void;
-  replaceValue(member: Property, text: string): void;
-  // `key` is the raw property name.
-  rename(member: Property, key: string): void;
-  // Replaces contiguous members with `key: { ...members }`.
-  group(members: Property[], key: string): void;
-  // The member as text to insert elsewhere under another key.
-  take(member: Property, key: string): MemberInsert;
-}
-
-// A member of an `ObjectRoot` that is not written as one, such as a named export or a
-// `Story.name = value` assignment. Its key and value are nodes of the file, so every span read from
-// it is real; the member itself only exists in memory, spanning `statement`.
-export const detachedMember = (
-  key: Property['key'],
-  value: Property['value'],
-  computed: boolean,
-  statement: Span
-): Property => ({
-  type: 'Property',
-  kind: 'init',
-  method: false,
-  shorthand: false,
-  computed,
-  key,
-  value,
-  start: statement.start,
-  end: statement.end,
-});
-
 export interface CsfObjectHost {
   readonly editor: SourceEditor;
   // Located again after every commit.
   root(): ObjectRoot | undefined;
 }
 
-export const literalRoot = (editor: SourceEditor, object: E.ObjectExpression): ObjectRoot => ({
-  properties: object.properties,
-  detached: false,
-  node: object,
-  append: (members) =>
-    appendMembers(
-      editor,
-      object,
-      members.map((member) => member.text)
-    ),
-  prepend: (members) =>
-    prependMembers(
-      editor,
-      object,
-      members.map((member) => member.text)
-    ),
-  remove: (members) => removeMembers(editor, object, members),
-  replaceValue: (member, text) => replaceValue(editor, member, text),
-  rename: (member, key) => renameKey(editor, member, printKey(key, editor.quote)),
-  group: (members, key) => groupMembers(editor, object, members, key),
-  take: (member, key) => ({
-    key,
-    value: placeableValueSource(editor, member),
-    text: renamedMemberText(editor, object, member, printKey(key, editor.quote)),
-  }),
-});
-
 type ReportDiagnostic = (diagnostic: CsfMutationDiagnostic) => void;
 type MarkChanged = () => void;
 
-type PropertyLookup =
-  | { ok: true; property?: Property }
-  | { ok: false; code: CsfMutationDiagnosticCode; node: Node };
-
 const unsafePath = (path: readonly string[]) => path.includes('__proto__');
-
-// A `set` appends a missing field after every member, so it overrides what they could provide;
-// a removal could reveal what an earlier member provides.
-type Access = 'read' | 'set' | 'remove';
-
-const lookupProperty = (
-  properties: readonly E.ObjectPropertyKind[],
-  name: string,
-  access: Access = 'read'
-): PropertyLookup => {
-  const matches: Property[] = [];
-  let unknown: { code: CsfMutationDiagnosticCode; node: Node } | undefined;
-  let unknownAfterMatch: { code: CsfMutationDiagnosticCode; node: Node } | undefined;
-
-  for (const member of properties) {
-    const key = member.type === 'SpreadElement' ? undefined : staticKey(member);
-    if (key === undefined) {
-      unknown = {
-        code: member.type === 'SpreadElement' ? 'spread-field' : 'dynamic-key',
-        node: member,
-      };
-      if (matches.length > 0) {
-        unknownAfterMatch = unknown;
-      }
-      continue;
-    }
-    if (key !== name) {
-      continue;
-    }
-    if (member.type !== 'Property' || member.kind !== 'init') {
-      return { ok: false, code: 'unsupported-member', node: member };
-    }
-    matches.push(member);
-  }
-
-  if (matches.length > 1) {
-    return { ok: false, code: 'duplicate-field', node: matches[1] };
-  }
-  // A member whose key is only known at runtime cannot shadow an explicit property declared after
-  // it, but it can shadow one declared before it, and with no explicit property at all it leaves
-  // both the value and its absence unproven.
-  const unproven =
-    unknownAfterMatch ??
-    (access === 'remove' || (access === 'read' && matches.length === 0) ? unknown : undefined);
-  if (unproven) {
-    return { ok: false, code: unproven.code, node: unproven.node };
-  }
-  return { ok: true, property: matches[0] };
-};
-
-// A spread a parent created after it carries forward, with the object literal of the local
-// constant it spreads, whose members are known.
-type CarriedSpread = { source: string; literal: E.ObjectExpression | undefined };
-
-// A reference reads the same value when it is read again.
-const isReference = (node: Node): boolean =>
-  node.type === 'Identifier' ||
-  (node.type === 'MemberExpression' &&
-    !node.computed &&
-    !node.optional &&
-    node.property.type === 'Identifier' &&
-    isReference(node.object));
-
-const carriedSpreads = (
-  editor: SourceEditor,
-  properties: readonly E.ObjectPropertyKind[]
-):
-  | { ok: true; spreads: CarriedSpread[] }
-  | { ok: false; code: CsfMutationDiagnosticCode; node: Node } => {
-  const spreads: CarriedSpread[] = [];
-  for (const member of properties) {
-    if (member.type !== 'SpreadElement') {
-      if (staticKey(member) === undefined) {
-        return { ok: false, code: 'dynamic-key', node: member };
-      }
-      continue;
-    }
-    const reference = unwrapExpression(member.argument);
-    if (!isReference(reference)) {
-      return { ok: false, code: 'spread-field', node: member };
-    }
-    const binding =
-      reference.type === 'Identifier' ? editor.scopes.bindingOf(reference) : undefined;
-    const init =
-      binding?.constant && binding.node.type === 'VariableDeclarator'
-        ? unwrapExpression(binding.node.init)
-        : undefined;
-    // A type assertion stays, so the carried member has the type the spread was given.
-    const source = editor.source(member.argument);
-    spreads.push({
-      source: reference === member.argument ? source : `(${source})`,
-      literal: init?.type === 'ObjectExpression' ? init : undefined,
-    });
-  }
-  return { ok: true, spreads };
-};
-
-// What an object literal is known to hold at `key`: no member, the value of one, or unknown.
-const literalMember = (literal: E.ObjectExpression, key: string) => {
-  const lookup = lookupProperty(literal.properties, key);
-  if (!lookup.ok || lookup.property?.method) {
-    return { kind: 'unknown' as const };
-  }
-  if (!lookup.property) {
-    return { kind: 'missing' as const };
-  }
-  const value = unwrapExpression(lookup.property.value);
-  return { kind: 'value' as const, literal: value.type === 'ObjectExpression' ? value : undefined };
-};
-
-// The spread that writes the member at `keys` of `spreads` into a new object or array, or
-// `undefined` when none can have it. The last spread that may have the first key wins, earlier ones
-// follow after `??` in case it lacks it; a local literal known to have it ends that list, and one
-// known to lack it is skipped. A member below a spread's own is read with `?.`.
-const carriedSpread = (
-  spreads: readonly CarriedSpread[],
-  keys: readonly string[],
-  quote: string,
-  into: 'object' | 'array'
-) => {
-  const spreadOf = (expression: string, alternatives = false) =>
-    into === 'array'
-      ? `...(${expression} ?? [])`
-      : `...${alternatives ? `(${expression})` : expression}`;
-  const [first, ...rest] = keys;
-  const candidates: { expression: string; literal: E.ObjectExpression | undefined }[] = [];
-  for (const spread of [...spreads].reverse()) {
-    const member = spread.literal ? literalMember(spread.literal, first) : undefined;
-    if (member?.kind === 'missing') {
-      continue;
-    }
-    candidates.push({
-      expression: `${spread.source}${printMemberAccess(first, quote)}`,
-      literal: member?.kind === 'value' ? member.literal : undefined,
-    });
-    if (member?.kind === 'value') {
-      break;
-    }
-  }
-  if (candidates.length === 0) {
-    return undefined;
-  }
-  if (candidates.length > 1) {
-    const either = candidates.map(({ expression }) => expression).join(' ?? ');
-    return rest.length === 0
-      ? spreadOf(either, true)
-      : spreadOf(`(${either})${rest.map((key) => printMemberAccess(key, quote, true)).join('')}`);
-  }
-  let [{ expression, literal }] = candidates;
-  for (const key of rest) {
-    const member = literal ? literalMember(literal, key) : undefined;
-    if (member?.kind === 'missing') {
-      return undefined;
-    }
-    expression += printMemberAccess(key, quote, !literal);
-    literal = member?.kind === 'value' ? member.literal : undefined;
-  }
-  return spreadOf(expression);
-};
 
 class Editor implements CsfObjectEditor {
   #changed = false;

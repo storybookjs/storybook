@@ -712,6 +712,36 @@ describe('CsfObject', () => {
       "export const A = { ...Base, args: { a: 'x' } };",
     ],
     [
+      'a spread of a local object that other code only names as a type',
+      'const Base = { title: "B" };\ntype BaseType = typeof Base.title;\nexport const A = { ...Base };',
+      ['args', 'a'],
+      "export const A = { ...Base, args: { a: 'x' } };",
+    ],
+    [
+      'a spread of a local object whose play another story calls',
+      'const Base = { args: {}, play: async () => {} };\nexport const A = { ...Base, play: async (c) => { await Base.play(c); await Base.play?.(c); } };',
+      ['parameters', 'a'],
+      "export const A = { ...Base, play: async (c) => { await Base.play(c); await Base.play?.(c); }, parameters: { a: 'x' } };",
+    ],
+    [
+      'a spread of a local object whose args a render spreads into JSX',
+      'const Base = { args: {} };\nexport const A = { ...Base, render: (args) => <C {...Base.args} /> };',
+      ['parameters', 'a'],
+      "export const A = { ...Base, render: (args) => <C {...Base.args} />, parameters: { a: 'x' } };",
+    ],
+    [
+      'a spread of a local object a member of which is already spread',
+      'const Base = { title: "B" };\nexport const A = { ...Base, args: { ...Base.args } };',
+      ['parameters', 'a'],
+      "export const A = { ...Base, args: { ...Base.args }, parameters: { a: 'x' } };",
+    ],
+    [
+      'a spread of a local object whose nested object lacks the field',
+      'const Base = { parameters: {} };\nexport const A = { ...Base };',
+      ['parameters', 'docs', 'a'],
+      "export const A = { ...Base, parameters: { ...Base.parameters, docs: { ...Base.parameters.docs, a: 'x' } } };",
+    ],
+    [
       'a spread of a local object, two parents deep',
       'const Base = { parameters: { docs: { y: 1 } } };\nexport const A = { ...Base };',
       ['parameters', 'docs', 'a'],
@@ -756,6 +786,63 @@ describe('CsfObject', () => {
       expect(story.set(path, 'x')).toEqual({ ok: true, changed: true });
       expect(printCsf(csf).code.split('\n').at(-1)).toBe(line);
       expect(csf.mutationDiagnostics).toEqual([]);
+    }
+  );
+
+  it.each([
+    ['an assignment', 'const Base = { render: () => null };\nBase.args = { x: 1 };'],
+    [
+      'Object.assign',
+      'const Base = { render: () => null };\nObject.assign(Base, { args: { x: 1 } });',
+    ],
+    [
+      'an assignment to an exported base',
+      'export const Base = { render: () => null };\nBase.args = { x: 1 };',
+    ],
+    [
+      'a destructuring assignment',
+      'const Base = { render: () => null };\n({ args: Base.args } = source);',
+    ],
+    ['a call it is passed to', 'const Base = { render: () => null };\nmutate(Base);'],
+    ['an alias', 'const Base = { render: () => null };\nconst Alias = Base;'],
+  ])(
+    'reads through a spread whose base gets members from %s after its declaration',
+    (_case, base) => {
+      const csf = parse(`export default { title: 'X' };\n${base}\nexport const A = { ...Base };`);
+      const story = csf
+        .objects({ meta: false })
+        .find(({ target }) => target.kind === 'story' && target.exportName === 'A')!;
+
+      expect(story.set(['args', 'a'], 'x')).toEqual({ ok: true, changed: true });
+      expect(printCsf(csf).code.split('\n').at(-1)).toBe(
+        "export const A = { ...Base, args: { ...Base.args, a: 'x' } };"
+      );
+    }
+  );
+
+  it.each([
+    [
+      'a story',
+      'const Base = { args: { a: 1 } };\nexport const B = { ...Base };\nB.args.b = { z: 1 };',
+      ['args', 'b', 'w'],
+      "export const A = { ...Base, args: { ...Base.args, b: { ...Base.args.b, w: 'x' } } };",
+    ],
+    [
+      'a local constant',
+      'const Base = { parameters: {} };\nconst Other = { ...Base };\nOther.parameters.docs = { extra: 1 };',
+      ['parameters', 'docs', 'a'],
+      "export const A = { ...Base, parameters: { ...Base.parameters, docs: { ...Base.parameters.docs, a: 'x' } } };",
+    ],
+  ])(
+    'reads through a nested object of a spread base that a copy of it in %s shares',
+    (_case, base, path, line) => {
+      const csf = parse(`export default { title: 'X' };\n${base}\nexport const A = { ...Base };`);
+      const story = csf
+        .objects({ meta: false })
+        .find(({ target }) => target.kind === 'story' && target.exportName === 'A')!;
+
+      expect(story.set(path, 'x')).toEqual({ ok: true, changed: true });
+      expect(printCsf(csf).code.split('\n').at(-1)).toBe(line);
     }
   );
 

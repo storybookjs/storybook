@@ -1,8 +1,16 @@
 // Which member of an object literal a key statically reads, and the spreads that carry it into a new
 // object.
 import type { CsfMutationDiagnosticCode } from './CsfObject.ts';
-import { type E, type Node, type Property, staticKey, unwrapExpression } from './estree/ast.ts';
+import {
+  type E,
+  type Node,
+  type Property,
+  isTSWrapper,
+  staticKey,
+  unwrapExpression,
+} from './estree/ast.ts';
 import { type SourceEditor, printMemberAccess } from './estree/editor.ts';
+import type { Binding } from './estree/scope.ts';
 
 type PropertyLookup =
   | { ok: true; property?: Property }
@@ -58,7 +66,7 @@ export const lookupProperty = (
 };
 
 // A spread a parent created after it carries forward, with the object literal of the local
-// constant it spreads, whose members are known.
+// constant it spreads, whose own members are known.
 type CarriedSpread = { source: string; literal: E.ObjectExpression | undefined };
 
 // A reference reads the same value when it is read again.
@@ -69,6 +77,59 @@ const isReference = (node: Node): boolean =>
     !node.optional &&
     node.property.type === 'Identifier' &&
     isReference(node.object));
+
+// Whether `user` writes to `target`, the binding or a member path of it.
+const writes = (editor: SourceEditor, user: Node, target: Node) =>
+  ((user.type === 'AssignmentExpression' ||
+    user.type === 'AssignmentPattern' ||
+    user.type === 'ForInStatement' ||
+    user.type === 'ForOfStatement') &&
+    user.left === target) ||
+  user.type === 'UpdateExpression' ||
+  (user.type === 'UnaryExpression' && user.operator === 'delete') ||
+  user.type === 'ArrayPattern' ||
+  user.type === 'RestElement' ||
+  (user.type === 'Property' && editor.parentOf(user)?.type === 'ObjectPattern');
+
+// Code that only reads a binding cannot change which members its literal has. A member read, even
+// one that is called, is a read; the binding itself escaping, such as into `Object.assign`, is not.
+const onlyRead = (editor: SourceEditor, binding: Binding) =>
+  binding.references.every((reference) => {
+    if (reference.type !== 'Identifier') {
+      return reference.type === 'ExportNamedDeclaration';
+    }
+    let read: Node = reference;
+    let member = false;
+    for (let next = editor.parentOf(read); next; next = editor.parentOf(read)) {
+      if (
+        (next.type === 'MemberExpression' && next.object === read) ||
+        (next.type === 'TSQualifiedName' && next.left === read)
+      ) {
+        member = true;
+      } else if (
+        !isTSWrapper(next) &&
+        next.type !== 'ParenthesizedExpression' &&
+        next.type !== 'ChainExpression'
+      ) {
+        break;
+      }
+      read = next;
+    }
+    const user = editor.parentOf(read);
+    if (!user) {
+      return false;
+    }
+    switch (user.type) {
+      case 'SpreadElement':
+      case 'JSXSpreadAttribute':
+      case 'TSTypeQuery':
+        return true;
+      case 'ExportSpecifier':
+        return read === reference;
+      default:
+        return member && !writes(editor, user, read);
+    }
+  });
 
 export const carriedSpreads = (
   editor: SourceEditor,
@@ -91,7 +152,7 @@ export const carriedSpreads = (
     const binding =
       reference.type === 'Identifier' ? editor.scopes.bindingOf(reference) : undefined;
     const init =
-      binding?.constant && binding.node.type === 'VariableDeclarator'
+      binding?.constant && binding.node.type === 'VariableDeclarator' && onlyRead(editor, binding)
         ? unwrapExpression(binding.node.init)
         : undefined;
     // A type assertion stays, so the carried member has the type the spread was given.
@@ -104,7 +165,8 @@ export const carriedSpreads = (
   return { ok: true, spreads };
 };
 
-// What an object literal is known to hold at `key`: no member, the value of one, or unknown.
+// What an object literal is known to hold at `key`: no member, a value that may be an object
+// literal, or unknown.
 const literalMember = (literal: E.ObjectExpression, key: string) => {
   const lookup = lookupProperty(literal.properties, key);
   if (!lookup.ok || lookup.property?.method) {
@@ -114,13 +176,15 @@ const literalMember = (literal: E.ObjectExpression, key: string) => {
     return { kind: 'missing' as const };
   }
   const value = unwrapExpression(lookup.property.value);
-  return { kind: 'value' as const, literal: value.type === 'ObjectExpression' ? value : undefined };
+  return { kind: 'value' as const, object: value.type === 'ObjectExpression' };
 };
 
 // The spread that writes the member at `keys` of `spreads` into a new object or array, or
 // `undefined` when none can have it. The last spread that may have the first key wins, earlier ones
 // follow after `??` in case it lacks it; a local literal known to have it ends that list, and one
-// known to lack it is skipped. A member below a spread's own is read with `?.`.
+// known to lack it is skipped. A member below a spread's own is read with `?.`, unless it is read
+// from an object literal: only the literal's own members are known, as a copy of it shares the
+// objects it holds, through which code can change them.
 export const carriedSpread = (
   spreads: readonly CarriedSpread[],
   keys: readonly string[],
@@ -132,7 +196,7 @@ export const carriedSpread = (
       ? `...(${expression} ?? [])`
       : `...${alternatives ? `(${expression})` : expression}`;
   const [first, ...rest] = keys;
-  const candidates: { expression: string; literal: E.ObjectExpression | undefined }[] = [];
+  const candidates: { expression: string; object: boolean }[] = [];
   for (const spread of [...spreads].reverse()) {
     const member = spread.literal ? literalMember(spread.literal, first) : undefined;
     if (member?.kind === 'missing') {
@@ -140,7 +204,7 @@ export const carriedSpread = (
     }
     candidates.push({
       expression: `${spread.source}${printMemberAccess(first, quote)}`,
-      literal: member?.kind === 'value' ? member.literal : undefined,
+      object: member?.kind === 'value' && member.object,
     });
     if (member?.kind === 'value') {
       break;
@@ -155,14 +219,9 @@ export const carriedSpread = (
       ? spreadOf(either, true)
       : spreadOf(`(${either})${rest.map((key) => printMemberAccess(key, quote, true)).join('')}`);
   }
-  let [{ expression, literal }] = candidates;
-  for (const key of rest) {
-    const member = literal ? literalMember(literal, key) : undefined;
-    if (member?.kind === 'missing') {
-      return undefined;
-    }
-    expression += printMemberAccess(key, quote, !literal);
-    literal = member?.kind === 'value' ? member.literal : undefined;
-  }
-  return spreadOf(expression);
+  const [{ expression, object }] = candidates;
+  return spreadOf(
+    expression +
+      rest.map((key, index) => printMemberAccess(key, quote, index > 0 || !object)).join('')
+  );
 };

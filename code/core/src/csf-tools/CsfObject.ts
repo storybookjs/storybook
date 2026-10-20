@@ -251,6 +251,11 @@ export interface CsfObject {
   group(path: readonly string[], names: readonly string[]): CsfMutationResult;
 }
 
+// `CsfObject` with the mutation `ConfigFile` adds: a new array at a missing field.
+export interface CsfObjectEditor extends CsfObject {
+  createArray(path: readonly string[], items: string[]): CsfMutationResult;
+}
+
 export interface CsfObjectOptions {
   meta?: boolean;
   stories?: boolean;
@@ -502,7 +507,7 @@ const carriedSpread = (
   return spreadOf(expression);
 };
 
-class CsfObjectEditor implements CsfObject {
+class Editor implements CsfObjectEditor {
   #changed = false;
 
   readonly target: CsfObjectTarget;
@@ -1132,6 +1137,4 @@ export const createCsfObject = (
   host: CsfObjectHost,
   report: ReportDiagnostic,
   markChanged: MarkChanged
-) => new CsfObjectEditor(target, host, report, markChanged);
-
-export type { CsfObjectEditor };
+): CsfObjectEditor => new Editor(target, host, report, markChanged);

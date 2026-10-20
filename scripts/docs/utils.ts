@@ -182,21 +182,19 @@ export function getSnippetSegments(lines: string[]): SnippetSegment[] {
   return segments;
 }
 
-type CsfVersion = 'next' | 'csf3';
+type CsfVersion = 'csf4' | 'csf3';
 
-const CSF_TAB_TITLE_REGEX = /\(?CSF (Next 🧪|3)\)?/;
+const CSF_TAB_TITLE_REGEX = /\(?CSF (4|3)\)?/;
 
 /**
  * Returns which CSF version a snippet's `tabTitle` names, and the rest of the title. Titles like
- * `Head (CSF 3)` and `Head (CSF Next 🧪)` share the base `Head`, so they pair up.
- * `Svelte CSF` is the CSF 3 counterpart of `Svelte CSF Next 🧪`.
+ * `Head (CSF 3)` and `Head (CSF 4)` share the base `Head`, so they pair up.
  */
 function parseCsfTabTitle(tabTitle = ''): { version?: CsfVersion; base: string } {
-  if (tabTitle === 'Svelte CSF') return { version: 'csf3', base: 'Svelte' };
   const match = tabTitle.match(CSF_TAB_TITLE_REGEX);
   if (!match) return { base: tabTitle };
   return {
-    version: match[1] === '3' ? 'csf3' : 'next',
+    version: match[1] === '3' ? 'csf3' : 'csf4',
     base: tabTitle.replace(CSF_TAB_TITLE_REGEX, '').trim(),
   };
 }
@@ -227,7 +225,7 @@ function canShareView(a: SnippetSegment, b: SnippetSegment) {
 }
 
 /**
- * Groups the CSF 3 and CSF Next segments of a snippet file. A group holds every segment that can
+ * Groups the CSF 3 and CSF 4 segments of a snippet file. A group holds every segment that can
  * appear as the same tab in one reader's view, including through a shared `common` segment.
  */
 export function getCsfSegmentGroups(segments: SnippetSegment[]): CsfSegment[][] {
@@ -253,7 +251,7 @@ export function getCsfSegmentGroups(segments: SnippetSegment[]): CsfSegment[][] 
 }
 
 /**
- * Returns the CSF 3 segments that come before their CSF Next counterpart in any reader's view.
+ * Returns the CSF 3 segments that come before their CSF 4 counterpart in any reader's view.
  * A view is one renderer's blocks plus the `common` blocks, as the docs site shows them.
  */
 export function getMisorderedCsfSegments(lines: string[]): SnippetSegment[] {
@@ -267,9 +265,9 @@ export function getMisorderedCsfSegments(lines: string[]): SnippetSegment[] {
     );
     for (const key of new Set(view.map((csfSegment) => csfSegment.key))) {
       const tab = view.filter((csfSegment) => csfSegment.key === key);
-      const firstNext = tab.findIndex(({ version }) => version === 'next');
+      const firstCsf4 = tab.findIndex(({ version }) => version === 'csf4');
       const firstCsf3 = tab.findIndex(({ version }) => version === 'csf3');
-      if (firstNext > -1 && firstCsf3 > -1 && firstCsf3 < firstNext) {
+      if (firstCsf4 > -1 && firstCsf3 > -1 && firstCsf3 < firstCsf4) {
         misordered.add(tab[firstCsf3].segment);
       }
     }
@@ -278,7 +276,7 @@ export function getMisorderedCsfSegments(lines: string[]): SnippetSegment[] {
 }
 
 /**
- * Moves each CSF Next segment before its CSF 3 counterpart. Segments trade places within the slots
+ * Moves each CSF 4 segment before its CSF 3 counterpart. Segments trade places within the slots
  * their group already occupies, so all other content stays where it is.
  * Returns the reordered lines, or `undefined` if nothing changed.
  */
@@ -286,7 +284,7 @@ export function sortCsfSegments(lines: string[]): string[] | undefined {
   const replacements = new Map<SnippetSegment, SnippetSegment>();
   for (const group of getCsfSegmentGroups(getSnippetSegments(lines))) {
     const sorted = [
-      ...group.filter(({ version }) => version === 'next'),
+      ...group.filter(({ version }) => version === 'csf4'),
       ...group.filter(({ version }) => version === 'csf3'),
     ];
     group.forEach(({ segment }, idx) => {
@@ -307,4 +305,23 @@ export function sortCsfSegments(lines: string[]): string[] | undefined {
     }
   }
   return result;
+}
+
+/**
+ * Returns the current name for a `tabTitle` that uses an old CSF name, or `undefined` if the title
+ * is current. `CSF Next` is now `CSF 4`, and `Svelte CSF` is now `Svelte CSF 3`.
+ */
+export function getRenamedCsfTabTitle(tabTitle = ''): string | undefined {
+  if (tabTitle === 'Svelte CSF') return 'Svelte CSF 3';
+  if (tabTitle.includes('CSF Next')) return tabTitle.replace(/CSF Next( 🧪)?/, 'CSF 4');
+  return undefined;
+}
+
+/**
+ * Returns the segments whose `tabTitle` uses an old CSF name.
+ */
+export function getLegacyCsfTitleSegments(lines: string[]): SnippetSegment[] {
+  return getSnippetSegments(lines).filter(({ attributes }) =>
+    getRenamedCsfTabTitle(attributes.tabTitle)
+  );
 }

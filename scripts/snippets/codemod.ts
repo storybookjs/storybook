@@ -194,10 +194,12 @@ export function transformSvelteCsfNextFile(
 
   for (const language of languages) {
     const mirrors = svelteFences.filter(
-      (fence) => fence.attributes.language === language && fence.attributes.tabTitle === svelteCsfTabTitle
+      (fence) =>
+        fence.attributes.language === language && fence.attributes.tabTitle === svelteCsfTabTitle
     );
     const victims = svelteFences.filter(
-      (fence) => fence.attributes.language === language && fence.attributes.tabTitle === svelteCsf3TabTitle
+      (fence) =>
+        fence.attributes.language === language && fence.attributes.tabTitle === svelteCsf3TabTitle
     );
     if (victims.length === 0) {
       continue;
@@ -264,10 +266,12 @@ async function runSvelteCsfNextCodemod({ glob, dryRun }: { glob: string; dryRun?
   // eslint-disable-next-line depend/ban-dependencies
   const { globby } = await import('globby');
 
-  const files = (await globby(slash(glob), {
-    followSymbolicLinks: true,
-    ignore: ['node_modules/**', 'dist/**', 'storybook-static/**', 'build/**'],
-  })).sort();
+  const files = (
+    await globby(slash(glob), {
+      followSymbolicLinks: true,
+      ignore: ['node_modules/**', 'dist/**', 'storybook-static/**', 'build/**'],
+    })
+  ).sort();
 
   if (!files.length) {
     logger.error(`No files found for pattern ${glob}`);

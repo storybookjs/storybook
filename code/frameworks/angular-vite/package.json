@@ -93,7 +93,6 @@
   },
   "peerDependencies": {
     "@analogjs/vite-plugin-angular": ">=2.7.3",
-    "@angular/animations": ">=21.0.0 < 23.0.0",
     "@angular-devkit/architect": ">=0.2100.0 < 0.2300.0",
     "@angular-devkit/core": ">=21.0.0 < 23.0.0",
     "@angular/build": ">=21.0.0 < 23.0.0",
@@ -113,9 +112,6 @@
     "zone.js": ">=0.14.0"
   },
   "peerDependenciesMeta": {
-    "@angular/animations": {
-      "optional": true
-    },
     "@angular/cli": {
       "optional": true
     },

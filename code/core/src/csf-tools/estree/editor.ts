@@ -848,7 +848,10 @@ export const detachedSource = (editor: SourceEditor, span: Span) => {
   return dedentSource(editor, span.start, span.end, lineIndent(editor.code, span.start));
 };
 
-// `placeableTextOf` as `detachedSource`, for a node of `get`, `parseExpression` or any file.
+/**
+ * `placeableTextOf` dedented as if the node's line had no indent, to place a node of `get`,
+ * `parseExpression` or a `SourceEditor` at another indent.
+ */
 export const detachedTextOf = (node: Node) =>
   reindent(placeableTextOf(node), lineIndent(moduleOf(node)!.code, node.start), '');
 

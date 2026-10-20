@@ -38,6 +38,7 @@ export {
   argumentList,
   arrayList,
   declaratorList,
+  detachedTextOf,
   insertAfterImports,
   itemText,
   lineIndent,

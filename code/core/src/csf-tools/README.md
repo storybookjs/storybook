@@ -64,6 +64,8 @@ for (const story of csf.objects()) {
 }
 ```
 
+`textOf` gives a node's source as written, and `placeableTextOf` that source ready to place as a value. `detachedTextOf` also dedents it as if the node's line had no indent, to place a value from a file at another indent, such as in a generated snippet.
+
 ## Transforming preview and main configuration
 
 `ConfigFile` implements `CsfObject` directly, exposing the same methods and mutation results as the editors returned by `CsfFile.objects()`. Config files use `{ kind: 'config' }` as their target. Default-exported objects, identifier-backed objects, `definePreview` configurations, and CommonJS `module.exports` use their config object as the root.

@@ -8,6 +8,7 @@ import { dedent } from 'ts-dedent';
 
 import { loadConfig, printConfig } from '../ConfigFile.ts';
 import { loadCsf, printCsf } from '../CsfFile.ts';
+import { detachedTextOf } from '../index.ts';
 import type { E } from './ast.ts';
 import { parseExpression, parseModule } from './ast.ts';
 import {
@@ -641,6 +642,18 @@ describe('removeFromList', () => {
       expect(editor.toString()).toBe(`export default [1, /* k */ // k${eol}4,${eol}];`);
     }
   );
+});
+
+describe('detachedTextOf', () => {
+  it('gives the text of a value of the file as if its line had no indent', () => {
+    const editor = new SourceEditor(
+      `export default {\n  args: {\n    a: [\n      1, // one\n    ],\n  },\n};`
+    );
+    const object = (editor.program.body[0] as E.ExportDefaultDeclaration)
+      .declaration as E.ObjectExpression;
+    const args = (object.properties[0] as E.ObjectProperty).value as E.ObjectExpression;
+    expect(detachedTextOf(args)).toBe(`{\n  a: [\n    1, // one\n  ],\n}`);
+  });
 });
 
 describe('replaceValue', () => {

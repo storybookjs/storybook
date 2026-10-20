@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'pathe';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -88,19 +89,30 @@ describe('PNPM Proxy', () => {
   });
 
   describe('getRegistryURL', () => {
-    it('uses npm 12-compatible workspace flags', async () => {
+    it('should return the configured registry URL', async () => {
+      const cwd = resolve('fixtures', 'pnpm-project');
+      pnpmProxy = new PNPMProxy({ cwd });
       const executeCommandSpy = mockedExecuteCommand.mockResolvedValueOnce({
-        stdout: 'https://registry.npmjs.org/',
+        stdout: 'https://registry.npmjs.org/\n',
       } as Awaited<ReturnType<typeof executeCommand>>);
 
       await expect(pnpmProxy.getRegistryURL()).resolves.toBe('https://registry.npmjs.org/');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          command: 'npm',
-          args: ['config', 'get', 'registry', '--workspaces=false', '--include-workspace-root'],
+          command: 'pnpm',
+          cwd,
+          args: ['config', 'get', 'registry', '--location=project'],
         })
       );
+    });
+
+    it('should return undefined when pnpm reports no registry', async () => {
+      mockedExecuteCommand.mockResolvedValueOnce({
+        stdout: 'undefined\n',
+      } as Awaited<ReturnType<typeof executeCommand>>);
+
+      await expect(pnpmProxy.getRegistryURL()).resolves.toBeUndefined();
     });
   });
 

@@ -94,6 +94,116 @@ describe('CsfObject discovery', () => {
     expect(csf.mutationDiagnostics).toEqual([]);
   });
 
+  describe('a CSF4 factory call without an argument', () => {
+    const source = [
+      `import preview from './preview';`,
+      `const meta = preview.meta();`,
+      `export const A = meta.story();`,
+      `export const B = A.extend();`,
+      ``,
+    ].join('\n');
+
+    it('is an empty object whose first write adds the argument', () => {
+      const csf = parse(source);
+      const [meta, a, b] = csf.objects();
+
+      expect(csf.mutationDiagnostics).toEqual([]);
+      expect(a.target).toEqual({ kind: 'story', exportName: 'A', localName: 'A' });
+      expect(a.node).toBeUndefined();
+      expect(a.inspect(['args', 'a'])).toEqual({ kind: 'missing' });
+      expect(a.set(['args', 'a'], 1)).toEqual({ ok: true, changed: true });
+      expect(b.set(['tags'], ['b'])).toEqual({ ok: true, changed: true });
+      expect(meta.set(['title'], 'Example')).toEqual({ ok: true, changed: true });
+      expect(a.getValue(['args'])).toEqual({ a: 1 });
+      expect(printCsf(csf).code).toBe(
+        [
+          `import preview from './preview';`,
+          `const meta = preview.meta({ title: 'Example' });`,
+          `export const A = meta.story({ args: { a: 1 } });`,
+          `export const B = A.extend({ tags: ['b'] });`,
+          ``,
+        ].join('\n')
+      );
+    });
+
+    it('lays the argument out one field per line when a field spans lines', () => {
+      const csf = parse(source);
+      const [, a] = csf.objects();
+
+      expect(a.set(['play'], parseExpression('async () => {\n  await step();\n}'))).toEqual({
+        ok: true,
+        changed: true,
+      });
+      expect(printCsf(csf).code).toContain(
+        [
+          `export const A = meta.story({`,
+          `  play: async () => {`,
+          `    await step();`,
+          `  },`,
+          `});`,
+        ].join('\n')
+      );
+    });
+
+    it('appends a second write in the same transaction to the argument the first one added', () => {
+      const csf = parse(source);
+      const [, a] = csf.objects();
+
+      const kept = csf.transaction(() => {
+        a.set(['args', 'a'], 1);
+        a.set(['parameters', 'layout'], 'centered');
+      });
+
+      expect(kept).toBe(true);
+      expect(printCsf(csf).code).toContain(
+        `export const A = meta.story({ args: { a: 1 }, parameters: { layout: 'centered' } });`
+      );
+    });
+
+    it('is left without an argument when the transaction that added it rolls back', () => {
+      const csf = parse(source);
+      const [, a] = csf.objects();
+
+      const kept = csf.transaction(() => {
+        a.set(['args', 'a'], 1);
+        return false;
+      });
+
+      expect(kept).toBe(false);
+      expect(csf.changed).toBe(false);
+      expect(a.inspect(['args'])).toEqual({ kind: 'missing' });
+      expect(printCsf(csf).code).toBe(source);
+    });
+  });
+
+  it.each([
+    ['two export specifiers', `const L = { args: {} };\nexport { L as A, L as B };`, 'A', 'B'],
+    [
+      'a declaration and a specifier',
+      `export const L = { args: {} };\nexport { L as A };`,
+      'L',
+      'A',
+    ],
+  ])(
+    'edits a story exported by %s under its first export and reports the other',
+    (_kind, code, first, other) => {
+      const csf = parse(`export default { title: 'Example' };\n${code}`);
+      const stories = csf.objects({ meta: false });
+
+      expect(csf.stories.map(({ name }) => name).sort()).toEqual([first, other].sort());
+      expect(stories.map((story) => story.target)).toEqual([
+        { kind: 'story', exportName: first, localName: 'L' },
+      ]);
+      expect(csf.mutationDiagnostics).toEqual([
+        expect.objectContaining({
+          code: 'aliased-story',
+          target: { kind: 'story', exportName: other, localName: 'L' },
+          message: `Cannot mutate ${other} without changing ${first}, which exports the same story`,
+        }),
+      ]);
+    }
+  );
+
   it('does not diagnose excluded direct exports or re-exports', () => {
     const direct = parse(`
       export default { title: 'Example', includeStories: ['Basic'] };
@@ -759,22 +869,136 @@ describe('CsfFile.storyObject', () => {
     expect(csf.storyObject('Basic')?.ok).toBe(true);
   });
 
-  it('refuses a second export of the same story, which would change both', () => {
-    const csf = parse(`
-      export default { title: 'Example' };
-      export const Basic = { args: { label: 'Hi' } };
-      export { Basic as Copy };
-    `);
-
-    expect(csf.storyObject('Basic')?.ok).toBe(true);
-    expect(csf.storyObject('Copy')).toEqual({
+  describe('a story exported under a second name', () => {
+    const refusal = (exportName: string, localName: string, owner: string) => ({
       ok: false,
       diagnostic: expect.objectContaining({
-        code: 'ambiguous-binding',
-        message: 'Cannot mutate Copy without changing Basic, which exports the same story',
+        code: 'aliased-story',
+        target: { kind: 'story', exportName, localName },
+        path: [],
+        message: `Cannot mutate ${exportName} without changing ${owner}, which exports the same story`,
       }),
     });
+
+    it.each([
+      [
+        'a declaration and a specifier',
+        'Primary',
+        `export const Primary = { args: { label: 'Hi' } };\nexport { Primary as Secondary };`,
+      ],
+      [
+        'two export specifiers',
+        'Local',
+        `const Local = { args: { label: 'Hi' } };\nexport { Local as Primary, Local as Secondary };`,
+      ],
+    ])(
+      'refuses the second name of %s, as objects() does, and edits the story under its first',
+      (_kind, localName, code) => {
+        const csf = parse(`export default { title: 'Example' };\n${code}`);
+
+        const found = csf.storyObject('Secondary');
+
+        expect(found).toEqual(refusal('Secondary', localName, 'Primary'));
+        expect(csf.mutationDiagnostics).toEqual([found?.ok === false && found.diagnostic]);
+        const primary = csf.storyObject('Primary');
+        const story = primary?.ok ? primary.object : undefined;
+        expect(story?.target).toEqual({ kind: 'story', exportName: 'Primary', localName });
+        expect(story?.set(['args', 'label'], 'Bye')).toEqual({ ok: true, changed: true });
+        const printed = printCsf(csf).code;
+        expect(printed).toContain(`{ args: { label: 'Bye' } }`);
+        expect(
+          parse(printed)
+            .stories.map(({ name }) => name)
+            .sort()
+        ).toEqual(['Primary', 'Secondary']);
+      }
+    );
+
+    it('refuses the second name as an alias also when the first export cannot be edited', () => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        export const Primary = makeStory();
+        export { Primary as Secondary };
+      `);
+
+      expect(csf.storyObject('Secondary')).toEqual(refusal('Secondary', 'Primary', 'Primary'));
+      expect(csf.storyObject('Primary')).toEqual({
+        ok: false,
+        diagnostic: expect.objectContaining({
+          code: 'unsupported-initializer',
+          target: { kind: 'story', exportName: 'Primary', localName: 'Primary' },
+        }),
+      });
+    });
+
+    it('refuses a second name of an alias declaration as an alias of that declaration', () => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        export const Primary = { args: {} };
+        export const Secondary = Primary;
+        export { Secondary as Third };
+      `);
+
+      expect(csf.storyObject('Third')).toEqual(refusal('Third', 'Secondary', 'Secondary'));
+      expect(csf.storyObject('Secondary')).toEqual({
+        ok: false,
+        diagnostic: expect.objectContaining({
+          code: 'aliased-story',
+          target: { kind: 'story', exportName: 'Secondary', localName: 'Secondary' },
+          message: 'Cannot mutate story Secondary because it is an alias of story Primary',
+        }),
+      });
+    });
+
+    it('refuses the second name of a CSF2 story with assignments', () => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        const Template = (args) => null;
+        export const Primary = Template.bind({});
+        Primary.args = { label: 'Hi' };
+        export { Primary as Secondary };
+      `);
+
+      expect(csf.storyObject('Secondary')).toEqual(refusal('Secondary', 'Primary', 'Primary'));
+      expect(csf.storyObject('Primary')?.ok).toBe(true);
+    });
+
+    it('refuses the second name of a factory story', () => {
+      const csf = parse(`
+        import preview from './preview';
+        const meta = preview.meta({ title: 'Example' });
+        export const Primary = meta.story({ args: {} });
+        export { Primary as Secondary };
+      `);
+
+      expect(csf.storyObject('Secondary')).toEqual(refusal('Secondary', 'Primary', 'Primary'));
+      expect(csf.storyObject('Primary')?.ok).toBe(true);
+    });
   });
+
+  it.each(['Primary', 'Primary as Story', 'Primary satisfies Story'])(
+    'refuses a story initialized with %s, an alias of another story',
+    (initializer) => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        export const Primary = { args: {} };
+        export const Secondary = ${initializer};
+      `);
+
+      const found = csf.storyObject('Secondary');
+
+      expect(found).toEqual({
+        ok: false,
+        diagnostic: expect.objectContaining({
+          code: 'aliased-story',
+          target: { kind: 'story', exportName: 'Secondary', localName: 'Secondary' },
+          message: 'Cannot mutate story Secondary because it is an alias of story Primary',
+        }),
+      });
+      expect(csf.mutationDiagnostics).toEqual([found?.ok === false && found.diagnostic]);
+      expect(csf.storyObject('Primary')?.ok).toBe(true);
+    }
+  );
 
   it('returns undefined for an export that is not a story', () => {
     const csf = parse(`

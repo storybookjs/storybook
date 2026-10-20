@@ -3,6 +3,7 @@ import { csfFactoryReceiver, isCsfFactoryCall, withoutTypeCalls } from './CsfFil
 import {
   type CsfMutationDiagnostic,
   type CsfMutationDiagnosticCode,
+  type CsfMutationTarget,
   type CsfObject,
   type CsfObjectHost,
   type CsfObjectLookup,
@@ -10,7 +11,13 @@ import {
   type CsfObjectTarget,
   createCsfObject,
 } from './CsfObject.ts';
-import { type MemberInsert, type ObjectRoot, detachedMember, literalRoot } from './ObjectRoot.ts';
+import {
+  type MemberInsert,
+  type ObjectRoot,
+  argumentRoot,
+  detachedMember,
+  literalRoot,
+} from './ObjectRoot.ts';
 import {
   type E,
   type Node,
@@ -27,7 +34,7 @@ import {
   insertStatementAfter,
   printKey,
   printMemberAccess,
-  printMembers,
+  printObject,
   removeStatements,
 } from './estree/editor.ts';
 import { placeableValueSource } from './estree/values.ts';
@@ -171,13 +178,23 @@ const storyExports = (csf: CsfFile, report: ReportDiagnostic): StoryBinding[] =>
   );
 };
 
-// The first export of each declaration, which edits it for all of its exports.
+// The first export of each declaration, which edits it for all of its exports. Each other export
+// is reported as an alias of it.
 const storyBindings = (csf: CsfFile, report: ReportDiagnostic): StoryBinding[] => {
   const unique = new Map<Node, StoryBinding>();
   for (const binding of storyExports(csf, report)) {
-    if (!unique.has(binding.declaration)) {
+    const first = unique.get(binding.declaration);
+    if (!first) {
       unique.set(binding.declaration, binding);
+      continue;
     }
+    report({
+      code: 'aliased-story',
+      target: storyTarget(binding),
+      path: [],
+      message: `Cannot mutate ${binding.exportName} without changing ${first.exportName}, which exports the same story`,
+      ...loc(csf, binding.node),
+    });
   }
   return [...unique.values()];
 };
@@ -258,7 +275,14 @@ const discoverMeta = (csf: CsfFile, report: ReportDiagnostic): Discovered[] => {
     });
     return [];
   }
-  if (csf._metaNode && !csf._metaNodeIsSynthetic) {
+  const call = csf._metaIsFactory ? csf._metaFactoryCall : undefined;
+  const root =
+    csf._metaNode && !csf._metaNodeIsSynthetic
+      ? literalRoot(csf.editor, csf._metaNode)
+      : call?.arguments.length === 0
+        ? argumentRoot(csf.editor, call)
+        : undefined;
+  if (root) {
     const binding = csf._metaVariableName
       ? csf.editor.scopes.program.bindings.get(csf._metaVariableName)
       : undefined;
@@ -272,7 +296,7 @@ const discoverMeta = (csf: CsfFile, report: ReportDiagnostic): Discovered[] => {
       });
       return [];
     }
-    return [{ target: { kind: 'meta' }, root: literalRoot(csf.editor, csf._metaNode) }];
+    return [{ target: { kind: 'meta' }, root }];
   }
   if (csf._metaIsFactory && csf._metaFactoryCall) {
     report({
@@ -481,9 +505,7 @@ const storyRoot = (
         return;
       }
       const texts = members.map((member) => take(member, staticKey(member)!).text);
-      const value = texts.some((text) => text.includes('\n'))
-        ? printMembers(texts, editor.indent)
-        : `{ ${texts.join(', ')} }`;
+      const value = printObject(texts, editor.indent);
       const statements = statementsOf(members);
       removeStatements(editor, statements);
       assign([{ key, value, text: '' }], statements);
@@ -541,13 +563,13 @@ const discoverStories = (
       const argument = node.type === 'CallExpression' ? node.arguments[0] : undefined;
       const argumentNode =
         argument && argument.type !== 'SpreadElement' ? unwrapExpression(argument) : undefined;
-      if (
-        node.type === 'CallExpression' &&
-        isFactoryStory(csf, node) &&
-        node.arguments.length === 1 &&
-        argumentNode?.type === 'ObjectExpression'
-      ) {
-        return [{ target: storyTarget(binding), root: literalRoot(csf.editor, argumentNode) }];
+      if (node.type === 'CallExpression' && isFactoryStory(csf, node)) {
+        if (node.arguments.length === 0) {
+          return [{ target: storyTarget(binding), root: argumentRoot(csf.editor, node) }];
+        }
+        if (node.arguments.length === 1 && argumentNode?.type === 'ObjectExpression') {
+          return [{ target: storyTarget(binding), root: literalRoot(csf.editor, argumentNode) }];
+        }
       }
       report({
         code: 'unsupported-initializer',
@@ -646,7 +668,8 @@ export const discoverCsfObjects = (
     editorOf(csf, options, target, report, markChanged)
   );
 
-// Reports only the diagnostics of this story, as no other story was asked for.
+// The answer of `objects()` for this one story, so a name is mapped to its object only by
+// `discover`. Reports only the diagnostics of this story, as no other story was asked for.
 export const discoverStory = (
   csf: CsfFile,
   exportName: string,
@@ -657,30 +680,16 @@ export const discoverStory = (
   if (!Object.hasOwn(csf._stories, exportName)) {
     return undefined;
   }
+  const isOwn = (target: CsfMutationTarget) =>
+    'exportName' in target && target.exportName === exportName;
   const diagnostics: CsfMutationDiagnostic[] = [];
-  const reportOwn = (diagnostic: CsfMutationDiagnostic) => {
-    if ('exportName' in diagnostic.target && diagnostic.target.exportName === exportName) {
-      diagnostics.push(diagnostic);
-    }
-  };
-  const exports = storyExports(csf, reportOwn);
-  const binding = exports.find((candidate) => candidate.exportName === exportName);
-  const first = exports.find((candidate) => candidate.declaration === binding?.declaration);
-  if (binding && first && first !== binding) {
-    diagnostics.push({
-      code: 'ambiguous-binding',
-      target: storyTarget(binding),
-      path: [],
-      message: `Cannot mutate ${exportName} without changing ${first.exportName}, which exports the same story`,
-      ...loc(csf, binding.node),
-    });
-  }
-  const [found] =
-    diagnostics.length === 0 && binding ? discoverStories(csf, [binding], reportOwn) : [];
+  const found = discover(csf, { meta: false }, (diagnostic) => diagnostics.push(diagnostic)).find(
+    ({ target }) => isOwn(target)
+  );
   if (found) {
     return { ok: true, object: editorOf(csf, { meta: false }, found.target, report, markChanged) };
   }
-  const diagnostic = diagnostics[0] ?? {
+  const diagnostic = diagnostics.find(({ target }) => isOwn(target)) ?? {
     code: 'unsupported-initializer',
     target: {
       kind: 'story',

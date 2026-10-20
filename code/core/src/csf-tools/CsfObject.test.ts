@@ -182,22 +182,36 @@ describe('CsfObject', () => {
     expect(csf.changed).toBe(false);
   });
 
-  it('rejects AST-like nodes that did not come from this API and prints plain data', () => {
+  it('prints an object shaped like a node as data when no parser made it', () => {
     const csf = parse(`export default { title: 'X' };`);
     const [meta] = csf.objects({ stories: false });
 
-    expect(meta.set(['framework'], { type: 'StringLiteral', value: 'x' } as any)).toMatchObject({
-      ok: false,
-      diagnostic: { code: 'unsupported-value', message: expect.stringContaining('StringLiteral') },
-    });
-    expect(
-      meta.set(['control'], { type: 'button', data: { type: 'Identifier', name: 'plainData' } })
-    ).toMatchObject({ ok: false, diagnostic: { code: 'unsupported-value' } });
-    expect(meta.set(['control'], { type: 'button', label: 'Save' })).toEqual({
+    expect(meta.set(['framework'], { type: 'StringLiteral', value: 'x' })).toEqual({
       ok: true,
       changed: true,
     });
-    expect(printCsf(csf).code).toContain(`control: { type: 'button', label: 'Save' }`);
+    expect(
+      meta.set(['control'], { type: 'button', data: { type: 'Identifier', name: 'plainData' } })
+    ).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(
+      `export default { title: 'X', framework: { type: 'StringLiteral', value: 'x' }, control: { type: 'button', data: { type: 'Identifier', name: 'plainData' } } };`
+    );
+  });
+
+  it.each([
+    ['offsets', { start: 0, end: 3 }],
+    ['a loc', { loc: { start: { line: 1, column: 0 }, end: { line: 1, column: 3 } } }],
+    ['a range', { range: [0, 3] }],
+  ])('rejects a node of another parser with %s but not the parse tag', (_kind, position) => {
+    const csf = parse(`export default { title: 'X' };`);
+    const [meta] = csf.objects({ stories: false });
+    const node = { type: 'StringLiteral', value: 'x', ...position };
+
+    expect(meta.set(['framework'], node)).toMatchObject({
+      ok: false,
+      diagnostic: { code: 'unsupported-value', message: expect.stringContaining('StringLiteral') },
+    });
+    expect(printCsf(csf).code).toBe(`export default { title: 'X' };`);
   });
 
   it.each(['TextBlock', 'HeroBlock', 'ButtonElement'])(
@@ -1370,7 +1384,7 @@ describe('CsfObject', () => {
   });
 
   it.each([
-    ['meta without an argument', `const meta = preview.meta();`, { kind: 'meta' }],
+    ['meta with a call argument', `const meta = preview.meta(makeMeta());`, { kind: 'meta' }],
     [
       'identifier-backed story argument',
       `const meta = preview.meta({});\nconst config = { args: {} };\nexport const Basic = meta.story(config);`,
@@ -1453,15 +1467,14 @@ describe('CsfObject', () => {
     );
   });
 
-  it('reports a standalone CSF4 meta call without changing the source', () => {
-    const source = `import preview from './preview';\npreview.meta();`;
-    const csf = parse(source);
+  it('edits a standalone CSF4 meta call without an argument', () => {
+    const csf = parse(`import preview from './preview';\npreview.meta();`);
+    const [meta] = csf.objects({ meta: true, stories: false });
 
-    expect(csf.objects({ meta: true, stories: false })).toHaveLength(0);
-    expect(csf.mutationDiagnostics).toContainEqual(
-      expect.objectContaining({ code: 'unsupported-initializer', target: { kind: 'meta' } })
+    expect(meta.set(['title'], 'Example')).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(
+      `import preview from './preview';\npreview.meta({ title: 'Example' });`
     );
-    expect(printCsf(csf).code).toBe(source);
   });
 
   it('ignores non-story factory-shaped exports', () => {

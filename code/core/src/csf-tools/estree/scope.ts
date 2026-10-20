@@ -94,7 +94,7 @@ const BLOCK_SCOPE_TYPES = new Set([
 ]);
 
 // TS nodes that hold runtime code and are visited like any other expression or declaration.
-const TS_EXPRESSIONS = new Set([
+export const TS_EXPRESSIONS = new Set([
   'TSModuleDeclaration',
   'TSModuleBlock',
   'TSAsExpression',
@@ -115,7 +115,7 @@ const TS_EXPRESSIONS = new Set([
 
 // TS nodes that only describe types. A `TS*` node in neither set is an error rather than a guess:
 // treating a renamed runtime node as a type would silently drop references.
-const TS_TYPES = new Set([
+export const TS_TYPES = new Set([
   'TSAnyKeyword',
   'TSArrayType',
   'TSBigIntKeyword',
@@ -174,6 +174,20 @@ const TS_TYPES = new Set([
   'TSUnknownKeyword',
   'TSVoidKeyword',
 ]);
+
+const assertKnown = (node: Node) => {
+  if (node.type.startsWith('TS') && !TS_EXPRESSIONS.has(node.type) && !TS_TYPES.has(node.type)) {
+    throw new Error(`Scope analysis does not know the ${node.type} node type`);
+  }
+};
+
+// A `: Type` annotation counts no references, but a node in it may still be unknown.
+const assertKnownWithin = (node: Node) => {
+  for (const child of childEntries(node)) {
+    assertKnown(child.node);
+    assertKnownWithin(child.node);
+  }
+};
 
 const isCompatTag = (name: string) => /^[a-z]/.test(name) || name.includes('-');
 
@@ -440,8 +454,10 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
   // Babel counts the names a type refers to (`satisfies Meta<typeof Button>`) as references,
   // except inside `: Type` annotations.
   const visitType = (node: Node, scope: Scope): void => {
+    assertKnown(node);
     switch (node.type) {
       case 'TSTypeAnnotation':
+        assertKnownWithin(node);
         return;
       case 'TSTypeReference':
         reference(node.typeName, scope);
@@ -496,9 +512,6 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
 
   const visitNode = (node: Node, scope: Scope): void => {
     if (node.type.startsWith('TS') && !TS_EXPRESSIONS.has(node.type)) {
-      if (!TS_TYPES.has(node.type)) {
-        throw new Error(`Scope analysis does not know the ${node.type} node type`);
-      }
       visitType(node, scope);
       return;
     }

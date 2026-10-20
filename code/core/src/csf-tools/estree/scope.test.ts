@@ -1,7 +1,8 @@
+import { visitorKeys } from 'oxc-parser';
 import { describe, expect, it } from 'vitest';
 
 import { type E, parseModule } from './ast.ts';
-import { analyzeScopes, generateUid } from './scope.ts';
+import { TS_EXPRESSIONS, TS_TYPES, analyzeScopes, generateUid } from './scope.ts';
 
 const programBindings = (code: string) => {
   const { program } = parseModule(code, 'file.tsx');
@@ -119,6 +120,32 @@ describe('analyzeScopes', () => {
       body: [{ type: 'ExpressionStatement', expression: { type: 'TSNewThing' } }],
     } as unknown as E.Program;
     expect(() => analyzeScopes(program)).toThrow('TSNewThing');
+  });
+
+  it('classifies every TS node type of the oxc parser it runs on', () => {
+    const unclassified = Object.keys(visitorKeys).filter(
+      (type) => type.startsWith('TS') && !TS_EXPRESSIONS.has(type) && !TS_TYPES.has(type)
+    );
+    // `parseModule` replaces a parenthesized type with the type inside it.
+    expect(unclassified).toEqual(['TSParenthesizedType']);
+  });
+
+  it.each([
+    ['a type alias', 'type T = typeof x;', (statement: any) => statement.typeAnnotation],
+    [
+      'an annotation',
+      'let a: typeof x;',
+      (statement: any) => statement.declarations[0].id.typeAnnotation.typeAnnotation,
+    ],
+    [
+      'a type argument',
+      'f<typeof x>();',
+      (statement: any) => statement.expression.typeArguments.params[0],
+    ],
+  ])('refuses a TS node type it does not know inside %s', (_where, code, typeNode) => {
+    const { program } = parseModule(`const x = 1; ${code}`, 'file.ts');
+    typeNode(program.body[1]).type = 'TSFutureRuntimeNode';
+    expect(() => analyzeScopes(program)).toThrow('TSFutureRuntimeNode');
   });
 
   it('counts overload signatures as references to the implementation', () => {

@@ -1,19 +1,28 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { formatFileContent } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
+import { readFileSync } from 'node:fs';
+
+import { fs, vol } from 'memfs';
 import path from 'path';
 import { dedent } from 'ts-dedent';
 
 import { storyToCsfFactory } from './story-to-csf-factory.ts';
 
+vi.mock('node:fs', { spy: true });
 vi.mock('storybook/internal/node-logger', () => ({
   logger: {
     log: vi.fn(),
     warn: vi.fn(),
   },
 }));
+
+// Vitest reads its own modules through `node:fs` too, so only the tests that seed memfs read from it
+afterEach(() => {
+  vi.mocked(readFileSync).mockReset();
+});
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -282,6 +291,38 @@ describe('stories codemod', () => {
           },
         });
       `);
+    });
+
+    it('keeps the exports of an imported Svelte CSF file that are not stories', async () => {
+      vol.reset();
+      vol.fromJSON({
+        '/project/src/Task.stories.svelte': dedent`
+          <script module>
+            export const TaskData = { task: { id: '1' } };
+          </script>
+        `,
+      });
+      vi.mocked(readFileSync).mockImplementation(fs.readFileSync as typeof readFileSync);
+
+      await expect(
+        storyToCsfFactory(
+          {
+            path: '/project/src/TaskList.stories.ts',
+            source: dedent`
+              import * as TaskStories from './Task.stories.svelte';
+
+              export default { title: 'TaskList' };
+
+              export const Default = {
+                args: { ...TaskStories.Default.args, task: TaskStories.TaskData.task },
+              };
+            `,
+          },
+          { useSubPathImports: true }
+        )
+      ).resolves.toContain(
+        'args: { ...TaskStories.Default.input.args, task: TaskStories.TaskData.task }'
+      );
     });
 
     it('migrate cross-file story imports from `ImportedStories.Story.xyz` to `ImportedStories.Story.input.xyz`', async () => {
@@ -1324,6 +1365,64 @@ describe('stories codemod', () => {
           export const A = meta.story();
         `);
       });
+    });
+
+    it('migrates story imports from Svelte CSF files', async () => {
+      await expect(
+        transform(dedent`
+          import * as HeaderStories from './Header.stories.svelte';
+
+          export default { title: 'Page' };
+
+          export const LoggedIn = { args: HeaderStories.LoggedIn.args };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#.storybook/preview";
+        import * as HeaderStories from "./Header.stories.svelte";
+
+        const meta = preview.meta({ title: "Page" });
+
+        export const LoggedIn = meta.story({ args: HeaderStories.LoggedIn.input.args });
+      `);
+    });
+
+    it('migrates a Svelte stories file', async () => {
+      await expect(
+        transform(dedent`
+          import type { Meta, StoryObj } from '@storybook/svelte';
+          import { fn } from 'storybook/test';
+
+          import Button from './Button.svelte';
+
+          const meta = {
+            title: 'Example/Button',
+            component: Button,
+            args: { onclick: fn() },
+          } satisfies Meta<typeof Button>;
+
+          export default meta;
+          type Story = StoryObj<typeof meta>;
+
+          export const Primary: Story = {
+            args: { primary: true, label: 'Button' },
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#.storybook/preview";
+        import { fn } from "storybook/test";
+
+        import Button from "./Button.svelte";
+
+        const meta = preview.meta({
+          title: "Example/Button",
+          component: Button,
+          args: { onclick: fn() },
+        });
+
+        export const Primary = meta.story({
+          args: { primary: true, label: "Button" },
+        });
+      `);
     });
 
     it('should remove unused Story types', async () => {

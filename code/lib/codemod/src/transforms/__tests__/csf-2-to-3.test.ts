@@ -16,6 +16,18 @@ const tsTransform = async (source: string) =>
   (await _transform({ source, path: 'Component.stories.tsx' })).trim();
 
 describe('csf-2-to-3', () => {
+  it('leaves Svelte CSF files unchanged', async () => {
+    const source = dedent`
+      <script module>
+        import { defineMeta } from '@storybook/svelte';
+        const { Story } = defineMeta({});
+      </script>
+
+      <Story name="Primary" args={{ primary: true }} />
+    `;
+    await expect(_transform({ source, path: 'Button.stories.svelte' })).resolves.toBe(source);
+  });
+
   describe('javascript', () => {
     it('keeps the annotations of a story whose export it cannot rewrite', async () => {
       const output = await jsTransform(dedent`

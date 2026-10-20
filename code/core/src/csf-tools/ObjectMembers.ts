@@ -65,9 +65,9 @@ export const lookupProperty = (
   return { ok: true, property: matches[0] };
 };
 
-// A spread a parent created after it carries forward, with the object literal of the local
-// constant it spreads, whose own members are known.
-type CarriedSpread = { source: string; literal: E.ObjectExpression | undefined };
+// The spread a parent created after it carries forward, read at the parent's key, and whether
+// that member is known to be an object literal.
+type CarriedSpread = { source: string; object: boolean };
 
 // A reference reads the same value when it is read again.
 const isReference = (node: Node): boolean =>
@@ -131,13 +131,32 @@ const onlyRead = (editor: SourceEditor, binding: Binding) =>
     }
   });
 
+// What an object literal is known to hold at `key`: no member, a value that may be an object
+// literal, or unknown.
+const literalMember = (literal: E.ObjectExpression, key: string) => {
+  const lookup = lookupProperty(literal.properties, key);
+  if (!lookup.ok || lookup.property?.method) {
+    return { kind: 'unknown' as const };
+  }
+  if (!lookup.property) {
+    return { kind: 'missing' as const };
+  }
+  const value = unwrapExpression(lookup.property.value);
+  return { kind: 'value' as const, object: value.type === 'ObjectExpression' };
+};
+
+// The spread among `properties` whose member `key` a new parent at `key` carries forward: the last
+// one that may have it, skipping a local literal known to lack it. When two may have it, which one
+// does depends on own `undefined` members, so that is refused.
 export const carriedSpreads = (
   editor: SourceEditor,
-  properties: readonly E.ObjectPropertyKind[]
+  properties: readonly E.ObjectPropertyKind[],
+  key: string
 ):
-  | { ok: true; spreads: CarriedSpread[] }
+  | { ok: true; spread: CarriedSpread | undefined }
   | { ok: false; code: CsfMutationDiagnosticCode; node: Node } => {
-  const spreads: CarriedSpread[] = [];
+  // The spreads that may provide `key`, since the last one known to.
+  let candidates: { spread: CarriedSpread; node: Node }[] = [];
   for (const member of properties) {
     if (member.type !== 'SpreadElement') {
       if (staticKey(member) === undefined) {
@@ -155,73 +174,44 @@ export const carriedSpreads = (
       binding?.constant && binding.node.type === 'VariableDeclarator' && onlyRead(editor, binding)
         ? unwrapExpression(binding.node.init)
         : undefined;
+    const known = init?.type === 'ObjectExpression' ? literalMember(init, key) : undefined;
+    if (known?.kind === 'missing') {
+      continue;
+    }
     // A type assertion stays, so the carried member has the type the spread was given.
     const source = editor.source(member.argument);
-    spreads.push({
-      source: reference === member.argument ? source : `(${source})`,
-      literal: init?.type === 'ObjectExpression' ? init : undefined,
-    });
+    const candidate = {
+      spread: {
+        source: reference === member.argument ? source : `(${source})`,
+        object: known?.kind === 'value' && known.object,
+      },
+      node: member,
+    };
+    candidates = known?.kind === 'value' ? [candidate] : [...candidates, candidate];
   }
-  return { ok: true, spreads };
+  if (candidates.length > 1) {
+    return { ok: false, code: 'spread-field', node: candidates.at(-1)!.node };
+  }
+  return { ok: true, spread: candidates[0]?.spread };
 };
 
-// What an object literal is known to hold at `key`: no member, a value that may be an object
-// literal, or unknown.
-const literalMember = (literal: E.ObjectExpression, key: string) => {
-  const lookup = lookupProperty(literal.properties, key);
-  if (!lookup.ok || lookup.property?.method) {
-    return { kind: 'unknown' as const };
-  }
-  if (!lookup.property) {
-    return { kind: 'missing' as const };
-  }
-  const value = unwrapExpression(lookup.property.value);
-  return { kind: 'value' as const, object: value.type === 'ObjectExpression' };
-};
-
-// The spread that writes the member at `keys` of `spreads` into a new object or array, or
-// `undefined` when none can have it. The last spread that may have the first key wins, earlier ones
-// follow after `??` in case it lacks it; a local literal known to have it ends that list, and one
-// known to lack it is skipped. A member below a spread's own is read with `?.`, unless it is read
-// from an object literal: only the literal's own members are known, as a copy of it shares the
-// objects it holds, through which code can change them.
+// The spread that writes the member at `keys` of `spread`, the one `carriedSpreads` chose for the
+// first key, into a new object or array. A member below the spread's own is read with `?.`, unless
+// it is read from an object literal: only the literal's own members are known, as a copy of it
+// shares the objects it holds, through which code can change them.
 export const carriedSpread = (
-  spreads: readonly CarriedSpread[],
+  spread: CarriedSpread | undefined,
   keys: readonly string[],
   quote: string,
   into: 'object' | 'array'
 ) => {
-  const spreadOf = (expression: string, alternatives = false) =>
-    into === 'array'
-      ? `...(${expression} ?? [])`
-      : `...${alternatives ? `(${expression})` : expression}`;
-  const [first, ...rest] = keys;
-  const candidates: { expression: string; object: boolean }[] = [];
-  for (const spread of [...spreads].reverse()) {
-    const member = spread.literal ? literalMember(spread.literal, first) : undefined;
-    if (member?.kind === 'missing') {
-      continue;
-    }
-    candidates.push({
-      expression: `${spread.source}${printMemberAccess(first, quote)}`,
-      object: member?.kind === 'value' && member.object,
-    });
-    if (member?.kind === 'value') {
-      break;
-    }
-  }
-  if (candidates.length === 0) {
+  if (!spread) {
     return undefined;
   }
-  if (candidates.length > 1) {
-    const either = candidates.map(({ expression }) => expression).join(' ?? ');
-    return rest.length === 0
-      ? spreadOf(either, true)
-      : spreadOf(`(${either})${rest.map((key) => printMemberAccess(key, quote, true)).join('')}`);
-  }
-  const [{ expression, object }] = candidates;
-  return spreadOf(
-    expression +
-      rest.map((key, index) => printMemberAccess(key, quote, index > 0 || !object)).join('')
-  );
+  const [first, ...rest] = keys;
+  const expression =
+    spread.source +
+    printMemberAccess(first, quote) +
+    rest.map((key, index) => printMemberAccess(key, quote, index > 0 || !spread.object)).join('');
+  return into === 'array' ? `...(${expression} ?? [])` : `...${expression}`;
 };

@@ -812,12 +812,6 @@ describe('ConfigFile', () => {
         "export default { ...shared, addons: [...(shared.addons ?? []), 'x'] };",
       ],
       [
-        'several imports, the last one first',
-        "import a from './a';\nimport b from './b';\nexport default { ...a, ...b };",
-        ['addons'],
-        "export default { ...a, ...b, addons: [...(b.addons ?? a.addons ?? []), 'x'] };",
-      ],
-      [
         'an import, through a missing parent',
         "import shared from './shared';\nexport default { ...shared };",
         ['framework', 'addons'],
@@ -841,6 +835,11 @@ describe('ConfigFile', () => {
 
     it.each([
       ['a spread of a call', 'export default { ...getShared() };', 'spread-field'],
+      [
+        'spreads of two imports, either of which may provide it',
+        "import a from './a';\nimport b from './b';\nexport default { ...a, ...b };",
+        'spread-field',
+      ],
       ['a computed key, which may name it', 'export default { [key]: [] };', 'dynamic-key'],
     ])('rejects creating an array after %s', (_case, source, code) => {
       const config = loadConfig(source).parse();

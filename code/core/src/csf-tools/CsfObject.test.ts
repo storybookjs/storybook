@@ -789,10 +789,10 @@ describe('CsfObject', () => {
       "export const A = { ...Base, parameters: { ...Base.parameters, 'my-addon': { ...Base.parameters?.['my-addon'], a: 'x' } } };",
     ],
     [
-      'several spreads, of which the last with the field replaces the others',
-      "import { One, Two } from './stories';\nexport const A = { ...One, title: 'A', ...Two };",
+      'several spreads, of which the last is a local object known to have the field',
+      "import { One } from './stories';\nconst Two = { args: {} };\nexport const A = { ...One, ...Two };",
       ['args', 'a'],
-      "export const A = { ...One, title: 'A', ...Two, args: { ...(Two.args ?? One.args), a: 'x' } };",
+      "export const A = { ...One, ...Two, args: { ...Two.args, a: 'x' } };",
     ],
     [
       'a spread of a member chain',
@@ -823,6 +823,24 @@ describe('CsfObject', () => {
       expect(csf.mutationDiagnostics).toEqual([]);
     }
   );
+
+  it.each([
+    ['two imports', "import { One, Two } from './stories';\nexport const A = { ...One, ...Two };"],
+    [
+      'a local object with the field, then an import',
+      "import { Two } from './stories';\nconst One = { args: { stale: 1 } };\nexport const A = { ...One, ...Two };",
+    ],
+  ])('refuses a missing parent after %s, either of which may provide it', (_case, code) => {
+    const source = `export default { title: 'X' };\n${code}`;
+    const csf = parse(source);
+    const [story] = csf.objects({ meta: false });
+
+    expect(story.set(['args', 'a'], 'x')).toMatchObject({
+      ok: false,
+      diagnostic: { code: 'spread-field', path: ['args', 'a'] },
+    });
+    expect(printCsf(csf).code).toBe(source);
+  });
 
   it.each([
     ['an assignment', 'const Base = { render: () => null };\nBase.args = { x: 1 };'],

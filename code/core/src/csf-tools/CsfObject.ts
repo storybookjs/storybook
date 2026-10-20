@@ -378,7 +378,11 @@ class Editor implements CsfObjectEditor {
       }
     }
     if (inspected.missing !== undefined && inspected.missing < path.length - 1) {
-      const carried = carriedSpreads(this.editor, inspected.parent.properties);
+      const carried = carriedSpreads(
+        this.editor,
+        inspected.parent.properties,
+        path[inspected.missing]
+      );
       if (carried.ok === false) {
         return this.failure(carried.code, path, carried.node);
       }
@@ -417,7 +421,11 @@ class Editor implements CsfObjectEditor {
     if (refused) {
       return refused;
     }
-    const carried = carriedSpreads(this.editor, inspected.parent.properties);
+    const carried = carriedSpreads(
+      this.editor,
+      inspected.parent.properties,
+      path[inspected.missing!]
+    );
     if (carried.ok === false) {
       return this.failure(carried.code, path, carried.node);
     }
@@ -816,7 +824,7 @@ class Editor implements CsfObjectEditor {
         throw invalidated();
       }
       if (!lookup.property) {
-        const carried = carriedSpreads(this.editor, parent.properties);
+        const carried = carriedSpreads(this.editor, parent.properties, name);
         if (carried.ok === false) {
           throw invalidated();
         }
@@ -828,7 +836,7 @@ class Editor implements CsfObjectEditor {
         const block = (members: string[]) =>
           multiline ? printMembers(members, indent) : `{ ${members.join(', ')} }`;
         const forward = (depth: number, into: 'object' | 'array' = 'object') => {
-          const spread = carriedSpread(carried.spreads, missing.slice(0, depth + 1), quote, into);
+          const spread = carriedSpread(carried.spread, missing.slice(0, depth + 1), quote, into);
           return spread ? [spread] : [];
         };
         const last = missing.length - 1;

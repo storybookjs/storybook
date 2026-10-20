@@ -1,4 +1,4 @@
-import { isAbsolute } from 'node:path';
+import { isAbsolute } from 'pathe';
 
 export type ReactAliasTarget = {
   react: string;

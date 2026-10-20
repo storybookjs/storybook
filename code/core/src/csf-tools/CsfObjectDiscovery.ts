@@ -449,7 +449,11 @@ const storyRoot = (
         return;
       }
       const { left } = assignment;
-      editor.edits.overwrite(left.object.end, left.end, printMemberAccess(key, editor.quote));
+      editor.edits.overwrite(
+        outerSpan(left.object).end,
+        left.end,
+        printMemberAccess(key, editor.quote)
+      );
     },
     // `CsfObject` refuses a group of members from both the object and the assignments.
     group: (members, key) => {

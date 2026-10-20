@@ -479,6 +479,20 @@ Primary.args.label = 'Changed';
       ]);
     });
 
+    it('renames an annotation of a parenthesized story', () => {
+      const csf = parse(`export default { title: 'Example' };
+export const Primary = () => null;
+(Primary).argTypes = { label: { control: 'text' } };
+`);
+      const [story] = csf.objects({ meta: false });
+
+      expect(story.rename(['argTypes'], 'args')).toEqual({ ok: true, changed: true });
+      expect(printCsf(csf).code).toBe(`export default { title: 'Example' };
+export const Primary = () => null;
+(Primary).args = { label: { control: 'text' } };
+`);
+    });
+
     it('does not add annotations to a story that holds another value', () => {
       const csf = parse(`export default { title: 'Example' };
 export const Primary = shared;

@@ -122,7 +122,7 @@ export interface CsfObject {
   /**
    * Read a detached copy of the expression at a property path. Missing fields return `undefined`;
    * so does a path through a value that is not an object literal, or one a spread, computed key, or
-   * duplicate field leaves unproven, which also adds a mutation diagnostic.
+   * duplicate field leaves unproven. `inspect` tells these apart.
    *
    * @example
    * ```ts
@@ -134,8 +134,7 @@ export interface CsfObject {
   get(path: readonly string[]): CsfExpression | undefined;
   /**
    * Read the expression at a property path like `get`, telling a missing field from one that cannot
-   * be read statically, without adding a mutation diagnostic. Use it for reads that only inform;
-   * `get` and `getValue` record why a read failed, which stops `writeConfig`.
+   * be read statically, and why.
    *
    * @example
    * ```ts
@@ -143,13 +142,12 @@ export interface CsfObject {
    * object.inspect(['tags']).kind; // 'value'
    * object.inspect(['missing']); // { kind: 'missing' }
    * object.inspect(['args', 'size']).kind; // 'unreadable'
-   * object.mutationDiagnostics; // []
    * ```
    */
   inspect(path: readonly string[]): CsfInspection;
   /**
-   * Read plain values without executing code. Missing fields return `undefined`; unresolved
-   * expressions also return `undefined` and add a mutation diagnostic.
+   * Read plain values without executing code, following local constants. Missing fields and
+   * expressions it cannot evaluate, such as calls and functions, return `undefined`.
    *
    * @example
    * ```ts
@@ -329,19 +327,11 @@ class Editor implements CsfObjectEditor {
 
   getValue(path: readonly string[]): CsfValue {
     const property = this.getProperty(path);
-    if (!property) {
-      return undefined;
-    }
-    if (property.method) {
-      this.reportDiagnostic(this.diagnostic('unsupported-value', path, property));
+    if (!property || property.method) {
       return undefined;
     }
     const value = readValue(this.editor.scopes, property.value);
-    if (value === UNRESOLVED) {
-      this.reportDiagnostic(this.diagnostic('unsupported-value', path, property.value));
-      return undefined;
-    }
-    return value;
+    return value === UNRESOLVED ? undefined : value;
   }
 
   private find(
@@ -353,7 +343,7 @@ class Editor implements CsfObjectEditor {
     if (path.length === 0) {
       return { kind: 'missing' };
     }
-    const found = this.locate(path);
+    const found = this.locate(path, 'read', false);
     if (found.ok === false) {
       return { kind: 'unreadable', diagnostic: this.diagnostic(found.code, path, found.node) };
     }
@@ -362,9 +352,6 @@ class Editor implements CsfObjectEditor {
 
   private getProperty(path: readonly string[]): Property | undefined {
     const found = this.find(path);
-    if (found.kind === 'unreadable') {
-      this.reportDiagnostic(found.diagnostic);
-    }
     return found.kind === 'property' ? found.property : undefined;
   }
 
@@ -749,10 +736,11 @@ class Editor implements CsfObjectEditor {
   }
 
   // `access` applies to the last field of the path, and to its parents for a `set`, which creates
-  // missing ones; other parents are read.
+  // missing ones; other parents are read. Only a lookup for a read follows a shared constant.
   private locate(
     path: readonly string[],
-    access: Access = 'read'
+    access: Access = 'read',
+    edits = true
   ):
     | { ok: true; parent: ObjectRoot; property?: Property; missing?: number }
     | { ok: false; code: CsfMutationDiagnosticCode; node: Node } {
@@ -778,7 +766,7 @@ class Editor implements CsfObjectEditor {
       if (property.method) {
         return { ok: false, code: 'unsupported-member', node: property };
       }
-      const value = resolveExpression(this.editor.scopes, property.value);
+      const value = resolveExpression(this.editor.scopes, property.value, edits ? 'write' : 'read');
       if (value?.type !== 'ObjectExpression') {
         return { ok: false, code: 'unsupported-member', node: property.value };
       }

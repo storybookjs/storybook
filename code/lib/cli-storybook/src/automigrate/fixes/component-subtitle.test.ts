@@ -107,4 +107,16 @@ describe('component-subtitle', () => {
     ]);
     expect(result.story).toBe(story);
   });
+
+  it('reports a componentSubtitle that a later spread may override', async () => {
+    const story =
+      "import { shared } from './shared';\nexport default { parameters: { componentSubtitle: 'A', ...shared } };";
+
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      { file: storyPath, kind: 'story', message: expect.stringContaining('spread') },
+    ]);
+    expect(result.story).toBe(story);
+  });
 });

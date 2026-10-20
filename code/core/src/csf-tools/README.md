@@ -19,7 +19,7 @@ It can parse MDX into CSF.
 Each editor reads and writes static property paths with `get`, `getValue`, `inspect`, `set`, `transform`, `remove`, `rename`, `move`, and `group`.
 `get` returns an AST expression; `getValue` reads plain values from literals, nested arrays and objects, and local constants without executing code. Reads never return a partially decoded object.
 
-`get` and `getValue` return `undefined` both for a field that is missing and for one that cannot be read statically. Only the second adds a `CsfMutationDiagnostic` to `mutationDiagnostics`. For `get` that is a path whose parent is not an object literal, or that a spread, a computed key, or a duplicate field leaves unproven; `getValue` also reports a value it cannot evaluate, such as a call or a function. A field written as `undefined` is `undefined` without a diagnostic too, but `get` returns its expression. `inspect` tells the cases apart without recording a diagnostic. It reads the expression like `get`, without evaluating it:
+`get` and `getValue` return `undefined` both for a field that is missing and for one that cannot be read statically: a path whose parent is not an object literal, or that a spread, a computed key, or a duplicate field leaves unproven, and for `getValue` a value it cannot evaluate, such as a call or a function. A field written as `undefined` is `undefined` too, but `get` returns its expression. Reads add no diagnostics, so they never stop a later write: a mutation proves the shape it edits again and reports its own. `inspect` tells the cases apart and gives the reason. It reads the expression like `get`, without evaluating it:
 
 ```ts
 const size = story.inspect(['args', 'size']);
@@ -32,12 +32,12 @@ if (size.kind === 'value') {
 }
 ```
 
-Read diagnostics count like mutation ones, so `writeConfig` refuses a config after a read that added one. Use `get` and `getValue` for the reads an edit depends on, so a file whose shape was not proven is not written, and `inspect` for reads that only inform, such as an addon showing a field.
+Use `inspect` when a missing field and an unreadable one call for different edits, such as an automigration that reports a file it cannot read instead of skipping it.
 
 `set` accepts an expression from `get` or `parseExpression`, or plain strings, numbers, booleans, `null`, `undefined`, and nested arrays or objects of those values and expressions. An object whose `type` names an AST node is rejected with a diagnostic unless it came from `get` or `parseExpression`. Plain values are printed into the source, so later changes to the input do not affect the file.
 An expression from `get` is indented as if its line had no indent, and `set` and `transform` indent a value's lines like the line of the field it is written to, so a value copied between fields keeps its layout. A field that spans lines, added to an object written on one line, puts every field of that object on a line of its own; a one-line field leaves the object on its line. Objects around it, and an object a field is grouped into, keep their layout.
 Successful removals and moves recursively remove empty source parents, stopping at the editor's root object or an empty parent that shadows an earlier spread or computed key. Removing a field that could reveal an earlier spread value produces a diagnostic. Moves clean up after inserting the destination, so shared ancestors remain intact. Unrelated empty objects are preserved.
-Nested object paths can follow local constants used only by that object; shared or reassigned references remain untouched.
+Reads follow any local constant. Edits follow only a constant that the edited object alone refers to; shared or reassigned references remain untouched.
 Nodes reused by `transform` keep their original source, so relocating a value prints it as written instead of pretty-printing it.
 `group(path, names)` nests named siblings under a destination object, retaining their source order. A new group replaces a contiguous run of source fields at their original position. Grouping into an existing object requires values whose relocation cannot change expression evaluation order. Conflicts, ambiguous keys, and unsafe relocations produce diagnostics before the operation changes the source; absent source fields are ignored.
 `node` is the editor's object literal in the current parse: the meta or story object, a call argument, or a config object. It is the file's own node, found again after every mutation: read it after editing instead of keeping it, and do not change it, since edits go through the source. It is `undefined` for a config made of named exports, for a story without an object literal, and once the object is gone.

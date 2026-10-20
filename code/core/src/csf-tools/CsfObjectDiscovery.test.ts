@@ -438,10 +438,7 @@ Primary.args = { label: 'Assigned' };
 
       expect(story.set(['args', 'label'], 'Changed').ok).toBe(false);
       expect(story.getValue(['args'])).toBeUndefined();
-      expect(csf.mutationDiagnostics.map(({ code }) => code)).toEqual([
-        'duplicate-field',
-        'duplicate-field',
-      ]);
+      expect(csf.mutationDiagnostics.map(({ code }) => code)).toEqual(['duplicate-field']);
     });
 
     it.each([

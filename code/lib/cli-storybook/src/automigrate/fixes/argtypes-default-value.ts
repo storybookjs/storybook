@@ -2,6 +2,7 @@ import type { CsfObject, ESTree as E } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 
+import { readForEdit } from '../helpers/edit-parsed-file.ts';
 import type { Fix } from '../types.ts';
 
 const argName = (property: E.ObjectProperty): string | undefined => {
@@ -15,7 +16,7 @@ const argName = (property: E.ObjectProperty): string | undefined => {
 };
 
 const strip = (object: CsfObject) => {
-  const argTypes = object.get(['argTypes']);
+  const argTypes = readForEdit(object, ['argTypes']);
   if (argTypes?.type !== 'ObjectExpression') {
     return;
   }

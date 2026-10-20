@@ -2,6 +2,7 @@ import { type ESTree as E, SourceEditor, walk } from 'storybook/internal/csf-too
 
 import picocolors from 'picocolors';
 
+import { readForEdit } from '../helpers/edit-parsed-file.ts';
 import type { Fix } from '../types.ts';
 
 const tagOptionRenames = {
@@ -81,12 +82,12 @@ export const tagFilterApi: Fix = {
     {
       filter: { kind: ['main'], code: /excludeFromSidebar|excludeFromDocsStories/ },
       editConfig: (main) => {
-        const tags = main.get(['tags']);
+        const tags = readForEdit(main, ['tags']);
         if (tags?.type !== 'ObjectExpression') {
           return;
         }
         for (const tagName of objectKeys(tags)) {
-          const option = main.get(['tags', tagName]);
+          const option = readForEdit(main, ['tags', tagName]);
           if (option?.type !== 'ObjectExpression') {
             continue;
           }

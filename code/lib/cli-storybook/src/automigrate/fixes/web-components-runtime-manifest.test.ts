@@ -464,6 +464,19 @@ describe('run', (): void => {
     `);
   });
 
+  it('adds customElementsManifest to a framework whose name is a call', async (): Promise<void> => {
+    vol.fromNestedJSON({
+      [MAIN]:
+        "export default { framework: { name: getAbsolutePath('@storybook/web-components-vite') } };",
+    });
+
+    await runWith();
+
+    expect(vol.readFileSync(MAIN, 'utf8')).toBe(
+      "export default { framework: { name: getAbsolutePath('@storybook/web-components-vite'), options: { customElementsManifest: '../custom-elements.json' } } };"
+    );
+  });
+
   it('grows a string framework into the object form', async (): Promise<void> => {
     vol.fromNestedJSON({
       [MAIN]: "export default { framework: '@storybook/web-components-vite' };",

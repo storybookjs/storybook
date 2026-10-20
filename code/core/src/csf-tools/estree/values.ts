@@ -129,11 +129,27 @@ export const isEvaluationInert = (node: Node): boolean => {
   return false;
 };
 
-export const readValue = (scopes: ScopeInfo, node: Node): CsfValue | typeof UNRESOLVED => {
-  const value = resolveExpression(scopes, node);
-  if (!value) {
+// `reading` holds the values being read, so a constant that contains itself is unresolved.
+export const readValue = (
+  scopes: ScopeInfo,
+  node: Node,
+  reading = new Set<Node>()
+): CsfValue | typeof UNRESOLVED => {
+  const value = resolveExpression(scopes, node, 'read');
+  if (!value || reading.has(value)) {
     return UNRESOLVED;
   }
+  reading.add(value);
+  const result = readResolved(scopes, value, reading);
+  reading.delete(value);
+  return result;
+};
+
+const readResolved = (
+  scopes: ScopeInfo,
+  value: Node,
+  reading: Set<Node>
+): CsfValue | typeof UNRESOLVED => {
   if (value.type === 'Literal') {
     if ('regex' in value || 'bigint' in value) {
       return UNRESOLVED;
@@ -147,7 +163,7 @@ export const readValue = (scopes: ScopeInfo, node: Node): CsfValue | typeof UNRE
     return value.quasis[0].value.cooked ?? UNRESOLVED;
   }
   if (value.type === 'UnaryExpression') {
-    const argument = readValue(scopes, value.argument);
+    const argument = readValue(scopes, value.argument, reading);
     if (typeof argument !== 'number') {
       return UNRESOLVED;
     }
@@ -163,7 +179,11 @@ export const readValue = (scopes: ScopeInfo, node: Node): CsfValue | typeof UNRE
         elements.length++;
         continue;
       }
-      const item = readValue(scopes, element.type === 'SpreadElement' ? element.argument : element);
+      const item = readValue(
+        scopes,
+        element.type === 'SpreadElement' ? element.argument : element,
+        reading
+      );
       if (item === UNRESOLVED) {
         return UNRESOLVED;
       }
@@ -182,7 +202,7 @@ export const readValue = (scopes: ScopeInfo, node: Node): CsfValue | typeof UNRE
     const entries: [string, CsfValue][] = [];
     for (const property of value.properties) {
       if (property.type === 'SpreadElement') {
-        const spread = readValue(scopes, property.argument);
+        const spread = readValue(scopes, property.argument, reading);
         if (typeof spread !== 'object' || spread === null || Array.isArray(spread)) {
           return UNRESOLVED;
         }
@@ -198,7 +218,7 @@ export const readValue = (scopes: ScopeInfo, node: Node): CsfValue | typeof UNRE
       ) {
         return UNRESOLVED;
       }
-      const item = readValue(scopes, property.value);
+      const item = readValue(scopes, property.value, reading);
       if (item === UNRESOLVED) {
         return UNRESOLVED;
       }
@@ -209,7 +229,13 @@ export const readValue = (scopes: ScopeInfo, node: Node): CsfValue | typeof UNRE
   return UNRESOLVED;
 };
 
-export const resolveExpression = (scopes: ScopeInfo, node: Node): Node | undefined => {
+// Follows identifiers to the initializers of their constants. An edit through a constant changes
+// every user of it, so a `write` follows only a constant this identifier is the one reference of.
+export const resolveExpression = (
+  scopes: ScopeInfo,
+  node: Node,
+  access: 'read' | 'write' = 'write'
+): Node | undefined => {
   let value = unwrapExpression(node);
   const visited = new Set<Node>();
   while (isIdentifier(value) && !visited.has(value)) {
@@ -220,8 +246,8 @@ export const resolveExpression = (scopes: ScopeInfo, node: Node): Node | undefin
     }
     if (
       !binding?.constant ||
-      binding.references.length !== 1 ||
-      binding.references[0] !== value ||
+      (access === 'write' &&
+        (binding.references.length !== 1 || binding.references[0] !== value)) ||
       binding.node.type !== 'VariableDeclarator' ||
       binding.node.id.type !== 'Identifier' ||
       !binding.node.init

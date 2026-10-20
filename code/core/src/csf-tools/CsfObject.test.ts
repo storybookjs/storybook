@@ -61,7 +61,7 @@ describe('CsfObject', () => {
     expect(csf.mutationDiagnostics).toEqual([]);
   });
 
-  it('tells a field from a missing and an unreadable one without recording a diagnostic', () => {
+  it('tells a field from a missing and an unreadable one, and why', () => {
     const csf = parse(
       'export default {};\nexport const A = { args: { ...base }, parameters: { a: 1 } };'
     );
@@ -74,10 +74,37 @@ describe('CsfObject', () => {
       kind: 'unreadable',
       diagnostic: { code: 'spread-field', path: ['args', 'size'] },
     });
+    expect(story.get(['args', 'size'])).toBeUndefined();
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
+  it('reads a constant that other code uses too, which an edit would not go through', () => {
+    const csf = parse(`
+      const label = 'x';
+      const base = { size: 1 };
+      export default {};
+      export const A = { args: { label, base } };
+      export const B = { args: { label, base } };
+    `);
+    const [story] = csf.objects({ meta: false });
+
+    expect(story.getValue(['args'])).toEqual({ label: 'x', base: { size: 1 } });
+    expect(story.getValue(['args', 'base', 'size'])).toBe(1);
+    expect(textOf(story.get(['args', 'base', 'size'])!)).toBe('1');
+    expect(story.inspect(['args', 'base', 'size']).kind).toBe('value');
     expect(csf.mutationDiagnostics).toEqual([]);
 
-    expect(story.get(['args', 'size'])).toBeUndefined();
-    expect(csf.mutationDiagnostics).toMatchObject([{ code: 'spread-field' }]);
+    expect(story.set(['args', 'base', 'size'], 2)).toMatchObject({
+      ok: false,
+      diagnostic: { code: 'unsupported-member' },
+    });
+  });
+
+  it('reads a constant that contains itself as unresolved', () => {
+    const csf = parse('const own = { own }; export default { parameters: { own } };');
+    const [meta] = csf.objects({ stories: false });
+
+    expect(meta.getValue(['parameters'])).toBeUndefined();
   });
 
   it('inspects every annotation of a CSF2 story, and the object itself as unreadable', () => {
@@ -143,7 +170,7 @@ describe('CsfObject', () => {
     '{ get enabled() { return globalThis.csfReadProbe(); } }',
     'globalThis.csfReadProbe.value',
     '() => globalThis.csfReadProbe()',
-  ])('reports an unresolved value without executing %s', (expression) => {
+  ])('reads an unresolved value as undefined without executing %s', (expression) => {
     const probe = vi.fn();
     vi.stubGlobal('csfReadProbe', probe);
     const csf = parse(`export default { parameters: ${expression} };`);
@@ -151,12 +178,7 @@ describe('CsfObject', () => {
 
     expect(meta.getValue(['parameters'])).toBeUndefined();
     expect(probe).not.toHaveBeenCalled();
-    expect(csf.mutationDiagnostics).toContainEqual(
-      expect.objectContaining({
-        code: 'unsupported-value',
-        path: ['parameters'],
-      })
-    );
+    expect(csf.mutationDiagnostics).toEqual([]);
     expect(csf.changed).toBe(false);
   });
 
@@ -619,7 +641,6 @@ describe('CsfObject', () => {
     expect(story.remove(['parameters', 'first']).ok).toBe(false);
     expect(story.set(['args', 'label'], 'Label').ok).toBe(true);
     expect(csf.mutationDiagnostics).toEqual([
-      expect.objectContaining({ code: 'duplicate-field', path: ['parameters'] }),
       expect.objectContaining({ code: 'duplicate-field', path: ['parameters', 'first'] }),
     ]);
   });

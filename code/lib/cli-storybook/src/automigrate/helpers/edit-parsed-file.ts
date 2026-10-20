@@ -1,7 +1,15 @@
 import { HandledError } from 'storybook/internal/common';
-import type { ConfigFile } from 'storybook/internal/csf-tools';
+import type {
+  ConfigFile,
+  CsfMutationDiagnostic,
+  CsfObject,
+  ESTree as E,
+} from 'storybook/internal/csf-tools';
 
 type ParsedFile = { mutationDiagnostics: ConfigFile['mutationDiagnostics'] };
+
+const describeDiagnostic = ({ message, loc }: CsfMutationDiagnostic) =>
+  loc ? `line ${loc.start.line}: ${message}` : message;
 
 /** Run `edit` on a parsed file, and throw the mutation diagnostics it left, with their lines. */
 export const editParsedFile = async <File extends ParsedFile>(
@@ -12,9 +20,21 @@ export const editParsedFile = async <File extends ParsedFile>(
   await edit(file);
   const diagnostics = file.mutationDiagnostics.slice(diagnosticsBefore);
   if (diagnostics.length > 0) {
-    const messages = diagnostics.map(({ message, loc }) =>
-      loc ? `line ${loc.start.line}: ${message}` : message
-    );
-    throw new HandledError([...new Set(messages)].join('; '));
+    throw new HandledError([...new Set(diagnostics.map(describeDiagnostic))].join('; '));
   }
+};
+
+/**
+ * Read the expression at a path that decides an edit, or `undefined` when it is missing. A field
+ * that cannot be read statically throws like a refused edit, so the file is reported, not skipped.
+ */
+export const readForEdit = (
+  object: CsfObject,
+  path: readonly string[]
+): E.Expression | undefined => {
+  const found = object.inspect(path);
+  if (found.kind === 'unreadable') {
+    throw new HandledError(describeDiagnostic(found.diagnostic));
+  }
+  return found.kind === 'value' ? found.node : undefined;
 };

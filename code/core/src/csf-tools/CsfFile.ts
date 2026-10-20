@@ -389,7 +389,7 @@ export class CsfFile {
   }
 
   /**
-   * Read diagnostics from object discovery, reads, and mutations. Check them before writing
+   * Read diagnostics from object discovery and mutations. Check them before writing
    * because a file can contain both successful edits and unsupported targets.
    *
    * @example

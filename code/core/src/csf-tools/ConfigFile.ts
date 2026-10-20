@@ -230,8 +230,8 @@ export class ConfigFile implements CsfObject {
   }
 
   /**
-   * Read diagnostics from unsupported discovery, reads, or mutations. `writeConfig` refuses to
-   * write a config with diagnostics, even if another edit succeeded.
+   * Read diagnostics from unsupported discovery or mutations. `writeConfig` refuses to write a
+   * config with diagnostics, even if another edit succeeded.
    *
    * @example
    * ```ts
@@ -248,7 +248,7 @@ export class ConfigFile implements CsfObject {
   /**
    * Read a detached copy of the expression at a property path. Missing fields return `undefined`;
    * so does a path through a value that is not an object literal, or one a spread, computed key, or
-   * duplicate field leaves unproven, which also adds a mutation diagnostic.
+   * duplicate field leaves unproven. `inspect` tells these apart.
    *
    * @example
    * ```ts
@@ -258,14 +258,13 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   get(path: readonly string[]): CsfExpression | undefined {
-    const editor = this._objectEditor('read');
-    return editor.ok ? editor.object.get(path) : undefined;
+    const reader = this._reader();
+    return reader.ok ? reader.object.get(path) : undefined;
   }
 
   /**
    * Read the expression at a property path like `get`, telling a missing field from one that cannot
-   * be read statically, without adding a mutation diagnostic. Use it for reads that only inform;
-   * `get` and `getValue` record why a read failed, which stops `writeConfig`.
+   * be read statically, and why.
    *
    * @example
    * ```ts
@@ -273,24 +272,18 @@ export class ConfigFile implements CsfObject {
    * config.inspect(['tags']).kind; // 'value'
    * config.inspect(['missing']); // { kind: 'missing' }
    * config.inspect(['args', 'size']).kind; // 'unreadable'
-   * config.mutationDiagnostics; // []
    * ```
    */
   inspect(path: readonly string[]): CsfInspection {
-    const editor = createConfigObject(
-      this,
-      'read',
-      () => {},
-      () => {}
-    );
-    return editor.ok
-      ? editor.object.inspect(path)
-      : { kind: 'unreadable', diagnostic: { ...editor.diagnostic, path: [...path] } };
+    const reader = this._reader();
+    return reader.ok
+      ? reader.object.inspect(path)
+      : { kind: 'unreadable', diagnostic: { ...reader.diagnostic, path: [...path] } };
   }
 
   /**
-   * Read plain values without executing code. Missing fields return `undefined`; unresolved
-   * expressions also return `undefined` and add a mutation diagnostic.
+   * Read plain values without executing code, following local constants. Missing fields and
+   * expressions it cannot evaluate, such as calls and functions, return `undefined`.
    *
    * @example
    * ```ts
@@ -301,8 +294,8 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   getValue(path: readonly string[]): CsfValue {
-    const editor = this._objectEditor('read');
-    return editor.ok ? editor.object.getValue(path) : undefined;
+    const reader = this._reader();
+    return reader.ok ? reader.object.getValue(path) : undefined;
   }
 
   /**
@@ -425,27 +418,29 @@ export class ConfigFile implements CsfObject {
   }
 
   _mutate(operation: (object: CsfObjectEditor) => CsfMutationResult): CsfMutationResult {
-    const editor = this._objectEditor('mutate');
-    if (editor.ok === true) {
-      return operation(editor.object);
-    }
-    this._editor._refuse();
-    return { ok: false, changed: false, diagnostic: editor.diagnostic };
-  }
-
-  _objectEditor(mode: 'read' | 'mutate') {
     const editor = createConfigObject(
       this,
-      mode,
+      'mutate',
       (diagnostic) => this._mutationDiagnostics.push(diagnostic),
       () => {
         this._changed = true;
       }
     );
-    if (editor.ok === false) {
-      this._mutationDiagnostics.push(editor.diagnostic);
+    if (editor.ok === true) {
+      return operation(editor.object);
     }
-    return editor;
+    this._mutationDiagnostics.push(editor.diagnostic);
+    this._editor._refuse();
+    return { ok: false, changed: false, diagnostic: editor.diagnostic };
+  }
+
+  _reader() {
+    return createConfigObject(
+      this,
+      'read',
+      () => {},
+      () => {}
+    );
   }
 
   _editor: SourceEditor;

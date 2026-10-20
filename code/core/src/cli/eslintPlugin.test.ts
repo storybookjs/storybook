@@ -283,6 +283,19 @@ describe('configureEslintPlugin', () => {
         };"
       `);
     });
+
+    it('leaves an extends it cannot read statically unchanged', async () => {
+      vi.mocked(readFile).mockResolvedValue('module.exports = { extends: getExtends() };');
+
+      await expect(
+        configureEslintPlugin({
+          eslintConfigFile: '.eslintrc.js',
+          packageManager: { getAllDependencies: vi.fn() } as any,
+          isFlatConfig: false,
+        })
+      ).rejects.toThrow('Cannot read the extends of .eslintrc.js statically');
+      expect(vi.mocked(writeFile)).not.toHaveBeenCalled();
+    });
   });
 
   describe('flat config', () => {

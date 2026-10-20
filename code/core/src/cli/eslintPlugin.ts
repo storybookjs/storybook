@@ -426,7 +426,11 @@ export async function configureEslintPlugin({
         await writeFile(eslintConfigFile, output);
       } else {
         const eslint = await readConfig(eslintConfigFile);
-        const existingExtends = normalizeExtends(eslint.getValue(['extends'])).filter(Boolean);
+        const extendsValue = eslint.getValue(['extends']);
+        if (extendsValue === undefined && eslint.inspect(['extends']).kind !== 'missing') {
+          throw new Error(`Cannot read the extends of ${eslintConfigFile} statically`);
+        }
+        const existingExtends = normalizeExtends(extendsValue).filter(Boolean);
 
         if (existingExtends.includes('plugin:storybook/recommended')) {
           return;

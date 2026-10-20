@@ -1426,7 +1426,7 @@ If your custom migration tooling imports `ConfigFile` from `storybook/internal/c
 | `findNamedImportMethodCalls`         | `callArguments`          |
 | `FindNamedImportMethodCallsOptions`  | `CallArgumentsOptions`   |
 
-`getValue` reads static values without executing source code. When it cannot resolve a value, it returns `undefined` and adds a diagnostic. Mutation methods return a result that reports whether the edit succeeded and changed the file. `callArguments` returns `CsfObject` editors instead of Babel call expressions, so apply the same `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, and `group` methods you use for story and config objects.
+`getValue` reads static values without executing source code, following any local constant. When it cannot resolve a value, it returns `undefined`; reads add no diagnostics, so they never stop a later write. Use `inspect` to tell a missing field from one that cannot be read statically. Mutation methods return a result that reports whether the edit succeeded and changed the file. `callArguments` returns `CsfObject` editors instead of Babel call expressions, so apply the same `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, and `group` methods you use for story and config objects.
 
 Before writing a transformed file, check `changed` and `mutationDiagnostics`. `writeConfig` also rejects files with mutation diagnostics to prevent partial edits.
 

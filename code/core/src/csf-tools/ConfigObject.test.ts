@@ -153,11 +153,17 @@ describe('ConfigFile mutations', () => {
     'import { tags } from "./shared"; export default { tags };',
     'let tags = []; tags = other; export default { tags };',
     'const tags = [tags]; export default { tags };',
-    'const undefined = "shadowed"; use(undefined); export default { value: undefined };',
   ])('does not guess values from %s', (source) => {
     const config = loadConfig(source).parse();
-    expect(config.getValue([source.includes('shadowed') ? 'value' : 'tags'])).toBeUndefined();
-    expect(config.mutationDiagnostics.length).toBeGreaterThan(0);
+    expect(config.getValue(['tags'])).toBeUndefined();
+    expect(config.mutationDiagnostics).toEqual([]);
+  });
+
+  it('reads a local constant named undefined as its value', () => {
+    const config = loadConfig(
+      'const undefined = "shadowed"; use(undefined); export default { value: undefined };'
+    ).parse();
+    expect(config.getValue(['value'])).toBe('shadowed');
   });
 
   it.each([

@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- uses posix.normalize
 import { posix } from 'node:path';
 
 /**

@@ -1,4 +1,4 @@
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 
 import { findStorybookPackageRoot, versions } from 'storybook/internal/common';
 

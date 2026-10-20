@@ -87,6 +87,7 @@
     "@types/node": "^22.19.1",
     "empathic": "^2.0.0",
     "memfs": "^4.11.1",
+    "pathe": "^2.0.3",
     "rimraf": "^6.0.1",
     "typescript": "^6.0.3",
     "zone.js": "^0.16.2"

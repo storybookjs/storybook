@@ -1,4 +1,4 @@
-import { dirname, isAbsolute, resolve } from 'node:path';
+import { dirname, isAbsolute, resolve } from 'pathe';
 
 import type { PackageManagerName } from 'storybook/internal/common';
 import { JsPackageManagerFactory, getStorybookInfo, warnOnYarn1 } from 'storybook/internal/common';

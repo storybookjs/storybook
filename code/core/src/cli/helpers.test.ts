@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { Feature, SupportedLanguage, SupportedRenderer } from 'storybook/internal/types';
 
+// eslint-disable-next-line no-restricted-imports -- builds expected native paths with path.sep
 import { sep } from 'path';
 
 import { IS_WINDOWS } from '../../../vitest.helpers.ts';

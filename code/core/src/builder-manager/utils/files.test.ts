@@ -26,7 +26,7 @@ it('sanitizePath', () => {
 
   expect(location).toEqual(
     isWindows
-      ? 'C:\\Users\\username\\Projects\\projectname\\storybook\\node_modules\\@storybook\\addon-x+y\\dist\\manager.js'
+      ? 'C:/Users/username/Projects/projectname/storybook/node_modules/@storybook/addon-x+y/dist/manager.js'
       : '/Users/username/Projects/projectname/storybook/node_modules/@storybook/addon-x+y/dist/manager.js'
   );
   expect(url).toMatchInlineSnapshot(

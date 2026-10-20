@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- expects findConfigFile's node:path joins
 import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';

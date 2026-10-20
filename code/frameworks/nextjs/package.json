@@ -136,6 +136,7 @@
     "@types/probe-image-size": "^7.2.5",
     "@types/react-refresh": "^0",
     "next": "^15.2.3",
+    "pathe": "^2.0.3",
     "typescript": "^6.0.3",
     "webpack": "^5.65.0"
   },

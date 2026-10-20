@@ -2,7 +2,7 @@ import type { WriteStream } from 'node:fs';
 import { createWriteStream, mkdirSync } from 'node:fs';
 import { copyFile, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { type MergeExclusive } from 'type-fest';
 import uniqueString from 'unique-string';

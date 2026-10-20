@@ -1,8 +1,7 @@
 import { findFilesUp } from 'storybook/internal/common';
 
 import { readFileSync } from 'node:fs';
-// eslint-disable-next-line no-restricted-imports -- manifest paths are asserted beside loadPreviewOrConfigFile's native preview path
-import { dirname, resolve } from 'node:path';
+import { dirname, resolve } from 'pathe';
 
 import type { WebComponentsFrameworkOptions } from '../../../types.ts';
 

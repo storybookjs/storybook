@@ -1,5 +1,5 @@
 import { promises as fs } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 import { stripVTControlCharacters } from 'node:util';
 
 import type { LogLevel } from './logger.ts';

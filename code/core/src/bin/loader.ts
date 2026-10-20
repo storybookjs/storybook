@@ -4,7 +4,7 @@
  * cause the dist to get huge.
  */
 import { readFileSync, readdirSync } from 'node:fs';
-import * as path from 'node:path';
+import * as path from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 import { deprecate } from 'storybook/internal/node-logger';

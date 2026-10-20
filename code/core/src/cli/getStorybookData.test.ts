@@ -1,4 +1,4 @@
-import { dirname, resolve } from 'node:path';
+import { dirname, resolve } from 'pathe';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -9,9 +9,9 @@ import { getStorybookData, getWorkingDir } from './getStorybookData.ts';
 
 describe('getWorkingDir', () => {
   it.each([
-    ['.', process.cwd()],
-    ['.storybook', process.cwd()],
-    ['./.storybook', process.cwd()],
+    ['.', resolve(process.cwd())],
+    ['.storybook', resolve(process.cwd())],
+    ['./.storybook', resolve(process.cwd())],
     ['packages/foo/.storybook', resolve(process.cwd(), 'packages/foo')],
     ['./apps/web/.storybook', resolve(process.cwd(), 'apps/web')],
   ])('resolves relative configDir %j to %j', (configDir, expected) => {

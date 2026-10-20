@@ -1,4 +1,4 @@
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 
 import { detectAgent } from '../../telemetry/detect-agent.ts';
 import { resolveStorybookConfigDir } from './config-dir.ts';

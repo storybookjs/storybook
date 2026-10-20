@@ -108,6 +108,7 @@
     "knip": "^6.38.0",
     "mock-require": "^3.0.3",
     "oxlint": "1.85.0",
+    "pathe": "^2.0.3",
     "prettier": "^3.7.1",
     "process": "^0.11.10",
     "react": "^18.2.0",

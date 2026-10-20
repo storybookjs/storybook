@@ -46,6 +46,7 @@
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.22.0",
     "@tmcp/transport-stdio": "^0.4.3",
+    "pathe": "^2.0.3",
     "react-docgen": "^8.0.2",
     "react-docgen-typescript": "^2.4.0",
     "srvx": "^0.8.16",

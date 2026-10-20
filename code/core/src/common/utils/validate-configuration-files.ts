@@ -1,4 +1,4 @@
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 
 import { once } from 'storybook/internal/node-logger';
 import { MainFileMissingError } from 'storybook/internal/server-errors';

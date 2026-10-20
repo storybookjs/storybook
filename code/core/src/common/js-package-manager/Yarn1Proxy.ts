@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 import process from 'node:process';
 
 import { logger, prompt } from 'storybook/internal/node-logger';

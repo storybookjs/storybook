@@ -1,8 +1,7 @@
 import type { Options } from 'storybook/internal/types';
 
 import { existsSync, readFileSync } from 'node:fs';
-// eslint-disable-next-line no-restricted-imports -- expects loadPreviewOrConfigFile's native preview path
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

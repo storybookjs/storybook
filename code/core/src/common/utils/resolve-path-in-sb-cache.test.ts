@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- expects resolvePathInStorybookCache's node:path joins
 import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';

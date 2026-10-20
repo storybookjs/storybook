@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 
 import { prompt } from 'storybook/internal/node-logger';
 import { MissingAngularJsonError } from 'storybook/internal/server-errors';

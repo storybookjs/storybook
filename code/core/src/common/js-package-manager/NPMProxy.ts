@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
@@ -12,7 +11,7 @@ import * as find from 'empathic/find';
 import type { ResultPromise } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
-import { normalize } from 'pathe';
+import { dirname, join, normalize } from 'pathe';
 import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 

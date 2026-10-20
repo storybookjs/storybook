@@ -1,4 +1,4 @@
-import { isAbsolute, resolve } from 'node:path';
+import { isAbsolute, resolve } from 'pathe';
 
 /**
  * Resolve the config directory of the Storybook a CLI invocation targets: `--config-dir` when

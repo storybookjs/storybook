@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- memfs fixtures must match findConfigFile's node:path joins
 import { resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';

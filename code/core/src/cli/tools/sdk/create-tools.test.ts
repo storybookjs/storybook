@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- expects create-tools' node:path resolved cwd values
 import { resolve } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

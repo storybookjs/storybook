@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- compares with the module resolver's native results
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

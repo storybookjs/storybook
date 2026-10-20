@@ -30,6 +30,7 @@
     "validate:marketplace": "node ./scripts/validate-marketplace.ts"
   },
   "devDependencies": {
+    "pathe": "^2.0.3",
     "tinyexec": "^1.0.2"
   }
 }

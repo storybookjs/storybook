@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- splits __dirname with path.sep
 import { join, relative, resolve, sep } from 'node:path';
 
 import * as find from 'empathic/find';

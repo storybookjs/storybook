@@ -1,4 +1,4 @@
-import { basename } from 'node:path';
+import { basename } from 'pathe';
 
 import { getRefs } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';

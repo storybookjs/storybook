@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- splits paths on path.sep
 import { posix, sep } from 'node:path';
 
 // eslint-disable-next-line depend/ban-dependencies

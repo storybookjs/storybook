@@ -1,6 +1,6 @@
 import * as fs from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import * as v from 'valibot';
 

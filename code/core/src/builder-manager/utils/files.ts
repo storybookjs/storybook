@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, join, normalize, relative } from 'node:path';
+import { dirname, join, normalize, relative } from 'pathe';
 
 import type { OutputFile } from 'esbuild';
 // eslint-disable-next-line depend/ban-dependencies

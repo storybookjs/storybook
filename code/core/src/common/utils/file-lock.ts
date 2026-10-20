@@ -11,7 +11,7 @@ import { logger } from 'storybook/internal/node-logger';
 import { randomUUID } from 'node:crypto';
 import { readFileSync, rmSync } from 'node:fs';
 import { mkdir, open, readFile, rm, stat, utimes } from 'node:fs/promises';
-import { dirname } from 'node:path';
+import { dirname } from 'pathe';
 
 /** `token` identifies one acquisition, so a holder only ever removes the lock it still owns. */
 interface LockPayload {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { loadCsf, printCsf } from './CsfFile.ts';
 import { parseExpression } from './estree/ast.ts';
+import { appendStatement } from './estree/editor.ts';
 
 const parse = (source: string) =>
   loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();
@@ -577,5 +578,45 @@ Primary.args = {};
         expect.objectContaining({ code: 'unsupported-initializer', path: ['args'] })
       );
     });
+  });
+});
+
+describe('CsfObject discovery per parse', () => {
+  it('finds the objects of each parse, also after a rollback puts one back', () => {
+    const csf = parse('export default {};\nexport const A = {};\n');
+    const [a] = csf.objects({ meta: false });
+    appendStatement(csf.editor, 'export const B = {};');
+    csf.editor.commit();
+    const targets = () => csf.objects({ meta: false }).map(({ target }) => target);
+
+    expect(targets()).toMatchObject([{ exportName: 'A' }, { exportName: 'B' }]);
+    csf.transaction(() => {
+      appendStatement(csf.editor, 'export const C = {};');
+      csf.editor.commit();
+      expect(targets()).toHaveLength(3);
+      return false;
+    });
+    expect(targets()).toMatchObject([{ exportName: 'A' }, { exportName: 'B' }]);
+    expect(a.set(['args', 'b'], 1)).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(
+      'export default {};\nexport const A = { args: { b: 1 } };\nexport const B = {};\n'
+    );
+  });
+
+  it('reports what discovery found on every call, located in the code as edited', () => {
+    const source = 'export default {};\nexport const A = {};\nexport const B = 1;\n';
+    const csf = parse(source);
+    const [a] = csf.objects({ meta: false });
+    a.set(['play'], parseExpression('() => {\n  x();\n}'));
+    a.set(['args', 'b'], parseExpression('[\n  1,\n]'));
+    csf.objects({ meta: false });
+
+    const committed = parse(printCsf(csf).code);
+    committed.objects({ meta: false });
+
+    const [first, second] = csf.mutationDiagnostics;
+    expect(first).toMatchObject({ code: 'unsupported-initializer', loc: { start: { line: 3 } } });
+    expect(second).toEqual(committed.mutationDiagnostics[0]);
+    expect(second.loc?.start.line).toBe(12);
   });
 });

@@ -28,8 +28,9 @@ import {
   type Property,
   isFunction,
   isIdentifier,
+  type ParsedModule,
+  type SourceLocation,
   isStringLiteral,
-  locationOf,
   outerSpan,
   staticKey,
   unwrapExpression,
@@ -38,6 +39,7 @@ import {
   addKeys,
   addedKeys,
   insertStatementAfter,
+  locationIn,
   printKey,
   printMemberAccess,
   printMembers,
@@ -68,7 +70,14 @@ type Assignment = {
 
 type Rejection = { code: CsfMutationDiagnosticCode; node: Node; path: string[]; message: string };
 
-const loc = (csf: CsfFile, node: Node) => ({ loc: locationOf(csf._code, node.start, node.end) });
+// The node each diagnostic location was read from, so a repeated diagnostic is located again.
+const located = new WeakMap<SourceLocation, Node>();
+
+const loc = (csf: CsfFile, node: Node) => {
+  const at = locationIn(csf.editor, node);
+  located.set(at, node);
+  return { loc: at };
+};
 
 const storyTarget = ({ exportName, localName }: StoryBinding): CsfObjectTarget => ({
   kind: 'story',
@@ -595,37 +604,63 @@ const discoverStories = (
     return [{ target: storyTarget(binding), root: storyRoot(csf, binding, object, assignments) }];
   });
 
-const discover = (
-  csf: CsfFile,
-  options: CsfObjectOptions,
-  report: ReportDiagnostic
-): Discovered[] => {
+// What discovery found in a parse: the objects by their targets, and the diagnostics it reported.
+type Discovery = {
+  objects: Discovered[];
+  roots: Map<string, ObjectRoot>;
+  diagnostics: CsfMutationDiagnostic[];
+};
+
+// Discovery reads only the parse and the index derived from it, so it is kept per parse. A
+// commit makes a new parse and a rollback puts back the old one, whose discovery still holds.
+const discoveries = new WeakMap<ParsedModule, Map<string, Discovery>>();
+
+const discover = (csf: CsfFile, options: CsfObjectOptions): Discovery => {
   csf._assertIndexed();
+  const module = csf.editor._module;
+  const byOptions = discoveries.get(module) ?? new Map<string, Discovery>();
+  discoveries.set(module, byOptions);
+  const key = `${options.meta ?? true}:${options.stories ?? true}`;
+  const cached = byOptions.get(key);
+  if (cached) {
+    return cached;
+  }
+  const diagnostics: CsfMutationDiagnostic[] = [];
+  const report = (diagnostic: CsfMutationDiagnostic) => diagnostics.push(diagnostic);
   const includeStories = options.stories ?? true;
   const bindings = includeStories ? storyBindings(csf, report) : [];
-  return [
+  const objects = [
     ...((options.meta ?? true) ? discoverMeta(csf, report) : []),
     ...(includeStories ? discoverStories(csf, bindings, report) : []),
   ];
+  const roots = new Map(objects.map(({ target, root }) => [JSON.stringify(target), root]));
+  const discovery = { objects, roots, diagnostics };
+  byOptions.set(key, discovery);
+  return discovery;
 };
 
-const sameTarget = (a: CsfObjectTarget, b: CsfObjectTarget) =>
-  JSON.stringify(a) === JSON.stringify(b);
+// A diagnostic reported again is located in the code as edited now.
+const relocated = (csf: CsfFile, diagnostic: CsfMutationDiagnostic): CsfMutationDiagnostic => {
+  const node = diagnostic.loc && located.get(diagnostic.loc);
+  return node ? { ...diagnostic, ...loc(csf, node) } : diagnostic;
+};
 
 export const discoverCsfObjects = (
   csf: CsfFile,
   options: CsfObjectOptions,
   report: ReportDiagnostic,
   markChanged: MarkChanged
-): readonly CsfObject[] =>
-  discover(csf, options, report).map(({ target }) => {
+): readonly CsfObject[] => {
+  const { objects, diagnostics } = discover(csf, options);
+  diagnostics.forEach((diagnostic) => report(relocated(csf, diagnostic)));
+  return objects.map(({ target }) => {
+    const key = JSON.stringify(target);
     const host: CsfObjectHost = {
       editor: csf.editor,
       index: { reads: (path) => indexedPath(target, path), callees: INDEXED_CALLEES },
-      root: () =>
-        // A commit parses the file again, so the object is found again by its target.
-        discover(csf, options, () => {}).find((candidate) => sameTarget(candidate.target, target))
-          ?.root,
+      // A commit parses the file again, so the object is found again by its target.
+      root: () => discover(csf, options).roots.get(key),
     };
     return createCsfObject(target, host, report, markChanged);
   });
+};

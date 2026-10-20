@@ -1,5 +1,11 @@
 import type { ESTree as E, ESTreeNode as Node, ImportBinding } from 'storybook/internal/csf-tools';
-import { oneLineTextOf, unwrapExpression, walk } from 'storybook/internal/csf-tools';
+import {
+  oneLineTextOf,
+  reindent,
+  textOf,
+  unwrapExpression,
+  walk,
+} from 'storybook/internal/csf-tools';
 
 import { FAILED, evaluateArgValue, isFunctionNode, primitiveLiteralValue } from './arg-values.ts';
 import type { AliasValue, HtmlTemplate, TemplateScope } from './template-scope.ts';
@@ -8,6 +14,14 @@ import {
   argReferenceForExpression,
   templateFromExpression,
 } from './template-scope.ts';
+
+// A handler runs inside the snippet's `<script>`, so it keeps its lines and comments, re-indented
+// from the story file to the snippet.
+export const handlerText = (node: Node): string => {
+  const code = textOf(node);
+  const closingIndent = /^[ \t]*/.exec(code.slice(code.lastIndexOf('\n') + 1))![0];
+  return reindent(code, closingIndent, '    ');
+};
 
 export type HoleValue =
   | { kind: 'empty'; arg?: string }
@@ -49,7 +63,11 @@ export const resolveHoleValue = (expression: E.Expression, context: HoleContext)
     return { kind: 'value', value: literalValue(unwrapped) };
   }
   if (isFunctionNode(unwrapped)) {
-    return { handler: oneLineTextOf(expression), kind: 'function' };
+    return {
+      handler: handlerText(expression),
+      kind: 'function',
+      source: oneLineTextOf(expression),
+    };
   }
   const nested = templateFromExpression(unwrapped, context.bindings, context.scope);
   if (nested) {
@@ -123,7 +141,7 @@ const resolveArg = (arg: string, node: Node | undefined): HoleValue => {
   const value = evaluateArgValue(node);
   switch (value.kind) {
     case 'function':
-      return { handler: oneLineTextOf(node), kind: 'function', arg };
+      return { handler: handlerText(node), kind: 'function', arg, source: oneLineTextOf(node) };
     case 'unset':
       return { kind: 'value', arg, value: undefined };
     case 'unresolved':

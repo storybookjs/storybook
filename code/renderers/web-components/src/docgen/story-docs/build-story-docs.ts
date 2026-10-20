@@ -8,12 +8,10 @@ import type {
 } from 'storybook/internal/csf-tools';
 import {
   authoredSource,
-  textOf,
   createStoryArgsResolver,
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
   noSnippetWarning,
-  reindent,
   resolveEffectiveRender,
   oneLineTextOf,
   unwrapExpression,
@@ -33,6 +31,7 @@ import { evaluateArgValue, isFunctionNode } from './arg-values.ts';
 import { classifyArg, type ArgBinding } from './classify-args.ts';
 import type { ElementSnippet } from './print-element.ts';
 import { printElementSnippet } from './print-element.ts';
+import { handlerText } from './template-holes.ts';
 import { printHtmlTemplate } from './template-print.ts';
 import { resolveHtmlTemplate } from './template-scope.ts';
 
@@ -436,16 +435,8 @@ const hasSnippetContent = (snippet: ElementSnippet): boolean =>
   snippet.slots.length > 0 ||
   snippet.styleRules.length > 0;
 
-// The handler runs inside the snippet's `<script>`, so it keeps its lines and comments, re-indented
-// from the story file to the snippet.
-const listenerHandler = (node: Node): string => {
-  if (!isFunctionNode(unwrapExpression(node))) {
-    return '() => {}';
-  }
-  const code = textOf(node);
-  const closingIndent = /^[ \t]*/.exec(code.slice(code.lastIndexOf('\n') + 1))![0];
-  return reindent(code, closingIndent, '    ');
-};
+const listenerHandler = (node: Node): string =>
+  isFunctionNode(unwrapExpression(node)) ? handlerText(node) : '() => {}';
 
 const incompleteList = (names: string[], suffix: string): string | undefined =>
   names.length === 0

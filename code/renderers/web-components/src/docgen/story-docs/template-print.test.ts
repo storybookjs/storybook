@@ -132,6 +132,41 @@ describe('html template story snippets', () => {
       },
     },
     {
+      name: 'inline template listener handler with a line comment',
+      source: `
+        import { html } from 'lit';
+        export default { component: 'template-element' };
+        export const Primary = {
+          render: () => html\`<template-element @shape-change=\${(event) => {
+            // stop the browser action
+            event.preventDefault();
+          }}></template-element>\`,
+        };
+      `,
+      expected: {
+        listeners: [
+          {
+            event: 'shape-change',
+            handler:
+              '(event) => {\n      // stop the browser action\n      event.preventDefault();\n    }',
+          },
+        ],
+        properties: [],
+        referenced: [],
+        snippet: `<template-element></template-element>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', (event) => {
+      // stop the browser action
+      event.preventDefault();
+    });
+  }
+</script>`,
+        unresolved: [],
+      },
+    },
+    {
       name: 'unresolved template listener handler',
       source: `
         import { html } from 'lit';

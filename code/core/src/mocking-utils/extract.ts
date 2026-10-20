@@ -9,7 +9,11 @@ import { walk } from 'estree-walker';
 import { basename, normalize } from 'pathe';
 
 import { parseModule } from '../csf-tools/estree/ast.ts';
-import { SourceEditor } from '../csf-tools/estree/editor.ts';
+import {
+  type GeneratedMap,
+  type InputSourceMap,
+  SourceEditor,
+} from '../csf-tools/estree/editor.ts';
 import { resolveMock } from './resolve.ts';
 
 const DEFAULT_MODULE_DIRECTORIES = ['/node_modules/'];
@@ -42,8 +46,32 @@ const isStringLiteral = (node: any): boolean =>
 const isStaticImport = (node: any): boolean =>
   node?.type === 'ImportExpression' && isStringLiteral(node.source);
 
-/** Utility to rewrite sb.mock(import('...'), ...) to sb.mock('...', ...) */
-export function rewriteSbMockImportCalls(code: string, fileName: string) {
+/** A source map as a plain object, which loaders such as webpack's and babel-loader accept. */
+export interface MockRewriteSourceMap {
+  version: number;
+  file: string;
+  sources: string[];
+  /** An entry is `null` when the input map carried no content for its source. */
+  sourcesContent: string[];
+  names: string[];
+  mappings: string;
+  sourceRoot?: string;
+}
+
+export interface RewriteSbMockImportCallsOptions {
+  /** Map of `code` to its original, when it came from an earlier transform. */
+  inputSourceMap?: InputSourceMap;
+}
+
+/**
+ * Rewrite `sb.mock(import('...'), ...)` to `sb.mock('...', ...)`. The map goes from the original
+ * of `code`, through `inputSourceMap` when given, to the output, and is `null` when nothing changed.
+ */
+export function rewriteSbMockImportCalls(
+  code: string,
+  fileName: string,
+  options: RewriteSbMockImportCallsOptions = {}
+): { code: string; map: MockRewriteSourceMap | null } {
   const editor = new SourceEditor(code, fileName);
 
   walk(editor.program as any, {
@@ -67,11 +95,18 @@ export function rewriteSbMockImportCalls(code: string, fileName: string) {
   if (!editor.pending) {
     return { code, map: null };
   }
-  // Spread into a plain object: babel-loader, next in the webpack chain, rejects a string map.
-  const map = { ...editor.generateMap() };
+  let map: GeneratedMap;
+  try {
+    map = editor.generateMap({ inputSourceMap: options.inputSourceMap });
+  } catch (error) {
+    // `sb.mock` needs the rewrite, so an unreadable input map only costs the mapping through it.
+    logger.debug(`Could not compose the source map of ${fileName}: ${error}`);
+    map = editor.generateMap();
+  }
   return {
     code: editor.toString(),
-    map: { ...map, sourcesContent: map.sourcesContent as string[] },
+    // A plain object: babel-loader, next in the webpack chain, rejects a string map.
+    map: { ...map, file: fileName, sourcesContent: map.sourcesContent as string[] },
   };
 }
 

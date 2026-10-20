@@ -818,10 +818,61 @@ const inline = (
   return joined;
 };
 
-export const appendToList = (editor: SourceEditor, list: List, texts: string[]) => {
-  editor.assertCurrent(list);
+// What the appends of a batch of edits wrote to a list: where later items go, one per line at
+// `indent` or on the list's line without one, the list's trailing comma, whether a line break
+// follows, and what has to come before the next item.
+interface Appended {
+  at: number;
+  indent: string | undefined;
+  trailingComma: string;
+  lineBreakFollows: boolean;
+  separator: string;
+}
+
+const appendedTo = new WeakMap<SourceEdits, Map<string, Appended>>();
+
+// Items one per line at `indent`, each after a line break.
+const itemLines = (
+  texts: string[],
+  indent: string,
+  trailingComma: string,
+  lineBreakFollows: boolean
+) =>
+  texts
+    .map((text, index) => {
+      const isLast = index === texts.length - 1;
+      return `\n${indent}${withComma(reindent(text, '', indent), isLast ? trailingComma : ',', !isLast || lineBreakFollows)}`;
+    })
+    .join('');
+
+// A line comment ending the last item puts the comma for the next one on the next line.
+const appended = (
+  layout: Omit<Appended, 'separator'>,
+  written: string,
+  lastItem: string
+): Appended => ({
+  ...layout,
+  separator:
+    layout.trailingComma === ','
+      ? ''
+      : endsInLineComment(lastItem)
+        ? `${written.endsWith('\n') ? '' : '\n'}${layout.indent ?? ''},`
+        : ',',
+});
+
+const appendFirst = (editor: SourceEditor, list: List, texts: string[]): Appended => {
   const { code, edits } = editor;
   const { items, padding } = list;
+  const write = (layout: Omit<Appended, 'separator'>, text: string) => {
+    edits.appendLeft(layout.at, text);
+    return appended(layout, text, texts.at(-1)!);
+  };
+  // The text after the items goes to the right of the list's end, so later items go before it.
+  const close = (text: string) => {
+    if (text !== '') {
+      edits.appendRight(list.close, text);
+    }
+  };
   if (items.length === 0) {
     // Only comments can be inside an empty list, and the items go after them.
     const inner = code.slice(list.open, list.close);
@@ -838,18 +889,22 @@ export const appendToList = (editor: SourceEditor, list: List, texts: string[]) 
       if (list.close > end) {
         edits.remove(end, list.close);
       }
-      edits.appendLeft(
-        end,
-        `\n${texts.map((text) => `${indent}${withComma(reindent(text, '', indent), ',', true)}`).join('\n')}\n${outer}`
-      );
-    } else if (end > list.open) {
-      edits.appendLeft(end, ` ${texts.join(', ')}${end === list.close ? padding : ''}`);
-    } else if (list.close > list.open) {
-      edits.overwrite(list.open, list.close, `${padding}${texts.join(', ')}${padding}`);
-    } else {
-      edits.appendLeft(list.open, `${padding}${texts.join(', ')}${padding}`);
+      close(`\n${outer}`);
+      const layout = { at: end, indent, trailingComma: ',', lineBreakFollows: true };
+      return write(layout, itemLines(texts, indent, ',', true));
     }
-    return;
+    const inline = { indent: undefined, trailingComma: '', lineBreakFollows: false };
+    if (end > list.open) {
+      if (end === list.close) {
+        close(padding);
+      }
+      return write({ ...inline, at: end }, ` ${texts.join(', ')}`);
+    }
+    if (list.close > list.open) {
+      edits.remove(list.open, list.close);
+    }
+    close(padding);
+    return write({ ...inline, at: list.open }, `${padding}${texts.join(', ')}`);
   }
   const last = items.at(-1)!;
   const comma = separatorAfter(editor, last);
@@ -858,28 +913,53 @@ export const appendToList = (editor: SourceEditor, list: List, texts: string[]) 
   if (isMultiline(code, list)) {
     const indent = lineIndent(code, last.start);
     const at = itemEnd(editor, list, items.length - 1);
-    const block = texts
-      .map((text, index) => {
-        const isLast = index === texts.length - 1;
-        const separator = isLast ? trailingComma : ',';
-        const lineBreakFollows = !isLast || lineBreakAt(code, at);
-        return `${indent}${withComma(reindent(text, '', indent), separator, lineBreakFollows)}`;
-      })
-      .join('\n');
     if (comma === undefined) {
       edits.appendLeft(last.end, ',');
     }
-    edits.appendLeft(at, `\n${block}`);
-    return;
-  }
-  if (comma !== undefined) {
-    edits.appendLeft(
-      comma,
-      ` ${inline(editor, list, texts, trailingComma, lineBreakAt(code, comma))}`
+    const lineBreakFollows = lineBreakAt(code, at);
+    return write(
+      { at, indent, trailingComma, lineBreakFollows },
+      itemLines(texts, indent, trailingComma, lineBreakFollows)
     );
-  } else {
-    edits.appendLeft(last.end, `, ${inline(editor, list, texts, '', lineBreakAt(code, last.end))}`);
   }
+  const at = comma ?? last.end;
+  const lineBreakFollows = lineBreakAt(code, at);
+  const text = inline(editor, list, texts, trailingComma, lineBreakFollows);
+  return write(
+    { at, indent: undefined, trailingComma, lineBreakFollows },
+    comma === undefined ? `, ${text}` : ` ${text}`
+  );
+};
+
+const appendAfter = (editor: SourceEditor, list: List, previous: Appended, texts: string[]) => {
+  const { at, indent, trailingComma, lineBreakFollows, separator } = previous;
+  const text =
+    indent === undefined
+      ? ` ${inline(editor, list, texts, trailingComma, lineBreakFollows)}`
+      : itemLines(texts, indent, trailingComma, lineBreakFollows);
+  editor.edits.appendLeft(at, `${separator}${text}`);
+  return appended(previous, text, texts.at(-1)!);
+};
+
+/**
+ * Append items to a list, after the items earlier appends of the same batch of edits added to it.
+ * That writes what one append of all of them writes, except that a comma after an item ending in
+ * a line comment goes on the next line, and items stay on the line of a list an earlier append
+ * laid out so.
+ */
+export const appendToList = (editor: SourceEditor, list: List, texts: string[]) => {
+  editor.assertCurrent(list);
+  let lists = appendedTo.get(editor.edits);
+  if (!lists) {
+    lists = new Map();
+    appendedTo.set(editor.edits, lists);
+  }
+  const key = `${list.open}:${list.close}`;
+  const previous = lists.get(key);
+  lists.set(
+    key,
+    previous ? appendAfter(editor, list, previous, texts) : appendFirst(editor, list, texts)
+  );
 };
 
 export const prependToList = (editor: SourceEditor, list: List, texts: string[]) => {

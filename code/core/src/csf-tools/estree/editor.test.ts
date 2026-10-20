@@ -286,6 +286,54 @@ describe('lists', () => {
   });
 });
 
+describe('appendToList', () => {
+  const exported = (editor: SourceEditor) =>
+    (editor.program.body[0] as E.ExportDefaultDeclaration).declaration as
+      | E.ObjectExpression
+      | E.ArrayExpression;
+  const listOf = (editor: SourceEditor) => {
+    const node = exported(editor);
+    return node.type === 'ObjectExpression' ? objectList(editor, node) : arrayList(editor, node);
+  };
+  const append = (code: string, ...batches: string[][]) => {
+    const editor = new SourceEditor(code);
+    for (const texts of batches) {
+      appendToList(editor, listOf(editor), texts);
+    }
+    return editor.toString();
+  };
+
+  it.each([
+    "export default {\n  title: 'X',\n  component: Button // c\n};",
+    "export default {\n  title: 'X',\n  component: Button, // c\n};",
+    "export default {\n  title: 'X',\n  component: Button\n};",
+    "export default { title: 'X' };",
+    "export default { title: 'X', };",
+    "export default { title: 'X' /* c */ };",
+    'export default {};',
+    'export default { };',
+    'export default {\n};',
+    'export default { /* c */ };',
+    'export default {/* c */};',
+    'export default {\n  // c\n};',
+    'export default [];',
+    'export default [a, ,];',
+  ])('appends in two calls of one batch what one call appends, to %j', (code) => {
+    const batch = code.includes('[') ? [['x'], ['y']] : [['a: 1'], ['b: 2']];
+    const once = append(code, batch.flat());
+
+    expect(append(code, ...batch)).toBe(once);
+    expect(() => parseModule(once)).not.toThrow();
+  });
+
+  it('separates an item from an earlier one of the batch that ends in a line comment', () => {
+    const output = append("export default {\n  title: 'X'\n};", ['a: x // c\n'], ['b: 2']);
+
+    expect(output).toBe("export default {\n  title: 'X',\n  a: x // c\n  ,\n  b: 2\n};");
+    expect(() => parseModule(output)).not.toThrow();
+  });
+});
+
 describe('parenthesized array elements', () => {
   it('appends after a comma expression and removes a doubly parenthesized one whole', () => {
     const editor = new SourceEditor(`export default { addons: [(a, b)] };`);

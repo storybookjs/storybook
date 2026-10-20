@@ -17,4 +17,7 @@ export type WhatsNewData =
     }
   | {
       status: 'ERROR';
+    }
+  | {
+      status: 'DISABLED';
     };

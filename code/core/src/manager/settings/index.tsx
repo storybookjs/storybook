@@ -163,7 +163,9 @@ const SettingsPages: FC = () => {
 
   return (
     <Pages
-      enableWhatsNew={state.whatsNewData?.status === 'SUCCESS'}
+      enableWhatsNew={
+        state.whatsNewData?.status === 'SUCCESS' || state.whatsNewData?.status === 'DISABLED'
+      }
       enableShortcuts={state.ui.enableShortcuts}
       changeTab={changeTab}
       onClose={api.closeSettings}

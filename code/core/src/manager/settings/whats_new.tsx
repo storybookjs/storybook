@@ -172,11 +172,26 @@ const WhatsNewScreen: FC = () => {
   const { whatsNewData } = state;
   const [isLoaded, setLoaded] = useState(false);
   const [didHitMaxWaitTime, setDidHitMaxWaitTime] = useState(false);
+  const isDisabled = whatsNewData?.status === 'DISABLED';
 
   useEffect(() => {
+    // The wait time is for the post page, so it starts once the post has been fetched.
+    if (isDisabled) {
+      return;
+    }
     const timer = setTimeout(() => !isLoaded && setDidHitMaxWaitTime(true), MAX_WAIT_TIME);
     return () => clearTimeout(timer);
-  }, [isLoaded]);
+  }, [isLoaded, isDisabled]);
+
+  useEffect(() => {
+    if (isDisabled) {
+      api.loadWhatsNewPost();
+    }
+  }, [api, isDisabled]);
+
+  if (isDisabled) {
+    return <WhatsNewLoader />;
+  }
 
   if (whatsNewData?.status !== 'SUCCESS') {
     return null;

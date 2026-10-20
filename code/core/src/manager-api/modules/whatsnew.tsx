@@ -20,6 +20,8 @@ export type SubAPI = {
   isWhatsNewUnread(): boolean;
   whatsNewHasBeenRead(): void;
   toggleWhatsNewNotifications(): void;
+  /** Load the latest post when startup skipped it because notifications are disabled. */
+  loadWhatsNewPost(): Promise<void>;
 };
 
 const WHATS_NEW_NOTIFICATION_ID = 'whats-new';
@@ -55,6 +57,7 @@ export const init: ModuleFn = ({ fullAPI, store, provider }) => {
   const state: SubState = {
     whatsNewData: undefined,
   };
+  let pendingLoad: Promise<void> | undefined;
 
   function setWhatsNewState(newState: WhatsNewData) {
     store.setState({ whatsNewData: newState });
@@ -83,16 +86,34 @@ export const init: ModuleFn = ({ fullAPI, store, provider }) => {
         });
       }
     },
+    loadWhatsNewPost() {
+      if (state.whatsNewData?.status !== 'DISABLED') {
+        return Promise.resolve();
+      }
+      pendingLoad ??= getLatestWhatsNewPost(true)
+        .then(setWhatsNewState)
+        .finally(() => {
+          pendingLoad = undefined;
+        });
+      return pendingLoad;
+    },
   };
 
-  function getLatestWhatsNewPost(): Promise<WhatsNewData> {
-    provider.channel?.emit(REQUEST_WHATS_NEW_DATA);
+  function getLatestWhatsNewPost(force = false): Promise<WhatsNewData> {
+    provider.channel?.emit(REQUEST_WHATS_NEW_DATA, { force });
 
-    return new Promise((resolve) =>
-      provider.channel?.once(RESULT_WHATS_NEW_DATA, ({ data }: { data: WhatsNewData }) =>
-        resolve(data)
-      )
-    );
+    return new Promise((resolve) => {
+      // Results are broadcast to every connected manager, so a forced request must not settle on
+      // a 'DISABLED' result answering another manager's unforced request.
+      const onResult = ({ data }: { data: WhatsNewData }) => {
+        if (force && data.status === 'DISABLED') {
+          return;
+        }
+        provider.channel?.off(RESULT_WHATS_NEW_DATA, onResult);
+        resolve(data);
+      };
+      provider.channel?.on(RESULT_WHATS_NEW_DATA, onResult);
+    });
   }
 
   function setWhatsNewCache(cache: WhatsNewCache): void {

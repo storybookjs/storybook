@@ -31,7 +31,9 @@ export const AboutPage: FC = () => {
     <NotificationClearer api={api} notificationId="update">
       <AboutScreen
         onNavigateToWhatsNew={
-          state.whatsNewData?.status === 'SUCCESS' ? onNavigateToWhatsNew : undefined
+          state.whatsNewData?.status === 'SUCCESS' || state.whatsNewData?.status === 'DISABLED'
+            ? onNavigateToWhatsNew
+            : undefined
         }
       />
     </NotificationClearer>

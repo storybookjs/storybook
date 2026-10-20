@@ -12,11 +12,7 @@ Storybook for Web components & Vite is a [framework](../../contribute/framework.
 
 To install Storybook in an existing project, run this command in your project's root directory:
 
-<CodeSnippets
-  path="create-command.md"
-  variant="new-users"
-  copyEvent="CreateCommandCopy"
-/>
+<CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
 
 You can then get started [writing stories](../whats-a-story.mdx), [running tests](../../writing-tests/index.mdx) and [documenting your components](../../writing-docs/index.mdx). For more control over the installation process, refer to the [installation guide](../install.mdx).
 
@@ -25,9 +21,9 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
 <GetStartedVersions
   versions={[
     {
-      name: "Vite",
-      range: "≥ 5",
-      icon: "/images/logos/builders/vite.svg",
+      name: 'Vite',
+      range: '≥ 5',
+      icon: '/images/logos/builders/vite.svg',
     },
   ]}
 />
@@ -46,7 +42,7 @@ You will find the output in the configured `outputDir` (default is `storybook-st
 
 ## Configure
 
-Storybook for Web components with Vite needs no extra configuration. It reads your custom elements from your source code and turns their JSDoc comments into controls and documentation.
+Storybook for Web components with Vite needs no extra configuration. It reads your custom elements from your source code and turns their JSDoc comments into controls and documentation. This needs the [`docgenServer`](../../api/main-config/main-config-features.mdx) feature, which is on by default.
 
 ### Writing stories
 
@@ -63,6 +59,7 @@ Each arg key tells Storybook which part of the element to set. Keys for events, 
 | Attribute           | The attribute name                                    | `heading: 'Hello'`                           | `heading="Hello"`. `true` adds the attribute, `false` omits it. |
 | Property            | The property name                                     | `items: ['a', 'b']`                          | `element.items = ['a', 'b']`                                    |
 | Event               | `<name>-event`                                        | `'my-change-event': () => {}`                | A listener for the `my-change` event                            |
+| Method              | `<name>-method`                                       |                                              | Listed in the docs table only. Nothing is rendered.             |
 | Slot                | `<name>-slot`, or `default-slot` for the default slot | `'actions-slot': '<button>Confirm</button>'` | Child content with `slot="actions"`                             |
 | CSS part            | `<name>-part`                                         | `'panel-part': 'color: rebeccapurple;'`      | A `::part(panel)` rule                                          |
 | CSS state           | `<name>-state`                                        | `'active-state': 'opacity: 0.5;'`            | A `:state(active)` rule                                         |
@@ -82,7 +79,7 @@ A story file without `component` gets no automatic controls. The `Button`, `Head
 
 ### Code snippets
 
-Autodocs and the Code panel show HTML that Storybook generates from your story. For a story that uses args, the snippet is one element with its attributes and slot content, plus a `<style>` block when needed. For example, the `Args` story above becomes:
+Autodocs and the Code panel show HTML that Storybook generates from your story. For a story that uses args, the snippet is one element with its attributes and slot content, plus a `<style>` block when needed. For example, the `Basic` story above becomes:
 
 ```html
 <style>
@@ -90,7 +87,7 @@ Autodocs and the Code panel show HTML that Storybook generates from your story. 
     color: rebeccapurple;
   }
 </style>
-<lit-slots-and-css heading="Default render" style="--slot-panel-color: teal;">
+<lit-slots-and-css heading="Hello" style="--slot-panel-color: teal;">
   Body <b>text</b>
   <button slot="actions">Confirm</button>
 </lit-slots-and-css>
@@ -106,9 +103,9 @@ Some things cannot be shown as HTML, such as a Lit directive or a property that 
 
 A [Custom Elements Manifest](https://github.com/webcomponents/custom-elements-manifest) is optional. If your project already has one, you can tell Storybook where to find it. Storybook then reads the elements in the manifest from the manifest instead of from your source code:
 
-<CodeSnippets path="web-components-main-config-custom-elements-manifest.md" />
+<CodeSnippets path="web-components-vite-framework-options.md" />
 
-If you do not set this option, Storybook uses the `customElements` field in your `package.json`, if it exists.
+If you do not set this option, Storybook uses the `customElements` field in your `package.json`, if it exists. This option replaces the runtime `setCustomElementsManifest()` call, which is deprecated and will be removed in Storybook 12.
 
 If you generate the manifest with `@custom-elements-manifest/analyzer`, enable the plugin for your library, such as `--litelement` for Lit. Without it, the manifest does not include attributes that you declare with decorators.
 
@@ -121,7 +118,7 @@ If you register Stencil components with `defineCustomElements()` from the genera
 For Stencil 4.26 and later:
 
 ```ts title="stencil.config.ts"
-import type { Config } from "@stencil/core";
+import type { Config } from '@stencil/core';
 
 export const config: Config = {
   extras: {

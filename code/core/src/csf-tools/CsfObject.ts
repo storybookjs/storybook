@@ -503,7 +503,12 @@ class Editor implements CsfObjectEditor {
     if (!inspected.property) {
       return { ok: true, changed: false };
     }
-    const removal = lookupProperty(inspected.parent.properties, path.at(-1)!, 'remove');
+    const removal = lookupProperty(
+      inspected.parent.properties,
+      path.at(-1)!,
+      'remove',
+      this.editor
+    );
     if (!removal.ok) {
       return this.failure(removal.code, path, removal.node);
     }
@@ -542,7 +547,7 @@ class Editor implements CsfObjectEditor {
     if (!source.property) {
       return { ok: true, changed: false };
     }
-    const removal = lookupProperty(source.parent.properties, from.at(-1)!, 'remove');
+    const removal = lookupProperty(source.parent.properties, from.at(-1)!, 'remove', this.editor);
     if (!removal.ok) {
       return this.failure(removal.code, from, removal.node);
     }
@@ -776,7 +781,7 @@ class Editor implements CsfObjectEditor {
       if (value?.type !== 'ObjectExpression' || value.properties.length > 0) {
         return;
       }
-      if (!lookupProperty(ancestor.parent.properties, path[depth - 1], 'remove').ok) {
+      if (!lookupProperty(ancestor.parent.properties, path[depth - 1], 'remove', this.editor).ok) {
         return;
       }
       ancestor.parent.remove([ancestor.property]);
@@ -804,7 +809,8 @@ class Editor implements CsfObjectEditor {
       const lookup = lookupProperty(
         parent.properties,
         name,
-        index === path.length - 1 || access === 'set' ? access : 'read'
+        index === path.length - 1 || access === 'set' ? access : 'read',
+        this.editor
       );
       if (lookup.ok === false) {
         return lookup;
@@ -839,7 +845,7 @@ class Editor implements CsfObjectEditor {
     const { quote, indent } = this.editor;
     const invalidated = () => new Error('CsfObject mutation preflight was invalidated');
     for (const [index, name] of containers.entries()) {
-      const lookup = lookupProperty(parent.properties, name, 'set');
+      const lookup = lookupProperty(parent.properties, name, 'set', this.editor);
       if (lookup.ok === false) {
         throw invalidated();
       }

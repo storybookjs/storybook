@@ -20,16 +20,22 @@ type PropertyLookup =
 // a removal could reveal what an earlier member provides.
 export type Access = 'read' | 'set' | 'remove';
 
+// With an `editor`, a spread of a trusted local object literal known to lack `name` is skipped: it
+// can neither override the field nor provide it.
 export const lookupProperty = (
   properties: readonly E.ObjectPropertyKind[],
   name: string,
-  access: Access = 'read'
+  access: Access = 'read',
+  editor?: SourceEditor
 ): PropertyLookup => {
   const matches: Property[] = [];
   let unknown: { code: CsfMutationDiagnosticCode; node: Node } | undefined;
   let unknownAfterMatch: { code: CsfMutationDiagnosticCode; node: Node } | undefined;
 
   for (const member of properties) {
+    if (member.type === 'SpreadElement' && editor && lacks(editor, member, name)) {
+      continue;
+    }
     const key = member.type === 'SpreadElement' ? undefined : staticKey(member);
     if (key === undefined) {
       unknown = {
@@ -91,21 +97,42 @@ const writes = (editor: SourceEditor, user: Node, target: Node) =>
   user.type === 'RestElement' ||
   (user.type === 'Property' && editor.parentOf(user)?.type === 'ObjectPattern');
 
-// Code that only reads a binding cannot change which members its literal has. A member read, even
-// one that is called, is a read; the binding itself escaping, such as into `Object.assign`, is not.
-const onlyRead = (editor: SourceEditor, binding: Binding) =>
+const callCannotBindThis = (literal: E.ObjectExpression, key: string | undefined) => {
+  const lookup = key === undefined ? undefined : lookupProperty(literal.properties, key);
+  return (
+    lookup?.ok === true &&
+    lookup.property !== undefined &&
+    !lookup.property.method &&
+    unwrapExpression(lookup.property.value).type === 'ArrowFunctionExpression'
+  );
+};
+
+// Code that only reads a binding cannot change which members its literal has. A member read is a
+// read, and so is a call of a member the literal holds as an arrow function: any other call can run
+// with `this` bound to the literal, as can spreading it into an array or arguments, which runs its
+// iterator. The binding itself escaping, such as into `Object.assign`, is not a read either.
+const onlyRead = (editor: SourceEditor, binding: Binding, literal: E.ObjectExpression) =>
   binding.references.every((reference) => {
     if (reference.type !== 'Identifier') {
       return reference.type === 'ExportNamedDeclaration';
     }
     let read: Node = reference;
-    let member = false;
+    let members = 0;
+    let key: string | undefined;
     for (let next = editor.parentOf(read); next; next = editor.parentOf(read)) {
       if (
         (next.type === 'MemberExpression' && next.object === read) ||
         (next.type === 'TSQualifiedName' && next.left === read)
       ) {
-        member = true;
+        if (
+          members === 0 &&
+          next.type === 'MemberExpression' &&
+          !next.computed &&
+          next.property.type === 'Identifier'
+        ) {
+          key = next.property.name;
+        }
+        members++;
       } else if (
         !isTSWrapper(next) &&
         next.type !== 'ParenthesizedExpression' &&
@@ -121,15 +148,39 @@ const onlyRead = (editor: SourceEditor, binding: Binding) =>
     }
     switch (user.type) {
       case 'SpreadElement':
+        return members > 0 || editor.parentOf(user)?.type === 'ObjectExpression';
       case 'JSXSpreadAttribute':
       case 'TSTypeQuery':
         return true;
       case 'ExportSpecifier':
         return read === reference;
-      default:
-        return member && !writes(editor, user, read);
+      default: {
+        const called =
+          (user.type === 'CallExpression' && user.callee === read) ||
+          (user.type === 'TaggedTemplateExpression' && user.tag === read);
+        return (
+          members > 0 &&
+          !writes(editor, user, read) &&
+          !(called && members === 1 && !callCannotBindThis(literal, key))
+        );
+      }
     }
   });
+
+// The object literal whose own members a spread of `reference` is known to copy. An accessor can
+// run with `this` bound to it whenever it is read.
+const trustedLiteral = (editor: SourceEditor, reference: Node) => {
+  const binding = reference.type === 'Identifier' ? editor.scopes.bindingOf(reference) : undefined;
+  if (!binding?.constant || binding.node.type !== 'VariableDeclarator') {
+    return undefined;
+  }
+  const init = unwrapExpression(binding.node.init);
+  return init?.type === 'ObjectExpression' &&
+    init.properties.every((member) => member.type !== 'Property' || member.kind === 'init') &&
+    onlyRead(editor, binding, init)
+    ? init
+    : undefined;
+};
 
 // What an object literal is known to hold at `key`: no member, a value that may be an object
 // literal, or unknown.
@@ -143,6 +194,12 @@ const literalMember = (literal: E.ObjectExpression, key: string) => {
   }
   const value = unwrapExpression(lookup.property.value);
   return { kind: 'value' as const, object: value.type === 'ObjectExpression' };
+};
+
+// Whether `spread` is of a trusted local object literal known to lack `key`.
+const lacks = (editor: SourceEditor, spread: E.SpreadElement, key: string) => {
+  const literal = trustedLiteral(editor, unwrapExpression(spread.argument));
+  return literal !== undefined && literalMember(literal, key).kind === 'missing';
 };
 
 // The spread among `properties` whose member `key` a new parent at `key` carries forward: the last
@@ -168,13 +225,8 @@ export const carriedSpreads = (
     if (!isReference(reference)) {
       return { ok: false, code: 'spread-field', node: member };
     }
-    const binding =
-      reference.type === 'Identifier' ? editor.scopes.bindingOf(reference) : undefined;
-    const init =
-      binding?.constant && binding.node.type === 'VariableDeclarator' && onlyRead(editor, binding)
-        ? unwrapExpression(binding.node.init)
-        : undefined;
-    const known = init?.type === 'ObjectExpression' ? literalMember(init, key) : undefined;
+    const literal = trustedLiteral(editor, reference);
+    const known = literal ? literalMember(literal, key) : undefined;
     if (known?.kind === 'missing') {
       continue;
     }

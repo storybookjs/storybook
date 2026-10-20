@@ -583,10 +583,7 @@ describe('Project collection', () => {
 describe('withNpmForceFallback', () => {
   it('installs without --force for npm when the first install succeeds', async () => {
     const installDependencies = vi.fn().mockResolvedValue(undefined);
-    const manager = {
-      type: PackageManagerName.NPM,
-      installDependencies,
-    } as unknown as JsPackageManager;
+    const manager = { type: PackageManagerName.NPM } as unknown as JsPackageManager;
 
     await withNpmForceFallback(manager, installDependencies);
 
@@ -594,27 +591,38 @@ describe('withNpmForceFallback', () => {
     expect(installDependencies.mock.calls[0]).toEqual([]);
   });
 
-  it('retries npm with --force after a peer dependency conflict', async () => {
+  it('retries npm with --legacy-peer-deps on a peer dependency conflict without --force', async () => {
     const installDependencies = vi
       .fn()
       .mockRejectedValueOnce(new Error('npm error code ERESOLVE'))
       .mockResolvedValue(undefined);
-    const manager = {
-      type: PackageManagerName.NPM,
-      installDependencies,
-    } as unknown as JsPackageManager;
+    const manager = { type: PackageManagerName.NPM } as unknown as JsPackageManager;
 
     await withNpmForceFallback(manager, installDependencies);
 
-    expect(installDependencies.mock.calls).toEqual([[], [{ force: true }]]);
+    expect(installDependencies.mock.calls).toEqual([[], [{ legacyPeerDeps: true }]]);
+  });
+
+  it('retries npm with --force only after the --legacy-peer-deps retry fails', async () => {
+    const installDependencies = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('npm error code ERESOLVE'))
+      .mockRejectedValueOnce(new Error('npm error code ERESOLVE'))
+      .mockResolvedValue(undefined);
+    const manager = { type: PackageManagerName.NPM } as unknown as JsPackageManager;
+
+    await withNpmForceFallback(manager, installDependencies);
+
+    expect(installDependencies.mock.calls).toEqual([
+      [],
+      [{ legacyPeerDeps: true }],
+      [{ force: true }],
+    ]);
   });
 
   it('rethrows npm failures other than peer dependency conflicts without a second install', async () => {
     const installDependencies = vi.fn().mockRejectedValue(new Error('npm error code EACCES'));
-    const manager = {
-      type: PackageManagerName.NPM,
-      installDependencies,
-    } as unknown as JsPackageManager;
+    const manager = { type: PackageManagerName.NPM } as unknown as JsPackageManager;
 
     await expect(withNpmForceFallback(manager, installDependencies)).rejects.toThrow('EACCES');
     expect(installDependencies).toHaveBeenCalledTimes(1);
@@ -623,11 +631,8 @@ describe('withNpmForceFallback', () => {
   it('rethrows HandledError without a second install', async () => {
     const installDependencies = vi
       .fn()
-      .mockRejectedValue(new HandledError('Minimum release age policy blocked the install'));
-    const manager = {
-      type: PackageManagerName.NPM,
-      installDependencies,
-    } as unknown as JsPackageManager;
+      .mockRejectedValue(new HandledError(new Error('npm error code ERESOLVE')));
+    const manager = { type: PackageManagerName.NPM } as unknown as JsPackageManager;
 
     await expect(withNpmForceFallback(manager, installDependencies)).rejects.toThrow(HandledError);
     expect(installDependencies).toHaveBeenCalledTimes(1);
@@ -635,10 +640,7 @@ describe('withNpmForceFallback', () => {
 
   it('rethrows non-npm install failures without a second install', async () => {
     const installDependencies = vi.fn().mockRejectedValue(new Error('yarn install failed'));
-    const manager = {
-      type: PackageManagerName.YARN1,
-      installDependencies,
-    } as unknown as JsPackageManager;
+    const manager = { type: PackageManagerName.YARN1 } as unknown as JsPackageManager;
 
     await expect(withNpmForceFallback(manager, installDependencies)).rejects.toThrow(
       'yarn install failed'

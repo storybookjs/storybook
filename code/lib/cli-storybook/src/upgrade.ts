@@ -492,8 +492,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         ? JsPackageManagerFactory.getPackageManager({ force: options.packageManager })
         : storybookProjects[0].packageManager;
 
-    await withNpmForceFallback(rootPackageManager, (options) =>
-      rootPackageManager.installDependencies(options)
+    await withNpmForceFallback(rootPackageManager, (installOptions) =>
+      rootPackageManager.installDependencies(installOptions)
     );
 
     if (
@@ -512,8 +512,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         }));
 
       if (dedupe) {
-        await withNpmForceFallback(rootPackageManager, (options) =>
-          rootPackageManager.dedupeDependencies(options)
+        await withNpmForceFallback(rootPackageManager, (dedupeOptions) =>
+          rootPackageManager.dedupeDependencies(dedupeOptions)
         );
       } else {
         logger.log(
@@ -637,16 +637,26 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
 export const withNpmForceFallback = async (
   packageManager: JsPackageManager,
-  operation: (options?: { force?: boolean }) => Promise<void>
+  operation: (options?: { force?: boolean; legacyPeerDeps?: boolean }) => Promise<void>
 ) => {
   try {
     await operation();
   } catch (error) {
-    if (packageManager.type !== PackageManagerName.NPM || !isNpmPeerResolutionError(error)) {
+    if (
+      error instanceof HandledError ||
+      packageManager.type !== PackageManagerName.NPM ||
+      !isNpmPeerResolutionError(error)
+    ) {
       throw error;
     }
-    // npm/cli#8059: forcing resolves the conflict but can spin on large trees, so it is only a fallback.
-    logger.warn('Peer dependency conflict detected; retrying with --force');
-    await operation({ force: true });
+    try {
+      // --legacy-peer-deps resolves the conflict without forced resolution, so try it first:
+      // npm/cli#8059 shows --force can spin on large trees, making it only a last resort.
+      logger.warn('Peer dependency conflict detected; retrying with --legacy-peer-deps');
+      await operation({ legacyPeerDeps: true });
+    } catch {
+      logger.warn('Retry with --legacy-peer-deps failed; retrying with --force');
+      await operation({ force: true });
+    }
   }
 };

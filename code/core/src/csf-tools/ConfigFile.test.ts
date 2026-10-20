@@ -845,7 +845,7 @@ describe('ConfigFile', () => {
       {
         source: `export default { addons: ['b'] };`,
         expression: `'x' //c`,
-        output: `export default { addons: ['b', 'x' //c\n] };`,
+        output: `export default { addons: [\n  'b',\n  'x' //c\n] };`,
       },
       {
         source: `export default {};`,

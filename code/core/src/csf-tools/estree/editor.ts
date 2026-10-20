@@ -49,6 +49,8 @@ export interface SourceEdits {
   appendRight(index: number, content: string): this;
   prependRight(index: number, content: string): this;
   overwrite(start: number, end: number, content: string): this;
+  /** Like `overwrite`, but keeps what was written next to the span. */
+  update(start: number, end: number, content: string): this;
   remove(start: number, end: number): this;
   clone(): SourceEdits;
   /** The content of a span as edited so far; throws when an edit cuts through its ends. */
@@ -921,6 +923,29 @@ const appended = (
         : ',',
 });
 
+// Each item of a one-line list on a line of its own at `indent`, and its closing token on the next.
+// The line breaks replace the spaces in place, so items written next to them keep their side.
+const breakLines = (editor: SourceEditor, list: List, indent: string) => {
+  const { code, edits } = editor;
+  list.items.forEach((_, index) => {
+    const from = itemStart(editor, list, index);
+    const to = from + /^\s*/.exec(code.slice(from))![0].length;
+    if (to > from) {
+      edits.update(from, to, `\n${indent}`);
+    } else {
+      edits.appendRight(from, `\n${indent}`);
+    }
+  });
+  const outer = `\n${lineIndent(code, list.open)}`;
+  const end = list.close - /\s*$/.exec(code.slice(list.open, list.close))![0].length;
+  if (end < list.close) {
+    edits.update(end, list.close, outer);
+  } else {
+    // Without spaces before it, the closing token takes the line break, so it follows the items.
+    edits.update(list.close, list.close + 1, `${outer}${code[list.close]}`);
+  }
+};
+
 const appendFirst = (editor: SourceEditor, list: List, texts: string[]): Appended => {
   const { code, edits } = editor;
   const { items, padding } = list;
@@ -971,13 +996,24 @@ const appendFirst = (editor: SourceEditor, list: List, texts: string[]): Appende
   const comma = separatorAfter(editor, last);
   // The comma of a hole writes the hole, so it is no trailing comma to keep.
   const trailingComma = comma === undefined || isHole(last) ? '' : ',';
-  if (isMultiline(code, list)) {
-    const indent = lineIndent(code, last.start);
+  // A formatter puts the items of an object or array on lines of their own once one spans lines,
+  // but keeps a last argument that does on the line of the call: `f(a, () => {…})`.
+  const breaks =
+    (code[list.open - 1] === '{' || code[list.open - 1] === '[') &&
+    !isMultiline(code, list) &&
+    texts.some((text) => text.includes('\n'));
+  if (breaks || isMultiline(code, list)) {
+    const indent = breaks
+      ? `${lineIndent(code, list.open)}${editor.indent}`
+      : lineIndent(code, last.start);
+    if (breaks) {
+      breakLines(editor, list, indent);
+    }
     const at = itemEnd(editor, list, items.length - 1);
     if (comma === undefined) {
       edits.appendRight(last.end, ',');
     }
-    const lineBreakFollows = lineBreakAt(code, at);
+    const lineBreakFollows = breaks || lineBreakAt(code, at);
     return write(
       { at, right: true, indent, trailingComma, lineBreakFollows },
       itemLines(texts, indent, trailingComma, lineBreakFollows)

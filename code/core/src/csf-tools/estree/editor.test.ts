@@ -249,13 +249,94 @@ describe('lists', () => {
     expect(editor.toString()).toBe('f?.<T>(/* ( */ a, b);');
   });
 
-  it('indents the continuation lines of an item added to a one-line list like its line', () => {
-    const { editor } = firstStatement('const a = {\n  b: [1],\n};');
-    const array = editor.program.body[0] as E.VariableDeclaration;
-    const object = array.declarations[0].init as E.ObjectExpression;
-    const value = (object.properties[0] as E.ObjectProperty).value as E.ArrayExpression;
-    appendToList(editor, arrayList(editor, value), ['{\n  c: 2,\n}']);
-    expect(editor.toString()).toBe('const a = {\n  b: [1, {\n    c: 2,\n  }],\n};');
+  it('indents the continuation lines of an argument added to a one-line call like its line', () => {
+    const { editor } = firstStatement('const a = {\n  b: f(1),\n};');
+    const declaration = editor.program.body[0] as E.VariableDeclaration;
+    const object = declaration.declarations[0].init as E.ObjectExpression;
+    const value = (object.properties[0] as E.ObjectProperty).value as E.CallExpression;
+    appendToList(editor, argumentList(editor, value), ['{\n  c: 2,\n}']);
+    expect(editor.toString()).toBe('const a = {\n  b: f(1, {\n    c: 2,\n  }),\n};');
+  });
+
+  it('puts the items of a one-line object or array on lines of their own for a multi-line item', () => {
+    const csf = parse('export default {};\nexport const A = { args: { a: 1 } };\n');
+    const [story] = csf.objects({ meta: false });
+    story.set(['play'], parseExpression('async () => {\n  await x();\n}'));
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {};
+      export const A = {
+        args: { a: 1 },
+        play: async () => {
+          await x();
+        }
+      };
+
+    `);
+
+    const { editor, statement } = firstStatement('call([1, /* two */ 2]);');
+    const call = expressionOf(statement) as E.CallExpression;
+    appendToList(editor, arrayList(editor, call.arguments[0] as E.ArrayExpression), [
+      '() => {\n  y();\n}',
+    ]);
+    expect(editor.toString()).toBe('call([\n  1,\n  /* two */ 2,\n  () => {\n    y();\n  }\n]);');
+  });
+
+  it('keeps a one-line object on its line for a one-line item', () => {
+    const csf = parse('export default {};\nexport const A = { args: { a: 1 } };\n');
+    const [story] = csf.objects({ meta: false });
+    story.set(['args', 'b'], 2);
+    story.set(['tags'], ['x']);
+    expect(printCsf(csf).code).toBe(
+      'export default {};\nexport const A = { args: { a: 1, b: 2 }, tags: ["x"] };\n'
+    );
+  });
+
+  it('lays out a multi-line item added to an object without spaces inside its braces', () => {
+    const { editor, statement } = firstStatement('({a: 1});');
+    appendToList(editor, objectList(editor, expressionOf(statement) as E.ObjectExpression), [
+      'b: {\n  c: 2,\n}',
+    ]);
+    expect(editor.toString()).toBe('({\n  a: 1,\n  b: {\n    c: 2,\n  }\n});');
+  });
+
+  it('keeps the comma of each item when appending to a one-line list twice before a commit', () => {
+    const { editor, statement } = firstStatement('f([1], { a: 1 });');
+    const call = expressionOf(statement) as E.CallExpression;
+    const [array, object] = call.arguments as [E.ArrayExpression, E.ObjectExpression];
+    appendToList(editor, arrayList(editor, array), ['() => {\n  x();\n}']);
+    appendToList(editor, arrayList(editor, array), ['3']);
+    appendToList(editor, objectList(editor, object), ['b: {\n  c: 2,\n}']);
+    appendToList(editor, objectList(editor, object), ['d: {\n  e: 3,\n}']);
+    expect(editor.toString()).toBe(
+      'f([\n  1,\n  () => {\n    x();\n  },\n  3\n], {\n  a: 1,\n  b: {\n    c: 2,\n  },\n  d: {\n    e: 3,\n  }\n});'
+    );
+    expect(() => parseModule(editor.toString())).not.toThrow();
+  });
+
+  it.each([
+    ['before', '({a: x});'],
+    ['after', '({ a: x });'],
+  ])('keeps a wrapper written %s the break around its member alone', (order, code) => {
+    const { editor, statement } = firstStatement(code);
+    const object = expressionOf(statement) as E.ObjectExpression;
+    const wrap = () =>
+      wrapExpression(editor, (object.properties[0] as E.ObjectProperty).value, 'w(', ')');
+    if (order === 'before') {
+      wrap();
+    }
+    appendToList(editor, objectList(editor, object), ['b: {\n  c: 2,\n}']);
+    if (order === 'after') {
+      wrap();
+    }
+    expect(editor.toString()).toBe('({\n  a: w(x),\n  b: {\n    c: 2,\n  }\n});');
+  });
+
+  it('keeps a declaration on its line for a multi-line declarator', () => {
+    const { editor, statement } = firstStatement('const a = 1;');
+    appendToList(editor, declaratorList(editor, statement as E.VariableDeclaration), [
+      'b = {\n  c: 2,\n}',
+    ]);
+    expect(editor.toString()).toBe('const a = 1, b = {\n  c: 2,\n};');
   });
 
   it('keeps the line break of a prepended item ending in a line comment when code follows it', () => {
@@ -555,19 +636,19 @@ describe('replaceValue', () => {
     expect(editor.toString()).toBe(`export default { a: x, // c\n };`);
   });
 
-  it('ends a line comment before the member it is appended after on one line', () => {
+  it('puts the members of a one-line object on lines of their own for one ending in a line comment', () => {
     const trailingComma = new SourceEditor(`export default { a: 1, };`);
     appendToList(trailingComma, objectList(trailingComma, firstMember(trailingComma).object), [
       'b: x // c\n',
     ]);
-    expect(trailingComma.toString()).toBe(`export default { a: 1, b: x, // c\n };`);
+    expect(trailingComma.toString()).toBe(`export default {\n  a: 1,\n  b: x, // c\n};`);
 
     const noComma = new SourceEditor(`export default { a: 1 };`);
     appendToList(noComma, objectList(noComma, firstMember(noComma).object), [
       'b: x // c\n',
       'd: 2',
     ]);
-    expect(noComma.toString()).toBe(`export default { a: 1, b: x, // c\nd: 2 };`);
+    expect(noComma.toString()).toBe(`export default {\n  a: 1,\n  b: x, // c\n  d: 2\n};`);
   });
 });
 

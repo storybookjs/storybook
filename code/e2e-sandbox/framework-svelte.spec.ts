@@ -6,7 +6,7 @@ import { SbPage } from './util.ts';
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME;
 const expectedSource =
-  templateName === 'svelte-vite/default-ts'
+  templateName === 'svelte-vite/default-ts' || templateName === 'svelte-kit/skeleton-ts'
     ? "<script>\n  import Button from './Button.svelte';\n</script>\n\n<Button />"
     : '<Button />';
 

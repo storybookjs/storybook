@@ -967,9 +967,17 @@ For Angular-Vite, `framework.options.compodoc: false` does not disable the docge
 ### Builder docgen is deprecated
 
 Client-side docgen that runs in the builder is deprecated and will be removed in Storybook 12.
-This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`.
+This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`, and the Svelte `docgen` framework option in `@storybook/svelte-vite` and `@storybook/sveltekit` (including the sveltedoc-shaped `__docgen`).
 Builder docgen only runs when `features.docgenServer` is `false`, and Storybook now prints a deprecation warning when it does.
 Remove `docgenServer: false` to use server-side docgen.
+
+#### Svelte
+
+Server-side docgen is enabled by default when `typescript` is installed. Install it and remove `features.docgenServer: false` to migrate. Setting `framework.options.docgen: false` still disables builder docgen without a warning. The legacy APIs remain available until Storybook 12.
+
+Server output puts `Snippet` props in the slots category and event callbacks in the events category, with controls disabled. Literal unions get enum controls and options. JSDoc tags, component descriptions, and bindable metadata are now included. Native attributes, Svelte 4 events and slots, and component docs in files with preprocessed styles are preserved.
+
+The Code panel snippet now starts with a `<script>` block that imports its components. Import paths match the story file. Args that equal component defaults and mock functions are omitted.
 
 ### Node.js 22.12 or higher
 

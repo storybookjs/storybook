@@ -110,6 +110,7 @@ function transformToSvelteDocParserDataItems(docgen: Docgen): SvelteDataItem[] {
   });
 }
 
+/** @deprecated Use server-side docgen. See https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#builder-docgen-is-deprecated. */
 export async function svelteDocgen(): Promise<PluginOption> {
   const cwd = process.cwd();
   const include = /\.svelte$/;

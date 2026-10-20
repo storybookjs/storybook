@@ -16,7 +16,7 @@ export const Default = meta.story({
   },
   render: (args: { targetSelector: string; pulsating?: boolean }) => (
     <div style={{ overflow: 'hidden' }}>
-      <Button variant="ghost" id="highlighted">
+      <Button ariaLabel={false} variant="ghost" id="highlighted">
         I'm highlighted
       </Button>
       <HighlightElement {...args} />
@@ -31,7 +31,7 @@ export const Pulsating = meta.story({
   },
   render: (args: { targetSelector: string; pulsating?: boolean }) => (
     <>
-      <Button variant="ghost" id="highlighted">
+      <Button ariaLabel={false} variant="ghost" id="highlighted">
         I'm pulsating
       </Button>
       <HighlightElement {...args} />
@@ -46,7 +46,7 @@ export const PulsatingOverflow = meta.story({
   },
   render: (args: { targetSelector: string; pulsating?: boolean }) => (
     <div style={{ overflow: 'hidden' }}>
-      <Button variant="ghost" id="highlighted">
+      <Button ariaLabel={false} variant="ghost" id="highlighted">
         I'm pulsating despite being contained by overflow:hidden
       </Button>
       <HighlightElement {...args} />
@@ -70,7 +70,7 @@ export const WithScrollableContainer = meta.story({
       }}
     >
       <div style={{ height: 300 }}></div>
-      <Button variant="ghost" id="highlighted-in-scroll">
+      <Button ariaLabel={false} variant="ghost" id="highlighted-in-scroll">
         Scroll down to see the highlight follow me
       </Button>
       <div style={{ height: 300 }}></div>

@@ -141,7 +141,7 @@ export const ColorWarning = meta.story({
   },
 });
 
-/** Useful for WithTooltip where we'll use specialized tooltips like TooltipNote. */
+/** Useful for TooltipProvider where we'll use specialized tooltips like TooltipNote. */
 export const WithoutColor = meta.story({
   args: {
     color: 'none',
@@ -155,13 +155,14 @@ export const WithModal = meta.story({
     return (
       <>
         <PopoverProvider
+          ariaLabel="Modal launcher"
           visible={isPopoverOpen}
           popover={
             <div>
               <Button ariaLabel={false} onClick={() => setIsModalOpen(true)}>
                 Open modal
               </Button>
-              <Modal open={isModalOpen} onOpenChange={setIsModalOpen}>
+              <Modal ariaLabel="Example modal" open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <div>Hello</div>
               </Modal>
             </div>

@@ -107,7 +107,7 @@ export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }
           <Fragment>
             <Text>Sign in to browse this Storybook.</Text>
             <div>
-              <Button size="small" variant="outline" onClick={open}>
+              <Button ariaLabel={false} size="small" variant="outline" onClick={open}>
                 <LockIcon />
                 Sign in
               </Button>

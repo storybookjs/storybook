@@ -6,12 +6,14 @@
   import preview from './preview.ts';
   import Button from '../Button.svelte';
   import Layout from '../Layout.svelte';
+  import List from '../List.svelte';
 
   // svelte-check fails on each `@ts-expect-error` without an error. This isn't a stories file,
   // because it has more than one meta.
   const { Story } = preview.meta({ component: Button, args: { disabled: false } });
   const { Story: LayoutStory } = preview.meta({ component: Layout });
   const { Story: RenderStory } = preview.meta({ render: textTemplate });
+  const { Story: ListStory } = preview.meta({ component: List<{ id: number; name: string }> });
 </script>
 
 {#snippet textTemplate(args: { text: string })}
@@ -76,6 +78,26 @@
 
 {/* @ts-expect-error children is missing */ null}
 <LayoutStory name="No children" args={{ title: 'Title' }} />
+
+<ListStory
+  name="Generic args"
+  args={{
+    items: [{ id: 1, name: 'Ada' }],
+    getLabel: (item) => {
+      expectTypeOf(item).toEqualTypeOf<{ id: number; name: string }>();
+      return item.name;
+    },
+  }}
+/>
+
+<ListStory
+  name="Generic args wrong item"
+  args={{
+    // @ts-expect-error name must be a string
+    items: [{ id: 1, name: 1 }],
+    getLabel: (item) => item.name,
+  }}
+/>
 
 <RenderStory name="Render args" args={{ text: 'Text' }} />
 

@@ -217,8 +217,8 @@ async function getParser(filePath: string, userOptions?: ParserOptions) {
     } else {
       logger.warn(
         'No tsconfig.json (or tsconfig.base.json / tsconfig.app.json) found. ' +
-          'TypeScript component props will not be documented by react-docgen-typescript. ' +
-          'Create a tsconfig.json in your project root to enable automatic controls.'
+          'react-docgen-typescript reads each component without your compiler options, which is slower and less accurate. ' +
+          'Create a tsconfig.json in your project root.'
       );
     }
 
@@ -320,7 +320,11 @@ export const parseWithReactDocgenTypescript = asyncCache(
     const checker = program.getTypeChecker();
     const sourceFile = program.getSourceFile(filePath);
 
-    const docs = fileParser.parseWithProgramProvider(filePath, () => program);
+    // A file outside the tsconfig's `include` is not in the program: parse it on its own. Adding
+    // it as a root instead would make TypeScript rebuild the whole program without reuse.
+    const docs = sourceFile
+      ? fileParser.parseWithProgramProvider(filePath, () => program)
+      : fileParser.parse(filePath);
     // Map from resolved (original) name → public export name.
     // e.g. for `export { Card as RenamedCard }`: "Card" → "RenamedCard"
     const exportNameMap = sourceFile

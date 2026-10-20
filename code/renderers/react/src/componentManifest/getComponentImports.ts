@@ -12,7 +12,7 @@ import type { TypescriptOptions as TypescriptOptionsBase } from 'storybook/inter
 
 import type { ParserOptions } from 'react-docgen-typescript';
 
-import { getImportTag, getReactDocgen, matchPath } from './reactDocgen.ts';
+import type { DocgenEngine, ReactDocgenConfig } from '../docgen/engine.ts';
 import {
   type ComponentDocWithExportName,
   getReactDocgenTypescriptError,
@@ -20,10 +20,7 @@ import {
   parseWithReactDocgenTypescript,
 } from './reactDocgenTypescript.ts';
 import type { ComponentRef } from './types.ts';
-import { cachedResolveImport } from './utils.ts';
-
-export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript' | false;
-export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
+import { cachedResolveImport, getImportTag, matchPath } from './utils.ts';
 
 export interface TypescriptOptions extends TypescriptOptionsBase {
   reactDocgen: ReactDocgenConfig;
@@ -212,6 +209,7 @@ export const getComponents = async ({
           }
 
           if (docgenEngine === 'react-docgen') {
+            const { getReactDocgen } = await import('./reactDocgen.ts');
             const reactDocgen = getReactDocgen(path, componentWithPackage);
             return {
               ...componentWithPackage,
@@ -222,14 +220,13 @@ export const getComponents = async ({
             };
           }
 
-          if (docgenEngine === 'react-component-meta') {
-            // RCM fills importOverride later in ComponentMetaProject, where the TypeScript checker
-            // is available and we can read the official JSDoc tag data from the resolved symbol.
-            return {
-              ...componentWithPackage,
-              path,
-            };
-          }
+          // RCM fills importOverride later in ComponentMetaProject, where the TypeScript checker
+          // is available and we can read the official JSDoc tag data from the resolved symbol.
+          // Without an engine there is no docgen to read it from.
+          return {
+            ...componentWithPackage,
+            path,
+          };
         }
         return componentWithPackage;
       })

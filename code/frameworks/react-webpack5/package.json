@@ -57,11 +57,15 @@
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
+    "react-docgen": "^8.0.2",
     "react-dom": "^18.0.0 || ^19.0.0",
     "storybook": "workspace:^",
     "typescript": "^5.9.0 || ^6.0.0 || ^7.0.0"
   },
   "peerDependenciesMeta": {
+    "react-docgen": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     }

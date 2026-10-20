@@ -6,7 +6,8 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { getMatchingDocgen, matchPath, parseWithReactDocgen } from './reactDocgen.ts';
+import { getMatchingDocgen, parseWithReactDocgen } from './reactDocgen.ts';
+import { matchPath } from './utils.ts';
 import { invalidateCache } from './utils.ts';
 
 const tempDirs: string[] = [];

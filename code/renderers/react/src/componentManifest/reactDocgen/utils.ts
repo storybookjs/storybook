@@ -1,7 +1,5 @@
 import type { SBType } from 'storybook/internal/csf';
-import { findTsconfigPathForFile } from 'storybook/internal/common';
 
-import { dirname } from 'node:path';
 import type {
   ElementsType,
   LiteralType,
@@ -11,12 +9,9 @@ import type {
 } from 'react-docgen';
 import type { ParserOptions as ReactDocgenTypescriptOptions } from 'react-docgen-typescript';
 
-export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript' | false;
-
 export type GetArgTypesDataOptions = {
   componentFilePath: string;
   componentExportName?: string;
-  reactDocgen?: ReactDocgenConfig;
   reactDocgenTypescriptOptions?: ReactDocgenTypescriptOptions;
 };
 
@@ -126,25 +121,3 @@ export function mapCommonTypes(typeName: string): SBType | null {
 
   return null;
 }
-
-export const getTsConfig = async (componentFilePath?: string) => {
-  try {
-    const imported = await import('typescript');
-    const ts = imported.default ?? imported;
-    const tsconfigPath = componentFilePath
-      ? findTsconfigPathForFile(dirname(componentFilePath), componentFilePath)
-      : ts.findConfigFile(process.cwd(), ts.sys.fileExists);
-    if (tsconfigPath === undefined) {
-      return {};
-    }
-    const basePath = dirname(tsconfigPath);
-    const { config, error } = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
-    if (error) {
-      return {};
-    }
-
-    return ts.parseJsonConfigFileContent(config, ts.sys, basePath, {}, tsconfigPath).options;
-  } catch {
-    return {};
-  }
-};

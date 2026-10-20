@@ -1,6 +1,6 @@
-import { deprecate } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
+import type { ReactDocgenPlan } from '../../../renderers/react/src/docgen/engine.ts';
 import type { StorybookConfig } from './types.ts';
 
 export const core: PresetProperty<'core'> = {
@@ -9,38 +9,16 @@ export const core: PresetProperty<'core'> = {
 };
 
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, { presets }) => {
-  const features = await presets.apply('features', {});
+  const { builder } = await presets.apply<ReactDocgenPlan>('internal_reactDocgenPlan');
 
-  if (features?.docgenServer) {
-    // The docgen service extracts React metadata on the server. Keep the preview bundle free of
-    // build-time `__docgenInfo` injection so custom argTypes remain docgen-free.
+  if (!builder.reactDocgen && !builder.reactDocgenTypescript) {
     return config;
   }
 
   const plugins = [...(config?.plugins ?? [])];
 
-  // Add docgen plugin
-  const { reactDocgen: reactDocgenOption, reactDocgenTypescriptOptions } = await presets.apply<any>(
-    'typescript',
-    {}
-  );
-  let typescriptPresent;
-
-  try {
-    import.meta.resolve('typescript');
-    typescriptPresent = true;
-  } catch (e) {
-    typescriptPresent = false;
-  }
-
-  if (typeof reactDocgenOption === 'string') {
-    deprecate(
-      `Builder docgen (\`typescript.reactDocgen: '${reactDocgenOption}'\`) is deprecated and will be removed in Storybook 12. ` +
-        `It runs because \`features.docgenServer\` is off. Server-side docgen needs the \`typescript\` package: install it and remove any \`docgenServer: false\` from your \`.storybook/main.ts\`.`
-    );
-  }
-
-  if (reactDocgenOption === 'react-docgen-typescript' && typescriptPresent) {
+  if (builder.reactDocgenTypescript) {
+    const { reactDocgenTypescriptOptions } = await presets.apply<any>('typescript', {});
     plugins.push(
       (await import('@joshwooding/vite-plugin-react-docgen-typescript')).default({
         ...reactDocgenTypescriptOptions,
@@ -50,14 +28,12 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
     );
   }
 
-  // Add react-docgen so long as the option is not false
-  if (typeof reactDocgenOption === 'string') {
+  if (builder.reactDocgen) {
     const { reactDocgen } = await import('./plugins/react-docgen.ts');
     // Needs to run before the react plugin, so add to the front
     plugins.unshift(
-      // If react-docgen is specified, use it for everything, otherwise only use it for non-typescript files
       await reactDocgen({
-        include: reactDocgenOption === 'react-docgen' ? /\.(mjs|tsx?|jsx?)$/ : /\.(mjs|jsx?)$/,
+        include: builder.reactDocgen === 'all' ? /\.(mjs|tsx?|jsx?)$/ : /\.(mjs|jsx?)$/,
       })
     );
   }

@@ -7,10 +7,8 @@ import { type PresetPropertyFn, type StorybookConfigRaw } from 'storybook/intern
 
 import path from 'pathe';
 
-import {
-  type DocgenEngine,
-  buildReactComponentDocgenFromResolved,
-} from './buildReactComponentDocgen.ts';
+import { getReactDocgenPlan } from '../docgen/engine.ts';
+import { buildReactComponentDocgenFromResolved } from './buildReactComponentDocgen.ts';
 import { getSharedComponentMetaManager } from './componentMetaManagerSingleton.ts';
 import { type ComponentRef, type TypescriptOptions } from './getComponentImports.ts';
 import { invalidateParser } from './reactDocgenTypescript.ts';
@@ -24,10 +22,10 @@ export const manifests: PresetPropertyFn<
 > = async (existingManifests = {}, options) => {
   const { manifestEntries, presets, watch } = options;
   const typescriptOptions =
-    (await presets?.apply<Partial<TypescriptOptions>>('typescript', {})) ?? {};
-  const features = await presets?.apply('features', {});
+    (await presets.apply<Partial<TypescriptOptions>>('typescript', {})) ?? {};
+  const { manifest: docgenEngine } = await getReactDocgenPlan(options);
 
-  if (features?.docgenServer) {
+  if (docgenEngine === 'server') {
     /**
      * Docgen payloads live in the open service when this flag is on; core reads them via JSON refs
      * and the HTML debugger. We still emit an empty `components` manifest so renderer-owned metadata
@@ -43,10 +41,6 @@ export const manifests: PresetPropertyFn<
       },
     };
   }
-
-  const docgenEngine: DocgenEngine = features?.experimentalReactComponentMeta
-    ? 'react-component-meta'
-    : typescriptOptions.reactDocgen || 'react-docgen';
 
   invalidateCache();
   invalidateParser();
@@ -140,7 +134,10 @@ export const manifests: PresetPropertyFn<
       v: 0,
       components: Object.fromEntries(components.map((component) => [component.id, component])),
       meta: {
-        docgen: docgenEngine,
+        docgen:
+          docgenEngine === 'disabled' || docgenEngine === 'react-docgen-missing'
+            ? 'none'
+            : docgenEngine,
         durationMs,
       },
     },

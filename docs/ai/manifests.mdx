@@ -29,7 +29,7 @@ How the component API is extracted depends on your framework.
 
 Prop type extraction runs server-side via React Component Meta by default, and manifests use a ref-based format with per-component JSON snapshots when combined with [`componentsManifest`](../api/main-config/main-config-features.mdx#componentsmanifest).
 
-If you turn [`docgenServer`](../api/main-config/main-config-features.mdx#docgenserver) off, manifest generation uses the builder-based parser selected by [`reactDocgen`](../api/main-config/main-config-typescript.mdx#reactdocgen), or `react-docgen` by default.
+If you turn [`docgenServer`](../api/main-config/main-config-features.mdx#docgenserver) off, manifest generation uses the builder-based parser selected by [`reactDocgen`](../api/main-config/main-config-typescript.mdx#reactdocgen), or `react-docgen` by default. Storybook does not install `react-docgen`; add it as a devDependency to use it.
 
 </If>
 

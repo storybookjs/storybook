@@ -501,6 +501,24 @@ describe('extractArgTypesFromDocgenTypescript', () => {
       'Is this the principal call to action on the page?'
     );
   });
+
+  it.each([
+    ['outside the tsconfig include', { 'tsconfig.json': JSON.stringify({ include: ['src'] }) }],
+    ['in a project without a tsconfig', {}],
+  ])('reads a component %s', async (_name, files) => {
+    const dir = createTempProject({
+      ...files,
+      'lib/Button.tsx': `export const Button = ({ label }: { label: string }) => label;`,
+    });
+    vi.spyOn(process, 'cwd').mockReturnValue(dir);
+
+    const argTypes = await extractArgTypesFromDocgenTypescript({
+      componentFilePath: path.join(dir, 'lib/Button.tsx'),
+      componentExportName: 'Button',
+    });
+
+    expect(Object.keys(argTypes ?? {})).toEqual(['label']);
+  });
 });
 
 function createTempProject(files: Record<string, string>) {

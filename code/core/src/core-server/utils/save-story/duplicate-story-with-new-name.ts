@@ -1,19 +1,16 @@
+import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import type { CsfFile } from 'storybook/internal/csf-tools';
 
-import { type E, type Node, staticKey, walk } from '../../../csf-tools/estree/ast.ts';
-import {
-  SourceEditor,
-  appendStatement,
-  objectList,
-  removeFromList,
-} from '../../../csf-tools/estree/editor.ts';
-import { SaveStoryError } from './utils.ts';
+import type { Node } from '../../../csf-tools/estree/ast.ts';
+import { SaveStoryError, assertApplied, findStory } from './utils.ts';
 
-type In = ReturnType<CsfFile['parse']>;
-
-// Returns the new story's initializer, copied without `args` for the caller to fill in.
-export const duplicateStoryWithNewName = (csfFile: In, storyName: string, newStoryName: string) => {
-  const node = csfFile._storyExports[storyName];
+// Adds `newStoryName` as a copy of `storyName`, without its own `name` and with its `args` emptied.
+export const duplicateStoryWithNewName = (
+  csf: CsfFile,
+  storyName: string,
+  newStoryName: string
+) => {
+  const node = csf._storyExports[storyName];
   if (node?.type !== 'VariableDeclarator' || !node.init) {
     throw new SaveStoryError(`cannot clone Node`);
   }
@@ -30,28 +27,21 @@ export const duplicateStoryWithNewName = (csfFile: In, storyName: string, newSto
     throw new SaveStoryError(`Creating a new story based on a CSF2 story is not supported`);
   }
 
-  const copy = new SourceEditor(`(${csfFile.editor.source(init)})`, csfFile._options.fileName);
-  walk(copy.program, (child) => {
-    if (child.type !== 'ObjectExpression') {
-      return;
-    }
-    const args = child.properties.filter(
-      (property): property is E.ObjectProperty =>
-        property.type === 'Property' && staticKey(property) === 'args'
-    );
-    if (args.length > 0) {
-      removeFromList(copy, objectList(copy, child), args);
-    }
-  });
-  const initCode = copy.toString().slice(1, -1);
   const typeAnnotation =
     node.id.type === 'Identifier' && node.id.typeAnnotation
-      ? csfFile.editor.source(node.id.typeAnnotation)
+      ? csf.editor.source(node.id.typeAnnotation)
       : '';
+  csf.appendStatement(
+    `export const ${newStoryName}${typeAnnotation} = ${csf.editor.source(init)};`
+  );
+  csf.editor.commit();
 
-  appendStatement(csfFile.editor, `export const ${newStoryName}${typeAnnotation} = ${initCode};`);
-  csfFile.editor.commit();
-
-  const duplicated = csfFile._storyExports[newStoryName];
-  return (duplicated?.type === 'VariableDeclarator' ? duplicated.init : duplicated) as Node;
+  const copy = findStory(csf, newStoryName);
+  if (copy.inspect(['name']).kind === 'value' && !copy.remove(['name']).ok) {
+    // A spread before `name` would provide the copy's name instead.
+    assertApplied(copy.set(['name'], storyNameFromExport(newStoryName)));
+  }
+  if (copy.inspect(['args']).kind === 'value') {
+    assertApplied(copy.set(['args'], {}));
+  }
 };

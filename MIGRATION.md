@@ -29,6 +29,7 @@
   - [Sidebar rewrite: manager API changes](#sidebar-rewrite-manager-api-changes)
   - [Escape is no longer a configurable shortcut](#escape-is-no-longer-a-configurable-shortcut)
   - ['Create new story' UI feature removed](#create-new-story-ui-feature-removed)
+  - [Sidebar: standalone docs pages are no longer wrapped in a component](#sidebar-standalone-docs-pages-are-no-longer-wrapped-in-a-component)
   - [Test runner support ended](#test-runner-support-ended)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
@@ -69,6 +70,7 @@
     - [`<Template>` component](#template-component)
     - [`id`, `autodocs` and `source` props on `<Story>`](#id-autodocs-and-source-props-on-story)
   - [Svelte CSF: stories files are indexed without preprocessors](#svelte-csf-stories-files-are-indexed-without-preprocessors)
+  - [Svelte: `parameters.component` removed from the source decorator](#svelte-parameterscomponent-removed-from-the-source-decorator)
   - [Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`](#highlight-menu-items-emit-a-fixed-highlight_menu_click-event-with-a-mandatory-id)
   - [`core/module-graph` query aliases removed](#coremodule-graph-query-aliases-removed)
   - [ExternalDocs and ExternalDocsContainer are removed](#externaldocs-and-externaldocscontainer-are-removed)
@@ -1155,6 +1157,35 @@ Saving a story from the Controls panel is unchanged: you can still adjust contro
 
 The channel events `CREATE_NEW_STORYFILE_REQUEST`, `CREATE_NEW_STORYFILE_RESPONSE`, `FILE_COMPONENT_SEARCH_REQUEST` and `FILE_COMPONENT_SEARCH_RESPONSE`, their payload types in `storybook/internal/core-events`, and the `generateStoryFile` export from `storybook/internal/core-server` are removed too.
 
+### Sidebar: standalone docs pages are no longer wrapped in a component
+
+A docs page that doesn't belong to a component (for example an MDX file with `<Meta title="Introduction" />`) used to appear in the manager index as a component with a single `Docs` child.
+It is now a single `docs` entry.
+Addons that read `useStorybookState().index`, `sidebar.renderLabel` or sidebar filters see that entry directly.
+
+More generally, the manager index (`useStorybookState().index` and `filteredIndex`) used to type every title by its position, so the last segment of a title was always a `component`.
+
+Each title is now typed by everything the story index puts under it:
+
+| Under the title | Entry in the manager index |
+| --- | --- |
+| Other titles | `group` (or `root`) |
+| At least one story | `component` |
+| Exactly one docs page and no stories | the `docs` entry itself, with the title's `name`, `depth` and `parent` (`undefined` at the top level) |
+| Several docs pages and no stories | `group` |
+
+The type comes from the full index, so `index` and `filteredIndex` always agree on it.
+Filters only remove entries: a component whose stories are all filtered out stays a `component` with its docs child in `filteredIndex`.
+The sidebar still shows such a component as a single docs page, for example for [docs-only stories](https://storybook.js.org/docs/writing-stories/tags#docs-only-stories).
+
+Functions passed to `sidebar.renderLabel` and sidebar filters receive the `docs` entry instead of the old wrapper and its `Docs` child.
+Sidebar search lists these pages under their own name, for example `Introduction` instead of `Docs` under `Introduction`.
+`api.selectStory('Introduction')` and `linkTo('Introduction')` still resolve to the docs page.
+
+`api.jumpToComponent` is renamed to `api.jumpToSubtree`, because it now also stops on docs pages that are not attached to a component.
+Its menu entries and shortcut labels read `Previous component or page` and `Next component or page`.
+The shortcut keys `prevComponent` and `nextComponent` keep their names, so customized shortcuts carry over.
+
 ### Test runner support ended
 
 Official support for [`@storybook/test-runner`](https://github.com/storybookjs/test-runner) has ended. The package stays published and accepts Storybook 11 and later as a peer dependency, so existing setups can keep running it at their own risk, but it no longer receives fixes or compatibility updates and prints a warning on every run.
@@ -1899,6 +1930,22 @@ After:
 Storybook used to run the preprocessors from `svelte.config.js` on a stories file before it indexed the file. It now indexes stories files without preprocessors, so indexing works the same when your Svelte config is in the Vite config, as in SvelteKit 3. The indexer ignores the content of `<style>` blocks, so styles that need a preprocessor, such as SCSS, are fine. Preprocessors still apply when Storybook renders your stories.
 
 If a stories file needs a preprocessor outside of `<style>`, for example for TypeScript enums, indexing fails with [`SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009`](https://github.com/storybookjs/storybook/blob/next/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0009). Move that code to a separate module, and import it into the stories file.
+
+### Svelte: `parameters.component` removed from the source decorator
+
+The Svelte docs source decorator no longer reads or warns about `parameters.component`. That path has been deprecated since Storybook 7: for stories whose render result is a `@wrapper` component, generated source already used the story's `component` from meta (`context.component`).
+
+If you still set `parameters.component`, delete it and keep the component on the default export / `meta` instead:
+
+```diff
+ export default {
+   component: Button,
+   parameters: {
+-    component: Button,
+     docs: { description: { component: '...' } },
+   },
+ };
+```
 
 ### Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`
 

@@ -759,8 +759,13 @@ export const baseTemplates = {
   },
   'svelte-kit/skeleton-ts': {
     name: 'SvelteKit Latest (Vite | TypeScript)',
+    // Storybook 10 supports SvelteKit 2 only. `sv` 1.x scaffolds SvelteKit 3, so the template is
+    // pinned to the last `sv` 0.x release.
+    // TODO: Remove `inDevelopment` once the published sandbox on the `main` branch of
+    // storybookjs/sandboxes has SvelteKit 2 again. Until then, CI scaffolds the sandbox itself.
     script:
-      'npx sv@latest create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
+      'npx sv@0.17.1 create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
+    inDevelopment: true,
     expected: {
       framework: '@storybook/sveltekit',
       renderer: '@storybook/svelte',

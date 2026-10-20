@@ -1351,6 +1351,7 @@ export const insertStatementAfter = (editor: SourceEditor, statement: Span, text
   // belongs to that one. A removal of the statement keeps text there.
   const at = code[next] === '\n' ? next + 1 : next;
   if (at === next && !batch.insertedAt.has(at) && !isRemoved(editor, statement)) {
+    pullUpSemicolon(editor, statement);
     if (next > end) {
       edits.overwrite(end, next, '\n');
     } else {
@@ -1430,6 +1431,33 @@ const removeKeeping = (editor: SourceEditor, start: number, end: number) => {
     editor.edits.remove(from, at);
     from = at;
   }
+};
+
+// Put the `;` that ends a statement at the start of a line back after the statement's code, before
+// the comments between them, for when nothing else is left on that line: `a = 1 // c\n;` becomes
+// `a = 1; // c`.
+const pullUpSemicolon = (editor: SourceEditor, statement: Span) => {
+  const { code, comments } = editor;
+  const semicolon = statement.end - 1;
+  if (
+    code[semicolon] !== ';' ||
+    statement.start === semicolon ||
+    code.slice(lineStart(code, semicolon), semicolon).trim() ||
+    statementEnd(editor, statement) !== statement.end ||
+    isRemoved(editor, { start: semicolon, end: statement.end })
+  ) {
+    return;
+  }
+  const trimmedEnd = (index: number) =>
+    statement.start + code.slice(statement.start, index).trimEnd().length;
+  const inside = comments.filter((c) => c.start > statement.start && c.end <= semicolon);
+  const contentEnd = trimmedEnd(semicolon);
+  let codeEnd = contentEnd;
+  while (inside.at(-1)?.end === codeEnd) {
+    codeEnd = trimmedEnd(inside.pop()!.start);
+  }
+  editor.edits.remove(contentEnd, statement.end);
+  editor.edits.appendRight(codeEnd, ';');
 };
 
 /**
@@ -1530,6 +1558,12 @@ export const removeStatement = (editor: SourceEditor, statement: Span, atTop?: b
   if (keepsCode(editor, from, start)) {
     // Code stays before it on the line: take the spaces after that code.
     editor.edits.remove(start - /[^\S\n]*$/.exec(code.slice(from, start))![0].length, end);
+    const previous = editor.program.body.findLast(
+      (node) => node.end <= start && !isRemoved(editor, node)
+    );
+    if (previous && !keepsCode(editor, previous.end, start)) {
+      pullUpSemicolon(editor, previous);
+    }
     return;
   }
   // The statement takes the blank lines above it, so none are left behind; at the top of the

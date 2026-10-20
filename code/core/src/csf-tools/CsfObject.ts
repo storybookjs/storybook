@@ -27,7 +27,6 @@ import {
   detachedSource,
   detachedTextOf,
   printKey,
-  printMembers,
   printObject,
   printValue,
 } from './estree/editor.ts';
@@ -996,7 +995,8 @@ class Editor implements CsfObject {
         const lookup = lookupProperty(
           parent.properties,
           key,
-          last || access === 'set' ? access : 'read'
+          last || access === 'set' ? access : 'read',
+          this.editor
         );
         if (lookup.ok === false) {
           return lookup;
@@ -1090,24 +1090,24 @@ class Editor implements CsfObject {
     }
     const texts =
       'members' in content ? content.members.map((member) => member.text) : content.items;
-    // Comments travel with moved members; a line comment needs the object to span lines.
-    const multiline = texts.some((text) => text.includes('\n'));
-    const block = (members: string[]) =>
-      multiline ? printMembers(members, indent) : `{ ${members.join(', ')} }`;
     const forward = (depth: number, into: 'object' | 'array' = 'object') => {
       const spread = carriedSpread(carried.spread, missing.slice(0, depth + 1), quote, into);
       return spread ? [spread] : [];
     };
     const last = missing.length - 1;
     let nested: string;
+    // Comments travel with moved members; a line comment makes the object span lines.
     if ('members' in content) {
-      nested = block([...forward(last), ...texts]);
+      nested = printObject([...forward(last), ...texts], indent);
     } else {
       const spread = forward(last, 'array');
       nested = `[${(content.first ? [...texts, ...spread] : [...spread, ...texts]).join(', ')}]`;
     }
     for (let depth = last - 1; depth >= 0; depth--) {
-      nested = block([...forward(depth), `${printKey(missing[depth + 1], quote)}: ${nested}`]);
+      nested = printObject(
+        [...forward(depth), `${printKey(missing[depth + 1], quote)}: ${nested}`],
+        indent
+      );
     }
     parent.append([{ key: name, value: nested, text: `${printKey(name, quote)}: ${nested}` }]);
   }

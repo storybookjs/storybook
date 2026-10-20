@@ -14,6 +14,7 @@
   - [Toolbar `globalTypes` entries: index signature and `defaultValue` removed](#toolbar-globaltypes-entries-index-signature-and-defaultvalue-removed)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
   - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
+  - [Deprecated CSF and manager type aliases removed](#deprecated-csf-and-manager-type-aliases-removed)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
@@ -28,6 +29,7 @@
   - [Sidebar rewrite: manager API changes](#sidebar-rewrite-manager-api-changes)
   - [Escape is no longer a configurable shortcut](#escape-is-no-longer-a-configurable-shortcut)
   - ['Create new story' UI feature removed](#create-new-story-ui-feature-removed)
+  - [Sidebar: standalone docs pages are no longer wrapped in a component](#sidebar-standalone-docs-pages-are-no-longer-wrapped-in-a-component)
   - [Test runner support ended](#test-runner-support-ended)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
@@ -54,6 +56,7 @@
   - [`experimentalReview` feature flag removed](#experimentalreview-feature-flag-removed)
   - [`changeDetection` feature flag removed](#changedetection-feature-flag-removed)
   - [`storybook ai` command removed](#storybook-ai-command-removed)
+  - [`stories` skill renamed to `ui-workflow`](#stories-skill-renamed-to-ui-workflow)
   - [`--preview-url` and `--force-build-preview` removed](#--preview-url-and---force-build-preview-removed)
   - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
   - [Web Components: server-side docgen suffixes event, slot and part argType keys](#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys)
@@ -67,6 +70,7 @@
     - [`<Template>` component](#template-component)
     - [`id`, `autodocs` and `source` props on `<Story>`](#id-autodocs-and-source-props-on-story)
   - [Svelte CSF: stories files are indexed without preprocessors](#svelte-csf-stories-files-are-indexed-without-preprocessors)
+  - [Svelte: `parameters.component` removed from the source decorator](#svelte-parameterscomponent-removed-from-the-source-decorator)
   - [Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`](#highlight-menu-items-emit-a-fixed-highlight_menu_click-event-with-a-mandatory-id)
   - [`core/module-graph` query aliases removed](#coremodule-graph-query-aliases-removed)
   - [ExternalDocs and ExternalDocsContainer are removed](#externaldocs-and-externaldocscontainer-are-removed)
@@ -946,6 +950,28 @@ export const Primary: Story = {
 
 Decorators and `render` functions keep receiving `argTypes`, because renderers rely on them while rendering. Their context type is the new `StoryContextForRender`; the `StoryContext` type no longer declares `argTypes`. Custom decorator or render helpers that annotate their context parameter as `StoryContext` and read `argTypes` should switch to `StoryContextForRender`.
 
+### Deprecated CSF and manager type aliases removed
+
+The following deprecated type aliases and fields are removed. If your code imports any of them from `storybook` (via `storybook/internal/csf`, `storybook/internal/types`, or `storybook/manager-api`), switch to the supported replacement:
+
+| Deprecated               | Replacement             |
+| ------------------------ | ----------------------- |
+| `StoryKind`              | `ComponentTitle`        |
+| `StoryIdentifier.kind`   | `StoryIdentifier.title` |
+| `StoryIdentifier.story`  | `StoryIdentifier.name`  |
+| `AnyFramework`           | `Renderer`              |
+| `StoryContextForLoaders` | `StoryContext`          |
+| `PlayFunctionContext`    | `StoryContext`          |
+| `StoriesHash`            | `IndexHash`             |
+
+The deprecated `kind` and `story` fields are also gone from `Addon_AddStoryArgs`, `Addon_StoryApi`, and the legacy `setStories` payload type `SetStoriesStory` (the whole interface is removed). The `RenderContext` passed to `renderToCanvas` no longer contains `kind` or `story`; third-party renderers read `title` and `name` instead.
+
+`@storybook/addon-links`' deprecated `LinkTo` `kind` and `story` props are removed; use `title` and `name`. The `data-sb-kind` and `data-sb-story` HTML attributes are unchanged. The provider `StoryMapper` option is removed.
+
+Story context objects passed to loaders and play functions no longer carry the deprecated `kind` and `story` keys; read `title` and `name` instead. The same applies to the context passed to decorators and `render` functions: custom helpers that read `context.kind` or `context.story` must switch to `context.title` and `context.name`. The `extract()` output — the serialized stories that external tools such as the Chromatic CLI read — still includes the deprecated `kind` and `story` fields for compatibility, so tools reading the serialized output keep working.
+
+The manager resolves `SELECT_STORY` payloads from `storyId` or `title`/`name`, and still accepts the deprecated `kind`/`story` payload that composed Storybooks built with Storybook 10.x or earlier send, so cross-story links inside those refs keep navigating. A payload without any of those keys is ignored with a warning. Composed refs must publish a story index (`stories.json`); the v2 format is no longer accepted and the legacy `setStories` event is no longer read.
+
 ### `docgenServer` is stable and enabled by default
 
 The `experimentalDocgenServer` feature is now `docgenServer`, and Storybook no longer reads the old name.
@@ -1130,6 +1156,35 @@ We have removed the button next to the sidebar's search field, which allowed Rea
 Saving a story from the Controls panel is unchanged: you can still adjust controls and save the result as a new story, or update an existing story, in an existing story file.
 
 The channel events `CREATE_NEW_STORYFILE_REQUEST`, `CREATE_NEW_STORYFILE_RESPONSE`, `FILE_COMPONENT_SEARCH_REQUEST` and `FILE_COMPONENT_SEARCH_RESPONSE`, their payload types in `storybook/internal/core-events`, and the `generateStoryFile` export from `storybook/internal/core-server` are removed too.
+
+### Sidebar: standalone docs pages are no longer wrapped in a component
+
+A docs page that doesn't belong to a component (for example an MDX file with `<Meta title="Introduction" />`) used to appear in the manager index as a component with a single `Docs` child.
+It is now a single `docs` entry.
+Addons that read `useStorybookState().index`, `sidebar.renderLabel` or sidebar filters see that entry directly.
+
+More generally, the manager index (`useStorybookState().index` and `filteredIndex`) used to type every title by its position, so the last segment of a title was always a `component`.
+
+Each title is now typed by everything the story index puts under it:
+
+| Under the title | Entry in the manager index |
+| --- | --- |
+| Other titles | `group` (or `root`) |
+| At least one story | `component` |
+| Exactly one docs page and no stories | the `docs` entry itself, with the title's `name`, `depth` and `parent` (`undefined` at the top level) |
+| Several docs pages and no stories | `group` |
+
+The type comes from the full index, so `index` and `filteredIndex` always agree on it.
+Filters only remove entries: a component whose stories are all filtered out stays a `component` with its docs child in `filteredIndex`.
+The sidebar still shows such a component as a single docs page, for example for [docs-only stories](https://storybook.js.org/docs/writing-stories/tags#docs-only-stories).
+
+Functions passed to `sidebar.renderLabel` and sidebar filters receive the `docs` entry instead of the old wrapper and its `Docs` child.
+Sidebar search lists these pages under their own name, for example `Introduction` instead of `Docs` under `Introduction`.
+`api.selectStory('Introduction')` and `linkTo('Introduction')` still resolve to the docs page.
+
+`api.jumpToComponent` is renamed to `api.jumpToSubtree`, because it now also stops on docs pages that are not attached to a component.
+Its menu entries and shortcut labels read `Previous component or page` and `Next component or page`.
+The shortcut keys `prevComponent` and `nextComponent` keep their names, so customized shortcuts carry over.
 
 ### Test runner support ended
 
@@ -1467,6 +1522,28 @@ When `skills setup` cannot produce the instructions (for example because it find
 `skills setup` always prints to stdout, so replace `--output <path>` with a shell redirect, for example `npx storybook skills setup > storybook-setup.md`. It detects the package manager itself and has no `--package-manager` option.
 
 The experimental `storybook ai <tool>` commands behind the `STORYBOOK_FEATURE_AI_CLI` environment variable are removed as well. Use `npx storybook tools` instead, and run `npx storybook tools --help` to list the available tools.
+
+### `stories` skill renamed to `ui-workflow`
+
+The `stories` skill is renamed to `ui-workflow`: it still looks up the components to reuse, writes stories, runs the story tests and publishes a review. A new `component-docs` skill looks up the components to reuse, with their props and usage examples, and answers questions about them. Run `npx storybook skills ui-workflow` instead of `npx storybook skills stories`, which now exits with code 1. The Claude Code and Codex plugins ship `ui-workflow` and `component-docs` instead of `stories`.
+
+The skills no longer run for every UI change on their own. A section in `AGENTS.md`, between `<!-- BEGIN:storybook-skills -->` and `<!-- END:storybook-skills -->` markers, tells agents when to use them. `create storybook` and the `skills` automigration add it when they install the skills, and also to a `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` that does not import `AGENTS.md`, because Claude Code reads those instead. `storybook upgrade` replaces the text between the markers when the skills change, and never adds the section back. So remove both markers to keep your own edits, or remove the whole section to opt out, in each file that has it. When `storybook upgrade` updates skills that still include `stories` from an 11.0 prerelease, it removes that skill and adds the section. If you use the Claude Code or Codex plugin, or install the skills yourself, add the section to the `AGENTS.md` of each project yourself:
+
+```md
+<!-- BEGIN:storybook-skills -->
+<!-- Storybook updates this section on upgrade. Remove both markers to keep your own edits. -->
+
+## Storybook skills
+
+For each of these tasks, invoke its Storybook skill first, before you edit any file, and follow it:
+
+- `ui-workflow`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results.
+- `component-docs`: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. It lists the project's components with their props and usage examples.
+
+<!-- END:storybook-skills -->
+```
+
+See [Skills and plugins](docs/ai/skills.mdx) for more details.
 
 ### `--preview-url` and `--force-build-preview` removed
 
@@ -1853,6 +1930,22 @@ After:
 Storybook used to run the preprocessors from `svelte.config.js` on a stories file before it indexed the file. It now indexes stories files without preprocessors, so indexing works the same when your Svelte config is in the Vite config, as in SvelteKit 3. The indexer ignores the content of `<style>` blocks, so styles that need a preprocessor, such as SCSS, are fine. Preprocessors still apply when Storybook renders your stories.
 
 If a stories file needs a preprocessor outside of `<style>`, for example for TypeScript enums, indexing fails with [`SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009`](https://github.com/storybookjs/storybook/blob/next/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0009). Move that code to a separate module, and import it into the stories file.
+
+### Svelte: `parameters.component` removed from the source decorator
+
+The Svelte docs source decorator no longer reads or warns about `parameters.component`. That path has been deprecated since Storybook 7: for stories whose render result is a `@wrapper` component, generated source already used the story's `component` from meta (`context.component`).
+
+If you still set `parameters.component`, delete it and keep the component on the default export / `meta` instead:
+
+```diff
+ export default {
+   component: Button,
+   parameters: {
+-    component: Button,
+     docs: { description: { component: '...' } },
+   },
+ };
+```
 
 ### Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`
 

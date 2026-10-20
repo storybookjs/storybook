@@ -6,10 +6,10 @@ import {
   CURRENT_STORY_WAS_SET,
   DOCS_PREPARED,
   RESET_STORY_ARGS,
+  SELECT_STORY,
   SET_CONFIG,
   SET_FILTER,
   SET_INDEX,
-  SET_STORIES,
   STORY_ARGS_UPDATED,
   STORY_INDEX_INVALIDATED,
   STORY_MISSING,
@@ -18,7 +18,11 @@ import {
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
 import { logger } from 'storybook/internal/client-logger';
-import { type API_StoryEntry, type StoryIndex } from 'storybook/internal/types';
+import {
+  type API_PreparedIndexEntry,
+  type API_StoryEntry,
+  type StoryIndex,
+} from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -373,36 +377,36 @@ describe('stories API', () => {
       api.setIndex({
         v: 5,
         entries: {
-          'a-sampleone': {
+          'a-sampleone--1': {
             type: 'story',
             subtype: 'story',
-            id: 'a-sampleone',
+            id: 'a-sampleone--1',
             title: 'A/SampleOne',
             name: '1',
             tags: ['shared', 'one-specific'],
             importPath: './a.ts',
           },
-          'a-sampletwo': {
+          'a-sampletwo--2': {
             type: 'story',
             subtype: 'story',
-            id: 'a-sampletwo',
+            id: 'a-sampletwo--2',
             title: 'A/SampleTwo',
             name: '2',
             tags: ['shared', 'two-specific'],
             importPath: './a.ts',
           },
-          'a-embedded-othertopic': {
+          'a-embedded-othertopic--docs': {
             type: 'docs',
-            id: 'a-embedded-othertopic',
+            id: 'a-embedded-othertopic--docs',
             title: 'A/Embedded/OtherTopic',
             name: '3',
             tags: ['shared', 'embedded-docs-specific', 'other'],
             storiesImports: [],
             importPath: './embedded/other.mdx',
           },
-          'a-embedded-extras': {
+          'a-embedded-extras--docs': {
             type: 'docs',
-            id: 'a-embedded-extras',
+            id: 'a-embedded-extras--docs',
             title: 'A/Embedded/Extras',
             name: '3',
             tags: ['shared', 'embedded-docs-specific', 'extras'],
@@ -416,10 +420,12 @@ describe('stories API', () => {
       expect(Object.keys(index!)).toEqual([
         'a',
         'a-sampleone',
+        'a-sampleone--1',
         'a-sampletwo',
+        'a-sampletwo--2',
         'a-embedded',
-        'a-embedded-othertopic',
-        'a-embedded-extras',
+        'a-embedded-othertopic--docs',
+        'a-embedded-extras--docs',
       ]);
       // Acts as the root, so that the next level is a group we're testing.
       expect(index!.a).toMatchObject({
@@ -561,7 +567,6 @@ describe('stories API', () => {
           'component-a',
           'component-a--page',
           'component-a--story-2',
-          'component-b',
           'component-b--docs',
           'component-c',
           'component-c--story-4',
@@ -581,7 +586,7 @@ describe('stories API', () => {
           const { store } = moduleArgs;
           api.setIndex({ v: 5, entries: docsEntries });
           const { index } = store.getState();
-          expect(Object.keys(index!)).toEqual(['component-b', 'component-b--docs']);
+          expect(Object.keys(index!)).toEqual(['component-b--docs']);
         });
       });
     });
@@ -737,6 +742,21 @@ describe('stories API', () => {
 
       provider.channel.emit(STORY_SPECIFIED, { storyId: 'a--1', viewMode: 'story' });
       expect(navigate).not.toHaveBeenCalled();
+    });
+    it('navigates to the entry the preview resolved from a partial id', async () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          path: '/docs/intro',
+          storyId: 'intro',
+          viewMode: 'docs',
+          index: { 'intro--docs': { type: 'docs', id: 'intro--docs' } as any },
+        },
+      });
+      initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate, provider } = moduleArgs;
+
+      provider.channel.emit(STORY_SPECIFIED, { storyId: 'intro--docs', viewMode: 'docs' });
+      expect(navigate).toHaveBeenCalledWith('/docs/intro--docs', undefined);
     });
     it('DOES not navigate if a settings page was selected', async () => {
       const moduleArgs = createMockModuleArgs({
@@ -1029,7 +1049,7 @@ describe('stories API', () => {
       expect(result).toEqual(['component-a--story-1', 'component-a--story-2']);
     });
   });
-  describe('jumpToComponent', () => {
+  describe('jumpToSubtree', () => {
     it('works forward', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
       const moduleArgs = createMockModuleArgs({ initialState });
@@ -1037,7 +1057,7 @@ describe('stories API', () => {
       const { navigate } = moduleArgs;
 
       api.setIndex({ v: 5, entries: navigationEntries });
-      api.jumpToComponent(1);
+      api.jumpToSubtree(1);
       expect(navigate).toHaveBeenCalledWith('/story/b-c--1', undefined);
     });
     it('works backwards', () => {
@@ -1051,7 +1071,7 @@ describe('stories API', () => {
       const { navigate } = moduleArgs;
 
       api.setIndex({ v: 5, entries: navigationEntries });
-      api.jumpToComponent(-1);
+      api.jumpToSubtree(-1);
       expect(navigate).toHaveBeenCalledWith('/story/a--1', undefined);
     });
     it('does nothing if you are in the last component and go forward', () => {
@@ -1065,8 +1085,31 @@ describe('stories API', () => {
       const { navigate } = moduleArgs;
 
       api.setIndex({ v: 5, entries: navigationEntries });
-      api.jumpToComponent(1);
+      api.jumpToSubtree(1);
       expect(navigate).not.toHaveBeenCalled();
+    });
+    it('lands on an unattached docs page', () => {
+      const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
+      const moduleArgs = createMockModuleArgs({ initialState });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate } = moduleArgs;
+
+      api.setIndex({
+        v: 5,
+        entries: {
+          ...navigationEntries,
+          'intro--docs': {
+            type: 'docs',
+            id: 'intro--docs',
+            title: 'Intro',
+            name: 'Page',
+            importPath: './intro.mdx',
+            storiesImports: [],
+          },
+        },
+      });
+      api.jumpToSubtree(1);
+      expect(navigate).toHaveBeenCalledWith('/docs/intro--docs', undefined);
     });
     it('does nothing if you are at the first component and go backward', () => {
       const initialState = { path: '/story/a--2', storyId: 'a--2', viewMode: 'story' };
@@ -1075,7 +1118,7 @@ describe('stories API', () => {
       const { navigate } = moduleArgs;
 
       api.setIndex({ v: 5, entries: navigationEntries });
-      api.jumpToComponent(-1);
+      api.jumpToSubtree(-1);
       expect(navigate).not.toHaveBeenCalled();
     });
   });
@@ -1122,6 +1165,34 @@ describe('stories API', () => {
       api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('a--1');
       expect(store.getState().settings.lastTrackedStoryId).toBe('a--1');
+    });
+    it('selects the docs page of a component whose stories are all filtered out', () => {
+      const initialState = {
+        path: '/story/a--1',
+        storyId: 'a--1',
+        viewMode: 'story',
+        filters: { hideStories: (entry: API_PreparedIndexEntry) => entry.type !== 'story' },
+      };
+      const moduleArgs = createMockModuleArgs({ initialState });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate } = moduleArgs;
+
+      api.setIndex({
+        v: 5,
+        entries: {
+          'a--docs': {
+            type: 'docs',
+            id: 'a--docs',
+            title: 'a',
+            name: 'Docs',
+            importPath: './a.ts',
+            storiesImports: [],
+          },
+          'a--1': navigationEntries['a--1'],
+        },
+      });
+      api.selectStory('a');
+      expect(navigate).toHaveBeenCalledWith('/docs/a--docs', undefined);
     });
     it('selects first visible child when component is clicked with filtered index', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1401,71 +1472,78 @@ describe('stories API', () => {
       });
     });
   });
-  describe('v2 SET_STORIES event', () => {
-    it('normalizes parameters and calls setRef for external stories', () => {
+  describe('SELECT_STORY event', () => {
+    const setup = () => {
       const fullAPI = {
         findRef: vi.fn(),
         setRef: vi.fn(),
+        selectStory: vi.fn(),
       };
       const moduleArgs = createMockModuleArgs({ fullAPI });
       initStories(moduleArgs as unknown as ModuleArgs);
-      const { provider, store } = moduleArgs;
+      return { provider: moduleArgs.provider, fullAPI };
+    };
+
+    it('resolves the story from title and name', () => {
+      const { provider, fullAPI } = setup();
+
+      getEventMetadata.mockReturnValueOnce({ sourceType: 'local' } as any);
+      provider.channel.emit(SELECT_STORY, {
+        title: 'a',
+        name: '1',
+        viewMode: 'story',
+      });
+
+      expect(fullAPI.selectStory).toHaveBeenCalledWith('a', '1', { viewMode: 'story' });
+    });
+
+    it('resolves the story from storyId when provided', () => {
+      const { provider, fullAPI } = setup();
+
+      getEventMetadata.mockReturnValueOnce({ sourceType: 'local' } as any);
+      provider.channel.emit(SELECT_STORY, {
+        storyId: 'a--1',
+        viewMode: 'story',
+      });
+
+      expect(fullAPI.selectStory).toHaveBeenCalledWith('a--1', undefined, { viewMode: 'story' });
+    });
+
+    it('resolves the story from the legacy kind/story payload sent by older composed Storybooks', () => {
+      const { provider, fullAPI } = setup();
 
       getEventMetadata.mockReturnValueOnce({
         sourceType: 'external',
         ref: { id: 'ref' },
       } as any);
-      const setStoriesPayload = {
-        v: 2,
-        globalParameters: { global: 'global' },
-        kindParameters: { a: { kind: 'kind' } },
-        stories: { 'a--1': { kind: 'a', parameters: { story: 'story' } } },
-      };
-      provider.channel.emit(SET_STORIES, setStoriesPayload);
-      expect(store.getState().index).toBeUndefined();
-      expect(fullAPI.setRef).toHaveBeenCalledWith(
-        'ref',
-        {
-          id: 'ref',
-          setStoriesData: {
-            'a--1': { kind: 'a', parameters: { global: 'global', kind: 'kind', story: 'story' } },
-          },
-        },
-        true
-      );
-    });
-  });
-  describe('legacy (v1) SET_STORIES event', () => {
-    it('calls setRef with stories', () => {
-      const fullAPI = {
-        findRef: vi.fn(),
-        setRef: vi.fn(),
-      };
-      const moduleArgs = createMockModuleArgs({ fullAPI });
-      initStories(moduleArgs as unknown as ModuleArgs);
-      const { provider, store } = moduleArgs;
+      provider.channel.emit(SELECT_STORY, {
+        kind: 'a',
+        story: '1',
+        viewMode: 'story',
+      });
 
-      getEventMetadata.mockReturnValueOnce({
-        sourceType: 'external',
-        ref: { id: 'ref' },
-      } as any);
-      const setStoriesPayload = {
-        stories: { 'a--1': {} },
-      };
-      provider.channel.emit(SET_STORIES, setStoriesPayload);
-      expect(store.getState().index).toBeUndefined();
-      expect(fullAPI.setRef).toHaveBeenCalledWith(
-        'ref',
-        {
-          id: 'ref',
-          setStoriesData: {
-            'a--1': {},
-          },
-        },
-        true
+      expect(fullAPI.selectStory).toHaveBeenCalledWith('a', '1', {
+        viewMode: 'story',
+        ref: 'ref',
+      });
+    });
+
+    it('warns and does not navigate on a payload without storyId, title or name', () => {
+      const { provider, fullAPI } = setup();
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+
+      getEventMetadata.mockReturnValueOnce({ sourceType: 'local' } as any);
+      provider.channel.emit(SELECT_STORY, {});
+
+      expect(fullAPI.selectStory).not.toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('without storyId, title or name')
       );
+
+      warnSpy.mockRestore();
     });
   });
+
   describe('SET_CONFIG', () => {
     it('ignores sidebar.filters when config arrives after the index', async () => {
       const moduleArgs = createMockModuleArgs({

@@ -153,3 +153,30 @@ it('wires Compodoc into an Angular Vite preview that opts out of server docgen',
     "
   `);
 });
+
+it('imports the Vue template preview of a CSF factory sandbox', async () => {
+  vol.fromNestedJSON({
+    [PREVIEW_PATH]: `export default {};\n`,
+    [`${SANDBOX_DIR}/src/stories/renderers/vue3_vue3-vite-prerelease-ts/preview.ts`]: ``,
+  });
+
+  await extendPreview(
+    {
+      key: 'vue3-vite/prerelease-ts',
+      template: {
+        expected: {
+          framework: '@storybook/vue3-vite',
+          renderer: '@storybook/vue3',
+          builder: '@storybook/builder-vite',
+        },
+        modifications: { useCsfFactory: true, skipMocking: true },
+      },
+      sandboxDir: SANDBOX_DIR,
+    } as TemplateDetails,
+    {} as PassedOptionValues
+  );
+
+  expect(await readFile(PREVIEW_PATH, 'utf-8')).toContain(
+    'import "../src/stories/renderers/vue3_vue3-vite-prerelease-ts/preview";'
+  );
+});

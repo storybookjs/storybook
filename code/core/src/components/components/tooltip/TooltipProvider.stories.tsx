@@ -32,6 +32,19 @@ export const Base = meta.story({
     tooltip: <SampleTooltipNote />,
     children: <Trigger>Hover me!</Trigger>,
   },
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    const trigger = canvas.getByRole('button', { name: 'Hover me!' });
+
+    await userEvent.keyboard('{Escape}');
+    // React Aria requires pointer modality before the trigger's pointerenter event.
+    await userEvent.hover(canvasElement);
+    await userEvent.hover(trigger);
+    await screen.findByRole('tooltip');
+    await expect(trigger).toHaveAccessibleDescription('This note appears on hover and focus');
+
+    await userEvent.unhover(trigger);
+    await waitFor(() => expect(trigger).not.toHaveAccessibleDescription());
+  },
 });
 
 export const FocusOnly = meta.story({
@@ -39,6 +52,18 @@ export const FocusOnly = meta.story({
     triggerOnFocusOnly: true,
     tooltip: <SampleTooltipNote />,
     children: <Trigger tabIndex={0}>Focus me!</Trigger>,
+  },
+  play: async ({ canvas, userEvent }) => {
+    const trigger = canvas.getByRole('button', { name: 'Focus me!' });
+
+    await userEvent.tab();
+    await expect(trigger).toHaveFocus();
+    await screen.findByRole('tooltip');
+    await expect(trigger).toHaveAccessibleDescription('This note appears on hover and focus');
+
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(trigger).not.toHaveAccessibleDescription());
+    trigger.blur();
   },
 });
 

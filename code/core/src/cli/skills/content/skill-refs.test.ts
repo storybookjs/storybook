@@ -10,14 +10,14 @@ describe('getSkillRef', () => {
 
   it('renders the skills CLI command on the CLI transport', () => {
     expect(getSkillRef('cli')('write-story')).toBe('npx storybook skills write-story');
-    expect(getSkillRef('cli')('stories')).toBe('npx storybook skills stories');
+    expect(getSkillRef('cli')('ui-workflow')).toBe('npx storybook skills ui-workflow');
     expect(getSkillRef('cli')('setup')).toBe('npx storybook skills setup');
   });
 
   it('falls back to the CLI command for skills with no MCP tool equivalent', () => {
-    // `stories` is delivered via MCP server instructions, not a callable tool,
-    // so even the MCP transport names the CLI command as the reachable channel.
-    expect(getSkillRef('mcp')('stories')).toBe('npx storybook skills stories');
+    // `ui-workflow` has no MCP tool, so even the MCP transport names the CLI command as the
+    // reachable channel.
+    expect(getSkillRef('mcp')('ui-workflow')).toBe('npx storybook skills ui-workflow');
   });
 });
 

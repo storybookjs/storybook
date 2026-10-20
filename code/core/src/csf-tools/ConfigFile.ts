@@ -13,9 +13,9 @@ import {
   type CsfMutationDiagnostic,
   type CsfMutationResult,
   type CsfObject,
+  type CsfObjectEditor,
   type CsfObjectHost,
   type CsfValue,
-  createArray,
   createCsfObject,
   literalRoot,
 } from './CsfObject.ts';
@@ -424,7 +424,7 @@ export class ConfigFile implements CsfObject {
     });
   }
 
-  _mutate(operation: (object: CsfObject) => CsfMutationResult): CsfMutationResult {
+  _mutate(operation: (object: CsfObjectEditor) => CsfMutationResult): CsfMutationResult {
     const editor = this._objectEditor('mutate');
     if (editor.ok === true) {
       return operation(editor.object);
@@ -835,7 +835,7 @@ export class ConfigFile implements CsfObject {
     const current = this.getFieldNode(path);
     const source = placeableTextOf(node);
     if (!current) {
-      return this._mutate((object) => createArray(object, path, [source]));
+      return this._mutate((object) => object.createArray(path, [source]));
     }
     if (current.type !== 'ArrayExpression') {
       return this._notAnArray(path, current);

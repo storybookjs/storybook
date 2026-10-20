@@ -50,7 +50,7 @@ type Discovered = { target: CsfObjectTarget; root: ObjectRoot };
 // A top-level `Story.name = value` statement, as a member of the story.
 type Assignment = {
   statement: E.ExpressionStatement;
-  expression: E.AssignmentExpression & { left: E.MemberExpression };
+  left: E.MemberExpression;
   property: Property;
 };
 
@@ -368,7 +368,7 @@ const assignmentsOf = (csf: CsfFile, binding: StoryBinding) => {
       return { assignments, write };
     }
     const property = detachedMember(parent.property, user.right, parent.computed, statement);
-    assignments.push({ statement, expression: user as Assignment['expression'], property });
+    assignments.push({ statement, left: parent, property });
   }
   assignments.sort((a, b) => a.statement.start - b.statement.start);
   return { assignments, shared };
@@ -439,7 +439,7 @@ const storyRoot = (
         literal!.replaceValue(member, text);
         return;
       }
-      const { start, end } = outerSpan(assignment.expression.right);
+      const { start, end } = outerSpan(assignment.property.value);
       editor.edits.overwrite(start, end, text);
     },
     rename: (member, key) => {
@@ -448,7 +448,7 @@ const storyRoot = (
         literal!.rename(member, key);
         return;
       }
-      const { left } = assignment.expression;
+      const { left } = assignment;
       editor.edits.overwrite(left.object.end, left.end, printMemberAccess(key, editor.quote));
     },
     // `CsfObject` refuses a group of members from both the object and the assignments.
@@ -527,7 +527,7 @@ const discoverStories = (
       return reject(shared);
     }
     if (!object && !isAnnotatable(node)) {
-      const name = annotationName(assignments[0].expression.left)!;
+      const name = annotationName(assignments[0].left)!;
       return reject({
         code: 'unsupported-initializer',
         node: assignments[0].property.value,

@@ -1,7 +1,7 @@
 import type { ConfigFile } from './ConfigFile.ts';
 import {
   type CsfMutationDiagnostic,
-  type CsfObject,
+  type CsfObjectEditor,
   type CsfObjectHost,
   type MemberInsert,
   type ObjectRoot,
@@ -337,7 +337,9 @@ const namedExportsRoot = (editor: SourceEditor, entries: NamedEntry[]): ObjectRo
     const value = (
       entry.declaration.type === 'VariableDeclarator' ? entry.declaration.init : entry.declaration
     ) as E.Expression;
-    const key = entry.specifier ? entry.specifier.specifier.exported : entry.declaration.id!;
+    const key = entry.specifier
+      ? entry.specifier.specifier.exported
+      : (entry.declaration.id as E.IdentifierName);
     const property = detachedMember(key, value, false, entry.declaration);
     byProperty.set(property, entry);
     return property;
@@ -475,7 +477,7 @@ export function createConfigObject(
   mode: 'read' | 'mutate',
   report: (diagnostic: CsfMutationDiagnostic) => void,
   markChanged: () => void
-): { ok: true; object: CsfObject } | { ok: false; diagnostic: CsfMutationDiagnostic } {
+): { ok: true; object: CsfObjectEditor } | { ok: false; diagnostic: CsfMutationDiagnostic } {
   const located = locateConfigRoot(config, mode);
   if (located.ok === false) {
     return located;

@@ -1453,11 +1453,15 @@ const committedStatement = (
   return program.body.find((node) => node.start === start);
 };
 
-const statementBefore = (program: E.Program, statement: Node): Node | undefined =>
-  (program.body as readonly Node[])[program.body.indexOf(statement as E.Statement) - 1];
+type TopLevel = E.Program['body'][number];
+
+const statementBefore = (program: E.Program, statement: TopLevel) => {
+  const index = program.body.indexOf(statement);
+  return index > 0 ? program.body[index - 1] : undefined;
+};
 
 // Whether a statement, or the statement before it, spans lines with no blank line between them.
-const setsApart = ({ code, program }: ParsedModule, statement: Node) => {
+const setsApart = ({ code, program }: ParsedModule, statement: TopLevel) => {
   const before = statementBefore(program, statement);
   return (
     !!before &&
@@ -1468,7 +1472,7 @@ const setsApart = ({ code, program }: ParsedModule, statement: Node) => {
 
 // The start of the first line of a statement with the comments above it, below the statement
 // before it and the comments that share that statement's line.
-const ownLineStart = ({ code, program, comments }: ParsedModule, statement: Node) => {
+const ownLineStart = ({ code, program, comments }: ParsedModule, statement: TopLevel) => {
   const before = statementBefore(program, statement)!;
   const above = comments.find(
     (comment) =>

@@ -798,6 +798,54 @@ describe('ConfigFile', () => {
       expect(printConfig(config).code).toBe(`export default { addons: 5 };`);
     });
 
+    it.each([
+      [
+        'a local object',
+        "const shared = { addons: ['a'] };\nexport default { ...shared };",
+        ['addons'],
+        "export default { ...shared, addons: [...(shared.addons ?? []), 'x'] };",
+      ],
+      [
+        'several imports, the last one first',
+        "import a from './a';\nimport b from './b';\nexport default { ...a, ...b };",
+        ['addons'],
+        "export default { ...a, ...b, addons: [...(b.addons ?? a.addons ?? []), 'x'] };",
+      ],
+      [
+        'an import, through a missing parent',
+        "import shared from './shared';\nexport default { ...shared };",
+        ['framework', 'addons'],
+        "export default { ...shared, framework: { ...shared.framework, addons: [...(shared.framework?.addons ?? []), 'x'] } };",
+      ],
+    ])(
+      'creates a missing array after a spread of %s, carrying its elements forward',
+      (_case, code, path, line) => {
+        const viaValue = loadConfig(code).parse();
+        expect(viaValue.appendValueToArray(path, 'x')).toEqual({ ok: true, changed: true });
+        expect(printConfig(viaValue).code.split('\n').at(-1)).toBe(line);
+
+        const viaNode = loadConfig(code).parse();
+        expect(viaNode.appendNodeToArray(path, parseExpression("'x'"))).toEqual({
+          ok: true,
+          changed: true,
+        });
+        expect(printConfig(viaNode).code).toBe(printConfig(viaValue).code);
+      }
+    );
+
+    it.each([
+      ['a spread of a call', 'export default { ...getShared() };', 'spread-field'],
+      ['a computed key, which may name it', 'export default { [key]: [] };', 'dynamic-key'],
+    ])('rejects creating an array after %s', (_case, source, code) => {
+      const config = loadConfig(source).parse();
+
+      expect(config.appendValueToArray(['addons'], 'x')).toMatchObject({
+        ok: false,
+        diagnostic: { code },
+      });
+      expect(printConfig(config).code).toBe(source);
+    });
+
     it('reports a change like the other mutations', () => {
       const config = loadConfig(`export default { addons: [] };`).parse();
 

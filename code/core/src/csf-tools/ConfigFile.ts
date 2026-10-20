@@ -15,6 +15,7 @@ import {
   type CsfObject,
   type CsfObjectHost,
   type CsfValue,
+  createArray,
   createCsfObject,
   literalRoot,
 } from './CsfObject.ts';
@@ -834,7 +835,7 @@ export class ConfigFile implements CsfObject {
     const current = this.getFieldNode(path);
     const source = placeableTextOf(node);
     if (!current) {
-      return this.set(path, parseExpression(`[${source}]`));
+      return this._mutate((object) => createArray(object, path, [source]));
     }
     if (current.type !== 'ArrayExpression') {
       return this._notAnArray(path, current);

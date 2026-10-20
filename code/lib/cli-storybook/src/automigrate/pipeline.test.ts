@@ -415,7 +415,7 @@ describe('edit hooks', () => {
   });
 
   it('fails a hook that leaves mutation diagnostics, with their line', async () => {
-    fs.writeFileSync(mainConfigPath, 'const base = {};\nexport default { ...base };');
+    fs.writeFileSync(mainConfigPath, 'const base = {};\nexport default { ...getBase() };');
 
     const outcomes = await runTransforms(project, [{ fixId: 'a', hooks: [setFeature('a')] }], {
       write: true,

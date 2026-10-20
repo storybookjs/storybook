@@ -689,9 +689,102 @@ describe('CsfObject', () => {
   });
 
   it.each([
-    ['creating a parent a spread could provide', '{ ...Primary }', ['args', 'label']],
-    ['changing a field a later spread could shadow', "{ label: 'a', ...base }", ['label']],
-  ])('rejects %s', (_case, object, path) => {
+    [
+      'a spread of a local object with the field',
+      'const Base = { args: { b: 2 } };\nexport const A = { ...Base };',
+      ['args', 'a'],
+      "export const A = { ...Base, args: { ...Base.args, a: 'x' } };",
+    ],
+    [
+      'a spread of a local object without the field',
+      'const Base = { title: "B" };\nexport const A = { ...Base };',
+      ['args', 'a'],
+      "export const A = { ...Base, args: { a: 'x' } };",
+    ],
+    [
+      'a spread of a local object, two parents deep',
+      'const Base = { parameters: { docs: { y: 1 } } };\nexport const A = { ...Base };',
+      ['parameters', 'docs', 'a'],
+      "export const A = { ...Base, parameters: { ...Base.parameters, docs: { ...Base.parameters.docs, a: 'x' } } };",
+    ],
+    [
+      'a spread of an import, two parents deep',
+      "import { Base } from './Base.stories';\nexport const A = { ...Base };",
+      ['parameters', 'my-addon', 'a'],
+      "export const A = { ...Base, parameters: { ...Base.parameters, 'my-addon': { ...Base.parameters?.['my-addon'], a: 'x' } } };",
+    ],
+    [
+      'several spreads, of which the last with the field replaces the others',
+      "import { One, Two } from './stories';\nexport const A = { ...One, title: 'A', ...Two };",
+      ['args', 'a'],
+      "export const A = { ...One, title: 'A', ...Two, args: { ...(Two.args ?? One.args), a: 'x' } };",
+    ],
+    [
+      'a spread of a member chain',
+      "import * as stories from './Base.stories';\nexport const A = { ...stories.Base };",
+      ['args', 'a'],
+      "export const A = { ...stories.Base, args: { ...stories.Base.args, a: 'x' } };",
+    ],
+    [
+      'a spread with a type assertion',
+      "import { Base } from './Base.stories';\nexport const A = { ...(Base as Story) };",
+      ['args', 'a'],
+      "export const A = { ...(Base as Story), args: { ...(Base as Story).args, a: 'x' } };",
+    ],
+    [
+      'a spread inside a nested object',
+      "import { base } from './base';\nexport const A = { args: { ...base } };",
+      ['args', 'nested', 'a'],
+      "export const A = { args: { ...base, nested: { ...base.nested, a: 'x' } } };",
+    ],
+  ])(
+    'creates a missing parent after %s, carrying the spread member forward',
+    (_case, code, path, line) => {
+      const csf = parse(`export default { title: 'X' };\n${code}`);
+      const [story] = csf.objects({ meta: false });
+
+      expect(story.set(path, 'x')).toEqual({ ok: true, changed: true });
+      expect(printCsf(csf).code.split('\n').at(-1)).toBe(line);
+      expect(csf.mutationDiagnostics).toEqual([]);
+    }
+  );
+
+  it('lays a created parent after a spread out on lines for a multi-line value', () => {
+    const csf = parse(
+      "export default { title: 'X' };\nconst Base = { args: {} };\nexport const A = {\n  ...Base,\n};"
+    );
+    const [story] = csf.objects({ meta: false });
+
+    expect(story.set(['args', 'onClick'], parseExpression('() => {\n  x();\n}'))).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toContain(
+      'export const A = {\n  ...Base,\n  args: {\n    ...Base.args,\n    onClick: () => {\n      x();\n    },\n  },\n};'
+    );
+  });
+
+  it.each([
+    [
+      'creating a parent after a spread of a call',
+      '{ ...make() }',
+      ['args', 'label'],
+      'spread-field',
+    ],
+    ['creating a parent after a computed key', '{ [key]: {} }', ['args', 'label'], 'dynamic-key'],
+    [
+      'changing a field a later spread could shadow',
+      "{ label: 'a', ...base }",
+      ['label'],
+      'spread-field',
+    ],
+    [
+      'setting into a field a later spread could shadow',
+      '{ args: {}, ...base }',
+      ['args', 'a'],
+      'spread-field',
+    ],
+  ])('rejects %s', (_case, object, path, code) => {
     const source = `export default {};\nexport const A = ${object};`;
     const csf = parse(source);
     const [story] = csf.objects({ meta: false });
@@ -699,7 +792,7 @@ describe('CsfObject', () => {
     expect(story.set(path, 'x')).toMatchObject({
       ok: false,
       changed: false,
-      diagnostic: { code: 'spread-field' },
+      diagnostic: { code },
     });
     expect(printCsf(csf).code).toBe(source);
   });

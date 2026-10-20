@@ -4,6 +4,7 @@ import {
   type Property,
   type SourceLocation,
   type Span,
+  isValidIdentifier,
   locationOf,
   parseExpression,
   staticKey,
@@ -18,6 +19,7 @@ import {
   prependMembers,
   printKey,
   printMembers,
+  printString,
   printValue,
   removeMembers,
   renameKey,
@@ -392,6 +394,119 @@ const lookupProperty = (
   return { ok: true, property: matches[0] };
 };
 
+// A spread a parent created after it carries forward, with the object literal of the local
+// constant it spreads, whose members are known.
+type CarriedSpread = { source: string; literal: E.ObjectExpression | undefined };
+
+// A reference reads the same value when it is read again.
+const isReference = (node: Node): boolean =>
+  node.type === 'Identifier' ||
+  (node.type === 'MemberExpression' &&
+    !node.computed &&
+    !node.optional &&
+    node.property.type === 'Identifier' &&
+    isReference(node.object));
+
+const carriedSpreads = (
+  editor: SourceEditor,
+  properties: readonly E.ObjectPropertyKind[]
+):
+  | { ok: true; spreads: CarriedSpread[] }
+  | { ok: false; code: CsfMutationDiagnosticCode; node: Node } => {
+  const spreads: CarriedSpread[] = [];
+  for (const member of properties) {
+    if (member.type !== 'SpreadElement') {
+      if (staticKey(member) === undefined) {
+        return { ok: false, code: 'dynamic-key', node: member };
+      }
+      continue;
+    }
+    const reference = unwrapExpression(member.argument);
+    if (!isReference(reference)) {
+      return { ok: false, code: 'spread-field', node: member };
+    }
+    const binding =
+      reference.type === 'Identifier' ? editor.scopes.bindingOf(reference) : undefined;
+    const init =
+      binding?.constant && binding.node.type === 'VariableDeclarator'
+        ? unwrapExpression(binding.node.init)
+        : undefined;
+    // A type assertion stays, so the carried member has the type the spread was given.
+    const source = editor.source(member.argument);
+    spreads.push({
+      source: reference === member.argument ? source : `(${source})`,
+      literal: init?.type === 'ObjectExpression' ? init : undefined,
+    });
+  }
+  return { ok: true, spreads };
+};
+
+const memberAccess = (key: string, optional: boolean, quote: string) =>
+  isValidIdentifier(key, false)
+    ? `${optional ? '?.' : '.'}${key}`
+    : `${optional ? '?.' : ''}[${printString(key, quote)}]`;
+
+// What an object literal is known to hold at `key`: no member, the value of one, or unknown.
+const literalMember = (literal: E.ObjectExpression, key: string) => {
+  const lookup = lookupProperty(literal.properties, key);
+  if (!lookup.ok || lookup.property?.method) {
+    return { kind: 'unknown' as const };
+  }
+  if (!lookup.property) {
+    return { kind: 'missing' as const };
+  }
+  const value = unwrapExpression(lookup.property.value);
+  return { kind: 'value' as const, literal: value.type === 'ObjectExpression' ? value : undefined };
+};
+
+// The value the spreads give the member at `keys`, or `undefined` when none gives it one. The last
+// spread with the first key replaces what earlier ones give it, which are only read when it may
+// lack it, after `??`. A member below the spread's own is read with `?.`, as it may be missing; one
+// a local literal lacks is left out.
+const carriedValue = (
+  spreads: readonly CarriedSpread[],
+  keys: readonly string[],
+  quote: string
+) => {
+  const [first, ...rest] = keys;
+  const candidates: { expression: string; literal: E.ObjectExpression | undefined }[] = [];
+  for (const spread of [...spreads].reverse()) {
+    const member = spread.literal ? literalMember(spread.literal, first) : undefined;
+    if (member?.kind === 'missing') {
+      continue;
+    }
+    candidates.push({
+      expression: `${spread.source}${memberAccess(first, false, quote)}`,
+      literal: member?.kind === 'value' ? member.literal : undefined,
+    });
+    if (member?.kind === 'value') {
+      break;
+    }
+  }
+  if (candidates.length === 0) {
+    return undefined;
+  }
+  if (candidates.length > 1) {
+    const either = candidates.map(({ expression }) => expression).join(' ?? ');
+    return rest.length === 0
+      ? { expression: either, alternatives: true }
+      : {
+          expression: `(${either})${rest.map((key) => memberAccess(key, true, quote)).join('')}`,
+          alternatives: false,
+        };
+  }
+  let [{ expression, literal }] = candidates;
+  for (const key of rest) {
+    const member = literal ? literalMember(literal, key) : undefined;
+    if (member?.kind === 'missing') {
+      return undefined;
+    }
+    expression += memberAccess(key, !literal, quote);
+    literal = member?.kind === 'value' ? member.literal : undefined;
+  }
+  return { expression, alternatives: false };
+};
+
 class CsfObjectEditor implements CsfObject {
   #changed = false;
 
@@ -523,19 +638,43 @@ class CsfObjectEditor implements CsfObject {
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
+    if (inspected.missing !== undefined && inspected.missing < path.length - 1) {
+      const carried = carriedSpreads(this.editor, inspected.parent!.root.properties);
+      if (carried.ok === false) {
+        return this.failure(carried.code, path, carried.node);
+      }
+    }
     const { quote, indent } = this.editor;
     const text = printValue(value, quote, { indent, expand: 'multiline' });
     if (inspected.property && inspected.parent) {
       inspected.parent.root.replaceValue(inspected.property, text);
     } else {
-      this.insert(path, [
-        {
-          key: path.at(-1)!,
-          value: text,
-          text: `${printKey(path.at(-1)!, this.editor.quote)}: ${text}`,
-        },
-      ]);
+      const key = path.at(-1)!;
+      this.insert(path.slice(0, -1), {
+        members: [{ key, value: text, text: `${printKey(key, quote)}: ${text}` }],
+      });
     }
+    return this.commit(path);
+  }
+
+  // `set` of an array of `items` at a missing path, which carries the spreads before it forward
+  // like a missing parent, for appending to the array a spread may provide.
+  createArray(path: readonly string[], items: string[]): CsfMutationResult {
+    if (path.length === 0 || unsafePath(path)) {
+      return this.failure('unsupported-member', path, this.anchor());
+    }
+    const inspected = this.locate(path, 'set');
+    if (inspected.ok === false) {
+      return this.failure(inspected.code, path, inspected.node);
+    }
+    if (inspected.property) {
+      return this.failure('occupied-destination', path, inspected.property);
+    }
+    const carried = carriedSpreads(this.editor, inspected.parent!.root.properties);
+    if (carried.ok === false) {
+      return this.failure(carried.code, path, carried.node);
+    }
+    this.insert(path, { items });
     return this.commit(path);
   }
 
@@ -635,7 +774,7 @@ class CsfObjectEditor implements CsfObject {
     const moved = source.parent.root.take(source.property, key);
     // Insert first: if that throws, nothing has been committed. The source is removed afterwards,
     // looked up again since the insertion moved its spans.
-    this.insert(to, [{ ...moved, key }]);
+    this.insert(to.slice(0, -1), { members: [{ ...moved, key }] });
     const inserted = this.commit(from);
     if (!inserted.ok) {
       return inserted;
@@ -849,12 +988,13 @@ class CsfObjectEditor implements CsfObject {
     return undefined;
   }
 
-  // `access` applies to the last field of the path; its parents are read.
+  // `access` applies to the last field of the path, and to its parents for a `set`, which creates
+  // missing ones; other parents are read.
   private locate(
     path: readonly string[],
     access: Access = 'read'
   ):
-    | { ok: true; parent?: ParentObject; property?: Property }
+    | { ok: true; parent?: ParentObject; property?: Property; missing?: number }
     | { ok: false; code: CsfMutationDiagnosticCode; node: Node } {
     let parent: ParentObject = { root: this.root() };
     let property: Property | undefined;
@@ -863,13 +1003,16 @@ class CsfObjectEditor implements CsfObject {
       const lookup = lookupProperty(
         parent.root.properties,
         name,
-        index === path.length - 1 ? access : 'read'
+        index === path.length - 1 || access === 'set' ? access : 'read'
       );
       if (lookup.ok === false) {
         return lookup;
       }
       property = lookup.property;
-      if (!property || index === path.length - 1) {
+      if (!property) {
+        return { ok: true, parent, missing: index };
+      }
+      if (index === path.length - 1) {
         return { ok: true, parent, property };
       }
       if (property.method) {
@@ -885,28 +1028,55 @@ class CsfObjectEditor implements CsfObject {
     return { ok: true, parent, property };
   }
 
-  // Parents may not exist yet; the caller has validated the path.
-  private insert(path: readonly string[], members: MemberInsert[]) {
+  // Writes `content` into the object at `containers`, creating the missing ones, which carry the
+  // spreads before them forward; the last one is an array for `items`. The caller has validated it.
+  private insert(
+    containers: readonly string[],
+    content: { members: MemberInsert[] } | { items: string[] }
+  ) {
     let parent = this.root();
     const { quote, indent } = this.editor;
-    for (const [index, name] of path.slice(0, -1).entries()) {
-      const lookup = lookupProperty(parent.properties, name);
+    const invalidated = () => new Error('CsfObject mutation preflight was invalidated');
+    for (const [index, name] of containers.entries()) {
+      const lookup = lookupProperty(parent.properties, name, 'set');
       if (lookup.ok === false) {
-        throw new Error('CsfObject mutation preflight was invalidated');
+        throw invalidated();
       }
       if (!lookup.property) {
-        const missing = path.slice(index, -1);
+        const carried = carriedSpreads(this.editor, parent.properties);
+        if (carried.ok === false) {
+          throw invalidated();
+        }
+        const missing = containers.slice(index);
+        const texts =
+          'members' in content ? content.members.map((member) => member.text) : content.items;
         // Comments travel with moved members; a line comment needs the object to span lines.
-        const multiline = members.some((member) => member.text.includes('\n'));
-        const block = (texts: string[]) =>
-          multiline ? printMembers(texts, indent) : `{ ${texts.join(', ')} }`;
-        const nested = missing
-          .slice(1)
-          .reverse()
-          .reduce(
-            (inner, key) => block([`${printKey(key, quote)}: ${inner}`]),
-            block(members.map((member) => member.text))
-          );
+        const multiline = texts.some((text) => text.includes('\n'));
+        const block = (members: string[]) =>
+          multiline ? printMembers(members, indent) : `{ ${members.join(', ')} }`;
+        const forward = (depth: number, array: boolean) => {
+          const value = carriedValue(carried.spreads, missing.slice(0, depth + 1), quote);
+          if (!value) {
+            return [];
+          }
+          const { expression, alternatives } = value;
+          return [
+            array
+              ? `...(${expression} ?? [])`
+              : `...${alternatives ? `(${expression})` : expression}`,
+          ];
+        };
+        const last = missing.length - 1;
+        let nested =
+          'members' in content
+            ? block([...forward(last, false), ...texts])
+            : `[${[...forward(last, true), ...texts].join(', ')}]`;
+        for (let depth = last - 1; depth >= 0; depth--) {
+          nested = block([
+            ...forward(depth, false),
+            `${printKey(missing[depth + 1], quote)}: ${nested}`,
+          ]);
+        }
         parent.append([{ key: name, value: nested, text: `${printKey(name, quote)}: ${nested}` }]);
         return;
       }
@@ -914,11 +1084,14 @@ class CsfObjectEditor implements CsfObject {
         ? undefined
         : resolveExpression(this.editor.scopes, lookup.property.value);
       if (value?.type !== 'ObjectExpression') {
-        throw new Error('CsfObject mutation preflight was invalidated');
+        throw invalidated();
       }
       parent = literalRoot(this.editor, value);
     }
-    parent.append(members);
+    if (!('members' in content)) {
+      throw invalidated();
+    }
+    parent.append(content.members);
   }
 
   private anchor(): Node {
@@ -984,6 +1157,14 @@ class CsfObjectEditor implements CsfObject {
     return { ok: true, changed: true };
   }
 }
+
+// Append to an array at a missing field, as `ConfigFile#appendNodeToArray` does.
+export const createArray = (object: CsfObject, path: readonly string[], items: string[]) => {
+  if (!(object instanceof CsfObjectEditor)) {
+    throw new Error('CsfObject: createArray needs an editor of createCsfObject');
+  }
+  return object.createArray(path, items);
+};
 
 export const createCsfObject = (
   target: CsfObjectTarget,

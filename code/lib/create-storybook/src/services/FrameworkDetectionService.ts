@@ -1,14 +1,13 @@
 import { type JsPackageManager, getProjectRoot } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
-import type { SupportedRenderer } from 'storybook/internal/types';
-import { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
+import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
 
 import { createPromptCancelOptions } from '../prompt-cancel.ts';
 import { TelemetryService } from './TelemetryService.ts';
-import { isRemix3VersionRange } from './ProjectTypeService.ts';
+import { dependsOnRemix3 } from './ProjectTypeService.ts';
 
 const viteConfigFiles = ['vite.config.ts', 'vite.config.js', 'vite.config.mjs'];
 const webpackConfigFiles = ['webpack.config.js'];
@@ -34,7 +33,7 @@ export class FrameworkDetectionService {
     throw new Error(`Could not find framework for renderer: ${renderer} and builder: ${builder}`);
   }
 
-  async detectBuilder() {
+  async detectBuilder(renderer?: SupportedRenderer) {
     const viteConfig = find.any(viteConfigFiles, { last: getProjectRoot() });
     const webpackConfig = find.any(webpackConfigFiles, { last: getProjectRoot() });
     const rsbuildConfig = find.any(rsbuildConfigFiles, { last: getProjectRoot() });
@@ -59,8 +58,13 @@ export class FrameworkDetectionService {
       detectedBuilders.push(SupportedBuilder.RSBUILD);
     }
 
-    // Remix 3 ships no bundler. The HTML renderer has Vite and Rsbuild, not Webpack.
-    if (isRemix3VersionRange(dependencies.remix)) {
+    // Remix 3 ships no bundler. Only the HTML renderer lacks Webpack; a React init keeps it.
+    if (
+      renderer === SupportedRenderer.HTML &&
+      (await dependsOnRemix3(dependencies.remix, () =>
+        this.jsPackageManager.getDeclaredVersionSpecifier('remix')
+      ))
+    ) {
       if (detectedBuilders.includes(SupportedBuilder.VITE)) {
         return SupportedBuilder.VITE;
       }

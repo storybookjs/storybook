@@ -3,6 +3,7 @@ import { csfFactoryReceiver, isCsfFactoryCall, withoutTypeCalls } from './CsfFil
 import {
   type CsfMutationDiagnostic,
   type CsfMutationDiagnosticCode,
+  type CsfMutationTarget,
   type CsfObject,
   type CsfObjectHost,
   type CsfObjectLookup,
@@ -177,34 +178,26 @@ const storyExports = (csf: CsfFile, report: ReportDiagnostic): StoryBinding[] =>
   );
 };
 
-// Each story export with the first export of its declaration, which owns the story's object: a
-// declaration exported under two names is one story. This is the one path from an export name to
-// the object it edits, for `objects()` and `storyObject()` alike.
-const storyOwners = (csf: CsfFile, report: ReportDiagnostic) => {
-  const firsts = new Map<Node, StoryBinding>();
-  return storyExports(csf, report).map((binding) => {
-    const owner = firsts.get(binding.declaration) ?? binding;
-    firsts.set(binding.declaration, owner);
-    return { binding, owner };
-  });
-};
-
 // The first export of each declaration, which edits it for all of its exports. Each other export
 // is reported as an alias of it.
-const storyBindings = (csf: CsfFile, report: ReportDiagnostic): StoryBinding[] =>
-  storyOwners(csf, report).flatMap(({ binding, owner }) => {
-    if (binding === owner) {
-      return [binding];
+const storyBindings = (csf: CsfFile, report: ReportDiagnostic): StoryBinding[] => {
+  const unique = new Map<Node, StoryBinding>();
+  for (const binding of storyExports(csf, report)) {
+    const first = unique.get(binding.declaration);
+    if (!first) {
+      unique.set(binding.declaration, binding);
+      continue;
     }
     report({
       code: 'aliased-story',
       target: storyTarget(binding),
       path: [],
-      message: `Cannot mutate ${binding.exportName} without changing ${owner.exportName}, which exports the same story`,
+      message: `Cannot mutate ${binding.exportName} without changing ${first.exportName}, which exports the same story`,
       ...loc(csf, binding.node),
     });
-    return [];
-  });
+  }
+  return [...unique.values()];
+};
 
 const variableInit = (binding: Binding | undefined) =>
   binding?.constant && binding.node.type === 'VariableDeclarator' ? binding.node.init : undefined;
@@ -675,7 +668,8 @@ export const discoverCsfObjects = (
     editorOf(csf, options, target, report, markChanged)
   );
 
-// Reports only the diagnostics of this story, as no other story was asked for.
+// The answer of `objects()` for this one story, so a name is mapped to its object only by
+// `discover`. Reports only the diagnostics of this story, as no other story was asked for.
 export const discoverStory = (
   csf: CsfFile,
   exportName: string,
@@ -686,30 +680,16 @@ export const discoverStory = (
   if (!Object.hasOwn(csf._stories, exportName)) {
     return undefined;
   }
+  const isOwn = (target: CsfMutationTarget) =>
+    'exportName' in target && target.exportName === exportName;
   const diagnostics: CsfMutationDiagnostic[] = [];
-  const reportOwn = (diagnostic: CsfMutationDiagnostic) => {
-    if ('exportName' in diagnostic.target && diagnostic.target.exportName === exportName) {
-      diagnostics.push(diagnostic);
-    }
-  };
-  const { binding, owner } =
-    storyOwners(csf, reportOwn).find((candidate) => candidate.binding.exportName === exportName) ??
-    {};
-  if (binding && owner && owner !== binding) {
-    diagnostics.push({
-      code: 'ambiguous-binding',
-      target: storyTarget(binding),
-      path: [],
-      message: `Cannot mutate ${exportName} without changing ${owner.exportName}, which exports the same story`,
-      ...loc(csf, binding.node),
-    });
-  }
-  const [found] =
-    diagnostics.length === 0 && binding ? discoverStories(csf, [binding], reportOwn) : [];
+  const found = discover(csf, { meta: false }, (diagnostic) => diagnostics.push(diagnostic)).find(
+    ({ target }) => isOwn(target)
+  );
   if (found) {
     return { ok: true, object: editorOf(csf, { meta: false }, found.target, report, markChanged) };
   }
-  const diagnostic = diagnostics[0] ?? {
+  const diagnostic = diagnostics.find(({ target }) => isOwn(target)) ?? {
     code: 'unsupported-initializer',
     target: {
       kind: 'story',

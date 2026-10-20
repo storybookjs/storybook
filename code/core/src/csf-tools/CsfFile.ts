@@ -472,7 +472,10 @@ export class CsfFile {
   /**
    * Find the editor of the story exported as `exportName`, as `objects()` would give it, or the
    * diagnostic that says why it has none, which is added to `mutationDiagnostics` as well. Returns
-   * `undefined` when the file has no story of that name.
+   * `undefined` when the file has no story of that name. A story that shares its object with
+   * another story, such as `Secondary` in `export { Primary as Secondary }` or `export const
+   * Secondary = Primary`, has none: it is refused as `aliased-story`, naming `Primary`, whose
+   * editor edits both.
    *
    * @example
    * ```ts

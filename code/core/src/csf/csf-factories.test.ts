@@ -198,6 +198,74 @@ describe('test function', () => {
   });
 });
 
+describe('experimental_storyInput', () => {
+  const derivingPreview = definePreview({
+    addons: [],
+    renderToCanvas: () => {},
+    experimental_storyInput: (input, meta) =>
+      Object.keys({ ...meta.input.args, ...input.args }).length
+        ? input
+        : { ...input, parameters: { ...input.parameters, argless: true } },
+  });
+  const derivingMeta = derivingPreview.meta({ render: () => 'hello' });
+
+  test('derives the input of a story before it is composed', () => {
+    const story = derivingMeta.story({ parameters: { layout: 'centered' } });
+    expect(story.input.parameters).toEqual({ layout: 'centered', argless: true });
+    expect(story.composed.parameters).toMatchObject({ layout: 'centered', argless: true });
+  });
+
+  test('derives the input of a function story', () => {
+    expect(derivingMeta.story(() => 'hi').composed.parameters).toMatchObject({ argless: true });
+  });
+
+  test('does not change the object the story was defined with', () => {
+    const annotations = { parameters: { theme: 'dark' } };
+    derivingMeta.story(annotations);
+    expect(annotations).toEqual({ parameters: { theme: 'dark' } });
+  });
+
+  test('derives the input of extend from the inputs the user gave', () => {
+    const derived = derivingMeta.story({ parameters: {} });
+    const given = derivingMeta.story({ parameters: { argless: true } });
+    const args = { label: 'foo' };
+    expect(derived.input.parameters).toEqual({ argless: true });
+    expect(derived.extend({ args, parameters: {} }).input.parameters).toEqual({});
+    expect(given.extend({ args, parameters: {} }).input.parameters).toEqual({ argless: true });
+  });
+
+  test('derives the input of a test', () => {
+    const story = derivingMeta.story();
+    story.test('a test', () => {});
+    story.test('a test with args', { args: { label: 'foo' } }, () => {});
+    const [test, testWithArgs] = getStoryChildren(story);
+    expect(test.input.parameters).toMatchObject({ argless: true });
+    expect(testWithArgs.input.parameters).not.toHaveProperty('argless');
+  });
+
+  test('is typed by the addons of the preview and does not change its type', () => {
+    const typedPreview = definePreview({
+      addons: [addon, addon2],
+      renderToCanvas: () => {},
+      // @ts-expect-error can not assign numbers to strings
+      experimental_storyInput: (input) => ({
+        ...input,
+        parameters: { ...input.parameters, foo: { value: 1 } },
+      }),
+    });
+    expectTypeOf(typedPreview).toEqualTypeOf(preview);
+  });
+
+  test('is not part of the composed preview', () => {
+    expect(derivingPreview.composed).not.toHaveProperty('experimental_storyInput');
+  });
+
+  test('without it, the input of a story is the object it was defined with', () => {
+    const annotations = { args: { label: 'bar' } };
+    expect(meta.story(annotations).input).toBe(annotations);
+  });
+});
+
 describe('definePreview composed', () => {
   test('composes the core annotations exactly once and marks the result', () => {
     const previewFactory = definePreview({ renderToCanvas: () => {} });

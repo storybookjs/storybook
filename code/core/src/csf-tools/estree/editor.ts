@@ -380,7 +380,8 @@ interface Batch {
   lists: Map<string, Appended>;
   // The text inserted last after each statement.
   lastInsertedAfter: Map<Span, string>;
-  // The line starts statements were inserted at, which a removal around them keeps.
+  // The line starts statements were inserted at, which a removal around them keeps. One can be
+  // where code sharing a line starts, which the inserted statements moved to a line of its own.
   insertedAt: Set<number>;
 }
 
@@ -1339,27 +1340,25 @@ export const insertStatementAfter = (editor: SourceEditor, statement: Span, text
   // A statement without `;` ends before code that would continue it, such as `[1].map(f)`.
   const terminator =
     !endsStatement(body) && CONTINUES_STATEMENT.test(code.slice(next).trimStart()) ? ';' : '';
-  const written = `\n${lead}${separator}${body}${terminator}`;
-  // At the start of the next line: not at the statement's end, which can be its last expression's
-  // end, where later text belongs to the expression, and left of the next statement, where text
-  // belongs to that one. A removal of the statement keeps text at the start of the next line.
+  const line = `${lead}${separator}${body}${terminator}`;
   if (next === code.length) {
-    edits.appendRight(next, written);
+    edits.appendRight(next, `\n${line}`);
     return;
   }
-  if (code[next] === '\n') {
-    const at = next + 1;
-    edits.appendLeft(at, `${written.slice(1)}\n`);
-    batch.insertedAt.add(at);
-    return;
+  // At the start of the next line, or of the code sharing the statement's line, which a line break
+  // moves to a line of its own: not at the statement's end, which can be its last expression's
+  // end, where later text belongs to the expression, and left of the next statement, where text
+  // belongs to that one. A removal of the statement keeps text there.
+  const at = code[next] === '\n' ? next + 1 : next;
+  if (at === next && !batch.insertedAt.has(at) && !isRemoved(editor, statement)) {
+    if (next > end) {
+      edits.overwrite(end, next, '\n');
+    } else {
+      edits.appendLeft(end, '\n');
+    }
   }
-  edits.appendLeft(end, written);
-  // The same line break for every statement inserted here.
-  if (next > end) {
-    edits.overwrite(end, next, '\n');
-  } else {
-    edits.appendRight(next, '\n');
-  }
+  edits.appendLeft(at, `${line}\n`);
+  batch.insertedAt.add(at);
 };
 
 /** Insert a statement after the last import, or as the first statement when there is none. */
@@ -1408,6 +1407,15 @@ const isRemoved = (editor: SourceEditor, span: Span) => {
     return editor.edits.slice(span.start, span.end) === '';
   } catch {
     return true;
+  }
+};
+
+// Whether code is left between two offsets once the pending edits are made.
+const keepsCode = (editor: SourceEditor, start: number, end: number) => {
+  try {
+    return editor.edits.slice(start, end).trim() !== '';
+  } catch {
+    return editor.code.slice(start, end).trim() !== '';
   }
 };
 
@@ -1509,13 +1517,17 @@ export const removeStatement = (editor: SourceEditor, statement: Span, atTop?: b
   const { code } = editor;
   const { start, end } = statementSpan(editor, statement);
   const lineBreak = lineEnd(code, end);
-  let from = lineStart(code, start);
-  if (code.slice(end, lineBreak).trim()) {
+  // A statement inserted before the code sharing its line moved that code to a line of its own.
+  let from = Math.max(
+    lineStart(code, start),
+    ...[...editor._batch.insertedAt].filter((at) => at <= start)
+  );
+  if (keepsCode(editor, end, lineBreak)) {
     // Code stays after it on the line: take the spaces before that code.
     editor.edits.remove(start, end + /^[^\S\n]*/.exec(code.slice(end))![0].length);
     return;
   }
-  if (code.slice(from, start).trim()) {
+  if (keepsCode(editor, from, start)) {
     // Code stays before it on the line: take the spaces after that code.
     editor.edits.remove(start - /[^\S\n]*$/.exec(code.slice(from, start))![0].length, end);
     return;

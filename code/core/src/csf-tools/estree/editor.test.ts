@@ -870,6 +870,13 @@ describe('removeStatement', () => {
     removeStatement(editor, editor.program.body[1]);
     expect(editor.toString()).toBe(`import a from 'a'; /* a */`);
   });
+
+  it('removes the line of statements that shared it with a removed one', () => {
+    const editor = new SourceEditor('a(); b();\nc();\n');
+    removeStatement(editor, editor.program.body[0]);
+    removeStatement(editor, editor.program.body[1]);
+    expect(editor.toString()).toBe('c();\n');
+  });
 });
 
 describe('prependStatement', () => {
@@ -966,6 +973,32 @@ describe('insertStatementAfter', () => {
       );
     }
   );
+
+  it.each([true, false])(
+    'keeps a statement inserted after one sharing its line when that one is removed, inserting first: %s',
+    (insertFirst) => {
+      const editor = new SourceEditor('a(); b();\nc();\n');
+      const [a] = editor.program.body;
+      const insert = () => insertStatementAfter(editor, a, 'x();');
+      if (insertFirst) {
+        insert();
+      }
+      removeStatement(editor, a);
+      if (!insertFirst) {
+        insert();
+      }
+      expect(editor.toString()).toBe('x();\nb();\nc();\n');
+    }
+  );
+
+  it('keeps a statement inserted after one sharing its line on its own line when the code after is removed', () => {
+    const editor = new SourceEditor('a(); b();\nc();\n');
+    const [a, b] = editor.program.body;
+    insertStatementAfter(editor, a, 'x();');
+    insertStatementAfter(editor, b, 'y();');
+    removeStatement(editor, b);
+    expect(editor.toString()).toBe('a();\nx();\ny();\nc();\n');
+  });
 });
 
 describe('insertAfterImports', () => {

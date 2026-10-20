@@ -113,7 +113,7 @@ export class SourceEditor {
   // how to undo state kept outside the editor, such as a `changed` flag.
   _transaction: { refused: boolean; rollbacks: (() => void)[] } | undefined;
 
-  /** Mark a mutation as refused, so the transaction it runs in rolls back. */
+  // Marks a mutation as refused, so the transaction it runs in rolls back.
   _refuse() {
     if (this._transaction) {
       this._transaction.refused = true;
@@ -121,8 +121,8 @@ export class SourceEditor {
   }
 
   // What `appendStatement` wrote without a blank line before it: statements of this parse, and
-  // texts of pending edits. Each commit finds them in the code it parses, and sets one apart once it
-  // or the statement before it spans lines.
+  // texts of pending edits. Each commit finds them in the code it parses, and sets one apart once
+  // it or the statement before it spans lines.
   _appendedWithoutBlankLine: (Node | string)[] = [];
 
   constructor(code: string, fileName?: string, onCommit?: () => void) {
@@ -356,7 +356,7 @@ export class SourceEditor {
     return this._style.indent;
   }
 
-  /** Whether statements to generate end with `;`: false only when most statements of the file omit it. */
+  /** Whether generated statements end with `;`: unless most statements of the file omit it. */
   get semicolons() {
     this._style ??= inferStyle(this._module);
     return this._style.semicolons;
@@ -389,8 +389,8 @@ const copyBatch = ({ edits, lists, lastInsertedAfter, insertedAt }: Batch): Batc
   insertedAt: new Set(insertedAt),
 });
 
-// Statements and class fields that end with an optional `;`. A declaration in a `for` head has none;
-// an exported declaration ends with the `;` of its `export`.
+// Statements and class fields that end with an optional `;`. A declaration in a `for` head has
+// none; an exported declaration ends with the `;` of its `export`.
 const endsWithOptionalSemicolon = (node: Node, parent: Node | null) => {
   switch (node.type) {
     case 'ImportDeclaration':
@@ -398,7 +398,6 @@ const endsWithOptionalSemicolon = (node: Node, parent: Node | null) => {
     case 'ExpressionStatement':
     case 'ReturnStatement':
     case 'ThrowStatement':
-      return true;
     case 'TSTypeAliasDeclaration':
     case 'PropertyDefinition':
       return true;
@@ -1430,8 +1429,8 @@ export const appendStatement = (editor: SourceEditor, text: string) => {
   insertStatementAfter(editor, last, `${multiline ? '\n' : ''}${text}`);
 };
 
-// The statement of the parse of `edits` that a statement of the code they edit became, or that a
-// text appended in them is.
+// The statement of `module`, the parse of `edits`, that a statement of the code they edit became,
+// or whose source is a text they appended.
 const committedStatement = (
   edits: SourceEdits,
   { code, program }: ParsedModule,

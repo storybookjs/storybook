@@ -290,10 +290,14 @@ type PropertyLookup =
 
 const unsafePath = (path: readonly string[]) => path.includes('__proto__');
 
+// A `set` appends a missing field after every member, so it overrides what they could provide;
+// a removal could reveal what an earlier member provides.
+type Access = 'read' | 'set' | 'remove';
+
 const lookupProperty = (
   properties: readonly E.ObjectPropertyKind[],
   name: string,
-  removing = false
+  access: Access = 'read'
 ): PropertyLookup => {
   const matches: Property[] = [];
   let unknown: { code: CsfMutationDiagnosticCode; node: Node } | undefined;
@@ -326,7 +330,9 @@ const lookupProperty = (
   // A member whose key is only known at runtime cannot shadow an explicit property declared after
   // it, but it can shadow one declared before it, and with no explicit property at all it leaves
   // both the value and its absence unproven.
-  const unproven = unknownAfterMatch ?? (removing || matches.length === 0 ? unknown : undefined);
+  const unproven =
+    unknownAfterMatch ??
+    (access === 'remove' || (access === 'read' && matches.length === 0) ? unknown : undefined);
   if (unproven) {
     return { ok: false, code: unproven.code, node: unproven.node };
   }
@@ -448,7 +454,7 @@ class CsfObjectEditor implements CsfObject {
     if (!logicalPath || logicalPath.length === 0 || unsafePath(logicalPath)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
-    const inspected = this.inspect(logicalPath);
+    const inspected = this.inspect(logicalPath, 'set');
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
@@ -504,7 +510,7 @@ class CsfObjectEditor implements CsfObject {
     if (!inspected.property || !inspected.parent) {
       return { ok: true, changed: false };
     }
-    const removal = lookupProperty(inspected.parent.root.properties, logicalPath.at(-1)!, true);
+    const removal = lookupProperty(inspected.parent.root.properties, logicalPath.at(-1)!, 'remove');
     if (!removal.ok) {
       return this.failure(removal.code, path, removal.node);
     }
@@ -554,7 +560,7 @@ class CsfObjectEditor implements CsfObject {
     if (!source.property || !source.parent) {
       return { ok: true, changed: false };
     }
-    const removal = lookupProperty(source.parent.root.properties, sourcePath.at(-1)!, true);
+    const removal = lookupProperty(source.parent.root.properties, sourcePath.at(-1)!, 'remove');
     if (!removal.ok) {
       return this.failure(removal.code, from, removal.node);
     }
@@ -776,7 +782,7 @@ class CsfObjectEditor implements CsfObject {
       if (value?.type !== 'ObjectExpression' || value.properties.length > 0) {
         return;
       }
-      if (!lookupProperty(ancestor.parent.root.properties, path[depth - 1], true).ok) {
+      if (!lookupProperty(ancestor.parent.root.properties, path[depth - 1], 'remove').ok) {
         return;
       }
       ancestor.parent.root.remove([ancestor.property]);
@@ -801,8 +807,10 @@ class CsfObjectEditor implements CsfObject {
     return path.slice(this.prefix.length);
   }
 
+  // `access` applies to the last field of the path; its parents are read.
   private inspect(
-    path: readonly string[]
+    path: readonly string[],
+    access: Access = 'read'
   ):
     | { ok: true; parent?: ParentObject; property?: Property }
     | { ok: false; code: CsfMutationDiagnosticCode; node: Node } {
@@ -810,7 +818,11 @@ class CsfObjectEditor implements CsfObject {
     let property: Property | undefined;
 
     for (const [index, name] of path.entries()) {
-      const lookup = lookupProperty(parent.root.properties, name);
+      const lookup = lookupProperty(
+        parent.root.properties,
+        name,
+        index === path.length - 1 ? access : 'read'
+      );
       if (lookup.ok === false) {
         return lookup;
       }

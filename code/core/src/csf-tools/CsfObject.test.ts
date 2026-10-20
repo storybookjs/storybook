@@ -610,6 +610,52 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toBe(source);
   });
 
+  it.each([
+    ['spread', '...Primary'],
+    ['computed key', '[field]: true'],
+  ])('adds a field after an earlier %s, which it then overrides', (_kind, member) => {
+    const csf = parse(`export default {};\nexport const A = { ${member}, args: { ${member} } };`);
+    const [story] = csf.objects({ meta: false });
+
+    expect(story.set(['play'], parseExpression('async () => {}'))).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(story.set(['args', 'label'], 'x')).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(
+      `export default {};\nexport const A = { ${member}, args: { ${member}, label: "x" }, play: async () => {} };`
+    );
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
+  it.each([
+    ['creating a parent a spread could provide', '{ ...Primary }', ['args', 'label']],
+    ['changing a field a later spread could shadow', "{ label: 'a', ...base }", ['label']],
+  ])('rejects %s', (_case, object, path) => {
+    const source = `export default {};\nexport const A = ${object};`;
+    const csf = parse(source);
+    const [story] = csf.objects({ meta: false });
+
+    expect(story.set(path, 'x')).toMatchObject({
+      ok: false,
+      changed: false,
+      diagnostic: { code: 'spread-field' },
+    });
+    expect(printCsf(csf).code).toBe(source);
+  });
+
+  it('rejects moving to a field a spread could provide', () => {
+    const source = `export default {};\nexport const A = { label: 'a', args: { ...base } };`;
+    const csf = parse(source);
+    const [story] = csf.objects({ meta: false });
+
+    expect(story.move(['label'], ['args', 'label'])).toMatchObject({
+      ok: false,
+      diagnostic: { code: 'spread-field' },
+    });
+    expect(printCsf(csf).code).toBe(source);
+  });
+
   it('keeps the original source of nodes reused by a transformed value', () => {
     const csf = parse(`
       export default {

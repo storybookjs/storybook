@@ -25,6 +25,7 @@ Annotation editors take the same paths as their story counterparts, so `['parame
 
 Discovery and mutation are conservative: an object or a path whose shape cannot be proven is left untouched, and the reason is reported on `CsfFile.mutationDiagnostics` as a `CsfMutationDiagnostic`.
 Unproven shapes include story or meta bindings that are reassigned or aliased, a CSF factory configuration that is not an object literal owned by that single factory call, dynamically computed annotation names, and target paths shadowed by a spread, a duplicate field, or a computed key.
+`set` can still add a field missing from an object with a spread or a computed key: the field is appended after them, so it overrides any value they provide. It cannot create a missing parent there, nor change a field that a later spread or computed key could override.
 
 `CsfFile.changed` is true once any mutation has been applied, which is the signal for whether the file needs to be written back.
 

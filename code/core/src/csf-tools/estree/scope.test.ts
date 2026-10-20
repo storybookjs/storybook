@@ -79,6 +79,18 @@ describe('analyzeScopes', () => {
     ['a parameter annotation', 'import { T } from "x"; function f(a: T) {}', 0],
     ['a method signature name', 'const get = 1; interface I { get(): void }', 1],
     ['a computed type key', 'const K = Symbol(); type X = { [K]: true };', 1],
+    ['a same-named type alias', 'const T = 1; type T = string;', 1],
+    [
+      'a namespace merged into a function',
+      'function F() {} namespace F { export const a = 1; }',
+      1,
+    ],
+    ['an ambient signature in a block', 'function f() {} { declare function f(): void; }', 1],
+    [
+      'an enum that shadows an import',
+      'import { Color } from "x"; function f() { enum Color { A } return Color.A; }',
+      2,
+    ],
   ])('counts type references like Babel: %s', (_, code, references) => {
     const [first] = Object.values(programBindings(code));
     expect(first.references).toBe(references);
@@ -196,6 +208,17 @@ describe('analyzeScopes', () => {
       expect(info.bindingOf(inner)).not.toBe(info.bindingOf(outer));
     }
   );
+
+  it('counts exports and overloads inside a namespace like Babel', () => {
+    const { program } = parseModule(
+      'namespace N { export function f(): void; export function f(a?: number) {} f(); }',
+      'file.ts'
+    );
+    const block = (program.body[0] as E.TSModuleDeclaration).body as E.TSModuleBlock;
+    const implementation = block.body[1] as E.ExportNamedDeclaration;
+    const id = (implementation.declaration as E.Function).id!;
+    expect(analyzeScopes(program).bindingOf(id)?.references).toHaveLength(3);
+  });
 
   it('does not bind TS enums or `declare global` vars at the top level', () => {
     expect(programBindings('enum E { A } declare global { var X: number }')).toEqual({});

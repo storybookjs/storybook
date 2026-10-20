@@ -23,10 +23,10 @@ export interface Binding {
   constant: boolean;
   /**
    * The identifiers that read or write the binding, in code or in a type such as `typeof Button`,
-   * and statements too. The `ExportNamedDeclaration` or `ExportDefaultDeclaration` of an exported
-   * declaration is one, as in Babel's `referencePaths`, also for an exported type of the binding's
-   * name. A top-level overload signature of a function is one as well: its `TSDeclareFunction`, or
-   * its export statement when it is exported.
+   * and statements too, as in Babel's `referencePaths`: the `ExportNamedDeclaration` or
+   * `ExportDefaultDeclaration` of an exported declaration, and any TS declaration of the same name
+   * in scope, such as an overload signature, a `type`, an `enum` or a `namespace`. An exported TS
+   * declaration counts through its export statement.
    */
   references: Node[];
 }
@@ -87,6 +87,13 @@ const TS_DECLARATIONS = new Set([
   'TSEnumDeclaration',
   'TSModuleDeclaration',
   'TSDeclareFunction',
+]);
+
+// Declarations whose `export` counts as a reference to their own name, besides TS declarations.
+const EXPORTED_DECLARATIONS = new Set([
+  'FunctionDeclaration',
+  'ClassDeclaration',
+  'TSImportEqualsDeclaration',
 ]);
 
 const FUNCTION_TYPES = new Set([
@@ -779,34 +786,34 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
       unbound.add(name);
     }
   }
-  // Overload signatures count as references to the function they overload.
-  for (const statement of program.body) {
-    if (statement.type === 'TSDeclareFunction' && statement.id) {
-      declaredProgramScope.bindings.get(statement.id.name)?.references.push(statement);
-    }
-  }
-
-  // Like Babel, an `export` of a declaration counts as a reference to the bindings it declares.
-  for (const statement of program.body) {
-    if (
-      (statement.type !== 'ExportNamedDeclaration' &&
-        statement.type !== 'ExportDefaultDeclaration') ||
-      !statement.declaration
-    ) {
-      continue;
-    }
-    const declaration = statement.declaration as Node;
-    const ids: E.BindingIdentifier[] = [];
-    if (declaration.type === 'VariableDeclaration') {
-      for (const declarator of declaration.declarations) {
-        patternParts(declarator.id, ids, []);
+  // Like Babel, an `export` of a declaration counts as a reference to the bindings it declares,
+  // and a TS declaration (an overload, `type X`, `enum X`) as one to the binding of its name.
+  for (const [block, scope] of nodeScopes) {
+    for (const statement of declarationStatements(block)) {
+      const exported =
+        (statement.type === 'ExportNamedDeclaration' ||
+          statement.type === 'ExportDefaultDeclaration') &&
+        !!statement.declaration;
+      const declaration = exported ? (statement.declaration as Node) : statement;
+      const declared: string[] = [];
+      if (declaration.type === 'VariableDeclaration' && exported) {
+        const ids: E.BindingIdentifier[] = [];
+        for (const declarator of declaration.declarations) {
+          patternParts(declarator.id, ids, []);
+        }
+        declared.push(...ids.map((id) => id.name));
+      } else if (
+        TS_DECLARATIONS.has(declaration.type) ||
+        (exported && EXPORTED_DECLARATIONS.has(declaration.type))
+      ) {
+        const name = declaredName((declaration as { id?: Node | null }).id);
+        if (name !== undefined) {
+          declared.push(name);
+        }
       }
-    } else if ((declaration as { id?: Node | null }).id?.type === 'Identifier') {
-      // Functions, classes and TS declarations: an exported `type X` also references a value `X`.
-      ids.push((declaration as { id: E.BindingIdentifier }).id);
-    }
-    for (const id of ids) {
-      declaredProgramScope.bindings.get(id.name)?.references.push(statement);
+      for (const name of declared) {
+        scope.lookup(name)?.references.push(statement);
+      }
     }
   }
   for (const { scope, identifier } of violations) {

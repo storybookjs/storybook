@@ -19,7 +19,7 @@ It can parse MDX into CSF.
 Each editor reads and writes static paths with `get`, `getValue`, `inspect`, `set`, `transform`, `remove`, `rename`, `move`, `group`, `append`, and `prepend`.
 `get` returns an AST expression; `getValue` reads plain values from literals, nested arrays and objects, and local constants without executing code. Reads never return a partially decoded object.
 
-`get` and `getValue` return `undefined` both for a field that is missing and for one that cannot be read statically: a path whose parent is not an object literal, or that a spread, a computed key, or a duplicate field leaves unproven, and for `getValue` a value it cannot evaluate, such as a call or a function. A field written as `undefined` is `undefined` too, but `get` returns its expression. Reads add no diagnostics, so they never stop a later write: a mutation proves the shape it edits again and reports its own. `inspect` tells the cases apart and gives the reason. It reads the expression like `get`, without evaluating it:
+`get` and `getValue` return `undefined` both for a field that is missing and for one that cannot be read statically: a path that does not fit a value, such as a key into an array or a call, or one that a spread, a computed key, or a duplicate field leaves unproven, and for `getValue` a value it cannot evaluate, such as a call or a function. A field written as `undefined` is `undefined` too, but `get` returns its expression. Reads add no diagnostics, so they never stop a later write: a mutation proves the shape it edits again and reports its own. `inspect` tells the cases apart and gives the reason. It reads the expression like `get`, without evaluating it:
 
 ```ts
 const size = story.inspect(['args', 'size']);
@@ -113,9 +113,12 @@ for (const story of csf.objects()) {
 
 ### Elements and arguments
 
-A path is a list of keys and indexes. A string is a key of an object literal; a number is an item of the array or call the path reaches, an element or an argument, at its position in the source, where spreads and holes count. That is its index in `get(path).elements` or `get(path).arguments`, so a consumer finds an item with its own predicate and addresses it. `printCsfPath` prints a path as diagnostics do, `parameters.msw.handlers[0]`, and a path of keys alone as `path.join('.')`.
+A path is a list of keys and indexes. A string is a key of an object literal; a number is an item of the array or call the path reaches, an element or an argument, at its position in the source, where spreads and holes count. `printCsfPath` prints a path as diagnostics do, `parameters.msw.handlers[0]`, and a path of keys alone as `path.join('.')`.
+
+For an array literal written at the field, that position is the index in `get(path).elements`, so a consumer finds an item with its own predicate and addresses it. `get` returns the expression as written, so for `const addons = [...]; export default { addons }` it returns the identifier, while `['addons', 0]` follows the constant to its first element.
 
 ```ts
+// export default { addons: ['a', 'x'] }
 const addons = main.get(['addons']);
 const index =
   addons?.type === 'ArrayExpression'
@@ -133,6 +136,8 @@ if (index >= 0) {
 | `remove` | Remove the one item, a hole with its slot. An emptied array stays `[]`, as `tags: []` is not a missing `tags`, and the cleanup of empty parents stops at an item. |
 | `append`, `prepend` | `path` names the array or the call: add an item after its last one or before its first one. A missing array is created, carrying spreads forward like a missing parent; a field holding neither an array nor a call is refused (`unsupported-value`). The first argument of an empty call hugs its parentheses: `mswLoader(async () => {…})`. |
 | `rename`, `move`, `group` | Refuse an item as the source or the destination (`unsupported-member`). Indexes earlier in the path only navigate, so `rename(['loaders', 0, 'name'], 'id')` renames a member of the first loader. |
+
+A number on a field that holds a call addresses the call's arguments, whatever the callee: on `addons: ['a', 'b'].filter(Boolean)`, `remove(['addons', 0])` removes `Boolean`, and `append(['addons'], 'c')` writes `.filter(Boolean, 'c')`. Check that the field is an array literal before editing it as one.
 
 A spread in a list shifts the positions after it but cannot shadow an item, so the items before and after it are edited as usual, and `append` and `prepend` leave it in place: `[...base.addons, 'x']`. The spread itself, addressed by its index, is unreadable and refused (`spread-field`), and `-1` from `findIndex` next to a spread means the source does not write the item, not that it is absent. Only keys create missing values; an index into an object, a key into a list, and an index that is not a non-negative integer are `unsupported-member`. Edits follow a constant only the edited object refers to, as for fields.
 
@@ -154,7 +159,7 @@ if (config.changed && config.mutationDiagnostics.length === 0) {
 
 `ConfigFile.changed` and `ConfigFile.mutationDiagnostics` track these editor operations. Existing `getFieldNode` reads reflect editor changes. `writeConfig` rejects files with mutation diagnostics to avoid writing partial edits.
 
-`appendValueToArray` and `appendNodeToArray` are deprecated aliases of `append`. `removeEntryFromArray`, deprecated too, removes the first entry of an array that names a value: a string, a `{ name }` object, or a call like `getAbsolutePath(value)`; find the entry in `get(path).elements` and `remove([...path, index])` it instead. They return a `CsfMutationResult` like the editor operations and refuse what `append` and `remove` refuse, such as an array a later spread could replace. A field that is not an array literal leaves the file as it is and adds an `unsupported-value` diagnostic; a missing field or entry is a no-op for `removeEntryFromArray`.
+`appendValueToArray` and `appendNodeToArray` are deprecated: use `append`. `removeEntryFromArray`, deprecated too, removes the first entry of an array that names a value: a string, a `{ name }` object, or a call like `getAbsolutePath(value)`; find the entry's index and `remove([...path, index])` it instead, keeping in mind that `get(path)` returns the field as written. The three helpers edit the array literal the field resolves to, through local constants and type assertions, and return a `CsfMutationResult` like the editor operations. A field that is not an array literal, a call included, leaves the file as it is and adds an `unsupported-value` diagnostic; a missing field or entry is a no-op for `removeEntryFromArray`. Like `append` and `remove`, they refuse an array that a later spread could replace, and one in a constant that other code refers to as well.
 
 `setImport`, `setRequireImport`, and `removeImport` look at every import or top-level `require` of the module, and take a named binding as `'name'` or `'name as alias'`. `setImport` and `setRequireImport` skip a binding the module already provides under that local name. A binding that only an `import type` provides becomes a value import; other type-only imports are left alone. `removeImport` removes every import of a plain name, whatever its local name, but only the matching import of an alias. Added statements follow the file's quotes and semicolons. Import helper edits are not tracked by `changed`.
 

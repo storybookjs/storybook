@@ -218,8 +218,10 @@ export interface CsfObject {
     derive: (value: CsfExpression) => CsfExpression | undefined
   ): CsfMutationResult;
   /**
-   * Remove a property and recursively clean up empty parents, or one element or argument, keeping
-   * its list. Missing fields are a no-op.
+   * Remove a property and recursively clean up the objects it leaves empty. At an index, remove
+   * that one element or argument and keep the list, also when it is left empty. Missing fields are
+   * a no-op. An index on a field that holds a call addresses the call's arguments, whatever the
+   * callee, such as `filter` in `[...].filter(Boolean)`.
    *
    * @example
    * ```ts
@@ -272,7 +274,8 @@ export interface CsfObject {
   /**
    * Add a plain value or an expression after the last element of the array, or the last argument
    * of the call, at a path. A missing array is created, carrying the spreads before it forward
-   * like a missing parent.
+   * like a missing parent. A field that holds a call gets an argument, whatever the callee: on
+   * `[...].filter(Boolean)` that is an argument of `filter`.
    *
    * @example
    * ```ts

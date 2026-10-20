@@ -46,7 +46,7 @@ export const Basic = meta.story({
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   // 👇 Automocked module resolves to '../lib/__mocks__/session'
   import { getUserFromSession } from '../lib/session';
@@ -64,22 +64,24 @@ export const Basic = meta.story({
 }} />
 ```
 
-```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-// 👇 Automocked module resolves to '../lib/__mocks__/session'
-import { getUserFromSession } from '../lib/session';
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-import Page from './Page.svelte';
+  // 👇 Automocked module resolves to '../lib/__mocks__/session'
+  import { getUserFromSession } from '../lib/session';
 
-export default {
-  component: Page,
-};
+  import Page from './Page.svelte';
 
-export const Basic = {
-  async beforeEach() {
-    // 👇 Set the return value for the getUserFromSession function
-    getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
-  },
-};
+  const { Story } = preview.meta({
+    component: Page,
+  });
+</script>
+
+<Story name="Default" beforeEach={() => {
+  // 👇 Set the return value for the getUserFromSession function
+  getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
+}} />
 ```
 
 ```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF 3"
@@ -102,7 +104,7 @@ export const Basic = {
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
   import { mocked } from 'storybook/test';
 
   // 👇 Automocked module resolves to '../lib/__mocks__/session'
@@ -121,30 +123,25 @@ export const Basic = {
 }} />
 ```
 
-```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
-import { mocked } from 'storybook/test';
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+  import { mocked } from 'storybook/test';
 
-// 👇 Automocked module resolves to '../lib/__mocks__/session'
-import { getUserFromSession } from '../lib/session';
+  // 👇 Automocked module resolves to '../lib/__mocks__/session'
+  import { getUserFromSession } from '../lib/session';
 
-import Page from './Page.svelte';
+  import Page from './Page.svelte';
 
-const meta = {
-  component: Page,
-} satisfies Meta<typeof Page>;
+  const { Story } = preview.meta({
+    component: Page,
+  });
+</script>
 
-export default meta;
-
-type Story = StoryObj<typeof meta>;
-
-export const Basic: Story = {
-  async beforeEach() {
-    // 👇 Set the return value for the getUserFromSession function
-    mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
-  },
-};
+<Story name="Default" beforeEach={() => {
+  // 👇 Set the return value for the getUserFromSession function
+  mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
+}} />
 ```
 
 ```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"

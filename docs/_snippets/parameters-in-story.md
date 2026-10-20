@@ -49,7 +49,7 @@ export const Primary = meta.story({
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import Button from './Button.svelte';
 
@@ -73,16 +73,21 @@ export const Primary = meta.story({
 />
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Button from './Button.svelte';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: Button,
-};
+  import Button from './Button.svelte';
 
-export const Primary = {
-  // 👇 Story-level parameters
-  parameters: {
+  const { Story } = preview.meta({
+    component: Button,
+  });
+</script>
+
+<!-- 👇 Story-level parameters-->
+<Story
+  name="Primary"
+  parameters={{
     backgrounds: {
       options: {
         red: { name: 'Red', value: '#f00' },
@@ -90,8 +95,8 @@ export const Primary = {
         blue: { name: 'Blue', value: '#00f' },
       },
     },
-  },
-};
+  }}
+/>
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
@@ -117,7 +122,7 @@ export const Primary = {
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import Button from './Button.svelte';
 
@@ -141,22 +146,21 @@ export const Primary = {
 />
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import Button from './Button.svelte';
+  import Button from './Button.svelte';
 
-const meta = {
-  component: Button,
-} satisfies Meta<typeof Button>;
+  const { Story } = preview.meta({
+    component: Button,
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Primary: Story = {
-  // 👇 Story-level parameters
-  parameters: {
+<!-- 👇 Story-level parameters-->
+<Story
+  name="Primary"
+  parameters={{
     backgrounds: {
       options: {
         red: { name: 'Red', value: '#f00' },
@@ -164,8 +168,8 @@ export const Primary: Story = {
         blue: { name: 'Blue', value: '#00f' },
       },
     },
-  },
-};
+  }}
+/>
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

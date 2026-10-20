@@ -205,7 +205,7 @@ export const Basic: Story = {
 
 ```svelte filename="Histogram.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import Histogram from './Histogram.svelte';
 
@@ -225,26 +225,31 @@ export const Basic: Story = {
 />
 ```
 
-```js filename="Histogram.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Histogram from './Histogram.svelte';
+```svelte filename="Histogram.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: Histogram,
-};
+  import Histogram from './Histogram.svelte';
 
-export const Basic = {
-  args: {
+  const { Story } = preview.meta({
+    component: Histogram,
+  });
+</script>
+
+<Story
+  name="Default"
+  args={{
     dataType: 'latency',
     showHistogramLabels: true,
     histogramAccentColor: '#1EA7FD',
     label: 'Latency distribution',
-  },
-};
+  }}
+/>
 ```
 
 ```svelte filename="Histogram.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import Histogram from './Histogram.svelte';
 
@@ -264,27 +269,26 @@ export const Basic = {
 />
 ```
 
-```ts filename="Histogram.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="Histogram.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import Histogram from './Histogram.svelte';
+  import Histogram from './Histogram.svelte';
 
-const meta = {
-  component: Histogram,
-} satisfies Meta<typeof Histogram>;
+  const { Story } = preview.meta({
+    component: Histogram,
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Basic: Story = {
-  args: {
+<Story
+  name="Default"
+  args={{
     dataType: 'latency',
     showHistogramLabels: true,
     histogramAccentColor: '#1EA7FD',
     label: 'Latency distribution',
-  },
-};
+  }}
+/>
 ```
 
 ```js filename="Histogram.stories.js" renderer="vue" language="js" tabTitle="CSF 3"

@@ -2,7 +2,7 @@
 <script module>
   import { setContext } from 'svelte';
 
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import YourComponent from './YourComponent.svelte';
   import MarginDecorator from './MarginDecorator.svelte';
@@ -20,22 +20,26 @@
 </script>
 ```
 
-```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import { setContext } from 'svelte';
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import { setContext } from 'svelte';
 
-import YourComponent from './YourComponent.svelte';
-import MarginDecorator from './MarginDecorator.svelte';
+  import preview from '../.storybook/preview';
 
-export default {
-  component: YourComponent,
-  decorators: [
-    (story, { globals }) => {
-      const marginSize = globals.marginSize === 'small' ? 'small' : 'medium';
-      setContext('marginSize', marginSize);
-      return { Component: MarginDecorator };
-    },
-  ],
-};
+  import YourComponent from './YourComponent.svelte';
+  import MarginDecorator from './MarginDecorator.svelte';
+
+  const { Story } = preview.meta({
+    component: YourComponent,
+    decorators: [
+      (story, { globals }) => {
+        const marginSize = globals.marginSize === 'small' ? 'small' : 'medium';
+        setContext('marginSize', marginSize);
+        return { Component: MarginDecorator };
+      },
+    ],
+  });
+</script>
 ```
 
 ```svelte filename="MarginDecorator.svelte" renderer="svelte" language="js" tabTitle="Decorator component"
@@ -57,7 +61,7 @@ export default {
 <script module lang="ts">
   import { setContext } from 'svelte';
 
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import YourComponent from './YourComponent.svelte';
   import MarginDecorator from './MarginDecorator.svelte';
@@ -75,26 +79,26 @@ export default {
 </script>
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-import { setContext } from 'svelte';
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta } from '@storybook/your-framework';
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import { setContext } from 'svelte';
 
-import YourComponent from './YourComponent.svelte';
-import MarginDecorator from './MarginDecorator.svelte';
+  import preview from '../.storybook/preview';
 
-const meta = {
-  component: YourComponent,
-  decorators: [
-    (story, { globals }) => {
-      const marginSize = globals.marginSize === 'small' ? 'small' : 'medium';
-      setContext('marginSize', marginSize);
-      return { Component: MarginDecorator };
-    },
-  ],
-} satisfies Meta<typeof YourComponent>;
+  import YourComponent from './YourComponent.svelte';
+  import MarginDecorator from './MarginDecorator.svelte';
 
-export default meta;
+  const { Story } = preview.meta({
+    component: YourComponent,
+    decorators: [
+      (story, { globals }) => {
+        const marginSize = globals.marginSize === 'small' ? 'small' : 'medium';
+        setContext('marginSize', marginSize);
+        return { Component: MarginDecorator };
+      },
+    ],
+  });
+</script>
 ```
 
 ```svelte filename="MarginDecorator.svelte" renderer="svelte" language="ts" tabTitle="Decorator component"

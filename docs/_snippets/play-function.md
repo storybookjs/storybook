@@ -77,7 +77,7 @@ export const FilledForm = meta.story({
 
 ```svelte filename="RegistrationForm.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import RegistrationForm from './RegistrationForm.svelte';
 
@@ -115,19 +115,24 @@ export const FilledForm = meta.story({
 />
 ```
 
-```js filename="RegistrationForm.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import RegistrationForm from './RegistrationForm.svelte';
+```svelte filename="RegistrationForm.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: RegistrationForm,
-};
+  import RegistrationForm from './RegistrationForm.svelte';
 
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvas to query the DOM
- */
-export const FilledForm = {
-  play: async ({ canvas, userEvent }) => {
+  const { Story } = preview.meta({
+    component: RegistrationForm,
+  });
+</script>
+
+<!--
+  See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+  to learn more about using the canvas to query the DOM
+-->
+<Story
+  name="FilledForm"
+  play={async ({ canvas, userEvent }) => {
     const emailInput = canvas.getByLabelText('email', {
       selector: 'input',
     });
@@ -146,8 +151,8 @@ export const FilledForm = {
 
     const submitButton = canvas.getByRole('button');
     await userEvent.click(submitButton);
-  },
-};
+  }}
+/>
 ```
 
 ```js filename="RegistrationForm.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
@@ -187,7 +192,7 @@ export const FilledForm = {
 
 ```svelte filename="RegistrationForm.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import RegistrationForm from './RegistrationForm.svelte';
 
@@ -225,25 +230,24 @@ export const FilledForm = {
 />
 ```
 
-```ts filename="RegistrationForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="RegistrationForm.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import RegistrationForm from './RegistrationForm.svelte';
+  import RegistrationForm from './RegistrationForm.svelte';
 
-const meta = {
-  component: RegistrationForm,
-} satisfies Meta<typeof RegistrationForm>;
+  const { Story } = preview.meta({
+    component: RegistrationForm,
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvas to query the DOM
- */
-export const FilledForm: Story = {
-  play: async ({ canvas, userEvent }) => {
+<!--
+  See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+  to learn more about using the canvas to query the DOM
+-->
+<Story
+  name="FilledForm"
+  play={async ({ canvas, userEvent }) => {
     const emailInput = canvas.getByLabelText('email', {
       selector: 'input',
     });
@@ -262,8 +266,8 @@ export const FilledForm: Story = {
 
     const submitButton = canvas.getByRole('button');
     await userEvent.click(submitButton);
-  },
-};
+  }}
+/>
 ```
 
 ```ts filename="RegistrationForm.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

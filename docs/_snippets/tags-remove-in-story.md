@@ -37,7 +37,7 @@ export const ExperimentalFeatureStory = meta.story({
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import Button from './Button.svelte';
 
@@ -52,24 +52,26 @@ export const ExperimentalFeatureStory = meta.story({
 <Story name="ExperimentalFeatureStory" tags={['!stable', 'experimental']} />
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Button from './Button.svelte';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: Button,
-  // 👇 Applies to all stories in this file
-  tags: ['stable'],
-};
+  import Button from './Button.svelte';
 
-export const ExperimentalFeatureStory = {
-  //👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag
-  tags: ['!stable', 'experimental'],
-};
+  const { Story } = preview.meta({
+    component: Button,
+    // 👇 Applies to all stories in this file
+    tags: ['stable'],
+  });
+</script>
+
+<!-- 👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag -->
+<Story name="ExperimentalFeatureStory" tags={['!stable', 'experimental']} />
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import Button from './Button.svelte';
 
@@ -84,25 +86,21 @@ export const ExperimentalFeatureStory = {
 <Story name="ExperimentalFeatureStory" tags={['!stable', 'experimental']} />
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import Button from './Button.svelte';
+  import Button from './Button.svelte';
 
-const meta = {
-  component: Button,
-  // 👇 Applies to all stories in this file
-  tags: ['stable'],
-} satisfies Meta<typeof Button>;
+  const { Story } = preview.meta({
+    component: Button,
+    // 👇 Applies to all stories in this file
+    tags: ['stable'],
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const ExperimentalFeatureStory: Story = {
-  //👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag
-  tags: ['!stable', 'experimental'],
-};
+<!-- 👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag -->
+<Story name="ExperimentalFeatureStory" tags={['!stable', 'experimental']} />
 ```
 
 ```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"

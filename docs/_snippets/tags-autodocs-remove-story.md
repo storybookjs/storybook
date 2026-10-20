@@ -37,7 +37,7 @@ export const UndocumentedStory = meta.story({
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import Button from './Button.svelte';
 
@@ -52,19 +52,21 @@ export const UndocumentedStory = meta.story({
 <Story name="UndocumentedStory" tags={['!autodocs']} />
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Button from './Button.svelte';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: Button,
-  //👇 Enables auto-generated documentation for this component and includes all stories in this file
-  tags: ['autodocs'],
-};
+  import Button from './Button.svelte';
 
-export const UndocumentedStory = {
-  // 👇 Removes this story from auto-generated documentation
-  tags: ['!autodocs'],
-};
+  const { Story } = preview.meta({
+    component: Button,
+    //👇 Enables auto-generated documentation for this component and includes all stories in this file
+    tags: ['autodocs'],
+  });
+</script>
+
+<!--👇 Removes this story from auto-generated documentation -->
+<Story name="UndocumentedStory" tags={['!autodocs']} />
 ```
 
 ```js filename="Button.stories.js" renderer="common" language="js" tabTitle="CSF 3"
@@ -84,7 +86,7 @@ export const UndocumentedStory = {
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import Button from './Button.svelte';
 
@@ -99,25 +101,21 @@ export const UndocumentedStory = {
 <Story name="UndocumentedStory" tags={['!autodocs']} />
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import Button from './Button.svelte';
+  import Button from './Button.svelte';
 
-const meta = {
-  component: Button,
-  //👇 Enables auto-generated documentation for this component and includes all stories in this file
-  tags: ['autodocs'],
-} satisfies Meta<typeof Button>;
-export default meta;
+  const { Story } = preview.meta({
+    component: Button,
+    //👇 Enables auto-generated documentation for this component and includes all stories in this file
+    tags: ['autodocs'],
+  });
+</script>
 
-type Story = StoryObj<typeof meta>;
-
-export const UndocumentedStory: Story = {
-  // 👇 Removes this story from auto-generated documentation
-  tags: ['!autodocs'],
-};
+<!--👇 Removes this story from auto-generated documentation -->
+<Story name="UndocumentedStory" tags={['!autodocs']} />
 ```
 
 ```ts filename="Button.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"

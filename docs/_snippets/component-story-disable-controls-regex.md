@@ -71,7 +71,7 @@ export const RegexExclude = meta.story({
 
 ```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import YourComponent from './YourComponent.svelte';
 
@@ -109,36 +109,44 @@ export const RegexExclude = meta.story({
 />
 ```
 
-```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import YourComponent from './YourComponent.svelte';
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: YourComponent,
-};
+  import YourComponent from './YourComponent.svelte';
 
-export const ArrayInclude = {
-  parameters: {
+  const { Story } = preview.meta({
+    component: YourComponent,
+  });
+</script>
+
+<Story
+  name="ArrayInclude"
+  parameters={{
     controls: { include: ['foo', 'bar'] },
-  },
-};
+  }}
+/>
 
-export const RegexInclude = {
-  parameters: {
+<Story
+  name="RegexInclude"
+  parameters={{
     controls: { include: /^hello*/ },
-  },
-};
+  }}
+/>
 
-export const ArrayExclude = {
-  parameters: {
+<Story
+  name="ArrayExclude"
+  parameters={{
     controls: { exclude: ['foo', 'bar'] },
-  },
-};
+  }}
+/>
 
-export const RegexExclude = {
-  parameters: {
+<Story
+  name="RegexExclude"
+  parameters={{
     controls: { exclude: /^hello*/ },
-  },
-};
+  }}
+/>
 ```
 
 ```js filename="YourComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
@@ -175,7 +183,7 @@ export const RegexExclude = {
 
 ```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import YourComponent from './YourComponent.svelte';
 
@@ -213,42 +221,44 @@ export const RegexExclude = {
 />
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import YourComponent from './YourComponent.svelte';
+  import YourComponent from './YourComponent.svelte';
 
-const meta = {
-  component: YourComponent,
-} satisfies Meta<typeof YourComponent>;
+  const { Story } = preview.meta({
+    component: YourComponent,
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const ArrayInclude: Story = {
-  parameters: {
+<Story
+  name="ArrayInclude"
+  parameters={{
     controls: { include: ['foo', 'bar'] },
-  },
-};
+  }}
+/>
 
-export const RegexInclude: Story = {
-  parameters: {
+<Story
+  name="RegexInclude"
+  parameters={{
     controls: { include: /^hello*/ },
-  },
-};
+  }}
+/>
 
-export const ArrayExclude: Story = {
-  parameters: {
+<Story
+  name="ArrayExclude"
+  parameters={{
     controls: { exclude: ['foo', 'bar'] },
-  },
-};
+  }}
+/>
 
-export const RegexExclude: Story = {
-  parameters: {
+<Story
+  name="RegexExclude"
+  parameters={{
     controls: { exclude: /^hello*/ },
-  },
-};
+  }}
+/>
 ```
 
 ```ts filename="YourComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

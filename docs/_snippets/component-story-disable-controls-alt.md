@@ -34,7 +34,7 @@ const meta = preview.meta({
 
 ```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import YourComponent from './YourComponent.svelte';
 
@@ -50,18 +50,22 @@ const meta = preview.meta({
 </script>
 ```
 
-```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import YourComponent from './YourComponent.svelte';
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: YourComponent,
-  argTypes: {
-    // foo is the property we want to remove from the UI
-    foo: {
-      control: false,
+  import YourComponent from './YourComponent.svelte';
+
+  const { Story } = preview.meta({
+    component: YourComponent,
+    argTypes: {
+      // foo is the property we want to remove from the UI
+      foo: {
+        control: false,
+      },
     },
-  },
-};
+  });
+</script>
 ```
 
 ```js filename="YourComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
@@ -80,7 +84,7 @@ export default {
 
 ```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import YourComponent from './YourComponent.svelte';
 
@@ -96,23 +100,22 @@ export default {
 </script>
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta } from '@storybook/your-framework';
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import YourComponent from './YourComponent.svelte';
+  import YourComponent from './YourComponent.svelte';
 
-const meta = {
-  component: YourComponent,
-  argTypes: {
-    // foo is the property we want to remove from the UI
-    foo: {
-      control: false,
+  const { Story } = preview.meta({
+    component: YourComponent,
+    argTypes: {
+      // foo is the property we want to remove from the UI
+      foo: {
+        control: false,
+      },
     },
-  },
-} satisfies Meta<typeof YourComponent>;
-
-export default meta;
+  });
+</script>
 ```
 
 ```ts filename="YourComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

@@ -25,7 +25,7 @@ const meta = preview.meta({
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import Page from './Page.svelte';
 
@@ -37,14 +37,18 @@ const meta = preview.meta({
 </script>
 ```
 
-```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Page from './Page.svelte';
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: Page,
-  // 👇 Disable auto-generated documentation for this component
-  tags: ['!autodocs'],
-};
+  import Page from './Page.svelte';
+
+  const { Story } = preview.meta({
+    component: Page,
+    // 👇 Disable auto-generated documentation for this component
+    tags: ['!autodocs'],
+  });
+</script>
 ```
 
 ```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF 3"
@@ -59,7 +63,7 @@ export default {
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import Page from './Page.svelte';
 
@@ -71,18 +75,18 @@ export default {
 </script>
 ```
 
-```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta } from '@storybook/your-framework';
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import Page from './Page.svelte';
+  import Page from './Page.svelte';
 
-const meta = {
-  component: Page,
-  // 👇 Disable auto-generated documentation for this component
-  tags: ['!autodocs'],
-} satisfies Meta<typeof Page>;
-export default meta;
+  const { Story } = preview.meta({
+    component: Page,
+    // 👇 Disable auto-generated documentation for this component
+    tags: ['!autodocs'],
+  });
+</script>
 ```
 
 ```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"

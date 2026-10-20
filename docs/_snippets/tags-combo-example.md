@@ -206,9 +206,9 @@ export const Combo: Story = {
 };
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import Button from './Button.svelte';
 
@@ -238,13 +238,77 @@ export const Combo: Story = {
 </Story>
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import preview from '../.storybook/preview';
+
+  import Button from './Button.svelte';
+
+  const { Story } = preview.meta({
+    component: Button,
+  });
+</script>
+
+<!-- 👇 This story will not appear in Storybook's sidebar or docs page -->
+<Story
+  name="Variant1"
+  tags={['!dev', '!autodocs']}
+  args={{ variant: 1 }}
+/>
+
+<!-- 👇 This story will not appear in Storybook's sidebar or docs page -->
+<Story
+  name="Variant2"
+  tags={['!dev', '!autodocs']}
+  args={{ variant: 2 }}
+/>
+
+<!-- 👇 This story should not be tested, but will appear in the sidebar and docs page -->
+<Story name="Combo" tags={['!test']}>
+  <Button variant={1}>
+  <Button variant={2}>
+</Story>
+```
+
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import Button from './Button.svelte';
 
   const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+
+<!-- 👇 This story will not appear in Storybook's sidebar or docs page -->
+<Story
+  name="Variant1"
+  tags={['!dev', '!autodocs']}
+  args={{ variant: 1 }}
+/>
+
+<!-- 👇 This story will not appear in Storybook's sidebar or docs page -->
+<Story
+  name="Variant2"
+  tags={['!dev', '!autodocs']}
+  args={{ variant: 2 }}
+/>
+
+<!-- 👇 This story should not be tested, but will appear in the sidebar and docs page -->
+<Story name="Combo" tags={['!test']}>
+  <Button variant={1} />
+  <Button variant={2} />
+</Story>
+```
+
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+
+  import Button from './Button.svelte';
+
+  const { Story } = preview.meta({
     component: Button,
   });
 </script>

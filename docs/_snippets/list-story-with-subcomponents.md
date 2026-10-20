@@ -177,9 +177,9 @@ export const OneItem: Story = {
 };
 ```
 
-```svelte filename="List.stories.svelte" renderer="svelte" language="js"
+```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import List from './List.svelte';
   import ListItem from './ListItem.svelte';
@@ -201,14 +201,62 @@ export const OneItem: Story = {
 </Story>
 ```
 
-```svelte filename="List.stories.svelte" renderer="svelte" language="ts"
+```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import preview from '../.storybook/preview';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  const { Story } = preview.meta({
+    component: List,
+    subcomponents: { ListItem },
+  });
+</script>
+
+<Story name="Empty" />
+
+<Story name="One Item">
+  {#snippet children(args)}
+    <List {...args}>
+      <ListItem />
+    </List>
+  {/snippet}
+</Story>
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import List from './List.svelte';
   import ListItem from './ListItem.svelte';
 
   const { Story } = defineMeta({
+    component: List,
+    subcomponents: { ListItem },
+  });
+</script>
+
+<Story name="Empty" />
+
+<Story name="One Item">
+  {#snippet children(args)}
+    <List {...args}>
+      <ListItem />
+    </List>
+  {/snippet}
+</Story>
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  const { Story } = preview.meta({
     component: List,
     subcomponents: { ListItem },
   });

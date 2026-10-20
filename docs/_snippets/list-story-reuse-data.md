@@ -233,9 +233,9 @@ export const ManyItems: Story = {
 };
 ```
 
-```svelte filename="List.stories.svelte" renderer="svelte" language="js"
+```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import List from './List.svelte';
   import ListItem from './ListItem.svelte';
@@ -259,9 +259,35 @@ export const ManyItems: Story = {
 </Story>
 ```
 
-```svelte filename="List.stories.svelte" renderer="svelte" language="ts"
+```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import preview from '../.storybook/preview';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  //👇 We're importing the necessary stories from ListItem
+  import { Selected, Unselected } from './ListItem.stories.svelte';
+
+  const { Story } = preview.meta({
+    component: List,
+  });
+</script>
+
+<Story name="Many Items">
+  {#snippet children(args)}
+    <List {...args}>
+      <ListItem {...Selected.args} />
+      <ListItem {...Unselected.args} />
+      <ListItem {...Unselected.args} />
+    </List>
+  {/snippet}
+</Story>
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import List from './List.svelte';
   import ListItem from './ListItem.svelte';
@@ -270,6 +296,32 @@ export const ManyItems: Story = {
   import { Selected, Unselected } from './ListItem.stories.svelte';
 
   const { Story } = defineMeta({
+    component: List,
+  });
+</script>
+
+<Story name="Many Items">
+  {#snippet children(args)}
+    <List {...args}>
+      <ListItem {...Selected.args} />
+      <ListItem {...Unselected.args} />
+      <ListItem {...Unselected.args} />
+    </List>
+  {/snippet}
+</Story>
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  //👇 We're importing the necessary stories from ListItem
+  import { Selected, Unselected } from './ListItem.stories.svelte';
+
+  const { Story } = preview.meta({
     component: List,
   });
 </script>

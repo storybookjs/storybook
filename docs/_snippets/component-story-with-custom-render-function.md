@@ -465,9 +465,9 @@ export const Example = meta.story({
 });
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import Layout from './Layout.svelte';
   import MyComponent from './MyComponent.svelte';
@@ -493,14 +493,70 @@ export const Example = meta.story({
 </Story>
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import preview from '../.storybook/preview';
+
+  import Layout from './Layout.svelte';
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = preview.meta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="Example"
+>
+  {#snippet template(args)}
+   <Layout>
+      <header>
+        <h1>Example</h1>
+      </header>
+      <article>
+        <MyComponent />
+      </article>
+    </Layout>
+  {/snippet}
+</Story>
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import Layout from './Layout.svelte';
   import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="Example"
+>
+  {#snippet template(args)}
+   <Layout>
+      <header>
+        <h1>Example</h1>
+      </header>
+      <article>
+        <MyComponent />
+      </article>
+    </Layout>
+  {/snippet}
+</Story>
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+
+  import Layout from './Layout.svelte';
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = preview.meta({
     component: MyComponent,
   });
 </script>

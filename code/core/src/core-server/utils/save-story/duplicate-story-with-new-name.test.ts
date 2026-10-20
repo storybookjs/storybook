@@ -100,12 +100,20 @@ describe('success', () => {
     // check if the code was updated correctly
     expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  ...
-            foo: "bar",
+            icon: "star",
           },
         });
         
       + export const EmptyDuplicated = meta.story({});
       + export const WithArgsDuplicated = meta.story({});
+      + 
+      + export const TypedDuplicated = meta
+      +   .type<{
+      +     args: {
+      +       icon: string;
+      +     };
+      +   }>()
+      +   .story({});
       + "
     `);
   });

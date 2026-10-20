@@ -8,6 +8,7 @@
     "src/**/*",
     "../../renderers/vue3/src/typings.d.ts",
     "../../renderers/svelte/src/typings.d.ts",
+    "../../renderers/svelte/src/svelte-csf/svelte.d.ts",
     "../../frameworks/angular-vite/src/typings.d.ts"
   ],
   // These import angular-vite source (client runtime and preset), which is authored

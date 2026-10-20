@@ -160,7 +160,7 @@ Additionally, adding our codebase as upstream ensures you can rebase against the
 ```shell
 git remote add upstream https://github.com/storybookjs/storybook.git
 git fetch upstream
-git branch --set-upstream-to upstream/main main
+git branch --set-upstream-to upstream/next next
 ```
 
 ### Running the local development environment 

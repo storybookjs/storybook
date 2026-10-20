@@ -157,7 +157,6 @@ export function prepareStory<TRenderer extends Renderer>(
     moduleExport,
     id,
     name,
-    story: name,
     originalStoryFn: render!,
     undecoratedStoryFn,
     unboundStoryFn,
@@ -255,11 +254,9 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
   } = {
     componentId: componentAnnotations.id,
     title: componentAnnotations.title,
-    kind: componentAnnotations.title, // Back compat
     id: storyAnnotations?.id || componentAnnotations.id,
     // if there's no story name, we create a fake one since enhancers expect a name
     name: storyAnnotations?.name || '__meta',
-    story: storyAnnotations?.name || '__meta', // Back compat
     component: componentAnnotations.component,
     subcomponents: componentAnnotations.subcomponents,
     tags,
@@ -273,7 +270,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     .filter((enhancer) => {
       // Server docgen merges component prop metadata at UI read time (`mergeServiceArgTypes`).
       // Second-pass enhancers run there instead so `customArgTypes` stays annotation-only.
-      if (global.FEATURES?.experimentalDocgenServer && enhancer.secondPass) {
+      if (global.FEATURES?.docgenServer && enhancer.secondPass) {
         return false;
       }
       return true;
@@ -297,7 +294,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     initialArgsBeforeEnhancers
   );
 
-  const { name, story, ...withoutStoryIdentifiers } = contextForEnhancers;
+  const { name, ...withoutStoryIdentifiers } = contextForEnhancers;
 
   return withoutStoryIdentifiers;
 }

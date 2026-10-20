@@ -3,9 +3,7 @@ import { Component, Input, ChangeDetectionStrategy, HostBinding } from '@angular
 @Component({
   standalone: false,
   selector: 'storybook-on-push-box',
-  template: `
-    Word of the day: {{ word }}
-  `,
+  template: ` Word of the day: {{ word }} `,
   styles: [
     `
       :host {

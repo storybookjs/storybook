@@ -36,6 +36,7 @@ describe('UserPreferencesCommand', () => {
     renderer: 'react' as SupportedRenderer,
     projectType: ProjectType.REACT,
     isTestFeatureAvailable: true,
+    isAiAvailable: false,
     isAiSetupAvailable: false,
   };
 
@@ -255,14 +256,14 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
+        isAiAvailable: true,
         isAiSetupAvailable: true,
       });
 
       expect(prompt.confirm).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining(
-            'Would you like to install AI features (MCP addon and prompt suggestions)?'
-          ),
+          message: 'Do you want AI features, like skills and prompts, in your Storybook?',
+          initialValue: true,
         }),
         expect.objectContaining({ onCancel: expect.any(Function) })
       );
@@ -280,6 +281,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
+        isAiAvailable: true,
         isAiSetupAvailable: true,
       });
 
@@ -301,6 +303,7 @@ describe('UserPreferencesCommand', () => {
       try {
         const result = await command.execute({
           ...defaultExecuteOptions,
+          isAiAvailable: true,
           isAiSetupAvailable: true,
         });
 
@@ -326,6 +329,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
+        isAiAvailable: true,
         isAiSetupAvailable: true,
       });
 
@@ -340,6 +344,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
+        isAiAvailable: true,
         isAiSetupAvailable: true,
       });
 
@@ -370,6 +375,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await yesCommand.execute({
         ...defaultExecuteOptions,
+        isAiAvailable: true,
         isAiSetupAvailable: true,
       });
 
@@ -377,7 +383,7 @@ describe('UserPreferencesCommand', () => {
       expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
     });
 
-    it('should not prompt for AI setup when isAiSetupAvailable is false', async () => {
+    it('should not prompt for AI setup when isAiAvailable is false', async () => {
       Object.defineProperty(process.stdout, 'isTTY', {
         value: true,
         configurable: true,
@@ -387,11 +393,59 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
-        isAiSetupAvailable: false,
+        isAiAvailable: false,
       });
 
       expect(prompt.confirm).not.toHaveBeenCalled();
       expect(result.selectedFeatures.has(Feature.AI)).toBe(false);
+    });
+
+    it('should keep onboarding when AI is accepted where AI setup is not available', async () => {
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
+
+      vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI: yes
+
+      const result = await command.execute({
+        ...defaultExecuteOptions,
+        isAiAvailable: true,
+        isAiSetupAvailable: false,
+      });
+
+      expect(prompt.confirm).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Do you want AI features, like skills, in your Storybook?',
+        }),
+        expect.anything()
+      );
+      expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
+      expect(result.selectedFeatures.has(Feature.ONBOARDING)).toBe(true);
+      const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
+      expect(telemetryService.trackAiSetupNudge).not.toHaveBeenCalled();
+    });
+
+    it('should not add the test feature to minimal installs where AI setup is not available', async () => {
+      Object.defineProperty(process.stdout, 'isTTY', {
+        value: true,
+        configurable: true,
+      });
+
+      vi.mocked(prompt.select)
+        .mockResolvedValueOnce(false) // not new user
+        .mockResolvedValueOnce('light'); // minimal install
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // AI: yes
+
+      const result = await command.execute({
+        ...defaultExecuteOptions,
+        isAiAvailable: true,
+        isAiSetupAvailable: false,
+      });
+
+      expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
+      expect(result.selectedFeatures.has(Feature.TEST)).toBe(false);
     });
 
     it('should include test feature in minimal installs when user accepts AI setup', async () => {
@@ -407,6 +461,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
+        isAiAvailable: true,
         isAiSetupAvailable: true,
       });
 
@@ -429,6 +484,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute({
         ...defaultExecuteOptions,
+        isAiAvailable: true,
         isAiSetupAvailable: true,
       });
 
@@ -448,6 +504,7 @@ describe('UserPreferencesCommand', () => {
 
       await command.execute({
         ...defaultExecuteOptions,
+        isAiAvailable: true,
         isAiSetupAvailable: true,
       });
 
@@ -466,6 +523,7 @@ describe('UserPreferencesCommand', () => {
 
       await command.execute({
         ...defaultExecuteOptions,
+        isAiAvailable: true,
         isAiSetupAvailable: true,
       });
 
@@ -477,6 +535,7 @@ describe('UserPreferencesCommand', () => {
       // Non-interactive (no TTY) with AI available — auto-accepts
       const result = await command.execute({
         ...defaultExecuteOptions,
+        isAiAvailable: true,
         isAiSetupAvailable: true,
       });
 

@@ -226,6 +226,7 @@ export const automigrate = async ({
       fixSummary,
       skippedFiles: fileFailures.filter(({ fixId }) => fixResults[fixId] === FixStatus.SUCCEEDED)
         .length,
+      dryRun,
     });
   }
 
@@ -352,7 +353,7 @@ export async function runFixes({
     };
 
     logger.step(`${getTitle()}: ${picocolors.cyan(f.id)}`);
-    logger.logBox(f.prompt());
+    logger.logBox(f.prompt(result));
 
     let runAnswer: { fix: boolean } | undefined;
 

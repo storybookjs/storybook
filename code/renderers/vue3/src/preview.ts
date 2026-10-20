@@ -5,9 +5,10 @@ import type {
   MetaInput,
   MetaTypes,
   StoryArgs,
+  TypedMetaArgKeys,
   WithRenderArgs,
   Preview,
-  PreviewAddon,
+  PreviewAddonEntry,
   Story,
 } from 'storybook/internal/csf';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
@@ -44,7 +45,7 @@ import { type VueTypes } from './types.ts';
  * });
  * ```
  */
-export function __definePreview<Addons extends PreviewAddon<never>[]>(
+export function __definePreview<Addons extends PreviewAddonEntry[]>(
   input: { addons: Addons } & ProjectAnnotations<VueTypes & InferTypes<Addons>>
 ): VuePreview<VueTypes & InferTypes<Addons>> {
   const preview = definePreviewBase({
@@ -120,7 +121,7 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
     TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
-      render?: ArgsStoryFn<VueTypes & T, TArgs>;
+      render?: ArgsStoryFn<VueTypes & T, TArgs & T['args']>;
     } & MetaInput<VueTypes & T, TArgs, Decorators, TMetaArgKeys>
   ): VueMeta<MetaTypes<VueTypes & T, TArgs, Decorators, TMetaArgKeys>, TMetaArgKeys>;
 }
@@ -214,6 +215,12 @@ export interface VueMeta<T extends VueTypes, TMetaArgKeys extends PropertyKey = 
   story(
     ..._args: Partial<T['args']> extends StoryArgs<T['args'], TMetaArgKeys> ? [] : [never]
   ): VueStory<T, {}>;
+
+  /**
+   * Add types to the stories created from the returned meta, such as an arg that only one story
+   * has: `meta.type<{ args: { icon: string } }>().story({ args: { icon: 'star' } })`.
+   */
+  type<S>(): VueMeta<T & S, TypedMetaArgKeys<TMetaArgKeys, S>>;
 }
 
 /**

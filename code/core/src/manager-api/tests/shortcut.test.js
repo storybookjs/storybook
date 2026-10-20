@@ -82,9 +82,9 @@ describe('keyToSymbol', () => {
     const result = keyToSymbol(' ');
     expect(result).toEqual('SPACE');
   });
-  it('escape returns esc', () => {
+  it('escape returns ESCAPE', () => {
     const result = keyToSymbol('escape');
-    expect(result).toEqual('');
+    expect(result).toEqual('ESCAPE');
   });
   it('ArrowUp returns ↑​​​', () => {
     const result = keyToSymbol('ArrowUp');

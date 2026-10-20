@@ -336,6 +336,19 @@ export abstract class JsPackageManager {
   }
 
   /**
+   * Write `name@version` upgrade specifiers for dependencies that `declared` references through a
+   * catalog into the catalog file, and return the remaining specifiers for package.json. Only
+   * PNPMProxy supports catalogs, so the base implementation writes nothing and returns every
+   * specifier.
+   */
+  public writeCatalogUpgrades(
+    specifiers: string[],
+    _declared: Partial<Record<string, string>>
+  ): string[] {
+    return specifiers;
+  }
+
+  /**
    * Pin `packages` to `version`, mirroring how `anchorPackage` is declared. The base implementation
    * pins each directly (`pkg@version`). PNPMProxy overrides this to honor pnpm catalogs: when
    * `anchorPackage` is declared through a catalog, the packages are registered in that catalog and
@@ -421,6 +434,53 @@ export abstract class JsPackageManager {
         throw new HandledError(e);
       }
     }
+  }
+
+  /**
+   * Replace a dependency with another package in every package.json of the project, in the same
+   * dependency field. A package.json that already declares the replacement only loses the old
+   * dependency. The method does not run a package manager install.
+   *
+   * @example
+   *
+   * ```ts
+   * replaceDependency('@storybook/addon-svelte-csf', '@storybook/svelte-vite', '^11.0.0');
+   * ```
+   *
+   * @param version The version range for the replacement, unless the package.json declares
+   *   `storybook` with a semver range: then the replacement gets the same range as `storybook`.
+   * @returns The paths of the package.json files that changed.
+   */
+  replaceDependency(dependency: string, replacement: string, version: string): string[] {
+    const changed: string[] = [];
+    for (const packageJsonPath of this.packageJsonPaths) {
+      const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
+      const fields = (['dependencies', 'devDependencies', 'peerDependencies'] as const).filter(
+        (field) => packageJson[field]?.[dependency]
+      );
+      if (fields.length === 0) {
+        continue;
+      }
+      const declaresReplacement = [
+        packageJson.dependencies,
+        packageJson.devDependencies,
+        packageJson.peerDependencies,
+      ].some((deps) => deps?.[replacement]);
+      const storybookRange =
+        packageJson.dependencies?.storybook ?? packageJson.devDependencies?.storybook;
+      // A `catalog:` or `workspace:` specifier names an entry for `storybook`, not for the replacement.
+      const storybookVersion =
+        storybookRange && validRange(storybookRange) ? storybookRange : undefined;
+      for (const field of fields) {
+        delete packageJson[field]![dependency];
+        if (!declaresReplacement) {
+          packageJson[field]![replacement] = storybookVersion ?? version;
+        }
+      }
+      this.writePackageJson(packageJson, dirname(packageJsonPath));
+      changed.push(packageJsonPath);
+    }
+    return changed;
   }
 
   /**

@@ -740,9 +740,9 @@ describe('prepareStory', () => {
     });
   });
 
-  describe('with `FEATURES.experimentalDocgenServer`', () => {
+  describe('with `FEATURES.docgenServer`', () => {
     beforeEach(() => {
-      vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+      vi.stubGlobal('FEATURES', { docgenServer: true });
     });
 
     afterEach(() => {
@@ -869,7 +869,6 @@ describe('prepareMeta', () => {
     // omitting the properties from preparedStory that are not in preparedMeta
     const {
       name: storyName,
-      story,
       applyLoaders,
       applyBeforeEach,
       applyAfterEach,

@@ -1389,24 +1389,6 @@ describe('CsfFile', () => {
       expect(Object.keys(csf._storyAnnotations.A)).toEqual(['x', 'y']);
       expect(Object.keys(csf._storyAnnotations.B)).toEqual(['z']);
     });
-
-    it('v1-style story annotations', () => {
-      const input = dedent`
-        export default { title: 'foo/bar' };
-        export const A = () => {};
-        A.story = {
-          x: 1,
-          y: 2,
-        }
-        export const B = () => {};
-        B.story = {
-          z: 3,
-        }
-    `;
-      const csf = loadCsf(input, { makeTitle }).parse();
-      expect(Object.keys(csf._storyAnnotations.A)).toEqual(['x', 'y']);
-      expect(Object.keys(csf._storyAnnotations.B)).toEqual(['z']);
-    });
   });
 
   describe('CSF3', () => {
@@ -2968,6 +2950,25 @@ describe('CsfFile', () => {
                 moduleMock: false
         `);
       });
+
+      it('story typed with meta.type<>()', () => {
+        const parsed = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            export const A = meta.story({})
+            export const B = meta.type<{ args: { icon: string } }>().story({ name: 'Typed' })
+            export const C = meta.type<{ args: { icon: string } }>().type<{ args: { size: number } }>().story()
+          `,
+          { makeTitle }
+        ).parse();
+
+        expect(parsed.stories).toMatchObject([
+          { id: 'default-title--a', name: 'A', __stats: { factory: true } },
+          { id: 'default-title--b', name: 'Typed', __stats: { factory: true } },
+          { id: 'default-title--c', name: 'C', __stats: { factory: true } },
+        ]);
+      });
     });
     describe('errors', () => {
       it('multiple meta variables', () => {
@@ -3072,6 +3073,57 @@ describe('CsfFile', () => {
         ).parse();
         // Only factory stories are indexed, non-factory exports are skipped
         expect(Object.keys(parsed._stories)).toEqual(['A']);
+      });
+
+      it('reads factory stories exported with export specifiers', () => {
+        const parsed = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            const $__Button = meta.story({ tags: ['a'] });
+            const $__Typed = meta.story({ tags: ['b'] }) satisfies ReturnType<typeof meta.story>;
+            const someHelper = () => {};
+            function helperFunction() {}
+            class HelperClass {}
+            export { $__Button as Button, $__Typed as Typed, someHelper, helperFunction, HelperClass };
+            export { Other } from './Other.stories';
+            import { Imported } from './Imported.stories';
+            export { Imported };
+          `,
+          { makeTitle }
+        ).parse();
+
+        expect(
+          parsed.stories.map(({ name, tags, __stats }) => ({
+            name,
+            tags,
+            factory: __stats.factory,
+          }))
+        ).toEqual([
+          { name: 'Button', tags: ['a'], factory: true },
+          { name: 'Typed', tags: ['b'], factory: true },
+          { name: 'Other', tags: undefined, factory: undefined },
+          { name: 'Imported', tags: undefined, factory: undefined },
+        ]);
+      });
+
+      it('reads a .story() call behind an export specifier as a plain story in a non-factory file', () => {
+        const parsed = loadCsf(
+          dedent`
+            export default { title: 'foo' };
+            const Local = api.story({ tags: ['a'] });
+            export { Local as Story };
+          `,
+          { makeTitle }
+        ).parse();
+
+        expect(
+          parsed.stories.map(({ name, tags, __stats }) => ({
+            name,
+            tags,
+            factory: __stats.factory,
+          }))
+        ).toEqual([{ name: 'Story', tags: undefined, factory: undefined }]);
       });
 
       it('excludeStories still works with factories', () => {

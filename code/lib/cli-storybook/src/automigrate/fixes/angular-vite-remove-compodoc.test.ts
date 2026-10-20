@@ -149,12 +149,16 @@ describe('check', () => {
     expect(result).toBeNull();
   });
 
-  it('skips a project that opted out of the docgen server', async () => {
+  it.each([
+    { docgenServer: false },
+    { experimentalDocgenServer: false },
+    { docgenServer: false, experimentalDocgenServer: true },
+  ])('skips a project that opted out of the docgen server with %j', async (features) => {
     const result = await checkFix(
       angularViteRemoveCompodoc,
       checkOptions({
         framework: { name: '@storybook/angular-vite', options: { compodoc: true } },
-        features: { experimentalDocgenServer: false },
+        features,
       } as never)
     );
 

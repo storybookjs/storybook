@@ -3,14 +3,10 @@
   import { action } from 'storybook/actions';
   
   import { setAfterNavigateArgument } from '@storybook/sveltekit/internal/mocks/app/navigation';
-  import { setAppStoresNavigating, setAppStoresPage, setAppStoresUpdated } from '@storybook/sveltekit/internal/mocks/app/stores';
 
   const { svelteKitParameters = {}, children } = $props();
 
   // Set context during component initialization - this happens before any child components
-  setAppStoresPage(svelteKitParameters?.stores?.page);
-  setAppStoresNavigating(svelteKitParameters?.stores?.navigating);
-  setAppStoresUpdated(svelteKitParameters?.stores?.updated);
   setAfterNavigateArgument(svelteKitParameters?.navigation?.afterNavigate);
 
   const normalizeHrefConfig = (hrefConfig) => {
@@ -110,7 +106,7 @@
 
     const removeNavigationListeners = createListeners(
       'navigation',
-      ['goto', 'invalidate', 'invalidateAll', 'pushState', 'replaceState'],
+      ['goto', 'invalidate', 'invalidateAll', 'refreshAll', 'pushState', 'replaceState'],
       true
     );
     const removeFormsListeners = createListeners('forms', ['enhance']);

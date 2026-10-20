@@ -9,8 +9,7 @@ import { storyDocsSourceBeforeEach } from './story-docs-source-before-each.ts';
 export type StoryDocsService = ServiceInstanceOf<typeof storyDocsServiceDef>;
 
 export default () => {
-  const useStaticServiceSnippets =
-    'FEATURES' in globalThis && globalThis.FEATURES?.experimentalDocgenServer;
+  const useStaticServiceSnippets = 'FEATURES' in globalThis && globalThis.FEATURES?.docgenServer;
 
   if (!useStaticServiceSnippets) {
     return definePreviewAddon({});

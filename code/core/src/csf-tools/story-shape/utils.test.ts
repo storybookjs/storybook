@@ -7,6 +7,7 @@ import { dedent } from 'ts-dedent';
 import { babelParseFile, loadCsf } from '../CsfFile.ts';
 import type { RenderFunctionPath } from './render.ts';
 import {
+  csfFactoryReceiver,
   isCanonicalCsf2BindCall,
   isCsfFactoryCall,
   keyOf,
@@ -147,10 +148,15 @@ describe('isCsfFactoryCall', () => {
     expect(
       [
         'meta.story({})',
+        'meta.type<{ args: { icon: string } }>().story({})',
+        'meta.type<A>().type<B>().story({})',
         'Base.extend({})',
         "meta['story']({})",
         'meta[story]({})',
         'getMeta().story({})',
+        'getMeta().type<A>().story({})',
+        "meta['type']<A>().story({})",
+        "schema.type('string').story({})",
         'makeStory({})',
         'Template.bind({})',
       ].map((initializer) => [initializer, isCsfFactoryCall(storyInitializer(initializer))])
@@ -158,6 +164,14 @@ describe('isCsfFactoryCall', () => {
       [
         [
           "meta.story({})",
+          true,
+        ],
+        [
+          "meta.type<{ args: { icon: string } }>().story({})",
+          true,
+        ],
+        [
+          "meta.type<A>().type<B>().story({})",
           true,
         ],
         [
@@ -177,6 +191,18 @@ describe('isCsfFactoryCall', () => {
           false,
         ],
         [
+          "getMeta().type<A>().story({})",
+          false,
+        ],
+        [
+          "meta['type']<A>().story({})",
+          false,
+        ],
+        [
+          "schema.type('string').story({})",
+          false,
+        ],
+        [
           "makeStory({})",
           false,
         ],
@@ -186,6 +212,12 @@ describe('isCsfFactoryCall', () => {
         ],
       ]
     `);
+  });
+
+  it('reads the receiver through meta.type<>()', () => {
+    const call = storyInitializer('meta.type<A>().type<B>().story({})');
+
+    expect(isCsfFactoryCall(call) && csfFactoryReceiver(call).name).toBe('meta');
   });
 });
 

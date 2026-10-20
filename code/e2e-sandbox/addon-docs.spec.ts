@@ -130,6 +130,12 @@ test.describe('addon-docs', () => {
 
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/basic', 'docs');
+    test.skip(
+      await page.evaluate(() =>
+        Boolean((globalThis as { FEATURES?: { docgenServer?: boolean } }).FEATURES?.docgenServer)
+      ),
+      'Server docgen renders static source snippets'
+    );
     const root = sbPage.previewRoot();
     const toggles = root.locator('.docblock-code-toggle');
 
@@ -225,12 +231,8 @@ test.describe('addon-docs', () => {
 
     // Arrange - Setup expectations
     let expectedReactVersionRange = /^19/;
-    if (templateName.includes('preact-vite/prerelease')) {
-      expectedReactVersionRange = /^18/;
-    } else if (
+    if (
       templateName.includes('internal/react18-webpack-babel') ||
-      templateName.includes('preact-vite/default-js') ||
-      templateName.includes('preact-vite/default-ts') ||
       templateName.includes('react-webpack/18-ts')
     ) {
       expectedReactVersionRange = /^18/;

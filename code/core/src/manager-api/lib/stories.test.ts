@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   type API_PreparedStoryIndex,
   type StatusesByStoryIdAndTypeId,
-  type StoryIndexV2,
   type StoryIndexV3,
 } from 'storybook/internal/types';
 
@@ -11,17 +10,9 @@ import type { State } from '../root.tsx';
 import { mockEntries } from '../tests/mockStoriesEntries.ts';
 import {
   transformStoryIndexToStoriesHash,
-  transformStoryIndexV2toV3,
   transformStoryIndexV3toV4,
   transformStoryIndexV4toV5,
 } from './stories.ts';
-
-const baseV2: StoryIndexV2['stories'][0] = {
-  id: '1',
-  story: '',
-  kind: '',
-  parameters: {},
-};
 
 const baseV3: StoryIndexV3['stories'][0] = {
   id: '1',
@@ -32,54 +23,6 @@ const baseV3: StoryIndexV3['stories'][0] = {
   parameters: {},
   importPath: '',
 };
-
-describe('transformStoryIndexV2toV3', () => {
-  it('transforms a StoryIndexV2 to a StoryIndexV3 correctly', () => {
-    const indexV2: StoryIndexV2 = {
-      v: 2,
-      stories: {
-        '1': {
-          ...baseV2,
-          id: '1',
-          kind: 'story',
-          story: 'Story 1',
-        },
-        '2': {
-          ...baseV2,
-          id: '2',
-          kind: 'blog',
-          story: 'Blog 1',
-        },
-      },
-    };
-
-    expect(transformStoryIndexV2toV3(indexV2)).toMatchInlineSnapshot(`
-      {
-        "stories": {
-          "1": {
-            "id": "1",
-            "importPath": "",
-            "kind": "story",
-            "name": "Story 1",
-            "parameters": {},
-            "story": "Story 1",
-            "title": "story",
-          },
-          "2": {
-            "id": "2",
-            "importPath": "",
-            "kind": "blog",
-            "name": "Blog 1",
-            "parameters": {},
-            "story": "Blog 1",
-            "title": "blog",
-          },
-        },
-        "v": 3,
-      }
-    `);
-  });
-});
 
 describe('transformStoryIndexV3toV4', () => {
   it('transforms a StoryIndexV3 to an API_PreparedStoryIndex correctly', () => {
@@ -299,5 +242,95 @@ describe('transformStoryIndexToStoriesHash', () => {
     expect(result['1']).toBeTruthy();
     expect(result['story-2']).toBeUndefined();
     expect(result['2']).toBeUndefined();
+  });
+
+  describe('title types', () => {
+    const options = {
+      provider: { getConfig: () => ({ sidebar: {} }) } as any,
+      docsOptions: { docsMode: false },
+      filters: {},
+      allStatuses: {},
+    };
+    const docs = (id: string, title: string, name = 'Docs') => ({
+      id,
+      type: 'docs' as const,
+      title,
+      name,
+      importPath: `./${id}.mdx`,
+      storiesImports: [],
+      tags: [],
+    });
+    const index: API_PreparedStoryIndex = {
+      v: 5,
+      entries: {
+        'welcome--docs': docs('welcome--docs', 'Welcome'),
+        'guides-intro--docs': docs('guides-intro--docs', 'Guides/Intro'),
+        'guides-faq--setup': docs('guides-faq--setup', 'Guides/FAQ', 'Setup'),
+        'guides-faq--usage': docs('guides-faq--usage', 'Guides/FAQ', 'Usage'),
+        'guides-button--docs': docs('guides-button--docs', 'Guides/Button'),
+        'guides-button--primary': {
+          id: 'guides-button--primary',
+          type: 'story',
+          subtype: 'story',
+          title: 'Guides/Button',
+          name: 'Primary',
+          importPath: './button.stories.ts',
+          tags: [],
+        },
+      },
+    };
+    const result = transformStoryIndexToStoriesHash(index, options);
+
+    it('puts a single unattached docs page in place of its title', () => {
+      expect(result['guides-intro']).toBeUndefined();
+      expect(result['guides-intro--docs']).toMatchObject({
+        name: 'Intro',
+        parent: 'guides',
+        depth: 1,
+      });
+      expect(result['guides']).toMatchObject({
+        children: ['guides-intro--docs', 'guides-faq', 'guides-button'],
+      });
+    });
+
+    it('puts a root-level unattached docs page at the root', () => {
+      expect(result['welcome']).toBeUndefined();
+      expect(result['welcome--docs']).toMatchObject({
+        name: 'Welcome',
+        parent: undefined,
+        depth: 0,
+      });
+    });
+
+    it('makes a title with several docs pages and no stories a group', () => {
+      expect(result['guides-faq']).toMatchObject({
+        type: 'group',
+        children: ['guides-faq--setup', 'guides-faq--usage'],
+      });
+      expect(result['guides-faq--setup']).toMatchObject({ name: 'Setup', parent: 'guides-faq' });
+    });
+
+    it('keeps the component of a docs page that has stories', () => {
+      expect(result['guides-button']).toMatchObject({
+        type: 'component',
+        children: ['guides-button--docs', 'guides-button--primary'],
+      });
+      expect(result['guides-button--docs']).toMatchObject({
+        name: 'Docs',
+        parent: 'guides-button',
+      });
+    });
+
+    it('keeps the component when filters hide all of its stories', () => {
+      const filtered = transformStoryIndexToStoriesHash(index, {
+        ...options,
+        filters: { hideStories: (entry) => entry.type !== 'story' },
+      });
+      expect(filtered['guides-button']).toMatchObject({
+        type: 'component',
+        children: ['guides-button--docs'],
+      });
+      expect(filtered['guides-button--primary']).toBeUndefined();
+    });
   });
 });

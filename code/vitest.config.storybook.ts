@@ -19,6 +19,10 @@ if (process.env.INSPECT === 'true') {
 }
 
 export default defineProject({
+  // react-aria's Virtualizer reads process.env.NODE_ENV at runtime; the browser has no process.
+  define: {
+    'process.env.NODE_ENV': JSON.stringify('test'),
+  },
   plugins: [
     storybookTest({
       configDir: import.meta.dirname + '/.storybook',

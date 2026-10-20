@@ -1,4 +1,4 @@
-import type { DocgenPayload, IndexEntry, Indexer, Options } from 'storybook/internal/types';
+import type { DocgenPayload, IndexEntry } from 'storybook/internal/types';
 import { toId } from 'storybook/internal/csf';
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createDocgenProvider } from '../../../../renderers/svelte/src/docgen/docgen-worker.ts';
+import { createIndexer } from '../../../../renderers/svelte/src/svelte-csf/indexer/index.ts';
 import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
 import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
@@ -19,16 +20,7 @@ if (BASELINE_PATH !== 'legacy') {
   );
 }
 
-// Typed locally: the preset's own declarations pull `@storybook/svelte` globals into this Vue-typed program.
-const { experimental_indexers } = await vi.importActual<{
-  experimental_indexers: (existing: Indexer[], options: Options) => Indexer[];
-}>('@storybook/addon-svelte-csf/preset');
-
-const [svelteCsfIndexer] = experimental_indexers([], {} as Options);
-
-if (!svelteCsfIndexer) {
-  throw new Error('@storybook/addon-svelte-csf/preset no longer contributes an indexer');
-}
+const svelteCsfIndexer = createIndexer();
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 

@@ -36,9 +36,9 @@ describe('collectTranscriptUsage', () => {
   });
 
   test('prices a Codex transcript from uncached input, cached input and output', () => {
-    const usage = collectTranscriptUsage(codexTranscript, 'gpt-6-sol');
+    const usage = collectTranscriptUsage(codexTranscript, 'gpt-6.1-sol');
 
-    expect(usage?.estimatedCostUsd).toBeCloseTo(2 + 0.2 + 10);
+    expect(usage?.estimatedCostUsd).toBeCloseTo(2 + 0.1 + 10);
   });
 
   test('leaves the estimate undefined for an unknown model', () => {

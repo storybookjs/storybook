@@ -7,6 +7,7 @@ import type { AngularFileMeta } from '../types.ts';
 import { resolvedSymbol, type AnalyzerContext } from './context.ts';
 import type { DocumentedClassKind } from './members.ts';
 import { collectClassMembers } from './class-members.ts';
+import { type ComponentMetadata, readComponentDeclaration } from './component-declaration.ts';
 import { decoratorObjectArg, getDecorators, objectProperty, stringOption } from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
 import { TypeIndex } from './type-index.ts';
@@ -53,6 +54,12 @@ export function analyzeSourceFile(
       logger.debug(`[angular-cm] ${statement.name.text} left out of docgen: an @NgModule`);
       continue;
     }
+    if (kind === 'class' && sourceFile.isDeclarationFile) {
+      logger.debug(
+        `[angular-cm] ${statement.name.text} left out of docgen: a declaration-file class with no compiled ɵcmp`
+      );
+      continue;
+    }
     const name = statement.name.text;
     const file = sourceFile.fileName;
     const members = collectClassMembers(ctx, statement, kind);
@@ -63,13 +70,7 @@ export function analyzeSourceFile(
     };
 
     if (kind === 'component' || kind === 'directive') {
-      const metadata = decoratorObjectArg(
-        ctx,
-        statement,
-        kind === 'component' ? 'Component' : 'Directive'
-      );
-      const selector = metadata && decoratorSelector(ctx, metadata);
-      const standalone = metadata && decoratorStandalone(ctx, metadata);
+      const { selector, standalone } = componentMetadata(ctx, statement, kind);
       const record: Directive & typeof common & { selector?: string; standalone?: boolean } = {
         name,
         type: kind,
@@ -138,7 +139,23 @@ const classify = (ctx: AnalyzerContext, node: tsModule.ClassDeclaration): ClassK
       return kind;
     }
   }
-  return 'class';
+  return readComponentDeclaration(ctx, node) ? 'component' : 'class';
+};
+
+const componentMetadata = (
+  ctx: AnalyzerContext,
+  node: tsModule.ClassDeclaration,
+  kind: 'component' | 'directive'
+): ComponentMetadata => {
+  const declared = readComponentDeclaration(ctx, node);
+  if (declared) {
+    return declared;
+  }
+  const metadata = decoratorObjectArg(ctx, node, kind === 'component' ? 'Component' : 'Directive');
+  return {
+    selector: metadata && decoratorSelector(ctx, metadata),
+    standalone: metadata && decoratorStandalone(ctx, metadata),
+  };
 };
 
 const decoratorSelector = (
@@ -154,15 +171,41 @@ const decoratorStandalone = (
   ctx: AnalyzerContext,
   metadata: tsModule.ObjectLiteralExpression
 ): boolean | undefined => {
-  const standalone = objectProperty(ctx, metadata, 'standalone');
-  const value = standalone && resolveInitializer(ctx, standalone);
-  if (value?.kind === ctx.ts.SyntaxKind.TrueKeyword) {
-    return true;
+  let standalone: boolean | undefined = true;
+
+  for (const property of metadata.properties) {
+    if (ctx.ts.isSpreadAssignment(property)) {
+      standalone = undefined;
+      continue;
+    }
+    if (ctx.ts.isComputedPropertyName(property.name)) {
+      standalone = undefined;
+      continue;
+    }
+    if (ctx.ts.isShorthandPropertyAssignment(property)) {
+      if (property.name.text === 'standalone') {
+        standalone = undefined;
+      }
+      continue;
+    }
+    if (
+      !ctx.ts.isPropertyAssignment(property) ||
+      (!ctx.ts.isIdentifier(property.name) && !ctx.ts.isStringLiteralLike(property.name)) ||
+      property.name.text !== 'standalone'
+    ) {
+      continue;
+    }
+
+    const value = resolveInitializer(ctx, property.initializer);
+    standalone =
+      value?.kind === ctx.ts.SyntaxKind.TrueKeyword
+        ? true
+        : value?.kind === ctx.ts.SyntaxKind.FalseKeyword
+          ? false
+          : undefined;
   }
-  if (value?.kind === ctx.ts.SyntaxKind.FalseKeyword) {
-    return false;
-  }
-  return undefined;
+
+  return standalone;
 };
 
 // A reference to a variable resolves to its initializer, a slice of what ngtsc's own partial

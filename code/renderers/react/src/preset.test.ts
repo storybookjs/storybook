@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { optimizeViteDeps } from './preset.ts';
+import { features, optimizeViteDeps } from './preset.ts';
 
 describe('optimizeViteDeps', () => {
   it('includes react-dom/client', () => {
@@ -13,5 +13,28 @@ describe('optimizeViteDeps', () => {
     // so it must be listed explicitly in optimizeViteDeps.
     // If this test fails, add 'react-dom/test-utils' back to the optimizeViteDeps array in preset.ts.
     expect(optimizeViteDeps).toContain('react-dom/test-utils');
+  });
+
+  it('includes react/jsx-runtime', () => {
+    // Plugins such as vite-plugin-svgr emit `react/jsx-runtime` imports while transforming non-JS
+    // files. The dependency scan does not run those transforms, so the import is only found
+    // mid-run and a second copy of React gets loaded.
+    // If this test fails, add 'react/jsx-runtime' back to the optimizeViteDeps array in preset.ts.
+    expect(optimizeViteDeps).toContain('react/jsx-runtime');
+  });
+});
+
+describe('features', () => {
+  const applyFeatures = features as (existing: unknown) => Promise<Record<string, unknown>>;
+
+  it('turns component manifests on by default', async () => {
+    expect(await applyFeatures({})).toMatchObject({ componentsManifest: true });
+  });
+
+  it('keeps other feature defaults from earlier presets', async () => {
+    expect(await applyFeatures({ controls: true })).toMatchObject({
+      controls: true,
+      componentsManifest: true,
+    });
   });
 });

@@ -992,7 +992,7 @@ export const addStaticDirs: Task['run'] = async ({ key, sandboxDir }) => {
   await writeConfig(mainConfig);
 };
 
-export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
+export const extendPreview: Task['run'] = async ({ key, template, sandboxDir }) => {
   logger.log('📝 Extending preview.js');
   const previewConfig = await readConfig({ cwd: sandboxDir, fileName: 'preview' });
 
@@ -1020,6 +1020,11 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     previewConfig.setImport(null, storiesDir);
     if (template.expected.renderer === '@storybook/vue3') {
       previewConfig.setImport(null, '../src/stories/renderers/vue3/preview.js');
+      const variant = template.modifications?.storiesVariant ?? key.replaceAll('/', '-');
+      const variantPreview = `src/stories/renderers/vue3_${variant}/preview`;
+      if (existsSync(join(sandboxDir, `${variantPreview}.ts`))) {
+        previewConfig.setImport(null, `../${variantPreview}`);
+      }
     }
     previewConfig.setImport(
       { namespace: 'templateAnnotations' },

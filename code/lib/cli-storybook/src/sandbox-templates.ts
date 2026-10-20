@@ -506,6 +506,22 @@ export const baseTemplates = {
     },
     skipTasks: ['bench'],
   },
+  'vue3-vite/prerelease-ts': {
+    name: 'Vue v3 Prerelease (Vite | TypeScript)',
+    script: 'npm create vite --yes {{beforeDir}} -- --template vue-ts',
+    // `vue` pins its `@vue/*` packages to the same release.
+    minAgeGateExemptions: ['vue', '@vue/*', 'vue-component-meta'],
+    expected: {
+      framework: '@storybook/vue3-vite',
+      renderer: '@storybook/vue3',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
+      extraDependencies: ['vue@rc'],
+    },
+    skipTasks: ['e2e-tests', 'bench'],
+  },
   'vue3-rsbuild/default-ts': {
     name: 'Vue Latest (RsBuild | TypeScript)',
     script: 'npx create-rsbuild -d {{beforeDir}} -t vue-ts --tools eslint',
@@ -1072,6 +1088,7 @@ export const daily: TemplateKey[] = [
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',
   'vue3-vite/default-js',
+  'vue3-vite/prerelease-ts',
   'lit-vite/default-js',
   'svelte-vite/default-js',
   'nextjs/prerelease',

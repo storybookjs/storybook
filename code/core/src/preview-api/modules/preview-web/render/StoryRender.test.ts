@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
 import { logger } from 'storybook/internal/client-logger';
+import type { CleanupCallback } from 'storybook/internal/csf';
 import {
   STORY_FINISHED,
   STORY_RENDERED,
@@ -80,6 +81,23 @@ const buildStore = (overrides: Partial<StoryStore<Renderer>> = {}): StoryStore<R
     cleanupStory: vi.fn(),
     ...overrides,
   }) as any;
+
+// A store that keeps the cleanups of its one story and runs them like the real one.
+const buildStoreWithCleanups = () => {
+  let cleanups: CleanupCallback[] = [];
+  return buildStore({
+    addCleanupCallbacks: vi.fn((_story, ...callbacks) => {
+      cleanups = cleanups.concat(callbacks);
+    }),
+    cleanupStory: vi.fn(async () => {
+      const callbacks = cleanups;
+      cleanups = [];
+      for (const callback of callbacks.reverse()) {
+        await callback();
+      }
+    }),
+  });
+};
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -516,6 +534,90 @@ describe('StoryRender', () => {
       await Promise.all([render.teardown(), render.teardown()]);
 
       expect(store.cleanupStory).toHaveBeenCalledTimes(2);
+    });
+
+    it('runs a cleanup that beforeEach returns after the teardown began', async () => {
+      const [beforeEachGate, openBeforeEachGate] = createGate();
+      const cleanup = vi.fn();
+      const store = buildStoreWithCleanups();
+      const story = buildStory({
+        applyBeforeEach: vi.fn(async () => {
+          await beforeEachGate;
+          return [cleanup];
+        }),
+      });
+      const render = new StoryRender(
+        new Channel({}),
+        store,
+        {} as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        story
+      );
+
+      render.renderToElement({} as any);
+      await vi.waitFor(() => expect(story.applyBeforeEach).toHaveBeenCalledOnce());
+      const tearingDown = render.teardown();
+      openBeforeEachGate();
+      await tearingDown;
+
+      expect(cleanup).toHaveBeenCalledOnce();
+      expect(window.location.reload).not.toHaveBeenCalled();
+    });
+
+    it('keeps the cleanups of a remounted render until its teardown', async () => {
+      const cleanup = vi.fn();
+      const store = buildStoreWithCleanups();
+      const render = new StoryRender(
+        new Channel({}),
+        store,
+        {} as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        buildStory({ applyBeforeEach: vi.fn(async () => [cleanup]) })
+      );
+      await render.renderToElement({} as any);
+
+      await render.remount();
+      expect(cleanup).toHaveBeenCalledOnce();
+
+      await render.teardown();
+      expect(cleanup).toHaveBeenCalledTimes(2);
+    });
+
+    it('runs the cleanup of a cycle remounted during its beforeEach before the next cycle', async () => {
+      const [beforeEachGate, openBeforeEachGate] = createGate();
+      const calls: string[] = [];
+      let cycle = 0;
+      const story = buildStory({
+        applyBeforeEach: vi.fn(async () => {
+          const current = ++cycle;
+          calls.push(`beforeEach ${current}`);
+          if (current === 1) {
+            await beforeEachGate;
+          }
+          return [() => calls.push(`cleanup ${current}`)];
+        }),
+      });
+      const render = new StoryRender(
+        new Channel({}),
+        buildStoreWithCleanups(),
+        {} as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        story
+      );
+
+      render.renderToElement({} as any);
+      await vi.waitFor(() => expect(cycle).toBe(1));
+      const remounting = render.remount();
+      openBeforeEachGate();
+      await remounting;
+
+      expect(calls).toEqual(['beforeEach 1', 'cleanup 1', 'beforeEach 2']);
     });
 
     it('does not mount again when torn down while it remounts', async () => {

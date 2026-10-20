@@ -313,6 +313,13 @@ export interface StoryTest {
   parent: { node: Node | undefined };
 }
 
+/** The import a meta's `component` refers to: `imported` is `'default'` for a default import. */
+export interface CsfComponentImport {
+  source: string;
+  imported: string;
+  local: string;
+}
+
 export class CsfFile {
   _editor: SourceEditor;
 
@@ -1102,6 +1109,35 @@ export class CsfFile {
   public get meta() {
     this._assertIndexed();
     return this._meta;
+  }
+
+  /**
+   * Read the import the meta's `component` refers to, or `undefined` when `component` is not an
+   * identifier bound by a default or named import, such as a local component, a namespace import or
+   * member, or `Button as any`.
+   *
+   * @example
+   * ```ts
+   * const csf = loadCsf(
+   *   "import { Button as B } from './Button';\nexport default { component: B };",
+   *   { makeTitle: () => 'Example' }
+   * ).parse();
+   * csf.componentImport; // { source: './Button', imported: 'Button', local: 'B' }
+   * ```
+   */
+  public get componentImport(): CsfComponentImport | undefined {
+    this._assertIndexed();
+    const specifier = this._componentImportSpecifier;
+    if (!specifier || this._rawComponentPath === undefined) {
+      return undefined;
+    }
+    const imported =
+      specifier.type === 'ImportDefaultSpecifier'
+        ? 'default'
+        : specifier.imported.type === 'Identifier'
+          ? specifier.imported.name
+          : specifier.imported.value;
+    return { source: this._rawComponentPath, imported, local: specifier.local.name };
   }
 
   public get stories() {

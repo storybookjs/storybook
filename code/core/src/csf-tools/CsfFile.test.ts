@@ -2488,6 +2488,40 @@ describe('CsfFile', () => {
     });
   });
 
+  describe('component import', () => {
+    const componentImport = (code: string) =>
+      loadCsf(code, { makeTitle, fileName: 'Button.stories.ts' }).parse().componentImport;
+
+    it.each([
+      {
+        code: `import { Button as B } from './Button';\nexport default { component: B };`,
+        expected: { source: './Button', imported: 'Button', local: 'B' },
+      },
+      {
+        code: `import Button from './Button';\nexport default { component: Button };`,
+        expected: { source: './Button', imported: 'default', local: 'Button' },
+      },
+      {
+        code: `import { 'my-button' as B } from 'lib';\nexport default { component: B };`,
+        expected: { source: 'lib', imported: 'my-button', local: 'B' },
+      },
+      {
+        code: `import preview from '#.storybook/preview';\nimport { Button } from './Button';\nconst meta = preview.meta({ component: Button });\nexport const A = meta.story();`,
+        expected: { source: './Button', imported: 'Button', local: 'Button' },
+      },
+    ])('reads $expected.local from $expected.source', ({ code, expected }) => {
+      expect(componentImport(code)).toEqual(expected);
+    });
+
+    it.each([
+      `export default {};`,
+      `const Button = () => null;\nexport default { component: Button };`,
+      `import * as UI from './ui';\nexport default { component: UI.Button };`,
+    ])('is undefined for %s', (code) => {
+      expect(componentImport(code)).toBeUndefined();
+    });
+  });
+
   describe('beforeEach', () => {
     it('basic', () => {
       expect(

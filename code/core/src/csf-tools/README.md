@@ -9,6 +9,8 @@ An experimental library to read, analyze, transform, and write CSF programmatica
 
 It can parse MDX into CSF.
 
+`CsfFile.meta.component` is the meta's `component` as written. `CsfFile.componentImport` is the import it refers to, as `{ source, imported, local }`, so `import { Button as B } from './Button'` gives `{ source: './Button', imported: 'Button', local: 'B' }`; `imported` is `'default'` for a default import. It is `undefined` when `component` is not an identifier bound by a default or named import, such as a local component, a namespace import or a member like `UI.Button`, or `Button as any`.
+
 ## Transforming stories
 
 `CsfFile.objects()` returns one `CsfObject` editor per mutable object it can prove safe to edit: the meta, each story export, and each CSF2 `Story.parameters` / `Story.argTypes` annotation assignment.

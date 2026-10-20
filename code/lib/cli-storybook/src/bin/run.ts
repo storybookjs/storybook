@@ -181,6 +181,7 @@ command('upgrade')
   )
   .option('-f --force', 'force the upgrade, skipping autoblockers')
   .option('-n --dry-run', 'Only check for upgrades, do not install')
+  .option('--skip-install', 'Skip installing deps')
   .option('-s --skip-check', 'Skip postinstall version and automigration checks')
   .option(
     '--skip-automigrations',

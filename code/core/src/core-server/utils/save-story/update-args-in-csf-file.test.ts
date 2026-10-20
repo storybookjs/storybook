@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, test } from 'vitest';
 
-import { loadCsf, printCsf, readCsf } from 'storybook/internal/csf-tools';
+import { loadCsf, parseExpression, printCsf, readCsf } from 'storybook/internal/csf-tools';
 
 import { format } from 'prettier';
 
@@ -17,7 +17,7 @@ const FILES = {
   typescriptConstructs: join(__dirname, 'mocks/typescript-constructs.stories.tsx'),
   csfVariances: join(__dirname, 'mocks/csf-variances.stories.tsx'),
   csf4Variances: join(__dirname, 'mocks/csf4-variances.stories.tsx'),
-  unsupportedCsfVariances: join(__dirname, 'mocks/unsupported-csf-variances.stories.tsx'),
+  csf2Variances: join(__dirname, 'mocks/csf2-variances.stories.tsx'),
   exportVariances: join(__dirname, 'mocks/export-variances.stories.tsx'),
   dataVariances: join(__dirname, 'mocks/data-variances.stories.tsx'),
 };
@@ -33,10 +33,9 @@ describe('success', () => {
 
     const parsed = CSF.parse();
     const names = Object.keys(parsed._stories);
-    const nodes = names.map((name) => CSF.getStoryExport(name));
 
-    nodes.forEach((node) => {
-      updateArgsInCsfFile(parsed, node, newArgs);
+    names.forEach((name) => {
+      updateArgsInCsfFile(parsed, name, newArgs);
     });
 
     const after = await format(printCsf(parsed).code, {
@@ -96,27 +95,103 @@ describe('success', () => {
         "
     `);
   });
-  test('re-exported story', async () => {
+  test('re-exported story', () => {
     const parsed = loadCsf(
       `export default { title: 'X' };\nconst Local = { args: { a: 1 } };\nexport { Local as Alias };`,
       { makeTitle }
     ).parse();
 
-    await expect(() =>
-      updateArgsInCsfFile(parsed, parsed.getStoryExport('Alias'), { a: 2 })
-    ).rejects.toThrow(SaveStoryError);
+    updateArgsInCsfFile(parsed, 'Alias', { a: 2 });
+
+    expect(printCsf(parsed).code).toMatchInlineSnapshot(`
+      "export default { title: 'X' };
+      const Local = { args: { a: 2 } };
+      export { Local as Alias };"
+    `);
   });
-  test('Unsupported CSF Variances', async () => {
+  test('story whose args spread another story', () => {
+    const parsed = loadCsf(
+      [
+        `export default { title: 'X' };`,
+        `export const Base = { args: { a: 1 } };`,
+        `export const Spread = { ...Base };`,
+        `export const SpreadArgs = { args: { ...Base.args, a: 2 } };`,
+      ].join('\n'),
+      { makeTitle }
+    ).parse();
+
+    updateArgsInCsfFile(parsed, 'Spread', { b: 2 });
+    updateArgsInCsfFile(parsed, 'SpreadArgs', { a: 3, b: 3 });
+
+    expect(printCsf(parsed).code).toMatchInlineSnapshot(`
+      "export default { title: 'X' };
+      export const Base = { args: { a: 1 } };
+      export const Spread = { ...Base, args: { ...Base.args, b: 2 } };
+      export const SpreadArgs = { args: { ...Base.args, a: 3, b: 3 } };"
+    `);
+  });
+  test('refuses an arg a later spread could override, leaving the story as it was', () => {
+    const source = [
+      `export default { title: 'X' };`,
+      `export const Base = { args: { a: 1 } };`,
+      `export const A = { args: { a: 1, ...Base.args } };`,
+    ].join('\n');
+    const parsed = loadCsf(source, { makeTitle }).parse();
+
+    expect(() =>
+      updateArgsInCsfFile(parsed, 'A', { c: 2, a: 2 })
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Cannot mutate args.a because the target contains spread field]`
+    );
+    expect(printCsf(parsed).code).toBe(source);
+    expect(parsed.changed).toBe(false);
+  });
+  test('reports why a story cannot be edited', () => {
+    const parsed = loadCsf(
+      [
+        `import preview from '#.storybook/preview';`,
+        `const meta = preview.meta({ title: 'X' });`,
+        `export const A = meta.story();`,
+      ].join('\n'),
+      { makeTitle }
+    ).parse();
+
+    expect(() => updateArgsInCsfFile(parsed, 'A', { a: 1 })).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Cannot mutate CSF factory story A because its configuration is not an inline object literal]`
+    );
+  });
+  test('CSF2 Variances', async () => {
     const newArgs = { bordered: true, initial: 'test1' };
 
-    const CSF = await readCsf(FILES.unsupportedCsfVariances, { makeTitle });
+    const before = await format(await readFile(FILES.csf2Variances, 'utf-8'), {
+      parser: 'typescript',
+    });
+    const CSF = await readCsf(FILES.csf2Variances, { makeTitle });
     const parsed = CSF.parse();
     const names = Object.keys(parsed._stories);
-    const nodes = names.map((name) => CSF.getStoryExport(name));
 
-    for (const node of nodes) {
-      await expect(() => updateArgsInCsfFile(parsed, node, newArgs)).rejects.toThrowError();
-    }
+    names.forEach((name) => {
+      updateArgsInCsfFile(parsed, name, newArgs);
+    });
+
+    const after = await format(printCsf(parsed).code, {
+      parser: 'typescript',
+    });
+
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  ...
+        }> = (props) => <pre>{JSON.stringify(props)}</pre>;
+        
+        export const CSF2 = () => <MyComponent absolute bordered initial="test2" />;
+        
+      + CSF2.args = { bordered: true, initial: "test1" };
+      + 
+        
+        export const CSF2b = CSF2.bind({});
+        
+      + CSF2b.args = { bordered: true, initial: "test1" };
+      + "
+    `);
   });
   test('CSF Variances', async () => {
     const newArgs = { bordered: true, initial: 'test1' };
@@ -128,10 +203,9 @@ describe('success', () => {
 
     const parsed = CSF.parse();
     const names = Object.keys(parsed._stories);
-    const nodes = names.map((name) => CSF.getStoryExport(name));
 
-    nodes.forEach((node) => {
-      updateArgsInCsfFile(parsed, node, newArgs);
+    names.forEach((name) => {
+      updateArgsInCsfFile(parsed, name, newArgs);
     });
 
     const after = await format(printCsf(parsed).code, {
@@ -152,20 +226,14 @@ describe('success', () => {
       - export const Empty = {} satisfies Story;
       - 
       + export const Empty = {
-      +   args: {
-      +     bordered: true,
-      +     initial: "test1",
-      +   },
+      +   args: { bordered: true, initial: "test1" },
       + } satisfies Story;
       + 
         
         export const EmptyWithComment = {
           // this is a useless comment, to test that it is preserved
         
-      +   args: {
-      +     bordered: true,
-      +     initial: "test1",
-      +   },
+      +   args: { bordered: true, initial: "test1" },
       + 
         } satisfies Story;
         
@@ -180,13 +248,10 @@ describe('success', () => {
         } satisfies Story;
         
         export const RenderNoArgs = {
-        
-      +   args: {
-      +     bordered: true,
-      +     initial: "test1",
-      +   },
-      + 
           render: (args) => <MyComponent {...args} />,
+        
+      +   args: { bordered: true, initial: "test1" },
+      + 
         } satisfies Story;
         
         export const RenderArgs = {
@@ -252,10 +317,9 @@ describe('success', () => {
 
     const parsed = CSF.parse();
     const names = Object.keys(parsed._stories);
-    const nodes = names.map((name) => CSF.getStoryExport(name));
 
-    nodes.forEach((node) => {
-      updateArgsInCsfFile(parsed, node, newArgs);
+    names.forEach((name) => {
+      updateArgsInCsfFile(parsed, name, newArgs);
     });
 
     const after = await format(printCsf(parsed).code, {
@@ -275,12 +339,7 @@ describe('success', () => {
         
       - export const Empty = meta.story({});
       - 
-      + export const Empty = meta.story({
-      +   args: {
-      +     bordered: true,
-      +     initial: "test1",
-      +   },
-      + });
+      + export const Empty = meta.story({ args: { bordered: true, initial: "test1" } });
       + 
         export const WithArgs = meta.story({
           args: {
@@ -313,13 +372,9 @@ describe('success', () => {
 
     const parsed = CSF.parse();
     const names = Object.keys(parsed._stories);
-    const nodes = names.map((name) => CSF.getStoryExport(name));
 
-    nodes.forEach((node) => {
-      if (node === undefined) {
-        return;
-      }
-      updateArgsInCsfFile(parsed, node, newArgs);
+    names.forEach((name) => {
+      updateArgsInCsfFile(parsed, name, newArgs);
     });
 
     const after = await format(printCsf(parsed).code, {
@@ -346,6 +401,28 @@ describe('success', () => {
         };
         
         const BlockExport: Story = {
+          args: {
+        
+      -     initial: "bar",
+      - 
+      +     initial: "test1",
+      +     bordered: true,
+      + 
+          },
+        };
+        
+        const NotYetRenamedExport: Story = {
+          args: {
+        
+      -     initial: "bar",
+      - 
+      +     initial: "test1",
+      +     bordered: true,
+      + 
+          },
+        };
+        
+        export { BlockExport, NotYetRenamedExport as RenamedExport };
         ..."
     `);
   });
@@ -354,7 +431,7 @@ describe('success', () => {
       myArray: ['FOO', 'BAR'],
       myArrayDeep: [['FOO'], ['BAR']],
       myBoolean: true,
-      myFunction: () => {},
+      myFunction: parseExpression('() => {}'),
       myNull: null,
       myNumber: 41,
       myObject: {
@@ -371,13 +448,9 @@ describe('success', () => {
 
     const parsed = CSF.parse();
     const names = Object.keys(parsed._stories);
-    const nodes = names.map((name) => CSF.getStoryExport(name));
 
-    nodes.forEach((node) => {
-      if (node === undefined) {
-        return;
-      }
-      updateArgsInCsfFile(parsed, node, newArgs);
+    names.forEach((name) => {
+      updateArgsInCsfFile(parsed, name, newArgs);
     });
 
     const after = await format(printCsf(parsed).code, {
@@ -405,19 +478,13 @@ describe('success', () => {
             myNull: null,
         
       -     myNumber: 42,
-      - 
-      +     myNumber: 41,
-      + 
-            myObject: {
-        
+      -     myObject: {
       -       foo: "bar",
-      - 
-      +       FOO: "BAR",
-      + 
-            },
-        
+      -     },
       -     myString: "foo",
       - 
+      +     myNumber: 41,
+      +     myObject: { FOO: "BAR" },
       +     myString: "FOO",
       + 
             myUndefined: undefined,
@@ -435,9 +502,7 @@ describe('success', () => {
       +     myFunction: () => {},
       +     myNull: null,
       +     myNumber: 41,
-      +     myObject: {
-      +       FOO: "BAR",
-      +     },
+      +     myObject: { FOO: "BAR" },
       +     myString: "FOO",
       +     myUndefined: undefined,
       +   },

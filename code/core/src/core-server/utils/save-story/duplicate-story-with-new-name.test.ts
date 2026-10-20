@@ -15,7 +15,7 @@ const makeTitle = (userTitle: string) => userTitle;
 const FILES = {
   csfVariances: join(__dirname, 'mocks/csf-variances.stories.tsx'),
   csf4Variances: join(__dirname, 'mocks/csf4-variances.stories.tsx'),
-  unsupportedCsfVariances: join(__dirname, 'mocks/unsupported-csf-variances.stories.tsx'),
+  csf2Variances: join(__dirname, 'mocks/csf2-variances.stories.tsx'),
   typescriptConstructs: join(__dirname, 'mocks/typescript-constructs.stories.tsx'),
 };
 
@@ -119,7 +119,7 @@ describe('success', () => {
     `);
   });
   test('Unsupported CSF Variances', async () => {
-    const CSF = await readCsf(FILES.unsupportedCsfVariances, { makeTitle });
+    const CSF = await readCsf(FILES.csf2Variances, { makeTitle });
 
     const parsed = CSF.parse();
     const names = Object.keys(parsed._stories);

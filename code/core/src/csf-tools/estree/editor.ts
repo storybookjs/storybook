@@ -490,9 +490,8 @@ const printLines = (items: string[], indent: string, open: string, close: string
 export const printMembers = (members: string[], indent: string) =>
   printLines(members, indent, '{', '}');
 
-// Objects, or with `multiline` only objects and arrays with an item that spans lines, are laid out
-// one item per line.
-type ValueLayout = { indent: string; expand: 'objects' | 'multiline' };
+// With a layout, objects and arrays with an item that spans lines are laid out one item per line.
+type ValueLayout = { indent: string };
 
 const spansLines = (texts: string[]) => texts.some((text) => text.includes('\n'));
 
@@ -533,7 +532,7 @@ export const printValue = (value: unknown, quote: string, layout?: ValueLayout):
   }
   if (Array.isArray(value)) {
     const items = Array.from(value, (item) => printValue(item, quote, layout));
-    return layout?.expand === 'multiline' && spansLines(items)
+    return layout && spansLines(items)
       ? printLines(items, layout.indent, '[', ']')
       : `[${items.join(', ')}]`;
   }
@@ -541,7 +540,7 @@ export const printValue = (value: unknown, quote: string, layout?: ValueLayout):
     const members = Object.entries(value as Record<string, unknown>).map(
       ([key, item]) => `${printKey(key, quote)}: ${printValue(item, quote, layout)}`
     );
-    if (layout && (layout.expand === 'objects' || spansLines(members))) {
+    if (layout && spansLines(members)) {
       return printMembers(members, layout.indent);
     }
     return members.length === 0 ? '{}' : `{ ${members.join(', ')} }`;

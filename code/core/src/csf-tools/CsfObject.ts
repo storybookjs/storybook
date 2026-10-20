@@ -398,7 +398,7 @@ class Editor implements CsfObjectEditor {
       }
     }
     const { quote, indent } = this.editor;
-    const text = printValue(value, quote, { indent, expand: 'multiline' });
+    const text = printValue(value, quote, { indent });
     if (inspected.property) {
       inspected.parent.replaceValue(inspected.property, text);
     } else {

@@ -2522,6 +2522,36 @@ export const Secondary = { args: {} };
     );
   });
 
+  describe('a factory call without an argument', () => {
+    const source = `import preview from './preview';\nconst meta = preview.meta();\nexport const A = meta.story();\n`;
+
+    it('writes a second key of the same field into the argument the first write added', () => {
+      const csf = parse(source);
+      const [a] = csf.objects({ meta: false });
+
+      expect(a.set(['args', 'a'], 1)).toEqual({ ok: true, changed: true });
+      expect(a.set(['args', 'b'], 2)).toEqual({ ok: true, changed: true });
+
+      expect(printCsf(csf).code).toContain(
+        `export const A = meta.story({ args: { a: 1, b: 2 } });`
+      );
+    });
+
+    it('writes another field into the argument the first write added', () => {
+      const csf = parse(source);
+      const [a] = csf.objects({ meta: false });
+
+      expect(a.set(['args', 'a'], 1)).toEqual({ ok: true, changed: true });
+      expect(csf.editor.pending).toBe(true);
+      expect(a.set(['parameters', 'layout'], 'centered')).toEqual({ ok: true, changed: true });
+      expect(a.node?.properties).toHaveLength(2);
+
+      expect(printCsf(csf).code).toContain(
+        `export const A = meta.story({ args: { a: 1 }, parameters: { layout: 'centered' } });`
+      );
+    });
+  });
+
   it('keeps the nodes of the parse, so raw edits join the same batch', () => {
     const csf = parse(stories);
     const [primary, secondary] = csf.objects({ meta: false });

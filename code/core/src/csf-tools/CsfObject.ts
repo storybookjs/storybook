@@ -1188,7 +1188,7 @@ class Editor implements CsfObject {
         if (!property) {
           // A pending edit may have added the key; one that creates it reads the spreads too.
           const creates = lookup.ok && purpose !== 'read' && purpose !== 'remove';
-          const about = { into: this.owner(parent), key };
+          const about = this.about(parent, key);
           const keyed = this.members(parent).map(({ start, end }) => ({ start, end, about }));
           if (isPendingAt(this.editor, [...keyed, ...(creates ? this.spreads(parent) : [])])) {
             return CROSSED;
@@ -1273,13 +1273,13 @@ class Editor implements CsfObject {
       throw invalidated();
     }
     const [member] = content.members;
-    const added = { into: this.owner(object), key: member.key };
+    const added = this.about(object, member.key);
     if (isPendingAt(this.editor, this.gaps(object.members?.().gaps, added, [member.text]))) {
       this.settle();
       this.insert(containers, content);
       return;
     }
-    adding(this.editor, added, () => object.append([member]));
+    this.appendTo(object, added, [member]);
   }
 
   // Writes the missing containers at `missing` into `parent`, the first one a member of it, which
@@ -1321,11 +1321,11 @@ class Editor implements CsfObject {
       );
     }
     const text = `${printKey(name, quote)}: ${nested}`;
-    const added = { into: this.owner(parent), key: name };
+    const added = this.about(parent, name);
     if (isPendingAt(this.editor, this.gaps(parent.members?.().gaps, added, [text]))) {
       return false;
     }
-    adding(this.editor, added, () => parent.append([{ key: name, value: nested, text }]));
+    this.appendTo(parent, added, [{ key: name, value: nested, text }]);
     return true;
   }
 
@@ -1565,9 +1565,20 @@ class Editor implements CsfObject {
     return members ? [...members.keys, ...members.gaps] : this.gaps(undefined);
   }
 
-  // The object a root's appends name, or the root itself for one that cannot tell.
-  private owner(root: ObjectRoot): object {
-    return root.members?.().owner ?? root;
+  // The member `key` of a root, for a root that names the object its appends add to. A root that
+  // cannot name its member spans cannot tell its appends apart either, such as the argument a call
+  // without one gets from its first write, so a lookup in it depends on every append to it.
+  private about(root: ObjectRoot, key: string): Added | undefined {
+    const owner = root.members?.().owner;
+    return owner && { into: owner, key };
+  }
+
+  private appendTo(root: ObjectRoot, added: Added | undefined, members: MemberInsert[]) {
+    if (added) {
+      adding(this.editor, added, () => root.append(members));
+    } else {
+      root.append(members);
+    }
   }
 
   // The constants the spreads among a root's members read, which tell what a member created after

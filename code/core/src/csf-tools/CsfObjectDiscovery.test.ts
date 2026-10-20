@@ -237,6 +237,114 @@ describe('CsfObject discovery', () => {
     }
   );
 
+  describe('a story that is an alias of another story', () => {
+    const aliasDiagnostic = (exportName: string, aliased: string) =>
+      expect.objectContaining({
+        code: 'aliased-story',
+        target: { kind: 'story', exportName, localName: exportName },
+        path: [],
+        message: `Cannot mutate story ${exportName} because it is an alias of story ${aliased}`,
+      });
+
+    it.each(['Primary', 'Primary as Story', 'Primary satisfies Story'])(
+      'reports a story initialized with %s as an alias of Primary',
+      (initializer) => {
+        const csf = parse(`
+          export default { title: 'Example' };
+          export const Primary = { args: {} };
+          export const Secondary = ${initializer};
+        `);
+
+        csf.objects();
+
+        expect(csf.mutationDiagnostics).toEqual([aliasDiagnostic('Secondary', 'Primary')]);
+      }
+    );
+
+    it('reports every story of a chain of aliases as an alias of the story that holds the object', () => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        export const Primary = { args: {} };
+        export const Secondary = Primary;
+        export const Tertiary = Secondary as Story;
+      `);
+      csf.objects();
+
+      expect(csf.mutationDiagnostics).toEqual([
+        aliasDiagnostic('Secondary', 'Primary'),
+        aliasDiagnostic('Tertiary', 'Primary'),
+      ]);
+    });
+
+    it('names the export of the story it aliases', () => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        const Primary = { args: {} };
+        export { Primary as Main };
+        export const Secondary = Primary;
+      `);
+      csf.objects();
+
+      expect(csf.mutationDiagnostics).toEqual([aliasDiagnostic('Secondary', 'Main')]);
+    });
+
+    it('returns the aliased story once, as the story it aliases', () => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        export const Primary = { args: { label: 'Primary' } };
+        export const Secondary = Primary;
+        export const Tertiary = Secondary;
+      `);
+      const objects = csf.objects();
+
+      expect(objects.map(({ target }) => target)).toEqual([
+        { kind: 'meta' },
+        { kind: 'story', exportName: 'Primary', localName: 'Primary' },
+      ]);
+      expect(objects[1].set(['args', 'label'], 'Changed')).toEqual({ ok: true, changed: true });
+    });
+
+    it('does not follow a constant that is not a story, which could write to the story unseen', () => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        export const Primary = { args: {} };
+        const Shared = Primary;
+        Shared.args.label = 'A';
+        export const Secondary = Shared;
+      `);
+      csf.objects({ meta: false });
+
+      expect(csf.mutationDiagnostics).toEqual([
+        expect.objectContaining({
+          code: 'unsupported-initializer',
+          target: { kind: 'story', exportName: 'Secondary', localName: 'Secondary' },
+        }),
+      ]);
+    });
+
+    it.each([
+      ['a constant that is not a story', 'const base = { args: {} };', 'base'],
+      [
+        'an alias of a constant that is not a story',
+        'const base = {};\nconst Shared = base;',
+        'Shared',
+      ],
+      ['an imported story', "import { Primary } from './other.stories';", 'Primary'],
+      ['a reassigned binding', 'let Shared = {};\nShared = {};', 'Shared'],
+    ])('keeps unsupported-initializer for an initializer that names %s', (_kind, code, name) => {
+      const csf = parse(`
+        export default { title: 'Example' };
+        ${code}
+        export const Basic = ${name};
+      `);
+
+      expect(csf.objects({ meta: false })).toEqual([]);
+      expect(csf.mutationDiagnostics).toEqual([
+        expect.objectContaining({ code: 'unsupported-initializer', path: [] }),
+      ]);
+    });
+  });
+
   describe('CSF2 annotation assignments', () => {
     const legacy = `export default { title: 'Example' };
 const Template = (args) => args;

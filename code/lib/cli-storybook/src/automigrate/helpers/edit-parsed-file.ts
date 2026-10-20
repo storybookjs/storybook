@@ -77,7 +77,7 @@ export const everyCsfObject = (csf: CsfFile): readonly CsfObject[] => {
   );
   const aliases = csf.mutationDiagnostics.slice(diagnosticsBefore).flatMap((diagnostic) => {
     const { code, path, target } = diagnostic;
-    if (code !== 'unsupported-initializer' || path.length > 0 || target.kind !== 'story') {
+    if (code !== 'aliased-story' || path.length > 0 || target.kind !== 'story') {
       return [];
     }
     const init = constInitializer(csf, target.localName);

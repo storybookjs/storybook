@@ -11,6 +11,7 @@ import type { CSFFile, PreparedStory, Renderer } from 'storybook/internal/types'
 import { DocsContext as DocsContextImpl } from 'storybook/preview-api';
 
 import { Story as PureStory } from '../components/Story.tsx';
+import { ZoomContext } from '../components/ZoomContext.tsx';
 import type { DocsContextProps } from './DocsContext.ts';
 import { DocsContext } from './DocsContext.ts';
 import { Story, getStoryProps } from './Story.tsx';
@@ -159,6 +160,38 @@ describe('a story in an iframe', () => {
 
     expect(iframeAutoplay(false)).toBe('false');
     expect(iframeAutoplay(true)).toBe(null);
+  });
+
+  it('zooms by scaling its frame from the docs page, without a reload', () => {
+    const block = (scale: number) => (
+      <ZoomContext.Provider value={{ scale }}>
+        <PureStory
+          story={iframeStory}
+          inline={false}
+          height="1px"
+          autoplay={false}
+          primary={false}
+        />
+      </ZoomContext.Provider>
+    );
+    // Outside the document, so happy-dom loads no story URL.
+    const container = document.createElement('div');
+    const { rerender } = render(block(1), { container });
+    const frame = container.querySelector('iframe')!;
+
+    rerender(block(2));
+
+    const scaled = frame.parentElement!;
+    expect(scaled.style.width).toBe('200%');
+    expect(scaled.style.transform).toBe('scale(0.5)');
+    expect(scaled.parentElement!.style.overflow).toBe('hidden');
+    expect(container.querySelector('iframe')).toBe(frame);
+    expect(frame.style.transform).toBe('');
+
+    rerender(block(1));
+
+    expect(scaled.style.width).toBe('100%');
+    expect(scaled.style.transform).toBe('none');
   });
 });
 

@@ -104,10 +104,18 @@ const IFrameStory: FunctionComponent<IFrameStoryProps> = ({
     ...(!autoplay && { autoplay: 'false' }),
   });
   return (
-    <div style={{ width: '100%', height }}>
+    <div style={{ width: '100%', height, overflow: 'hidden' }}>
       <ZoomContext.Consumer>
-        {({ scale }) => {
-          return (
+        {({ scale }) => (
+          // Zoom scales the frame from the docs page and writes nothing into the story's document.
+          <div
+            style={{
+              width: `${scale * 100}%`,
+              height: `${scale * 100}%`,
+              transform: scale !== 1 ? `scale(${1 / scale})` : 'none',
+              transformOrigin: 'top left',
+            }}
+          >
             <IFrame
               // `IFrame` never updates, so a new URL is a new iframe.
               key={src}
@@ -115,15 +123,14 @@ const IFrameStory: FunctionComponent<IFrameStoryProps> = ({
               title={story.name}
               src={src}
               allowFullScreen
-              scale={scale}
               style={{
                 width: '100%',
                 height: '100%',
                 border: '0 none',
               }}
             />
-          );
-        }}
+          </div>
+        )}
       </ZoomContext.Consumer>
     </div>
   );

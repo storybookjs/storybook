@@ -29,6 +29,7 @@ import {
   removeStatements,
   replaceValue,
   setImportSpecifiers,
+  wrapExpression,
 } from './editor.ts';
 
 const parse = (source: string, fileName?: string) =>
@@ -331,6 +332,56 @@ describe('appendToList', () => {
 
     expect(output).toBe("export default {\n  title: 'X',\n  a: x // c\n  ,\n  b: 2\n};");
     expect(() => parseModule(output)).not.toThrow();
+  });
+});
+
+describe('wrapExpression', () => {
+  const render = (editor: SourceEditor) => {
+    const meta = (editor.program.body[0] as E.ExportDefaultDeclaration)
+      .declaration as E.ObjectExpression;
+    return { meta, value: (meta.properties[1] as E.ObjectProperty).value };
+  };
+  const elements = (editor: SourceEditor) => {
+    const array = (editor.program.body[0] as E.ExportDefaultDeclaration)
+      .declaration as E.ArrayExpression;
+    return { array, first: array.elements[0]! };
+  };
+
+  it.each([true, false])(
+    'writes the wrapper around the expression alone, the list edits next to it first: %s',
+    (listEditsFirst) => {
+      const editor = new SourceEditor("export default { title: 'X', render: (args) => null };");
+      const list = new SourceEditor('export default [a];');
+      const listEdits = () => {
+        appendToList(editor, objectList(editor, render(editor).meta), ['a: {}']);
+        prependToList(list, arrayList(list, elements(list).array), ['b']);
+        appendToList(list, arrayList(list, elements(list).array), ['c']);
+      };
+      if (listEditsFirst) {
+        listEdits();
+      }
+      wrapExpression(editor, render(editor).value, 'wrapped(', ')');
+      wrapExpression(list, elements(list).first, 'f(', ')');
+      if (!listEditsFirst) {
+        listEdits();
+      }
+
+      expect(editor.toString()).toBe(
+        "export default { title: 'X', render: wrapped((args) => null), a: {} };"
+      );
+      expect(list.toString()).toBe('export default [b, f(a), c];');
+    }
+  );
+
+  it('wraps text an earlier edit wrote at its end, and an earlier wrapper', () => {
+    const editor = new SourceEditor("export default { title: 'X', render: (args) => null };");
+    const { value } = render(editor);
+    editor.edits.appendLeft(value.end, '.input');
+    wrapExpression(editor, value, '[', ']');
+    wrapExpression(editor, value, '(', ')');
+    expect(editor.toString()).toBe(
+      "export default { title: 'X', render: ([(args) => null.input]) };"
+    );
   });
 });
 

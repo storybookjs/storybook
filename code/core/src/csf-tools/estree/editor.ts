@@ -47,6 +47,7 @@ export interface SourceEdits {
   append(content: string): this;
   appendLeft(index: number, content: string): this;
   appendRight(index: number, content: string): this;
+  prependRight(index: number, content: string): this;
   overwrite(start: number, end: number, content: string): this;
   remove(start: number, end: number): this;
   /** The content of a span as edited so far; throws when an edit cuts through its ends. */
@@ -820,9 +821,11 @@ const inline = (
 
 // What the appends of a batch of edits wrote to a list: where later items go, one per line at
 // `indent` or on the list's line without one, the list's trailing comma, whether a line break
-// follows, and what has to come before the next item.
+// follows, and what has to come before the next item. Items after an item are written to the right
+// of its end, so a wrapper of that item stays around the item alone.
 interface Appended {
   at: number;
+  right: boolean;
   indent: string | undefined;
   trailingComma: string;
   lineBreakFollows: boolean;
@@ -830,6 +833,9 @@ interface Appended {
 }
 
 const appendedTo = new WeakMap<SourceEdits, Map<string, Appended>>();
+
+const insert = (edits: SourceEdits, { at, right }: Pick<Appended, 'at' | 'right'>, text: string) =>
+  right ? edits.appendRight(at, text) : edits.appendLeft(at, text);
 
 // Items one per line at `indent`, each after a line break.
 const itemLines = (
@@ -864,7 +870,7 @@ const appendFirst = (editor: SourceEditor, list: List, texts: string[]): Appende
   const { code, edits } = editor;
   const { items, padding } = list;
   const write = (layout: Omit<Appended, 'separator'>, text: string) => {
-    edits.appendLeft(layout.at, text);
+    insert(edits, layout, text);
     return appended(layout, text, texts.at(-1)!);
   };
   // The text after the items goes to the right of the list's end, so later items go before it.
@@ -890,10 +896,10 @@ const appendFirst = (editor: SourceEditor, list: List, texts: string[]): Appende
         edits.remove(end, list.close);
       }
       close(`\n${outer}`);
-      const layout = { at: end, indent, trailingComma: ',', lineBreakFollows: true };
+      const layout = { at: end, right: false, indent, trailingComma: ',', lineBreakFollows: true };
       return write(layout, itemLines(texts, indent, ',', true));
     }
-    const inline = { indent: undefined, trailingComma: '', lineBreakFollows: false };
+    const inline = { right: false, indent: undefined, trailingComma: '', lineBreakFollows: false };
     if (end > list.open) {
       if (end === list.close) {
         close(padding);
@@ -914,11 +920,11 @@ const appendFirst = (editor: SourceEditor, list: List, texts: string[]): Appende
     const indent = lineIndent(code, last.start);
     const at = itemEnd(editor, list, items.length - 1);
     if (comma === undefined) {
-      edits.appendLeft(last.end, ',');
+      edits.appendRight(last.end, ',');
     }
     const lineBreakFollows = lineBreakAt(code, at);
     return write(
-      { at, indent, trailingComma, lineBreakFollows },
+      { at, right: true, indent, trailingComma, lineBreakFollows },
       itemLines(texts, indent, trailingComma, lineBreakFollows)
     );
   }
@@ -926,18 +932,18 @@ const appendFirst = (editor: SourceEditor, list: List, texts: string[]): Appende
   const lineBreakFollows = lineBreakAt(code, at);
   const text = inline(editor, list, texts, trailingComma, lineBreakFollows);
   return write(
-    { at, indent: undefined, trailingComma, lineBreakFollows },
+    { at, right: true, indent: undefined, trailingComma, lineBreakFollows },
     comma === undefined ? `, ${text}` : ` ${text}`
   );
 };
 
 const appendAfter = (editor: SourceEditor, list: List, previous: Appended, texts: string[]) => {
-  const { at, indent, trailingComma, lineBreakFollows, separator } = previous;
+  const { indent, trailingComma, lineBreakFollows, separator } = previous;
   const text =
     indent === undefined
       ? ` ${inline(editor, list, texts, trailingComma, lineBreakFollows)}`
       : itemLines(texts, indent, trailingComma, lineBreakFollows);
-  editor.edits.appendLeft(at, `${separator}${text}`);
+  insert(editor.edits, previous, `${separator}${text}`);
   return appended(previous, text, texts.at(-1)!);
 };
 
@@ -982,11 +988,12 @@ export const prependToList = (editor: SourceEditor, list: List, texts: string[])
         return `${indent}${withComma(reindent(text, '', indent), ',', lineBreakFollows)}`;
       })
       .join('\n');
-    edits.appendRight(list.open, `\n${block}`);
+    edits.appendLeft(list.open, `\n${block}`);
     return;
   }
+  // To the left of the first item, so a wrapper of it stays around it alone.
   const items = inline(editor, list, texts, ',', false);
-  edits.appendRight(first.start, items.endsWith('\n') ? items : `${items} `);
+  edits.appendLeft(first.start, items.endsWith('\n') ? items : `${items} `);
 };
 
 /** Remove items with their separators and the comments that lead and trail them from a list. */
@@ -1383,11 +1390,15 @@ export const replaceValue = (editor: SourceEditor, member: Property, text: strin
   }
 };
 
-/** Write `before` and `after` around an expression and the parentheses written around it. */
+/**
+ * Write `before` and `after` around an expression and the parentheses written around it. Text an
+ * earlier edit wrote at its ends, such as `.input` after it, ends up inside, as does an earlier
+ * wrapper; items list edits add next to it stay outside in either order.
+ */
 export const wrapExpression = (editor: SourceEditor, node: Node, before: string, after: string) => {
   editor.assertCurrent(node);
   const { start, end } = outerSpan(node);
-  editor.edits.appendRight(start, before);
+  editor.edits.prependRight(start, before);
   editor.edits.appendLeft(end, after);
 };
 

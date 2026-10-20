@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Emotion APIs moved out of `storybook/theming`](#emotion-apis-moved-out-of-storybooktheming)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging)
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
@@ -619,6 +620,18 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 10.x to 11.0.0
+
+### Emotion APIs moved out of `storybook/theming`
+
+`storybook/theming` no longer exports Emotion. It exports theme data: `themes`, `create`, `ensure`, `convert`, `color`, `background`, `typography`, `tokens`, `lighten`, and `darken`. `storybook/theming/create` exports that same module.
+
+A preview that imports an Emotion API from `storybook/theming` has to import it from `storybook/theming/internal` instead. The affected names are `styled`, `ThemeProvider`, `css`, `Global`, `keyframes`, `useTheme`, `withTheme`, `CacheProvider`, `ClassNames`, `jsx`, `createCache`, and `isPropValid`.
+
+```ts
+import { styled, ThemeProvider } from 'storybook/theming/internal';
+```
+
+Imports of `themes` and `create`, including `parameters.docs.theme`, stay on `storybook/theming`. Manager code can keep importing `styled` from `storybook/theming`: the manager global still provides it.
 
 ### `storybook dev` now blocks remote iframe embedding
 

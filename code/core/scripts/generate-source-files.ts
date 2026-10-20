@@ -141,7 +141,10 @@ async function generateExportsFile(): Promise<void> {
   for (const mod of globalPackages) {
     const key = mod.replace(/[/@]/g, '_');
     input[key] = `\0${key}`;
-    virtualModules[`\0${key}`] = `export * from '${mod}'`;
+    // The manager global keeps the Emotion API under storybook/theming. The package
+    // export with that name is the React-free module, so scan the internal entry.
+    const source = mod === 'storybook/theming' ? 'storybook/theming/internal' : mod;
+    virtualModules[`\0${key}`] = `export * from '${source}'`;
   }
 
   const bundle = await rolldown({

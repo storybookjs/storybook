@@ -179,12 +179,8 @@ const config: BuildEntries = {
         dts: false,
       },
       {
-        exportEntries: ['./theming'],
+        exportEntries: ['./theming', './theming/create'],
         entryPoint: './src/theming/index.ts',
-      },
-      {
-        exportEntries: ['./theming/create'],
-        entryPoint: './src/theming/create.ts',
       },
       {
         exportEntries: ['./theming/internal'],

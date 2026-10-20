@@ -16,7 +16,7 @@ It can parse MDX into CSF.
 `CsfFile.objects()` returns one `CsfObject` editor per mutable object it can prove safe to edit: the meta and each story export.
 `{ meta, stories }` narrows what is discovered; both are included by default.
 
-Each editor reads and writes static property paths with `get`, `getValue`, `inspect`, `set`, `transform`, `remove`, `rename`, `move`, and `group`.
+Each editor reads and writes static paths with `get`, `getValue`, `inspect`, `set`, `transform`, `remove`, `rename`, `move`, `group`, `append`, and `prepend`.
 `get` returns an AST expression; `getValue` reads plain values from literals, nested arrays and objects, and local constants without executing code. Reads never return a partially decoded object.
 
 `get` and `getValue` return `undefined` both for a field that is missing and for one that cannot be read statically: a path whose parent is not an object literal, or that a spread, a computed key, or a duplicate field leaves unproven, and for `getValue` a value it cannot evaluate, such as a call or a function. A field written as `undefined` is `undefined` too, but `get` returns its expression. Reads add no diagnostics, so they never stop a later write: a mutation proves the shape it edits again and reports its own. `inspect` tells the cases apart and gives the reason. It reads the expression like `get`, without evaluating it:
@@ -47,7 +47,7 @@ A story's top-level `Story.name = value` assignments (CSF2 annotations such as `
 Discovery and mutation are conservative: an object or a path whose shape cannot be proven is left untouched, and the reason is reported on `CsfFile.mutationDiagnostics` as a `CsfMutationDiagnostic`.
 Unproven shapes include story or meta bindings that are reassigned or aliased, a CSF factory configuration that is not an object literal owned by that single factory call, and target paths shadowed by a spread, a duplicate field, or a computed key.
 A story whose initializer is not an object literal, a function or a bound template, such as `export const A = base` or `makeStory()`, is reported as `unsupported-initializer`. A story is also left untouched when it is written to other than by a top-level `Story.name = value`, such as `Story.args.label = 'x'`, `Story.parameters ||= {}` or `Story[name] = {}`. A story whose assignments are edited is left untouched when other code could see them: an alias, a spread, or a call or array that receives the story; calling or rendering the story is fine. Such a story without an object literal holds a function or a bound template; any other value could be shared with other stories.
-`set` can still add a field to an object with a spread or a computed key. The field is appended after them, so it overrides what they provide, and a missing parent it creates there carries the spreads' member forward. In the table, the object is a story `export const A = <object>` after the code in the first column. For `appendValueToArray`, which `appendNodeToArray` matches, it is a config `export default <object>`. Each row is a test in `CsfObject.test.ts`, and those tests fail when this table differs from them.
+`set` can still add a field to an object with a spread or a computed key. The field is appended after them, so it overrides what they provide, and a missing parent it creates there carries the spreads' member forward. In the table, the object is a story `export const A = <object>` after the code in the first column. For `append`, it is a config `export default <object>`. Each row is a test in `CsfObject.test.ts`, and those tests fail when this table differs from them.
 
 | Declared before | Object | Edit | Result |
 | --- | --- | --- | --- |
@@ -72,7 +72,7 @@ A story whose initializer is not an object literal, a function or a bound templa
 | `const Base = { setup() { this.args = { x: 1 }; } }; Base.setup();` | `{ ...Base }` | `set(['args', 'a'], 1)` | `{ ...Base, args: { ...Base.args, a: 1 } }` |
 | `const Base = { async play() {} };` | `{ ...Base, play: async (c) => { await Base.play(c); } }` | `set(['args', 'a'], 1)` | `{ ...Base, play: async (c) => { await Base.play(c); }, args: { ...Base.args, a: 1 } }` |
 | `const Base = { *[Symbol.iterator]() { this.args = undefined; }, args: {} }; [...Base];` | `{ ...Base }` | `set(['args', 'b', 'a'], 1)` | `{ ...Base, args: { ...Base.args, b: { ...Base.args?.b, a: 1 } } }` |
-| `import shared from './shared';` | `{ ...shared }` | `appendValueToArray(['addons'], 'x')` | `{ ...shared, addons: [...(shared.addons ?? []), 'x'] }` |
+| `import shared from './shared';` | `{ ...shared }` | `append(['addons'], 'x')` | `{ ...shared, addons: [...(shared.addons ?? []), 'x'] }` |
 | `import { Base } from './base';` | `{ ...Base, label: 'a' }` | `set(['label'], 'b')` | `{ ...Base, label: 'b' }` |
 | `import { Base } from './base';` | `{ label: 'a', ...Base }` | `set(['label'], 'b')` | refused, `spread-field` |
 | `import { Base } from './base';` | `{ args: {}, ...Base }` | `set(['args', 'a'], 1)` | refused, `spread-field` |
@@ -111,6 +111,31 @@ for (const story of csf.objects()) {
 
 `textOf` gives a node's source as written, and `placeableTextOf` that source ready to place as a value. `detachedTextOf` also dedents it as if the node's line had no indent, to place a value from a file at another indent, such as in a generated snippet.
 
+### Elements and arguments
+
+A path is a list of keys and indexes. A string is a key of an object literal; a number is an item of the array or call the path reaches, an element or an argument, at its position in the source, where spreads and holes count. That is its index in `get(path).elements` or `get(path).arguments`, so a consumer finds an item with its own predicate and addresses it. `printPath` prints a path as diagnostics do, `parameters.msw.handlers[0]`, and a path of keys alone as `path.join('.')`.
+
+```ts
+const addons = main.get(['addons']);
+const index =
+  addons?.type === 'ArrayExpression'
+    ? addons.elements.findIndex((element) => isStringLiteral(element) && element.value === 'x')
+    : -1;
+if (index >= 0) {
+  main.remove(['addons', index]);
+}
+```
+
+| Operation | On an element or argument |
+| --- | --- |
+| `get`, `getValue`, `inspect` | Read the item. Past the end of the list, or at a hole, it is missing. |
+| `set`, `transform` | Replace the item in place, keeping the layout of the list; `set` fills a hole. `set` at an index the list lacks is refused (`unsupported-member`), and `transform` leaves it alone. |
+| `remove` | Remove the one item, a hole with its slot. An emptied array stays `[]`, as `tags: []` is not a missing `tags`, and the cleanup of empty parents stops at an item. |
+| `append`, `prepend` | `path` names the array or the call: add an item after its last one or before its first one. A missing array is created, carrying spreads forward like a missing parent; a field holding neither an array nor a call is refused (`unsupported-value`). The first argument of an empty call hugs its parentheses: `mswLoader(async () => {…})`. |
+| `rename`, `move`, `group` | Refuse an item as the source or the destination (`unsupported-member`). Indexes earlier in the path only navigate, so `rename(['loaders', 0, 'name'], 'id')` renames a member of the first loader. |
+
+A spread in a list shifts the positions after it but cannot shadow an item, so the items before and after it are edited as usual, and `append` and `prepend` leave it in place: `[...base.addons, 'x']`. The spread itself, addressed by its index, is unreadable and refused (`spread-field`), and `-1` from `findIndex` next to a spread means the source does not write the item, not that it is absent. Only keys create missing values; an index into an object, a key into a list, and an index that is not a non-negative integer are `unsupported-member`. Edits follow a constant only the edited object refers to, as for fields.
+
 ## Transforming preview and main configuration
 
 `ConfigFile` implements `CsfObject` directly, exposing the same methods and mutation results as the editors returned by `CsfFile.objects()`. Config files use `{ kind: 'config' }` as their target. Default-exported objects, identifier-backed objects, `definePreview` configurations, and CommonJS `module.exports` use their config object as the root.
@@ -129,7 +154,7 @@ if (config.changed && config.mutationDiagnostics.length === 0) {
 
 `ConfigFile.changed` and `ConfigFile.mutationDiagnostics` track these editor operations. Existing `getFieldNode` reads reflect editor changes. `writeConfig` rejects files with mutation diagnostics to avoid writing partial edits.
 
-`appendValueToArray`, `appendNodeToArray`, and `removeEntryFromArray` return a `CsfMutationResult` like the editor operations. A field that is not an array literal leaves the file as it is and adds an `unsupported-value` diagnostic; a missing field or entry is a no-op for `removeEntryFromArray`.
+`appendValueToArray` and `appendNodeToArray` are deprecated aliases of `append`. `removeEntryFromArray`, deprecated too, removes the first entry of an array that names a value: a string, a `{ name }` object, or a call like `getAbsolutePath(value)`; find the entry in `get(path).elements` and `remove([...path, index])` it instead. They return a `CsfMutationResult` like the editor operations and refuse what `append` and `remove` refuse, such as an array a later spread could replace. A field that is not an array literal leaves the file as it is and adds an `unsupported-value` diagnostic; a missing field or entry is a no-op for `removeEntryFromArray`.
 
 `setImport`, `setRequireImport`, and `removeImport` look at every import or top-level `require` of the module, and take a named binding as `'name'` or `'name as alias'`. `setImport` and `setRequireImport` skip a binding the module already provides under that local name. A binding that only an `import type` provides becomes a value import; other type-only imports are left alone. `removeImport` removes every import of a plain name, whatever its local name, but only the matching import of an alias. Added statements follow the file's quotes and semicolons. Import helper edits are not tracked by `changed`.
 

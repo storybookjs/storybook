@@ -244,9 +244,10 @@ export class ConfigFile implements CsfObject {
   }
 
   /**
-   * Read a detached copy of the expression at a property path. Missing fields return `undefined`;
-   * so does a path through a value that is not an object literal, or one a spread, computed key, or
-   * duplicate field leaves unproven. `inspect` tells these apart.
+   * Read a detached copy of the expression at a path of keys and indexes, such as `['addons', 0]`.
+   * Missing fields return `undefined`; so does a path that does not fit a value, such as a key into
+   * an array, or one a spread, computed key, or duplicate field leaves unproven. `inspect` tells
+   * these apart.
    *
    * @example
    * ```ts
@@ -261,7 +262,7 @@ export class ConfigFile implements CsfObject {
   }
 
   /**
-   * Read the expression at a property path like `get`, telling a missing field from one that cannot
+   * Read the expression at a path like `get`, telling a missing field from one that cannot
    * be read statically, and why.
    *
    * @example
@@ -297,7 +298,8 @@ export class ConfigFile implements CsfObject {
   }
 
   /**
-   * Set a plain value or an expression from `get` / `parseExpression`, creating missing parents.
+   * Set a plain value or an expression from `get` / `parseExpression`, creating missing parents at
+   * keys. An index replaces the element or argument it addresses.
    *
    * @example
    * ```ts
@@ -332,7 +334,8 @@ export class ConfigFile implements CsfObject {
   }
 
   /**
-   * Remove a property and recursively clean up empty parents. Missing fields are a no-op.
+   * Remove a property and recursively clean up empty parents, or one element or argument, keeping
+   * its list. Missing fields are a no-op.
    *
    * @example
    * ```ts

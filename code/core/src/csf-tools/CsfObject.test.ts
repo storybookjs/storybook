@@ -751,7 +751,7 @@ describe('CsfObject', () => {
       "inspect(['args'])": (story) => story.inspect(['args']),
     } satisfies Record<string, (story: CsfObject) => CsfMutationResult | CsfInspection>;
     const configEdits = {
-      "appendValueToArray(['addons'], 'x')": (config) => config.appendValueToArray(['addons'], 'x'),
+      "append(['addons'], 'x')": (config) => config.append(['addons'], 'x'),
     } satisfies Record<string, (config: ConfigFile) => CsfMutationResult>;
     const isConfigEdit = (edit: string): edit is keyof typeof configEdits => edit in configEdits;
     type Row = {
@@ -906,7 +906,7 @@ describe('CsfObject', () => {
       {
         before: "import shared from './shared';",
         object: '{ ...shared }',
-        edit: "appendValueToArray(['addons'], 'x')",
+        edit: "append(['addons'], 'x')",
         result: { writes: "{ ...shared, addons: [...(shared.addons ?? []), 'x'] }" },
       },
       {

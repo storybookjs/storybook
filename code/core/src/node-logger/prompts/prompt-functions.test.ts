@@ -1,3 +1,5 @@
+import { stripVTControlCharacters } from 'node:util';
+
 import { afterEach, expect, it, vi } from 'vitest';
 
 const stubStdoutColumns = (descriptor: PropertyDescriptor) => {
@@ -38,4 +40,23 @@ it('leaves a usable terminal width alone', async () => {
   await import('./prompt-functions.ts');
 
   expect(process.stdout.columns).toBe(120);
+});
+
+it('shortens a multiselect hint link to the width clack wraps option lines at', async () => {
+  stubStdoutColumns({ value: 100, writable: true });
+  const multiselect = vi.fn().mockResolvedValue([]);
+  vi.doMock('./prompt-config.ts', () => ({ getPromptProvider: () => ({ multiselect }) }));
+  const prompts = await import('./prompt-functions.ts');
+  const url =
+    'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#parameterscomponentsubtitle-removed';
+
+  await prompts.multiselect({
+    message: 'Select automigrations to run',
+    options: [{ value: 'fix', label: 'fix', hint: `Move it\nMore info: ${url}` }],
+  });
+
+  const { hint } = multiselect.mock.calls[0][0].options[0];
+  const linkLine = stripVTControlCharacters(hint).split('\n')[1];
+  expect(`${linkLine})`.length).toBeLessThanOrEqual(100 - 13);
+  expect(hint).toContain(`\u001b]8;;${url}\u0007`);
 });

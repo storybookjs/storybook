@@ -105,12 +105,16 @@ export const multiselect = async <T>(
   options: MultiSelectPromptOptions<T>,
   promptOptions?: PromptOptions
 ): Promise<T[]> => {
+  // Clack wraps option lines 13 columns short of the terminal, as it counts the color codes of its
+  // guide bar, and the hint ends in a parenthesis. Shortening links to that width keeps a link on its
+  // "More info:" line.
+  const maxLineWidth = Math.max(getTerminalWidth() - 14, 40);
   return getPromptProvider().multiselect(
     {
       ...options,
       options: options.options.map((opt) => ({
         ...opt,
-        hint: opt.hint ? protectUrls(opt.hint) : undefined,
+        hint: opt.hint ? protectUrls(opt.hint, { maxLineWidth }) : undefined,
       })),
     },
     promptOptions

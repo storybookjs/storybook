@@ -2105,12 +2105,14 @@ describe('ConfigFile', () => {
       }
     );
 
-    it.each(['const X = 1;', 'type X = {};', 'import { X } from "x";'])(
-      'accepts export { X } after %s',
-      (declaration) => {
-        expect(() => loadConfig(`${declaration}\nexport { X };`, 'main.ts').parse()).not.toThrow();
-      }
-    );
+    it.each([
+      'const X = 1;',
+      'type X = {};',
+      'import { X } from "x";',
+      'export default interface X {}',
+    ])('accepts export { X } after %s', (declaration) => {
+      expect(() => loadConfig(`${declaration}\nexport { X };`, 'main.ts').parse()).not.toThrow();
+    });
 
     it("export { X } with X is import { X } from 'another-file'", () => {
       const source = dedent`

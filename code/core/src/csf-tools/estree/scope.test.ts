@@ -177,6 +177,34 @@ describe('analyzeScopes', () => {
     expect(generateUid(info, 'meta')).toBe('_meta2');
   });
 
+  it('lists the top-level names of TypeScript declarations', () => {
+    const code = [
+      'type Story = {};',
+      'export interface Props {}',
+      'export default interface Default {}',
+      'export declare enum Size { S }',
+      'namespace NS.inner {}',
+      'declare function ambient(): void;',
+      'function overloaded(a: string): void;',
+      'function overloaded(a) {}',
+      'declare const value: number;',
+      "declare module 'virtual' {}",
+      'declare global { interface Window {} }',
+      'function f() { type Local = 1; }',
+    ].join('\n');
+    const info = analyzeScopes(parseModule(code, 'file.ts').program);
+    expect([...info.tsDeclarationNames]).toEqual([
+      'Story',
+      'Props',
+      'Default',
+      'Size',
+      'NS',
+      'ambient',
+      'overloaded',
+    ]);
+    expect([...info.program.bindings.keys()]).toEqual(['overloaded', 'value', 'f']);
+  });
+
   it('generates Babel-style unique names', () => {
     const info = analyzeScopes(parseModule('const _meta = 1; const _meta2 = 2;').program);
     expect(generateUid(info, 'meta')).toBe('_meta3');

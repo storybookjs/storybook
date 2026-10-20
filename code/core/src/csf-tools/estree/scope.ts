@@ -1,12 +1,4 @@
-import {
-  TYPE_KEYS,
-  type E,
-  type Node,
-  childEntries,
-  children,
-  isIdentifier,
-  isNode,
-} from './ast.ts';
+import { TYPE_KEYS, type E, type Node, childEntries, children, isNode } from './ast.ts';
 
 export type BindingKind =
   | 'var'
@@ -64,7 +56,31 @@ export interface ScopeInfo {
   names: Set<string>;
   /** Names the file reads without declaring them: globals and anything another scope provides. */
   unbound: Set<string>;
+  /**
+   * Top-level names of TypeScript declarations, which bind no `Binding`: type aliases, interfaces,
+   * enums, namespaces, and functions without a body (`declare function` and overloads). A name can
+   * be a binding as well, such as a `type X` next to a `const X`. `declare const` and `declare class`
+   * are bindings, not listed here.
+   */
+  tsDeclarationNames: ReadonlySet<string>;
 }
+
+// The name a TS declaration's id declares: `namespace A.B {}` declares `A`, and
+// `declare module 'x' {}` none.
+const declaredName = (id: Node | null | undefined): string | undefined => {
+  while (id?.type === 'TSQualifiedName') {
+    id = id.left;
+  }
+  return id?.type === 'Identifier' ? id.name : undefined;
+};
+
+const TS_DECLARATIONS = new Set([
+  'TSTypeAliasDeclaration',
+  'TSInterfaceDeclaration',
+  'TSEnumDeclaration',
+  'TSModuleDeclaration',
+  'TSDeclareFunction',
+]);
 
 const FUNCTION_TYPES = new Set([
   'FunctionDeclaration',
@@ -502,13 +518,11 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
   };
 
   // Enums, namespaces and ambient functions bind no name in the analysis, but a generated name
-  // must not collide with theirs. `namespace A.B {}` declares `A`.
+  // must not collide with theirs.
   const reserveName = (id: Node | null | undefined) => {
-    while (id?.type === 'TSQualifiedName') {
-      id = id.left;
-    }
-    if (id?.type === 'Identifier') {
-      names.add(id.name);
+    const name = declaredName(id);
+    if (name !== undefined) {
+      names.add(name);
     }
   };
 
@@ -788,10 +802,30 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
     }
   }
 
+  const tsDeclarationNames = new Set<string>();
+  for (const statement of program.body) {
+    const declaration =
+      statement.type === 'ExportNamedDeclaration' || statement.type === 'ExportDefaultDeclaration'
+        ? (statement.declaration as Node | null)
+        : statement;
+    if (
+      !declaration ||
+      !TS_DECLARATIONS.has(declaration.type) ||
+      (declaration.type === 'TSModuleDeclaration' && declaration.kind === 'global')
+    ) {
+      continue;
+    }
+    const name = declaredName((declaration as { id?: Node | null }).id);
+    if (name !== undefined) {
+      tsDeclarationNames.add(name);
+    }
+  }
+
   return {
     program: declaredProgramScope,
     names,
     unbound,
+    tsDeclarationNames,
     bindingOf: (identifier) => identifierBindings.get(identifier),
     scopeOf: (node) => {
       // Linear over scopes; only write paths ask.
@@ -820,31 +854,6 @@ export const generateUid = (info: ScopeInfo, name: string) => {
   return uid;
 };
 
-// Declarations that are no bindings of the scope analysis, yet valid to export by name.
-const UNBOUND_DECLARATIONS = new Set([
-  'TSTypeAliasDeclaration',
-  'TSInterfaceDeclaration',
-  'TSEnumDeclaration',
-  'TSModuleDeclaration',
-  'TSDeclareFunction',
-]);
-
 /** Whether the name an `export { local }` refers to is declared in the module. */
-export const isDeclared = (
-  module: { scopes: ScopeInfo; program: E.Program },
-  local: E.IdentifierReference
-) =>
-  !!module.scopes.bindingOf(local) ||
-  module.program.body.some((statement) => {
-    const declaration =
-      statement.type === 'ExportNamedDeclaration' ? statement.declaration : statement;
-    if (!declaration || !UNBOUND_DECLARATIONS.has(declaration.type)) {
-      return false;
-    }
-    // `namespace A.B {}` declares `A`.
-    let id = (declaration as { id?: Node | null }).id;
-    while (id?.type === 'TSQualifiedName') {
-      id = id.left;
-    }
-    return isIdentifier(id, local.name);
-  });
+export const isDeclared = (module: { scopes: ScopeInfo }, local: E.IdentifierReference) =>
+  !!module.scopes.bindingOf(local) || module.scopes.tsDeclarationNames.has(local.name);

@@ -335,7 +335,17 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       }
 
       const cleanupCallbacks = await applyBeforeEach(hookContext);
-      this.store.addCleanupCallbacks(story, ...cleanupCallbacks);
+
+      // The teardown that aborted this render ran the story's cleanups before these were returned,
+      // so this render runs them itself; the story's list may hold another render's of the same id.
+      // They run before the phase report below, so that teardown waits for them.
+      if (abortSignal.aborted) {
+        for (const cleanup of cleanupCallbacks.reverse()) {
+          await cleanup();
+        }
+      } else {
+        this.store.addCleanupCallbacks(story, ...cleanupCallbacks);
+      }
 
       if (this.checkIfAborted(abortSignal)) {
         return;

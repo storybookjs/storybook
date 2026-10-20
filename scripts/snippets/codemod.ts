@@ -7,7 +7,7 @@
  * to add extra snippets to more renderers.
  */
 import os from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 
 import { program } from 'commander';
 import { promises as fs } from 'fs';
@@ -37,6 +37,271 @@ type SnippetInfo = {
     [key: string]: string;
   };
 };
+
+// --- svelte-csf-next codemod -------------------------------------------------
+// Converts Svelte story snippets to the CSF Next (factories) syntax established by PR #36702:
+// per renderer="svelte" fence group, the "CSF 3" fences are deleted and a "Svelte CSF Next 🧪"
+// fence derived from the group's "Svelte CSF" fence is inserted right after it. Kept Svelte CSF
+// fences stop importing defineMeta from the legacy addon and import it from the framework package.
+
+type SvelteFence = {
+  openIndex: number;
+  closeIndex: number;
+  attributes: Record<string, string>;
+  contentLines: string[];
+};
+
+const svelteCsfTabTitle = 'Svelte CSF';
+const svelteCsfNextTabTitle = 'Svelte CSF Next 🧪';
+const svelteCsf3TabTitle = 'CSF 3';
+const sveltePreviewImportSpecifier = '../.storybook/preview';
+// The Before/After migration didactics keep the addon imports they teach migrating away from
+const svelteMigrationSnippetFiles = new Set([
+  'svelte-csf-addon-tags.md',
+  'svelte-csf-story-custom-children.md',
+  'svelte-csf-story-migration.md',
+]);
+// These groups document SvelteKit-only features, so their Svelte CSF fences import from the SvelteKit framework
+const sveltekitSnippetFiles = new Set(['sveltekit-mock-features.md', 'sveltekit-mock-links.md']);
+
+const defineMetaAddonImportPattern =
+  /^(\s*)import\s*\{\s*defineMeta\s*\}\s*from\s*(['"])@storybook\/addon-svelte-csf\2(;?)$/;
+const defineMetaImportPattern =
+  /^(\s*)import\s*\{\s*defineMeta\s*\}\s*from\s*(['"])(@storybook\/addon-svelte-csf|@storybook\/svelte-vite|@storybook\/sveltekit)\2(;?)$/;
+
+export function findFences(lines: string[]): SvelteFence[] {
+  const fences: SvelteFence[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (!lines[i].startsWith('```')) {
+      continue;
+    }
+    let closeIndex = -1;
+    for (let j = i + 1; j < lines.length; j++) {
+      if (lines[j].startsWith('```')) {
+        closeIndex = j;
+        break;
+      }
+    }
+    if (closeIndex === -1) {
+      break;
+    }
+    fences.push({
+      openIndex: i,
+      closeIndex,
+      attributes: parseAttributes(lines[i].slice(3).trim()),
+      contentLines: lines.slice(i + 1, closeIndex),
+    });
+    i = closeIndex;
+  }
+  return fences;
+}
+
+function rewriteDefineMetaImport(line: string, frameworkPackage: string): string {
+  return line.replace(
+    defineMetaAddonImportPattern,
+    (_match, indent: string, quote: string, semicolon: string) =>
+      `${indent}import { defineMeta } from ${quote}${frameworkPackage}${quote}${semicolon}`
+  );
+}
+
+// Derives the "Svelte CSF Next 🧪" fence content from its "Svelte CSF" mirror: the defineMeta
+// import is replaced with the relative preview import, the call becomes preview.meta, and the
+// ts variant gets lang="ts" on the module script. Everything else stays byte-identical.
+function buildSvelteCsfNextFence(mirror: SvelteFence, language: string): string[] | string {
+  if (!mirror.attributes.filename) {
+    return 'the Svelte CSF fence has no filename attribute';
+  }
+
+  const content: string[] = [];
+  let scriptTagFound = false;
+  let importReplaced = false;
+  let defineMetaCallFound = false;
+
+  for (const line of mirror.contentLines) {
+    let next = line;
+    if (!scriptTagFound && /^\s*<script module( lang="ts")?>$/.test(next)) {
+      scriptTagFound = true;
+      if (language === 'ts') {
+        next = next.replace(/<script module>$/, '<script module lang="ts">');
+      }
+    }
+    if (!importReplaced) {
+      const rewritten = next.replace(
+        defineMetaImportPattern,
+        (_match, indent: string, quote: string, _source: string, semicolon: string) =>
+          `${indent}import preview from ${quote}${sveltePreviewImportSpecifier}${quote}${semicolon}`
+      );
+      if (rewritten !== next) {
+        importReplaced = true;
+        next = rewritten;
+      }
+    }
+    if (next.includes('defineMeta(')) {
+      defineMetaCallFound = true;
+      next = next.replaceAll('defineMeta(', 'preview.meta(');
+    }
+    content.push(next);
+  }
+
+  if (!scriptTagFound) {
+    return 'the Svelte CSF fence has no <script module> tag';
+  }
+  if (!importReplaced) {
+    return 'the Svelte CSF fence has no defineMeta import';
+  }
+  if (!defineMetaCallFound) {
+    return 'the Svelte CSF fence has no defineMeta call';
+  }
+
+  return [
+    `\`\`\`svelte filename="${mirror.attributes.filename}" renderer="svelte" language="${language}" tabTitle="${svelteCsfNextTabTitle}"`,
+    ...content,
+    '```',
+  ];
+}
+
+// Returns the transformed file source, or a stop reason when the file doesn't match the
+// expected shape. Stopped files are left byte-identical and reported for hand review.
+export function transformSvelteCsfNextFile(
+  filePath: string,
+  source: string
+): { source: string; changed: boolean; stopReason?: string } {
+  const fileName = basename(filePath);
+  const lines = source.split('\n');
+  const rewritten = [...lines];
+
+  // Kept Svelte CSF fences import defineMeta from the framework package their reader uses.
+  if (!svelteMigrationSnippetFiles.has(fileName)) {
+    const frameworkPackage = sveltekitSnippetFiles.has(fileName)
+      ? '@storybook/sveltekit'
+      : '@storybook/svelte-vite';
+    for (let i = 0; i < rewritten.length; i++) {
+      rewritten[i] = rewriteDefineMetaImport(rewritten[i], frameworkPackage);
+    }
+  }
+
+  const svelteFences = findFences(rewritten).filter(
+    (fence) => fence.attributes.renderer === 'svelte'
+  );
+  const languages = [
+    ...new Set(svelteFences.map((fence) => fence.attributes.language).filter(Boolean)),
+  ];
+
+  type Operation =
+    | { position: number; kind: 'delete'; count: number }
+    | { position: number; kind: 'insert'; inserted: string[] };
+  const operations: Operation[] = [];
+
+  for (const language of languages) {
+    const mirrors = svelteFences.filter(
+      (fence) => fence.attributes.language === language && fence.attributes.tabTitle === svelteCsfTabTitle
+    );
+    const victims = svelteFences.filter(
+      (fence) => fence.attributes.language === language && fence.attributes.tabTitle === svelteCsf3TabTitle
+    );
+    if (victims.length === 0) {
+      continue;
+    }
+    if (mirrors.length !== 1) {
+      return {
+        source,
+        changed: false,
+        stopReason: `expected exactly one "${svelteCsfTabTitle}" fence for language=${language}, found ${mirrors.length}`,
+      };
+    }
+    if (victims.length !== 1) {
+      return {
+        source,
+        changed: false,
+        stopReason: `expected exactly one "${svelteCsf3TabTitle}" fence for language=${language}, found ${victims.length}`,
+      };
+    }
+
+    const nextFence = buildSvelteCsfNextFence(mirrors[0], language);
+    if (typeof nextFence === 'string') {
+      return { source, changed: false, stopReason: nextFence };
+    }
+
+    // Insert the new fence right after its mirror, and delete the CSF 3 fence plus one adjacent
+    // blank line (before preferred) so no double blank line is left at the seam.
+    const victim = victims[0];
+    const beforeBlank = lines[victim.openIndex - 1] === '';
+    const afterBlank = !beforeBlank && lines[victim.closeIndex + 1] === '';
+    const deleteStart = beforeBlank ? victim.openIndex - 1 : victim.openIndex;
+    const deleteCount = victim.closeIndex - deleteStart + 1 + (afterBlank ? 1 : 0);
+
+    operations.push({ position: deleteStart, kind: 'delete', count: deleteCount });
+    operations.push({
+      position: mirrors[0].closeIndex + 1,
+      kind: 'insert',
+      inserted: ['', ...nextFence],
+    });
+  }
+
+  const importFixed = rewritten.some((line, index) => line !== lines[index]);
+
+  if (operations.length === 0) {
+    return { source: rewritten.join('\n'), changed: importFixed };
+  }
+
+  operations.sort((a, b) => b.position - a.position || (a.kind === 'delete' ? -1 : 1));
+  for (const operation of operations) {
+    if (operation.kind === 'delete') {
+      rewritten.splice(operation.position, operation.count);
+    } else {
+      rewritten.splice(operation.position, 0, ...operation.inserted);
+    }
+  }
+
+  return { source: rewritten.join('\n'), changed: true };
+}
+
+async function runSvelteCsfNextCodemod({ glob, dryRun }: { glob: string; dryRun?: boolean }) {
+  const stoppedFiles: string[] = [];
+  let modifiedCount = 0;
+
+  // Dynamically import this package because it is a pure ESM module
+  // eslint-disable-next-line depend/ban-dependencies
+  const { globby } = await import('globby');
+
+  const files = (await globby(slash(glob), {
+    followSymbolicLinks: true,
+    ignore: ['node_modules/**', 'dist/**', 'storybook-static/**', 'build/**'],
+  })).sort();
+
+  if (!files.length) {
+    logger.error(`No files found for pattern ${glob}`);
+    return;
+  }
+
+  for (const file of files) {
+    const source = await fs.readFile(file, 'utf-8');
+    const result = transformSvelteCsfNextFile(file, source);
+    if (result.stopReason) {
+      stoppedFiles.push(`${basename(file)}: ${result.stopReason}`);
+      continue;
+    }
+    if (!result.changed) {
+      continue;
+    }
+    modifiedCount++;
+    if (!dryRun) {
+      await fs.writeFile(file, result.source, 'utf-8');
+    }
+  }
+
+  logger.log(
+    `Summary: ${picocolors.green(`${modifiedCount} files ${dryRun ? 'would be ' : ''}modified`)}, ${picocolors.red(`${stoppedFiles.length} files stopped`)}`
+  );
+  if (stoppedFiles.length > 0) {
+    logger.log('Stopped files (left unchanged, review by hand):');
+    for (const entry of stoppedFiles) {
+      logger.log(`  - ${entry}`);
+    }
+  }
+}
+
+// --- end svelte-csf-next codemod ---------------------------------------------
 
 type Codemod = {
   getTargetSnippet: (snippetInfo: SnippetInfo) => boolean;
@@ -348,6 +613,14 @@ program
   .option('--dry-run', 'Run without making actual changes', false)
   .option('--prompt', 'Prompt before applying changes', false)
   .action(async (id, { glob, dryRun, prompt }) => {
+    if (id === 'svelte-csf-next') {
+      await runSvelteCsfNextCodemod({
+        glob: join(SNIPPETS_DIRECTORY, glob),
+        dryRun,
+      });
+      return;
+    }
+
     const codemod = codemods[id as keyof typeof codemods];
     if (!codemod) {
       logger.error(`Unknown codemod "${id}"`);

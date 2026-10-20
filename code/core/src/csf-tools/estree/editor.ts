@@ -830,22 +830,23 @@ export const reindent = (source: string, from: string, to: string) => {
   return literals ? reindentLines(text, from, to, literals) : text;
 };
 
-// `text`, the source of a node at `start` in `code`, indented as if the node's line had no indent.
-export const detachedText = (code: string, start: number, text: string) =>
-  reindent(text, lineIndent(code, start), '');
-
-// `placeableTextOf` as `detachedText`, for a node of `get`, `parseExpression` or a file.
-export const detachedTextOf = (node: Node) => {
-  const text = placeableTextOf(node);
-  return detachedText(moduleOf(node)!.code, node.start, text);
-};
-
-const dedentSource = (editor: SourceEditor, start: number, end: number, from: string) => {
+// The editor's code from `start` to `end`, its continuation lines without `indent`.
+const dedentSource = (editor: SourceEditor, start: number, end: number, indent: string) => {
   const text = editor.code.slice(start, end);
-  return from === '' || !text.includes('\n')
+  return indent === '' || !text.includes('\n')
     ? text
-    : reindentLines(text, from, '', literalSpans(editor.program, { start, end }));
+    : reindentLines(text, indent, '', literalSpans(editor.program, { start, end }));
 };
+
+// The source of a span of the editor's code as if the line it starts on had no indent.
+export const detachedSource = (editor: SourceEditor, span: Span) => {
+  editor.assertCurrent(span);
+  return dedentSource(editor, span.start, span.end, lineIndent(editor.code, span.start));
+};
+
+// `placeableTextOf` as `detachedSource`, for a node of `get`, `parseExpression` or any file.
+export const detachedTextOf = (node: Node) =>
+  reindent(placeableTextOf(node), lineIndent(moduleOf(node)!.code, node.start), '');
 
 // An item owns the comments after its separator when they end the line. Followed by code on that
 // line, they lead the next item instead.
@@ -892,9 +893,7 @@ const itemTextWith = (editor: SourceEditor, list: List, index: number, print: ()
 export const itemText = (editor: SourceEditor, list: List, item: Span) => {
   editor.assertCurrent(list);
   editor.assertCurrent(item);
-  return itemTextWith(editor, list, list.items.indexOf(item), () =>
-    dedentSource(editor, item.start, item.end, lineIndent(editor.code, item.start))
-  );
+  return itemTextWith(editor, list, list.items.indexOf(item), () => detachedSource(editor, item));
 };
 
 export const memberText = (
@@ -1663,12 +1662,12 @@ export const renamedMemberText = (
   });
 };
 
-// Function expression source for a method, so reads and transforms of `play() {}` see a value.
-// `async *play(a) {}` becomes `async function* (a) {}`.
+// A method as the source of a function expression, as `detachedSource`, so reads and transforms
+// of `play() {}` see a value. `async *play(a) {}` becomes `async function* (a) {}`.
 export const functionFromMethod = (editor: SourceEditor, member: Property) => {
   const fn = member.value as E.Function;
   const range = keyRange(editor, member);
-  const rest = editor.code.slice(range.end, member.end);
+  const rest = dedentSource(editor, range.end, member.end, lineIndent(editor.code, member.start));
   return `${fn.async ? 'async ' : ''}function${fn.generator ? '*' : ''} ${rest.replace(/^\s*/, '')}`;
 };
 

@@ -11,7 +11,7 @@ import {
   staticKey,
   unwrapExpression,
 } from './ast.ts';
-import { type SourceEditor, detachedText, detachedTextOf, functionFromMethod } from './editor.ts';
+import { type SourceEditor, detachedSource, detachedTextOf, functionFromMethod } from './editor.ts';
 import type { ScopeInfo } from './scope.ts';
 
 // Node types Babel produces that OXC's ESTree output has no equivalent for (`@babel/types`
@@ -49,16 +49,16 @@ const BABEL_ONLY_TYPES = new Set([
 export const isAstLike = (value: unknown): value is Node =>
   isNode(value) && (Object.hasOwn(visitorKeys, value.type) || BABEL_ONLY_TYPES.has(value.type));
 
-// A member's value as `detachedText`; methods become function expressions.
+// A member's value as `detachedSource`; methods become function expressions.
 export const valueSource = (editor: SourceEditor, member: Property) =>
   member.method || member.kind !== 'init'
-    ? detachedText(editor.code, member.start, functionFromMethod(editor, member))
-    : detachedText(editor.code, member.value.start, editor.source(member.value));
+    ? functionFromMethod(editor, member)
+    : detachedSource(editor, member.value);
 
 // `valueSource` ready to be placed as another value, as `placeableTextOf` prints it.
 export const placeableValueSource = (editor: SourceEditor, member: Property) =>
   member.method || member.kind !== 'init'
-    ? detachedText(editor.code, member.start, functionFromMethod(editor, member))
+    ? functionFromMethod(editor, member)
     : detachedTextOf(member.value);
 
 /**

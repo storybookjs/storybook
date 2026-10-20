@@ -8,12 +8,17 @@ import { dedent } from 'ts-dedent';
 
 import {
   type CsfOptions,
+  INDEXED_CALLEES,
+  INDEX_FIELDS,
   formatCsf,
+  indexedPath,
   isModuleMock,
   isValidPreviewPath,
   loadCsf,
   printCsf,
 } from './CsfFile.ts';
+import { type CsfPath, type CsfValue, printCsfPath } from './CsfObject.ts';
+import { type E, parseExpression } from './estree/ast.ts';
 
 expect.addSnapshotSerializer({
   print: (val: any) => yaml.dump(val).trimEnd(),
@@ -3334,5 +3339,123 @@ describe('isValidPreviewPath', () => {
     ['preview', false],
   ])('isValidPreviewPath("%s") === %s', (path, expected) => {
     expect(isValidPreviewPath(path)).toBe(expected);
+  });
+});
+
+describe('INDEX_FIELDS', () => {
+  const source = dedent`
+    import { Button } from './Button';
+    export default {
+      title: 'Example/Button',
+      component: Button,
+      args: { label: 'A' },
+      argTypes: { label: { control: 'text' } },
+      parameters: { layout: 'centered' },
+      decorators: [],
+    };
+    export const Primary = { args: { primary: true }, parameters: { docs: {} }, decorators: [] };
+    export const Secondary = () => null;
+    Secondary.args = { primary: false };
+  `;
+  const keys = [
+    'title',
+    'id',
+    'component',
+    'subcomponents',
+    'includeStories',
+    'excludeStories',
+    'tags',
+    'play',
+    'render',
+    'loaders',
+    'beforeEach',
+    'afterEach',
+    'globals',
+    'initialGlobals',
+    'args',
+    'argTypes',
+    'parameters',
+    'decorators',
+    'name',
+    'storyName',
+    'mount',
+  ];
+  const paths: CsfPath[] = [
+    ...keys.map((key) => [key]),
+    ['parameters', '__id'],
+    ['parameters', 'docs'],
+    ['args', 'primary'],
+  ];
+  const values: (CsfValue<E.Expression> | 'remove')[] = [
+    'remove',
+    1,
+    'x',
+    [],
+    ['a'],
+    {},
+    { __id: 'custom' },
+    parseExpression('() => {}'),
+    parseExpression('async ({ mount }) => { await mount(); }'),
+    parseExpression("storiesOf('X')"),
+    parseExpression("() => {\n  Primary.test('t', () => {});\n}"),
+  ];
+  const load = () =>
+    loadCsf(source, { fileName: 'Button.stories.tsx', makeTitle: (title) => title! }).parse();
+  const indexed = (csf: ReturnType<typeof load>) => {
+    try {
+      return JSON.stringify([csf.indexInputs, csf._stories, csf.meta]);
+    } catch (error) {
+      return String(error);
+    }
+  };
+
+  // Every change of a field and of a value inside it, committed before the file is indexed again.
+  const changes = [0, 1, 2].flatMap((target) =>
+    paths.flatMap((path) =>
+      values.map((value) => {
+        const csf = load();
+        const before = indexed(csf);
+        const object = csf.objects()[target];
+        const result = value === 'remove' ? object.remove(path) : object.set(path, value);
+        let changed = !result.ok && result.diagnostic.code === 'invalid-csf';
+        try {
+          csf.editor.commit();
+        } catch {
+          changed = true;
+        }
+        const callee = INDEXED_CALLEES.some((name) => JSON.stringify(value).includes(name));
+        return { target: object.target, path, callee, changed: changed || indexed(csf) !== before };
+      })
+    )
+  );
+
+  it('lists every field whose change the index sees, unless the value calls an indexed callee', () => {
+    vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    const unlisted = changes.filter(
+      ({ target, path, callee, changed }) => changed && !callee && !indexedPath(target, path)
+    );
+    expect([
+      ...new Set(unlisted.map(({ target, path }) => `${target.kind}: ${printCsfPath(path)}`)),
+    ]).toEqual([]);
+  });
+
+  it('lists only fields whose change the index sees', () => {
+    const seen = (kind: string, key: string) =>
+      changes.some(
+        ({ target, path, callee, changed }) =>
+          changed && !callee && target.kind === kind && path[0] === key
+      );
+    const listed = [
+      ...INDEX_FIELDS.meta.map((key) => ['meta', key]),
+      ...INDEX_FIELDS.story.map((key) => ['story', key]),
+      ['story', 'parameters'],
+    ];
+    expect(listed.filter(([kind, key]) => !seen(kind, key))).toEqual([]);
+  });
+
+  it('sees a value calling an indexed callee anywhere', () => {
+    expect(
+      changes.filter(({ path, callee, changed }) => callee && path[0] === 'args' && !changed)
+    ).toEqual([]);
   });
 });

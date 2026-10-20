@@ -8,7 +8,7 @@ import { transformSync } from 'esbuild';
 import { walk } from 'estree-walker';
 import { basename, normalize } from 'pathe';
 
-import { type E, parseModule } from '../csf-tools/estree/ast.ts';
+import { parseModule } from '../csf-tools/estree/ast.ts';
 import { SourceEditor } from '../csf-tools/estree/editor.ts';
 import { resolveMock } from './resolve.ts';
 
@@ -34,20 +34,6 @@ interface ExtractMockCallsOptions {
   /** Configuration directory */
   configDir: string;
 }
-
-/**
- * The parse function Storybook 10 builders passed to `getAutomockCode` and `extractMockCalls`:
- * Babel's parser, whose second parameter is its options. Removed in Storybook 12.
- */
-export type LegacyParser = (code: string, ...rest: any[]) => unknown;
-
-/**
- * @deprecated Storybook 10 builders passed this to `getAutomockCode` and `extractMockCalls`, which
- *   now parse the code themselves and ignore it. Parse with `parseModule` from
- *   `storybook/internal/csf-tools` instead. Removed in Storybook 12.
- */
-export const babelParser = (code: string, fileName?: string): E.Program =>
-  parseModule(code, fileName).program;
 
 const isStringLiteral = (node: any): boolean =>
   node?.type === 'Literal' && typeof node.value === 'string';
@@ -89,37 +75,20 @@ export function rewriteSbMockImportCalls(code: string, fileName: string) {
   };
 }
 
-type FindMockRedirect = (
-  root: string,
-  absolutePath: string,
-  externalPath: string | null
-) => string | null;
-
-/** Extracts all sb.mock() calls from the preview config file. */
-export function extractMockCalls(
-  options: ExtractMockCallsOptions,
-  root: string,
-  findMockRedirect: FindMockRedirect
-): MockCall[];
 /**
- * @deprecated Builders built against Storybook 10, such as `storybook-builder-rsbuild` 3.6, pass
- *   `babelParser` before `root`. The function is ignored: the preview config is parsed by its file
- *   name. Drop the argument. This overload is removed in Storybook 12.
+ * Extracts all sb.mock() calls from the preview config file.
+ *
+ * @param this PluginContext
  */
 export function extractMockCalls(
   options: ExtractMockCallsOptions,
-  parse: LegacyParser,
   root: string,
-  findMockRedirect: FindMockRedirect
-): MockCall[];
-export function extractMockCalls(
-  options: ExtractMockCallsOptions,
-  ...rest: [string, FindMockRedirect] | [LegacyParser, string, FindMockRedirect]
+  findMockRedirect: (
+    root: string,
+    absolutePath: string,
+    externalPath: string | null
+  ) => string | null
 ): MockCall[] {
-  const [root, findMockRedirect] = (typeof rest[0] === 'function' ? rest.slice(1) : rest) as [
-    string,
-    FindMockRedirect,
-  ];
   try {
     const previewConfigCode = readFileSync(options.previewConfigPath, 'utf-8');
     const { code: jsCode } = transformSync(previewConfigCode, { loader: 'tsx', format: 'esm' });

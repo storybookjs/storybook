@@ -9,32 +9,11 @@ import MagicString from 'magic-string';
 
 import { outerSpan, parseModule } from '../csf-tools/estree/ast.ts';
 import { type Positioned, getArbitraryModuleIdentifier } from './esmWalker.ts';
-import type { LegacyParser } from './extract.ts';
 
 export const __STORYBOOK_GLOBAL_THIS_ACCESSOR__ = '__vitest_mocker__';
 
 /** Mock the exports of a module. The file name picks the grammar it is parsed with. */
-export function getAutomockCode(
-  originalCode: string,
-  isSpy: boolean,
-  fileName?: string
-): MagicString;
-/**
- * @deprecated Builders built against Storybook 10, such as `storybook-builder-rsbuild` 3.6, pass
- *   `babelParser` here. The function is ignored: the module is parsed without a file name, as it
- *   was then. Pass the module's file name instead. This overload is removed in Storybook 12.
- */
-export function getAutomockCode(
-  originalCode: string,
-  isSpy: boolean,
-  parse: LegacyParser
-): MagicString;
-export function getAutomockCode(
-  originalCode: string,
-  isSpy: boolean,
-  fileNameOrParser?: string | LegacyParser
-) {
-  const fileName = typeof fileNameOrParser === 'function' ? undefined : fileNameOrParser;
+export function getAutomockCode(originalCode: string, isSpy: boolean, fileName?: string) {
   const mocked = automockModule(originalCode, isSpy ? 'autospy' : 'automock', fileName, {
     globalThisAccessor: JSON.stringify(__STORYBOOK_GLOBAL_THIS_ACCESSOR__),
   });

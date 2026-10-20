@@ -78,11 +78,11 @@ export const getComponents = async ({
   const componentSet = new Set<string>();
   /** Minimum JSX nesting depth per component name (1 = outermost JSX element). */
   const componentDepth = new Map<string, number>();
-  const localToImport = collectImportBindings(csf._program);
+  const localToImport = collectImportBindings(csf.program);
 
   // Gather components from all JSX opening elements, tracking how many JSX elements enclose each.
   const jsxDepth = new Map<ESTreeNode, number>();
-  walk(csf._program, (node, parent) => {
+  walk(csf.program, (node, parent) => {
     const depth = (parent ? (jsxDepth.get(parent) ?? 0) : 0) + (node.type === 'JSXElement' ? 1 : 0);
     jsxDepth.set(node, depth);
     if (node.type !== 'JSXOpeningElement') {
@@ -128,7 +128,7 @@ export const getComponents = async ({
 
   // Filter out locally defined components (those whose base identifier has a local, non-import binding)
   const isLocallyDefinedWithoutImport = (base: string): boolean => {
-    const binding = csf._editor.scopes.program.bindings.get(base);
+    const binding = csf.editor.scopes.program.bindings.get(base);
 
     if (!binding) {
       return false; // missing binding -> keep (will become null import)

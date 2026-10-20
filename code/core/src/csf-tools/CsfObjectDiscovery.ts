@@ -73,7 +73,7 @@ const addQualifiedBinding = (
   report: ReportDiagnostic,
   isStory: boolean
 ) => {
-  const binding = csf._editor.scopes.program.bindings.get(localName);
+  const binding = csf.editor.scopes.program.bindings.get(localName);
   if (
     !binding?.constant ||
     (binding.node.type !== 'VariableDeclarator' && binding.node.type !== 'FunctionDeclaration')
@@ -98,7 +98,7 @@ const addQualifiedBinding = (
 
 const storyBindings = (csf: CsfFile, report: ReportDiagnostic): StoryBinding[] => {
   const bindings = new Map<string, StoryBinding>();
-  for (const statement of csf._program.body) {
+  for (const statement of csf.program.body) {
     if (statement.type !== 'ExportNamedDeclaration' || statement.exportKind === 'type') {
       continue;
     }
@@ -179,7 +179,7 @@ const factoryMember = (node: Node | null | undefined): 'story' | 'extend' | unde
 };
 
 const isFactoryMeta = (csf: CsfFile, name: string, seen = new Set<string>()): boolean => {
-  const init = variableInit(csf._editor.scopes.program.bindings.get(name));
+  const init = variableInit(csf.editor.scopes.program.bindings.get(name));
   if (seen.has(name) || !csf._metaFactoryCall || !init) {
     return false;
   }
@@ -203,7 +203,7 @@ const isFactoryStory = (csf: CsfFile, node: Node, seen = new Set<string>()): boo
     return false;
   }
   seen.add(receiver);
-  const initializer = variableInit(csf._editor.scopes.program.bindings.get(receiver));
+  const initializer = variableInit(csf.editor.scopes.program.bindings.get(receiver));
   return initializer ? isFactoryStory(csf, unwrapExpression(initializer), seen) : false;
 };
 
@@ -212,7 +212,7 @@ const factoryMetaConfigurationIsSafe = (csf: CsfFile): boolean => {
   if (argument?.type !== 'Identifier') {
     return true;
   }
-  const binding = csf._editor.scopes.program.bindings.get(argument.name);
+  const binding = csf.editor.scopes.program.bindings.get(argument.name);
   if (
     !binding?.constant ||
     binding.node.type !== 'VariableDeclarator' ||
@@ -241,7 +241,7 @@ const discoverMeta = (csf: CsfFile, report: ReportDiagnostic): Discovered[] => {
   }
   if (csf._metaNode && !csf._metaNodeIsSynthetic) {
     const binding = csf._metaVariableName
-      ? csf._editor.scopes.program.bindings.get(csf._metaVariableName)
+      ? csf.editor.scopes.program.bindings.get(csf._metaVariableName)
       : undefined;
     if (binding && !binding.constant) {
       report({
@@ -253,7 +253,7 @@ const discoverMeta = (csf: CsfFile, report: ReportDiagnostic): Discovered[] => {
       });
       return [];
     }
-    return [{ target: { kind: 'meta' }, root: literalRoot(csf._editor, csf._metaNode) }];
+    return [{ target: { kind: 'meta' }, root: literalRoot(csf.editor, csf._metaNode) }];
   }
   if (csf._metaIsFactory && csf._metaFactoryCall) {
     report({
@@ -287,7 +287,7 @@ const NON_SHARING_PARENTS = new Set([
 // that could share the story, such as an alias or a call that receives it, is a `shared` one: it
 // only matters for a story whose assignments are edited, as it could add them to another story.
 const assignmentsOf = (csf: CsfFile, binding: StoryBinding) => {
-  const editor = csf._editor;
+  const editor = csf.editor;
   const parentOf = (node: Node) => editor.parentOf(node);
   const assignments: Assignment[] = [];
   let shared: Rejection | undefined;
@@ -383,11 +383,11 @@ const storyRoot = (
   object: E.ObjectExpression | undefined,
   assignments: Assignment[]
 ): ObjectRoot => {
-  const editor = csf._editor;
+  const editor = csf.editor;
   const literal = object && literalRoot(editor, object);
   const byProperty = new Map(assignments.map((assignment) => [assignment.property, assignment]));
   const own = (members: readonly Property[]) => members.filter((member) => !byProperty.has(member));
-  const declaration = csf._program.body.find(
+  const declaration = csf.program.body.find(
     (statement) =>
       statement.start <= binding.declaration.start && binding.declaration.end <= statement.end
   )!;
@@ -508,7 +508,7 @@ const discoverStories = (
         node.arguments.length === 1 &&
         argumentNode?.type === 'ObjectExpression'
       ) {
-        return [{ target: storyTarget(binding), root: literalRoot(csf._editor, argumentNode) }];
+        return [{ target: storyTarget(binding), root: literalRoot(csf.editor, argumentNode) }];
       }
       report({
         code: 'unsupported-initializer',
@@ -529,7 +529,7 @@ const discoverStories = (
       return reject(write);
     }
     if (assignments.length === 0 && object) {
-      return [{ target: storyTarget(binding), root: literalRoot(csf._editor, object) }];
+      return [{ target: storyTarget(binding), root: literalRoot(csf.editor, object) }];
     }
     if (assignments.length === 0 && !isAnnotatable(node)) {
       return reject({
@@ -579,7 +579,7 @@ export const discoverCsfObjects = (
 ): readonly CsfObject[] =>
   discover(csf, options, report).map(({ target }) => {
     const host: CsfObjectHost = {
-      editor: csf._editor,
+      editor: csf.editor,
       root: () =>
         // Edits re-parse the file, so the object is found again by its target.
         discover(csf, options, () => {}).find((candidate) => sameTarget(candidate.target, target))

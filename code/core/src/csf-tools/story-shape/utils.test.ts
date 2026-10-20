@@ -22,7 +22,7 @@ import {
 
 const parse = (code: string) => {
   const csf = loadCsf(code, { makeTitle: (title) => title ?? 'title' }).parse();
-  csf._editor.parentOf(csf._program);
+  csf.editor.parentOf(csf.program);
   return csf;
 };
 
@@ -30,7 +30,7 @@ const printed = (node: Node) => textOf(node);
 
 const renderFunction = (code: string): Node => {
   const csf = parse(code);
-  const found = resolveIdentifierInit(csf._program, 'render');
+  const found = resolveIdentifierInit(csf.program, 'render');
   if (!found) {
     throw new Error('Expected a render function');
   }
@@ -220,7 +220,7 @@ describe('resolveIdentifierInit', () => {
       `export default { title: 'Button' };\n${declaration}\nexport const A = Template.bind({});`
     );
 
-    const resolved = resolveIdentifierInit(csf._program, 'Template');
+    const resolved = resolveIdentifierInit(csf.program, 'Template');
 
     expect(resolved?.type).toBe('FunctionDeclaration');
     expect(printed(resolved!)).toBe('function Template(args) {\n  return args;\n}');
@@ -233,7 +233,7 @@ describe('resolveIdentifierInit', () => {
       export const A = Template.bind({});
     `);
 
-    expect(printed(resolveIdentifierInit(csf._program, 'Template')!)).toBe('(args) => args');
+    expect(printed(resolveIdentifierInit(csf.program, 'Template')!)).toBe('(args) => args');
   });
 
   it('returns null for unknown identifiers', () => {
@@ -242,7 +242,7 @@ describe('resolveIdentifierInit', () => {
       export const A = Template.bind({});
     `);
 
-    expect(resolveIdentifierInit(csf._program, 'Template')).toBeNull();
+    expect(resolveIdentifierInit(csf.program, 'Template')).toBeNull();
   });
 });
 

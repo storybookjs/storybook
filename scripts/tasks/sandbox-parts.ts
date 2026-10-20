@@ -118,7 +118,7 @@ const updateObjectExpression = (
   value: string,
   existing: E.ObjectExpression
 ) => {
-  const editor = config._editor;
+  const editor = config.editor;
   const [first, ...rest] = path;
   const existingField = existing.properties.find((p) => staticKey(p) === first) as
     | E.ObjectProperty
@@ -172,7 +172,7 @@ function setPluginParam(
     paramValue: unknown;
   }
 ) {
-  const call = findPluginCall(pluginName, config._program);
+  const call = findPluginCall(pluginName, config.program);
   if (!call) {
     throw new Error(`Could not find a call to the "${pluginName}" plugin in this file.`);
   }
@@ -190,10 +190,10 @@ function setPluginParam(
   const value = textOf(valueNode);
 
   if (paramPos === call.arguments.length) {
-    appendToList(config._editor, argumentList(config._editor, call), [
+    appendToList(config.editor, argumentList(config.editor, call), [
       makeObjectSource(paramPath, value),
     ]);
-    config._editor.commit();
+    config.editor.commit();
     return;
   }
 
@@ -205,7 +205,7 @@ function setPluginParam(
   }
 
   updateObjectExpression(config, paramPath, value, param);
-  config._editor.commit();
+  config.editor.commit();
 }
 
 const logger = console;
@@ -1053,8 +1053,8 @@ export const extendPreview: Task['run'] = async ({ key, template, sandboxDir }) 
     "sb.mock(import('uuid'));",
   ].join('\n');
 
-  insertAfterImports(previewConfig._editor, mockStatements);
-  previewConfig._editor.commit();
+  insertAfterImports(previewConfig.editor, mockStatements);
+  previewConfig.editor.commit();
 
   await writeConfig(previewConfig);
 };

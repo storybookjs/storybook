@@ -127,15 +127,15 @@ ${storySource}
 `,
     { makeTitle: () => 'Example/MyButton' }
   ).parse();
-  csf._editor.parentOf(csf._program);
-  const normalized = normalizeStoryDeclaration(csf._storyExports.Primary, csf._editor);
+  csf.editor.parentOf(csf.program);
+  const normalized = normalizeStoryDeclaration(csf._storyExports.Primary, csf.editor);
 
   if (normalized.type !== 'config') {
     throw new Error('Expected a config story');
   }
 
   const meta = metaObject(csf);
-  const references: ReferenceContext = { editor: csf._editor, filePath: 'entry.ts' };
+  const references: ReferenceContext = { editor: csf.editor, filePath: 'entry.ts' };
   const metaMembers = meta ? resolveObjectMembers(meta, references) : undefined;
   const classified = classifyArgs(
     {
@@ -148,15 +148,15 @@ ${storySource}
     docgen
   );
   // Mirrors resolveEffectiveRender in build-story-docs: story render wins, meta is the fallback.
-  const storyRender = resolveRenderFunction(normalized.node, csf._editor);
+  const storyRender = resolveRenderFunction(normalized.node, csf.editor);
   const renderResolution =
-    storyRender.kind !== 'missing' ? storyRender : resolveRenderFunction(meta, csf._editor);
+    storyRender.kind !== 'missing' ? storyRender : resolveRenderFunction(meta, csf.editor);
 
   if (renderResolution.kind !== 'resolved') {
     return {
       args: classified.args,
       unsetArgs: classified.unset,
-      importBindings: collectImportBindings(csf._program),
+      importBindings: collectImportBindings(csf.program),
     };
   }
 
@@ -166,7 +166,7 @@ ${storySource}
     unsetArgs: classified.unset,
     argsParam: parameter?.type === 'Identifier' ? parameter.name : undefined,
     expression: returnedExpression(renderResolution.node),
-    importBindings: collectImportBindings(csf._program),
+    importBindings: collectImportBindings(csf.program),
   };
 }
 

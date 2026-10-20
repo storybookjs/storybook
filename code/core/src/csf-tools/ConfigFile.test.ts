@@ -29,6 +29,18 @@ const appendToArray = (path: string[], value: any, source: string) => {
 };
 
 describe('ConfigFile', () => {
+  it('edits its source through editor and program, and their deprecated aliases', () => {
+    const config = loadConfig('export default { a: 1 };').parse();
+
+    expect(config._editor).toBe(config.editor);
+    expect(config._program).toBe(config.program);
+    config.editor.edits.append('\nexport const b = 2;');
+    config.editor.commit();
+
+    expect(config.program.body).toHaveLength(2);
+    expect(config.getValue(['a'])).toBe(1);
+  });
+
   it.each([
     `export default { parameters: { viewport: { disable: true } } };`,
     `export default definePreview({ parameters: { viewport: { disable: true } } });`,

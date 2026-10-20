@@ -58,7 +58,7 @@ export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (inpu
       //   }
       // };
       const parameters = `${key}${csf._metaIsFactory ? '.input' : ''}.parameters`;
-      csf._appendStatement(
+      csf.appendStatement(
         `${parameters} = { ...${parameters}, docs: { ...${parameters}?.docs, source: { code: ${JSON.stringify(snippet)}, ...${parameters}?.docs?.source } } };`
       );
     });

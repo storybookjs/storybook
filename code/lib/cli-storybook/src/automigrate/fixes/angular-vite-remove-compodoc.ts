@@ -278,7 +278,7 @@ export function compodocTransforms(): FixTransform[] {
     {
       filter: { kind: ['preview'], code: /setCompodocJson|documentation\.json/ },
       editConfig: (preview, { id }) => {
-        if (wiresCompodoc(preview._program)) {
+        if (wiresCompodoc(preview.program)) {
           removePreviewWiring(preview, id);
         }
       },
@@ -428,7 +428,7 @@ const removePreviewWiring = (preview: ConfigFile, previewConfigPath: string): vo
   if (!result.removed) {
     manualRemovalHint(
       previewConfigPath,
-      countReferences(preview._editor, SET_COMPODOC_JSON) > 0
+      countReferences(preview.editor, SET_COMPODOC_JSON) > 0
         ? result.reason
         : `no ${SET_COMPODOC_JSON} call is visible here, only a documentation.json import`
     );

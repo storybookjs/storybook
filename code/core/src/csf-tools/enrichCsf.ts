@@ -26,7 +26,7 @@ export const enrichCsfStory = (
   const source = !options?.disableSource && extractSource(storyExport, csfSource._code);
   const description =
     !options?.disableDescription &&
-    extractDescription(csfSource._storyStatements[key], csfSource._editor);
+    extractDescription(csfSource._storyStatements[key], csfSource.editor);
   // in csf 1/2/3 use Story.parameters; CSF factories use Story.input.parameters
   const originalParameters = csfSource._metaIsFactory
     ? `${key}.input.parameters`
@@ -50,7 +50,7 @@ export const enrichCsfStory = (
 
   if (extraDocsParameters.length > 0) {
     appendStatement(
-      csf._editor,
+      csf.editor,
       `${originalParameters} = { ...${originalParameters}, docs: { ...${optionalDocs}, ${extraDocsParameters.join(', ')} } };`
     );
   }
@@ -91,13 +91,13 @@ const addComponentDescription = (
 
 export const enrichCsfMeta = (csf: CsfFile, csfSource: CsfFile, options?: EnrichCsfOptions) => {
   const description =
-    !options?.disableDescription && extractDescription(csfSource._metaStatement, csfSource._editor);
+    !options?.disableDescription && extractDescription(csfSource._metaStatement, csfSource.editor);
   // docs: { description: { component: %%description%% } },
   if (description) {
     const metaNode = csf._metaNode;
     if (metaNode && !csf._metaNodeIsSynthetic) {
       addComponentDescription(
-        csf._editor,
+        csf.editor,
         metaNode,
         ['parameters', 'docs', 'description'],
         JSON.stringify(description)

@@ -137,7 +137,7 @@ export async function vitestTransform({
     },
   }).parse();
 
-  const editor = parsed._editor;
+  const editor = parsed.editor;
   const metaExportName = parsed._metaVariableName!;
   const metaNode = parsed._metaNode;
 

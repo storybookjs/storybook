@@ -291,7 +291,7 @@ const findManifestImports = (
 };
 
 const removeDefaultImport = (preview: ConfigFile, name: string): void => {
-  const editor = preview._editor;
+  const editor = preview.editor;
   const statementsToDrop = new Set<Node>();
   for (const node of editor.program.body) {
     if (node.type !== 'ImportDeclaration') {
@@ -307,7 +307,7 @@ const removeDefaultImport = (preview: ConfigFile, name: string): void => {
     }
   }
   removeStatements(editor, statementsToDrop);
-  preview._editor.commit();
+  preview.editor.commit();
 };
 
 const removePreviewWiring = (
@@ -316,7 +316,7 @@ const removePreviewWiring = (
   { setterNames, manifestFiles }: WebComponentsRuntimeManifestOptions
 ): void => {
   const manifestImports = findManifestImports(
-    preview._program,
+    preview.program,
     dirname(previewConfigPath),
     manifestFiles
   );
@@ -334,7 +334,7 @@ const removePreviewWiring = (
     removedAnySetter = true;
     logger.debug(`Removed the ${setterName} wiring from ${previewConfigPath}`);
     for (const name of result.keptArguments) {
-      const specifier = findDefaultJsonImportSpecifier(preview._program, name);
+      const specifier = findDefaultJsonImportSpecifier(preview.program, name);
       if (specifier) {
         keptImports.set(name, specifier);
       }
@@ -345,7 +345,7 @@ const removePreviewWiring = (
   }
 
   for (const [name, specifier] of keptImports) {
-    const editor = preview._editor;
+    const editor = preview.editor;
     // A setter call left in place already got the manual-removal hint.
     const readers = topLevelReaders(editor, name).filter(
       (node) => !SETTER_NAMES.some((setterName) => isTopLevelCall(node, setterName))

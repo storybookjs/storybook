@@ -155,11 +155,11 @@ export async function buildStoryDocsPayload(
     // Docgen is optional here: without it the payload is still built, just without snippets.
   }
   const componentName = resolveMetaComponentIdentifier(meta);
-  const importBindings = collectImportBindings(csf._program);
+  const importBindings = collectImportBindings(csf.program);
   const importStatement = createImportStatement(
     componentName,
     importBindings,
-    jsDocTagsForNode(meta, csf._editor),
+    jsDocTagsForNode(meta, csf.editor),
     docgenPayload
   );
   const docgenArgInfo =
@@ -267,7 +267,7 @@ function extractStories(csf: ParsedCsf, options: StoryDocsContext): ExtractStori
     Object.entries(csf._stories).map(([storyExport, story]): [string, StoryDoc] => {
       const { description, summary } = extractStoryJSDocInfo(
         csf._storyStatements[storyExport],
-        csf._editor
+        csf.editor
       );
       const storyDoc: StoryDoc = {
         id: story.id,
@@ -310,7 +310,7 @@ function enrichStoryDoc(
 
   let normalized;
   try {
-    normalized = normalizeStoryDeclaration(csf._storyExports[storyExport], csf._editor);
+    normalized = normalizeStoryDeclaration(csf._storyExports[storyExport], csf.editor);
   } catch {
     return plain;
   }

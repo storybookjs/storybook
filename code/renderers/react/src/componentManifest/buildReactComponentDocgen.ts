@@ -358,13 +358,13 @@ export function buildComponentDocgenFromResolved({
         name: error.name,
         message:
           (csf._metaStatement
-            ? storyShapeError(error.message, csf._metaStatement, csf._editor).message
+            ? storyShapeError(error.message, csf._metaStatement, csf.editor).message
             : error.message) + `\n\n${entry.importPath}:\n${storyFile}`,
       },
     };
   }
 
-  const metaJsDoc = extractDescription(csf._metaStatement, csf._editor) || undefined;
+  const metaJsDoc = extractDescription(csf._metaStatement, csf.editor) || undefined;
   const { description, summary, jsDocTags } = extractComponentDescription(
     metaJsDoc,
     docgenDescription,

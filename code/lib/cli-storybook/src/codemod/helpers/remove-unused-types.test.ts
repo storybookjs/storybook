@@ -17,7 +17,7 @@ const unescape = (str: string) => str.replace(/\r\n/g, '\n');
 describe('removeUnusedTypes', () => {
   const getTransformed = (source: string) => {
     const csf = loadCsf(source, { makeTitle: () => 'FIXME' }).parse();
-    removeUnusedTypes(csf._editor);
+    removeUnusedTypes(csf.editor);
     return printCsf(csf).code;
   };
 

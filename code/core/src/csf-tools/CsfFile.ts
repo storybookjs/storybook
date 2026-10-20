@@ -181,7 +181,7 @@ const isArgsStory = (init: Node, isTopLevel: boolean, csf: CsfFile) => {
   // export const Foo = Bar.bind({})
   if (isTopLevel && isCanonicalCsf2BindCall(init)) {
     const boundIdentifier = init.callee.object.name;
-    const template = findVarInitialization(boundIdentifier, csf._program);
+    const template = findVarInitialization(boundIdentifier, csf.program);
     if (template) {
       csf._templates[boundIdentifier] = template;
       storyFn = template;
@@ -321,7 +321,11 @@ export interface CsfComponentImport {
 }
 
 export class CsfFile {
-  _editor: SourceEditor;
+  /**
+   * Edit the file's source directly, for edits `objects()` has no path for. A commit parses and
+   * indexes the file again, so nodes read before it are stale.
+   */
+  editor: SourceEditor;
 
   _options: CsfOptions;
 
@@ -370,22 +374,33 @@ export class CsfFile {
   _indexError: unknown;
 
   constructor(code: string, options: CsfOptions) {
-    this._editor = new SourceEditor(code, options.fileName, () => this._reindex());
+    this.editor = new SourceEditor(code, options.fileName, () => this._reindex());
     this._options = options;
     this.imports = [];
     mutationStates.set(this, { diagnostics: [], changed: false });
   }
 
+  /** Read the program of the current parse. */
+  get program(): E.Program {
+    return this.editor.program;
+  }
+
+  /** @deprecated Use `editor`. */
+  get _editor(): SourceEditor {
+    return this.editor;
+  }
+
+  /** @deprecated Use `program`. */
   get _program(): E.Program {
-    return this._editor.program;
+    return this.program;
   }
 
   get _code(): string {
-    return this._editor.code;
+    return this.editor.code;
   }
 
   _loc(node: Span | undefined): Located {
-    return node ? { loc: locationOf(this._editor.code, node.start, node.end) } : undefined;
+    return node ? { loc: locationOf(this.editor.code, node.start, node.end) } : undefined;
   }
 
   /**
@@ -465,14 +480,22 @@ export class CsfFile {
   transaction(fn: () => boolean | void): boolean {
     const state = mutationStates.get(this)!;
     const { changed } = state;
-    return this._editor.transaction(fn, () => {
+    return this.editor.transaction(fn, () => {
       state.changed = changed;
     });
   }
 
-  // Not committed: `formatCsf` prints it with the other pending edits.
+  /**
+   * Append a statement, given as source, to the end of the file. It is not committed: `formatCsf`
+   * prints it with the other pending edits.
+   */
+  appendStatement(code: string) {
+    appendStatement(this.editor, code);
+  }
+
+  /** @deprecated Use `appendStatement`. */
   _appendStatement(code: string) {
-    appendStatement(this._editor, code);
+    this.appendStatement(code);
   }
 
   _reset() {
@@ -516,7 +539,7 @@ export class CsfFile {
 
   _parseTitle(value: Node) {
     const node =
-      value.type === 'Identifier' ? findVarInitialization(value.name, this._program) : value;
+      value.type === 'Identifier' ? findVarInitialization(value.name, this.program) : value;
     if (isStringLiteral(node)) {
       return node.value;
     }
@@ -579,11 +602,11 @@ export class CsfFile {
             }
           }
         }
-        meta.component = this._editor.source(p.value);
+        meta.component = this.editor.source(p.value);
       } else if (key === 'tags') {
         let node: Node | null = p.value;
         if (node.type === 'Identifier') {
-          node = findVarInitialization(node.name, this._program);
+          node = findVarInitialization(node.name, this.program);
         }
         meta.tags = parseTags(node);
       } else if (key === 'id') {
@@ -653,15 +676,11 @@ export class CsfFile {
        *
        * `const _meta = {}; export default _meta;`
        */
-      const metaName = generateUid(this._editor.scopes, 'meta');
+      const metaName = generateUid(this.editor.scopes, 'meta');
       this._metaVariableName = metaName;
       const { declaration } = node;
-      this._editor.edits.overwrite(
-        node.start,
-        outerSpan(declaration).start,
-        `const ${metaName} = `
-      );
-      insertStatementAfter(this._editor, node, `export default ${metaName};`);
+      this.editor.edits.overwrite(node.start, outerSpan(declaration).start, `const ${metaName} = `);
+      insertStatementAfter(this.editor, node, `export default ${metaName};`);
       this._metaStatement = node;
       decl = declaration;
     } else if (isVariableReference) {
@@ -669,7 +688,7 @@ export class CsfFile {
       // export default meta;
       const variableName = (node.declaration as E.IdentifierReference).name;
       this._metaVariableName = variableName;
-      const statement = this._program.body.find(
+      const statement = this.program.body.find(
         (candidate): candidate is E.VariableDeclaration =>
           candidate.type === 'VariableDeclaration' &&
           candidate.declarations.some((d) => isIdentifier(d.id, variableName))
@@ -683,7 +702,7 @@ export class CsfFile {
 
     const metaNode = this._metaObjectFrom(decl);
     if (metaNode) {
-      this._parseMeta(metaNode, this._program);
+      this._parseMeta(metaNode, this.program);
     }
 
     if (this._metaStatement && !this._metaNode) {
@@ -827,20 +846,20 @@ export class CsfFile {
             ? specifier.exported.name
             : (specifier.exported as E.StringLiteral).value;
         const localName = specifier.local.name;
-        if (isTopLevel && !node.source && !isDeclared(this._editor, specifier.local)) {
+        if (isTopLevel && !node.source && !isDeclared(this.editor, specifier.local)) {
           throw new EstreeParseError(
             `Export '${localName}' is not defined`,
             this._options.fileName,
             locationOf(this._code, specifier.local.start, specifier.local.start)
           );
         }
-        const decl = isTopLevel ? findVarInitialization(localName, this._program) : specifier.local;
+        const decl = isTopLevel ? findVarInitialization(localName, this.program) : specifier.local;
 
         if (exportName === 'default') {
           this._metaVariableName = localName;
           const metaNode = this._metaObjectFrom(decl);
           if (metaNode && isTopLevel) {
-            this._parseMeta(metaNode, this._program);
+            this._parseMeta(metaNode, this.program);
           }
         } else {
           const annotations = {} as Record<string, Node>;
@@ -853,7 +872,7 @@ export class CsfFile {
           }
           // A story from another file is kept: its declaration isn't in this file
           const isImported =
-            !!node.source || this._editor.scopes.bindingOf(specifier.local)?.kind === 'import';
+            !!node.source || this.editor.scopes.bindingOf(specifier.local)?.kind === 'import';
           if (this._metaIsFactory && !storyIsFactory && !isImported) {
             continue;
           }
@@ -922,7 +941,7 @@ export class CsfFile {
       const testFunction =
         expression.arguments.length === 2 ? expression.arguments[1] : expression.arguments[2];
       const testArguments = expression.arguments.length === 2 ? null : expression.arguments[1];
-      const tags = parseTestTags(testArguments, this._program);
+      const tags = parseTestTags(testArguments, this.program);
 
       this._tests.push({
         function: testFunction,
@@ -963,7 +982,7 @@ export class CsfFile {
       }
 
       if (rootObject.type === 'Identifier') {
-        const configCandidate = this._editor.scopes.bindingOf(rootObject);
+        const configCandidate = this.editor.scopes.bindingOf(rootObject);
         const configParent = configCandidate?.declaration;
         if (configParent?.type === 'ImportDeclaration') {
           if (isValidPreviewPath(configParent.source.value)) {
@@ -980,19 +999,19 @@ export class CsfFile {
               metaDeclarator?.id.type === 'Identifier' ? metaDeclarator.id.name : 'meta';
             const [argument] = node.arguments;
             const argumentBinding =
-              argument?.type === 'Identifier' ? this._editor.scopes.bindingOf(argument) : undefined;
+              argument?.type === 'Identifier' ? this.editor.scopes.bindingOf(argument) : undefined;
             const argumentNode =
               argumentBinding?.constant && argumentBinding.node.type === 'VariableDeclarator'
                 ? argumentBinding.node.init
                 : argument;
             const unwrappedArgument = argumentNode && unwrapExpression(argumentNode as Node);
             if (unwrappedArgument?.type === 'ObjectExpression') {
-              this._parseMeta(unwrappedArgument, this._program);
+              this._parseMeta(unwrappedArgument, this.program);
             } else {
               this._metaNodeIsSynthetic = true;
               this._parseMeta(
                 { type: 'ObjectExpression', properties: [], start: node.start, end: node.start },
-                this._program
+                this.program
               );
             }
           } else if (rootObject.name === 'preview') {
@@ -1040,7 +1059,7 @@ export class CsfFile {
       }
       ancestors.pop();
     };
-    visit(this._program, []);
+    visit(this.program, []);
 
     if (!this._meta) {
       // The program node starts at its first statement, not at the start of the file.
@@ -1079,7 +1098,7 @@ export class CsfFile {
         const { tags, play } = storyAnnotations;
         if (tags) {
           const node =
-            tags.type === 'Identifier' ? findVarInitialization(tags.name, this._program) : tags;
+            tags.type === 'Identifier' ? findVarInitialization(tags.name, this.program) : tags;
           acc[key].tags = parseTags(node);
         }
         if (play) {
@@ -1280,13 +1299,13 @@ export const formatCsf = (
   csf: CsfFile,
   options: FormatCsfOptions = { sourceMaps: false }
 ): { code: string; map: CsfSourceMap } | string => {
-  const code = csf._editor.toString();
+  const code = csf.editor.toString();
   if (!options.sourceMaps) {
     return code;
   }
   return {
     code,
-    map: csf._editor.generateMap({
+    map: csf.editor.generateMap({
       source: options.sourceFileName ?? csf._options.fileName,
       inputSourceMap: options.inputSourceMap,
     }) as unknown as CsfSourceMap,
@@ -1298,7 +1317,7 @@ export const formatCsf = (
  * ends like the first one: CRLF when that is CRLF, `\n` otherwise.
  */
 export const printCsf = (csf: CsfFile): PrintResultType => {
-  const code = csf._editor.toString();
+  const code = csf.editor.toString();
   return { code, toString: () => code };
 };
 

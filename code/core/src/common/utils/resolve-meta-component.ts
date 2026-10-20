@@ -98,7 +98,7 @@ export function createMetaComponentResolver(options: MetaComponentResolverOption
       return { reason: 'no-meta-component' };
     }
 
-    const storyModule: ReferenceModule = { editor: csf._editor, filePath: storyPath };
+    const storyModule: ReferenceModule = { editor: csf.editor, filePath: storyPath };
     const expression = unwrapComponentExpression(node);
     if (expression.type === 'Identifier') {
       return fromIdentifier(storyModule, expression.name);
@@ -112,7 +112,7 @@ export function createMetaComponentResolver(options: MetaComponentResolverOption
       expression.object.type === 'Identifier' &&
       expression.property.type === 'Identifier'
     ) {
-      const namespace = findImport(csf._program, expression.object.name);
+      const namespace = findImport(csf.program, expression.object.name);
       if (namespace.kind === 'namespace') {
         const exportName = expression.property.name;
         return {

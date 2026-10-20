@@ -38,14 +38,14 @@ export async function configToCsfFactory(
   }
 
   const methodName = configType === 'main' ? 'defineMain' : 'definePreview';
-  const editor = config._editor;
+  const editor = config.editor;
   const exportDecls = config._exportDecls;
 
   const defineConfigProps = getConfigProperties(editor, exportDecls, { configType });
   const hasNamedExports = defineConfigProps.length > 0;
 
   // Early return if the code is already transformed (default export is already defineMain/definePreview)
-  const isAlreadyTransformed = config._program.body.some((node) => {
+  const isAlreadyTransformed = config.program.body.some((node) => {
     if (node.type !== 'ExportDefaultDeclaration') {
       return false;
     }
@@ -60,7 +60,7 @@ export async function configToCsfFactory(
   // Check whether the required framework import (e.g. defineMain from '@storybook/react-vite/node') is already present
   const expectedImportSource = frameworkPackage + (configType === 'main' ? '/node' : '');
   const findFrameworkImport = () =>
-    config._program.body.find(
+    config.program.body.find(
       (node): node is E.ImportDeclaration =>
         node.type === 'ImportDeclaration' &&
         node.importKind !== 'type' &&
@@ -85,7 +85,7 @@ export async function configToCsfFactory(
   }
 
   const findObjectDeclaration = (declarationName: string) =>
-    config._program.body.find(
+    config.program.body.find(
       (n): n is E.VariableDeclaration =>
         n.type === 'VariableDeclaration' &&
         n.declarations.some(
@@ -103,7 +103,7 @@ export async function configToCsfFactory(
       return;
     }
     const removed = new Set<Node>();
-    for (const node of config._program.body) {
+    for (const node of config.program.body) {
       if (node.type !== 'ExportDefaultDeclaration') {
         continue;
       }
@@ -144,7 +144,7 @@ export async function configToCsfFactory(
     // when merging named exports with default exports, add the named exports first in the list
     prependToList(editor, objectList(editor, config._exportsObject), defineConfigProps);
     removeExportDeclarations(editor, exportDecls);
-    config._editor.commit();
+    config.editor.commit();
     wrapDefaultExport(false);
   } else if (config._exportsObject) {
     /**
@@ -181,7 +181,7 @@ export async function configToCsfFactory(
      */
     appendStatement(editor, `export default ${methodName}({});`);
   }
-  config._editor.commit();
+  config.editor.commit();
 
   // Check whether @storybook/framework import already exists
   const existingImport = findFrameworkImport();
@@ -199,7 +199,7 @@ export async function configToCsfFactory(
       `import { ${methodName} } from ${printString(expectedImportSource, editor.quote)};`
     );
   }
-  config._editor.commit();
+  config.editor.commit();
 
   // Remove type imports – now inferred – from @storybook/* packages
   const disallowList = ['StorybookConfig', 'Preview'];

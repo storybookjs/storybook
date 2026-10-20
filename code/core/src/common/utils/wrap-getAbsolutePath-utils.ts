@@ -52,7 +52,7 @@ export function getAbsolutePathWrapperName(config: ConfigFile) {
 /** Source of a call to the config's getAbsolutePath wrapper, such as `getAbsolutePath('x')`. */
 export function getAbsolutePathCall(config: ConfigFile, value: string) {
   const wrapper = getAbsolutePathWrapperName(config) ?? PREFERRED_GET_ABSOLUTE_PATH_WRAPPER_NAME;
-  return `${wrapper}(${printString(value, config._editor.quote)})`;
+  return `${wrapper}(${printString(value, config.editor.quote)})`;
 }
 
 // Relative paths resolve from the config dir; the wrapper's `${value}/package.json` lookup breaks them.
@@ -148,7 +148,7 @@ export function getAbsolutePathWrapperDeclaration(
     ' * It is needed in projects that are set up within a monorepo.',
     ' */',
     `function ${PREFERRED_GET_ABSOLUTE_PATH_WRAPPER_NAME}(${parameter}${isConfigTypescript ? ': string' : ''})${isConfigTypescript ? ': any' : ''} {`,
-    `${config._editor.indent}return ${names.dirname}(${names.fileURLToPath}(import.meta.resolve(\`\${${parameter}}/package.json\`)));`,
+    `${config.editor.indent}return ${names.dirname}(${names.fileURLToPath}(import.meta.resolve(\`\${${parameter}}/package.json\`)));`,
     '}',
   ].join('\n');
 }
@@ -157,7 +157,7 @@ export function wrapValuesWithGetAbsolutePathWrapper(config: ConfigFile, nodes: 
   const wrap = (node: Node) =>
     isGetAbsolutePathWrapperNecessary(node, (target) => {
       if (isStringLiteral(target)) {
-        config._editor.edits.overwrite(
+        config.editor.edits.overwrite(
           target.start,
           target.end,
           getAbsolutePathCall(config, target.value)
@@ -167,7 +167,7 @@ export function wrapValuesWithGetAbsolutePathWrapper(config: ConfigFile, nodes: 
       }
     });
   nodes.forEach(wrap);
-  config._editor.commit();
+  config.editor.commit();
 }
 
 /**
@@ -178,7 +178,7 @@ export function wrapValuesWithGetAbsolutePathWrapper(config: ConfigFile, nodes: 
 export function ensureNamedImport(config: ConfigFile, imported: string, source: string) {
   const sameSource = (value: string) =>
     value.replace(/^node:/, '') === source.replace(/^node:/, '');
-  for (const node of config._program.body) {
+  for (const node of config.program.body) {
     if (node.type === 'ImportDeclaration' && sameSource(node.source.value)) {
       const existing = node.specifiers.find(
         (specifier) =>
@@ -193,7 +193,7 @@ export function ensureNamedImport(config: ConfigFile, imported: string, source: 
     }
   }
 
-  const taken = config._editor.scopes.program.bindings;
+  const taken = config.editor.scopes.program.bindings;
   if (!taken.has(imported)) {
     config.setImport([imported], source);
     return imported;

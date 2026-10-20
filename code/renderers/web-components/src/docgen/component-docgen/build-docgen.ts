@@ -85,7 +85,7 @@ export async function buildDocgenPayload(
   }
 
   const { description, summary, jsDocTags } = extractComponentDescription(
-    extractDescription(csf._metaStatement, csf._editor) || undefined,
+    extractDescription(csf._metaStatement, csf.editor) || undefined,
     found.declaration.description,
     declarationTags(found.declaration)
   );

@@ -8,7 +8,7 @@ export type DeclaredSubcomponent = {
 };
 
 export function extractDeclaredSubcomponents(csf: CsfFile): DeclaredSubcomponent[] {
-  const rawSubcomponents = unwrapSubcomponentNode(csf._metaAnnotations.subcomponents, csf._program);
+  const rawSubcomponents = unwrapSubcomponentNode(csf._metaAnnotations.subcomponents, csf.program);
 
   if (rawSubcomponents?.type !== 'ObjectExpression') {
     return [];
@@ -21,7 +21,7 @@ export function extractDeclaredSubcomponents(csf: CsfFile): DeclaredSubcomponent
 
     const name = getObjectKeyName(property.key);
     const directComponentName = getComponentExpressionName(property.value);
-    const componentExpression = unwrapSubcomponentNode(property.value, csf._program);
+    const componentExpression = unwrapSubcomponentNode(property.value, csf.program);
     const componentName = getComponentExpressionName(componentExpression) ?? directComponentName;
 
     return name && componentName ? [{ name, componentName }] : [];

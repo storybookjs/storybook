@@ -13,7 +13,7 @@ expect.addSnapshotSerializer({
 
 const transform = (source: string) => {
   const csf = loadCsf(source, { makeTitle: () => 'FIXME' }).parse();
-  wrapArgsMocks(csf._editor);
+  wrapArgsMocks(csf.editor);
   return printCsf(csf).code;
 };
 

@@ -46,7 +46,7 @@ export function createStoryArgsResolver(
   references?: StoryReferences
 ): StoryArgsResolver {
   const ctx: ReferenceContext = {
-    editor: csf._editor,
+    editor: csf.editor,
     filePath: csf._options.fileName ?? '',
     ...references,
   };

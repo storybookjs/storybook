@@ -348,7 +348,7 @@ const isImportedArgsToTemplate = (call: E.CallExpression, shape: StoryShape): bo
   if (call.callee.type !== 'Identifier') {
     return false;
   }
-  const binding = shape.csf._editor.scopes.bindingOf(call.callee);
+  const binding = shape.csf.editor.scopes.bindingOf(call.callee);
   const specifier = binding?.node;
   const declaration = binding?.declaration;
   if (specifier?.type !== 'ImportSpecifier' || declaration?.type !== 'ImportDeclaration') {
@@ -641,7 +641,7 @@ const declaredValue = (shape: StoryShape, node: Node | undefined): Node | undefi
   if (node?.type !== 'Identifier') {
     return node;
   }
-  const binding = shape.csf._editor.scopes.program.bindings.get(node.name);
+  const binding = shape.csf.editor.scopes.program.bindings.get(node.name);
   // A reassigned binding's value at render time is not its initializer.
   if (!binding?.constant) {
     return node;

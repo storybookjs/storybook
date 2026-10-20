@@ -148,7 +148,7 @@ export default async function transform(info: TransformFile) {
     return info.source;
   }
 
-  const editor = csf._editor;
+  const editor = csf.editor;
   const importHelper = new StorybookImportHelper(editor);
   // Read before the commit below, after which the stories no longer bind their templates.
   const templates = Object.keys(csf._templates);

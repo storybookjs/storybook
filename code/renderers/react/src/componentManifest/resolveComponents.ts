@@ -175,7 +175,7 @@ export function extractStorySnippets(
       try {
         const { description, summary } = extractStoryJSDocInfo(
           csf._storyStatements[storyExport],
-          csf._editor
+          csf.editor
         );
         const snippet = getCodeSnippet(csf, storyExport, componentName, resolver);
         imports.push(...snippet.imports);

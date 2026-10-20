@@ -109,7 +109,7 @@ export async function storyToCsfFactory(
 
   const metaVariableName = csf._metaVariableName ?? 'meta';
 
-  const editor = csf._editor;
+  const editor = csf.editor;
   const { program, scopes } = editor;
 
   // Check if a root-level constant named 'preview' exists

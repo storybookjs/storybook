@@ -161,8 +161,8 @@ describe('commit', () => {
 
   it('derives the story exports of a CsfFile again', () => {
     const csf = parse('export default {};\nexport const A = {};\n');
-    appendStatement(csf._editor, 'export const B = {};');
-    csf._editor.commit();
+    appendStatement(csf.editor, 'export const B = {};');
+    csf.editor.commit();
     expect(Object.keys(csf._stories)).toEqual(['A', 'B']);
   });
 });
@@ -1094,8 +1094,8 @@ describe('appendStatement', () => {
 
   it('sets an appended statement apart once a later commit makes it span lines', () => {
     const csf = parse('export default {};\nexport const A = {};\n');
-    appendStatement(csf._editor, 'export const B = {};');
-    csf._editor.commit();
+    appendStatement(csf.editor, 'export const B = {};');
+    csf.editor.commit();
     const story = csf
       .objects({ meta: false })
       .find(({ target }) => 'exportName' in target && target.exportName === 'B')!;
@@ -1121,8 +1121,8 @@ describe('appendStatement', () => {
 
   it('sets an appended statement apart once a later commit makes the one before it span lines', () => {
     const csf = parse('export default {};\nexport const A = {};\n');
-    appendStatement(csf._editor, 'export const B = {};');
-    csf._editor.commit();
+    appendStatement(csf.editor, 'export const B = {};');
+    csf.editor.commit();
     const [story] = csf.objects({ meta: false });
     story.set(['play'], parseExpression('async () => {\n  await x();\n}'));
     expect(printCsf(csf).code).toBe(dedent`
@@ -1140,7 +1140,7 @@ describe('appendStatement', () => {
 
   it('sets a pending appended statement apart in the commit that makes the one before it span lines', () => {
     const csf = parse('export default {};\nexport const A = {}; // A\n');
-    csf._appendStatement('export const B = {};');
+    csf.appendStatement('export const B = {};');
     const [story] = csf.objects({ meta: false });
     story.set(['play'], parseExpression('async () => {\n  await x();\n}'));
     expect(printCsf(csf).code).toBe(dedent`
@@ -1159,7 +1159,7 @@ describe('appendStatement', () => {
   it('forgets a statement appended in a transaction that rolls back', () => {
     const csf = parse('export default {};\nexport const A = {};\nexport const B = {};\n');
     csf.transaction(() => {
-      csf._appendStatement('export const B = {};');
+      csf.appendStatement('export const B = {};');
       return false;
     });
     const [first, story] = csf.objects({ meta: false });
@@ -1424,7 +1424,7 @@ describe('line endings', () => {
     const csf = parse(['export default {', '  title: "A",', '};', ''].join(eol));
     const [meta] = csf.objects({ stories: false });
     meta.set(['parameters', 'layout'], 'centered');
-    return csf._editor.toString();
+    return csf.editor.toString();
   };
   const expected = [
     'export default {',

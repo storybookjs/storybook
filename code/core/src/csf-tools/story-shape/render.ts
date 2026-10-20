@@ -82,14 +82,14 @@ export function resolveEffectiveRender(
   exportName: string,
   references?: ReferenceContext
 ): RenderResolution {
-  const normalized = normalizeStoryDeclaration(csf._storyExports[exportName], csf._editor);
+  const normalized = normalizeStoryDeclaration(csf._storyExports[exportName], csf.editor);
   if (normalized.type === 'fn') {
     return { kind: 'resolved', node: normalized.node as RenderFunction };
   }
 
   const storyRender = readRender(
     normalized.type === 'config' ? (normalized.node as E.ObjectExpression) : undefined,
-    csf._editor,
+    csf.editor,
     references
   );
   if (storyRender.kind === 'invalid') {
@@ -99,7 +99,7 @@ export function resolveEffectiveRender(
     return storyRender;
   }
 
-  const metaRender = readRender(metaObject(csf), csf._editor, references);
+  const metaRender = readRender(metaObject(csf), csf.editor, references);
   return metaRender.kind === 'invalid' ? { kind: 'unresolved' } : metaRender;
 }
 

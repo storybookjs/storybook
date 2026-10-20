@@ -91,7 +91,7 @@ export const buildStoryDocsPayload = async (
   };
 
   const componentName = componentNameOf(componentNode);
-  const importBindings = collectImportBindings(csf._program);
+  const importBindings = collectImportBindings(csf.program);
   const deps: StoryDocDeps = {
     csf,
     resolveStoryArgs: createStoryArgsResolver(csf, references),
@@ -172,7 +172,7 @@ const buildStoryDoc = async (
   try {
     const { description, summary } = extractStoryJSDocInfo(
       csf._storyStatements[exportName],
-      csf._editor
+      csf.editor
     );
     const rendered = await renderedSnippet(storyShape(exportName, deps), deps);
 

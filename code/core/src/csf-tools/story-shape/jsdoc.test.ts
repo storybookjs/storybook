@@ -7,7 +7,7 @@ import { extractStoryJSDocInfo } from './jsdoc.ts';
 
 const storyStatement = (code: string) => {
   const csf = loadCsf(code, { makeTitle: (title) => title ?? 'title' }).parse();
-  return [csf._storyStatements['A'], csf._editor] as const;
+  return [csf._storyStatements['A'], csf.editor] as const;
 };
 
 describe('extractStoryJSDocInfo', () => {

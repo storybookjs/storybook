@@ -28,7 +28,7 @@ export const csfNextMockedArgs: Fix = {
       filter: { kind: ['story'], code: /mock|withImplementation/i },
       editCsf: (csf) => {
         if (csf._metaIsFactory) {
-          wrapArgsMocks(csf._editor);
+          wrapArgsMocks(csf.editor);
         }
       },
     },

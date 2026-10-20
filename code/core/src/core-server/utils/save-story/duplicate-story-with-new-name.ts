@@ -30,7 +30,7 @@ export const duplicateStoryWithNewName = (csfFile: In, storyName: string, newSto
     throw new SaveStoryError(`Creating a new story based on a CSF2 story is not supported`);
   }
 
-  const copy = new SourceEditor(`(${csfFile._editor.source(init)})`, csfFile._options.fileName);
+  const copy = new SourceEditor(`(${csfFile.editor.source(init)})`, csfFile._options.fileName);
   walk(copy.program, (child) => {
     if (child.type !== 'ObjectExpression') {
       return;
@@ -46,11 +46,11 @@ export const duplicateStoryWithNewName = (csfFile: In, storyName: string, newSto
   const initCode = copy.toString().slice(1, -1);
   const typeAnnotation =
     node.id.type === 'Identifier' && node.id.typeAnnotation
-      ? csfFile._editor.source(node.id.typeAnnotation)
+      ? csfFile.editor.source(node.id.typeAnnotation)
       : '';
 
-  appendStatement(csfFile._editor, `export const ${newStoryName}${typeAnnotation} = ${initCode};`);
-  csfFile._editor.commit();
+  appendStatement(csfFile.editor, `export const ${newStoryName}${typeAnnotation} = ${initCode};`);
+  csfFile.editor.commit();
 
   const duplicated = csfFile._storyExports[newStoryName];
   return (duplicated?.type === 'VariableDeclarator' ? duplicated.init : duplicated) as Node;

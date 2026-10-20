@@ -22,7 +22,7 @@ describe('setupAddonInConfig', () => {
     vi.clearAllMocks();
 
     mockMain = {
-      _editor: { quote: "'" },
+      editor: { quote: "'" },
       getBodyDeclarations: () => [],
       getFieldNode: vi.fn(),
       appendNodeToArray: vi.fn(() => ({ ok: true, changed: true })),

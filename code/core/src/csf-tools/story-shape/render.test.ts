@@ -13,12 +13,12 @@ import { normalizeStoryDeclaration } from './normalize-story.ts';
 const resolveStoryRender = (code: string) => {
   const source = `export default { title: 'T' };\n${dedent(code)}`;
   const csf = loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();
-  editor = csf._editor;
-  const normalized = normalizeStoryDeclaration(csf._storyExports['A'], csf._editor);
+  editor = csf.editor;
+  const normalized = normalizeStoryDeclaration(csf._storyExports['A'], csf.editor);
 
   return resolveRenderFunction(
     normalized.type === 'config' ? normalized.node : undefined,
-    csf._editor
+    csf.editor
   );
 };
 
@@ -184,7 +184,7 @@ describe('resolveEffectiveRender', () => {
       ? code
       : `export default { title: 'T' };\n${code}`;
     const csf = loadCsf(dedent(source), { makeTitle: (title) => title ?? 'title' }).parse();
-    editor = csf._editor;
+    editor = csf.editor;
     const resolution = resolveEffectiveRender(csf, 'A');
     expect(printedBody(resolution)).toBe(expected);
   });

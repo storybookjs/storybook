@@ -12,8 +12,8 @@ const parse = (code: string) => {
 
 const normalize = (code: string, exportName = 'A') => {
   const csf = parse(code);
-  csf._editor.parentOf(csf._program);
-  return normalizeStoryDeclaration(csf._storyExports[exportName], csf._editor);
+  csf.editor.parentOf(csf.program);
+  return normalizeStoryDeclaration(csf._storyExports[exportName], csf.editor);
 };
 
 const printedShape = (code: string) => {

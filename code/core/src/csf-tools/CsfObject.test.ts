@@ -1488,13 +1488,13 @@ describe('CsfObject', () => {
     it('throws for code that does not parse, leaving earlier edits and the index as they were', () => {
       const csf = load("export default { title: 'B' };\nexport const A = {};\n");
       const [meta] = csf.objects({ stories: false });
-      csf._editor.edits.appendLeft(0, '(');
+      csf.editor.edits.appendLeft(0, '(');
 
       expect(() => meta.set(['tags'], ['docs'])).toThrow(/B\.stories\.ts$/);
-      expect(csf._editor.edits.toString()).toBe(
+      expect(csf.editor.edits.toString()).toBe(
         "(export default { title: 'B' };\nexport const A = {};\n"
       );
-      expect(csf._editor._committed).toEqual([]);
+      expect(csf.editor._committed).toEqual([]);
       expect(csf.meta?.title).toBe('B');
       expect(csf.changed).toBe(false);
       expect(csf.mutationDiagnostics).toEqual([]);

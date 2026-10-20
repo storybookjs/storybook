@@ -69,7 +69,7 @@ function findAnnotations(program: E.Program, storyName: string, annotationName: 
 export default async function transform(info: TransformFile) {
   const csf = loadCsf(info.source, { makeTitle: (title) => title, fileName: info.path });
   csf.parse();
-  const editor = csf._editor;
+  const editor = csf.editor;
 
   const metaKeys = [
     ...getObjectExpressionKeys(csf._metaAnnotations.args),

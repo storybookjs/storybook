@@ -44,7 +44,7 @@ export function resolveHtmlTemplate(
   renderFunction: RenderFunction,
   csf: CsfFile
 ): HtmlTemplate | undefined {
-  const bindings = collectImportBindings(csf._program);
+  const bindings = collectImportBindings(csf.program);
   const returned = returnedTemplateExpression(renderFunction, bindings);
   return returned
     ? templateFromExpression(unwrapExpression(returned.node), bindings, returned.scope)

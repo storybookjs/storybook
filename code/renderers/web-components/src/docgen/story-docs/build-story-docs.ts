@@ -154,7 +154,7 @@ const baseStoryDoc = (
 ): StoryDoc => {
   const { description, summary } = extractStoryJSDocInfo(
     csf._storyStatements[exportName],
-    csf._editor
+    csf.editor
   );
   return {
     id: story.id,

@@ -27,7 +27,7 @@ export const updateArgsInCsfFile = async (
   if (!node) {
     throw new SaveStoryError(`Updating a re-exported story is not supported`);
   }
-  const editor = csf._editor;
+  const editor = csf.editor;
   const args = Object.fromEntries(
     Object.entries(input).map(([k, v]) => {
       if (!isValidIdentifier(k, false)) {

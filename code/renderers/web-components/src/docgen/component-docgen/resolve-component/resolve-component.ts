@@ -40,7 +40,7 @@ function tagFromNode(csf: CsfFile, node: ESTreeNode): WebComponentsComponentReso
       return { tag };
     }
   }
-  return { reason: 'component-not-a-tag', expression: csf._editor.source(node) };
+  return { reason: 'component-not-a-tag', expression: csf.editor.source(node) };
 }
 
 /**
@@ -57,7 +57,7 @@ export function resolveStoryComponent(csf: CsfFile): WebComponentsComponentResol
   if (!csf._metaNode) {
     return { reason: 'no-meta-component' };
   }
-  const ctx: ReferenceContext = { editor: csf._editor, filePath: csf._options.fileName ?? '' };
+  const ctx: ReferenceContext = { editor: csf.editor, filePath: csf._options.fileName ?? '' };
   const members = resolveObjectMembers(csf._metaNode, ctx);
   return (
     componentIn(csf, members, csf._metaNode, ctx, new Set()) ?? { reason: 'no-meta-component' }

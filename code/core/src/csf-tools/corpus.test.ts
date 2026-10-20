@@ -28,7 +28,7 @@ const summarize = (file: string, code: string) => {
     return { error: true };
   }
   const bindings: Record<string, { constant: boolean; uses: number }> = {};
-  for (const [name, binding] of csf._editor.scopes.program.bindings) {
+  for (const [name, binding] of csf.editor.scopes.program.bindings) {
     bindings[name] = { constant: binding.constant, uses: binding.references.length };
   }
   return {

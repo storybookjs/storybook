@@ -82,7 +82,7 @@ function importedBoundStory(
     return undefined;
   }
   const local = declaration.init.callee.object.name;
-  const binding = collectImportBindings(csf._program).get(local);
+  const binding = collectImportBindings(csf.program).get(local);
   if (!binding) {
     return undefined;
   }
@@ -109,12 +109,12 @@ function buildSnippet(
   merged: Args,
   resolver: StoryArgsResolver
 ): string {
-  const editor = csf._editor;
+  const editor = csf.editor;
   const storyDeclaration = csf._storyExports[storyName];
 
   if (!storyDeclaration) {
     const message = 'Expected story to be a function or variable declaration';
-    const statement = csf._program.body.find(
+    const statement = csf.program.body.find(
       (node) =>
         node.type === 'ExportNamedDeclaration' &&
         node.specifiers.some(

@@ -148,7 +148,7 @@ export async function buildDocgenPayload(
         name: error.name,
         message:
           (csf._metaStatement
-            ? storyShapeError(error.message, csf._metaStatement, csf._editor).message
+            ? storyShapeError(error.message, csf._metaStatement, csf.editor).message
             : error.message) + `\n\n${input.entry.importPath}:\n${storyFile}`,
       },
     };
@@ -175,7 +175,7 @@ export async function buildDocgenPayload(
     };
   }
 
-  const metaJsDoc = extractDescription(csf._metaStatement, csf._editor) || undefined;
+  const metaJsDoc = extractDescription(csf._metaStatement, csf.editor) || undefined;
   const { description, summary, jsDocTags } = extractComponentDescription(
     metaJsDoc,
     componentMeta.description,

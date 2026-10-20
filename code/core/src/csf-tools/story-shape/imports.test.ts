@@ -6,7 +6,7 @@ import { loadCsf } from '../CsfFile.ts';
 import { collectImportBindings, importedName, isTypeSpecifier } from './imports.ts';
 
 const programPath = (code: string) => {
-  return loadCsf(code, { makeTitle: (title) => title ?? 'title' })._program;
+  return loadCsf(code, { makeTitle: (title) => title ?? 'title' }).program;
 };
 
 const importSpecifiers = (code: string) => {

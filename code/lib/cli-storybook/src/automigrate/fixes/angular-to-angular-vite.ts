@@ -211,7 +211,7 @@ const rewriteWorkspaceJson = (files: FixFiles, paths: string[]) =>
 const addZoneJsImport: FixTransform = {
   filter: { kind: ['preview'] },
   editConfig: (preview, { id }) => {
-    const hasZoneJsImport = preview._program.body.some(
+    const hasZoneJsImport = preview.program.body.some(
       (node) =>
         node.type === 'ImportDeclaration' &&
         (node.source.value === 'zone.js' || node.source.value.startsWith('zone.js/'))

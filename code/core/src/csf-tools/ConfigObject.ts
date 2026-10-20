@@ -79,7 +79,7 @@ export const locateConfigRoot = (
   config: ConfigFile,
   mode: 'read' | 'mutate'
 ): { ok: true; root: ObjectRoot } | Rejection => {
-  const editor = config._editor;
+  const editor = config.editor;
   const { program } = editor;
   const reject = (
     node: Node | Span | undefined,
@@ -479,7 +479,7 @@ export function createConfigObject(
     return located;
   }
   const host: CsfObjectHost = {
-    editor: config._editor,
+    editor: config.editor,
     root: () => {
       const current = locateConfigRoot(config, mode);
       return current.ok ? current.root : undefined;

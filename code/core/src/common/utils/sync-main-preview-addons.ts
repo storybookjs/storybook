@@ -57,7 +57,7 @@ export async function syncPreviewAddonsWithMainConfig(
   for (const addon of addons) {
     const annotations = await getAddonAnnotations(addon, configDir);
     if (annotations) {
-      const hasAlreadyImportedAddonAnnotations = previewConfig._program.body.find(
+      const hasAlreadyImportedAddonAnnotations = previewConfig.program.body.find(
         (node) => node.type === 'ImportDeclaration' && node.source.value === annotations.importPath
       );
 

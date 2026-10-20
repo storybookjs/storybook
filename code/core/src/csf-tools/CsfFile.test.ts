@@ -36,6 +36,22 @@ const transform = (code: string, options: Partial<CsfOptions> = { makeTitle }) =
 };
 
 describe('CsfFile', () => {
+  it('edits its source through editor, program and appendStatement, and their deprecated aliases', () => {
+    const csf = loadCsf("export default { title: 'A' };\nexport const B = {};\n", {
+      makeTitle,
+    }).parse();
+
+    expect(csf._editor).toBe(csf.editor);
+    expect(csf._program).toBe(csf.program);
+    expect(csf.program.body).toHaveLength(2);
+    csf.appendStatement('export const C = {};');
+    csf._appendStatement('export const D = {};');
+    csf.editor.commit();
+
+    expect(csf.program.body).toHaveLength(4);
+    expect(csf.stories.map(({ name }) => name)).toEqual(['B', 'C', 'D']);
+  });
+
   it('prints an edited CRLF source with CRLF line endings', () => {
     const source = ['export default { title: "foo/bar" };', '', 'export const Story = {};'].join(
       '\r\n'

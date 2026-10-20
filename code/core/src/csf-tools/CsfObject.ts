@@ -921,7 +921,7 @@ class Editor implements CsfObjectEditor {
     } else if (result.changed) {
       if (!this.#changed) {
         this.#changed = true;
-        this.editor._transaction?.rollbacks.push(() => {
+        this.editor._onRollback(() => {
           this.#changed = false;
         });
       }

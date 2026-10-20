@@ -363,14 +363,9 @@ class Editor implements CsfObjectEditor {
     if (path.length === 0 || unsafePath(path)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
-    const unprintable = nodeWithoutParse(value);
+    const unprintable = this.unprintable(path, value);
     if (unprintable) {
-      return this.failure(
-        'unsupported-value',
-        path,
-        this.anchor(),
-        `Cannot set ${path.join('.')} to a ${unprintable.type} node that did not come from \`get\`, \`transform\` or \`parseExpression\``
-      );
+      return unprintable;
     }
     const inspected = this.locate(path, 'set');
     if (inspected.ok === false) {
@@ -456,6 +451,10 @@ class Editor implements CsfObjectEditor {
     const derived = derive(value);
     if (!derived || derived === value) {
       return { ok: true, changed: false };
+    }
+    const unprintable = this.unprintable(path, derived);
+    if (unprintable) {
+      return unprintable;
     }
     parent.replaceValue(property, detachedTextOf(derived));
     return this.commit(path);
@@ -855,6 +854,19 @@ class Editor implements CsfObjectEditor {
       throw invalidated();
     }
     parent.append(content.members);
+  }
+
+  // `printValue` would print a node no parse produced as its fields.
+  private unprintable(path: readonly string[], value: CsfValue<CsfExpression>) {
+    const node = nodeWithoutParse(value);
+    return node
+      ? this.failure(
+          'unsupported-value',
+          path,
+          this.anchor(),
+          `Cannot set ${path.join('.')} to a ${node.type} node that did not come from \`get\`, \`transform\` or \`parseExpression\``
+        )
+      : undefined;
   }
 
   private refusedKey(parent: ObjectRoot, key: string, path: readonly string[]) {

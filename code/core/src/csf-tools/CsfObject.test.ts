@@ -250,6 +250,20 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toBe(`export default { a: 1 };`);
   });
 
+  it('rejects a transform result that did not come from this API, like set', () => {
+    const source = 'export default { args: { n: 1 } };';
+    const csf = parse(source);
+    const [meta] = csf.objects({ stories: false });
+    const statement = parseModule('2').program.body[0] as ESTree.ExpressionStatement;
+
+    expect(meta.transform(['args', 'n'], () => statement.expression)).toMatchObject({
+      ok: false,
+      changed: false,
+      diagnostic: { code: 'unsupported-value', path: ['args', 'n'] },
+    });
+    expect(printCsf(csf).code).toBe(source);
+  });
+
   it('wraps a sequence expression unless its own parentheses already enclose it', () => {
     const csf = parse(`export default { b: ((1), 2) };`);
     const [meta] = csf.objects({ stories: false });

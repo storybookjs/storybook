@@ -1,5 +1,11 @@
 import type { CsfFile } from './CsfFile.ts';
-import { csfFactoryReceiver, isCsfFactoryCall, withoutTypeCalls } from './CsfFile.ts';
+import {
+  INDEXED_CALLEES,
+  csfFactoryReceiver,
+  indexedPath,
+  isCsfFactoryCall,
+  withoutTypeCalls,
+} from './CsfFile.ts';
 import {
   type CsfMutationDiagnostic,
   type CsfMutationDiagnosticCode,
@@ -9,7 +15,13 @@ import {
   type CsfObjectTarget,
   createCsfObject,
 } from './CsfObject.ts';
-import { type MemberInsert, type ObjectRoot, detachedMember, literalRoot } from './ObjectRoot.ts';
+import {
+  type MemberInsert,
+  type ObjectRoot,
+  conflicting,
+  detachedMember,
+  literalRoot,
+} from './ObjectRoot.ts';
 import {
   type E,
   type Node,
@@ -23,11 +35,14 @@ import {
   unwrapExpression,
 } from './estree/ast.ts';
 import {
+  addKeys,
+  addedKeys,
   insertStatementAfter,
   printKey,
   printMemberAccess,
   printMembers,
   removeStatements,
+  shapeOf,
 } from './estree/editor.ts';
 import { placeableValueSource } from './estree/values.ts';
 import type { Binding } from './estree/scope.ts';
@@ -403,6 +418,11 @@ const storyRoot = (
         `${binding.localName}${printMemberAccess(key, editor.quote)} = ${value}${end}`
       );
     }
+    addKeys(
+      editor,
+      declaration,
+      members.map((member) => member.key)
+    );
   };
   const statementsOf = (members: readonly Property[]) =>
     new Set<Node>(members.flatMap((member) => byProperty.get(member)?.statement ?? []));
@@ -454,6 +474,7 @@ const storyRoot = (
         left.end,
         printMemberAccess(key, editor.quote)
       );
+      addKeys(editor, declaration, [key]);
     },
     // `CsfObject` refuses a group of members from both the object and the assignments.
     group: (members, key) => {
@@ -470,6 +491,26 @@ const storyRoot = (
       assign([{ key, value, text: '' }], statements);
     },
     take,
+    // The members written as statements are added after the declaration, or after an assignment.
+    added: (key) => literal?.added?.(key) || !!addedKeys(editor, declaration)?.has(key),
+    // An assignment goes after the text inserted after the statement it follows, which has to be
+    // another assignment of the story to keep the order a commit between them would give.
+    conflicts: (change, texts) => {
+      if (literal?.conflicts?.(change, texts)) {
+        return true;
+      }
+      if (assignments.length === 0 && literal) {
+        return false;
+      }
+      const after = assignments.at(-1)?.statement ?? declaration;
+      const inserted = editor._batch.lastInsertedAfter.get(after);
+      return (
+        conflicting(shapeOf(editor), change) ||
+        (!literal &&
+          inserted !== undefined &&
+          !new RegExp(`^${binding.localName.replaceAll('$', '\\$')}[.[]`).test(inserted))
+      );
+    },
     refuseKey: object
       ? undefined
       : (key) =>
@@ -580,8 +621,9 @@ export const discoverCsfObjects = (
   discover(csf, options, report).map(({ target }) => {
     const host: CsfObjectHost = {
       editor: csf.editor,
+      index: { reads: (path) => indexedPath(target, path), callees: INDEXED_CALLEES },
       root: () =>
-        // Edits re-parse the file, so the object is found again by its target.
+        // A commit parses the file again, so the object is found again by its target.
         discover(csf, options, () => {}).find((candidate) => sameTarget(candidate.target, target))
           ?.root,
     };

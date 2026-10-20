@@ -12,8 +12,12 @@ import {
   type CsfMutationResult,
   type CsfObject,
   type CsfValue,
+  createCsfObject,
   printCsfPath,
 } from './CsfObject.ts';
+import type { ObjectRoot } from './ObjectRoot.ts';
+import { literalRoot } from './ObjectRoot.ts';
+import { SourceEditor, appendMembers } from './estree/editor.ts';
 import {
   type E as ESTree,
   parseExpression,
@@ -2402,5 +2406,215 @@ describe('CsfObject append and prepend', () => {
     expect(meta.changed).toBe(false);
     expect(csf.changed).toBe(false);
     expect(printCsf(csf).code).toBe("export default { tags: ['a'] };");
+  });
+});
+
+describe('CsfObject pending edits', () => {
+  const stories = `export default { title: 'A' };
+export const Primary = { args: { label: 'A' } };
+export const Secondary = { args: {} };
+`;
+
+  it('leaves the edit of a field the index does not read pending, and commits one it reads', () => {
+    const csf = parse(stories);
+    const [primary] = csf.objects({ meta: false });
+
+    expect(primary.set(['args', 'disabled'], true)).toEqual({ ok: true, changed: true });
+    expect(csf.editor._committed).toEqual([]);
+    expect(csf.editor.pending).toBe(true);
+    expect(primary.getValue(['args', 'disabled'])).toBe(true);
+
+    expect(primary.set(['tags'], ['docs'])).toEqual({ ok: true, changed: true });
+    expect(csf.editor.pending).toBe(false);
+    expect(csf.stories[0].tags).toEqual(['docs']);
+    expect(printCsf(csf).code).toContain(
+      "export const Primary = { args: { label: 'A', disabled: true }, tags: ['docs'] };"
+    );
+  });
+
+  it('refuses a field the index rejects alone, keeping the edits pending before it', () => {
+    const csf = parse(stories);
+    const [primary, secondary] = csf.objects({ meta: false });
+    primary.set(['args', 'disabled'], true);
+
+    expect(secondary.set(['tags'], 1)).toMatchObject({
+      ok: false,
+      diagnostic: { code: 'invalid-csf' },
+    });
+    expect(csf.editor.pending).toBe(true);
+    expect(csf.stories.map(({ tags }) => tags)).toEqual([undefined, undefined]);
+    expect(printCsf(csf).code).toBe(
+      stories.replace("label: 'A' }", "label: 'A', disabled: true }")
+    );
+  });
+
+  it('keeps the nodes of the parse, so raw edits join the same batch', () => {
+    const csf = parse(stories);
+    const [primary, secondary] = csf.objects({ meta: false });
+    const node = secondary.node!;
+    primary.set(['args', 'disabled'], true);
+
+    expect(secondary.node).toBe(node);
+    appendMembers(csf.editor, node, ['parameters: {}']);
+    expect(printCsf(csf).code).toContain('export const Secondary = { args: {}, parameters: {} };');
+  });
+
+  it('throws for a node a pending mutation wrote over', () => {
+    const csf = parse(stories);
+    const [primary] = csf.objects({ meta: false });
+    const args = (primary.node!.properties[0] as ESTree.ObjectProperty).value;
+    primary.set(['args'], { size: 'large' });
+
+    expect(() => appendMembers(csf.editor, args as ESTree.ObjectExpression, ['a: 1'])).toThrow(
+      'that a pending edit wrote over'
+    );
+  });
+
+  it('reads and writes a field again after a pending edit to it, committing first', () => {
+    const csf = parse(stories);
+    const [primary] = csf.objects({ meta: false });
+    primary.set(['args', 'size'], 'small');
+    primary.set(['args', 'size'], 'large');
+    primary.transform(['args', 'size'], (value) => parseExpression(`${textOf(value)} + 'r'`));
+
+    expect(textOf(primary.get(['args', 'size'])!)).toBe("'large' + 'r'");
+    expect(printCsf(csf).code).toContain(
+      "export const Primary = { args: { label: 'A', size: 'large' + 'r' } };"
+    );
+  });
+
+  it('removes what pending edits emptied, and adds to what they created', () => {
+    const csf = parse(
+      `export default {};\nexport const A = { args: { a: 1 }, argTypes: { a: { defaultValue: 1 } } };\n`
+    );
+    const [story] = csf.objects({ meta: false });
+    story.remove(['argTypes', 'a', 'defaultValue']);
+    story.set(['parameters', 'docs', 'a'], 1);
+    story.set(['parameters', 'docs', 'b'], 2);
+    story.remove(['args', 'a']);
+
+    expect(printCsf(csf).code).toBe(
+      'export default {};\nexport const A = { parameters: { docs: { a: 1, b: 2 } } };\n'
+    );
+  });
+
+  it('commits a value that names a binding, whose references the next proof counts', () => {
+    const csf = parse(`export default {};\nconst base = { a: 1 };\nexport const A = {};\n`);
+    const [story] = csf.objects({ meta: false });
+
+    story.set(['args'], parseExpression('{ ...base }'));
+    expect(csf.editor.pending).toBe(false);
+    story.set(['args', 'b'], 2);
+    expect(csf.editor.pending).toBe(true);
+    expect(printCsf(csf).code).toContain('export const A = { args: { ...base, b: 2 } };');
+  });
+
+  it('adds the assignments of a story without an object once', () => {
+    const csf = parse(`export default {};\nexport const A = () => null;\n`);
+    const [story] = csf.objects({ meta: false });
+    story.set(['args', 'a'], 1);
+    story.set(['args', 'b'], 2);
+    story.set(['parameters', 'c'], 3);
+
+    expect(printCsf(csf).code).toBe(
+      'export default {};\nexport const A = () => null;\nA.args = { a: 1, b: 2 };\nA.parameters = { c: 3 };\n'
+    );
+  });
+
+  it('throws for a value that does not parse, as a commit does', () => {
+    const csf = parse(stories);
+    const [primary] = csf.objects({ meta: false });
+    const method = { m() {} }.m;
+
+    expect(() => primary.set(['args', 'm'], method as never)).toThrow();
+    expect(printCsf(csf).code).toBe(stories);
+  });
+
+  it('commits before writing to an object a root that cannot tell its pending edits wrote', () => {
+    const editor = new SourceEditor('const meta = preview.meta({});\nmeta.story();\n');
+    const call = () =>
+      (editor.program.body[1] as ESTree.ExpressionStatement).expression as ESTree.CallExpression;
+    const root = (): ObjectRoot => {
+      const [argument] = call().arguments;
+      if (argument?.type === 'ObjectExpression') {
+        return literalRoot(editor, argument);
+      }
+      const write = (members: { text: string }[]) =>
+        editor.edits.appendLeft(
+          call().end - 1,
+          `{ ${members.map((member) => member.text).join(', ')} }`
+        );
+      const none = () => {
+        throw new Error('no members');
+      };
+      return {
+        properties: [],
+        detached: false,
+        append: write,
+        prepend: write,
+        remove: none,
+        replaceValue: none,
+        rename: none,
+        group: none,
+        take: none,
+      };
+    };
+    const story = createCsfObject(
+      { kind: 'story', exportName: 'A', localName: 'A' },
+      { editor, root },
+      () => {},
+      () => {}
+    );
+
+    story.set(['args', 'a'], 1);
+    story.set(['args', 'b'], 2);
+    expect(editor.toString()).toBe(
+      'const meta = preview.meta({});\nmeta.story({ args: { a: 1, b: 2 } });\n'
+    );
+  });
+
+  it('commits raw edits that name a binding before a mutation, also after a refused one', () => {
+    const csf = parse(
+      `export default {};\nconst Base = { a: 1 };\nexport const A = { args: Base };\nexport const B = {};\n`
+    );
+    const [a, b] = csf.objects({ meta: false });
+    appendMembers(csf.editor, b.node!, ['args: Base']);
+
+    expect(a.set(['__proto__'], 1)).toMatchObject({ ok: false });
+    expect(a.set(['args', 'a'], 2)).toMatchObject({
+      ok: false,
+      diagnostic: { code: 'unsupported-member' },
+    });
+    expect(printCsf(csf).code).toContain('const Base = { a: 1 };');
+  });
+
+  it('lays out an append after a pending prepend to the same list as a commit between them', () => {
+    const csf = parse(`export default {};\nexport const A = { args: { list: [1] } };\n`);
+    const [a] = csf.objects({ meta: false });
+    a.prepend(['args', 'list'], 0);
+    a.append(['args', 'list'], parseExpression('() => {\n  return 1;\n}'));
+
+    expect(printCsf(csf).code).toBe(
+      'export default {};\nexport const A = { args: { list: [\n  0,\n  1,\n  () => {\n    return 1;\n  }\n] } };\n'
+    );
+  });
+
+  it('still throws for a read of an object that is gone', () => {
+    const csf = parse(stories);
+    const [primary] = csf.objects({ meta: false });
+    const statement = csf.editor.program.body[1];
+    csf.editor.edits.remove(statement.start, statement.end);
+    csf.editor.commit();
+
+    expect(() => primary.get(['args'])).toThrow('no longer exists');
+    expect(() => primary.inspect(['args'])).toThrow('no longer exists');
+  });
+
+  it('reads a config field after a pending mutation of it', () => {
+    const config = loadConfig("export default { framework: 'a' };").parse();
+    config.set(['framework'], { name: 'a', options: {} });
+
+    expect(config.getFieldNode(['framework'])?.type).toBe('ObjectExpression');
+    expect(config.getNameFromPath(['framework'])).toBe('a');
   });
 });

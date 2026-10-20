@@ -11,6 +11,7 @@ import {
   isStringLiteral,
   isValidIdentifier,
   derivedFrom,
+  locationOf,
   moduleOf,
   normalizeLineEndings,
   outerSpan,
@@ -227,14 +228,18 @@ export class SourceEditor {
    */
   commit() {
     if (!this.pending) {
+      // Edits that wrote what was there leave nothing to parse, and nothing to record either.
+      if (this._batch.touched.length > 0) {
+        this._batch = newBatch(this.code, this.fileName);
+      }
       return false;
     }
     let module = parsePrintable(this.edits.toString(), this.fileName);
     this._style ??= inferStyle(this._module);
     this._committed.push(this.edits);
-    let appended = this._appendedWithoutBlankLine
-      .map((statement) => committedStatement(this.edits, module, statement))
-      .filter((statement) => statement !== undefined);
+    let appended = committedStatements(this.edits, module, this._appendedWithoutBlankLine).filter(
+      (statement) => statement !== undefined
+    );
     // The blank lines go in as edits of their own, over the code just parsed.
     const apart = appended.filter((statement) => setsApart(module, statement));
     if (apart.length > 0) {
@@ -246,7 +251,7 @@ export class SourceEditor {
       this._committed.push(spacing);
       appended = appended
         .filter((statement) => !apart.includes(statement))
-        .map((statement) => committedStatement(spacing, module, statement))
+        .map((statement) => committedStatement(spacing, module, statement, new Set()))
         .filter((statement) => statement !== undefined);
     }
     this._appendedWithoutBlankLine = appended;
@@ -395,14 +400,14 @@ interface Batch {
   shapes: Map<string, Shape>;
 }
 
-/**
- * A write of a batch, in offsets of the code it edits: the span it replaced or removed and the
- * text it wrote there, or an empty span where it inserted the text.
- */
+// A write of a batch, in offsets of the code it edits: the span it replaced or removed and the text
+// it wrote there, or an empty span where it inserted the text.
 export interface Written {
   start: number;
   end: number;
   text: string;
+  // For an insert, the side of the offset it went to: the text before it or the text after it.
+  side?: 'left' | 'right';
   // Whether a `CsfObject` mutation made it and left it pending.
   staged?: boolean;
 }
@@ -414,6 +419,8 @@ export interface Shape {
   prepended: boolean;
   removed: boolean;
   keys: Set<string> | undefined;
+  // Whether the appends laid the items out on the list's line, as later appends keep them.
+  inline?: boolean;
 }
 
 // The writes `recording` knows the span of. Any other, such as `move` or `indent`, counts as a
@@ -444,49 +451,41 @@ const UNSPANNED_WRITES = [
 const recording = (edits: MagicString, touched: Written[]): MagicString => {
   const { length } = edits.original;
   const offset = (index: number) => (index < 0 ? Math.max(0, index + length) : index);
-  const write = (start: number, end: number, text: string) => {
-    touched.push({ start: offset(start), end: offset(end), text });
+  // Recorded once made, so a write that throws leaves no record.
+  const write = <T>(start: number, end: number, text: string, side: Written['side'], made: T) => {
+    touched.push({ start: offset(start), end: offset(end), text, ...(side ? { side } : {}) });
+    return made;
   };
   const base = MagicString.prototype;
   const writes: Pick<MagicString, SpannedWrite> = {
-    append: (text) => (write(length, length, text), base.append.call(edits, text)),
-    prepend: (text) => (write(0, 0, text), base.prepend.call(edits, text)),
-    appendLeft: (index, text) => (
-      write(index, index, text),
-      base.appendLeft.call(edits, index, text)
-    ),
-    appendRight: (index, text) => (
-      write(index, index, text),
-      base.appendRight.call(edits, index, text)
-    ),
-    prependLeft: (index, text) => (
-      write(index, index, text),
-      base.prependLeft.call(edits, index, text)
-    ),
-    prependRight: (index, text) => (
-      write(index, index, text),
-      base.prependRight.call(edits, index, text)
-    ),
+    append: (text) => write(length, length, text, 'left', base.append.call(edits, text)),
+    prepend: (text) => write(0, 0, text, 'right', base.prepend.call(edits, text)),
+    appendLeft: (index, text) =>
+      write(index, index, text, 'left', base.appendLeft.call(edits, index, text)),
+    appendRight: (index, text) =>
+      write(index, index, text, 'right', base.appendRight.call(edits, index, text)),
+    prependLeft: (index, text) =>
+      write(index, index, text, 'left', base.prependLeft.call(edits, index, text)),
+    prependRight: (index, text) =>
+      write(index, index, text, 'right', base.prependRight.call(edits, index, text)),
     // `overwrite` is an `update` that also replaces what was written at the span's ends.
     overwrite: (start, end, text, options) => {
       const { storeName, contentOnly } = typeof options === 'object' ? options : {};
-      write(start, end, text);
-      return base.update.call(edits, start, end, text, {
+      const made = base.update.call(edits, start, end, text, {
         storeName: storeName ?? options === true,
         overwrite: !contentOnly,
       });
+      return write(start, end, text, undefined, made);
     },
-    update: (start, end, text, options) => (
-      write(start, end, text),
-      base.update.call(edits, start, end, text, options)
-    ),
-    remove: (start, end) => (write(start, end, ''), base.remove.call(edits, start, end)),
+    update: (start, end, text, options) =>
+      write(start, end, text, undefined, base.update.call(edits, start, end, text, options)),
+    remove: (start, end) => write(start, end, '', undefined, base.remove.call(edits, start, end)),
   };
   Object.assign(edits, writes);
   for (const name of UNSPANNED_WRITES) {
     const method = base[name] as (...args: unknown[]) => MagicString;
     Object.assign(edits, {
-      [name]: (...args: unknown[]) => (write(0, length, ''), method.apply(edits, args)),
+      [name]: (...args: unknown[]) => write(0, length, '', undefined, method.apply(edits, args)),
     });
   }
   return edits;
@@ -532,15 +531,13 @@ const isSpan = (value: object): value is Span =>
   typeof (value as Partial<Span>).start === 'number' &&
   typeof (value as Partial<Span>).end === 'number';
 
-/** Whether a pending edit wrote inside a span, over it, or at one of its ends. */
+// Whether a pending edit wrote inside a span, over it, or at one of its ends.
 export const isWrittenAt = (editor: SourceEditor, span: Span) =>
   editor._batch.touched.some((written) => written.start <= span.end && span.start <= written.end);
 
-/**
- * Whether a pending edit replaced or removed text a span lies within or reaches past the ends of,
- * so its text is gone until the next commit. A span around the edited text is not. With
- * `stagedOnly`, only the edits `markStaged` marked count.
- */
+// Whether a pending edit replaced or removed text a span lies within or reaches past the ends of,
+// so its text is gone until the next commit. A span around the edited text is not. With
+// `stagedOnly`, only the edits `markStaged` marked count.
 export const isOverwritten = (editor: SourceEditor, span: Span, stagedOnly = false) =>
   editor._batch.touched.some(
     (written) =>
@@ -555,7 +552,7 @@ export const isOverwritten = (editor: SourceEditor, span: Span, stagedOnly = fal
       )
   );
 
-/** Mark the writes from the `from`th on as made by a `CsfObject` mutation that left them pending. */
+// Mark the writes from the `from`th on as made by a `CsfObject` mutation that left them pending.
 export const markStaged = (editor: SourceEditor, from: number) => {
   for (const written of editor._batch.touched.slice(from)) {
     written.staged = true;
@@ -567,7 +564,7 @@ const listKey = (list: Pick<List, 'open' | 'close'>) => `${list.open}:${list.clo
 
 const STATEMENTS = 'statements';
 
-/** What the batch did to a list so far, or to the top-level statements without a list. */
+// What the batch did to a list so far, or to the top-level statements without a list.
 export const shapeOf = (editor: SourceEditor, list?: Pick<List, 'open' | 'close'>) =>
   editor._batch.shapes.get(list ? listKey(list) : STATEMENTS);
 
@@ -593,14 +590,44 @@ const reshape = (
   shapes.set(key, shape);
 };
 
-/**
- * Record the keys of members written as statements under `owner`, such as `Story.name = value`
- * assignments after a story's declaration, so a lookup of one finds it pending.
- */
+// Record the keys of members written as statements under `owner`, such as `Story.name = value`
+// assignments after a story's declaration, so a lookup of one finds it pending.
 export const addKeys = (editor: SourceEditor, owner: Span, keys: readonly string[]) =>
   reshape(editor, `after:${owner.start}`, 'appended', keys);
 
-/** The keys `addKeys` recorded under `owner`. */
+// Whether pending edits wrote line breaks into a list on one line as parsed, which its items are
+// then laid out by when added at either end.
+export const addsLines = (editor: SourceEditor, list: Pick<List, 'open' | 'close'>) =>
+  !editor.code.slice(list.open, list.close).includes('\n') &&
+  editor._batch.touched.some(
+    (written) =>
+      list.open <= written.start && written.end <= list.close && written.text.includes('\n')
+  );
+
+// Record that edits renamed members of an object to `keys`, so a lookup of one finds it pending.
+export const nameMembers = (
+  editor: SourceEditor,
+  object: E.ObjectExpression,
+  keys: readonly string[]
+) => reshape(editor, listKey(objectList(editor, object)), 'appended', keys);
+
+// Where a span of the editor's code is in the code its pending edits make, as a commit would put
+// it; where it is in `code` when an edit cuts through one of its ends.
+export const locationIn = (editor: SourceEditor, span: Span) => {
+  const { code, edits } = editor;
+  if (editor._batch.touched.length > 0) {
+    try {
+      const start = normalizeLineEndings(edits.slice(0, span.start)).length;
+      const end = start + normalizeLineEndings(edits.slice(span.start, span.end)).length;
+      return locationOf(normalizeLineEndings(edits.toString()), start, end);
+    } catch {
+      // An edit cut through one of its ends.
+    }
+  }
+  return locationOf(code, span.start, span.end);
+};
+
+// The keys `addKeys` recorded under `owner`.
 export const addedKeys = (editor: SourceEditor, owner: Span) =>
   editor._batch.shapes.get(`after:${owner.start}`)?.keys;
 
@@ -1334,11 +1361,12 @@ const appendItems = (
   const { lists } = editor._batch;
   const key = listKey(list);
   const previous = lists.get(key);
-  lists.set(
-    key,
-    previous ? appendAfter(editor, list, previous, texts) : appendFirst(editor, list, texts)
-  );
+  const appended = previous
+    ? appendAfter(editor, list, previous, texts)
+    : appendFirst(editor, list, texts);
+  lists.set(key, appended);
   reshape(editor, key, 'appended', keys);
+  editor._batch.shapes.get(key)!.inline = appended.indent === undefined;
 };
 
 export const prependToList = (editor: SourceEditor, list: List, texts: string[]) =>
@@ -1446,7 +1474,7 @@ export const appendMembers = (editor: SourceEditor, object: E.ObjectExpression, 
 export const prependMembers = (editor: SourceEditor, object: E.ObjectExpression, texts: string[]) =>
   prependToList(editor, objectList(editor, object), texts);
 
-/** A member to add, with its key, which the object's shape records. */
+// A member to add, with its key, which the object's shape records.
 export interface NamedMember {
   key: string;
   text: string;
@@ -1486,6 +1514,7 @@ export const groupMembers = (
   const list = objectList(editor, object);
   members.forEach((member) => editor.assertCurrent(member));
   reshape(editor, listKey(list), 'removed');
+  reshape(editor, listKey(list), 'appended', [key]);
   const texts = members.map((member) => memberText(editor, object, member));
   const first = list.items.indexOf(members[0]);
   const multiline = editor.code.slice(object.start, object.end).includes('\n');
@@ -1669,7 +1698,7 @@ export const prependStatement = (editor: SourceEditor, text: string) => {
 };
 
 // Whether pending edits removed a span; one cutting through either end of it counts as that.
-const isRemoved = (editor: SourceEditor, span: Span) => {
+export const isRemoved = (editor: SourceEditor, span: Span) => {
   try {
     return editor.edits.slice(span.start, span.end) === '';
   } catch {
@@ -1704,8 +1733,9 @@ export const appendStatement = (editor: SourceEditor, text: string) => {
     editor.edits.append(`${output && !output.endsWith('\n') ? '\n' : ''}${text}\n`);
     return;
   }
-  // The text inserted last may lead with the blank line that set it apart.
-  const before = editor._batch.lastInsertedAfter.get(last)?.trim() ?? editor.source(last);
+  // The text inserted last may lead with the blank line that set it apart. The statement spans
+  // lines as edited.
+  const before = editor._batch.lastInsertedAfter.get(last)?.trim() ?? editedSource(editor, last);
   const multiline = text.includes('\n') || before.includes('\n');
   if (!multiline) {
     editor._appendedWithoutBlankLine.push(text);
@@ -1713,14 +1743,44 @@ export const appendStatement = (editor: SourceEditor, text: string) => {
   insertStatementAfter(editor, last, `${multiline ? '\n' : ''}${text}`);
 };
 
+// The source of a span with the pending edits inside it, or as parsed when one cuts through its ends.
+const editedSource = (editor: SourceEditor, span: Span) => {
+  try {
+    return editor.edits.slice(span.start, span.end);
+  } catch {
+    return editor.source(span);
+  }
+};
+
+// `committedStatement` of each of `statements`, the same text appended twice being two statements.
+const committedStatements = (
+  edits: SourceEdits,
+  module: ParsedModule,
+  statements: readonly (Node | string)[]
+) => {
+  const taken = new Set<Node>();
+  return [...statements]
+    .reverse()
+    .map((statement) => committedStatement(edits, module, statement, taken))
+    .reverse();
+};
+
 // Where a statement, or a text appended as one, is in `module`, the code `edits` produced.
+// A text is the last statement with that text that no later text of `taken` is.
 const committedStatement = (
   edits: SourceEdits,
   { code, program }: ParsedModule,
-  statement: Node | string
+  statement: Node | string,
+  taken: Set<Node>
 ) => {
   if (typeof statement === 'string') {
-    return program.body.findLast((node) => sourceOf(code, node) === statement);
+    const found = program.body.findLast(
+      (node) => !taken.has(node) && sourceOf(code, node) === statement
+    );
+    if (found) {
+      taken.add(found);
+    }
+    return found;
   }
   let start: number;
   try {

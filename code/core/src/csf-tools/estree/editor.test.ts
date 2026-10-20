@@ -207,9 +207,9 @@ describe('batch records', () => {
     editor.edits.append('x();\n');
     expect(editor._batch.touched).toEqual([
       { start: 10, end: 11, text: '3' },
-      { start: 12, end: 12, text: '\n// c' },
+      { start: 12, end: 12, text: '\n// c', side: 'left' },
       { start: 13, end: 26, text: '' },
-      { start: 26, end: 26, text: 'x();\n' },
+      { start: 26, end: 26, text: 'x();\n', side: 'left' },
     ]);
     expect(editor.toString()).toBe('const a = 3;\n// c\nx();\n');
   });
@@ -234,6 +234,7 @@ describe('batch records', () => {
       prepended: false,
       removed: false,
       keys: new Set(['b']),
+      inline: true,
     });
     expect(editor.toString()).toBe('export default { a: 1, b: 2 };\n');
   });

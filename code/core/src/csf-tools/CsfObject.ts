@@ -126,7 +126,9 @@ export interface CsfObject {
   readonly node: E.ObjectExpression | undefined;
   /**
    * Read a detached copy of the expression at a property path. For a CSF2 annotation, its
-   * annotation path returns the whole object. Missing fields return `undefined`.
+   * annotation path returns the whole object. Missing fields return `undefined`; so does a path
+   * through a value that is not an object literal, or one a spread, computed key, or duplicate field
+   * leaves unproven, which also adds a mutation diagnostic.
    *
    * @example
    * ```ts

@@ -17,7 +17,23 @@ It can parse MDX into CSF.
 `{ meta, stories }` narrows what is discovered; both are included by default. Story discovery also includes separate CSF2 parameter assignments, so callers use the same paths regardless of the source format.
 
 Each editor reads and writes static property paths with `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, and `group`.
-`get` returns an AST expression; `getValue` reads plain values from literals, nested arrays and objects, and local constants without executing code. Missing fields return `undefined`. Values that cannot be resolved statically return `undefined` and add a mutation diagnostic; reads never return a partially decoded object.
+`get` returns an AST expression; `getValue` reads plain values from literals, nested arrays and objects, and local constants without executing code. Reads never return a partially decoded object.
+
+`get` and `getValue` return `undefined` both for a field that is missing and for one that cannot be read statically. Only the second adds a `CsfMutationDiagnostic` to `mutationDiagnostics`. For `get` that is a path whose parent is not an object literal, or that a spread, a computed key, or a duplicate field leaves unproven; `getValue` also reports a value it cannot evaluate, such as a call or a function. A field written as `undefined` is `undefined` without a diagnostic too, but `get` returns its expression. Compare the diagnostics before and after a read to tell the cases apart:
+
+```ts
+const before = csf.mutationDiagnostics.length;
+const size = story.getValue(['args', 'size']);
+const [unreadable] = csf.mutationDiagnostics.slice(before);
+if (size === undefined && unreadable) {
+  // `args.size` may be set to a value that cannot be read statically: see `unreadable.code`
+} else if (size === undefined) {
+  // `args.size` is missing, or written as `undefined`
+}
+```
+
+Read diagnostics count like mutation ones, so `writeConfig` refuses a config after a read that added one.
+
 `set` accepts an expression from `get` or `parseExpression`, or plain strings, numbers, booleans, `null`, `undefined`, and nested arrays or objects of those values and expressions. An object whose `type` names an AST node is rejected with a diagnostic unless it came from `get` or `parseExpression`. Plain values are printed into the source, so later changes to the input do not affect the file.
 An expression from `get` is indented as if its line had no indent, and `set` and `transform` indent a value's lines like the line of the field it is written to, so a value copied between fields keeps its layout.
 Successful removals and moves recursively remove empty source parents, stopping at the editor's root object or an empty parent that shadows an earlier spread or computed key. Removing a field that could reveal an earlier spread value produces a diagnostic. Moves clean up after inserting the destination, so shared ancestors remain intact. Unrelated empty objects are preserved.

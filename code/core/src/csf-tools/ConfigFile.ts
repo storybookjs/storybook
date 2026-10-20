@@ -244,7 +244,9 @@ export class ConfigFile implements CsfObject {
   }
 
   /**
-   * Read a detached copy of the expression at a property path. Missing fields return `undefined`.
+   * Read a detached copy of the expression at a property path. Missing fields return `undefined`;
+   * so does a path through a value that is not an object literal, or one a spread, computed key, or
+   * duplicate field leaves unproven, which also adds a mutation diagnostic.
    *
    * @example
    * ```ts

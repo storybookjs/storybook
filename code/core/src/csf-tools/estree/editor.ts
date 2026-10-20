@@ -1341,18 +1341,21 @@ export const insertStatementAfter = (editor: SourceEditor, statement: Span, text
   const terminator =
     !endsStatement(body) && CONTINUES_STATEMENT.test(code.slice(next).trimStart()) ? ';' : '';
   const line = `${lead}${separator}${body}${terminator}`;
-  if (next === code.length) {
-    edits.appendRight(next, `\n${line}`);
+  const lineBreak = lineEnd(code, next);
+  const shared = keepsCode(editor, end, lineBreak);
+  if (!shared && lineBreak === code.length) {
+    edits.appendRight(code.length, `\n${line}`);
     return;
   }
-  // At the start of the next line, or of the code sharing the statement's line, which a line break
-  // moves to a line of its own: not at the statement's end, which can be its last expression's
-  // end, where later text belongs to the expression, and left of the next statement, where text
-  // belongs to that one. A removal of the statement keeps text there.
-  const at = code[next] === '\n' ? next + 1 : next;
-  if (at === next && !batch.insertedAt.has(at) && !isRemoved(editor, statement)) {
-    pullUpSemicolon(editor, statement);
-    if (next > end) {
+  // At a line start the batch tracks, so a removal around it keeps the text: of the next line, or
+  // of the code sharing the statement's line, which a line break moves to a line of its own. Not
+  // at the statement's end, which can be its last expression's end, where later text belongs to
+  // the expression.
+  const at = shared ? next : lineBreak + 1;
+  if (shared && !batch.insertedAt.has(at) && !isRemoved(editor, statement)) {
+    if (pullUpSemicolon(editor, statement, '\n')) {
+      edits.remove(end, next);
+    } else if (next > end) {
       edits.overwrite(end, next, '\n');
     } else {
       edits.appendLeft(end, '\n');
@@ -1402,23 +1405,23 @@ export const prependStatement = (editor: SourceEditor, text: string) => {
   );
 };
 
-// Whether pending edits removed a span; one cutting through either end of it counts as that.
-const isRemoved = (editor: SourceEditor, span: Span) => {
+// The code between two offsets as pending edits leave it, unless an edit cuts through either end.
+const pendingSource = (editor: SourceEditor, start: number, end: number) => {
   try {
-    return editor.edits.slice(span.start, span.end) === '';
+    return editor.edits.slice(start, end);
   } catch {
-    return true;
+    return undefined;
   }
 };
 
-// Whether code is left between two offsets once the pending edits are made.
-const keepsCode = (editor: SourceEditor, start: number, end: number) => {
-  try {
-    return editor.edits.slice(start, end).trim() !== '';
-  } catch {
-    return editor.code.slice(start, end).trim() !== '';
-  }
-};
+// Whether pending edits removed a span; one cutting through either end of it counts as that.
+const isRemoved = (editor: SourceEditor, span: Span) =>
+  (pendingSource(editor, span.start, span.end) ?? '') === '';
+
+// Whether code is left between two offsets once the pending edits are made, as written where an
+// edit cuts through either end. Only inserted statements add code between statements.
+const keepsCode = (editor: SourceEditor, start: number, end: number) =>
+  editor.code.slice(start, end).trim() !== '' && pendingSource(editor, start, end)?.trim() !== '';
 
 // `remove`, split around the statements inserted inside the range, as removing a range clears what
 // other edits wrote inside it.
@@ -1435,9 +1438,10 @@ const removeKeeping = (editor: SourceEditor, start: number, end: number) => {
 
 // Put the `;` that ends a statement at the start of a line back after the statement's code, before
 // the comments between them, for when nothing else is left on that line: `a = 1 // c\n;` becomes
-// `a = 1; // c`.
-const pullUpSemicolon = (editor: SourceEditor, statement: Span) => {
-  const { code, comments } = editor;
+// `a = 1; // c`. `lineBreak` takes the place of the `;` and the line breaks before it. Returns
+// whether it moved the `;`.
+const pullUpSemicolon = (editor: SourceEditor, statement: Span, lineBreak = '') => {
+  const { code, edits } = editor;
   const semicolon = statement.end - 1;
   if (
     code[semicolon] !== ';' ||
@@ -1446,18 +1450,29 @@ const pullUpSemicolon = (editor: SourceEditor, statement: Span) => {
     statementEnd(editor, statement) !== statement.end ||
     isRemoved(editor, { start: semicolon, end: statement.end })
   ) {
-    return;
+    return false;
   }
   const trimmedEnd = (index: number) =>
     statement.start + code.slice(statement.start, index).trimEnd().length;
-  const inside = comments.filter((c) => c.start > statement.start && c.end <= semicolon);
   const contentEnd = trimmedEnd(semicolon);
   let codeEnd = contentEnd;
-  while (inside.at(-1)?.end === codeEnd) {
-    codeEnd = trimmedEnd(inside.pop()!.start);
+  for (
+    let comment = commentAt(editor, codeEnd, 'end');
+    comment && comment.start > statement.start;
+    comment = commentAt(editor, codeEnd, 'end')
+  ) {
+    codeEnd = trimmedEnd(comment.start);
   }
-  editor.edits.remove(contentEnd, statement.end);
-  editor.edits.appendRight(codeEnd, ';');
+  const replacement = codeEnd === contentEnd ? `;${lineBreak}` : lineBreak;
+  if (codeEnd < contentEnd) {
+    edits.appendRight(codeEnd, ';');
+  }
+  if (replacement) {
+    edits.overwrite(contentEnd, statement.end, replacement);
+  } else {
+    edits.remove(contentEnd, statement.end);
+  }
+  return true;
 };
 
 /**
@@ -1474,7 +1489,10 @@ export const appendStatement = (editor: SourceEditor, text: string) => {
     return;
   }
   // The text inserted last may lead with the blank line that set it apart.
-  const before = editor._batch.lastInsertedAfter.get(last)?.trim() ?? editor.source(last);
+  const before =
+    editor._batch.lastInsertedAfter.get(last)?.trim() ??
+    pendingSource(editor, last.start, last.end) ??
+    editor.source(last);
   const multiline = text.includes('\n') || before.includes('\n');
   if (!multiline) {
     editor._appendedWithoutBlankLine.push(text);
@@ -1555,7 +1573,14 @@ export const removeStatement = (editor: SourceEditor, statement: Span, atTop?: b
     editor.edits.remove(start, end + /^[^\S\n]*/.exec(code.slice(end))![0].length);
     return;
   }
-  if (keepsCode(editor, from, start)) {
+  // A removed statement that ends on the line leaves no code there.
+  const removedUpTo = () => {
+    const spanning = editor.program.body.find(
+      (node) => node.start < from && from < node.end && node.end <= start
+    );
+    return spanning && isRemoved(editor, spanning) ? statementEnd(editor, spanning) : from;
+  };
+  if (keepsCode(editor, from, start) && keepsCode(editor, removedUpTo(), start)) {
     // Code stays before it on the line: take the spaces after that code.
     editor.edits.remove(start - /[^\S\n]*$/.exec(code.slice(from, start))![0].length, end);
     const previous = editor.program.body.findLast(

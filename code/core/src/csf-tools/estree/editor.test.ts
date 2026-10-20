@@ -894,12 +894,23 @@ describe('removeStatement', () => {
     expect(kept.toString()).toBe('const a = 1 // c\n;b();\n');
   });
 
-  it('removes a statement with the `;` put back on its line, and the line that `;` was on', () => {
-    const editor = new SourceEditor('const a = 1 // c\n;[1].map(f)\nfoo();\n');
-    const [a, map] = editor.program.body;
-    removeStatement(editor, map);
-    removeStatement(editor, a);
-    expect(editor.toString()).toBe('foo();\n');
+  it.each([false, true])(
+    'removes a statement ending with a `;` on the next line, and the code after that `;`, the statement first: %s',
+    (statementFirst) => {
+      const editor = new SourceEditor('const a = 1 // c\n;[1].map(f)\nfoo();\n');
+      const [a, map] = editor.program.body;
+      for (const statement of statementFirst ? [a, map] : [map, a]) {
+        removeStatement(editor, statement);
+      }
+      expect(editor.toString()).toBe('foo();\n');
+    }
+  );
+
+  it('appends below a statement whose `;` was put back on its line without a blank line', () => {
+    const editor = new SourceEditor('const a = 1 // c\n;[1].map(f)\n');
+    removeStatement(editor, editor.program.body[1]);
+    appendStatement(editor, 'const x = 1;');
+    expect(editor.toString()).toBe('const a = 1; // c\nconst x = 1;\n');
   });
 
   it('removes the line of statements that shared it with a removed one', () => {
@@ -1036,6 +1047,29 @@ describe('insertStatementAfter', () => {
     insertStatementAfter(editor, editor.program.body[0], 'const x = 1;');
     expect(editor.toString()).toBe('const a = 1; // c\nconst x = 1;\n[1].map(f)\n');
   });
+
+  it('keeps a statement inserted after one ending with a `;` on the next line when that one is removed', () => {
+    const editor = new SourceEditor('const a = 1 // c\n;[1].map(f)\n');
+    const [a] = editor.program.body;
+    insertStatementAfter(editor, a, 'x();');
+    removeStatement(editor, a);
+    expect(editor.toString()).toBe('x();\n[1].map(f)\n');
+  });
+
+  it.each([
+    ['a(); b();\nc();\n', 'a();\nx();\nc();\n'],
+    ['a(); b();', 'a();\nx();'],
+    ['const a = 1 // c\n;[1].map(f)\n', 'const a = 1; // c\nx();\n'],
+  ])(
+    'inserts on the next line after a statement whose line had code removed: %j',
+    (code, output) => {
+      const editor = new SourceEditor(code);
+      const [a, b] = editor.program.body;
+      removeStatement(editor, b);
+      insertStatementAfter(editor, a, 'x();');
+      expect(editor.toString()).toBe(output);
+    }
+  );
 });
 
 describe('insertAfterImports', () => {

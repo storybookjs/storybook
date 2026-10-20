@@ -407,6 +407,29 @@ describe('check-docs', () => {
       const errors = await checkSnippetCsfOrder(docsDir);
       expect(errors.length).toBe(1);
     });
+    it('errors when a common CSF 3 block comes before a renderer CSF Next block', async () => {
+      await writeFile(
+        path.join(snippetsDir, 'foo.md'),
+        [csf3('common'), next('react')].join('\n\n')
+      );
+      const errors = await checkSnippetCsfOrder(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].line).toBe(1);
+    });
+    it('fixes the order across common and renderer blocks', async () => {
+      const file = path.join(snippetsDir, 'foo.md');
+      await writeFile(
+        file,
+        [csf3('common'), next('react'), next('vue'), block('renderer="svelte"'), ''].join('\n\n')
+      );
+
+      await fixSnippetCsfOrder(docsDir);
+
+      expect(await fs.readFile(file, 'utf8')).toBe(
+        [next('react'), next('vue'), csf3('common'), block('renderer="svelte"'), ''].join('\n\n')
+      );
+      expect(await checkSnippetCsfOrder(docsDir)).toEqual([]);
+    });
     it('fixes the order, moving attached comments with their block', async () => {
       const file = path.join(snippetsDir, 'foo.md');
       await writeFile(

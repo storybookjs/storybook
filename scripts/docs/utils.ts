@@ -199,33 +199,80 @@ function parseCsfTabTitle(tabTitle = ''): { version?: CsfVersion; base: string }
   };
 }
 
-/**
- * Groups the CSF 3 and CSF Next segments of a snippet file. Segments in a group are alternatives
- * of the same example for one renderer, language, and package manager.
- */
-export function getCsfSegmentGroups(segments: SnippetSegment[]) {
-  const groups = new Map<string, { segment: SnippetSegment; version: CsfVersion }[]>();
-  for (const segment of segments) {
-    const { renderer, language, packageManager, tabTitle } = segment.attributes;
+interface CsfSegment {
+  segment: SnippetSegment;
+  version: CsfVersion;
+  /** Everything except the renderer that decides whether two segments are versions of one tab */
+  key: string;
+}
+
+function getCsfSegments(segments: SnippetSegment[]): CsfSegment[] {
+  return segments.flatMap((segment) => {
+    const { language, packageManager, tabTitle } = segment.attributes;
     const { version, base } = parseCsfTabTitle(tabTitle);
-    if (!version) continue;
-    const key = [renderer, language, packageManager, base].join('|');
-    groups.set(key, [...(groups.get(key) ?? []), { segment, version }]);
-  }
+    return version ? [{ segment, version, key: [language, packageManager, base].join('|') }] : [];
+  });
+}
+
+/**
+ * The docs site shows a reader the blocks for their renderer plus all `common` blocks, so two
+ * segments can appear together if either one is `common`.
+ */
+function canShareView(a: SnippetSegment, b: SnippetSegment) {
+  const rendererA = a.attributes.renderer;
+  const rendererB = b.attributes.renderer;
+  return rendererA === rendererB || rendererA === 'common' || rendererB === 'common';
+}
+
+/**
+ * Groups the CSF 3 and CSF Next segments of a snippet file. A group holds every segment that can
+ * appear as the same tab in one reader's view, including through a shared `common` segment.
+ */
+export function getCsfSegmentGroups(segments: SnippetSegment[]): CsfSegment[][] {
+  const csfSegments = getCsfSegments(segments);
+  const groupOf = csfSegments.map((_, idx) => idx);
+  const findGroup = (idx: number): number =>
+    groupOf[idx] === idx ? idx : (groupOf[idx] = findGroup(groupOf[idx]));
+
+  csfSegments.forEach((a, i) => {
+    csfSegments.forEach((b, j) => {
+      if (j > i && a.key === b.key && canShareView(a.segment, b.segment)) {
+        groupOf[findGroup(j)] = findGroup(i);
+      }
+    });
+  });
+
+  const groups = new Map<number, CsfSegment[]>();
+  csfSegments.forEach((csfSegment, idx) => {
+    const group = findGroup(idx);
+    groups.set(group, [...(groups.get(group) ?? []), csfSegment]);
+  });
   return [...groups.values()];
 }
 
 /**
- * Returns the CSF 3 segments that come before their CSF Next counterpart.
+ * Returns the CSF 3 segments that come before their CSF Next counterpart in any reader's view.
+ * A view is one renderer's blocks plus the `common` blocks, as the docs site shows them.
  */
 export function getMisorderedCsfSegments(lines: string[]): SnippetSegment[] {
-  return getCsfSegmentGroups(getSnippetSegments(lines)).flatMap((group) => {
-    const firstNext = group.findIndex(({ version }) => version === 'next');
-    const firstCsf3 = group.findIndex(({ version }) => version === 'csf3');
-    return firstNext > -1 && firstCsf3 > -1 && firstCsf3 < firstNext
-      ? [group[firstCsf3].segment]
-      : [];
-  });
+  const csfSegments = getCsfSegments(getSnippetSegments(lines));
+  const renderers = new Set(csfSegments.map(({ segment }) => segment.attributes.renderer));
+  const misordered = new Set<SnippetSegment>();
+
+  for (const renderer of renderers) {
+    const view = csfSegments.filter(({ segment }) =>
+      [renderer, 'common'].includes(segment.attributes.renderer)
+    );
+    for (const key of new Set(view.map((csfSegment) => csfSegment.key))) {
+      const tab = view.filter((csfSegment) => csfSegment.key === key);
+      const firstNext = tab.findIndex(({ version }) => version === 'next');
+      const firstCsf3 = tab.findIndex(({ version }) => version === 'csf3');
+      if (firstNext > -1 && firstCsf3 > -1 && firstCsf3 < firstNext) {
+        misordered.add(tab[firstCsf3].segment);
+      }
+    }
+  }
+  return [...misordered].sort((a, b) => a.start - b.start);
 }
 
 /**

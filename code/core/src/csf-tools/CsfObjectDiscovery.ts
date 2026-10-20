@@ -293,7 +293,7 @@ const assignmentsOf = (csf: CsfFile, binding: StoryBinding) => {
   let shared: Rejection | undefined;
   const references = editor.scopes.program.bindings.get(binding.localName)?.references ?? [];
   for (const reference of references) {
-    // An `export` of the declaration counts as a reference.
+    // An `export` of the declaration, or a TS declaration of its name, counts as a reference.
     if (reference.type !== 'Identifier' && reference.type !== 'JSXIdentifier') {
       continue;
     }

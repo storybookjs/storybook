@@ -1,8 +1,18 @@
 import { visitorKeys } from 'oxc-parser';
 import { describe, expect, it } from 'vitest';
 
-import { type E, parseModule } from './ast.ts';
+import { type E, type Node, parseModule, walk } from './ast.ts';
 import { TS_EXPRESSIONS, TS_TYPES, analyzeScopes, generateUid } from './scope.ts';
+
+const identifiersNamed = (program: E.Program, name: string) => {
+  const found: Node[] = [];
+  walk(program, (node) => {
+    if (node.type === 'Identifier' && node.name === name) {
+      found.push(node);
+    }
+  });
+  return found;
+};
 
 const programBindings = (code: string) => {
   const { program } = parseModule(code, 'file.tsx');
@@ -69,6 +79,18 @@ describe('analyzeScopes', () => {
     ['a parameter annotation', 'import { T } from "x"; function f(a: T) {}', 0],
     ['a method signature name', 'const get = 1; interface I { get(): void }', 1],
     ['a computed type key', 'const K = Symbol(); type X = { [K]: true };', 1],
+    ['a same-named type alias', 'const T = 1; type T = string;', 1],
+    [
+      'a namespace merged into a function',
+      'function F() {} namespace F { export const a = 1; }',
+      1,
+    ],
+    ['an ambient signature in a block', 'function f() {} { declare function f(): void; }', 1],
+    [
+      'an enum that shadows an import',
+      'import { Color } from "x"; function f() { enum Color { A } return Color.A; }',
+      2,
+    ],
   ])('counts type references like Babel: %s', (_, code, references) => {
     const [first] = Object.values(programBindings(code));
     expect(first.references).toBe(references);
@@ -161,6 +183,41 @@ describe('analyzeScopes', () => {
     const statement = (loop.body as E.BlockStatement).body[1] as E.ExpressionStatement;
     const call = (statement.expression as E.CallExpression).callee;
     expect(info.bindingOf(call)).toMatchObject({ name: 'f', constant: false });
+  });
+
+  it.each([
+    'function f(a) { if (a) { var a = 1; } return a; }',
+    'const f = (a) => { if (a) { var a = 1; } return a; };',
+    'const o = { m(a) { if (a) { var a = 1; } return a; } };',
+  ])('keeps one binding for a body `var` that redeclares a parameter: %s', (code) => {
+    const { program } = parseModule(code, 'file.ts');
+    const info = analyzeScopes(program);
+    const [param, test, declared, returned] = identifiersNamed(program, 'a');
+    const binding = info.bindingOf(param);
+    expect(info.bindingOf(declared)).toBe(binding);
+    expect(binding).toMatchObject({ kind: 'param', constant: false, references: [test, returned] });
+  });
+
+  it.each(['(a) => (a) => a', '(a) => class a {}', '(a) => function a() { return a; }'])(
+    'keeps a parameter apart from the function or class an arrow returns: %s',
+    (code) => {
+      const { program } = parseModule(code, 'file.ts');
+      const info = analyzeScopes(program);
+      const [outer, inner] = identifiersNamed(program, 'a');
+      expect(info.bindingOf(outer)).toMatchObject({ constant: true, references: [] });
+      expect(info.bindingOf(inner)).not.toBe(info.bindingOf(outer));
+    }
+  );
+
+  it('counts exports and overloads inside a namespace like Babel', () => {
+    const { program } = parseModule(
+      'namespace N { export function f(): void; export function f(a?: number) {} f(); }',
+      'file.ts'
+    );
+    const block = (program.body[0] as E.TSModuleDeclaration).body as E.TSModuleBlock;
+    const implementation = block.body[1] as E.ExportNamedDeclaration;
+    const id = (implementation.declaration as E.Function).id!;
+    expect(analyzeScopes(program).bindingOf(id)?.references).toHaveLength(3);
   });
 
   it('does not bind TS enums or `declare global` vars at the top level', () => {

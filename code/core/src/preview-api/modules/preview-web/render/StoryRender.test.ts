@@ -566,6 +566,48 @@ describe('StoryRender', () => {
       expect(window.location.reload).not.toHaveBeenCalled();
     });
 
+    it('leaves the cleanups of another render of the same story alone', async () => {
+      const [beforeEachGate, openBeforeEachGate] = createGate();
+      const cleanup = vi.fn();
+      const siblingCleanup = vi.fn();
+      const store = buildStoreWithCleanups();
+      const story = buildStory({
+        applyBeforeEach: vi.fn(async () => {
+          await beforeEachGate;
+          return [cleanup];
+        }),
+      });
+      const render = new StoryRender(
+        new Channel({}),
+        store,
+        {} as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        story
+      );
+      const sibling = new StoryRender(
+        new Channel({}),
+        store,
+        {} as any,
+        entry.id,
+        'docs',
+        { autoplay: true },
+        buildStory({ applyBeforeEach: vi.fn(async () => [siblingCleanup]) })
+      );
+
+      render.renderToElement({} as any);
+      await vi.waitFor(() => expect(story.applyBeforeEach).toHaveBeenCalledOnce());
+      const tearingDown = render.teardown();
+      await sibling.renderToElement({} as any);
+      openBeforeEachGate();
+      await tearingDown;
+
+      expect(cleanup).toHaveBeenCalledOnce();
+      expect(siblingCleanup).not.toHaveBeenCalled();
+      expect(window.location.reload).not.toHaveBeenCalled();
+    });
+
     it('keeps the cleanups of a remounted render until its teardown', async () => {
       const cleanup = vi.fn();
       const store = buildStoreWithCleanups();

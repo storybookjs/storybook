@@ -105,10 +105,12 @@ describe('js package manager util', () => {
         '@storybook/*',
         'eslint-plugin-storybook',
         '@chromatic-com/storybook',
+        'chromatic',
       ])
     ).toBe(true);
     expect(hasStorybookMinimumAgeExclusions(['storybook', '@storybook/react-vite'])).toBe(false);
-    expect(hasStorybookMinimumAgeExclusions(['*storybook*'])).toBe(true);
+    expect(hasStorybookMinimumAgeExclusions(['*storybook*', 'chromatic'])).toBe(true);
+    expect(hasStorybookMinimumAgeExclusions(['*storybook*'])).toBe(false);
   });
 
   it('builds rerun guidance', () => {

@@ -19,7 +19,7 @@ import type {
 import { ChevronSmallUpIcon, PlayAllHollowIcon, SweepIcon } from '@storybook/icons';
 
 import { internal_fullTestProviderStore } from '#manager-stores';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { Optional } from '../Optional/Optional.tsx';

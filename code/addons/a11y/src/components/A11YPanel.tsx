@@ -4,7 +4,7 @@ import { Badge, Button } from 'storybook/internal/components';
 
 import { SyncIcon } from '@storybook/icons';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { RuleType } from '../types.ts';
 import { useA11yContext } from './A11yContext.tsx';

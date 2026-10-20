@@ -2,7 +2,7 @@ import type { FC, ReactNode } from 'react';
 import React from 'react';
 
 import { Tabs } from 'react-aria-components/Tabs';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { Bar } from '../Bar/Bar.tsx';
 import { EmptyTabContent } from './EmptyTabContent.tsx';

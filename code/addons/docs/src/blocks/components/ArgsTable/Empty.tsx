@@ -5,7 +5,7 @@ import { EmptyTabContent, Link } from 'storybook/internal/components';
 
 import { DocumentIcon } from '@storybook/icons';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 interface EmptyProps {
   inAddonPanel?: boolean;

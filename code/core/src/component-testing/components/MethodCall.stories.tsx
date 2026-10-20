@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { styled, typography } from 'storybook/theming';
+import { styled, typography } from 'storybook/theming/internal';
 
 import type { Call } from '../../instrumenter/types.ts';
 import { MethodCall, Node } from './MethodCall.tsx';

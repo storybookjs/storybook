@@ -1,7 +1,7 @@
 import React, { useCallback, type FC } from 'react';
 
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { PRE_REVIEW_RETURN_KEY } from '../constants.ts';
 import { useReviewContext } from '../review-context.ts';

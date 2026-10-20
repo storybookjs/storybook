@@ -11,7 +11,7 @@ import {
   shortcutMatchesShortcut,
   shortcutToHumanString,
 } from 'storybook/manager-api';
-import { keyframes, styled } from 'storybook/theming';
+import { keyframes, styled } from 'storybook/theming/internal';
 
 import SettingsFooter from './SettingsFooter.tsx';
 

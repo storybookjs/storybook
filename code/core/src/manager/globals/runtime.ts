@@ -16,7 +16,7 @@ import * as ICONS from '@storybook/icons';
 
 import * as MANAGER_API from 'storybook/manager-api';
 import * as TEST from 'storybook/test';
-import * as THEMING from 'storybook/theming';
+import * as THEMING from 'storybook/theming/internal';
 import * as THEMINGCREATE from 'storybook/theming/create';
 
 import type { globalsNameReferenceMap } from './globals.ts';
@@ -38,6 +38,7 @@ export const globalsNameValueMap: Required<Record<keyof typeof globalsNameRefere
   'storybook/manager-api': MANAGER_API,
 
   'storybook/theming': THEMING,
+  'storybook/theming/internal': THEMING,
   'storybook/theming/create': THEMINGCREATE,
 
   'storybook/test': TEST,

@@ -2,7 +2,7 @@ import React, { type RefObject } from 'react';
 
 import { transparentize } from 'polished';
 import type { API, IndexHash } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { getAncestorIds } from '../../utils/tree.ts';
 import { CollapseIcon } from './CollapseIcon.tsx';

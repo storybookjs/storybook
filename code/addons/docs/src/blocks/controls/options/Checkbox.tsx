@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { getControlId } from '../helpers';
 import type { ControlProps, NormalizedOptionsConfig, OptionsMultiSelection } from '../types';

@@ -6,7 +6,7 @@ import { ChevronSmallLeftIcon, ChevronSmallRightIcon } from '@storybook/icons';
 import { useTab, useTabList } from 'react-aria/useTabList';
 import type { TabListState } from 'react-stately/useTabListState';
 import type { Node } from '@react-types/shared';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { Button } from '../Button/Button.tsx';
 import type { useTabsState } from './TabsView.tsx';

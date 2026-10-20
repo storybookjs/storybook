@@ -2,7 +2,7 @@ import React from 'react';
 
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import preview from '../../../../.storybook/preview.tsx';
 import { results } from '../results.mock.ts';

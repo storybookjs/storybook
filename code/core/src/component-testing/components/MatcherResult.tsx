@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { styled, typography } from 'storybook/theming';
+import { styled, typography } from 'storybook/theming/internal';
 
 import { useAnsiToHtmlFilter } from '../utils.ts';
 import { Node } from './MethodCall.tsx';

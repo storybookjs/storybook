@@ -6,7 +6,7 @@ import { LinuxIcon } from '@storybook/icons';
 
 import type { StoryAnnotations } from 'storybook/internal/types';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import preview from '../../../../../.storybook/preview.tsx';
 import { Select } from './Select.tsx';

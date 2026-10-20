@@ -1,4 +1,4 @@
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { Button } from '../Button/Button.tsx';
 import { Checkbox } from './Checkbox.tsx';

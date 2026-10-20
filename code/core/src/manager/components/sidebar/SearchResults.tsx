@@ -10,7 +10,7 @@ import { TrashIcon } from '@storybook/icons';
 import type { ControllerStateAndHelpers } from 'downshift';
 import { transparentize } from 'polished';
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming';
+import { styled, useTheme } from 'storybook/theming/internal';
 
 import { matchesKeyCode, matchesModifiers } from '../../keybinding.ts';
 import { getStatus } from '../../utils/status.tsx';

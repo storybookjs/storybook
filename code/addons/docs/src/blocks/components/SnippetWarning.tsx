@@ -4,7 +4,7 @@ import React from 'react';
 import { Button } from 'storybook/internal/components';
 
 import { AlertIcon } from '@storybook/icons';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 export const SNIPPET_WARNING_LABEL = 'Incomplete code snippet';
 

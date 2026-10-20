@@ -7,7 +7,7 @@ import { CloseAltIcon } from '@storybook/icons';
 
 import { darken, lighten, transparentize } from 'polished';
 import type { Step, TooltipRenderProps } from 'react-joyride';
-import { color, styled } from 'storybook/theming';
+import { color, styled } from 'storybook/theming/internal';
 
 const ONBOARDING_ARROW_STYLE_ID = 'storybook-onboarding-arrow-style';
 

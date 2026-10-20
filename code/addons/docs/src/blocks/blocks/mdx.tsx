@@ -7,7 +7,7 @@ import { NAVIGATE_URL } from 'storybook/internal/core-events';
 
 import { LinkIcon } from '@storybook/icons';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { Source } from '../components';
 import type { DocsContextProps } from './DocsContext';

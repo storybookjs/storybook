@@ -1,7 +1,7 @@
 import React, { forwardRef } from 'react';
 
 import TextareaAutoResize from 'react-textarea-autosize';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import {
   type Alignments,

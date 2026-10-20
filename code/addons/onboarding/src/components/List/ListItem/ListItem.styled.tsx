@@ -1,4 +1,4 @@
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 export const ListItemWrapper = styled.li(() => ({
   display: 'flex',

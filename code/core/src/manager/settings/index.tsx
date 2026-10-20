@@ -10,7 +10,7 @@ import { global } from '@storybook/global';
 import { CloseIcon } from '@storybook/icons';
 
 import { types, useStorybookApi, useStorybookState } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { menuTool } from '../components/preview/tools/menu.tsx';
 import { matchesKeyCode, matchesModifiers } from '../keybinding.ts';

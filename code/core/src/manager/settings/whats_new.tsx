@@ -7,7 +7,7 @@ import { global } from '@storybook/global';
 import { AlertIcon as AlertIconSvg, EyeCloseIcon, EyeIcon, HeartIcon } from '@storybook/icons';
 
 import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming';
+import { styled, useTheme } from 'storybook/theming/internal';
 
 import { useCopyButton } from '../../shared/useCopyButton.ts';
 

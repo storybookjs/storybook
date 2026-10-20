@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 interface ButtonProps {
   /** Is this the principal call to action on the page? */

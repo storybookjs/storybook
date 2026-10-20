@@ -6,7 +6,7 @@ import { codeCommon } from 'storybook/internal/components';
 import Markdown from 'markdown-to-jsx';
 import { transparentize } from 'polished';
 import type { CSSObject } from 'storybook/theming';
-import { srOnlyStyles, srOnlyUnsetStyles, styled } from 'storybook/theming';
+import { srOnlyStyles, srOnlyUnsetStyles, styled } from 'storybook/theming/internal';
 
 import type { ArgControlProps } from './ArgControl';
 import { ArgControl } from './ArgControl';

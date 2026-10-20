@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { type API } from 'storybook/manager-api';
-import { ThemeProvider, convert } from 'storybook/theming';
+import { ThemeProvider, convert } from 'storybook/theming/internal';
 
 import { ADDON_ONBOARDING_CHANNEL } from './constants.ts';
 import { IntentSurvey } from './features/IntentSurvey/IntentSurvey.tsx';

@@ -2,7 +2,7 @@ import type { ComponentProps } from 'react';
 import React, { memo, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { keyframes, styled } from 'storybook/theming';
+import { keyframes, styled } from 'storybook/theming/internal';
 
 const Shape = styled.svg(({ color }) => ({
   fill: color,

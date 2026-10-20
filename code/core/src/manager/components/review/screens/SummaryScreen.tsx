@@ -17,7 +17,7 @@ import {
   ScrollArea,
   ToggleButton,
 } from 'storybook/internal/components';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import {
   CheckIcon,

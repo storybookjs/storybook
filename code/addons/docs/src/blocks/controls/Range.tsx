@@ -2,7 +2,7 @@ import type { ChangeEvent, FC } from 'react';
 import React, { useMemo } from 'react';
 
 import { darken, lighten, rgba } from 'polished';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { parse } from './Number';
 import { getControlId } from './helpers';

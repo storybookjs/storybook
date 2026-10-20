@@ -1,5 +1,5 @@
 import type { CSSObject } from 'storybook/theming';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { headerCommon, withReset } from '../lib/common.tsx';
 

@@ -3,7 +3,7 @@ import React from 'react';
 
 import { Button } from 'storybook/internal/components';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { Brand } from './Brand.tsx';
 import type { MenuList, SidebarMenuProps } from './Menu.tsx';

@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 export interface SeparatorProps {
   force?: boolean;

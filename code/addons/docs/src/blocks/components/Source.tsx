@@ -11,7 +11,7 @@ import {
   styled,
   themes,
   useTheme,
-} from 'storybook/theming';
+} from 'storybook/theming/internal';
 
 import { EmptyBlock } from './EmptyBlock';
 import { SnippetWarning } from './SnippetWarning';

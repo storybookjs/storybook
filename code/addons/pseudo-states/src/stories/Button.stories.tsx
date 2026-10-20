@@ -1,7 +1,7 @@
 import React, { type ComponentProps } from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { Button } from './Button.tsx';
 import './grid.css';

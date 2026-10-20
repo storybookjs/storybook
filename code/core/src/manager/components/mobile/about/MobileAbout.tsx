@@ -7,7 +7,7 @@ import { ArrowLeftIcon, GithubIcon, ShareAltIcon, StorybookIcon } from '@storybo
 
 import { FocusScope } from 'react-aria/FocusScope';
 import { useTransitionState } from 'react-transition-state';
-import { keyframes, styled } from 'storybook/theming';
+import { keyframes, styled } from 'storybook/theming/internal';
 
 import { MOBILE_TRANSITION_DURATION } from '../../../constants.ts';
 import { useLayout } from '../../layout/LayoutProvider.tsx';

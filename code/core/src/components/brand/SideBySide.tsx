@@ -1,4 +1,4 @@
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 export const SideBySide = styled.div({
   display: 'grid',

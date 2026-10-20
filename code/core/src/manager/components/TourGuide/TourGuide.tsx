@@ -5,8 +5,8 @@ import { createRoot } from 'react-dom/client';
 import { darken } from 'polished';
 import type { CallBackProps } from 'react-joyride';
 import Joyride, { ACTIONS, type Step } from 'react-joyride';
-import { useTheme } from 'storybook/theming';
-import { ThemeProvider, convert, themes } from 'storybook/theming';
+import { useTheme } from 'storybook/theming/internal';
+import { ThemeProvider, convert, themes } from 'storybook/theming/internal';
 
 import { HighlightElement } from './HighlightElement.tsx';
 import { TourTooltip } from './TourTooltip.tsx';

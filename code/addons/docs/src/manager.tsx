@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { AddonPanel, type SyntaxHighlighterFormatTypes } from 'storybook/internal/components';
 
 import { addons, types, useChannel, useParameter } from 'storybook/manager-api';
-import { ignoreSsrWarning, styled, useTheme } from 'storybook/theming';
+import { ignoreSsrWarning, styled, useTheme } from 'storybook/theming/internal';
 
 import {
   ADDON_ID,

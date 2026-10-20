@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BookIcon } from '@storybook/icons';
 
 import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { getActiveFilterCount } from '../../../shared/utils/story-index-filters.ts';
 import { getStateType } from '../../utils/tree.ts';

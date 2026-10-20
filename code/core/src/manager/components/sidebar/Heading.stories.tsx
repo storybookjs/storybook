@@ -4,7 +4,7 @@ import type { Meta, StoryFn, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
 import { screen } from 'storybook/test';
-import { ThemeProvider, useTheme } from 'storybook/theming';
+import { ThemeProvider, useTheme } from 'storybook/theming/internal';
 import type { Theme } from 'storybook/theming';
 
 import { Heading } from './Heading.tsx';

@@ -5,7 +5,7 @@ import Events from 'storybook/internal/core-events';
 import type { Addon_PageType } from 'storybook/internal/types';
 
 import { addons } from 'storybook/manager-api';
-import { Global, createGlobal } from 'storybook/theming';
+import { Global, createGlobal } from 'storybook/theming/internal';
 
 import { ManagerErrorBoundary } from './components/error-boundary/ManagerErrorBoundary.tsx';
 import { Layout } from './components/layout/Layout.tsx';

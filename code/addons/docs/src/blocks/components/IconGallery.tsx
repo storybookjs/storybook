@@ -3,7 +3,7 @@ import React from 'react';
 
 import { ResetWrapper } from 'storybook/internal/components';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { getBlockBackgroundStyle } from './BlockBackgroundStyles';
 

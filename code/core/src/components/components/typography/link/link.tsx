@@ -6,7 +6,7 @@ import { deprecate } from 'storybook/internal/client-logger';
 import { ChevronRightIcon } from '@storybook/icons';
 
 import { darken } from 'polished';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 // Cmd/Ctrl/Shift/Alt + Click should trigger default browser behavior. Same applies to non-left clicks
 const LEFT_BUTTON = 0;

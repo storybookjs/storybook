@@ -4,7 +4,7 @@ import React, { Fragment } from 'react';
 import { logger } from 'storybook/internal/client-logger';
 
 import { ObjectInspector } from '@devtools-ds/object-inspector';
-import { useTheme } from 'storybook/theming';
+import { useTheme } from 'storybook/theming/internal';
 
 import type { Call, CallRef, ElementRef } from '../../instrumenter/types.ts';
 

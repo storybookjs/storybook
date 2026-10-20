@@ -2,7 +2,7 @@ import React from 'react';
 
 import { StorybookLogo } from 'storybook/internal/components';
 
-import { styled, withTheme } from 'storybook/theming';
+import { styled, withTheme } from 'storybook/theming/internal';
 
 export const StorybookLogoStyled = styled(StorybookLogo)(({ theme }) => ({
   width: 'auto',

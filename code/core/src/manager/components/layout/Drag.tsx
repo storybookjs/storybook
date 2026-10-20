@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import type { PopperPlacement } from '../../../components/index.ts';
 import { TooltipNote } from '../../../components/components/tooltip/TooltipNote.tsx';

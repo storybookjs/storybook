@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import { ArrowRightIcon } from '@storybook/icons';
 
-import { keyframes, styled } from 'storybook/theming';
+import { keyframes, styled } from 'storybook/theming/internal';
 
 const fadeIn = keyframes({
   from: {

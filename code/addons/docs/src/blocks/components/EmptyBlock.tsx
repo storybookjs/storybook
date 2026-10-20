@@ -4,7 +4,7 @@ import React from 'react';
 import { withReset } from 'storybook/internal/components';
 
 import { transparentize } from 'polished';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 const Wrapper = styled.div(withReset, ({ theme }) => ({
   backgroundColor: theme.base === 'light' ? 'rgba(0,0,0,.01)' : 'rgba(255,255,255,.01)',

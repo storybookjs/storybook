@@ -1,6 +1,6 @@
 import type React from 'react';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 export const PAGE_STEP_SIZE = 5;
 export const UNDEFINED_VALUE = Symbol.for('undefined');

@@ -8,7 +8,7 @@ import { includeConditionalArg } from 'storybook/internal/csf';
 import { DocumentIcon, UndoIcon } from '@storybook/icons';
 
 import { pickBy } from 'es-toolkit/object';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { EmptyBlock } from '../EmptyBlock';
 import { ArgRow } from './ArgRow';

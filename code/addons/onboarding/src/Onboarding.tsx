@@ -4,7 +4,7 @@ import { SyntaxHighlighter } from 'storybook/internal/components';
 import { SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
 
 import { type API } from 'storybook/manager-api';
-import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
+import { ThemeProvider, convert, styled, themes } from 'storybook/theming/internal';
 
 import { HighlightElement } from '../../../core/src/manager/components/TourGuide/HighlightElement.tsx';
 import { TourGuide } from '../../../core/src/manager/components/TourGuide/TourGuide.tsx';

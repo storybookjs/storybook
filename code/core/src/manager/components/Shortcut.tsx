@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { shortcutToHumanString } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 const Wrapper = styled.span(({ theme }) => ({
   display: 'inline-flex',

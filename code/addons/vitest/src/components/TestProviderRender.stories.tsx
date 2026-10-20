@@ -7,7 +7,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { destroyAnnouncer } from '@react-aria/live-announcer';
 import { ManagerContext, addons } from 'storybook/manager-api';
 import { expect, fn, waitFor } from 'storybook/test';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { ADDON_ID as A11Y_ADDON_ID } from '../../../a11y/src/constants.ts';
 import { storeOptions } from '../constants.ts';

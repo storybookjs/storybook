@@ -4,7 +4,7 @@ import React, { forwardRef } from 'react';
 import { Button } from 'storybook/internal/components';
 
 import { darken, lighten } from 'polished';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 export type ContextMenuButtonProps = ComponentProps<typeof StyledButton>;
 

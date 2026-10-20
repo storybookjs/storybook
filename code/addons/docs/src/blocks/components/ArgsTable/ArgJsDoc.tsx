@@ -5,7 +5,7 @@ import { codeCommon } from 'storybook/internal/components';
 
 import Markdown from 'markdown-to-jsx';
 import type { CSSObject } from 'storybook/theming';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import type { JsDocTags } from './types';
 

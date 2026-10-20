@@ -1,7 +1,7 @@
 import React, { forwardRef } from 'react';
 
 import { darken, transparentize } from 'polished';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { Button, type ButtonProps } from '../Button/Button.tsx';
 

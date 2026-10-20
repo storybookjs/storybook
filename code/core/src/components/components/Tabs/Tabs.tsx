@@ -6,7 +6,7 @@ import { deprecate } from 'storybook/internal/client-logger';
 import { sanitize } from 'storybook/internal/csf';
 import type { Addon_RenderOptions } from 'storybook/internal/types';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/internal';
 
 import { FlexBar } from '../Bar/Bar.tsx';
 import { TabButton } from './Button.tsx';

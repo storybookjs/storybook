@@ -4,7 +4,9 @@ export type {
   CsfMutationDiagnostic,
   CsfMutationDiagnosticCode,
   CsfMutationResult,
+  CsfMutationTarget,
   CsfObject,
+  CsfObjectLookup,
   CsfObjectOptions,
   CsfObjectTarget,
   CsfValue,
@@ -34,6 +36,7 @@ export {
   walk,
 } from './estree/ast.ts';
 export { SourceEditor, type GeneratedMap, type SourceEdits } from './estree/editor.ts';
+export type { ImportBindings } from './estree/imports.ts';
 export { generateUid, type Binding, type ScopeInfo } from './estree/scope.ts';
 export {
   appendStatement,

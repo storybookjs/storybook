@@ -957,6 +957,91 @@ describe('appendStatement', () => {
     expect(editor.toString()).toBe('const a = 1;\nf() // done;\n;(a.b).c = 1;\n');
   });
 
+  it('sets an appended statement apart once a later commit makes it span lines', () => {
+    const csf = parse('export default {};\nexport const A = {};\n');
+    appendStatement(csf._editor, 'export const B = {};');
+    csf._editor.commit();
+    const story = csf
+      .objects({ meta: false })
+      .find(({ target }) => 'exportName' in target && target.exportName === 'B')!;
+    story.set(['args', 'a'], 1);
+    expect(printCsf(csf).code).toBe(
+      'export default {};\nexport const A = {};\nexport const B = { args: { a: 1 } };\n'
+    );
+
+    story.set(['play'], parseExpression('async () => {\n  await x();\n}'));
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {};
+      export const A = {};
+
+      export const B = {
+        args: { a: 1 },
+        play: async () => {
+          await x();
+        }
+      };
+
+    `);
+  });
+
+  it('sets an appended statement apart once a later commit makes the one before it span lines', () => {
+    const csf = parse('export default {};\nexport const A = {};\n');
+    appendStatement(csf._editor, 'export const B = {};');
+    csf._editor.commit();
+    const [story] = csf.objects({ meta: false });
+    story.set(['play'], parseExpression('async () => {\n  await x();\n}'));
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {};
+      export const A = {
+        play: async () => {
+          await x();
+        },
+      };
+
+      export const B = {};
+
+    `);
+  });
+
+  it('sets a pending appended statement apart in the commit that makes the one before it span lines', () => {
+    const csf = parse('export default {};\nexport const A = {}; // A\n');
+    csf._appendStatement('export const B = {};');
+    const [story] = csf.objects({ meta: false });
+    story.set(['play'], parseExpression('async () => {\n  await x();\n}'));
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {};
+      export const A = {
+        play: async () => {
+          await x();
+        },
+      }; // A
+
+      export const B = {};
+
+    `);
+  });
+
+  it('forgets a statement appended in a transaction that rolls back', () => {
+    const csf = parse('export default {};\nexport const A = {};\nexport const B = {};\n');
+    csf.transaction(() => {
+      csf._appendStatement('export const B = {};');
+      return false;
+    });
+    const [first, story] = csf.objects({ meta: false });
+    first.set(['args'], {});
+    story.set(['play'], parseExpression('async () => {\n  await x();\n}'));
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {};
+      export const A = { args: {} };
+      export const B = {
+        play: async () => {
+          await x();
+        },
+      };
+
+    `);
+  });
+
   it('appends to the end of a file whose statements are all removed', () => {
     const editor = new SourceEditor(`const a = 1;\nconst b = 2;\n`);
     removeStatements(editor, new Set(editor.program.body));

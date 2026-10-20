@@ -119,6 +119,11 @@ export class SourceEditor {
     }
   }
 
+  // What `appendStatement` wrote without a blank line before it: statements of this parse, and
+  // texts of pending edits. Each commit finds them in the code it parses, and sets one apart once it
+  // or the statement before it spans lines.
+  _appendedWithoutBlankLine: (Node | string)[] = [];
+
   constructor(code: string, fileName?: string, onCommit?: () => void) {
     this.fileName = fileName;
     this._onCommit = onCommit;
@@ -209,9 +214,27 @@ export class SourceEditor {
     if (!this.pending) {
       return false;
     }
-    const module = parsePrintable(this._edits.toString(), this.fileName);
+    let module = parsePrintable(this._edits.toString(), this.fileName);
     this._style ??= inferStyle(this._module);
     this._committed.push(this._edits);
+    let appended = this._appendedWithoutBlankLine
+      .map((statement) => committedStatement(this._edits, module, statement))
+      .filter((statement) => statement !== undefined);
+    // The blank lines go in as edits of their own, over the code just parsed.
+    const apart = appended.filter((statement) => setsApart(module, statement));
+    if (apart.length > 0) {
+      const spacing = new MagicString(module.code, { filename: this.fileName });
+      for (const statement of apart) {
+        spacing.appendLeft(ownLineStart(module, statement), '\n');
+      }
+      module = parsePrintable(spacing.toString(), this.fileName);
+      this._committed.push(spacing);
+      appended = appended
+        .filter((statement) => !apart.includes(statement))
+        .map((statement) => committedStatement(spacing, module, statement))
+        .filter((statement) => statement !== undefined);
+    }
+    this._appendedWithoutBlankLine = appended;
     this._module = module;
     this._scopes = undefined;
     this._parents = undefined;
@@ -230,6 +253,8 @@ export class SourceEditor {
     const { _module, _style, _transaction: outer } = this;
     const committed = this._committed.length;
     const edits = this._edits.clone();
+    lastInserted.set(edits, new Map(lastInserted.get(this._edits)));
+    const appended = [...this._appendedWithoutBlankLine];
     const transaction = { refused: false, rollbacks: onRollback ? [onRollback] : [] };
     this._transaction = transaction;
     let kept = false;
@@ -251,6 +276,7 @@ export class SourceEditor {
         this._style = _style;
         this._committed.length = committed;
         this._edits = edits;
+        this._appendedWithoutBlankLine = appended;
         this._scopes = undefined;
         this._parents = undefined;
         try {
@@ -1358,7 +1384,59 @@ export const appendStatement = (editor: SourceEditor, text: string) => {
   // The text inserted last may lead with the blank line that set it apart.
   const before = lastInserted.get(editor.edits)?.get(last)?.trim() ?? editor.source(last);
   const multiline = text.includes('\n') || before.includes('\n');
+  if (!multiline) {
+    editor._appendedWithoutBlankLine.push(text);
+  }
   insertStatementAfter(editor, last, `${multiline ? '\n' : ''}${text}`);
+};
+
+// The statement of the parse of `edits` that a statement of the code they edit became, or that a
+// text appended in them is.
+const committedStatement = (
+  edits: SourceEdits,
+  { code, program }: ParsedModule,
+  statement: Node | string
+) => {
+  if (typeof statement === 'string') {
+    return program.body.findLast((node) => sourceOf(code, node) === statement);
+  }
+  let start: number;
+  try {
+    if (edits.slice(statement.start, statement.end) === '') {
+      return undefined;
+    }
+    start = normalizeLineEndings(edits.slice(0, statement.start)).length;
+  } catch {
+    // An edit cut through the statement.
+    return undefined;
+  }
+  return program.body.find((node) => node.start === start);
+};
+
+const statementBefore = (program: E.Program, statement: Node): Node | undefined =>
+  (program.body as readonly Node[])[program.body.indexOf(statement as E.Statement) - 1];
+
+// Whether a statement, or the statement before it, spans lines with no blank line between them.
+const setsApart = ({ code, program }: ParsedModule, statement: Node) => {
+  const before = statementBefore(program, statement);
+  return (
+    !!before &&
+    [before, statement].some((node) => sourceOf(code, node).includes('\n')) &&
+    !/\n[^\S\n]*\n/.test(code.slice(before.end, statement.start))
+  );
+};
+
+// The start of the first line of a statement with the comments above it, below the statement
+// before it and the comments that share that statement's line.
+const ownLineStart = ({ code, program, comments }: ParsedModule, statement: Node) => {
+  const before = statementBefore(program, statement)!;
+  const above = comments.find(
+    (comment) =>
+      comment.start >= before.end &&
+      comment.end <= statement.start &&
+      code.slice(before.end, comment.start).includes('\n')
+  );
+  return lineStart(code, (above ?? statement).start);
 };
 
 /** The span of a statement with the comments it owns. */

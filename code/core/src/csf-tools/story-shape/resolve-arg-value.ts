@@ -11,6 +11,7 @@ import {
   textOf,
   unwrapExpression,
 } from '../estree/ast.ts';
+import { detachedTextOf, reindent } from '../estree/editor.ts';
 import { analyzeScopes } from '../estree/scope.ts';
 import { type ImportRef } from './import-statements.ts';
 import { type ImportBinding, collectImportBindings } from './imports.ts';
@@ -101,9 +102,9 @@ const inlineSpreads = (node: Node, ctx: ReferenceContext, unresolved: string[]):
         .map((element) =>
           element === null
             ? ''
-            : element.type === 'SpreadElement'
-              ? textOf(element)
-              : placeableTextOf(inlineSpreads(element, ctx, unresolved))
+            : detachedTextOf(
+                element.type === 'SpreadElement' ? element : inlineSpreads(element, ctx, unresolved)
+              )
         )
         .join(', ')}]`
     );
@@ -187,13 +188,14 @@ const objectFrom = (
     // A shorthand prints its key and nothing else, so it may only stay shorthand while its value is
     // still the one the key stands for.
     const shorthand = 'type' in property && property.shorthand && value === property.value;
-    members.push(shorthand ? key : `${key}: ${placeableTextOf(value)}`);
+    members.push(shorthand ? key : `${key}: ${detachedTextOf(value)}`);
   }
   // One member per line, so formatters keep the object expanded.
+  const { indent } = ctx.editor;
   return rebuilt(
     members.length === 0
       ? '{}'
-      : `{\n${members.map((member) => `  ${member.replaceAll('\n', '\n  ')}`).join(',\n')}\n}`
+      : `{\n${members.map((member) => `${indent}${reindent(member, '', indent)}`).join(',\n')}\n}`
   );
 };
 

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
+import { dedent } from 'ts-dedent';
+
+import { textOf } from '../estree/ast.ts';
 import { SourceEditor } from '../estree/editor.ts';
 import { resolveArgValue } from './resolve-arg-value.ts';
 import {
@@ -128,6 +131,53 @@ describe('resolveArgValue', () => {
       imports: [],
       unresolved: [],
     });
+  });
+
+  const textOfValue = (code: string) => {
+    const ctx = contextOf(code);
+    const record = resolveArgsRecord(resolveBindingMembers(ctx, 'Story')?.properties.args, ctx);
+    return textOf(resolveArgValue(record.properties.v, ctx).node);
+  };
+
+  it.each([
+    [
+      'two levels deep',
+      `const base = {\n  nested: {\n    deep: 1,\n  },\n};`,
+      `{\n  nested: {\n    deep: 1,\n  },\n  tone: 'x'\n}`,
+    ],
+    [
+      'three levels deep',
+      `const base = {\n  nested: {\n    deeper: {\n      deepest: \`a\n  b\`,\n    },\n  },\n};`,
+      `{\n  nested: {\n    deeper: {\n      deepest: \`a\n  b\`,\n    },\n  },\n  tone: 'x'\n}`,
+    ],
+    [
+      'indented with tabs',
+      `const base = {\n\tnested: {\n\t\tdeep: \`a\n\tb\`,\n\t},\n};`,
+      `{\n\tnested: {\n\t\tdeep: \`a\n\tb\`,\n\t},\n\ttone: 'x'\n}`,
+    ],
+  ])(
+    "writes out a spread's members %s at the file's indent, leaving literal lines alone",
+    (_, code, text) => {
+      const story = `export const Story = { args: { v: { ...base, tone: 'x' } } };`;
+      expect(textOfValue(`${code}\n${story}`)).toBe(text);
+    }
+  );
+
+  it('writes out the elements of an array holding a spread as if their lines had no indent', () => {
+    const code = dedent`
+      const base = { a: 1 };
+      export const Story = {
+        args: {
+          v: [
+            { ...base },
+            {
+              z: 2,
+            },
+          ],
+        },
+      };
+    `;
+    expect(textOfValue(code)).toBe(`[{\n  a: 1\n}, {\n  z: 2,\n}]`);
   });
 
   it('names nothing for a global or a parameter the expression declares itself', () => {

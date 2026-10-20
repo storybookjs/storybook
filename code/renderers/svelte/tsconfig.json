@@ -1,8 +1,15 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "allowJs": true,
     "module": "ESNext",
     "verbatimModuleSyntax": true
   },
-  "include": ["src/**/*", "src/**/*.svelte", "template/**/*", "template/**/*.svelte"]
+  "include": [
+    "src/**/*",
+    "src/**/*.svelte",
+    "static/**/*.svelte",
+    "template/**/*",
+    "template/**/*.svelte"
+  ]
 }

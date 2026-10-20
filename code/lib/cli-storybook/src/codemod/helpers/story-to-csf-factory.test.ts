@@ -63,7 +63,6 @@ describe('stories codemod', () => {
          * Copyright 2024
          */
         import preview from "#.storybook/preview";
-
         const meta = preview.meta({ title: "Component" });
         export const A = meta.story();
       `);
@@ -77,11 +76,7 @@ describe('stories codemod', () => {
           `)
       ).resolves.toMatchInlineSnapshot(`
         import preview from "#.storybook/preview";
-
-        const meta = preview.meta({
-          title: "Component",
-        });
-
+        const meta = preview.meta({ title: "Component" });
         export const A = meta.story();
       `);
     });
@@ -210,11 +205,7 @@ describe('stories codemod', () => {
           `)
       ).resolves.toMatchInlineSnapshot(`
         import preview from "#.storybook/preview";
-
-        const meta = preview.meta({
-          title: "Component",
-        });
-
+        const meta = preview.meta({ title: "Component" });
         const someData = {};
 
         export const A = meta.story();
@@ -324,9 +315,7 @@ describe('stories codemod', () => {
         import * as BaseStories from "./Button.stories";
         import { Primary as ImportedPrimary } from "./Card.stories";
 
-        const meta = preview.meta({
-          title: "Component",
-        });
+        const meta = preview.meta({ title: "Component" });
 
         export const A = meta.story({
           args: BaseStories.Primary.input.args,
@@ -468,6 +457,31 @@ describe('stories codemod', () => {
       }
     });
 
+    it('uses a relative import for .rnstorybook when subpath imports are off', async () => {
+      await expect(
+        formatFileContent(
+          '/project/src/Button.stories.tsx',
+          await storyToCsfFactory(
+            {
+              source: dedent`
+                export default {};
+                export const A = {};
+              `,
+              path: '/project/src/Button.stories.tsx',
+            },
+            {
+              previewConfigPath: '/project/.rnstorybook/preview.tsx',
+              useSubPathImports: false,
+            }
+          )
+        )
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "../.rnstorybook/preview";
+        const meta = preview.meta({});
+        export const A = meta.story();
+      `);
+    });
+
     it('converts CSF1 into CSF4 with render', async () => {
       await expect(
         transform(dedent`
@@ -499,7 +513,9 @@ describe('stories codemod', () => {
         import preview from "#.storybook/preview";
         import { ComponentProps } from "./Component";
 
-        const meta = preview.meta({ title: "Component", component: Component });
+        const meta = preview
+          .type<{ args: ComponentProps }>()
+          .meta({ title: "Component", component: Component });
 
         export const A = meta.story({
           args: { primary: true },
@@ -522,7 +538,9 @@ describe('stories codemod', () => {
         import preview from "#.storybook/preview";
         import { ComponentProps } from "./Component";
 
-        const meta = preview.meta({ title: "Component", component: Component });
+        const meta = preview
+          .type<{ args: ComponentProps }>()
+          .meta({ title: "Component", component: Component });
 
         export const A = meta.story({
           args: { primary: true },
@@ -545,7 +563,9 @@ describe('stories codemod', () => {
         import preview from "#.storybook/preview";
         import { ComponentProps } from "./Component";
 
-        const meta = preview.meta({ title: "Component", component: Component });
+        const meta = preview
+          .type<{ args: ComponentProps }>()
+          .meta({ title: "Component", component: Component });
 
         export const A = meta.story({
           args: { primary: true },
@@ -569,7 +589,9 @@ describe('stories codemod', () => {
         import preview from "#.storybook/preview";
         import { ComponentProps } from "./Component";
 
-        const meta = preview.meta({ title: "Component", component: Component });
+        const meta = preview
+          .type<{ args: ComponentProps }>()
+          .meta({ title: "Component", component: Component });
 
         export const A = meta.story({
           args: { primary: true },
@@ -593,7 +615,9 @@ describe('stories codemod', () => {
         import preview from "#.storybook/preview";
         import { ComponentProps } from "./Component";
 
-        const meta = preview.meta({ title: "Component", component: Component });
+        const meta = preview
+          .type<{ args: ComponentProps }>()
+          .meta({ title: "Component", component: Component });
 
         export const A = meta.story({
           args: { primary: true },
@@ -617,7 +641,9 @@ describe('stories codemod', () => {
         import preview from "#.storybook/preview";
         import { ComponentProps } from "./Component";
 
-        const meta = preview.meta({ title: "Component", component: Component });
+        const meta = preview
+          .type<{ args: ComponentProps }>()
+          .meta({ title: "Component", component: Component });
 
         export const A = meta.story({
           args: { primary: true },
@@ -641,7 +667,9 @@ describe('stories codemod', () => {
         import preview from "#.storybook/preview";
         import { ComponentProps } from "./Component";
 
-        const meta = preview.meta({ title: "Component", component: Component });
+        const meta = preview
+          .type<{ args: ComponentProps }>()
+          .meta({ title: "Component", component: Component });
 
         export const A = meta.story({
           args: { primary: true },
@@ -661,6 +689,640 @@ describe('stories codemod', () => {
 
       allSnippets.forEach((result) => {
         expect(result).toEqual(allSnippets[0]);
+      });
+    });
+
+    describe('custom args types', () => {
+      it('carries the custom args type of the meta over to preview.type', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/angular';
+            import { MyComponent } from './my.component';
+            import { type Icon, DeactivatedOrg } from './icons';
+
+            type StoryArgs = {
+              pageIcon: Icon;
+            };
+
+            export default {
+              component: MyComponent,
+              args: {
+                pageIcon: DeactivatedOrg,
+              },
+            } satisfies Meta<StoryArgs>;
+
+            export const Default: StoryObj<StoryArgs> = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { MyComponent } from "./my.component";
+          import { type Icon, DeactivatedOrg } from "./icons";
+
+          type StoryArgs = {
+            pageIcon: Icon;
+          };
+
+          const meta = preview.type<{ args: StoryArgs }>().meta({
+            component: MyComponent,
+            args: {
+              pageIcon: DeactivatedOrg,
+            },
+          });
+
+          export const Default = meta.story();
+        `);
+      });
+
+      it.each([
+        ['Meta', 'Meta<StoryArgs>'],
+        ['MetaObj', 'MetaObj<StoryArgs>'],
+        ['a renamed import', 'CSF3Meta<StoryArgs>'],
+      ])('supports %s', async (_, type) => {
+        await expect(
+          transform(dedent`
+            import type { Meta, MetaObj, Meta as CSF3Meta } from '@storybook/react';
+            import { Button } from './Button';
+            import type { StoryArgs } from './types';
+
+            export default { component: Button } satisfies ${type};
+
+            export const A = {};
+          `)
+        ).resolves.toContain('preview.type<{ args: StoryArgs }>().meta({ component: Button })');
+      });
+
+      it.each([
+        ['Meta without a type argument', 'Meta'],
+        ['Meta of the component', 'Meta<typeof Button>'],
+        ['Meta of the component class', 'Meta<Button>'],
+        ['Meta of a generic component class', 'Meta<Button<string>>'],
+        ['Meta of an alias of the component', 'Meta<ButtonAlias>'],
+        ['ComponentMeta, which only takes a component', 'ComponentMeta<ButtonType>'],
+        ['a type that is not a Storybook type', 'CustomMeta<StoryArgs>'],
+      ])('infers the args from the component for %s', async (_, type) => {
+        const output = await transform(dedent`
+          import type { Meta, ComponentMeta, StoryObj } from '@storybook/react';
+          import { Button, type ButtonType } from './Button';
+          import type { CustomMeta, StoryArgs } from './types';
+
+          type ButtonAlias = typeof Button;
+
+          const meta = { component: Button } satisfies ${type};
+          export default meta;
+
+          export const A: StoryObj<typeof meta> = {};
+          export const B: StoryObj<typeof Button> = {};
+          export const C: StoryObj<Button> = {};
+          export const D: StoryObj = {};
+          export const E: StoryObj<Meta<typeof Button>> = {};
+        `);
+        expect(output).toContain('const meta = preview.meta({ component: Button });');
+        expect(output).not.toContain('.type<');
+      });
+
+      it('keeps a type argument that extends the props of the component', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button, type ButtonProps } from './Button';
+
+            const meta = {
+              component: Button,
+              args: { theme: 'dark' },
+            } satisfies Meta<ButtonProps & { theme: string }>;
+            export default meta;
+
+            export const A: StoryObj<typeof meta> = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button, type ButtonProps } from "./Button";
+
+          const meta = preview.type<{ args: ButtonProps & { theme: string } }>().meta({
+            component: Button,
+            args: { theme: "dark" },
+          });
+
+          export const A = meta.story();
+        `);
+      });
+
+      it('leaves the component class out of an intersection, as its args are inferred', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/angular';
+            import { Page } from './page.component';
+
+            const meta: Meta<Page & { footer?: string }> = {
+              component: Page,
+            };
+            export default meta;
+
+            export const CustomFooter: StoryObj<Page & { footer?: string }> = {
+              args: { footer: 'Built with Storybook' },
+            };
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Page } from "./page.component";
+
+          const meta = preview.type<{ args: { footer?: string } }>().meta({
+            component: Page,
+          });
+
+          export const CustomFooter = meta.story({
+            args: { footer: "Built with Storybook" },
+          });
+        `);
+      });
+
+      it('drops a type alias that includes the component class', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/angular';
+            import { Page } from './page.component';
+
+            type PagePropsAndCustomArgs = Page & { footer?: string };
+
+            const meta: Meta<PagePropsAndCustomArgs> = {
+              component: Page,
+            };
+            export default meta;
+
+            type Story = StoryObj<PagePropsAndCustomArgs>;
+
+            export const CustomFooter: Story = {
+              args: { footer: 'Built with Storybook' },
+            };
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Page } from "./page.component";
+
+          type PagePropsAndCustomArgs = Page & { footer?: string };
+
+          const meta = preview.meta({
+            component: Page,
+          });
+
+          export const CustomFooter = meta.story({
+            args: { footer: "Built with Storybook" },
+          });
+        `);
+      });
+
+      it('leaves the component class out of the custom args type of a story', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/angular';
+            import { Page } from './page.component';
+
+            const meta: Meta<Page> = { component: Page };
+            export default meta;
+
+            export const Default: StoryObj<Page> = {};
+            export const CustomFooter: StoryObj<Page & { footer: string }> = {
+              args: { footer: 'Built with Storybook' },
+            };
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Page } from "./page.component";
+
+          const meta = preview.meta({ component: Page });
+
+          export const Default = meta.story();
+          export const CustomFooter = meta.type<{ args: { footer: string } }>().story({
+            args: { footer: "Built with Storybook" },
+          });
+        `);
+      });
+
+      it('carries the custom args type over when the meta has no component', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import type { StoryArgs } from './types';
+
+            const meta = {
+              render: (args) => <Page icon={args.pageIcon} />,
+            } satisfies Meta<StoryArgs>;
+            export default meta;
+
+            export const A: StoryObj<typeof meta> = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import type { StoryArgs } from "./types";
+
+          const meta = preview.type<{ args: StoryArgs }>().meta({
+            render: (args) => <Page icon={args.pageIcon} />,
+          });
+
+          export const A = meta.story();
+        `);
+      });
+
+      it('migrates parenthesized expressions before satisfies and as', async () => {
+        await expect(
+          transform(dedent`
+            import type { StoryFn, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+
+            export default { component: Button };
+
+            export const P = ((args) => <Button {...args} />) satisfies
+              StoryFn<typeof Button>;
+            export const O = ({ args: { a: 1 } }) satisfies StoryObj;
+            export const A = ({ args: { a: 2 } }) as StoryObj;
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button } from "./Button";
+
+          const meta = preview.meta({ component: Button });
+
+          export const P = meta.story((args) => <Button {...args} />);
+          export const O = meta.story({ args: { a: 1 } });
+          export const A = meta.story({ args: { a: 2 } });
+        `);
+      });
+
+      it('migrates a parenthesized meta before satisfies', async () => {
+        const source = (meta: string) => dedent`
+          import type { Meta } from '@storybook/react';
+          import { Button } from './Button';
+
+          ${meta}
+          export const A = {};
+        `;
+        const migrated = dedent`
+          import preview from "#.storybook/preview";
+          import { Button } from "./Button";
+
+          const meta = preview.meta({ component: Button });
+          export const A = meta.story();
+        `;
+        await expect(
+          transform(source('export default ({ component: Button }) satisfies Meta;'))
+        ).resolves.toBe(`${migrated}\n`);
+        await expect(
+          transform(
+            source('const meta = (({ component: Button })) satisfies Meta;\nexport default meta;')
+          )
+        ).resolves.toBe(`${migrated}\n`);
+      });
+
+      it('migrates parenthesized expressions with a comment inside the parentheses', async () => {
+        const output = await transform(dedent`
+          import type { StoryObj } from '@storybook/react';
+          import { Button } from './Button';
+
+          export default { component: Button };
+
+          export const K = (/* c */ { args: {} }) satisfies StoryObj;
+          export const T = ({ args: {} } /* after */) satisfies StoryObj;
+        `);
+        expect(output).toContain('export const K = meta.story(');
+        expect(output).toContain('export const T = meta.story(');
+        expect(output).not.toContain('satisfies');
+      });
+
+      it('keeps the custom args type of a story on that story', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryFn, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+            import type { StoryArgs } from './types';
+
+            const meta = { component: Button } satisfies Meta<typeof Button>;
+            export default meta;
+
+            export const Annotated: StoryObj<StoryArgs> = {};
+            export const Satisfies = {} satisfies StoryObj<StoryArgs>;
+            export const As = {} as StoryObj<StoryArgs>;
+            export const Nested: StoryObj<Meta<StoryArgs>> = {};
+            export const Fn: StoryFn<StoryArgs> = () => <Button />;
+            export const Reused: StoryObj<StoryArgs> = { ...Annotated, args: { ...Annotated.args } };
+            export const Inferred: StoryObj<typeof meta> = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button } from "./Button";
+          import type { StoryArgs } from "./types";
+
+          const meta = preview.meta({ component: Button });
+
+          export const Annotated = meta.type<{ args: StoryArgs }>().story();
+          export const Satisfies = meta.type<{ args: StoryArgs }>().story();
+          export const As = meta.type<{ args: StoryArgs }>().story();
+          export const Nested = meta.type<{ args: StoryArgs }>().story();
+          export const Fn = meta.type<{ args: StoryArgs }>().story(() => <Button />);
+          export const Reused = meta
+            .type<{ args: StoryArgs }>()
+            .story({ ...Annotated.input, args: { ...Annotated.input.args } });
+          export const Inferred = meta.story();
+        `);
+      });
+
+      it('reads the custom args type through a type alias of Meta and of StoryObj', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+            import type { StoryArgs } from './types';
+
+            type StoryMeta = Meta<StoryArgs>;
+            type Story = StoryObj<StoryMeta>;
+
+            export default { component: Button } satisfies Meta<typeof Button>;
+
+            export const A: Story = {};
+            export const B: StoryObj<typeof Button> = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button } from "./Button";
+          import type { StoryArgs } from "./types";
+
+          const meta = preview.meta({ component: Button });
+
+          export const A = meta.type<{ args: StoryArgs }>().story();
+          export const B = meta.story();
+        `);
+      });
+
+      it('writes the custom args type of the only story on the meta', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+            import type { StoryArgs } from './types';
+
+            export default { component: Button } satisfies Meta<typeof Button>;
+
+            export const A: StoryObj<StoryArgs> = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button } from "./Button";
+          import type { StoryArgs } from "./types";
+
+          const meta = preview.type<{ args: StoryArgs }>().meta({ component: Button });
+
+          export const A = meta.story();
+        `);
+      });
+
+      it('keeps the custom args type on the story when another story is a function', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+            import type { StoryArgs } from './types';
+
+            export default { component: Button } satisfies Meta<typeof Button>;
+
+            export const A: StoryObj<StoryArgs> = {};
+            export function B() {}
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button } from "./Button";
+          import type { StoryArgs } from "./types";
+
+          const meta = preview.meta({ component: Button });
+
+          export const A = meta.type<{ args: StoryArgs }>().story();
+          export const B = meta.story(() => {});
+        `);
+      });
+
+      it('reads a parenthesized custom args type', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta } from '@storybook/angular';
+            import { Page } from './page.component';
+
+            export default { component: Page } satisfies Meta<(Page & { footer?: string })>;
+
+            export const A = {};
+          `)
+        ).resolves.toContain('.type<{ args: { footer?: string } }>()');
+      });
+
+      it('writes a custom args type that every story has once, on the meta', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/angular';
+            import { Page } from './page.component';
+
+            const meta: Meta<Page> = { component: Page };
+            export default meta;
+
+            type Story = StoryObj<Page & { content: string }>;
+
+            export const A: Story = { args: { content: 'a' } };
+            export const B: Story = { args: { content: 'b' } };
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Page } from "./page.component";
+
+          const meta = preview
+            .type<{ args: { content: string } }>()
+            .meta({ component: Page });
+
+          export const A = meta.story({ args: { content: "a" } });
+          export const B = meta.story({ args: { content: "b" } });
+        `);
+      });
+
+      it('puts a union in parentheses when it is intersected', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+            import type { Small, Themed, Wide } from './types';
+
+            export default { component: Button } satisfies Meta<typeof Button>;
+
+            export const Default: StoryObj<typeof Button> = {};
+            export const Sized: StoryObj<Small | Wide> = {} satisfies StoryObj<Themed>;
+          `)
+        ).resolves.toContain('meta.type<{ args: (Small | Wide) & Themed }>().story()');
+      });
+
+      it('puts a conditional type in parentheses when it is intersected', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+            import type { Small, Themed } from './types';
+
+            export default { component: Button } satisfies Meta<typeof Button>;
+
+            export const Default: StoryObj<typeof Button> = {};
+            export const Sized: StoryObj<Small extends Themed ? Small : never> = {} satisfies StoryObj<Themed>;
+          `)
+        ).resolves.toContain('.type<{ args: (Small extends Themed ? Small : never) & Themed }>()');
+      });
+
+      it('leaves out of the custom args type of a story what the meta already has', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj, StoryFn } from '@storybook/react';
+            import { Button, type ButtonProps } from './Button';
+
+            const meta = { component: Button } satisfies Meta<ButtonProps>;
+            export default meta;
+
+            export const Same: StoryObj<ButtonProps> = {};
+            export const Themed: StoryObj<ButtonProps & { theme: string }> = {};
+            export const Sized: StoryFn<{ size: number } | { width: number }> = () => <Button />;
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button, type ButtonProps } from "./Button";
+
+          const meta = preview.type<{ args: ButtonProps }>().meta({ component: Button });
+
+          export const Same = meta.story();
+          export const Themed = meta.type<{ args: { theme: string } }>().story();
+          export const Sized = meta
+            .type<{ args: { size: number } | { width: number } }>()
+            .story(() => <Button />);
+        `);
+      });
+
+      it('tells custom args types apart by their string literals', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+
+            const meta = { component: Button } satisfies Meta<{ href: 'http://x' }>;
+            export default meta;
+
+            export const Same: StoryObj<{ href: 'http://x' }> = {};
+            export const Spaced: StoryObj<{ href: 'http://x' } & { label: 'a  b' }> = {};
+            export const Single: StoryObj<{ href: /* c */ 'http://x' } & { label: 'a b' }> = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button } from "./Button";
+
+          const meta = preview
+            .type<{ args: { href: "http://x" } }>()
+            .meta({ component: Button });
+
+          export const Same = meta.story();
+          export const Spaced = meta.type<{ args: { label: "a  b" } }>().story();
+          export const Single = meta.type<{ args: { label: "a b" } }>().story();
+        `);
+      });
+
+      it('tells custom args types apart by their bigint literals', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+
+            const meta = { component: Button } satisfies Meta<{ id: 1n }>;
+            export default meta;
+
+            export const Same: StoryObj<{ id: 1n }> = {};
+            export const Other: StoryObj<{ id: 2n }> = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button } from "./Button";
+
+          const meta = preview.type<{ args: { id: 1n } }>().meta({ component: Button });
+
+          export const Same = meta.story();
+          export const Other = meta.type<{ args: { id: 2n } }>().story();
+        `);
+      });
+
+      it('leaves a namespaced component class out, as its args are inferred', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/angular';
+            import * as Components from './components';
+
+            const meta: Meta<Components.Button & { theme: string }> = {
+              component: Components.Button,
+            };
+            export default meta;
+
+            export const A: StoryObj<Components.Button> = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import * as Components from "./components";
+
+          const meta = preview.type<{ args: { theme: string } }>().meta({
+            component: Components.Button,
+          });
+
+          export const A = meta.story();
+        `);
+      });
+
+      it('keeps a Storybook type that the custom args type is built from', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+
+            type StoryArgs = NonNullable<StoryObj<typeof Button>['args']> & { theme: string };
+
+            export default { component: Button } satisfies Meta<StoryArgs>;
+
+            export const A: StoryObj<StoryArgs> = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import type { StoryObj } from "@storybook/react";
+          import { Button } from "./Button";
+
+          type StoryArgs = NonNullable<StoryObj<typeof Button>["args"]> & {
+            theme: string;
+          };
+
+          const meta = preview.type<{ args: StoryArgs }>().meta({ component: Button });
+
+          export const A = meta.story();
+        `);
+      });
+
+      it('uses the name of the preview import', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta } from '@storybook/react';
+            import { Button } from './Button';
+            import type { StoryArgs } from './types';
+
+            const preview = {};
+
+            export default { component: Button } satisfies Meta<StoryArgs>;
+
+            export const A = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import storybookPreview from "#.storybook/preview";
+          import { Button } from "./Button";
+          import type { StoryArgs } from "./types";
+
+          const preview = {};
+
+          const meta = storybookPreview
+            .type<{ args: StoryArgs }>()
+            .meta({ component: Button });
+
+          export const A = meta.story();
+        `);
       });
     });
 
@@ -716,9 +1378,7 @@ describe('stories codemod', () => {
           name: string;
         }
 
-        const meta = preview.meta({
-          title: "Table",
-        });
+        const meta = preview.meta({ title: "Table" });
 
         export const A = meta.story({
           render: () => {
@@ -749,14 +1409,10 @@ describe('stories codemod', () => {
         import preview from "#.storybook/preview";
         import { Meta } from "@storybook/react";
         import { Button } from "./Button";
-
         type ThisShouldNotBeRemoved = Meta<typeof Button>;
         const something: ThisShouldNotBeRemoved = {};
 
-        const meta = preview.meta({
-          title: "Button",
-        });
-
+        const meta = preview.meta({ title: "Button" });
         export const A = meta.story();
       `);
     });
@@ -898,6 +1554,90 @@ describe('stories codemod', () => {
       expect(transformed).toEqual(formattedSource);
 
       expect(logger.log).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('mock API on args', () => {
+    it('wraps mock calls on args in play, beforeEach, afterEach and loaders in mocked()', async () => {
+      await expect(
+        transform(dedent`
+          import { expect, fn } from 'storybook/test';
+
+          export default {
+            component: Component,
+            args: { getUsers: fn(), onClick: fn() },
+            beforeEach: ({ args }) => {
+              args.getUsers.mockResolvedValue([]);
+            },
+            loaders: [async ({ args }) => { args.getUsers.mockClear(); }],
+          };
+
+          export const A = {
+            async play({ args, canvas }) {
+              args.getUsers.mockReturnValue([{ id: 1 }]);
+              args.onClick.mockImplementation(() => {});
+              await expect(args.onClick).toHaveBeenCalled();
+              expect(args.onClick.mock.calls).toHaveLength(1);
+            },
+            afterEach: async (context) => {
+              context.args.onClick.mockReset();
+            },
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#.storybook/preview";
+        import { expect, fn, mocked } from "storybook/test";
+
+        const meta = preview.meta({
+          component: Component,
+          args: { getUsers: fn(), onClick: fn() },
+          beforeEach: ({ args }) => {
+            mocked(args.getUsers).mockResolvedValue([]);
+          },
+          loaders: [
+            async ({ args }) => {
+              mocked(args.getUsers).mockClear();
+            },
+          ],
+        });
+
+        export const A = meta.story({
+          async play({ args, canvas }) {
+            mocked(args.getUsers).mockReturnValue([{ id: 1 }]);
+            mocked(args.onClick).mockImplementation(() => {});
+            await expect(args.onClick).toHaveBeenCalled();
+            expect(mocked(args.onClick).mock.calls).toHaveLength(1);
+          },
+          afterEach: async (context) => {
+            mocked(context.args.onClick).mockReset();
+          },
+        });
+      `);
+    });
+
+    it('wraps mock calls on meta.args after rewriting them to meta.input.args', async () => {
+      await expect(
+        transform(dedent`
+          const meta = { component: Component, args: { onClick: fn() } };
+          export default meta;
+
+          export const A = {
+            play: async () => {
+              meta.args.onClick.mockRestore();
+            },
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#.storybook/preview";
+        import { mocked } from "storybook/test";
+        const meta = preview.meta({ component: Component, args: { onClick: fn() } });
+
+        export const A = meta.story({
+          play: async () => {
+            mocked(meta.input.args.onClick).mockRestore();
+          },
+        });
+      `);
     });
   });
 });

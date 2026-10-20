@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 
-import type { Args, Parameters, StoryContext } from 'storybook/internal/types';
+import { storyNameFromExport } from 'storybook/internal/csf';
+import type { Args, StoryContext, StrictArgTypes } from 'storybook/internal/types';
 
 import type { StoryObj } from '@storybook/react';
 
 import { PureArgsTable as ArgsTable } from '@storybook/addon-docs/blocks';
 
-import { mapValues } from 'es-toolkit/object';
-import { inferControls } from 'storybook/preview-api';
+import { getService, inferControls } from 'storybook/preview-api';
 import { ThemeProvider, convert, themes } from 'storybook/theming';
 
 import { component as TsImportedTypesComponent } from './docgen-components/8143-ts-imported-types/input';
@@ -31,15 +31,57 @@ import { component as TsFCComponent } from './docgen-components/ts-react-fc/inpu
 import { component as TsTypesComponent } from './docgen-components/ts-types/input';
 
 export default {
-  component: {},
-  render: (_: Args, context: StoryContext) => <ArgsStory parameters={context.parameters} />,
+  // Portable stories in Vitest have no docgen server to load argTypes from.
+  tags: ['!vitest'],
+  // The docgen server only extracts subcomponents once `component` resolves to a real component.
+  component: TsFunctionComponentComponent,
+  // Listed so the docgen server extracts every component; each story shows its own entry.
+  subcomponents: {
+    TsFunctionComponent: TsFunctionComponentComponent,
+    TsFunctionComponentInlineDefaults: TsFunctionComponentInlineDefaultsComponent,
+    TsReactFcGenerics: TsReactFcGenericsComponent,
+    TsImportedTypes: TsImportedTypesComponent,
+    TsMultiProps: TsMultiPropsComponent,
+    TsReactDefaultExports: TsReactDefaultExportsComponent,
+    TsImportTypes: TsImportTypesComponent,
+    TsDeprecatedJsdoc: TsDeprecatedJsdocComponent,
+    TsDefaultValues: TsDefaultValuesComponent,
+    TsCamelCase: TsCamelCaseComponent,
+    TsDisplayName: TsDisplayNameComponent,
+    TsForwardRef: TsForwardRefComponent,
+    TsTypeProps: TsTypePropsComponent,
+    TsExtendProps: TsExtendPropsComponent,
+    TsComponentProps: TsComponentPropsComponent,
+    TsJsdoc: TsJsdocComponent,
+    TsFC: TsFCComponent,
+    TsTypes: TsTypesComponent,
+    TsHtml: TsHtmlComponent,
+  },
+  loaders: [
+    async ({ componentId, name }: StoryContext) => {
+      if (!globalThis.FEATURES?.docgenServer) {
+        return {};
+      }
+      const docgen = await getService('core/docgen', { internal: true }).queries.docgen.loaded({
+        id: componentId,
+      });
+      const [, subcomponent] =
+        Object.entries(docgen?.subcomponents ?? {}).find(
+          ([exportName]) => storyNameFromExport(exportName) === name
+        ) ?? [];
+      return { argTypes: subcomponent?.argTypes ?? {} };
+    },
+  ],
+  render: (_: Args, { loaded, parameters }: StoryContext) => (
+    <ArgsStory
+      argTypes={loaded.argTypes ?? parameters.docs.extractArgTypes(parameters.component)}
+    />
+  ),
 };
 
-const ArgsStory = ({ parameters }: { parameters: Parameters }) => {
-  const argTypes = parameters.docs.extractArgTypes(parameters.component);
+const ArgsStory = ({ argTypes }: { argTypes: StrictArgTypes }) => {
   const rows = inferControls({ argTypes, parameters: { __isArgsStory: true } } as any);
-  const initialArgs = mapValues(rows, (argType) => argType.defaultValue);
-  const [args, setArgs] = useState(initialArgs);
+  const [args, setArgs] = useState<Args>({});
 
   return (
     <ThemeProvider theme={convert(themes.light)}>

@@ -3,7 +3,6 @@ import { fileURLToPath } from 'node:url';
 import type {
   DocgenProviderDescriptor,
   IndexEntry,
-  Options,
   PresetPropertyFn,
   StorybookConfigRaw,
 } from 'storybook/internal/types';
@@ -11,20 +10,11 @@ import type {
 import { DOCGEN_WORKER_SPECIFIER } from './worker-specifier.ts';
 
 export const experimental_docgenProvider = async (
-  existing: DocgenProviderDescriptor[] = [],
-  options: Options
-): Promise<DocgenProviderDescriptor[]> => {
-  const features = await options.presets.apply('features', {});
-
-  if (!features?.experimentalDocgenServer) {
-    return existing;
-  }
-
-  return [
-    ...existing,
-    { moduleSpecifier: fileURLToPath(import.meta.resolve(DOCGEN_WORKER_SPECIFIER)) },
-  ];
-};
+  existing: DocgenProviderDescriptor[] = []
+): Promise<DocgenProviderDescriptor[]> => [
+  ...existing,
+  { moduleSpecifier: fileURLToPath(import.meta.resolve(DOCGEN_WORKER_SPECIFIER)) },
+];
 
 export const experimental_manifests: PresetPropertyFn<
   'experimental_manifests',
@@ -33,7 +23,7 @@ export const experimental_manifests: PresetPropertyFn<
 > = async (existingManifests = {}, options) => {
   const features = await options.presets.apply('features', {});
 
-  if (!features?.experimentalDocgenServer || !features?.componentsManifest) {
+  if (!features?.docgenServer || !features?.componentsManifest) {
     return existingManifests;
   }
 

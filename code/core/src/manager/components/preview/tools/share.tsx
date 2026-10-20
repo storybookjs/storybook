@@ -85,7 +85,7 @@ export const isolationModeTool: Addon_BaseType = {
   title: 'isolation mode',
   id: 'isolationMode',
   type: types.TOOLEXTRA,
-  match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
+  match: ({ viewMode }) => viewMode === 'story',
   render: () => (
     <Consumer filter={mapper}>
       {({ api, storyId, refId }) => {

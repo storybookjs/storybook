@@ -3,30 +3,13 @@ import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types.ts';
 
-interface StorybookPackageNameOptions {
-  packageName: string;
-}
-
-/**
- * Detects when a project's package.json "name" field is "storybook",
- * which conflicts with the actual storybook package in node_modules
- * when using npm/pnpm/yarn workspaces.
- *
- * See: https://github.com/storybookjs/storybook/issues/28725
- */
-export const storybookPackageNameConflict: Fix<StorybookPackageNameOptions> = {
+export const storybookPackageNameConflict: Fix = {
   id: 'storybookPackageNameConflict',
   promptType: 'notification',
   link: 'https://github.com/storybookjs/storybook/issues/28725',
 
   async check({ packageManager }) {
-    const packageName = packageManager.primaryPackageJson.packageJson.name;
-
-    if (packageName === 'storybook') {
-      return { packageName };
-    }
-
-    return null;
+    return packageManager.primaryPackageJson.packageJson.name === 'storybook' ? {} : null;
   },
 
   prompt() {

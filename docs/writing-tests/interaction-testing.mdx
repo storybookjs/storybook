@@ -286,8 +286,6 @@ In the Storybook UI, you can run interaction tests by clicking the **Run compone
 
 ![Test widget, expanded, hovering run component tests button](../_assets/writing-tests/test-widget-run-component-tests.png)
 
-If you're using the [test-runner](./integrations/test-runner.mdx), you can run your interaction tests in the terminal or in CI environments.
-
 ## Debugging interaction tests
 
 If you check the Interactions panel, you'll see the step-by-step flow defined in your play function for each story. It also offers a handy set of UI controls to pause, resume, rewind, and step through each interaction.
@@ -308,7 +306,7 @@ Streamline interaction testing further by automatically [publishing Storybook](.
 
 When you run your tests with the Vitest addon, automating those tests is as simple as running your tests in your CI environment. Please see the [testing in CI guide](./in-ci.mdx) for more information.
 
-If you cannot use the Vitest addon, you can still run your tests in CI using the [test-runner](./integrations/test-runner.mdx).
+The Vitest addon requires a Vite-based framework. If your project uses Webpack, [migrate to Vite](./integrations/vitest-addon/migration-guide.mdx#what-if-i-am-using-storybook-with-webpack-or-rspack) first.
 
 ## Troubleshooting
 
@@ -331,4 +329,3 @@ Interaction tests integrate Vitest and Testing Library into Storybook. The bigge
 - [CI](./in-ci.mdx) for running tests in your CI/CD pipeline
 - [End-to-end testing](./integrations/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
 - [Unit testing](./integrations/stories-in-unit-tests.mdx) for functionality
-- [Test runner](./integrations/test-runner.mdx) to automate test execution

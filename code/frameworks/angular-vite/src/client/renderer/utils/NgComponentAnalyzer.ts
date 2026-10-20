@@ -37,7 +37,7 @@ export const getComponentInputsOutputs = (component: any): ComponentInputsOutput
     initialValue.inputs.push(
       ...componentMetadata.inputs.map((i) => ({
         propName: typeof i === 'string' ? i : i.name,
-        templateName: typeof i === 'string' ? i : i.alias,
+        templateName: typeof i === 'string' ? i : (i.alias ?? i.name),
       }))
     );
   }

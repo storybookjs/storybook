@@ -6,10 +6,10 @@ import {
   CURRENT_STORY_WAS_SET,
   DOCS_PREPARED,
   RESET_STORY_ARGS,
+  SELECT_STORY,
   SET_CONFIG,
   SET_FILTER,
   SET_INDEX,
-  SET_STORIES,
   STORY_ARGS_UPDATED,
   STORY_INDEX_INVALIDATED,
   STORY_MISSING,
@@ -20,6 +20,7 @@ import {
 import { logger } from 'storybook/internal/client-logger';
 import {
   type API_ComposedRef,
+  type API_PreparedIndexEntry,
   type API_StoryEntry,
   type StoryIndex,
 } from 'storybook/internal/types';
@@ -47,6 +48,8 @@ const fetch = vi.mocked(global.fetch);
 const getEventMetadata = vi.mocked(getEventMetadataOriginal);
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+vi.mock('../stores/status.ts');
 
 vi.mock('../lib/events.ts', () => ({
   getEventMetadata: vi.fn(() => ({ sourceType: 'local' })),
@@ -375,36 +378,36 @@ describe('stories API', () => {
       api.setIndex({
         v: 5,
         entries: {
-          'a-sampleone': {
+          'a-sampleone--1': {
             type: 'story',
             subtype: 'story',
-            id: 'a-sampleone',
+            id: 'a-sampleone--1',
             title: 'A/SampleOne',
             name: '1',
             tags: ['shared', 'one-specific'],
             importPath: './a.ts',
           },
-          'a-sampletwo': {
+          'a-sampletwo--2': {
             type: 'story',
             subtype: 'story',
-            id: 'a-sampletwo',
+            id: 'a-sampletwo--2',
             title: 'A/SampleTwo',
             name: '2',
             tags: ['shared', 'two-specific'],
             importPath: './a.ts',
           },
-          'a-embedded-othertopic': {
+          'a-embedded-othertopic--docs': {
             type: 'docs',
-            id: 'a-embedded-othertopic',
+            id: 'a-embedded-othertopic--docs',
             title: 'A/Embedded/OtherTopic',
             name: '3',
             tags: ['shared', 'embedded-docs-specific', 'other'],
             storiesImports: [],
             importPath: './embedded/other.mdx',
           },
-          'a-embedded-extras': {
+          'a-embedded-extras--docs': {
             type: 'docs',
-            id: 'a-embedded-extras',
+            id: 'a-embedded-extras--docs',
             title: 'A/Embedded/Extras',
             name: '3',
             tags: ['shared', 'embedded-docs-specific', 'extras'],
@@ -418,10 +421,12 @@ describe('stories API', () => {
       expect(Object.keys(index!)).toEqual([
         'a',
         'a-sampleone',
+        'a-sampleone--1',
         'a-sampletwo',
+        'a-sampletwo--2',
         'a-embedded',
-        'a-embedded-othertopic',
-        'a-embedded-extras',
+        'a-embedded-othertopic--docs',
+        'a-embedded-extras--docs',
       ]);
       // Acts as the root, so that the next level is a group we're testing.
       expect(index!.a).toMatchObject({
@@ -563,7 +568,6 @@ describe('stories API', () => {
           'component-a',
           'component-a--page',
           'component-a--story-2',
-          'component-b',
           'component-b--docs',
           'component-c',
           'component-c--story-4',
@@ -583,7 +587,7 @@ describe('stories API', () => {
           const { store } = moduleArgs;
           api.setIndex({ v: 5, entries: docsEntries });
           const { index } = store.getState();
-          expect(Object.keys(index!)).toEqual(['component-b', 'component-b--docs']);
+          expect(Object.keys(index!)).toEqual(['component-b--docs']);
         });
       });
     });
@@ -739,6 +743,21 @@ describe('stories API', () => {
 
       provider.channel.emit(STORY_SPECIFIED, { storyId: 'a--1', viewMode: 'story' });
       expect(navigate).not.toHaveBeenCalled();
+    });
+    it('navigates to the entry the preview resolved from a partial id', async () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          path: '/docs/intro',
+          storyId: 'intro',
+          viewMode: 'docs',
+          index: { 'intro--docs': { type: 'docs', id: 'intro--docs' } as any },
+        },
+      });
+      initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate, provider } = moduleArgs;
+
+      provider.channel.emit(STORY_SPECIFIED, { storyId: 'intro--docs', viewMode: 'docs' });
+      expect(navigate).toHaveBeenCalledWith('/docs/intro--docs', undefined);
     });
     it('DOES not navigate if a settings page was selected', async () => {
       const moduleArgs = createMockModuleArgs({
@@ -1102,7 +1121,7 @@ describe('stories API', () => {
       expect(result).toEqual(['component-a--story-1', 'component-a--story-2']);
     });
   });
-  describe('jumpToComponent', () => {
+  describe('jumpToSubtree', () => {
     it('works forward', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
       const moduleArgs = createMockModuleArgs({ initialState });
@@ -1110,7 +1129,7 @@ describe('stories API', () => {
       const { navigate } = moduleArgs;
 
       api.setIndex({ v: 5, entries: navigationEntries });
-      api.jumpToComponent(1);
+      api.jumpToSubtree(1);
       expect(navigate).toHaveBeenCalledWith('/story/b-c--1', undefined);
     });
     it('works backwards', () => {
@@ -1124,7 +1143,7 @@ describe('stories API', () => {
       const { navigate } = moduleArgs;
 
       api.setIndex({ v: 5, entries: navigationEntries });
-      api.jumpToComponent(-1);
+      api.jumpToSubtree(-1);
       expect(navigate).toHaveBeenCalledWith('/story/a--1', undefined);
     });
     it('does nothing if you are in the last component and go forward', () => {
@@ -1138,8 +1157,31 @@ describe('stories API', () => {
       const { navigate } = moduleArgs;
 
       api.setIndex({ v: 5, entries: navigationEntries });
-      api.jumpToComponent(1);
+      api.jumpToSubtree(1);
       expect(navigate).not.toHaveBeenCalled();
+    });
+    it('lands on an unattached docs page', () => {
+      const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
+      const moduleArgs = createMockModuleArgs({ initialState });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate } = moduleArgs;
+
+      api.setIndex({
+        v: 5,
+        entries: {
+          ...navigationEntries,
+          'intro--docs': {
+            type: 'docs',
+            id: 'intro--docs',
+            title: 'Intro',
+            name: 'Page',
+            importPath: './intro.mdx',
+            storiesImports: [],
+          },
+        },
+      });
+      api.jumpToSubtree(1);
+      expect(navigate).toHaveBeenCalledWith('/docs/intro--docs', undefined);
     });
     it('does nothing if you are at the first component and go backward', () => {
       const initialState = { path: '/story/a--2', storyId: 'a--2', viewMode: 'story' };
@@ -1148,7 +1190,7 @@ describe('stories API', () => {
       const { navigate } = moduleArgs;
 
       api.setIndex({ v: 5, entries: navigationEntries });
-      api.jumpToComponent(-1);
+      api.jumpToSubtree(-1);
       expect(navigate).not.toHaveBeenCalled();
     });
   });
@@ -1195,6 +1237,34 @@ describe('stories API', () => {
       api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('a--1');
       expect(store.getState().settings.lastTrackedStoryId).toBe('a--1');
+    });
+    it('selects the docs page of a component whose stories are all filtered out', () => {
+      const initialState = {
+        path: '/story/a--1',
+        storyId: 'a--1',
+        viewMode: 'story',
+        filters: { hideStories: (entry: API_PreparedIndexEntry) => entry.type !== 'story' },
+      };
+      const moduleArgs = createMockModuleArgs({ initialState });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate } = moduleArgs;
+
+      api.setIndex({
+        v: 5,
+        entries: {
+          'a--docs': {
+            type: 'docs',
+            id: 'a--docs',
+            title: 'a',
+            name: 'Docs',
+            importPath: './a.ts',
+            storiesImports: [],
+          },
+          'a--1': navigationEntries['a--1'],
+        },
+      });
+      api.selectStory('a');
+      expect(navigate).toHaveBeenCalledWith('/docs/a--docs', undefined);
     });
     it('selects first visible child when component is clicked with filtered index', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1474,73 +1544,80 @@ describe('stories API', () => {
       });
     });
   });
-  describe('v2 SET_STORIES event', () => {
-    it('normalizes parameters and calls setRef for external stories', () => {
+  describe('SELECT_STORY event', () => {
+    const setup = () => {
       const fullAPI = {
         findRef: vi.fn(),
         setRef: vi.fn(),
+        selectStory: vi.fn(),
       };
       const moduleArgs = createMockModuleArgs({ fullAPI });
       initStories(moduleArgs as unknown as ModuleArgs);
-      const { provider, store } = moduleArgs;
+      return { provider: moduleArgs.provider, fullAPI };
+    };
+
+    it('resolves the story from title and name', () => {
+      const { provider, fullAPI } = setup();
+
+      getEventMetadata.mockReturnValueOnce({ sourceType: 'local' } as any);
+      provider.channel.emit(SELECT_STORY, {
+        title: 'a',
+        name: '1',
+        viewMode: 'story',
+      });
+
+      expect(fullAPI.selectStory).toHaveBeenCalledWith('a', '1', { viewMode: 'story' });
+    });
+
+    it('resolves the story from storyId when provided', () => {
+      const { provider, fullAPI } = setup();
+
+      getEventMetadata.mockReturnValueOnce({ sourceType: 'local' } as any);
+      provider.channel.emit(SELECT_STORY, {
+        storyId: 'a--1',
+        viewMode: 'story',
+      });
+
+      expect(fullAPI.selectStory).toHaveBeenCalledWith('a--1', undefined, { viewMode: 'story' });
+    });
+
+    it('resolves the story from the legacy kind/story payload sent by older composed Storybooks', () => {
+      const { provider, fullAPI } = setup();
 
       getEventMetadata.mockReturnValueOnce({
         sourceType: 'external',
         ref: { id: 'ref' },
       } as any);
-      const setStoriesPayload = {
-        v: 2,
-        globalParameters: { global: 'global' },
-        kindParameters: { a: { kind: 'kind' } },
-        stories: { 'a--1': { kind: 'a', parameters: { story: 'story' } } },
-      };
-      provider.channel.emit(SET_STORIES, setStoriesPayload);
-      expect(store.getState().index).toBeUndefined();
-      expect(fullAPI.setRef).toHaveBeenCalledWith(
-        'ref',
-        {
-          id: 'ref',
-          setStoriesData: {
-            'a--1': { kind: 'a', parameters: { global: 'global', kind: 'kind', story: 'story' } },
-          },
-        },
-        true
-      );
-    });
-  });
-  describe('legacy (v1) SET_STORIES event', () => {
-    it('calls setRef with stories', () => {
-      const fullAPI = {
-        findRef: vi.fn(),
-        setRef: vi.fn(),
-      };
-      const moduleArgs = createMockModuleArgs({ fullAPI });
-      initStories(moduleArgs as unknown as ModuleArgs);
-      const { provider, store } = moduleArgs;
+      provider.channel.emit(SELECT_STORY, {
+        kind: 'a',
+        story: '1',
+        viewMode: 'story',
+      });
 
-      getEventMetadata.mockReturnValueOnce({
-        sourceType: 'external',
-        ref: { id: 'ref' },
-      } as any);
-      const setStoriesPayload = {
-        stories: { 'a--1': {} },
-      };
-      provider.channel.emit(SET_STORIES, setStoriesPayload);
-      expect(store.getState().index).toBeUndefined();
-      expect(fullAPI.setRef).toHaveBeenCalledWith(
-        'ref',
-        {
-          id: 'ref',
-          setStoriesData: {
-            'a--1': {},
-          },
-        },
-        true
+      expect(fullAPI.selectStory).toHaveBeenCalledWith('a', '1', {
+        viewMode: 'story',
+        ref: 'ref',
+      });
+    });
+
+    it('warns and does not navigate on a payload without storyId, title or name', () => {
+      const { provider, fullAPI } = setup();
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+
+      getEventMetadata.mockReturnValueOnce({ sourceType: 'local' } as any);
+      provider.channel.emit(SELECT_STORY, {});
+
+      expect(fullAPI.selectStory).not.toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('without storyId, title or name')
       );
+
+      warnSpy.mockRestore();
     });
   });
+
   describe('SET_CONFIG', () => {
-    it('applies config sidebar filters to an index that was already set', async () => {
+    it('ignores sidebar.filters when config arrives after the index', async () => {
       const moduleArgs = createMockModuleArgs({
         initialState: {
           tagPresets: {},
@@ -1579,7 +1656,6 @@ describe('stories API', () => {
 
       expect(Object.keys(store.getState().filteredIndex!)).toContain('b--1');
 
-      // Now the addon config with sidebar filters lands
       provider.getConfig.mockReturnValue({
         sidebar: { filters: { pattern: (item: any) => item.id.startsWith('a') } },
       });
@@ -1587,17 +1663,18 @@ describe('stories API', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
 
       const { filteredIndex } = store.getState();
-      expect(Object.keys(filteredIndex!)).toEqual(['a', 'a--1']);
+      expect(Object.keys(filteredIndex!)).toContain('a--1');
+      expect(Object.keys(filteredIndex!)).toContain('b--1');
     });
   });
-  describe('experimental_setFilters', () => {
+  describe('setFilters', () => {
     it('applies multiple filters in a single call', async () => {
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
 
       await api.setIndex({ v: 5, entries: navigationEntries });
-      await api.experimental_setFilters({
+      await api.setFilters({
         one: (item: any) => !item.id.startsWith('b'),
         two: (item: any) => !item.id.startsWith('custom'),
       });
@@ -1620,17 +1697,17 @@ describe('stories API', () => {
       provider.channel.on(SET_FILTER, listener);
 
       // Without an index, nothing is emitted (the filters only take effect later)
-      await api.experimental_setFilters({ one: () => true });
+      await api.setFilters({ one: () => true });
       expect(listener).not.toHaveBeenCalled();
 
       await api.setIndex({ v: 5, entries: navigationEntries });
-      await api.experimental_setFilters({ one: () => true, two: () => true });
+      await api.setFilters({ one: () => true, two: () => true });
       expect(listener).toHaveBeenCalledTimes(2);
       expect(listener).toHaveBeenCalledWith({ id: 'one' });
       expect(listener).toHaveBeenCalledWith({ id: 'two' });
     });
   });
-  describe('experimental_setFilter', () => {
+  describe('setFilter', () => {
     it('is included in the initial state', async () => {
       const moduleArgs = createMockModuleArgs({});
       const { state, api } = initStories(moduleArgs as unknown as ModuleArgs);
@@ -1659,7 +1736,7 @@ describe('stories API', () => {
 
       await api.setIndex({ v: 5, entries: mockEntries });
 
-      await api.experimental_setFilter('myCustomFilter', () => true);
+      await api.setFilter('myCustomFilter', () => true);
 
       expect(store.getState()).toEqual(
         expect.objectContaining({
@@ -1676,7 +1753,7 @@ describe('stories API', () => {
       const { store } = moduleArgs;
 
       await api.setIndex({ v: 5, entries: navigationEntries });
-      await api.experimental_setFilter('myCustomFilter', (item: any) => item.id.startsWith('a'));
+      await api.setFilter('myCustomFilter', (item: any) => item.id.startsWith('a'));
 
       const { filteredIndex } = store.getState();
 
@@ -1730,13 +1807,12 @@ describe('stories API', () => {
     });
 
     it('can filter on status', async () => {
-      vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
 
       await api.setIndex({ v: 5, entries: navigationEntries });
-      await api.experimental_setFilter(
+      await api.setFilter(
         'myCustomFilter',
         (item) =>
           item.statuses !== undefined &&
@@ -1807,7 +1883,7 @@ describe('stories API', () => {
       const { store } = moduleArgs;
 
       await api.setIndex({ v: 5, entries: navigationEntries });
-      await api.experimental_setFilter('myCustomFilter', (item: any) => item.id.startsWith('a'));
+      await api.setFilter('myCustomFilter', (item: any) => item.id.startsWith('a'));
 
       await api.setIndex({ v: 5, entries: navigationEntries });
 
@@ -2088,9 +2164,8 @@ describe('stories API', () => {
     });
   });
 
-  describe('computeStatusFilterFn (via experimental_setFilter)', () => {
+  describe('computeStatusFilterFn (via setFilter)', () => {
     it('passes through all stories when both included and excluded are empty', async () => {
-      vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
@@ -2103,7 +2178,6 @@ describe('stories API', () => {
     });
 
     it('applies OR logic within included status filters', async () => {
-      vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
@@ -2138,7 +2212,6 @@ describe('stories API', () => {
     });
 
     it('re-applies active filters on status changes without re-registering the status filter', async () => {
-      vi.mock('../stores/status');
       fullStatusStore.unset();
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
@@ -2152,7 +2225,7 @@ describe('stories API', () => {
         expect(Object.keys(filteredIndex!)).toHaveLength(0);
       });
 
-      const setFilterSpy = vi.spyOn(api, 'experimental_setFilter');
+      const setFilterSpy = vi.spyOn(api, 'setFilter');
       fullStatusStore.set([
         {
           typeId: 'addon-id',
@@ -2172,7 +2245,6 @@ describe('stories API', () => {
     });
 
     it('a stream of status updates triggers a bounded number of index rebuilds', async () => {
-      vi.mock('../stores/status');
       vi.useFakeTimers();
       try {
         fullStatusStore.unset();
@@ -2182,7 +2254,7 @@ describe('stories API', () => {
         await api.setIndex({ v: 5, entries: navigationEntries });
 
         const setIndexSpy = vi.spyOn(api, 'setIndex');
-        const setFilterSpy = vi.spyOn(api, 'experimental_setFilter');
+        const setFilterSpy = vi.spyOn(api, 'setFilter');
 
         const BURST = 50;
         for (let i = 0; i < BURST; i += 1) {
@@ -2210,7 +2282,6 @@ describe('stories API', () => {
     });
 
     it('applies the last status update after a burst (trailing edge of the throttle)', async () => {
-      vi.mock('../stores/status');
       vi.useFakeTimers();
       try {
         fullStatusStore.unset();
@@ -2250,7 +2321,6 @@ describe('stories API', () => {
     });
 
     it('does not overlap status-driven index rebuilds when a rebuild outlasts the throttle', async () => {
-      vi.mock('../stores/status');
       vi.useFakeTimers();
       try {
         fullStatusStore.unset();
@@ -2310,7 +2380,6 @@ describe('stories API', () => {
     });
 
     it('keeps rebuilding the status-filtered index after a rebuild rejection', async () => {
-      vi.mock('../stores/status');
       vi.useFakeTimers();
       const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
       try {
@@ -2362,7 +2431,6 @@ describe('stories API', () => {
     });
 
     it('applies exclude logic: story with excluded status is hidden', async () => {
-      vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
@@ -2397,7 +2465,6 @@ describe('stories API', () => {
     });
 
     it('story with no statuses is hidden when included filters are active', async () => {
-      vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
@@ -2454,7 +2521,7 @@ describe('stories API', () => {
     /**
      * Whilst the two of the built-in filters (status and tag) have easy ways to determine
      * whether or not they are active, no other filters do - in particular, user-provided filters
-     * from experimental_setFilter.
+     * from setFilter.
      *
      * As such, the filtered index is now used if it is present, regardless of the heuristics that
      * could be used to determine if the status/tag filters are active.

@@ -36,19 +36,39 @@ const transform = (code: string, options: Partial<CsfOptions> = { makeTitle }) =
 };
 
 describe('CsfFile', () => {
-  it('prints CRLF sources with LF output', async () => {
-    const os = (await import('node:os')).default;
-    const original = os.EOL;
-    Object.defineProperty(os, 'EOL', { value: '\r\n' });
-    try {
-      const source = ['export default { title: "foo/bar" };', '', 'export const Story = {};'].join(
-        '\r\n'
-      );
-      const csf = loadCsf(source, { makeTitle }).parse();
-      expect(printCsf(csf).code).not.toContain('\r');
-    } finally {
-      Object.defineProperty(os, 'EOL', { value: original });
-    }
+  it('edits its source through editor, program and appendStatement, and their deprecated aliases', () => {
+    const csf = loadCsf("export default { title: 'A' };\nexport const B = {};\n", {
+      makeTitle,
+    }).parse();
+
+    expect(csf._editor).toBe(csf.editor);
+    expect(csf._program).toBe(csf.program);
+    expect(csf.program.body).toHaveLength(2);
+    csf.appendStatement('export const C = {};');
+    csf._appendStatement('export const D = {};');
+    csf.editor.commit();
+
+    expect(csf.program.body).toHaveLength(4);
+    expect(csf.stories.map(({ name }) => name)).toEqual(['B', 'C', 'D']);
+  });
+
+  it('prints an edited CRLF source with CRLF line endings', () => {
+    const source = ['export default { title: "foo/bar" };', '', 'export const Story = {};'].join(
+      '\r\n'
+    );
+    const csf = loadCsf(source, { makeTitle }).parse();
+    const [story] = csf.objects({ meta: false });
+    story.set(['args', 'label'], 'Hi');
+    expect(printCsf(csf).code).toBe(
+      'export default { title: "foo/bar" };\r\n\r\nexport const Story = { args: { label: "Hi" } };'
+    );
+  });
+
+  it('reports the line and column of a CSF error in a CRLF source', () => {
+    const source = ['const title = "foo";', 'export default { title: `${title}/bar` };'].join(
+      '\r\n'
+    );
+    expect(() => loadCsf(source, { makeTitle }).parse()).toThrow('(line 2, col 24)');
   });
 
   describe('basic', () => {
@@ -83,9 +103,7 @@ describe('CsfFile', () => {
           { transformInlineMeta: true }
         )
       ).toMatchInlineSnapshot(`
-        "const _meta = {
-          title: 'foo/bar'
-        };
+        "const _meta = { title: 'foo/bar' };
         export default _meta;"
       `);
     });
@@ -1297,6 +1315,37 @@ describe('CsfFile', () => {
       `);
     });
 
+    it.each(['export { Missing };', 'export { type Missing };', 'export type { Missing };'])(
+      'rejects %s of a name the file never declares',
+      (exported) => {
+        expect(() =>
+          loadCsf(`export default {};\n${exported}`, {
+            makeTitle,
+            fileName: 'foo/bar.stories.ts',
+          }).parse()
+        ).toThrow(/^Export 'Missing' is not defined \(2:\d+\) in foo\/bar\.stories\.ts$/);
+      }
+    );
+
+    it.each([
+      'type X = {};\nexport { X };',
+      'type X = {};\nexport { type X };',
+      'interface X {}\nexport { X };',
+      'enum X {}\nexport { X };',
+      'namespace X {}\nexport { X };',
+      'namespace X.Y {}\nexport { X };',
+      'declare function X(): void;\nexport { X };',
+      "import type { X } from './x';\nexport { X };",
+      "export { X } from './x';",
+    ])('accepts the export in %s', (declaration) => {
+      expect(() =>
+        loadCsf(`export default {};\n${declaration}`, {
+          makeTitle,
+          fileName: 'foo/bar.stories.ts',
+        }).parse()
+      ).not.toThrow();
+    });
+
     it('dynamic titles', () => {
       expect(() =>
         parse(
@@ -1384,24 +1433,6 @@ describe('CsfFile', () => {
         A.y = 2;
         export const B = () => {};
         B.z = 3;
-    `;
-      const csf = loadCsf(input, { makeTitle }).parse();
-      expect(Object.keys(csf._storyAnnotations.A)).toEqual(['x', 'y']);
-      expect(Object.keys(csf._storyAnnotations.B)).toEqual(['z']);
-    });
-
-    it('v1-style story annotations', () => {
-      const input = dedent`
-        export default { title: 'foo/bar' };
-        export const A = () => {};
-        A.story = {
-          x: 1,
-          y: 2,
-        }
-        export const B = () => {};
-        B.story = {
-          z: 3,
-        }
     `;
       const csf = loadCsf(input, { makeTitle }).parse();
       expect(Object.keys(csf._storyAnnotations.A)).toEqual(['x', 'y']);
@@ -2473,6 +2504,40 @@ describe('CsfFile', () => {
     });
   });
 
+  describe('component import', () => {
+    const componentImport = (code: string) =>
+      loadCsf(code, { makeTitle, fileName: 'Button.stories.ts' }).parse().componentImport;
+
+    it.each([
+      {
+        code: `import { Button as B } from './Button';\nexport default { component: B };`,
+        expected: { source: './Button', imported: 'Button', local: 'B' },
+      },
+      {
+        code: `import Button from './Button';\nexport default { component: Button };`,
+        expected: { source: './Button', imported: 'default', local: 'Button' },
+      },
+      {
+        code: `import { 'my-button' as B } from 'lib';\nexport default { component: B };`,
+        expected: { source: 'lib', imported: 'my-button', local: 'B' },
+      },
+      {
+        code: `import preview from '#.storybook/preview';\nimport { Button } from './Button';\nconst meta = preview.meta({ component: Button });\nexport const A = meta.story();`,
+        expected: { source: './Button', imported: 'Button', local: 'Button' },
+      },
+    ])('reads $expected.local from $expected.source', ({ code, expected }) => {
+      expect(componentImport(code)).toEqual(expected);
+    });
+
+    it.each([
+      `export default {};`,
+      `const Button = () => null;\nexport default { component: Button };`,
+      `import * as UI from './ui';\nexport default { component: UI.Button };`,
+    ])('is undefined for %s', (code) => {
+      expect(componentImport(code)).toBeUndefined();
+    });
+  });
+
   describe('beforeEach', () => {
     it('basic', () => {
       expect(
@@ -2968,6 +3033,25 @@ describe('CsfFile', () => {
                 moduleMock: false
         `);
       });
+
+      it('story typed with meta.type<>()', () => {
+        const parsed = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            export const A = meta.story({})
+            export const B = meta.type<{ args: { icon: string } }>().story({ name: 'Typed' })
+            export const C = meta.type<{ args: { icon: string } }>().type<{ args: { size: number } }>().story()
+          `,
+          { makeTitle }
+        ).parse();
+
+        expect(parsed.stories).toMatchObject([
+          { id: 'default-title--a', name: 'A', __stats: { factory: true } },
+          { id: 'default-title--b', name: 'Typed', __stats: { factory: true } },
+          { id: 'default-title--c', name: 'C', __stats: { factory: true } },
+        ]);
+      });
     });
     describe('errors', () => {
       it('multiple meta variables', () => {
@@ -3018,7 +3102,7 @@ describe('CsfFile', () => {
         `
           )
         ).toThrowErrorMatchingInlineSnapshot(`
-          [MultipleMetaError: CSF: multiple meta objects 
+          [MultipleMetaError: CSF: multiple meta objects (line 3, col 15)
 
           More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export]
         `);
@@ -3072,6 +3156,57 @@ describe('CsfFile', () => {
         ).parse();
         // Only factory stories are indexed, non-factory exports are skipped
         expect(Object.keys(parsed._stories)).toEqual(['A']);
+      });
+
+      it('reads factory stories exported with export specifiers', () => {
+        const parsed = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            const $__Button = meta.story({ tags: ['a'] });
+            const $__Typed = meta.story({ tags: ['b'] }) satisfies ReturnType<typeof meta.story>;
+            const someHelper = () => {};
+            function helperFunction() {}
+            class HelperClass {}
+            export { $__Button as Button, $__Typed as Typed, someHelper, helperFunction, HelperClass };
+            export { Other } from './Other.stories';
+            import { Imported } from './Imported.stories';
+            export { Imported };
+          `,
+          { makeTitle }
+        ).parse();
+
+        expect(
+          parsed.stories.map(({ name, tags, __stats }) => ({
+            name,
+            tags,
+            factory: __stats.factory,
+          }))
+        ).toEqual([
+          { name: 'Button', tags: ['a'], factory: true },
+          { name: 'Typed', tags: ['b'], factory: true },
+          { name: 'Other', tags: undefined, factory: undefined },
+          { name: 'Imported', tags: undefined, factory: undefined },
+        ]);
+      });
+
+      it('reads a .story() call behind an export specifier as a plain story in a non-factory file', () => {
+        const parsed = loadCsf(
+          dedent`
+            export default { title: 'foo' };
+            const Local = api.story({ tags: ['a'] });
+            export { Local as Story };
+          `,
+          { makeTitle }
+        ).parse();
+
+        expect(
+          parsed.stories.map(({ name, tags, __stats }) => ({
+            name,
+            tags,
+            factory: __stats.factory,
+          }))
+        ).toEqual([{ name: 'Story', tags: undefined, factory: undefined }]);
       });
 
       it('excludeStories still works with factories', () => {

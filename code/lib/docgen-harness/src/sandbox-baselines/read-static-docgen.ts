@@ -60,8 +60,9 @@ export const toBaseline = (payload: DocgenPayload, sandboxDir: string): SandboxB
 // The monorepo's shared template stories reference their component through a global, so there is no
 // import for the resolver to follow and every one of them is an error payload by construction.
 // Recording them would say something about the template-story harness, not about docgen.
+// Web Components names such a payload after its title and quotes the global in the error instead.
 const isGloballyReferenced = (payload: SandboxBaseline): boolean =>
-  payload.name.startsWith('globalThis');
+  payload.name.startsWith('globalThis') || payload.error?.message.includes('`globalThis.') === true;
 
 export function readStaticDocgen({
   staticDir,
@@ -79,8 +80,8 @@ export function readStaticDocgen({
     // eslint-disable-next-line local-rules/no-uncategorized-errors
     throw new Error(
       `No docgen snapshots at ${docgenDir}.\n` +
-        `Build the sandbox first, and check that its main config enables both ` +
-        `features.experimentalDocgenServer and features.componentsManifest.`,
+        `Build the sandbox first, and check that its framework supports server docgen, ` +
+        `features.componentsManifest is enabled, and features.docgenServer is not disabled.`,
       { cause }
     );
   }

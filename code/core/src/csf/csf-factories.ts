@@ -1,8 +1,10 @@
 import type { AddonTypes, StoryContext } from 'storybook/internal/csf';
 import { combineTags } from 'storybook/internal/csf';
 import type {
+  Args,
   ComponentAnnotations,
   ComposedStoryFn,
+  DecoratorFunction,
   NormalizedProjectAnnotations,
   ProjectAnnotations,
   Renderer,
@@ -10,7 +12,7 @@ import type {
   TestFunction,
 } from 'storybook/internal/types';
 
-import type { SetOptional } from 'type-fest';
+import type { OmitIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
 import {
   combineParameters,
@@ -25,27 +27,37 @@ import { getCoreAnnotations, markAsComposedWithCoreAnnotations } from './core-an
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';
-  input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddon<never>[] };
+  input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddonEntry[] };
   composed: NormalizedProjectAnnotations<TRenderer>;
 
-  meta<
-    TArgs,
-    TInput extends ComponentAnnotations<TRenderer & { args: TArgs }, TArgs & TRenderer['args']>,
-  >(
-    input: TInput
-  ): Meta<TRenderer & { args: TArgs }, TInput>;
+  meta<TArgs = Args, TMetaArgKeys extends PropertyKey = never>(
+    input: Omit<
+      ComponentAnnotations<TRenderer & { args: TArgs }, TArgs & TRenderer['args']>,
+      'args'
+    > & { args?: MetaArgs<TArgs & TRenderer['args'], TMetaArgKeys> }
+  ): Meta<RequireMetaArgs<TRenderer & { args: TArgs }, TMetaArgKeys>, TMetaArgKeys>;
 
   type<T>(): Preview<TRenderer & T>;
 }
 
-export type InferTypes<T extends PreviewAddon<never>[]> = T extends PreviewAddon<infer C>[]
+/**
+ * A typed addon created with `definePreviewAddon`, or a legacy preview annotations module namespace
+ * (`import * as addon from 'some-addon/preview'`). Legacy namespaces add no types to the preview.
+ */
+export type PreviewAddonEntry = PreviewAddon<never> | Record<string, unknown>;
+
+export type InferTypes<T extends PreviewAddonEntry[]> = Extract<
+  T[number],
+  PreviewAddon<never>
+>[] extends PreviewAddon<infer C>[]
   ? C & { csf4: true }
   : never;
 
-export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddon<never>[]>(
+export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddonEntry[]>(
   input: ProjectAnnotations<TRenderer> & { addons?: Addons }
 ): Preview<TRenderer & InferTypes<Addons>> {
-  let composed: NormalizedProjectAnnotations<TRenderer & InferTypes<Addons>>;
+  type TPreviewRenderer = TRenderer & InferTypes<Addons>;
+  let composed: NormalizedProjectAnnotations<TPreviewRenderer>;
   const preview = {
     _tag: 'Preview',
     input: input,
@@ -57,7 +69,7 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
       // The composed result already includes the core annotations. Mark it so that downstream
       // consumers (StoryStore / portable setProjectAnnotations) don't prepend them a second time.
       composed = markAsComposedWithCoreAnnotations(
-        normalizeProjectAnnotations<TRenderer & InferTypes<Addons>>(
+        normalizeProjectAnnotations<TPreviewRenderer>(
           composeConfigs([...getCoreAnnotations(), ...(addons ?? []), rest])
         )
       );
@@ -67,10 +79,12 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
       return this;
     },
     meta(meta) {
-      // @ts-expect-error hard
-      return defineMeta(meta, this);
+      return defineMeta(
+        meta as ComponentAnnotations<TPreviewRenderer, TPreviewRenderer['args']>,
+        this
+      );
     },
-  } as Preview<TRenderer & InferTypes<Addons>>;
+  } as Preview<TPreviewRenderer>;
   globalThis.globalProjectAnnotations = preview.composed;
   return preview;
 }
@@ -89,15 +103,87 @@ export function isPreview(input: unknown): input is Preview<Renderer> {
   return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Preview';
 }
 
-export interface Meta<
+// Types the `args` of `preview.meta()` by the keys provided. Each value is checked against `TArgs`
+// but never used to infer it, so literals don't widen and callbacks get their parameter types. The
+// other arg names are listed so editors can suggest them.
+type MetaArgs<TArgs, TKeys extends PropertyKey> = string extends TKeys
+  ? Partial<NoInfer<TArgs>>
+  : {
+      [K in TKeys]?: K extends keyof NoInfer<TArgs> ? NoInfer<TArgs>[K] : never;
+    } & Partial<Record<Exclude<keyof NoInfer<TArgs>, TKeys>, unknown>>;
+
+// An `Args` record doesn't say which args it sets, so it sets none.
+type MetaArgKeys<TArgs, TKeys extends PropertyKey> = string extends TKeys
+  ? never
+  : TKeys & keyof TArgs;
+
+type WithMetaArgs<TArgs, TKeys extends PropertyKey> = TArgs &
+  Required<Pick<TArgs, MetaArgKeys<TArgs, TKeys>>>;
+
+type RequireMetaArgs<TRenderer extends Renderer, TKeys extends PropertyKey> = TRenderer & {
+  args: WithMetaArgs<TRenderer['args'], TKeys>;
+};
+
+type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
+  Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
+>;
+
+type InferMetaTypes<TRenderer extends Renderer, TArgs, Decorators> = TRenderer & {
+  args: Simplify<TArgs & OmitIndexSignature<DecoratorsArgs<TRenderer, Decorators>>>;
+};
+
+/**
+ * The input of a renderer's `preview.meta()`, apart from `component` and `render`. `args` are
+ * typed by the keys provided, and the meta's own hooks see those args as present.
+ */
+export type MetaInput<TRenderer extends Renderer, TArgs, Decorators, TKeys extends PropertyKey> = {
+  args?: MetaArgs<InferMetaTypes<TRenderer, TArgs, Decorators>['args'], TKeys>;
+  decorators?: Decorators | Decorators[];
+} & Omit<
+  ComponentAnnotations<TRenderer, NoInfer<WithMetaArgs<TArgs & TRenderer['args'], TKeys>>>,
+  'args' | 'component' | 'decorators' | 'render'
+>;
+
+/**
+ * The renderer types of the meta returned by `preview.meta()`: `TArgs` plus the args read by
+ * `Decorators`, with the args set in meta present.
+ */
+export type MetaTypes<
   TRenderer extends Renderer,
-  TMetaInput extends ComponentAnnotations<TRenderer, TRenderer['args']> = ComponentAnnotations<
-    TRenderer,
-    TRenderer['args']
-  >,
-> {
+  TArgs,
+  Decorators,
+  TKeys extends PropertyKey,
+> = RequireMetaArgs<InferMetaTypes<TRenderer, TArgs, Decorators>, TKeys>;
+
+/** The args a story must still provide: the ones `preview.meta()` didn't set. */
+export type StoryArgs<TArgs, TKeys extends PropertyKey> = SetOptional<
+  TArgs,
+  MetaArgKeys<TArgs, TKeys>
+>;
+
+/**
+ * The meta's arg keys after `meta.type<T>()`. An arg that `T` redeclares is required again, because
+ * the meta's value was not checked against its new type.
+ */
+export type TypedMetaArgKeys<TKeys extends PropertyKey, T> = Exclude<
+  TKeys,
+  T extends { args: infer TArgs } ? keyof TArgs : never
+>;
+
+/**
+ * Adds the args of a typed `render` to those of the meta's `component`. A `render` typed as `any` or
+ * `Args` adds none, and it can't change the types of the component's args.
+ */
+export type WithRenderArgs<TComponentArgs, TRenderArgs> = TComponentArgs &
+  (string extends keyof TRenderArgs ? unknown : Omit<TRenderArgs, keyof TComponentArgs>);
+
+export interface Meta<TRenderer extends Renderer, TMetaArgKeys extends PropertyKey = never> {
   readonly _tag: 'Meta';
-  input: TMetaInput;
+  input: Omit<ComponentAnnotations<TRenderer, TRenderer['args']>, 'args'> & {
+    args: [MetaArgKeys<TRenderer['args'], TMetaArgKeys>] extends [never]
+      ? Partial<TRenderer['args']> | undefined
+      : WithMetaArgs<Partial<TRenderer['args']>, TMetaArgKeys>;
+  };
   // composed: NormalizedComponentAnnotations<TRenderer>;
   preview: Preview<TRenderer>;
 
@@ -109,43 +195,49 @@ export interface Meta<
     TInput extends StoryAnnotations<
       TRenderer,
       TRenderer['args'],
-      SetOptional<TRenderer['args'], keyof TRenderer['args'] & keyof TMetaInput['args']>
+      StoryArgs<TRenderer['args'], TMetaArgKeys>
     >,
   >(
     input?: TInput
   ): Story<TRenderer, TInput>;
+
+  type<T>(): Meta<TRenderer & T, TypedMetaArgKeys<TMetaArgKeys, T>>;
 }
 
 export function isMeta(input: unknown): input is Meta<Renderer> {
   return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Meta';
 }
 
-function defineMeta<
-  TRenderer extends Renderer,
-  TInput extends ComponentAnnotations<TRenderer, TRenderer['args']> = ComponentAnnotations<
-    TRenderer,
-    TRenderer['args']
-  >,
->(input: TInput, preview: Preview<TRenderer>): Meta<TRenderer, TInput> {
+function defineMeta<TRenderer extends Renderer>(
+  input: ComponentAnnotations<TRenderer, TRenderer['args']>,
+  preview: Preview<TRenderer>
+): Meta<TRenderer> {
   return {
     _tag: 'Meta',
-    input: { ...input, parameters: { ...input.parameters, csfFactory: true } },
+    input: {
+      ...input,
+      parameters: { ...input.parameters, csfFactory: true },
+    } as Meta<TRenderer>['input'],
     preview,
-    // @ts-expect-error hard
+    type<T>() {
+      return this as unknown as Meta<TRenderer & T>;
+    },
     story(
       story: StoryAnnotations<TRenderer, TRenderer['args']> | (() => TRenderer['storyResult']) = {}
     ) {
-      return defineStory(typeof story === 'function' ? { render: story } : story, this);
+      const annotations = typeof story === 'function' ? { render: story } : story;
+      // The overloads of `Meta['story']` type the story's input.
+      return defineStory(annotations, this) as Story<TRenderer, any>;
     },
   };
 }
 
 export interface Story<
   TRenderer extends Renderer,
-  TInput extends StoryAnnotations<TRenderer, TRenderer['args']> = StoryAnnotations<
-    TRenderer,
-    TRenderer['args']
-  >,
+  TInput extends {
+    play?: (...args: never[]) => void;
+    render?: (...args: never[]) => TRenderer['storyResult'];
+  } = StoryAnnotations<TRenderer, TRenderer['args']>,
 > {
   readonly _tag: 'Story';
   input: TInput;
@@ -181,7 +273,13 @@ export function isStory<TRenderer extends Renderer>(input: unknown): input is St
 function defineStory<
   TRenderer extends Renderer,
   TInput extends StoryAnnotations<TRenderer, TRenderer['args']>,
->(input: TInput, meta: Meta<TRenderer>): Story<TRenderer, TInput> {
+>(
+  input: TInput,
+  meta: Meta<TRenderer>
+): Story<TRenderer, TInput> & {
+  __compose: () => ComposedStoryFn<TRenderer>;
+  __children: Story<TRenderer>[];
+} {
   let composed: ComposedStoryFn<TRenderer>;
   const compose = () => {
     if (!composed) {
@@ -201,7 +299,6 @@ function defineStory<
     _tag: 'Story',
     input,
     meta,
-    // @ts-expect-error this is a private property used only once in renderers/react/src/preview
     __compose: compose,
     __children,
     get composed() {
@@ -219,7 +316,7 @@ function defineStory<
       name: string,
       overridesOrTestFn: StoryAnnotations<TRenderer, TRenderer['args']> | TestFunction<TRenderer>,
       testFn?: TestFunction<TRenderer, TRenderer['args']>
-    ): void {
+    ) {
       const annotations = typeof overridesOrTestFn !== 'function' ? overridesOrTestFn : {};
       const testFunction = typeof overridesOrTestFn !== 'function' ? testFn! : overridesOrTestFn;
 
@@ -244,7 +341,7 @@ function defineStory<
       });
       __children.push(test);
 
-      return test as unknown as void;
+      return test;
     },
     extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
       return defineStory(

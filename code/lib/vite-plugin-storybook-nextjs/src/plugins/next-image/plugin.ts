@@ -145,7 +145,7 @@ export function vitePluginNextImage(
                   paths: [path.dirname(importerPath)],
                 });
               } catch {
-                imagePath = source;
+                return null;
               }
             }
           }

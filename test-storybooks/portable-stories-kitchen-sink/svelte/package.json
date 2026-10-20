@@ -31,7 +31,6 @@
     "@storybook/preset-react-webpack": "portal:../../../code/presets/react-webpack",
     "@storybook/preset-server-webpack": "portal:../../../code/presets/server-webpack",
     "@storybook/react": "portal:../../../code/renderers/react",
-    "@storybook/react-dom-shim": "portal:../../../code/lib/react-dom-shim",
     "@storybook/react-vite": "portal:../../../code/frameworks/react-vite",
     "@storybook/react-webpack5": "portal:../../../code/frameworks/react-webpack5",
     "@storybook/server": "portal:../../../code/renderers/server",

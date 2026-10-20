@@ -2,7 +2,6 @@
   "count": {
     "description": undefined,
     "name": "count",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {
@@ -13,13 +12,12 @@
       },
     },
     "type": {
-      "name": undefined,
+      "name": "string",
     },
   },
   "disabled": {
     "description": undefined,
     "name": "disabled",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {
@@ -30,13 +28,12 @@
       },
     },
     "type": {
-      "name": undefined,
+      "name": "string",
     },
   },
   "label": {
     "description": undefined,
     "name": "label",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {
@@ -47,13 +44,12 @@
       },
     },
     "type": {
-      "name": undefined,
+      "name": "string",
     },
   },
   "legacy-label": {
     "description": "Old name for label. @deprecated Use label instead.",
     "name": "legacy-label",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {

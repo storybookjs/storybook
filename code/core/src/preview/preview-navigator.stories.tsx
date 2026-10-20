@@ -6,7 +6,11 @@ import { expect, fn, within } from 'storybook/test';
 
 import { setupPreviewNavigator, teardownPreviewNavigator } from './preview-navigator.ts';
 
-const meta: Meta = {
+type StoryArgs = {
+  currentStoryId: string;
+};
+
+const meta = {
   parameters: {
     layout: 'fullscreen',
   },
@@ -16,7 +20,7 @@ const meta: Meta = {
   args: {
     currentStoryId: 'input--text',
   },
-};
+} satisfies Meta<StoryArgs>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

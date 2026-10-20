@@ -86,7 +86,7 @@ const initialUrlSupport = ({
   state: { location, path, viewMode, storyId: storyIdFromUrl },
   singleStory,
 }: ModuleArgs) => {
-  const { full, panel, nav, shortcuts, addonPanel, tabs } = queryFromLocation(location);
+  const { full, panel, nav, shortcuts, addonPanel } = queryFromLocation(location);
 
   let navSize;
   let bottomPanelHeight;
@@ -122,7 +122,6 @@ const initialUrlSupport = ({
     bottomPanelHeight,
     rightPanelWidth,
     panelPosition: ['right', 'bottom'].includes(panel) ? panel : undefined,
-    showTabs: parseBoolean(tabs),
   };
   const ui: Partial<API_UI> = {
     enableShortcuts: parseBoolean(shortcuts),
@@ -275,7 +274,7 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       const previewBaseUrl = base ? managerBase : global.document?.baseURI || originAddress;
       const previewBase = refId
         ? refs[refId].url + '/iframe.html'
-        : global.PREVIEW_URL || resolveIframeUrl(previewBaseUrl, { absolute: Boolean(base) });
+        : resolveIframeUrl(previewBaseUrl, { absolute: Boolean(base) });
 
       const refParam = refId ? `&refId=${encodeURIComponent(refId)}` : '';
       const { args = '', globals = '', ...otherParams } = queryParams;

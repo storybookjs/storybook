@@ -64,19 +64,19 @@ Because story exports are automatically "start cased" (`myStory` becomes `"My St
 
 ## Sorting stories
 
-Out of the box, Storybook sorts stories based on the order in which they are imported. However, you can customize this pattern to suit your needs and provide a more intuitive experience by adding `storySort` to the `options` parameter in your `preview.js` file.
+Out of the box, Storybook sorts stories based on the order in which they are imported. However, you can customize this pattern to suit your needs and provide a more intuitive experience by adding sorters to [`storySorts`](../api/main-config/main-config-story-sorts.mdx) in your `.storybook/main.js|ts` file.
 
-<CodeSnippets path="storybook-preview-sort-function.md" />
+<CodeSnippets path="main-config-story-sorts-function.md" />
 
 <Callout variant="info">
 
-Asides from the unique story identifier, you can also use the `title`, `name`, and import path to sort your stories using the `storySort` function.
+Asides from the unique story identifier, you can also use the `title`, `name`, and import path to sort your stories using a sort function.
 
 </Callout>
 
-The `storySort` can also accept a configuration object.
+A sorter can also be a configuration object.
 
-<CodeSnippets path="storybook-preview-empty-sort-object.md" />
+<CodeSnippets path="main-config-story-sorts-empty-sort-object.md" />
 
 | Field            | Type    | Description                                              | Required | Default Value           | Example                   |
 | ---------------- | ------- | -------------------------------------------------------- | -------- | ----------------------- | ------------------------- |
@@ -89,7 +89,7 @@ To sort your stories alphabetically, set `method` to `'alphabetical'` and option
 
 The `order` array can accept a nested array to sort 2nd-level story kinds. For example:
 
-<CodeSnippets path="storybook-preview-with-ordered-pages.md" />
+<CodeSnippets path="main-config-story-sorts-ordered-pages.md" />
 
 Which would result in this story ordering:
 
@@ -104,8 +104,15 @@ Which would result in this story ordering:
 
 If you want specific categories to sort to the end of the list, you can insert a `*` into your `order` array to indicate where "all other stories" should go:
 
-<CodeSnippets path="storybook-preview-with-ordered-pages-and-wildcard.md" />
+<CodeSnippets path="main-config-story-sorts-ordered-pages-and-wildcard.md" />
 
 In this example, the `WIP` category would be displayed at the end of the list.
+
+### Combining sorters
+
+When `storySorts` lists several sorters, each one only decides the order of the stories that the sorters before it consider equal.
+The following configuration shows `Intro` and `Components` first and sorts all other stories alphabetically:
+
+<CodeSnippets path="main-config-story-sorts.md" />
 
 Note that the `order` option is independent of the `method` option; stories are sorted first by the `order` array and then by either the `method: 'alphabetical'` or the default `configure()` import order.

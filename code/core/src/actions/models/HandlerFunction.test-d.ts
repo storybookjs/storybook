@@ -1,9 +1,11 @@
-import { expectTypeOf } from 'vitest';
+import { expectTypeOf, test } from 'vitest';
 
 import type { HandlerFunction } from './HandlerFunction.ts';
 
-// Should be assignable to async callback props (the fixed case)
-expectTypeOf<HandlerFunction>().toExtend<() => Promise<void>>();
+test('is assignable to async callbacks', () => {
+  expectTypeOf<HandlerFunction>().toExtend<() => Promise<void>>();
+});
 
-// Should remain assignable to plain void callbacks
-expectTypeOf<HandlerFunction>().toExtend<() => void>();
+test('is assignable to void callbacks', () => {
+  expectTypeOf<HandlerFunction>().toExtend<() => void>();
+});

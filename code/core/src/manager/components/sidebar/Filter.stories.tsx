@@ -7,7 +7,7 @@ import { global } from '@storybook/global';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
-import { expect, screen, waitFor } from 'storybook/test';
+import { expect, screen, userEvent, waitFor } from 'storybook/test';
 
 import { internal_fullStatusStore } from '../../manager-stores.mock.ts';
 
@@ -215,6 +215,55 @@ export const ClosedWithSelection: Story = {
   },
 };
 
+export const HiddenTagStillActive: Story = {
+  ...ClosedWithSelection,
+  beforeEach: () => {
+    const originalTagsOptions = global.TAGS_OPTIONS;
+    global.TAGS_OPTIONS = {
+      ...originalTagsOptions,
+      hidden: { hideFromFilterPanel: true },
+    };
+
+    return () => {
+      global.TAGS_OPTIONS = originalTagsOptions;
+    };
+  },
+  parameters: {
+    initialStoryState: {
+      internal_index: {
+        v: 6,
+        entries: {
+          'c1-s1': {
+            tags: ['hidden', 'visible', 'dev', 'play-fn'],
+            type: 'story',
+          } as StoryIndexEntry,
+          'c1-test': {
+            tags: ['test-fn'],
+            type: 'story',
+            subtype: 'test',
+          } as StoryIndexEntry,
+          'c1-doc': { tags: [], type: 'docs' } as unknown as DocsIndexEntry,
+        },
+      } as StoryIndex,
+      includedTagFilters: ['hidden'],
+    },
+  },
+  play: async ({ canvas }) => {
+    const button = await canvas.findByRole('button', { name: /1 active tag filter/i });
+    await userEvent.click(button);
+
+    await expect(await screen.findByRole('checkbox', { name: /visible/i })).toBeInTheDocument();
+    await expect(screen.queryByRole('checkbox', { name: /hidden/i })).not.toBeInTheDocument();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Clear filters' }));
+
+    await expect(await canvas.findByRole('button', { name: /tag filters/i })).toBeInTheDocument();
+    await expect(
+      canvas.queryByRole('button', { name: /1 active tag filter/i })
+    ).not.toBeInTheDocument();
+  },
+};
+
 export const Clear = {
   ...ClosedWithSelection,
   beforeEach: () => {
@@ -397,16 +446,5 @@ export const Empty: Story = {
 
     const learnButton = await screen.findByText('Learn how to add tags');
     expect(learnButton).toBeInTheDocument();
-  },
-};
-
-export const EmptyNoChangeDetection: Story = {
-  ...Empty,
-  beforeEach: () => {
-    const features = global.FEATURES;
-    global.FEATURES = { ...features, changeDetection: false };
-    return () => {
-      global.FEATURES = features;
-    };
   },
 };

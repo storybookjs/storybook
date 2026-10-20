@@ -52,13 +52,7 @@ export async function reactDocgen({
       }
 
       try {
-        const matchPath = createTsconfigMatchPath(id);
-        const docgenResults = parse(src, {
-          resolver: defaultResolver,
-          handlers,
-          importer: getReactDocgenImporter(matchPath),
-          filename: id,
-        }) as DocObj[];
+        const docgenResults = parseDocgen(src, id, createTsconfigMatchPath(id));
         const s = new MagicString(src);
 
         docgenResults.forEach((info) => {
@@ -82,6 +76,43 @@ export async function reactDocgen({
       }
     },
   };
+}
+
+/**
+ * Parses with react-docgen's own Babel parser settings first, so a project Babel config that cannot
+ * parse the file (e.g. a StyleX-only `babel.config.*` without a TypeScript preset) does not break
+ * docgen. If that fails, retries once with the project Babel config, which keeps configs that add
+ * parser syntax react-docgen lacks working. If both fail, the first error is thrown.
+ */
+function parseDocgen(src: string, id: string, matchPath: TsconfigPaths.MatchPath | undefined) {
+  const options = {
+    resolver: defaultResolver,
+    handlers,
+    importer: getReactDocgenImporter(matchPath),
+    filename: id,
+  };
+
+  try {
+    return parse(src, {
+      ...options,
+      babelOptions: { babelrc: false, configFile: false },
+    }) as DocObj[];
+  } catch (isolatedError: any) {
+    if (isolatedError.code === ERROR_CODES.MISSING_DEFINITION) {
+      throw isolatedError;
+    }
+    try {
+      return parse(src, options) as DocObj[];
+    } catch (projectConfigError: any) {
+      if (projectConfigError.code === ERROR_CODES.MISSING_DEFINITION) {
+        throw projectConfigError;
+      }
+      logger.debug(
+        `react-docgen also failed with the project Babel config for ${id}: ${projectConfigError}`
+      );
+      throw isolatedError;
+    }
+  }
 }
 
 export function getReactDocgenImporter(matchPath: TsconfigPaths.MatchPath | undefined) {

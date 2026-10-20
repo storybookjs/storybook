@@ -63,6 +63,10 @@ export class Yarn1Proxy extends JsPackageManager {
     return `yarn exec ${command} -- ${rest.join(' ')}`;
   }
 
+  getRemoteRunCommand(args: string[]): string {
+    return `npx ${args.join(' ')}`;
+  }
+
   public runPackageCommand({
     args,
     useRemotePkg = false,
@@ -72,16 +76,11 @@ export class Yarn1Proxy extends JsPackageManager {
     useRemotePkg?: boolean;
   }): ResultPromise {
     const [command, ...rest] = args;
-    if (useRemotePkg) {
-      return executeCommand({
-        command: 'npx',
-        args,
-      });
-    }
     return executeCommand({
-      command: `yarn`,
-      args: ['exec', command, '--', ...rest],
       ...options,
+      ...(useRemotePkg
+        ? { command: 'npx', args, env: { npm_config_yes: 'true', ...options.env } }
+        : { command: 'yarn', args: ['exec', command, '--', ...rest] }),
     });
   }
 

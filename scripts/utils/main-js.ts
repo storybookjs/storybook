@@ -16,6 +16,9 @@ export async function readConfig({ fileName, cwd }: { fileName: string; cwd: str
   }
 
   const mainConfigPath = getInterpretedFile(resolve(configDir, fileName));
+  if (!mainConfigPath) {
+    throw new Error(`Unable to find "${fileName}" in "${configDir}".`);
+  }
   return csfReadConfig(mainConfigPath);
 }
 

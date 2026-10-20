@@ -70,19 +70,43 @@ describe('Yarn 1 Proxy', () => {
   });
 
   describe('runScript', () => {
-    it('should execute script `yarn compodoc -- -e json -d .`', () => {
-      const executeCommandSpy = mockedExecuteCommand.mockReturnValue(
-        Promise.resolve({ stdout: '7.1.0' }) as any
-      );
+    beforeEach(() => {
+      mockedExecuteCommand.mockResolvedValue({ stdout: '' } as never);
+    });
 
+    it('should execute script `yarn compodoc -- -e json -d .`', () => {
       yarn1Proxy.runPackageCommand({ args: ['compodoc', '-e', 'json', '-d', '.'] });
 
-      expect(executeCommandSpy).toHaveBeenLastCalledWith(
+      expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
         expect.objectContaining({
           command: 'yarn',
           args: ['exec', 'compodoc', '--', '-e', 'json', '-d', '.'],
         })
       );
+    });
+
+    it('forwards the caller options to `npx` when running a remote package', () => {
+      const args = ['some-package@1.2.3', 'run', '--flag'];
+      const options = {
+        cwd: '/repo',
+        stdio: 'inherit' as const,
+        signal: new AbortController().signal,
+        ignoreError: true,
+      };
+
+      yarn1Proxy.runPackageCommand({
+        args,
+        useRemotePkg: true,
+        env: { SOME_VAR: '1' },
+        ...options,
+      });
+
+      expect(mockedExecuteCommand).toHaveBeenLastCalledWith({
+        command: 'npx',
+        args,
+        env: { npm_config_yes: 'true', SOME_VAR: '1' },
+        ...options,
+      });
     });
   });
 

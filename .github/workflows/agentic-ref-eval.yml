@@ -69,10 +69,11 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Build local MCP packages
+      # Sandbox setup compiles these again, but inside each eval's timeout, so warm the nx cache here.
+      - name: Compile the Storybook packages the sandboxes install
         env:
           NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
-        run: yarn nx run-many -t compile --projects mcp,addon-mcp
+        run: yarn workspace agent-eval run compile:checkout
 
       - name: Type check agent eval config
         run: yarn workspace agent-eval run typecheck

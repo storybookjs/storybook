@@ -95,9 +95,19 @@
     },
     "manifestPath": "custom-elements.json",
   },
-  "description": "Panel with string, number and boolean attributes.",
+  "description": "Story-level docs for the basic attributes fixture.",
   "id": "lit-basic-attributes",
-  "jsDocTags": {},
+  "jsDocTags": {
+    "see": [
+      "https://example.com/lit-basic-attributes",
+    ],
+    "since": [
+      "1.2.0",
+    ],
+    "summary": [
+      "Attribute fixture.",
+    ],
+  },
   "name": "lit-basic-attributes",
   "path": "./input.stories.ts",
   "renderer": "web-components",

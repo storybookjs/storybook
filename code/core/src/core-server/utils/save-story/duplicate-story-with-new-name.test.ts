@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, test } from 'vitest';
 
-import { printCsf, readCsf } from 'storybook/internal/csf-tools';
+import { loadCsf, printCsf, readCsf } from 'storybook/internal/csf-tools';
 
 import { format } from 'prettier';
 
@@ -47,8 +47,13 @@ describe('success', () => {
           },
         } satisfies Story;
         
+      + 
       + export const EmptyDuplicated = {} satisfies Story;
-      + export const EmptyWithCommentDuplicated = {} satisfies Story;
+      + 
+      + export const EmptyWithCommentDuplicated = {
+      +   // this is a useless comment, to test that it is preserved
+      + } satisfies Story;
+      + 
       + export const OnlyArgsDuplicated = {} satisfies Story;
       + 
       + export const RenderNoArgsDuplicated = {
@@ -100,12 +105,16 @@ describe('success', () => {
     // check if the code was updated correctly
     expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  ...
-            foo: "bar",
+            icon: "star",
           },
         });
         
+      + 
       + export const EmptyDuplicated = meta.story({});
       + export const WithArgsDuplicated = meta.story({});
+      + export const TypedDuplicated = meta
+      +   .type<{ args: { icon: string } }>()
+      +   .story({});
       + "
     `);
   });
@@ -146,11 +155,24 @@ describe('success', () => {
           },
         };
         
+      + 
       + export const CastDuplicated: Story = {};
       + export const AsDuplicated = {} as Story;
       + export const SatisfiesDuplicated = {} satisfies Story;
       + export const NoneDuplicated = {};
       + "
     `);
+  });
+  test('removes the args member only, not a computed key named args', () => {
+    const parsed = loadCsf(
+      [
+        `export default { title: 'A' };`,
+        `const args = 'label';`,
+        `export const A = { args: { label: 'a' }, parameters: { [args]: 1 } };`,
+      ].join('\n'),
+      { makeTitle }
+    ).parse();
+    duplicateStoryWithNewName(parsed, 'A', 'B');
+    expect(printCsf(parsed).code).toContain(`export const B = { parameters: { [args]: 1 } };`);
   });
 });

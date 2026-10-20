@@ -22,17 +22,30 @@ interface InternalGetArgTypesDataOptions extends GetArgTypesDataOptions {
   presets?: Options['presets'];
 }
 
-export const addons: PresetProperty<'addons'> = [
-  import.meta.resolve('@storybook/react-dom-shim/preset'),
-];
-
 export { manifests as experimental_manifests } from './componentManifest/generator.ts';
 
 export { enrichCsf as experimental_enrichCsf } from './enrichCsf.ts';
 
 export { experimental_docgenProvider } from './docgen/preset.ts';
 
+// Turns `features.docgenServer` on by default; read through `presets.apply('isDocgenProviderEnabled')`
+// so the default never has to call the provider, which itself reads `features`. Server docgen runs on
+// the optional `typescript` peer, so a project without it keeps builder docgen.
+export const isDocgenProviderEnabled = () => {
+  try {
+    import.meta.resolve('typescript');
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
+
+export const features: PresetProperty<'features'> = async (existing) => ({
+  ...existing,
+  componentsManifest: true,
+});
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],
@@ -132,4 +145,17 @@ export async function internal_getArgTypesData(
   return argTypesData;
 }
 
-export const optimizeViteDeps: string[] = ['react-dom/test-utils'];
+export const optimizeViteDeps: string[] = [
+  // The vitest project-annotations setup file imports this renderer's entry previews through a
+  // virtual module, and those chunks import React by the bare specifier. In the observed failure
+  // (react 19.3.1, vite 7.3.7, vitest 5.0.5, chromium browser mode) the dependency scan had not
+  // registered plain `react`, so the browser loaded react's CJS index.js raw and module linking
+  // failed with "The requested module 'react/index.js' does not provide an export named 'default'".
+  // Projects only hit this when their stories use the automatic JSX runtime and never import
+  // `react` by name; a story importing `react` (for `useState`, say) registers it in the scan
+  // and masks the failure.
+  'react',
+  'react-dom/client',
+  'react-dom/test-utils',
+  'react/jsx-runtime',
+];

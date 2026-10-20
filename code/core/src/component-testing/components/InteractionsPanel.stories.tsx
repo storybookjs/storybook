@@ -39,6 +39,10 @@ const managerContext: any = {
   },
 };
 
+type InteractionsPanelStoryArgs = React.ComponentProps<typeof InteractionsPanel> & {
+  active: boolean;
+};
+
 const meta = {
   title: 'InteractionsPanel',
   component: InteractionsPanel,
@@ -68,11 +72,11 @@ const meta = {
   beforeEach: () => {
     destroyAnnouncer();
   },
-} as Meta<typeof InteractionsPanel>;
+} satisfies Meta<InteractionsPanelStoryArgs>;
 
 export default meta;
 
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<Meta<InteractionsPanelStoryArgs>>;
 
 const withNestedStepToggle = (isCollapsed: boolean) => {
   return getInteractions(CallStates.DONE).map((interaction) =>

@@ -148,8 +148,8 @@ interface AgenticRefCaseRecord {
 // other (a bare override would drop token usage). Heavy metrics, including MCP
 // tool usage, are computed offline — see scripts/analyze-results.ts.
 function makeAgenticRefMetricsHook(agenticRefCase: AgenticRefCaseRecord, provider: LlmProvider) {
-  return function attachAgenticRefMetrics(context: RunCompleteContext) {
-    const withUsage = DEFAULT_EXPERIMENT_CONFIG.onRunComplete?.(context) ?? context.runData;
+  return async function attachAgenticRefMetrics(context: RunCompleteContext) {
+    const withUsage = await DEFAULT_EXPERIMENT_CONFIG.onRunComplete(context);
     return {
       ...withUsage,
       result: {
@@ -235,9 +235,11 @@ export function agenticRefExperiment(
   const onRunComplete: RunCompleteHook =
     overrides?.onRunComplete === undefined
       ? metricsHook
-      : (context) => {
-          const withMetrics = metricsHook(context);
-          return overrides.onRunComplete?.({ ...context, runData: withMetrics }) ?? withMetrics;
+      : async (context) => {
+          const withMetrics = await metricsHook(context);
+          return (
+            (await overrides.onRunComplete?.({ ...context, runData: withMetrics })) ?? withMetrics
+          );
         };
 
   return {

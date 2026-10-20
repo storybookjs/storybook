@@ -325,9 +325,8 @@ describe('IncrementalPatcher', () => {
   });
 
   it('unlink prunes reverseIndex for a story path even when not in current storyFiles', async () => {
-    // Regression: if refreshStoryFiles already removed the story from the story set before
-    // the unlink event fires, `isStoryFile(path)` returns false. The old code guarded
-    // `removeStory` behind that check, leaving stale (dep→story) entries forever.
+    // refreshStoryFiles removes the story from the story set before the unlink event fires, so
+    // `isStoryFile(path)` is already false when the unlink is handled.
     const story = '/repo/src/A.stories.tsx';
     const dep = '/repo/src/dep.ts';
 

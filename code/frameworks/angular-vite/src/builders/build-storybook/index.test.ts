@@ -165,7 +165,7 @@ describe('build-storybook builder', () => {
       context
     );
 
-    expect(standaloneOptions.angularBuilderOptions.styles).toEqual(['src/own.scss']);
+    expect(standaloneOptions.angularBuilderOptions?.styles).toEqual(['src/own.scss']);
   });
 
   it('does not let schema-defaulted empty own options override browser target values', async () => {
@@ -211,5 +211,23 @@ describe('build-storybook builder', () => {
       preserveSymlinks: false,
       zoneless: true,
     });
+  });
+
+  it('passes a --stats-json=<path> value through unchanged', async () => {
+    const standaloneOptions = await getStandaloneOptions(
+      createOptions({ statsJson: '/test/stats' }),
+      createMockContext()
+    );
+
+    expect(standaloneOptions.statsJson).toBe('/test/stats');
+  });
+
+  it('treats the empty string the Angular CLI produces for a bare --stats-json flag as true', async () => {
+    const standaloneOptions = await getStandaloneOptions(
+      createOptions({ statsJson: '' }),
+      createMockContext()
+    );
+
+    expect(standaloneOptions.statsJson).toBe(true);
   });
 });

@@ -61,10 +61,6 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
 });
 
 describe('legacy snippet gaps (red until a re-recorded baseline closes them)', () => {
-  gapTest('text-content args references are emitted without JSON quotes', () => {
-    expect(baseline('templateReferenceSnippet')).toContain('<h1>Reference title</h1>');
-  });
-
   gapTest('spread args omit values equal to prop defaults', () => {
     expect(baseline('defaultSnippet')).not.toContain('count={0}');
     expect(baseline('defaultSnippet')).not.toContain('primary={false}');
@@ -77,6 +73,10 @@ describe('legacy snippet gaps (red until a re-recorded baseline closes them)', (
 });
 
 describe('legacy behavior locked by the current recordings', () => {
+  test('text-content args references are emitted without JSON quotes', () => {
+    expect(baseline('templateReferenceSnippet')).toContain('<h1>Reference title</h1>');
+  });
+
   test('intrinsic HTML attributes inherited via HTMLInputAttributes are not recorded', () => {
     expect(baseline('bindableRestArgTypes')).not.toContain('"disabled"');
     expect(baseline('bindableRestArgTypes')).not.toContain('"placeholder"');

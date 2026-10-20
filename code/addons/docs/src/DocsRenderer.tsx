@@ -8,7 +8,7 @@ import type {
   Renderer,
 } from 'storybook/internal/types';
 
-import { renderElement, unmountElement } from '@storybook/react-dom-shim';
+import { renderElement, unmountElement } from '../../../renderers/react/src/react-dom-client.tsx';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore (these types only work once the package is compiled)

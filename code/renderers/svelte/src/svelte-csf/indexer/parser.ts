@@ -38,7 +38,7 @@ const styleBlocks =
 
 // Preprocessors don't run here, so a style block in SCSS and similar fails to compile. Then the
 // style content is blanked. Newlines stay, so error positions stay correct.
-function getIndexableAST(code: string, filename: string) {
+export function getIndexableAST(code: string, filename: string) {
   try {
     return getSvelteAST({ code, filename });
   } catch {

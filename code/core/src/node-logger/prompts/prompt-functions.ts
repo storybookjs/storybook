@@ -1,5 +1,5 @@
 import { error, log, shouldLog } from '../logger/index.ts';
-import { getTerminalWidth, wrapTextForClack, wrapTextForClackHint } from '../wrap-utils.ts';
+import { getTerminalWidth, protectUrls, wrapTextForClack } from '../wrap-utils.ts';
 import { getPromptProvider } from './prompt-config.ts';
 import type {
   BasePromptOptions,
@@ -105,14 +105,16 @@ export const multiselect = async <T>(
   options: MultiSelectPromptOptions<T>,
   promptOptions?: PromptOptions
 ): Promise<T[]> => {
+  // Clack wraps option lines 13 columns short of the terminal, as it counts the color codes of its
+  // guide bar, and the hint ends in a parenthesis. Shortening links to that width keeps a link on its
+  // "More info:" line.
+  const maxLineWidth = Math.max(getTerminalWidth() - 14, 40);
   return getPromptProvider().multiselect(
     {
       ...options,
       options: options.options.map((opt) => ({
         ...opt,
-        hint: opt.hint
-          ? wrapTextForClackHint(opt.hint, undefined, opt.label || String(opt.value), 0)
-          : undefined,
+        hint: opt.hint ? protectUrls(opt.hint, { maxLineWidth }) : undefined,
       })),
     },
     promptOptions

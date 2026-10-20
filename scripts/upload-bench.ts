@@ -1,7 +1,7 @@
 import { BigQuery } from '@google-cloud/bigquery';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
-import { join } from 'path';
+import { join } from 'pathe';
 
 import type { BenchResults } from './bench/types.ts';
 import { loadBench } from './bench/utils.ts';

@@ -1,6 +1,5 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readdir, rm } from 'node:fs/promises';
-import { isAbsolute } from 'node:path';
 
 import { PackageManagerName } from 'storybook/internal/common';
 import {
@@ -12,7 +11,7 @@ import {
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { sync as spawnSync } from 'cross-spawn';
-import { join } from 'pathe';
+import { isAbsolute, join } from 'pathe';
 import picocolors from 'picocolors';
 import { lt, prerelease } from 'semver';
 import invariant from 'tiny-invariant';

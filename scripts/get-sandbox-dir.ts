@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- prints the sandbox dir for shell consumers
 import { join } from 'node:path';
 
 import { program } from 'commander';

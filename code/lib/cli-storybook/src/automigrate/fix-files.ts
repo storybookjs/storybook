@@ -1,5 +1,5 @@
 import { readFile, unlink, writeFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 
 import { HandledError } from 'storybook/internal/common';
 import { type ConfigFile, formatConfig, loadConfig } from 'storybook/internal/csf-tools';

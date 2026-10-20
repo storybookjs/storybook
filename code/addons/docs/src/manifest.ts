@@ -1,5 +1,5 @@
 import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
+import * as path from 'pathe';
 
 import { getComponentIdFromEntry, groupBy } from 'storybook/internal/common';
 import {

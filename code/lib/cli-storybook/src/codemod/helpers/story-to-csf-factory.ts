@@ -2,6 +2,7 @@ import { types as t, traverse } from 'storybook/internal/babel';
 import { isValidPreviewPath, loadCsf, printCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
+// eslint-disable-next-line no-restricted-imports -- its test spies on node:path relative
 import path from 'path';
 
 import { DOCUMENTED_PREVIEW_IMPORT } from '../../../../../core/src/shared/constants/config-folder.ts';

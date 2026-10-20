@@ -8,7 +8,7 @@ import { lstat, readFile, realpath, writeFile } from 'node:fs/promises';
 import { execaCommand } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
-import { join, resolve } from 'path';
+import { join, resolve } from 'pathe';
 
 import { temporaryDirectory } from '../code/core/src/common/utils/cli.ts';
 import { esMain } from './utils/esmain.ts';

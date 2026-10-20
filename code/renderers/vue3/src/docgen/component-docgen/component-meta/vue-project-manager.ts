@@ -16,7 +16,7 @@
  *   does not resolve tsconfig project references.
  */
 import { readFileSync, statSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname } from 'pathe';
 
 import { getProjectRoot, slash } from 'storybook/internal/common';
 import {

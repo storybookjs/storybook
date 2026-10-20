@@ -1,5 +1,5 @@
 import { utimesSync, writeFileSync } from 'node:fs';
-import * as path from 'node:path';
+import * as path from 'pathe';
 
 import { afterEach, describe, expect, it } from 'vitest';
 

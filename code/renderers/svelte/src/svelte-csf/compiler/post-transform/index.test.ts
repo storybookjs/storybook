@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import path from 'node:path';
+import path from 'pathe';
 import url from 'node:url';
 
 import { SVELTE_CSF_RENDERER_IMPORT_SOURCE } from '../../constants.ts';

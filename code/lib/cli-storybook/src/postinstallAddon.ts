@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { join } from 'node:path';
+import { join } from 'pathe';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { importModule } from '../../../core/src/shared/utils/module.ts';

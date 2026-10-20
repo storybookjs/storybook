@@ -1,4 +1,5 @@
 import { readFile, rm, writeFile } from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- module under test mocks node:path
 import { join, relative } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';

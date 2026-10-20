@@ -1,4 +1,5 @@
 import { access, cp, rm } from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- compares the cache dir with the native sandbox dir from task details
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 

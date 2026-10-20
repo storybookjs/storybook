@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { relative, resolve } from 'node:path';
+import { relative, resolve } from 'pathe';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

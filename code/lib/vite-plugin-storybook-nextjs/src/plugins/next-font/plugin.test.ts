@@ -1,4 +1,4 @@
-import path from 'node:path';
+import path from 'pathe';
 
 import type { PluginContext } from 'rollup';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

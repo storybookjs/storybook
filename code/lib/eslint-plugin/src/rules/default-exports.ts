@@ -4,7 +4,7 @@
  */
 import type { TSESTree } from '@typescript-eslint/types';
 import type { TSESLint } from '@typescript-eslint/utils';
-import path from 'path';
+import path from 'pathe';
 
 import { isIdentifier, isImportDeclaration, isLiteral } from '../utils/ast.ts';
 import { CategoryId } from '../utils/constants.ts';

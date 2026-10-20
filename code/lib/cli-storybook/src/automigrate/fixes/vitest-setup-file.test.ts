@@ -8,7 +8,7 @@ import {
   writeFileSync,
 } from 'fs';
 import { tmpdir } from 'os';
-import path from 'path';
+import path from 'pathe';
 import { dedent } from 'ts-dedent';
 import { stripVTControlCharacters } from 'util';
 import { describe, expect, it, onTestFinished, vi } from 'vitest';

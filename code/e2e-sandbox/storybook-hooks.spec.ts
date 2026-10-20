@@ -1,6 +1,6 @@
 /* eslint-disable playwright/expect-expect */
 import { promises as fs } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { expect, test } from '@playwright/test';
 

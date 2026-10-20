@@ -2,7 +2,7 @@ import { createStorybookMcpHandler } from './src/index.ts';
 import { serve } from 'srvx';
 import fs from 'node:fs/promises';
 import { parseArgs } from 'node:util';
-import { basename } from 'node:path';
+import { basename } from 'pathe';
 
 async function serveMcp(port: number, manifestsDir: string) {
   const storybookMcpHandler = await createStorybookMcpHandler({

@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
-import { join } from 'path';
+import { join } from 'pathe';
 
 import { CODE_DIRECTORY } from './utils/constants.ts';
 import { esMain } from './utils/esmain.ts';

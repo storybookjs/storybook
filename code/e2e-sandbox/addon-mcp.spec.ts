@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import path from 'node:path';
+import path from 'pathe';
 
 import type { APIRequestContext } from '@playwright/test';
 import { expect, test } from '@playwright/test';

@@ -8,7 +8,7 @@ import {
 } from 'storybook/internal/component-meta';
 import { logger } from 'storybook/internal/node-logger';
 
-import * as path from 'node:path';
+import * as path from 'pathe';
 
 import type * as ts from 'typescript';
 

@@ -11,7 +11,7 @@ import {
 } from 'storybook/internal/core-server';
 import { isWebContainer } from 'storybook/internal/common';
 import htmlTemplate from './template.html';
-import path from 'node:path';
+import path from 'pathe';
 import { extractBearerToken, type ManifestProvider } from './auth/index.ts';
 import { resolveCompositionSources } from './auth/resolve-composition-sources.ts';
 import { logger } from 'storybook/internal/node-logger';

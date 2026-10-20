@@ -11,11 +11,10 @@
  *
  * When you pass no package names, you will be prompted to select which packages to build.
  */
-import { join } from 'node:path';
+import { join, resolve } from 'pathe';
 
 import { exec } from 'child_process';
 import { program } from 'commander';
-import { resolve } from 'path';
 import picocolors from 'picocolors';
 import prompts from 'prompts';
 import windowSize from 'window-size';

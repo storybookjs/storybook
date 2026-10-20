@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { readdirSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- passes the analyzer bin path to a shell command
 import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';

@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { isAbsolute, join } from 'node:path';
+import { isAbsolute, join } from 'pathe';
 
 import { types as t, type NodePath } from 'storybook/internal/babel';
 import {

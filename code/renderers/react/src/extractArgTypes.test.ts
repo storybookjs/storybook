@@ -1,4 +1,4 @@
-import { join, resolve } from 'node:path';
+import { join, resolve } from 'pathe';
 
 import { describe, expect, it, vi } from 'vitest';
 

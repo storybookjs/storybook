@@ -1,4 +1,4 @@
-import * as path from 'node:path';
+import * as path from 'pathe';
 
 import { extractDeclaredSubcomponents } from 'storybook/internal/common';
 import { loadCsf } from 'storybook/internal/csf-tools';

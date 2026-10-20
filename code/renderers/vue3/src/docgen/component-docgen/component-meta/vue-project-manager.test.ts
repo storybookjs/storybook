@@ -1,4 +1,4 @@
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, describe, expect, it, vi } from 'vitest';
@@ -45,12 +45,10 @@ describe('VueComponentMetaManager', () => {
   // vuejs/language-tools#3896); the manager walks the reference chain instead and lands on the
   // sub-config whose `include` actually covers the component.
   it('resolves a component through a references-only root tsconfig to its sub-project', () => {
-    const componentPath = join(referencesDir, 'src/RefButton.vue').replace(/\\/g, '/');
+    const componentPath = join(referencesDir, 'src/RefButton.vue');
     const project = manager.getProjectForFile(componentPath);
 
-    expect(project.configFileName).toBe(
-      join(referencesDir, 'tsconfig.app.json').replace(/\\/g, '/')
-    );
+    expect(project.configFileName).toBe(join(referencesDir, 'tsconfig.app.json'));
     // Pin the *direct-include* mechanism: the SFC must appear in the parsed fileNames, so matching
     // is by config contents — not by the slower indirect fallback that probes each candidate
     // project's built program.
@@ -255,10 +253,10 @@ describe('VueComponentMetaManager', () => {
   // the factory re-enumerates with the Vue extensions as `extraFileExtensions`), and the SFC would
   // only match through the indirect built-program fallback.
   it('matches .vue files to a tsconfig via the Vue-aware command-line parse', () => {
-    const componentPath = join(fixturesDir, 'Button.vue').replace(/\\/g, '/');
+    const componentPath = join(fixturesDir, 'Button.vue');
     const project = manager.getProjectForFile(componentPath);
 
-    expect(project.configFileName).toBe(join(fixturesDir, 'tsconfig.json').replace(/\\/g, '/'));
+    expect(project.configFileName).toBe(join(fixturesDir, 'tsconfig.json'));
     expect(project.getCommandLine().fileNames).toContain(componentPath);
   });
 
@@ -277,9 +275,9 @@ describe('VueComponentMetaManager', () => {
   });
 
   it('defers and batches created files until the project is next queried', () => {
-    const buttonPath = join(fixturesDir, 'Button.vue').replace(/\\/g, '/');
-    const refButtonPath = join(referencesDir, 'src/RefButton.vue').replace(/\\/g, '/');
-    const excludedPath = join(fixturesDir, 'excluded.vue').replace(/\\/g, '/');
+    const buttonPath = join(fixturesDir, 'Button.vue');
+    const refButtonPath = join(referencesDir, 'src/RefButton.vue');
+    const excludedPath = join(fixturesDir, 'excluded.vue');
     const checker = {
       updateFile: vi.fn(),
       clearCache: vi.fn(),

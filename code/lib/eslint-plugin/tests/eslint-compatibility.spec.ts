@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative } from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';

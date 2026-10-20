@@ -9,6 +9,7 @@
 import { vi } from 'vitest';
 
 import { AST_NODE_TYPES } from '@typescript-eslint/utils';
+// eslint-disable-next-line no-restricted-imports -- splits OS paths with path.sep
 import { sep } from 'path';
 
 import ruleTester from '../test-utils.ts';

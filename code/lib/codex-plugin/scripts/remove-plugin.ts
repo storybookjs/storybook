@@ -1,6 +1,6 @@
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 import { x } from 'tinyexec';
 
 import { removeTomlSection } from './toml.ts';

@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import * as fsp from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- compares with findConfigFile's native result
 import { resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';

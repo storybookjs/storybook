@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- takes basename of user-given targets that may end in a slash
 import { basename, extname, join } from 'node:path';
 
 import { executeCommand } from 'storybook/internal/common';

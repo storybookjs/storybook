@@ -1,6 +1,6 @@
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join } from 'pathe';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -32,9 +32,7 @@ describe('findStorybookProjects', () => {
       'node_modules/@nx/storybook/files/project-files/.storybook/main.ts': 'export default {};',
     });
 
-    expect(await findStorybookProjects(root)).toEqual([
-      join(root, 'packages/ui/.storybook').replace(/\\/g, '/'),
-    ]);
+    expect(await findStorybookProjects(root)).toEqual([join(root, 'packages/ui/.storybook')]);
   });
 });
 

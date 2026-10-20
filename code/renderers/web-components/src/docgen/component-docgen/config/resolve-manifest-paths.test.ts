@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- module under test resolves with node:path
 import { resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';

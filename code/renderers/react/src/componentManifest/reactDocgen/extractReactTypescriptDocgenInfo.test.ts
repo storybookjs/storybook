@@ -1,6 +1,6 @@
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import path from 'node:path';
+import path from 'pathe';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 

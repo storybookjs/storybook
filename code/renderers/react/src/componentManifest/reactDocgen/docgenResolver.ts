@@ -1,4 +1,4 @@
-import { extname } from 'node:path';
+import { extname } from 'pathe';
 
 import { supportedExtensions } from 'storybook/internal/common';
 

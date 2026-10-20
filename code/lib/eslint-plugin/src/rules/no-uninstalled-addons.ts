@@ -5,6 +5,7 @@
  */
 import type { TSESTree } from '@typescript-eslint/types';
 import { readFileSync } from 'fs';
+// eslint-disable-next-line no-restricted-imports -- splits OS paths with path.sep
 import { relative, resolve, sep } from 'path';
 import { dedent } from 'ts-dedent';
 

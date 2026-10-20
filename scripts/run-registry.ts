@@ -2,6 +2,7 @@ import { exec } from 'node:child_process';
 import { access, mkdir, readFile, rm } from 'node:fs/promises';
 import http from 'node:http';
 import type { Server } from 'node:http';
+// eslint-disable-next-line no-restricted-imports -- interpolates resolved package paths into a shell command
 import { join, resolve as resolvePath } from 'node:path';
 
 import { program } from 'commander';

@@ -204,6 +204,15 @@
       }
     },
     {
+      "files": [
+        "addons/vitest/templates/**",
+        "lib/cli-storybook/src/automigrate/fixes/__test__/**"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
+    {
       "files": ["**/*.compat.ts", "**/*.compat.tsx"],
       "rules": {
         "local-rules/no-uncategorized-errors": "off"

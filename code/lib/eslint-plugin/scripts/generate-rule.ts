@@ -1,5 +1,6 @@
 import cp from 'node:child_process';
 import fs from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- passes generated file paths to a shell command
 import path from 'node:path';
 
 import type { PromptObject } from 'prompts';

@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+// eslint-disable-next-line no-restricted-imports -- matches native resolved module paths with path.sep
 import { dirname, sep } from 'node:path';
 
 import { babelParse, types as t } from 'storybook/internal/babel';

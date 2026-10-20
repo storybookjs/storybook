@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { formatFileContent } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
+// eslint-disable-next-line no-restricted-imports -- spies on the node:path relative used by the module under test
 import path from 'path';
 import { dedent } from 'ts-dedent';
 

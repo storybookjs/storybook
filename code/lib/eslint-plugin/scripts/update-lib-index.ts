@@ -4,7 +4,7 @@
 This script updates `src/index.js` file from rule's meta data.
 */
 import fs from 'fs/promises';
-import path from 'path';
+import path from 'pathe';
 import { format } from 'oxfmt';
 
 import { categoryIds } from './utils/categories.ts';

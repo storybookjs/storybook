@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, resolve } from 'pathe';
 import { fileURLToPath } from 'node:url';
 
 import { renderCodexSkill } from './codex-skill.ts';

@@ -1,4 +1,5 @@
 import { readFile, rm, writeFile } from 'node:fs/promises';
+// eslint-disable-next-line no-restricted-imports -- mocks node:path relative with path.win32
 import { relative, win32 } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

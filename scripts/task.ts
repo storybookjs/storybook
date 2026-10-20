@@ -2,6 +2,7 @@ import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 
 import type { TestCase } from 'junit-xml';
 import { getJunitXml } from 'junit-xml';
+// eslint-disable-next-line no-restricted-imports -- sandbox paths flow into env vars, shell commands and node:path consumers in tasks
 import { dirname, join, resolve } from 'path';
 import picocolors from 'picocolors';
 import { prompt } from 'prompts';

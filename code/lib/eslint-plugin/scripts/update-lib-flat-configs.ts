@@ -2,7 +2,7 @@
 This script updates `lib/configs/flat/*.js` files from rule's meta data.
 */
 import fs from 'node:fs/promises';
-import path from 'node:path';
+import path from 'pathe';
 
 import { format } from 'oxfmt';
 import type { TCategory } from './utils/categories.ts';

@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import type { BuildEntries } from '../../../scripts/build/utils/entry-utils.ts';
 

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { loadCsf, printCsf } from './CsfFile.ts';
@@ -970,6 +972,21 @@ describe('CsfObject', () => {
       const done = storyEdits[edit](story);
       return { source, declaration: 'export const A =', done, printed: printCsf(csf).code };
     };
+
+    it('are the rows of the table in the README', () => {
+      const lines = readFileSync(new URL('README.md', import.meta.url), 'utf8').split('\n');
+      const header = lines.findIndex((line) => /^\|\s*Declared before\s*\|/.test(line));
+      const table = lines.slice(header + 2, lines.indexOf('', header));
+
+      expect(
+        table.map((line) =>
+          line
+            .split(/(?<!\\)\|/)
+            .slice(1, -1)
+            .map((text) => text.trim().replaceAll('\\|', '|'))
+        )
+      ).toEqual(rows.map(cells));
+    });
 
     it.each(rows.map((row) => [cells(row).filter(Boolean).join(' | '), row] as const))(
       '%s',

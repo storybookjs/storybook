@@ -97,17 +97,17 @@ const inlineSpreads = (node: Node, ctx: ReferenceContext, unresolved: string[]):
   }
 
   if (node.type === 'ArrayExpression') {
-    return rebuilt(
-      `[${node.elements
-        .map((element) =>
-          element === null
-            ? ''
-            : detachedTextOf(
-                element.type === 'SpreadElement' ? element : inlineSpreads(element, ctx, unresolved)
-              )
-        )
-        .join(', ')}]`
-    );
+    const items = node.elements
+      .map((element) =>
+        element === null
+          ? ''
+          : detachedTextOf(
+              element.type === 'SpreadElement' ? element : inlineSpreads(element, ctx, unresolved)
+            )
+      )
+      .join(', ');
+    // A trailing comma ends the last element, so a hole there takes one more.
+    return rebuilt(`[${items}${node.elements.at(-1) === null ? ',' : ''}]`);
   }
 
   if (node.type !== 'ObjectExpression') {

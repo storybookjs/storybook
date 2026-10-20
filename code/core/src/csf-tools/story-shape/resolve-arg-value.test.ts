@@ -33,6 +33,21 @@ const valueOf = (code: string, expression: string) => {
 };
 
 describe('resolveArgValue', () => {
+  it.each([
+    { expression: '[{ ...Base },,]', node: '[{ a: 1 }, ,]' },
+    { expression: '[, { ...Base }]', node: '[, { a: 1 }]' },
+    { expression: '[{ ...Base }, , 1]', node: '[{ a: 1 }, , 1]' },
+  ])('keeps the holes of $expression when it writes out a spread', ({ expression, node }) => {
+    const base = 'const Base = { a: 1 };';
+    const { node: text } = valueOf(base, expression);
+    const original = new Function(`${base} return ${expression}`)() as unknown[];
+    const written = new Function(`return ${text}`)() as unknown[];
+
+    expect(text).toBe(node);
+    expect(written).toHaveLength(original.length);
+    expect(Object.keys(written)).toEqual(Object.keys(original));
+  });
+
   it('reads a local const through to the value it was declared with', () => {
     expect(valueOf(`const LOCAL_LABEL = 'local';`, 'LOCAL_LABEL')).toEqual({
       node: "'local'",

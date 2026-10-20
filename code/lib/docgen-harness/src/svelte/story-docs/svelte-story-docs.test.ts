@@ -210,6 +210,27 @@ it.each([
   );
 });
 
+it('extracts props for a SvelteKit component resolved through jsconfig paths', async () => {
+  const payload = await buildDocgenPayload(
+    {
+      entry: {
+        id: 'aliases--default',
+        name: 'Default',
+        title: 'Aliases',
+        type: 'story',
+        subtype: 'story',
+        importPath: join(
+          dirname(fileURLToPath(import.meta.url)),
+          '__fixtures__/jsconfig-alias/input.stories.svelte'
+        ),
+      },
+    },
+    { cache: createDocgenCache() }
+  );
+  expect(payload?.error).toBeUndefined();
+  expect(payload?.argTypes?.label).toMatchObject({ name: 'label', type: { name: 'string' } });
+});
+
 it('keeps every story payload when block bindings are destructured', async () => {
   const payload = await buildStoryDocsPayload(
     {

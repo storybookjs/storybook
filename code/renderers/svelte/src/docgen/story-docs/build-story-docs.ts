@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { types as t } from 'storybook/internal/babel';
+import { babelParse, babelPrint, traverse, types as t } from 'storybook/internal/babel';
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { getService } from 'storybook/internal/core-server';
 import { storyNameFromExport, toId } from 'storybook/internal/csf';
@@ -53,21 +53,18 @@ export async function buildStoryDocsPayload(
   const templates = new Map<string, { code: string; description?: string }>();
   const snippets = new Map<string, string>();
   let csfSource = source;
+  let typescript = /\.(?:ts|tsx|mts|cts)$/.test(filename);
   let instanceScript: { code: string; typescript: boolean } | undefined;
   if (filename.endsWith('.svelte')) {
     const ast = getSvelteAST({ code: source, filename });
+    typescript = isTypeScript(ast.module) || isTypeScript(ast.instance);
     if (ast.instance) {
       instanceScript = {
         code: source.slice(
           position(ast.instance.content).start,
           position(ast.instance.content).end
         ),
-        typescript: ast.instance.attributes.some(
-          (attribute) =>
-            attribute.name === 'lang' &&
-            Array.isArray(attribute.value) &&
-            attribute.value.some((value) => value.type === 'Text' && value.data === 'ts')
-        ),
+        typescript,
       };
     }
     const nodes = await extractSvelteASTNodes({ ast, filename });
@@ -109,7 +106,19 @@ export async function buildStoryDocsPayload(
       );
     }
   }
-  const csf = loadCsf(csfSource, { makeTitle: () => input.entry.title }).parse();
+  let csf = loadCsf(csfSource, { makeTitle: () => input.entry.title }).parse();
+  if (instanceScript) {
+    traverse(babelParse(instanceScript.code), {
+      Program(path) {
+        for (const name of Object.keys(path.scope.bindings)) {
+          if (csf._file.path.scope.hasOwnBinding(name))
+            csf._file.path.scope.rename(name, csf._file.path.scope.generateUid(name));
+        }
+        path.stop();
+      },
+    });
+  }
+  csf = loadCsf(babelPrint(csf._file.path.node), { makeTitle: () => input.entry.title }).parse();
   const id = getComponentIdFromEntry(input.entry);
   const docgen = await (context.readDocgen ?? readDocgen)(id);
   const argTypes = docgen?.argTypes ?? {};
@@ -143,14 +152,27 @@ export async function buildStoryDocsPayload(
     const staticArgs = readStaticArgs(argNodes, { snippetFactories, mockFactories });
     for (const [name, body] of Object.entries(staticArgs.snippets))
       snippetArgs.push(`{#snippet ${name}()}${body}{/snippet}`);
+    const expressions = Object.fromEntries(
+      staticArgs.unresolved.map((key) => [key, babelPrint(argNodes[key])])
+    );
+    const preservedNames = new Set<string>();
+    for (const key of staticArgs.unresolved) {
+      const node = argNodes[key];
+      if (!t.isExpression(node)) continue;
+      traverse(t.file(t.program([t.expressionStatement(t.cloneNode(node, true))])), {
+        ReferencedIdentifier(path) {
+          if (!path.scope.hasBinding(path.node.name)) preservedNames.add(path.node.name);
+        },
+      });
+    }
     const componentName =
       csf.meta.component && /^[A-Z][\w$]*(?:\.[\w$]+)*$/.test(csf.meta.component)
         ? csf.meta.component
         : undefined;
     let markup = template
-      ? printSvelteCsfSnippet({ code: template.code, args: staticArgs.args, argTypes })
+      ? printSvelteCsfSnippet({ code: template.code, args: staticArgs.args, argTypes, expressions })
       : componentName && !filename.endsWith('.svelte')
-        ? printPlainCsfSnippet({ componentName, args: staticArgs.args, argTypes })
+        ? printPlainCsfSnippet({ componentName, args: staticArgs.args, argTypes, expressions })
         : undefined;
     if (markup && snippetArgs.length > 0) {
       const root = /^\s*<([A-Z][\w$.]*)\b/.exec(markup);
@@ -171,14 +193,23 @@ export async function buildStoryDocsPayload(
       }
     }
     const imported = markup
-      ? buildSnippetImportBlock(markup, { bindings, importOverride, instanceScript })
+      ? buildSnippetImportBlock(markup, {
+          bindings,
+          importOverride,
+          instanceScript: filename.endsWith('.svelte')
+            ? instanceScript
+            : { code: babelPrint(csf._file.path.node), typescript },
+          ...(filename.endsWith('.svelte')
+            ? { moduleScript: { code: babelPrint(csf._file.path.node), typescript } }
+            : {}),
+        })
       : undefined;
     const warnings = [
       imported?.unresolved.map((name) => `Import not resolved: \`${name}\`.`).join(' '),
       imported?.unresolvedIdentifiers
         ?.map((name) => `Identifier not resolved: \`${name}\`.`)
         .join(' '),
-      unresolvedWarning([...resolved.unresolved, ...staticArgs.unresolved]),
+      unresolvedWarning(resolved.unresolved.filter((name) => !preservedNames.has(name))),
       !template &&
       (resolved.storyMembers.properties.render || resolved.metaMembers.properties.render)
         ? 'The render function is not reflected in this snippet.'
@@ -209,4 +240,15 @@ function position(node: object): { start: number; end: number } {
     return { start: node.start, end: node.end };
   }
   throw new TypeError('Svelte AST node has no source positions');
+}
+
+function isTypeScript(script: ReturnType<typeof getSvelteAST>['module']): boolean {
+  return (
+    script?.attributes.some(
+      (attribute) =>
+        attribute.name === 'lang' &&
+        Array.isArray(attribute.value) &&
+        attribute.value.some((value) => value.type === 'Text' && value.data === 'ts')
+    ) ?? false
+  );
 }

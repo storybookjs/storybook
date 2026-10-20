@@ -48,9 +48,9 @@
         }
       },
       "type": {
-        "name": "other",
-        "required": false,
-        "value": "() => void"
+        "name": "function",
+        "raw": "() => void",
+        "required": false
       }
     },
     "primary": {

@@ -16,7 +16,10 @@ import { getDefineMetaComponentValue } from '../../../svelte-csf/parser/analyse/
 import { extractSvelteASTNodes } from '../../../svelte-csf/parser/extract/svelte/nodes.ts';
 
 function resolveImport(specifier: string, from: string): string | undefined {
-  const configPath = ts.findConfigFile(dirname(from), ts.sys.fileExists);
+  const configPath = ['tsconfig.json', 'jsconfig.json']
+    .map((name) => ts.findConfigFile(dirname(from), ts.sys.fileExists, name))
+    .filter((filename) => filename !== undefined)
+    .sort((a, b) => dirname(b).length - dirname(a).length)[0];
   const options = configPath
     ? ts.parseJsonConfigFileContent(
         ts.readConfigFile(configPath, ts.sys.readFile).config,

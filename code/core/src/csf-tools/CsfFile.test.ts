@@ -1327,6 +1327,15 @@ describe('CsfFile', () => {
       }
     );
 
+    it('rejects an export of `global`, which `declare global` does not declare', () => {
+      expect(() =>
+        loadCsf('export default {};\ndeclare global {}\nexport { global };', {
+          makeTitle,
+          fileName: 'foo/bar.stories.ts',
+        }).parse()
+      ).toThrow("Export 'global' is not defined");
+    });
+
     it.each([
       'type X = {};\nexport { X };',
       'type X = {};\nexport { type X };',

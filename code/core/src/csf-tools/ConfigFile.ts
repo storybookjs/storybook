@@ -299,7 +299,8 @@ export class ConfigFile implements CsfObject {
   }
 
   /**
-   * Set a plain value or an expression from `get` / `parseExpression`, creating missing parents.
+   * Set a plain value or an expression from `get`, `parseExpression` or `parseModule`, creating
+   * missing parents.
    *
    * @example
    * ```ts

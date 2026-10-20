@@ -244,19 +244,32 @@ describe('CsfObject', () => {
       diagnostic: {
         code: 'unsupported-value',
         message:
-          'Cannot set b to a Literal node that did not come from `get`, `transform` or `parseExpression`',
+          'Cannot set b to a Literal node that did not come from `get`, `transform`, `parseExpression` or `parseModule`',
       },
     });
     expect(printCsf(csf).code).toBe(`export default { a: 1 };`);
+  });
+
+  it('sets an expression of a parseModule tree as written', () => {
+    const csf = parse(`export default { a: 1 };`);
+    const [meta] = csf.objects({ stories: false });
+    const { program } = parseModule(`const handlers = [\n  http.get('/a', resolve),\n];`);
+    const [declarator] = (program.body[0] as ESTree.VariableDeclaration).declarations;
+
+    expect(meta.set(['b'], declarator.init!)).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(
+      ['export default {', '  a: 1,', '  b: [', "    http.get('/a', resolve),", '  ]', '};'].join(
+        '\n'
+      )
+    );
   });
 
   it('rejects a transform result that did not come from this API, like set', () => {
     const source = 'export default { args: { n: 1 } };';
     const csf = parse(source);
     const [meta] = csf.objects({ stories: false });
-    const statement = parseModule('2').program.body[0] as ESTree.ExpressionStatement;
 
-    expect(meta.transform(['args', 'n'], () => statement.expression)).toMatchObject({
+    expect(meta.transform(['args', 'n'], () => ({ ...parseExpression('2') }))).toMatchObject({
       ok: false,
       changed: false,
       diagnostic: { code: 'unsupported-value', path: ['args', 'n'] },
@@ -1065,9 +1078,8 @@ describe('CsfObject', () => {
     const source = 'export default {};\nexport const A = {};';
     const csf = parse(source);
     const [story] = csf.objects({ meta: false });
-    const statement = parseModule('() => {}').program.body[0] as ESTree.ExpressionStatement;
 
-    expect(story.set(['args'], { onClick: statement.expression })).toMatchObject({
+    expect(story.set(['args'], { onClick: { ...parseExpression('() => {}') } })).toMatchObject({
       ok: false,
       changed: false,
       diagnostic: { code: 'unsupported-value' },

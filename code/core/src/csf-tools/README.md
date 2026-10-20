@@ -35,7 +35,7 @@ if (size.kind === 'value') {
 Use `inspect` when a missing field and an unreadable one call for different edits, such as an automigration that reports a file it cannot read instead of skipping it.
 
 The expressions `get`, `inspect` and `transform` give are frozen snapshots: `set` prints an expression from its source, so a change to its fields would be lost, and making one throws. To write another value, pass a plain value or `parseExpression(text)`.
-`set` accepts an expression from `get` or `parseExpression`, or plain strings, numbers, booleans, `null`, `undefined`, and nested arrays or objects of those values and expressions. An object whose `type` names an AST node is rejected with a diagnostic unless it came from `get` or `parseExpression`. Plain values are printed into the source, so later changes to the input do not affect the file.
+`set` accepts an expression from `get`, `parseExpression` or `parseModule`, or plain strings, numbers, booleans, `null`, `undefined`, and nested arrays or objects of those values and expressions. An object whose `type` names an AST node is rejected with a diagnostic unless it came from `get`, `parseExpression` or `parseModule`. Plain values are printed into the source, so later changes to the input do not affect the file.
 An expression from `get` is indented as if its line had no indent, and `set` and `transform` indent a value's lines like the line of the field it is written to, so a value copied between fields keeps its layout. A field that spans lines, added to an object written on one line, puts every field of that object on a line of its own; a one-line field leaves the object on its line. Objects around it, and an object a field is grouped into, keep their layout.
 Successful removals and moves recursively remove empty source parents, stopping at the editor's root object or an empty parent that shadows an earlier spread or computed key. Removing a field that could reveal an earlier spread value produces a diagnostic. Moves clean up after inserting the destination, so shared ancestors remain intact. Unrelated empty objects are preserved.
 Reads follow any local constant. Edits follow only a constant that the edited object alone refers to; shared or reassigned references remain untouched.
@@ -67,7 +67,11 @@ for (const story of csf.objects()) {
 }
 ```
 
-`textOf` gives a node's source as written, and `placeableTextOf` that source ready to place as a value. `detachedTextOf` also dedents it as if the node's line had no indent, to place a value from a file at another indent, such as in a generated snippet.
+`textOf` gives a node's source as written, and `placeableTextOf` that source ready to place as a value. `detachedTextOf` also dedents it as if the node's line had no indent, to place a value from a file at another indent, such as in a generated snippet. All three take the nodes of an editor's `program`, `parseExpression` and `parseModule`.
+
+To read a tree, `walk` visits its nodes depth-first, `staticKey` reads an object member's key, `objectProperty(object, name)` finds a property by that key, `isIdentifier(node, name)` checks for an identifier and its name, and `locationOf(code, start, end)` gives the lines and columns of two offsets.
+
+`editor.scopes` is the file's scope analysis: `scopes.program.bindings` maps each top-level name to its `Binding`, and `scopes.tsDeclarationNames` holds the top-level names of type aliases, interfaces, enums, namespaces and bodiless functions, which bind none. A binding's `references` holds the identifiers that read or write it, and statements too: the `export` statement of an exported declaration, as in Babel, also of an exported type of the same name, and a top-level overload signature of a function, or its `export` statement. Filter on `type` when only identifiers count.
 
 ## Transforming preview and main configuration
 

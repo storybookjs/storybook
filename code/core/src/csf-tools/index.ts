@@ -15,11 +15,14 @@ export * from './enrichCsf.ts';
 export { vitestTransform } from './vitest-plugin/transformer.ts';
 export { componentTransform } from './vitest-plugin/component-transformer.ts';
 export * from './story-shape/index.ts';
-export type { E as ESTree, Node as ESTreeNode } from './estree/ast.ts';
+export type { E as ESTree, Node as ESTreeNode, SourceLocation } from './estree/ast.ts';
 export {
+  isIdentifier,
   isStringLiteral,
   isTSWrapper,
+  locationOf,
   normalizeLineEndings,
+  objectProperty,
   outerSpan,
   parseExpression,
   parseModule,

@@ -159,8 +159,8 @@ export interface CsfObject {
    */
   getValue(path: readonly string[]): CsfValue;
   /**
-   * Set a plain value or an expression from `get` / `parseExpression`, creating missing parents.
-   * Expressions can also be nested in the arrays and objects of a plain value.
+   * Set a plain value or an expression from `get`, `parseExpression` or `parseModule`, creating
+   * missing parents. Expressions can also be nested in the arrays and objects of a plain value.
    *
    * @example
    * ```ts
@@ -882,7 +882,7 @@ class Editor implements CsfObjectEditor {
           'unsupported-value',
           path,
           this.anchor(),
-          `Cannot set ${path.join('.')} to a ${node.type} node that did not come from \`get\`, \`transform\` or \`parseExpression\``
+          `Cannot set ${path.join('.')} to a ${node.type} node that did not come from \`get\`, \`transform\`, \`parseExpression\` or \`parseModule\``
         )
       : undefined;
   }

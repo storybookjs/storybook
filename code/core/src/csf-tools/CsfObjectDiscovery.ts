@@ -172,10 +172,10 @@ const storyBindings = (csf: CsfFile, report: ReportDiagnostic): StoryBinding[] =
       continue;
     }
     report({
-      code: 'ambiguous-binding',
+      code: 'aliased-story',
       target: storyTarget(candidate),
       path: [],
-      message: `Cannot mutate ${candidate.exportName} without changing ${first.exportName}: both export ${candidate.localName}`,
+      message: `Cannot mutate ${candidate.exportName} without changing ${first.exportName}, which exports the same story`,
       ...loc(csf, candidate.node),
     });
   }

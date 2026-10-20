@@ -181,7 +181,7 @@ describe('argtypes-default-value', () => {
     const result = await migrate({ story });
 
     expect(result.failures).toEqual([
-      { file: storyPath, kind: 'story', message: expect.stringContaining('Secondary') },
+      { file: storyPath, kind: 'story', message: expect.stringContaining('Primary') },
     ]);
     expect(result.story).toBe(story);
   });

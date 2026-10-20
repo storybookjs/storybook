@@ -196,9 +196,9 @@ describe('CsfObject discovery', () => {
       ]);
       expect(csf.mutationDiagnostics).toEqual([
         expect.objectContaining({
-          code: 'ambiguous-binding',
+          code: 'aliased-story',
           target: { kind: 'story', exportName: other, localName: 'L' },
-          message: `Cannot mutate ${other} without changing ${first}: both export L`,
+          message: `Cannot mutate ${other} without changing ${first}, which exports the same story`,
         }),
       ]);
     }

@@ -167,6 +167,16 @@ describe('analyzeScopes', () => {
     expect(programBindings('enum E { A } declare global { var X: number }')).toEqual({});
   });
 
+  it.each([
+    'enum _meta { A }',
+    'namespace _meta { export const x = 1; }',
+    'namespace _meta.inner { export const x = 1; }',
+    'declare function _meta(): void;',
+  ])('generates a name that does not collide with %s', (code) => {
+    const info = analyzeScopes(parseModule(code, 'file.ts').program);
+    expect(generateUid(info, 'meta')).toBe('_meta2');
+  });
+
   it('generates Babel-style unique names', () => {
     const info = analyzeScopes(parseModule('const _meta = 1; const _meta2 = 2;').program);
     expect(generateUid(info, 'meta')).toBe('_meta3');

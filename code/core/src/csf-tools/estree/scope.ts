@@ -456,6 +456,9 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
   const visitType = (node: Node, scope: Scope): void => {
     assertKnown(node);
     switch (node.type) {
+      case 'TSDeclareFunction':
+        reserveName(node.id);
+        break;
       case 'TSTypeAnnotation':
         assertKnownWithin(node);
         return;
@@ -495,6 +498,17 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
       } else if (child.node.type !== 'Identifier') {
         visitType(child.node, scope);
       }
+    }
+  };
+
+  // Enums, namespaces and ambient functions bind no name in the analysis, but a generated name
+  // must not collide with theirs. `namespace A.B {}` declares `A`.
+  const reserveName = (id: Node | null | undefined) => {
+    while (id?.type === 'TSQualifiedName') {
+      id = id.left;
+    }
+    if (id?.type === 'Identifier') {
+      names.add(id.name);
     }
   };
 
@@ -701,9 +715,11 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
         }
         return;
       case 'TSEnumDeclaration':
+        reserveName(node.id);
         visit(node.body, current);
         return;
       case 'TSModuleDeclaration':
+        reserveName(node.id);
         if (node.body) {
           visit(node.body, current);
         }

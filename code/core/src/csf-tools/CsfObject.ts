@@ -844,7 +844,7 @@ class Editor implements CsfObjectEditor {
         // Comments travel with moved members; a line comment needs the object to span lines.
         const multiline = texts.some((text) => text.includes('\n'));
         const block = (members: string[]) =>
-          multiline ? printMembers(members, indent) : `{ ${members.join(', ')} }`;
+          printMembers(members, multiline ? { indent, trailingComma: true } : 'one-line');
         const forward = (depth: number, into: 'object' | 'array' = 'object') => {
           const spread = carriedSpread(carried.spread, missing.slice(0, depth + 1), quote, into);
           return spread ? [spread] : [];

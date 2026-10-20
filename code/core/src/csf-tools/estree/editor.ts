@@ -370,9 +370,18 @@ export class SourceEditor {
     this._style ??= inferStyle(this._module);
     return this._style.semicolons;
   }
+
+  /**
+   * Whether a generated object or array laid out one item per line ends with a comma, as most of
+   * the file's do.
+   */
+  get trailingCommas() {
+    this._style ??= inferStyle(this._module);
+    return this._style.trailingCommas;
+  }
 }
 
-type Style = { quote: "'" | '"'; indent: string; semicolons: boolean };
+type Style = { quote: "'" | '"'; indent: string; semicolons: boolean; trailingCommas: boolean };
 
 interface Batch {
   edits: SourceEdits;
@@ -426,11 +435,16 @@ const endsWithOptionalSemicolon = (node: Node, parent: Node | null) => {
 const inferStyle = ({ code, program }: ParsedModule): Style => {
   const counts = { "'": 0, '"': 0 };
   const endings = { with: 0, without: 0 };
+  const lastItems = { with: 0, without: 0 };
   let first: "'" | '"' | undefined;
   let indent: string | undefined;
   walk(program, (node, parent) => {
     if (endsWithOptionalSemicolon(node, parent)) {
       endings[code[node.end - 1] === ';' ? 'with' : 'without']++;
+    }
+    const trailingComma = trailingCommaOf(code, node);
+    if (trailingComma !== undefined) {
+      lastItems[trailingComma ? 'with' : 'without']++;
     }
     if (isStringLiteral(node) && parent?.type !== 'JSXAttribute') {
       const quote = node.raw?.[0];
@@ -443,7 +457,30 @@ const inferStyle = ({ code, program }: ParsedModule): Style => {
   });
   const quote =
     counts["'"] === counts['"'] ? (first ?? '"') : counts["'"] > counts['"'] ? "'" : '"';
-  return { quote, indent: indent ?? '  ', semicolons: endings.without <= endings.with };
+  return {
+    quote,
+    indent: indent ?? '  ',
+    semicolons: endings.without <= endings.with,
+    trailingCommas: lastItems.with > lastItems.without,
+  };
+};
+
+// Whether an object or array whose closing bracket is on a line after its last item has a comma
+// after that item.
+const trailingCommaOf = (code: string, node: Node) => {
+  const last =
+    node.type === 'ObjectExpression'
+      ? node.properties.at(-1)
+      : node.type === 'ArrayExpression'
+        ? node.elements.at(-1)
+        : undefined;
+  if (!last) {
+    return undefined;
+  }
+  const after = code
+    .slice(outerSpan(last).end, node.end - 1)
+    .replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
+  return after.includes('\n') ? after.trimStart().startsWith(',') : undefined;
 };
 
 // The indent step from a block's line to the line of its first item, if that is a deeper one.
@@ -481,14 +518,28 @@ export const printString = (value: string, quote: string) => {
     : `'${json.slice(1, -1).replaceAll('\\"', '"').replaceAll("'", "\\'")}'`;
 };
 
-const printLines = (items: string[], indent: string, open: string, close: string) =>
+type LinesLayout = { indent: string; trailingComma: boolean };
+
+const printLines = (
+  items: string[],
+  { indent, trailingComma }: LinesLayout,
+  open: string,
+  close: string
+) =>
   items.length === 0
     ? `${open}${close}`
-    : `${open}\n${items.map((item) => `${indent}${withComma(reindent(item, '', indent), ',', true)}`).join('\n')}\n${close}`;
+    : `${open}${itemLines(items, indent, trailingComma ? ',' : '', true)}\n${close}`;
 
-/** An object literal laid out one member per line, so formatters keep it expanded. */
-export const printMembers = (members: string[], indent: string) =>
-  printLines(members, indent, '{', '}');
+/**
+ * An object literal of member texts, on one line or one member per line at an indent, which
+ * formatters keep expanded.
+ */
+export const printMembers = (members: string[], layout: LinesLayout | 'one-line') =>
+  layout !== 'one-line'
+    ? printLines(members, layout, '{', '}')
+    : members.length === 0
+      ? '{}'
+      : `{ ${members.join(', ')} }`;
 
 // Objects, or with `multiline` only objects and arrays with an item that spans lines, are laid out
 // one item per line.
@@ -534,17 +585,19 @@ export const printValue = (value: unknown, quote: string, layout?: ValueLayout):
   if (Array.isArray(value)) {
     const items = Array.from(value, (item) => printValue(item, quote, layout));
     return layout?.expand === 'multiline' && spansLines(items)
-      ? printLines(items, layout.indent, '[', ']')
+      ? printLines(items, { indent: layout.indent, trailingComma: true }, '[', ']')
       : `[${items.join(', ')}]`;
   }
   if (typeof value === 'object') {
     const members = Object.entries(value as Record<string, unknown>).map(
       ([key, item]) => `${printKey(key, quote)}: ${printValue(item, quote, layout)}`
     );
-    if (layout && (layout.expand === 'objects' || spansLines(members))) {
-      return printMembers(members, layout.indent);
-    }
-    return members.length === 0 ? '{}' : `{ ${members.join(', ')} }`;
+    return printMembers(
+      members,
+      layout && (layout.expand === 'objects' || spansLines(members))
+        ? { indent: layout.indent, trailingComma: true }
+        : 'one-line'
+    );
   }
   throw new Error(`Cannot print value of type ${typeof value}`);
 };
@@ -1229,8 +1282,8 @@ export const groupMembers = (
   const { start } = members[0];
   const indent = /[ \t]*$/.exec(editor.code.slice(lineStart(editor.code, start), start))![0];
   const inner = multiline
-    ? reindent(printMembers(texts, editor.indent), '', indent)
-    : `{ ${texts.join(', ')} }`;
+    ? reindent(printMembers(texts, { indent: editor.indent, trailingComma: true }), '', indent)
+    : printMembers(texts, 'one-line');
   // The comments of the first member move into the group with it.
   const lead = multiline ? `\n${indent}` : ' ';
   editor.edits.overwrite(

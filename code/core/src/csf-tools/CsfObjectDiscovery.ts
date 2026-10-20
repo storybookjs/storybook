@@ -462,9 +462,12 @@ const storyRoot = (
         return;
       }
       const texts = members.map((member) => take(member, staticKey(member)!).text);
-      const value = texts.some((text) => text.includes('\n'))
-        ? printMembers(texts, editor.indent)
-        : `{ ${texts.join(', ')} }`;
+      const value = printMembers(
+        texts,
+        texts.some((text) => text.includes('\n'))
+          ? { indent: editor.indent, trailingComma: true }
+          : 'one-line'
+      );
       const statements = statementsOf(members);
       removeStatements(editor, statements);
       assign([{ key, value, text: '' }], statements);

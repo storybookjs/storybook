@@ -72,7 +72,7 @@ export const updateArgsInCsfFile = async (
     prependMembers(editor, story, [
       `args: ${printMembers(
         Object.entries(args).map(([key, value]) => `${key}: ${value}`),
-        editor.indent
+        { indent: editor.indent, trailingComma: true }
       )}`,
     ]);
     return;

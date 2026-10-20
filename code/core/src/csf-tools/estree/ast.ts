@@ -60,7 +60,7 @@ export const rawTransferAvailable = process.platform !== 'win32' && rawTransferS
 
 let rawTransferEnabled = rawTransferAvailable;
 
-// The option is missing from the `ParserOptions` type of oxc-parser 0.155.
+// The option is missing from the `ParserOptions` type of oxc-parser 0.154.
 type ParseOptions = E.ParserOptions & { experimentalRawTransfer: boolean };
 
 /**

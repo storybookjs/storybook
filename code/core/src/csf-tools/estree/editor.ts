@@ -548,7 +548,7 @@ const spansLines = (texts: string[]) => texts.some((text) => text.includes('\n')
 
 // A new object literal: on one line, unless a member spans lines.
 export const printObject = (members: string[], indent: string) =>
-  spansLines(members) ? printMembers(members, indent) : `{ ${members.join(', ')} }`;
+  printMembers(members, spansLines(members) ? { indent, trailingComma: true } : 'one-line');
 
 // A JS value as source, and a node of `get`, `parseExpression`, `parseModule` or a file in it as
 // `detachedTextOf`.

@@ -392,12 +392,12 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         }
 
         case 'nextComponent': {
-          fullAPI.jumpToComponent(1);
+          fullAPI.jumpToSubtree(1);
           break;
         }
 
         case 'prevComponent': {
-          fullAPI.jumpToComponent(-1);
+          fullAPI.jumpToSubtree(-1);
           break;
         }
 

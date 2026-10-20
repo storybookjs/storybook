@@ -1,6 +1,6 @@
 ---
-name: stories
-description: Invoke FIRST, before creating, editing, or deleting components, stories, styles, CSS, themes, colors, or design tokens — anything that changes how the UI looks, no exceptions. Also before running story tests, answering a question about a component's props, API, or usage, starting Storybook, or showing or listing components, stories, or UI states.
+name: ui-workflow
+description: Storybook's workflow for UI changes in a project with Storybook - look up the components to reuse, write and update stories, run story tests, and publish a review of the result. Also shows existing components or stories in a review. Use when the project's agent instructions (such as AGENTS.md) or the user ask for it.
 ---
 
 Prerequisites:
@@ -12,9 +12,7 @@ Run the Storybook dev server and every Storybook CLI command from the same worki
 
 If the sandbox blocks network access or ports, request escalated permissions for Storybook CLI commands; otherwise the dev server can fail in confusing ways (for example, it finds no free port to bind to).
 
-For docs, props, or usage questions, use `npx storybook tools docs list` followed by `npx storybook tools docs show --id <id>` before inspecting source files. Fall back to source inspection only when the documentation commands are unavailable or return no relevant documentation.
-
-Run `npx storybook skills stories` and read the output in its **entirety** to get the **mandatory, ordered workflow** for working on UI changes, writing stories, and keeping stories in sync with every frontend component you create, modify, or delete. This workflow explains how to write stories, preview stories, and display a curated Storybook review.
+Run `npx storybook skills ui-workflow` and read the output in its **entirety** to get the **mandatory, ordered workflow** for working on UI changes, writing stories, and keeping stories in sync with every frontend component you create, modify, or delete. This workflow explains how to write stories, preview stories, and display a curated Storybook review.
 
 Some commands require a running Storybook dev server:
 

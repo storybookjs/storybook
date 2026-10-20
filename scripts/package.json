@@ -9,7 +9,7 @@
     "check": "node ./check/check-package.ts",
     "check-package": "jiti ./check-package.ts",
     "docs:check": "jiti ./docs/check-docs.ts",
-    "docs:codemod": "jiti ./snippets/codemod.ts",
+    "docs:fix-snippet-order": "jiti ./docs/fix-snippet-order.ts",
     "eval": "node ./eval/eval.ts",
     "eval:collect-pr-data": "node ./eval/collect-pr-data.ts",
     "eval:run-batch": "node ./eval/run-batch.ts",

@@ -10,7 +10,6 @@ export const BEFORE_DIR_NAME = 'before-storybook';
 // error. Keep this module free of ESM-only globals.
 export const ROOT_DIRECTORY = join(__dirname, '..', '..');
 export const CODE_DIRECTORY = join(ROOT_DIRECTORY, 'code');
-export const SNIPPETS_DIRECTORY = join(ROOT_DIRECTORY, 'docs', '_snippets');
 export const PACKS_DIRECTORY = join(ROOT_DIRECTORY, 'packs');
 export const REPROS_DIRECTORY = join(ROOT_DIRECTORY, 'repros');
 

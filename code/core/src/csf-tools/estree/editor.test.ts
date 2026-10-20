@@ -166,6 +166,27 @@ describe('commit', () => {
   });
 });
 
+describe('transaction', () => {
+  it('appends after the items an append before a rolled back transaction added', () => {
+    const editor = new SourceEditor('export default {};\n');
+    const object = () =>
+      (editor.program.body[0] as E.ExportDefaultDeclaration).declaration as E.ObjectExpression;
+    appendToList(editor, objectList(editor, object()), ['a: 1']);
+    editor.transaction(() => false);
+    appendToList(editor, objectList(editor, object()), ['b: 2']);
+    expect(editor.toString()).toBe('export default { a: 1, b: 2 };\n');
+  });
+
+  it('keeps a statement inserted before a rolled back transaction when its anchor is removed', () => {
+    const editor = new SourceEditor("import a from 'a';\n\nfoo();\n");
+    const [anchor] = editor.program.body;
+    insertStatementAfter(editor, anchor, 'const b = 1;');
+    editor.transaction(() => false);
+    removeStatement(editor, anchor);
+    expect(editor.toString()).toBe('const b = 1;\nfoo();\n');
+  });
+});
+
 describe('style', () => {
   it('quotes like most string literals, leaving JSX attributes out', () => {
     expect(new SourceEditor('import a from \'a\';\nconst x = <A b="1" c="2" />;').quote).toBe("'");

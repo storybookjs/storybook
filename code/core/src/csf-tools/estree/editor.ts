@@ -254,6 +254,8 @@ export class SourceEditor {
     const committed = this._committed.length;
     const edits = this._edits.clone();
     lastInserted.set(edits, new Map(lastInserted.get(this._edits)));
+    appendedTo.set(edits, new Map(appendedTo.get(this._edits)));
+    insertedAt.set(edits, new Set(insertedAt.get(this._edits)));
     const appended = [...this._appendedWithoutBlankLine];
     const transaction = { refused: false, rollbacks: onRollback ? [onRollback] : [] };
     this._transaction = transaction;

@@ -184,7 +184,7 @@ const isTypeOnly = (declaration: E.ImportDeclaration, specifier: ImportSpecifier
 
 export class ConfigFile implements CsfObject {
   /**
-   * Identify the config, meta, story, annotation, or call argument this editor represents.
+   * Identify the config, meta, story, or call argument this editor represents.
    *
    * @example
    * ```ts

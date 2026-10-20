@@ -1383,6 +1383,19 @@ Storybook no longer bundles Babel or recast to read and write story and config f
 - Story files read string-literal keys and ignore computed identifier keys. `export default { 'title': 'X' }` now gives story ids under `X`, where Babel used the automatic title, and `export default { [title]: 'X' }` no longer sets the title.
 - On StackBlitz WebContainers, which have no native `oxc-parser` binding, `oxc-parser` downloads `@oxc-parser/binding-wasm32-wasi` itself with `pnpm`. On any other host without a native binding, Storybook fails with a "Cannot find native binding" error whose cause names the missing packages; install `@oxc-parser/binding-wasm32-wasi` in the project at the exact version of `oxc-parser`.
 
+#### Community packages that need a release
+
+These packages read `storybook/internal/babel` or Babel-shaped `csf-tools` fields such as `_ast`, so they stop loading on Storybook 11 until they publish a release for it. No release with the fix is known yet; upgrade each once it ships:
+
+- `storybook-solidjs-vite`
+- `msw-storybook-addon`, for its migration CLI
+- `storybook-addon-test-codegen`
+- `@storybook/experimental-devtools`
+- `storybook-addon-metadata`
+- `storybook-detox-test-runner`
+- `@parcel/transformer-storybook`, used by `storybook-builder-parcel`
+- `storybook-builder-rsbuild`, which passes the removed `babelParser` to Storybook's mocking utilities
+
 #### Changes for tooling that imports Storybook's internal entry points
 
 - `storybook/internal/babel` is removed. Import Babel from your own `@babel/*` dependencies if you still need it.

@@ -1,5 +1,5 @@
 ```js filename=".storybook/preview.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
-import { withThemeFromJSXProvider } from '@storybook/addon-themes';
+import { withThemeFromJSXProvider } from '@storybook/addon-themes-react';
 
 import { createGlobalStyle, ThemeProvider } from 'styled-components';
 import { lightTheme, darkTheme } from '../src/themes';
@@ -31,7 +31,7 @@ export default preview;
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import { Preview, Renderer } from '@storybook/your-framework';
 
-import { withThemeFromJSXProvider } from '@storybook/addon-themes';
+import { withThemeFromJSXProvider } from '@storybook/addon-themes-react';
 
 import { createGlobalStyle, ThemeProvider } from 'styled-components';
 import { lightTheme, darkTheme } from '../src/themes';
@@ -64,6 +64,7 @@ export default preview;
 import { Renderer, definePreview } from '@storybook/your-framework';
 
 import addonThemes from '@storybook/addon-themes';
+import { withThemeFromJSXProvider } from '@storybook/addon-themes-react';
 
 import { ThemeProvider, createGlobalStyle } from 'styled-components';
 
@@ -78,7 +79,7 @@ const GlobalStyles = createGlobalStyle`
 export default definePreview({
   addons: [addonThemes()],
   decorators: [
-    addonThemes.withThemeFromJSXProvider<Renderer>({
+    withThemeFromJSXProvider<Renderer>({
       themes: {
         light: lightTheme,
         dark: darkTheme,
@@ -98,6 +99,7 @@ export default definePreview({
 import { definePreview } from '@storybook/your-framework';
 
 import addonThemes from '@storybook/addon-themes';
+import { withThemeFromJSXProvider } from '@storybook/addon-themes-react';
 
 import { ThemeProvider, createGlobalStyle } from 'styled-components';
 
@@ -112,7 +114,7 @@ const GlobalStyles = createGlobalStyle`
 export default definePreview({
   addons: [addonThemes()],
   decorators: [
-    addonThemes.withThemeFromJSXProvider({
+    withThemeFromJSXProvider({
       themes: {
         light: lightTheme,
         dark: darkTheme,

@@ -7,6 +7,7 @@ export default {
   '@storybook/addon-onboarding': '11.0.0-alpha.6',
   'storybook-addon-pseudo-states': '11.0.0-alpha.6',
   '@storybook/addon-themes': '11.0.0-alpha.6',
+  '@storybook/addon-themes-react': '11.0.0-alpha.6',
   '@storybook/addon-vitest': '11.0.0-alpha.6',
   '@storybook/builder-vite': '11.0.0-alpha.6',
   '@storybook/builder-webpack5': '11.0.0-alpha.6',

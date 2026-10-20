@@ -4,10 +4,10 @@
 
 ### `withThemeFromJSXProvider`
 
-Takes your provider component, global styles, and theme(s)to wrap your stories in.
+Takes your provider component, global styles, and theme(s)to wrap your stories in. Import it from `@storybook/addon-themes-react`. That package is not registered in `.storybook/main`.
 
 ```js
-import { withThemeFromJSXProvider } from '@storybook/addon-themes';
+import { withThemeFromJSXProvider } from '@storybook/addon-themes-react';
 
 export const decorators = [
   withThemeFromJSXProvider({

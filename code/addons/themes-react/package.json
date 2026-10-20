@@ -1,0 +1,58 @@
+{
+  "name": "@storybook/addon-themes-react",
+  "version": "11.0.0-alpha.6",
+  "description": "React provider decorator for @storybook/addon-themes",
+  "keywords": [
+    "css",
+    "emotion",
+    "material-ui",
+    "react",
+    "storybook",
+    "styled-components",
+    "themes"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/themes-react",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/addons/themes-react"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "author": "Shaun Evening",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "devDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^6.0.3"
+  },
+  "peerDependencies": {
+    "@storybook/addon-themes": "workspace:^",
+    "react": "^18.0.0 || ^19.0.0",
+    "storybook": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

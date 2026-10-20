@@ -11,11 +11,11 @@ Storybook's [Themes](https://github.com/storybookjs/storybook/tree/next/code/add
 
 ## Theme decorators
 
-To make your themes accessible to your stories, `@storybook/addon-themes` exposes three [decorators](https://storybook.js.org/docs/writing-stories/decorators) for different methods of theming.
+`@storybook/addon-themes` exposes [decorators](https://storybook.js.org/docs/writing-stories/decorators) for CSS classes and data attributes. React providers use `withThemeFromJSXProvider` from `@storybook/addon-themes-react`.
 
 ### JSX providers
 
-For libraries that expose themes to components through providers, such as [Material UI](https://storybook.js.org/recipes/@mui/material/), [Styled-components](https://storybook.js.org/recipes/styled-components/), and [Emotion](https://storybook.js.org/recipes/@emotion/styled/), use the `withThemeFromJSXProvider`.
+For libraries that expose themes to components through providers, such as [Material UI](https://storybook.js.org/recipes/@mui/material/), [Styled-components](https://storybook.js.org/recipes/styled-components/), and [Emotion](https://storybook.js.org/recipes/@emotion/styled/), install `@storybook/addon-themes-react` and use `withThemeFromJSXProvider`. Register `@storybook/addon-themes` in `main.ts`. Do not register the React package.
 
 <CodeSnippets path="storybook-addon-themes-jsx-provider-decorator.md" />
 

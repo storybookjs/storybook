@@ -7,6 +7,7 @@
   - [Tag filtering API](#tag-filtering-api)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`useThemeParameters` removed](#usethemeparameters-removed)
+  - [`withThemeFromJSXProvider` moved to `@storybook/addon-themes-react`](#withthemefromjsxprovider-moved-to-storybookaddon-themes-react)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [`viewport.defaultViewport` parameter and `responsiveViewport` removed](#viewportdefaultviewport-parameter-and-responsiveviewport-removed)
   - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
@@ -764,6 +765,31 @@ See the [addon migration guide](docs/addons/addon-migration-guide.mdx#tab-ui-typ
 ```
 
 Keep any existing precedence between the theme parameters and your selected theme global. Rebuild your Storybook and check the decorator in both development and a served static build. See the [addon migration guide](docs/addons/addon-migration-guide.mdx#usethemeparameters-removal) for the replacement.
+
+### `withThemeFromJSXProvider` moved to `@storybook/addon-themes-react`
+
+`withThemeFromJSXProvider` and `ProviderStrategyConfiguration` now live in `@storybook/addon-themes-react`. `@storybook/addon-themes` still exports `withThemeByClassName`, `withThemeByDataAttribute`, and `DecoratorHelpers`. Keep registering `@storybook/addon-themes` in `.storybook/main`. Do not add `@storybook/addon-themes-react` to `addons`.
+
+Install the React package beside the addon and change the import:
+
+```diff
+-import { withThemeFromJSXProvider } from '@storybook/addon-themes';
++import { withThemeFromJSXProvider } from '@storybook/addon-themes-react';
+```
+
+An import that also names `withThemeByClassName`, `withThemeByDataAttribute`, or `DecoratorHelpers` keeps those names on `@storybook/addon-themes`. `export * from '@storybook/addon-themes'` no longer re-exports the provider decorator. Add a named re-export from `@storybook/addon-themes-react` when a barrel still needs it.
+
+CSF Next code that called `addonThemes.withThemeFromJSXProvider` imports the decorator by name. The default export of `@storybook/addon-themes` is the preview factory:
+
+```ts
+import addonThemes from '@storybook/addon-themes';
+import { withThemeFromJSXProvider } from '@storybook/addon-themes-react';
+
+export default definePreview({
+  addons: [addonThemes()],
+  decorators: [withThemeFromJSXProvider({ /* ... */ })],
+});
+```
 
 ### `storybook dev` no longer opens a browser by default
 

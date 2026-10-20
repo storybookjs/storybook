@@ -7,24 +7,24 @@ To get started, **install the package** as a dev dependency.
 yarn:
 
 ```zsh
-yarn add -D @storybook/addon-themes
+yarn add -D @storybook/addon-themes @storybook/addon-themes-react
 ```
 
 npm:
 
 ```zsh
-npm install -D @storybook/addon-themes
+npm install -D @storybook/addon-themes @storybook/addon-themes-react
 ```
 
 pnpm:
 
 ```zsh
-pnpm add -D @storybook/addon-themes
+pnpm add -D @storybook/addon-themes @storybook/addon-themes-react
 ```
 
 ## 🧩 Register Addon
 
-Now, **include the addon** in your `.storybook/main.js` file.
+**Include `@storybook/addon-themes`** in your `.storybook/main.js` file. Do not register `@storybook/addon-themes-react` there. Preview code imports `withThemeFromJSXProvider` from that package.
 
 ```diff
 export default {
@@ -68,7 +68,7 @@ Make the following changes to your `.storybook/preview.js`:
 ```diff
 -import { Preview } from '@storybook/your-renderer';
 +import { Preview, Renderer } from '@storybook/your-renderer';
-+import { withThemeFromJSXProvider } from '@storybook/addon-themes';
++import { withThemeFromJSXProvider } from '@storybook/addon-themes-react';
 +import { CssBaseline, ThemeProvider } from '@mui/material';
 +import { lightTheme, darkTheme } from '../src/themes'; // Import your custom theme configs
 

@@ -1,10 +1,7 @@
 import { global as globalThis } from '@storybook/global';
 
-import {
-  withThemeByClassName,
-  withThemeByDataAttribute,
-  withThemeFromJSXProvider,
-} from '@storybook/addon-themes';
+import { withThemeByClassName, withThemeByDataAttribute } from '@storybook/addon-themes';
+import { withThemeFromJSXProvider } from '@storybook/addon-themes-react';
 
 import { useEffect } from 'storybook/preview-api';
 

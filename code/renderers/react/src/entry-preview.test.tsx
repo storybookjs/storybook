@@ -72,14 +72,16 @@ describe('beforeEach', () => {
     expect(wrappersOf(readConfig())).toEqual(previous);
   });
 
-  it('keeps the wrappers until the last of several stories is left, in any order', async () => {
-    const cleanupA = await reactBeforeEach();
-    const cleanupB = await reactBeforeEach();
+  it.each([
+    ['in page order', [0, 1]],
+    ['in reverse order', [1, 0]],
+  ])('keeps the wrappers until the last of several stories is left, %s', async (_, order) => {
+    const storyCleanups = [await reactBeforeEach(), await reactBeforeEach()];
 
-    await cleanupA?.();
+    await storyCleanups[order[0]]?.();
     expect(readConfig().eventWrapper).not.toBe(defaults.eventWrapper);
 
-    await cleanupB?.();
+    await storyCleanups[order[1]]?.();
     expect(wrappersOf(readConfig())).toEqual(wrappersOf(defaults));
   });
 
@@ -90,6 +92,8 @@ describe('beforeEach', () => {
     expect(readConfig()).toEqual(defaults);
   });
 
+  // React flushes the update of a continuous event like mousemove later unless it runs in act; the
+  // update of a click it would flush at once anyway.
   it('commits the update of an event fired after it without waiting', async () => {
     const Counter: FC = () => {
       const [count, setCount] = useState(0);

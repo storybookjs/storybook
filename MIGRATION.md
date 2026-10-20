@@ -29,6 +29,7 @@
   - [Sidebar rewrite: manager API changes](#sidebar-rewrite-manager-api-changes)
   - [Escape is no longer a configurable shortcut](#escape-is-no-longer-a-configurable-shortcut)
   - ['Create new story' UI feature removed](#create-new-story-ui-feature-removed)
+  - [Sidebar: standalone docs pages are no longer wrapped in a component](#sidebar-standalone-docs-pages-are-no-longer-wrapped-in-a-component)
   - [Test runner support ended](#test-runner-support-ended)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
@@ -1155,6 +1156,35 @@ We have removed the button next to the sidebar's search field, which allowed Rea
 Saving a story from the Controls panel is unchanged: you can still adjust controls and save the result as a new story, or update an existing story, in an existing story file.
 
 The channel events `CREATE_NEW_STORYFILE_REQUEST`, `CREATE_NEW_STORYFILE_RESPONSE`, `FILE_COMPONENT_SEARCH_REQUEST` and `FILE_COMPONENT_SEARCH_RESPONSE`, their payload types in `storybook/internal/core-events`, and the `generateStoryFile` export from `storybook/internal/core-server` are removed too.
+
+### Sidebar: standalone docs pages are no longer wrapped in a component
+
+A docs page that doesn't belong to a component (for example an MDX file with `<Meta title="Introduction" />`) used to appear in the manager index as a component with a single `Docs` child.
+It is now a single `docs` entry.
+Addons that read `useStorybookState().index`, `sidebar.renderLabel` or sidebar filters see that entry directly.
+
+More generally, the manager index (`useStorybookState().index` and `filteredIndex`) used to type every title by its position, so the last segment of a title was always a `component`.
+
+Each title is now typed by everything the story index puts under it:
+
+| Under the title | Entry in the manager index |
+| --- | --- |
+| Other titles | `group` (or `root`) |
+| At least one story | `component` |
+| Exactly one docs page and no stories | the `docs` entry itself, with the title's `name`, `depth` and `parent` (`undefined` at the top level) |
+| Several docs pages and no stories | `group` |
+
+The type comes from the full index, so `index` and `filteredIndex` always agree on it.
+Filters only remove entries: a component whose stories are all filtered out stays a `component` with its docs child in `filteredIndex`.
+The sidebar still shows such a component as a single docs page, for example for [docs-only stories](https://storybook.js.org/docs/writing-stories/tags#docs-only-stories).
+
+Functions passed to `sidebar.renderLabel` and sidebar filters receive the `docs` entry instead of the old wrapper and its `Docs` child.
+Sidebar search lists these pages under their own name, for example `Introduction` instead of `Docs` under `Introduction`.
+`api.selectStory('Introduction')` and `linkTo('Introduction')` still resolve to the docs page.
+
+`api.jumpToComponent` is renamed to `api.jumpToSubtree`, because it now also stops on docs pages that are not attached to a component.
+Its menu entries and shortcut labels read `Previous component or page` and `Next component or page`.
+The shortcut keys `prevComponent` and `nextComponent` keep their names, so customized shortcuts carry over.
 
 ### Test runner support ended
 

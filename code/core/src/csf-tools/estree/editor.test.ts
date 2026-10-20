@@ -72,6 +72,12 @@ describe('reindent', () => {
     expect(reindent('{\n    a: 1,\n  }', '  ', '')).toBe('{\n  a: 1,\n}');
   });
 
+  it('leaves empty lines empty', () => {
+    expect(reindent('() => {\n  a();\n\n  b();\n}', '', '  ')).toBe(
+      '() => {\n    a();\n\n    b();\n  }'
+    );
+  });
+
   it('re-indents CRLF text with LF line endings, leaving its template literals alone', () => {
     expect(reindent('{\r\n  a: `x\r\ny`,\r\n}', '', '  ')).toBe('{\n    a: `x\ny`,\n  }');
   });
@@ -213,6 +219,21 @@ describe('style', () => {
         'a.ts'
       ).semicolons
     ).toBe(false);
+  });
+
+  it.each([
+    [
+      'most multi-line lists end with one',
+      'const a = {\n  b: 1,\n};\nconst c = [\n  1,\n  2,\n];\nconst d = [\n  3\n];',
+      true,
+    ],
+    ['as many end with one as without', 'const a = {\n  b: 1,\n};\nconst c = [\n  1\n];', false],
+    ['the comma comes before a comment', 'const a = {\n  b: 1, // c, d\n};', true],
+    ['only a comment holds a comma', 'const a = {\n  b: 1 // c, d\n};', false],
+    ['the last item is parenthesized', 'const a = [\n  (1),\n];', true],
+    ['only one-line lists end with one', 'const a = { b: 1, };\nconst c = [1,];', false],
+  ])('infers trailing commas when %s', (_, code, trailingCommas) => {
+    expect(new SourceEditor(code).trailingCommas).toBe(trailingCommas);
   });
 
   it('keeps the style of the code it was created with after a commit', () => {
@@ -1691,9 +1712,9 @@ describe('tab-indented files', () => {
 
 describe('printMembers', () => {
   it('leaves the template literal of a function value alone', () => {
-    expect(printMembers(['fn: () => {\n  return `a\nb`;\n}'], '  ')).toBe(
-      '{\n  fn: () => {\n    return `a\nb`;\n  },\n}'
-    );
+    expect(
+      printMembers(['fn: () => {\n  return `a\nb`;\n}'], { indent: '  ', trailingComma: true })
+    ).toBe('{\n  fn: () => {\n    return `a\nb`;\n  },\n}');
   });
 });
 

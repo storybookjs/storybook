@@ -207,8 +207,9 @@ const wrapTestConfigAsProject = (
   const projectMembers = testObject.properties.filter(
     (member) => !hoisted.includes(member as E.ObjectProperty)
   );
-  const projectTest = printMembers(memberTexts(target, testObject, projectMembers), source.indent);
-  const project = printMembers(['extends: true', `test: ${projectTest}`], source.indent);
+  const layout = { indent: source.indent, trailingComma: true };
+  const projectTest = printMembers(memberTexts(target, testObject, projectMembers), layout);
+  const project = printMembers(['extends: true', `test: ${projectTest}`], layout);
 
   prependToList(source, arrayList(source, templateProjects.value), [project]);
   if (hoisted.length > 0) {

@@ -41,6 +41,18 @@ Hover.parameters = { pseudo: { hover: true } };
 
 This is what enables snapshot testing your pseudo states in [Chromatic](https://www.chromatic.com/).
 
+### Negated pseudo states
+
+Rules such as `:not(:hover)` and `:not(:focus-visible)` keep their native behavior while no state is forced. The addon adds class-based negations only while a pseudo state is forced, and restores the native rules when forcing is cleared. For example, hide an icon only while its row is neither hovered nor keyboard-focused:
+
+```css
+.negation-row:not(:hover):not(:focus-visible) .negation-icon {
+  visibility: hidden;
+}
+```
+
+With this rule, the icon appears when you hover or keyboard-focus the row, or simulate either state with the addon. It is hidden when neither real nor simulated state is active. Simulating focus styles does not move browser focus.
+
 ### Targeting specific elements
 
 If you don't want to force or toggle pseudo styles to all elements that use them, but rather only enable them on specific elements, you can set a string or array value instead of a boolean:

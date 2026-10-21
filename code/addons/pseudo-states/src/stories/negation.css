@@ -1,0 +1,11 @@
+.negation-row {
+  display: flex;
+  gap: 8px;
+  width: 240px;
+  padding: 12px;
+  border: 1px solid;
+}
+
+.negation-row:not(:hover):not(:focus-visible) .negation-icon {
+  visibility: hidden;
+}

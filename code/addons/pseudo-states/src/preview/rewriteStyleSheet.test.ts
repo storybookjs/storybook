@@ -124,31 +124,31 @@ describe('rewriteStyleSheet', () => {
 
   it('does not create additional rules', () => {
     const sheet = new Sheet('a:hover { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules.length).toEqual(1);
   });
 
   it('does not remove original selector', () => {
     const sheet = new Sheet('a:hover { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].getSelectors()).toContain('a:hover');
   });
 
   it('adds alternative selector targeting the element directly', () => {
     const sheet = new Sheet('a:hover { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].getSelectors()).toContain('a.pseudo-hover');
   });
 
   it('adds alternative selector targeting an ancestor', () => {
     const sheet = new Sheet('a:hover { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].getSelectors()).toContain('.pseudo-hover-all a');
   });
 
   it('does not add unexpected selectors', () => {
     const sheet = new Sheet('a:hover { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(
       sheet.cssRules[0]
         .getSelectors()
@@ -158,28 +158,28 @@ describe('rewriteStyleSheet', () => {
 
   it('does not add invalid selector where .pseudo-<class> would be appended to ::-webkit-* pseudo-element', () => {
     const sheet = new Sheet('::-webkit-foo-bar:hover { border-color: transparent; }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].getSelectors()).not.toContain('::-webkit-foo-bar.pseudo-hover');
     expect(sheet.cssRules[0].getSelectors()).toContain('.pseudo-hover-all ::-webkit-foo-bar');
   });
 
   it('does not add invalid selector where .pseudo-<class> would be appended to ::-moz-* pseudo-element', () => {
     const sheet = new Sheet('::-moz-foo-bar-baz:hover { border-color: transparent; }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].getSelectors()).not.toContain('::-moz-foo-bar-baz.pseudo-hover');
     expect(sheet.cssRules[0].getSelectors()).toContain('.pseudo-hover-all ::-moz-foo-bar-baz');
   });
 
   it('does not add invalid selector where .pseudo-<class> would be appended to ::-ms-* pseudo-element', () => {
     const sheet = new Sheet('::-ms-foo:hover { border-color: transparent; }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].getSelectors()).not.toContain('::-ms-foo.pseudo-hover');
     expect(sheet.cssRules[0].getSelectors()).toContain('.pseudo-hover-all ::-ms-foo');
   });
 
   it('adds alternative selector when .pseudo-<class> would not be appended to pseudo-element', () => {
     const sheet = new Sheet('div:hover::-webkit-scrollbar-thumb { border-color: transparent; }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].getSelectors()).toContain('div.pseudo-hover::-webkit-scrollbar-thumb');
   });
 
@@ -187,7 +187,7 @@ describe('rewriteStyleSheet', () => {
     const sheet = new Sheet(
       '::-webkit-scrollbar-thumb:hover .button:focus { border-color: transparent; }'
     );
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     const selectors = sheet.cssRules[0].getSelectors();
     expect(selectors).toContain('::-webkit-scrollbar-thumb:hover .button.pseudo-focus');
     expect(selectors).not.toContain('::-webkit-scrollbar-thumb.pseudo-hover .button.pseudo-focus');
@@ -198,26 +198,26 @@ describe('rewriteStyleSheet', () => {
 
   it('does not add invalid selector where .pseudo-<class> would be appended to ::part()', () => {
     const sheet = new Sheet('::part(foo bar):hover { border-color: transparent; }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].getSelectors()).not.toContain('::part(foo bar).pseudo-hover');
     expect(sheet.cssRules[0].getSelectors()).toContain('.pseudo-hover-all ::part(foo bar)');
   });
 
   it('adds alternative selector when .pseudo-<class> would not be appended to ::part()', () => {
     const sheet = new Sheet('custom-elt:hover::part(foo bar) { border-color: transparent; }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].getSelectors()).toContain('custom-elt.pseudo-hover::part(foo bar)');
   });
 
   it('does not replace :is() with :is(*)', () => {
     const sheet = new Sheet(':is():hover { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].getSelectors()).toContain('.pseudo-hover-all :is()');
   });
 
   it('adds alternative selector for each pseudo selector', () => {
     const sheet = new Sheet('a:hover, a:focus { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     const selectors = sheet.cssRules[0].getSelectors();
     expect(selectors).toContain('a.pseudo-hover');
     expect(selectors).toContain('a.pseudo-focus');
@@ -227,7 +227,7 @@ describe('rewriteStyleSheet', () => {
 
   it('keeps non-pseudo selectors as-is', () => {
     const sheet = new Sheet('a.class, a:hover, a:focus, a#id { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     const selectors = sheet.cssRules[0].getSelectors();
     expect(selectors).toContain('a.class');
     expect(selectors).toContain('a#id');
@@ -235,8 +235,8 @@ describe('rewriteStyleSheet', () => {
 
   it('does not duplicate selectors on subsequent rewrites', () => {
     const sheet = new Sheet('a:hover { color: red }');
-    rewriteStyleSheet(sheet as any);
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
+    rewriteStyleSheet(sheet as any, false, true);
     const selectors = sheet.cssRules[0].getSelectors();
     selectors.splice(selectors.indexOf('a.pseudo-hover'), 1);
     expect(selectors).not.toContain('a.pseudo-hover');
@@ -247,8 +247,8 @@ describe('rewriteStyleSheet', () => {
     const deleteRule = vi.spyOn(sheet, 'deleteRule');
     const insertRule = vi.spyOn(sheet, 'insertRule');
 
-    rewriteStyleSheet(sheet as any);
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
+    rewriteStyleSheet(sheet as any, false, true);
 
     expect(deleteRule).toHaveBeenCalledOnce();
     expect(insertRule).toHaveBeenCalledOnce();
@@ -256,7 +256,7 @@ describe('rewriteStyleSheet', () => {
 
   it('supports combined pseudo selectors', () => {
     const sheet = new Sheet('a:hover:focus { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     const selectors = sheet.cssRules[0].getSelectors();
     expect(selectors).toContain('a.pseudo-hover.pseudo-focus');
     expect(selectors).toContain('.pseudo-hover-all.pseudo-focus-all a');
@@ -264,7 +264,7 @@ describe('rewriteStyleSheet', () => {
 
   it('supports combined pseudo selectors with classes', () => {
     const sheet = new Sheet('.hiOZqY:hover { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     const selectors = sheet.cssRules[0].getSelectors();
     expect(selectors).toContain('.hiOZqY:hover');
     expect(selectors).toContain('.hiOZqY.pseudo-hover');
@@ -273,7 +273,7 @@ describe('rewriteStyleSheet', () => {
 
   it('supports ":host"', () => {
     const sheet = new Sheet(':host(:hover) { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     const selectors = sheet.cssRules[0].getSelectors();
     expect(selectors).toContain(':host(:hover)');
     expect(selectors).toContain(':host(.pseudo-hover)');
@@ -282,7 +282,7 @@ describe('rewriteStyleSheet', () => {
 
   it('supports ":host" with classes', () => {
     const sheet = new Sheet(':host(.a:hover) .c { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     const selectors = sheet.cssRules[0].getSelectors();
     expect(selectors).toContain(':host(.a:hover) .c');
     expect(selectors).toContain(':host(.a.pseudo-hover) .c');
@@ -291,7 +291,7 @@ describe('rewriteStyleSheet', () => {
 
   it('supports ":host" with state selectors in descendant selector', () => {
     const sheet = new Sheet(':host(.a) .b:hover { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     const selectors = sheet.cssRules[0].getSelectors();
     expect(selectors).toContain(':host(.a) .b:hover');
     expect(selectors).toContain(':host(.a) .b.pseudo-hover');
@@ -300,7 +300,7 @@ describe('rewriteStyleSheet', () => {
 
   it('supports ":host" with state selectors in :host and descendant selector', () => {
     const sheet = new Sheet(':host(.a:focus) .b:hover { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     const selectors = sheet.cssRules[0].getSelectors();
     expect(selectors).toContain(':host(.a:focus) .b:hover');
     expect(selectors).toContain(':host(.a.pseudo-focus) .b.pseudo-hover');
@@ -309,7 +309,7 @@ describe('rewriteStyleSheet', () => {
 
   it('supports ":host-context"', () => {
     const sheet = new Sheet(':host-context(:hover) { color: red }');
-    rewriteStyleSheet(sheet as any, true);
+    rewriteStyleSheet(sheet as any, true, true);
     const selectors = sheet.cssRules[0].getSelectors();
     expect(selectors).toContain(':host-context(:hover)');
     expect(selectors).toContain(':host-context(.pseudo-hover)');
@@ -318,7 +318,7 @@ describe('rewriteStyleSheet', () => {
 
   it('supports ":host-context" with classes', () => {
     const sheet = new Sheet(':host-context(.a:hover) .b { color: red }');
-    rewriteStyleSheet(sheet as any, true);
+    rewriteStyleSheet(sheet as any, true, true);
     const selectors = sheet.cssRules[0].getSelectors();
     expect(selectors).toContain(':host-context(.a:hover) .b');
     expect(selectors).toContain(':host-context(.a.pseudo-hover) .b');
@@ -327,7 +327,7 @@ describe('rewriteStyleSheet', () => {
 
   it('supports ":host-context" with state selectors in descendant selector', () => {
     const sheet = new Sheet(':host-context(.a) .b:hover { color: red }');
-    rewriteStyleSheet(sheet as any, true);
+    rewriteStyleSheet(sheet as any, true, true);
     const selectors = sheet.cssRules[0].getSelectors();
     expect(selectors).toContain(':host-context(.a) .b:hover');
     expect(selectors).toContain(':host-context(.a) .b.pseudo-hover');
@@ -336,7 +336,7 @@ describe('rewriteStyleSheet', () => {
 
   it('supports ":host-context" with state selectors in :host-context and descendant selector', () => {
     const sheet = new Sheet(':host-context(.a:focus) .b:hover { color: red }');
-    rewriteStyleSheet(sheet as any, true);
+    rewriteStyleSheet(sheet as any, true, true);
     const selectors = sheet.cssRules[0].getSelectors();
     expect(selectors).toContain(':host-context(.a:focus) .b:hover');
     expect(selectors).toContain(':host-context(.a.pseudo-focus) .b.pseudo-hover');
@@ -345,7 +345,7 @@ describe('rewriteStyleSheet', () => {
 
   it('supports "::slotted"', () => {
     const sheet = new Sheet('::slotted(:hover) { color: red }');
-    rewriteStyleSheet(sheet as any, true);
+    rewriteStyleSheet(sheet as any, true, true);
     const selectors = sheet.cssRules[0].getSelectors();
     expect(selectors).toContain('::slotted(:hover)');
     expect(selectors).toContain('::slotted(.pseudo-hover)');
@@ -354,74 +354,149 @@ describe('rewriteStyleSheet', () => {
 
   it('supports "::slotted" with classes', () => {
     const sheet = new Sheet('.a > slot::slotted(.b:hover) { color: red }');
-    rewriteStyleSheet(sheet as any, true);
+    rewriteStyleSheet(sheet as any, true, true);
     const selectors = sheet.cssRules[0].getSelectors();
     expect(selectors).toContain('.a > slot::slotted(.b:hover)');
     expect(selectors).toContain('.a > slot::slotted(.b.pseudo-hover)');
     expect(selectors).toContain(':host(.pseudo-hover-all) .a > slot::slotted(.b)');
   });
 
+  it('leaves negations native while no state is forced', () => {
+    const sheet = new Sheet('.row:not(:hover):not(:focus-visible) .icon { visibility: hidden }');
+    expect(rewriteStyleSheet(sheet as unknown as CSSStyleSheet)).toBe(false);
+    expect(sheet.cssRules[0].selectorText).toBe('.row:not(:hover):not(:focus-visible) .icon');
+  });
+
+  it('keeps positive alternatives while leaving inactive negations native', () => {
+    const sheet = new Sheet('.row:focus:not(:hover) .icon { visibility: hidden }');
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet);
+    expect(sheet.cssRules[0].getSelectors()).toEqual([
+      '.row:focus:not(:hover) .icon',
+      '.row.pseudo-focus:not(:hover) .icon',
+      '.pseudo-focus-all .row:not(:hover) .icon',
+    ]);
+  });
+
+  it('preserves current declarations when restoring native selectors', () => {
+    const sheet = new Sheet('.row:not(:hover) .icon { visibility: hidden }');
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet, false, true);
+    const rule = sheet.cssRules[0];
+    Object.defineProperty(rule, 'cssText', {
+      value: `${rule.selectorText} { visibility: hidden; color: red }`,
+    });
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet, false, false);
+    expect(sheet.cssRules[0].cssText).toBe(
+      '.row:not(:hover) .icon { visibility: hidden; color: red }'
+    );
+  });
+
+  it('restores native negations after forcing is cleared', () => {
+    const sheet = new Sheet('.row:not(:hover) .icon { visibility: hidden }');
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet, false, true);
+    expect(sheet.cssRules[0].selectorText).toContain('.pseudo-hover');
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet, false, false);
+    expect(sheet.cssRules[0].selectorText).toBe('.row:not(:hover) .icon');
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet, false, true);
+    expect(sheet.cssRules[0].selectorText).toContain('.pseudo-hover');
+    expect(sheet.cssRules).toHaveLength(1);
+  });
+
+  it('updates negations nested in grouping rules when forcing changes', () => {
+    const sheet = new Sheet('@media all { .row:not(:hover) .icon { visibility: hidden } }');
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet, false, true);
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet, false, false);
+    const group = sheet.cssRules[0] as GroupingRule;
+    expect(group.cssRules[0].selectorText).toBe('.row:not(:hover) .icon');
+  });
+
   it('supports ":not"', () => {
     const sheet = new Sheet(':not(:hover) { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].selectorText).toEqual(
-      ':not(:hover), :not(.pseudo-hover), :not(.pseudo-hover-all *)'
+      ':not(:is(:hover, .pseudo-hover, :where(.pseudo-hover-all *)))'
+    );
+  });
+
+  it('preserves pseudo-state text inside attribute values', () => {
+    const sheet = new Sheet('.row[data-state=":not(:hover)"] { color: red }');
+    expect(rewriteStyleSheet(sheet as unknown as CSSStyleSheet)).toBe(false);
+    expect(sheet.cssRules[0].selectorText).toBe('.row[data-state=":not(:hover)"]');
+  });
+
+  it('only rewrites states outside attribute values inside negation', () => {
+    const sheet = new Sheet('.row:not([data-state=":hover"]:focus) { color: red }');
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet, false, true);
+    expect(sheet.cssRules[0].selectorText).toBe(
+      '.row:not([data-state=":hover"]:is(:focus, .pseudo-focus, :where(.pseudo-focus-all *)))'
+    );
+  });
+
+  it('supports deeply nested negation without changing attribute parentheses', () => {
+    const sheet = new Sheet('.row:not([title="("], :is(:is(:is(:hover)))) { color: red }');
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet, false, true);
+    expect(sheet.cssRules[0].selectorText).toBe(
+      '.row:not([title="("], :is(:is(:is(:is(:hover, .pseudo-hover, :where(.pseudo-hover-all *))))))'
     );
   });
 
   it('supports ":not" in shadow DOM', () => {
     const sheet = new Sheet(':not(:hover) { color: red }');
-    rewriteStyleSheet(sheet as any, true);
+    rewriteStyleSheet(sheet as any, true, true);
     expect(sheet.cssRules[0].selectorText).toEqual(
-      ':not(:hover), :not(.pseudo-hover), :not(:host(.pseudo-hover-all) *)'
+      ':not(:is(:hover, .pseudo-hover, :where(:host(.pseudo-hover-all) *)))'
     );
   });
 
   it('supports complex use of ":not"', () => {
     const sheet = new Sheet('foo:focus:not(:hover, .bar:active) .baz { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     const selectors = sheet.cssRules[0].getSelectors();
-    expect(selectors).toContain('foo:focus:not(:hover, .bar:active) .baz');
-    expect(selectors).toContain('foo.pseudo-focus:not(.pseudo-hover, .bar.pseudo-active) .baz');
-    expect(selectors).toContain(
-      '.pseudo-focus-all foo:not(.pseudo-hover-all *, .pseudo-active-all .bar) .baz'
-    );
+    const negation =
+      ':not(:is(:hover, .pseudo-hover, :where(.pseudo-hover-all *)), .bar:is(:active, .pseudo-active, :where(.pseudo-active-all *)))';
+    expect(selectors).toEqual([
+      `foo:focus${negation} .baz`,
+      `foo.pseudo-focus${negation} .baz`,
+      `.pseudo-focus-all foo${negation} .baz`,
+    ]);
   });
 
   it('supports complex use of ":not" in shadow DOM', () => {
     const sheet = new Sheet('foo:focus:not(:hover, .bar:active) .baz { color: red }');
-    rewriteStyleSheet(sheet as any, true);
+    rewriteStyleSheet(sheet as any, true, true);
     const selectors = sheet.cssRules[0].getSelectors();
-    expect(selectors).toContain('foo:focus:not(:hover, .bar:active) .baz');
-    expect(selectors).toContain('foo.pseudo-focus:not(.pseudo-hover, .bar.pseudo-active) .baz');
-    expect(selectors).toContain(
-      ':host(.pseudo-focus-all) foo:not(:host(.pseudo-hover-all) *, :host(.pseudo-active-all) .bar) .baz'
-    );
+    const negation =
+      ':not(:is(:hover, .pseudo-hover, :where(:host(.pseudo-hover-all) *)), .bar:is(:active, .pseudo-active, :where(:host(.pseudo-active-all) *)))';
+    expect(selectors).toEqual([
+      `foo:focus${negation} .baz`,
+      `foo.pseudo-focus${negation} .baz`,
+      `:host(.pseudo-focus-all) foo${negation} .baz`,
+    ]);
   });
 
   it('supports ":not" inside ":host"', () => {
     const sheet = new Sheet(':host(.foo:not(:hover)) .baz:active { color: red }');
-    rewriteStyleSheet(sheet as any, true);
+    rewriteStyleSheet(sheet as any, true, true);
     const selectors = sheet.cssRules[0].getSelectors();
-    expect(selectors).toContain(':host(.foo:not(:hover)) .baz:active');
-    expect(selectors).toContain(':host(.foo:not(.pseudo-hover)) .baz.pseudo-active');
-    expect(selectors).toContain(':host(.foo:not(.pseudo-hover-all).pseudo-active-all) .baz');
+    const negation = ':not(:is(:hover, .pseudo-hover, :where(.pseudo-hover-all)))';
+    expect(selectors).toEqual([
+      `:host(.foo${negation}) .baz:active`,
+      `:host(.foo${negation}) .baz.pseudo-active`,
+      `:host(.foo${negation}.pseudo-active-all) .baz`,
+    ]);
   });
 
   it('supports ":not" inside and outside of ":host"', () => {
     const sheet = new Sheet(':host(.foo:not(:hover)) .baz:not(:active) { color: red }');
-    rewriteStyleSheet(sheet as any, true);
+    rewriteStyleSheet(sheet as any, true, true);
     const selectors = sheet.cssRules[0].getSelectors();
-    expect(selectors).toContain(':host(.foo:not(:hover)) .baz:not(:active)');
-    expect(selectors).toContain(':host(.foo:not(.pseudo-hover)) .baz:not(.pseudo-active)');
-    expect(selectors).toContain(
-      ':host(.foo:not(.pseudo-hover-all)) .baz:not(:host(.pseudo-active-all) *)'
-    );
+    expect(selectors).toEqual([
+      ':host(.foo:not(:is(:hover, .pseudo-hover, :where(.pseudo-hover-all)))) .baz:not(:is(:active, .pseudo-active, :where(:host(.pseudo-active-all) *)))',
+    ]);
   });
 
   it('supports ":has"', () => {
     const sheet = new Sheet(':has(:hover) { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].cssText).toEqual(
       ':has(:hover), :has(.pseudo-hover), .pseudo-hover-all :has(*) { color: red }'
     );
@@ -429,7 +504,7 @@ describe('rewriteStyleSheet', () => {
 
   it('keeps child-combinator pseudo-state selectors valid', () => {
     const sheet = new Sheet('.ds-card > :focus-visible { outline: none }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].cssText).toEqual(
       '.ds-card > :focus-visible, .ds-card > .pseudo-focus-visible, .pseudo-focus-visible-all .ds-card > * { outline: none }'
     );
@@ -437,7 +512,7 @@ describe('rewriteStyleSheet', () => {
 
   it('keeps pseudo-state selectors valid inside ":has" child combinators', () => {
     const sheet = new Sheet('.ds-card:has(> :focus-visible) { outline: 4px solid blue }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].cssText).toEqual(
       '.ds-card:has(> :focus-visible), .ds-card:has(> .pseudo-focus-visible), .pseudo-focus-visible-all .ds-card:has(> *) { outline: 4px solid blue }'
     );
@@ -445,15 +520,15 @@ describe('rewriteStyleSheet', () => {
 
   it('supports ":has" inside and outside of ":not"', () => {
     const sheet = new Sheet(':has(:not(:hover, :has(:focus), :has(:active))) { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].cssText).toEqual(
-      ':has(:not(:hover, :has(:focus), :has(:active))), :has(:not(.pseudo-hover, :has(.pseudo-focus), :has(.pseudo-active))), :has(:not(.pseudo-hover-all *, .pseudo-focus-all :has(*), .pseudo-active-all :has(*))) { color: red }'
+      ':has(:not(:is(:hover, .pseudo-hover, :where(.pseudo-hover-all *)), :has(:is(:focus, .pseudo-focus, :where(.pseudo-focus-all *))), :has(:is(:active, .pseudo-active, :where(.pseudo-active-all *))))) { color: red }'
     );
   });
 
   it('supports combinators nested inside pseudo-classes with parameters', () => {
     const sheet = new Sheet(':has(span > :hover) { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].cssText).toEqual(
       ':has(span > :hover), :has(span > .pseudo-hover), .pseudo-hover-all :has(span > *) { color: red }'
     );
@@ -461,7 +536,7 @@ describe('rewriteStyleSheet', () => {
 
   it('skips escaped pseudo-selectors "\\:hover"', () => {
     const sheet = new Sheet('a\\:hover { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules.length).toEqual(1);
     expect(sheet.cssRules[0].cssText).toEqual('a\\:hover { color: red }');
     expect(sheet.cssRules[0].selectorText).toEqual('a\\:hover');
@@ -469,7 +544,7 @@ describe('rewriteStyleSheet', () => {
 
   it('supports "\\\\:hover"', () => {
     const sheet = new Sheet('.btn\\\\:hover { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].cssText).toEqual(
       '.btn\\\\:hover, .btn\\\\.pseudo-hover, .pseudo-hover-all .btn\\\\ { color: red }'
     );
@@ -477,7 +552,7 @@ describe('rewriteStyleSheet', () => {
 
   it('supports selectors with escaped and unescaped pseudo-selectors', () => {
     const sheet = new Sheet('.foo\\:hover\\:red:hover { color: red }');
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].cssText).toEqual(
       '.foo\\:hover\\:red:hover, .foo\\:hover\\:red.pseudo-hover, .pseudo-hover-all .foo\\:hover\\:red { color: red }'
     );
@@ -485,13 +560,13 @@ describe('rewriteStyleSheet', () => {
 
   it('skips pseudo-selectors preceded by any odd number of backslashes', () => {
     const sheet = new Sheet(String.raw`.btn\\\:hover { color: red }`);
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].cssText).toEqual(String.raw`.btn\\\:hover { color: red }`);
   });
 
   it('rewrites pseudo-selectors preceded by any even number of backslashes', () => {
     const sheet = new Sheet(String.raw`.btn\\\\:hover { color: red }`);
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].getSelectors()).toContain(String.raw`.btn\\\\.pseudo-hover`);
   });
 
@@ -499,7 +574,7 @@ describe('rewriteStyleSheet', () => {
     const selectors = Array.from({ length: 1500 }, (_, index) => `.item-${index}:hover`);
     const sheet = new Sheet(`${selectors.join(', ')} { color: red }`);
 
-    rewriteStyleSheet(sheet as unknown as CSSStyleSheet);
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet, false, true);
 
     const rewrittenSelectors = sheet.cssRules.flatMap((rule) => rule.getSelectors());
     expect(sheet.cssRules).toHaveLength(2);
@@ -538,7 +613,7 @@ describe('rewriteStyleSheet', () => {
 
   it('keeps existing .pseudo- selectors when rewriting a mixed list', () => {
     const sheet = new Sheet('.pseudo-hover:hover, .foo:hover { color: red }');
-    rewriteStyleSheet(sheet as unknown as CSSStyleSheet);
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet, false, true);
     const selectors = sheet.cssRules[0].getSelectors();
     expect(selectors).toContain('.pseudo-hover:hover');
     expect(selectors).toContain('.foo:hover');
@@ -547,7 +622,7 @@ describe('rewriteStyleSheet', () => {
 
   it('does not interpret $& in rewritten selector text', () => {
     const sheet = new Sheet('[data-label="$&"]:hover { color: red }');
-    rewriteStyleSheet(sheet as unknown as CSSStyleSheet);
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet, false, true);
     const selectors = sheet.cssRules[0].getSelectors();
     expect(selectors).toContain('[data-label="$&"]:hover');
     expect(selectors).toContain('[data-label="$&"].pseudo-hover');
@@ -570,7 +645,7 @@ describe('rewriteStyleSheet', () => {
         background-color: white;
       }`
     );
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].cssText).toContain('@media (max-width: 790px)');
     expect(sheet.cssRules[1].getSelectors()).toContain('.test');
     expect(sheet.cssRules[2].getSelectors()).toContain('.test:hover');
@@ -589,7 +664,7 @@ describe('rewriteStyleSheet', () => {
         }
       }`
     );
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[0].cssText).toContain('@media (max-width: 790px)');
     const selectors = (sheet.cssRules[0] as GroupingRule).cssRules[0].getSelectors();
     expect(selectors).toContain('test:hover');
@@ -605,7 +680,7 @@ describe('rewriteStyleSheet', () => {
         }
       }`
     );
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     const selectors = (sheet.cssRules[0] as GroupingRule).cssRules[0].getSelectors();
     expect(selectors).toContain('test:hover');
     expect(selectors).toContain('test.pseudo-hover');
@@ -625,7 +700,7 @@ describe('rewriteStyleSheet', () => {
         }
       }`
     );
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect((sheet.cssRules[0] as GroupingRule).cssRules[0].getSelectors()).toContain(
       'test.pseudo-hover'
     );
@@ -649,7 +724,7 @@ describe('rewriteStyleSheet', () => {
         }
       }`
     );
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     const layer = sheet.cssRules[0] as GroupingRule;
     expect(layer.cssRules[0].getSelectors()).toContain('test.pseudo-hover');
     const media = layer.cssRules[1] as GroupingRule;
@@ -661,7 +736,7 @@ describe('rewriteStyleSheet', () => {
 
   it('can rewrite 1000 rules in a sheet', () => {
     const sheet = new Sheet(Array(1000).fill('a:hover { color: red }').join('\n'));
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     for (let i = 0; i < 1000; i++) {
       expect(sheet.cssRules[i].getSelectors()).toContain('a.pseudo-hover');
     }
@@ -669,13 +744,13 @@ describe('rewriteStyleSheet', () => {
 
   it('skips rewriting rules beyond the first 1000', () => {
     const sheet = new Sheet(Array(1001).fill('a:hover { color: red }').join('\n'));
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     expect(sheet.cssRules[1000].getSelectors()).not.toContain('a.pseudo-hover');
   });
 
   it('can rewrite 1000 rules in a sheet with group rules', () => {
     const sheet = new Sheet(Array(1000).fill('@layer foo { a:hover { color: red } }').join('\n'));
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
     for (let i = 0; i < 1000; i++) {
       expect((sheet.cssRules[i] as GroupingRule).cssRules[0].getSelectors()).toContain(
         'a.pseudo-hover'
@@ -686,8 +761,8 @@ describe('rewriteStyleSheet', () => {
   it('counts both a rewritten style rule and its nested rules toward the limit', () => {
     const sheet = new Sheet(Array(501).fill('a:hover { b:hover { color: red } }').join('\n'));
 
-    rewriteStyleSheet(sheet as any);
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
+    rewriteStyleSheet(sheet as any, false, true);
 
     expect(sheet.cssRules[499].getSelectors()).toContain('a.pseudo-hover');
     expect(sheet.cssRules[500].getSelectors()).not.toContain('a.pseudo-hover');
@@ -700,7 +775,7 @@ describe('rewriteStyleSheet', () => {
       )
     );
 
-    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any, false, true);
 
     const finalRule = sheet.cssRules[999] as NestedStyleRule;
     expect(finalRule.getSelectors()).toContain('b.pseudo-hover');

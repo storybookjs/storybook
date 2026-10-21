@@ -981,6 +981,12 @@ describe('CsfObject', () => {
         result: { writes: "{ ...shared, addons: [...(shared.addons ?? []), 'x'] }" },
       },
       {
+        before: 'const shared = { stories: [] };',
+        object: "{ addons: ['a'], ...shared }",
+        edit: "append(['addons'], 'x')",
+        result: { writes: "{ addons: ['a', 'x'], ...shared }" },
+      },
+      {
         before: "import { Base } from './base';",
         object: "{ ...Base, label: 'a' }",
         edit: "set(['label'], 'b')",

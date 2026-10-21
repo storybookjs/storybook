@@ -10,7 +10,6 @@ import {
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
-import { valid } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { logger } from '../../node-logger/index.ts';
@@ -32,7 +31,6 @@ import {
   parseReleaseTime,
   parseYarnMinimalAgeGateMinutes,
   readPackageVersions,
-  registryPackumentUrl,
   STORYBOOK_PACKAGE_PATTERNS,
 } from './util.ts';
 
@@ -221,10 +219,7 @@ export class Yarn2Proxy extends JsPackageManager {
     } catch (error) {
       const logs = getErrorLogs(error);
 
-      if (
-        this.isDeclaredAgeGateError(logs) ||
-        (this.isUnresolvedCandidateError(logs) && (await this.getMinimumAgeGate()) !== null)
-      ) {
+      if (logs.includes('YN0016') && logs.includes('quarantined')) {
         const handledError = new MinimumReleaseAgeHandledError({
           packageManagerName: 'yarn',
           minimumReleaseAgeConfigName: 'npmMinimalAgeGate',
@@ -260,7 +255,11 @@ export class Yarn2Proxy extends JsPackageManager {
     }
 
     const preapprovedPackages = await this.getPreapprovedPackages();
-    if (!preapprovedPackages || hasStorybookMinimumAgeExclusions(preapprovedPackages)) {
+    if (!preapprovedPackages) {
+      logger.debug('Skipping the age gate precheck: npmPreapprovedPackages could not be read.');
+      return;
+    }
+    if (hasStorybookMinimumAgeExclusions(preapprovedPackages)) {
       return;
     }
 
@@ -375,30 +374,6 @@ export class Yarn2Proxy extends JsPackageManager {
     return url === 'undefined' ? undefined : url;
   }
 
-  private async getNpmAuthToken(): Promise<string | undefined> {
-    try {
-      const result = await this.runInternalCommand(
-        'config',
-        ['get', 'npmAuthToken'],
-        undefined,
-        'pipe'
-      );
-      const token = (typeof result?.stdout === 'string' ? result.stdout : '').trim();
-      if (
-        !token ||
-        token === 'undefined' ||
-        token === 'null' ||
-        /\s/.test(token) ||
-        token.startsWith('{')
-      ) {
-        return undefined;
-      }
-      return token;
-    } catch {
-      return undefined;
-    }
-  }
-
   protected async runGetVersions<T extends boolean>(
     packageName: string,
     fetchAllVersions: T
@@ -413,9 +388,7 @@ export class Yarn2Proxy extends JsPackageManager {
         return info.version as T extends true ? string[] : string;
       }
 
-      const versions =
-        readPackageVersions(info.versions) ??
-        readPackageVersions((await this.fetchRegistryPackument(packageName))?.versions);
+      const versions = readPackageVersions(info.versions);
       if (!versions) {
         throw new Error(`Missing versions for ${packageName}`);
       }
@@ -468,15 +441,6 @@ export class Yarn2Proxy extends JsPackageManager {
     };
   }
 
-  private isDeclaredAgeGateError(logs: string) {
-    return logs.includes('YN0016') && logs.includes('quarantined');
-  }
-
-  /** Yarn 6 prints this for an age gate and for any range that matches nothing. */
-  private isUnresolvedCandidateError(logs: string) {
-    return logs.includes('No candidates found');
-  }
-
   private extractQuarantinedPackage(logs: string): string | null {
     const match = logs.match(
       /│\s+((?:@[^/\s]+\/)?[^@\s]+)@npm:([^:\s]+):\s+All versions satisfying/
@@ -510,13 +474,8 @@ export class Yarn2Proxy extends JsPackageManager {
   private async getPackageTimeMap(packageName: string): Promise<Record<string, string> | null> {
     try {
       const info = await this.queryNpmPackageInfo(packageName);
-      const fromInfo = parsePackageTimeMap(info.time);
-      if (fromInfo && Object.keys(fromInfo).some((key) => valid(key))) {
-        return fromInfo;
-      }
-
-      // Yarn 6 `npm info --json` is one version manifest and leaves out packument `time`.
-      return parsePackageTimeMap((await this.fetchRegistryPackument(packageName))?.time);
+      // Yarn 6 returns a single version manifest without `time`, so the precheck is skipped there.
+      return parsePackageTimeMap(info.time);
     } catch (error) {
       logger.debug(`Failed to read publish times for ${packageName}: ${String(error)}`);
       return null;
@@ -536,33 +495,6 @@ export class Yarn2Proxy extends JsPackageManager {
       throw new Error(`Unexpected npm info output for ${packageName}`);
     }
     return parsed as Record<string, unknown>;
-  }
-
-  private async fetchRegistryPackument(
-    packageName: string
-  ): Promise<Record<string, unknown> | null> {
-    try {
-      const registry = (await this.getRegistryURL()) ?? 'https://registry.yarnpkg.com';
-      const headers: Record<string, string> = { accept: 'application/json' };
-      const token = await this.getNpmAuthToken();
-      if (token) {
-        headers.authorization = `Bearer ${token}`;
-      }
-      const response = await fetch(registryPackumentUrl(registry, packageName), {
-        headers,
-      });
-      if (!response.ok) {
-        return null;
-      }
-      const body: unknown = await response.json();
-      if (!body || typeof body !== 'object' || Array.isArray(body)) {
-        return null;
-      }
-      return body as Record<string, unknown>;
-    } catch (error) {
-      logger.debug(`Failed to read the npm packument for ${packageName}: ${String(error)}`);
-      return null;
-    }
   }
 
   private createMinimalAgeGateRerunMessage({
@@ -591,6 +523,7 @@ export class Yarn2Proxy extends JsPackageManager {
   private async updatePreapprovedPackages(): Promise<void> {
     const currentPreapprovedPackages = await this.getPreapprovedPackages();
     if (!currentPreapprovedPackages) {
+      logger.debug('Not updating npmPreapprovedPackages: the current list could not be read.');
       return;
     }
     const nextPreapprovedPackages = Array.from(
@@ -614,6 +547,8 @@ export class Yarn2Proxy extends JsPackageManager {
     );
   }
 
+  // `null` means the list could not be read (Yarn 6 prints "unimplemented"). It must not become `[]`,
+  // because `updatePreapprovedPackages` would then overwrite the user's list in `.yarnrc.yml`.
   private async getPreapprovedPackages(): Promise<string[] | null> {
     try {
       const result = await this.runInternalCommand(

@@ -126,14 +126,6 @@ export const readPackageVersions = (value: unknown): string[] | null => {
   return null;
 };
 
-export const registryPackumentUrl = (registry: string, packageName: string) => {
-  const base = registry.endsWith('/') ? registry : `${registry}/`;
-  const encodedName = packageName.startsWith('@')
-    ? `@${encodeURIComponent(packageName.slice(1))}`
-    : encodeURIComponent(packageName);
-  return new URL(encodedName, base).href;
-};
-
 export const parseReleaseTime = (value: unknown): Date | null => {
   if (typeof value !== 'string' || value.length === 0) {
     return null;

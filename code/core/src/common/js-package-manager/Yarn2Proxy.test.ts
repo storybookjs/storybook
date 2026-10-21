@@ -64,33 +64,12 @@ describe('Yarn 2 Proxy', () => {
       );
     });
 
-    it('should rethrow Yarn 6 minimum-age-gate install errors as handled errors', async () => {
-      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
-        await Promise.resolve(fn());
-      });
-      const originalError = new Error('➤ · No candidates found for npm:10.4.0-alpha.17');
-      mockedExecuteCommand
-        .mockRejectedValueOnce(originalError)
-        .mockResolvedValueOnce({ stdout: '86400s\n' } as any);
-
-      const error = await yarn2Proxy.installDependencies().then(
-        () => null,
-        (caughtError) => caughtError
-      );
-
-      expect(error).toBeInstanceOf(MinimumReleaseAgeHandledError);
-      expect(error).toMatchObject({ cause: originalError });
-      expect(error?.message).toContain('npmMinimalAgeGate');
-    });
-
-    it('does not treat a missing candidate as an age gate when the gate is off', async () => {
+    it('keeps the original error when Yarn 6 finds no candidates', async () => {
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
         await Promise.resolve(fn());
       });
       const originalError = new Error('➤ · No candidates found for npm:not-a-package');
-      mockedExecuteCommand
-        .mockRejectedValueOnce(originalError)
-        .mockResolvedValueOnce({ stdout: 'undefined\n' } as any);
+      mockedExecuteCommand.mockRejectedValueOnce(originalError);
 
       const error = await yarn2Proxy.installDependencies().then(
         () => null,
@@ -98,7 +77,6 @@ describe('Yarn 2 Proxy', () => {
       );
 
       expect(error).toBe(originalError);
-      expect(error).not.toBeInstanceOf(MinimumReleaseAgeHandledError);
     });
 
     it('should rethrow minimum-age-gate install errors as handled errors', async () => {
@@ -219,58 +197,6 @@ describe('Yarn 2 Proxy', () => {
         })
       );
       expect(version).toEqual('5.3.19');
-    });
-
-    it('uses the registry packument when Yarn 6 info has no versions list', async () => {
-      mockedExecuteCommand
-        .mockResolvedValueOnce({
-          stdout: JSON.stringify({ name: 'storybook', version: '6.0.0' }),
-        } as any)
-        .mockResolvedValueOnce({ stdout: 'https://registry.npmjs.org\n' } as any);
-      vi.stubGlobal(
-        'fetch',
-        vi.fn(async () => ({
-          ok: true,
-          json: async () => ({
-            versions: {
-              '6.0.0-beta.23': {},
-              '4.25.3': {},
-              '5.3.19': {},
-            },
-          }),
-        }))
-      );
-
-      await expect(yarn2Proxy.latestVersion('storybook', '5.X')).resolves.toBe('5.3.19');
-      expect(fetch).toHaveBeenCalledWith(
-        'https://registry.npmjs.org/storybook',
-        expect.objectContaining({ headers: { accept: 'application/json' } })
-      );
-      vi.unstubAllGlobals();
-    });
-
-    it('sends the Yarn npm auth token when reading the packument', async () => {
-      mockedExecuteCommand
-        .mockResolvedValueOnce({
-          stdout: JSON.stringify({ name: 'storybook', version: '6.0.0' }),
-        } as any)
-        .mockResolvedValueOnce({ stdout: 'https://registry.example\n' } as any)
-        .mockResolvedValueOnce({ stdout: 'secret-token\n' } as any);
-      vi.stubGlobal(
-        'fetch',
-        vi.fn(async () => ({
-          ok: true,
-          json: async () => ({
-            versions: { '5.3.19': {} },
-          }),
-        }))
-      );
-
-      await expect(yarn2Proxy.latestVersion('storybook', '5.X')).resolves.toBe('5.3.19');
-      expect(fetch).toHaveBeenCalledWith('https://registry.example/storybook', {
-        headers: { accept: 'application/json', authorization: 'Bearer secret-token' },
-      });
-      vi.unstubAllGlobals();
     });
 
     it('throws an error if command output is not a valid JSON', async () => {
@@ -491,22 +417,12 @@ describe('Yarn 2 Proxy', () => {
         .mockResolvedValueOnce({ stdout: '86400s\n' } as any)
         .mockResolvedValueOnce({ stdout: '[]\n' } as any)
         .mockResolvedValueOnce({
-          stdout: JSON.stringify({ name: 'storybook', version: '10.3.2' }),
-        } as any)
-        .mockResolvedValueOnce({ stdout: 'https://registry.npmjs.org\n' } as any);
-      vi.stubGlobal(
-        'fetch',
-        vi.fn(async () => ({
-          ok: true,
-          json: async () => ({
-            time: {
-              created: '2025-01-01T00:00:00.000Z',
-              modified: '2026-05-11T12:00:00.000Z',
-              '10.3.2': '2026-05-01T00:00:00.000Z',
-            },
+          stdout: JSON.stringify({
+            name: 'storybook',
+            version: '10.3.2',
+            time: { '10.3.2': '2026-05-01T00:00:00.000Z' },
           }),
-        }))
-      );
+        } as any);
 
       await yarn2Proxy.precheckStorybookPackageInstall({
         storybookVersion: '10.3.2',

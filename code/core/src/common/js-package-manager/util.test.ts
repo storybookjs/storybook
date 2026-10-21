@@ -19,7 +19,6 @@ import {
   parseReleaseTime,
   parseYarnMinimalAgeGateMinutes,
   readPackageVersions,
-  registryPackumentUrl,
 } from './util.ts';
 
 describe('js package manager util', () => {
@@ -58,15 +57,6 @@ describe('js package manager util', () => {
       '2.0.0',
     ]);
     expect(readPackageVersions(null)).toBeNull();
-  });
-
-  it('builds a packument URL for scoped packages', () => {
-    expect(registryPackumentUrl('https://registry.npmjs.org', '@storybook/react')).toBe(
-      'https://registry.npmjs.org/@storybook%2Freact'
-    );
-    expect(registryPackumentUrl('https://registry.npmjs.org/', 'storybook')).toBe(
-      'https://registry.npmjs.org/storybook'
-    );
   });
 
   it('parses release times', () => {

@@ -55,13 +55,16 @@ export const useHighlights = (channel: Channel) => {
 
   let root = document.getElementById(rootId);
 
-  // Only create the root element when first highlights are added
-  highlights.subscribe(() => {
-    if (!root) {
-      root = createElement('div', { id: rootId }) as HTMLElement;
-      document.body.appendChild(root);
+  // Created on first use. Like Storybook's own UI in the preview, it is a child of <html> after
+  // <body>, outside the story's root, so a story that replaces its body takes nothing of it away. A
+  // render that clears <html> does, so every use attaches it again.
+  const attachRoot = () => {
+    root ??= createElement('div', { id: rootId }) as HTMLElement;
+    if (!root.isConnected) {
+      document.documentElement.appendChild(root);
     }
-  });
+    return root;
+  };
 
   // Update tracked elements when highlights change or the DOM tree changes
   highlights.subscribe((value) => {
@@ -69,11 +72,7 @@ export const useHighlights = (channel: Channel) => {
 
     elements.set(mapElements(value));
 
-    const observer = new MutationObserver((records) => {
-      if (records.some((record) => !root?.contains(record.target))) {
-        elements.set(mapElements(value));
-      }
-    });
+    const observer = new MutationObserver(() => elements.set(mapElements(value)));
     observer.observe(storybookRoot, { subtree: true, childList: true });
 
     return () => {
@@ -173,13 +172,13 @@ export const useHighlights = (channel: Channel) => {
   boxes.subscribe((value) => {
     value.forEach((box) => {
       let boxElement = boxElementByTargetElement.get(box.element);
-      if (root && !boxElement) {
+      if (!boxElement) {
         const props = {
           popover: 'manual',
           'data-highlight-dimensions': `w${box.width.toFixed(0)}h${box.height.toFixed(0)}`,
           'data-highlight-coordinates': `x${box.left.toFixed(0)}y${box.top.toFixed(0)}`,
         };
-        boxElement = root.appendChild(
+        boxElement = attachRoot().appendChild(
           createElement('div', props, [createElement('div')]) as HTMLDivElement
         );
         boxElementByTargetElement.set(box.element, boxElement);
@@ -252,6 +251,7 @@ export const useHighlights = (channel: Channel) => {
     const targetElements = selectedElement ? [selectedElement] : targets.get();
     const focusedElement = targetElements.length === 1 ? targetElements[0] : focused.get();
     const isMenuOpen = clickCoords.get() !== undefined;
+    attachRoot();
 
     boxes.get().forEach((box) => {
       const boxElement = boxElementByTargetElement.get(box.element);
@@ -308,9 +308,7 @@ export const useHighlights = (channel: Channel) => {
   selected.subscribe(updateBoxStyles);
 
   const renderMenu = () => {
-    if (!root) {
-      return;
-    }
+    const root = attachRoot();
 
     let menu = document.getElementById(menuId);
     if (menu) {
@@ -607,7 +605,7 @@ export const useHighlights = (channel: Channel) => {
     requestAnimationFrame(() => hoverCoords.set({ x: event.pageX, y: event.pageY }));
   };
 
-  document.body.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mousemove', onMouseMove);
 
   channel.on(HIGHLIGHT, addHighlight);
   channel.on(REMOVE_HIGHLIGHT, removeHighlight);

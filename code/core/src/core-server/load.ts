@@ -89,7 +89,14 @@ export async function loadStorybook(
     const builderPreset = safeResolveModule({ specifier: join(builderPresetDir, 'preset.js') });
 
     if (builderPreset) {
-      corePresets.push(builderPreset);
+      // loadStorybook-only policy: a builder preset that fails to load aborts with a
+      // CriticalPresetLoadError instead of being downgraded to a warning and an empty result;
+      // `storybook dev`/`build` still load the same preset.js through the lenient second pass
+      // (build-dev.ts, build-static.ts). The loader's downgrade would surface downstream as
+      // confusing failures — e.g. @storybook/addon-vitest composes its plugin list without any
+      // of the builder's core Vite plugins. Per-entry criticality keeps the rest of the pass at
+      // warning level.
+      corePresets.push({ name: builderPreset, critical: true });
     }
   }
 

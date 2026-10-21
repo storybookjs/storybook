@@ -35,7 +35,10 @@ export type PreviewProps = PropsWithChildren<{
   onReloadStory?: () => void;
 }>;
 
-export type Layout = 'padded' | 'fullscreen' | 'centered';
+export type Layout = 'padded' | 'fullscreen' | 'centered' | 'none' | 'document';
+
+// Only a padded or a centered story gets room around it; any other story fills the canvas.
+const isPadded = (layout: Layout) => layout === 'padded' || layout === 'centered';
 
 const ChildrenContainer = styled.div<PreviewProps & { layout: Layout }>(
   ({ isColumn, columns, layout }) => ({
@@ -47,16 +50,16 @@ const ChildrenContainer = styled.div<PreviewProps & { layout: Layout }>(
 
     '& .innerZoomElementWrapper > *': isColumn
       ? {
-          width: layout !== 'fullscreen' ? 'calc(100% - 20px)' : '100%',
+          width: isPadded(layout) ? 'calc(100% - 20px)' : '100%',
           display: 'block',
         }
       : {
-          maxWidth: layout !== 'fullscreen' ? 'calc(100% - 20px)' : '100%',
+          maxWidth: isPadded(layout) ? 'calc(100% - 20px)' : '100%',
           display: 'inline-block',
         },
   }),
   ({ layout = 'padded', inline }) =>
-    layout === 'centered' || layout === 'padded'
+    isPadded(layout)
       ? {
           padding: inline ? '32px 22px' : '0px',
           '& .innerZoomElementWrapper > *': {

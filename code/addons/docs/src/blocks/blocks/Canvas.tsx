@@ -70,7 +70,7 @@ type CanvasProps = Pick<PurePreviewProps, 'withToolbar' | 'additionalActions' | 
   /**
    * How to layout the story within the canvas padded: the story has padding within the canvas
    * fullscreen: the story is rendered edge to edge within the canvas centered: the story is
-   * centered within the canvas
+   * centered within the canvas none and document: like fullscreen, the story fills the canvas
    *
    * @default 'padded'
    */

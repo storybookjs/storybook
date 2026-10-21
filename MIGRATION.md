@@ -1225,7 +1225,7 @@ The `preview-stats.json` file that `@storybook/builder-vite` writes for `storybo
 - Proxy modules that Vite and Rollup insert between your code and its dependencies, for example `\0./node_modules/react/index.js?commonjs-es-import`
 - Sub-modules with a query string, for example `./src/Button.vue?vue&type=style&index=0&lang.css` next to `./src/Button.vue`
 
-Chromatic TurboSnap reads this file. It needs a `chromatic-cli` release that merges these nodes, or a changed Vue or Svelte component can trace to zero stories. Upgrade to the latest version of `chromatic-cli` before you upgrade Storybook.
+Chromatic TurboSnap reads this file. It needs `chromatic-cli` [v18.13.1](https://github.com/chromaui/chromatic-cli/releases/tag/v18.13.1) or later, which merges these nodes into the files they stand for. With an older version, a changed Vue or Svelte component can trace to zero stories. Upgrade `chromatic-cli` to v18.13.1 or later before you upgrade Storybook.
 
 ### Next.js: Require v15 and up
 

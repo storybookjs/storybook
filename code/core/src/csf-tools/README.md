@@ -11,6 +11,16 @@ It can parse MDX into CSF.
 
 `CsfFile.meta.component` is the meta's `component` as written, and `CsfFile.componentImport` the import it refers to, as `{ source, imported, local }`: `import { Button as B } from './Button'` gives `{ source: './Button', imported: 'Button', local: 'B' }`, and a default import has `imported: 'default'`. It is `undefined` when `component` is not an identifier bound by a default or named import, such as a local component, a member like `UI.Button`, or `Button as any`.
 
+## What you can rely on
+
+The exports of `storybook/internal/csf-tools` fall into three tiers. Build on the first wherever it covers your edit.
+
+**Stable.** `loadCsf`, `readCsf`, `writeCsf`, `formatCsf`, `printCsf` and `CsfFile`, with `objects()`, `storyObject()`, `setImport`, `removeImport`, `transaction` and `changed`; `loadConfig`, `readConfig`, `writeConfig`, `formatConfig`, `printConfig` and `ConfigFile`, with `callArguments()` and `setRequireImport` too; the `CsfObject` methods `get`, `getValue`, `inspect`, `inspectList`, `set`, `transform`, `remove`, `rename`, `move`, `group`, `append` and `prepend`; `parseExpression`, `parseModule`, `textOf`, `placeableTextOf`, `detachedTextOf` and `oneLineTextOf`; and the types `CsfMutationResult`, `CsfMutationDiagnostic`, `CsfMutationDiagnosticCode`, `CsfMutationTarget`, `CsfInspection`, `CsfListInspection`, `CsfObjectLookup` and `CsfPath`. A breaking change comes only in a major, with a `MIGRATION.md` entry. A minor can add a diagnostic code, so treat an unknown `code` as a refusal.
+
+**Supported, lower level.** The `SourceEditor` of `CsfFile.editor` and `ConfigFile.editor`, with `program`, `scopes` and `commit()`; `CsfFile.appendStatement`; the other editor and tree functions, such as `appendToList`, `removeStatement`, `walk` and `staticKey`; the `ESTree` node types; and the `story-shape` and `enrichCsf` helpers. The same rule holds, but these work on nodes and offsets, so expect new functions and new diagnostics in a minor.
+
+**Not an API.** Underscored names, including the deprecated `_editor`, `_program` and `_appendStatement`; `__corpus__`; and every module `index.ts` does not re-export. These change in any release. If you need one, open an issue to move it into a tier above.
+
 ## Transforming stories
 
 `CsfFile.objects()` returns one `CsfObject` editor per mutable object it can prove safe to edit: the meta and each story object, once even when more than one export names it.

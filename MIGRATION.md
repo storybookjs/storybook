@@ -1400,7 +1400,7 @@ These packages read `storybook/internal/babel` or Babel-shaped `csf-tools` field
 
 #### Changes for tooling that imports Storybook's internal entry points
 
-An addon that supports both Storybook 10 and 11 can detect the new API with `typeof csfTools.parseModule === 'function'`, where `csfTools` is `import * as csfTools from 'storybook/internal/csf-tools'`.
+An addon that supports both Storybook 10 and 11 can detect the new API with `typeof csfTools.parseModule === 'function'`, where `csfTools` is `import * as csfTools from 'storybook/internal/csf-tools'`. [What you can rely on](./code/core/src/csf-tools/README.md#what-you-can-rely-on) in the csf-tools README lists which of its exports are stable, which are supported but lower level, and which are not an API.
 
 - `storybook/internal/babel` is removed. Import Babel from your own `@babel/*` dependencies if you still need it.
 - `getBabelDependencies` is removed from `storybook/internal/cli`.

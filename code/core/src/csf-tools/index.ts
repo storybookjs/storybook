@@ -1,3 +1,4 @@
+/** Which exports addons can build on: see "What you can rely on" in `README.md`. */
 export * from './CsfFile.ts';
 export type {
   CsfInspection,

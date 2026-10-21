@@ -821,7 +821,9 @@ export class ConfigFile implements CsfObject {
 
   /**
    * Remove the first entry of the array literal at a path that names `value`: a string, a
-   * `{ name }` object, or a call like `getAbsolutePath(value)`. A missing field or entry is a no-op.
+   * `{ name }` object, or a call like `getAbsolutePath(value)`. A missing field or entry is a no-op
+   * when the array can be edited; an array in a constant that other code refers to as well, or in a
+   * config that mixes a default export with named exports, is refused like `append` refuses it.
    *
    * @deprecated Find the entry's index in the list `inspectList(path)` returns, and
    * `remove([...path, index])` it.

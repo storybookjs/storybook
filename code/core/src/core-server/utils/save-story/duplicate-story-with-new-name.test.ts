@@ -312,6 +312,31 @@ describe('refuses before it adds the copy', () => {
   });
 });
 
+describe('the name of the copy', () => {
+  const copyOf = (source: string[]) => {
+    const parsed = loadCsf([`export default { title: 'A' };`, ...source].join('\n'), {
+      makeTitle,
+    }).parse();
+    duplicateStoryWithNewName(parsed, 'A', 'MyCopy');
+    return printCsf(parsed).code.split('\n').at(-1);
+  };
+
+  test('is set after a spread that provides a name', () => {
+    expect(
+      copyOf([
+        `const Base = { name: 'Base story', args: { a: 1 } };`,
+        `export const A = { ...Base, args: { a: 2 } };`,
+      ])
+    ).toBe(`export const MyCopy = { ...Base, args: {}, name: 'My Copy' };`);
+  });
+
+  test('is left as it is when a later spread could override it', () => {
+    expect(
+      copyOf([`import { Base } from './Base';`, `export const A = { name: 'Nice', ...Base };`])
+    ).toBe(`export const MyCopy = { name: 'Nice', ...Base };`);
+  });
+});
+
 describe('factory stories', () => {
   test('copies a story made with extend', () => {
     const parsed = loadCsf(

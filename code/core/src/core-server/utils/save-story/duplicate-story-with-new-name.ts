@@ -1,5 +1,5 @@
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
-import type { CsfFile } from 'storybook/internal/csf-tools';
+import type { CsfFile, CsfMutationResult } from 'storybook/internal/csf-tools';
 
 import { type Node, unwrapExpression } from '../../../csf-tools/estree/ast.ts';
 import { SaveStoryError, assertApplied, findStory, originalStoryOf } from './utils.ts';
@@ -50,10 +50,15 @@ export const duplicateStoryWithNewName = (
   );
   csf.editor.commit();
 
+  // Tried in a transaction of its own, so that a refusal does not roll back a transaction around it.
+  const attempt = (mutation: () => CsfMutationResult) => csf.transaction(() => mutation().ok);
+
   const copy = findStory(csf, newStoryName);
-  if (copy.inspect(['name']).kind === 'value' && !copy.remove(['name']).ok) {
-    // A spread before `name` would provide the copy's name instead.
-    assertApplied(csf, newStoryName, copy.set(['name'], storyNameFromExport(newStoryName)));
+  // Without a `name` of its own, the copy shows the name its export gives. When a spread provides
+  // the name, or could, set that name after it; when a later spread could override it, leave it.
+  const name = copy.inspect(['name']);
+  if (name.kind !== 'missing' && !(name.kind === 'value' && attempt(() => copy.remove(['name'])))) {
+    attempt(() => copy.set(['name'], storyNameFromExport(newStoryName)));
   }
   if (copy.inspect(['args']).kind === 'value') {
     assertApplied(csf, newStoryName, copy.set(['args'], {}));

@@ -2539,6 +2539,23 @@ export const Composed = { ...Primary, name: 'Composed' };
     });
   });
 
+  it('lays out a value after a removal that joined its line as a commit after the removal does', () => {
+    const csf = parse(
+      `export default { title: 'A' };\nexport const S = { args: { a: 1,\n  b: 2 } };\n`
+    );
+    const [s] = csf.objects({ meta: false });
+
+    expect(s.remove(['args', 'a'])).toEqual({ ok: true, changed: true });
+    expect(s.set(['args', 'b'], parseExpression('() => {\n  return 1;\n}'))).toEqual({
+      ok: true,
+      changed: true,
+    });
+
+    expect(printCsf(csf).code).toBe(
+      `export default { title: 'A' };\nexport const S = { args: { b: () => {\n  return 1;\n} } };\n`
+    );
+  });
+
   describe('a factory call without an argument', () => {
     const source = `import preview from './preview';\nconst meta = preview.meta();\nexport const A = meta.story();\n`;
 

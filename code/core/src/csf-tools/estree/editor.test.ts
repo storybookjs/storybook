@@ -245,6 +245,16 @@ describe('batch records', () => {
     ]);
   });
 
+  it('records the rest of a line a write joins to the line before, when it holds code', () => {
+    const editor = new SourceEditor('const a = { b: 1,\n  c: 2 };\nconst d = { e: [1,\n] };\n');
+    editor.edits.remove(16, 20);
+    editor.edits.remove(46, 47);
+    expect(editor._batch.touched.map(({ reach }) => reach)).toEqual([
+      { start: 20, end: 27 },
+      undefined,
+    ]);
+  });
+
   it('tells a span a write meets, one an edit inside leaves alone, and an append of another key', () => {
     const editor = new SourceEditor('export default { a: [1, 2], b: 3 };\n');
     const [a, b] = objectOf(editor).properties as E.ObjectProperty[];

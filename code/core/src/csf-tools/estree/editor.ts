@@ -464,11 +464,14 @@ const recording = (edits: MagicString, touched: Written[]): MagicString => {
   const write = <T>(start: number, end: number, text: string, side: Written['side'], made: T) => {
     const span = { start: offset(start), end: offset(end) };
     const rest = { start: span.end, end: lineEnd(code, span.end) };
-    // Text ending in a line break, inserted at a line start, leaves the line after it as it was,
-    // and a break before the end of a line moves nothing.
+    const after = code.slice(rest.start, rest.end);
+    // A write that breaks a line, or joins it to the line before, moves the code after it on that
+    // line to another line or indent, which later writes lay out from. Text ending in a line break,
+    // inserted at a line start, leaves the line after it as it was, a break before the end of a line
+    // moves nothing, and a join moves no code when only closing punctuation follows it.
     const breaks =
-      text.includes('\n') &&
-      code.slice(rest.start, rest.end).trim() !== '' &&
+      ((text.includes('\n') && after.trim() !== '') ||
+        (code.slice(span.start, span.end).includes('\n') && !/^[\s,;)\]}]*$/.test(after))) &&
       !(
         text.endsWith('\n') &&
         span.start === span.end &&

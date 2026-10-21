@@ -74,7 +74,7 @@ const MockLink = React.forwardRef<HTMLAnchorElement, MockLinkProps>(function Moc
           href.query
             ? `?${new URLSearchParams(href.query as Record<string, string>).toString()}`
             : ''
-        }${href.hash || ''}`
+        }${href.hash && !href.hash.startsWith('#') ? '#' : ''}${href.hash || ''}`
       : href;
 
   const hrefString = typeof rawHref === 'string' ? normalizePathTrailingSlash(rawHref) : rawHref;

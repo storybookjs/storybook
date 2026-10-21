@@ -65,7 +65,7 @@ const MockLink = React.forwardRef<HTMLAnchorElement, any>(function MockLink(
   const resolvedHref = as ?? href;
   const rawHref =
     typeof resolvedHref === 'object'
-      ? `${resolvedHref.pathname || ''}${resolvedHref.query ? '?' + new URLSearchParams(resolvedHref.query).toString() : ''}${resolvedHref.hash || ''}`
+      ? `${resolvedHref.pathname || ''}${resolvedHref.query ? '?' + new URLSearchParams(resolvedHref.query).toString() : ''}${resolvedHref.hash && !resolvedHref.hash.startsWith('#') ? '#' : ''}${resolvedHref.hash || ''}`
       : resolvedHref;
   const hrefString = typeof rawHref === 'string' ? normalizePathTrailingSlash(rawHref) : rawHref;
 

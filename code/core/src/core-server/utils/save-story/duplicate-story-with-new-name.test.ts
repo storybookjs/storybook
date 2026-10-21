@@ -350,6 +350,23 @@ describe('the name of the copy', () => {
 });
 
 describe('factory stories', () => {
+  test('leaves the file as it was when the copy cannot be edited', () => {
+    const code = [
+      `import preview from '#.storybook/preview';`,
+      `const meta = preview.meta({ title: 'X' });`,
+      `const config = { args: { a: 1 } };`,
+      `export const A = meta.story(config);`,
+    ].join('\n');
+    const parsed = loadCsf(code, { makeTitle }).parse();
+
+    expect(() => duplicateStoryWithNewName(parsed, 'A', 'B')).toThrowError(
+      'Cannot save story B because its configuration is not written inline in this file.'
+    );
+    expect(printCsf(parsed).code).toBe(code);
+    expect(parsed.changed).toBe(false);
+    expect(parsed.stories.map(({ exportName }) => exportName)).toEqual(['A']);
+  });
+
   test('copies a story made with extend', () => {
     const parsed = loadCsf(
       [

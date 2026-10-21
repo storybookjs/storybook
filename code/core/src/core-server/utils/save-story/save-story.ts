@@ -78,16 +78,11 @@ export function initializeSaveStory(channel: Channel, options: Options) {
 
       sourceStoryName = storyNameFromExport(storyName);
 
-      // One unit: a refused edit of the args also takes back the copy they were for.
-      const saved = parsed.transaction(() => {
-        if (name) {
-          duplicateStoryWithNewName(parsed, storyName, name);
-        }
-        updateArgsInCsfFile(parsed, name || storyName, args ? parseArgs(args) : {});
-      });
-      if (!saved) {
-        throw new SaveStoryError(`Cannot save story ${name || storyName} automatically`);
+      // A refusal throws, so a refused edit of the args is never written with the copy it was for.
+      if (name) {
+        duplicateStoryWithNewName(parsed, storyName, name);
       }
+      updateArgsInCsfFile(parsed, name || storyName, args ? parseArgs(args) : {});
 
       const code = await formatFileContent(sourceFilePath, printCsf(csf).code);
 

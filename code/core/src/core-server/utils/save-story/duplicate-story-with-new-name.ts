@@ -50,22 +50,28 @@ export const duplicateStoryWithNewName = (
     node.id.type === 'Identifier' && node.id.typeAnnotation
       ? csf.editor.source(node.id.typeAnnotation)
       : '';
-  csf.appendStatement(
-    `export const ${newStoryName}${typeAnnotation} = ${csf.editor.source(init)};`
-  );
-  csf.editor.commit();
-
-  // Tried in a transaction of its own, so that a refusal does not roll back a transaction around it.
+  // Tried in a transaction of its own, so that a refusal does not roll back the copy.
   const attempt = (mutation: () => CsfMutationResult) => csf.transaction(() => mutation().ok);
 
-  const copy = findStory(csf, newStoryName);
-  // Without a `name` of its own, the copy shows the name its export gives. When a spread provides
-  // the name, or could, set that name after it; when a later spread could override it, leave it.
-  const name = copy.inspect(['name']);
-  if (name.kind !== 'missing' && !(name.kind === 'value' && attempt(() => copy.remove(['name'])))) {
-    attempt(() => copy.set(['name'], storyNameFromExport(newStoryName)));
-  }
-  if (copy.inspect(['args']).kind === 'value') {
-    assertApplied(newStoryName, copy.set(['args'], {}));
-  }
+  // A refusal after the copy is added takes the copy back too, so the file stays as it was.
+  csf.transaction(() => {
+    csf.appendStatement(
+      `export const ${newStoryName}${typeAnnotation} = ${csf.editor.source(init)};`
+    );
+    csf.editor.commit();
+
+    const copy = findStory(csf, newStoryName);
+    // Without a `name` of its own, the copy shows the name its export gives. When a spread provides
+    // the name, or could, set that name after it; when a later spread could override it, leave it.
+    const name = copy.inspect(['name']);
+    if (
+      name.kind !== 'missing' &&
+      !(name.kind === 'value' && attempt(() => copy.remove(['name'])))
+    ) {
+      attempt(() => copy.set(['name'], storyNameFromExport(newStoryName)));
+    }
+    if (copy.inspect(['args']).kind === 'value') {
+      assertApplied(newStoryName, copy.set(['args'], {}));
+    }
+  });
 };

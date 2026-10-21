@@ -11,6 +11,7 @@ import {
   check,
   commonJobsNoOpJob,
   defineCircleciCompletion,
+  defineNightlyFailureReport,
   docgenMemoryGate,
   docgenPerfGate,
   knip,
@@ -113,7 +114,12 @@ function generateConfig(workflow: Workflow) {
   // Append a completion job that depends on every other job in the workflow.
   // It acts as a single status check for GitHub branch protection: it only runs
   // (and reports success) once every required job has finished successfully.
-  ensuredJobs.push(defineCircleciCompletion([...ensuredJobs]));
+  const completion = defineCircleciCompletion([...ensuredJobs]);
+  ensuredJobs.push(completion);
+
+  if (workflow === 'daily') {
+    ensuredJobs.push(defineNightlyFailureReport(completion));
+  }
 
   const sortedJobs = ensuredJobs.sort((a, b) => {
     if (a.requires.length && b.requires.length) {
@@ -148,7 +154,13 @@ function generateConfig(workflow: Workflow) {
       [`${workflow}-generated${isDebugging ? '-debug' : ''}`]: {
         jobs: sortedJobs.map((t) =>
           t.requires && t.requires.length > 0
-            ? { [t.id]: { requires: t.requires.map((r) => r.id) } }
+            ? {
+                [t.id]: {
+                  requires: t.requires.map((r) =>
+                    t.requiresTerminal ? { [r.id]: 'terminal' } : r.id
+                  ),
+                },
+              }
             : t.id
         ),
       },

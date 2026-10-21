@@ -7,6 +7,8 @@ export type Job<K extends string> = {
   name: K;
   implementation: (workflow: Workflow) => JobImplementationObj | NoOpJobImplementationObj;
   requires: JobOrNoOpJob[];
+  /** Start once the required jobs have finished in any state, instead of only after they succeed. */
+  requiresTerminal?: boolean;
 };
 
 export type JobOrNoOpJob = Job<string>;

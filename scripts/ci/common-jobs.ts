@@ -447,6 +447,33 @@ export const defineCircleciCompletion = (requires: JobOrNoOpJob[]) =>
     requires
   );
 
+/** Report the failed jobs of a nightly `next` run to Slack, whatever state the workflow ends in. */
+export const defineNightlyFailureReport = (completion: JobOrNoOpJob): JobOrNoOpJob => ({
+  ...defineJob(
+    'Nightly failure report',
+    () => ({
+      executor: {
+        name: 'sb_barebones',
+        class: 'small',
+      },
+      steps: [
+        git.checkout(),
+        {
+          run: {
+            name: 'Report failed jobs to Slack',
+            environment: {
+              PIPELINE_NUMBER: '<< pipeline.number >>',
+            },
+            command: 'bash scripts/ci/report-nightly-failure.sh',
+          },
+        },
+      ],
+    }),
+    [completion]
+  ),
+  requiresTerminal: true,
+});
+
 const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';
 const DOCGEN_PERF_RESULTS_DIR = 'perf-results';
 

@@ -364,8 +364,9 @@ export const workflow = {
         run: {
           name: 'Cancel current workflow',
           when: 'on_fail',
+          // The nightly run on `next` keeps going so its failure report lists every failed job.
           command:
-            'curl -X POST --header "Content-Type: application/json" "https://circleci.com/api/v2/workflow/${CIRCLE_WORKFLOW_ID}/cancel?circle-token=${WORKFLOW_CANCELER}"',
+            '[ "$CIRCLE_BRANCH" = "next" ] || curl -X POST --header "Content-Type: application/json" "https://circleci.com/api/v2/workflow/${CIRCLE_WORKFLOW_ID}/cancel?circle-token=${WORKFLOW_CANCELER}"',
         },
       },
     ];

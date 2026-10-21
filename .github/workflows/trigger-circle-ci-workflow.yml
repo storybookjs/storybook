@@ -39,18 +39,10 @@ on:
   # zizmor: ignore[dangerous-triggers]  # required for fork PRs; no fork code is checked out — only the Circle CI API is called
   pull_request_target:
     types: [opened, synchronize, labeled, reopened]
-  push:
-    branches:
-      - next
-      - main
 
-# For PR events, group per-PR (github.ref is refs/pull/<n>/merge) so redundant
-# re-triggers on the same PR cancel each other. For pushes to a shared branch
-# (next/main), key on the commit SHA instead: otherwise two merges landing close
-# together share the refs/heads/<branch> group and the earlier merge's trigger is
-# cancelled before it can POST to CircleCI, silently skipping its `merged` workflow.
+# Group per PR so redundant re-triggers on the same PR cancel each other.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name == 'push' && github.sha || github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
@@ -61,16 +53,12 @@ jobs:
     steps:
       - id: get-branch
         env:
-          REF_NAME: ${{ github.ref_name }}
           PR_REF_NAME: ${{ github.event.pull_request.head.ref }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
-          EVENT_NAME: ${{ github.event_name }}
         run: |
           if [ "$IS_FORK" = "true" ]; then
             BRANCH="pull/${PR_NUMBER}/head"
-          elif [ "$EVENT_NAME" = "push" ]; then
-            BRANCH="$REF_NAME"
           else
             BRANCH="$PR_REF_NAME"
           fi
@@ -91,23 +79,19 @@ jobs:
         if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:docs'))
         run: echo "workflow=docs" >> "$GITHUB_OUTPUT"
       - id: merged
-        if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'ci:merged')
+        if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:merged'))
         run: echo "workflow=merged" >> "$GITHUB_OUTPUT"
       - id: daily
         if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:daily'))
         run: echo "workflow=daily" >> "$GITHUB_OUTPUT"
       - id: trusted-author
         env:
-          EVENT_NAME: ${{ github.event_name }}
           USER_TYPE: ${{ github.event.pull_request.user.type }}
           USER_LOGIN: ${{ github.event.pull_request.user.login }}
           GITHUB_API_TOKEN: ${{ secrets.STORYBOOKJS_ORG_MEMBERSHIP_TOKEN }}
         run: |
-          # You can only push to `main` and `next` as a core team member, so the content is trustworthy.
-          if [ "$EVENT_NAME" = "push" ]; then
-            echo "result=true" >> "$GITHUB_OUTPUT"
           # These commits are made by the release actions, which are gated to core team members.
-          elif [ "$USER_LOGIN" = "github-actions[bot]" ] && [ "$USER_TYPE" = "Bot" ]; then
+          if [ "$USER_LOGIN" = "github-actions[bot]" ] && [ "$USER_TYPE" = "Bot" ]; then
             echo "result=true" >> "$GITHUB_OUTPUT"
           else
             # Explicitly trust only members of specific Storybook teams.

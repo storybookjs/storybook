@@ -62,13 +62,14 @@ export function initializeSaveStory(channel: Channel, options: Options) {
       });
 
       const parsed = csf.parse();
-      const stories = Object.entries(parsed._stories);
 
       const [componentId, storyId] = csfId.split('--');
       newStoryName = name && storyNameFromExport(name);
       newStoryId = newStoryName && toId(componentId, newStoryName);
 
-      const [storyName] = stories.find(([key, value]) => value.id.endsWith(`--${storyId}`)) || [];
+      const storyName = parsed.stories.find((story) =>
+        story.id.endsWith(`--${storyId}`)
+      )?.exportName;
       if (!storyName) {
         throw new SaveStoryError(`Source story not found.`);
       }

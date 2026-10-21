@@ -10,6 +10,7 @@ import { format } from 'prettier';
 import { duplicateStoryWithNewName } from './duplicate-story-with-new-name.ts';
 import { getDiff } from './getDiff.ts';
 import { updateArgsInCsfFile } from './update-args-in-csf-file.ts';
+import { SaveStoryError, assertApplied } from './utils.ts';
 
 const makeTitle = (userTitle: string) => userTitle;
 
@@ -141,7 +142,7 @@ describe('success', () => {
     expect(() =>
       updateArgsInCsfFile(parsed, 'A', { c: 2, a: 2 })
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: Cannot mutate args.a because the target contains spread field]`
+      `[Error: Cannot save arg "a" of story A because a spread in the story could override it.]`
     );
     expect(printCsf(parsed).code).toBe(source);
     expect(parsed.changed).toBe(false);
@@ -175,7 +176,7 @@ describe('success', () => {
     expect(() =>
       updateArgsInCsfFile(parsed, 'Secondary', { a: 2 })
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: Cannot mutate Secondary without changing Primary, which exports the same story]`
+      `[Error: Cannot save story Secondary because it is the same story as Primary. Save Primary instead.]`
     );
     expect(printCsf(parsed).code).toBe(source);
     expect(parsed.changed).toBe(false);
@@ -242,7 +243,7 @@ describe('success', () => {
     ).parse();
 
     expect(() => updateArgsInCsfFile(parsed, 'A', { a: 1 })).toThrowErrorMatchingInlineSnapshot(
-      `[Error: Cannot mutate CSF factory story A because its configuration is not an inline object literal]`
+      `[Error: Cannot save story A because its configuration is not written inline in this file.]`
     );
   });
   test('CSF2 Variances', async () => {
@@ -595,5 +596,105 @@ describe('success', () => {
         } satisfies Story;
         "
     `);
+  });
+});
+
+describe('refusal messages', () => {
+  // Saves `a: 2` on `story` of `source`, and returns the error the controls panel shows.
+  const refusal = (source: string[], story = 'A') => {
+    const code = [`export default { title: 'X' };`, ...source].join('\n');
+    const parsed = loadCsf(code, { makeTitle }).parse();
+    let error: unknown;
+    try {
+      updateArgsInCsfFile(parsed, story, { a: 2 });
+    } catch (thrown) {
+      error = thrown;
+    }
+    expect(error).toBeInstanceOf(SaveStoryError);
+    expect(printCsf(parsed).code).toBe(code);
+    return error as SaveStoryError;
+  };
+
+  test('names the arg a spread could override, and keeps the diagnostic as the cause', () => {
+    const error = refusal([
+      `const Base = { args: {} };`,
+      `export const A = { args: { a: 1, ...Base.args } };`,
+    ]);
+    expect(error.message).toBe(
+      'Cannot save arg "a" of story A because a spread in the story could override it.'
+    );
+    expect(error.cause).toMatchObject({
+      code: 'spread-field',
+      message: 'Cannot mutate args.a because the target contains spread field',
+    });
+  });
+
+  test('explains args in a constant that other stories share', () => {
+    expect(
+      refusal([
+        `const shared = { a: 1 };`,
+        `export const A = { args: shared };`,
+        `export const B = { args: shared };`,
+      ]).message
+    ).toBe(
+      'Cannot save arg "a" of story A because the args of the story are not an object written in the story itself, for example a constant that other stories share.'
+    );
+  });
+
+  test('explains two args fields', () => {
+    expect(refusal([`export const A = { args: { a: 1 }, args: { b: 1 } };`]).message).toBe(
+      'Cannot save arg "a" of story A because the story sets it more than once.'
+    );
+  });
+
+  test('names the story an alias stands for', () => {
+    expect(refusal([`export const P = { args: { a: 1 } };`, `export const A = P;`]).message).toBe(
+      'Cannot save story A because it is the same story as P. Save P instead.'
+    );
+  });
+
+  test('explains an alias of a binding that is not a story of its own', () => {
+    expect(
+      refusal([`const Local = { args: { a: 1 } };`, `export { Local as A, Local as B };`], 'B')
+        .message
+    ).toBe(
+      'Cannot save story B because it is another name for a story in this file. Save that story instead.'
+    );
+  });
+
+  test('explains a story that other code in the file changes', () => {
+    expect(refusal([`export const A = { args: {} };`, `A.args.x = 1;`]).message).toBe(
+      'Cannot save story A because other code in the file changes or shares the story.'
+    );
+  });
+
+  test('explains a story re-exported from another file', () => {
+    expect(refusal([`export { A } from './other';`]).message).toBe(
+      'Cannot save story A because its configuration is not written inline in this file.'
+    );
+  });
+
+  test('explains an edit that would leave an invalid story file', () => {
+    const parsed = loadCsf(`export default { title: 'X' };\nexport const A = {};`, {
+      makeTitle,
+    }).parse();
+    const diagnostic = {
+      code: 'invalid-csf',
+      target: { kind: 'story', exportName: 'A', localName: 'A' },
+      path: ['args', 'a'],
+      message: 'Edited args.a, but the result is not valid CSF: reason',
+    } as const;
+    expect(() =>
+      assertApplied(parsed, 'A', { ok: false, changed: false, diagnostic })
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Cannot save arg "a" of story A because the result would not be a valid story file.]`
+    );
+    expect(() =>
+      assertApplied(parsed, 'A', {
+        ok: false,
+        changed: false,
+        diagnostic: { ...diagnostic, code: 'cyclic-move' },
+      })
+    ).toThrowError(diagnostic.message);
   });
 });

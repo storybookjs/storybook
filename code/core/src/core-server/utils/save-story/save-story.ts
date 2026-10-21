@@ -126,8 +126,10 @@ export function initializeSaveStory(channel: Channel, options: Options) {
         error: error instanceof SaveStoryError ? error.message : 'Unknown error',
       } satisfies ResponseData<SaveStoryResponsePayload>);
 
+      // The panel shows the message; the csf-tools diagnostic behind it is for the log.
+      const cause = error?.cause?.message ? `\nCaused by: ${error.cause.message}` : '';
       logger.error(
-        `Error writing to ${sourceFilePath}:\n${error.stack || error.message || error.toString()}`
+        `Error writing to ${sourceFilePath}:\n${error.stack || error.message || error.toString()}${cause}`
       );
 
       if (!(error instanceof SaveStoryError)) {

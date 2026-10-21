@@ -9,6 +9,7 @@ import { format } from 'prettier';
 
 import { duplicateStoryWithNewName } from './duplicate-story-with-new-name.ts';
 import { getDiff } from './getDiff.ts';
+import { SaveStoryError } from './utils.ts';
 
 const makeTitle = (userTitle: string) => userTitle;
 
@@ -247,5 +248,66 @@ describe('success', () => {
     ).parse();
     duplicateStoryWithNewName(parsed, 'A', 'MyCopy');
     expect(printCsf(parsed).code).toContain(`export const MyCopy = { ...Base, name: 'My Copy' };`);
+  });
+});
+
+describe('refuses before it adds the copy', () => {
+  const refused = (source: string[], storyName: string, newStoryName: string) => {
+    const code = [`export default { title: 'A' };`, ...source].join('\n');
+    const parsed = loadCsf(code, { makeTitle }).parse();
+    expect(() => duplicateStoryWithNewName(parsed, storyName, newStoryName)).toThrowError(
+      SaveStoryError
+    );
+    expect(printCsf(parsed).code).toBe(code);
+    expect(parsed.changed).toBe(false);
+    try {
+      duplicateStoryWithNewName(parsed, storyName, newStoryName);
+    } catch (error) {
+      return (error as Error).message;
+    }
+  };
+
+  test('a name an import of the file uses', () => {
+    expect(
+      refused(
+        [`import { Button } from './Button';`, `export const A = { args: {} };`],
+        'A',
+        'Button'
+      )
+    ).toBe(
+      'Cannot create story Button because the file already uses the name Button. Choose another name.'
+    );
+  });
+
+  test('a name a local of the file uses', () => {
+    expect(
+      refused([`const helper = () => {};`, `export const A = { args: {} };`], 'A', 'helper')
+    ).toBe(
+      'Cannot create story helper because the file already uses the name helper. Choose another name.'
+    );
+  });
+
+  test('a story that is another name for a story', () => {
+    expect(
+      refused(
+        [`export const Primary = { args: { a: 1 } };`, `export const Secondary = Primary;`],
+        'Secondary',
+        'New'
+      )
+    ).toBe(
+      'Cannot create a story from Secondary because it is the same story as Primary. Create the new story from Primary instead.'
+    );
+  });
+
+  test('a story that is a second export of a story', () => {
+    expect(
+      refused(
+        [`export const Primary = { args: { a: 1 } };`, `export { Primary as Secondary };`],
+        'Secondary',
+        'New'
+      )
+    ).toBe(
+      'Cannot create a story from Secondary because it is the same story as Primary. Create the new story from Primary instead.'
+    );
   });
 });

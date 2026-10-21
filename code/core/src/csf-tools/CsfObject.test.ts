@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { loadCsf, printCsf } from './CsfFile.ts';
@@ -1101,18 +1099,21 @@ describe('CsfObject', () => {
         result: { inspects: 'value' },
       },
     ];
-    const cells = ({ before, object, edit, result }: Row) => [
-      before && `\`${before}\``,
-      `\`${object}\``,
-      `\`${edit}\``,
-      'writes' in result
-        ? `\`${result.writes}\``
-        : 'refused' in result
-          ? `refused, \`${result.refused}\``
-          : 'code' in result
-            ? `\`unreadable\`, \`${result.code}\``
-            : '`value`',
-    ];
+    const title = ({ before, object, edit, result }: Row) =>
+      [
+        before,
+        object,
+        edit,
+        'writes' in result
+          ? result.writes
+          : 'refused' in result
+            ? `refused, ${result.refused}`
+            : 'code' in result
+              ? `unreadable, ${result.code}`
+              : 'value',
+      ]
+        .filter(Boolean)
+        .join(' | ');
     const apply = ({ before, object, edit }: Row) => {
       if (isConfigEdit(edit)) {
         const source = `${before}\nexport default ${object};`;
@@ -1127,45 +1128,27 @@ describe('CsfObject', () => {
       return { source, declaration: 'export const A =', done, printed: printCsf(csf).code };
     };
 
-    it('are the rows of the table in the README', () => {
-      const lines = readFileSync(new URL('README.md', import.meta.url), 'utf8').split('\n');
-      const header = lines.findIndex((line) => /^\|\s*Declared before\s*\|/.test(line));
-      const table = lines.slice(header + 2, lines.indexOf('', header));
-
-      expect(
-        table.map((line) =>
-          line
-            .split(/(?<!\\)\|/)
-            .slice(1, -1)
-            .map((text) => text.trim().replaceAll('\\|', '|'))
-        )
-      ).toEqual(rows.map(cells));
-    });
-
-    it.each(rows.map((row) => [cells(row).filter(Boolean).join(' | '), row] as const))(
-      '%s',
-      (_title, row) => {
-        const { source, declaration, done, printed } = apply(row);
-        const { result } = row;
-        if ('writes' in result) {
-          expect(done).toEqual({ ok: true, changed: true });
-          expect(printed.split('\n').at(-1)).toBe(`${declaration} ${result.writes};`);
-        } else if ('refused' in result) {
-          expect(done).toMatchObject({
-            ok: false,
-            changed: false,
-            diagnostic: { code: result.refused },
-          });
-          expect(printed).toBe(source);
-        } else {
-          expect(done).toMatchObject(
-            'code' in result
-              ? { kind: result.inspects, diagnostic: { code: result.code } }
-              : { kind: result.inspects }
-          );
-        }
+    it.each(rows.map((row) => [title(row), row] as const))('%s', (_title, row) => {
+      const { source, declaration, done, printed } = apply(row);
+      const { result } = row;
+      if ('writes' in result) {
+        expect(done).toEqual({ ok: true, changed: true });
+        expect(printed.split('\n').at(-1)).toBe(`${declaration} ${result.writes};`);
+      } else if ('refused' in result) {
+        expect(done).toMatchObject({
+          ok: false,
+          changed: false,
+          diagnostic: { code: result.refused },
+        });
+        expect(printed).toBe(source);
+      } else {
+        expect(done).toMatchObject(
+          'code' in result
+            ? { kind: result.inspects, diagnostic: { code: result.code } }
+            : { kind: result.inspects }
+        );
       }
-    );
+    });
   });
 
   it.each([

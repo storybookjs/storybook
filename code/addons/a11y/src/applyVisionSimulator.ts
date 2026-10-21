@@ -34,7 +34,9 @@ export const applyVisionSimulator: BeforeEach = ({ globals, parameters, viewMode
   }
 
   // A story with layout 'document' owns the body, whichever body the document has. Any other story
-  // is filtered only while the preview shows it, not its error or loading state.
+  // is filtered only while the preview shows it, not its error or loading state. `!important`, so
+  // the simulator wins over a filter a story sets in its body's inline style. Not the root element,
+  // which would keep `position: fixed` content in place: Firefox renders no `url()` filter on it.
   const selector =
     viewMode === 'story' && parameters.layout === 'document' ? 'body' : '.sb-show-main';
   const css = `${selector} { filter: ${visionFilter} !important; }`;

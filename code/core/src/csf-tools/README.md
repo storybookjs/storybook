@@ -58,59 +58,13 @@ A CSF factory meta or story written without an argument, such as `meta.story()` 
 Discovery and mutation are conservative: an object or a path whose shape cannot be proven is left untouched, and the reason is reported on `CsfFile.mutationDiagnostics` as a `CsfMutationDiagnostic`.
 Unproven shapes include story or meta bindings that are reassigned or shared, a CSF factory argument that is not an object literal owned by that single factory call, and target paths shadowed by a spread, a duplicate field, or a computed key.
 A story whose initializer is not an object literal, a function or a bound template, such as `export const A = base` or `makeStory()`, is reported as `unsupported-initializer`. A story that is an alias of another story of the file, such as `export const Secondary = Primary`, also through `as`, `satisfies` or other stories that alias it, holds that story's object: when that story is editable, `objects()` returns its object once, as that story, so editing it edits the alias too. Discovery reports the alias as `aliased-story`, with a message that names the story it aliases; an edit that applies alike to every story can ignore that diagnostic, as the aliased story reports its own when it is not editable. A story exported under more than one name, such as `export { Primary as A, Primary as B }`, is one object in the same way: `objects()` returns it once, under its first export, and reports each other export as `aliased-story`, as `storyObject()` does for those names; all names stay stories. A story whose alias is written to, such as `Secondary.args = {}` after `export const Secondary = Primary`, is left untouched and reported as `ambiguous-binding`, as that write changes its object. A story is also left untouched when it is written to other than by a top-level `Story.name = value`, such as `Story.args.label = 'x'`, `Story.parameters ||= {}` or `Story[name] = {}`. A story whose assignments are edited is left untouched when other code could see them: an alias, a spread, or a call or array that receives the story; calling or rendering the story is fine. Such a story without an object literal holds a function or a bound template; any other value could be shared with other stories.
-`set` can still add a field to an object with a spread or a computed key. The field is appended after them, so it overrides what they provide, and a missing parent it creates there carries the spreads' member forward. In the table, the object is a story `export const A = <object>` after the code in the first column. For `append`, it is a config `export default <object>`. Each row is a test in `CsfObject.test.ts`, and those tests fail when this table differs from them.
-
-| Declared before | Object | Edit | Result |
-| --- | --- | --- | --- |
-|  | `{ ...make(), [key]: 0 }` | `set(['args'], { a: 1 })` | `{ ...make(), [key]: 0, args: { a: 1 } }` |
-| `import { base } from './base';` | `{ args: { ...base } }` | `set(['args', 'a'], 1)` | `{ args: { ...base, a: 1 } }` |
-| `import { Base } from './base';` | `{ ...Base }` | `set(['args', 'a'], 1)` | `{ ...Base, args: { ...Base.args, a: 1 } }` |
-| `import * as stories from './base';` | `{ ...stories.Base }` | `set(['args', 'a'], 1)` | `{ ...stories.Base, args: { ...stories.Base.args, a: 1 } }` |
-| `import { Base } from './base';` | `{ ...(Base as Story) }` | `set(['args', 'a'], 1)` | `{ ...(Base as Story), args: { ...(Base as Story).args, a: 1 } }` |
-| `import { Base } from './base';` | `{ ...Base }` | `set(['parameters', 'docs', 'a'], 1)` | `{ ...Base, parameters: { ...Base.parameters, docs: { ...Base.parameters?.docs, a: 1 } } }` |
-| `import { base } from './base';` | `{ args: { ...base } }` | `set(['args', 'b', 'a'], 1)` | `{ args: { ...base, b: { ...base.b, a: 1 } } }` |
-| `import { One, Two } from './base';` | `{ ...One, ...Two }` | `set(['args', 'a'], 1)` | refused, `spread-field` |
-|  | `{ ...make() }` | `set(['args', 'a'], 1)` | refused, `spread-field` |
-|  | `{ [key]: 0 }` | `set(['args', 'a'], 1)` | refused, `dynamic-key` |
-| `const Base = { args: { b: 2 } };` | `{ ...Base }` | `set(['args', 'a'], 1)` | `{ ...Base, args: { ...Base.args, a: 1 } }` |
-| `const Base = { title: 'B' };` | `{ ...Base }` | `set(['args', 'a'], 1)` | `{ ...Base, args: { a: 1 } }` |
-| `const Base = { parameters: {} };` | `{ ...Base }` | `set(['parameters', 'docs', 'a'], 1)` | `{ ...Base, parameters: { ...Base.parameters, docs: { ...Base.parameters.docs, a: 1 } } }` |
-| `import { One } from './base'; const Two = { args: {} };` | `{ ...One, ...Two }` | `set(['args', 'a'], 1)` | `{ ...One, ...Two, args: { ...Two.args, a: 1 } }` |
-| `import { One } from './base'; const Two = { title: 'B' };` | `{ ...One, ...Two }` | `set(['args', 'a'], 1)` | `{ ...One, ...Two, args: { ...One.args, a: 1 } }` |
-| `const Base = { play: async () => {} };` | `{ ...Base, play: async (c) => { await Base.play(c); } }` | `set(['args', 'a'], 1)` | `{ ...Base, play: async (c) => { await Base.play(c); }, args: { a: 1 } }` |
-| `const Base = { title: 'B' }; Base.args = { x: 1 };` | `{ ...Base }` | `set(['args', 'a'], 1)` | `{ ...Base, args: { ...Base.args, a: 1 } }` |
-| `const Base = { title: 'B' }; mutate(Base);` | `{ ...Base }` | `set(['args', 'a'], 1)` | `{ ...Base, args: { ...Base.args, a: 1 } }` |
-| `const Base = { setup() { this.args = { x: 1 }; } }; Base.setup();` | `{ ...Base }` | `set(['args', 'a'], 1)` | `{ ...Base, args: { ...Base.args, a: 1 } }` |
-| `const Base = { async play() {} };` | `{ ...Base, play: async (c) => { await Base.play(c); } }` | `set(['args', 'a'], 1)` | `{ ...Base, play: async (c) => { await Base.play(c); }, args: { ...Base.args, a: 1 } }` |
-| `const Base = { *[Symbol.iterator]() { this.args = undefined; }, args: {} }; [...Base];` | `{ ...Base }` | `set(['args', 'b', 'a'], 1)` | `{ ...Base, args: { ...Base.args, b: { ...Base.args?.b, a: 1 } } }` |
-| `import shared from './shared';` | `{ ...shared }` | `append(['addons'], 'x')` | `{ ...shared, addons: [...(shared.addons ?? []), 'x'] }` |
-| `const shared = { stories: [] };` | `{ addons: ['a'], ...shared }` | `append(['addons'], 'x')` | `{ addons: ['a', 'x'], ...shared }` |
-| `import { Base } from './base';` | `{ ...Base, label: 'a' }` | `set(['label'], 'b')` | `{ ...Base, label: 'b' }` |
-| `import { Base } from './base';` | `{ label: 'a', ...Base }` | `set(['label'], 'b')` | refused, `spread-field` |
-| `import { Base } from './base';` | `{ args: {}, ...Base }` | `set(['args', 'a'], 1)` | refused, `spread-field` |
-| `const Base = { title: 'B' };` | `{ args: { a: 1 }, ...Base }` | `set(['args', 'a'], 2)` | `{ args: { a: 2 }, ...Base }` |
-| `const Base = { args: {} };` | `{ args: { a: 1 }, ...Base }` | `set(['args', 'a'], 2)` | refused, `spread-field` |
-| `const Base = { title: 'B' }; Base.args = {};` | `{ args: { a: 1 }, ...Base }` | `set(['args', 'a'], 2)` | refused, `spread-field` |
-| `import { Base } from './base';` | `{ ...Base, label: 'a' }` | `remove(['label'])` | refused, `spread-field` |
-| `import { Base } from './base';` | `{ ...Base, label: 'a' }` | `rename(['label'], 'name')` | refused, `spread-field` |
-| `const Base = { title: 'B' };` | `{ label: 'a', ...Base }` | `remove(['label'])` | `{ ...Base }` |
-| `const Base = { title: 'B' }; type Base = typeof Base;` | `{ label: 'a', ...Base }` | `remove(['label'])` | `{ ...Base }` |
-| `const Base = { label: 'b' };` | `{ label: 'a', ...Base }` | `remove(['label'])` | refused, `spread-field` |
-| `const Base = { title: 'B' };` | `{ ...Base, label: 'a' }` | `remove(['label'])` | `{ ...Base }` |
-| `const Base = { title: 'B' };` | `{ ...Base, label: 'a' }` | `rename(['label'], 'name')` | `{ ...Base, name: 'a' }` |
-| `import { base } from './base';` | `{ label: 'a', args: { ...base } }` | `move(['label'], ['args', 'label'])` | refused, `spread-field` |
-| `import { Base } from './base';` | `{ ...Base, a: 1, b: 2 }` | `group(['args'], ['a', 'b'])` | refused, `spread-field` |
-| `import { Base } from './base';` | `{ ...Base, label: 'a' }` | `inspect(['label'])` | `value` |
-| `import { Base } from './base';` | `{ label: 'a', ...Base }` | `inspect(['label'])` | `unreadable`, `spread-field` |
-| `import { Base } from './base';` | `{ ...Base }` | `inspect(['args'])` | `unreadable`, `spread-field` |
-| `const Base = { title: 'B' };` | `{ args: { a: 1 }, ...Base }` | `inspect(['args'])` | `value` |
-
-A carried member is read again where the parent is created, so a getter or a binding reassigned in between can give another value than the spread did.
-The spread's own member is read with `.`, as a story spreading a value that is not an object is broken already, and a deeper one with `?.`, as it may be missing, unless a trusted local object literal holds it as an object literal.
-When more than one spread may provide the member, which one does depends on whether a later one has it as its own `undefined`, so creating the parent is refused.
-Changing a field that a later spread or computed key could override is refused, and so is removing or renaming a field after them, which could reveal what they provide. A spread of a trusted local object literal known to lack the field is the exception: it neither overrides nor provides the field, so these edits and reads proceed (`group` still refuses any spread).
-A local object literal is trusted for its own members only, not those of the objects it holds, and only when every reference to it reads it, as a type does: `typeof Base`, or `type Base` declaring its name.
-An assignment, `Object.assign`, an alias or a call it is passed to makes it unknown. So does code that can run with `this` bound to it: an accessor, spreading it into an array or arguments, or a call of a member it does not hold as an arrow function.
+`set` can still add a field to an object with a spread or a computed key: the field is appended after them, so it overrides what they provide.
+A missing parent it creates there carries the spread's member forward, `args: { ...Base.args, a: 1 }`, reading it again at that point, with `.` for the spread's own member and `?.` for a deeper one unless a trusted local object literal holds it.
+When more than one spread may provide that member, creating the parent is refused, as which one provides it depends on whether a later one has it as its own `undefined`.
+Changing a field that a later spread or computed key could override is refused, and so is removing or renaming a field after them, which could reveal what they provide.
+A spread of a trusted local object literal known to lack the field is the exception, so these edits and reads proceed, though `group` still refuses any spread.
+A local object literal is trusted for its own members only, and only while every reference to it reads it as a type does, such as `typeof Base`; an assignment, `Object.assign`, an alias, a call it is passed to, or code that can run with `this` bound to it makes it unknown.
+Every case is a test in `CsfObject.test.ts` (the `spreads` block).
 
 For edits that no path addresses, `CsfFile.editor` and `ConfigFile.editor` are the file's `SourceEditor`, and `program` its current parse; `CsfFile.appendStatement(code)` adds a statement that `formatCsf` prints. A commit parses and indexes the file again. The underscored `_editor`, `_program` and `_appendStatement` are deprecated aliases.
 

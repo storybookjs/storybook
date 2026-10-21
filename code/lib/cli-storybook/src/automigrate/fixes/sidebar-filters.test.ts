@@ -37,16 +37,19 @@ describe('sidebar-filters', () => {
     vi.mocked(fsp.readFile).mockImplementation(memfsFs.promises.readFile as typeof fsp.readFile);
   });
 
-  it('notifies when manager setConfig registers sidebar.filters', async () => {
-    vol.fromJSON({
-      [managerConfigPath]: `
-        import { addons } from 'storybook/manager-api';
+  it.each(['storybook/manager-api', 'storybook/internal/manager-api', '@storybook/manager-api'])(
+    'notifies when manager setConfig registers sidebar.filters from %s',
+    async (specifier) => {
+      vol.fromJSON({
+        [managerConfigPath]: `
+        import { addons } from '${specifier}';
         addons.setConfig({ sidebar: { filters: { internal: (item) => !item.tags?.includes('internal') } } });
       `,
-    });
-    expect(findConfigFile('manager', configDir)).toBe(managerConfigPath);
-    await expect(check()).resolves.toEqual({});
-  });
+      });
+      expect(findConfigFile('manager', configDir)).toBe(managerConfigPath);
+      await expect(check()).resolves.toEqual({});
+    }
+  );
 
   it('stays quiet when the manager has no sidebar filters', async () => {
     vol.fromJSON({

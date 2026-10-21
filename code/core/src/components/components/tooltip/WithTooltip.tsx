@@ -103,10 +103,10 @@ export interface WrapperProps {
 }
 
 const Wrapper = styled.div<WrapperProps>(
-  ({ hidden }) => ({
+  ({ theme, hidden }) => ({
     display: hidden ? 'none' : 'inline-block',
     zIndex: 2147483647,
-    colorScheme: 'light dark',
+    colorScheme: theme.base,
   }),
   ({ theme, color, hasChrome }) =>
     hasChrome

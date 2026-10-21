@@ -46,6 +46,9 @@ export class VitestManager {
 
   runningPromise: Promise<any> | null = null;
 
+  // Tracked here because `vitest.config.coverage.enabled` does not follow `disableCoverage()`.
+  coverageEnabled = false;
+
   constructor(private testManager: TestManager) {}
 
   async startVitest({ coverage }: { coverage: boolean }) {
@@ -55,21 +58,20 @@ export class VitestManager {
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
       '@storybook/addon-vitest/internal/coverage-reporter',
       {
-        testManager: this.testManager,
+        // A function, not the manager itself: Vitest deep-clones coverage options when coverage
+        // is toggled at runtime, and the reporter must reach the live manager.
+        getTestManager: () => this.testManager,
       },
     ];
-    const coverageOptions = (
-      coverage
-        ? {
-            enabled: true,
-            clean: true,
-            cleanOnRerun: true,
-            reportOnFailure: true,
-            reporter: [['html', {}], storybookCoverageReporter],
-            reportsDirectory: resolvePathInStorybookCache(COVERAGE_DIRECTORY),
-          }
-        : { enabled: false }
-    ) as CoverageOptions;
+    // Always pass the full options so `enableCoverage()` can turn coverage on later.
+    const coverageOptions = {
+      enabled: coverage,
+      clean: true,
+      cleanOnRerun: true,
+      reportOnFailure: true,
+      reporter: [['html', {}], storybookCoverageReporter],
+      reportsDirectory: resolvePathInStorybookCache(COVERAGE_DIRECTORY),
+    } as CoverageOptions;
 
     // In monorepos, the Storybook configDir (e.g. packages/web-app/.storybook) identifies
     // the sub-package. We start the Vitest config search from its parent (the package root)
@@ -132,6 +134,7 @@ export class VitestManager {
         reporters: ['default', new StorybookReporter(this.testManager)],
         coverage: coverageOptions,
       });
+      this.coverageEnabled = coverage;
     } catch (err: any) {
       const originalMessage = String(err.message);
       if (originalMessage.includes('Found multiple projects')) {
@@ -201,6 +204,20 @@ export class VitestManager {
       }
     });
     return this.vitestRestartPromise;
+  }
+
+  async setCoverage(enabled: boolean) {
+    await this.vitestRestartPromise;
+    if (!this.vitest || this.coverageEnabled === enabled) {
+      return;
+    }
+    await this.cancelCurrentRun();
+    if (enabled) {
+      await this.vitest.enableCoverage();
+    } else {
+      this.vitest.disableCoverage();
+    }
+    this.coverageEnabled = enabled;
   }
 
   private resetGlobalTestNamePattern() {
@@ -377,14 +394,11 @@ export class VitestManager {
     const runConfig = this.getCurrentRunConfig();
     const coverageShouldBeEnabled =
       !!runConfig.coverage && !watching && (runPayload?.storyIds?.length ?? 0) === 0;
-    const currentCoverage = this.vitest?.config.coverage?.enabled;
 
     if (!this.vitest) {
       await this.startVitest({ coverage: coverageShouldBeEnabled });
-    } else if (currentCoverage !== coverageShouldBeEnabled) {
-      await this.restartVitest({ coverage: coverageShouldBeEnabled });
     } else {
-      await this.vitestRestartPromise;
+      await this.setCoverage(coverageShouldBeEnabled);
     }
 
     this.provideRunConfig();

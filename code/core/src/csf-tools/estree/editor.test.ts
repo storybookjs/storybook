@@ -1,0 +1,1824 @@
+import { SourceMap as NodeSourceMap } from 'node:module';
+
+import { describe, expect, it } from 'vitest';
+
+import { decode, encode } from '@jridgewell/sourcemap-codec';
+import MagicString from 'magic-string';
+import { dedent } from 'ts-dedent';
+
+import { loadConfig, printConfig } from '../ConfigFile.ts';
+import { loadCsf, printCsf } from '../CsfFile.ts';
+import { detachedTextOf } from '../index.ts';
+import type { E } from './ast.ts';
+import { parseExpression, parseModule } from './ast.ts';
+import {
+  SourceEditor,
+  appendStatement,
+  appendToList,
+  argumentList,
+  arrayList,
+  declaratorList,
+  insertAfterImports,
+  insertStatementAfter,
+  objectList,
+  prependStatement,
+  prependToList,
+  printMembers,
+  reindent,
+  removeFromList,
+  removeMembers,
+  removeStatement,
+  removeStatements,
+  replaceValue,
+  setImportSpecifiers,
+  wrapExpression,
+} from './editor.ts';
+
+const parse = (source: string, fileName?: string) =>
+  loadCsf(source, { fileName, makeTitle: (title) => title ?? 'title' }).parse();
+
+const defaultExportArray = (editor: SourceEditor) => {
+  const statement = editor.program.body[0] as E.ExportDefaultDeclaration;
+  const object = statement.declaration as E.ObjectExpression;
+  return (object.properties[0] as E.ObjectProperty).value as E.ArrayExpression;
+};
+
+describe('parseModule', () => {
+  it('parses .ts-only syntax when no file name picks the grammar', () => {
+    expect(() => parseModule('const id = <T>(x: T) => x;')).not.toThrow();
+    expect(() => parseModule('const size = <number>value;')).not.toThrow();
+  });
+
+  it('reports the error of the parse that got further', () => {
+    expect(() => parseModule('const id = <T>(x: T) => x;\nconst z = ;')).toThrow('(2:10)');
+  });
+
+  it('rejects duplicate declarations like Babel did', () => {
+    expect(() => parseModule('export const A = {};\nexport const A = { args: {} };')).toThrow(
+      'already been declared'
+    );
+  });
+
+  it('names Flow when a @flow file fails to parse', () => {
+    expect(() => parseModule('// @flow\nconst x: { +readOnly: number } = {};')).toThrow(
+      'Flow syntax is no longer supported'
+    );
+  });
+});
+
+describe('reindent', () => {
+  it('re-indents code lines only', () => {
+    expect(reindent('{\n  a: 1,\n}', '', '    ')).toBe('{\n      a: 1,\n    }');
+    expect(reindent('{\n    a: 1,\n  }', '  ', '')).toBe('{\n  a: 1,\n}');
+  });
+
+  it('re-indents CRLF text with LF line endings, leaving its template literals alone', () => {
+    expect(reindent('{\r\n  a: `x\r\ny`,\r\n}', '', '  ')).toBe('{\n    a: `x\ny`,\n  }');
+  });
+
+  it('leaves the lines of template literals and continued strings alone', () => {
+    expect(reindent('{\n  code: `line1\nline2`,\n}', '', '  ')).toBe(
+      '{\n    code: `line1\nline2`,\n  }'
+    );
+    expect(reindent('{\n  code: `${a}\nb`,\n}', '', '  ')).toBe('{\n    code: `${a}\nb`,\n  }');
+    expect(reindent("{\n  text: 'first\\\nsecond',\n}", '', '  ')).toBe(
+      "{\n    text: 'first\\\nsecond',\n  }"
+    );
+  });
+
+  it('does not mistake a regex backtick or JSX text for a template', () => {
+    expect(reindent('{\n    a: /`/.test(s),\n    b: `x\n    y`,\n  }', '  ', '')).toBe(
+      '{\n  a: /`/.test(s),\n  b: `x\n    y`,\n}'
+    );
+    expect(reindent("<p>\n    Don't\n    stop\n  </p>", '  ', '')).toBe(
+      "<p>\n  Don't\n  stop\n</p>"
+    );
+    expect(reindent("{\n    text: 'first\\\nsecond',\n  }", '  ', '')).toBe(
+      "{\n  text: 'first\\\nsecond',\n}"
+    );
+  });
+
+  it('re-indents code inside template expressions', () => {
+    expect(reindent('`${\nfn()\n}`', '', '  ')).toBe('`${\n  fn()\n  }`');
+  });
+
+  it('leaves the template literals of a function body alone', () => {
+    const body =
+      '{\n    if (typeof /`/ === "object") {}\n    const label = `a\n    b`;\n    return label;\n  }';
+    expect(reindent(body, '  ', '')).toBe(
+      '{\n  if (typeof /`/ === "object") {}\n  const label = `a\n    b`;\n  return label;\n}'
+    );
+  });
+
+  it('leaves the template literals of a method member alone', () => {
+    expect(reindent("fn() {\n  return /`/.test('a') ? `a\n  b` : 1;\n}", '', '  ')).toBe(
+      "fn() {\n    return /`/.test('a') ? `a\n  b` : 1;\n  }"
+    );
+  });
+});
+
+describe('commit', () => {
+  it('throws for a node of the parse before a commit', () => {
+    const editor = new SourceEditor("import z from 'z';\nimport { a } from 'a';\n");
+    const [stale] = editor.program.body;
+    editor.edits.overwrite(stale.start, stale.end, "import z from 'zzzzzzzz';");
+    editor.commit();
+    expect(() => removeStatement(editor, stale)).toThrow('stale after `commit()`');
+    expect(() => editor.source(stale)).toThrow('stale after `commit()`');
+    removeStatement(editor, editor.program.body[0]);
+    expect(editor.toString()).toBe("import { a } from 'a';\n");
+  });
+
+  it('throws for a list read before a commit', () => {
+    const editor = new SourceEditor('f(a);\n');
+    const call = (editor.program.body[0] as E.ExpressionStatement).expression as E.CallExpression;
+    const stale = argumentList(editor, call);
+    appendStatement(editor, 'g();');
+    editor.commit();
+    expect(() => appendToList(editor, stale, ['b'])).toThrow('Cannot edit a list of another parse');
+  });
+
+  it('throws for a copy of a node, which carries no parse', () => {
+    const editor = new SourceEditor('const a = (1 + 2);\nconst b = 3;\n');
+    const copy = { ...editor.program.body[0] };
+    expect(() => removeStatement(editor, copy)).toThrow(
+      'Cannot edit a VariableDeclaration node of no parse'
+    );
+    expect(() => editor.source(copy)).toThrow('a copy, or built by hand');
+    expect(editor.source({ start: 0, end: 5 })).toBe('const');
+  });
+
+  it('leaves the editor as it was when the result does not parse', () => {
+    const editor = new SourceEditor('const a = 1;\n');
+    const [statement] = editor.program.body;
+    editor.edits.appendLeft(0, '(');
+    expect(() => editor.commit()).toThrow();
+    expect(editor.pending).toBe(true);
+    expect(editor._committed).toEqual([]);
+    expect(editor.program.body[0]).toBe(statement);
+    expect(editor.toString()).toBe('(const a = 1;\n');
+  });
+
+  it('derives the story exports of a CsfFile again', () => {
+    const csf = parse('export default {};\nexport const A = {};\n');
+    appendStatement(csf.editor, 'export const B = {};');
+    csf.editor.commit();
+    expect(Object.keys(csf._stories)).toEqual(['A', 'B']);
+  });
+});
+
+describe('transaction', () => {
+  it('appends after the items an append before a rolled back transaction added', () => {
+    const editor = new SourceEditor('export default {};\n');
+    const object = () =>
+      (editor.program.body[0] as E.ExportDefaultDeclaration).declaration as E.ObjectExpression;
+    appendToList(editor, objectList(editor, object()), ['a: 1']);
+    editor.transaction(() => false);
+    appendToList(editor, objectList(editor, object()), ['b: 2']);
+    expect(editor.toString()).toBe('export default { a: 1, b: 2 };\n');
+  });
+
+  it('keeps a statement inserted before a rolled back transaction when its anchor is removed', () => {
+    const editor = new SourceEditor("import a from 'a';\n\nfoo();\n");
+    const [anchor] = editor.program.body;
+    insertStatementAfter(editor, anchor, 'const b = 1;');
+    editor.transaction(() => false);
+    removeStatement(editor, anchor);
+    expect(editor.toString()).toBe('const b = 1;\nfoo();\n');
+  });
+});
+
+describe('style', () => {
+  it('quotes like most string literals, leaving JSX attributes out', () => {
+    expect(new SourceEditor('import a from \'a\';\nconst x = <A b="1" c="2" />;').quote).toBe("'");
+    expect(new SourceEditor("const a = \"a\";\nconst b = 'b';\nconst c = 'c';").quote).toBe("'");
+  });
+
+  it('breaks a tie with the first literal and defaults to double quotes', () => {
+    expect(new SourceEditor('const a = "a";\nconst b = \'b\';').quote).toBe('"');
+    expect(new SourceEditor('const a = 1;').quote).toBe('"');
+  });
+
+  it('ends statements with a semicolon unless most statements of the file omit it', () => {
+    expect(new SourceEditor("import a from 'a'\nconst b = 1\nexport default b;").semicolons).toBe(
+      false
+    );
+    expect(
+      new SourceEditor("import a from 'a';\nfor (let i = 0; i < 1; i++) a(i)").semicolons
+    ).toBe(true);
+    expect(new SourceEditor('export function f() {}').semicolons).toBe(true);
+    expect(
+      new SourceEditor(
+        'export type A = 1\ntype B = 2\nclass C { d = 1 }\nexport const e = 1;',
+        'a.ts'
+      ).semicolons
+    ).toBe(false);
+  });
+
+  it('keeps the style of the code it was created with after a commit', () => {
+    const editor = new SourceEditor("const a = 'a';\n");
+    editor.edits.overwrite(10, 13, '1');
+    editor.commit();
+    expect(editor.quote).toBe("'");
+  });
+
+  it('indents generated lines with the step of the first multi-line block', () => {
+    const editor = new SourceEditor('const a = {\n\tb: 1,\n};\nconst c = [];\n');
+    const array = (editor.program.body[1] as E.VariableDeclaration).declarations[0]
+      .init as E.ArrayExpression;
+    appendToList(editor, arrayList(editor, array), ['{\n\td: 1,\n}']);
+    expect(editor.toString()).toBe(
+      'const a = {\n\tb: 1,\n};\nconst c = [\n\t{\n\t\td: 1,\n\t},\n];\n'
+    );
+  });
+});
+
+describe('lists', () => {
+  const firstStatement = (code: string) => {
+    const editor = new SourceEditor(code);
+    return { editor, statement: editor.program.body[0] };
+  };
+  const expressionOf = (statement: E.Node) => (statement as E.ExpressionStatement).expression;
+
+  it('keeps the comments of an empty one-line list when adding its first item', () => {
+    const object = firstStatement('({ /* todo */ });');
+    appendToList(
+      object.editor,
+      objectList(object.editor, expressionOf(object.statement) as E.ObjectExpression),
+      ['a: 1']
+    );
+    expect(object.editor.toString()).toBe('({ /* todo */ a: 1 });');
+
+    const call = firstStatement('config(/* none */);');
+    appendToList(
+      call.editor,
+      argumentList(call.editor, expressionOf(call.statement) as E.CallExpression),
+      ['a']
+    );
+    expect(call.editor.toString()).toBe('config(/* none */ a);');
+  });
+
+  it('lines up the first item of an empty multi-line list with its comments', () => {
+    const { editor, statement } = firstStatement('({\n\t// none yet\n});');
+    const object = expressionOf(statement) as E.ObjectExpression;
+    appendToList(editor, objectList(editor, object), ['a: 1']);
+    expect(editor.toString()).toBe('({\n\t// none yet\n\ta: 1,\n});');
+  });
+
+  it('finds the arguments of an optional call with type arguments past comments', () => {
+    const { editor, statement } = firstStatement('f?.<T>(/* ( */ a);');
+    const chain = expressionOf(statement) as E.ChainExpression;
+    appendToList(editor, argumentList(editor, chain.expression as E.CallExpression), ['b']);
+    expect(editor.toString()).toBe('f?.<T>(/* ( */ a, b);');
+  });
+
+  it('indents the continuation lines of an argument added to a one-line call like its line', () => {
+    const { editor } = firstStatement('const a = {\n  b: f(1),\n};');
+    const declaration = editor.program.body[0] as E.VariableDeclaration;
+    const object = declaration.declarations[0].init as E.ObjectExpression;
+    const value = (object.properties[0] as E.ObjectProperty).value as E.CallExpression;
+    appendToList(editor, argumentList(editor, value), ['{\n  c: 2,\n}']);
+    expect(editor.toString()).toBe('const a = {\n  b: f(1, {\n    c: 2,\n  }),\n};');
+  });
+
+  it('puts the items of a one-line object or array on lines of their own for a multi-line item', () => {
+    const csf = parse('export default {};\nexport const A = { args: { a: 1 } };\n');
+    const [story] = csf.objects({ meta: false });
+    story.set(['play'], parseExpression('async () => {\n  await x();\n}'));
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {};
+      export const A = {
+        args: { a: 1 },
+        play: async () => {
+          await x();
+        }
+      };
+
+    `);
+
+    const { editor, statement } = firstStatement('call([1, /* two */ 2]);');
+    const call = expressionOf(statement) as E.CallExpression;
+    appendToList(editor, arrayList(editor, call.arguments[0] as E.ArrayExpression), [
+      '() => {\n  y();\n}',
+    ]);
+    expect(editor.toString()).toBe('call([\n  1,\n  /* two */ 2,\n  () => {\n    y();\n  }\n]);');
+  });
+
+  it('keeps a one-line object on its line for a one-line item', () => {
+    const csf = parse('export default {};\nexport const A = { args: { a: 1 } };\n');
+    const [story] = csf.objects({ meta: false });
+    story.set(['args', 'b'], 2);
+    story.set(['tags'], ['x']);
+    expect(printCsf(csf).code).toBe(
+      'export default {};\nexport const A = { args: { a: 1, b: 2 }, tags: ["x"] };\n'
+    );
+  });
+
+  it('lays out a multi-line item added to an object without spaces inside its braces', () => {
+    const { editor, statement } = firstStatement('({a: 1});');
+    appendToList(editor, objectList(editor, expressionOf(statement) as E.ObjectExpression), [
+      'b: {\n  c: 2,\n}',
+    ]);
+    expect(editor.toString()).toBe('({\n  a: 1,\n  b: {\n    c: 2,\n  }\n});');
+  });
+
+  it('keeps the comma of each item when appending to a one-line list twice before a commit', () => {
+    const { editor, statement } = firstStatement('f([1], { a: 1 });');
+    const call = expressionOf(statement) as E.CallExpression;
+    const [array, object] = call.arguments as [E.ArrayExpression, E.ObjectExpression];
+    appendToList(editor, arrayList(editor, array), ['() => {\n  x();\n}']);
+    appendToList(editor, arrayList(editor, array), ['3']);
+    appendToList(editor, objectList(editor, object), ['b: {\n  c: 2,\n}']);
+    appendToList(editor, objectList(editor, object), ['d: {\n  e: 3,\n}']);
+    expect(editor.toString()).toBe(
+      'f([\n  1,\n  () => {\n    x();\n  },\n  3\n], {\n  a: 1,\n  b: {\n    c: 2,\n  },\n  d: {\n    e: 3,\n  }\n});'
+    );
+    expect(() => parseModule(editor.toString())).not.toThrow();
+  });
+
+  it.each([
+    ['before', '({a: x});'],
+    ['after', '({ a: x });'],
+  ])('keeps a wrapper written %s the break around its member alone', (order, code) => {
+    const { editor, statement } = firstStatement(code);
+    const object = expressionOf(statement) as E.ObjectExpression;
+    const wrap = () =>
+      wrapExpression(editor, (object.properties[0] as E.ObjectProperty).value, 'w(', ')');
+    if (order === 'before') {
+      wrap();
+    }
+    appendToList(editor, objectList(editor, object), ['b: {\n  c: 2,\n}']);
+    if (order === 'after') {
+      wrap();
+    }
+    expect(editor.toString()).toBe('({\n  a: w(x),\n  b: {\n    c: 2,\n  }\n});');
+  });
+
+  it('keeps a declaration on its line for a multi-line declarator', () => {
+    const { editor, statement } = firstStatement('const a = 1;');
+    appendToList(editor, declaratorList(editor, statement as E.VariableDeclaration), [
+      'b = {\n  c: 2,\n}',
+    ]);
+    expect(editor.toString()).toBe('const a = 1, b = {\n  c: 2,\n};');
+  });
+
+  it('keeps the line break of a prepended item ending in a line comment when code follows it', () => {
+    const { editor, statement } = firstStatement('({ a: 1,\n  b: 2,\n});');
+    const object = expressionOf(statement) as E.ObjectExpression;
+    prependToList(editor, objectList(editor, object), ['x: 0 // note\n']);
+    expect(editor.toString()).toBe('({\n  x: 0, // note\n a: 1,\n  b: 2,\n});');
+    expect(() => parseModule(editor.toString())).not.toThrow();
+  });
+
+  it('removes a declarator with its comma', () => {
+    const { editor, statement } = firstStatement('const a = 1, b = 2, c = 3;');
+    const declaration = statement as E.VariableDeclaration;
+    removeFromList(editor, declaratorList(editor, declaration), [declaration.declarations[0]]);
+    removeFromList(editor, declaratorList(editor, declaration), [declaration.declarations[2]]);
+    expect(editor.toString()).toBe('const b = 2;');
+  });
+
+  it('gives what follows a removed first item the space before that item', () => {
+    const { editor, statement } = firstStatement('const a = 1,\n  b = 2;');
+    const declaration = statement as E.VariableDeclaration;
+    removeFromList(editor, declaratorList(editor, declaration), [declaration.declarations[0]]);
+    expect(editor.toString()).toBe('const b = 2;');
+
+    const elements = new SourceEditor(`export default { addons: [a, b] };`);
+    const array = defaultExportArray(elements);
+    removeFromList(elements, arrayList(elements, array), [array.elements[0]!]);
+    expect(elements.toString()).toBe(`export default { addons: [b] };`);
+  });
+});
+
+describe('appendToList', () => {
+  const exported = (editor: SourceEditor) =>
+    (editor.program.body[0] as E.ExportDefaultDeclaration).declaration as
+      | E.ObjectExpression
+      | E.ArrayExpression;
+  const listOf = (editor: SourceEditor) => {
+    const node = exported(editor);
+    return node.type === 'ObjectExpression' ? objectList(editor, node) : arrayList(editor, node);
+  };
+  const append = (code: string, ...batches: string[][]) => {
+    const editor = new SourceEditor(code);
+    for (const texts of batches) {
+      appendToList(editor, listOf(editor), texts);
+    }
+    return editor.toString();
+  };
+
+  it.each([
+    "export default {\n  title: 'X',\n  component: Button // c\n};",
+    "export default {\n  title: 'X',\n  component: Button, // c\n};",
+    "export default {\n  title: 'X',\n  component: Button\n};",
+    "export default { title: 'X' };",
+    "export default { title: 'X', };",
+    "export default { title: 'X' /* c */ };",
+    'export default {};',
+    'export default { };',
+    'export default {\n};',
+    'export default { /* c */ };',
+    'export default {/* c */};',
+    'export default {\n  // c\n};',
+    'export default [];',
+    'export default [a, ,];',
+  ])('appends in two calls of one batch what one call appends, to %j', (code) => {
+    const batch = code.includes('[') ? [['x'], ['y']] : [['a: 1'], ['b: 2']];
+    const once = append(code, batch.flat());
+
+    expect(append(code, ...batch)).toBe(once);
+    expect(() => parseModule(once)).not.toThrow();
+  });
+
+  it('separates an item from an earlier one of the batch that ends in a line comment', () => {
+    const output = append("export default {\n  title: 'X'\n};", ['a: x // c\n'], ['b: 2']);
+
+    expect(output).toBe("export default {\n  title: 'X',\n  a: x // c\n  ,\n  b: 2\n};");
+    expect(() => parseModule(output)).not.toThrow();
+  });
+});
+
+describe('wrapExpression', () => {
+  const render = (editor: SourceEditor) => {
+    const meta = (editor.program.body[0] as E.ExportDefaultDeclaration)
+      .declaration as E.ObjectExpression;
+    return { meta, value: (meta.properties[1] as E.ObjectProperty).value };
+  };
+  const elements = (editor: SourceEditor) => {
+    const array = (editor.program.body[0] as E.ExportDefaultDeclaration)
+      .declaration as E.ArrayExpression;
+    return { array, first: array.elements[0]! };
+  };
+
+  it.each([true, false])(
+    'writes the wrapper around the expression alone, the list edits next to it first: %s',
+    (listEditsFirst) => {
+      const editor = new SourceEditor("export default { title: 'X', render: (args) => null };");
+      const list = new SourceEditor('export default [a];');
+      const listEdits = () => {
+        appendToList(editor, objectList(editor, render(editor).meta), ['a: {}']);
+        prependToList(list, arrayList(list, elements(list).array), ['b']);
+        appendToList(list, arrayList(list, elements(list).array), ['c']);
+      };
+      if (listEditsFirst) {
+        listEdits();
+      }
+      wrapExpression(editor, render(editor).value, 'wrapped(', ')');
+      wrapExpression(list, elements(list).first, 'f(', ')');
+      if (!listEditsFirst) {
+        listEdits();
+      }
+
+      expect(editor.toString()).toBe(
+        "export default { title: 'X', render: wrapped((args) => null), a: {} };"
+      );
+      expect(list.toString()).toBe('export default [b, f(a), c];');
+    }
+  );
+
+  it('wraps text an earlier edit wrote at its end, and an earlier wrapper', () => {
+    const editor = new SourceEditor("export default { title: 'X', render: (args) => null };");
+    const { value } = render(editor);
+    editor.edits.appendLeft(value.end, '.input');
+    wrapExpression(editor, value, '[', ']');
+    wrapExpression(editor, value, '(', ')');
+    expect(editor.toString()).toBe(
+      "export default { title: 'X', render: ([(args) => null.input]) };"
+    );
+  });
+});
+
+describe('parenthesized array elements', () => {
+  it('appends after a comma expression and removes a doubly parenthesized one whole', () => {
+    const editor = new SourceEditor(`export default { addons: [(a, b)] };`);
+    appendToList(editor, arrayList(editor, defaultExportArray(editor)), [`'c'`]);
+    expect(editor.toString()).toBe(`export default { addons: [(a, b), 'c'] };`);
+
+    const removal = new SourceEditor(`export default { addons: ['c', ((a, b))] };`);
+    const array = defaultExportArray(removal);
+    removeFromList(removal, arrayList(removal, array), [array.elements[1]!]);
+    expect(removal.toString()).toBe(`export default { addons: ['c'] };`);
+  });
+
+  it('appends after a parenthesized last element and removes it whole', () => {
+    const editor = new SourceEditor(`export default { addons: [(cond ? 'a' : 'c')] };`);
+    appendToList(editor, arrayList(editor, defaultExportArray(editor)), [`'b'`]);
+    expect(editor.toString()).toBe(`export default { addons: [(cond ? 'a' : 'c'), 'b'] };`);
+
+    const removal = new SourceEditor(`export default { addons: ['b', (cond ? 'a' : 'c')] };`);
+    const array = defaultExportArray(removal);
+    removeFromList(removal, arrayList(removal, array), [array.elements[1]!]);
+    expect(removal.toString()).toBe(`export default { addons: ['b'] };`);
+  });
+
+  it('skips the comments between the parentheses and the element', () => {
+    const editor = new SourceEditor(`export default { addons: [(/* c */ cond ? 'a' : 'c')] };`);
+    appendToList(editor, arrayList(editor, defaultExportArray(editor)), [`'b'`]);
+    expect(editor.toString()).toBe(`export default { addons: [(/* c */ cond ? 'a' : 'c'), 'b'] };`);
+
+    const removal = new SourceEditor(
+      `export default { addons: [(/* c */ cond ? 'a' : 'c'), 'b'] };`
+    );
+    const array = defaultExportArray(removal);
+    removeFromList(removal, arrayList(removal, array), [array.elements[1]!]);
+    expect(removal.toString()).toBe(`export default { addons: [(/* c */ cond ? 'a' : 'c')] };`);
+
+    const after = new SourceEditor(`export default { addons: [(x /* after */)] };`);
+    appendToList(after, arrayList(after, defaultExportArray(after)), [`'b'`]);
+    expect(after.toString()).toBe(`export default { addons: [(x /* after */), 'b'] };`);
+
+    // The list spans lines because of the comment, so the item lands on its own line.
+    const line = new SourceEditor(`export default { addons: [(x // after\n)] };`);
+    appendToList(line, arrayList(line, defaultExportArray(line)), [`'b'`]);
+    expect(line.toString()).toBe(`export default { addons: [(x // after\n),\n'b'] };`);
+  });
+});
+
+describe('array holes', () => {
+  const removeElement = (code: string, index: number) => {
+    const editor = new SourceEditor(code);
+    const array = defaultExportArray(editor);
+    removeFromList(editor, arrayList(editor, array), [array.elements[index]!]);
+    return editor.toString();
+  };
+  const lengthOf = (code: string) => defaultExportArray(new SourceEditor(code)).elements.length;
+
+  it('keeps leading holes when appending to and emptying an array', () => {
+    const editor = new SourceEditor(`export default { addons: [, 'a'] };`);
+    appendToList(editor, arrayList(editor, defaultExportArray(editor)), [`'b'`]);
+    expect(editor.toString()).toBe(`export default { addons: [, 'a', 'b'] };`);
+
+    expect(removeElement(`export default { addons: [, 'a'] };`, 1)).toBe(
+      `export default { addons: [,] };`
+    );
+  });
+
+  it('keeps a hole before a removed last element', () => {
+    const removed = removeElement(`export default { addons: ['a', , 'b'] };`, 2);
+    expect(removed).toBe(`export default { addons: ['a', ,] };`);
+    expect(lengthOf(removed)).toBe(2);
+  });
+
+  it('keeps a trailing hole after a removed element', () => {
+    const removed = removeElement(`export default { addons: ['a', , 'b', ,] };`, 2);
+    expect(removed).toBe(`export default { addons: ['a', , ,] };`);
+    expect(lengthOf(removed)).toBe(3);
+  });
+
+  it('appends after a trailing hole', () => {
+    const editor = new SourceEditor(`export default { addons: ['a', ,] };`);
+    appendToList(editor, arrayList(editor, defaultExportArray(editor)), [`'b'`]);
+    expect(editor.toString()).toBe(`export default { addons: ['a', , 'b'] };`);
+    expect(lengthOf(editor.toString())).toBe(3);
+  });
+
+  it('prepends before a leading hole', () => {
+    const editor = new SourceEditor(`export default { addons: [, 'a'] };`);
+    prependToList(editor, arrayList(editor, defaultExportArray(editor)), [`'b'`]);
+    expect(editor.toString()).toBe(`export default { addons: ['b', , 'a'] };`);
+  });
+});
+
+describe('removeFromList', () => {
+  const removeElement = (code: string, index: number) => {
+    const editor = new SourceEditor(code);
+    const array = defaultExportArray(editor);
+    removeFromList(editor, arrayList(editor, array), [array.elements[index]!]);
+    return editor.toString();
+  };
+
+  it('keeps what follows a removed item off the line of the comment before it', () => {
+    expect(removeElement(`export default { addons: ['a', /* x */ // l\n  'b', 'c'] };`, 1)).toBe(
+      `export default { addons: ['a', /* x */ // l\n  'c'] };`
+    );
+    expect(removeElement(`export default { addons: ['a', // l\n  'b'] };`, 1)).toBe(
+      `export default { addons: ['a' // l\n] };`
+    );
+  });
+
+  it('removes only the comma of the last kept item before a removed trailing run', () => {
+    expect(removeElement(`export default { addons: [1 // one\n, 2 // two\n, 3] };`, 2)).toBe(
+      `export default { addons: [1 // one\n, 2 // two\n] };`
+    );
+  });
+
+  it.each([
+    [
+      'shares the line of the removed item after a line comment',
+      `({\n    render: () => null, // custom render\n    name() { return 1; } })`,
+      `({\n    render: () => null // custom render\n})`,
+    ],
+    [
+      'is on a line of its own after a line comment',
+      `({\n    render: () => null, // custom render\n    name() { return 1; }\n})`,
+      `({\n    render: () => null // custom render\n})`,
+    ],
+    [
+      'follows a trailing comma after a line comment',
+      `({\n    render: () => null, // custom render\n    name() { return 1; }, })`,
+      `({\n    render: () => null, // custom render\n})`,
+    ],
+    [
+      'is on the line of a one-line list',
+      `({ render: () => null, name() { return 1; } })`,
+      `({ render: () => null })`,
+    ],
+  ])('puts the closing token at the indent of the list when it %s', (_, code, result) => {
+    const editor = new SourceEditor(code);
+    const object = (editor.program.body[0] as E.ExpressionStatement)
+      .expression as E.ObjectExpression;
+    removeFromList(editor, objectList(editor, object), [object.properties[1]]);
+    expect(editor.toString()).toBe(result);
+  });
+
+  it.each(['\n', '\r\n'])(
+    'keeps what follows adjacent removed items off the line of the comment before them',
+    (eol) => {
+      const editor = new SourceEditor(`export default [1, /* k */ // k${eol}2,${eol}3, 4,${eol}];`);
+      const array = (editor.program.body[0] as E.ExportDefaultDeclaration)
+        .declaration as E.ArrayExpression;
+      removeFromList(editor, arrayList(editor, array), array.elements.slice(1, 3) as E.Node[]);
+      expect(editor.toString()).toBe(`export default [1, /* k */ // k${eol}4,${eol}];`);
+    }
+  );
+});
+
+describe('detachedTextOf', () => {
+  it('gives the text of a value of the file as if its line had no indent', () => {
+    const editor = new SourceEditor(
+      `export default {\n  args: {\n    a: [\n      1, // one\n    ],\n  },\n};`
+    );
+    const object = (editor.program.body[0] as E.ExportDefaultDeclaration)
+      .declaration as E.ObjectExpression;
+    const args = (object.properties[0] as E.ObjectProperty).value as E.ObjectExpression;
+    expect(detachedTextOf(args)).toBe(`{\n  a: [\n    1, // one\n  ],\n}`);
+  });
+});
+
+describe('replaceValue', () => {
+  const firstMember = (editor: SourceEditor) => {
+    const statement = editor.program.body[0] as E.ExportDefaultDeclaration;
+    const object = statement.declaration as E.ObjectExpression;
+    return { object, members: object.properties as E.ObjectProperty[] };
+  };
+
+  it.each([
+    ['one line', `export default { a: 1, b: 2 };`, `export default { a: 9 };`],
+    ['on lines', `export default {\n  a: 1,\n  b: 2,\n};`, `export default {\n  a: 9,\n};`],
+  ])('leaves the comma after the value to a removal of the next member, %s', (_, code, result) => {
+    const replacedFirst = new SourceEditor(code);
+    const first = firstMember(replacedFirst);
+    replaceValue(replacedFirst, first.members[0], '9');
+    removeMembers(replacedFirst, first.object, [first.members[1]]);
+    expect(replacedFirst.toString()).toBe(result);
+
+    const removedFirst = new SourceEditor(code);
+    const second = firstMember(removedFirst);
+    removeMembers(removedFirst, second.object, [second.members[1]]);
+    replaceValue(removedFirst, second.members[0], '9');
+    expect(removedFirst.toString()).toBe(result);
+  });
+
+  it('indents the lines of the text like the member, except inside literals', () => {
+    const editor = new SourceEditor(`export default {\n  a: 1,\n};`);
+    replaceValue(editor, firstMember(editor).members[0], 'f(() => {\n  x(`\n`);\n})');
+    expect(editor.toString()).toBe(`export default {\n  a: f(() => {\n    x(\`\n\`);\n  }),\n};`);
+  });
+
+  it('takes the comma after the value before a line comment that ends the text', () => {
+    const editor = new SourceEditor(`export default { a: 1, b: 2 };`);
+    replaceValue(editor, firstMember(editor).members[0], 'x // c\n');
+    expect(editor.toString()).toBe(`export default { a: x, // c\n b: 2 };`);
+  });
+
+  it('leaves the next member removable after a text ending in a line comment took its comma', () => {
+    const editor = new SourceEditor(`export default { a: 1 , b: 2 };`);
+    const { object, members } = firstMember(editor);
+    replaceValue(editor, members[0], 'x // c\n');
+    removeMembers(editor, object, [members[1]]);
+    expect(editor.toString()).toBe(`export default { a: x, // c\n };`);
+  });
+
+  it('puts the members of a one-line object on lines of their own for one ending in a line comment', () => {
+    const trailingComma = new SourceEditor(`export default { a: 1, };`);
+    appendToList(trailingComma, objectList(trailingComma, firstMember(trailingComma).object), [
+      'b: x // c\n',
+    ]);
+    expect(trailingComma.toString()).toBe(`export default {\n  a: 1,\n  b: x, // c\n};`);
+
+    const noComma = new SourceEditor(`export default { a: 1 };`);
+    appendToList(noComma, objectList(noComma, firstMember(noComma).object), [
+      'b: x // c\n',
+      'd: 2',
+    ]);
+    expect(noComma.toString()).toBe(`export default {\n  a: 1,\n  b: x, // c\n  d: 2\n};`);
+  });
+});
+
+describe('removeStatement', () => {
+  it.each([
+    ['inserted after imports', "import a from 'a';\nfoo();\n", 'const b = 1;\nfoo();\n'],
+    [
+      'inserted after imports, above a blank line',
+      "import a from 'a';\n\nfoo();\n",
+      'const b = 1;\nfoo();\n',
+    ],
+    ['appended', "import a from 'a';\n", 'const b = 1;\n'],
+  ])(
+    'keeps a statement %s next to a removed one in the same batch, in either order',
+    (how, code, output) => {
+      for (const removeFirst of [false, true]) {
+        const editor = new SourceEditor(code);
+        const add = () =>
+          how === 'appended'
+            ? appendStatement(editor, 'const b = 1;')
+            : insertAfterImports(editor, 'const b = 1;');
+        if (!removeFirst) {
+          add();
+        }
+        removeStatement(editor, editor.program.body[0]);
+        if (removeFirst) {
+          add();
+        }
+        expect(editor.toString()).toBe(output);
+      }
+    }
+  );
+
+  it('removes the leading comments with the statement', () => {
+    const editor = new SourceEditor(dedent`
+      import a from 'a';
+
+      /** Shared template */
+      const Template = () => null;
+      // @ts-expect-error
+      export const A = Template;
+    `);
+    removeStatement(editor, editor.program.body[1]);
+    removeStatement(editor, editor.program.body[2]);
+    expect(editor.toString()).toBe(`import a from 'a';\n`);
+  });
+
+  it('keeps the file header when the first statement is removed', () => {
+    const editor = new SourceEditor(dedent`
+      /* license */
+      // @ts-expect-error
+      const a = 1;
+      const b = 2;
+    `);
+    removeStatement(editor, editor.program.body[0]);
+    expect(editor.toString()).toBe(`/* license */\nconst b = 2;`);
+  });
+
+  it('keeps a JSDoc header directly above a removed first import', () => {
+    const editor = new SourceEditor(
+      `/** Copyright ACME */\nimport a from 'a';\nimport b from 'b';`
+    );
+    removeStatement(editor, editor.program.body[0]);
+    expect(editor.toString()).toBe(`/** Copyright ACME */\nimport b from 'b';`);
+  });
+
+  it('keeps a plain comment directly above the removed first statement', () => {
+    const editor = new SourceEditor(`// plain comment\nconst a = 1;\nconst b = 2;`);
+    removeStatement(editor, editor.program.body[0]);
+    expect(editor.toString()).toBe(`// plain comment\nconst b = 2;`);
+  });
+
+  it('removes the JSDoc directly above the first statement with it', () => {
+    const editor = new SourceEditor(dedent`
+      /** Shared template */
+      const Template = (args) => <Button {...args} />;
+      export default { component: Button };
+    `);
+    removeStatement(editor, editor.program.body[0]);
+    expect(editor.toString()).toBe(`export default { component: Button };`);
+  });
+
+  it('keeps header comments separated from the first statement by a blank line', () => {
+    const editor = new SourceEditor(dedent`
+      // Copyright Storybook
+
+      /** Shared template */
+      const Template = 1;
+      export default {};
+    `);
+    removeStatements(editor, new Set([editor.program.body[0]]));
+    expect(editor.toString()).toBe(`// Copyright Storybook\n\nexport default {};`);
+  });
+
+  it('keeps pragmas directly above the first statement', () => {
+    const editor = new SourceEditor(dedent`
+      /** @license MIT */
+      /** Shared template */
+      const Template = 1;
+      export default {};
+    `);
+    removeStatement(editor, editor.program.body[0]);
+    expect(editor.toString()).toBe(`/** @license MIT */\nexport default {};`);
+  });
+
+  it('takes the blank lines above the statement in a CRLF file', () => {
+    const editor = new SourceEditor(
+      "import a from 'a';\r\n\r\n\r\nconst b = 1;\r\nconst c = 2;\r\n"
+    );
+    removeStatement(editor, editor.program.body[1]);
+    expect(editor.toString()).toBe("import a from 'a';\r\nconst c = 2;\r\n");
+  });
+
+  it('removes every comment that trails the statement on its line', () => {
+    const editor = new SourceEditor(`import a from 'a'; /* a */ // why\nimport b from 'b';`);
+    removeStatement(editor, editor.program.body[0]);
+    expect(editor.toString()).toBe(`import b from 'b';`);
+  });
+
+  it('removes a block comment that starts beside the statement', () => {
+    const editor = new SourceEditor(`const a = 1; /* a\n   continued */\nconst b = 2;`);
+    removeStatement(editor, editor.program.body[0]);
+    expect(editor.toString()).toBe(`const b = 2;`);
+  });
+
+  it('leaves a JSDoc block that starts beside the statement to the statement below', () => {
+    const code = `const a = 1; /**\n * Docs for B\n */\nexport const B = 2;`;
+    const first = new SourceEditor(code);
+    removeStatement(first, first.program.body[0]);
+    expect(first.toString()).toBe(`/**\n * Docs for B\n */\nexport const B = 2;`);
+
+    const second = new SourceEditor(code);
+    removeStatement(second, second.program.body[1]);
+    expect(second.toString()).toBe(`const a = 1;`);
+  });
+
+  it('takes the spaces between it and the code it shares its line with', () => {
+    const before = new SourceEditor(`foo(); // @ts-expect-error\nbar();`);
+    removeStatement(before, before.program.body[0]);
+    expect(before.toString()).toBe(`// @ts-expect-error\nbar();`);
+
+    const after = new SourceEditor(`foo(); bar();\nbaz();`);
+    removeStatement(after, after.program.body[1]);
+    expect(after.toString()).toBe(`foo();\nbaz();`);
+  });
+
+  it('removes a statement below a blank first line', () => {
+    const editor = new SourceEditor(`\nconst a = 1;\nconst b = 2;`);
+    removeStatement(editor, editor.program.body[0]);
+    expect(editor.toString()).toBe(`const b = 2;`);
+  });
+
+  it.each([
+    ['a run of statements', 'a(); b(); c();\n', [1, 2], 'a();\n'],
+    ['a run after a comment', 'a(); /* a */ b(); c();\nd();\n', [1, 2], 'a(); /* a */\nd();\n'],
+    ['every statement after the first', 'a(); b(); c(); d();\n', [1, 2, 3], 'a();\n'],
+  ])('leaves no space at the end of a line that loses %s', (_, code, removed, output) => {
+    const editor = new SourceEditor(code);
+    removeStatements(editor, new Set(removed.map((index) => editor.program.body[index])));
+    expect(editor.toString()).toBe(output);
+  });
+
+  it.each([1, 2])(
+    'inserts after a run of removed statements that ends the line, after statement %i',
+    (index) => {
+      const editor = new SourceEditor('a(); b(); c();\n');
+      const [, b, c] = editor.program.body;
+      removeStatements(editor, new Set([b, c]));
+      insertStatementAfter(editor, editor.program.body[index], 'x();');
+      expect(editor.toString()).toBe('a();\nx();\n');
+    }
+  );
+
+  it('leaves the comment trailing the previous statement on a shared last line', () => {
+    const editor = new SourceEditor(`import a from 'a'; /* a */ import b from 'b';`);
+    removeStatement(editor, editor.program.body[1]);
+    expect(editor.toString()).toBe(`import a from 'a'; /* a */`);
+  });
+
+  it.each([
+    ['a line comment', 'const a = 1 // c\n;[1].map(f)\n', 'const a = 1; // c\n'],
+    ['a block comment', 'const a = 1 /* c */\n;[1].map(f)\n', 'const a = 1; /* c */\n'],
+    ['comment lines', 'const a = 1 // c\n// d\n;[1].map(f)\n', 'const a = 1; // c\n// d\n'],
+    ['a blank line', 'const a = 1\n\n;[1].map(f)\n', 'const a = 1;\n'],
+    ['a multi-line value', 'a = {\n  b: 1,\n} // c\n;[1].map(f)\n', 'a = {\n  b: 1,\n}; // c\n'],
+    ['a removed statement', 'const a = 1 // c\n;b(); [1].map(f)\n', 'const a = 1; // c\n'],
+  ])('puts the `;` the statement before ends with back on its line, past %s', (_, code, output) => {
+    const editor = new SourceEditor(code);
+    removeStatements(editor, new Set(editor.program.body.slice(1)));
+    expect(editor.toString()).toBe(output);
+  });
+
+  it('leaves a `;` alone on its line when it is a statement of its own or code still follows it', () => {
+    const empty = new SourceEditor('a();\n;[1].map(f)\n');
+    removeStatement(empty, empty.program.body[2]);
+    expect(empty.toString()).toBe('a();\n;\n');
+
+    const kept = new SourceEditor('const a = 1 // c\n;b(); [1].map(f)\n');
+    removeStatement(kept, kept.program.body[2]);
+    expect(kept.toString()).toBe('const a = 1 // c\n;b();\n');
+  });
+
+  it.each([false, true])(
+    'removes a statement ending with a `;` on the next line, and the code after that `;`, the statement first: %s',
+    (statementFirst) => {
+      const editor = new SourceEditor('const a = 1 // c\n;[1].map(f)\nfoo();\n');
+      const [a, map] = editor.program.body;
+      for (const statement of statementFirst ? [a, map] : [map, a]) {
+        removeStatement(editor, statement);
+      }
+      expect(editor.toString()).toBe('foo();\n');
+    }
+  );
+
+  it('appends below a statement whose `;` was put back on its line without a blank line', () => {
+    const editor = new SourceEditor('const a = 1 // c\n;[1].map(f)\n');
+    removeStatement(editor, editor.program.body[1]);
+    appendStatement(editor, 'const x = 1;');
+    expect(editor.toString()).toBe('const a = 1; // c\nconst x = 1;\n');
+  });
+
+  it('removes the line of statements that shared it with a removed one', () => {
+    const editor = new SourceEditor('a(); b();\nc();\n');
+    removeStatement(editor, editor.program.body[0]);
+    removeStatement(editor, editor.program.body[1]);
+    expect(editor.toString()).toBe('c();\n');
+  });
+});
+
+describe('prependStatement', () => {
+  it('inserts above the comments of the first statement', () => {
+    const editor = new SourceEditor(`/** Shared template */\nconst Template = 1;`);
+    prependStatement(editor, `import a from 'a';`);
+    expect(editor.toString()).toBe(
+      `import a from 'a';\n/** Shared template */\nconst Template = 1;`
+    );
+  });
+
+  it('inserts below a file header', () => {
+    const editor = new SourceEditor(`// Copyright Storybook\nimport a from 'a';\nconst b = 1;`);
+    prependStatement(editor, `import c from 'c';`);
+    expect(editor.toString()).toBe(
+      `// Copyright Storybook\nimport c from 'c';\nimport a from 'a';\nconst b = 1;`
+    );
+  });
+
+  it('inserts below a JSDoc header above an import, and above a JSDoc on a declaration', () => {
+    const header = new SourceEditor(`/**\n * Copyright ACME\n */\nimport a from 'a';`);
+    prependStatement(header, `import c from 'c';`);
+    expect(header.toString()).toBe(
+      `/**\n * Copyright ACME\n */\nimport c from 'c';\nimport a from 'a';`
+    );
+
+    const docs = new SourceEditor(`/** Docs for a */\nconst a = 1;`);
+    prependStatement(docs, `import c from 'c';`);
+    expect(docs.toString()).toBe(`import c from 'c';\n/** Docs for a */\nconst a = 1;`);
+  });
+
+  it('inserts below a JSDoc pragma directly above the first statement', () => {
+    const editor = new SourceEditor(`/** @license MIT */\nconst a = 1;`);
+    prependStatement(editor, `import b from 'b';`);
+    expect(editor.toString()).toBe(`/** @license MIT */\nimport b from 'b';\nconst a = 1;`);
+  });
+
+  it('inserts below the BOM and the comments of a file without statements', () => {
+    const editor = new SourceEditor('\uFEFF// @ts-nocheck\n');
+    prependStatement(editor, `import a from 'a';`);
+    expect(editor.toString()).toBe(`\uFEFF// @ts-nocheck\nimport a from 'a';\n`);
+  });
+
+  it('ends the statement when the first statement would continue it', () => {
+    const editor = new SourceEditor(`[1].map(f)\n`);
+    prependStatement(editor, `const a = require('a')`);
+    expect(editor.toString()).toBe(`const a = require('a');\n[1].map(f)\n`);
+  });
+
+  it('inserts right after the BOM of a file with nothing else', () => {
+    const editor = new SourceEditor('\uFEFF');
+    prependStatement(editor, `import a from 'a';`);
+    expect(editor.toString()).toBe(`\uFEFFimport a from 'a';\n`);
+  });
+});
+
+describe('insertStatementAfter', () => {
+  it.each([true, false])(
+    'keeps a wrapper of the last expression of a statement without a semicolon around it alone, inserting first: %s',
+    (insertFirst) => {
+      const editor = new SourceEditor('const Primary = fn\nfoo()\n');
+      const [declaration] = editor.program.body as E.VariableDeclaration[];
+      const insert = () => insertStatementAfter(editor, declaration, 'Primary.args = {}');
+      if (insertFirst) {
+        insert();
+      }
+      wrapExpression(editor, declaration.declarations[0].init!, 'wrap(', ')');
+      if (!insertFirst) {
+        insert();
+      }
+      expect(editor.toString()).toBe('const Primary = wrap(fn)\nPrimary.args = {}\nfoo()\n');
+    }
+  );
+
+  it.each([true, false])(
+    'keeps edits of the next statement to that statement, inserting first: %s',
+    (insertFirst) => {
+      const editor = new SourceEditor('const Primary = fn\nfoo()\nbar()\n');
+      const [declaration, foo, bar] = editor.program.body as E.ExpressionStatement[];
+      const insert = () => {
+        insertStatementAfter(editor, declaration, 'Primary.args = {}');
+        insertStatementAfter(editor, foo, 'x = 1');
+      };
+      if (insertFirst) {
+        insert();
+      }
+      wrapExpression(editor, foo.expression, 'wrap(', ')');
+      editor.edits.overwrite(bar.start, bar.end, 'baz()');
+      if (!insertFirst) {
+        insert();
+      }
+      expect(editor.toString()).toBe(
+        'const Primary = fn\nPrimary.args = {}\nwrap(foo())\nx = 1\nbaz()\n'
+      );
+    }
+  );
+
+  it.each([true, false])(
+    'keeps a statement inserted after one sharing its line when that one is removed, inserting first: %s',
+    (insertFirst) => {
+      const editor = new SourceEditor('a(); b();\nc();\n');
+      const [a] = editor.program.body;
+      const insert = () => insertStatementAfter(editor, a, 'x();');
+      if (insertFirst) {
+        insert();
+      }
+      removeStatement(editor, a);
+      if (!insertFirst) {
+        insert();
+      }
+      expect(editor.toString()).toBe('x();\nb();\nc();\n');
+    }
+  );
+
+  it('keeps a statement inserted after one sharing its line on its own line when the code after is removed', () => {
+    const editor = new SourceEditor('a(); b();\nc();\n');
+    const [a, b] = editor.program.body;
+    insertStatementAfter(editor, a, 'x();');
+    insertStatementAfter(editor, b, 'y();');
+    removeStatement(editor, b);
+    expect(editor.toString()).toBe('a();\nx();\ny();\nc();\n');
+  });
+
+  it('puts the `;` the statement ends with back on its line when its line is broken', () => {
+    const editor = new SourceEditor('const a = 1 // c\n;[1].map(f)\n');
+    insertStatementAfter(editor, editor.program.body[0], 'const x = 1;');
+    expect(editor.toString()).toBe('const a = 1; // c\nconst x = 1;\n[1].map(f)\n');
+  });
+
+  it('keeps a statement inserted after one ending with a `;` on the next line when that one is removed', () => {
+    const editor = new SourceEditor('const a = 1 // c\n;[1].map(f)\n');
+    const [a] = editor.program.body;
+    insertStatementAfter(editor, a, 'x();');
+    removeStatement(editor, a);
+    expect(editor.toString()).toBe('x();\n[1].map(f)\n');
+  });
+
+  it.each([
+    ['a(); b();\nc();\n', 'a();\nx();\nc();\n'],
+    ['a(); b();', 'a();\nx();'],
+    ['const a = 1 // c\n;[1].map(f)\n', 'const a = 1; // c\nx();\n'],
+  ])(
+    'inserts on the next line after a statement whose line had code removed: %j',
+    (code, output) => {
+      const editor = new SourceEditor(code);
+      const [a, b] = editor.program.body;
+      removeStatement(editor, b);
+      insertStatementAfter(editor, a, 'x();');
+      expect(editor.toString()).toBe(output);
+    }
+  );
+});
+
+describe('insertAfterImports', () => {
+  const insert = (code: string) => {
+    const editor = new SourceEditor(code);
+    insertAfterImports(editor, `const b = 2;`);
+    return editor.toString();
+  };
+
+  it('leaves a next-line directive beside the last import above the line it is about', () => {
+    expect(insert(`import a from 'a'; // @ts-expect-error\nfoo();`)).toBe(
+      `import a from 'a';\nconst b = 2;\n// @ts-expect-error\nfoo();`
+    );
+  });
+
+  it('moves code sharing the line of the last import below the statement', () => {
+    expect(insert(`import a from 'a'; /* a */ foo();`)).toBe(
+      `import a from 'a'; /* a */\nconst b = 2;\nfoo();`
+    );
+  });
+
+  it('inserts below the comments the last import owns', () => {
+    expect(insert(`import x from 'x'; // x\nfoo();`)).toBe(
+      `import x from 'x'; // x\nconst b = 2;\nfoo();`
+    );
+    expect(insert(`import x from 'x'; /* x\n y */`)).toBe(
+      `import x from 'x'; /* x\n y */\nconst b = 2;`
+    );
+  });
+
+  it('keeps the spaces ending the line of the last import on that line', () => {
+    expect(insert(`import a from 'a';   \nfoo();`)).toBe(
+      `import a from 'a';   \nconst b = 2;\nfoo();`
+    );
+  });
+
+  it('inserts several statements in order, with one line break before the code moved below', () => {
+    const editor = new SourceEditor(`import a from 'a'; foo();`);
+    insertAfterImports(editor, `const b = 2;`);
+    insertAfterImports(editor, `const c = 3;`);
+    expect(editor.toString()).toBe(`import a from 'a';\nconst b = 2;\nconst c = 3;\nfoo();`);
+  });
+
+  it('separates a statement that would continue the one before it', () => {
+    const editor = new SourceEditor(`import a from 'a'\nfoo()`);
+    insertAfterImports(editor, `[1, 2].forEach(a);`);
+    expect(editor.toString()).toBe(`import a from 'a'\n;[1, 2].forEach(a);\nfoo()`);
+  });
+
+  it('inserts as the first statement without imports', () => {
+    expect(insert(`'use client';\nfoo();`)).toBe(`'use client';\nconst b = 2;\nfoo();`);
+  });
+});
+
+describe('appendStatement', () => {
+  it('appends below the comments trailing the last statement', () => {
+    const editor = new SourceEditor(`export const a = 1; /* a */ // a`);
+    appendStatement(editor, `export const b = 2;`);
+    expect(editor.toString()).toBe(`export const a = 1; /* a */ // a\nexport const b = 2;`);
+  });
+
+  it('appends below the last statement that is not removed', () => {
+    const editor = new SourceEditor(`const a = 1;\nconst b = 2;\n`);
+    removeStatement(editor, editor.program.body[1]);
+    appendStatement(editor, `const c = 3;`);
+    expect(editor.toString()).toBe(`const a = 1;\nconst c = 3;\n`);
+  });
+
+  it('sets a run of one-line statements apart from a multi-line statement once', () => {
+    const editor = new SourceEditor(`const a = {\n  b: 1,\n};\n`);
+    appendStatement(editor, `const c = 3;`);
+    appendStatement(editor, `const d = 4;`);
+    expect(editor.toString()).toBe(`const a = {\n  b: 1,\n};\n\nconst c = 3;\nconst d = 4;\n`);
+  });
+
+  it('sets a statement apart from the one inserted after the imports before it, not from an earlier append', () => {
+    const editor = new SourceEditor(`import a from 'a';\n`);
+    appendStatement(editor, `const x = {\n  y: 1,\n};`);
+    insertAfterImports(editor, `const b = 1;`);
+    appendStatement(editor, `const c = 2;`);
+    expect(editor.toString()).toBe(
+      `import a from 'a';\n\nconst x = {\n  y: 1,\n};\nconst b = 1;\nconst c = 2;\n`
+    );
+  });
+
+  it('sets a statement apart from a multi-line append, after an insert elsewhere in the batch', () => {
+    const editor = new SourceEditor(`import a from 'a';\nconst q = 1;\n`);
+    appendStatement(editor, `const x = {\n  y: 1,\n};`);
+    insertAfterImports(editor, `const b = 1;`);
+    appendStatement(editor, `const c = 2;`);
+    expect(editor.toString()).toBe(
+      `import a from 'a';\nconst b = 1;\nconst q = 1;\n\nconst x = {\n  y: 1,\n};\n\nconst c = 2;\n`
+    );
+  });
+
+  it.each([
+    [
+      'a multi-line statement',
+      'export default {\n  title: "X"\n}\n',
+      'export default {\n  title: "X"\n}\n\n;(a.b).c = 1;\n',
+    ],
+    [
+      'a one-line statement',
+      'export default { title: "X" }\n',
+      'export default { title: "X" }\n;(a.b).c = 1;\n',
+    ],
+  ])('separates a statement that would continue %s without a semicolon', (_case, code, output) => {
+    const editor = new SourceEditor(code);
+    appendStatement(editor, '(a.b).c = 1;');
+    expect(editor.toString()).toBe(output);
+  });
+
+  it('separates a statement that would continue the one appended before it', () => {
+    const editor = new SourceEditor('const a = 1;\n');
+    appendStatement(editor, 'f()');
+    appendStatement(editor, '(a.b).c = 1;');
+    expect(editor.toString()).toBe('const a = 1;\nf()\n;(a.b).c = 1;\n');
+  });
+
+  it('separates a statement from one whose line comment ends in a semicolon', () => {
+    const editor = new SourceEditor('const a = 1;\n');
+    appendStatement(editor, 'f() // done;');
+    appendStatement(editor, '(a.b).c = 1;');
+    expect(editor.toString()).toBe('const a = 1;\nf() // done;\n;(a.b).c = 1;\n');
+  });
+
+  it('sets an appended statement apart once a later commit makes it span lines', () => {
+    const csf = parse('export default {};\nexport const A = {};\n');
+    appendStatement(csf.editor, 'export const B = {};');
+    csf.editor.commit();
+    const story = csf
+      .objects({ meta: false })
+      .find(({ target }) => 'exportName' in target && target.exportName === 'B')!;
+    story.set(['args', 'a'], 1);
+    expect(printCsf(csf).code).toBe(
+      'export default {};\nexport const A = {};\nexport const B = { args: { a: 1 } };\n'
+    );
+
+    story.set(['play'], parseExpression('async () => {\n  await x();\n}'));
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {};
+      export const A = {};
+
+      export const B = {
+        args: { a: 1 },
+        play: async () => {
+          await x();
+        }
+      };
+
+    `);
+  });
+
+  it('sets an appended statement apart once a later commit makes the one before it span lines', () => {
+    const csf = parse('export default {};\nexport const A = {};\n');
+    appendStatement(csf.editor, 'export const B = {};');
+    csf.editor.commit();
+    const [story] = csf.objects({ meta: false });
+    story.set(['play'], parseExpression('async () => {\n  await x();\n}'));
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {};
+      export const A = {
+        play: async () => {
+          await x();
+        },
+      };
+
+      export const B = {};
+
+    `);
+  });
+
+  it('sets a pending appended statement apart in the commit that makes the one before it span lines', () => {
+    const csf = parse('export default {};\nexport const A = {}; // A\n');
+    csf.appendStatement('export const B = {};');
+    const [story] = csf.objects({ meta: false });
+    story.set(['play'], parseExpression('async () => {\n  await x();\n}'));
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {};
+      export const A = {
+        play: async () => {
+          await x();
+        },
+      }; // A
+
+      export const B = {};
+
+    `);
+  });
+
+  it('forgets a statement appended in a transaction that rolls back', () => {
+    const csf = parse('export default {};\nexport const A = {};\nexport const B = {};\n');
+    csf.transaction(() => {
+      csf.appendStatement('export const B = {};');
+      return false;
+    });
+    const [first, story] = csf.objects({ meta: false });
+    first.set(['args'], {});
+    story.set(['play'], parseExpression('async () => {\n  await x();\n}'));
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {};
+      export const A = { args: {} };
+      export const B = {
+        play: async () => {
+          await x();
+        },
+      };
+
+    `);
+  });
+
+  it('appends to the end of a file whose statements are all removed', () => {
+    const editor = new SourceEditor(`const a = 1;\nconst b = 2;\n`);
+    removeStatements(editor, new Set(editor.program.body));
+    appendStatement(editor, `const c = 3;`);
+    expect(editor.toString()).toBe(`const c = 3;\n`);
+  });
+});
+
+describe('setImportSpecifiers', () => {
+  const keep = (code: string, names: string[]) => {
+    const editor = new SourceEditor(code);
+    const declaration = editor.program.body[0] as E.ImportDeclaration;
+    setImportSpecifiers(
+      editor,
+      declaration,
+      declaration.specifiers.filter((specifier) => names.includes(specifier.local.name))
+    );
+    return editor.toString();
+  };
+
+  it('keeps the layout and comments of a multi-line import', () => {
+    const code = dedent`
+      import {
+        beforeAll, // run before
+        // run after
+        afterAll,
+        expect, // assert
+        /* end */
+      } from 'vitest';
+    `;
+    expect(keep(code, ['afterAll', 'expect'])).toBe(dedent`
+      import {
+        // run after
+        afterAll,
+        expect, // assert
+        /* end */
+      } from 'vitest';
+    `);
+    expect(keep(code, ['beforeAll'])).toBe(dedent`
+      import {
+        beforeAll, // run before
+        /* end */
+      } from 'vitest';
+    `);
+  });
+
+  it('keeps the comments of a single-line import', () => {
+    expect(keep(`import { a, /* b */ b, c /* end */ } from 'x';`, ['a', 'c'])).toBe(
+      `import { a, c /* end */ } from 'x';`
+    );
+  });
+
+  it('finds the braces past comments that contain braces', () => {
+    expect(keep(`import { /* { */ a, b /* } */ } from 'x';`, ['a'])).toBe(
+      `import { /* { */ a /* } */ } from 'x';`
+    );
+  });
+
+  it('adds and removes default and named specifiers', () => {
+    expect(keep(`import A, { b, c } from 'x';`, ['A'])).toBe(`import A from 'x';`);
+    expect(keep(`import A, { b } from 'x';`, ['b'])).toBe(`import { b } from 'x';`);
+
+    const editor = new SourceEditor(`import A from 'x';\nimport { b } from 'y';`);
+    const [first, second] = editor.program.body as E.ImportDeclaration[];
+    setImportSpecifiers(editor, first, first.specifiers, { named: ['c'] });
+    setImportSpecifiers(editor, second, second.specifiers, { default: 'D', named: ['e'] });
+    expect(editor.toString()).toBe(`import A, { c } from 'x';\nimport D, { b, e } from 'y';`);
+
+    const aliased = new SourceEditor(`import { a } from 'x';`);
+    const imported = aliased.program.body[0] as E.ImportDeclaration;
+    setImportSpecifiers(aliased, imported, imported.specifiers, { named: ['b as c'] });
+    expect(aliased.toString()).toBe(`import { a, b as c } from 'x';`);
+
+    const replaced = new SourceEditor(`import { a, b } from 'x';`);
+    const declaration = replaced.program.body[0] as E.ImportDeclaration;
+    setImportSpecifiers(replaced, declaration, [declaration.specifiers[0]], { named: ['c'] });
+    expect(replaced.toString()).toBe(`import { a, c } from 'x';`);
+  });
+});
+
+describe('trailing comments', () => {
+  const code = dedent`
+    export default {
+      parameters: {
+        layout: 'centered', // center it
+        docs: {}, // no docs
+      },
+      globals: {},
+    };
+  `;
+
+  it('removes a member with the comment that trails it', () => {
+    const csf = parse(code);
+    const [meta] = csf.objects({ stories: false });
+    meta.remove(['parameters', 'docs']);
+    expect(printCsf(csf).code).toContain(`layout: 'centered', // center it\n  },`);
+  });
+
+  it('moves the comment that trails a member above it', () => {
+    const csf = parse(code);
+    const [meta] = csf.objects({ stories: false });
+    meta.move(['parameters', 'layout'], ['globals', 'layout']);
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {
+        parameters: {
+          docs: {}, // no docs
+        },
+        globals: {
+          // center it
+          layout: 'centered',
+        },
+      };
+    `);
+  });
+
+  it('moves the comment that trails a member below the comments that lead it', () => {
+    const csf = parse(dedent`
+      export default {
+        parameters: {
+          // where it goes
+          layout: 'centered', // center it
+        },
+        globals: {},
+      };
+    `);
+    const [meta] = csf.objects({ stories: false });
+    meta.move(['parameters', 'layout'], ['globals', 'layout']);
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {
+        globals: {
+          // where it goes
+          // center it
+          layout: 'centered',
+        },
+      };
+    `);
+  });
+
+  it('keeps a leading comment that shares the line of a moved member in front of it', () => {
+    const csf = parse(dedent`
+      export default {
+        parameters: {
+          // where it goes
+          /* a */ layout: 'centered', // center it
+        },
+        globals: {},
+      };
+    `);
+    const [meta] = csf.objects({ stories: false });
+    meta.move(['parameters', 'layout'], ['globals', 'layout']);
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {
+        globals: {
+          // where it goes
+          // center it
+          /* a */ layout: 'centered',
+        },
+      };
+    `);
+  });
+
+  it('removes a member with every comment that trails it on its line', () => {
+    const csf = parse(`export default {\n  a: 1, /* a */ // why\n  b: 2,\n};`);
+    const [meta] = csf.objects({ stories: false });
+    meta.remove(['a']);
+    expect(printCsf(csf).code).toBe(`export default {\n  b: 2,\n};`);
+  });
+
+  it('groups members with the comments that trail them', () => {
+    const csf = parse(code);
+    const [meta] = csf.objects({ stories: false });
+    meta.group(['parameters', 'ui'], ['layout', 'docs']);
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {
+        parameters: {
+          ui: {
+            // center it
+            layout: 'centered',
+            // no docs
+            docs: {},
+          },
+        },
+        globals: {},
+      };
+    `);
+  });
+});
+
+describe('computed keys', () => {
+  it('renames a computed key with a bracket in a comment', () => {
+    const csf = parse(`export default { ['a' /* ] */]: 1, async [('b')]() {} };`);
+    const [meta] = csf.objects({ stories: false });
+    expect(meta.rename(['a'], 'c')).toEqual({ ok: true, changed: true });
+    expect(meta.rename(['b'], 'd')).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(`export default { c: 1, async d() {} };`);
+  });
+
+  it('renames a parenthesized computed key with comments around its parentheses', () => {
+    const csf = parse(`export default { [('a')]: 1, [ /* c */ (('b')) /* d */ ]: 2 };`);
+    const [meta] = csf.objects({ stories: false });
+    expect(meta.rename(['a'], 'c')).toEqual({ ok: true, changed: true });
+    expect(meta.rename(['b'], 'd')).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(`export default { c: 1, d: 2 };`);
+  });
+});
+
+describe('parenthesized default exports', () => {
+  it('hoists an inline meta without breaking its parentheses', () => {
+    const csf = loadCsf(`export default ({ title: 'X' } satisfies Meta);\nexport const A = {};`, {
+      transformInlineMeta: true,
+      makeTitle: (title) => title ?? 'title',
+    }).parse();
+    expect(printCsf(csf).code).toBe(
+      `const _meta = ({ title: 'X' } satisfies Meta);\nexport default _meta;\nexport const A = {};`
+    );
+  });
+
+  it('hoists and reads a doubly parenthesized meta', () => {
+    const csf = loadCsf(`export default (({ title: 'X' }));\nexport const A = {};`, {
+      transformInlineMeta: true,
+      makeTitle: (title) => title ?? 'title',
+    }).parse();
+    expect(csf._meta?.title).toBe('X');
+    expect(printCsf(csf).code).toBe(
+      `const _meta = (({ title: 'X' }));\nexport default _meta;\nexport const A = {};`
+    );
+
+    const reference = parse(`const meta = { title: 'Y' };\nexport default ((meta));`);
+    expect(reference._meta?.title).toBe('Y');
+  });
+
+  it('hoists an inline meta with comments between the keywords', () => {
+    const csf = loadCsf(`export /* a */ default // b\n { title: 'X' };\nexport const A = {};`, {
+      transformInlineMeta: true,
+      makeTitle: (title) => title ?? 'title',
+    }).parse();
+    expect(printCsf(csf).code).toBe(
+      `const _meta = { title: 'X' };\nexport default _meta;\nexport const A = {};`
+    );
+  });
+});
+
+describe('line endings', () => {
+  const edited = (eol: string) => {
+    const csf = parse(['export default {', '  title: "A",', '};', ''].join(eol));
+    const [meta] = csf.objects({ stories: false });
+    meta.set(['parameters', 'layout'], 'centered');
+    return csf.editor.toString();
+  };
+  const expected = [
+    'export default {',
+    '  title: "A",',
+    '  parameters: { layout: "centered" },',
+    '};',
+    '',
+  ];
+
+  it('prints a CRLF file with CRLF line endings, edits included', () => {
+    expect(edited('\r\n')).toBe(expected.join('\r\n'));
+  });
+
+  it('prints a file with lone CR line endings with LF', () => {
+    expect(edited('\r')).toBe(expected.join('\n'));
+  });
+
+  it('takes the line ending of the first line for a file that mixes them', () => {
+    const editor = new SourceEditor('const a = 1;\r\nconst b = 2;\nconst c = 3;\n');
+    expect(editor.toString()).toBe('const a = 1;\r\nconst b = 2;\r\nconst c = 3;\r\n');
+  });
+
+  it.each([
+    ['a CRLF file with CRLF', 'a;\r\n', 'a;\r\n\r\nc;\r\nd;\r\n'],
+    ['an LF file with LF', 'a;\n', 'a;\n\nc;\nd;\n'],
+  ])('writes inserted CRLF text into %s', (_, code, expected) => {
+    const editor = new SourceEditor(code);
+    appendStatement(editor, 'c;\r\nd;');
+    expect(editor.toString()).toBe(expected);
+  });
+});
+
+describe('multi-line members', () => {
+  it('moves a member that spans several lines without touching its value', () => {
+    const csf = parse(dedent`
+      export default {
+        parameters: {
+          a11y: {
+            test: 'todo',
+          },
+        },
+      };
+    `);
+    const [meta] = csf.objects({ stories: false });
+    expect(meta.move(['parameters', 'a11y'], ['globals', 'a11y'])).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {
+        globals: {
+          a11y: {
+            test: 'todo',
+          },
+        },
+      };
+    `);
+  });
+
+  it('groups multi-line members into an existing object', () => {
+    const csf = parse(dedent`
+      export default {
+        layout: {
+          existing: true,
+        },
+        showNav: {
+          value: false,
+        },
+      };
+    `);
+    const [meta] = csf.objects({ stories: false });
+    expect(meta.group(['layout'], ['showNav'])).toEqual({ ok: true, changed: true });
+    expect(meta.getValue(['layout', 'showNav', 'value'])).toBe(false);
+    expect(printCsf(csf).code).toContain(`showNav: {\n      value: false,\n    },`);
+  });
+
+  it('keeps a template literal when grouping it into a new key', () => {
+    const csf = parse('export default {\n  previewHead: `<style>\n.a {}\n</style>`,\n  b: 1,\n};');
+    const [meta] = csf.objects({ stories: false });
+    expect(meta.group(['ui'], ['previewHead'])).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(
+      'export default {\n  ui: {\n    previewHead: `<style>\n.a {}\n</style>`,\n  },\n  b: 1,\n};'
+    );
+    const [again] = parse(printCsf(csf).code).objects({ stories: false });
+    expect(again.getValue(['ui', 'previewHead'])).toBe('<style>\n.a {}\n</style>');
+  });
+
+  it('keeps a template literal set into a missing parent', () => {
+    const csf = parse('export default {\n  parameters: {\n    a: 1,\n  },\n};');
+    const [meta] = csf.objects({ stories: false });
+    meta.set(['globals', 'code'], parseExpression('`line1\nline2`'));
+    expect(printCsf(csf).code).toBe(
+      'export default {\n  parameters: {\n    a: 1,\n  },\n  globals: {\n    code: `line1\nline2`,\n  },\n};'
+    );
+    const [again] = parse(printCsf(csf).code).objects({ stories: false });
+    expect(again.getValue(['globals', 'code'])).toBe('line1\nline2');
+  });
+
+  it('keeps the template literal of a method moved into another object', () => {
+    const csf = parse(
+      "export default {\n  parameters: {\n    fn() {\n      return /`/.test('a') ? `a\n  b` : 1;\n    },\n  },\n  globals: {\n    a: 1,\n  },\n};"
+    );
+    const [meta] = csf.objects({ stories: false });
+    expect(meta.move(['parameters', 'fn'], ['globals', 'fn'])).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(
+      "export default {\n  globals: {\n    a: 1,\n    fn() {\n      return /`/.test('a') ? `a\n  b` : 1;\n    },\n  },\n};"
+    );
+  });
+
+  it('keeps the template literal of a method set into a missing parent', () => {
+    const config = loadConfig('export default {\n  parameters: {\n    a: 1,\n  },\n};').parse();
+    config.set(
+      ['parameters', 'docs'],
+      parseExpression("{ fn() { return /`/.test('a') ? `x\n  y` : 0; } }")
+    );
+    expect(printConfig(config).code).toBe(
+      "export default {\n  parameters: {\n    a: 1,\n    docs: { fn() { return /`/.test('a') ? `x\n  y` : 0; } },\n  },\n};"
+    );
+  });
+
+  it('keeps a template literal moved into a missing parent', () => {
+    const csf = parse('export default {\n  parameters: {\n    code: `line1\nline2`,\n  },\n};');
+    const [meta] = csf.objects({ stories: false });
+    expect(meta.move(['parameters', 'code'], ['globals', 'code'])).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toBe(
+      'export default {\n  globals: {\n    code: `line1\nline2`,\n  },\n};'
+    );
+    const [again] = parse(printCsf(csf).code).objects({ stories: false });
+    expect(again.getValue(['globals', 'code'])).toBe('line1\nline2');
+  });
+});
+
+describe('tab-indented files', () => {
+  it('groups members with the indent unit of the file', () => {
+    const csf = parse('export default {\n\tlayout: 1,\n\tshowNav: false,\n};');
+    const [meta] = csf.objects({ stories: false });
+    expect(meta.group(['ui'], ['layout', 'showNav'])).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(
+      'export default {\n\tui: {\n\t\tlayout: 1,\n\t\tshowNav: false,\n\t},\n};'
+    );
+  });
+
+  it('creates missing parents with the indent unit of the file', () => {
+    const csf = parse(
+      "export default {\n\tparameters: {\n\t\ta11y: {\n\t\t\ttest: 'todo',\n\t\t},\n\t},\n};"
+    );
+    const [meta] = csf.objects({ stories: false });
+    expect(meta.move(['parameters', 'a11y'], ['globals', 'a11y'])).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toBe(
+      "export default {\n\tglobals: {\n\t\ta11y: {\n\t\t\ttest: 'todo',\n\t\t},\n\t},\n};"
+    );
+  });
+});
+
+describe('printMembers', () => {
+  it('leaves the template literal of a function value alone', () => {
+    expect(printMembers(['fn: () => {\n  return `a\nb`;\n}'], '  ')).toBe(
+      '{\n  fn: () => {\n    return `a\nb`;\n  },\n}'
+    );
+  });
+});
+
+describe('generateMap', () => {
+  const original = `const a = 1;\nconst b = 2;\nexport default { title: 'A' };\n`;
+  // An earlier transform: drops the first line and maps the result back to `original`.
+  const transform = (source: string) => {
+    const edited = new MagicString(original).remove(0, original.indexOf('\n') + 1);
+    return {
+      code: edited.toString(),
+      map: edited.generateMap({ hires: true, source, includeContent: true }),
+    };
+  };
+  const editOf = (editor: SourceEditor) =>
+    editor.edits.appendLeft(editor.code.indexOf('export'), 'const c = 3;\n');
+  const entryOf = (map: object, code: string, token: string) => {
+    const line = code.split('\n').findIndex((text) => text.includes(token));
+    return new NodeSourceMap(map as ConstructorParameters<typeof NodeSourceMap>[0]).findEntry(
+      line,
+      code.split('\n')[line].indexOf(token)
+    );
+  };
+
+  it('keeps the names of a two-source input map whose first source is unused', () => {
+    const { code, map } = transform('real.ts');
+    const unused = {
+      ...map,
+      sources: ['unused.ts', 'real.ts'],
+      sourcesContent: [null, original],
+      mappings: encode(
+        decode(map.mappings).map((line) =>
+          line.map(
+            (segment) =>
+              (segment.length > 1 ? [segment[0], 1, segment[2]!, segment[3]!] : segment) as never
+          )
+        )
+      ),
+    };
+    const editor = new SourceEditor(code, 'out.ts');
+    editOf(editor);
+    const result = editor.generateMap({ inputSourceMap: unused });
+    expect(result.sources).toEqual(['real.ts']);
+    expect(result.sourcesContent).toEqual([original]);
+    expect(entryOf(result, editor.toString(), 'title')).toMatchObject({
+      originalSource: 'real.ts',
+      originalLine: 2,
+    });
+  });
+
+  it('keeps sourceRoot and the names relative to it', () => {
+    const { code, map } = transform('Button.stories.tsx');
+    const editor = new SourceEditor(code, 'out.ts');
+    editOf(editor);
+    const result = editor.generateMap({
+      inputSourceMap: { ...map, sourceRoot: 'webpack:///src/' },
+    });
+    expect(result.sources).toEqual(['Button.stories.tsx']);
+    expect(result.sourceRoot).toBe('webpack:///src/');
+  });
+
+  it('maps a CRLF file line for line and keeps its content as written', () => {
+    const crlf = original.replaceAll('\n', '\r\n');
+    const editor = new SourceEditor(crlf, 'file.ts');
+    editOf(editor);
+    editor.commit();
+    editor.edits.appendLeft(0, '// header\n');
+    const result = editor.generateMap();
+    expect(result.sourcesContent).toEqual([crlf]);
+    expect(entryOf(result, editor.toString(), 'title')).toMatchObject({
+      originalLine: 2,
+      originalColumn: original.split('\n')[2].indexOf('title'),
+    });
+  });
+
+  it('maps through two commits and a pending edit back to the original code', () => {
+    const editor = new SourceEditor(original, 'file.ts');
+    editOf(editor);
+    editor.commit();
+    editor.edits.appendLeft(0, '// header\n');
+    editor.commit();
+    const title = editor.code.indexOf("'A'");
+    editor.edits.overwrite(title, title + 3, "'Renamed'");
+    const result = editor.generateMap();
+    expect(result.sources).toEqual(['file.ts']);
+    expect(result.sourcesContent).toEqual([original]);
+    expect(entryOf(result, editor.toString(), 'title')).toMatchObject({
+      originalLine: 2,
+      originalColumn: original.split('\n')[2].indexOf('title'),
+    });
+    expect(result.mappings).toMatchInlineSnapshot(
+      `";AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACX,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;AACX,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,SAAG,CAAC,CAAC"`
+    );
+  });
+
+  it('names the source as requested after a committed edit', () => {
+    const editor = new SourceEditor(original, 'file.ts');
+    editOf(editor);
+    editor.commit();
+    editor.edits.appendLeft(0, '// header\n');
+    const result = editor.generateMap({ source: 'Custom.tsx' });
+    expect(result.sources).toEqual(['Custom.tsx']);
+    expect(entryOf(result, editor.toString(), 'title')).toMatchObject({
+      originalSource: 'Custom.tsx',
+      originalLine: 2,
+    });
+  });
+});

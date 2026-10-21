@@ -321,15 +321,12 @@ export const baseTemplates = {
   },
   'react-vite/prerelease-ts': {
     name: 'React Prerelease (Vite | TypeScript)',
-    /**
-     * Create a Vite project with the React template. The beta React, React-DOM and @types packages,
-     * see https://react.dev/blog/2024/04/25/react-19-upgrade-guide#installing
-     */
     script: 'npm create vite --yes {{beforeDir}} -- --template react-ts',
-    // Beta React is applied after scaffold (extraDependencies / resolutions). The allowlist
+    // Canary React is applied after scaffold (extraDependencies / resolutions). The allowlist
     // still has to live on before-storybook so later installs under the 7-day gate can
-    // resolve those packages. `scheduler` ships in lockstep with React releases.
-    minAgeGateExemptions: ['react', 'react-dom', 'types-react', 'types-react-dom', 'scheduler'],
+    // resolve those packages. `@types/react` has no canary dist-tag, so types stay on
+    // `@latest`. `scheduler` ships in lockstep with React releases.
+    minAgeGateExemptions: ['react', 'react-dom', 'scheduler'],
     expected: {
       framework: '@storybook/react-vite',
       renderer: '@storybook/react',
@@ -337,17 +334,13 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['react@beta', 'react-dom@beta'],
-      extraDevDependencies: [
-        'prop-types',
-        '@types/react@npm:types-react@beta',
-        '@types/react-dom@npm:types-react-dom@beta',
-      ],
+      extraDependencies: ['react@canary', 'react-dom@canary'],
+      extraDevDependencies: ['prop-types', '@types/react@latest', '@types/react-dom@latest'],
       resolutions: {
-        '@types/react': 'npm:types-react@beta',
-        '@types/react-dom': 'npm:types-react-dom@beta',
-        react: 'npm:react@beta',
-        'react-dom': 'npm:react-dom@beta',
+        '@types/react': 'npm:@types/react@latest',
+        '@types/react-dom': 'npm:@types/react-dom@latest',
+        react: 'npm:react@canary',
+        'react-dom': 'npm:react-dom@canary',
       },
       mainConfig: {
         features: {
@@ -380,17 +373,12 @@ export const baseTemplates = {
   },
   'react-webpack/prerelease-ts': {
     name: 'React Prerelease (Webpack | TypeScript)',
-    /**
-     * Create a Webpack project with React beta versions.
-     * See https://react.dev/blog/2024/04/25/react-19-upgrade-guide#installing
-     */
     script:
-      'npx create-webpack5-react {{beforeDir}} --version-react="beta" --version-react-dom="beta"',
-    // create-webpack5-react pins react@beta at scaffold time, so refresh must allow the
-    // React beta family or the 7-day gate quarantines them. `types-react*` are the
-    // packages behind the `@types/react@npm:types-react@beta` aliases; `scheduler`
-    // ships in lockstep with React releases.
-    minAgeGateExemptions: ['react', 'react-dom', 'types-react', 'types-react-dom', 'scheduler'],
+      'npx create-webpack5-react {{beforeDir}} --version-react="canary" --version-react-dom="canary"',
+    // create-webpack5-react pins react@canary at scaffold time, so refresh must allow the
+    // React canary family or the 7-day gate quarantines them. `@types/react` has no canary
+    // dist-tag, so types stay on `@latest`. `scheduler` ships in lockstep with React releases.
+    minAgeGateExemptions: ['react', 'react-dom', 'scheduler'],
     expected: {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
@@ -398,14 +386,10 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDevDependencies: [
-        'prop-types',
-        '@types/react@npm:types-react@beta',
-        '@types/react-dom@npm:types-react-dom@beta',
-      ],
+      extraDevDependencies: ['prop-types', '@types/react@latest', '@types/react-dom@latest'],
       resolutions: {
-        '@types/react': 'npm:types-react@beta',
-        '@types/react-dom': 'npm:types-react-dom@beta',
+        '@types/react': 'npm:@types/react@latest',
+        '@types/react-dom': 'npm:@types/react-dom@latest',
       },
       mainConfig: {
         swc: { swcrc: false },
@@ -444,7 +428,13 @@ export const baseTemplates = {
       renderer: 'storybook-solidjs-vite',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
+    // `chromatic` is skipped: the published storybook-solidjs-vite imports
+    // `storybook/internal/babel`, which Storybook 11 removed, so its preset fails to load and
+    // the built Storybook renders no stories ("Expected your framework's preset to export a
+    // `renderToCanvas` field"). Creating and building the sandbox still pass.
+    // Fix: https://github.com/solidjs-community/storybook/pull/76
+    // Re-enable once storybook-solidjs-vite releases a version that works with Storybook 11.
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration', 'chromatic'],
   },
   'tanstack-react-router/default-ts': {
     name: 'TanStack React Router Latest (Vite | TypeScript)',
@@ -521,6 +511,22 @@ export const baseTemplates = {
       },
     },
     skipTasks: ['bench'],
+  },
+  'vue3-vite/prerelease-ts': {
+    name: 'Vue v3 Prerelease (Vite | TypeScript)',
+    script: 'npm create vite --yes {{beforeDir}} -- --template vue-ts',
+    // `vue` pins its `@vue/*` packages to the same release.
+    minAgeGateExemptions: ['vue', '@vue/*', 'vue-component-meta'],
+    expected: {
+      framework: '@storybook/vue3-vite',
+      renderer: '@storybook/vue3',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
+      extraDependencies: ['vue@rc'],
+    },
+    skipTasks: ['e2e-tests', 'bench'],
   },
   'vue3-rsbuild/default-ts': {
     name: 'Vue Latest (RsBuild | TypeScript)',
@@ -603,6 +609,9 @@ export const baseTemplates = {
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
     },
+    modifications: {
+      useCsfFactory: true,
+    },
     skipTasks: ['e2e-tests', 'bench'],
   },
   'svelte-vite/default-ts': {
@@ -612,6 +621,9 @@ export const baseTemplates = {
       framework: '@storybook/svelte-vite',
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'bench'],
@@ -624,6 +636,9 @@ export const baseTemplates = {
       framework: '@storybook/sveltekit',
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
@@ -718,6 +733,8 @@ export const baseTemplates = {
     name: 'Lit Latest (Vite | JavaScript)',
     script:
       'npm create vite --yes {{beforeDir}} -- --template lit && cd {{beforeDir}} && echo "export default {}" > vite.config.js',
+    // TODO: remove after oct 21 2026
+    minAgeGateExemptions: ['@wc-toolkit/*'],
     expected: {
       framework: '@storybook/web-components-vite',
       renderer: '@storybook/web-components',
@@ -743,6 +760,7 @@ export const baseTemplates = {
     name: 'Lit Latest (Vite | TypeScript)',
     script:
       'npm create vite --yes {{beforeDir}} -- --template lit-ts && cd {{beforeDir}} && echo "export default {}" > vite.config.js',
+    minAgeGateExemptions: ['@wc-toolkit/*'],
     expected: {
       framework: '@storybook/web-components-vite',
       renderer: '@storybook/web-components',
@@ -773,6 +791,7 @@ export const baseTemplates = {
   'lit-rsbuild/default-ts': {
     name: 'Web Components Latest (RsBuild | TypeScript)',
     script: 'npx create-rsbuild -d {{beforeDir}} -t lit-ts --tools eslint',
+    minAgeGateExemptions: ['@wc-toolkit/*'],
     expected: {
       framework: 'storybook-web-components-rsbuild',
       renderer: '@storybook/web-components',
@@ -1061,7 +1080,11 @@ export const normal: TemplateKey[] = [
   'bench/react-vite-default-ts-test-build',
   'bench/react-webpack-18-ts-test-build',
   // 'ember/default-js',
-  'react-rsbuild/default-ts',
+  // Disabled in CI: the published storybook-builder-rsbuild imports `babelParser` from
+  // `storybook/internal/mocking-utils`, which Storybook 11 removed, so the sandbox cannot be
+  // created. Fix: https://github.com/rstackjs/storybook-rsbuild/pull/603
+  // Re-enable once storybook-builder-rsbuild releases a version that works with Storybook 11.
+  // 'react-rsbuild/default-ts',
   'tanstack-react-router/default-ts',
   'tanstack-react-start/default-ts',
 ];
@@ -1074,7 +1097,11 @@ export const merged: TemplateKey[] = [
   'preact-vite/default-ts',
   'html-vite/default-ts',
   'solid-vite/default-ts',
-  'vue3-rsbuild/default-ts',
+  // Disabled in CI: the published storybook-builder-rsbuild imports `babelParser` from
+  // `storybook/internal/mocking-utils`, which Storybook 11 removed, so the sandbox cannot be
+  // created. Fix: https://github.com/rstackjs/storybook-rsbuild/pull/603
+  // Re-enable once storybook-builder-rsbuild releases a version that works with Storybook 11.
+  // 'vue3-rsbuild/default-ts',
 ];
 
 export const daily: TemplateKey[] = [
@@ -1084,6 +1111,7 @@ export const daily: TemplateKey[] = [
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',
   'vue3-vite/default-js',
+  'vue3-vite/prerelease-ts',
   'lit-vite/default-js',
   'svelte-vite/default-js',
   'nextjs/prerelease',
@@ -1092,8 +1120,12 @@ export const daily: TemplateKey[] = [
   'html-vite/default-js',
   'internal/react18-webpack-babel',
   'react-native-web-vite/expo-ts',
-  'lit-rsbuild/default-ts',
-  'html-rsbuild/default-ts',
+  // Disabled in CI: the published storybook-builder-rsbuild imports `babelParser` from
+  // `storybook/internal/mocking-utils`, which Storybook 11 removed, so the sandbox cannot be
+  // created. Fix: https://github.com/rstackjs/storybook-rsbuild/pull/603
+  // Re-enable once storybook-builder-rsbuild releases a version that works with Storybook 11.
+  // 'lit-rsbuild/default-ts',
+  // 'html-rsbuild/default-ts',
   // 'react-native-web-vite/rn-cli-ts',
 ];
 

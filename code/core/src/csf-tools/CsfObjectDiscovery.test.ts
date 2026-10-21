@@ -353,7 +353,7 @@ describe('CsfObject discovery', () => {
         code: 'aliased-story',
         target: { kind: 'story', exportName, localName: exportName },
         path: [],
-        message: `Cannot mutate story ${exportName} because it is an alias of story ${aliased}`,
+        message: `Cannot mutate ${exportName} without changing ${aliased}, which exports the same story`,
       });
 
     it.each(['Primary', 'Primary as Story', 'Primary satisfies Story'])(
@@ -982,7 +982,7 @@ describe('CsfFile.storyObject', () => {
         diagnostic: expect.objectContaining({
           code: 'aliased-story',
           target: { kind: 'story', exportName: 'Secondary', localName: 'Secondary' },
-          message: 'Cannot mutate story Secondary because it is an alias of story Primary',
+          message: 'Cannot mutate Secondary without changing Primary, which exports the same story',
         }),
       });
     });
@@ -1029,7 +1029,7 @@ describe('CsfFile.storyObject', () => {
         diagnostic: expect.objectContaining({
           code: 'aliased-story',
           target: { kind: 'story', exportName: 'Secondary', localName: 'Secondary' },
-          message: 'Cannot mutate story Secondary because it is an alias of story Primary',
+          message: 'Cannot mutate Secondary without changing Primary, which exports the same story',
         }),
       });
       expect(csf.mutationDiagnostics).toEqual([found?.ok === false && found.diagnostic]);

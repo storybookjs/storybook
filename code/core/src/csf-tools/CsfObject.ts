@@ -1,17 +1,20 @@
 import {
-  type Access,
-  carriedSpread,
-  carriedSpreads,
-  lookupElement,
-  lookupProperty,
-} from './ObjectMembers.ts';
-import {
-  type ListRoot,
-  type MemberInsert,
-  type ObjectRoot,
-  listRoot,
-  literalRoot,
-} from './ObjectRoot.ts';
+  type CsfPath,
+  type Located,
+  type Slot,
+  creatable,
+  insertAt,
+  isInvalidIndex,
+  isKey,
+  listAt,
+  locate,
+  printCsfPath,
+  refusedKey,
+  unsafePath,
+  valueAt,
+} from './CsfObjectPath.ts';
+import { type Access, lookupMember } from './ObjectMembers.ts';
+import { type ObjectRoot, listRoot, literalRoot } from './ObjectRoot.ts';
 import {
   type E,
   type Node,
@@ -27,7 +30,6 @@ import {
   detachedSource,
   detachedTextOf,
   printKey,
-  printObject,
   printValue,
 } from './estree/editor.ts';
 import {
@@ -37,7 +39,6 @@ import {
   nodeWithoutParse,
   readValue,
   resolveExpression,
-  valueSource,
 } from './estree/values.ts';
 
 export type { CsfValue };
@@ -65,20 +66,6 @@ export type CsfMutationDiagnosticCode =
 /** What a diagnostic is about: an editor's object, or the whole file for an edit of its imports. */
 export type CsfMutationTarget = CsfObjectTarget | { kind: 'file' };
 
-/**
- * A path to a value: a string addresses a property of an object, a number an element of an array
- * or an argument of a call, by its position in the source.
- */
-export type CsfPath = readonly (string | number)[];
-
-/** Print a path as `parameters.msw.handlers[0]`. */
-export const printCsfPath = (path: CsfPath) =>
-  path
-    .map((segment, index) =>
-      typeof segment === 'number' ? `[${segment}]` : index === 0 ? segment : `.${segment}`
-    )
-    .join('');
-
 export interface CsfMutationDiagnostic {
   code: CsfMutationDiagnosticCode;
   target: CsfMutationTarget;
@@ -95,6 +82,16 @@ export type CsfInspection =
   | { kind: 'value'; node: CsfExpression }
   | { kind: 'missing' }
   | { kind: 'unreadable'; diagnostic: CsfMutationDiagnostic };
+
+/**
+ * What `append` and `prepend` would act on at a path: the list they add to, a detached copy of the
+ * array literal or, at an item path, the call, whose arguments are its items; a missing one they
+ * create; or the diagnostic they would refuse with.
+ */
+export type CsfListInspection =
+  | { kind: 'list'; node: E.ArrayExpression | E.CallExpression }
+  | { kind: 'missing' }
+  | { kind: 'refused'; diagnostic: CsfMutationDiagnostic };
 
 /**
  * Outcome of a mutation. A refused one leaves the file as it was, also when its edit would leave a
@@ -310,6 +307,21 @@ export interface CsfObject {
    * ```
    */
   prepend(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult;
+  /**
+   * Read what `append` and `prepend` would act on at a path, by the rule they apply, without
+   * editing or reporting: the list, `missing` when they would create it, or the diagnostic they
+   * would refuse it with. A refusal of the added value, such as `invalid-csf` for an entry that
+   * leaves a meta `tags` invalid, is not foreseen.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig('export default { addons: [a], tags: tags() };').parse();
+   * object.inspectList(['addons']).kind; // 'list'
+   * object.inspectList(['loaders']); // { kind: 'missing' }
+   * object.inspectList(['tags']).kind; // 'refused'
+   * ```
+   */
+  inspectList(path: CsfPath): CsfListInspection;
 }
 
 export interface CsfObjectOptions {
@@ -325,73 +337,6 @@ export interface CsfObjectHost {
 
 type ReportDiagnostic = (diagnostic: CsfMutationDiagnostic) => void;
 type MarkChanged = () => void;
-
-// An index is a position in the source.
-const isInvalidIndex = (segment: string | number) =>
-  typeof segment === 'number' && !(Number.isSafeInteger(segment) && segment >= 0);
-
-// `__proto__` would set the prototype.
-const unsafePath = (path: CsfPath) =>
-  path.some((segment) => segment === '__proto__' || isInvalidIndex(segment));
-
-const isKey = (segment: string | number): segment is string => typeof segment === 'string';
-
-const invalidated = () => new Error('CsfObject mutation preflight was invalidated');
-
-// A new array: its items go after the spread it carries forward, or before it when `first`.
-type ArrayInsert = { items: string[]; first: boolean };
-
-// Where a path ends: a property or an item, which is `null` for a hole, or the first segment the
-// source lacks, a key at `missing` of the path or an item past the end of its list or at a hole
-// before the last segment.
-type Located =
-  | { ok: true; kind: 'property'; parent: ObjectRoot; key: string; property: Property }
-  | { ok: true; kind: 'item'; parent: ListRoot; index: number; element: E.Expression | null }
-  | { ok: true; kind: 'missing-key'; parent: ObjectRoot; missing: number }
-  | { ok: true; kind: 'missing-item'; parent: ListRoot; index: number }
-  | { ok: false; code: CsfMutationDiagnosticCode; node: Node };
-
-type Found = Extract<Located, { ok: true }>;
-
-// The value at a property or an item, as `get` reads it: `node` is the property or the element,
-// and `expression` the value to evaluate, which a method lacks.
-type Slot = { node: Property | E.Expression; source: string; expression?: Node };
-
-// The next segment of a path with the container it addresses.
-type Step =
-  | { kind: 'object'; parent: ObjectRoot; key: string }
-  | { kind: 'list'; parent: ListRoot; index: number };
-
-// An array literal, or a call, also an optional one: `f?.(a)`.
-const listNode = (value: Node | undefined) => {
-  const node = value?.type === 'ChainExpression' ? value.expression : value;
-  return node?.type === 'ArrayExpression' || node?.type === 'CallExpression' ? node : undefined;
-};
-
-// The list that `append` and `prepend` add to at the end of a path: an array literal, or, at a list
-// item such as `['loaders', 0]` for `loaders: [mswLoader()]`, also a call, whose arguments are its
-// items. A field is a list only when it holds an array literal: an argument added to a call such as
-// `addons: base.filter(Boolean)` would change the call instead of adding an entry.
-const addableList = (value: Node | undefined, last: string | number) => {
-  const list = listNode(value);
-  return list?.type === 'CallExpression' && isKey(last) ? undefined : list;
-};
-
-// A key addresses a property of an object literal, an index an element of an array or an
-// argument of a call.
-const stepInto = (
-  editor: SourceEditor,
-  value: Node | undefined,
-  segment: string | number
-): Step | undefined => {
-  if (isKey(segment)) {
-    return value?.type === 'ObjectExpression'
-      ? { kind: 'object', parent: literalRoot(editor, value), key: segment }
-      : undefined;
-  }
-  const list = listNode(value);
-  return list && { kind: 'list', parent: listRoot(editor, list), index: segment };
-};
 
 // `set` prints a node from its source, so a change to its fields would be lost: it throws instead.
 const readOnly = <T extends object>(node: T): T => {
@@ -494,24 +439,8 @@ class Editor implements CsfObject {
     if (found.ok === false) {
       return { kind: 'unreadable', diagnostic: this.diagnostic(found.code, path, found.node) };
     }
-    const slot = this.valueAt(found);
+    const slot = valueAt(this.editor, found);
     return slot ? { kind: 'value', ...slot } : { kind: 'missing' };
-  }
-
-  private valueAt(located: Found): Slot | undefined {
-    if (located.kind === 'item' && located.element) {
-      const { element } = located;
-      return { node: element, source: detachedSource(this.editor, element), expression: element };
-    }
-    if (located.kind === 'property') {
-      const { property } = located;
-      return {
-        node: property,
-        source: valueSource(this.editor, property),
-        ...(property.method ? {} : { expression: property.value }),
-      };
-    }
-    return undefined;
   }
 
   set(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
@@ -540,13 +469,13 @@ class Editor implements CsfObject {
       inspected.parent.replaceValue(inspected.property, text());
       return this.commit(path);
     }
-    const creatable = this.creatable(inspected, path, (keys) => keys.length > 1);
-    if (!creatable.ok) {
-      return creatable;
+    const creation = creatable(this.editor, inspected, path, 'when-creating-parents');
+    if (!creation.ok) {
+      return this.failure(creation.code, path, creation.node, creation.message);
     }
-    const key = creatable.keys.at(-1)!;
+    const key = creation.keys.at(-1)!;
     const printed = text();
-    this.insert(path.slice(0, -1), {
+    insertAt(this.editor, this.root(), path.slice(0, -1), {
       members: [{ key, value: printed, text: `${printKey(key, quote)}: ${printed}` }],
     });
     return this.commit(path);
@@ -565,47 +494,37 @@ class Editor implements CsfObject {
     value: CsfValue<CsfExpression>,
     end: 'append' | 'prepend'
   ): CsfMutationResult {
-    if (path.length === 0 || unsafePath(path)) {
-      return this.failure('unsupported-member', path, this.anchor());
-    }
     const unprintable = this.unprintable(path, value);
     if (unprintable) {
       return unprintable;
     }
-    const inspected = this.locate(path, 'set');
-    if (inspected.ok === false) {
-      return this.failure(inspected.code, path, inspected.node);
+    const list = listAt(this.editor, this.root(), path);
+    if (list.ok === false) {
+      return this.failure(list.code, path, list.node, list.message);
     }
     const { quote, indent } = this.editor;
-    const text = () => printValue(value, quote, { indent });
-    const slot = this.valueAt(inspected);
-    if (!slot) {
-      const creatable = this.creatable(inspected, path, () => true);
-      if (!creatable.ok) {
-        return creatable;
-      }
-      this.insert(path, { items: [text()], first: end === 'prepend' });
-      return this.commit(path);
+    const text = printValue(value, quote, { indent });
+    if (list.kind === 'missing') {
+      insertAt(this.editor, this.root(), path, { items: [text], first: end === 'prepend' });
+    } else {
+      listRoot(this.editor, list.list)[end]([text]);
     }
-    const { scopes } = this.editor;
-    const last = path[path.length - 1];
-    const resolved = slot.expression && resolveExpression(scopes, slot.expression);
-    const list = addableList(resolved, last);
-    if (!list) {
-      const node = slot.expression ?? slot.node;
-      const shared =
-        slot.expression && addableList(resolveExpression(scopes, slot.expression, 'read'), last);
-      return this.failure(
-        'unsupported-value',
-        path,
-        node,
-        shared
-          ? `Cannot add to '${printCsfPath(path)}', a constant that other code refers to as well`
-          : `Expected an array literal${isKey(last) ? '' : ' or a call'} at '${printCsfPath(path)}', got '${(resolved ?? node).type}'`
-      );
-    }
-    listRoot(this.editor, list)[end]([text()]);
     return this.commit(path);
+  }
+
+  inspectList(path: CsfPath): CsfListInspection {
+    const list = listAt(this.editor, this.root(), path);
+    if (list.ok === false) {
+      const diagnostic = this.diagnostic(list.code, path, list.node, list.message);
+      return { kind: 'refused', diagnostic };
+    }
+    if (list.kind === 'missing') {
+      return { kind: 'missing' };
+    }
+    // `f?.(a)` parses as the chain around the call.
+    const copy = readOnly(parseExpression(detachedSource(this.editor, list.list)));
+    const node = copy.type === 'ChainExpression' ? copy.expression : copy;
+    return { kind: 'list', node: node as E.ArrayExpression | E.CallExpression };
   }
 
   transform(
@@ -626,7 +545,7 @@ class Editor implements CsfObject {
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
-    const slot = this.valueAt(inspected);
+    const slot = valueAt(this.editor, inspected);
     if (!slot) {
       return { ok: true, changed: false };
     }
@@ -667,12 +586,7 @@ class Editor implements CsfObject {
     if (inspected.kind !== 'property') {
       return { ok: true, changed: false };
     }
-    const removal = lookupProperty(
-      inspected.parent.properties,
-      inspected.key,
-      'remove',
-      this.editor
-    );
+    const removal = lookupMember(this.editor, inspected.parent.properties, inspected.key, 'remove');
     if (!removal.ok) {
       return this.failure(removal.code, path, removal.node);
     }
@@ -721,7 +635,7 @@ class Editor implements CsfObject {
     if (source.kind !== 'property') {
       return { ok: true, changed: false };
     }
-    const removal = lookupProperty(source.parent.properties, name, 'remove', this.editor);
+    const removal = lookupMember(this.editor, source.parent.properties, name, 'remove');
     if (!removal.ok) {
       return this.failure(removal.code, from, removal.node);
     }
@@ -732,10 +646,9 @@ class Editor implements CsfObject {
     if (destination.kind === 'property') {
       return this.failure('occupied-destination', to, destination.property);
     }
-    // A read refuses a missing key next to a spread or computed key, so there is none to carry.
-    const creatable = this.creatable(destination, to, () => false);
-    if (!creatable.ok) {
-      return creatable;
+    const creation = creatable(this.editor, destination, to, 'when-creating-parents');
+    if (!creation.ok) {
+      return this.failure(creation.code, to, creation.node, creation.message);
     }
 
     const sourceParent = from.slice(0, -1);
@@ -750,7 +663,7 @@ class Editor implements CsfObject {
 
     const moved = source.parent.take(source.property, key);
     // The source is removed after the insertion, looked up again since the insertion moved its spans.
-    this.insert(to.slice(0, -1), { members: [{ ...moved, key }] });
+    insertAt(this.editor, this.root(), to.slice(0, -1), { members: [{ ...moved, key }] });
     const inserted = this.commit(from);
     if (!inserted.ok) {
       return inserted;
@@ -793,7 +706,7 @@ class Editor implements CsfObject {
       if (inspected.ok === false) {
         return this.failure(inspected.code, path, inspected.node);
       }
-      const slot = this.valueAt(inspected);
+      const slot = valueAt(this.editor, inspected);
       if (!slot) {
         return { ok: true, changed: false };
       }
@@ -840,7 +753,7 @@ class Editor implements CsfObject {
       }
       sourceNames.add(name);
     }
-    const destination = lookupProperty(parent.properties, group);
+    const destination = lookupMember(this.editor, parent.properties, group);
     if (destination.ok === false) {
       return this.failure(
         destination.code,
@@ -913,9 +826,9 @@ class Editor implements CsfObject {
       );
       parent.remove(moved);
     } else {
-      const refused = this.refusedKey(parent, group, path);
+      const refused = refusedKey(this.editor, parent, group);
       if (refused) {
-        return refused;
+        return this.failure(refused.code, path, refused.node, refused.message);
       }
       if (parent.detached) {
         const effectful = moved.find((property) => !isEvaluationInert(property.value));
@@ -965,7 +878,7 @@ class Editor implements CsfObject {
       if (value?.type !== 'ObjectExpression' || value.properties.length > 0) {
         return;
       }
-      if (!lookupProperty(ancestor.parent.properties, ancestor.key, 'remove', this.editor).ok) {
+      if (!lookupMember(this.editor, ancestor.parent.properties, ancestor.key, 'remove').ok) {
         return;
       }
       ancestor.parent.remove([ancestor.property]);
@@ -977,152 +890,8 @@ class Editor implements CsfObject {
     return undefined;
   }
 
-  // `access` applies to the last field of the path, and to its parents for a `set`, which creates
-  // missing ones; other parents are read. Only a lookup for a read follows a shared constant.
-  private locate(path: CsfPath, access: Access = 'read', edits = true): Located {
-    const [first] = path;
-    if (typeof first !== 'string') {
-      return { ok: false, code: 'unsupported-member', node: this.anchor() };
-    }
-    let step: Step = { kind: 'object', parent: this.root(), key: first };
-
-    for (let index = 0; ; index++) {
-      const last = index === path.length - 1;
-      let value: Node;
-      if (step.kind === 'list') {
-        const { parent, index: position } = step;
-        const lookup = lookupElement(parent.items, position);
-        if (lookup.ok === false) {
-          return lookup;
-        }
-        const { element } = lookup;
-        if (last && element !== undefined) {
-          return { ok: true, kind: 'item', parent, index: position, element };
-        }
-        if (!element) {
-          return { ok: true, kind: 'missing-item', parent, index: position };
-        }
-        value = element;
-      } else {
-        const { parent, key } = step;
-        const lookup = lookupProperty(
-          parent.properties,
-          key,
-          last || access === 'set' ? access : 'read',
-          this.editor
-        );
-        if (lookup.ok === false) {
-          return lookup;
-        }
-        const { property } = lookup;
-        if (!property) {
-          return { ok: true, kind: 'missing-key', parent, missing: index };
-        }
-        if (last) {
-          return { ok: true, kind: 'property', parent, key, property };
-        }
-        if (property.method) {
-          return { ok: false, code: 'unsupported-member', node: property };
-        }
-        value = property.value;
-      }
-      const resolved = resolveExpression(this.editor.scopes, value, edits ? 'write' : 'read');
-      const next = stepInto(this.editor, resolved, path[index + 1]);
-      if (!next) {
-        return { ok: false, code: 'unsupported-member', node: value };
-      }
-      step = next;
-    }
-  }
-
-  // Whether a write can create the value a path lacks. Missing values are created only at keys: a
-  // position is in the source or nowhere, and a hole is no value to add to. `carries` tells, from
-  // the keys to create, whether the first one carries the spreads before it forward.
-  private creatable(
-    located: Found,
-    path: CsfPath,
-    carries: (keys: readonly string[]) => boolean
-  ): { ok: true; keys: readonly string[] } | Extract<CsfMutationResult, { ok: false }> {
-    const keys = located.kind === 'missing-key' ? path.slice(located.missing) : [];
-    if (located.kind !== 'missing-key' || !keys.every(isKey)) {
-      return this.failure(
-        'unsupported-member',
-        path,
-        located.parent.node ?? this.anchor(),
-        `Cannot create ${printCsfPath(path)}: an index addresses an element or argument that exists, and append or prepend adds one`
-      );
-    }
-    const refused = this.refusedKey(located.parent, keys[0], path);
-    if (refused) {
-      return refused;
-    }
-    if (carries(keys)) {
-      const carried = carriedSpreads(this.editor, located.parent.properties, keys[0]);
-      if (carried.ok === false) {
-        return this.failure(carried.code, path, carried.node);
-      }
-    }
-    return { ok: true, keys };
-  }
-
-  // Writes `content` into the object at `containers`, creating the missing ones, which carry the
-  // spreads before them forward; the last one is an array for `items`. The caller has validated it.
-  private insert(containers: CsfPath, content: { members: MemberInsert[] } | ArrayInsert) {
-    let object: ObjectRoot | undefined = containers.length === 0 ? this.root() : undefined;
-    if (!object) {
-      const located = this.locate(containers, 'set');
-      if (located.ok && located.kind === 'missing-key') {
-        this.create(located.parent, containers.slice(located.missing), content);
-        return;
-      }
-      const slot = located.ok ? this.valueAt(located) : undefined;
-      const value = slot?.expression && resolveExpression(this.editor.scopes, slot.expression);
-      object = value?.type === 'ObjectExpression' ? literalRoot(this.editor, value) : undefined;
-    }
-    if (!object || !('members' in content)) {
-      throw invalidated();
-    }
-    object.append(content.members);
-  }
-
-  // Writes the missing containers at `missing` into `parent`, the first one a member of it, which
-  // carry the spreads before them forward.
-  private create(
-    parent: ObjectRoot,
-    missing: CsfPath,
-    content: { members: MemberInsert[] } | ArrayInsert
-  ) {
-    const { quote, indent } = this.editor;
-    if (!missing.every(isKey)) {
-      throw invalidated();
-    }
-    const [name] = missing;
-    const carried = carriedSpreads(this.editor, parent.properties, name);
-    if (carried.ok === false) {
-      throw invalidated();
-    }
-    const texts =
-      'members' in content ? content.members.map((member) => member.text) : content.items;
-    const forward = (depth: number, into: 'object' | 'array' = 'object') => {
-      const spread = carriedSpread(carried.spread, missing.slice(0, depth + 1), quote, into);
-      return spread ? [spread] : [];
-    };
-    const last = missing.length - 1;
-    let nested: string;
-    // Comments travel with moved members; a line comment makes the object span lines.
-    if ('members' in content) {
-      nested = printObject([...forward(last), ...texts], indent);
-    } else {
-      const spread = forward(last, 'array');
-      nested = `[${(content.first ? [...texts, ...spread] : [...spread, ...texts]).join(', ')}]`;
-    }
-    for (let depth = last - 1; depth >= 0; depth--) {
-      nested = printObject(
-        [...forward(depth), `${printKey(missing[depth + 1], quote)}: ${nested}`],
-        indent
-      );
-    }
-    parent.append([{ key: name, value: nested, text: `${printKey(name, quote)}: ${nested}` }]);
+  private locate(path: CsfPath, access?: Access, edits?: boolean): Located {
+    return locate(this.editor, this.root(), path, access, edits);
   }
 
   // `printValue` would print a node no parse produced as its fields.
@@ -1136,11 +905,6 @@ class Editor implements CsfObject {
           `Cannot set ${printCsfPath(path)} to a ${node.type} node that did not come from \`get\`, \`transform\`, \`parseExpression\` or \`parseModule\``
         )
       : undefined;
-  }
-
-  private refusedKey(parent: ObjectRoot, key: string, path: CsfPath) {
-    const refusal = parent.refuseKey?.(key);
-    return refusal ? this.failure('unsupported-member', path, this.anchor(), refusal) : undefined;
   }
 
   private anchor(): Node {

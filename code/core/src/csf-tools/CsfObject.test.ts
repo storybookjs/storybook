@@ -197,16 +197,59 @@ describe('CsfObject', () => {
     const csf = parse(`export default { title: 'X' };`);
     const [meta] = csf.objects({ stories: false });
 
-    expect(meta.set(['framework'], { type: 'StringLiteral', value: 'x' })).toEqual({
+    expect(meta.set(['framework'], { type: 'Literal', value: 'x' })).toEqual({
       ok: true,
       changed: true,
     });
     expect(
       meta.set(['control'], { type: 'button', data: { type: 'Identifier', name: 'plainData' } })
     ).toEqual({ ok: true, changed: true });
+    expect(meta.set(['file'], { type: 'File', name: 'a.pdf' })).toEqual({
+      ok: true,
+      changed: true,
+    });
     expect(printCsf(csf).code).toBe(
-      `export default { title: 'X', framework: { type: 'StringLiteral', value: 'x' }, control: { type: 'button', data: { type: 'Identifier', name: 'plainData' } } };`
+      `export default { title: 'X', framework: { type: 'Literal', value: 'x' }, control: { type: 'button', data: { type: 'Identifier', name: 'plainData' } }, file: { type: 'File', name: 'a.pdf' } };`
     );
+  });
+
+  // What `@babel/types` builders give: `t.stringLiteral('b')`, which has no position.
+  const babelString = (value: string) => ({ type: 'StringLiteral', value });
+
+  it.each([
+    ['a builder node', babelString('b'), 'StringLiteral'],
+    [
+      'a node with a builder node inside',
+      { type: 'ArrayExpression', elements: [babelString('b')] },
+      'StringLiteral',
+    ],
+    [
+      'a call with a builder argument',
+      {
+        type: 'CallExpression',
+        callee: { type: 'Identifier', name: 'f' },
+        arguments: [{ type: 'NumericLiteral', value: 1 }],
+      },
+      'NumericLiteral',
+    ],
+    ['an object property', { type: 'ObjectProperty', key: babelString('a') }, 'ObjectProperty'],
+  ])('rejects %s of a Babel-only type without a position', (_kind, node, type) => {
+    const source = `export default { framework: 'a', addons: ['x'] };`;
+    const config = loadConfig(source).parse();
+
+    expect(config.set(['framework'], node)).toMatchObject({
+      ok: false,
+      changed: false,
+      diagnostic: {
+        code: 'unsupported-value',
+        message: `Cannot set framework to a ${type} node that did not come from \`get\`, \`transform\`, \`parseExpression\` or \`parseModule\``,
+      },
+    });
+    expect(config.append(['addons'], node)).toMatchObject({
+      ok: false,
+      diagnostic: { code: 'unsupported-value' },
+    });
+    expect(printConfig(config).code).toBe(source);
   });
 
   it.each([

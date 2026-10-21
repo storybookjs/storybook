@@ -36,17 +36,14 @@ import type {
   JobOrNoOpJob,
   NoOpJobImplementationObj,
 } from './utils/types.ts';
-import { type Workflow, isWorkflowOrAbove } from './utils/types.ts';
+import { type Workflow, isWorkflowOrAbove, workflows } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
 
-/**
- * Generate the CircleCI config for a given workflow.
- *
- * @param workflow - The workflow to generate the config for.
- * @returns The generated config for CircleCI in JS format.
- */
-function generateConfig(workflow: Workflow) {
+/** Workflows that a PR can merge on, so they end in the `circleci-completion` status check. */
+const isMergeGating = (workflow: Workflow) => workflow !== 'windows';
+
+function getJobs(workflow: Workflow): JobOrNoOpJob[] {
   const jobs: JobOrNoOpJob[] = [];
   if (isWorkflowOrAbove(workflow, 'docs')) {
     jobs.push(fmt);
@@ -87,6 +84,19 @@ function generateConfig(workflow: Workflow) {
       ...initEmpty
     );
   }
+  return jobs;
+}
+
+/**
+ * Generate the CircleCI config for the union of the given workflows.
+ *
+ * @param selected - The workflows to generate the config for, in `workflows` order. Jobs report
+ *   failures as the first, most thorough one.
+ * @returns The generated config for CircleCI in JS format.
+ */
+function generateConfig(selected: Workflow[]) {
+  const [workflow] = selected;
+  const jobs = selected.flatMap(getJobs);
 
   /**
    * If you want to filter down to a particular job, e.g.for debugging purposes.. you can do that
@@ -115,7 +125,9 @@ function generateConfig(workflow: Workflow) {
   // Append a completion job that depends on every other job in the workflow.
   // It acts as a single status check for GitHub branch protection: it only runs
   // (and reports success) once every required job has finished successfully.
-  ensuredJobs.push(defineCircleciCompletion([...ensuredJobs]));
+  if (selected.some(isMergeGating)) {
+    ensuredJobs.push(defineCircleciCompletion([...ensuredJobs]));
+  }
 
   const sortedJobs = ensuredJobs.sort((a, b) => {
     if (a.requires.length && b.requires.length) {
@@ -147,7 +159,7 @@ function generateConfig(workflow: Workflow) {
       {} as Record<string, JobImplementationObj | NoOpJobImplementationObj>
     ),
     workflows: {
-      [`${workflow}-generated${isDebugging ? '-debug' : ''}`]: {
+      [`${selected.join('-')}-generated${isDebugging ? '-debug' : ''}`]: {
         jobs: sortedJobs.map((t) =>
           t.requires && t.requires.length > 0
             ? { [t.id]: { requires: t.requires.map((r) => r.id) } }
@@ -163,7 +175,10 @@ console.log('--------------------------------');
 
 program
   .description('Generate CircleCI config')
-  .requiredOption('-w, --workflow <string>', 'Workflow to generate config for')
+  .requiredOption(
+    '-w, --workflow <string>',
+    'Comma-separated workflows to generate the union config for (e.g. `normal,windows`)'
+  )
   .option(
     '--gh-trusted-author <string>',
     'Whether the pipeline can persist to shared caches',
@@ -174,9 +189,18 @@ program
 const opts = program.opts();
 setTrustedAuthor(opts.ghTrustedAuthor === 'true');
 
+const requested: string[] = opts.workflow.split(',').filter(Boolean);
+const unknown = requested.filter((w) => !(workflows as readonly string[]).includes(w));
+if (unknown.length > 0 || requested.length === 0) {
+  program.error(
+    `Unknown workflow "${opts.workflow}". Expected a comma-separated list of: ${workflows.join(', ')}`
+  );
+}
+const selected = workflows.filter((w) => requested.includes(w));
+
 await fs.writeFile(
   join(dirname, '../../.circleci/config.generated.yml'),
-  yml.stringify(generateConfig(opts.workflow), null, {
+  yml.stringify(generateConfig(selected), null, {
     lineWidth: 1200,
     indent: 4,
   })

@@ -22,21 +22,19 @@ vi.mock('../util.ts', () => ({
   shortenPath: (path: string) => path,
 }));
 
-type AddonVersion = string | null | (() => Promise<string | null>);
+type GateVersions = Record<string, string | null | (() => Promise<string | null>)>;
 
 const createPackageManager = (
   versions: Record<string, string>,
-  addonVersion: AddonVersion = null
+  gateVersions: GateVersions = {}
 ): JsPackageManager =>
   ({
     getModulePackageJSON: async (packageName: string): Promise<PackageJson | null> =>
       versions[packageName] ? { version: versions[packageName] } : null,
     getInstalledVersion: async (packageName: string) => {
-      if (packageName !== '@storybook/addon-vitest') {
-        return null;
-      }
+      const gateVersion = gateVersions[packageName] ?? null;
 
-      return typeof addonVersion === 'function' ? addonVersion() : addonVersion;
+      return typeof gateVersion === 'function' ? gateVersion() : gateVersion;
     },
   }) as JsPackageManager;
 
@@ -186,7 +184,10 @@ describe('dependenciesVersions blocker', () => {
   test.each(['2.70.3', '3.0.0-next.30'])(
     '@sveltejs/kit %s is blocked with message and migration anchor',
     async (version) => {
-      const packageManager = createPackageManager({ '@sveltejs/kit': version });
+      const packageManager = createPackageManager(
+        { '@sveltejs/kit': version },
+        { '@storybook/sveltekit': '10.0.0' }
+      );
 
       const result = await blocker.check(createCheckOptions(packageManager));
 
@@ -218,6 +219,39 @@ describe('dependenciesVersions blocker', () => {
     expect(result).toBe(false);
   });
 
+  test('does not block on @sveltejs/kit 2 without @storybook/sveltekit installed', async () => {
+    const manager = createPackageManager({ '@sveltejs/kit': '2.70.3' });
+    const gateSpy = vi.spyOn(manager, 'getInstalledVersion');
+
+    const result = await blocker.check(createCheckOptions(manager));
+
+    expect(result).toBe(false);
+    expect(gateSpy).toHaveBeenCalledWith('@storybook/sveltekit');
+  });
+
+  test('blocks on @sveltejs/kit 2 when @storybook/sveltekit is installed', async () => {
+    const packageManager = createPackageManager(
+      { '@sveltejs/kit': '2.70.3' },
+      { '@storybook/sveltekit': '10.0.0' }
+    );
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toEqual({
+      packageName: '@sveltejs/kit',
+      installedVersion: '2.70.3',
+      minimumVersion: '3.0.0',
+    });
+
+    if (!result) {
+      throw new Error('Expected @sveltejs/kit 2.70.3 to be blocked');
+    }
+
+    const logged = blocker.log(result);
+
+    expect(logged.title).toBe('Require SvelteKit v3 and up');
+  });
+
   test('missing @angular/core does not block', async () => {
     const packageManager = createPackageManager({});
 
@@ -241,7 +275,12 @@ describe('dependenciesVersions blocker', () => {
   });
 
   test('blocks on Vitest 3 when @storybook/addon-vitest is installed', async () => {
-    const packageManager = createPackageManager({ vitest: '3.2.4' }, '11.0.0');
+    const packageManager = createPackageManager(
+      { vitest: '3.2.4' },
+      {
+        '@storybook/addon-vitest': '11.0.0',
+      }
+    );
 
     const result = await blocker.check(createCheckOptions(packageManager));
 
@@ -263,7 +302,12 @@ describe('dependenciesVersions blocker', () => {
   });
 
   test('passes at the Vitest 4.0.0 boundary with the addon installed', async () => {
-    const packageManager = createPackageManager({ vitest: '4.0.0' }, '11.0.0');
+    const packageManager = createPackageManager(
+      { vitest: '4.0.0' },
+      {
+        '@storybook/addon-vitest': '11.0.0',
+      }
+    );
 
     const result = await blocker.check(createCheckOptions(packageManager));
 
@@ -271,7 +315,7 @@ describe('dependenciesVersions blocker', () => {
   });
 
   test('does not block when the addon is installed but Vitest is absent', async () => {
-    const manager = createPackageManager({}, '11.0.0');
+    const manager = createPackageManager({}, { '@storybook/addon-vitest': '11.0.0' });
     const moduleSpy = vi.spyOn(manager, 'getModulePackageJSON');
 
     const result = await blocker.check(createCheckOptions(manager));
@@ -285,7 +329,7 @@ describe('dependenciesVersions blocker', () => {
       vite: '7.1.2',
       vitest: '3.2.4',
     }));
-    const packageManager = createPackageManager({}, '11.0.0');
+    const packageManager = createPackageManager({}, { '@storybook/addon-vitest': '11.0.0' });
 
     const result = await blocker.check(createCheckOptions(packageManager));
 
@@ -297,8 +341,11 @@ describe('dependenciesVersions blocker', () => {
   });
 
   test('does not block when the addon lookup throws', async () => {
-    const packageManager = createPackageManager({}, () =>
-      Promise.reject(new Error('version detection failed'))
+    const packageManager = createPackageManager(
+      {},
+      {
+        '@storybook/addon-vitest': () => Promise.reject(new Error('version detection failed')),
+      }
     );
 
     const result = await blocker.check(createCheckOptions(packageManager));

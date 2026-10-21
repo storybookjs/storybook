@@ -511,7 +511,7 @@ export class InvalidBasePathError extends StorybookError {
     super({
       name: 'InvalidBasePathError',
       category: Category.CORE_COMMON,
-      code: 16,
+      code: 20,
       message: dedent`
         Invalid Storybook base path: ${JSON.stringify(data.basePath)}.
 

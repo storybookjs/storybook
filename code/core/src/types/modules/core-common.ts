@@ -229,8 +229,8 @@ export interface LoadOptions {
   cacheKey?: string;
   extendServer?: (server: HttpServer) => void;
   /**
-   * The basePath from which storybook is served.
-   * @default '/' or undefined
+   * URL path prefix Storybook is served from, normalized to start and end with `/`.
+   * @default '/'
    */
   basePath?: string;
 }

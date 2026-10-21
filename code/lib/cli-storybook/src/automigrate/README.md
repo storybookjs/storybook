@@ -47,6 +47,7 @@ transform: () => [
   Edits only see script files: MDX, Svelte, and Vue stories reach `handler` hooks only.
   Consecutive edits share one parse, and the runner prints the file after each edit.
   `handler(code, { id, kind })` receives the output of the fixes before it and returns new code, or `null` to leave the file unchanged; use it for text edits such as renaming an import.
+- An edit that applies alike to the meta and every story discovers them with `everyCsfObject(csf)` from `helpers/edit-parsed-file.ts` instead of `csf.objects()`: a story declared as another story, such as `export const Secondary = Primary`, shares that story's object, so its diagnostic does not skip the file.
 - A hook that throws, an edit that leaves mutation diagnostics, or a file that cannot be read or parsed skips that file for that fix only: the fix still migrates its other files, and later fixes see the file as the last successful hook left it.
   The runner writes every skipped file and the reason to `automigrations-summary.md` in the project root and points the user to it at the end of the run.
 - A fix fails when its hooks fail on the main config, and then leaves the other files alone; otherwise it succeeds and reports the files it skipped.

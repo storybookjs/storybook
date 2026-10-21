@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 
-import { generate, parser, types as t } from 'storybook/internal/babel';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig } from 'storybook/internal/types';
@@ -9,6 +8,8 @@ import { transformSync } from 'esbuild';
 import { walk } from 'estree-walker';
 import { basename, normalize } from 'pathe';
 
+import { parseModule } from '../csf-tools/estree/ast.ts';
+import { SourceEditor } from '../csf-tools/estree/editor.ts';
 import { resolveMock } from './resolve.ts';
 
 const DEFAULT_MODULE_DIRECTORIES = ['/node_modules/'];
@@ -34,27 +35,18 @@ interface ExtractMockCallsOptions {
   configDir: string;
 }
 
-/**
- * A wrapper around the babel parser that enables the necessary plugins to handle modern JavaScript
- * features, including TSX.
- *
- * @param code - The code to parse.
- * @returns The parsed code.
- */
-export const babelParser = (code: string) => {
-  return parser.parse(code, {
-    sourceType: 'module',
-    // Enable plugins to handle modern JavaScript features, including TSX.
-    plugins: ['typescript', 'jsx', 'classProperties', 'objectRestSpread'],
-    errorRecovery: true,
-  }).program;
-};
+const isStringLiteral = (node: any): boolean =>
+  node?.type === 'Literal' && typeof node.value === 'string';
+
+// `import('foo')`, whose specifier `sb.mock` accepts in place of the string.
+const isStaticImport = (node: any): boolean =>
+  node?.type === 'ImportExpression' && isStringLiteral(node.source);
 
 /** Utility to rewrite sb.mock(import('...'), ...) to sb.mock('...', ...) */
-export function rewriteSbMockImportCalls(code: string) {
-  const ast = babelParser(code);
+export function rewriteSbMockImportCalls(code: string, fileName: string) {
+  const editor = new SourceEditor(code, fileName);
 
-  walk(ast as any, {
+  walk(editor.program as any, {
     enter(node: any) {
       if (
         node.type === 'CallExpression' &&
@@ -64,17 +56,23 @@ export function rewriteSbMockImportCalls(code: string) {
         node.callee.property.type === 'Identifier' &&
         node.callee.property.name === 'mock' &&
         node.arguments.length > 0 &&
-        node.arguments[0].type === 'CallExpression' &&
-        node.arguments[0].callee.type === 'Import' &&
-        node.arguments[0].arguments.length === 1 &&
-        node.arguments[0].arguments[0].type === 'StringLiteral'
+        isStaticImport(node.arguments[0])
       ) {
         // Replace sb.mock(import('foo'), ...) with sb.mock('foo', ...)
-        node.arguments[0] = t.stringLiteral(node.arguments[0].arguments[0].value);
+        const [argument] = node.arguments;
+        editor.edits.overwrite(argument.start, argument.end, JSON.stringify(argument.source.value));
       }
     },
   });
-  return generate(ast, {}, code);
+  if (!editor.pending) {
+    return { code, map: null };
+  }
+  // Spread into a plain object: babel-loader, next in the webpack chain, rejects a string map.
+  const map = { ...editor.generateMap() };
+  return {
+    code: editor.toString(),
+    map: { ...map, sourcesContent: map.sourcesContent as string[] },
+  };
 }
 
 /**
@@ -84,13 +82,6 @@ export function rewriteSbMockImportCalls(code: string) {
  */
 export function extractMockCalls(
   options: ExtractMockCallsOptions,
-  parse: (
-    input: string,
-    options?: {
-      allowReturnOutsideFunction?: boolean;
-      jsx?: boolean;
-    }
-  ) => t.Node,
   root: string,
   findMockRedirect: (
     root: string,
@@ -101,7 +92,7 @@ export function extractMockCalls(
   try {
     const previewConfigCode = readFileSync(options.previewConfigPath, 'utf-8');
     const { code: jsCode } = transformSync(previewConfigCode, { loader: 'tsx', format: 'esm' });
-    const ast = parse(jsCode);
+    const ast = parseModule(jsCode, options.previewConfigPath).program;
     const mocks: MockCall[] = [];
 
     /** Helper to check if an ObjectExpression node has spy: true */
@@ -111,10 +102,10 @@ export function extractMockCalls(
       }
       for (const prop of objectExpression.properties) {
         if (
-          prop.type === 'ObjectProperty' &&
+          prop.type === 'Property' &&
           ((prop.key.type === 'Identifier' && prop.key.name === 'spy') ||
-            (prop.key.type === 'StringLiteral' && prop.key.value === 'spy')) &&
-          prop.value.type === 'BooleanLiteral' &&
+            (isStringLiteral(prop.key) && prop.key.value === 'spy')) &&
+          prop.value.type === 'Literal' &&
           prop.value.value === true
         ) {
           return true;
@@ -124,8 +115,7 @@ export function extractMockCalls(
     }
 
     walk(ast as any, {
-      // @ts-expect-error - Node comes from babel
-      async enter(node: t.Node) {
+      async enter(node: any) {
         if (
           node.type !== 'CallExpression' ||
           node.callee.type !== 'MemberExpression' ||
@@ -141,16 +131,12 @@ export function extractMockCalls(
           return;
         }
 
-        let path: string | undefined;
         // Support sb.mock('foo', ...) and sb.mock(import('foo'), ...)
-        if (node.arguments[0].type === 'StringLiteral') {
-          path = node.arguments[0].value as string;
-        } else if (
-          node.arguments[0].type === 'CallExpression' &&
-          node.arguments[0].callee.type === 'Import' &&
-          node.arguments[0].arguments[0].type === 'StringLiteral'
-        ) {
-          path = node.arguments[0].arguments[0].value;
+        let path: string;
+        if (isStringLiteral(node.arguments[0])) {
+          path = node.arguments[0].value;
+        } else if (isStaticImport(node.arguments[0])) {
+          path = node.arguments[0].source.value;
         } else {
           return;
         }

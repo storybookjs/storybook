@@ -52,7 +52,9 @@ export const UpgradeBlock: FC<UpgradeBlockProps> = ({ onNavigateToWhatsNew }) =>
       {
         id: 'pnpm',
         title: 'pnpm',
-        children: <UpgradeSnippet command="pnpm dlx storybook@latest upgrade" />,
+        children: (
+          <UpgradeSnippet command="pnpm --allow-build=esbuild dlx storybook@latest upgrade" />
+        ),
       },
     ],
   });

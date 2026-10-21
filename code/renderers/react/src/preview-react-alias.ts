@@ -11,12 +11,10 @@ export const reactResolveAlias = ({ react, reactDom }: ReactAliasTarget) => ({
   'react-dom': reactDom,
 });
 
-/**
- * Vite merges object aliases with a spread, which keeps our key position while another plugin
- * replaces the value. A string key is a prefix match, so `react` pointing at a file would turn
- * `react/jsx-runtime` into `<file>/jsx-runtime`. Anchored regexes with an explicit subpath capture
- * keep each entry self-contained no matter how they are merged.
- */
+// Vite merges object aliases with a spread, which keeps our key position while another plugin
+// replaces the value. A string key is a prefix match, so `react` pointing at a file would turn
+// `react/jsx-runtime` into `<file>/jsx-runtime`. Anchored regexes with an explicit subpath capture
+// keep each entry self-contained no matter how they are merged.
 export const reactViteAlias = ({ react, reactDom }: ReactAliasTarget) => [
   ...(isAbsolute(reactDom)
     ? [{ find: /^react-dom\/server$/, replacement: `${reactDom}/server.browser.js` }]

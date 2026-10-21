@@ -1,5 +1,9 @@
 import { Channel } from 'storybook/internal/channels';
-import { CHANNEL_CREATED, CHANNEL_WS_DISCONNECT } from 'storybook/internal/core-events';
+import {
+  CHANNEL_CREATED,
+  CHANNEL_WS_DISCONNECT,
+  PREVIEW_KEYDOWN,
+} from 'storybook/internal/core-events';
 import { MemoryRouter } from 'storybook/internal/router';
 import type { Addon_Config, Addon_Types } from 'storybook/internal/types';
 import type { API_PreparedStoryIndex } from 'storybook/internal/types';
@@ -220,6 +224,30 @@ export const FocusRegionShortcuts = meta.story({
       await userEvent.tab();
       expect(panel).not.toHaveFocus();
       expect(getComputedStyle(panel, '::after').outlineStyle).toBe('none');
+    });
+  },
+});
+
+export const LandmarkNavigationFromPreview = meta.story({
+  play: async ({ canvasElement, step }) => {
+    const iframe = canvasElement.querySelector('#storybook-preview-iframe') as HTMLElement;
+    const pressInPreview = (shiftKey: boolean) => {
+      iframe.focus();
+      channel.emit(PREVIEW_KEYDOWN, {
+        event: { key: 'F6', code: 'F6', shiftKey, altKey: false, ctrlKey: false, metaKey: false },
+      });
+    };
+
+    await step('F6 moves to the landmark after the preview', async () => {
+      pressInPreview(false);
+      const panel = canvasElement.querySelector(`#${focusableUIElements.addonPanel}`);
+      await waitFor(() => expect(panel).toHaveFocus());
+    });
+
+    await step('Shift+F6 moves to the landmark before the preview', async () => {
+      pressInPreview(true);
+      const toolbar = canvasElement.querySelector('[aria-labelledby="sb-preview-toolbar-title"]');
+      await waitFor(() => expect(toolbar).toHaveFocus());
     });
   },
 });

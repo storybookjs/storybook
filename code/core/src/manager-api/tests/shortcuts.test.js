@@ -2,6 +2,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/client-logger';
+import { PREVIEW_KEYDOWN } from 'storybook/internal/core-events';
 
 import { init as initLayout } from '../modules/layout';
 import { init as initShortcuts } from '../modules/shortcuts';
@@ -473,6 +474,55 @@ describe('focus region shortcuts', () => {
 
       expect(document.activeElement).toBe(sidebar);
     });
+  });
+});
+
+describe('landmark navigation relayed from the preview', () => {
+  const setup = () => {
+    document.body.innerHTML = '<div id="storybook-preview-region" data-sb-landmark></div>';
+    const store = createMockStore();
+    const channel = { on: vi.fn() };
+    const fullAPI = {
+      getNavAvailability: () => 'shown',
+      getIsFullscreen: () => false,
+      toggleFullscreen: vi.fn(),
+    };
+    const { state, init } = initShortcuts({ store, provider: { channel }, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: true }, storyId: 'a' });
+    init();
+
+    const [, onPreviewKeydown] = channel.on.mock.calls.find(([name]) => name === PREVIEW_KEYDOWN);
+    const replayed = [];
+    const listener = (event) => replayed.push(event);
+    document.addEventListener('keydown', listener, { capture: true });
+    return {
+      fullAPI,
+      replayed,
+      region: document.getElementById('storybook-preview-region'),
+      pressInPreview: (event) => {
+        onPreviewKeydown({ event: { altKey: false, ctrlKey: false, metaKey: false, ...event } });
+        document.removeEventListener('keydown', listener, { capture: true });
+      },
+    };
+  };
+
+  it('replays F6 on the preview landmark for React Aria to navigate from', () => {
+    const { pressInPreview, replayed, region } = setup();
+
+    pressInPreview({ key: 'F6', code: 'F6', shiftKey: true });
+
+    expect(replayed).toHaveLength(1);
+    expect(replayed[0].target).toBe(region);
+    expect(replayed[0].key).toBe('F6');
+    expect(replayed[0].shiftKey).toBe(true);
+  });
+
+  it('does not replay other keys', () => {
+    const { pressInPreview, replayed } = setup();
+
+    pressInPreview({ key: 'F', code: 'KeyF', altKey: true, shiftKey: false });
+
+    expect(replayed).toHaveLength(0);
   });
 });
 

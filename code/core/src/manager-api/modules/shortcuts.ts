@@ -586,6 +586,24 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
       ) {
         fullAPI.toggleFullscreen(false);
       }
+
+      // React Aria navigates landmarks on F6 / Shift+F6 (keys no shortcut can be bound to), but
+      // only sees keydowns in the manager document. A press inside the preview is replayed on
+      // the preview landmark, from where React Aria navigates exactly as it would for a press on
+      // the preview iframe.
+      if (data.event.key === 'F6') {
+        const { key, altKey, ctrlKey, metaKey, shiftKey } = data.event;
+        document.getElementById(focusableUIElements.previewRegion)?.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key,
+            altKey,
+            ctrlKey,
+            metaKey,
+            shiftKey,
+            cancelable: true,
+          })
+        );
+      }
     });
   };
 

@@ -1,3 +1,4 @@
+/// <reference path="../typings.d.ts" />
 import type { FunctionInterpolation, Interpolation } from '@emotion/react';
 
 import type { StorybookTheme } from './types.ts';

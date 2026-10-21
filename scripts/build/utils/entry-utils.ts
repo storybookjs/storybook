@@ -23,6 +23,12 @@ export type BuildEntry = {
    * second copy, so widening it is a reviewer-visible edit), and a size budget.
    */
   portable?: { external: string[] };
+  /**
+   * Packages this entry's d.ts must import, bundled in a separate pass so the rest of the package
+   * can still inline them. An inlined copy is a different `Theme` from the package the entry
+   * augments, so `styled` and `useTheme` never see the augmentation.
+   */
+  dtsExternal?: string[];
 };
 export type BuildEntriesByPlatform = Partial<Record<EntryType, BuildEntry[]>>;
 

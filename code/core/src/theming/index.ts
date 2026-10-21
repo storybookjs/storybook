@@ -1,5 +1,3 @@
-/// <reference path="../typings.d.ts" />
-
 export * from './base.ts';
 export * from './types.ts';
 export * from './create.ts';

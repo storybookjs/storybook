@@ -2,31 +2,72 @@
 
 An experimental library to read, analyze, transform, and write CSF programmatically.
 
-- Read - Parse a CSF file with Babel
-- Analyze - Extract its metadata & stories based on the Babel AST
+- Read - Parse a CSF file with OXC
+- Analyze - Extract its metadata & stories from the ESTree AST
 - Transform - Edit stories through `CsfFile.objects()` and preview or main configuration directly through `ConfigFile`
-- Write - Write the AST back to a file
+- Write - Write the edited source back to a file; code no edit touches stays as written
 
 It can parse MDX into CSF.
 
+`CsfFile.meta.component` is the meta's `component` as written, and `CsfFile.componentImport` the import it refers to, as `{ source, imported, local }`: `import { Button as B } from './Button'` gives `{ source: './Button', imported: 'Button', local: 'B' }`, and a default import has `imported: 'default'`. It is `undefined` when `component` is not an identifier bound by a default or named import, such as a local component, a member like `UI.Button`, or `Button as any`.
+
 ## Transforming stories
 
-`CsfFile.objects()` returns one `CsfObject` editor per mutable object it can prove safe to edit: the meta, each story export, and each CSF2 `Story.parameters` / `Story.argTypes` annotation assignment.
-`{ meta, stories }` narrows what is discovered; both are included by default. Story discovery also includes separate CSF2 parameter assignments, so callers use the same paths regardless of the source format.
+`CsfFile.objects()` returns one `CsfObject` editor per mutable object it can prove safe to edit: the meta and each story export.
+`{ meta, stories }` narrows what is discovered; both are included by default.
 
-Each editor reads and writes static property paths with `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, and `group`.
-`get` returns an AST expression; `getValue` reads plain values from literals, nested arrays and objects, and local constants without executing code. Missing fields return `undefined`. Values that cannot be resolved statically return `undefined` and add a mutation diagnostic; reads never return a partially decoded object.
-`set` accepts Babel expressions or plain strings, numbers, booleans, `null`, `undefined`, and nested arrays or objects of those values. Values are copied into the AST; subsequent changes to the input do not affect the file. Top-level expression-shaped objects are interpreted as AST nodes.
+Each editor reads and writes static property paths with `get`, `getValue`, `inspect`, `set`, `transform`, `remove`, `rename`, `move`, and `group`.
+`get` returns an AST expression; `getValue` reads plain values from literals, nested arrays and objects, and local constants without executing code. Reads never return a partially decoded object.
+
+`get` and `getValue` return `undefined` both for a field that is missing and for one that cannot be read statically: a path whose parent is not an object literal, or that a spread, a computed key, or a duplicate field leaves unproven, and for `getValue` a value it cannot evaluate, such as a call or a function. A field written as `undefined` is `undefined` too, but `get` returns its expression. Reads add no diagnostics, so they never stop a later write: a mutation proves the shape it edits again and reports its own. `inspect` tells the cases apart and gives the reason. It reads the expression like `get`, without evaluating it:
+
+```ts
+const size = story.inspect(['args', 'size']);
+if (size.kind === 'value') {
+  // `size.node` is the expression, `undefined` included
+} else if (size.kind === 'unreadable') {
+  // `args.size` may be set where it cannot be read statically: see `size.diagnostic.code`
+} else {
+  // `args.size` is missing
+}
+```
+
+Use `inspect` when a missing field and an unreadable one call for different edits, such as an automigration that reports a file it cannot read instead of skipping it.
+
+The expressions `get`, `inspect` and `transform` give are frozen snapshots: `set` prints an expression from its source, so a change to its fields would be lost, and making one throws. To write another value, pass a plain value or `parseExpression(text)`.
+`set` accepts an expression from `get` or `parseExpression`, or plain strings, numbers, booleans, `null`, `undefined`, and nested arrays or objects of those values and expressions. An object whose `type` names an AST node is rejected with a diagnostic unless it came from `get` or `parseExpression`. Plain values are printed into the source, so later changes to the input do not affect the file.
+An expression from `get` is indented as if its line had no indent, and `set` and `transform` indent a value's lines like the line of the field it is written to, so a value copied between fields keeps its layout. A field that spans lines, added to an object written on one line, puts every field of that object on a line of its own; a one-line field leaves the object on its line. Objects around it, and an object a field is grouped into, keep their layout.
 Successful removals and moves recursively remove empty source parents, stopping at the editor's root object or an empty parent that shadows an earlier spread or computed key. Removing a field that could reveal an earlier spread value produces a diagnostic. Moves clean up after inserting the destination, so shared ancestors remain intact. Unrelated empty objects are preserved.
-Nested object paths can follow local constants used only by that object; shared or reassigned references remain untouched.
+Reads follow any local constant. Edits follow only a constant that the edited object alone refers to; shared or reassigned references remain untouched.
 Nodes reused by `transform` keep their original source, so relocating a value prints it as written instead of pretty-printing it.
 `group(path, names)` nests named siblings under a destination object, retaining their source order. A new group replaces a contiguous run of source fields at their original position. Grouping into an existing object requires values whose relocation cannot change expression evaluation order. Conflicts, ambiguous keys, and unsafe relocations produce diagnostics before the operation changes the source; absent source fields are ignored.
-Annotation editors take the same paths as their story counterparts, so `['parameters', 'a11y']` addresses `Story.parameters.a11y` and an inline `parameters.a11y` alike.
+`node` is the editor's object literal in the current parse: the meta or story object, a call argument, or a config object. It is the file's own node, found again after every mutation: read it after editing instead of keeping it, and do not change it, since edits go through the source. It is `undefined` for a config made of named exports, for a story without an object literal, and once the object is gone.
+A story's top-level `Story.name = value` assignments (CSF2 annotations such as `args`, `argTypes`, `parameters`, `decorators`, `loaders`, `beforeEach`, `play`, `render` and `tags`) are fields of the story, after the fields of its object literal if it has one. The same paths address both forms, so `['parameters', 'a11y']` is `Story.parameters.a11y` and an inline `parameters.a11y` alike. A story without an object literal, a function or a bound template, adds a missing field as a new `Story.name = value;` statement after its last annotation, or after its declaration; removing a field, or emptying it through cleanup, removes its statement. A field written both inline and as an assignment is a duplicate field.
 
 Discovery and mutation are conservative: an object or a path whose shape cannot be proven is left untouched, and the reason is reported on `CsfFile.mutationDiagnostics` as a `CsfMutationDiagnostic`.
-Unproven shapes include story or meta bindings that are reassigned or aliased, a CSF factory configuration that is not an object literal owned by that single factory call, dynamically computed annotation names, and target paths shadowed by a spread, a duplicate field, or a computed key.
+Unproven shapes include story or meta bindings that are reassigned or aliased, a CSF factory configuration that is not an object literal owned by that single factory call, and target paths shadowed by a spread, a duplicate field, or a computed key.
+A story whose initializer is not an object literal, a function or a bound template, such as `export const A = base` or `makeStory()`, is reported as `unsupported-initializer`. A story is also left untouched when it is written to other than by a top-level `Story.name = value`, such as `Story.args.label = 'x'`, `Story.parameters ||= {}` or `Story[name] = {}`. A story whose assignments are edited is left untouched when other code could see them: an alias, a spread, or a call or array that receives the story; calling or rendering the story is fine. Such a story without an object literal holds a function or a bound template; any other value could be shared with other stories.
+`set` can still add a field missing from an object with a spread or a computed key: the field is appended after them, so it overrides any value they provide. A missing parent it creates there carries the spreads' member forward at every level it creates: `set(['args', 'a'], 1)` on `{ ...Base }` writes `args: { ...Base.args, a: 1 }`, and two levels deep `parameters: { ...Base.parameters, docs: { ...Base.parameters?.docs, x: 1 } }`. When more than one spread may provide the member, which one does depends on whether a later one has it as its own `undefined`, so creating the parent is refused (`spread-field`); a spread of a local object literal known to have the member settles it, and one known to lack it is skipped. `appendValueToArray` and `appendNodeToArray` create a missing array the same way, as `addons: [...(shared.addons ?? []), 'x']`. The spread's own member is read with `.`, as a story spreading a value that is not an object is broken already, and a member below it with `?.`, as it may be missing. For a spread of a local constant object literal the members are known: a member it has is read with `.`, and one it lacks is left out. A type assertion on the spread is kept. Only a spread of an identifier or a member chain such as `...stories.Base` is carried. The carried member is read again where the parent is created, so a getter or a binding reassigned in between can give another value than the spread did; after a spread of anything else, such as a call, or after a computed key, creating a parent or an array is refused. Changing or removing a field that a later spread or computed key could override is refused as well.
+
+For edits that no path addresses, `CsfFile.editor` and `ConfigFile.editor` are the file's `SourceEditor`, and `program` its current parse; `CsfFile.appendStatement(code)` adds a statement that `formatCsf` prints. A commit parses and indexes the file again. The underscored `_editor`, `_program` and `_appendStatement` are deprecated aliases.
 
 `CsfFile.changed` is true once any mutation has been applied, which is the signal for whether the file needs to be written back.
+
+Each mutation is applied on its own, and a refused one leaves the file as it was, also when its edit would leave a file the CSF indexer rejects (`invalid-csf`). To apply several as one, run them in `transaction(fn)` on `CsfFile` or `ConfigFile`: when `fn` throws, returns `false`, or any mutation in it returns `{ ok: false }`, every edit made in it is rolled back, and `changed` with it. Mutations inside return their results as usual, and the diagnostics of refused ones stay on `mutationDiagnostics`. `transaction` returns whether the edits were kept. `fn` runs synchronously; one that returns a promise throws. A transaction inside another rolls back on its own, and with the outer one.
+
+```ts
+for (const story of csf.objects()) {
+  const handlers = story.get(['parameters', 'msw', 'handlers']);
+  if (handlers) {
+    csf.transaction(() => {
+      story.remove(['parameters', 'msw']);
+      story.set(['beforeEach'], parseExpression(`() => worker.use(...${placeableTextOf(handlers)})`));
+    });
+  }
+}
+```
+
+`textOf` gives a node's source as written, and `placeableTextOf` that source ready to place as a value. `detachedTextOf` also dedents it as if the node's line had no indent, to place a value from a file at another indent, such as in a generated snippet.
 
 ## Transforming preview and main configuration
 
@@ -44,7 +85,11 @@ if (config.changed && config.mutationDiagnostics.length === 0) {
 }
 ```
 
-`ConfigFile.changed` and `ConfigFile.mutationDiagnostics` track these editor operations. Existing `getFieldNode` reads reflect editor changes. Array and import helpers remain available; their edits are not tracked by `changed`. `writeConfig` rejects files with mutation diagnostics to avoid writing partial edits.
+`ConfigFile.changed` and `ConfigFile.mutationDiagnostics` track these editor operations. Existing `getFieldNode` reads reflect editor changes. `writeConfig` rejects files with mutation diagnostics to avoid writing partial edits.
+
+`appendValueToArray`, `appendNodeToArray`, and `removeEntryFromArray` return a `CsfMutationResult` like the editor operations. A field that is not an array literal leaves the file as it is and adds an `unsupported-value` diagnostic; a missing field or entry is a no-op for `removeEntryFromArray`.
+
+`setImport`, `setRequireImport`, and `removeImport` look at every import or top-level `require` of the module, and take a named binding as `'name'` or `'name as alias'`. `setImport` and `setRequireImport` skip a binding the module already provides under that local name. A binding that only an `import type` provides becomes a value import; other type-only imports are left alone. `removeImport` removes every import of a plain name, whatever its local name, but only the matching import of an alias. Added statements follow the file's quotes and semicolons. Import helper edits are not tracked by `changed`.
 
 Discovery rejects shared or reassigned bindings, unresolved re-exports, and conditional or repeated CommonJS assignments. Inline object methods and exported function declarations can be transformed as function expressions while retaining their declaration form. Path edits use the same spread, duplicate-key, occupied-destination, and dynamic-value checks as story edits. Unsupported input produces diagnostics without rewriting that input.
 

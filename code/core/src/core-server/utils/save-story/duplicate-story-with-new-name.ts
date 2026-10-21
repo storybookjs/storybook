@@ -4,7 +4,8 @@ import type { CsfFile, CsfMutationResult } from 'storybook/internal/csf-tools';
 import { type Node, unwrapExpression } from '../../../csf-tools/estree/ast.ts';
 import { SaveStoryError, assertApplied, findStory } from './utils.ts';
 
-// Adds `newStoryName` as a copy of `storyName`, without its own `name` and with its `args` emptied.
+// Adds `newStoryName` as a copy of `storyName`. The copy shows the name of its export and has empty
+// `args`, except where a later spread could override them: those are kept as written.
 export const duplicateStoryWithNewName = (
   csf: CsfFile,
   storyName: string,
@@ -61,14 +62,22 @@ export const duplicateStoryWithNewName = (
     csf.editor.commit();
 
     const copy = findStory(csf, newStoryName);
-    // Without a `name` of its own, the copy shows the name its export gives. When a spread provides
-    // the name, or could, set that name after it; when a later spread could override it, leave it.
-    const name = copy.inspect(['name']);
-    if (
-      name.kind !== 'missing' &&
-      !(name.kind === 'value' && attempt(() => copy.remove(['name'])))
-    ) {
-      attempt(() => copy.set(['name'], storyNameFromExport(newStoryName)));
+    // Without a `name` of its own, the copy shows the name its export gives.
+    const exportedName = storyNameFromExport(newStoryName);
+    switch (copy.inspect(['name']).kind) {
+      case 'missing':
+        break;
+      case 'value':
+        // Removing it is refused when that would reveal a name a spread before it provides.
+        if (!attempt(() => copy.remove(['name']))) {
+          attempt(() => copy.set(['name'], exportedName));
+        }
+        break;
+      case 'unreadable':
+        // A spread provides the name, or could: set it after the spread. When a later spread could
+        // override it, the set is refused, and the name is left as it is.
+        attempt(() => copy.set(['name'], exportedName));
+        break;
     }
     if (copy.inspect(['args']).kind === 'value') {
       assertApplied(newStoryName, copy.set(['args'], {}));

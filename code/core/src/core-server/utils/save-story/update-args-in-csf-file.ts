@@ -17,7 +17,7 @@ export const updateArgsInCsfFile = (
   const story = findStory(csf, exportName);
   csf.transaction(() => {
     for (const [key, value] of Object.entries(args)) {
-      assertApplied(csf, exportName, story.set(['args', key], value));
+      assertApplied(exportName, story.set(['args', key], value));
     }
   });
 };

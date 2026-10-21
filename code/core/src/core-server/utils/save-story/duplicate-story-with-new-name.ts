@@ -2,7 +2,7 @@ import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import type { CsfFile, CsfMutationResult } from 'storybook/internal/csf-tools';
 
 import { type Node, unwrapExpression } from '../../../csf-tools/estree/ast.ts';
-import { SaveStoryError, assertApplied, findStory, originalStoryOf } from './utils.ts';
+import { SaveStoryError, assertApplied, findStory } from './utils.ts';
 
 // Adds `newStoryName` as a copy of `storyName`, without its own `name` and with its `args` emptied.
 export const duplicateStoryWithNewName = (
@@ -18,7 +18,7 @@ export const duplicateStoryWithNewName = (
   // A copy of `export const Secondary = Primary` would be another name for Primary too.
   const source = csf.storyObject(storyName);
   if (source?.ok === false && source.diagnostic.code === 'aliased-story') {
-    const original = originalStoryOf(csf, storyName);
+    const original = source.diagnostic.aliasOf;
     throw new SaveStoryError(
       original
         ? `Cannot create a story from ${storyName} because it is the same story as ${original}. Create the new story from ${original} instead.`
@@ -61,6 +61,6 @@ export const duplicateStoryWithNewName = (
     attempt(() => copy.set(['name'], storyNameFromExport(newStoryName)));
   }
   if (copy.inspect(['args']).kind === 'value') {
-    assertApplied(csf, newStoryName, copy.set(['args'], {}));
+    assertApplied(newStoryName, copy.set(['args'], {}));
   }
 };

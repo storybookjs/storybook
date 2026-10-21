@@ -653,13 +653,11 @@ describe('refusal messages', () => {
     );
   });
 
-  test('explains an alias of a binding that is not a story of its own', () => {
+  test('names the first export of a binding that is not a story of its own', () => {
     expect(
       refusal([`const Local = { args: { a: 1 } };`, `export { Local as A, Local as B };`], 'B')
         .message
-    ).toBe(
-      'Cannot save story B because it is another name for a story in this file. Save that story instead.'
-    );
+    ).toBe('Cannot save story B because it is the same story as A. Save A instead.');
   });
 
   test('explains a story that other code in the file changes', () => {
@@ -675,9 +673,6 @@ describe('refusal messages', () => {
   });
 
   test('explains an edit that would leave an invalid story file', () => {
-    const parsed = loadCsf(`export default { title: 'X' };\nexport const A = {};`, {
-      makeTitle,
-    }).parse();
     const diagnostic = {
       code: 'invalid-csf',
       target: { kind: 'story', exportName: 'A', localName: 'A' },
@@ -685,12 +680,12 @@ describe('refusal messages', () => {
       message: 'Edited args.a, but the result is not valid CSF: reason',
     } as const;
     expect(() =>
-      assertApplied(parsed, 'A', { ok: false, changed: false, diagnostic })
+      assertApplied('A', { ok: false, changed: false, diagnostic })
     ).toThrowErrorMatchingInlineSnapshot(
       `[Error: Cannot save arg "a" of story A because the result would not be a valid story file.]`
     );
     expect(() =>
-      assertApplied(parsed, 'A', {
+      assertApplied('A', {
         ok: false,
         changed: false,
         diagnostic: { ...diagnostic, code: 'cyclic-move' },

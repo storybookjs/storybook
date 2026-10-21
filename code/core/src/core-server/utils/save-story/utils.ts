@@ -6,42 +6,11 @@ import type {
 } from 'storybook/internal/csf-tools';
 import { printCsfPath } from 'storybook/internal/csf-tools';
 
-import { type Node, unwrapExpression } from '../../../csf-tools/estree/ast.ts';
-
 export class SaveStoryError extends Error {}
-
-/**
- * The story `exportName` is another name for, as in `export { Primary as Secondary }` or `export
- * const Secondary = Primary`, when that is a story of the file too.
- */
-export const originalStoryOf = (csf: CsfFile, exportName: string) => {
-  const node = csf._storyExports[exportName] as Node | undefined;
-  let original: string | undefined;
-  if (node?.type === 'VariableDeclarator' && node.init) {
-    const init = unwrapExpression(node.init as Node);
-    original = init.type === 'Identifier' ? init.name : undefined;
-  } else {
-    for (const statement of csf.program.body) {
-      if (statement.type !== 'ExportNamedDeclaration' || statement.source) {
-        continue;
-      }
-      const specifier = statement.specifiers.find(
-        ({ exported }) =>
-          (exported.type === 'Identifier' ? exported.name : exported.value) === exportName
-      );
-      if (specifier?.local.type === 'Identifier') {
-        original = specifier.local.name;
-      }
-    }
-  }
-  return original !== undefined && original !== exportName && Object.hasOwn(csf._stories, original)
-    ? original
-    : undefined;
-};
 
 // What the controls panel shows when csf-tools refuses an edit of story `exportName`. The
 // diagnostic is written for API callers, so it only goes to the server log, as the cause.
-const describeRefusal = (csf: CsfFile, exportName: string, diagnostic: CsfMutationDiagnostic) => {
+const describeRefusal = (exportName: string, diagnostic: CsfMutationDiagnostic) => {
   const { code, path } = diagnostic;
   const [field, key] = path;
   const subject =
@@ -60,7 +29,7 @@ const describeRefusal = (csf: CsfFile, exportName: string, diagnostic: CsfMutati
     case 'duplicate-field':
       return `Cannot save ${subject} because the story sets it more than once.`;
     case 'aliased-story': {
-      const original = originalStoryOf(csf, exportName);
+      const original = diagnostic.aliasOf;
       return original
         ? `Cannot save story ${exportName} because it is the same story as ${original}. Save ${original} instead.`
         : `Cannot save story ${exportName} because it is another name for a story in this file. Save that story instead.`;
@@ -76,8 +45,8 @@ const describeRefusal = (csf: CsfFile, exportName: string, diagnostic: CsfMutati
   }
 };
 
-const refused = (csf: CsfFile, exportName: string, diagnostic: CsfMutationDiagnostic) =>
-  new SaveStoryError(describeRefusal(csf, exportName, diagnostic), { cause: diagnostic });
+const refused = (exportName: string, diagnostic: CsfMutationDiagnostic) =>
+  new SaveStoryError(describeRefusal(exportName, diagnostic), { cause: diagnostic });
 
 export const findStory = (csf: CsfFile, exportName: string): CsfObject => {
   const found = csf.storyObject(exportName);
@@ -85,13 +54,13 @@ export const findStory = (csf: CsfFile, exportName: string): CsfObject => {
     throw new SaveStoryError(`Cannot edit story ${exportName} automatically`);
   }
   if (!found.ok) {
-    throw refused(csf, exportName, found.diagnostic);
+    throw refused(exportName, found.diagnostic);
   }
   return found.object;
 };
 
-export const assertApplied = (csf: CsfFile, exportName: string, result: CsfMutationResult) => {
+export const assertApplied = (exportName: string, result: CsfMutationResult) => {
   if (!result.ok) {
-    throw refused(csf, exportName, result.diagnostic);
+    throw refused(exportName, result.diagnostic);
   }
 };

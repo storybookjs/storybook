@@ -10,7 +10,7 @@ import { TrashIcon } from '@storybook/icons';
 import type { ControllerStateAndHelpers } from 'downshift';
 import { transparentize } from 'polished';
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming/emotion';
+import { styled, type Theme, useTheme } from 'storybook/theming/emotion';
 
 import { matchesKeyCode, matchesModifiers } from '../../keybinding.ts';
 import { getStatus } from '../../utils/status.tsx';
@@ -18,7 +18,6 @@ import { NoResults } from './NoResults.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { DownshiftItem, Match, SearchResult } from './types.ts';
 import { isExpandType } from './types.ts';
-import type { Theme } from '@emotion/react';
 import type { StatusValue } from '../../../types/index.ts';
 
 const { document } = global;

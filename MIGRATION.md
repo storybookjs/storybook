@@ -1,7 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
-  - [Emotion APIs moved out of `storybook/theming`](#emotion-apis-moved-out-of-storybooktheming)
+  - [Theming imports](#theming-imports)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging)
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
@@ -625,19 +625,15 @@
 
 ## From version 10.x to 11.0.0
 
-### Emotion APIs moved out of `storybook/theming`
+### Theming imports
 
-`themes`, `create`, `color`, `background`, `typography`, `tokens`, `lighten`, `darken`, `getPreferredColorScheme`, `createGlobal`, `createReset`, `srOnlyStyles`, `srOnlyUnsetStyles`, and `ignoreSsrWarning` stay on `storybook/theming`, along with the theme types. `Theme` on that entry is `StorybookTheme`. `storybook/theming/create` continues to export `create` and `themes`.
+Import `create`, `themes`, `ThemeVars`, and `ThemeVarsPartial` from `storybook/theming` (or `storybook/theming/create`, the same module). Import everything else — `styled`, `css`, `useTheme`, `color`, `typography`, `background`, `convert`, `ensure`, and the other theme types — from `storybook/theming/emotion`.
 
-`convert` and `ensure` moved to `storybook/theming/emotion`. They attach Emotion keyframes, so they are not part of the React-free module. `DocsContainer` calls `ensure` on the docs theme.
-
-Emotion APIs (`styled`, `ThemeProvider`, `css`, `Global`, `keyframes`, `useTheme`, `withTheme`, `CacheProvider`, `ClassNames`, `jsx`, `createCache`, and `isPropValid`) and Emotion types (`CSSObject`, `Keyframes`, `StyledComponent`, `FunctionInterpolation`, `Interpolation`, and Emotion's `Theme`) are exported from `storybook/theming/emotion`.
-
-The manager runtime still provides the old `storybook/theming` global as a compatibility shim for addons built against Storybook 10, but new manager and preview source should import Emotion APIs from `storybook/theming/emotion`. The package types follow the package export, so `import { styled } from 'storybook/theming'` no longer typechecks.
+The manager runtime still provides `storybook/theming` as a compatibility global for addons built against Storybook 10, and that global includes the Emotion APIs. Package types follow the exports above, so `import { styled } from 'storybook/theming'` does not typecheck.
 
 ```ts
-import { styled, ThemeProvider } from 'storybook/theming/emotion';
-import { themes, create } from 'storybook/theming';
+import { create, themes, type ThemeVars } from 'storybook/theming';
+import { styled, css, useTheme } from 'storybook/theming/emotion';
 ```
 
 ### `storybook dev` now blocks remote iframe embedding

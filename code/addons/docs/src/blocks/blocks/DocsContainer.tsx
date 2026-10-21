@@ -3,8 +3,7 @@ import React, { useEffect, useMemo } from 'react';
 
 import type { Renderer } from 'storybook/internal/types';
 
-import type { ThemeVars } from 'storybook/theming';
-import { ensure as ensureTheme, ThemeProvider } from 'storybook/theming/emotion';
+import { type ThemeVars, ensure as ensureTheme, ThemeProvider } from 'storybook/theming/emotion';
 
 import { DocsPageWrapper } from '../components';
 import { TableOfContents } from '../components/TableOfContents';

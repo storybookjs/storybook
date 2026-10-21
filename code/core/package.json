@@ -245,9 +245,9 @@
       "default": "./dist/test/index.js"
     },
     "./theming": {
-      "types": "./dist/theming/index.d.ts",
-      "code": "./src/theming/index.ts",
-      "default": "./dist/theming/index.js"
+      "types": "./dist/theming/create.d.ts",
+      "code": "./src/theming/create.ts",
+      "default": "./dist/theming/create.js"
     },
     "./theming/create": {
       "types": "./dist/theming/create.d.ts",

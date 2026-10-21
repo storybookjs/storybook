@@ -175,24 +175,12 @@ const config: BuildEntries = {
         dts: false,
       },
       {
-        exportEntries: ['./theming'],
-        entryPoint: './src/theming/index.ts',
-      },
-      {
-        exportEntries: ['./theming/create'],
+        exportEntries: ['./theming', './theming/create'],
         entryPoint: './src/theming/create.ts',
       },
       {
         exportEntries: ['./theming/emotion'],
         entryPoint: './src/theming/emotion.ts',
-        // Inlining these copies Theme into a shared chunk that the @emotion/react augmentation
-        // does not reach. The JS bundle still inlines them; only the d.ts pass keeps the imports.
-        dtsExternal: [
-          '@emotion/cache',
-          '@emotion/is-prop-valid',
-          '@emotion/react',
-          '@emotion/styled',
-        ],
       },
       {
         exportEntries: ['./internal/components'],

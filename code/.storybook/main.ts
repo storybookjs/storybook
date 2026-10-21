@@ -172,16 +172,16 @@ const config = defineMain({
       resolve: {
         alias:
           configType === 'DEVELOPMENT'
-            ? {
-                'storybook/internal/components': componentsPath,
-                'storybook/manager-api': managerApiPath,
-                'storybook/preview-api': previewApiPath,
-                'storybook/theming/create': themingCreatePath,
-                'storybook/theming/emotion': themingEmotionPath,
+            ? [
+                { find: 'storybook/internal/components', replacement: componentsPath },
+                { find: 'storybook/manager-api', replacement: managerApiPath },
+                { find: 'storybook/preview-api', replacement: previewApiPath },
+                { find: 'storybook/theming/create', replacement: themingCreatePath },
+                { find: 'storybook/theming/emotion', replacement: themingEmotionPath },
                 // addon-designs still imports styled/css/jsx from storybook/theming.
-                'storybook/theming': themingEmotionPath,
-                'sb-original/image-context': imageContextPath,
-              }
+                { find: /^storybook\/theming$/, replacement: themingEmotionPath },
+                { find: 'sb-original/image-context', replacement: imageContextPath },
+              ]
             : {
                 // The components dist bundle inlines react-aria; resolving to source keeps the
                 // preview on a single react-aria copy so FocusScopes can nest across modules.

@@ -122,6 +122,34 @@ function createTypesFallbackResolverPlugin(isExternal: (id: string) => boolean):
 }
 
 /** Compiler options shared by both declaration emitters (TS 6 API and TS 7 CLI). */
+// dist is deleted before emit, so `storybook/theming/emotion` resolves via `code` and
+// styled's types are named from `@emotion/*`, which the dts bundle then shares.
+function retargetEmotionTypeQueries(emitDir: string, specifier: string): void {
+  const files = ts.sys.readDirectory(emitDir, ['.d.ts', '.d.mts', '.d.cts']);
+  const pairs = [
+    ['import("@emotion/styled")', `import("${specifier}")`],
+    ['import("@emotion/react")', `import("${specifier}")`],
+    ["import('@emotion/styled')", `import('${specifier}')`],
+    ["import('@emotion/react')", `import('${specifier}')`],
+  ] as const;
+  for (const file of files) {
+    if (file.split(sep).includes('theming')) {
+      continue;
+    }
+    const text = ts.sys.readFile(file);
+    if (!text?.includes('@emotion/')) {
+      continue;
+    }
+    let next = text;
+    for (const [from, to] of pairs) {
+      next = next.replaceAll(from, to);
+    }
+    if (next !== text) {
+      ts.sys.writeFile(file, next);
+    }
+  }
+}
+
 function dtsEmitCompilerOptions(outDir: string) {
   return {
     noEmit: false,
@@ -293,14 +321,13 @@ export async function generateTypesFiles(
     entryMap[entryName(entry)] = join(cwd, entry);
   }
 
-  // These entries leave the shared pass and bundle alone. Portable entries inline everything
-  // outside their allowlist (see BuildEntry.portable). dtsExternal entries keep those packages as
-  // imports so a module augmentation targets the real package rather than a chunk-local copy.
-  const isolatedExternalByName = new Map(
-    dtsBuildEntries.flatMap((entry) => {
-      const extra = entry.portable?.external ?? entry.dtsExternal;
-      return extra ? [[entryName(entry.entryPoint), extra] as const] : [];
-    })
+  // Portable entries leave the shared pass: bundled alone, everything outside the entry's own
+  // external allowlist inlines into one flat file instead of importing shared type chunks (see
+  // BuildEntry.portable).
+  const portableByName = new Map(
+    dtsBuildEntries
+      .filter((entry) => entry.portable)
+      .map((entry) => [entryName(entry.entryPoint), entry.portable!])
   );
 
   // The dts plugin and tsgo derive rootDir from path.dirname(tsconfig).
@@ -354,6 +381,16 @@ export async function generateTypesFiles(
       emitPackageDeclarations(wrapperTsconfig, emitDir);
     }
 
+    const emotionExport = dtsBuildEntries
+      .find((entry) => entry.entryPoint === './src/theming/emotion.ts')
+      ?.exportEntries?.find((entry) => entry.endsWith('/emotion'));
+    if (emotionExport) {
+      const packageJson = JSON.parse(await readFile(join(cwd, 'package.json'), 'utf8')) as {
+        name: string;
+      };
+      retargetEmotionTypeQueries(emitDir, `${packageJson.name}${emotionExport.slice(1)}`);
+    }
+
     const input: Record<string, string> = Object.fromEntries(
       Object.entries(entryMap).map(([name, sourcePath]) => [
         name,
@@ -362,13 +399,13 @@ export async function generateTypesFiles(
     );
 
     const sharedInput = Object.fromEntries(
-      Object.entries(input).filter(([name]) => !isolatedExternalByName.has(name))
+      Object.entries(input).filter(([name]) => !portableByName.has(name))
     );
-    const isolatedInputs = Object.entries(input)
-      .filter(([name]) => isolatedExternalByName.has(name))
+    const portableInputs = Object.entries(input)
+      .filter(([name]) => portableByName.has(name))
       .map(([name, emitted]) => ({
         input: { [name]: emitted },
-        allowedExternal: isolatedExternalByName.get(name)!,
+        allowedExternal: portableByName.get(name)!.external,
       }));
 
     const bundleDts = async (
@@ -412,10 +449,10 @@ export async function generateTypesFiles(
 
     const outputs = [
       ...(Object.keys(sharedInput).length > 0 ? [await bundleDts(sharedInput, externalFn)] : []),
-      // One isolated pass per portable or dtsExternal entry, so nothing is shared with the rest.
+      // One isolated pass per portable entry, so nothing is shared between it and the rest.
       ...(await Promise.all(
-        isolatedInputs.map(({ input: isolatedInput, allowedExternal }) =>
-          bundleDts(isolatedInput, portableExternalFn(allowedExternal))
+        portableInputs.map(({ input: portableInput, allowedExternal }) =>
+          bundleDts(portableInput, portableExternalFn(allowedExternal))
         )
       )),
     ];

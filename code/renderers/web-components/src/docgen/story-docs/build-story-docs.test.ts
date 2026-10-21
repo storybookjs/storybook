@@ -7,7 +7,6 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { WebComponentsDocgenPayload } from '../component-docgen/build-docgen.ts';
-import { DEFAULT_TYPE_PROPERTY } from '../component-docgen/arg-types/alt-type.ts';
 import { mapArgTypes } from '../component-docgen/arg-types/map-arg-types.ts';
 import type {
   ManifestClassField,
@@ -84,7 +83,7 @@ const payload = (extra: Partial<WebComponentsDocgenPayload> = {}): WebComponents
   id: 'example-test-element',
   name: 'test-element',
   path: 'input.stories.ts',
-  argTypes: mapArgTypes(declaration, DEFAULT_TYPE_PROPERTY),
+  argTypes: mapArgTypes(declaration),
   jsDocTags: {},
   customElementsManifest: { manifestPath: 'custom-elements.json', declaration },
   ...extra,
@@ -328,7 +327,35 @@ describe('buildStoryDocsPayload', () => {
 <script>
   {
     const host = document.currentScript.previousElementSibling;
-    host.addEventListener('shape-change', event => event.preventDefault());
+    host.addEventListener('shape-change', (event) => event.preventDefault());
+  }
+</script>`,
+      },
+    },
+    {
+      name: 'keeps the lines and comments of a multi-line listener',
+      source: `
+        export default { title: 'Example/TestElement', component: 'test-element' };
+        export const Primary = {
+          args: {
+            onShapeChange: (e) => {
+              // log the event
+              console.log(e);
+            },
+          },
+        };
+      `,
+      expected: {
+        id: 'example-testelement--primary',
+        name: 'Primary',
+        snippet: `<test-element></test-element>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', (e) => {
+      // log the event
+      console.log(e);
+    });
   }
 </script>`,
       },
@@ -368,7 +395,7 @@ describe('buildStoryDocsPayload', () => {
 <script>
   {
     const host = document.currentScript.previousElementSibling;
-    host.addEventListener('shape-change', event => first(event));
+    host.addEventListener('shape-change', (event) => first(event));
   }
 </script>`,
       },

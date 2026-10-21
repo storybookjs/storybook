@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import ansiRegex from 'ansi-regex';
-import type { API } from 'jscodeshift';
 import { dedent } from 'ts-dedent';
 
 import _transform from '../upgrade-deprecated-types.ts';
@@ -12,11 +11,7 @@ expect.addSnapshotSerializer({
 });
 
 const tsTransform = async (source: string) =>
-  (
-    await _transform({ source, path: 'Component.stories.tsx' }, {} as API, {
-      parser: 'tsx',
-    })
-  ).trim();
+  (await _transform({ source, path: 'Component.stories.tsx' })).trim();
 
 describe('upgrade-deprecated-types', () => {
   describe('typescript', () => {
@@ -87,6 +82,49 @@ describe('upgrade-deprecated-types', () => {
          
         `)
       ).rejects.toThrowErrorMatchingSnapshot();
+    });
+
+    it('keeps inline type modifiers, default imports and comments between specifiers', async () => {
+      await expect(
+        tsTransform(dedent`
+          import React, { type ComponentStory, /* keep */ type ComponentMeta, Meta } from '@storybook/react';
+
+          export default { title: 'Cat' } satisfies ComponentMeta<typeof Cat>;
+          export const A: ComponentStory<typeof Cat> = () => <Cat />;
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import React, { type StoryFn, Meta } from "@storybook/react";
+
+        export default { title: "Cat" } satisfies Meta<typeof Cat>;
+        export const A: StoryFn<typeof Cat> = () => <Cat />;
+      `);
+    });
+
+    it('upgrades a file without a default export or with a dynamic title', async () => {
+      await expect(
+        tsTransform(dedent`
+          import type { ComponentStory } from '@storybook/react';
+          import { Cat } from './Cat';
+
+          export const A: ComponentStory<typeof Cat> = () => <Cat />;
+        `)
+      ).resolves.toBe(dedent`
+        import type { StoryFn } from "@storybook/react";
+        import { Cat } from "./Cat";
+
+        export const A: StoryFn<typeof Cat> = () => <Cat />;
+      `);
+      await expect(
+        tsTransform(dedent`
+          import type { ComponentMeta } from '@storybook/react';
+
+          export default { title: \`Cats/\${name}\` } satisfies ComponentMeta<typeof Cat>;
+        `)
+      ).resolves.toBe(dedent`
+        import type { Meta } from "@storybook/react";
+
+        export default { title: \`Cats/\${name}\` } satisfies Meta<typeof Cat>;
+      `);
     });
 
     it('upgrade namespaces', async () => {

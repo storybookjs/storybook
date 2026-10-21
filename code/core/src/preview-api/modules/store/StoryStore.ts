@@ -4,6 +4,7 @@ import {
   MissingStoryFromCsfFileError,
 } from 'storybook/internal/preview-errors';
 import type {
+  ComponentTitle,
   CSFFile,
   IndexEntry,
   ModuleExports,
@@ -17,6 +18,7 @@ import type {
   StoryContextForEnhancers,
   StoryId,
   StoryIndex,
+  StoryName,
 } from 'storybook/internal/types';
 
 import { omitBy, pick } from 'es-toolkit/object';
@@ -56,6 +58,18 @@ function composeProjectAnnotations<TRenderer extends Renderer>(
 // TODO -- what are reasonable values for these?
 const CSF_CACHE_SIZE = 1000;
 const STORY_CACHE_SIZE = 10000;
+
+/**
+ * The serialized story an external tool (such as the Chromatic CLI) reads via `extract()`.
+ * Keeps the deprecated `kind`/`story` fields for those extractors; everything else uses `title`/`name`.
+ */
+export type ExtractedStory<TRenderer extends Renderer = Renderer> =
+  StoryContextForEnhancers<TRenderer> & {
+    /** @deprecated Use `title`. Kept for external extractors such as the Chromatic CLI. */
+    kind: ComponentTitle;
+    /** @deprecated Use `name`. Kept for external extractors such as the Chromatic CLI. */
+    story: StoryName;
+  };
 
 export class StoryStore<TRenderer extends Renderer> {
   public storyIndex: StoryIndexStore;
@@ -292,7 +306,7 @@ export class StoryStore<TRenderer extends Renderer> {
 
   extract(
     options: { includeDocsOnly?: boolean } = { includeDocsOnly: false }
-  ): Record<StoryId, StoryContextForEnhancers<TRenderer>> {
+  ): Record<StoryId, ExtractedStory<TRenderer>> {
     const { cachedCSFFiles } = this;
 
     console.log('extract: extracting stories', cachedCSFFiles);
@@ -316,9 +330,6 @@ export class StoryStore<TRenderer extends Renderer> {
 
         acc[storyId] = Object.entries(story).reduce(
           (storyAcc, [key, value]) => {
-            if (key === 'story' && entry.subtype === 'test') {
-              return { ...storyAcc, story: entry.parentName };
-            }
             if (key === 'moduleExport') {
               return storyAcc;
             }
@@ -338,6 +349,8 @@ export class StoryStore<TRenderer extends Renderer> {
               ...story.storyGlobals,
             },
             storyId: entry.parent ? entry.parent : storyId,
+            kind: story.title,
+            story: entry.subtype === 'test' ? entry.parentName : story.name,
           }
         );
         return acc;

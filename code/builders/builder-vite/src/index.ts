@@ -1,22 +1,38 @@
 // noinspection JSUnusedGlobalSymbols
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+
 import { NoStatsForViteDevError } from 'storybook/internal/server-errors';
-import type { Builder, Options } from 'storybook/internal/types';
+import type { Builder, Middleware, Options } from 'storybook/internal/types';
 
 import type { ViteDevServer } from 'vite';
 
 import { build as viteBuild } from './build.ts';
 import { createHeadlessViteChangeDetectionAdapter } from './change-detection-adapter/headless.ts';
 import { createViteChangeDetectionAdapter } from './change-detection-adapter/index.ts';
-import { iframeRoute } from './iframe-handler.ts';
 import type { ViteBuilder } from './types.ts';
 import { createViteServer } from './vite-server.ts';
 
 export { withoutVitePlugins } from './utils/without-vite-plugins.ts';
 export { hasVitePlugins } from './utils/has-vite-plugins.ts';
-export { iframeHandler } from './iframe-handler.ts';
-export { createViteServer } from './vite-server.ts';
 
 export * from './types.ts';
+
+function iframeHandler(options: Options, server: ViteDevServer): Middleware {
+  return async (req, res) => {
+    const indexHtml = await readFile(
+      fileURLToPath(import.meta.resolve('@storybook/builder-vite/input/iframe.html')),
+      {
+        encoding: 'utf8',
+      }
+    );
+    const transformed = await server.transformIndexHtml('/iframe.html', indexHtml);
+    res.setHeader('Content-Type', 'text/html');
+    res.statusCode = 200;
+    res.write(transformed);
+    res.end();
+  };
+}
 
 let server: ViteDevServer;
 
@@ -52,22 +68,19 @@ export const start: ViteBuilder['start'] = async ({
   router,
   server: devServer,
 }) => {
-  const viteServer = await createViteServer(options as Options, devServer);
-  server = viteServer;
+  server = await createViteServer(options as Options, devServer);
 
-  router.use(iframeRoute(viteServer));
-  router.use(viteServer.middlewares);
+  router.get('/iframe.html', iframeHandler(options as Options, server));
+  router.use(server.middlewares);
 
   return {
-    // Bound to this start call's server; Vite may replace the module-level server before closing the old host.
-    bail: () => viteServer.close(),
+    bail,
     stats: {
       toJson: () => {
         throw new NoStatsForViteDevError();
       },
     },
     totalTime: process.hrtime(startTime),
-    server: viteServer,
   };
 };
 

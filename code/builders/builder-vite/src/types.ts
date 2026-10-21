@@ -1,20 +1,13 @@
 import type { Builder, Options } from 'storybook/internal/types';
 
-import type { InlineConfig, UserConfig, ViteDevServer } from 'vite';
+import type { InlineConfig, UserConfig } from 'vite';
 
 // Storybook's Stats are optional Webpack related property
 type ViteStats = {
-  toJson: () => unknown;
+  toJson: () => any;
 };
 
-export type ViteBuilder = Omit<Builder<UserConfig, ViteStats>, 'start'> & {
-  start: (args: Parameters<Builder<UserConfig, ViteStats>['start']>[0]) => Promise<{
-    stats: ViteStats;
-    totalTime: ReturnType<typeof process.hrtime>;
-    bail: (e?: Error) => Promise<void>;
-    server: ViteDevServer;
-  }>;
-};
+export type ViteBuilder = Builder<UserConfig, ViteStats>;
 
 export type ViteFinal = (
   config: InlineConfig,

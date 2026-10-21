@@ -4,10 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
-import type { MiddlewareHost } from 'storybook/internal/types';
 
 import { debounce } from 'es-toolkit/function';
-import type { Request, Response } from 'polka';
+import type { Polka, Request, Response } from 'polka';
 import Watchpack from 'watchpack';
 
 import { csfIndexer } from '../presets/common-preset.ts';
@@ -65,7 +64,7 @@ const getStoryIndexGeneratorPromise = async (
 
 describe('registerIndexJsonRoute', () => {
   const use = vi.fn();
-  const app: MiddlewareHost = { use };
+  const app: Polka = { use } as any;
   const end = vi.fn();
   const write = vi.fn();
   const response: Response = {

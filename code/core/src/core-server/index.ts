@@ -121,17 +121,11 @@ export type {
 export { ChangeDetectionService } from './change-detection/change-detection-service.ts';
 export { resolveChangeDetectionAdapter } from '../shared/open-service/services/module-graph/server.ts';
 export { getBuilders } from './utils/get-builders.ts';
-export {
-  getServerChannel,
-  prepareHeadlessUniversalStores,
-  type UpgradeEmitter,
-} from './utils/get-server-channel.ts';
+export { getServerChannel, prepareHeadlessUniversalStores } from './utils/get-server-channel.ts';
 export { isValidHost, type HostValidationOptions } from './utils/getHostValidationMiddleware.ts';
 export { resetServicesPresetOnce as experimental_resetServicesPresetOnce } from './utils/apply-services-preset-once.ts';
-export { getWsToken } from './presets/wsToken.ts';
 export { registerIndexJsonRoute } from './utils/index-json.ts';
 export { doTelemetry } from './utils/doTelemetry.ts';
-export { registerManifests } from './utils/manifests/manifests.ts';
 export {
   getTestProviderStoreById as experimental_getTestProviderStore,
   fullTestProviderStore as internal_fullTestProviderStore,

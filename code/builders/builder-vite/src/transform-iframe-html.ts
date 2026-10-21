@@ -5,11 +5,7 @@ import { SB_VIRTUAL_FILES } from './virtual-file-names.ts';
 
 export type PreviewHtml = string | undefined;
 
-export async function transformIframeHtml(
-  html: string,
-  options: Options,
-  base = '/'
-): Promise<string> {
+export async function transformIframeHtml(html: string, options: Options, base = '/') {
   const { configType, features, presets } = options;
   const build = await presets.apply('build');
   const frameworkOptions = await presets.apply<Record<string, any> | null>('frameworkOptions');

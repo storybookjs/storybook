@@ -1,15 +1,12 @@
 import type { Options } from 'storybook/internal/types';
 
 import type { Server } from 'http';
-import type { InlineConfig, ServerOptions, ViteDevServer } from 'vite';
+import type { InlineConfig, ServerOptions } from 'vite';
 
 import { createViteLogger } from './logger.ts';
 import { commonConfig } from './vite-config.ts';
 
-export async function createViteServer(
-  options: Options,
-  devServer: Server
-): Promise<ViteDevServer> {
+export async function createViteServer(options: Options, devServer: Server) {
   const { presets } = options;
 
   const commonCfg = await commonConfig(options, 'development');

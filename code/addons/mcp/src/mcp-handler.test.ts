@@ -253,6 +253,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: initReq,
       res: initResponse,
+      origin: 'http://localhost:6006',
+      baseUrl: 'http://localhost:6006',
       options: mockOptions,
       addonOptions,
       compositionAuth: new CompositionAuth(),
@@ -268,6 +270,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: listReq,
       res: listResponse,
+      origin: 'http://localhost:6006',
+      baseUrl: 'http://localhost:6006',
       options: mockOptions,
       addonOptions,
       compositionAuth: new CompositionAuth(),
@@ -292,6 +296,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: mockReq,
       res: response,
+      origin: 'http://localhost:6006',
+      baseUrl: 'http://localhost:6006',
       options: mockOptions as any,
       addonOptions: {
         toolsets: {
@@ -368,6 +374,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: mockReq,
       res: response,
+      origin: 'http://localhost:6006',
+      baseUrl: 'http://localhost:6006',
       options: mockOptions as any,
       addonOptions: {
         toolsets: {
@@ -426,6 +434,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: mockReq,
       res: response,
+      origin: 'http://localhost:6006',
+      baseUrl: 'http://localhost:6006',
       options: mockOptions as any,
       addonOptions: {
         toolsets: {
@@ -473,6 +483,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: initReq,
       res: initResponse,
+      origin: 'http://localhost:6006',
+      baseUrl: 'http://localhost:6006',
       options: mockOptions as any,
       addonOptions: {
         toolsets: { dev: true, docs: true },
@@ -496,6 +508,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: listToolsReq,
       res: listResponse,
+      origin: 'http://localhost:6006',
+      baseUrl: 'http://localhost:6006',
       options: mockOptions as any,
       addonOptions: {
         toolsets: { dev: true, docs: true },

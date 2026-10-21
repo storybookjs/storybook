@@ -273,4 +273,46 @@ describe('toolset-backed MCP tools', () => {
       text: 'http://localhost:6006/nested',
     });
   });
+
+  it('prefers the configured base URL over the request path in the toolset origin', async () => {
+    registerStubStoriesToolset({
+      handler: async (_input, ctx) => ({ ok: true, data: { stories: [] }, markdown: ctx.origin }),
+    });
+
+    const result = await callToolsetMethod(
+      makeServer({
+        baseUrl: 'http://localhost:6006/__storybook',
+        endpoint: '/mcp',
+        request: new Request('http://localhost:6006/nested/mcp', { method: 'POST' }),
+      }),
+      previewOptions,
+      { id: 'button--primary' }
+    );
+
+    expect(result.content[0]).toEqual({
+      type: 'text',
+      text: 'http://localhost:6006/__storybook',
+    });
+  });
+
+  it('still uses the request subpath when the base URL is the bare origin', async () => {
+    registerStubStoriesToolset({
+      handler: async (_input, ctx) => ({ ok: true, data: { stories: [] }, markdown: ctx.origin }),
+    });
+
+    const result = await callToolsetMethod(
+      makeServer({
+        baseUrl: 'http://localhost:6006',
+        endpoint: '/mcp',
+        request: new Request('http://localhost:6006/nested/mcp', { method: 'POST' }),
+      }),
+      previewOptions,
+      { id: 'button--primary' }
+    );
+
+    expect(result.content[0]).toEqual({
+      type: 'text',
+      text: 'http://localhost:6006/nested',
+    });
+  });
 });

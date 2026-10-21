@@ -76,6 +76,11 @@ export type AddonContext = DocsServingContext & {
   origin: string;
 
   /**
+   * The origin plus the configured base path, without a trailing slash.
+   */
+  baseUrl: string;
+
+  /**
    * Whether telemetry collection is disabled.
    */
   disableTelemetry: boolean;

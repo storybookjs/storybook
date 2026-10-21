@@ -9,7 +9,6 @@ import { buffer } from 'node:stream/consumers';
 import { collectTelemetry } from './telemetry.ts';
 import type { DocsAccess } from 'storybook/internal/toolsets-docs';
 import type { AddonContext, AddonOptionsOutput } from './types.ts';
-import { logger } from 'storybook/internal/node-logger';
 import { getEffectiveToolAvailability, getToolAvailability } from 'storybook/internal/core-server';
 import { buildServerInstructions } from 'storybook/internal/skills';
 import type { CompositionAuth } from './auth/index.ts';
@@ -17,7 +16,6 @@ import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 import { registerAddonMcpTools } from './tools/tool-registry.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
-let origin: string | undefined;
 // Promise that ensures single initialization, even with concurrent requests
 let initialize: Promise<McpServer<any, AddonContext>> | undefined;
 let disableTelemetry: boolean | undefined;
@@ -73,8 +71,6 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 
   transport = new HttpTransport(server, { path: null });
 
-  origin = `http://localhost:${options.port}`;
-  logger.debug(`MCP server origin: ${origin}`);
   return server;
 };
 
@@ -87,6 +83,10 @@ type McpServerHandlerParams = {
   res: ServerResponse;
   options: Options;
   addonOptions: AddonOptionsOutput;
+  /** Origin of the local Storybook, e.g. `http://localhost:6006`. */
+  origin: string;
+  /** Origin plus the configured base path of the local Storybook, without a trailing slash. */
+  baseUrl: string;
   /**
    * The MCP endpoint path (e.g. `/mcp` or a user-configured override).
    * Used to derive the Storybook root from the incoming request URL inside
@@ -117,6 +117,8 @@ export const mcpServerHandler = async ({
   res,
   options,
   addonOptions,
+  origin,
+  baseUrl,
   endpoint = DEFAULT_MCP_ENDPOINT,
   sources,
   manifestProvider,
@@ -139,7 +141,8 @@ export const mcpServerHandler = async ({
     options,
     endpoint,
     toolsets: getToolsets(webRequest, addonOptions),
-    origin: origin!,
+    origin,
+    baseUrl,
     disableTelemetry: disableTelemetry!,
     a11yEnabled,
     request: webRequest,
@@ -160,7 +163,7 @@ export const mcpServerHandler = async ({
           status: 401,
           headers: {
             'Content-Type': 'text/plain',
-            'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(origin!),
+            'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(baseUrl),
           },
         })
       : new Response(body, { status: response.status, headers: response.headers });

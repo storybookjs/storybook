@@ -30,14 +30,21 @@ function storybookRootFromRequest(
 /**
  * Derives the complete Storybook UI base URL for the toolset context, including any deployment
  * subpath. The trusted origin remains separate in the transport context for security checks.
+ *
+ * A configured base path wins over the request path, because a host that mounts Storybook under
+ * that path strips it before the request reaches the MCP handler.
  */
 export function resolveToolsetOrigin(context: {
   origin?: string;
+  baseUrl?: string;
   request?: Request;
   endpoint?: string;
 }): string | undefined {
   if (!context.origin) {
     return undefined;
+  }
+  if (context.baseUrl && context.baseUrl !== context.origin) {
+    return context.baseUrl;
   }
   return context.request
     ? (storybookRootFromRequest(

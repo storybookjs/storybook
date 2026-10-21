@@ -1,6 +1,6 @@
 # Chromatic Projects
 
-Pass the project ID as `projectId` to the Chromatic tools. Sandbox projects are listed by template key, which is the name in the `<template> (chromatic)` CI job.
+Pass the project ID as `projectId` to the Chromatic tools. Sandbox projects are listed by template key. CI job names use the template's display name instead, and `code/lib/cli-storybook/src/sandbox-templates.ts` maps each display name to its key.
 
 | Project                                  | Project ID                         |
 | ---------------------------------------- | ---------------------------------- |

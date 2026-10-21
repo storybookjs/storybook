@@ -72,25 +72,10 @@ describe('vitestTransform of a CSF factories stories file', () => {
     expect(output.slice(output.indexOf('const _isRunningFromThisFile'))).toMatchInlineSnapshot(`
       "const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
       if (_isRunningFromThisFile) {
-        _test("Primary", _testStory({
-          exportName: "Primary",
-          story: $__Primary,
-          meta: $__meta,
-          skipTags: [],
-          storyId: "button--primary",
-          componentPath: "./Button.svelte",
-          componentName: "Button"
-        }));
-        _test("Button", _testStory({
-          exportName: "Button",
-          story: $__Button,
-          meta: $__meta,
-          skipTags: [],
-          storyId: "button--button",
-          componentPath: "./Button.svelte",
-          componentName: "Button"
-        }));
-      }"
+        _test("Primary", _testStory({ exportName: "Primary", story: $__Primary, meta: $__meta, skipTags: [], storyId: "button--primary", componentPath: "./Button.svelte", componentName: "Button" }));
+        _test("Button", _testStory({ exportName: "Button", story: $__Button, meta: $__meta, skipTags: [], storyId: "button--button", componentPath: "./Button.svelte", componentName: "Button" }));
+      }
+      "
     `);
   });
 
@@ -113,25 +98,10 @@ describe('vitestTransform of a CSF factories stories file', () => {
     expect(output.slice(output.indexOf('const _isRunningFromThisFile'))).toMatchInlineSnapshot(`
       "const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
       if (_isRunningFromThisFile) {
-        _test("Primary", _testStory({
-          exportName: "Primary",
-          story: $__Primary,
-          meta: meta,
-          skipTags: [],
-          storyId: "button--primary",
-          componentPath: "./Button.svelte",
-          componentName: "Button"
-        }));
-        _test("Icon", _testStory({
-          exportName: "Icon",
-          story: $__Icon,
-          meta: meta,
-          skipTags: [],
-          storyId: "button--icon",
-          componentPath: "./Button.svelte",
-          componentName: "Button"
-        }));
-      }"
+        _test("Primary", _testStory({ exportName: "Primary", story: $__Primary, meta: meta, skipTags: [], storyId: "button--primary", componentPath: "./Button.svelte", componentName: "Button" }));
+        _test("Icon", _testStory({ exportName: "Icon", story: $__Icon, meta: meta, skipTags: [], storyId: "button--icon", componentPath: "./Button.svelte", componentName: "Button" }));
+      }
+      "
     `);
   });
 

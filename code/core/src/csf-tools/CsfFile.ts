@@ -1,17 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import {
-  BabelFileClass,
-  type GeneratorOptions,
-  type NodePath,
-  type RecastOptions,
-  babelParse,
-  generate,
-  recast,
-  types as t,
-  traverse,
-} from 'storybook/internal/babel';
-import {
   isExportStory,
   storyNameFromExport,
   toId,
@@ -30,26 +19,40 @@ import { dedent } from 'ts-dedent';
 
 import { Tag } from '../shared/constants/tags.ts';
 import type { PrintResultType } from './PrintResultType.ts';
-import { type CsfMutationDiagnostic, type CsfObject, type CsfObjectOptions } from './CsfObject.ts';
-import { discoverCsfObjects } from './CsfObjectDiscovery.ts';
-import { findVarInitialization } from './findVarInitialization.ts';
 import {
-  isCanonicalCsf2BindCall,
-  isCsfFactoryCall,
+  type CsfMutationDiagnostic,
+  type CsfMutationResult,
+  type CsfObject,
+  type CsfObjectLookup,
+  type CsfObjectOptions,
+} from './CsfObject.ts';
+import { discoverCsfObjects, discoverStory } from './CsfObjectDiscovery.ts';
+import {
+  type E,
+  EstreeParseError,
+  type Node,
+  type SourceLocation,
+  type Span,
+  children,
+  staticKey,
+  isFunction,
+  isIdentifier,
+  isRegExpLiteral,
+  isStringLiteral,
+  locationOf,
+  outerSpan,
   unwrapExpression,
-} from './story-shape/utils.ts';
-
-// We add this BabelFile as a temporary workaround to deal with a BabelFileClass "ImportEquals should have a literal source" issue in no link mode with tsup
-interface BabelFile {
-  ast: t.File;
-  opts: any;
-  hub: any;
-  metadata: object;
-  path: NodePath<t.Program>;
-  scope: any;
-  inputMap: object | null;
-  code: string;
-}
+} from './estree/ast.ts';
+import {
+  type GeneratedMap,
+  type InputSourceMap,
+  SourceEditor,
+  appendStatement,
+  insertStatementAfter,
+} from './estree/editor.ts';
+import { type ImportBindings, removeImport, setImport } from './estree/imports.ts';
+import { generateUid, isDeclared } from './estree/scope.ts';
+import { findVarInitialization } from './findVarInitialization.ts';
 
 type CsfMutationState = {
   diagnostics: CsfMutationDiagnostic[];
@@ -61,59 +64,102 @@ const mutationStates = new WeakMap<CsfFile, CsfMutationState>();
 const PREVIEW_FILE_REGEX = /\/preview(.(js|jsx|mjs|ts|tsx))?$/;
 export const isValidPreviewPath = (filepath: string) => PREVIEW_FILE_REGEX.test(filepath);
 
-function parseIncludeExclude(prop: t.Node) {
-  if (t.isArrayExpression(prop)) {
+type StaticIdentifierMemberCall = E.CallExpression & {
+  callee: E.StaticMemberExpression & { object: E.IdentifierReference; property: E.IdentifierName };
+};
+
+type CsfFactoryCall = E.CallExpression & {
+  callee: E.StaticMemberExpression & { property: E.IdentifierName };
+};
+
+export const isCanonicalCsf2BindCall = (
+  node: Node | null | undefined
+): node is StaticIdentifierMemberCall =>
+  node?.type === 'CallExpression' &&
+  node.callee.type === 'MemberExpression' &&
+  !node.callee.computed &&
+  node.callee.object.type === 'Identifier' &&
+  isIdentifier(node.callee.property, 'bind') &&
+  (node.arguments.length === 0 ||
+    (node.arguments.length === 1 &&
+      node.arguments[0].type === 'ObjectExpression' &&
+      node.arguments[0].properties.length === 0));
+
+/** Receiver of a `.type<T>()` chain, which returns its receiver: `meta` for `meta.type<T>()`. */
+export const withoutTypeCalls = (object: Node): Node =>
+  object.type === 'CallExpression' &&
+  object.arguments.length === 0 &&
+  object.callee.type === 'MemberExpression' &&
+  !object.callee.computed &&
+  isIdentifier(object.callee.property, 'type')
+    ? withoutTypeCalls(object.callee.object)
+    : object;
+
+export const isCsfFactoryCall = (node: Node | null | undefined): node is CsfFactoryCall =>
+  node?.type === 'CallExpression' &&
+  node.callee.type === 'MemberExpression' &&
+  !node.callee.computed &&
+  withoutTypeCalls(node.callee.object).type === 'Identifier' &&
+  node.callee.property.type === 'Identifier' &&
+  (node.callee.property.name === 'story' || node.callee.property.name === 'extend');
+
+/** Identifier a CSF factory call is made on: `meta` in `meta.type<T>().story()`. */
+export const csfFactoryReceiver = (node: CsfFactoryCall): E.IdentifierReference =>
+  withoutTypeCalls(node.callee.object) as E.IdentifierReference;
+
+function parseIncludeExclude(prop: Node) {
+  if (prop.type === 'ArrayExpression') {
     return prop.elements.map((e) => {
-      if (t.isStringLiteral(e)) {
+      if (isStringLiteral(e)) {
         return e.value;
       }
       throw new Error(`Expected string literal: ${e}`);
     });
   }
 
-  if (t.isStringLiteral(prop)) {
+  if (isStringLiteral(prop)) {
     return new RegExp(prop.value);
   }
 
-  if (t.isRegExpLiteral(prop)) {
-    return new RegExp(prop.pattern, prop.flags);
+  if (isRegExpLiteral(prop)) {
+    return new RegExp(prop.regex.pattern, prop.regex.flags);
   }
 
   throw new Error(`Unknown include/exclude: ${prop}`);
 }
 
-function parseTags(prop: t.Node) {
-  if (!t.isArrayExpression(prop)) {
+function parseTags(prop: Node | null | undefined) {
+  if (prop?.type !== 'ArrayExpression') {
     throw new Error('CSF: Expected tags array');
   }
 
   return prop.elements.map((e) => {
-    if (t.isStringLiteral(e)) {
+    if (isStringLiteral(e)) {
       return e.value;
     }
     throw new Error(`CSF: Expected tag to be string literal`);
   }) as Tag[];
 }
 
-function parseTestTags(optionsNode: t.Node | null | undefined, program: t.Program) {
+function parseTestTags(optionsNode: Node | null | undefined, program: E.Program) {
   if (!optionsNode) {
     return [] as string[];
   }
 
-  let node: t.Node = optionsNode;
-  if (t.isIdentifier(node)) {
+  let node: Node | null = optionsNode;
+  if (node.type === 'Identifier') {
     node = findVarInitialization(node.name, program);
   }
 
-  if (t.isObjectExpression(node)) {
+  if (node?.type === 'ObjectExpression') {
     const tagsProp = node.properties.find(
-      (property) =>
-        t.isObjectProperty(property) && t.isIdentifier(property.key) && property.key.name === 'tags'
-    ) as t.ObjectProperty | undefined;
+      (property): property is E.ObjectProperty =>
+        property.type === 'Property' && staticKey(property) === 'tags' && !property.method
+    );
 
     if (tagsProp) {
-      let tagsNode: t.Node = tagsProp.value as t.Node;
-      if (t.isIdentifier(tagsNode)) {
+      let tagsNode: Node | null = tagsProp.value;
+      if (tagsNode.type === 'Identifier') {
         tagsNode = findVarInitialization(tagsNode.name, program);
       }
       return parseTags(tagsNode);
@@ -123,10 +169,13 @@ function parseTestTags(optionsNode: t.Node | null | undefined, program: t.Progra
   return [] as string[];
 }
 
-const formatLocation = (node: t.Node, fileName?: string) => {
+/** Anything an error can point at: a node with a location, or nothing. */
+export type Located = { loc?: SourceLocation | null } | null | undefined;
+
+const formatLocation = (node: Located, fileName?: string) => {
   let loc = '';
-  if (node.loc) {
-    const { line, column } = node.loc?.start || {};
+  if (node?.loc) {
+    const { line, column } = node.loc.start;
     loc = `(line ${line}, col ${column})`;
   }
   return `${fileName || ''} ${loc}`.trim();
@@ -134,30 +183,27 @@ const formatLocation = (node: t.Node, fileName?: string) => {
 
 export const isModuleMock = (importPath: string) => MODULE_MOCK_REGEX.test(importPath);
 
-const isArgsStory = (init: t.Node, parent: t.Node, csf: CsfFile) => {
-  let storyFn: t.Node = init;
+const isArgsStory = (init: Node, isTopLevel: boolean, csf: CsfFile) => {
+  let storyFn: Node | null = init;
   // export const Foo = Bar.bind({})
-  if (t.isProgram(parent) && isCanonicalCsf2BindCall(init)) {
+  if (isTopLevel && isCanonicalCsf2BindCall(init)) {
     const boundIdentifier = init.callee.object.name;
-    const template = findVarInitialization(boundIdentifier, parent);
+    const template = findVarInitialization(boundIdentifier, csf.program);
     if (template) {
       csf._templates[boundIdentifier] = template;
       storyFn = template;
     }
   }
-  if (t.isArrowFunctionExpression(storyFn)) {
-    return storyFn.params.length > 0;
-  }
-  if (t.isFunctionDeclaration(storyFn)) {
+  if (storyFn?.type === 'ArrowFunctionExpression' || storyFn?.type === 'FunctionDeclaration') {
     return storyFn.params.length > 0;
   }
   return false;
 };
 
-const parseExportsOrder = (init: t.Expression) => {
-  if (t.isArrayExpression(init)) {
-    return (init.elements as t.Expression[]).map((item) => {
-      if (t.isStringLiteral(item)) {
+const parseExportsOrder = (init: Node | null) => {
+  if (init?.type === 'ArrayExpression') {
+    return init.elements.map((item) => {
+      if (isStringLiteral(item)) {
         return item.value;
       }
       throw new Error(`Expected string literal named export: ${item}`);
@@ -180,22 +226,16 @@ const sortExports = (exportByName: Record<string, any>, order: string[]) => {
   );
 };
 
-const hasMount = (play: t.Node | undefined) => {
+const hasMount = (play: Node | undefined) => {
   if (
-    t.isArrowFunctionExpression(play) ||
-    t.isFunctionDeclaration(play) ||
-    t.isObjectMethod(play)
+    play?.type === 'ArrowFunctionExpression' ||
+    play?.type === 'FunctionDeclaration' ||
+    // Object methods are stored as their function expression.
+    play?.type === 'FunctionExpression'
   ) {
-    const params = play.params;
-    if (params.length >= 1) {
-      const [arg] = params;
-      if (t.isObjectPattern(arg)) {
-        return !!arg.properties.find((prop) => {
-          if (t.isObjectProperty(prop) && t.isIdentifier(prop.key)) {
-            return prop.key.name === 'mount';
-          }
-        });
-      }
+    const [arg] = play.params;
+    if (arg?.type === 'ObjectPattern') {
+      return arg.properties.some((prop) => prop.type === 'Property' && staticKey(prop) === 'mount');
     }
   }
   return false;
@@ -208,17 +248,17 @@ export interface CsfOptions {
   makeTitle: (userTitle: string) => string;
   /**
    * If an inline meta is detected e.g. `export default { title: 'foo' }` it will be transformed
-   * into a constant format e.g. `export const _meta = { title: 'foo' }; export default _meta;`
+   * into a constant format e.g. `const _meta = { title: 'foo' }; export default _meta;`
    */
   transformInlineMeta?: boolean;
 }
 
 export class NoMetaError extends Error {
-  constructor(message: string, ast: t.Node, fileName?: string) {
+  constructor(message: string, ast: Located, fileName?: string) {
     const msg = message.trim();
     super(dedent`
       CSF: ${msg} ${formatLocation(ast, fileName)}
-      
+
       More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export
     `);
     this.name = this.constructor.name;
@@ -226,11 +266,10 @@ export class NoMetaError extends Error {
 }
 
 export class MultipleMetaError extends Error {
-  constructor(message: string, ast: t.Node, fileName?: string) {
-    const msg = `${message} ${formatLocation(ast, fileName)}`.trim();
+  constructor(message: string, ast: Located, fileName?: string) {
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
-      
+
       More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export
     `);
     this.name = this.constructor.name;
@@ -238,11 +277,10 @@ export class MultipleMetaError extends Error {
 }
 
 export class MixedFactoryError extends Error {
-  constructor(message: string, ast: t.Node, fileName?: string) {
-    const msg = `${message} ${formatLocation(ast, fileName)}`.trim();
+  constructor(message: string, ast: Located, fileName?: string) {
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
-      
+
       More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export
     `);
     this.name = this.constructor.name;
@@ -250,11 +288,10 @@ export class MixedFactoryError extends Error {
 }
 
 export class BadMetaError extends Error {
-  constructor(message: string, ast: t.Node, fileName?: string) {
-    const msg = ``.trim();
+  constructor(message: string, ast: Located, fileName?: string) {
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
-      
+
       More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export
     `);
     this.name = this.constructor.name;
@@ -269,57 +306,64 @@ export interface StaticMeta extends Pick<
 }
 
 export interface StaticStory extends Pick<StoryAnnotations, 'name' | 'parameters' | 'tags'> {
+  /** The name the story is exported as: `B` for `export { A as B }`. */
+  exportName: string;
   id: string;
   localName?: string;
+  /** Whether the story is a CSF factory call, such as `meta.story({})` or `Primary.extend({})`. */
+  factory: boolean;
   __stats: IndexInputStats;
 }
 
 export interface StoryTest {
-  node: t.Node;
-  function: t.Node;
+  node: Node;
+  function: Node;
   name: string;
   id: string;
   tags: string[];
-  parent: { node: t.Node };
+  parent: { node: Node | undefined };
+}
+
+/** The import a meta's `component` refers to: `imported` is `'default'` for a default import. */
+export interface CsfComponentImport {
+  source: string;
+  imported: string;
+  local: string;
 }
 
 export class CsfFile {
-  _ast: t.File;
-
-  _file: BabelFile;
+  /**
+   * Edit the file's source directly, for edits `objects()` has no path for. A commit parses and
+   * indexes the file again, so nodes read before it are stale.
+   */
+  editor: SourceEditor;
 
   _options: CsfOptions;
 
   _rawComponentPath?: string;
 
-  _componentImportSpecifier?: t.ImportSpecifier | t.ImportDefaultSpecifier;
+  _componentImportSpecifier?: E.ImportSpecifier | E.ImportDefaultSpecifier;
 
   _meta?: StaticMeta;
 
   _stories: Record<string, StaticStory> = {};
 
-  _metaAnnotations: Record<string, t.Node> = {};
+  _metaAnnotations: Record<string, Node> = {};
 
-  _storyExports: Record<string, t.VariableDeclarator | t.FunctionDeclaration> = {};
+  _storyExports: Record<string, E.VariableDeclarator | E.Function> = {};
 
-  _storyDeclarationPath: Record<string, NodePath<t.VariableDeclarator | t.FunctionDeclaration>> =
-    {};
+  // The `export` statement of each story (the declaration for `export { X as Y }`).
+  _storyStatements: Record<string, E.ExportNamedDeclaration | Node> = {};
 
-  _storyPaths: Record<string, NodePath<t.ExportNamedDeclaration>> = {};
+  _metaStatement: Node | undefined;
 
-  _metaStatement: t.Statement | undefined;
-
-  _metaStatementPath: NodePath<t.Statement> | undefined;
-
-  _metaNode: t.ObjectExpression | undefined;
-
-  _metaPath: NodePath<t.ExportDefaultDeclaration> | undefined;
+  _metaNode: E.ObjectExpression | undefined;
 
   _metaVariableName: string | undefined;
 
   _metaIsFactory: boolean | undefined;
 
-  _metaFactoryCall: t.CallExpression | undefined;
+  _metaFactoryCall: E.CallExpression | undefined;
 
   /**
    * True when the CSF factory configuration could not be resolved to an object literal in this
@@ -327,11 +371,9 @@ export class CsfFile {
    */
   _metaNodeIsSynthetic: boolean | undefined;
 
-  _storyStatements: Record<string, t.ExportNamedDeclaration | t.Expression> = {};
+  _storyAnnotations: Record<string, Record<string, Node>> = {};
 
-  _storyAnnotations: Record<string, Record<string, t.Node>> = {};
-
-  _templates: Record<string, t.Expression> = {};
+  _templates: Record<string, Node> = {};
 
   _namedExportsOrder?: string[];
 
@@ -339,16 +381,41 @@ export class CsfFile {
 
   _tests: StoryTest[] = [];
 
-  constructor(ast: t.File, options: CsfOptions, file: BabelFile) {
-    this._ast = ast;
-    this._file = file;
+  // Why the last commit left the index empty: its code is valid JS the CSF indexer rejects.
+  _indexError: unknown;
+
+  constructor(code: string, options: CsfOptions) {
+    this.editor = new SourceEditor(code, options.fileName, () => this._reindex());
     this._options = options;
     this.imports = [];
     mutationStates.set(this, { diagnostics: [], changed: false });
   }
 
+  /** Read the program of the current parse. */
+  get program(): E.Program {
+    return this.editor.program;
+  }
+
+  /** @deprecated Use `editor`. */
+  get _editor(): SourceEditor {
+    return this.editor;
+  }
+
+  /** @deprecated Use `program`. */
+  get _program(): E.Program {
+    return this.program;
+  }
+
+  get _code(): string {
+    return this.editor.code;
+  }
+
+  _loc(node: Span | undefined): Located {
+    return node ? { loc: locationOf(this.editor.code, node.start, node.end) } : undefined;
+  }
+
   /**
-   * Read diagnostics from object discovery, reads, and mutations. Check them before writing
+   * Read diagnostics from object discovery and mutations. Check them before writing
    * because a file can contain both successful edits and unsupported targets.
    *
    * @example
@@ -365,7 +432,7 @@ export class CsfFile {
   }
 
   /**
-   * Report whether any object editor has changed this story file.
+   * Report whether a mutation has changed this story file.
    *
    * @example
    * ```ts
@@ -380,8 +447,8 @@ export class CsfFile {
   }
 
   /**
-   * Discover editors for the meta and stories, including CSF2 parameter and argTypes assignments. Unsupported
-   * targets are skipped and reported in `mutationDiagnostics`.
+   * Discover editors for the meta and stories; a story's CSF2 annotation assignments are its fields.
+   * Unsupported targets are skipped and reported in `mutationDiagnostics`.
    *
    * @example
    * ```ts
@@ -400,588 +467,745 @@ export class CsfFile {
       this,
       options,
       (diagnostic) => state.diagnostics.push(diagnostic),
-      () => {
-        state.changed = true;
-      }
+      () => this._markChanged()
     );
   }
 
-  _parseTitle(value: t.Node) {
-    const node = t.isIdentifier(value)
-      ? findVarInitialization(value.name, this._ast.program)
-      : value;
-    if (t.isStringLiteral(node)) {
+  /**
+   * Find the editor of the story exported as `exportName`, as `objects()` would give it, or the
+   * diagnostic that says why it has none, which is added to `mutationDiagnostics` as well. Returns
+   * `undefined` when the file has no story of that name. A story that shares its object with
+   * another story, such as `Secondary` in `export { Primary as Secondary }` or `export const
+   * Secondary = Primary`, has none: it is refused as `aliased-story`, naming `Primary`, whose
+   * editor edits both. An automigration that edits through `storyObject` handles `ok: false`.
+   *
+   * @example
+   * ```ts
+   * const csf = loadCsf('export default {}; export const Primary = {};', {
+   *   makeTitle: () => 'Example',
+   * }).parse();
+   * const found = csf.storyObject('Primary');
+   * if (found?.ok) {
+   *   found.object.set(['args', 'disabled'], true);
+   * }
+   * ```
+   */
+  storyObject(exportName: string): CsfObjectLookup | undefined {
+    const state = mutationStates.get(this)!;
+    return discoverStory(
+      this,
+      exportName,
+      (diagnostic) => state.diagnostics.push(diagnostic),
+      () => this._markChanged()
+    );
+  }
+
+  // The transaction running, if any, resets the flag when it rolls back, also when it was started
+  // on `editor` directly.
+  _markChanged() {
+    const state = mutationStates.get(this)!;
+    if (!state.changed) {
+      state.changed = true;
+      this.editor._onRollback(() => {
+        state.changed = false;
+      });
+    }
+  }
+
+  /**
+   * Add import bindings of a module, like `ConfigFile.setImport`: a string as the default import,
+   * an array of names or `'name as alias'` as named imports, `{ namespace }` as a namespace import
+   * and `null` as a side-effect import. A binding a value import of the module has already is
+   * skipped; one only a type-only import has becomes a value import. An edit that leaves a file the
+   * CSF indexer rejects is refused with an `invalid-csf` diagnostic.
+   *
+   * @example
+   * ```ts
+   * csf.setImport(['expect', 'userEvent'], 'storybook/test'); // { ok: true, changed: true }
+   * csf.setImport(['expect'], 'storybook/test'); // { ok: true, changed: false }
+   * ```
+   *
+   * @throws When a name is neither an identifier nor `'name as alias'`.
+   */
+  setImport(importSpecifier: ImportBindings, fromImport: string): CsfMutationResult {
+    return this._editImports(fromImport, (editor) =>
+      setImport(editor, importSpecifier, fromImport)
+    );
+  }
+
+  /**
+   * Remove import and `require` bindings of a module, like `ConfigFile.removeImport`. A removal
+   * that leaves a file the CSF indexer rejects, such as one whose `export { Button }` loses its
+   * binding, is refused with an `invalid-csf` diagnostic.
+   *
+   * @example
+   * ```ts
+   * csf.removeImport(['fn'], 'storybook/test'); // { ok: true, changed: true }
+   * ```
+   *
+   * @throws When a name is neither an identifier nor `'name as alias'`.
+   */
+  removeImport(importSpecifier: ImportBindings, fromImport: string): CsfMutationResult {
+    return this._editImports(fromImport, (editor) =>
+      removeImport(editor, importSpecifier, fromImport)
+    );
+  }
+
+  // Runs in a transaction of its own, so a refused or throwing edit leaves the file as it was.
+  _editImports(fromImport: string, edit: (editor: SourceEditor) => boolean): CsfMutationResult {
+    let result: CsfMutationResult = { ok: true, changed: false };
+    this.editor.transaction(() => {
+      try {
+        result = { ok: true, changed: edit(this.editor) };
+      } catch (error) {
+        if (error !== this._indexError) {
+          throw error;
+        }
+        const reason = error instanceof Error ? error.message : String(error);
+        const diagnostic: CsfMutationDiagnostic = {
+          code: 'invalid-csf',
+          target: { kind: 'file' },
+          path: [],
+          message: `Edited the imports of '${fromImport}', but the result is not valid CSF: ${reason}`,
+        };
+        mutationStates.get(this)!.diagnostics.push(diagnostic);
+        result = { ok: false, changed: false, diagnostic };
+        return false;
+      }
+    });
+    if (!result.ok) {
+      this.editor._refuse();
+    } else if (result.changed) {
+      this._markChanged();
+    }
+    return result;
+  }
+
+  /**
+   * Apply mutations together: when `fn` throws, returns `false`, or any mutation in it returns
+   * `{ ok: false }`, every edit made in it is rolled back. Its diagnostics stay, to report why.
+   * Returns whether the edits were kept.
+   *
+   * @example
+   * ```ts
+   * const [story] = csf.objects({ meta: false });
+   * const migrated = csf.transaction(() => {
+   *   story.remove(['parameters', 'msw']);
+   *   story.set(['beforeEach'], parseExpression('mockHandlers'));
+   * });
+   * // false, and the file as it was, when `beforeEach` cannot be set
+   * ```
+   */
+  transaction(fn: () => boolean | void): boolean {
+    return this.editor.transaction(fn);
+  }
+
+  /**
+   * Append a statement, given as source, to the end of the file. It is not committed: `formatCsf`
+   * prints it with the other pending edits.
+   */
+  appendStatement(code: string) {
+    appendStatement(this.editor, code);
+  }
+
+  /** @deprecated Use `appendStatement`. */
+  _appendStatement(code: string) {
+    this.appendStatement(code);
+  }
+
+  _reset() {
+    this._rawComponentPath = undefined;
+    this._componentImportSpecifier = undefined;
+    this._meta = undefined;
+    this._stories = {};
+    this._metaAnnotations = {};
+    this._storyExports = {};
+    this._storyStatements = {};
+    this._metaStatement = undefined;
+    this._metaNode = undefined;
+    this._metaVariableName = undefined;
+    this._metaIsFactory = undefined;
+    this._metaFactoryCall = undefined;
+    this._metaNodeIsSynthetic = undefined;
+    this._storyAnnotations = {};
+    this._templates = {};
+    this._namedExportsOrder = undefined;
+    this.imports = [];
+    this._tests = [];
+    this._indexError = undefined;
+  }
+
+  _reindex() {
+    this._reset();
+    try {
+      this.parse();
+    } catch (error) {
+      this._reset();
+      this._indexError = error;
+      throw error;
+    }
+  }
+
+  _assertIndexed() {
+    if (this._indexError) {
+      throw this._indexError;
+    }
+  }
+
+  _parseTitle(value: Node) {
+    const node =
+      value.type === 'Identifier' ? findVarInitialization(value.name, this.program) : value;
+    if (isStringLiteral(node)) {
       return node.value;
     }
-    if (t.isTSSatisfiesExpression(node) && t.isStringLiteral(node.expression)) {
+    if (node?.type === 'TSSatisfiesExpression' && isStringLiteral(node.expression)) {
       return node.expression.value;
     }
 
     throw new Error(dedent`
-      CSF: unexpected dynamic title ${formatLocation(node, this._options.fileName)}
+      CSF: unexpected dynamic title ${formatLocation(this._loc(node ?? undefined), this._options.fileName)}
 
       More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#string-literal-titles
     `);
   }
 
-  _parseMeta(declaration: t.ObjectExpression, program: t.Program) {
+  _parseMeta(declaration: E.ObjectExpression, program: E.Program) {
     if (this._metaNode) {
-      throw new MultipleMetaError('multiple meta objects', declaration, this._options.fileName);
+      throw new MultipleMetaError(
+        'multiple meta objects',
+        this._loc(declaration),
+        this._options.fileName
+      );
     }
     this._metaNode = declaration;
     const meta: StaticMeta = {};
-    (declaration.properties as t.ObjectProperty[]).forEach((p) => {
-      if (t.isIdentifier(p.key)) {
-        const value = t.isObjectMethod(p) ? p : p.value;
-        this._metaAnnotations[p.key.name] = value;
+    for (const p of declaration.properties) {
+      const key = staticKey(p);
+      if (p.type !== 'Property' || key === undefined) {
+        continue;
+      }
+      this._metaAnnotations[key] = p.value;
 
-        if (p.key.name === 'title') {
-          meta.title = this._parseTitle(p.value);
-        } else if (['includeStories', 'excludeStories'].includes(p.key.name)) {
-          (meta as any)[p.key.name] = parseIncludeExclude(p.value);
-        } else if (p.key.name === 'component') {
-          const n = p.value;
-          if (t.isIdentifier(n)) {
-            const id = n.name;
-            const importStmt = program.body.find(
-              (stmt) =>
-                t.isImportDeclaration(stmt) &&
-                stmt.specifiers.find((spec) => spec.local.name === id)
-            ) as t.ImportDeclaration;
-            if (importStmt) {
-              // Example: `import { ComponentImport } from './path-to-component'`
-              // const meta = { component: ComponentImport };
-              // Sets:
-              // - _rawComponentPath = './path-to-component'
-              // - _componentImportSpecifier = ComponentImport
-              const { source } = importStmt;
-              const specifier = importStmt.specifiers.find((spec) => spec.local.name === id);
-              if (t.isStringLiteral(source) && specifier) {
-                this._rawComponentPath = source.value;
-                if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
-                  this._componentImportSpecifier = specifier;
-                }
+      if (key === 'title') {
+        meta.title = this._parseTitle(p.value);
+      } else if (key === 'includeStories' || key === 'excludeStories') {
+        (meta as any)[key] = parseIncludeExclude(p.value);
+      } else if (key === 'component') {
+        const n = p.value;
+        if (n.type === 'Identifier') {
+          const id = n.name;
+          const importStmt = program.body.find(
+            (stmt): stmt is E.ImportDeclaration =>
+              stmt.type === 'ImportDeclaration' &&
+              stmt.specifiers.some((spec) => spec.local.name === id)
+          );
+          if (importStmt) {
+            // Example: `import { ComponentImport } from './path-to-component'`
+            // const meta = { component: ComponentImport };
+            // Sets:
+            // - _rawComponentPath = './path-to-component'
+            // - _componentImportSpecifier = ComponentImport
+            const specifier = importStmt.specifiers.find((spec) => spec.local.name === id);
+            if (specifier) {
+              this._rawComponentPath = importStmt.source.value;
+              if (
+                specifier.type === 'ImportSpecifier' ||
+                specifier.type === 'ImportDefaultSpecifier'
+              ) {
+                this._componentImportSpecifier = specifier;
               }
             }
           }
-          const { code } = recast.print(p.value, {});
-          meta.component = code;
-        } else if (p.key.name === 'tags') {
-          let node = p.value;
-          if (t.isIdentifier(node)) {
-            node = findVarInitialization(node.name, this._ast.program);
-          }
-          meta.tags = parseTags(node);
-        } else if (p.key.name === 'id') {
-          if (t.isStringLiteral(p.value)) {
-            meta.id = p.value.value;
-          } else {
-            throw new Error(`Unexpected component id: ${p.value}`);
-          }
+        }
+        meta.component = this.editor.source(p.value);
+      } else if (key === 'tags') {
+        let node: Node | null = p.value;
+        if (node.type === 'Identifier') {
+          node = findVarInitialization(node.name, this.program);
+        }
+        meta.tags = parseTags(node);
+      } else if (key === 'id') {
+        if (isStringLiteral(p.value)) {
+          meta.id = p.value.value;
+        } else {
+          throw new Error(`Unexpected component id: ${p.value}`);
         }
       }
-    });
+    }
     this._meta = meta;
   }
 
-  getStoryExport(key: string) {
-    let node = this._storyExports[key] as t.Node;
-    node = t.isVariableDeclarator(node) ? (node.init as t.Node) : node;
+  getStoryExport(key: string): Node {
+    this._assertIndexed();
+    let node: Node | null = this._storyExports[key];
+    node = node?.type === 'VariableDeclarator' ? node.init : node;
     if (isCanonicalCsf2BindCall(node)) {
       node = this._templates[node.callee.object.name];
     }
-    return node;
+    return node as Node;
+  }
+
+  _metaObjectFrom(decl: Node | null | undefined): E.ObjectExpression | undefined {
+    if (decl?.type === 'ObjectExpression') {
+      // export default { ... };
+      return decl;
+    }
+    if (
+      // export default { ... } as Meta<...>
+      // export default { ... } satisfies Meta<...>
+      (decl?.type === 'TSAsExpression' || decl?.type === 'TSSatisfiesExpression') &&
+      decl.expression.type === 'ObjectExpression'
+    ) {
+      return decl.expression;
+    }
+    if (
+      // export default { ... } satisfies Meta as Meta<...>
+      decl?.type === 'TSAsExpression' &&
+      decl.expression.type === 'TSSatisfiesExpression' &&
+      decl.expression.expression.type === 'ObjectExpression'
+    ) {
+      return decl.expression.expression;
+    }
+    return undefined;
+  }
+
+  _visitExportDefault(node: E.ExportDefaultDeclaration) {
+    const isVariableReference = node.declaration.type === 'Identifier';
+
+    let decl: Node | null | undefined;
+    if (
+      this._options.transformInlineMeta &&
+      !isVariableReference &&
+      node.declaration.type !== 'FunctionDeclaration' &&
+      node.declaration.type !== 'ClassDeclaration' &&
+      node.declaration.type !== 'TSInterfaceDeclaration'
+    ) {
+      /**
+       * Transform inline default exports into a constant declaration as it is needed for the
+       * Vitest plugin to compose stories using CSF1 through CSF3 should not be needed at all once
+       * we move to CSF4 entirely
+       *
+       * `export default {};`
+       *
+       * Becomes
+       *
+       * `const _meta = {}; export default _meta;`
+       */
+      const metaName = generateUid(this.editor.scopes, 'meta');
+      this._metaVariableName = metaName;
+      const { declaration } = node;
+      this.editor.edits.overwrite(node.start, outerSpan(declaration).start, `const ${metaName} = `);
+      insertStatementAfter(this.editor, node, `export default ${metaName};`);
+      this._metaStatement = node;
+      decl = declaration;
+    } else if (isVariableReference) {
+      // const meta = { ... };
+      // export default meta;
+      const variableName = (node.declaration as E.IdentifierReference).name;
+      this._metaVariableName = variableName;
+      const statement = this.program.body.find(
+        (candidate): candidate is E.VariableDeclaration =>
+          candidate.type === 'VariableDeclaration' &&
+          candidate.declarations.some((d) => isIdentifier(d.id, variableName))
+      );
+      this._metaStatement = statement;
+      decl = statement?.declarations.find((d) => isIdentifier(d.id, variableName))?.init;
+    } else {
+      this._metaStatement = node;
+      decl = node.declaration;
+    }
+
+    const metaNode = this._metaObjectFrom(decl);
+    if (metaNode) {
+      this._parseMeta(metaNode, this.program);
+    }
+
+    if (this._metaStatement && !this._metaNode) {
+      throw new NoMetaError(
+        'default export must be an object',
+        this._loc(this._metaStatement),
+        this._options.fileName
+      );
+    }
+  }
+
+  _visitExportNamed(node: E.ExportNamedDeclaration, isTopLevel: boolean) {
+    const { declaration } = node;
+    let declarations: (E.VariableDeclarator | E.Function)[] | undefined;
+    if (declaration?.type === 'VariableDeclaration') {
+      declarations = declaration.declarations;
+    } else if (declaration?.type === 'FunctionDeclaration') {
+      declarations = [declaration];
+    }
+    if (declarations) {
+      // export const X = ...;
+      for (const decl of declarations) {
+        const id = decl.id;
+        if (id?.type !== 'Identifier') {
+          continue;
+        }
+        const exportName = id.name;
+        if (exportName === '__namedExportsOrder' && decl.type === 'VariableDeclarator') {
+          this._namedExportsOrder = parseExportsOrder(decl.init);
+          continue;
+        }
+
+        // Determine the story node, unwrapping TS expressions
+        let storyNode: Node | null | undefined;
+        if (decl.type === 'VariableDeclarator') {
+          const init = decl.init;
+          if (init?.type === 'TSAsExpression' && init.expression.type === 'TSSatisfiesExpression') {
+            // { ... } satisfies Meta<...> as Meta<...>
+            storyNode = init.expression.expression;
+          } else if (init?.type === 'TSAsExpression' || init?.type === 'TSSatisfiesExpression') {
+            // { ... } as Meta<...>
+            // { ... } satisfies Meta<...>
+            storyNode = init.expression;
+          } else {
+            storyNode = init;
+          }
+        } else {
+          storyNode = decl;
+        }
+
+        // Check if this is a factory story (meta.story() or meta.extend())
+        let storyIsFactory = false;
+        if (isCsfFactoryCall(storyNode)) {
+          storyIsFactory = true;
+          storyNode = storyNode.arguments[0] as Node | undefined;
+        }
+
+        // Skip non-factory exports in factory files
+        if (this._metaIsFactory && !storyIsFactory) {
+          continue;
+        }
+
+        if (!this._metaIsFactory && storyIsFactory) {
+          if (this._metaNode) {
+            throw new MixedFactoryError(
+              'expected non-factory story',
+              this._loc(storyNode ?? undefined),
+              this._options.fileName
+            );
+          } else {
+            throw new BadMetaError(
+              'meta() factory must be imported from .storybook/preview configuration',
+              this._loc(storyNode ?? undefined),
+              this._options.fileName
+            );
+          }
+        }
+
+        // Now we know this is a valid story, register it
+        this._storyExports[exportName] = decl;
+        this._storyStatements[exportName] = node;
+        let name = storyNameFromExport(exportName);
+        if (this._storyAnnotations[exportName]) {
+          logger.warn(`Unexpected annotations for "${exportName}" before story declaration`);
+        } else {
+          this._storyAnnotations[exportName] = {};
+        }
+
+        const parameters: { [key: string]: any } = {};
+        if (storyNode?.type === 'ObjectExpression') {
+          parameters.__isArgsStory = true; // assume default render is an args story
+          // CSF3 object export
+          for (const p of storyNode.properties) {
+            const key = staticKey(p);
+            if (p.type !== 'Property' || key === undefined) {
+              continue;
+            }
+            if (p.method) {
+              this._storyAnnotations[exportName][key] = p.value;
+              continue;
+            }
+            if (key === 'render') {
+              parameters.__isArgsStory = isArgsStory(p.value, isTopLevel, this);
+            } else if (key === 'name' && isStringLiteral(p.value)) {
+              name = p.value.value;
+            } else if (key === 'storyName' && isStringLiteral(p.value)) {
+              logger.warn(
+                `Unexpected usage of "storyName" in "${exportName}". Please use "name" instead.`
+              );
+            } else if (key === 'parameters' && p.value.type === 'ObjectExpression') {
+              const idProperty = p.value.properties.find(
+                (property): property is E.ObjectProperty =>
+                  property.type === 'Property' && staticKey(property) === '__id'
+              );
+              if (idProperty) {
+                parameters.__id = (idProperty.value as E.StringLiteral).value;
+              }
+            }
+            this._storyAnnotations[exportName][key] = p.value;
+          }
+        } else {
+          parameters.__isArgsStory = storyNode ? isArgsStory(storyNode, isTopLevel, this) : false;
+        }
+        this._stories[exportName] = {
+          exportName,
+          id: 'FIXME',
+          name,
+          parameters,
+          factory: storyIsFactory,
+          __stats: {
+            factory: storyIsFactory,
+          },
+        };
+      }
+    } else if (node.specifiers.length > 0) {
+      // export { X as Y }
+      for (const specifier of node.specifiers) {
+        if (specifier.local.type !== 'Identifier') {
+          continue;
+        }
+        const exportName =
+          specifier.exported.type === 'Identifier'
+            ? specifier.exported.name
+            : (specifier.exported as E.StringLiteral).value;
+        const localName = specifier.local.name;
+        if (isTopLevel && !node.source && !isDeclared(this.editor, specifier.local)) {
+          throw new EstreeParseError(
+            `Export '${localName}' is not defined`,
+            this._options.fileName,
+            locationOf(this._code, specifier.local.start, specifier.local.start)
+          );
+        }
+        const decl = isTopLevel ? findVarInitialization(localName, this.program) : specifier.local;
+
+        if (exportName === 'default') {
+          this._metaVariableName = localName;
+          const metaNode = this._metaObjectFrom(decl);
+          if (metaNode && isTopLevel) {
+            this._parseMeta(metaNode, this.program);
+          }
+        } else {
+          const annotations = {} as Record<string, Node>;
+          let storyNode: Node | null | undefined = decl;
+          let storyIsFactory = false;
+          const unwrappedDecl = unwrapExpression(decl);
+          if (this._metaIsFactory && isCsfFactoryCall(unwrappedDecl)) {
+            storyIsFactory = true;
+            storyNode = unwrappedDecl.arguments[0] as Node | undefined;
+          }
+          // A story from another file is kept: its declaration isn't in this file
+          const isImported =
+            !!node.source || this.editor.scopes.bindingOf(specifier.local)?.kind === 'import';
+          if (this._metaIsFactory && !storyIsFactory && !isImported) {
+            continue;
+          }
+          if (storyNode?.type === 'ObjectExpression') {
+            for (const p of storyNode.properties) {
+              const key = staticKey(p);
+              if (p.type === 'Property' && key !== undefined) {
+                annotations[key] = p.value;
+              }
+            }
+          }
+          this._storyAnnotations[exportName] = annotations;
+          this._storyStatements[exportName] = decl as Node;
+          this._stories[exportName] = {
+            exportName,
+            id: 'FIXME',
+            name: exportName,
+            localName,
+            parameters: {},
+            factory: storyIsFactory,
+            __stats: storyIsFactory ? { factory: true } : {},
+          };
+        }
+      }
+    }
+  }
+
+  _visitExpressionStatement(node: E.ExpressionStatement, isTopLevel: boolean) {
+    const { expression } = node;
+    // B.storyName = 'some string';
+    if (
+      isTopLevel &&
+      expression.type === 'AssignmentExpression' &&
+      expression.left.type === 'MemberExpression' &&
+      expression.left.object.type === 'Identifier' &&
+      expression.left.property.type === 'Identifier'
+    ) {
+      const exportName = expression.left.object.name;
+      const annotationKey = expression.left.property.name;
+      const annotationValue = expression.right;
+
+      if (this._storyAnnotations[exportName]) {
+        this._storyAnnotations[exportName][annotationKey] = annotationValue;
+      }
+
+      if (annotationKey === 'storyName' && isStringLiteral(annotationValue)) {
+        const storyName = annotationValue.value;
+        const story = this._stories[exportName];
+
+        if (story) {
+          story.name = storyName;
+        }
+      }
+    }
+    // B.test('foo', () => {})
+    // B.test('foo', context, () => {})
+    if (
+      expression.type === 'CallExpression' &&
+      expression.callee.type === 'MemberExpression' &&
+      expression.callee.object.type === 'Identifier' &&
+      expression.callee.property.type === 'Identifier' &&
+      expression.callee.property.name === 'test' &&
+      expression.arguments.length >= 2 &&
+      isStringLiteral(expression.arguments[0])
+    ) {
+      const exportName = expression.callee.object.name;
+      const testName = expression.arguments[0].value;
+      const testFunction =
+        expression.arguments.length === 2 ? expression.arguments[1] : expression.arguments[2];
+      const testArguments = expression.arguments.length === 2 ? null : expression.arguments[1];
+      const tags = parseTestTags(testArguments, this.program);
+
+      this._tests.push({
+        function: testFunction,
+        name: testName,
+        node: expression,
+        // can't set id because meta title isn't available yet
+        // so it's set later on
+        id: 'FIXME',
+        tags,
+        parent: { node: this._storyStatements[exportName] },
+      });
+
+      // TODO: fix this when stories fail
+      this._stories[exportName].__stats.tests = true;
+    }
+  }
+
+  _visitCallExpression(node: E.CallExpression, ancestors: Node[]) {
+    const { callee } = node;
+    if (isIdentifier(callee, 'storiesOf')) {
+      throw new Error(dedent`
+        Unexpected \`storiesOf\` usage: ${formatLocation(this._loc(node), this._options.fileName)}.
+
+        \`storiesOf\` was removed in Storybook 8.0. Write stories in CSF instead.
+      `);
+    }
+    if (
+      callee.type === 'MemberExpression' &&
+      isIdentifier(callee.property, 'meta') &&
+      !callee.computed
+    ) {
+      // Find the root object for factory pattern:
+      // - preview.meta() => preview
+      // - preview.type().meta() => preview
+      let rootObject: Node = callee.object;
+      if (rootObject.type === 'CallExpression' && rootObject.callee.type === 'MemberExpression') {
+        rootObject = rootObject.callee.object;
+      }
+
+      if (rootObject.type === 'Identifier') {
+        const configCandidate = this.editor.scopes.bindingOf(rootObject);
+        const configParent = configCandidate?.declaration;
+        if (configParent?.type === 'ImportDeclaration') {
+          if (isValidPreviewPath(configParent.source.value)) {
+            this._metaIsFactory = true;
+            this._metaFactoryCall = node;
+            const metaDeclarator = ancestors.findLast(
+              (ancestor): ancestor is E.VariableDeclarator => ancestor.type === 'VariableDeclarator'
+            );
+
+            // find the name of the meta variable declaration
+            // e.g. const foo = preview.meta({ ... });
+            // otherwise fallback to meta
+            this._metaVariableName =
+              metaDeclarator?.id.type === 'Identifier' ? metaDeclarator.id.name : 'meta';
+            const [argument] = node.arguments;
+            const argumentBinding =
+              argument?.type === 'Identifier' ? this.editor.scopes.bindingOf(argument) : undefined;
+            const argumentNode =
+              argumentBinding?.constant && argumentBinding.node.type === 'VariableDeclarator'
+                ? argumentBinding.node.init
+                : argument;
+            const unwrappedArgument = argumentNode && unwrapExpression(argumentNode as Node);
+            if (unwrappedArgument?.type === 'ObjectExpression') {
+              this._parseMeta(unwrappedArgument, this.program);
+            } else {
+              this._metaNodeIsSynthetic = true;
+              this._parseMeta(
+                { type: 'ObjectExpression', properties: [], start: node.start, end: node.start },
+                this.program
+              );
+            }
+          } else if (rootObject.name === 'preview') {
+            // Only throw if the variable is named "preview" - this indicates
+            // the user is trying to use CSF Factories but with a wrong import path.
+            // Other .meta() calls (e.g., Zod v4's .meta()) are silently ignored.
+            throw new BadMetaError(
+              'meta() factory must be imported from .storybook/preview configuration',
+              this._loc(configParent),
+              this._options.fileName
+            );
+          }
+        }
+      }
+    }
   }
 
   parse() {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const self = this;
-    traverse(this._ast, {
-      ExportDefaultDeclaration: {
-        enter(path) {
-          const { node, parent } = path;
-          const isVariableReference = t.isIdentifier(node.declaration) && t.isProgram(parent);
+    const visit = (node: Node, ancestors: Node[]) => {
+      const parent = ancestors.at(-1);
+      const isTopLevel = parent?.type === 'Program';
+      switch (node.type) {
+        case 'ImportDeclaration':
+          this.imports.push(node.source.value);
+          return;
+        case 'ExportDefaultDeclaration':
+          this._visitExportDefault(node);
+          break;
+        case 'ExportNamedDeclaration':
+          this._visitExportNamed(node, isTopLevel);
+          break;
+        case 'ExpressionStatement':
+          this._visitExpressionStatement(node, isTopLevel);
+          break;
+        case 'CallExpression':
+          this._visitCallExpression(node, ancestors);
+          break;
+      }
+      ancestors.push(node);
+      const sorted = children(node, { skipTypes: true }).sort(
+        (a, b) => (a as Node & { start: number }).start - (b as Node & { start: number }).start
+      );
+      for (const child of sorted) {
+        visit(child, ancestors);
+      }
+      ancestors.pop();
+    };
+    visit(this.program, []);
 
-          /**
-           * Transform inline default exports into a constant declaration as it is needed for the
-           * Vitest plugin to compose stories using CSF1 through CSF3 should not be needed at all
-           * once we move to CSF4 entirely
-           *
-           * `export default {};`
-           *
-           * Becomes
-           *
-           * `const _meta = {}; export default _meta;`
-           */
-          if (
-            self._options.transformInlineMeta &&
-            !isVariableReference &&
-            t.isExpression(node.declaration)
-          ) {
-            const metaId = path.scope.generateUidIdentifier('meta');
-            self._metaVariableName = metaId.name;
-            const nodes = [
-              t.variableDeclaration('const', [t.variableDeclarator(metaId, node.declaration)]),
-              t.exportDefaultDeclaration(metaId),
-            ];
-
-            // Preserve sourcemaps location
-            nodes.forEach((_node: t.Node) => (_node.loc = path.node.loc));
-            path.replaceWithMultiple(nodes);
-
-            // This is a bit brittle because it assumes that we will hit the inserted default export
-            // as the traversal continues.
-            return;
-          }
-
-          let metaNode: t.ObjectExpression | undefined;
-          let decl;
-          if (isVariableReference) {
-            // const meta = { ... };
-            // export default meta;
-            const variableName = (node.declaration as t.Identifier).name;
-            self._metaVariableName = variableName;
-            const isMetaVariable = (declaration: t.VariableDeclarator) =>
-              t.isIdentifier(declaration.id) && declaration.id.name === variableName;
-
-            self._metaStatementPath = self._file.path
-              .get('body')
-              .find(
-                (path) =>
-                  path.isVariableDeclaration() && path.node.declarations.some(isMetaVariable)
-              );
-
-            self._metaStatement = self._metaStatementPath?.node;
-
-            decl = ((self?._metaStatement as t.VariableDeclaration)?.declarations || []).find(
-              isMetaVariable
-            )?.init;
-          } else {
-            self._metaStatement = node;
-            self._metaStatementPath = path;
-            decl = node.declaration;
-          }
-
-          if (t.isObjectExpression(decl)) {
-            // export default { ... };
-            metaNode = decl;
-          } else if (
-            // export default { ... } as Meta<...>
-            // export default { ... } satisfies Meta<...>
-            (t.isTSAsExpression(decl) || t.isTSSatisfiesExpression(decl)) &&
-            t.isObjectExpression(decl.expression)
-          ) {
-            metaNode = decl.expression;
-          } else if (
-            // export default { ... } satisfies Meta as Meta<...>
-            t.isTSAsExpression(decl) &&
-            t.isTSSatisfiesExpression(decl.expression) &&
-            t.isObjectExpression(decl.expression.expression)
-          ) {
-            metaNode = decl.expression.expression;
-          }
-
-          if (metaNode && t.isProgram(parent)) {
-            self._parseMeta(metaNode, parent);
-          }
-
-          if (self._metaStatement && !self._metaNode) {
-            throw new NoMetaError(
-              'default export must be an object',
-              self._metaStatement,
-              self._options.fileName
-            );
-          }
-
-          self._metaPath = path;
-        },
-      },
-      ExportNamedDeclaration: {
-        enter(path) {
-          const { node, parent } = path;
-          const declaration = path.get('declaration');
-          let declarations;
-          if (declaration.isVariableDeclaration()) {
-            declarations = declaration.get('declarations').filter((d) => d.isVariableDeclarator());
-          } else if (declaration.isFunctionDeclaration()) {
-            declarations = [declaration];
-          }
-          if (declarations) {
-            // export const X = ...;
-            declarations.forEach((declPath) => {
-              const decl = declPath.node;
-              const id = declPath.node.id;
-
-              if (t.isIdentifier(id)) {
-                const { name: exportName } = id;
-                if (exportName === '__namedExportsOrder' && declPath.isVariableDeclarator()) {
-                  self._namedExportsOrder = parseExportsOrder(declPath.node.init as t.Expression);
-                  return;
-                }
-
-                // Determine the story node, unwrapping TS expressions
-                let storyNode;
-                if (t.isVariableDeclarator(decl)) {
-                  if (
-                    t.isTSAsExpression(decl.init) &&
-                    t.isTSSatisfiesExpression(decl.init.expression)
-                  ) {
-                    // { ... } satisfies Meta<...> as Meta<...>
-                    storyNode = decl.init.expression.expression;
-                  } else if (
-                    t.isTSAsExpression(decl.init) ||
-                    t.isTSSatisfiesExpression(decl.init)
-                  ) {
-                    // { ... } as Meta<...>
-                    // { ... } satisfies Meta<...>
-                    storyNode = decl.init.expression;
-                  } else {
-                    storyNode = decl.init;
-                  }
-                } else {
-                  storyNode = decl;
-                }
-
-                // Check if this is a factory story (meta.story() or meta.extend())
-                let storyIsFactory = false;
-                if (storyNode && isCsfFactoryCall(storyNode)) {
-                  storyIsFactory = true;
-                  storyNode = storyNode.arguments[0];
-                }
-
-                // Skip non-factory exports in factory files
-                if (self._metaIsFactory && !storyIsFactory) {
-                  return;
-                }
-
-                if (!self._metaIsFactory && storyIsFactory) {
-                  if (self._metaNode) {
-                    throw new MixedFactoryError(
-                      'expected non-factory story',
-                      storyNode as t.Node,
-                      self._options.fileName
-                    );
-                  } else {
-                    throw new BadMetaError(
-                      'meta() factory must be imported from .storybook/preview configuration',
-                      storyNode as t.Node,
-                      self._options.fileName
-                    );
-                  }
-                }
-
-                // Now we know this is a valid story, register it
-                self._storyExports[exportName] = decl;
-                self._storyDeclarationPath[exportName] = declPath;
-                self._storyPaths[exportName] = path;
-                self._storyStatements[exportName] = node;
-                let name = storyNameFromExport(exportName);
-                if (self._storyAnnotations[exportName]) {
-                  logger.warn(
-                    `Unexpected annotations for "${exportName}" before story declaration`
-                  );
-                } else {
-                  self._storyAnnotations[exportName] = {};
-                }
-
-                const parameters: { [key: string]: any } = {};
-                if (t.isObjectExpression(storyNode)) {
-                  parameters.__isArgsStory = true; // assume default render is an args story
-                  // CSF3 object export
-                  (storyNode.properties as t.ObjectProperty[]).forEach((p) => {
-                    if (t.isIdentifier(p.key)) {
-                      const key = p.key.name;
-                      if (t.isObjectMethod(p)) {
-                        self._storyAnnotations[exportName][key] = p;
-                      } else {
-                        if (p.key.name === 'render') {
-                          parameters.__isArgsStory = isArgsStory(
-                            p.value as t.Expression,
-                            parent,
-                            self
-                          );
-                        } else if (p.key.name === 'name' && t.isStringLiteral(p.value)) {
-                          name = p.value.value;
-                        } else if (p.key.name === 'storyName' && t.isStringLiteral(p.value)) {
-                          logger.warn(
-                            `Unexpected usage of "storyName" in "${exportName}". Please use "name" instead.`
-                          );
-                        } else if (p.key.name === 'parameters' && t.isObjectExpression(p.value)) {
-                          const idProperty = p.value.properties.find(
-                            (property) =>
-                              t.isObjectProperty(property) &&
-                              t.isIdentifier(property.key) &&
-                              property.key.name === '__id'
-                          ) as t.ObjectProperty | undefined;
-                          if (idProperty) {
-                            parameters.__id = (idProperty.value as t.StringLiteral).value;
-                          }
-                        }
-                        self._storyAnnotations[exportName][p.key.name] = p.value;
-                      }
-                    }
-                  });
-                } else {
-                  parameters.__isArgsStory = isArgsStory(storyNode as t.Node, parent, self);
-                }
-                self._stories[exportName] = {
-                  id: 'FIXME',
-                  name,
-                  parameters,
-                  __stats: {
-                    factory: storyIsFactory,
-                  },
-                };
-              }
-            });
-          } else if (node.specifiers.length > 0) {
-            // export { X as Y }
-            node.specifiers.forEach((specifier) => {
-              if (
-                t.isExportSpecifier(specifier) &&
-                (t.isIdentifier(specifier.exported) || t.isStringLiteral(specifier.exported))
-              ) {
-                const exportName = t.isIdentifier(specifier.exported)
-                  ? specifier.exported.name
-                  : specifier.exported.value;
-                const { name: localName } = specifier.local;
-                const decl = t.isProgram(parent)
-                  ? findVarInitialization(localName, parent)
-                  : specifier.local;
-
-                if (exportName === 'default') {
-                  self._metaVariableName = localName;
-                  let metaNode: t.ObjectExpression | undefined;
-
-                  if (t.isObjectExpression(decl)) {
-                    // export default { ... };
-                    metaNode = decl;
-                  } else if (
-                    // export default { ... } as Meta<...>
-                    // export default { ... } satisfies Meta<...>
-                    (t.isTSAsExpression(decl) || t.isTSSatisfiesExpression(decl)) &&
-                    t.isObjectExpression(decl.expression)
-                  ) {
-                    metaNode = decl.expression;
-                  } else if (
-                    // export default { ... } satisfies Meta as Meta<...>
-                    t.isTSAsExpression(decl) &&
-                    t.isTSSatisfiesExpression(decl.expression) &&
-                    t.isObjectExpression(decl.expression.expression)
-                  ) {
-                    metaNode = decl.expression.expression;
-                  }
-
-                  if (metaNode && t.isProgram(parent)) {
-                    self._parseMeta(metaNode, parent);
-                  }
-                } else {
-                  const annotations = {} as Record<string, t.Node>;
-                  let storyNode: t.Node | undefined = decl;
-                  let storyIsFactory = false;
-                  const unwrappedDecl = decl && unwrapExpression(decl);
-                  if (self._metaIsFactory && unwrappedDecl && isCsfFactoryCall(unwrappedDecl)) {
-                    storyIsFactory = true;
-                    storyNode = unwrappedDecl.arguments[0];
-                  }
-                  // A story from another file is kept: its declaration isn't in this file
-                  const isImported =
-                    !!node.source || path.scope.getBinding(localName)?.kind === 'module';
-                  if (self._metaIsFactory && !storyIsFactory && !isImported) {
-                    return;
-                  }
-                  if (t.isObjectExpression(storyNode)) {
-                    (storyNode.properties as t.ObjectProperty[]).forEach((p) => {
-                      if (t.isIdentifier(p.key)) {
-                        annotations[p.key.name] = p.value;
-                      }
-                    });
-                  }
-                  self._storyAnnotations[exportName] = annotations;
-                  self._storyStatements[exportName] = decl;
-                  self._storyPaths[exportName] = path;
-                  self._stories[exportName] = {
-                    id: 'FIXME',
-                    name: exportName,
-                    localName,
-                    parameters: {},
-                    __stats: storyIsFactory ? { factory: true } : {},
-                  };
-                }
-              }
-            });
-          }
-        },
-      },
-      ExpressionStatement: {
-        enter({ node, parent }) {
-          const { expression } = node;
-          // B.storyName = 'some string';
-          if (
-            t.isProgram(parent) &&
-            t.isAssignmentExpression(expression) &&
-            t.isMemberExpression(expression.left) &&
-            t.isIdentifier(expression.left.object) &&
-            t.isIdentifier(expression.left.property)
-          ) {
-            const exportName = expression.left.object.name;
-            const annotationKey = expression.left.property.name;
-            const annotationValue = expression.right;
-
-            if (self._storyAnnotations[exportName]) {
-              self._storyAnnotations[exportName][annotationKey] = annotationValue;
-            }
-
-            if (annotationKey === 'storyName' && t.isStringLiteral(annotationValue)) {
-              const storyName = annotationValue.value;
-              const story = self._stories[exportName];
-
-              if (!story) {
-                return;
-              }
-              story.name = storyName;
-            }
-          }
-          // B.test('foo', () => {})
-          // B.test('foo', context, () => {})
-          if (
-            t.isCallExpression(expression) &&
-            t.isMemberExpression(expression.callee) &&
-            t.isIdentifier(expression.callee.object) &&
-            t.isIdentifier(expression.callee.property) &&
-            expression.callee.property.name === 'test' &&
-            expression.arguments.length >= 2 &&
-            t.isStringLiteral(expression.arguments[0])
-          ) {
-            const exportName = expression.callee.object.name;
-            const testName = expression.arguments[0].value;
-            const testFunction =
-              expression.arguments.length === 2 ? expression.arguments[1] : expression.arguments[2];
-            const testArguments =
-              expression.arguments.length === 2 ? null : expression.arguments[1];
-            const tags = parseTestTags(testArguments as t.Node | null, self._ast.program);
-
-            self._tests.push({
-              function: testFunction,
-              name: testName,
-              node: expression,
-              // can't set id because meta title isn't available yet
-              // so it's set later on
-              id: 'FIXME',
-              tags,
-              parent: { node: self._storyStatements[exportName] },
-            });
-
-            // TODO: fix this when stories fail
-            self._stories[exportName].__stats.tests = true;
-          }
-        },
-      },
-      CallExpression: {
-        enter(path) {
-          const { node } = path;
-          const { callee } = node;
-          if (t.isIdentifier(callee) && callee.name === 'storiesOf') {
-            throw new Error(dedent`
-              Unexpected \`storiesOf\` usage: ${formatLocation(node, self._options.fileName)}.
-
-              \`storiesOf\` was removed in Storybook 8.0. Write stories in CSF instead.
-            `);
-          }
-          if (
-            t.isMemberExpression(callee) &&
-            t.isIdentifier(callee.property) &&
-            callee.property.name === 'meta' &&
-            !callee.computed
-          ) {
-            // Find the root object for factory pattern:
-            // - preview.meta() => preview
-            // - preview.type().meta() => preview
-            let rootObject = callee.object;
-            if (t.isCallExpression(rootObject) && t.isMemberExpression(rootObject.callee)) {
-              rootObject = rootObject.callee.object;
-            }
-
-            if (t.isIdentifier(rootObject)) {
-              const configCandidate = path.scope.getBinding(rootObject.name);
-              const configParent = configCandidate?.path?.parentPath?.node;
-              if (t.isImportDeclaration(configParent)) {
-                if (isValidPreviewPath(configParent.source.value)) {
-                  self._metaIsFactory = true;
-                  self._metaFactoryCall = node;
-                  const metaDeclarator = path.findParent((p) => p.isVariableDeclarator());
-
-                  // find the name of the meta variable declaration
-                  // e.g. const foo = preview.meta({ ... });
-                  // otherwise fallback to meta
-                  self._metaVariableName =
-                    metaDeclarator?.isVariableDeclarator() && t.isIdentifier(metaDeclarator.node.id)
-                      ? metaDeclarator.node.id.name
-                      : callee.property.name;
-                  const [argument] = node.arguments;
-                  const argumentBinding =
-                    argument && t.isIdentifier(argument)
-                      ? path.scope.getBinding(argument.name)
-                      : undefined;
-                  const argumentNode =
-                    argumentBinding?.constant && argumentBinding.path.isVariableDeclarator()
-                      ? argumentBinding.path.node.init
-                      : argument;
-                  const unwrappedArgument = argumentNode && unwrapExpression(argumentNode);
-                  if (t.isObjectExpression(unwrappedArgument)) {
-                    self._parseMeta(unwrappedArgument, self._ast.program);
-                  } else {
-                    self._metaNodeIsSynthetic = true;
-                    self._parseMeta(t.objectExpression([]), self._ast.program);
-                  }
-                } else if (rootObject.name === 'preview') {
-                  // Only throw if the variable is named "preview" - this indicates
-                  // the user is trying to use CSF Factories but with a wrong import path.
-                  // Other .meta() calls (e.g., Zod v4's .meta()) are silently ignored.
-                  throw new BadMetaError(
-                    'meta() factory must be imported from .storybook/preview configuration',
-                    configParent,
-                    self._options.fileName
-                  );
-                }
-              }
-            }
-          }
-        },
-      },
-      ImportDeclaration: {
-        enter({ node }) {
-          const { source } = node;
-          if (t.isStringLiteral(source)) {
-            self.imports.push(source.value);
-          } else {
-            throw new Error('CSF: unexpected import source');
-          }
-        },
-      },
-    });
-
-    if (!self._meta) {
-      throw new NoMetaError('missing default export', self._ast, self._options.fileName);
+    if (!this._meta) {
+      // The program node starts at its first statement, not at the start of the file.
+      throw new NoMetaError(
+        'missing default export',
+        this._loc({ start: 0, end: 0 }),
+        this._options.fileName
+      );
     }
 
     // default export can come at any point in the file, so we do this post processing last
-    const entries = Object.entries(self._stories);
-    self._meta.title = this._options.makeTitle(self._meta?.title as string);
-    if (self._metaAnnotations.play) {
-      self._meta.tags = [...(self._meta.tags || []), Tag.PLAY_FN];
+    const entries = Object.entries(this._stories);
+    this._meta.title = this._options.makeTitle(this._meta?.title as string);
+    if (this._metaAnnotations.play) {
+      this._meta.tags = [...(this._meta.tags || []), Tag.PLAY_FN];
     }
-    self._stories = entries.reduce(
+    this._stories = entries.reduce(
       (acc, [key, story]) => {
-        if (!isExportStory(key, self._meta as StaticMeta)) {
+        if (!isExportStory(key, this._meta as StaticMeta)) {
           return acc;
         }
         const id =
           story.parameters?.__id ??
-          toId((self._meta?.id || self._meta?.title) as string, storyNameFromExport(key));
+          toId((this._meta?.id || this._meta?.title) as string, storyNameFromExport(key));
         const parameters: Record<string, any> = { ...story.parameters, __id: id };
 
-        const { includeStories } = self._meta || {};
+        const { includeStories } = this._meta || {};
         if (
           key === '__page' &&
           (entries.length === 1 || (Array.isArray(includeStories) && includeStories.length === 1))
@@ -989,12 +1213,11 @@ export class CsfFile {
           parameters.docsOnly = true;
         }
         acc[key] = { ...story, id, parameters };
-        const storyAnnotations = self._storyAnnotations[key];
+        const storyAnnotations = this._storyAnnotations[key];
         const { tags, play } = storyAnnotations;
         if (tags) {
-          const node = t.isIdentifier(tags)
-            ? findVarInitialization(tags.name, this._ast.program)
-            : tags;
+          const node =
+            tags.type === 'Identifier' ? findVarInitialization(tags.name, this.program) : tags;
           acc[key].tags = parseTags(node);
         }
         if (play) {
@@ -1003,17 +1226,18 @@ export class CsfFile {
         const stats = acc[key].__stats;
         ['play', 'render', 'loaders', 'beforeEach', 'globals', 'tags'].forEach((annotation) => {
           stats[annotation as keyof IndexInputStats] =
-            !!storyAnnotations[annotation] || !!self._metaAnnotations[annotation];
+            !!storyAnnotations[annotation] || !!this._metaAnnotations[annotation];
         });
-        const storyExport = self.getStoryExport(key);
+        const storyExport = this.getStoryExport(key);
         stats.storyFn = !!(
-          t.isArrowFunctionExpression(storyExport) || t.isFunctionDeclaration(storyExport)
+          storyExport?.type === 'ArrowFunctionExpression' ||
+          storyExport?.type === 'FunctionDeclaration'
         );
-        stats.mount = hasMount(storyAnnotations.play ?? self._metaAnnotations.play);
-        stats.moduleMock = !!self.imports.find((fname) => isModuleMock(fname));
+        stats.mount = hasMount(storyAnnotations.play ?? this._metaAnnotations.play);
+        stats.moduleMock = !!this.imports.find((fname) => isModuleMock(fname));
 
-        const storyNode = self._storyStatements[key];
-        const storyTests = self._tests.filter((t) => t.parent.node === storyNode);
+        const storyNode = this._storyStatements[key];
+        const storyTests = this._tests.filter((t) => t.parent.node === storyNode);
         if (storyTests.length > 0) {
           // TODO: [test-syntax] if we want to add a tag for the story that contains tests, this is the place for it
           // acc[key].tags = [...(acc[key].tags || []), 'story-with-tests'];
@@ -1029,20 +1253,20 @@ export class CsfFile {
       {} as Record<string, StaticStory>
     );
 
-    Object.keys(self._storyExports).forEach((key) => {
-      if (!isExportStory(key, self._meta as StaticMeta)) {
-        delete self._storyExports[key];
-        delete self._storyAnnotations[key];
-        delete self._storyStatements[key];
+    Object.keys(this._storyExports).forEach((key) => {
+      if (!isExportStory(key, this._meta as StaticMeta)) {
+        delete this._storyExports[key];
+        delete this._storyAnnotations[key];
+        delete this._storyStatements[key];
       }
     });
 
-    if (self._namedExportsOrder) {
-      const unsortedExports = Object.keys(self._storyExports);
-      self._storyExports = sortExports(self._storyExports, self._namedExportsOrder);
-      self._stories = sortExports(self._stories, self._namedExportsOrder);
+    if (this._namedExportsOrder) {
+      const unsortedExports = Object.keys(this._storyExports);
+      this._storyExports = sortExports(this._storyExports, this._namedExportsOrder);
+      this._stories = sortExports(this._stories, this._namedExportsOrder);
 
-      const sortedExports = Object.keys(self._storyExports);
+      const sortedExports = Object.keys(this._storyExports);
       if (unsortedExports.length !== sortedExports.length) {
         throw new Error(
           `Missing exports after sort: ${unsortedExports.filter(
@@ -1052,18 +1276,50 @@ export class CsfFile {
       }
     }
 
-    return self as CsfFile & IndexedCSFFile;
+    return this as CsfFile & IndexedCSFFile;
   }
 
   public get meta() {
+    this._assertIndexed();
     return this._meta;
   }
 
+  /**
+   * Read the import the meta's `component` refers to, or `undefined` when `component` is not an
+   * identifier bound by a default or named import, such as a local component, a namespace import or
+   * member, or `Button as any`.
+   *
+   * @example
+   * ```ts
+   * const csf = loadCsf(
+   *   "import { Button as B } from './Button';\nexport default { component: B };",
+   *   { makeTitle: () => 'Example' }
+   * ).parse();
+   * csf.componentImport; // { source: './Button', imported: 'Button', local: 'B' }
+   * ```
+   */
+  public get componentImport(): CsfComponentImport | undefined {
+    this._assertIndexed();
+    const specifier = this._componentImportSpecifier;
+    if (!specifier || this._rawComponentPath === undefined) {
+      return undefined;
+    }
+    const imported =
+      specifier.type === 'ImportDefaultSpecifier'
+        ? 'default'
+        : specifier.imported.type === 'Identifier'
+          ? specifier.imported.name
+          : specifier.imported.value;
+    return { source: this._rawComponentPath, imported, local: specifier.local.name };
+  }
+
   public get stories() {
+    this._assertIndexed();
     return Object.values(this._stories);
   }
 
-  public getStoryTests(story: string | t.Node) {
+  public getStoryTests(story: string | Node) {
+    this._assertIndexed();
     const storyNode = typeof story === 'string' ? this._storyStatements[story] : story;
     if (!storyNode) {
       return [];
@@ -1072,6 +1328,7 @@ export class CsfFile {
   }
 
   public get indexInputs(): IndexInput[] {
+    this._assertIndexed();
     const { fileName } = this._options;
     if (!fileName) {
       throw new Error(
@@ -1134,47 +1391,65 @@ export class CsfFile {
   }
 }
 
-/** Using new babel.File is more powerful and give access to API such as buildCodeFrameError */
-export const babelParseFile = ({
-  code,
-  filename = '',
-  ast,
-}: {
-  code: string;
-  filename?: string;
-  ast?: t.File;
-}): BabelFile => {
-  return new BabelFileClass(
-    { filename, highlightCode: false },
-    { code, ast: ast ?? babelParse(code) }
-  );
+// Children in source order; type annotations are skipped since CSF never reads them.
+export const loadCsf = (code: string, options: CsfOptions) => new CsfFile(code, options);
+
+/**
+ * A source map that carries the content of its sources, as Rollup's types expect. An entry is `null`
+ * only when an input map carried none, which Rollup, Vite and webpack accept at runtime.
+ */
+export type CsfSourceMap = Omit<GeneratedMap, 'sourcesContent'> & {
+  sourcesContent: string[];
 };
 
-export const loadCsf = (code: string, options: CsfOptions) => {
-  const ast = babelParse(code);
-  const file = babelParseFile({ code, filename: options.fileName, ast });
-  return new CsfFile(ast, options, file);
-};
+export interface FormatCsfOptions {
+  sourceMaps?: boolean;
+  /** Source name the map refers to; defaults to the file name the CSF was loaded with. */
+  sourceFileName?: string;
+  /** Map of the loaded code to its original, when it came from an earlier transform. */
+  inputSourceMap?: InputSourceMap;
+}
 
-export const formatCsf = (
+/**
+ * Print the file with its pending edits. With `sourceMaps`, returns the code and a hi-res source map
+ * from the loaded code to the output.
+ */
+export function formatCsf(
   csf: CsfFile,
-  options: GeneratorOptions & { inputSourceMap?: any } = { sourceMaps: false },
-  code?: string
-): ReturnType<typeof generate> | string => {
-  const result = generate(csf._ast, options, code);
-  if (options.sourceMaps) {
-    return result;
+  options: FormatCsfOptions & { sourceMaps: true }
+): { code: string; map: CsfSourceMap };
+export function formatCsf(
+  csf: CsfFile,
+  options?: FormatCsfOptions & { sourceMaps?: false }
+): string;
+export function formatCsf(
+  csf: CsfFile,
+  options?: FormatCsfOptions
+): { code: string; map: CsfSourceMap } | string;
+export function formatCsf(
+  csf: CsfFile,
+  options: FormatCsfOptions = { sourceMaps: false }
+): { code: string; map: CsfSourceMap } | string {
+  const code = csf.editor.toString();
+  if (!options.sourceMaps) {
+    return code;
   }
-  return result.code;
-};
+  return {
+    code,
+    map: csf.editor.generateMap({
+      source: options.sourceFileName ?? csf._options.fileName,
+      inputSourceMap: options.inputSourceMap,
+    }) as unknown as CsfSourceMap,
+  };
+}
 
-/** Use this function, if you want to preserve styles. Uses recast under the hood. */
-export const printCsf = (csf: CsfFile, options: RecastOptions = {}): PrintResultType => {
-  return recast.print(csf._ast, {
-    // Recast defaults this to `os.EOL`, which would carriage-return printed files on Windows.
-    lineTerminator: '\n',
-    ...options,
-  });
+/**
+ * Print the file with its pending edits. Untouched code is kept as written, except that every line
+ * ends like the first one: CRLF when that is CRLF, `\n` otherwise.
+ */
+export const printCsf = (csf: CsfFile): PrintResultType => {
+  const code = csf.editor.toString();
+  return { code, toString: () => code };
 };
 
 export const readCsf = async (fileName: string, options: CsfOptions) => {
@@ -1188,5 +1463,7 @@ export const writeCsf = async (csf: CsfFile, fileName?: string) => {
   if (!fname) {
     throw new Error('Please specify a fileName for writeCsf');
   }
-  await writeFile(fileName as string, printCsf(csf).code);
+  await writeFile(fname, printCsf(csf).code);
 };
+
+export { isFunction };

@@ -6,15 +6,20 @@ import {
   getAddonNames,
   rendererPackages,
 } from 'storybook/internal/common';
+import {
+  type ESTree as E,
+  type ESTreeNode as Node,
+  SourceEditor,
+  walk,
+  removeStatements,
+  setImportSpecifiers,
+} from 'storybook/internal/csf-tools';
 
 import jscodeshift from 'jscodeshift';
 import path from 'path';
 import picocolors from 'picocolors';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
-
-import type { types as t } from 'storybook/internal/babel';
-import { getHeaderComments } from 'storybook/internal/csf-tools';
 
 import { findFilesUp } from '../../util.ts';
 import type { Fix } from '../types.ts';
@@ -276,7 +281,9 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
 
     for (const { path: setupFile, transform } of setupFiles) {
       if (transform.kind === 'rewritten') {
-        files.write(setupFile, await formatExistingFile(setupFile, transform.code));
+        // `check` read the file through another `files`; this read lets the commit keep the
+        // file's line endings and notice when it changed on disk since.
+        await files.edit(setupFile, () => formatExistingFile(setupFile, transform.code));
       }
     }
 
@@ -322,20 +329,19 @@ export function transformSetupFile(
   source: string,
   options: TransformOptions
 ): VitestSetupFileInfo['transform'] {
-  const j = jscodeshift.withParser(/\.[jt]sx$/.test(options.setupFilePath) ? 'tsx' : 'ts');
-  let root: jscodeshift.Collection;
+  let editor: SourceEditor;
 
   try {
-    root = j(source);
+    editor = new SourceEditor(source, options.setupFilePath);
   } catch {
     return { kind: 'manual', reason: 'it could not be parsed' };
   }
 
-  const program: t.Program = root.get().node.program;
+  const { program } = editor;
 
   const bindings = new Map<
     string,
-    { declaration: t.ImportDeclaration; specifier: t.ImportDeclaration['specifiers'][number] }
+    { declaration: E.ImportDeclaration; specifier: E.ImportDeclaration['specifiers'][number] }
   >();
 
   for (const statement of program.body) {
@@ -363,13 +369,13 @@ export function transformSetupFile(
     };
   }
 
-  const unsupportedAnnotation = (node: t.Node | null) => ({
+  const unsupportedAnnotation = (node: Node) => ({
     kind: 'manual' as const,
-    reason: `it passes annotations that are neither your ".storybook/preview" nor "${A11Y_PREVIEW_MODULE}": ${j(node as unknown as jscodeshift.ASTNode).toSource()}`,
+    reason: `it passes annotations that are neither your ".storybook/preview" nor "${A11Y_PREVIEW_MODULE}": ${editor.source(node)}`,
   });
 
   const annotationName = (
-    node: t.Expression | t.SpreadElement | t.ArgumentPlaceholder | null
+    node: E.ArrayExpressionElement
   ): string | { kind: 'manual'; reason: string } => {
     const identifier =
       node?.type === 'MemberExpression' &&
@@ -383,7 +389,7 @@ export function transformSetupFile(
       binding?.specifier.type !== 'ImportNamespaceSpecifier' &&
       binding?.specifier.type !== 'ImportDefaultSpecifier'
     ) {
-      return unsupportedAnnotation(node);
+      return unsupportedAnnotation(node!);
     }
 
     const importSource = String(binding.declaration.source.value);
@@ -398,11 +404,10 @@ export function transformSetupFile(
             reason: `it passes "${A11Y_PREVIEW_MODULE}" annotations, but ${A11Y_ADDON_NAME} is not registered in the "addons" field of your .storybook/main`,
           };
     }
-    return unsupportedAnnotation(node);
+    return unsupportedAnnotation(node!);
   };
 
-  const [firstStatement] = program.body;
-  const removedStatements = new Set<t.Statement>();
+  const removedStatements = new Set<Node>();
   const capturedNames = new Set<string>();
   const annotationNames = new Set<string>();
 
@@ -442,11 +447,11 @@ export function transformSetupFile(
 
     removedStatements.add(statement);
     if (statement.type === 'VariableDeclaration') {
-      capturedNames.add((statement.declarations[0].id as t.Identifier).name);
+      capturedNames.add((statement.declarations[0].id as E.BindingIdentifier).name);
     }
   }
 
-  if (countReferences(j, root, callBinding[0]) !== removedStatements.size) {
+  if (countReferences(program, callBinding[0]) !== removedStatements.size) {
     return {
       kind: 'manual',
       reason:
@@ -457,7 +462,7 @@ export function transformSetupFile(
   for (const name of capturedNames) {
     const forwardings = program.body.filter((statement) => isBeforeAllForwarding(statement, name));
 
-    if (countReferences(j, root, name) !== forwardings.length) {
+    if (countReferences(program, name) !== forwardings.length) {
       return {
         kind: 'manual',
         reason:
@@ -468,39 +473,37 @@ export function transformSetupFile(
     forwardings.forEach((statement) => removedStatements.add(statement));
   }
 
-  program.body = program.body.filter((statement) => !removedStatements.has(statement));
+  const keptSpecifiers = new Map<E.ImportDeclaration, E.ImportDeclaration['specifiers']>();
 
   for (const name of [callBinding[0], ...annotationNames, 'beforeAll']) {
     const binding = bindings.get(name);
 
-    if (!binding || countReferences(j, root, name) > 0) {
+    if (!binding || countReferences(program, name, removedStatements) > 0) {
       continue;
     }
 
-    binding.declaration.specifiers = binding.declaration.specifiers.filter(
+    const kept = (keptSpecifiers.get(binding.declaration) ?? binding.declaration.specifiers).filter(
       (specifier) => specifier !== binding.specifier
     );
+    keptSpecifiers.set(binding.declaration, kept);
 
-    if (binding.declaration.specifiers.length === 0) {
-      program.body = program.body.filter((statement) => statement !== binding.declaration);
+    if (kept.length === 0) {
+      removedStatements.add(binding.declaration);
     }
   }
 
-  if (program.body.length === 0) {
+  if (program.body.every((statement) => removedStatements.has(statement))) {
     return { kind: 'empty' };
   }
 
-  keepHeader(firstStatement, program.body[0]);
-  return { kind: 'rewritten', code: root.toSource(PRINT_OPTIONS) };
-}
-
-function keepHeader(removed: t.Statement | undefined, first: t.Statement) {
-  const header = getHeaderComments(removed);
-  if (removed === first || !header.length) {
-    return;
+  for (const [declaration, kept] of keptSpecifiers) {
+    if (kept.length > 0) {
+      setImportSpecifiers(editor, declaration, kept);
+    }
   }
-  const commented = first as { comments?: t.Comment[] };
-  commented.comments = [...header, ...(commented.comments ?? [])];
+  removeStatements(editor, removedStatements);
+
+  return { kind: 'rewritten', code: editor.toString() };
 }
 
 function resolvesToPreview(importSource: string, options: TransformOptions) {
@@ -513,7 +516,7 @@ function resolvesToPreview(importSource: string, options: TransformOptions) {
   return resolved === path.resolve(options.configDir, 'preview');
 }
 
-function isCallOf(node: t.Node | null | undefined, calleeName: string): node is t.CallExpression {
+function isCallOf(node: Node | null | undefined, calleeName: string): node is E.CallExpression {
   return (
     node?.type === 'CallExpression' &&
     node.callee.type === 'Identifier' &&
@@ -521,7 +524,7 @@ function isCallOf(node: t.Node | null | undefined, calleeName: string): node is 
   );
 }
 
-function isBeforeAllForwarding(statement: t.Statement, resultName: string) {
+function isBeforeAllForwarding(statement: Node, resultName: string) {
   if (statement.type !== 'ExpressionStatement' || !isCallOf(statement.expression, 'beforeAll')) {
     return false;
   }
@@ -538,28 +541,41 @@ function isBeforeAllForwarding(statement: t.Statement, resultName: string) {
 }
 
 /** Counts uses of a binding, ignoring its declaration, member property names and object keys. */
-function countReferences(j: jscodeshift.JSCodeshift, root: jscodeshift.Collection, name: string) {
-  return root
-    .find(j.Identifier, { name })
-    .filter((identifierPath) => {
-      const parent = identifierPath.parent.node;
-      if (
-        parent.type === 'ImportSpecifier' ||
-        parent.type === 'ImportDefaultSpecifier' ||
-        parent.type === 'ImportNamespaceSpecifier' ||
-        (parent.type === 'VariableDeclarator' && parent.id === identifierPath.node)
-      ) {
-        return false;
-      }
-      if (parent.type === 'MemberExpression' && !parent.computed) {
-        return parent.property !== identifierPath.node;
-      }
-      if ((parent.type === 'ObjectProperty' || parent.type === 'Property') && !parent.computed) {
-        return parent.key !== identifierPath.node || parent.shorthand === true;
-      }
-      return true;
-    })
-    .size();
+function countReferences(
+  program: E.Program,
+  name: string,
+  excluded: ReadonlySet<Node> = new Set()
+) {
+  let references = 0;
+  walk(program, (node, parent) => {
+    if (excluded.has(node)) {
+      return false;
+    }
+    if (node.type !== 'Identifier' || node.name !== name || !parent) {
+      return;
+    }
+    if (
+      parent.type === 'ImportSpecifier' ||
+      parent.type === 'ImportDefaultSpecifier' ||
+      parent.type === 'ImportNamespaceSpecifier' ||
+      (parent.type === 'VariableDeclarator' && parent.id === node)
+    ) {
+      return;
+    }
+    if (parent.type === 'MemberExpression' && !parent.computed && parent.property === node) {
+      return;
+    }
+    if (
+      parent.type === 'Property' &&
+      !parent.computed &&
+      parent.key === node &&
+      !parent.shorthand
+    ) {
+      return;
+    }
+    references += 1;
+  });
+  return references;
 }
 
 /**

@@ -268,6 +268,37 @@ describe('buildApiDescription', () => {
     `);
   });
 
+  it('keeps a property named like an attribute backed by another field', () => {
+    expect(
+      buildApiDescription(
+        declaration({
+          name: 'WNames',
+          attributes: [{ name: 'value', fieldName: 'defaultValue', type: { text: 'string' } }],
+          members: [
+            { kind: 'field', name: 'defaultValue', type: { text: 'string' } },
+            { kind: 'field', name: 'value', type: { text: 'string' } },
+          ],
+        })
+      )
+    ).toMatchInlineSnapshot(`
+      "## Attributes
+
+      \`\`\`
+      export type WNamesAttributes = {
+        value?: string; // property: defaultValue
+      }
+      \`\`\`
+
+      ## Properties
+
+      \`\`\`
+      export type WNamesProperties = {
+        value?: string;
+      }
+      \`\`\`"
+    `);
+  });
+
   it('returns undefined for an empty declaration', () => {
     expect(buildApiDescription(declaration({}))).toMatchInlineSnapshot(`undefined`);
   });

@@ -9,7 +9,9 @@ import { printCsfPath } from 'storybook/internal/csf-tools';
 export class SaveStoryError extends Error {}
 
 // What the controls panel shows when csf-tools refuses an edit of story `exportName`. The
-// diagnostic is written for API callers, so it only goes to the server log, as the cause.
+// diagnostic is written for API callers, so it goes to the server log, as the cause. A code that
+// save-story does not expect from `set(['args', key])` has no message here: the panel shows the
+// diagnostic's own message.
 const describeRefusal = (exportName: string, diagnostic: CsfMutationDiagnostic) => {
   const { code, path } = diagnostic;
   const [field, key] = path;

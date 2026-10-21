@@ -5,21 +5,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
+// eslint-disable-next-line depend/ban-dependencies
+import { globby } from 'globby';
 import { vol } from 'memfs';
 
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
-import type { CheckOptions } from '../types.ts';
 import { addonThemesJsxProvider } from './addon-themes-jsx-provider.ts';
 
-const { globby } = vi.hoisted(() => ({ globby: vi.fn(async () => [] as string[]) }));
-
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('globby', () => ({ globby }));
+vi.mock('globby', { spy: true });
 
 const mainConfigPath = '/project/.storybook/main.ts';
 const previewConfigPath = '/project/.storybook/preview.ts';
 const storyPath = '/project/src/Button.stories.tsx';
 const decoratorPath = '/project/.storybook/decorator.ts';
+const mdxPath = '/project/src/Button.mdx';
+const vuePath = '/project/src/Button.stories.vue';
 
 const packageManager = {
   addDependencies: vi.fn(),
@@ -35,25 +36,46 @@ const options = {
   storybookVersion: '11.0.0',
 };
 
-const seed = (files: { main?: string; preview?: string; story?: string; decorator?: string }) => {
+type ProjectFiles = {
+  main?: string;
+  preview?: string;
+  story?: string;
+  decorator?: string;
+  mdx?: string;
+  vue?: string;
+};
+
+const seed = (files: ProjectFiles) => {
   vol.fromJSON({
     [mainConfigPath]: files.main ?? "export default { addons: ['@storybook/addon-themes'] };\n",
     [previewConfigPath]:
       files.preview ?? "import { withThemeByClassName } from '@storybook/addon-themes';\n",
     [storyPath]: files.story ?? 'export default { title: "Button" };\n',
     ...(files.decorator ? { [decoratorPath]: files.decorator } : {}),
+    ...(files.mdx !== undefined ? { [mdxPath]: files.mdx } : {}),
+    ...(files.vue !== undefined ? { [vuePath]: files.vue } : {}),
   });
 };
 
-const check = (files: Parameters<typeof seed>[0], storybookVersion = '11.0.0') => {
+const projectOptions = (files: ProjectFiles, storybookVersion = '11.0.0') => ({
+  ...options,
+  storybookVersion,
+  storiesPaths: [
+    storyPath,
+    ...(files.mdx !== undefined ? [mdxPath] : []),
+    ...(files.vue !== undefined ? [vuePath] : []),
+  ],
+});
+
+const check = (files: ProjectFiles, storybookVersion = '11.0.0') => {
   seed(files);
-  return checkFix(addonThemesJsxProvider, { ...options, storybookVersion } as CheckOptions);
+  return checkFix(addonThemesJsxProvider, projectOptions(files, storybookVersion));
 };
 
-const migrate = async (files: Parameters<typeof seed>[0], storybookVersion = '11.0.0') => {
+const migrate = async (files: ProjectFiles, storybookVersion = '11.0.0') => {
   seed(files);
   const failures = await runFix(addonThemesJsxProvider, {
-    ...options,
+    ...projectOptions(files, storybookVersion),
     result: {},
     storybookVersion,
   });
@@ -71,7 +93,7 @@ const migrate = async (files: Parameters<typeof seed>[0], storybookVersion = '11
 beforeEach(() => {
   vol.reset();
   vi.mocked(packageManager.addDependencies).mockClear();
-  globby.mockResolvedValue([]);
+  vi.mocked(globby).mockResolvedValue([]);
   vi.mocked(readFile).mockImplementation(vol.promises.readFile as typeof readFile);
   vi.mocked(writeFile).mockImplementation(vol.promises.writeFile as typeof writeFile);
 });
@@ -153,7 +175,7 @@ describe('addon-themes-jsx-provider', () => {
   });
 
   it('rewrites a config-directory file found beside main and preview', async () => {
-    globby.mockResolvedValue([decoratorPath]);
+    vi.mocked(globby).mockResolvedValue([decoratorPath]);
     const files = {
       decorator: `import { withThemeFromJSXProvider } from '@storybook/addon-themes';\n`,
     };
@@ -173,6 +195,44 @@ describe('addon-themes-jsx-provider', () => {
     expect(packageManager.addDependencies).toHaveBeenCalledWith(
       { type: 'devDependencies', skipInstall: true },
       [`@storybook/addon-themes-react@${version}`]
+    );
+  });
+
+  it('rewrites an MDX import the parser cannot read', async () => {
+    const files = {
+      mdx: `import { Meta } from '@storybook/addon-docs/blocks';\nimport { withThemeFromJSXProvider } from '@storybook/addon-themes';\nexport { ProviderStrategyConfiguration } from '@storybook/addon-themes';\n\n<Meta title="Button" />\n\n# Button\n`,
+    };
+
+    expect(await check(files)).toEqual({});
+    await migrate(files);
+    expect(vol.readFileSync(mdxPath, 'utf8')).toBe(
+      `import { Meta } from '@storybook/addon-docs/blocks';\nimport { withThemeFromJSXProvider } from '@storybook/addon-themes-react';\nexport { ProviderStrategyConfiguration } from '@storybook/addon-themes-react';\n\n<Meta title="Button" />\n\n# Button\n`
+    );
+  });
+
+  it('leaves a mixed import in a file that cannot be parsed and reports it', async () => {
+    const line = `import { withThemeByClassName, withThemeFromJSXProvider } from '@storybook/addon-themes';`;
+    const vue = `<script setup>\n${line}\n</script>\n\n<template><div /></template>\n`;
+    const files = { vue };
+
+    const result = await check(files);
+
+    expect(result).toEqual({ mixedImportLines: [{ file: vuePath, line }] });
+    expect(addonThemesJsxProvider.prompt(result!)).toContain(line);
+    expect(addonThemesJsxProvider.prompt(result!)).toContain('Button.stories.vue');
+    await migrate(files);
+    expect(vol.readFileSync(vuePath, 'utf8')).toBe(vue);
+  });
+
+  it('rewrites dynamic import() destructuring the way require destructuring is rewritten', async () => {
+    const files = {
+      preview: `const { withThemeFromJSXProvider } = await import('@storybook/addon-themes');\nconst { withThemeByClassName, ProviderStrategyConfiguration } = await import('@storybook/addon-themes');\nimport('@storybook/addon-themes').then(({ withThemeFromJSXProvider }) => withThemeFromJSXProvider);\nimport('@storybook/addon-themes').then(({ withThemeByClassName, withThemeFromJSXProvider }) => withThemeByClassName);\n`,
+    };
+
+    const migrated = await migrate(files);
+
+    expect(migrated.preview).toBe(
+      `const { withThemeFromJSXProvider } = await import('@storybook/addon-themes-react');\nconst { withThemeByClassName } = await import('@storybook/addon-themes');\nconst { ProviderStrategyConfiguration } = await import('@storybook/addon-themes-react');\nimport('@storybook/addon-themes-react').then(({ withThemeFromJSXProvider }) => withThemeFromJSXProvider);\nimport('@storybook/addon-themes').then(({ withThemeByClassName, withThemeFromJSXProvider }) => withThemeByClassName);\n`
     );
   });
 

@@ -20,22 +20,18 @@ type PropertyLookup =
 // a removal could reveal what an earlier member provides.
 export type Access = 'read' | 'set' | 'remove';
 
-// With an `editor`, a spread of a trusted local object literal known to lack `name` is skipped: it
-// can neither override the field nor provide it.
+// The member `name` reads, from the syntax alone: any spread or computed key may provide or
+// override it.
 export const lookupProperty = (
   properties: readonly E.ObjectPropertyKind[],
   name: string,
-  access: Access = 'read',
-  editor?: SourceEditor
+  access: Access = 'read'
 ): PropertyLookup => {
   const matches: Property[] = [];
   let unknown: { code: CsfMutationDiagnosticCode; node: Node } | undefined;
   let unknownAfterMatch: { code: CsfMutationDiagnosticCode; node: Node } | undefined;
 
   for (const member of properties) {
-    if (member.type === 'SpreadElement' && editor && lacks(editor, member, name)) {
-      continue;
-    }
     const key = member.type === 'SpreadElement' ? undefined : staticKey(member);
     if (key === undefined) {
       unknown = {
@@ -202,6 +198,20 @@ const lacks = (editor: SourceEditor, spread: E.SpreadElement, key: string) => {
   const literal = trustedLiteral(editor, unwrapExpression(spread.argument));
   return literal !== undefined && literalMember(literal, key).kind === 'missing';
 };
+
+// The member `name` reads, like `lookupProperty`, skipping a spread of a trusted local object
+// literal known to lack it, which can neither override the field nor provide it.
+export const lookupMember = (
+  editor: SourceEditor,
+  properties: readonly E.ObjectPropertyKind[],
+  name: string,
+  access: Access = 'read'
+): PropertyLookup =>
+  lookupProperty(
+    properties.filter((member) => member.type !== 'SpreadElement' || !lacks(editor, member, name)),
+    name,
+    access
+  );
 
 // The spread among `properties` whose member `key` a new parent at `key` carries forward: the last
 // one that may have it, skipping a local literal known to lack it. When two may have it, which one

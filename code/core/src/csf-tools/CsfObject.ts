@@ -12,7 +12,7 @@ import {
   unsafePath,
   valueAt,
 } from './CsfObjectPath.ts';
-import { type Access, lookupProperty } from './ObjectMembers.ts';
+import { type Access, lookupMember } from './ObjectMembers.ts';
 import { type ObjectRoot, listRoot, literalRoot } from './ObjectRoot.ts';
 import {
   type E,
@@ -564,12 +564,7 @@ class Editor implements CsfObject {
     if (inspected.kind !== 'property') {
       return { ok: true, changed: false };
     }
-    const removal = lookupProperty(
-      inspected.parent.properties,
-      inspected.key,
-      'remove',
-      this.editor
-    );
+    const removal = lookupMember(this.editor, inspected.parent.properties, inspected.key, 'remove');
     if (!removal.ok) {
       return this.failure(removal.code, path, removal.node);
     }
@@ -618,7 +613,7 @@ class Editor implements CsfObject {
     if (source.kind !== 'property') {
       return { ok: true, changed: false };
     }
-    const removal = lookupProperty(source.parent.properties, name, 'remove', this.editor);
+    const removal = lookupMember(this.editor, source.parent.properties, name, 'remove');
     if (!removal.ok) {
       return this.failure(removal.code, from, removal.node);
     }
@@ -736,7 +731,7 @@ class Editor implements CsfObject {
       }
       sourceNames.add(name);
     }
-    const destination = lookupProperty(parent.properties, group);
+    const destination = lookupMember(this.editor, parent.properties, group);
     if (destination.ok === false) {
       return this.failure(
         destination.code,
@@ -861,7 +856,7 @@ class Editor implements CsfObject {
       if (value?.type !== 'ObjectExpression' || value.properties.length > 0) {
         return;
       }
-      if (!lookupProperty(ancestor.parent.properties, ancestor.key, 'remove', this.editor).ok) {
+      if (!lookupMember(this.editor, ancestor.parent.properties, ancestor.key, 'remove').ok) {
         return;
       }
       ancestor.parent.remove([ancestor.property]);

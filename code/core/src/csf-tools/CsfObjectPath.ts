@@ -6,7 +6,7 @@ import {
   carriedSpread,
   carriedSpreads,
   lookupElement,
-  lookupProperty,
+  lookupMember,
 } from './ObjectMembers.ts';
 import {
   type ListRoot,
@@ -153,11 +153,11 @@ export const locate = (
       value = element;
     } else {
       const { parent, key } = step;
-      const lookup = lookupProperty(
+      const lookup = lookupMember(
+        editor,
         parent.properties,
         key,
-        last || access === 'set' ? access : 'read',
-        editor
+        last || access === 'set' ? access : 'read'
       );
       if (lookup.ok === false) {
         return lookup;

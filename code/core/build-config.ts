@@ -177,6 +177,14 @@ const config: BuildEntries = {
       {
         exportEntries: ['./theming'],
         entryPoint: './src/theming/index.ts',
+        // Inlining these copies Theme into a shared chunk that the @emotion/react augmentation
+        // does not reach. The JS bundle still inlines them; only the d.ts pass keeps the imports.
+        dtsExternal: [
+          '@emotion/cache',
+          '@emotion/is-prop-valid',
+          '@emotion/react',
+          '@emotion/styled',
+        ],
       },
       {
         exportEntries: ['./theming/create'],
@@ -185,6 +193,12 @@ const config: BuildEntries = {
       {
         exportEntries: ['./theming/emotion'],
         entryPoint: './src/theming/emotion.ts',
+        dtsExternal: [
+          '@emotion/cache',
+          '@emotion/is-prop-valid',
+          '@emotion/react',
+          '@emotion/styled',
+        ],
       },
       {
         exportEntries: ['./internal/components'],

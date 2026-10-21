@@ -22,10 +22,11 @@ describe('setupAddonInConfig', () => {
     vi.clearAllMocks();
 
     mockMain = {
+      editor: { quote: "'" },
+      getBodyDeclarations: () => [],
       getFieldNode: vi.fn(),
-      valueToNode: vi.fn(),
-      appendNodeToArray: vi.fn(),
-      appendValueToArray: vi.fn(),
+      appendNodeToArray: vi.fn(() => ({ ok: true, changed: true })),
+      appendValueToArray: vi.fn(() => ({ ok: true, changed: true })),
     } as any;
 
     mockMainConfig = {
@@ -50,7 +51,6 @@ describe('setupAddonInConfig', () => {
 
     expect(mockMain.appendValueToArray).toHaveBeenCalledWith(['addons'], '@storybook/addon-docs');
     expect(mockMain.appendNodeToArray).not.toHaveBeenCalled();
-    expect(wrapUtils.wrapValueWithGetAbsolutePathWrapper).not.toHaveBeenCalled();
     expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain);
     expect(loadMainConfigModule.loadMainConfig).toHaveBeenCalledWith({
       configDir: '.storybook',
@@ -64,12 +64,8 @@ describe('setupAddonInConfig', () => {
   });
 
   it('should add addon with getAbsolutePath wrapper when wrapper exists', async () => {
-    const mockAddonNode = { type: 'StringLiteral' } as any;
-
     vi.mocked(mockMain.getFieldNode).mockReturnValue({} as any);
-    vi.mocked(mockMain.valueToNode).mockReturnValue(mockAddonNode);
     vi.mocked(wrapUtils.getAbsolutePathWrapperName).mockReturnValue('getAbsolutePath');
-    vi.mocked(wrapUtils.wrapValueWithGetAbsolutePathWrapper).mockImplementation(() => {});
 
     await setupAddonInConfig({
       addonName: '@storybook/addon-docs',
@@ -78,12 +74,9 @@ describe('setupAddonInConfig', () => {
       configDir: '.storybook',
     });
 
-    expect(mockMain.valueToNode).toHaveBeenCalledWith('@storybook/addon-docs');
-    expect(mockMain.appendNodeToArray).toHaveBeenCalledWith(['addons'], mockAddonNode);
-    expect(wrapUtils.wrapValueWithGetAbsolutePathWrapper).toHaveBeenCalledWith(
-      mockMain,
-      mockAddonNode
-    );
+    const [path, node] = vi.mocked(mockMain.appendNodeToArray).mock.calls[0];
+    expect(path).toEqual(['addons']);
+    expect(csfTools.textOf(node)).toBe("getAbsolutePath('@storybook/addon-docs')");
     expect(mockMain.appendValueToArray).not.toHaveBeenCalled();
     expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain);
     expect(loadMainConfigModule.loadMainConfig).toHaveBeenCalledWith({
@@ -109,6 +102,25 @@ describe('setupAddonInConfig', () => {
 
     expect(mockMain.appendValueToArray).toHaveBeenCalledWith(['addons'], '@storybook/addon-docs');
     expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain);
+  });
+
+  it('throws without writing when the addons field is not an array', async () => {
+    const diagnostic = { message: "Expected an array literal at 'addons', got 'Identifier'" };
+    vi.mocked(mockMain.appendValueToArray).mockReturnValue({
+      ok: false,
+      changed: false,
+      diagnostic,
+    } as any);
+
+    await expect(
+      setupAddonInConfig({
+        addonName: '@storybook/addon-docs',
+        mainConfigCSFFile: mockMain,
+        previewConfigPath: undefined,
+        configDir: '.storybook',
+      })
+    ).rejects.toThrow(diagnostic.message);
+    expect(csfTools.writeConfig).not.toHaveBeenCalled();
   });
 
   it('should handle sync errors gracefully', async () => {

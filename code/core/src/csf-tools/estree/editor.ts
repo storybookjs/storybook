@@ -1583,9 +1583,9 @@ const keepsCodeBefore = (editor: SourceEditor, from: number, start: number) => {
   return keepsCode(editor, removedUpTo, start);
 };
 
-// Removes the statement from `start` to `end` that follows code on its line, which starts at `from`,
-// with the spaces after that code.
-const removeAfterCodeOnLine = (editor: SourceEditor, start: number, end: number, from: number) => {
+// Removes the statement from `start` to `end` that follows code on its line, which starts at
+// `from`, with the spaces after that code.
+const removeAfterCodeOnLine = (editor: SourceEditor, from: number, start: number, end: number) => {
   const { code } = editor;
   const previous = editor.program.body.findLast(
     (node) => node.end <= start && !isRemoved(editor, node)
@@ -1621,7 +1621,7 @@ export const removeStatement = (editor: SourceEditor, statement: Span, atTop?: b
     return;
   }
   if (keepsCodeBefore(editor, from, start)) {
-    removeAfterCodeOnLine(editor, start, end, from);
+    removeAfterCodeOnLine(editor, from, start, end);
     return;
   }
   // The statement takes the blank lines above it, so none are left behind; at the top of the

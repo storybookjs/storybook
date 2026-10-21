@@ -212,26 +212,24 @@ const aliasDiagnostic = (
   ...loc(csf, node),
 });
 
-// The first export of each declaration, which edits it for all of its exports, and the story each
-// alias shares its object with: the first export of its declaration, for `B` in
-// `export { A, A as B }`, or the story `export const B = A` names, through other stories that
-// alias it. An export of a declaration that another export edits is reported here.
+// The stories that have an editor, and for each one declared as another story, such as
+// `export const B = A`, the story whose object it shares.
 type Stories = { bindings: StoryBinding[]; canonical: Map<StoryBinding, StoryBinding> };
 
+// The first export of each declaration, which edits it for all of its exports, reporting each other
+// export, such as `B` in `export { A, A as B }`, and the story each alias declared as another story
+// names, through other stories that alias it.
 const storyBindings = (csf: CsfFile, report: ReportDiagnostic): Stories => {
   const unique = new Map<Node, StoryBinding>();
-  const canonical = new Map<StoryBinding, StoryBinding>();
   for (const binding of storyExports(csf, report)) {
     const first = unique.get(binding.declaration);
     if (first) {
-      canonical.set(binding, first);
+      report(aliasDiagnostic(csf, binding, first, binding.node));
     } else {
       unique.set(binding.declaration, binding);
     }
   }
-  for (const [alias, story] of canonical) {
-    report(aliasDiagnostic(csf, alias, story, alias.node));
-  }
+  const canonical = new Map<StoryBinding, StoryBinding>();
   const bindings = [...unique.values()];
   for (const binding of bindings) {
     const { declaration } = binding;
@@ -576,12 +574,11 @@ const isAnnotatable = (node: Node | undefined) =>
       isIdentifier(node.callee.property, 'bind')));
 
 // A write through an alias, such as `B.args = {}` after `export const B = A`, changes the object
-// of the story it aliases: for each such story, the first write through one of its aliases. An
-// export of the story's own declaration writes as the story does.
+// of the story it aliases: for each such story, the first write through one of its aliases.
 const writesThroughAliases = (csf: CsfFile, canonical: Stories['canonical']) => {
   const writes = new Map<StoryBinding, { alias: StoryBinding; node: Node }>();
   for (const [alias, story] of canonical) {
-    if (alias.declaration === story.declaration || writes.has(story)) {
+    if (writes.has(story)) {
       continue;
     }
     const { assignments, write } = assignmentsOf(csf, alias);

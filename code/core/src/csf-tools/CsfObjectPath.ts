@@ -49,7 +49,7 @@ const invalidated = () => new Error('CsfObject mutation preflight was invalidate
 type ArrayInsert = { items: string[]; first: boolean };
 
 // Why a path or a write is refused; the message defaults to one for the code.
-export type Refusal = { ok: false; code: CsfMutationDiagnosticCode; node: Node; message?: string };
+type Refusal = { ok: false; code: CsfMutationDiagnosticCode; node: Node; message?: string };
 
 // Where a path ends: a property or an item, which is `null` for a hole, or the first segment the
 // source lacks, a key at `missing` of the path or an item past the end of its list or at a hole
@@ -61,7 +61,7 @@ export type Located =
   | { ok: true; kind: 'missing-item'; parent: ListRoot; index: number }
   | Refusal;
 
-export type Found = Extract<Located, { ok: true }>;
+type Found = Extract<Located, { ok: true }>;
 
 // The value at a property or an item, as `get` reads it: `node` is the property or the element,
 // and `expression` the value to evaluate, which a method lacks.
@@ -183,6 +183,18 @@ export const locate = (
   }
 };
 
+// Why `parent` refuses a new member `key`, such as a function story's `name`.
+export const refusedKey = (
+  editor: SourceEditor,
+  parent: ObjectRoot,
+  key: string
+): Refusal | undefined => {
+  const message = parent.refuseKey?.(key);
+  return message
+    ? { ok: false, code: 'unsupported-member', node: editor.program, message }
+    : undefined;
+};
+
 // Whether a write can create the value a path lacks. Missing values are created only at keys: a
 // position is in the source or nowhere, and a hole is no value to add to. `carry` tells when the
 // first key to create carries the spreads before it forward: always, or when the write creates its
@@ -202,9 +214,9 @@ export const creatable = (
       message: `Cannot create ${printCsfPath(path)}: an index addresses an element or argument that exists, and append or prepend adds one`,
     };
   }
-  const refusal = located.parent.refuseKey?.(keys[0]);
-  if (refusal) {
-    return { ok: false, code: 'unsupported-member', node: editor.program, message: refusal };
+  const refused = refusedKey(editor, located.parent, keys[0]);
+  if (refused) {
+    return refused;
   }
   if (carry === 'always' || (carry === 'when-creating-parents' && keys.length > 1)) {
     const carried = carriedSpreads(editor, located.parent.properties, keys[0]);
@@ -259,7 +271,7 @@ export const listAt = (
 
 // Writes the missing containers at `missing` into `parent`, the first one a member of it, which
 // carry the spreads before them forward.
-export const createContainers = (
+const createContainers = (
   editor: SourceEditor,
   parent: ObjectRoot,
   missing: CsfPath,

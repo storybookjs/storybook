@@ -835,12 +835,9 @@ export class ConfigFile implements CsfObject {
     if (list.kind === 'refused') {
       return this._reject(list.diagnostic);
     }
+    // A path of keys ends at an array literal, never at a call.
     const entries =
-      list.kind === 'missing'
-        ? []
-        : list.node.type === 'ArrayExpression'
-          ? list.node.elements
-          : list.node.arguments;
+      list.kind === 'list' && list.node.type === 'ArrayExpression' ? list.node.elements : [];
     const index = entries.findIndex((element) => {
       if (isStringLiteral(element)) {
         return element.value === value;

@@ -9,6 +9,7 @@ import {
   listAt,
   locate,
   printCsfPath,
+  refusedKey,
   unsafePath,
   valueAt,
 } from './CsfObjectPath.ts';
@@ -825,9 +826,9 @@ class Editor implements CsfObject {
       );
       parent.remove(moved);
     } else {
-      const refused = this.refusedKey(parent, group, path);
+      const refused = refusedKey(this.editor, parent, group);
       if (refused) {
-        return refused;
+        return this.failure(refused.code, path, refused.node, refused.message);
       }
       if (parent.detached) {
         const effectful = moved.find((property) => !isEvaluationInert(property.value));
@@ -904,11 +905,6 @@ class Editor implements CsfObject {
           `Cannot set ${printCsfPath(path)} to a ${node.type} node that did not come from \`get\`, \`transform\`, \`parseExpression\` or \`parseModule\``
         )
       : undefined;
-  }
-
-  private refusedKey(parent: ObjectRoot, key: string, path: CsfPath) {
-    const refusal = parent.refuseKey?.(key);
-    return refusal ? this.failure('unsupported-member', path, this.anchor(), refusal) : undefined;
   }
 
   private anchor(): Node {

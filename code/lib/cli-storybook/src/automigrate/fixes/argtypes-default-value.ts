@@ -1,27 +1,27 @@
-import { types as t } from 'storybook/internal/babel';
-import type { CsfObject } from 'storybook/internal/csf-tools';
+import type { CsfObject, ESTree as E } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 
+import { everyCsfObject, readForEdit } from '../helpers/edit-parsed-file.ts';
 import type { Fix } from '../types.ts';
 
-const argName = (property: t.ObjectProperty): string | undefined => {
-  if (t.isIdentifier(property.key) && !property.computed) {
+const argName = (property: E.ObjectProperty): string | undefined => {
+  if (property.key.type === 'Identifier' && !property.computed) {
     return property.key.name;
   }
-  if (t.isStringLiteral(property.key)) {
+  if (property.key.type === 'Literal' && typeof property.key.value === 'string') {
     return property.key.value;
   }
   return undefined;
 };
 
 const strip = (object: CsfObject) => {
-  const argTypes = object.get(['argTypes']);
-  if (!t.isObjectExpression(argTypes)) {
+  const argTypes = readForEdit(object, ['argTypes']);
+  if (argTypes?.type !== 'ObjectExpression') {
     return;
   }
   for (const property of argTypes.properties) {
-    if (!t.isObjectProperty(property)) {
+    if (property.type !== 'Property') {
       continue;
     }
     const name = argName(property);
@@ -44,7 +44,7 @@ export const argtypesDefaultValue: Fix = {
       filter: { kind: ['preview', 'story'], code: 'defaultValue' },
       editConfig: strip,
       editCsf: (csf) => {
-        csf.objects().forEach(strip);
+        everyCsfObject(csf).forEach(strip);
       },
     },
   ],

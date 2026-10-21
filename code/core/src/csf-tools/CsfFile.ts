@@ -310,6 +310,8 @@ export interface StaticStory extends Pick<StoryAnnotations, 'name' | 'parameters
   exportName: string;
   id: string;
   localName?: string;
+  /** Whether the story is a CSF factory call, such as `meta.story({})` or `Primary.extend({})`. */
+  factory: boolean;
   __stats: IndexInputStats;
 }
 
@@ -944,6 +946,7 @@ export class CsfFile {
           id: 'FIXME',
           name,
           parameters,
+          factory: storyIsFactory,
           __stats: {
             factory: storyIsFactory,
           },
@@ -1006,6 +1009,7 @@ export class CsfFile {
             name: exportName,
             localName,
             parameters: {},
+            factory: storyIsFactory,
             __stats: storyIsFactory ? { factory: true } : {},
           };
         }

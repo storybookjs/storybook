@@ -7,7 +7,7 @@ export type {
   JsDocHost,
   JsDocSymbolLike,
 } from './jsdoc-info.ts';
-export { loadTypeScriptCompilerApi, shareTypeScriptCompilerApi } from './load-typescript.ts';
+export { loadTypeScriptCompilerApi, redirectTypeScriptToTypeScript6 } from './load-typescript.ts';
 export { parseTsconfigCommandLine } from './parse-tsconfig.ts';
 export { packageRootFromFile, redirectTypeScriptRequires } from './redirect-typescript.ts';
 export type { FileExtensionInfo, TsconfigParserModule } from './parse-tsconfig.ts';

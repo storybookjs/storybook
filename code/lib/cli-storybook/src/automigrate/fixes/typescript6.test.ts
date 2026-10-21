@@ -32,17 +32,19 @@ describe('typescript6 fix', () => {
 
   it('installs @typescript/typescript6 for TypeScript 7', async () => {
     const packageManager = packageManagerWith({ typescript: '^7.0.0' }, '7.0.2');
-    await expect(checkFix(typescript6, { ...checkOptions, packageManager })).resolves.toEqual({});
+    await expect(checkFix(typescript6, { ...checkOptions, packageManager })).resolves.toEqual({
+      dependency: '@typescript/typescript6@^6.0.2',
+    });
 
     await runFix(typescript6, {
-      result: {},
+      result: { dependency: '@typescript/typescript6@^6.0.2' },
       packageManager,
       mainConfigPath: '/project/.storybook/main.ts',
       configDir: '/project/.storybook',
       storiesPaths: [],
       mainConfig: {},
       storybookVersion: '11.0.0',
-    } as unknown as Omit<RunOptions<object>, 'files'>);
+    } as unknown as Omit<RunOptions<{ dependency: string }>, 'files'>);
 
     expect(packageManager.addDependencies).toHaveBeenCalledWith(
       { type: 'devDependencies', skipInstall: true },

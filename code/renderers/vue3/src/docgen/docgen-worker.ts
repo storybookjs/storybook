@@ -16,7 +16,32 @@ import type { DocgenMiddleware } from 'storybook/internal/types';
 import type ts from 'typescript';
 
 import { buildDocgenPayload } from './component-docgen/build-docgen.ts';
-import { VueComponentMetaManager } from './component-docgen/component-meta/vue-project-manager.ts';
+import {
+  type CreateCheckerBase,
+  VueComponentMetaManager,
+} from './component-docgen/component-meta/vue-project-manager.ts';
+
+/**
+ * Loads `createCheckerBase`, the function behind `vue-component-meta`'s public `createChecker`.
+ *
+ * `createChecker` always loads the `typescript` package itself. On TypeScript 7 that package has no
+ * compiler API, so the checker fails even when Storybook has found `@typescript/typescript6`.
+ * `createCheckerBase` takes the TypeScript module as its first argument, so the manager can pass
+ * the module that `loadTypeScriptCompilerApi` returned. The manager calls it with the same checker
+ * options and tsconfig handling that `createChecker` uses (see `createVueProjectFactory`).
+ *
+ * It is not part of the package's public API (`vue-component-meta/lib/checker.js`), so it may move
+ * in a future version. Then this resolves to `undefined`, and the manager falls back to
+ * `createChecker`, which works on TypeScript 6 and lower.
+ */
+const loadCreateCheckerBase = async (): Promise<CreateCheckerBase | undefined> => {
+  try {
+    const checker = await import('vue-component-meta/lib/checker.js');
+    return checker.createCheckerBase;
+  } catch {
+    return undefined;
+  }
+};
 
 /**
  * Builds the Vue docgen middleware. Owns one {@link VueComponentMetaManager} for the worker's
@@ -36,12 +61,7 @@ export const createDocgenProvider = (): DocgenMiddleware =>
         if (!typescript) {
           return undefined;
         }
-        // Not part of the package's public API, so a missing export falls back to `createChecker`.
-        const createCheckerBase = await import('vue-component-meta/lib/checker.js').then(
-          (checker) => checker.createCheckerBase,
-          () => undefined
-        );
-        const manager = new VueComponentMetaManager(typescript, createCheckerBase);
+        const manager = new VueComponentMetaManager(typescript, await loadCreateCheckerBase());
         manager.startWatching();
         return manager;
       } catch (error) {

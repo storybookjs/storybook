@@ -60,10 +60,14 @@ export async function loadTypeScriptCompilerApi<TypeScript>(importers: {
 }
 
 /**
- * When the compiler API comes from `@typescript/typescript6`, redirect `typescript` loads inside
- * `packageDir` to that same module.
+ * Side effect: when the compiler API comes from `@typescript/typescript6`, patch module resolution
+ * so that `typescript` imports from files inside `packageDir` load `@typescript/typescript6`
+ * instead. Use it before loading a third-party docgen library that imports `typescript` itself, so
+ * the library does not get TypeScript 7, which has no compiler API. Imports from anywhere else,
+ * including the project's own code, still get the project's `typescript`. Does nothing when the
+ * project's `typescript` is version 6 or lower.
  */
-export async function shareTypeScriptCompilerApi(
+export async function redirectTypeScriptToTypeScript6(
   packageDir: string,
   importers: {
     typescript: ModuleImporter;

@@ -1,6 +1,9 @@
 import { createRequire } from 'node:module';
 
-import { packageRootFromFile, shareTypeScriptCompilerApi } from 'storybook/internal/component-meta';
+import {
+  packageRootFromFile,
+  redirectTypeScriptToTypeScript6,
+} from 'storybook/internal/component-meta';
 import { deprecate } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
@@ -8,8 +11,8 @@ import type { StorybookConfig } from './types.ts';
 
 const require = createRequire(import.meta.url);
 
-const shareTypeScriptWith = (packageName: string) =>
-  shareTypeScriptCompilerApi(
+const redirectTypeScriptToTypeScript6For = (packageName: string) =>
+  redirectTypeScriptToTypeScript6(
     packageRootFromFile(require.resolve(packageName)),
     {
       typescript: () => import('typescript'),
@@ -56,7 +59,7 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
   }
 
   if (reactDocgenOption === 'react-docgen-typescript' && typescriptPresent) {
-    await shareTypeScriptWith('@joshwooding/vite-plugin-react-docgen-typescript');
+    await redirectTypeScriptToTypeScript6For('@joshwooding/vite-plugin-react-docgen-typescript');
     plugins.push(
       (await import('@joshwooding/vite-plugin-react-docgen-typescript')).default({
         ...reactDocgenTypescriptOptions,

@@ -11,8 +11,8 @@ import type ts from 'typescript';
 import { logger } from 'storybook/internal/node-logger';
 
 import {
-  loadTypeScript as loadTypeScriptCompilerApi,
-  shareReactDocgenTypescript,
+  loadTypeScript,
+  redirectReactDocgenTypescriptToTypeScript6,
 } from './componentMeta/loadTypeScript.ts';
 import { asyncCache, cached, findTsconfigPath } from './utils.ts';
 
@@ -24,8 +24,9 @@ type ReactDocgenTypescriptRuntime = typeof import('react-docgen-typescript');
 let typeScriptPromise: Promise<TypeScriptRuntime> | undefined;
 let reactDocgenTypescriptPromise: Promise<ReactDocgenTypescriptRuntime> | undefined;
 
-const loadTypeScript = () =>
-  (typeScriptPromise ??= loadTypeScriptCompilerApi().then((typescript) => {
+/** Loads TypeScript once, and throws when no version with the compiler API is installed. */
+const loadRequiredTypeScript = () =>
+  (typeScriptPromise ??= loadTypeScript().then((typescript) => {
     if (!typescript) {
       throw new Error('react-docgen-typescript needs a TypeScript version with the compiler API.');
     }
@@ -33,7 +34,7 @@ const loadTypeScript = () =>
   }));
 
 const loadReactDocgenTypescript = () =>
-  (reactDocgenTypescriptPromise ??= shareReactDocgenTypescript().then(
+  (reactDocgenTypescriptPromise ??= redirectReactDocgenTypescriptToTypeScript6().then(
     () => import('react-docgen-typescript')
   ));
 
@@ -195,7 +196,7 @@ export function invalidateParser() {
 
 async function getParser(filePath: string, userOptions?: ParserOptions) {
   const [typescript, reactDocgenTypescript] = await Promise.all([
-    loadTypeScript(),
+    loadRequiredTypeScript(),
     loadReactDocgenTypescript(),
   ]);
   const optionsKey = JSON.stringify(userOptions ?? {});

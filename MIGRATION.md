@@ -983,13 +983,15 @@ Storybook 11 requires TypeScript 5.9 or higher. Upgrade your project's TypeScrip
 
 There is no automatic source migration. Updating the compiler can expose errors in application code or dependencies that require project-specific fixes. JavaScript-only projects do not need to install TypeScript.
 
-TypeScript 7 does not include the compiler API that Storybook uses to extract component metadata for Controls, the Docs args table and the component manifest. `storybook init` and `storybook upgrade` install `@typescript/typescript6` when the project uses TypeScript 7. You can also install it yourself:
+Storybook cannot use TypeScript 7 directly. It needs TypeScript 5.9 or 6 to extract component metadata for Controls, the Docs args table and the component manifest.
+
+If your project uses TypeScript 7, `storybook init` and `storybook upgrade` automatically install `@typescript/typescript6`. Your project code is unaffected and keeps compiling with TypeScript 7.
+
+If you did not use `storybook upgrade` to upgrade, `@typescript/typescript6` may be missing. In that case, Storybook shows a warning and does not generate Controls from your component types. You can then install the dependency manually:
 
 ```sh
 npm install --save-dev @typescript/typescript6
 ```
-
-Storybook only uses it to read your component types. Your project keeps compiling with TypeScript 7. Without it, Storybook shows a warning and does not generate Controls from your component types.
 
 ### CSF Next: meta args no longer need `as const`
 

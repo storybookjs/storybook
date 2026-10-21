@@ -1,7 +1,10 @@
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
-import { packageRootFromFile, shareTypeScriptCompilerApi } from 'storybook/internal/component-meta';
+import {
+  packageRootFromFile,
+  redirectTypeScriptToTypeScript6,
+} from 'storybook/internal/component-meta';
 import { deprecate } from 'storybook/internal/node-logger';
 
 import type { Configuration } from 'webpack';
@@ -59,7 +62,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
     };
   }
 
-  await shareTypeScriptCompilerApi(
+  await redirectTypeScriptToTypeScript6(
     packageRootFromFile(require.resolve('@storybook/react-docgen-typescript-plugin')),
     {
       typescript: () => import('typescript'),

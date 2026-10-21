@@ -204,7 +204,7 @@ export const Primary = { args: { label: 'Primary' } };
   it('leaves the source passed to enrichCsf hooks unenriched', async () => {
     expect.assertions(3);
     enrichCsf.mockImplementation(async (csf, csfSource) => {
-      const sourceCode = formatCsf(csfSource) as string;
+      const sourceCode = formatCsf(csfSource);
       expect(sourceCode).toContain('/** Button component */');
       expect(sourceCode).not.toContain('component: "Button component"');
       expect(formatCsf(csf)).toContain('component: "Button component"');

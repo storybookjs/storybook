@@ -361,6 +361,30 @@ describe('buildStoryDocsPayload', () => {
       },
     },
     {
+      name: 'indents a listener that does not end on a bracket from its first line',
+      source: `
+        export default { title: 'Example/TestElement', component: 'test-element' };
+        export const Primary = {
+          args: {
+            onShapeChange: (e) =>
+              console.log(e),
+          },
+        };
+      `,
+      expected: {
+        id: 'example-testelement--primary',
+        name: 'Primary',
+        snippet: `<test-element></test-element>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', (e) =>
+      console.log(e));
+  }
+</script>`,
+      },
+    },
+    {
       name: 'args on-convention listener',
       source: `
         export default { title: 'Example/TestElement', component: 'test-element' };

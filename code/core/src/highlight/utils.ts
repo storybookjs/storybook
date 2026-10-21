@@ -173,19 +173,6 @@ export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
     })
     .sort((a, b) => b.width * b.height - a.width * a.height);
 
-export const isOverMenu = (menuElement: HTMLElement, coordinates: { x: number; y: number }) => {
-  const menu = menuElement.getBoundingClientRect();
-  const { x, y } = coordinates;
-  return (
-    menu?.top &&
-    menu?.left &&
-    x >= menu.left &&
-    x <= menu.left + menu.width &&
-    y >= menu.top &&
-    y <= menu.top + menu.height
-  );
-};
-
 export const isTargeted = (
   box: Box,
   boxElement: HTMLElement,
@@ -211,33 +198,41 @@ export const isTargeted = (
   return x >= left && x <= left + width && y >= top && y <= top + height;
 };
 
-export const keepInViewport = (
-  element: HTMLElement,
-  targetCoordinates: { x: number; y: number },
+/**
+ * Convert coordinates from the preview iframe's viewport space to the manager's viewport space,
+ * accounting for the iframe's position and any scaling applied to it (e.g. custom viewports).
+ */
+export const previewToManagerCoords = (
+  coords: { x: number; y: number },
+  iframeRect: { left: number; top: number; width: number; height: number },
+  iframeSize: { width: number; height: number }
+) => ({
+  x: iframeRect.left + coords.x * (iframeRect.width / (iframeSize.width || 1)),
+  y: iframeRect.top + coords.y * (iframeRect.height / (iframeSize.height || 1)),
+});
+
+/**
+ * Clamp coordinates so a menu of the given size stays within the viewport rectangle, optionally
+ * keeping it horizontally centered on the anchor. The menu is kept between the rect's top and
+ * bottom edges; when it is taller than the rect it is pinned to the top, and the caller should
+ * constrain the menu's height so its contents stay reachable.
+ */
+export const clampToRect = (
+  coords: { x: number; y: number },
+  size: { width: number; height: number },
+  rect: { left: number; top: number; right: number; bottom: number },
   options: { margin?: number; topOffset?: number; centered?: boolean } = {}
 ) => {
-  const { x, y } = targetCoordinates;
+  const { x, y } = coords;
+  const { width, height } = size;
   const { margin = 5, topOffset = 0, centered = false } = options;
-  const { scrollX, scrollY, innerHeight: windowHeight, innerWidth: windowWidth } = window;
-
-  const top = Math.min(
-    element.style.position === 'fixed' ? y - scrollY : y,
-    windowHeight - element.clientHeight - margin - topOffset + scrollY
-  );
-
-  const leftOffset = centered ? element.clientWidth / 2 : 0;
-  const left =
-    element.style.position === 'fixed'
-      ? Math.max(Math.min(x - scrollX, windowWidth - leftOffset - margin), leftOffset + margin)
-      : Math.max(
-          Math.min(x, windowWidth - leftOffset - margin + scrollX),
-          leftOffset + margin + scrollX
-        );
-
-  Object.assign(element.style, {
-    ...(left !== x && { left: `${left}px` }),
-    ...(top !== y && { top: `${top}px` }),
-  });
+  const leftOffset = centered ? width / 2 : 0;
+  return {
+    x: Math.max(Math.min(x, rect.right - leftOffset - margin), rect.left + leftOffset + margin),
+    // The top clamp also covers the short-rect case: if the menu does not fit, the upper bound
+    // falls below the lower bound and the menu is pinned just inside the top edge.
+    y: Math.max(Math.min(y, rect.bottom - height - margin - topOffset), rect.top + margin),
+  };
 };
 
 export const showPopover = (element: HTMLElement) => {
@@ -263,3 +258,28 @@ export const getEventDetails = (target: Box): ClickEventDetails => ({
     tagName: target.element.tagName,
   },
 });
+
+/**
+ * A short, non-content label identifying an element (e.g. `div#id.class`), derived from the tag
+ * name, id and class names only. Used by the manager to render the highlight menu's element list
+ * without the preview sending renderable DOM content over the channel.
+ */
+export const getTargetLabel = (element: {
+  localName?: string;
+  tagName?: string;
+  id?: string;
+  classList?: ArrayLike<string>;
+}) => {
+  const tag = (element.localName || element.tagName || '').toLowerCase();
+  const id = element.id ? `#${element.id}` : '';
+  const classes = element.classList?.length
+    ? `.${Array.from(element.classList as ArrayLike<string>).join('.')}`
+    : '';
+  return `${tag}${id}${classes}`;
+};
+
+/** Menu groups containing at least one item applicable to the given selectors. */
+export const filterMenuGroups = (menu: Highlight['menu'], selectors: string[]): Highlight['menu'] =>
+  menu?.filter((group) =>
+    group.some((item) => !item.selectors || item.selectors.some((s) => selectors.includes(s)))
+  );

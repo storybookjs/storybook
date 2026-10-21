@@ -5,6 +5,7 @@ import type { InlineConfig } from 'vitest/node';
 
 import { validateConfigurationFiles } from 'storybook/internal/common';
 import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
+import { MissingProjectAnnotationsProviderError } from 'storybook/internal/preview-errors';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 
 import { storybookTest } from './index.ts';
@@ -28,6 +29,8 @@ beforeEach(() => {
         return ['../stories/**/*.stories.tsx'];
       case 'framework':
         return { name: '@storybook/react-vite' };
+      case 'viteCorePlugins':
+        return [{ name: 'storybook:project-annotations-plugin' }];
       // Mirrors a project without its own `viteFinal`: the common config is returned untouched,
       // so the root the plugin proposes is the root it ends up returning.
       case 'viteFinal':
@@ -158,6 +161,22 @@ describe('internal setup files', () => {
       '@storybook/addon-vitest/internal/setup-file',
       '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
     ]);
+  });
+});
+
+describe('project annotations provider', () => {
+  it('throws a dedicated error when the preset chain delivers no provider', async () => {
+    const applyPreset = presetApply.getMockImplementation()!;
+    presetApply.mockImplementation(async (key: string, fallback?: unknown) => {
+      if (key === 'viteCorePlugins') {
+        return [];
+      }
+      return applyPreset(key, fallback);
+    });
+
+    await expect(storybookTest({ configDir: CONFIG_DIR })).rejects.toThrow(
+      MissingProjectAnnotationsProviderError
+    );
   });
 });
 

@@ -1592,12 +1592,21 @@ export const removeStatement = (editor: SourceEditor, statement: Span, atTop?: b
     return spanning && isRemoved(editor, spanning) ? statementEnd(editor, spanning) : from;
   };
   if (keepsCode(editor, from, start) && keepsCode(editor, removedUpTo(), start)) {
-    // Code stays before it on the line: take the spaces after that code.
-    editor.edits.remove(start - /[^\S\n]*$/.exec(code.slice(from, start))![0].length, end);
     const previous = editor.program.body.findLast(
       (node) => node.end <= start && !isRemoved(editor, node)
     );
-    if (previous && !keepsCode(editor, previous.end, start)) {
+    // Code stays before it on the line: take the spaces after that code.
+    editor.edits.remove(start - /[^\S\n]*$/.exec(code.slice(from, start))![0].length, end);
+    if (!previous) {
+      return;
+    }
+    const after = Math.min(statementEnd(editor, previous), start);
+    if (after >= from && !keepsCode(editor, after, start)) {
+      // The statements between them are removed too, as in `a(); b(); c();` without `b` and `c`:
+      // take the spaces after `a();` as well, each removal keeping its own span.
+      editor.edits.remove(after, after + /^[^\S\n]*/.exec(code.slice(after, start))![0].length);
+    }
+    if (!keepsCode(editor, previous.end, start)) {
       pullUpSemicolon(editor, previous);
     }
     return;

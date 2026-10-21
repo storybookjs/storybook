@@ -726,6 +726,16 @@ Mixed.height = 2;
 `);
     });
 
+    it('groups assignments that share the line of the story, leaving no space at its end', () => {
+      const csf = parse(`export default {};\nexport const A = () => null; A.a = 1; A.b = 2;\n`);
+      const [story] = csf.objects({ meta: false });
+
+      expect(story.group(['args'], ['a', 'b'])).toEqual({ ok: true, changed: true });
+      expect(printCsf(csf).code).toBe(
+        `export default {};\nexport const A = () => null;\nA.args = { a: 1, b: 2 };\n`
+      );
+    });
+
     it('edits a story that another story calls', () => {
       const csf = parse(`export default { title: 'Example' };
 export const Primary = (args) => null;

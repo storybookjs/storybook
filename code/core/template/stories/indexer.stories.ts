@@ -1,4 +1,4 @@
-import type { PlayFunctionContext } from 'storybook/internal/types';
+import type { StoryContext } from 'storybook/internal/types';
 
 import { global as globalThis } from '@storybook/global';
 
@@ -11,7 +11,7 @@ export default {
 };
 
 export const Default = {
-  play: async ({ id }: PlayFunctionContext<any>) => {
+  play: async ({ id }: StoryContext<any>) => {
     await expect(id).toBe('indexer-custom-meta-id--default');
   },
 };
@@ -20,7 +20,7 @@ export const CustomParametersId = {
   parameters: {
     __id: 'custom-id',
   },
-  play: async ({ id }: PlayFunctionContext<any>) => {
+  play: async ({ id }: StoryContext<any>) => {
     await expect(id).toBe('custom-id');
   },
 };

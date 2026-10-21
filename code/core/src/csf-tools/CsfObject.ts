@@ -650,7 +650,7 @@ class Editor implements CsfObject {
     if (destination.kind === 'property') {
       return this.failure('occupied-destination', to, destination.property);
     }
-    const creation = creatable(this.editor, destination, to, 'never');
+    const creation = creatable(this.editor, destination, to, 'when-creating-parents');
     if (!creation.ok) {
       return this.failure(creation.code, to, creation.node, creation.message);
     }

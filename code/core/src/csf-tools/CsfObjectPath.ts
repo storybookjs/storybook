@@ -185,13 +185,13 @@ export const locate = (
 
 // Whether a write can create the value a path lacks. Missing values are created only at keys: a
 // position is in the source or nowhere, and a hole is no value to add to. `carry` tells when the
-// first key to create carries the spreads before it forward: when the write creates its parents
-// too, always, or never.
+// first key to create carries the spreads before it forward: always, or when the write creates its
+// parents too.
 export const creatable = (
   editor: SourceEditor,
   located: Found,
   path: CsfPath,
-  carry: 'when-creating-parents' | 'always' | 'never'
+  carry: 'when-creating-parents' | 'always'
 ): { ok: true; keys: readonly string[] } | Refusal => {
   const keys = located.kind === 'missing-key' ? path.slice(located.missing) : [];
   if (located.kind !== 'missing-key' || !keys.every(isKey)) {

@@ -47,8 +47,9 @@ export {
 export const ignoreSsrWarning =
   '/* emotion-disable-server-rendering-unsafe-selector-warning-please-do-not-use-this-the-warning-exists-for-a-reason */';
 
-// Re-export Theme from @emotion/react and self-augment with StorybookTheme
-declare module '.' {
-  interface Theme extends StorybookTheme {}
+// styled() and useTheme() type Theme from @emotion/react. Augmenting this
+// module instead breaks once emotion.ts loads this file via a relative import.
+declare module '@emotion/react' {
+  export interface Theme extends StorybookTheme {}
 }
 export type { Theme } from '@emotion/react';

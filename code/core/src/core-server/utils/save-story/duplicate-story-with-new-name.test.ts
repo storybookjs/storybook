@@ -311,3 +311,23 @@ describe('refuses before it adds the copy', () => {
     );
   });
 });
+
+describe('factory stories', () => {
+  test('copies a story made with extend', () => {
+    const parsed = loadCsf(
+      [
+        `import preview from '#.storybook/preview';`,
+        `const meta = preview.meta({ title: 'X' });`,
+        `export const A = meta.story({ args: { a: 1 } });`,
+        `export const B = A.extend({ args: { b: 1 } });`,
+      ].join('\n'),
+      { makeTitle }
+    ).parse();
+
+    duplicateStoryWithNewName(parsed, 'B', 'C');
+
+    expect(printCsf(parsed).code.split('\n').at(-1)).toBe(
+      `export const C = A.extend({ args: {} });`
+    );
+  });
+});

@@ -33,15 +33,9 @@ export const duplicateStoryWithNewName = (
   // `as` and `satisfies` stay on the copy, but do not hide a CSF2 story from the check.
   const story = unwrapExpression(init);
 
-  const isCsf4Story =
-    story.type === 'CallExpression' &&
-    story.callee.type === 'MemberExpression' &&
-    story.callee.property.type === 'Identifier' &&
-    story.callee.property.name === 'story';
-
-  // detect CSF2 and throw
+  // A factory story, such as `meta.story({})` or `Primary.extend({})`, is a call too.
   if (
-    !isCsf4Story &&
+    !csf._stories[storyName]?.__stats.factory &&
     (story.type === 'ArrowFunctionExpression' || story.type === 'CallExpression')
   ) {
     throw new SaveStoryError(`Creating a new story based on a CSF2 story is not supported`);

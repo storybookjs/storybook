@@ -9,11 +9,7 @@ import { walk } from 'estree-walker';
 import { basename, normalize } from 'pathe';
 
 import { parseModule } from '../csf-tools/estree/ast.ts';
-import {
-  type GeneratedMap,
-  type InputSourceMap,
-  SourceEditor,
-} from '../csf-tools/estree/editor.ts';
+import { type InputSourceMap, SourceEditor } from '../csf-tools/estree/editor.ts';
 import { resolveMock } from './resolve.ts';
 
 const DEFAULT_MODULE_DIRECTORIES = ['/node_modules/'];
@@ -95,14 +91,8 @@ export function rewriteSbMockImportCalls(
   if (!editor.pending) {
     return { code, map: null };
   }
-  let map: GeneratedMap;
-  try {
-    map = editor.generateMap({ inputSourceMap: options.inputSourceMap });
-  } catch (error) {
-    // `sb.mock` needs the rewrite, so an unreadable input map only costs the mapping through it.
-    logger.debug(`Could not compose the source map of ${fileName}: ${error}`);
-    map = editor.generateMap();
-  }
+  // `sb.mock` needs the rewrite, so an input map the editor cannot read only costs the mapping.
+  const map = editor.generateMap({ inputSourceMap: options.inputSourceMap });
   return {
     code: editor.toString(),
     // A plain object: babel-loader, next in the webpack chain, rejects a string map.

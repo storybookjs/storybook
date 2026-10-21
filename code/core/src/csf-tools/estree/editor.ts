@@ -1,3 +1,5 @@
+import { logger } from 'storybook/internal/node-logger';
+
 import remapping, { type SourceMapInput } from '@jridgewell/remapping';
 import MagicString, { SourceMap } from 'magic-string';
 
@@ -300,18 +302,31 @@ export class SourceEditor {
   /**
    * Hi-res map from the code the editor was created with to `toString()`, through every commit,
    * and through `inputSourceMap` when the code came from an earlier transform. Without an input
-   * map, `sourcesContent` is that code as it was passed in, line endings included.
+   * map, `sourcesContent` is that code as it was passed in, line endings included. An input map
+   * that cannot be read only costs the mapping through it: the map then starts at the editor's
+   * code, as without one, and the reason is logged at debug level.
    */
   generateMap(options: { source?: string; inputSourceMap?: InputSourceMap } = {}): GeneratedMap {
     const source = options.source ?? this.fileName ?? '';
+    if (options.inputSourceMap !== undefined) {
+      try {
+        return this._generateMap(source, options.inputSourceMap);
+      } catch (error) {
+        logger.debug(`Could not compose the source map of ${source}: ${error}`);
+      }
+    }
+    return this._generateMap(source);
+  }
+
+  _generateMap(source: string, inputSourceMap?: InputSourceMap): GeneratedMap {
     const chain = [this.edits, ...this._committed.slice().reverse()].map((edits) =>
       edits.generateMap({ hires: true, includeContent: true, source: mapSource(this) })
     );
     const [current] = chain;
     const input =
-      typeof options.inputSourceMap === 'string'
-        ? (JSON.parse(options.inputSourceMap) as Exclude<InputSourceMap, string>)
-        : options.inputSourceMap;
+      typeof inputSourceMap === 'string'
+        ? (JSON.parse(inputSourceMap) as Exclude<InputSourceMap, string>)
+        : inputSourceMap;
     if (chain.length === 1 && !input) {
       current.sources = [source];
       current.sourcesContent = [this._originalCode];

@@ -1830,6 +1830,17 @@ describe('generateMap', () => {
     );
   });
 
+  it('maps from its own code when the input map cannot be read', () => {
+    const editor = new SourceEditor(original, 'file.ts');
+    editOf(editor);
+    const result = editor.generateMap({ inputSourceMap: '{ not a source map' });
+    expect(result).toMatchObject({ sources: ['file.ts'], sourcesContent: [original] });
+    expect(entryOf(result, editor.toString(), 'title')).toMatchObject({
+      originalSource: 'file.ts',
+      originalLine: 2,
+    });
+  });
+
   it('names the source as requested after a committed edit', () => {
     const editor = new SourceEditor(original, 'file.ts');
     editOf(editor);

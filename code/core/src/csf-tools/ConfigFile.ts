@@ -377,11 +377,12 @@ export class ConfigFile implements CsfObject {
   }
 
   /**
-   * Add a plain value or an expression after the last element of the array, or the last argument
-   * of the call, at a path. A missing array is created, carrying the spreads before it forward
-   * like a missing parent. A field that holds a call gets an argument, whatever the callee: on
-   * `[...].filter(Boolean)` that is an argument of `filter`. A method, such as `addons() {}`, is
-   * refused as the `Property` it is written as.
+   * Add a plain value or an expression after the last element of the array at a path, or the last
+   * argument of the call at an item path such as `['loaders', 0]`. A missing array is created,
+   * carrying the spreads before it forward like a missing parent. A field is a list only when it
+   * holds an array literal: one that holds a call, such as `[...].filter(Boolean)`, is refused, as
+   * an argument of `filter` would be no entry. A method, such as `addons() {}`, is refused as the
+   * `Property` it is written as.
    *
    * @example
    * ```ts
@@ -395,8 +396,9 @@ export class ConfigFile implements CsfObject {
   }
 
   /**
-   * Add a plain value or an expression before the first element of the array, or the first
-   * argument of the call, at a path. A missing array is created like for `append`.
+   * Add a plain value or an expression before the first element of the array at a path, or the
+   * first argument of the call at an item path. A missing array is created, and a field holding a
+   * call refused, like for `append`.
    *
    * @example
    * ```ts
@@ -779,17 +781,12 @@ export class ConfigFile implements CsfObject {
     return value;
   }
 
-  /**
-   * @deprecated Use `append`, which takes a plain value too, and adds to a call's arguments as
-   * well as to an array.
-   */
+  /** @deprecated Use `append`, which takes a plain value too. */
   appendValueToArray(path: string[], value: any): CsfMutationResult {
     return this.appendNodeToArray(path, this.valueToNode(value));
   }
 
-  /**
-   * @deprecated Use `append`, which adds to a call's arguments as well as to an array.
-   */
+  /** @deprecated Use `append`. */
   appendNodeToArray(path: string[], node: CsfExpression): CsfMutationResult {
     const array = this._arrayAt(path);
     return array.kind === 'other' ? this._reject(array.diagnostic) : this.append(path, node);

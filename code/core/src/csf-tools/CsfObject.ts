@@ -282,11 +282,12 @@ export interface CsfObject {
    */
   group(path: CsfPath, names: readonly string[]): CsfMutationResult;
   /**
-   * Add a plain value or an expression after the last element of the array, or the last argument
-   * of the call, at a path. A missing array is created, carrying the spreads before it forward
-   * like a missing parent. A field that holds a call gets an argument, whatever the callee: on
-   * `[...].filter(Boolean)` that is an argument of `filter`. A method, such as `addons() {}`, is
-   * refused as the `Property` it is written as.
+   * Add a plain value or an expression after the last element of the array at a path, or the last
+   * argument of the call at an item path such as `['loaders', 0]`. A missing array is created,
+   * carrying the spreads before it forward like a missing parent. A field is a list only when it
+   * holds an array literal: one that holds a call, such as `[...].filter(Boolean)`, is refused, as
+   * an argument of `filter` would be no entry. A method, such as `addons() {}`, is refused as the
+   * `Property` it is written as.
    *
    * @example
    * ```ts
@@ -297,8 +298,9 @@ export interface CsfObject {
    */
   append(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult;
   /**
-   * Add a plain value or an expression before the first element of the array, or the first
-   * argument of the call, at a path. A missing array is created like for `append`.
+   * Add a plain value or an expression before the first element of the array at a path, or the
+   * first argument of the call at an item path. A missing array is created, and a field holding a
+   * call refused, like for `append`.
    *
    * @example
    * ```ts
@@ -364,6 +366,15 @@ type Step =
 const listNode = (value: Node | undefined) => {
   const node = value?.type === 'ChainExpression' ? value.expression : value;
   return node?.type === 'ArrayExpression' || node?.type === 'CallExpression' ? node : undefined;
+};
+
+// The list that `append` and `prepend` add to at the end of a path: an array literal, or, at a list
+// item such as `['loaders', 0]` for `loaders: [mswLoader()]`, also a call, whose arguments are its
+// items. A field is a list only when it holds an array literal: an argument added to a call such as
+// `addons: base.filter(Boolean)` would change the call instead of adding an entry.
+const addableList = (value: Node | undefined, last: string | number) => {
+  const list = listNode(value);
+  return list?.type === 'CallExpression' && isKey(last) ? undefined : list;
 };
 
 // A key addresses a property of an object literal, an index an element of an array or an
@@ -577,18 +588,20 @@ class Editor implements CsfObject {
       return this.commit(path);
     }
     const { scopes } = this.editor;
-    const list = slot.expression && listNode(resolveExpression(scopes, slot.expression));
+    const last = path[path.length - 1];
+    const resolved = slot.expression && resolveExpression(scopes, slot.expression);
+    const list = addableList(resolved, last);
     if (!list) {
       const node = slot.expression ?? slot.node;
       const shared =
-        slot.expression && listNode(resolveExpression(scopes, slot.expression, 'read'));
+        slot.expression && addableList(resolveExpression(scopes, slot.expression, 'read'), last);
       return this.failure(
         'unsupported-value',
         path,
         node,
         shared
           ? `Cannot add to '${printCsfPath(path)}', a constant that other code refers to as well`
-          : `Expected an array literal or a call at '${printCsfPath(path)}', got '${node.type}'`
+          : `Expected an array literal${isKey(last) ? '' : ' or a call'} at '${printCsfPath(path)}', got '${(resolved ?? node).type}'`
       );
     }
     listRoot(this.editor, list)[end]([text()]);

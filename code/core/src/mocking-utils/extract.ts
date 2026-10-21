@@ -52,7 +52,7 @@ export interface MockRewriteSourceMap {
   file: string;
   sources: string[];
   /** An entry is `null` when the input map carried no content for its source. */
-  sourcesContent: string[];
+  sourcesContent: (string | null)[];
   names: string[];
   mappings: string;
   sourceRoot?: string;
@@ -106,7 +106,7 @@ export function rewriteSbMockImportCalls(
   return {
     code: editor.toString(),
     // A plain object: babel-loader, next in the webpack chain, rejects a string map.
-    map: { ...map, file: fileName, sourcesContent: map.sourcesContent as string[] },
+    map: { ...map, file: fileName, sourcesContent: map.sourcesContent ?? [] },
   };
 }
 

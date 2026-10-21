@@ -219,6 +219,25 @@ describe('argtypes-default-value', () => {
     expect(result.story).toBe(story);
   });
 
+  it('fails a story whose alias receives an assignment, through that story', async () => {
+    const story = [
+      'export default { title: "Example" };',
+      "export const Primary = { argTypes: { label: { defaultValue: 'A' } } };",
+      'export const Secondary = Primary;',
+      "Secondary.args = { label: 'B' };",
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      {
+        file: storyPath,
+        kind: 'story',
+        message: expect.stringContaining('Cannot mutate Primary because Secondary, an alias of it'),
+      },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
   it('leaves a spread inside the arg unchanged when the editor cannot remove it', async () => {
     const story =
       "import { shared } from './shared';\nexport default { argTypes: { label: { ...shared, defaultValue: 'A' } } };";

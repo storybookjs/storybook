@@ -371,6 +371,33 @@ describe('CsfObject discovery', () => {
       }
     );
 
+    it.each([
+      [
+        'an assignment',
+        'export const Secondary = Primary;\nSecondary.args = { x: 1 };',
+        'Secondary',
+      ],
+      [
+        'a nested write through a chain of aliases',
+        'export const Secondary = Primary;\nexport const Tertiary = Secondary;\nTertiary.args.x = 1;',
+        'Tertiary',
+      ],
+    ])('refuses a story whose alias receives %s, which changes its object', (_, aliases, alias) => {
+      const csf = parse(
+        `export default { title: 'Example' };\nexport const Primary = { args: { a: 1 } };\n${aliases}\n`
+      );
+
+      expect(csf.objects({ meta: false })).toEqual([]);
+      expect(csf.storyObject('Primary')).toMatchObject({ ok: false });
+      expect(csf.mutationDiagnostics).toContainEqual(
+        expect.objectContaining({
+          code: 'ambiguous-binding',
+          target: { kind: 'story', exportName: 'Primary', localName: 'Primary' },
+          message: `Cannot mutate Primary because ${alias}, an alias of it, is written to`,
+        })
+      );
+    });
+
     it('reports every story of a chain of aliases as an alias of the story that holds the object', () => {
       const csf = parse(`
         export default { title: 'Example' };
@@ -724,6 +751,16 @@ Primary.size = { width: 1, height: 2 };
 export const Mixed = { width: 1 };
 Mixed.height = 2;
 `);
+    });
+
+    it('groups assignments that share the line of the story, leaving no space at its end', () => {
+      const csf = parse(`export default {};\nexport const A = () => null; A.a = 1; A.b = 2;\n`);
+      const [story] = csf.objects({ meta: false });
+
+      expect(story.group(['args'], ['a', 'b'])).toEqual({ ok: true, changed: true });
+      expect(printCsf(csf).code).toBe(
+        `export default {};\nexport const A = () => null;\nA.args = { a: 1, b: 2 };\n`
+      );
     });
 
     it('edits a story that another story calls', () => {

@@ -37,7 +37,6 @@ function createCanvas(): CanvasState {
   canvas.style.zIndex = '2147483647';
   // Disable any user interactions
   canvas.style.pointerEvents = 'none';
-  global.document.body.appendChild(canvas);
 
   return { canvas, context, width, height };
 }
@@ -61,10 +60,20 @@ function setCanvasWidthAndHeight(
 
 let state: CanvasState = {};
 
+// The canvas is a child of <html>, outside <head> and <body>: the renderer of a story with layout
+// 'document' may replace the body, and a render that clears <html> takes the canvas out, so every
+// use attaches it again.
+function attachCanvas() {
+  if (state.canvas && !state.canvas.isConnected) {
+    global.document.documentElement.appendChild(state.canvas);
+  }
+}
+
 export function init() {
   if (!state.canvas) {
     state = createCanvas();
   }
+  attachCanvas();
 }
 
 export function clear() {
@@ -73,8 +82,13 @@ export function clear() {
   }
 }
 
+// Sized to the document at every draw: the story renders after the canvas is created, and may grow.
 export function draw(callback: (context?: CanvasRenderingContext2D) => void) {
-  clear();
+  if (!state.canvas) {
+    return;
+  }
+  attachCanvas();
+  rescale();
   callback(state.context);
 }
 

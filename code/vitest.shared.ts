@@ -21,6 +21,11 @@ export const textAssetLoaderPlugins: Plugin[] = ['.md', '.html'].map((extension)
 }));
 
 export const vitestCommonConfig = defineConfig({
+  resolve: {
+    // Projects that resolve the `browser` condition, such as Svelte's, would get the WASM build of
+    // oxc-parser, which is not installed. Storybook parses in Node, with the native binding.
+    alias: [{ find: /^oxc-parser$/, replacement: require.resolve('oxc-parser') }],
+  },
   test: {
     passWithNoTests: true,
     clearMocks: true,

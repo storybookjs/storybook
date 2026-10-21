@@ -358,6 +358,7 @@ describe('Yarn 2 Proxy', () => {
               '@storybook/*',
               'eslint-plugin-storybook',
               '@chromatic-com/storybook',
+              'chromatic',
             ]),
           ],
         })
@@ -436,6 +437,7 @@ describe('Yarn 2 Proxy', () => {
               '@storybook/*',
               'eslint-plugin-storybook',
               '@chromatic-com/storybook',
+              'chromatic',
             ]),
           ],
         })
@@ -521,7 +523,7 @@ describe('Yarn 2 Proxy', () => {
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({
           stdout:
-            "[\n  'storybook',\n  '@storybook/*',\n  'eslint-plugin-storybook',\n  '@chromatic-com/storybook',\n]\n",
+            "[\n  'storybook',\n  '@storybook/*',\n  'eslint-plugin-storybook',\n  '@chromatic-com/storybook',\n  'chromatic',\n]\n",
         } as any);
 
       await expect(

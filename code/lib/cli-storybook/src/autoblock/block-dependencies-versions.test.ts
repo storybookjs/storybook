@@ -212,7 +212,10 @@ describe('dependenciesVersions blocker', () => {
   );
 
   test.each(['3.0.0', '3.1.2'])('@sveltejs/kit %s is not blocked', async (version) => {
-    const packageManager = createPackageManager({ '@sveltejs/kit': version });
+    const packageManager = createPackageManager(
+      { '@sveltejs/kit': version },
+      { '@storybook/sveltekit': '10.0.0' }
+    );
 
     const result = await blocker.check(createCheckOptions(packageManager));
 

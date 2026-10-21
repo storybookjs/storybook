@@ -9,6 +9,7 @@ import { getProjectRoot } from 'storybook/internal/common';
 import type { Options, Presets } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
+import { normalize } from 'pathe';
 import { loadConfigFromFile } from 'vite';
 
 import { storybookConfigPlugin } from './plugins/storybook-config-plugin.ts';
@@ -208,8 +209,11 @@ describe('resolveVitePublicDir', () => {
 
 describe('discovery miss reporting', () => {
   it('warns when configDir is nested and the Vite config sits at the project root', async () => {
+    // `resolve` gives the drive-letter, backslash form on Windows, as `find.any` does there.
+    const found = resolve('/project/vite.config.mjs');
+    const printed = normalize(found);
     vi.mocked(getProjectRoot).mockReturnValue('/project');
-    vi.mocked(find.any).mockReturnValueOnce(resolve('/project/vite.config.mjs'));
+    vi.mocked(find.any).mockReturnValueOnce(found);
     loadConfigFromFileMock.mockResolvedValueOnce(null);
 
     await commonConfig(
@@ -222,11 +226,28 @@ describe('discovery miss reporting', () => {
       last: '/project',
     });
     expect(loggerWarnMock).toHaveBeenCalledTimes(1);
-    expect(loggerWarnMock.mock.calls[0][0]).toContain('/project/vite.config.mjs');
+    expect(loggerWarnMock.mock.calls[0][0]).toContain(`found at "${printed}"`);
     expect(loggerWarnMock.mock.calls[0][0]).toContain(
-      "core: { builder: { options: { viteConfigPath: '/project/vite.config.mjs' } } }"
+      `core: { builder: { options: { viteConfigPath: '${printed}' } } }`
     );
     expect(loggerWarnMock.mock.calls[0][0]).toContain('viteConfigPath: null');
+  });
+
+  it('prints a Windows config path with forward slashes so the snippet stays pasteable', async () => {
+    vi.mocked(getProjectRoot).mockReturnValue('/project');
+    vi.mocked(find.any).mockReturnValueOnce('C:\\project\\vite.config.mjs');
+    loadConfigFromFileMock.mockResolvedValueOnce(null);
+
+    await commonConfig(
+      { ...dummyOptions, configDir: '/project/configuration/storybook' },
+      'development'
+    );
+
+    expect(loggerWarnMock).toHaveBeenCalledTimes(1);
+    expect(loggerWarnMock.mock.calls[0][0]).toContain('found at "C:/project/vite.config.mjs"');
+    expect(loggerWarnMock.mock.calls[0][0]).toContain(
+      "core: { builder: { options: { viteConfigPath: 'C:/project/vite.config.mjs' } } }"
+    );
   });
 
   it('stays quiet when no Vite config exists in the project at all', async () => {

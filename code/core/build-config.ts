@@ -67,10 +67,6 @@ const config: BuildEntries = {
         entryPoint: './src/csf-tools/index.ts',
       },
       {
-        exportEntries: ['./internal/babel'],
-        entryPoint: './src/babel/index.ts',
-      },
-      {
         exportEntries: ['./internal/bin/dispatcher'],
         entryPoint: './src/bin/dispatcher.ts',
         dts: false,

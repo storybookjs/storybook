@@ -237,13 +237,40 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   }
 
   onKeydown(event: KeyboardEvent) {
-    if (!this.storyRenders.find((r) => r.disableKeyListeners) && !focusInInput(event)) {
-      // We have to pick off the keys of the event that we need on the other side
-      const { altKey, ctrlKey, metaKey, shiftKey, key, code, keyCode } = event;
-      this.channel.emit(PREVIEW_KEYDOWN, {
-        event: { altKey, ctrlKey, metaKey, shiftKey, key, code, keyCode },
+    if (this.storyRenders.find((r) => r.disableKeyListeners)) {
+      if (event.key === 'F6') {
+        // Temporary diagnostics for landmark navigation from the preview.
+        logger.info('[landmark navigation] F6 ignored: a render disabled key listeners');
+      }
+      return;
+    }
+
+    // F6 and Shift+F6 navigate the manager's landmarks, which the manager can only do for a
+    // keydown it is told about. So they are forwarded even from text inputs, where they cannot
+    // clash with typing, and the browser's own F6 behaviour (moving focus to its toolbar) is
+    // suppressed. Not when the preview is the top-level document, where there is no manager.
+    const isLandmarkNavigation =
+      event.key === 'F6' && !!globalWindow.parent && globalWindow.parent !== globalWindow.self;
+    if (isLandmarkNavigation) {
+      event.preventDefault();
+    } else if (focusInInput(event)) {
+      return;
+    }
+    if (event.key === 'F6') {
+      // Temporary diagnostics for landmark navigation from the preview.
+      logger.info('[landmark navigation] F6 in the preview', {
+        shiftKey: event.shiftKey,
+        embedded: isLandmarkNavigation,
+        defaultPrevented: event.defaultPrevented,
+        target: (event.target as Element | null)?.tagName,
       });
     }
+
+    // We have to pick off the keys of the event that we need on the other side
+    const { altKey, ctrlKey, metaKey, shiftKey, key, code, keyCode } = event;
+    this.channel.emit(PREVIEW_KEYDOWN, {
+      event: { altKey, ctrlKey, metaKey, shiftKey, key, code, keyCode },
+    });
   }
 
   async onSetCurrentStory(selection: { storyId: StoryId; viewMode?: ViewMode }) {

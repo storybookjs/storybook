@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
-import { relative, resolve } from 'pathe';
+// eslint-disable-next-line no-restricted-imports -- empathic compares its `last` stop dir with getProjectRoot()'s native path as a string
+import { relative, resolve } from 'node:path';
 
 import {
   getBuilderOptions,

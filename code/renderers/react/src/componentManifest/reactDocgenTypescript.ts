@@ -175,10 +175,20 @@ const previousProgramsByConfigKey = new Map<string, ts.Program | undefined>();
 let parserCache = new Map<string, ParserState>();
 let parserBuilds = new Map<string, Promise<ParserState>>();
 
+type TsconfigState = { config: unknown; parsed: ts.ParsedCommandLine };
+
+/**
+ * Parsed tsconfig files by normalized path, with the same lifetime as `parserCache`. The owning
+ * tsconfig lookup runs for every component file, and parsing a config expands its `include` globs,
+ * which is slow in large projects.
+ */
+let tsconfigCache = new Map<string, TsconfigState>();
+
 /** Rebuild the TS program incrementally so that file changes are picked up on the next parse. */
 export function invalidateParser() {
   parserCache = new Map();
   parserBuilds = new Map();
+  tsconfigCache = new Map();
   previousProgramsByConfigKey.clear();
 }
 
@@ -421,12 +431,20 @@ function parseTsconfig(typescript: TypeScriptRuntime, configPath: string) {
   return readTsconfig(typescript, configPath).parsed;
 }
 
-function readTsconfig(typescript: TypeScriptRuntime, configPath: string) {
+function readTsconfig(typescript: TypeScriptRuntime, configPath: string): TsconfigState {
+  const cacheKey = normalizeFileName(typescript, configPath);
+  const cachedTsconfig = tsconfigCache.get(cacheKey);
+  if (cachedTsconfig) {
+    return cachedTsconfig;
+  }
+
   const { config } = typescript.readConfigFile(configPath, typescript.sys.readFile);
-  return {
+  const state = {
     config,
     parsed: typescript.parseJsonConfigFileContent(config, typescript.sys, dirname(configPath)),
   };
+  tsconfigCache.set(cacheKey, state);
+  return state;
 }
 
 function isSameFileName(typescript: TypeScriptRuntime, left: string, right: string) {

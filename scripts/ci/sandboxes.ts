@@ -482,6 +482,13 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
 
 export const sandboxesNoOpJob = defineNoOpJob('sandboxes', [build_linux]);
 
+/** Define the Windows build and dev E2E jobs, which run against the first daily sandbox. */
+export function getWindowsSandboxes(): JobOrNoOpJob[] {
+  const sandbox = defineSandboxFlow(sandboxTemplates.daily[0]);
+
+  return [defineWindowsSandboxBuild(sandbox), defineWindowsSandboxDev(sandbox)];
+}
+
 const getListOfSandboxes = (workflow: Workflow) => {
   switch (workflow) {
     case 'normal':
@@ -501,10 +508,7 @@ export function getSandboxes(workflow: Workflow) {
   const list: JobOrNoOpJob[] = sandboxes.flatMap((sandbox) => sandbox.jobs);
 
   if (isWorkflowOrAbove(workflow, 'daily')) {
-    const windows_sandbox_build = defineWindowsSandboxBuild(sandboxes[0]);
-    const windows_sandbox_dev = defineWindowsSandboxDev(sandboxes[0]);
-
-    list.push(windows_sandbox_build, windows_sandbox_dev);
+    list.push(...getWindowsSandboxes());
   }
 
   return list;

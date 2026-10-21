@@ -18,8 +18,7 @@ export const parameters = {
   },
   workflow: {
     default: 'skipped',
-    description: 'Which workflow to run',
-    enum: ['normal', 'focus', 'merged', 'daily', 'skipped', 'docs'] as const,
-    type: 'enum',
+    description: 'Which workflows to run, comma-separated (e.g. `normal,windows`)',
+    type: 'string',
   },
 };

@@ -23,15 +23,8 @@ parameters:
     type: string
   workflow:
     default: skipped
-    description: Which workflow to run
-    enum:
-      - normal
-      - focus
-      - merged
-      - daily
-      - skipped
-      - docs
-    type: enum
+    description: Which workflows to run, comma-separated (e.g. `normal,windows`)
+    type: string
 
 jobs:
   generate-and-run-config:
@@ -48,11 +41,13 @@ jobs:
           environment:
             GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
           command: |
-            if [ "<< pipeline.parameters.workflow >>" = "focus" ]; then
-              git fetch origin \
-                "$GH_BASE_BRANCH:refs/remotes/origin/$GH_BASE_BRANCH" \
-                --deepen=500
-            fi
+            case ",<< pipeline.parameters.workflow >>," in
+              *,focus,*)
+                git fetch origin \
+                  "$GH_BASE_BRANCH:refs/remotes/origin/$GH_BASE_BRANCH" \
+                  --deepen=500
+                ;;
+            esac
       - run:
           name: Install dependencies
           command: yarn workspaces focus @storybook/scripts

@@ -45,9 +45,28 @@ const BABEL_ONLY_TYPES = new Set([
   'TSExpressionWithTypeArguments',
 ]);
 
-/** An object that is an AST node rather than data: a node type OXC or Babel produces. */
-export const isAstLike = (value: unknown): value is Node =>
-  isNode(value) && (Object.hasOwn(visitorKeys, value.type) || BABEL_ONLY_TYPES.has(value.type));
+// A node some parser or builder made, which `printValue` must not print as its fields: a node type
+// with a position, as offsets, `loc` or `range`, which a copy of it keeps, or a Babel-only type,
+// which a `@babel/types` builder such as `t.stringLiteral('x')` gives without a position. Any
+// other object built by hand is data, whatever its `type`; so is a `File`, common in data such as
+// `{ type: 'File', name: 'a.pdf' }`.
+const isParsedNode = (value: unknown): value is Node => {
+  if (!isNode(value)) {
+    return false;
+  }
+  const type: string = value.type;
+  if (type !== 'File' && BABEL_ONLY_TYPES.has(type)) {
+    return true;
+  }
+  if (!(Object.hasOwn(visitorKeys, type) || type === 'File')) {
+    return false;
+  }
+  return (
+    (typeof value.start === 'number' && typeof value.end === 'number') ||
+    ('loc' in value && typeof value.loc === 'object' && value.loc !== null) ||
+    ('range' in value && Array.isArray(value.range))
+  );
+};
 
 // A member's value as `detachedSource`; methods become function expressions.
 export const valueSource = (editor: SourceEditor, member: Property) =>
@@ -63,7 +82,7 @@ export const placeableValueSource = (editor: SourceEditor, member: Property) =>
 
 /**
  * A plain value, as `getValue` reads it. `CsfValue<CsfExpression>`, which `set` takes, can also hold
- * expressions from `get` or `parseExpression`, at any depth.
+ * expressions from `get`, `parseExpression` or `parseModule`, at any depth.
  */
 export type CsfValue<Expression = never> =
   | string
@@ -75,12 +94,12 @@ export type CsfValue<Expression = never> =
   | readonly CsfValue<Expression>[]
   | { readonly [key: string]: CsfValue<Expression> };
 
-// The first node in `value` that no parse produced, which `printValue` would print as its fields.
+// The first node in `value` without the parse tag, which `printValue` would print as data.
 export const nodeWithoutParse = (value: unknown): Node | undefined => {
   if (typeof value !== 'object' || value === null || moduleOf(value)) {
     return undefined;
   }
-  if (isAstLike(value)) {
+  if (isParsedNode(value)) {
     return value;
   }
   for (const item of Object.values(value)) {

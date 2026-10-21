@@ -25,7 +25,7 @@ import {
 } from './common-jobs.ts';
 import { getInitEmpty, initEmptyNoOpJob } from './init-empty.ts';
 import { getChangedFiles, getFocusJobs } from './focus.ts';
-import { getSandboxes, sandboxesNoOpJob } from './sandboxes.ts';
+import { getSandboxes, getWindowsSandboxes, sandboxesNoOpJob } from './sandboxes.ts';
 import { getTestStorybooks, testStorybooksNoOpJob } from './test-storybooks.ts';
 import { executors } from './utils/executors.ts';
 import { ensureRequiredJobs } from './utils/helpers.ts';
@@ -37,22 +37,21 @@ import type {
   JobOrNoOpJob,
   NoOpJobImplementationObj,
 } from './utils/types.ts';
-import { type Workflow, isWorkflowOrAbove } from './utils/types.ts';
+import { type Workflow, isWorkflowOrAbove, workflows } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
 
-/**
- * Generate the CircleCI config for a given workflow.
- *
- * @param workflow - The workflow to generate the config for.
- * @returns The generated config for CircleCI in JS format.
- */
-function generateConfig(workflow: Workflow, baseRef: string) {
+/** Workflows that a PR can merge on, so they end in the `circleci-completion` status check. */
+const isMergeGating = (workflow: Workflow) => workflow !== 'windows';
+
+function getJobs(workflow: Workflow, baseRef: string): JobOrNoOpJob[] {
   const jobs: JobOrNoOpJob[] = [];
   if (workflow === 'focus') {
     jobs.push(...getFocusJobs(getChangedFiles(baseRef)));
   } else if (isWorkflowOrAbove(workflow, 'docs')) {
     jobs.push(fmt);
+  } else if (workflow === 'windows') {
+    jobs.push(build_windows, testUnit_windows, ...getWindowsSandboxes());
   } else {
     const sandboxes = getSandboxes(workflow);
     const testStorybooks = getTestStorybooks();
@@ -88,6 +87,20 @@ function generateConfig(workflow: Workflow, baseRef: string) {
       ...initEmpty
     );
   }
+  return jobs;
+}
+
+/**
+ * Generate the CircleCI config for the union of the given workflows.
+ *
+ * @param selected - The workflows to generate the config for, in `workflows` order. Jobs report
+ *   failures as the first, most thorough one.
+ * @param baseRef - The git ref `focus` diffs against.
+ * @returns The generated config for CircleCI in JS format.
+ */
+function generateConfig(selected: Workflow[], baseRef: string) {
+  const [workflow] = selected;
+  const jobs = selected.flatMap((workflow) => getJobs(workflow, baseRef));
 
   /**
    * If you want to filter down to a particular job, e.g.for debugging purposes.. you can do that
@@ -116,7 +129,9 @@ function generateConfig(workflow: Workflow, baseRef: string) {
   // Append a completion job that depends on every other job in the workflow.
   // It acts as a single status check for GitHub branch protection: it only runs
   // (and reports success) once every required job has finished successfully.
-  ensuredJobs.push(defineCircleciCompletion([...ensuredJobs]));
+  if (selected.some(isMergeGating)) {
+    ensuredJobs.push(defineCircleciCompletion([...ensuredJobs]));
+  }
 
   const sortedJobs = ensuredJobs.sort((a, b) => {
     if (a.requires.length && b.requires.length) {
@@ -148,7 +163,7 @@ function generateConfig(workflow: Workflow, baseRef: string) {
       {} as Record<string, JobImplementationObj | NoOpJobImplementationObj>
     ),
     workflows: {
-      [`${workflow}-generated${isDebugging ? '-debug' : ''}`]: {
+      [`${selected.join('-')}-generated${isDebugging ? '-debug' : ''}`]: {
         jobs: sortedJobs.map((t) =>
           t.requires && t.requires.length > 0
             ? { [t.id]: { requires: t.requires.map((r) => r.id) } }
@@ -164,7 +179,10 @@ console.log('--------------------------------');
 
 program
   .description('Generate CircleCI config')
-  .requiredOption('-w, --workflow <string>', 'Workflow to generate config for')
+  .requiredOption(
+    '-w, --workflow <string>',
+    'Comma-separated workflows to generate the union config for (e.g. `normal,windows`)'
+  )
   .option('--base-ref <string>', 'Git ref to compare against for focused CI', 'origin/next')
   .option(
     '--gh-trusted-author <string>',
@@ -176,9 +194,18 @@ program
 const opts = program.opts();
 setTrustedAuthor(opts.ghTrustedAuthor === 'true');
 
+const requested: string[] = opts.workflow.split(',').filter(Boolean);
+const unknown = requested.filter((w) => !(workflows as readonly string[]).includes(w));
+if (unknown.length > 0 || requested.length === 0) {
+  program.error(
+    `Unknown workflow "${opts.workflow}". Expected a comma-separated list of: ${workflows.join(', ')}`
+  );
+}
+const selected = workflows.filter((w) => requested.includes(w));
+
 await fs.writeFile(
   join(dirname, '../../.circleci/config.generated.yml'),
-  yml.stringify(generateConfig(opts.workflow, opts.baseRef), null, {
+  yml.stringify(generateConfig(selected, opts.baseRef), null, {
     lineWidth: 1200,
     indent: 4,
   })

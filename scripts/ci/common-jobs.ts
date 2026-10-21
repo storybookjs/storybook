@@ -19,6 +19,7 @@ import {
   workflow,
   workspace,
 } from './utils/helpers.ts';
+import { FULL_RUN_MARKER } from './affected-tests.ts';
 import { isTrustedAuthor } from './utils/runtime.ts';
 import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
 
@@ -342,6 +343,14 @@ export const knip = defineJob(
   [commonJobsNoOpJob]
 );
 
+const UNIT_TEST_REPORTERS =
+  '--reporter=junit --reporter=default --outputFile=./test-results/junit.xml';
+
+const runAllUnitTests = [
+  'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec,test-d}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "agent-eval/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
+  `echo "$TEST_FILES" | circleci tests run --command="xargs yarn test ${UNIT_TEST_REPORTERS}" --verbose`,
+].join('\n');
+
 export const testsUnit_linux = defineJob(
   'Tests (linux)',
   (workflowName) => ({
@@ -354,10 +363,7 @@ export const testsUnit_linux = defineJob(
       {
         run: {
           name: 'Run tests',
-          command: [
-            'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec,test-d}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "agent-eval/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
-            'echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
-          ].join('\n'),
+          command: runAllUnitTests,
         },
       },
       testResults.persist(`test-results`),
@@ -369,6 +375,85 @@ export const testsUnit_linux = defineJob(
   }),
   [commonJobsNoOpJob]
 );
+
+const CHANGED_FILES_PATH = '/tmp/changed-files.txt';
+const AFFECTED_TESTS_PATH = '/tmp/affected-tests.txt';
+
+const writeChangedFiles = (changedFiles: readonly string[]) => ({
+  run: {
+    name: 'Write changed files',
+    environment: { CHANGED_FILES: changedFiles.join('\n') },
+    command: `printf '%s\\n' "$CHANGED_FILES" > ${CHANGED_FILES_PATH}`,
+  },
+});
+
+/**
+ * Typecheck only the projects Nx considers affected by `changedFiles`. The restored workspace
+ * already holds every compiled package, so the `compile` dependencies are skipped.
+ */
+export const defineAffectedCheck = (changedFiles: readonly string[]) =>
+  defineJob(
+    'TypeScript validation (affected)',
+    (workflowName) => ({
+      executor: {
+        name: 'sb_node_22_classic',
+        class: 'xlarge',
+      },
+      steps: [
+        ...workflow.restoreLinux(),
+        writeChangedFiles(changedFiles),
+        {
+          run: {
+            name: 'TypeCheck affected projects',
+            command: `yarn nx affected -t check --exclude-task-dependencies --parallel=4 --stdin < ${CHANGED_FILES_PATH}`,
+          },
+        },
+        ...workflow.reportOnFailure(workflowName),
+        ...workflow.cancelOnFailure(),
+      ],
+    }),
+    [commonJobsNoOpJob]
+  );
+
+/**
+ * Run the unit tests related to `changedFiles`, following imports through the built `dist` files
+ * that contain them. Falls back to the full suite when a global input such as a lockfile changed.
+ */
+export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
+  defineJob(
+    'Tests (linux, affected)',
+    (workflowName) => ({
+      executor: {
+        name: 'sb_node_22_classic',
+        class: 'large',
+      },
+      steps: [
+        ...workflow.restoreLinux(),
+        writeChangedFiles(changedFiles),
+        {
+          run: {
+            name: 'Run affected tests',
+            command: [
+              `node ./scripts/ci/select-affected-tests.ts ${CHANGED_FILES_PATH} > ${AFFECTED_TESTS_PATH}`,
+              `if [ "$(cat ${AFFECTED_TESTS_PATH})" = "${FULL_RUN_MARKER}" ]; then`,
+              ...runAllUnitTests.split('\n').map((line) => `  ${line}`),
+              `elif [ -s ${AFFECTED_TESTS_PATH} ]; then`,
+              `  NODE_OPTIONS=--max_old_space_size=4096 yarn vitest related --run --project '!storybook-ui' ${UNIT_TEST_REPORTERS} $(cat ${AFFECTED_TESTS_PATH})`,
+              'else',
+              '  echo "No changed file is related to a unit test."',
+              'fi',
+            ].join('\n'),
+          },
+        },
+        testResults.persist(`test-results`),
+
+        git.check(),
+        ...workflow.reportOnFailure(workflowName),
+        ...workflow.cancelOnFailure(),
+      ],
+    }),
+    [commonJobsNoOpJob]
+  );
 
 export const testsStories_linux = defineJob(
   'Tests stories (linux)',

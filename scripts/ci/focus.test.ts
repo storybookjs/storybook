@@ -71,10 +71,11 @@ describe('selectChromaticSiblings', () => {
 describe('getFocusJobs', () => {
   const jobIds = (changedFiles: string[]) => getFocusJobs(changedFiles).map(({ id }) => id);
 
-  it('runs the build, unit tests, and every React Vite sandbox job for a core change', () => {
+  it('runs the build, affected checks, and every React Vite sandbox job for a core change', () => {
     expect(jobIds(['code/core/src/manager/App.tsx'])).toEqual([
       'build--linux',
-      'tests--linux',
+      'typescript-validation--affected',
+      'tests--linux--affected',
       'sandboxes',
       'react-latest--vite---typescript---create',
       'react-latest--vite---typescript---dev',
@@ -101,5 +102,23 @@ describe('getFocusJobs', () => {
 
     expect(ids).toContain('next-js-latest--webpack---typescript---chromatic');
     expect(ids.some((id) => id.startsWith('bench--react-vite-default-ts--no-docs'))).toBe(false);
+  });
+
+  it('bakes the changed files into both affected jobs', () => {
+    const changedFiles = ['code/core/src/manager/App.tsx', 'docs/index.mdx'];
+    const affectedJobs = getFocusJobs(changedFiles).filter(({ id }) => id.endsWith('--affected'));
+
+    expect(affectedJobs).toHaveLength(2);
+    for (const job of affectedJobs) {
+      expect(job.implementation('focus')).toMatchObject({
+        steps: expect.arrayContaining([
+          {
+            run: expect.objectContaining({
+              environment: { CHANGED_FILES: changedFiles.join('\n') },
+            }),
+          },
+        ]),
+      });
+    }
   });
 });

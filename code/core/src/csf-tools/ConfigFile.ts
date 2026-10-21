@@ -783,13 +783,12 @@ export class ConfigFile implements CsfObject {
 
   /** @deprecated Use `append`, which takes a plain value too. */
   appendValueToArray(path: string[], value: any): CsfMutationResult {
-    return this.appendNodeToArray(path, this.valueToNode(value));
+    return this.append(path, this.valueToNode(value));
   }
 
   /** @deprecated Use `append`. */
   appendNodeToArray(path: string[], node: CsfExpression): CsfMutationResult {
-    const array = this._arrayAt(path);
-    return array.kind === 'other' ? this._reject(array.diagnostic) : this.append(path, node);
+    return this.append(path, node);
   }
 
   /**
@@ -828,7 +827,7 @@ export class ConfigFile implements CsfObject {
   // The array literal at a path as `getFieldNode` resolves it, through local constants and type
   // assertions. `getFieldNode` follows a constant only at the root, so below one the field as
   // `inspect` reads it decides. A field holding anything else, such as a call, comes with the
-  // diagnostic of the array helpers, which refuse it.
+  // diagnostic `append` gives it.
   _arrayAt(
     path: string[]
   ):

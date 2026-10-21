@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-storybook",
-  "version": "11.0.0-alpha.6",
+  "version": "11.0.0-alpha.7",
   "description": "Storybook ESLint Plugin: Best practice rules for writing stories",
   "keywords": [
     "eslint",
@@ -59,7 +59,7 @@
     "eslint-plugin-node": "^11.1.0",
     "prompts": "^2.4.0",
     "storybook": "workspace:*",
-    "ts-dedent": "^2.0.0",
+    "ts-dedent": "^2.2.0",
     "typescript": "^6.0.3"
   },
   "peerDependencies": {

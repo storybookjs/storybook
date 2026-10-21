@@ -70,4 +70,5 @@ export const CORE_EVENT_SENDERS: Record<events, EventSender> = {
   [events.SHARE_ISOLATE_MODE]: 'manager',
   [events.AI_PROMPT_NUDGE]: 'manager',
   [events.SIDEBAR_FILTER_CHANGED]: 'manager',
+  [events.SIDEBAR_OPEN_CONTEXT_MENU]: 'manager',
 };

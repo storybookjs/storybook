@@ -5,8 +5,9 @@
  * everything behind the commander wiring, without spawning processes.
  */
 
+import { logger } from 'storybook/internal/node-logger';
 import type { StoryIndex } from 'storybook/internal/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import * as v from 'valibot';
 
@@ -33,6 +34,9 @@ import {
   type ToolsRuntime,
 } from './sdk/index.ts';
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
+
+// The shared setup stubs the logger; these tests assert what the real one prints.
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 const CONFIG_DIR = '/repo/.storybook';
 
@@ -760,6 +764,15 @@ describe('outcome mapping', () => {
               throw error;
             },
           },
+          warn: {
+            title: 'warn',
+            input: v.strictObject({}),
+            description: 'warns while running',
+            handler: async () => {
+              logger.warn('No story files found for the specified pattern');
+              return { ok: true, data: {}, markdown: 'result' };
+            },
+          },
           input: {
             title: 'input',
             input: v.strictObject({ a: v.optional(v.number()), b: v.optional(v.number()) }),
@@ -784,6 +797,43 @@ describe('outcome mapping', () => {
       exitCode: 0,
       output: 'one\n\ntwo',
       outcome: { kind: 'success' },
+    });
+  });
+
+  describe('warnings logged while the tool runs', () => {
+    let printed: string[];
+
+    beforeEach(() => {
+      printed = [];
+      const capture = (chunk: unknown) => {
+        printed.push(String(chunk));
+        return true;
+      };
+      const spies = [
+        vi.spyOn(process.stdout, 'write').mockImplementation(capture),
+        vi.spyOn(console, 'warn').mockImplementation(capture),
+      ];
+      onTestFinished(() => spies.forEach((spy) => spy.mockRestore()));
+    });
+
+    it('stay out of the output, and the log level is restored afterwards', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'warn'], deps);
+
+      expect(result.output).toBe('result');
+      expect(printed.join('')).not.toContain('No story files found');
+      expect(logger.getLogLevel()).toBe('info');
+    });
+
+    it('are printed when the log level is not the default', async () => {
+      logger.setLogLevel('debug');
+      onTestFinished(() => logger.setLogLevel('info'));
+      const { deps } = makeDeps();
+
+      await run(['echo', 'warn'], deps);
+
+      expect(printed.join('')).toContain('No story files found');
     });
   });
 

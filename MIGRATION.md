@@ -35,6 +35,7 @@
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
+  - [Vite: `preview-stats.json` contains the full bundler graph](#vite-preview-statsjson-contains-the-full-bundler-graph)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
   - [Next.js: most Node.js built-in polyfills removed from `@storybook/nextjs`](#nextjs-most-nodejs-built-in-polyfills-removed-from-storybooknextjs)
   - [`storySort` in the preview replaced by `storySorts` in main](#storysort-in-the-preview-replaced-by-storysorts-in-main)
@@ -43,6 +44,7 @@
   - [Create React App support removed](#create-react-app-support-removed)
   - [`storybook/internal/babel` removed; `csf-tools` uses ESTree](#storybookinternalbabel-removed-csf-tools-uses-estree)
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
+  - [`storybook add` and `storybook remove` leave an `addons` they cannot edit safely](#storybook-add-and-storybook-remove-leave-an-addons-they-cannot-edit-safely)
   - [Internal CSF tools use the unified mutation API](#internal-csf-tools-use-the-unified-mutation-api)
   - [Internal WebSocket heartbeat controls removed](#internal-websocket-heartbeat-controls-removed)
   - [Internal toolset telemetry now returns with the outcome](#internal-toolset-telemetry-now-returns-with-the-outcome)
@@ -62,6 +64,7 @@
   - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
   - [Web Components: server-side docgen suffixes event, slot and part argType keys](#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys)
   - [Web Components: the default render binds args by key](#web-components-the-default-render-binds-args-by-key)
+  - [Web Components: the runtime Custom Elements Manifest API is deprecated](#web-components-the-runtime-custom-elements-manifest-api-is-deprecated)
   - [SvelteKit: Require v3 and up](#sveltekit-require-v3-and-up)
   - [Svelte CSF is built into the Svelte frameworks](#svelte-csf-is-built-into-the-svelte-frameworks)
   - [Svelte CSF: legacy story syntax removed](#svelte-csf-legacy-story-syntax-removed)
@@ -1271,6 +1274,15 @@ If you're using framework-specific Vite plugins, ensure they are compatible with
 
 For more information on upgrading Vite, see the [Vite Migration Guide](https://vite.dev/guide/migration).
 
+### Vite: `preview-stats.json` contains the full bundler graph
+
+The `preview-stats.json` file that `@storybook/builder-vite` writes for `storybook build --stats-json` now contains the full bundler graph. In previous versions the builder dropped some nodes before it wrote the file. It now also writes:
+
+- Virtual modules such as `/virtual:/@storybook/builder-vite/project-annotations.js` and their edges
+- Proxy modules that Vite and Rollup insert between your code and its dependencies, for example `\0./node_modules/react/index.js?commonjs-es-import`
+- Sub-modules with a query string, for example `./src/Button.vue?vue&type=style&index=0&lang.css` next to `./src/Button.vue`
+
+Chromatic TurboSnap reads this file. It needs `chromatic-cli` [v18.13.1](https://github.com/chromaui/chromatic-cli/releases/tag/v18.13.1) or later, which merges these nodes into the files they stand for. With an older version, a changed Vue or Svelte component can trace to zero stories. Upgrade `chromatic-cli` to v18.13.1 or later before you upgrade Storybook.
 
 ### Next.js: Require v15 and up
 
@@ -1403,7 +1415,8 @@ An addon that supports both Storybook 10 and 11 can detect the new API with `typ
 - `storybook/internal/babel` is removed. Import Babel from your own `@babel/*` dependencies if you still need it.
 - `getBabelDependencies` is removed from `storybook/internal/cli`.
 - The nodes exposed by `storybook/internal/csf-tools` are ESTree (OXC) nodes instead of Babel nodes, for example `Literal` instead of `StringLiteral` and `Property` instead of `ObjectProperty`/`ObjectMethod`. `CsfFile._ast` and the `NodePath` fields are removed; use `CsfFile.program` and `CsfFile.editor`. `ConfigFile._ast` is removed as well; use `ConfigFile.program` and `ConfigFile.editor`. Both `editor`s are a `SourceEditor`: call `editor.commit()` to apply pending edits, after which the file parses the result again. `_program` and `_editor` remain as deprecated aliases in Storybook 11. The editing functions and `source()` throw for nodes of another parse, such as nodes from before a commit; offsets passed to `editor.edits` are not checked.
-- `CsfObject#get` returns an ESTree expression, and `set`/`transform` accept expressions from `get()` or `parseExpression(code)`. Use `textOf(node)` to read an expression's source, and `placeableTextOf(node)` to build new code around it. The expressions `get`, `inspect` and `transform` give are frozen snapshots: where a Babel node could be changed in place before passing it to `set`, assigning to an ESTree node's fields throws, as `set` prints a node from its source. Pass a plain value or `parseExpression(text)` instead.
+- `ConfigFile#_removeImport`, `_removeRequireImport`, `_removeImportSpecifiers`, `_findImports`, `_findRequires` and `_notAnArray` are removed; `removeImport` removes both import and `require` bindings.
+- `CsfObject#get` returns an ESTree expression, and `set`/`transform` accept expressions from `get()`, `parseExpression(code)` or `parseModule(code)`. Use `textOf(node)` to read an expression's source, and `placeableTextOf(node)` to build new code around it. The expressions `get`, `inspect` and `transform` give are frozen snapshots: where a Babel node could be changed in place before passing it to `set`, assigning to an ESTree node's fields throws, as `set` prints a node from its source. Pass a plain value or `parseExpression(text)` instead. The same holds for a node built with `@babel/types`: `set` and `append` refuse one of a type only Babel has, such as `t.stringLiteral('x')`, and write any other, such as `t.identifier('x')`, as a plain object, so use `parseExpression('x')`.
 - An `experimental_enrichCsf` function receives the new `CsfFile`. Add code with `csf.appendStatement(code)` instead of pushing Babel nodes onto `csf._ast`; `_appendStatement` remains as a deprecated alias.
 - `extractSource(node)` is `extractSource(node, code)`, and returns the story's source as written instead of a Babel reprint. Pass the file's `editor.code`, the normalized code its node offsets index. `extractDescription(node)` is `extractDescription(node, editor)`: ESTree nodes carry no `leadingComments`, so it reads the comments before the node from the file's `editor`.
 
@@ -1422,11 +1435,11 @@ An addon that supports both Storybook 10 and 11 can detect the new API with `typ
 - `getHeaderComments(statement)` is removed. The editor keeps a file's header comments in place: `prependStatement` inserts below them, also in a file without statements, and `appendStatement` separates a multi-line statement from its neighbour with a blank line.
 - `CsfObject` mutations index the story file again after every edit, where they used to leave the index as it was and return `{ ok: true }`. An edit whose result is valid JavaScript but not valid CSF, for example a meta `tags` that is no longer an array of string literals, is rolled back and returns `{ ok: false, changed: false, diagnostic }` with code `'invalid-csf'`. A refused mutation always leaves the file as it was, so the index stays readable. An edit whose result does not parse throws, and is rolled back too. The `ok: false` arm of `CsfMutationResult` now carries `changed: false`.
 - `SourceEditor#edits`, the pending edits of an `editor`, is a `SourceEdits`: text edits addressed by offsets into `code`, with `append`, `appendLeft`, `appendRight`, `overwrite`, `remove`, `slice`, `hasChanged`, `generateMap` and `toString`. `SourceEditor#generateMap()` returns a `GeneratedMap`.
-- `getAutomockCode(code, isSpy, fileName)` and `extractMockCalls(options, root, findMockRedirect)` in `storybook/internal/mocking-utils` parse the code themselves and no longer take a parser: drop the parser argument and pass the module's file name to `getAutomockCode`. `rewriteSbMockImportCalls(code, fileName)` requires the file name as well. `babelParser` is no longer exported; builders that passed it, such as `storybook-builder-rsbuild` 3.6, need a release that drops the argument. `automockModule` is no longer exported.
-- The story-shape helpers no longer take Babel paths: `jsDocTagsForPath` is `jsDocTagsForNode`, `metaObjectPath` is `metaObject`, `RenderFunctionPath` is `RenderFunction`, and `pathForNode` and `returnedExpressionPath` are removed in favor of `returnedExpression` and plain nodes. `keyOf` is `staticKey`, which returns `undefined` instead of `null` for a key it cannot read, and reads numeric and template-literal keys as well. `sourceOf` is `oneLineTextOf`: the node's source text with its line breaks collapsed and its comments kept, where `sourceOf` was a concise Babel reprint without comments; it takes nodes of `CsfFile.program`, `ConfigFile.program` or `parseExpression`, not of `parseModule`.
+- `getAutomockCode(code, isSpy, fileName)` and `extractMockCalls(options, root, findMockRedirect)` in `storybook/internal/mocking-utils` parse the code themselves and no longer take a parser: drop the parser argument and pass the module's file name to `getAutomockCode`. `rewriteSbMockImportCalls(code, fileName, { inputSourceMap })` requires the file name as well; its map sets `file` to that name and goes through `inputSourceMap` to the original when given, so a loader no longer adds `file` itself and can chain the map it received. The map is still `null` when nothing was rewritten. `babelParser` is no longer exported; builders that passed it, such as `storybook-builder-rsbuild` 3.6, need a release that drops the argument. `automockModule` is no longer exported.
+- The story-shape helpers no longer take Babel paths: `jsDocTagsForPath` is `jsDocTagsForNode`, `metaObjectPath` is `metaObject`, `RenderFunctionPath` is `RenderFunction`, and `pathForNode` and `returnedExpressionPath` are removed in favor of `returnedExpression` and plain nodes. `keyOf` is `staticKey`, which returns `undefined` instead of `null` for a key it cannot read, and reads numeric and template-literal keys as well. `sourceOf` is `oneLineTextOf`: the node's source text with its line breaks collapsed and its comments kept, where `sourceOf` was a concise Babel reprint without comments; it takes nodes of `CsfFile.program`, `ConfigFile.program`, `parseExpression` or `parseModule`.
 - The `getAbsolutePath` wrapper helpers in `storybook/internal/common` produce source text instead of Babel nodes. `getAbsolutePathWrapperAsCallExpression(isTs, names)`, which returned the wrapper's function declaration, is replaced by `getAbsolutePathWrapperDeclaration(config, isTs, names)`, which returns the declaration's source, indented like `config`, for `ConfigFile#setBodyDeclaration`. `getAbsolutePathCall(config, value)` returns the source of a call to the config's wrapper. `wrapValueWithGetAbsolutePathWrapper(config, node)` is replaced by `wrapValuesWithGetAbsolutePathWrapper(config, nodes)`, which wraps every node in the array and commits the edits to `config`.
 - `new CsfFile(code, options)` and `new ConfigFile(code, fileName)` take source code instead of a Babel AST.
-- `formatCsf(csf, { sourceMaps, sourceFileName, inputSourceMap })` replaces the Babel generator options; `printCsf` and `printConfig` take no options, and all three print a file whose first line ends in CRLF with CRLF line endings, and any other file with `\n`. A file that mixes line endings is printed with its first line's ending throughout, and a file with lone CR line endings with `\n`.
+- `formatCsf(csf, { sourceMaps, sourceFileName, inputSourceMap })` replaces the Babel generator options. It is typed `{ code, map }` with `sourceMaps: true` and `string` without it, so a caller no longer casts the result; `printCsf` and `printConfig` take no options, and all three print a file whose first line ends in CRLF with CRLF line endings, and any other file with `\n`. A file that mixes line endings is printed with its first line's ending throughout, and a file with lone CR line endings with `\n`.
 - `ConfigFile#setBodyDeclaration(code)` takes the declaration's source text instead of a Babel node.
 - The Vitest config helpers `canUpdateVitestConfigFile`, `getTargetConfigObject`, `getEffectiveMergeConfigCall`, `getConfigObjectFromMergeArg` and `resolveExpression` moved from `storybook/internal/babel` to `storybook/internal/cli`. `canUpdateVitestConfigFile` still takes the file's source; the others take an ESTree `Program`, such as `parseModule(code, fileName).program`, instead of a Babel `File`, and return ESTree nodes. `isDefineConfigLike` and `isImportedDefineConfigLikeIdentifier` are no longer exported. `unwrapTSExpression` is now `unwrapExpression` in `storybook/internal/csf-tools`, and also unwraps non-null assertions (`value!`).
 
@@ -1442,6 +1455,15 @@ Migrating off Create React App is not a hard requirement. To keep using Storyboo
 
 `@storybook/angular-vite` no longer depends on `@angular/animations` and no longer auto-converts `BrowserAnimationsModule`/`NoopAnimationsModule` found in a story's `moduleMetadata.imports` into `provideAnimations()`/`provideNoopAnimations()`. If a story still references one of these modules, Storybook now logs a deprecation warning instead. Migrate to native CSS transitions or the `animate.enter`/`animate.leave` bindings (Angular 20.2+), or continue using the legacy animations API yourself by adding `provideAnimations()`/`provideNoopAnimations()` to the `providers` array of the `applicationConfig` decorator; that path is unaffected by this change.
 
+### `storybook add` and `storybook remove` leave an `addons` they cannot edit safely
+
+`storybook add` installs the addon but then stops with a message instead of adding it to your main config, and `storybook remove` uninstalls it but warns and leaves it listed there, when:
+
+- a later spread could replace `addons`, as in `{ addons: [...], ...shared }` with an imported `shared`
+- `addons` is a constant that other code refers to as well
+
+Add or remove the addon in `addons` by hand in that case.
+
 ### Internal CSF tools use the unified mutation API
 
 If your custom migration tooling imports `ConfigFile` from `storybook/internal/csf-tools`, update its legacy field and call-expression helpers to the unified `CsfObject` mutation API:
@@ -1451,10 +1473,12 @@ If your custom migration tooling imports `ConfigFile` from `storybook/internal/c
 | `getFieldValue`, `getSafeFieldValue` | `getValue`               |
 | `setFieldNode`, `setFieldValue`      | `set`                    |
 | `removeField`                        | `remove`, which also removes a parent it leaves empty: `export const core = { builder: 'webpack4' }` loses the export instead of becoming `export const core = {}` |
+| `appendValueToArray`, `appendNodeToArray` | `append`, which takes a plain value or an expression. Like these, it refuses a field that holds a call, such as `addons: getAddons()`; it adds an argument only to a call that is an item, such as `['loaders', 0]` for `loaders: [mswLoader()]`. Both are deprecated and still available. |
+| `removeEntryFromArray`               | `remove([...path, index])`, with the entry's `index` in the list `inspectList(path)` returns, which resolves a constant only the config refers to, as `remove` does. It is deprecated and still available. |
 | `findNamedImportMethodCalls`         | `callArguments`          |
 | `FindNamedImportMethodCallsOptions`  | `CallArgumentsOptions`   |
 
-`getValue` reads static values without executing source code, following any local constant. When it cannot resolve a value, it returns `undefined`; reads add no diagnostics, so they never stop a later write. Use `inspect` to tell a missing field from one that cannot be read statically. Mutation methods return a result that reports whether the edit succeeded and changed the file. `callArguments` returns `CsfObject` editors instead of Babel call expressions, so apply the same `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, and `group` methods you use for story and config objects.
+`getValue` reads static values without executing source code, following any local constant. When it cannot resolve a value, it returns `undefined`; reads add no diagnostics, so they never stop a later write. Use `inspect` to tell a missing field from one that cannot be read statically. Mutation methods return a result that reports whether the edit succeeded and changed the file. `callArguments` returns `CsfObject` editors instead of Babel call expressions, so apply the same `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, `group`, `append`, and `prepend` methods you use for story and config objects. A path addresses an element of an array or an argument of a call by its index in the source, such as `['addons', 0]` or `['framework', 0]`.
 
 Before writing a transformed file, check `changed` and `mutationDiagnostics`. `writeConfig` also rejects files with mutation diagnostics to prevent partial edits.
 
@@ -1742,6 +1766,44 @@ A decorator that calls element methods on the story result must read the element
   return result;
 },
 ```
+
+### Web Components: the runtime Custom Elements Manifest API is deprecated
+
+`setCustomElementsManifest()` and `setCustomElements()`, which hand the preview a Custom Elements Manifest from `.storybook/preview.ts`, are deprecated and will be removed in Storybook 12, together with the `getCustomElements()`, `isValidComponent()` and `isValidMetaData()` helpers.
+Calling either setter logs a deprecation warning.
+
+With server-side docgen, which is on by default (see [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)), `@storybook/web-components-vite` reads your elements from your sources, so you no longer need a manifest.
+Remove the call and its import from the preview; there is nothing to add:
+
+```ts
+// Before: .storybook/preview.ts
+import { setCustomElementsManifest } from '@storybook/web-components-vite';
+import customElements from '../custom-elements.json';
+
+setCustomElementsManifest(customElements);
+
+// After: .storybook/preview.ts
+// (nothing; Storybook reads your elements from your sources)
+```
+
+To keep a manifest you generate yourself, point `main` at the file instead:
+
+```ts
+// .storybook/main.ts
+export default {
+  framework: {
+    name: '@storybook/web-components-vite',
+    options: { customElementsManifest: '../custom-elements.json' },
+  },
+};
+```
+
+When the option is not set, Storybook reads the `customElements` field of the nearest `package.json`.
+Elements the manifest does not declare are still read from your sources.
+
+The `web-components-runtime-manifest` automigration removes the setter call and its import from the preview and, when the manifest came from a file the preview imported, keeps it by adding its path to `framework.options.customElementsManifest`.
+It does nothing when `features.docgenServer` is `false`, and it leaves the preview alone with a warning when the manifest it finds is not readable.
+You can also run it with `storybook automigrate web-components-runtime-manifest`.
 
 ### SvelteKit: Require v3 and up
 

@@ -72,6 +72,12 @@ describe('reindent', () => {
     expect(reindent('{\n    a: 1,\n  }', '  ', '')).toBe('{\n  a: 1,\n}');
   });
 
+  it('leaves empty lines empty', () => {
+    expect(reindent('() => {\n  a();\n\n  b();\n}', '', '  ')).toBe(
+      '() => {\n    a();\n\n    b();\n  }'
+    );
+  });
+
   it('re-indents CRLF text with LF line endings, leaving its template literals alone', () => {
     expect(reindent('{\r\n  a: `x\r\ny`,\r\n}', '', '  ')).toBe('{\n    a: `x\ny`,\n  }');
   });
@@ -213,6 +219,21 @@ describe('style', () => {
         'a.ts'
       ).semicolons
     ).toBe(false);
+  });
+
+  it.each([
+    [
+      'most multi-line lists end with one',
+      'const a = {\n  b: 1,\n};\nconst c = [\n  1,\n  2,\n];\nconst d = [\n  3\n];',
+      true,
+    ],
+    ['as many end with one as without', 'const a = {\n  b: 1,\n};\nconst c = [\n  1\n];', false],
+    ['the comma comes before a comment', 'const a = {\n  b: 1, // c, d\n};', true],
+    ['only a comment holds a comma', 'const a = {\n  b: 1 // c, d\n};', false],
+    ['the last item is parenthesized', 'const a = [\n  (1),\n];', true],
+    ['only one-line lists end with one', 'const a = { b: 1, };\nconst c = [1,];', false],
+  ])('infers trailing commas when %s', (_, code, trailingCommas) => {
+    expect(new SourceEditor(code).trailingCommas).toBe(trailingCommas);
   });
 
   it('keeps the style of the code it was created with after a commit', () => {
@@ -865,10 +886,80 @@ describe('removeStatement', () => {
     expect(editor.toString()).toBe(`const b = 2;`);
   });
 
+  it.each([
+    ['a run of statements', 'a(); b(); c();\n', [1, 2], 'a();\n'],
+    ['a run after a comment', 'a(); /* a */ b(); c();\nd();\n', [1, 2], 'a(); /* a */\nd();\n'],
+    ['every statement after the first', 'a(); b(); c(); d();\n', [1, 2, 3], 'a();\n'],
+  ])('leaves no space at the end of a line that loses %s', (_, code, removed, output) => {
+    const editor = new SourceEditor(code);
+    removeStatements(editor, new Set(removed.map((index) => editor.program.body[index])));
+    expect(editor.toString()).toBe(output);
+  });
+
+  it.each([1, 2])(
+    'inserts after a run of removed statements that ends the line, after statement %i',
+    (index) => {
+      const editor = new SourceEditor('a(); b(); c();\n');
+      const [, b, c] = editor.program.body;
+      removeStatements(editor, new Set([b, c]));
+      insertStatementAfter(editor, editor.program.body[index], 'x();');
+      expect(editor.toString()).toBe('a();\nx();\n');
+    }
+  );
+
   it('leaves the comment trailing the previous statement on a shared last line', () => {
     const editor = new SourceEditor(`import a from 'a'; /* a */ import b from 'b';`);
     removeStatement(editor, editor.program.body[1]);
     expect(editor.toString()).toBe(`import a from 'a'; /* a */`);
+  });
+
+  it.each([
+    ['a line comment', 'const a = 1 // c\n;[1].map(f)\n', 'const a = 1; // c\n'],
+    ['a block comment', 'const a = 1 /* c */\n;[1].map(f)\n', 'const a = 1; /* c */\n'],
+    ['comment lines', 'const a = 1 // c\n// d\n;[1].map(f)\n', 'const a = 1; // c\n// d\n'],
+    ['a blank line', 'const a = 1\n\n;[1].map(f)\n', 'const a = 1;\n'],
+    ['a multi-line value', 'a = {\n  b: 1,\n} // c\n;[1].map(f)\n', 'a = {\n  b: 1,\n}; // c\n'],
+    ['a removed statement', 'const a = 1 // c\n;b(); [1].map(f)\n', 'const a = 1; // c\n'],
+  ])('puts the `;` the statement before ends with back on its line, past %s', (_, code, output) => {
+    const editor = new SourceEditor(code);
+    removeStatements(editor, new Set(editor.program.body.slice(1)));
+    expect(editor.toString()).toBe(output);
+  });
+
+  it('leaves a `;` alone on its line when it is a statement of its own or code still follows it', () => {
+    const empty = new SourceEditor('a();\n;[1].map(f)\n');
+    removeStatement(empty, empty.program.body[2]);
+    expect(empty.toString()).toBe('a();\n;\n');
+
+    const kept = new SourceEditor('const a = 1 // c\n;b(); [1].map(f)\n');
+    removeStatement(kept, kept.program.body[2]);
+    expect(kept.toString()).toBe('const a = 1 // c\n;b();\n');
+  });
+
+  it.each([false, true])(
+    'removes a statement ending with a `;` on the next line, and the code after that `;`, the statement first: %s',
+    (statementFirst) => {
+      const editor = new SourceEditor('const a = 1 // c\n;[1].map(f)\nfoo();\n');
+      const [a, map] = editor.program.body;
+      for (const statement of statementFirst ? [a, map] : [map, a]) {
+        removeStatement(editor, statement);
+      }
+      expect(editor.toString()).toBe('foo();\n');
+    }
+  );
+
+  it('appends below a statement whose `;` was put back on its line without a blank line', () => {
+    const editor = new SourceEditor('const a = 1 // c\n;[1].map(f)\n');
+    removeStatement(editor, editor.program.body[1]);
+    appendStatement(editor, 'const x = 1;');
+    expect(editor.toString()).toBe('const a = 1; // c\nconst x = 1;\n');
+  });
+
+  it('removes the line of statements that shared it with a removed one', () => {
+    const editor = new SourceEditor('a(); b();\nc();\n');
+    removeStatement(editor, editor.program.body[0]);
+    removeStatement(editor, editor.program.body[1]);
+    expect(editor.toString()).toBe('c();\n');
   });
 });
 
@@ -964,6 +1055,61 @@ describe('insertStatementAfter', () => {
       expect(editor.toString()).toBe(
         'const Primary = fn\nPrimary.args = {}\nwrap(foo())\nx = 1\nbaz()\n'
       );
+    }
+  );
+
+  it.each([true, false])(
+    'keeps a statement inserted after one sharing its line when that one is removed, inserting first: %s',
+    (insertFirst) => {
+      const editor = new SourceEditor('a(); b();\nc();\n');
+      const [a] = editor.program.body;
+      const insert = () => insertStatementAfter(editor, a, 'x();');
+      if (insertFirst) {
+        insert();
+      }
+      removeStatement(editor, a);
+      if (!insertFirst) {
+        insert();
+      }
+      expect(editor.toString()).toBe('x();\nb();\nc();\n');
+    }
+  );
+
+  it('keeps a statement inserted after one sharing its line on its own line when the code after is removed', () => {
+    const editor = new SourceEditor('a(); b();\nc();\n');
+    const [a, b] = editor.program.body;
+    insertStatementAfter(editor, a, 'x();');
+    insertStatementAfter(editor, b, 'y();');
+    removeStatement(editor, b);
+    expect(editor.toString()).toBe('a();\nx();\ny();\nc();\n');
+  });
+
+  it('puts the `;` the statement ends with back on its line when its line is broken', () => {
+    const editor = new SourceEditor('const a = 1 // c\n;[1].map(f)\n');
+    insertStatementAfter(editor, editor.program.body[0], 'const x = 1;');
+    expect(editor.toString()).toBe('const a = 1; // c\nconst x = 1;\n[1].map(f)\n');
+  });
+
+  it('keeps a statement inserted after one ending with a `;` on the next line when that one is removed', () => {
+    const editor = new SourceEditor('const a = 1 // c\n;[1].map(f)\n');
+    const [a] = editor.program.body;
+    insertStatementAfter(editor, a, 'x();');
+    removeStatement(editor, a);
+    expect(editor.toString()).toBe('x();\n[1].map(f)\n');
+  });
+
+  it.each([
+    ['a(); b();\nc();\n', 'a();\nx();\nc();\n'],
+    ['a(); b();', 'a();\nx();'],
+    ['const a = 1 // c\n;[1].map(f)\n', 'const a = 1; // c\nx();\n'],
+  ])(
+    'inserts on the next line after a statement whose line had code removed: %j',
+    (code, output) => {
+      const editor = new SourceEditor(code);
+      const [a, b] = editor.program.body;
+      removeStatement(editor, b);
+      insertStatementAfter(editor, a, 'x();');
+      expect(editor.toString()).toBe(output);
     }
   );
 });
@@ -1587,9 +1733,9 @@ describe('tab-indented files', () => {
 
 describe('printMembers', () => {
   it('leaves the template literal of a function value alone', () => {
-    expect(printMembers(['fn: () => {\n  return `a\nb`;\n}'], '  ')).toBe(
-      '{\n  fn: () => {\n    return `a\nb`;\n  },\n}'
-    );
+    expect(
+      printMembers(['fn: () => {\n  return `a\nb`;\n}'], { indent: '  ', trailingComma: true })
+    ).toBe('{\n  fn: () => {\n    return `a\nb`;\n  },\n}');
   });
 });
 
@@ -1682,6 +1828,17 @@ describe('generateMap', () => {
     expect(result.mappings).toMatchInlineSnapshot(
       `";AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACX,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;AACX,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,SAAG,CAAC,CAAC"`
     );
+  });
+
+  it('maps from its own code when the input map cannot be read', () => {
+    const editor = new SourceEditor(original, 'file.ts');
+    editOf(editor);
+    const result = editor.generateMap({ inputSourceMap: '{ not a source map' });
+    expect(result).toMatchObject({ sources: ['file.ts'], sourcesContent: [original] });
+    expect(entryOf(result, editor.toString(), 'title')).toMatchObject({
+      originalSource: 'file.ts',
+      originalLine: 2,
+    });
   });
 
   it('names the source as requested after a committed edit', () => {

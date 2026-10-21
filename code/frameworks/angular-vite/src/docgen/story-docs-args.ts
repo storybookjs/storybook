@@ -2,7 +2,7 @@
 // themselves - following spreads and names - is the shared CSF pass in `story-shape`.
 import {
   type ESTreeNode as Node,
-  textOf,
+  detachedTextOf,
   parseExpression,
   staticKey,
   parseModule,
@@ -42,7 +42,8 @@ export const evaluateArgLiteral = (node: Node, enums: SnippetEnum[]): string | u
   return value === EVAL_FAILED ? undefined : printExpressionValue(value, new Set());
 };
 
-export const argFieldValue = (node: Node): string => printArgSource(textOf(unwrapExpression(node)));
+export const argFieldValue = (node: Node): string =>
+  expandTabs(detachedTextOf(unwrapExpression(node)));
 
 // An arg no static evaluation could reduce to a value falls back to its source text, without the
 // comments a template expression cannot take (a class field keeps them). Every expression is
@@ -51,26 +52,14 @@ export const argFieldValue = (node: Node): string => printArgSource(textOf(unwra
 export const evaluateArgExpression = (node: Node, enums: SnippetEnum[]): string => {
   const literal = evaluateArgLiteral(node, enums);
   return escapeAttributeExpression(
-    literal ?? printArgSource(withoutComments(textOf(unwrapExpression(node))))
+    literal ?? expandTabs(withoutComments(detachedTextOf(unwrapExpression(node))))
   );
 };
 
-// Continuation lines keep the story file's indentation, which the snippet replaces with its own.
-// Lines inside template literals are values and keep theirs.
-const printArgSource = (code: string): string => {
-  const lines = code.split('\n').slice(1);
-  const last = lines.at(-1);
-  const indents = lines.filter((line) => line.trim()).map((line) => /^[ \t]*/.exec(line)![0]);
-  // A closing bracket sits at the expression's own indentation; otherwise the shallowest line does.
-  const indent =
-    last && /^[ \t]*[)\]}]/.test(last)
-      ? /^[ \t]*/.exec(last)![0]
-      : indents.reduce(
-          (shortest, current) => (current.length < shortest.length ? current : shortest),
-          indents[0] ?? ''
-        );
-  let result = reindent(code, indent, '');
-  // Tabs left on code lines become spaces, deepest first so each line is converted once.
+// Tabs on code lines become spaces, deepest first so each line is converted once. Lines inside
+// template literals are values and keep theirs.
+const expandTabs = (code: string): string => {
+  let result = code;
   const deepest = Math.max(0, ...result.split('\n').map((line) => /^\t*/.exec(line)![0].length));
   for (let depth = deepest; depth > 0; depth--) {
     result = reindent(result, '\t'.repeat(depth), '  '.repeat(depth));

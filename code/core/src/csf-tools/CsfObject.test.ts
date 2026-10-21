@@ -2354,6 +2354,27 @@ describe('CsfObject element and argument paths', () => {
   });
 });
 
+describe('CsfObject inspectList', () => {
+  it('reads the lists of a story and its meta as append acts on them', () => {
+    const csf = parse(`
+      export default { title: 'Example', tags: ['a'] };
+      export const Primary = { tags: ['b'], args: {} };
+    `);
+    const [meta, story] = csf.objects();
+    const metaTags = meta.inspectList(['tags']);
+    const storyTags = story.inspectList(['tags']);
+
+    expect(metaTags.kind === 'list' && textOf(metaTags.node)).toBe("['a']");
+    expect(storyTags.kind === 'list' && textOf(storyTags.node)).toBe("['b']");
+    expect(story.inspectList(['loaders'])).toEqual({ kind: 'missing' });
+    expect(story.inspectList(['args'])).toMatchObject({
+      kind: 'refused',
+      diagnostic: { code: 'unsupported-value', target: story.target, path: ['args'] },
+    });
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+});
+
 describe('CsfObject append and prepend', () => {
   const edit = (source: string, mutate: (config: ConfigFile) => unknown) => {
     const config = loadConfig(source).parse();

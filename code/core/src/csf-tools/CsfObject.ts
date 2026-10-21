@@ -492,9 +492,6 @@ class Editor implements CsfObject {
     value: CsfValue<CsfExpression>,
     end: 'append' | 'prepend'
   ): CsfMutationResult {
-    if (path.length === 0 || unsafePath(path)) {
-      return this.failure('unsupported-member', path, this.anchor());
-    }
     const unprintable = this.unprintable(path, value);
     if (unprintable) {
       return unprintable;
@@ -514,10 +511,7 @@ class Editor implements CsfObject {
   }
 
   inspectList(path: CsfPath): CsfListInspection {
-    const list: ReturnType<typeof listAt> =
-      path.length === 0 || unsafePath(path)
-        ? { ok: false, code: 'unsupported-member', node: this.anchor() }
-        : listAt(this.editor, this.root(), path);
+    const list = listAt(this.editor, this.root(), path);
     if (list.ok === false) {
       const diagnostic = this.diagnostic(list.code, path, list.node, list.message);
       return { kind: 'refused', diagnostic };

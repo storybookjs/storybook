@@ -216,7 +216,7 @@ export const creatable = (
 };
 
 // The list `append` and `prepend` add to at the end of a path, `missing` when they create it, or why
-// they refuse it. The caller has checked the path.
+// they refuse it.
 export const listAt = (
   editor: SourceEditor,
   root: ObjectRoot,
@@ -225,6 +225,9 @@ export const listAt = (
   | { ok: true; kind: 'list'; list: E.ArrayExpression | E.CallExpression }
   | { ok: true; kind: 'missing' }
   | Refusal => {
+  if (path.length === 0 || unsafePath(path)) {
+    return { ok: false, code: 'unsupported-member', node: editor.program };
+  }
   const located = locate(editor, root, path, 'set');
   if (located.ok === false) {
     return located;

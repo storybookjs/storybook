@@ -2148,10 +2148,19 @@ describe('ConfigFile', () => {
         ['loaders', 0],
         'mswLoader()',
       ],
+      [
+        'an optional call at an item path, without its chain',
+        'export default { loaders: [loader?.()] };',
+        ['loaders', 0],
+        'loader?.()',
+      ],
     ])('reads %s, which append adds to', (_case, source, path, text) => {
       const config = loadConfig(source).parse();
       const list = config.inspectList(path);
 
+      expect(list.kind === 'list' && list.node.type).toBe(
+        typeof path[1] === 'number' ? 'CallExpression' : 'ArrayExpression'
+      );
       expect(list.kind === 'list' && textOf(list.node)).toBe(text);
       expect(config.mutationDiagnostics).toEqual([]);
     });
@@ -2194,6 +2203,25 @@ describe('ConfigFile', () => {
         diagnostic: list.kind === 'refused' && list.diagnostic,
       });
       expect(printConfig(config).code).toBe(source);
+    });
+
+    it('refuses, like append, a config that mixes a default export with named exports', () => {
+      const config = loadConfig('export const tags = [];\nexport default { addons: [] };').parse();
+      const list = config.inspectList(['addons']);
+
+      expect(list).toMatchObject({ kind: 'refused', diagnostic: { code: 'ambiguous-binding' } });
+      expect(config.append(['addons'], 'b')).toMatchObject({
+        diagnostic: list.kind === 'refused' && list.diagnostic,
+      });
+    });
+
+    it('refuses the object itself, which is no list', () => {
+      const config = loadConfig('export default { addons: [] };').parse();
+
+      expect(config.inspectList([])).toMatchObject({
+        kind: 'refused',
+        diagnostic: { code: 'unsupported-member', path: [] },
+      });
     });
   });
 

@@ -1,6 +1,4 @@
-import type { DecoratorFunction } from 'storybook/internal/types';
-
-import { useEffect } from 'storybook/preview-api';
+import type { BeforeEach } from 'storybook/internal/types';
 
 import { PARAM_KEY } from './constants.ts';
 import { DEFAULT_BACKGROUNDS } from './defaults.ts';
@@ -18,7 +16,9 @@ const GRID_SELECTOR_BASE = 'addon-backgrounds-grid';
 
 const transitionStyle = isReduceMotionEnabled() ? '' : 'transition: background-color 0.3s;';
 
-export const withBackgroundAndGrid: DecoratorFunction = (StoryFn, context) => {
+// Runs before every render of a story, also of one that runs no decorators, and leaves nothing
+// once the story is left.
+export const applyBackgroundAndGrid: BeforeEach = (context) => {
   const { globals = {}, parameters = {}, viewMode, id } = context;
   const {
     options = DEFAULT_BACKGROUNDS,
@@ -34,14 +34,13 @@ export const withBackgroundAndGrid: DecoratorFunction = (StoryFn, context) => {
   const showGrid = typeof data === 'string' ? false : data.grid || false;
   const shownBackground = !!item && !disable;
 
-  const backgroundSelector =
+  // A story with layout 'document' owns the body, whichever body the document has.
+  const selector =
     viewMode === 'docs'
       ? `#anchor--${id} .docs-story, #anchor--primary--${id} .docs-story`
-      : '.sb-show-main';
-  const gridSelector =
-    viewMode === 'docs'
-      ? `#anchor--${id} .docs-story, #anchor--primary--${id} .docs-story`
-      : '.sb-show-main';
+      : parameters.layout === 'document'
+        ? 'body'
+        : '.sb-show-main';
 
   const isLayoutPadded = parameters.layout === undefined || parameters.layout === 'padded';
   const defaultOffset = viewMode === 'docs' ? 20 : isLayoutPadded ? 16 : 0;
@@ -50,29 +49,26 @@ export const withBackgroundAndGrid: DecoratorFunction = (StoryFn, context) => {
   const backgroundSelectorId =
     viewMode === 'docs' ? `${BG_SELECTOR_BASE}-docs-${id}` : `${BG_SELECTOR_BASE}-color`;
   const backgroundTarget = viewMode === 'docs' ? id : null;
-
-  useEffect(() => {
-    const backgroundStyles = `
-    ${backgroundSelector} {
-      background: ${value} !important;
-      ${transitionStyle}
-      }`;
-
-    if (!shownBackground) {
-      clearStyles(backgroundSelectorId);
-      return;
-    }
-
-    addBackgroundStyle(backgroundSelectorId, backgroundStyles, backgroundTarget);
-  }, [backgroundSelector, backgroundSelectorId, backgroundTarget, shownBackground, value]);
-
   const gridSelectorId =
     viewMode === 'docs' ? `${GRID_SELECTOR_BASE}-docs-${id}` : `${GRID_SELECTOR_BASE}`;
-  useEffect(() => {
-    if (!showGrid) {
-      clearStyles(gridSelectorId);
-      return;
-    }
+
+  if (shownBackground) {
+    // Only a change of a background already shown fades: a story shows with its background at once.
+    const transition = globalThis.document?.getElementById(backgroundSelectorId)
+      ? transitionStyle
+      : '';
+    const backgroundStyles = `
+    ${selector} {
+      background: ${value} !important;
+      ${transition}
+      }`;
+
+    addBackgroundStyle(backgroundSelectorId, backgroundStyles, backgroundTarget);
+  } else {
+    clearStyles(backgroundSelectorId);
+  }
+
+  if (showGrid) {
     const gridSize = [
       `${cellSize * cellAmount}px ${cellSize * cellAmount}px`,
       `${cellSize * cellAmount}px ${cellSize * cellAmount}px`,
@@ -81,7 +77,7 @@ export const withBackgroundAndGrid: DecoratorFunction = (StoryFn, context) => {
     ].join(', ');
 
     const gridStyles = `
-        ${gridSelector} {
+        ${selector} {
           background-size: ${gridSize} !important;
           background-position: ${offsetX}px ${offsetY}px, ${offsetX}px ${offsetY}px, ${offsetX}px ${offsetY}px, ${offsetX}px ${offsetY}px !important;
           background-blend-mode: difference !important;
@@ -95,7 +91,9 @@ export const withBackgroundAndGrid: DecoratorFunction = (StoryFn, context) => {
       `;
 
     addGridStyle(gridSelectorId, gridStyles);
-  }, [cellAmount, cellSize, gridSelector, gridSelectorId, showGrid, offsetX, offsetY, opacity]);
+  } else {
+    clearStyles(gridSelectorId);
+  }
 
-  return StoryFn();
+  return () => clearStyles([backgroundSelectorId, gridSelectorId]);
 };

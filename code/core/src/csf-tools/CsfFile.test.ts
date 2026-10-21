@@ -2635,6 +2635,20 @@ describe('CsfFile', () => {
         expect(stories).toMatchObject([{ id: 'default-title--a', __stats: { factory: true } }]);
       });
 
+      it('meta statement of a meta variable, for its JSDoc', () => {
+        const csf = loadCsf(
+          dedent`
+            import preview from '#.storybook/preview.server.tsx'
+            /** The start page. */
+            const meta = preview.meta({ title: 'Public/Home' });
+            export const A = meta.story({})
+          `,
+          { makeTitle }
+        ).parse();
+        expect(csf._metaStatement).toBe(csf._ast.program.body[1]);
+        expect(csf._metaStatement?.type).toBe('VariableDeclaration');
+      });
+
       it('meta variable with renamed factory', () => {
         expect(
           parse(

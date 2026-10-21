@@ -908,6 +908,11 @@ export class CsfFile {
                     metaDeclarator?.isVariableDeclarator() && t.isIdentifier(metaDeclarator.node.id)
                       ? metaDeclarator.node.id.name
                       : callee.property.name;
+                  // The top-level statement of the meta carries its JSDoc, the component
+                  // description: `/** ... */ const meta = preview.meta({ ... });`
+                  self._metaStatementPath ??= (path.find((p) => !!p.parentPath?.isProgram()) ??
+                    undefined) as NodePath<t.Statement> | undefined;
+                  self._metaStatement ??= self._metaStatementPath?.node;
                   const [argument] = node.arguments;
                   const argumentBinding =
                     argument && t.isIdentifier(argument)

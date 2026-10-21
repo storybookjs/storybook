@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [ESLint plugin: `meta-inline-properties` replaced by `static-csf-properties`](#eslint-plugin-meta-inline-properties-replaced-by-static-csf-properties)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging)
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
@@ -622,6 +623,12 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 10.x to 11.0.0
+
+### ESLint plugin: `meta-inline-properties` replaced by `static-csf-properties`
+
+The `storybook/meta-inline-properties` rule has been removed from `eslint-plugin-storybook`. It checked a different property set than Storybook statically analyzes. If your ESLint config enables it explicitly, delete that entry, or the config will fail to load.
+
+Its replacement, `storybook/static-csf-properties`, ships at `error` severity in the `recommended`, `csf`, and `csf-strict` configs (flat and legacy). It reports exactly what breaks Storybook's static analysis of a story file: dynamic values for `title`, `id`, `tags`, `includeStories`, and `excludeStories` (on the meta, on stories, and in `preview.meta()` factory files), statically-read properties placed before an object spread that can override them at runtime, a `preview.meta()` argument that cannot be resolved statically, and a `preview` factory imported from a path that is not a `.storybook/preview` file. Every report corresponds to a file that already fails to index or silently diverges from what renders.
 
 ### `storybook dev` now blocks remote iframe embedding
 

@@ -83,12 +83,21 @@ const findImports = (editor: SourceEditor, fromImport: string) =>
       node.type === 'ImportDeclaration' && isSource(node.source.value, fromImport)
   );
 
+// Commits, and returns whether the edits written since the code was `before` changed it. A
+// mutation may have left edits pending, which the commit's own answer would count.
+const commitWritten = (editor: SourceEditor, before: string) => {
+  const wrote = editor.edits.toString() !== before;
+  editor.commit();
+  return wrote;
+};
+
 // Each edit commits, and returns whether it changed the code.
 export const setRequireImport = (
   editor: SourceEditor,
   importSpecifier: string[] | string,
   fromImport: string
 ) => {
+  const before = editor.edits.toString();
   const requires = findRequires(editor, fromImport);
   const call = requires[0]?.declarations[0].init as E.CallExpression | undefined;
   const source = printString(
@@ -125,7 +134,7 @@ export const setRequireImport = (
       prependStatement(editor, `const { ${texts.join(', ')} } = require(${source})${end}`);
     }
   }
-  return editor.commit();
+  return commitWritten(editor, before);
 };
 
 // Edits planned on the code as it is. A removal commits before the edits after it are planned, as
@@ -167,6 +176,7 @@ const planSpecifierRemoval = (
 };
 
 const commitImportPlan = (editor: SourceEditor, plan: ImportPlan | undefined) => {
+  const before = editor.edits.toString();
   switch (plan?.kind) {
     case 'remove':
       plan.removedStatements.forEach((statement) => removeStatement(editor, statement));
@@ -190,7 +200,7 @@ const commitImportPlan = (editor: SourceEditor, plan: ImportPlan | undefined) =>
     default:
       plan satisfies undefined;
   }
-  return editor.commit();
+  return commitWritten(editor, before);
 };
 
 const hasSpecifier = (declaration: E.ImportDeclaration, type: ImportSpecifierNode['type']) =>

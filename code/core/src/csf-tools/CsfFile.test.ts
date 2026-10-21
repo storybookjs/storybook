@@ -1751,6 +1751,23 @@ describe('CsfFile', () => {
       `);
     });
 
+    it('reports only its own edits as changed when a mutation left edits pending', () => {
+      const csf = load(dedent`
+        import { expect } from 'storybook/test';
+
+        export default { title: 'A' };
+        export const Primary = { args: {} };
+      `);
+      const [primary] = csf.objects({ meta: false });
+
+      primary.set(['args', 'a'], 1);
+      expect(csf.editor.pending).toBe(true);
+      expect(csf.setImport(['expect'], 'storybook/test')).toEqual({ ok: true, changed: false });
+      primary.set(['args', 'b'], 2);
+      expect(csf.removeImport(['fn'], 'storybook/test')).toEqual({ ok: true, changed: false });
+      expect(printCsf(csf).code).toContain('export const Primary = { args: { a: 1, b: 2 } };');
+    });
+
     it('refuses a removal that leaves a file the CSF indexer rejects', () => {
       const source = dedent`
         import { Primary } from './Shared.stories';

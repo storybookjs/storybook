@@ -1610,6 +1610,20 @@ describe('ConfigFile', () => {
       expect(printConfig(config).code).toBe(`const { b } = require('y');\nexport default {};`);
     });
 
+    it('reports only its own edits as changed when a mutation left edits pending', () => {
+      const config = loadConfig(
+        `import { a } from 'x';\nconst { b } = require('y');\nexport default { tags: [] };`
+      ).parse();
+
+      config.set(['framework'], 'f');
+      expect(config.editor.pending).toBe(true);
+      expect(config.setImport(['a'], 'x')).toEqual({ ok: true, changed: false });
+      config.set(['core'], {});
+      expect(config.setRequireImport(['b'], 'y')).toEqual({ ok: true, changed: false });
+      config.set(['docs'], {});
+      expect(config.removeImport(['c'], 'x')).toEqual({ ok: true, changed: false });
+    });
+
     it('rolls back an import and changed with the transaction it runs in', () => {
       const source = `export default { tags: 'a' };`;
       const config = loadConfig(source).parse();

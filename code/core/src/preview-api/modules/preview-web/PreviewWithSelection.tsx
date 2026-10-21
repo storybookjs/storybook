@@ -388,6 +388,13 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
     try {
       await render.prepare();
+      // A newer selection may have taken over while we awaited.
+      if (this.currentRender !== render || render.torndown) {
+        if (lastRender) {
+          await this.teardownRender(lastRender);
+        }
+        return;
+      }
     } catch (err) {
       if (lastRender) {
         await this.teardownRender(lastRender);
@@ -429,6 +436,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
         // replaces it in place, so the document never collapses and scroll is preserved.
         keepRenderedDom: !storyIdChanged && !viewModeChanged,
       });
+      if (this.currentRender !== render || render.torndown) {
+        return;
+      }
     }
 
     // If we are rendering something new (as opposed to re-rendering the same or first story), emit
@@ -491,13 +501,13 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     if (isStoryRender(render)) {
       invariant(!!render.story);
       this.storyRenders.push(render as StoryRender<TRenderer>);
-      (this.currentRender as StoryRender<TRenderer>).renderToElement(
+      (render as StoryRender<TRenderer>).renderToElement(
         this.view.prepareForStory(render.story, {
           scrollReset: storyIdChanged || viewModeChanged,
         })
       );
     } else {
-      this.currentRender.renderToElement(
+      render.renderToElement(
         this.view.prepareForDocs({ scrollReset: storyIdChanged || viewModeChanged }),
         // This argument is used for docs, which is currently only compatible with HTMLElements
         this.renderStoryToElement.bind(this) as any

@@ -107,6 +107,36 @@ describe('parseWithReactDocgenTypescript', () => {
     expect(docs[0].props.severity?.defaultValue?.value).toBe('info');
   });
 
+  test('extracts repeated JSDoc tags as one value per occurrence', async () => {
+    const dir = createTempProject({
+      'tsconfig.json': JSON.stringify({
+        compilerOptions: { jsx: 'react-jsx', strict: true },
+        include: ['*.tsx'],
+      }),
+      'Button.tsx': dedent`
+        /**
+         * Primary UI component
+         * @example a
+         * @example b
+         * @summary For clicks
+         * @import import { Button } from 'ds';
+         */
+        export function Button() {
+          return null;
+        }
+      `,
+    });
+
+    const docs = await parseWithReactDocgenTypescript(path.join(dir, 'Button.tsx'));
+
+    expect(docs).toHaveLength(1);
+    // RDT's own `tags` collapses repeats; our symbol-based map must not.
+    expect(docs[0].tags?.example).toBe('a\nb');
+    expect(docs[0].componentJsDocTags?.example).toEqual(['a', 'b']);
+    expect(docs[0].componentJsDocTags?.summary).toEqual(['For clicks']);
+    expect(docs[0].componentJsDocTags?.import).toEqual(["import { Button } from 'ds';"]);
+  });
+
   test('round-trips through manifest JSON serialization', async () => {
     const dir = createTempProject({
       'tsconfig.json': JSON.stringify({

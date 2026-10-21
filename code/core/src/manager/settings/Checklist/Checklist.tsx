@@ -11,7 +11,7 @@ import {
 } from '@storybook/icons';
 
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { Focus } from '../../components/Focus/Focus.tsx';
 import type { ChecklistItem, useChecklist } from '../../components/sidebar/useChecklist.ts';

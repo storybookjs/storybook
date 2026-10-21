@@ -5,7 +5,7 @@ import { ActionBar, ScrollArea } from 'storybook/internal/components';
 
 import { Inspector } from 'react-inspector';
 import type { Theme } from 'storybook/theming';
-import { styled, withTheme } from 'storybook/theming/internal';
+import { styled, withTheme } from 'storybook/theming/emotion';
 
 import type { ActionDisplay } from '../../models/index.ts';
 import { Action, Counter, InspectorContainer } from './style.tsx';

@@ -2,7 +2,7 @@
 import React from 'react';
 
 import { expect, within } from 'storybook/test';
-import { Global, css } from 'storybook/theming/internal';
+import { Global, css } from 'storybook/theming/emotion';
 
 import { ArgsTable, Source } from '.';
 import { Markdown as MarkdownComponent } from '../blocks/Markdown';

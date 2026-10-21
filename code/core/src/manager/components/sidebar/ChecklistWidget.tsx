@@ -19,7 +19,7 @@ import {
 
 import { type TransitionMapOptions, useTransitionMap } from 'react-transition-state';
 import { useStorybookApi } from 'storybook/manager-api';
-import { keyframes, styled } from 'storybook/theming/internal';
+import { keyframes, styled } from 'storybook/theming/emotion';
 
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import { Optional } from '../Optional/Optional.tsx';

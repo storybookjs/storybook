@@ -1,7 +1,7 @@
 import React, { forwardRef, type ComponentProps, type DOMAttributes } from 'react';
 
 import type { StorybookTheme } from 'storybook/theming';
-import { keyframes, styled } from 'storybook/theming/internal';
+import { keyframes, styled } from 'storybook/theming/emotion';
 
 type ThemeColor = keyof StorybookTheme['color'] | keyof StorybookTheme['fgColor'];
 

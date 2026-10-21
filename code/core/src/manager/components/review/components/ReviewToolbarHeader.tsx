@@ -1,7 +1,7 @@
 import React, { type FC, type ReactNode } from 'react';
 
 import { Badge, Button } from 'storybook/internal/components';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon, WandIcon } from '@storybook/icons';
 

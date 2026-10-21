@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import { ThemeProvider, ensure, themes } from 'storybook/theming/internal';
+import { ThemeProvider, ensure, themes } from 'storybook/theming/emotion';
 
 import { SyntaxHighlighter } from './lazy-syntaxhighlighter.tsx';
 

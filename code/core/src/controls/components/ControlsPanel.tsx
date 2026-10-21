@@ -18,7 +18,7 @@ import {
   useStorybookState,
 } from 'storybook/manager-api';
 import type { DocgenService } from 'storybook/open-service';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import {
   ArgsTable,

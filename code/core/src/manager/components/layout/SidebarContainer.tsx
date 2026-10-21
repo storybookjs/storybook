@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { Drag } from './Drag.tsx';
 

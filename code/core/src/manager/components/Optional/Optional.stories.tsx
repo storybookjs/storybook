@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { keyframes, styled } from 'storybook/theming/internal';
+import { keyframes, styled } from 'storybook/theming/emotion';
 
 import { Optional } from './Optional.tsx';
 

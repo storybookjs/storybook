@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { API_HashEntry, API_StoryEntry, API_TestEntry } from 'storybook/internal/types';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { UseSymbol } from './IconSymbols.tsx';
 

@@ -6,7 +6,7 @@ import { AI_PROMPT_NUDGE } from 'storybook/internal/core-events';
 import { CheckIcon, UndoIcon } from '@storybook/icons';
 
 import { type API, useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { getAiSetupPrompt } from '../../../shared/utils/ai-prompts.ts';
 import { useCopyButton } from '../../../shared/useCopyButton.ts';

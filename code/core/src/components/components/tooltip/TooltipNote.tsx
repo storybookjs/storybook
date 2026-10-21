@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 /** Wide enough for a label to stay on one line, narrow enough that a sentence stays a note. */
 const DEFAULT_MAX_WIDTH = 260;

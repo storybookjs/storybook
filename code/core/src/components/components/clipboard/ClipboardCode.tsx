@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { color, styled, typography } from 'storybook/theming/internal';
+import { color, styled, typography } from 'storybook/theming/emotion';
 
 const Code = styled.pre`
   line-height: 18px;

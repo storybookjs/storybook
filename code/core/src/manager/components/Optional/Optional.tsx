@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import React, { useEffect, useRef, useState } from 'react';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 const Wrapper = styled.div({
   display: 'inline-grid',

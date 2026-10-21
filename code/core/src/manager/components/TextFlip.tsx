@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import React, { useRef, useState } from 'react';
 
-import { keyframes, styled } from 'storybook/theming/internal';
+import { keyframes, styled } from 'storybook/theming/emotion';
 
 const slideIn = keyframes({
   from: {

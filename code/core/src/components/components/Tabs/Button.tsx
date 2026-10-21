@@ -12,7 +12,7 @@ import React, { forwardRef } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
 
-import { isPropValid, styled } from 'storybook/theming/internal';
+import { isPropValid, styled } from 'storybook/theming/emotion';
 
 interface ButtonProps extends DetailedHTMLProps<
   ButtonHTMLAttributes<HTMLButtonElement>,

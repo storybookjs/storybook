@@ -8,7 +8,7 @@ import { CloseAltIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { type State } from 'storybook/manager-api';
-import { keyframes, styled } from 'storybook/theming/internal';
+import { keyframes, styled } from 'storybook/theming/emotion';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 

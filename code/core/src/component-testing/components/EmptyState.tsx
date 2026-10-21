@@ -5,7 +5,7 @@ import { EmptyTabContent, Link } from 'storybook/internal/components';
 import { DocumentIcon } from '@storybook/icons';
 
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { DOCUMENTATION_PLAY_FUNCTION_LINK } from '../constants.ts';
 

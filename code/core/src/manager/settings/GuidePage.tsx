@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Link } from 'storybook/internal/components';
 import { global } from '@storybook/global';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { useChecklist } from '../components/sidebar/useChecklist.ts';
 import { Checklist } from './Checklist/Checklist.tsx';

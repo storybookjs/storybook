@@ -399,7 +399,7 @@ export default {
     'useTheme',
     'withTheme',
   ],
-  'storybook/theming/internal': [
+  'storybook/theming/emotion': [
     'CacheProvider',
     'ClassNames',
     'Global',

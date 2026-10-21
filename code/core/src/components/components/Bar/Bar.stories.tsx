@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import preview from '../../../../../.storybook/preview.tsx';
 import { Bar } from './Bar.tsx';

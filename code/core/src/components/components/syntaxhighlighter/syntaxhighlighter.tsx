@@ -20,7 +20,7 @@ import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typesc
 import yml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
 import type { PrismLight } from 'react-syntax-highlighter';
 import ReactSyntaxHighlighterRuntime from 'react-syntax-highlighter/dist/esm/prism-light';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { ActionBar } from '../ActionBar/ActionBar.tsx';
 import type { ScrollAreaProps } from '../ScrollArea/ScrollArea.tsx';

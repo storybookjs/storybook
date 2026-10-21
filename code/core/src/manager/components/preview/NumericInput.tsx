@@ -12,7 +12,7 @@ import React, {
 import { Form } from 'storybook/internal/components';
 
 import { useId } from 'react-aria/useId';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 const Wrapper = styled.div<{ after?: ReactNode; before?: ReactNode }>(
   ({ after, before, theme }) => ({

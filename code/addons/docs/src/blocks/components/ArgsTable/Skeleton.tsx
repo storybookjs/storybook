@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import React from 'react';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 const TableWrapper = styled.div(({ theme }) => ({
   width: '100%',

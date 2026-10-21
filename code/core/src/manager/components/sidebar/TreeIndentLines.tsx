@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useSyncExternalStore } from 'react';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { TREE_CONTENT_INSET, TREE_INDENT_STEP } from './treeGeometry.ts';
 

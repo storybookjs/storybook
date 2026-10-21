@@ -16,8 +16,6 @@ export type {
 export * from './base.ts';
 export * from './types.ts';
 export * from './create.ts';
-export * from './convert.ts';
-export * from './ensure.ts';
 export { createGlobal, createReset, srOnlyStyles, srOnlyUnsetStyles } from './global.ts';
 export {
   lightenColor as lighten,

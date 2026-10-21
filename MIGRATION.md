@@ -623,15 +623,18 @@
 
 ### Emotion APIs moved out of `storybook/theming`
 
-`storybook/theming` no longer exports Emotion. It exports theme data: `themes`, `create`, `ensure`, `convert`, `color`, `background`, `typography`, `tokens`, `lighten`, and `darken`. `storybook/theming/create` exports that same module.
+`themes`, `create`, `color`, `background`, `typography`, `lighten`, and `darken` stay on `storybook/theming`, along with `getPreferredColorScheme` and the theme types. `storybook/theming/create` continues to export `create` and `themes`.
 
-A preview that imports an Emotion API from `storybook/theming` has to import it from `storybook/theming/internal` instead. The affected names are `styled`, `ThemeProvider`, `css`, `Global`, `keyframes`, `useTheme`, `withTheme`, `CacheProvider`, `ClassNames`, `jsx`, `createCache`, and `isPropValid`.
+`convert` and `ensure` moved to `storybook/theming/emotion`. They attach Emotion keyframes, so they are not part of the React-free module. `DocsContainer` calls `ensure` on the docs theme.
+
+Emotion APIs (`styled`, `ThemeProvider`, `css`, `Global`, `keyframes`, `useTheme`, `withTheme`, `CacheProvider`, `ClassNames`, `jsx`, `createCache`, and `isPropValid`) are exported from `storybook/theming/emotion`.
+
+The manager runtime still provides the old `storybook/theming` global as a compatibility shim for addons built against Storybook 10, but new manager and preview source should import Emotion APIs from `storybook/theming/emotion`. The package types follow the package export, so `import { styled } from 'storybook/theming'` no longer typechecks.
 
 ```ts
-import { styled, ThemeProvider } from 'storybook/theming/internal';
+import { styled, ThemeProvider } from 'storybook/theming/emotion';
+import { themes, create } from 'storybook/theming';
 ```
-
-Imports of `themes` and `create`, including `parameters.docs.theme`, stay on `storybook/theming`. Manager code can keep importing `styled` from `storybook/theming`: the manager global still provides it.
 
 ### `storybook dev` now blocks remote iframe embedding
 

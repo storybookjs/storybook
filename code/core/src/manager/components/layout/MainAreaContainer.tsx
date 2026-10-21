@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 
 import { Match } from 'storybook/internal/router';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 import { useLandmark } from '../../hooks/useLandmark.ts';

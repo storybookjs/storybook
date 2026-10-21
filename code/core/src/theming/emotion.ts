@@ -1,4 +1,6 @@
 export * from './index.ts';
+export * from './convert.ts';
+export * from './ensure.ts';
 
 export { default as styled } from '@emotion/styled';
 export {

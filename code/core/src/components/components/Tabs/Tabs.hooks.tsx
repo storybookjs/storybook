@@ -3,7 +3,7 @@ import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { deprecate } from 'storybook/internal/client-logger';
 import { sanitize } from 'storybook/internal/csf';
 
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 import useResizeObserver from 'use-resize-observer';
 
 import { PopoverProvider } from '../Popover/PopoverProvider.tsx';

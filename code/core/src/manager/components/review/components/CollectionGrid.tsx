@@ -1,7 +1,7 @@
 import React, { type CSSProperties, type FC } from 'react';
 
 import { Badge, Button, Loader } from 'storybook/internal/components';
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 import {
   hasFixedViewportDimensions,

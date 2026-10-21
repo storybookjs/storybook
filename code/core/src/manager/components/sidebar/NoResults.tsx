@@ -1,4 +1,4 @@
-import { styled } from 'storybook/theming/internal';
+import { styled } from 'storybook/theming/emotion';
 
 export const NoResults = styled.div(({ theme }) => ({
   display: 'flex',

@@ -1,7 +1,13 @@
 import { relative } from 'node:path';
 
-import { parser, traverse, types as t } from 'storybook/internal/babel';
 import { getProjectRoot } from 'storybook/internal/common';
+import {
+  type ESTree as E,
+  isStringLiteral,
+  parseModule,
+  restoreLineEndings,
+  walk,
+} from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 
@@ -28,44 +34,35 @@ export interface AddonThemesJsxProviderResult {
   mixedImportLines?: { file: string; line: string }[];
 }
 
-const parse = (code: string) => {
-  for (const plugins of [['typescript', 'jsx'], ['typescript']] as const) {
-    try {
-      return parser.parse(code, { sourceType: 'module', plugins: [...plugins] });
-    } catch {}
-  }
-  return undefined;
-};
+const bindingName = (node: E.ModuleExportName) =>
+  node.type === 'Literal' ? node.value : node.name;
 
-const bindingName = (node: t.Identifier | t.StringLiteral) =>
-  t.isIdentifier(node) ? node.name : node.value;
+const quote = (code: string, literal: E.StringLiteral) => code[literal.start] ?? "'";
 
-const quote = (code: string, literal: t.StringLiteral) => code[literal.start ?? 0] ?? "'";
+const semicolon = (code: string, node: E.Span) => (code[node.end - 1] === ';' ? ';' : '');
 
-const semicolon = (code: string, node: t.Node) => (code[(node.end ?? 1) - 1] === ';' ? ';' : '');
+const finish = (code: string, node: E.Span, text: string) => `${text}${semicolon(code, node)}`;
 
-const finish = (code: string, node: t.Node, text: string) => `${text}${semicolon(code, node)}`;
+const namedText = (code: string, specifiers: readonly E.Span[]) =>
+  specifiers.map((specifier) => code.slice(specifier.start, specifier.end)).join(', ');
 
-const namedText = (code: string, specifiers: readonly t.Node[]) =>
-  specifiers.map((specifier) => code.slice(specifier.start ?? 0, specifier.end ?? 0)).join(', ');
+const importMoves = (specifier: E.ImportDeclarationSpecifier) =>
+  specifier.type === 'ImportSpecifier' && MOVED_NAMES.has(bindingName(specifier.imported));
 
-const importMoves = (specifier: t.ModuleSpecifier) =>
-  t.isImportSpecifier(specifier) && MOVED_NAMES.has(bindingName(specifier.imported));
-
-const exportMoves = (specifier: t.ExportNamedDeclaration['specifiers'][number]) =>
-  t.isExportSpecifier(specifier) && MOVED_NAMES.has(bindingName(specifier.local));
+const exportMoves = (specifier: E.ExportSpecifier) => MOVED_NAMES.has(bindingName(specifier.local));
 
 const renderImport = (
   code: string,
-  node: t.ImportDeclaration,
-  specifiers: t.ImportDeclaration['specifiers'],
+  node: E.ImportDeclaration,
+  specifiers: E.ImportDeclaration['specifiers'],
   source: string
 ) => {
   const typePrefix = node.importKind === 'type' ? 'type ' : '';
   const heads = specifiers.filter(
-    (specifier) => t.isImportDefaultSpecifier(specifier) || t.isImportNamespaceSpecifier(specifier)
+    (specifier) =>
+      specifier.type === 'ImportDefaultSpecifier' || specifier.type === 'ImportNamespaceSpecifier'
   );
-  const named = specifiers.filter((specifier) => t.isImportSpecifier(specifier));
+  const named = specifiers.filter((specifier) => specifier.type === 'ImportSpecifier');
   const head = namedText(code, heads);
   const names = namedText(code, named);
   const clause = head && names ? `${head}, { ${names} }` : names ? `{ ${names} }` : head;
@@ -75,8 +72,8 @@ const renderImport = (
 
 const renderExport = (
   code: string,
-  node: t.ExportNamedDeclaration,
-  specifiers: readonly t.Node[],
+  node: E.ExportNamedDeclaration,
+  specifiers: readonly E.Span[],
   source: string
 ) => {
   const typePrefix = node.exportKind === 'type' ? 'type ' : '';
@@ -84,15 +81,15 @@ const renderExport = (
   return `export ${typePrefix}{ ${namedText(code, specifiers)} } from ${q}${source}${q}`;
 };
 
-const replaceModule = (literal: t.StringLiteral): Edit => ({
-  start: (literal.start ?? 0) + 1,
-  end: (literal.end ?? 0) - 1,
+const replaceModule = (literal: E.StringLiteral): Edit => ({
+  start: literal.start + 1,
+  end: literal.end - 1,
   text: ADDON_THEMES_REACT,
 });
 
-const replaceStatement = (code: string, node: t.Node, text: string): Edit => ({
-  start: node.start ?? 0,
-  end: node.end ?? 0,
+const replaceStatement = (code: string, node: E.Span, text: string): Edit => ({
+  start: node.start,
+  end: node.end,
   text: finish(code, node, text),
 });
 
@@ -104,28 +101,21 @@ const applyEdits = (code: string, edits: Edit[]) =>
       code
     );
 
-const propertyName = (property: t.ObjectProperty) => {
+const propertyName = (property: E.BindingProperty) => {
   if (property.computed) {
     return undefined;
   }
-  if (t.isIdentifier(property.key)) {
+  if (property.key.type === 'Identifier') {
     return property.key.name;
   }
-  if (t.isStringLiteral(property.key)) {
+  if (isStringLiteral(property.key)) {
     return property.key.value;
   }
   return undefined;
 };
 
-const literalArgument = (node: t.Node | null | undefined) => {
-  if (t.isStringLiteral(node)) {
-    return node;
-  }
-  if (t.isTSLiteralType(node) && t.isStringLiteral(node.literal)) {
-    return node.literal;
-  }
-  return undefined;
-};
+const stringLiteral = (node: E.Node | null | undefined) =>
+  isStringLiteral(node) ? node : undefined;
 
 const specifierNames = (list: string) => {
   const names: string[] = [];
@@ -195,161 +185,182 @@ const rewriteUnparsed = (code: string) => {
   return { code: changed ? lines.join('\n') : null, mixedLines };
 };
 
-const loadedModule = (init: t.Node | null | undefined) => {
-  const expression = t.isAwaitExpression(init) ? init.argument : init;
-  if (!t.isCallExpression(expression)) {
-    return undefined;
+const loadedModule = (init: E.Expression | null | undefined) => {
+  const awaited = init?.type === 'AwaitExpression';
+  const expression = awaited ? init.argument : init;
+  if (
+    !awaited &&
+    expression?.type === 'CallExpression' &&
+    expression.callee.type === 'Identifier' &&
+    expression.callee.name === 'require'
+  ) {
+    const source = stringLiteral(expression.arguments[0]);
+    return source ? { source, awaited: false as const } : undefined;
   }
-  const awaited = t.isAwaitExpression(init);
-  const requireCall = !awaited && t.isIdentifier(expression.callee, { name: 'require' });
-  const importCall = awaited && t.isImport(expression.callee);
-  if (!requireCall && !importCall) {
-    return undefined;
+  if (expression?.type === 'ImportExpression') {
+    const source = stringLiteral(expression.source);
+    return source ? { source, awaited: true as const } : undefined;
   }
-  const source = literalArgument(expression.arguments[0]);
-  return source ? { source, awaited } : undefined;
+  return undefined;
 };
 
-const splitPattern = (properties: t.ObjectPattern['properties']) => {
-  const moved = properties.filter(
-    (property) => t.isObjectProperty(property) && MOVED_NAMES.has(propertyName(property) ?? '')
-  );
-  return { moved, kept: properties.filter((property) => !moved.includes(property)) };
+const splitPattern = (properties: E.ObjectPattern['properties']) => {
+  const isMoved = (
+    property: E.ObjectPattern['properties'][number]
+  ): property is E.BindingProperty => {
+    if (property.type !== 'Property') {
+      return false;
+    }
+    return MOVED_NAMES.has(propertyName(property) ?? '');
+  };
+  return {
+    moved: properties.filter(isMoved),
+    kept: properties.filter((property) => !isMoved(property)),
+  };
 };
 
 const rewriteJsxProviderImports = (code: string): string | null => rewriteModule(code).code;
 
 const rewriteModule = (code: string): { code: string | null; mixedLines: string[] } => {
-  const ast = parse(code);
-  if (!ast) {
+  let parsed: ReturnType<typeof parseModule> | undefined;
+  try {
+    parsed = parseModule(code);
+  } catch {
     return rewriteUnparsed(code);
   }
+  const source = parsed.code;
 
   const edits: Edit[] = [];
-  traverse(ast, {
-    ImportDeclaration(path) {
-      if (path.node.source.value !== ADDON_THEMES) {
+  walk(parsed.program, (node, parent) => {
+    if (node.type === 'ImportDeclaration') {
+      if (node.source.value !== ADDON_THEMES) {
         return;
       }
-      const moved = path.node.specifiers.filter(importMoves);
+      const moved = node.specifiers.filter(importMoves);
       if (moved.length === 0) {
         return;
       }
-      if (moved.length === path.node.specifiers.length) {
-        edits.push(replaceModule(path.node.source));
+      if (moved.length === node.specifiers.length) {
+        edits.push(replaceModule(node.source));
         return;
       }
-      const kept = path.node.specifiers.filter((specifier) => !importMoves(specifier));
+      const kept = node.specifiers.filter((specifier) => !importMoves(specifier));
       edits.push(
         replaceStatement(
-          code,
-          path.node,
-          `${finish(code, path.node, renderImport(code, path.node, kept, ADDON_THEMES))}\n${renderImport(code, path.node, moved, ADDON_THEMES_REACT)}`
+          source,
+          node,
+          `${finish(source, node, renderImport(source, node, kept, ADDON_THEMES))}\n${renderImport(source, node, moved, ADDON_THEMES_REACT)}`
         )
       );
-    },
-    ExportNamedDeclaration(path) {
-      if (!path.node.source || path.node.source.value !== ADDON_THEMES) {
+      return;
+    }
+    if (node.type === 'ExportNamedDeclaration') {
+      if (node.source?.value !== ADDON_THEMES) {
         return;
       }
-      const moved = path.node.specifiers.filter(exportMoves);
+      const moved = node.specifiers.filter(exportMoves);
       if (moved.length === 0) {
         return;
       }
-      if (moved.length === path.node.specifiers.length) {
-        edits.push(replaceModule(path.node.source));
+      if (moved.length === node.specifiers.length) {
+        edits.push(replaceModule(node.source));
         return;
       }
-      const kept = path.node.specifiers.filter((specifier) => !exportMoves(specifier));
+      const kept = node.specifiers.filter((specifier) => !exportMoves(specifier));
       edits.push(
         replaceStatement(
-          code,
-          path.node,
-          `${finish(code, path.node, renderExport(code, path.node, kept, ADDON_THEMES))}\n${renderExport(code, path.node, moved, ADDON_THEMES_REACT)}`
+          source,
+          node,
+          `${finish(source, node, renderExport(source, node, kept, ADDON_THEMES))}\n${renderExport(source, node, moved, ADDON_THEMES_REACT)}`
         )
       );
-    },
-    VariableDeclarator(path) {
-      const declaration = path.parentPath.node;
-      if (
-        !t.isVariableDeclaration(declaration) ||
-        declaration.declarations.length !== 1 ||
-        !t.isObjectPattern(path.node.id)
-      ) {
-        return;
-      }
-      const loaded = loadedModule(path.node.init);
+      return;
+    }
+    if (
+      node.type === 'VariableDeclarator' &&
+      parent?.type === 'VariableDeclaration' &&
+      parent.declarations.length === 1 &&
+      node.id.type === 'ObjectPattern'
+    ) {
+      const declaration = parent;
+      const loaded = loadedModule(node.init);
       if (!loaded || loaded.source.value !== ADDON_THEMES) {
         return;
       }
-      const { moved, kept } = splitPattern(path.node.id.properties);
+      const { moved, kept } = splitPattern(node.id.properties);
       if (moved.length === 0) {
         return;
       }
-      if (moved.length === path.node.id.properties.length) {
+      if (moved.length === node.id.properties.length) {
         edits.push(replaceModule(loaded.source));
         return;
       }
-      const q = quote(code, loaded.source);
+      const q = quote(source, loaded.source);
       const load = loaded.awaited ? 'await import' : 'require';
       const statement = (names: string, moduleName: string) =>
         `${declaration.kind} { ${names} } = ${load}(${q}${moduleName}${q})`;
       edits.push(
         replaceStatement(
-          code,
+          source,
           declaration,
-          `${finish(code, declaration, statement(namedText(code, kept), ADDON_THEMES))}\n${statement(namedText(code, moved), ADDON_THEMES_REACT)}`
+          `${finish(source, declaration, statement(namedText(source, kept), ADDON_THEMES))}\n${statement(namedText(source, moved), ADDON_THEMES_REACT)}`
         )
       );
-    },
-    CallExpression(path) {
-      const callee = path.node.callee;
+      return;
+    }
+    if (node.type === 'CallExpression') {
+      const callee = node.callee;
       if (
-        !t.isMemberExpression(callee) ||
+        callee.type !== 'MemberExpression' ||
         callee.computed ||
-        !t.isIdentifier(callee.property, { name: 'then' }) ||
-        !t.isCallExpression(callee.object) ||
-        !t.isImport(callee.object.callee)
+        callee.property.type !== 'Identifier' ||
+        callee.property.name !== 'then' ||
+        callee.object.type !== 'ImportExpression'
       ) {
         return;
       }
-      const source = literalArgument(callee.object.arguments[0]);
-      const callback = path.node.arguments[0];
-      if (!source || source.value !== ADDON_THEMES) {
+      const imported = stringLiteral(callee.object.source);
+      const callback = node.arguments[0];
+      if (!imported || imported.value !== ADDON_THEMES) {
         return;
       }
-      if (!t.isArrowFunctionExpression(callback) && !t.isFunctionExpression(callback)) {
+      if (
+        !callback ||
+        (callback.type !== 'ArrowFunctionExpression' && callback.type !== 'FunctionExpression')
+      ) {
         return;
       }
       const pattern = callback.params[0];
-      if (!t.isObjectPattern(pattern)) {
+      if (pattern?.type !== 'ObjectPattern') {
         return;
       }
       const { moved } = splitPattern(pattern.properties);
       if (moved.length > 0 && moved.length === pattern.properties.length) {
-        edits.push(replaceModule(source));
+        edits.push(replaceModule(imported));
       }
-    },
-    TSImportType(path) {
-      const source = literalArgument(path.node.argument as t.Node);
-      const qualifier = path.node.qualifier;
+      return;
+    }
+    if (node.type === 'TSImportType') {
+      const qualifier = node.qualifier;
       if (
-        !source ||
-        source.value !== ADDON_THEMES ||
-        !t.isIdentifier(qualifier) ||
+        node.source.value !== ADDON_THEMES ||
+        qualifier?.type !== 'Identifier' ||
         !MOVED_NAMES.has(qualifier.name)
       ) {
         return;
       }
-      edits.push(replaceModule(source));
-    },
+      edits.push(replaceModule(node.source));
+    }
   });
 
   if (edits.length === 0) {
     return { code: null, mixedLines: [] };
   }
-  const next = applyEdits(code, edits);
-  return { code: next === code ? null : next, mixedLines: [] };
+  const next = applyEdits(source, edits);
+  return {
+    code: next === source ? null : restoreLineEndings(next, code),
+    mixedLines: [],
+  };
 };
 
 const promptSummary = () =>

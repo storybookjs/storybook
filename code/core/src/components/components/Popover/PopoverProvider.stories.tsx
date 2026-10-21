@@ -36,6 +36,23 @@ const meta = preview.meta({
   decorators: [OverlayTriggerDecorator],
 });
 
+const expectPopoverColorScheme = (expected: 'light' | 'dark') => async () => {
+  const title = await screen.findByText('Lorem ipsum dolor sit amet');
+  const popover = title.parentElement?.parentElement;
+  expect(popover).not.toBeNull();
+  if (!popover) {
+    throw new Error('Popover content was not rendered');
+  }
+
+  expect(getComputedStyle(popover).colorScheme).toBe(expected);
+
+  const radio = document.createElement('input');
+  radio.type = 'radio';
+  popover.append(radio);
+  expect(getComputedStyle(radio).colorScheme).toBe(expected);
+  radio.remove();
+};
+
 export const Base = meta.story({
   args: {
     children: <Trigger>Click me!</Trigger>,
@@ -146,17 +163,27 @@ export const WithoutCloseButton = meta.story({
 });
 
 export const AlwaysOpen = meta.story({
+  globals: { sb_theme: 'light' },
   args: {
     visible: true,
+    hasChrome: false,
     children: <Trigger>Always visible tooltip</Trigger>,
     popover: <SamplePopover />,
     placement: 'right-start',
   },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const popover = screen.getByText('Lorem ipsum dolor sit amet');
-    await expect(popover).toBeInTheDocument();
+  play: expectPopoverColorScheme('light'),
+});
+
+export const AlwaysOpenDark = meta.story({
+  globals: { sb_theme: 'dark' },
+  args: {
+    visible: true,
+    hasChrome: false,
+    children: <Trigger>Always visible tooltip</Trigger>,
+    popover: <SamplePopover />,
+    placement: 'right-start',
   },
+  play: expectPopoverColorScheme('dark'),
 });
 
 export const NeverOpen = meta.story({

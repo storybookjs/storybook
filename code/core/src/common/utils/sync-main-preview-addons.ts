@@ -38,9 +38,14 @@ export async function syncPreviewAddonsWithMainConfig(
   if (!isCsfFactory) {
     return previewConfig;
   }
-  const existingAddons = previewConfig.getFieldNode(['addons']);
-
-  if (!existingAddons) {
+  const existingAddons = previewConfig.inspectList(['addons']);
+  if (existingAddons.kind === 'refused') {
+    logger.warn(`Not synchronizing the preview addons: ${existingAddons.diagnostic.message}`);
+    return previewConfig;
+  }
+  // An empty `addons` written after a spread would replace the addons it provides, which `append`
+  // carries forward instead.
+  if (existingAddons.kind === 'missing' && previewConfig.inspect(['addons']).kind === 'missing') {
     previewConfig.set(['addons'], []);
   }
 
@@ -66,9 +71,9 @@ export async function syncPreviewAddonsWithMainConfig(
       }
 
       if (
-        !existingAddons ||
-        (existingAddons.type === 'ArrayExpression' &&
-          !existingAddons.elements.some(
+        existingAddons.kind === 'missing' ||
+        (existingAddons.node.type === 'ArrayExpression' &&
+          !existingAddons.node.elements.some(
             (element) => element?.type === 'Identifier' && element.name === annotations.importName
           ))
       ) {
@@ -77,14 +82,11 @@ export async function syncPreviewAddonsWithMainConfig(
         if (annotations.isCoreAddon) {
           // import addonName from 'addon'; + addonName()
           previewConfig.setImport(annotations.importName, annotations.importPath);
-          previewConfig.appendNodeToArray(
-            ['addons'],
-            parseExpression(`${annotations.importName}()`)
-          );
+          previewConfig.append(['addons'], parseExpression(`${annotations.importName}()`));
         } else {
           // import * as addonName from 'addon/preview'; + addonName
           previewConfig.setImport({ namespace: annotations.importName }, annotations.importPath);
-          previewConfig.appendNodeToArray(['addons'], parseExpression(annotations.importName));
+          previewConfig.append(['addons'], parseExpression(annotations.importName));
         }
       }
     }

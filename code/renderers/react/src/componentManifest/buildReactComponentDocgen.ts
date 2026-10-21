@@ -149,6 +149,7 @@ function getComponentDocgenData(component: ComponentRef | undefined, docgenEngin
   } else if (docgenEngine === 'react-docgen-typescript') {
     reactDocgenTypescript = component?.reactDocgenTypescript;
     docgenDescription = reactDocgenTypescript?.description;
+    docgenJsDocTags = component?.componentJsDocTags;
     docgenError = component?.reactDocgenTypescriptError;
   } else {
     reactComponentMeta = component?.reactComponentMeta

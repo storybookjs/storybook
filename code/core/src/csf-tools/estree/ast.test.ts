@@ -7,11 +7,14 @@ import { parseSync } from 'oxc-parser';
 import {
   type E,
   codeFrame,
+  isIdentifier,
+  locationOf,
   moduleOf,
+  objectProperty,
   parseExpression,
   outerSpan,
   parseModule,
-  parsePrintable,
+  placeableTextOf,
   rawTransferAvailable,
   textOf,
   walk,
@@ -101,11 +104,19 @@ describe('parseModule', () => {
     expect(() => parseModule(['const a = 1;', 'const b = ;', ''].join(eol))).toThrow(/\(2:10\)$/);
   });
 
-  it('serializes a printable parse like the parser output, with its text available', () => {
-    const code = 'export const a = (1);\n';
-    const { program } = parsePrintable(code, 'a.ts');
-    expect(textOf(program.body[0])).toBe('export const a = (1);');
-    expect(JSON.stringify(program)).toBe(JSON.stringify(parseModule(code, 'a.ts').program));
+  it('records its parse on a node without adding a key, with its text available', () => {
+    const { program } = parseModule('export const a = (1);\n', 'a.ts');
+    const [statement] = program.body;
+    expect(textOf(statement)).toBe('export const a = (1);');
+    expect(Reflect.ownKeys(statement)).toEqual(Object.keys(JSON.parse(JSON.stringify(statement))));
+  });
+
+  it('gives nodes and comments whose source text prints', () => {
+    const { program, comments } = parseModule("import a from 'a';\nconst b = (a, 1); // end\n");
+    expect(textOf(program.body[0])).toBe("import a from 'a';");
+    const [declarator] = (program.body[1] as E.VariableDeclaration).declarations;
+    expect(placeableTextOf(declarator.init!)).toBe('(a, 1)');
+    expect(moduleOf(comments[0])?.program).toBe(program);
   });
 
   it.each(transfers)(
@@ -141,11 +152,11 @@ describe('parseModule', () => {
   });
 
   it('keeps what it records on a node out of its inspection and equality', () => {
-    const [first] = parsePrintable('a;\nb;', 'a.ts').program.body;
-    const [second] = parsePrintable('a;\nc;', 'a.ts').program.body;
+    const [first] = parseModule('a;\nb;', 'a.ts').program.body;
+    const [second] = parseModule('a;\nc;', 'a.ts').program.body;
     expect(moduleOf(first)).not.toBe(moduleOf(second));
     expect(first).toEqual(second);
-    expect(inspect(first)).toBe(inspect(parseModule('a;\nb;', 'a.ts').program.body[0]));
+    expect(inspect(first)).toBe(inspect(structuredClone(first)));
     expect(moduleOf({ ...first })).toBeUndefined();
   });
 });
@@ -202,5 +213,34 @@ describe('codeFrame', () => {
     expect(codeFrame('Button.stories.ts', 'const a = 1;\nconst b = ;', 23)).toBe(
       'Button.stories.ts: (2:10)\n> 2 | const b = ;\n    |           ^'
     );
+  });
+});
+
+describe('locationOf', () => {
+  it('gives 1-based lines and 0-based columns of both offsets', () => {
+    expect(locationOf('a;\nconst b = 1;', 3, 8)).toEqual({
+      start: { line: 2, column: 0, index: 3 },
+      end: { line: 2, column: 5, index: 8 },
+    });
+  });
+});
+
+describe('isIdentifier', () => {
+  it('checks the name only when one is given', () => {
+    const node = parseExpression('story');
+    expect(isIdentifier(node)).toBe(true);
+    expect(isIdentifier(node, 'story')).toBe(true);
+    expect(isIdentifier(node, 'meta')).toBe(false);
+    expect(isIdentifier(parseExpression("'story'"))).toBe(false);
+  });
+});
+
+describe('objectProperty', () => {
+  it('finds the first property with a static key, skipping spreads and dynamic keys', () => {
+    const object = parseExpression(
+      "{ ...base, [key]: 0, ['args']: 1, args() {}, args: 3 }"
+    ) as E.ObjectExpression;
+    expect(textOf(objectProperty(object, 'args')!)).toBe("['args']: 1");
+    expect(objectProperty(object, 'key')).toBeUndefined();
   });
 });

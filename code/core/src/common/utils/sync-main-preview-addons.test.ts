@@ -2,6 +2,7 @@ import type { Mock } from 'vitest';
 import { describe, expect, it, vi } from 'vitest';
 
 import { loadConfig, printConfig } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
@@ -150,6 +151,144 @@ describe('syncPreviewAddonsWithMainConfig', () => {
     const transformedCode = normalizeLineBreaks(printConfig(result).code);
 
     expect(transformedCode).toMatch(originalCode);
+  });
+
+  it('adds an addon to an addons constant that only the preview refers to', async () => {
+    const originalCode = dedent`
+      import { definePreview } from "@storybook/react/preview";
+
+      const addons = [];
+      export default definePreview({ addons });
+    `;
+    const preview = loadConfig(originalCode).parse();
+
+    (getAddonAnnotations as Mock).mockImplementation(() => {
+      return { importName: 'addonA11yAnnotations', importPath: '@storybook/addon-a11y/preview' };
+    });
+
+    const result = await syncPreviewAddonsWithMainConfig(mainConfig, preview, configDir);
+    expect(printConfig(result).code).toMatchInlineSnapshot(`
+      import { definePreview } from "@storybook/react/preview";
+      import * as addonA11yAnnotations from "@storybook/addon-a11y/preview";
+
+      const addons = [addonA11yAnnotations];
+      export default definePreview({ addons });
+    `);
+  });
+
+  it('carries forward the addons of a spread when the preview writes none', async () => {
+    const originalCode = dedent`
+      import { definePreview } from "@storybook/react/preview";
+      import shared from "./shared";
+
+      export default definePreview({ ...shared });
+    `;
+    const preview = loadConfig(originalCode).parse();
+
+    (getAddonAnnotations as Mock).mockImplementation(() => {
+      return { importName: 'addonA11yAnnotations', importPath: '@storybook/addon-a11y/preview' };
+    });
+
+    const result = await syncPreviewAddonsWithMainConfig(mainConfig, preview, configDir);
+    expect(printConfig(result).code).toMatchInlineSnapshot(`
+      import { definePreview } from "@storybook/react/preview";
+      import shared from "./shared";
+      import * as addonA11yAnnotations from "@storybook/addon-a11y/preview";
+
+      export default definePreview({ ...shared, addons: [...(shared.addons ?? []), addonA11yAnnotations] });
+    `);
+  });
+
+  it('leaves an addons array alone that a later spread could replace', async () => {
+    const originalCode = dedent`
+      import { definePreview } from "@storybook/react/preview";
+      import shared from "./shared";
+
+      export default definePreview({
+        addons: [],
+        ...shared,
+      });
+    `;
+    const preview = loadConfig(originalCode).parse();
+
+    (getAddonAnnotations as Mock).mockImplementation(() => {
+      return { importName: 'addonA11yAnnotations', importPath: '@storybook/addon-a11y/preview' };
+    });
+
+    const result = await syncPreviewAddonsWithMainConfig(mainConfig, preview, configDir);
+
+    expect(printConfig(result).code).toBe(originalCode);
+    expect(result.mutationDiagnostics).toEqual([]);
+  });
+
+  it.each([
+    ['holds a call', 'definePreview({ addons: getAddons() })', "got 'CallExpression'"],
+    ['a computed key could provide', 'definePreview({ [key]: [] })', 'dynamic key'],
+    [
+      'a spread that cannot be carried forward could provide',
+      'definePreview({ ...getBase() })',
+      'spread field',
+    ],
+  ])('leaves alone, with a warning, addons that %s', async (_case, call, reason) => {
+    const originalCode = dedent`
+      import { definePreview } from "@storybook/react/preview";
+
+      export default ${call};
+    `;
+    const preview = loadConfig(originalCode).parse();
+
+    (getAddonAnnotations as Mock).mockImplementation(() => {
+      return { importName: 'addonA11yAnnotations', importPath: '@storybook/addon-a11y/preview' };
+    });
+
+    const result = await syncPreviewAddonsWithMainConfig(mainConfig, preview, configDir);
+
+    expect(printConfig(result).code).toBe(originalCode);
+    expect(result.mutationDiagnostics).toEqual([]);
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining(reason));
+  });
+
+  it('leaves alone, with a warning, an addons constant that other code refers to as well', async () => {
+    const originalCode = dedent`
+      import { definePreview } from "@storybook/react/preview";
+
+      const addons = [];
+      register(addons);
+      export default definePreview({ addons });
+    `;
+    const preview = loadConfig(originalCode).parse();
+
+    (getAddonAnnotations as Mock).mockImplementation(() => {
+      return { importName: 'addonA11yAnnotations', importPath: '@storybook/addon-a11y/preview' };
+    });
+
+    const result = await syncPreviewAddonsWithMainConfig(mainConfig, preview, configDir);
+
+    expect(printConfig(result).code).toBe(originalCode);
+    expect(result.mutationDiagnostics).toEqual([]);
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('other code refers to'));
+  });
+
+  it('leaves alone, with a warning, a preview that mixes a default export with named exports', async () => {
+    const originalCode = dedent`
+      import { definePreview } from "@storybook/react/preview";
+
+      export const tags = [];
+      export default definePreview({});
+    `;
+    const preview = loadConfig(originalCode).parse();
+
+    (getAddonAnnotations as Mock).mockImplementation(() => {
+      return { importName: 'addonA11yAnnotations', importPath: '@storybook/addon-a11y/preview' };
+    });
+
+    const result = await syncPreviewAddonsWithMainConfig(mainConfig, preview, configDir);
+
+    expect(printConfig(result).code).toBe(originalCode);
+    expect(result.mutationDiagnostics).toEqual([]);
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Not synchronizing the preview addons')
+    );
   });
 
   it('should add an empty addons array if no addons are installed', async () => {

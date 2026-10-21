@@ -4,6 +4,7 @@
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
   - [`@storybook/csf-plugin` removed](#storybookcsf-plugin-removed)
+  - [Vite: `preview-stats.json` contains the full bundler graph (10.6.8)](#vite-preview-statsjson-contains-the-full-bundler-graph-1068)
 - [From version 10.4.0 to 10.5.0](#from-version-1040-to-1050)
   - [ExternalDocs and ExternalDocsContainer are deprecated](#externaldocs-and-externaldocscontainer-are-deprecated)
 - [From version 10.3.0 to 10.4.0](#from-version-1030-to-1040)
@@ -723,6 +724,16 @@ export default {
 ```
 
 Direct imports of `@storybook/csf-plugin` in custom builders or standalone Vite/Webpack configs are no longer supported. There is no public replacement package — CSF enrichment is only registered through `@storybook/addon-docs` as shown above.
+
+### Vite: `preview-stats.json` contains the full bundler graph (10.6.8)
+
+Starting in 10.6.8, the `preview-stats.json` file that `@storybook/builder-vite` writes for `storybook build --stats-json` contains the full bundler graph. In previous versions the builder dropped some nodes before it wrote the file. It now also writes:
+
+- Virtual modules such as `/virtual:/@storybook/builder-vite/project-annotations.js` and their edges
+- Proxy modules that Vite and Rollup insert between your code and its dependencies, for example `\0./node_modules/react/index.js?commonjs-es-import`
+- Sub-modules with a query string, for example `./src/Button.vue?vue&type=style&index=0&lang.css` next to `./src/Button.vue`
+
+Chromatic TurboSnap reads this file. It needs `chromatic-cli` [v18.13.1](https://github.com/chromaui/chromatic-cli/releases/tag/v18.13.1) or later, which merges these nodes into the files they stand for. With an older version, a changed Vue or Svelte component can trace to zero stories. Upgrade `chromatic-cli` to v18.13.1 or later before you upgrade Storybook.
 
 ## From version 10.4.0 to 10.5.0
 

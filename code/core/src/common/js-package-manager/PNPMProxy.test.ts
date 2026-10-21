@@ -1,9 +1,16 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'pathe';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
+import * as find from 'empathic/find';
+import { fs as memfs, vol } from 'memfs';
+
 import { executeCommand, executeCommandSync } from '../utils/command.ts';
+import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { PNPMProxy } from './PNPMProxy.ts';
 
@@ -22,6 +29,9 @@ vi.mock('storybook/internal/node-logger', () => ({
 }));
 
 vi.mock(import('../utils/command.ts'), { spy: true });
+vi.mock('node:fs', { spy: true });
+vi.mock('empathic/find', { spy: true });
+vi.mock('../utils/paths.ts', { spy: true });
 const mockedExecuteCommand = vi.mocked(executeCommand);
 const mockedExecuteCommandSync = vi.mocked(executeCommandSync);
 
@@ -40,14 +50,37 @@ const expectedMinimumReleaseAgeExcludePackages = [
   '@storybook/*',
   'eslint-plugin-storybook',
   '@chromatic-com/storybook',
+  'chromatic',
 ];
 
 describe('PNPM Proxy', () => {
   let pnpmProxy: PNPMProxy;
 
+  const PROJECT_DIR = '/project';
+  const WORKSPACE_YAML = `${PROJECT_DIR}/pnpm-workspace.yaml`;
+  const workspaceYaml = () => vol.toJSON()[WORKSPACE_YAML];
+
+  const useMemfsProject = (proxy: PNPMProxy, packageJson: Record<string, unknown> = {}) => {
+    vi.mocked(getProjectRoot).mockReturnValue(PROJECT_DIR);
+    vi.mocked(find.up).mockImplementation((name) =>
+      name === 'pnpm-workspace.yaml' && vol.existsSync(WORKSPACE_YAML) ? WORKSPACE_YAML : undefined
+    );
+    vi.spyOn(proxy, 'primaryPackageJson', 'get').mockReturnValue({
+      operationDir: PROJECT_DIR,
+      packageJson: { dependencies: {}, devDependencies: {}, peerDependencies: {}, ...packageJson },
+    } as any);
+  };
+
   beforeEach(() => {
+    vi.mocked(readFileSync).mockReset();
+    vi.mocked(writeFileSync).mockReset();
     mockPnpmVersion('11.18.0');
     pnpmProxy = new PNPMProxy();
+    vol.reset();
+    vol.mkdirSync(PROJECT_DIR, { recursive: true });
+    vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as typeof readFileSync);
+    vi.mocked(writeFileSync).mockImplementation(memfs.writeFileSync as typeof writeFileSync);
+    useMemfsProject(pnpmProxy);
     JsPackageManager.clearLatestVersionCache();
     vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
   });
@@ -57,19 +90,30 @@ describe('PNPM Proxy', () => {
   });
 
   describe('getRegistryURL', () => {
-    it('uses npm 12-compatible workspace flags', async () => {
+    it('should return the configured registry URL', async () => {
+      const cwd = resolve('fixtures', 'pnpm-project');
+      pnpmProxy = new PNPMProxy({ cwd });
       const executeCommandSpy = mockedExecuteCommand.mockResolvedValueOnce({
-        stdout: 'https://registry.npmjs.org/',
+        stdout: 'https://registry.npmjs.org/\n',
       } as Awaited<ReturnType<typeof executeCommand>>);
 
       await expect(pnpmProxy.getRegistryURL()).resolves.toBe('https://registry.npmjs.org/');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          command: 'npm',
-          args: ['config', 'get', 'registry', '--workspaces=false', '--include-workspace-root'],
+          command: 'pnpm',
+          cwd,
+          args: ['config', 'get', 'registry', '--location=project'],
         })
       );
+    });
+
+    it('should return undefined when pnpm reports no registry', async () => {
+      mockedExecuteCommand.mockResolvedValueOnce({
+        stdout: 'undefined\n',
+      } as Awaited<ReturnType<typeof executeCommand>>);
+
+      await expect(pnpmProxy.getRegistryURL()).resolves.toBeUndefined();
     });
   });
 
@@ -120,6 +164,257 @@ describe('PNPM Proxy', () => {
       expect(error).toMatchObject({ cause: originalError });
       expect(error?.message).toContain('minimumReleaseAge');
       expect(error?.message).toContain('minimumReleaseAgeExclude');
+    });
+  });
+
+  describe('allowBuilds for Storybook build scripts', () => {
+    const unmockSpinner = () => {
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+        await Promise.resolve(fn());
+      });
+    };
+    const install = async () => {
+      unmockSpinner();
+      mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+      await pnpmProxy.installDependencies();
+    };
+
+    it('creates pnpm-workspace.yaml next to package.json, allowing esbuild, before `pnpm install`', async () => {
+      await install();
+
+      expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: true\n');
+      expect(logger.info).toHaveBeenCalledWith(
+        'Approved build scripts for esbuild in /project/pnpm-workspace.yaml'
+      );
+      expect(mockedExecuteCommand).toHaveBeenCalledWith(
+        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+      );
+    });
+
+    it('also allows esbuild before `pnpm add`', async () => {
+      mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+      await pnpmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
+
+      expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: true\n');
+    });
+
+    it('adds esbuild to an existing pnpm-workspace.yaml without disturbing its content', async () => {
+      vol.fromJSON({
+        [WORKSPACE_YAML]:
+          '# my workspace\npackages:\n  - "packages/*"\n\ncatalog:\n  react: ^19 # pinned\n',
+      });
+
+      await install();
+
+      expect(workspaceYaml()).toBe(
+        '# my workspace\npackages:\n  - "packages/*"\n\ncatalog:\n  react: ^19 # pinned\nallowBuilds:\n  esbuild: true\n'
+      );
+    });
+
+    it('leaves a decision the user already recorded alone', async () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'allowBuilds:\n  esbuild: false\n' });
+
+      await install();
+
+      expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: false\n');
+      expect(writeFileSync).not.toHaveBeenCalled();
+      expect(logger.info).not.toHaveBeenCalled();
+    });
+
+    it('resolves the placeholder pnpm 12 writes for unreviewed packages', async () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'allowBuilds:\n  esbuild: set this to true or false\n' });
+
+      await install();
+
+      expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: true\n');
+    });
+
+    it.each([
+      ['a version-pinned allowBuilds matcher', 'allowBuilds:\n  esbuild@0.25.0 || 0.25.1: false\n'],
+      [
+        'a git-pinned allowBuilds matcher',
+        "allowBuilds:\n  'esbuild@git+ssh://git@example.com/esbuild.git': true\n",
+      ],
+      ['dangerouslyAllowAllBuilds', 'dangerouslyAllowAllBuilds: true\n'],
+    ])('does not add a bare esbuild key when %s already covers it', async (_, yaml) => {
+      vol.fromJSON({ [WORKSPACE_YAML]: yaml });
+
+      await install();
+
+      expect(workspaceYaml()).toBe(yaml);
+      expect(writeFileSync).not.toHaveBeenCalled();
+    });
+
+    it('still adds esbuild when the existing allowBuilds decisions concern other packages', async () => {
+      vol.fromJSON({
+        [WORKSPACE_YAML]: 'allowBuilds:\n  sharp: true\n  esbuild-wasm@1.0.0: true\n',
+      });
+
+      await install();
+
+      expect(workspaceYaml()).toBe(
+        'allowBuilds:\n  sharp: true\n  esbuild-wasm@1.0.0: true\n  esbuild: true\n'
+      );
+    });
+
+    it.each([
+      ['onlyBuiltDependencies names esbuild', 'onlyBuiltDependencies:\n  - esbuild\n'],
+      ['ignoredBuiltDependencies names esbuild', 'ignoredBuiltDependencies:\n  - esbuild\n'],
+      ['neverBuiltDependencies names esbuild', 'neverBuiltDependencies:\n  - esbuild\n'],
+      ['neverBuiltDependencies lists other packages', 'neverBuiltDependencies:\n  - fsevents\n'],
+    ])('still allows esbuild on pnpm 11 when a leftover pnpm 10 %s', async (_, yaml) => {
+      vol.fromJSON({ [WORKSPACE_YAML]: yaml });
+
+      await install();
+
+      expect(workspaceYaml()).toBe(`${yaml}allowBuilds:\n  esbuild: true\n`);
+    });
+
+    it('still allows esbuild on pnpm 11 when a leftover onlyBuiltDependenciesFile names it', async () => {
+      vol.fromJSON({
+        [WORKSPACE_YAML]: 'onlyBuiltDependenciesFile: trusted/allow.json\n',
+        [`${PROJECT_DIR}/trusted/allow.json`]: '["esbuild"]',
+      });
+
+      await install();
+
+      expect(workspaceYaml()).toBe(
+        'onlyBuiltDependenciesFile: trusted/allow.json\nallowBuilds:\n  esbuild: true\n'
+      );
+    });
+
+    it('still allows esbuild on pnpm 11 when only the ignored `pnpm` field of package.json names it', async () => {
+      useMemfsProject(pnpmProxy, { pnpm: { allowBuilds: { esbuild: false } } });
+
+      await install();
+
+      expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: true\n');
+    });
+
+    describe('on pnpm 10', () => {
+      beforeEach(() => {
+        mockPnpmVersion('10.28.0');
+        pnpmProxy = new PNPMProxy();
+        useMemfsProject(pnpmProxy);
+      });
+
+      it.each([
+        ['onlyBuiltDependencies', 'onlyBuiltDependencies:\n  - esbuild\n'],
+        [
+          'a version-pinned onlyBuiltDependencies entry',
+          'onlyBuiltDependencies:\n  - esbuild@0.28.2\n',
+        ],
+        ['ignoredBuiltDependencies', 'ignoredBuiltDependencies:\n  - esbuild\n'],
+        ['neverBuiltDependencies', 'neverBuiltDependencies:\n  - esbuild\n'],
+      ])('does not add a bare esbuild key when %s already covers it', async (_, yaml) => {
+        vol.fromJSON({ [WORKSPACE_YAML]: yaml });
+
+        await install();
+
+        expect(workspaceYaml()).toBe(yaml);
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it('honors a decision recorded in the `pnpm` field of package.json', async () => {
+        useMemfsProject(pnpmProxy, { pnpm: { ignoredBuiltDependencies: ['esbuild'] } });
+
+        await install();
+
+        expect(workspaceYaml()).toBeUndefined();
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it('honors a trusted-dependencies file named by onlyBuiltDependenciesFile', async () => {
+        vol.fromJSON({
+          [WORKSPACE_YAML]: 'onlyBuiltDependenciesFile: trusted/allow.json\n',
+          [`${PROJECT_DIR}/trusted/allow.json`]: '["@swc/core", "esbuild"]',
+        });
+
+        await install();
+
+        expect(workspaceYaml()).toBe('onlyBuiltDependenciesFile: trusted/allow.json\n');
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it.each([
+        ['neverBuiltDependencies lists another package', 'neverBuiltDependencies:\n  - fsevents\n'],
+        ['neverBuiltDependencies is an empty list', 'neverBuiltDependencies: []\n'],
+      ])('does not write allowBuilds when %s', async (_, yaml) => {
+        vol.fromJSON({ [WORKSPACE_YAML]: yaml });
+
+        await install();
+
+        expect(workspaceYaml()).toBe(yaml);
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it('does not write allowBuilds when package.json neverBuiltDependencies lists other packages', async () => {
+        useMemfsProject(pnpmProxy, { pnpm: { neverBuiltDependencies: ['fsevents'] } });
+
+        await install();
+
+        expect(workspaceYaml()).toBeUndefined();
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it('preserves an explicit esbuild denial', async () => {
+        vol.fromJSON({ [WORKSPACE_YAML]: 'allowBuilds:\n  esbuild: false\n' });
+
+        await install();
+
+        expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: false\n');
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it('preserves a version-pinned esbuild approval', async () => {
+        vol.fromJSON({ [WORKSPACE_YAML]: 'allowBuilds:\n  esbuild@0.25.0: true\n' });
+
+        await install();
+
+        expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild@0.25.0: true\n');
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it('still allows esbuild when onlyBuiltDependencies lists other packages', async () => {
+        vol.fromJSON({ [WORKSPACE_YAML]: 'onlyBuiltDependencies:\n  - fsevents\n' });
+
+        await install();
+
+        expect(workspaceYaml()).toBe(
+          'onlyBuiltDependencies:\n  - fsevents\nallowBuilds:\n  esbuild: true\n'
+        );
+      });
+    });
+
+    it('still runs the install, with a warning, when pnpm-workspace.yaml is malformed', async () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'packages: [\n' });
+
+      await install();
+
+      expect(workspaceYaml()).toBe('packages: [\n');
+      expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+        expect.stringContaining('Could not allow build scripts of esbuild')
+      );
+      expect(mockedExecuteCommand).toHaveBeenCalledWith(
+        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+      );
+    });
+
+    it.each([
+      ['pnpm 9, which runs build scripts without approval', '9.15.9'],
+      ['pnpm < 10.26, which has no allowBuilds setting', '10.25.0'],
+    ])('neither reads nor writes the workspace file on %s', async (_, version) => {
+      mockPnpmVersion(version);
+      pnpmProxy = new PNPMProxy();
+      useMemfsProject(pnpmProxy);
+      vol.fromJSON({ [WORKSPACE_YAML]: 'packages:\n  - "packages/*"\n' });
+
+      await install();
+
+      expect(readFileSync).not.toHaveBeenCalledWith(WORKSPACE_YAML, expect.anything());
+      expect(writeFileSync).not.toHaveBeenCalled();
+      expect(workspaceYaml()).toBe('packages:\n  - "packages/*"\n');
     });
   });
 
@@ -721,6 +1016,7 @@ describe('PNPM Proxy', () => {
             '@storybook/*',
             'eslint-plugin-storybook',
             '@chromatic-com/storybook',
+            'chromatic',
           ]),
         } as any);
 

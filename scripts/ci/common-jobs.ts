@@ -379,15 +379,13 @@ export const node26Smoke = defineJob('Node 26 smoke', () => ({
     {
       run: {
         name: 'Build React Vite sandbox',
-        command:
-          'yarn task build --template react-vite/default-ts --start-from=auto --no-link',
+        command: 'yarn task build --template react-vite/default-ts --start-from=auto --no-link',
       },
     },
     {
       run: {
         name: 'Build React Webpack sandbox',
-        command:
-          'yarn task build --template react-webpack/18-ts --start-from=auto --no-link',
+        command: 'yarn task build --template react-webpack/18-ts --start-from=auto --no-link',
       },
     },
   ],

@@ -365,10 +365,11 @@ export const node26Smoke = defineJob('Node 26 smoke', () => ({
       run: {
         // Node 25 stopped bundling corepack. Without it, sandboxes run the
         // image's global yarn instead of the Yarn 4 their `packageManager`
-        // field pins, and `create-storybook` hangs.
+        // field pins, and `create-storybook` hangs. `--force` replaces the
+        // image's own yarn and pnpm binaries, as `corepack enable` would.
         name: 'Install corepack',
         command: [
-          'sudo npm install -g corepack@0',
+          'sudo npm install -g --force corepack@0',
           'sudo corepack enable',
           'which yarn',
           'yarn --version',

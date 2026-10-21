@@ -901,6 +901,55 @@ describe('enrichCsf', () => {
         };
       `);
     });
+
+    it('csf factories', async () => {
+      expect(
+        await enrich(
+          dedent`
+          // compiled code
+          import preview from "/.storybook/preview.server.tsx";
+          const meta = preview.meta({ title: "Public/Home" });
+          export const SignedOut = meta.story({});
+        `,
+          dedent`
+          // original code
+          import preview from "#.storybook/preview.server.tsx";
+          /** The start page. */
+          const meta = preview.meta({ title: "Public/Home" });
+          /** A visitor. */
+          export const SignedOut = meta.story({});
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        // compiled code
+        import preview from "/.storybook/preview.server.tsx";
+        const meta = preview.meta({
+          title: "Public/Home",
+          parameters: {
+            docs: {
+              description: {
+                component: "The start page."
+              }
+            }
+          }
+        });
+        export const SignedOut = meta.story({});
+        SignedOut.input.parameters = {
+          ...SignedOut.input.parameters,
+          docs: {
+            ...SignedOut.input.parameters?.docs,
+            source: {
+              originalSource: "meta.story({})",
+              ...SignedOut.input.parameters?.docs?.source
+            },
+            description: {
+              story: "A visitor.",
+              ...SignedOut.input.parameters?.docs?.description
+            }
+          }
+        };
+      `);
+    });
   });
 
   describe('options', () => {

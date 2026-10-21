@@ -50,7 +50,7 @@ Do not describe how YOU tested the PR code, but how a separate maintainer should
 
 ## Checklist for Maintainers
 
-- [ ] When this PR is ready for testing, add a `ci:focus`, `ci:normal`, `ci:merged`, or `ci:daily` GitHub label. `ci:focus` runs the typecheck and unit tests affected by the diff, and one sandbox picked from the changed framework, renderer, or builder (default `react-vite/default-ts`) with all of its `ci:normal` jobs: create, dev, E2E, Vitest, and Chromatic. When renderer code changed, it also creates every other `ci:normal` sandbox of that renderer and runs Chromatic on it. The other labels run the sandbox sets in `code/lib/cli-storybook/src/sandbox-templates.ts`.
+- [ ] When this PR is ready for testing, add a `ci:focus`, `ci:normal`, `ci:merged`, or `ci:daily` GitHub label. `ci:focus` runs the typecheck and unit tests affected by the diff, and creates one sandbox picked from the changed framework, renderer, or builder (default `react-vite/default-ts`), then runs its dev, E2E, Vitest, and Chromatic tests. When renderer code changed, it also creates the other main sandboxes of that renderer and runs Chromatic on them. The other labels run the sandbox sets in `code/lib/cli-storybook/src/sandbox-templates.ts`.
 - [ ] Declare whether manual QA will be needed for this PR during the next release, through `qa:needed` or `qa:skip`
 - [ ] Make sure this PR contains **one** of the labels below:
    <details>

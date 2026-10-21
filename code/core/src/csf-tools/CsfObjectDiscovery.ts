@@ -178,25 +178,70 @@ const storyExports = (csf: CsfFile, report: ReportDiagnostic): StoryBinding[] =>
   );
 };
 
-// The first export of each declaration, which edits it for all of its exports. Each other export
-// is reported as an alias of it.
-const storyBindings = (csf: CsfFile, report: ReportDiagnostic): StoryBinding[] => {
+// The story an alias such as `export const Secondary = Primary` shares its object with, through
+// other stories that alias it.
+const aliasedStory = (csf: CsfFile, stories: StoryBinding[], node: Node | undefined) => {
+  const seen = new Set<string>();
+  for (let current = node; current?.type === 'Identifier' && !seen.has(current.name);) {
+    const { name } = current;
+    seen.add(name);
+    const story = stories.find(({ localName }) => localName === name);
+    if (!story) {
+      return undefined;
+    }
+    const init = variableInit(csf.editor.scopes.program.bindings.get(name));
+    current = init ? unwrapExpression(init) : undefined;
+    if (current?.type !== 'Identifier') {
+      return story;
+    }
+  }
+  return undefined;
+};
+
+// An alias shares its object with `story`, so an edit of it would change `story` too.
+const aliasDiagnostic = (
+  csf: CsfFile,
+  alias: StoryBinding,
+  story: StoryBinding,
+  node: Node
+): CsfMutationDiagnostic => ({
+  code: 'aliased-story',
+  target: storyTarget(alias),
+  path: [],
+  message: `Cannot mutate ${alias.exportName} without changing ${story.exportName}, which exports the same story`,
+  ...loc(csf, node),
+});
+
+// The first export of each declaration, which edits it for all of its exports, and the story each
+// alias shares its object with: the first export of its declaration, for `B` in
+// `export { A, A as B }`, or the story `export const B = A` names, through other stories that
+// alias it. An export of a declaration that another export edits is reported here.
+type Stories = { bindings: StoryBinding[]; canonical: Map<StoryBinding, StoryBinding> };
+
+const storyBindings = (csf: CsfFile, report: ReportDiagnostic): Stories => {
   const unique = new Map<Node, StoryBinding>();
+  const canonical = new Map<StoryBinding, StoryBinding>();
   for (const binding of storyExports(csf, report)) {
     const first = unique.get(binding.declaration);
-    if (!first) {
+    if (first) {
+      canonical.set(binding, first);
+    } else {
       unique.set(binding.declaration, binding);
-      continue;
     }
-    report({
-      code: 'aliased-story',
-      target: storyTarget(binding),
-      path: [],
-      message: `Cannot mutate ${binding.exportName} without changing ${first.exportName}, which exports the same story`,
-      ...loc(csf, binding.node),
-    });
   }
-  return [...unique.values()];
+  for (const [alias, story] of canonical) {
+    report(aliasDiagnostic(csf, alias, story, alias.node));
+  }
+  const bindings = [...unique.values()];
+  for (const binding of bindings) {
+    const { declaration } = binding;
+    const init = declaration.type === 'VariableDeclarator' ? declaration.init : null;
+    const story = init ? aliasedStory(csf, bindings, unwrapExpression(init)) : undefined;
+    if (story) {
+      canonical.set(binding, story);
+    }
+  }
+  return { bindings, canonical };
 };
 
 const variableInit = (binding: Binding | undefined) =>
@@ -520,26 +565,6 @@ const storyRoot = (
   };
 };
 
-// The story an alias such as `export const Secondary = Primary` shares its object with, through
-// other stories that alias it.
-const aliasedStory = (csf: CsfFile, stories: StoryBinding[], node: Node | undefined) => {
-  const seen = new Set<string>();
-  for (let current = node; current?.type === 'Identifier' && !seen.has(current.name);) {
-    const { name } = current;
-    seen.add(name);
-    const story = stories.find(({ localName }) => localName === name);
-    if (!story) {
-      return undefined;
-    }
-    const init = variableInit(csf.editor.scopes.program.bindings.get(name));
-    current = init ? unwrapExpression(init) : undefined;
-    if (current?.type !== 'Identifier') {
-      return story;
-    }
-  }
-  return undefined;
-};
-
 // A story without an object literal is a function or a bound template, which its assignments
 // annotate. Any other value may be shared, so annotating it could change other stories.
 const isAnnotatable = (node: Node | undefined) =>
@@ -551,20 +576,18 @@ const isAnnotatable = (node: Node | undefined) =>
       isIdentifier(node.callee.property, 'bind')));
 
 // A write through an alias, such as `B.args = {}` after `export const B = A`, changes the object
-// of the story it aliases: for each such story, the first write through one of its aliases.
-const writesThroughAliases = (csf: CsfFile, bindings: StoryBinding[]) => {
+// of the story it aliases: for each such story, the first write through one of its aliases. An
+// export of the story's own declaration writes as the story does.
+const writesThroughAliases = (csf: CsfFile, canonical: Stories['canonical']) => {
   const writes = new Map<StoryBinding, { alias: StoryBinding; node: Node }>();
-  for (const alias of bindings) {
-    const init = alias.declaration.type === 'VariableDeclarator' ? alias.declaration.init : null;
-    const node = init ? unwrapExpression(init) : undefined;
-    const aliased = node?.type === 'Identifier' ? aliasedStory(csf, bindings, node) : undefined;
-    if (!aliased || aliased === alias || writes.has(aliased)) {
+  for (const [alias, story] of canonical) {
+    if (alias.declaration === story.declaration || writes.has(story)) {
       continue;
     }
     const { assignments, write } = assignmentsOf(csf, alias);
     const at = write?.node ?? assignments[0]?.statement;
     if (at) {
-      writes.set(aliased, { alias, node: at });
+      writes.set(story, { alias, node: at });
     }
   }
   return writes;
@@ -572,10 +595,10 @@ const writesThroughAliases = (csf: CsfFile, bindings: StoryBinding[]) => {
 
 const discoverStories = (
   csf: CsfFile,
-  bindings: StoryBinding[],
+  { bindings, canonical }: Stories,
   report: ReportDiagnostic
 ): Discovered[] => {
-  const aliasWrites = writesThroughAliases(csf, bindings);
+  const aliasWrites = writesThroughAliases(csf, canonical);
   return bindings.flatMap((binding): Discovered[] => {
     const { declaration } = binding;
     const aliasWrite = aliasWrites.get(binding);
@@ -626,14 +649,10 @@ const discoverStories = (
       return [{ target: storyTarget(binding), root: literalRoot(csf.editor, object) }];
     }
     if (assignments.length === 0 && !isAnnotatable(node)) {
-      const aliased = aliasedStory(csf, bindings, node);
+      const aliased = canonical.get(binding);
       if (aliased) {
-        return reject({
-          code: 'aliased-story',
-          node: node!,
-          path: [],
-          message: `Cannot mutate story ${binding.exportName} because it is an alias of story ${aliased.exportName}`,
-        });
+        report(aliasDiagnostic(csf, binding, aliased, node!));
+        return [];
       }
       return reject({
         code: 'unsupported-initializer',
@@ -665,10 +684,10 @@ const discover = (
 ): Discovered[] => {
   csf._assertIndexed();
   const includeStories = options.stories ?? true;
-  const bindings = includeStories ? storyBindings(csf, report) : [];
+  const stories = includeStories ? storyBindings(csf, report) : undefined;
   return [
     ...((options.meta ?? true) ? discoverMeta(csf, report) : []),
-    ...(includeStories ? discoverStories(csf, bindings, report) : []),
+    ...(stories ? discoverStories(csf, stories, report) : []),
   ];
 };
 

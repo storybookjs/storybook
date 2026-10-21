@@ -2,9 +2,9 @@ import { definePreviewAddon } from 'storybook/internal/csf';
 
 import { PARAM_KEY } from './constants.ts';
 import type { OutlineTypes } from './types.ts';
-import { withOutline } from './withOutline.ts';
+import { applyOutline } from './applyOutline.ts';
 
-export const decorators = globalThis.FEATURES?.outline ? [withOutline] : [];
+const beforeEach = globalThis.FEATURES?.outline ? [applyOutline] : [];
 
 export const initialGlobals = {
   [PARAM_KEY]: false,
@@ -12,4 +12,4 @@ export const initialGlobals = {
 
 export type { OutlineTypes };
 
-export default () => definePreviewAddon<OutlineTypes>({ decorators, initialGlobals });
+export default () => definePreviewAddon<OutlineTypes>({ beforeEach, initialGlobals });

@@ -24,6 +24,9 @@ const clearStyle = (selector: string) => {
   }
 };
 
+// The styles are children of <html>, outside <head> and <body>: the renderer of a story with layout
+// 'document' may replace the body, and remove what was added to <head> while it renders. Each use
+// finds its style by id, and adds it again when a render removed it.
 export const addGridStyle = (selector: string, css: string) => {
   if (!document) {
     return;
@@ -38,7 +41,7 @@ export const addGridStyle = (selector: string, css: string) => {
     const style = document.createElement('style');
     style.setAttribute('id', selector);
     style.innerHTML = css;
-    document.head.appendChild(style);
+    document.documentElement.appendChild(style);
   }
 };
 
@@ -63,7 +66,7 @@ export const addBackgroundStyle = (selector: string, css: string, storyId: strin
     if (existingGridStyle) {
       existingGridStyle.parentElement?.insertBefore(style, existingGridStyle);
     } else {
-      document.head.appendChild(style);
+      document.documentElement.appendChild(style);
     }
   }
 };

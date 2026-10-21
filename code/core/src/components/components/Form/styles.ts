@@ -1,4 +1,5 @@
-import type { CSSObject, StorybookTheme } from 'storybook/theming';
+import type { StorybookTheme } from 'storybook/theming';
+import type { CSSObject } from 'storybook/theming/emotion';
 
 export type Sizes = '100%' | 'flex' | 'auto';
 export type Alignments = 'end' | 'center' | 'start';

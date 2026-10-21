@@ -5,8 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 
 import { STORY_PREPARED } from '../../core-events/index.ts';
-import { ThemeProvider, ensure, themes } from 'storybook/theming/emotion';
-import type { Theme } from 'storybook/theming';
+import { type Theme, ThemeProvider, ensure, themes } from 'storybook/theming/emotion';
 
 import Panel from './Panel.tsx';
 

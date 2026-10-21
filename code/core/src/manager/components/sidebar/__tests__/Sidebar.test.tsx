@@ -8,8 +8,7 @@ import React from 'react';
 import type { API_IndexHash } from 'storybook/internal/types';
 
 import type { HashEntry, Refs } from 'storybook/manager-api';
-import type { Theme } from 'storybook/theming';
-import { ThemeProvider, ensure, themes } from 'storybook/theming/emotion';
+import { type Theme, ThemeProvider, ensure, themes } from 'storybook/theming/emotion';
 
 import { Sidebar } from '../Sidebar.tsx';
 import type { SidebarProps } from '../Sidebar.tsx';

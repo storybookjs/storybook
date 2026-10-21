@@ -4,8 +4,7 @@ import React from 'react';
 import { codeCommon } from 'storybook/internal/components';
 
 import Markdown from 'markdown-to-jsx';
-import type { CSSObject } from 'storybook/theming';
-import { styled } from 'storybook/theming/emotion';
+import { type CSSObject, styled } from 'storybook/theming/emotion';
 
 import type { JsDocTags } from './types';
 

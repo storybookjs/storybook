@@ -4,8 +4,8 @@ import React, { useCallback } from 'react';
 import { Button } from 'storybook/internal/components';
 
 import { opacify, transparentize } from 'polished';
-import type { CSSObject, StorybookTheme } from 'storybook/theming';
-import { srOnlyStyles, styled } from 'storybook/theming/emotion';
+import type { StorybookTheme } from 'storybook/theming';
+import { type CSSObject, srOnlyStyles, styled } from 'storybook/theming/emotion';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import type { BooleanConfig, BooleanValue, ControlProps } from './types';

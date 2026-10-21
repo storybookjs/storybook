@@ -623,11 +623,11 @@
 
 ### Emotion APIs moved out of `storybook/theming`
 
-`themes`, `create`, `color`, `background`, `typography`, `lighten`, and `darken` stay on `storybook/theming`, along with `getPreferredColorScheme` and the theme types. `storybook/theming/create` continues to export `create` and `themes`.
+`themes`, `create`, `color`, `background`, `typography`, `tokens`, `lighten`, `darken`, `getPreferredColorScheme`, `createGlobal`, `createReset`, `srOnlyStyles`, `srOnlyUnsetStyles`, and `ignoreSsrWarning` stay on `storybook/theming`, along with the theme types. `Theme` on that entry is `StorybookTheme`. `storybook/theming/create` continues to export `create` and `themes`.
 
 `convert` and `ensure` moved to `storybook/theming/emotion`. They attach Emotion keyframes, so they are not part of the React-free module. `DocsContainer` calls `ensure` on the docs theme.
 
-Emotion APIs (`styled`, `ThemeProvider`, `css`, `Global`, `keyframes`, `useTheme`, `withTheme`, `CacheProvider`, `ClassNames`, `jsx`, `createCache`, and `isPropValid`) are exported from `storybook/theming/emotion`.
+Emotion APIs (`styled`, `ThemeProvider`, `css`, `Global`, `keyframes`, `useTheme`, `withTheme`, `CacheProvider`, `ClassNames`, `jsx`, `createCache`, and `isPropValid`) and Emotion types (`CSSObject`, `Keyframes`, `StyledComponent`, `FunctionInterpolation`, `Interpolation`, and Emotion's `Theme`) are exported from `storybook/theming/emotion`.
 
 The manager runtime still provides the old `storybook/theming` global as a compatibility shim for addons built against Storybook 10, but new manager and preview source should import Emotion APIs from `storybook/theming/emotion`. The package types follow the package export, so `import { styled } from 'storybook/theming'` no longer typechecks.
 

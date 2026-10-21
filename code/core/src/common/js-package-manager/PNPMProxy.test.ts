@@ -50,6 +50,7 @@ const expectedMinimumReleaseAgeExcludePackages = [
   '@storybook/*',
   'eslint-plugin-storybook',
   '@chromatic-com/storybook',
+  'chromatic',
 ];
 
 describe('PNPM Proxy', () => {
@@ -1015,6 +1016,7 @@ describe('PNPM Proxy', () => {
             '@storybook/*',
             'eslint-plugin-storybook',
             '@chromatic-com/storybook',
+            'chromatic',
           ]),
         } as any);
 

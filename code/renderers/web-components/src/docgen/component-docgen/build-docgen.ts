@@ -1,6 +1,9 @@
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
-import type { JsDocTagMap } from 'storybook/internal/csf-tools';
-import { extractComponentDescription, extractDescription } from 'storybook/internal/csf-tools';
+import {
+  type JsDocTagMap,
+  extractComponentDescription,
+  extractDescription,
+} from 'storybook/internal/csf-tools';
 import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'pathe';
@@ -82,7 +85,7 @@ export async function buildDocgenPayload(
   }
 
   const { description, summary, jsDocTags } = extractComponentDescription(
-    extractDescription(csf._metaStatement) || undefined,
+    extractDescription(csf._metaStatement, csf.editor) || undefined,
     found.declaration.description,
     declarationTags(found.declaration)
   );

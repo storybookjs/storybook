@@ -140,6 +140,41 @@ describe('argtypes-default-value', () => {
     expect(result.story).not.toContain('defaultValue');
   });
 
+  it('migrates a story declared as another story through the story it names', async () => {
+    const result = await migrate({
+      story: [
+        'export default { title: "Example" };',
+        "export const Primary = { argTypes: { label: { defaultValue: 'A', control: 'text' } } };",
+        'export const Secondary = Primary;',
+        'export const Tertiary = Secondary as typeof Primary;',
+      ].join('\n'),
+    });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).toContain("control: 'text'");
+    expect(result.story).not.toContain('defaultValue');
+    expect(result.story).toContain('export const Secondary = Primary;');
+  });
+
+  it('fails a story declared as a value it cannot edit', async () => {
+    const story = [
+      'export default { title: "Example" };',
+      "const base = { argTypes: { label: { defaultValue: 'A' } } };",
+      "export const Primary = { argTypes: { label: { defaultValue: 'B' } } };",
+      'export const Secondary = base;',
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      {
+        file: storyPath,
+        kind: 'story',
+        message: expect.stringContaining('Secondary'),
+      },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
   it('leaves a spread inside the arg unchanged when the editor cannot remove it', async () => {
     const story =
       "import { shared } from './shared';\nexport default { argTypes: { label: { ...shared, defaultValue: 'A' } } };";

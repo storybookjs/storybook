@@ -73,7 +73,8 @@ export const Primary = meta.story({
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -109,37 +110,42 @@ export const Primary = meta.story({
   }} />
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Button from './Button.svelte';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-/**
- * Button stories
- * These stories showcase the button
- */
-export default {
-  component: Button,
-  parameters: {
-    docs: {
-      description: {
-        component: 'Another description, overriding the comments',
+  import Button from './Button.svelte';
+
+  /**
+   * Button stories
+   * These stories showcase the button
+   */
+  const { Story } = preview.meta({
+    component: Button,
+    parameters: {
+      docs: {
+        description: {
+          component: 'Another description, overriding the comments',
+        },
       },
     },
-  },
-};
+  });
+</script>
 
-/**
- * Primary Button
- * This is the primary button
- */
-export const Primary = {
-  parameters: {
+<!--
+ Button stories
+ These stories showcase the button
+ -->
+
+<Story
+  name="Primary"
+  parameters={{
     docs: {
       description: {
-        story: 'Another description on the story, overriding the comments',
+        story: 'Another description on the story, overriding the comments'
       },
     },
-  },
-};
+  }} />
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
@@ -177,7 +183,8 @@ export const Primary = {
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -213,43 +220,42 @@ export const Primary = {
   }} />
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import Button from './Button.svelte';
+  import Button from './Button.svelte';
 
-/**
- * Button stories
- * These stories showcase the button
- */
-const meta = {
-  component: Button,
-  parameters: {
-    docs: {
-      description: {
-        component: 'Another description, overriding the comments',
+  /**
+   * Button stories
+   * These stories showcase the button
+   */
+  const { Story } = preview.meta({
+    component: Button,
+    parameters: {
+      docs: {
+        description: {
+          component: 'Another description, overriding the comments',
+        },
       },
     },
-  },
-} satisfies Meta<typeof Button>;
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
+<!--
+ Button stories
+ These stories showcase the button
+ -->
 
-/**
- * Primary Button
- * This is the primary button
- */
-export const Primary: Story = {
-  parameters: {
+<Story
+  name="Primary"
+  parameters={{
     docs: {
       description: {
-        story: 'Another description on the story, overriding the comments',
+        story: 'Another description on the story, overriding the comments'
       },
     },
-  },
-};
+  }} />
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

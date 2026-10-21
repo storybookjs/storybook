@@ -113,7 +113,8 @@ export const NoA11yFail = {
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -142,40 +143,41 @@ export const NoA11yFail = {
 />
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import Button from './Button.svelte';
+  import Button from './Button.svelte';
 
-const meta = {
-  component: Button,
-  parameters: {
-    // 👇 Applies to all stories in this file
-    a11y: { test: 'error' },
-  },
-} satisfies Meta<typeof Button>;
-export default meta;
+  const { Story } = preview.meta({
+    component: Button,
+    parameters: {
+      // 👇 Applies to all stories in this file
+      a11y: { test: 'error' },
+    },
+  });
+</script>
 
-type Story = StoryObj<typeof meta>;
+<!-- 👇 This story will use the 'error' value and fail on accessibility violations -->
+<Story
+  name="Primary"
+  args={{ primary: true }}
+/>
 
-// 👇 This story will use the 'error' value and fail on accessibility violations
-export const Primary: Story = {
-  args: { primary: true },
-};
-
-// 👇 This story will not fail on accessibility violations
-//    (but will still run the tests and show warnings)
-export const NoA11yFail: Story = {
-  parameters: {
+<!-- 👇 This story will not fail on accessibility violations
+        (but will still run the tests and show warnings) -->
+<Story
+  name="NoA11yFail"
+  parameters={{
     a11y: { test: 'todo' },
-  },
-};
+  }}
+/>
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -204,29 +206,35 @@ export const NoA11yFail: Story = {
 />
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Button from './Button.svelte';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: Button,
-  parameters: {
-    // 👇 Applies to all stories in this file
-    a11y: { test: 'error' },
-  },
-};
+  import Button from './Button.svelte';
 
-// 👇 This story will use the 'error' value and fail on accessibility violations
-export const Primary = {
-  args: { primary: true },
-};
+  const { Story } = preview.meta({
+    component: Button,
+    parameters: {
+      // 👇 Applies to all stories in this file
+      a11y: { test: 'error' },
+    },
+  });
+</script>
 
-// 👇 This story will not fail on accessibility violations
-//    (but will still run the tests and show warnings)
-export const NoA11yFail = {
-  parameters: {
+<!-- 👇 This story will use the 'error' value and fail on accessibility violations -->
+<Story
+  name="Primary"
+  args={{ primary: true }}
+/>
+
+<!-- 👇 This story will not fail on accessibility violations
+        (but will still run the tests and show warnings) -->
+<Story
+  name="NoA11yFail"
+  parameters={{
     a11y: { test: 'todo' },
-  },
-};
+  }}
+/>
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"

@@ -1,6 +1,7 @@
-```svelte filename="Example.stories.svelte" renderer="svelte" language="js"
+```svelte filename="Example.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Example from './Example.svelte';
 
@@ -32,13 +33,82 @@
 {/snippet}
 ```
 
-```svelte filename="Example.stories.svelte" renderer="svelte" language="ts"
+```svelte filename="Example.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import preview from '../.storybook/preview';
+
+  import Example from './Example.svelte';
+
+  const { Story } = preview.meta({
+    component: Example,
+    argTypes: {
+      label: {
+        control: { type: 'select' },
+        options: ['Normal', 'Bold', 'Italic'],
+        mapping: {
+          Normal: normal,
+          Bold: bold,
+          Italic: italic,
+        },
+      },
+    },
+  });
+</script>
+
+{#snippet normal()}
+  <span>Normal</span>
+{/snippet}
+
+{#snippet bold()}
+  <b>Bold</b>
+{/snippet}
+{#snippet italic()}
+  <i>Italic</i>
+{/snippet}
+```
+
+```svelte filename="Example.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Example from './Example.svelte';
 
   const { Story } = defineMeta({
+    component: Example,
+    argTypes: {
+      label: {
+        control: { type: 'select' },
+        options: ['Normal', 'Bold', 'Italic'],
+        mapping: {
+          Normal: normal,
+          Bold: bold,
+          Italic: italic,
+        },
+      },
+    },
+  });
+</script>
+
+{#snippet normal()}
+  <span>Normal</span>
+{/snippet}
+
+{#snippet bold()}
+  <b>Bold</b>
+{/snippet}
+{#snippet italic()}
+  <i>Italic</i>
+{/snippet}
+```
+
+```svelte filename="Example.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+
+  import Example from './Example.svelte';
+
+  const { Story } = preview.meta({
     component: Example,
     argTypes: {
       label: {

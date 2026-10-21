@@ -1,4 +1,4 @@
-import { mkdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,9 +18,22 @@ export async function importFrom(specifier, workspace = '.') {
 }
 
 export function packageVersion(name, workspace = '.') {
+  const require = requireFrom(workspace);
   try {
-    return requireFrom(workspace)(`${name}/package.json`).version;
+    return require(`${name}/package.json`).version;
   } catch {
+    // Packages whose `exports` hide package.json: walk up from the resolved entry.
+    try {
+      let dir = path.dirname(require.resolve(name));
+      while (dir !== path.dirname(dir)) {
+        const candidate = path.join(dir, 'package.json');
+        if (existsSync(candidate)) {
+          const pkg = JSON.parse(readFileSync(candidate, 'utf8'));
+          if (pkg.name === name) return pkg.version;
+        }
+        dir = path.dirname(dir);
+      }
+    } catch {}
     return null;
   }
 }

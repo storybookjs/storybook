@@ -72,6 +72,11 @@ export interface CsfMutationDiagnostic {
   path: CsfPath;
   message: string;
   loc?: SourceLocation;
+  /**
+   * For `aliased-story`, the export name of the story whose object the alias shares: `Primary` for
+   * `Secondary` in `export const Secondary = Primary` or `export { Primary, Primary as Secondary }`.
+   */
+  aliasOf?: string;
 }
 
 /**

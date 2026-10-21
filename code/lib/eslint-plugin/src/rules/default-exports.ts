@@ -6,6 +6,7 @@ import type { TSESTree } from '@typescript-eslint/types';
 import type { TSESLint } from '@typescript-eslint/utils';
 import path from 'path';
 
+import { parseFactoryMetaCall } from '../utils/index.ts';
 import { isIdentifier, isImportDeclaration, isLiteral } from '../utils/ast.ts';
 import { CategoryId } from '../utils/constants.ts';
 import { createStorybookRule } from '../utils/create-storybook-rule.ts';
@@ -71,25 +72,11 @@ export default createStorybookRule({
           hasStoriesOfImport = true;
         }
       },
-      VariableDeclaration(node) {
-        // we check for variables declared at the root in a CSF4 style
-        // e.g. const meta = config.meta({})
-        if (node.parent.type === 'Program') {
-          node.declarations.forEach((declaration) => {
-            const init = declaration.init;
-
-            if (init && init.type === 'CallExpression') {
-              const callee = init.callee;
-
-              if (
-                callee.type === 'MemberExpression' &&
-                callee.property.type === 'Identifier' &&
-                callee.property.name === 'meta'
-              ) {
-                isCsf4Style = true;
-              }
-            }
-          });
+      CallExpression(node) {
+        // CSF4 style: the meta comes from a factory imported from the preview file,
+        // e.g. const meta = preview.meta({})
+        if (parseFactoryMetaCall(node, context)) {
+          isCsf4Style = true;
         }
       },
       ExportDefaultSpecifier: function () {

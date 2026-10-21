@@ -1,7 +1,7 @@
+import { isValidPreviewPath } from 'storybook/internal/csf/csf-utils';
 import {
   type ESTree as E,
   type ESTreeNode as Node,
-  isValidPreviewPath,
   loadCsf,
   printCsf,
   printString,

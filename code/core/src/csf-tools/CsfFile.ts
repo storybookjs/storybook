@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import {
   isExportStory,
+  isValidPreviewPath,
   storyNameFromExport,
   toId,
   toTestId,
@@ -53,9 +54,6 @@ type CsfMutationState = {
 };
 
 const mutationStates = new WeakMap<CsfFile, CsfMutationState>();
-
-const PREVIEW_FILE_REGEX = /\/preview(.(js|jsx|mjs|ts|tsx))?$/;
-export const isValidPreviewPath = (filepath: string) => PREVIEW_FILE_REGEX.test(filepath);
 
 type StaticIdentifierMemberCall = E.CallExpression & {
   callee: E.StaticMemberExpression & { object: E.IdentifierReference; property: E.IdentifierName };

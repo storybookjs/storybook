@@ -1340,7 +1340,7 @@ Chromatic TurboSnap reads this file. It needs `chromatic-cli` [v18.13.1](https:/
 - `@storybook/ember`
 - `@storybook/server-webpack5`
 
-If your project depends on webpack directly, upgrade it to 5.101.0 or higher. Otherwise your package manager can install a second copy of webpack for Storybook, and webpack plugins from your configuration then may not work with Storybook's copy.
+If your project depends on webpack directly, upgrade it to 5.101.0 or higher. Otherwise your package manager can install a second copy of webpack for Storybook, and webpack plugins from your configuration may not work with Storybook's copy.
 
 ### Next.js: Require v15 and up
 

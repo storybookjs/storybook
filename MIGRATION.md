@@ -43,6 +43,7 @@
   - [Create React App support removed](#create-react-app-support-removed)
   - [`storybook/internal/babel` removed; `csf-tools` uses ESTree](#storybookinternalbabel-removed-csf-tools-uses-estree)
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
+  - [`storybook add` and `storybook remove` stop at an `addons` they cannot edit safely](#storybook-add-and-storybook-remove-stop-at-an-addons-they-cannot-edit-safely)
   - [Internal CSF tools use the unified mutation API](#internal-csf-tools-use-the-unified-mutation-api)
   - [Internal WebSocket heartbeat controls removed](#internal-websocket-heartbeat-controls-removed)
   - [Internal toolset telemetry now returns with the outcome](#internal-toolset-telemetry-now-returns-with-the-outcome)
@@ -1403,6 +1404,7 @@ An addon that supports both Storybook 10 and 11 can detect the new API with `typ
 - `storybook/internal/babel` is removed. Import Babel from your own `@babel/*` dependencies if you still need it.
 - `getBabelDependencies` is removed from `storybook/internal/cli`.
 - The nodes exposed by `storybook/internal/csf-tools` are ESTree (OXC) nodes instead of Babel nodes, for example `Literal` instead of `StringLiteral` and `Property` instead of `ObjectProperty`/`ObjectMethod`. `CsfFile._ast` and the `NodePath` fields are removed; use `CsfFile.program` and `CsfFile.editor`. `ConfigFile._ast` is removed as well; use `ConfigFile.program` and `ConfigFile.editor`. Both `editor`s are a `SourceEditor`: call `editor.commit()` to apply pending edits, after which the file parses the result again. `_program` and `_editor` remain as deprecated aliases in Storybook 11. The editing functions and `source()` throw for nodes of another parse, such as nodes from before a commit; offsets passed to `editor.edits` are not checked.
+- `ConfigFile#_removeImport` and `_removeRequireImport` are removed; `removeImport` removes both import and `require` bindings.
 - `CsfObject#get` returns an ESTree expression, and `set`/`transform` accept expressions from `get()`, `parseExpression(code)` or `parseModule(code)`. Use `textOf(node)` to read an expression's source, and `placeableTextOf(node)` to build new code around it. The expressions `get`, `inspect` and `transform` give are frozen snapshots: where a Babel node could be changed in place before passing it to `set`, assigning to an ESTree node's fields throws, as `set` prints a node from its source. Pass a plain value or `parseExpression(text)` instead. The same holds for a node built with `@babel/types`: `set` and `append` refuse one of a type only Babel has, such as `t.stringLiteral('x')`, and write any other, such as `t.identifier('x')`, as a plain object, so use `parseExpression('x')`.
 - An `experimental_enrichCsf` function receives the new `CsfFile`. Add code with `csf.appendStatement(code)` instead of pushing Babel nodes onto `csf._ast`; `_appendStatement` remains as a deprecated alias.
 - `extractSource(node)` is `extractSource(node, code)`, and returns the story's source as written instead of a Babel reprint. Pass the file's `editor.code`, the normalized code its node offsets index. `extractDescription(node)` is `extractDescription(node, editor)`: ESTree nodes carry no `leadingComments`, so it reads the comments before the node from the file's `editor`.
@@ -1442,6 +1444,15 @@ Migrating off Create React App is not a hard requirement. To keep using Storyboo
 
 `@storybook/angular-vite` no longer depends on `@angular/animations` and no longer auto-converts `BrowserAnimationsModule`/`NoopAnimationsModule` found in a story's `moduleMetadata.imports` into `provideAnimations()`/`provideNoopAnimations()`. If a story still references one of these modules, Storybook now logs a deprecation warning instead. Migrate to native CSS transitions or the `animate.enter`/`animate.leave` bindings (Angular 20.2+), or continue using the legacy animations API yourself by adding `provideAnimations()`/`provideNoopAnimations()` to the `providers` array of the `applicationConfig` decorator; that path is unaffected by this change.
 
+### `storybook add` and `storybook remove` stop at an `addons` they cannot edit safely
+
+`storybook add` and `storybook remove` now stop with a message, where they used to edit your main config, when:
+
+- a later spread could replace `addons`, as in `{ addons: [...], ...shared }` with an imported `shared`
+- `addons` is a constant that another export also uses
+
+Add or remove the addon in `addons` by hand in that case.
+
 ### Internal CSF tools use the unified mutation API
 
 If your custom migration tooling imports `ConfigFile` from `storybook/internal/csf-tools`, update its legacy field and call-expression helpers to the unified `CsfObject` mutation API:
@@ -1451,8 +1462,8 @@ If your custom migration tooling imports `ConfigFile` from `storybook/internal/c
 | `getFieldValue`, `getSafeFieldValue` | `getValue`               |
 | `setFieldNode`, `setFieldValue`      | `set`                    |
 | `removeField`                        | `remove`, which also removes a parent it leaves empty: `export const core = { builder: 'webpack4' }` loses the export instead of becoming `export const core = {}` |
-| `appendValueToArray`, `appendNodeToArray` | `append`, which takes a plain value or an expression. Like these, it refuses a field that holds a call, such as `addons: getAddons()`; it adds an argument only to a call that is an item, such as `['loaders', 0]` for `loaders: [mswLoader()]`. Both remain deprecated. |
-| `removeEntryFromArray`               | `remove([...path, index])`, with the entry's `index` in the list `inspectList(path)` returns, which resolves a constant only the config refers to, as `remove` does. It remains deprecated. |
+| `appendValueToArray`, `appendNodeToArray` | `append`, which takes a plain value or an expression. Like these, it refuses a field that holds a call, such as `addons: getAddons()`; it adds an argument only to a call that is an item, such as `['loaders', 0]` for `loaders: [mswLoader()]`. Both are deprecated and still available. |
+| `removeEntryFromArray`               | `remove([...path, index])`, with the entry's `index` in the list `inspectList(path)` returns, which resolves a constant only the config refers to, as `remove` does. It is deprecated and still available. |
 | `findNamedImportMethodCalls`         | `callArguments`          |
 | `FindNamedImportMethodCallsOptions`  | `CallArgumentsOptions`   |
 

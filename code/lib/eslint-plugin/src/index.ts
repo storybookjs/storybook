@@ -21,7 +21,6 @@ import contextInPlayFunction from './rules/context-in-play-function.ts';
 import csfComponent from './rules/csf-component.ts';
 import defaultExports from './rules/default-exports.ts';
 import hierarchySeparator from './rules/hierarchy-separator.ts';
-import metaInlineProperties from './rules/meta-inline-properties.ts';
 import metaSatisfiesType from './rules/meta-satisfies-type.ts';
 import noRedundantStoryName from './rules/no-redundant-story-name.ts';
 import noRendererPackages from './rules/no-renderer-packages.ts';
@@ -54,7 +53,6 @@ export const rules = {
   'csf-component': csfComponent,
   'default-exports': defaultExports,
   'hierarchy-separator': hierarchySeparator,
-  'meta-inline-properties': metaInlineProperties,
   'meta-satisfies-type': metaSatisfiesType,
   'no-redundant-story-name': noRedundantStoryName,
   'no-renderer-packages': noRendererPackages,

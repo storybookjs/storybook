@@ -166,13 +166,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
         handler(code, id) {
           if (id === normalizedPreviewConfigPath) {
             try {
-              const result = rewriteSbMockImportCalls(code, id);
-              // Without an input map, every source has its content, as Vite's map type requires.
-              const map = result.map && {
-                ...result.map,
-                sourcesContent: result.map.sourcesContent as string[],
-              };
-              return { code: result.code, map };
+              return rewriteSbMockImportCalls(code, id);
             } catch (e) {
               logger.debug(`Could not transform sb.mock(import(...)) calls in ${id}: ${e}`);
               return null;

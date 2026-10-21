@@ -47,8 +47,11 @@ export interface MockRewriteSourceMap {
   version: number;
   file: string;
   sources: string[];
-  /** An entry is `null` when the input map carried no content for its source. */
-  sourcesContent: (string | null)[];
+  /**
+   * Typed as webpack's and Rollup's map types expect. An entry is `null` only when the input map
+   * carried no content for its source, which webpack and Vite accept at runtime.
+   */
+  sourcesContent: string[];
   names: string[];
   mappings: string;
   sourceRoot?: string;
@@ -95,8 +98,9 @@ export function rewriteSbMockImportCalls(
   const map = editor.generateMap({ inputSourceMap: options.inputSourceMap });
   return {
     code: editor.toString(),
-    // A plain object: babel-loader, next in the webpack chain, rejects a string map.
-    map: { ...map, file: fileName, sourcesContent: map.sourcesContent ?? [] },
+    // A plain object: babel-loader, next in the webpack chain, rejects a string map. Its
+    // `sourcesContent` is typed as the loaders expect, as `MockRewriteSourceMap` says.
+    map: { ...map, file: fileName, sourcesContent: map.sourcesContent as string[] },
   };
 }
 

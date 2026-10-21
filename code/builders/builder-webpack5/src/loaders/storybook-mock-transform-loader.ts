@@ -20,10 +20,7 @@ const storybookMockTransformLoader: LoaderDefinition = function mockTransformLoa
     const result = rewriteSbMockImportCalls(source, this.resourcePath, {
       inputSourceMap: sourceMap,
     });
-    // webpack types `sourcesContent` as `string[]`, but accepts the `null` entry of a source whose
-    // content the incoming map did not carry.
-    const map = result.map as Exclude<typeof sourceMap, string | undefined> | null;
-    callback(null, result.code, map ?? sourceMap, meta);
+    callback(null, result.code, result.map ?? sourceMap, meta);
   } catch (error) {
     const filePath = this.resourcePath;
     logger.debug(`Could not transform sb.mock(import(...)) calls in ${filePath}: ${error}`);

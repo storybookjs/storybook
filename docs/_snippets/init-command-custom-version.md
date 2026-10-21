@@ -3,7 +3,7 @@ npx storybook@8.2 init
 ```
 
 ```shell renderer="common" packageManager="pnpm"
-pnpm dlx storybook@8.2 init
+pnpm --allow-build=esbuild dlx storybook@8.2 init
 ```
 
 ```shell renderer="common" packageManager="yarn"

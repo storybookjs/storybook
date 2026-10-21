@@ -94,7 +94,7 @@ const CLAUDE_BROWSER_PROMPT_SOURCE_PATH = path.join(
   'mcp',
   'claude-browser-prompt.md'
 );
-const CLAUDE_BROWSER_PROMPT_SANDBOX_PATH = 'CLAUDE.md';
+const CLAUDE_BROWSER_PROMPT_SANDBOX_PATH = '.claude/rules/built-in-browser.md';
 const START_STORYBOOK_SCRIPT_SOURCE_PATH = path.join(
   AGENT_EVAL_ROOT,
   'lib',
@@ -1011,17 +1011,16 @@ tool_timeout_sec = 180
   await appendCodexConfig(sandbox, config);
 }
 
-// The sandbox CLAUDE.md stands in for the `<built_in_browser>` block the
-// desktop app injects, so the agent knows it has that browser.
+// This rule stands in for the `<built_in_browser>` block the desktop app
+// injects, so the agent knows it has that browser. A rule, unlike a
+// CLAUDE.md, does not stop Claude Code from reading AGENTS.md.
 export async function writeClaudeInAppBrowserMock(sandbox: Sandbox): Promise<void> {
-  let existingClaudeMd = '';
-  try {
-    existingClaudeMd = `${(await sandbox.readFile(CLAUDE_BROWSER_PROMPT_SANDBOX_PATH)).trimEnd()}\n\n`;
-  } catch {}
   await sandbox.writeFiles({
     [CLAUDE_BROWSER_MOCK_SANDBOX_PATH]: await fs.readFile(CLAUDE_BROWSER_MOCK_SOURCE_PATH, 'utf8'),
-    [CLAUDE_BROWSER_PROMPT_SANDBOX_PATH]:
-      existingClaudeMd + (await fs.readFile(CLAUDE_BROWSER_PROMPT_SOURCE_PATH, 'utf8')),
+    [CLAUDE_BROWSER_PROMPT_SANDBOX_PATH]: await fs.readFile(
+      CLAUDE_BROWSER_PROMPT_SOURCE_PATH,
+      'utf8'
+    ),
   });
   await writeClaudeMcpServer(sandbox, CLAUDE_BROWSER_MCP_SERVER_NAME, {
     command: 'node',
@@ -1045,6 +1044,30 @@ async function appendCodexConfig(sandbox: Sandbox, section: string): Promise<voi
   await sandbox.writeFiles({
     [CODEX_CONFIG_PATH]: config,
   });
+}
+
+// The section that `create storybook` and `storybook upgrade` add next to the skills, which makes
+// agents use them. Call it after every other step that writes AGENTS.md or CLAUDE.md, as a user's
+// own files exist before Storybook adds the section.
+export async function writeStorybookAgentInstructions(sandbox: Sandbox): Promise<void> {
+  // Imported by path, not statically: agent-eval's tsc would otherwise type-check core's sources.
+  const { planStorybookAgentInstructions } = (await import(
+    path.join(AGENT_EVAL_ROOT, '..', 'code/core/src/cli/agentInstructions.ts')
+  )) as {
+    planStorybookAgentInstructions: (
+      read: (file: string) => Promise<string | undefined>
+    ) => Promise<Record<string, string>>;
+  };
+  await sandbox.writeFiles(
+    await planStorybookAgentInstructions(async (file) => {
+      // `test` exits with 1 for a missing file. Anything else is a failed check, not a missing file.
+      const { exitCode, stderr } = await sandbox.runCommand('test', ['-f', file]);
+      if (exitCode > 1) {
+        throw new Error(`Failed to check for ${file}: ${stderr}`);
+      }
+      return exitCode === 0 ? sandbox.readFile(file) : undefined;
+    })
+  );
 }
 
 export async function writeClaudePluginSkills(sandbox: Sandbox): Promise<void> {

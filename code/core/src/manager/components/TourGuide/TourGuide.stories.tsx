@@ -123,3 +123,68 @@ export const LateContentNearBottom: Story = {
     );
   },
 };
+
+/**
+ * The sidebar's rows live in a scroll area that holds a nested scroll view, and on a short index
+ * neither can scroll. A target low in such a container, like a story the user just created, must
+ * still keep the tooltip's buttons on screen.
+ */
+export const TargetInShortScrollContainerNearBottom: Story = {
+  decorators: [
+    (Story) => {
+      // The manager pins its body and hides overflow; the tooltip's overflow handling must not
+      // depend on a scrollable document.
+      useEffect(() => {
+        const { position, overflow, width, height } = document.body.style;
+        Object.assign(document.body.style, {
+          position: 'fixed',
+          overflow: 'hidden',
+          width: '100%',
+          height: '100%',
+        });
+        return () => {
+          Object.assign(document.body.style, { position, overflow, width, height });
+        };
+      }, []);
+      return <Story />;
+    },
+  ],
+  render: (args) => (
+    <>
+      <div
+        style={{
+          position: 'fixed',
+          left: 8,
+          bottom: 8,
+          width: 220,
+          height: 160,
+          overflowY: 'auto',
+        }}
+      >
+        <div style={{ overflow: 'auto' }}>
+          <div style={{ height: 120 }} />
+          <div id="tour-nested-target" style={{ width: 80, height: 24 }} />
+        </div>
+      </div>
+      <TourGuide {...args} />
+    </>
+  ),
+  args: {
+    steps: [
+      {
+        title: 'You just added your first story!',
+        content: <LateContent />,
+        target: '#tour-nested-target',
+        placement: 'right',
+        offset: 12,
+      },
+    ],
+  },
+  play: async () => {
+    await screen.findByText(/line 20/);
+    const done = await screen.findByRole('button', { name: 'Last' });
+    await waitFor(() =>
+      expect(done.getBoundingClientRect().bottom).toBeLessThanOrEqual(window.innerHeight)
+    );
+  },
+};

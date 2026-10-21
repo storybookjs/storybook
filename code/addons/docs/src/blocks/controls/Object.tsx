@@ -179,6 +179,7 @@ export const ObjectControl: FC<ObjectProps> = ({
 
   const [parseError, setParseError] = useState<Error | null>(null);
   const readonly = !!argType?.table?.readonly;
+  const isArray = argType?.type?.name === 'array';
   const updateRaw: (raw: string) => void = useCallback(
     (raw) => {
       try {
@@ -195,9 +196,9 @@ export const ObjectControl: FC<ObjectProps> = ({
 
   const [forceVisible, setForceVisible] = useState(false);
   const onForceVisible = useCallback(() => {
-    onChange({});
+    onChange(isArray ? [] : {});
     setForceVisible(true);
-  }, [onChange, setForceVisible]);
+  }, [isArray, onChange, setForceVisible]);
 
   useEffect(() => {
     if (!hadDataRef.current && hasData && showRaw && !forceVisible) {
@@ -226,7 +227,7 @@ export const ObjectControl: FC<ObjectProps> = ({
         id={getControlSetterButtonId(name, storyId, controlsId)}
         onClick={onForceVisible}
       >
-        Set object
+        {isArray ? 'Set array' : 'Set object'}
       </Button>
     );
   }

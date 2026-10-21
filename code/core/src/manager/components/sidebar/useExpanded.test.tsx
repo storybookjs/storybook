@@ -4,7 +4,7 @@ import React from 'react';
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { StoriesHash } from 'storybook/manager-api';
+import type { IndexHash } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
 
 import { useExpanded } from './useExpanded.ts';
@@ -22,7 +22,7 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
   <ManagerContext.Provider value={managerContext}>{children}</ManagerContext.Provider>
 );
 
-const root = (id: string, startCollapsed = false): StoriesHash[string] =>
+const root = (id: string, startCollapsed = false): IndexHash[string] =>
   ({
     type: 'root',
     id,
@@ -34,7 +34,7 @@ const root = (id: string, startCollapsed = false): StoriesHash[string] =>
 
 describe('useExpanded', () => {
   it('expands a default root when it first appears, without reopening collapsed ones', () => {
-    const initial: StoriesHash = { a: root('a') };
+    const initial: IndexHash = { a: root('a') };
     const { result, rerender } = renderHook(
       ({ data }) => useExpanded({ data, selectedStoryId: null }),
       { wrapper, initialProps: { data: initial } }
@@ -53,7 +53,7 @@ describe('useExpanded', () => {
   });
 
   it('keeps a startCollapsed root collapsed when it appears after mount', () => {
-    const initial: StoriesHash = { a: root('a') };
+    const initial: IndexHash = { a: root('a') };
     const { result, rerender } = renderHook(
       ({ data }) => useExpanded({ data, selectedStoryId: null }),
       { wrapper, initialProps: { data: initial } }

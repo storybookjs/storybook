@@ -24,7 +24,7 @@ import {
   testsUnit_linux,
 } from './common-jobs.ts';
 import { getInitEmpty, initEmptyNoOpJob } from './init-empty.ts';
-import { getSandboxes, sandboxesNoOpJob } from './sandboxes.ts';
+import { getSandboxes, getWindowsSandboxes, sandboxesNoOpJob } from './sandboxes.ts';
 import { getTestStorybooks, testStorybooksNoOpJob } from './test-storybooks.ts';
 import { executors } from './utils/executors.ts';
 import { ensureRequiredJobs } from './utils/helpers.ts';
@@ -50,6 +50,8 @@ function generateConfig(workflow: Workflow) {
   const jobs: JobOrNoOpJob[] = [];
   if (isWorkflowOrAbove(workflow, 'docs')) {
     jobs.push(fmt);
+  } else if (workflow === 'windows') {
+    jobs.push(build_windows, testUnit_windows, ...getWindowsSandboxes());
   } else {
     const sandboxes = getSandboxes(workflow);
     const testStorybooks = getTestStorybooks();

@@ -96,6 +96,9 @@ jobs:
       - id: daily
         if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:daily'))
         run: echo "workflow=daily" >> "$GITHUB_OUTPUT"
+      - id: windows
+        if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:windows'))
+        run: echo "workflow=windows" >> "$GITHUB_OUTPUT"
       - id: trusted-author
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -132,7 +135,7 @@ jobs:
             echo "result=$IS_TRUSTED" >> "$GITHUB_OUTPUT"
           fi
     outputs:
-      workflow: ${{ steps.normal.outputs.workflow || steps.docs.outputs.workflow || steps.merged.outputs.workflow || steps.daily.outputs.workflow }}
+      workflow: ${{ steps.normal.outputs.workflow || steps.docs.outputs.workflow || steps.merged.outputs.workflow || steps.daily.outputs.workflow || steps.windows.outputs.workflow }}
       ghBaseBranch: ${{ github.event.pull_request.base.ref }}
       ghPrNumber: ${{ github.event.pull_request.number }}
       ghTrustedAuthor: ${{ steps.trusted-author.outputs.result }}

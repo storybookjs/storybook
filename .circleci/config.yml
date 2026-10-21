@@ -28,6 +28,7 @@ parameters:
       - normal
       - merged
       - daily
+      - windows
       - skipped
       - docs
     type: enum

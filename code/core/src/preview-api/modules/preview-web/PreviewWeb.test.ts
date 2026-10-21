@@ -3787,6 +3787,36 @@ describe('PreviewWeb', () => {
       });
     });
 
+    it('keeps a story from wrapping around its own React Aria landmarks, so F6 moves on to the manager', async () => {
+      vi.stubGlobal('parent', {});
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      await createAndRenderPreview();
+
+      const wrap = new CustomEvent('react-aria-landmark-navigation', {
+        detail: { direction: 'forward' },
+        bubbles: true,
+        cancelable: true,
+      });
+      globalThis.dispatchEvent(wrap);
+
+      expect(wrap.defaultPrevented).toBe(true);
+    });
+
+    it('lets a story wrap around its own React Aria landmarks when it is the top-level document', async () => {
+      vi.stubGlobal('parent', globalThis.self);
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      await createAndRenderPreview();
+
+      const wrap = new CustomEvent('react-aria-landmark-navigation', {
+        detail: { direction: 'forward' },
+        bubbles: true,
+        cancelable: true,
+      });
+      globalThis.dispatchEvent(wrap);
+
+      expect(wrap.defaultPrevented).toBe(false);
+    });
+
     it('leaves F6 to the browser when the preview is the top-level document', async () => {
       vi.stubGlobal('parent', globalThis.self);
       document.location.search = '?id=component-one--docs&viewMode=docs';

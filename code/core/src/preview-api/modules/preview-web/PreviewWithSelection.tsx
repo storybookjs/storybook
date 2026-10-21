@@ -54,6 +54,11 @@ import { setupStoryFreezer } from './setupStoryFreezer.ts';
 
 const globalWindow = globalThis;
 
+/** Whether the preview runs inside a frame of the manager, which navigates landmarks on F6. */
+function isEmbedded() {
+  return !!globalWindow.parent && globalWindow.parent !== globalWindow.self;
+}
+
 function focusInInput(event: Event) {
   const target = ((event.composedPath && event.composedPath()[0]) || event.target) as Element;
   return /input|textarea/i.test(target.tagName) || target.getAttribute('contenteditable') !== null;
@@ -106,6 +111,15 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     super.setupListeners();
 
     globalWindow.onkeydown = this.onKeydown.bind(this);
+    // A story that navigates its own landmarks with React Aria stops F6 from reaching onKeydown
+    // for as long as it has a landmark to go to. React Aria asks before wrapping around at the end
+    // of those; declining leaves the key unhandled, so it reaches onKeydown and moves on to the
+    // manager's landmarks instead.
+    globalWindow.addEventListener('react-aria-landmark-navigation', (event) => {
+      if (isEmbedded()) {
+        event.preventDefault();
+      }
+    });
     const { onContentFrozen } = setupContentResizeBroadcast({
       getViewport: () => {
         const render = this.currentRender;
@@ -249,8 +263,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     // keydown it is told about. So they are forwarded even from text inputs, where they cannot
     // clash with typing, and the browser's own F6 behaviour (moving focus to its toolbar) is
     // suppressed. Not when the preview is the top-level document, where there is no manager.
-    const isLandmarkNavigation =
-      event.key === 'F6' && !!globalWindow.parent && globalWindow.parent !== globalWindow.self;
+    const isLandmarkNavigation = event.key === 'F6' && isEmbedded();
     if (isLandmarkNavigation) {
       event.preventDefault();
     } else if (focusInInput(event)) {

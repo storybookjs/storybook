@@ -293,13 +293,14 @@ export async function generateTypesFiles(
     entryMap[entryName(entry)] = join(cwd, entry);
   }
 
-  // Portable entries leave the shared pass: bundled alone, everything outside the entry's own
-  // external allowlist inlines into one flat file instead of importing shared type chunks (see
-  // BuildEntry.portable).
-  const portableByName = new Map(
-    dtsBuildEntries
-      .filter((entry) => entry.portable)
-      .map((entry) => [entryName(entry.entryPoint), entry.portable!])
+  // These entries leave the shared pass and bundle alone. Portable entries inline everything
+  // outside their allowlist (see BuildEntry.portable). dtsExternal entries keep those packages as
+  // imports so a module augmentation targets the real package rather than a chunk-local copy.
+  const isolatedExternalByName = new Map(
+    dtsBuildEntries.flatMap((entry) => {
+      const extra = entry.portable?.external ?? entry.dtsExternal;
+      return extra ? [[entryName(entry.entryPoint), extra] as const] : [];
+    })
   );
 
   // The dts plugin and tsgo derive rootDir from path.dirname(tsconfig).
@@ -361,13 +362,13 @@ export async function generateTypesFiles(
     );
 
     const sharedInput = Object.fromEntries(
-      Object.entries(input).filter(([name]) => !portableByName.has(name))
+      Object.entries(input).filter(([name]) => !isolatedExternalByName.has(name))
     );
-    const portableInputs = Object.entries(input)
-      .filter(([name]) => portableByName.has(name))
+    const isolatedInputs = Object.entries(input)
+      .filter(([name]) => isolatedExternalByName.has(name))
       .map(([name, emitted]) => ({
         input: { [name]: emitted },
-        allowedExternal: portableByName.get(name)!.external,
+        allowedExternal: isolatedExternalByName.get(name)!,
       }));
 
     const bundleDts = async (
@@ -411,10 +412,10 @@ export async function generateTypesFiles(
 
     const outputs = [
       ...(Object.keys(sharedInput).length > 0 ? [await bundleDts(sharedInput, externalFn)] : []),
-      // One isolated pass per portable entry, so nothing is shared between it and the rest.
+      // One isolated pass per portable or dtsExternal entry, so nothing is shared with the rest.
       ...(await Promise.all(
-        portableInputs.map(({ input: portableInput, allowedExternal }) =>
-          bundleDts(portableInput, portableExternalFn(allowedExternal))
+        isolatedInputs.map(({ input: isolatedInput, allowedExternal }) =>
+          bundleDts(isolatedInput, portableExternalFn(allowedExternal))
         )
       )),
     ];

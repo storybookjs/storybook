@@ -309,7 +309,8 @@ export interface CsfObject {
   /**
    * Read what `append` and `prepend` would act on at a path, by the rule they apply, without
    * editing or reporting: the list, `missing` when they would create it, or the diagnostic they
-   * would refuse it with.
+   * would refuse it with. A refusal of the added value, such as `invalid-csf` for an entry that
+   * leaves a meta `tags` invalid, is not foreseen.
    *
    * @example
    * ```ts

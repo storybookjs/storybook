@@ -415,8 +415,9 @@ export class ConfigFile implements CsfObject {
   /**
    * Read what `append` and `prepend` would act on at a path, by the rule they apply, without
    * editing or reporting: the list, `missing` when they would create it, or the diagnostic they
-   * would refuse it with. The list is a detached copy of the array literal the field resolves to,
-   * through local constants and type assertions, or of the call at an item path.
+   * would refuse it with. A refusal of the added value is not foreseen. The list is a detached copy
+   * of the array literal the field resolves to, through type assertions and a local constant only
+   * the config refers to, or of the call at an item path.
    *
    * @example
    * ```ts

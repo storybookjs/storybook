@@ -60,10 +60,9 @@ export { default as createCache } from '@emotion/cache';
 export { default as isPropValid } from '@emotion/is-prop-valid';
 
 // styled and useTheme read Theme from @emotion/react, not from this module's export.
+// Do not augment this module: storybook/theming's Theme is an alias of StorybookTheme,
+// and a self-augmentation would make that alias extend itself.
 declare module '@emotion/react' {
   export interface Theme extends StorybookTheme {}
-}
-declare module '.' {
-  interface Theme extends StorybookTheme {}
 }
 export type { Theme } from '@emotion/react';

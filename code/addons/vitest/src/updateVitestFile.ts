@@ -291,7 +291,14 @@ const normalizeProjectsValue = (
       : resolveExpression(value, target.program)?.type === 'ArrayExpression'
         ? `[...${valueText}]`
         : `[...((${valueText}) ?? [{ extends: true }])]`;
-  target.edits.overwrite(value.start, value.end, replacement);
+  // A shorthand property's key and value share one source span, so overwriting the value
+  // span alone would drop the key and emit unparseable output — restate the full property,
+  // the way mergeProperties guards the same case.
+  target.edits.overwrite(
+    value.start,
+    value.end,
+    projectsProp.shorthand ? `projects: ${replacement}` : replacement
+  );
   target.commit();
 
   const exportDefault = findExportDefault(target.program);

@@ -1284,6 +1284,89 @@ b'],
     `);
   });
 
+  it('appends storybook project when test.projects is a shorthand identifier', async () => {
+    const source = await loadTemplate('vitest.config.4.template', {
+      CONFIG_DIR: '.storybook',
+      BROWSER_CONFIG: "{ provider: 'playwright' }",
+      SETUP_FILE: '../.storybook/vitest.setup.ts',
+    });
+    const target = new SourceEditor(`
+      import { defineConfig } from 'vitest/config'
+
+      const projects = [
+        { extends: true, test: { name: 'client' } },
+        { extends: true, test: { name: 'server' } },
+      ]
+
+      export default defineConfig({
+        test: {
+          globals: true,
+          projects,
+        },
+      })
+    `);
+
+    const before = target.code;
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const after = target.toString();
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // A shorthand property's key and value share one source span. The rewrite must re-state
+    // the full `projects: ...` property; overwriting the value span alone would drop the
+    // key and produce `test: { [...projects, ...] }`, which does not parse.
+    expect(after).toContain('projects: [');
+    expect(after).toContain('...projects,');
+
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  
+              import { defineConfig } from 'vitest/config'
+        
+      + import path from 'node:path';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + 
+        
+              const projects = [
+                { extends: true, test: { name: 'client' } },
+                { extends: true, test: { name: 'server' } },
+      ...
+              export default defineConfig({
+                test: {
+                  globals: true,
+        
+      -           projects,
+      - 
+      +           projects: [
+      +             ...projects,
+      +             {
+      +               extends: true,
+      +               plugins: [
+      +                 // The plugin will run tests for the stories defined in your Storybook config
+      +                 // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +                 storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
+      +               ],
+      +               test: {
+      +                 name: 'storybook',
+      +                 browser: {
+      +                   enabled: true,
+      +                   headless: true,
+      +                   provider: playwright({}),
+      +                   instances: [{ browser: 'chromium' }],
+      +                 },
+      +               },
+      +             }
+      +           ],
+      + 
+                },
+              })
+            "
+    `);
+  });
+
   it('appends storybook project when test.projects is a computed expression', async () => {
     const source = await loadTemplate('vitest.config.4.template', {
       CONFIG_DIR: '.storybook',

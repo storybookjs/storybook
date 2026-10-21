@@ -194,13 +194,14 @@ export interface SubAPI {
   setIndex: (index: API_PreparedStoryIndex) => Promise<void>;
 
   /**
-   * Jumps to the next or previous component in the index.
+   * Jumps to the first entry of the next or previous component, or to the next or previous
+   * unattached docs page.
    *
-   * @param {Direction} direction - The direction to jump. Use -1 to jump to the previous component,
-   *   and 1 to jump to the next component.
+   * @param {Direction} direction - The direction to jump. Use -1 to jump backwards and 1 to jump
+   *   forwards.
    * @returns {void}
    */
-  jumpToComponent: (direction: Direction) => void;
+  jumpToSubtree: (direction: Direction) => void;
   /**
    * Jumps to the next or previous story in the story index.
    *
@@ -581,7 +582,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       // so this strange logic needs to be here until various client code is updated.
       return parameters || undefined;
     },
-    jumpToComponent: (direction) => {
+    jumpToSubtree: (direction) => {
       const { filteredIndex, storyId, refs, refId } = store.getState();
       const story = api.getData(storyId, refId);
 
@@ -675,7 +676,14 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
       if (!name) {
         // Find the entry (group, component, story or docs) that is referred to
-        const entry = titleOrId ? hash[titleOrId] || hash[sanitize(titleOrId)] : hash[kindSlug];
+        const entry = titleOrId
+          ? hash[titleOrId] ||
+            hash[sanitize(titleOrId)] ||
+            // Unattached docs pages have no entry keyed by their title
+            Object.values(hash).find(
+              (e) => e.type === 'docs' && sanitize(e.title) === sanitize(titleOrId)
+            )
+          : hash[kindSlug];
 
         if (!entry) {
           throw new Error(`Unknown id or title: '${titleOrId}'`);
@@ -1139,7 +1147,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         const stateHasSelection = state.viewMode && state.storyId;
         const stateSelectionDifferent = state.viewMode !== viewMode || state.storyId !== storyId;
         const { type } = state.index?.[state.storyId] || {};
-        const isStory = !(type === 'root' || type === 'component' || type === 'group');
+        const isLeaf = type === 'story' || type === 'docs';
 
         /**
          * When storybook starts, we want to navigate to the first story. But there are a few
@@ -1172,7 +1180,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
             }
           }
 
-          if (stateHasSelection && stateSelectionDifferent && isStory) {
+          if (stateHasSelection && stateSelectionDifferent && isLeaf) {
             // The manager state is correct, the preview state is lagging behind
             provider.channel?.emit(SET_CURRENT_STORY, {
               storyId: state.storyId,

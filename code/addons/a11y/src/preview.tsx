@@ -3,13 +3,13 @@ import type { AfterEach } from 'storybook/internal/types';
 import { expect } from 'storybook/test';
 
 import { run } from './a11yRunner.ts';
+import { applyVisionSimulator } from './applyVisionSimulator.ts';
 import type { A11yParameters } from './params.ts';
 import { getIsVitestStandaloneRun } from './utils.ts';
-import { withVisionSimulator } from './withVisionSimulator.ts';
 
 let vitestMatchersExtended = false;
 
-export const decorators = [withVisionSimulator];
+export const beforeEach = [applyVisionSimulator];
 
 export const afterEach: AfterEach<any> = async ({
   id: storyId,

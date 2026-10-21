@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { parse } from '@babel/parser';
 import { readFileSync } from 'fs';
 import { telemetry } from 'storybook/internal/telemetry';
 
@@ -41,9 +40,6 @@ vi.mock('storybook/internal/telemetry', () => ({
   telemetry: vi.fn(),
 }));
 
-const parser = (input: string) =>
-  parse(input, { sourceType: 'module', plugins: ['jsx', 'typescript'] });
-
 describe('isModuleDirectory', () => {
   it('returns true for node_modules path', () => {
     expect(extractModule.isModuleDirectory('/foo/node_modules/bar')).toBe(true);
@@ -66,7 +62,6 @@ describe('extractMockCalls', () => {
     vi.mocked(readFileSync).mockReturnValue(previewContent);
     return extractModule.extractMockCalls(
       { previewConfigPath, configDir, coreOptions },
-      parser,
       root,
       findMockRedirect
     );
@@ -218,12 +213,34 @@ describe('extractMockCalls', () => {
         sb.mock(import('./bar/baz'), { spy: true });
       `;
 
-      const result = extractModule.rewriteSbMockImportCalls(code);
+      const result = extractModule.rewriteSbMockImportCalls(code, 'preview.ts');
       expect(result.code).toMatchInlineSnapshot(`
-        "sb.mock("./bar/baz", {
-          spy: true
-        });"
+        "
+                sb.mock("./bar/baz", { spy: true });
+              "
       `);
+    });
+
+    it('rewrites a call on a later line of a CRLF file', () => {
+      const result = extractModule.rewriteSbMockImportCalls(
+        `import 'a';\r\n\r\nsb.mock(import('./bar/baz'), { spy: true });\r\n`,
+        'preview.ts'
+      );
+      expect(result.code).toBe(`import 'a';\r\n\r\nsb.mock("./bar/baz", { spy: true });\r\n`);
+    });
+
+    it('names the file in the map and returns no map when nothing changed', () => {
+      const changed = extractModule.rewriteSbMockImportCalls(
+        `sb.mock(import('./bar/baz'));`,
+        '/project/.storybook/preview.ts'
+      );
+      expect(changed.map?.sources).toEqual(['/project/.storybook/preview.ts']);
+
+      const unchanged = extractModule.rewriteSbMockImportCalls(
+        `export default {};`,
+        '/project/.storybook/preview.ts'
+      );
+      expect(unchanged).toEqual({ code: `export default {};`, map: null });
     });
 
     it('rewrites sb.mock(import("<xyz>")) to sb.mock("<xyz>")', () => {
@@ -231,9 +248,11 @@ describe('extractMockCalls', () => {
         sb.mock(import('./bar/baz'));
       `;
 
-      const result = extractModule.rewriteSbMockImportCalls(code);
+      const result = extractModule.rewriteSbMockImportCalls(code, 'preview.ts');
       expect(result.code).toMatchInlineSnapshot(`
-        "sb.mock("./bar/baz");"
+        "
+                sb.mock("./bar/baz");
+              "
       `);
     });
   });

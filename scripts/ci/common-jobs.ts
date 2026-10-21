@@ -19,7 +19,6 @@ import {
   workflow,
   workspace,
 } from './utils/helpers.ts';
-import { FULL_RUN_MARKER } from './affected-tests.ts';
 import { isTrustedAuthor } from './utils/runtime.ts';
 import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
 
@@ -346,11 +345,6 @@ export const knip = defineJob(
 const UNIT_TEST_REPORTERS =
   '--reporter=junit --reporter=default --outputFile=./test-results/junit.xml';
 
-const runAllUnitTests = [
-  'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec,test-d}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "agent-eval/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
-  `echo "$TEST_FILES" | circleci tests run --command="xargs yarn test ${UNIT_TEST_REPORTERS}" --verbose`,
-].join('\n');
-
 export const testsUnit_linux = defineJob(
   'Tests (linux)',
   (workflowName) => ({
@@ -363,7 +357,10 @@ export const testsUnit_linux = defineJob(
       {
         run: {
           name: 'Run tests',
-          command: runAllUnitTests,
+          command: [
+            'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec,test-d}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "agent-eval/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
+            `echo "$TEST_FILES" | circleci tests run --command="xargs yarn test ${UNIT_TEST_REPORTERS}" --verbose`,
+          ].join('\n'),
         },
       },
       testResults.persist(`test-results`),
@@ -419,7 +416,7 @@ export const defineAffectedCheck = (changedFiles: readonly string[]) =>
 
 /**
  * Run the unit tests related to `changedFiles`, following imports through the built `dist` files
- * that contain them. Falls back to the full suite when a global input such as a lockfile changed.
+ * that contain them.
  */
 export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
   defineJob(
@@ -437,9 +434,7 @@ export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
             name: 'Run affected tests',
             command: [
               `node ./scripts/ci/select-affected-tests.ts ${CHANGED_FILES_PATH} > ${AFFECTED_TESTS_PATH}`,
-              `if [ "$(cat ${AFFECTED_TESTS_PATH})" = "${FULL_RUN_MARKER}" ]; then`,
-              ...runAllUnitTests.split('\n').map((line) => `  ${line}`),
-              `elif [ -s ${AFFECTED_TESTS_PATH} ]; then`,
+              `if [ -s ${AFFECTED_TESTS_PATH} ]; then`,
               `  NODE_OPTIONS=--max_old_space_size=4096 yarn vitest related --run --project '!storybook-ui' ${UNIT_TEST_REPORTERS} $(cat ${AFFECTED_TESTS_PATH})`,
               'else',
               '  echo "No changed file is related to a unit test."',

@@ -6,7 +6,13 @@ import {
   type Template,
   type TemplateKey,
 } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
-import { build_linux, defineAffectedCheck, defineAffectedUnitTests } from './common-jobs.ts';
+import { isGlobalInput } from './affected-tests.ts';
+import {
+  build_linux,
+  defineAffectedCheck,
+  defineAffectedUnitTests,
+  testsUnit_linux,
+} from './common-jobs.ts';
 import { defineSandboxFlow, sandboxesNoOpJob } from './sandboxes.ts';
 import type { JobOrNoOpJob } from './utils/types.ts';
 
@@ -67,8 +73,8 @@ export function getChangedFiles(baseRef: string): string[] {
 
 /**
  * Select the `ci:normal` jobs a diff needs: the build, the typecheck and unit tests affected by the
- * diff, every job of the focused sandbox, and a Chromatic run for each sibling whose renderer
- * changed.
+ * diff (the full unit suite when a global input changed), every job of the focused sandbox, and a
+ * Chromatic run for each sibling whose renderer changed.
  */
 export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
   const template = selectFocusSandbox(changedFiles);
@@ -77,7 +83,7 @@ export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
   return [
     build_linux,
     defineAffectedCheck(changedFiles),
-    defineAffectedUnitTests(changedFiles),
+    changedFiles.some(isGlobalInput) ? testsUnit_linux : defineAffectedUnitTests(changedFiles),
     sandboxesNoOpJob,
     ...defineSandboxFlow(template).jobs,
     ...siblings.flatMap(({ createJob, chromaticJob }) =>

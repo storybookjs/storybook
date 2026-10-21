@@ -1,9 +1,9 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 
 import { join } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
-import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { allTemplates, normal } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import {
   FOCUS_PATH_ROOTS,
   getFocusJobs,
@@ -11,8 +11,37 @@ import {
   selectFocusSandbox,
 } from './focus.ts';
 
+const ROOT = join(import.meta.dirname, '../..');
+
+const packageDirsByName = new Map(
+  FOCUS_PATH_ROOTS.flatMap((root) =>
+    readdirSync(join(ROOT, root))
+      .filter((dir) => existsSync(join(ROOT, root, dir, 'package.json')))
+      .map((dir) => {
+        const { name } = JSON.parse(readFileSync(join(ROOT, root, dir, 'package.json'), 'utf8'));
+        return [name as string, `${root}${dir}/`] as const;
+      })
+  )
+);
+
+const allFocusPaths = Object.values(allTemplates).flatMap(({ focusPaths = [] }) => focusPaths);
+
 describe('focusPaths', () => {
-  it.each(Object.values(allTemplates).flatMap(({ focusPaths = [] }) => focusPaths))(
+  it.each(
+    [
+      ...new Set(
+        normal.flatMap((key) =>
+          Object.values(allTemplates[key].expected).flatMap(
+            (name) => packageDirsByName.get(name) ?? []
+          )
+        )
+      ),
+    ].sort()
+  )('%s, used by a ci:normal sandbox, selects a focus sandbox', (dir) => {
+    expect(allFocusPaths).toContain(dir);
+  });
+
+  it.each(allFocusPaths)(
     '%s is an existing directory under a framework, renderer, or builder root',
     (path) => {
       expect(FOCUS_PATH_ROOTS.some((root) => path.startsWith(root))).toBe(true);
@@ -31,6 +60,8 @@ describe('selectFocusSandbox', () => {
     ['code/frameworks/react-webpack5/src/preset.ts', 'react-webpack/18-ts'],
     ['code/frameworks/vue3-vite/src/preset.ts', 'vue3-vite/default-ts'],
     ['code/frameworks/svelte-vite/src/preset.ts', 'svelte-vite/default-ts'],
+    ['code/frameworks/sveltekit/src/preset.ts', 'svelte-kit/skeleton-ts'],
+    ['code/frameworks/tanstack-react/src/preset.ts', 'tanstack-react-router/default-ts'],
     ['code/frameworks/preact-vite/src/preset.ts', 'preact-vite/default-ts'],
     ['code/frameworks/html-vite/src/preset.ts', 'html-vite/default-ts'],
     ['code/frameworks/web-components-vite/src/preset.ts', 'lit-vite/default-ts'],
@@ -103,6 +134,13 @@ describe('getFocusJobs', () => {
       'react-latest--vite---typescript---vitest',
       'react-latest--vite---typescript---e2e',
     ]);
+  });
+
+  it('runs the full unit suite instead of the affected tests when a global input changed', () => {
+    const ids = jobIds(['code/core/src/manager/App.tsx', 'yarn.lock']);
+
+    expect(ids).toContain('tests--linux');
+    expect(ids).not.toContain('tests--linux--affected');
   });
 
   it('adds only the create and Chromatic jobs of each sibling', () => {

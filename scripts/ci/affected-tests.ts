@@ -14,20 +14,18 @@ export interface BuiltPackage {
   testFiles: string[];
 }
 
-/** What `select-affected-tests.ts` prints instead of a file list when the full suite must run. */
-export const FULL_RUN_MARKER = 'full';
+const GLOBAL_INPUTS = [
+  /(^|\/)(package\.json|yarn\.lock|\.yarnrc[^/]*|nx\.json|\.nvmrc|tsconfig[^/]*\.json|vite(st)?[.-](config|workspace|shared|setup)[^/]*)$/,
+  /^(\.yarn\/patches|code\/__mocks__)\//,
+];
 
-export type TestSelection = { kind: 'full' } | { kind: 'related'; files: string[] };
+/** A change to a global input can affect any test, so it needs the full suite. */
+export const isGlobalInput = (file: string) => GLOBAL_INPUTS.some((pattern) => pattern.test(file));
 
-type FileKind = 'global' | 'test' | 'source' | 'asset';
+type FileKind = 'test' | 'source' | 'asset';
 
 /** First match wins; a file matching no row is an asset. */
 const FILE_KINDS: readonly (readonly [FileKind, RegExp])[] = [
-  [
-    'global',
-    /(^|\/)(package\.json|yarn\.lock|\.yarnrc[^/]*|nx\.json|\.nvmrc|tsconfig[^/]*\.json|vite(st)?[.-](config|workspace|shared|setup)[^/]*)$/,
-  ],
-  ['global', /^(\.yarn\/patches|code\/__mocks__)\//],
   ['test', /\.(test|spec|test-d)\.[cm]?[jt]sx?$/],
   // Fixtures, mocks and snapshots reach tests through the file system or mock resolution, not imports.
   ['asset', /(^|\/)(__[^/]+__|fixtures)\//],
@@ -56,7 +54,7 @@ function indexOutputsByInput(packages: readonly BuiltPackage[]) {
 }
 
 const RELATED_FILES: Record<
-  Exclude<FileKind, 'global'>,
+  FileKind,
   (
     file: string,
     pkg: BuiltPackage | undefined,
@@ -84,26 +82,21 @@ function findPackage(packages: readonly BuiltPackage[], file: string) {
 /**
  * Turn a diff into the inputs for `vitest related`: each changed source file plus the built dist
  * files that contain it, because tests in other packages import workspace packages through their
- * `dist` exports. Anything that cannot be narrowed soundly widens the selection instead.
+ * `dist` exports. Anything that cannot be narrowed soundly widens the selection instead. Global
+ * inputs are not covered; callers check {@link isGlobalInput} first.
  */
 export function selectAffectedTests(
   changedFiles: readonly string[],
   packages: readonly BuiltPackage[]
-): TestSelection {
+): string[] {
   const outputsByInput = indexOutputsByInput(packages);
   const related = new Set<string>();
 
   for (const file of changedFiles) {
-    const kind = classifyFile(file);
-
-    if (kind === 'global') {
-      return { kind: 'full' };
-    }
-
-    RELATED_FILES[kind](file, findPackage(packages, file), outputsByInput).forEach((path) =>
-      related.add(path)
+    RELATED_FILES[classifyFile(file)](file, findPackage(packages, file), outputsByInput).forEach(
+      (path) => related.add(path)
     );
   }
 
-  return { kind: 'related', files: [...related].sort() };
+  return [...related].sort();
 }

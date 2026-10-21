@@ -1,24 +1,22 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 
+import type { Metafile as EsbuildMetafile } from 'esbuild';
 import { basename, dirname, join } from 'pathe';
 import { globSync } from 'tinyglobby';
 
-import {
-  type BuiltPackage,
-  FULL_RUN_MARKER,
-  type Metafile,
-  selectAffectedTests,
-} from './affected-tests.ts';
+import { metafileDirFor } from '../build/utils/metafiles.ts';
+import { type BuiltPackage, type Metafile, selectAffectedTests } from './affected-tests.ts';
 
 const ROOT = join(import.meta.dirname, '../..');
-const METAFILES_DIR = join(ROOT, 'code/bench/esbuild-metafiles');
 
-function readMetafiles(packageDirName: string): Metafile[] | undefined {
-  const dir = join(METAFILES_DIR, packageDirName);
+function readMetafiles(packageDir: string): Metafile[] | undefined {
+  const dir = metafileDirFor(packageDir);
   const files = existsSync(dir) ? readdirSync(dir).filter((file) => file.endsWith('.json')) : [];
 
   return files.length > 0
-    ? files.map((file) => JSON.parse(readFileSync(join(dir, file), 'utf8')) as Metafile)
+    ? files.map(
+        (file): Metafile => JSON.parse(readFileSync(join(dir, file), 'utf8')) as EsbuildMetafile
+      )
     : undefined;
 }
 
@@ -39,8 +37,7 @@ function loadPackages(): BuiltPackage[] {
 
   return dirs.map((dir) => ({
     dir,
-    metafiles:
-      dirsByBasename.get(basename(dir))?.length === 1 ? readMetafiles(basename(dir)) : undefined,
+    metafiles: dirsByBasename.get(basename(dir))?.length === 1 ? readMetafiles(dir) : undefined,
     distFiles: globSync(`${dir}/dist/**/*.{js,mjs,cjs}`, { cwd: ROOT }),
     testFiles: globSync(`${dir}/**/*.{test,spec,test-d}.{ts,tsx,js,jsx,mjs,cjs}`, {
       cwd: ROOT,
@@ -56,10 +53,8 @@ if (!changedFilesPath) {
 }
 
 const changedFiles = readFileSync(changedFilesPath, 'utf8').split('\n').filter(Boolean);
-const selection = selectAffectedTests(changedFiles, loadPackages());
-
 process.stdout.write(
-  selection.kind === 'full'
-    ? `${FULL_RUN_MARKER}\n`
-    : selection.files.map((file) => `${file}\n`).join('')
+  selectAffectedTests(changedFiles, loadPackages())
+    .map((file) => `${file}\n`)
+    .join('')
 );

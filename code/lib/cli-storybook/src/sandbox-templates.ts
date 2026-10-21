@@ -56,6 +56,11 @@ export type Template = {
     builder: string;
   };
 
+  /**
+   * Directories under `code/frameworks/`, `code/renderers/`, or `code/builders/` for which `ci:focus`
+   * picks this template. A framework match wins over a renderer match, and a renderer match wins
+   * over a builder match.
+   */
   focusPaths?: string[];
 
   expectedFailures?: Array<{
@@ -454,6 +459,7 @@ export const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
+    focusPaths: ['code/frameworks/tanstack-react/'],
     modifications: {
       useCsfFactory: true,
       extraDevDependencies: ['prop-types'],
@@ -650,6 +656,7 @@ export const baseTemplates = {
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
     },
+    focusPaths: ['code/frameworks/sveltekit/'],
     modifications: {
       useCsfFactory: true,
     },

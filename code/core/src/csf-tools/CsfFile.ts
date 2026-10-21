@@ -475,7 +475,9 @@ export class CsfFile {
    * `undefined` when the file has no story of that name. A story that shares its object with
    * another story, such as `Secondary` in `export { Primary as Secondary }` or `export const
    * Secondary = Primary`, has none: it is refused as `aliased-story`, naming `Primary`, whose
-   * editor edits both.
+   * editor edits both. An automigration that edits through `storyObject` handles `ok: false`
+   * itself: the automigrate runner ignores `aliased-story` diagnostics, so it does not fail the
+   * file for one.
    *
    * @example
    * ```ts

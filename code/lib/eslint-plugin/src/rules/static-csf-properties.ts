@@ -101,11 +101,6 @@ export default createStorybookRule({
       propertyBeforeSpread:
         'Storybook reads `{{property}}` statically, but a later spread can override it at runtime. Move it after the spread so the index matches what renders.',
       movePropertyAfterSpread: 'Move `{{property}}` after the spread',
-      ignoredKey:
-        "Storybook's indexer only recognizes `{{property}}` written as an identifier key; this form is silently ignored.",
-      useIdentifierKey: 'Use an identifier key',
-      misreadComputedKey:
-        "Storybook's indexer reads this computed key as a static `{{property}}` property, which can differ from its runtime name.",
       unresolvableFactoryMeta:
         '`.meta()` must be given an inline object literal (or a `const` in this file holding one); otherwise Storybook indexes this file as if the meta were empty.',
       invalidPreviewImport:
@@ -134,47 +129,24 @@ export default createStorybookRule({
           return;
         }
 
+        // mirror csf-tools' staticKey: string-literal keys count, computed identifiers do not
         const { key } = prop;
-        const quotedName =
-          isLiteral(key) && typeof key.value === 'string' && Object.hasOwn(checks, key.value)
+        const name =
+          isLiteral(key) && typeof key.value === 'string'
             ? key.value
-            : undefined;
-        if (quotedName) {
-          context.report({
-            node: key,
-            messageId: 'ignoredKey',
-            data: { property: quotedName },
-            suggest: prop.computed
-              ? undefined
-              : [
-                  {
-                    messageId: 'useIdentifierKey',
-                    fix: (fixer) => fixer.replaceText(key, quotedName),
-                  },
-                ],
-          });
+            : isIdentifier(key) && !prop.computed
+              ? key.name
+              : undefined;
+        if (name === undefined || !Object.hasOwn(checks, name)) {
           return;
         }
 
-        if (!isIdentifier(key) || !Object.hasOwn(checks, key.name)) {
-          return;
-        }
-
-        if (prop.computed) {
-          context.report({
-            node: key,
-            messageId: 'misreadComputedKey',
-            data: { property: key.name },
-          });
-          return;
-        }
-
-        const check = checks[key.name];
+        const check = checks[name];
         if (!isValidStaticValue(check, prop.value)) {
           context.report({
             node: prop,
             messageId: 'dynamicProperty',
-            data: { property: key.name, expected: check.expected },
+            data: { property: name, expected: check.expected },
           });
           return;
         }
@@ -184,11 +156,11 @@ export default createStorybookRule({
           context.report({
             node: prop,
             messageId: 'propertyBeforeSpread',
-            data: { property: key.name },
+            data: { property: name },
             suggest: [
               {
                 messageId: 'movePropertyAfterSpread',
-                data: { property: key.name },
+                data: { property: name },
                 fix: (fixer) => {
                   const propText = context.sourceCode.getText(prop);
                   const nextToken = context.sourceCode.getTokenAfter(prop);

@@ -233,36 +233,23 @@ const scenarios: Scenario[] = [
     ],
   },
   {
-    name: 'quoted keys are silently ignored by the indexer',
-    code: "export default { 'title': 'Button' }",
+    name: 'quoted keys are read like identifier keys',
+    code: "export default { 'title': 'Button', ['id']: 'button-id' }",
     indexable: true,
-    errors: [
-      {
-        messageId: 'ignoredKey',
-        type: AST_NODE_TYPES.Literal,
-        suggestions: [
-          {
-            messageId: 'useIdentifierKey',
-            output: "export default { title: 'Button' }",
-          },
-        ],
-      },
-    ],
   },
   {
-    name: 'computed string keys are silently ignored by the indexer',
-    code: "export default { ['title']: 'Button' }",
-    indexable: true,
-    errors: [{ messageId: 'ignoredKey', type: AST_NODE_TYPES.Literal }],
+    name: 'dynamic value behind a quoted key',
+    code: "export default { 'title': computeTitle() }",
+    indexable: false,
+    errors: [{ messageId: 'dynamicProperty', type: AST_NODE_TYPES.Property }],
   },
   {
-    name: 'computed identifier keys are misread as the static property',
+    name: 'computed identifier keys are not read by the indexer',
     code: dedent`
       const title = 'parameters'
       export default { [title]: { layout: 'fullscreen' } }
     `,
-    indexable: false,
-    errors: [{ messageId: 'misreadComputedKey', type: AST_NODE_TYPES.Identifier }],
+    indexable: true,
   },
   {
     name: 'dynamic story tags',

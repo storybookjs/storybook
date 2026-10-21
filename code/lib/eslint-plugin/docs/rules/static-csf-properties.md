@@ -16,7 +16,6 @@ A dynamic value â€” a function call, a template literal, an imported constant â€
 
 - dynamic values for the properties above (a local top-level `const` holding a literal is fine for `title` and `tags`, matching the indexer)
 - statically-read properties placed _before_ an object spread, where the spread can override them at runtime while the indexer still reads the literal
-- quoted or computed keys for these properties, which the indexer silently ignores or misreads
 - a `preview.meta(...)` argument that is not an inline object literal (or a local `const` holding one), which the indexer treats as an empty meta
 - a `preview.meta()` factory whose `preview` import does not point at a `.storybook/preview` file
 

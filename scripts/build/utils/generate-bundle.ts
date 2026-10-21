@@ -62,6 +62,13 @@ function rolldownGlobalExternalsPlugin(): RolldownPlugin {
 }
 
 /*
+ * No side-effect protection is needed for entry points here: esbuild always emits an entry point,
+ * regardless of `"sideEffects"` in package.json. PR #21335 (`manager.js` ignored when
+ * `sideEffects: false` in `package.json`) concerns user manager entries in builder-manager, where
+ * entries are reached through generated `import '<entry>'` wrapper files (see
+ * `preserveManagerEntrySideEffectsPlugin`).
+ */
+/*
  * This plugin writes the metafile to a file in the output directory.
  * It is used to analyze the bundle size of the different entry points.
  * The outputDir must be the package's directory, as that is the projectName in the NX config,
@@ -108,7 +115,6 @@ export async function generateBundle({
     format: 'esm',
     bundle: true,
     legalComments: 'none',
-    ignoreAnnotations: true,
     splitting: true,
     metafile: true,
     outbase: 'src',

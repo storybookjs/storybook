@@ -627,14 +627,20 @@
 
 ### Theming imports
 
-Import `create`, `themes`, `ThemeVars`, and `ThemeVarsPartial` from `storybook/theming` (or `storybook/theming/create`, the same module). Import everything else — `styled`, `css`, `useTheme`, `color`, `typography`, `background`, `convert`, `ensure`, and the other theme types — from `storybook/theming/emotion`.
-
-The manager runtime still provides `storybook/theming` as a compatibility global for addons built against Storybook 10, and that global includes the Emotion APIs. Package types follow the exports above, so `import { styled } from 'storybook/theming'` does not typecheck.
+End users who only create a theme keep `import { create, themes } from 'storybook/theming'`. That module is the same as `storybook/theming/create`. `ThemeVars` and `ThemeVarsPartial` are exported there too.
 
 ```ts
-import { create, themes, type ThemeVars } from 'storybook/theming';
-import { styled, css, useTheme } from 'storybook/theming/emotion';
+import { create, themes, type ThemeVars, type ThemeVarsPartial } from 'storybook/theming';
 ```
+
+Addon authors who build manager UI or docs blocks move Emotion and theme-data imports to `storybook/theming/emotion`. That is the supported entry for `styled`, `css`, `jsx`, `useTheme`, `ThemeProvider`, `color`, `typography`, `background`, `convert`, `ensure`, and the other theme types.
+
+```diff
+-import { styled, css, jsx, useTheme, ThemeProvider, color } from 'storybook/theming';
++import { styled, css, jsx, useTheme, ThemeProvider, color } from 'storybook/theming/emotion';
+```
+
+In the manager, `storybook/theming` still resolves to the Emotion implementation at runtime, so already-published manager addons keep running. Update the import anyway. TypeScript only knows `create`, `themes`, `ThemeVars`, and `ThemeVarsPartial` on `storybook/theming`, so importing `styled`, `css`, `jsx`, `useTheme`, or the other Emotion and theme-data helpers from that module is a type error. Preview and docs blocks have no runtime alias, so the same old import fails there at runtime.
 
 ### `storybook dev` now blocks remote iframe embedding
 

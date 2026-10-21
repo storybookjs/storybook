@@ -15,7 +15,10 @@ import { getStatusStoreByTypeId } from './stores/status.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { doTelemetry } from './utils/doTelemetry.ts';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
-import { getCachingMiddleware } from './utils/get-caching-middleware.ts';
+import {
+  getCachingMiddleware,
+  getPreviewBuilderCachingMiddleware,
+} from './utils/get-caching-middleware.ts';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware.ts';
 import { getHostValidationMiddleware } from './utils/getHostValidationMiddleware.ts';
 import { registerIndexJsonRoute } from './utils/index-json.ts';
@@ -131,6 +134,7 @@ export async function storybookDevServer(
     await Promise.resolve();
 
   logger.debug('Starting preview..');
+  app.use(getPreviewBuilderCachingMiddleware());
   previewResult = await previewBuilder
     .start({
       startTime: process.hrtime(),
@@ -154,6 +158,7 @@ export async function storybookDevServer(
       // re-throw the error
       throw e;
     });
+  app.use(getCachingMiddleware());
 
   let adapter: ChangeDetectionAdapter | undefined;
   try {

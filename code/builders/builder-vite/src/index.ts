@@ -28,6 +28,8 @@ function iframeHandler(options: Options, server: ViteDevServer): Middleware {
     );
     const transformed = await server.transformIndexHtml('/iframe.html', indexHtml);
     res.setHeader('Content-Type', 'text/html');
+    // Storybook writes this page on every request, so the browser must not keep it.
+    res.setHeader('Cache-Control', 'no-store');
     res.statusCode = 200;
     res.write(transformed);
     res.end();

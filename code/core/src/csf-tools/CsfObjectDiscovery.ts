@@ -603,8 +603,8 @@ const writesThroughAliases = (csf: CsfFile, bindings: StoryBinding[]) => {
     if (!aliased || aliased === alias || writes.has(aliased)) {
       continue;
     }
-    const { assignments, write } = assignmentsOf(csf, alias);
-    const at = write?.node ?? assignments[0]?.statement;
+    const found = assignmentsOf(csf, alias);
+    const at = found.ok ? found.assignments[0]?.statement : found.write.node;
     if (at) {
       writes.set(aliased, { alias, node: at });
     }

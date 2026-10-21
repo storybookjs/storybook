@@ -89,6 +89,12 @@ const TS_DECLARATIONS = new Set([
   'TSDeclareFunction',
 ]);
 
+/**
+ * Whether a reference is a TS declaration of the binding's name, such as `type Base = typeof Base`
+ * next to `const Base`, which declares a type and cannot read or write the value.
+ */
+export const isTSDeclaration = (node: Node) => TS_DECLARATIONS.has(node.type);
+
 // Declarations whose `export` counts as a reference to their own name, besides TS declarations.
 const EXPORTED_DECLARATIONS = new Set([
   'FunctionDeclaration',

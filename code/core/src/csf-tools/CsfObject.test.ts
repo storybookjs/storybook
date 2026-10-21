@@ -1035,6 +1035,12 @@ describe('CsfObject', () => {
         result: { writes: '{ ...Base }' },
       },
       {
+        before: "const Base = { title: 'B' }; type Base = typeof Base;",
+        object: "{ label: 'a', ...Base }",
+        edit: "remove(['label'])",
+        result: { writes: '{ ...Base }' },
+      },
+      {
         before: "const Base = { label: 'b' };",
         object: "{ label: 'a', ...Base }",
         edit: "remove(['label'])",

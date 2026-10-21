@@ -93,6 +93,7 @@ A story whose initializer is not an object literal, a function or a bound templa
 | `import { Base } from './base';` | `{ ...Base, label: 'a' }` | `remove(['label'])` | refused, `spread-field` |
 | `import { Base } from './base';` | `{ ...Base, label: 'a' }` | `rename(['label'], 'name')` | refused, `spread-field` |
 | `const Base = { title: 'B' };` | `{ label: 'a', ...Base }` | `remove(['label'])` | `{ ...Base }` |
+| `const Base = { title: 'B' }; type Base = typeof Base;` | `{ label: 'a', ...Base }` | `remove(['label'])` | `{ ...Base }` |
 | `const Base = { label: 'b' };` | `{ label: 'a', ...Base }` | `remove(['label'])` | refused, `spread-field` |
 | `const Base = { title: 'B' };` | `{ ...Base, label: 'a' }` | `remove(['label'])` | `{ ...Base }` |
 | `const Base = { title: 'B' };` | `{ ...Base, label: 'a' }` | `rename(['label'], 'name')` | `{ ...Base, name: 'a' }` |
@@ -107,7 +108,7 @@ A carried member is read again where the parent is created, so a getter or a bin
 The spread's own member is read with `.`, as a story spreading a value that is not an object is broken already, and a deeper one with `?.`, as it may be missing, unless a trusted local object literal holds it as an object literal.
 When more than one spread may provide the member, which one does depends on whether a later one has it as its own `undefined`, so creating the parent is refused.
 Changing a field that a later spread or computed key could override is refused, and so is removing or renaming a field after them, which could reveal what they provide. A spread of a trusted local object literal known to lack the field is the exception: it neither overrides nor provides the field, so these edits and reads proceed (`group` still refuses any spread).
-A local object literal is trusted for its own members only, not those of the objects it holds, and only when every reference to it reads it.
+A local object literal is trusted for its own members only, not those of the objects it holds, and only when every reference to it reads it, as a type does: `typeof Base`, or `type Base` declaring its name.
 An assignment, `Object.assign`, an alias or a call it is passed to makes it unknown. So does code that can run with `this` bound to it: an accessor, spreading it into an array or arguments, or a call of a member it does not hold as an arrow function.
 
 For edits that no path addresses, `CsfFile.editor` and `ConfigFile.editor` are the file's `SourceEditor`, and `program` its current parse; `CsfFile.appendStatement(code)` adds a statement that `formatCsf` prints. A commit parses and indexes the file again. The underscored `_editor`, `_program` and `_appendStatement` are deprecated aliases.
@@ -132,7 +133,7 @@ for (const story of csf.objects()) {
 
 To read a tree, `walk` visits its nodes depth-first, `staticKey` reads an object member's key, `objectProperty(object, name)` finds a property by that key, `isIdentifier(node, name)` checks for an identifier and its name, and `locationOf(code, start, end)` gives the lines and columns of two offsets.
 
-`editor.scopes` is the file's scope analysis: `scopes.program.bindings` maps each top-level name to its `Binding`, and `scopes.tsDeclarationNames` holds the top-level names of type aliases, interfaces, enums, namespaces and bodiless functions, which bind none. A binding's `references` holds the identifiers that read or write it, and statements too: the `export` statement of an exported declaration, as in Babel, also of an exported type of the same name, and a top-level overload signature of a function, or its `export` statement. Filter on `type` when only identifiers count.
+`editor.scopes` is the file's scope analysis: `scopes.program.bindings` maps each top-level name to its `Binding`, and `scopes.tsDeclarationNames` holds the top-level names of type aliases, interfaces, enums, namespaces and bodiless functions, which bind none. A binding's `references` holds the identifiers that read or write it, in code or in a type such as `typeof Button`, and statements too, as in Babel: the `export` statement of an exported declaration, and any TS declaration of the same name in scope, such as an overload signature, a `type`, an `interface`, an `enum` or a `namespace`, which counts through its `export` statement when it is exported. Filter on `type` when only identifiers count.
 
 ### Elements and arguments
 

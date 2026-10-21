@@ -1,0 +1,335 @@
+/**
+ * @file CSF properties that Storybook indexes must be statically analyzable
+ */
+import { isExportStory } from '../utils/csf-helpers.ts';
+
+import type { TSESTree } from '@typescript-eslint/types';
+
+import {
+  getNonStoryExportsConfig,
+  getMetaObjectExpression,
+  isCsfFactoryStoryCall,
+  parseFactoryMetaCall,
+  resolveIdentifierInit,
+  unwrapCsfTSWrappers,
+} from '../utils/index.ts';
+import {
+  isArrayExpression,
+  isAssignmentExpression,
+  isFunctionDeclaration,
+  isIdentifier,
+  isLiteral,
+  isMemberExpression,
+  isObjectExpression,
+  isProperty,
+  isSpreadElement,
+  isTSSatisfiesExpression,
+  isVariableDeclaration,
+} from '../utils/ast.ts';
+import { CategoryId } from '../utils/constants.ts';
+import { createStorybookRule } from '../utils/create-storybook-rule.ts';
+
+const isStaticString = (node: TSESTree.Node): boolean =>
+  isLiteral(node) && typeof node.value === 'string';
+
+const isStaticRegExp = (node: TSESTree.Node): boolean => isLiteral(node) && 'regex' in node;
+
+const isStaticStringArray = (node: TSESTree.Node): boolean =>
+  isArrayExpression(node) && node.elements.every((element) => element && isStaticString(element));
+
+interface StaticPropertyCheck {
+  /** Whether csf-tools follows an identifier to a top-level variable in the same file. */
+  resolveIdentifier: boolean;
+  isValid: (node: TSESTree.Node) => boolean;
+  expected: string;
+}
+
+const META_PROPERTIES: Record<string, StaticPropertyCheck> = {
+  title: {
+    resolveIdentifier: true,
+    isValid: (node) =>
+      isStaticString(node) || (isTSSatisfiesExpression(node) && isStaticString(node.expression)),
+    expected: 'a string literal (or a top-level `const` in this file holding one)',
+  },
+  id: {
+    resolveIdentifier: false,
+    isValid: isStaticString,
+    expected: 'a string literal',
+  },
+  tags: {
+    resolveIdentifier: true,
+    isValid: isStaticStringArray,
+    expected:
+      'an inline array of string literals (or a top-level `const` in this file holding one)',
+  },
+  includeStories: {
+    resolveIdentifier: false,
+    isValid: (node) => isStaticString(node) || isStaticRegExp(node) || isStaticStringArray(node),
+    expected: 'a string literal, regular expression literal, or inline array of string literals',
+  },
+  excludeStories: {
+    resolveIdentifier: false,
+    isValid: (node) => isStaticString(node) || isStaticRegExp(node) || isStaticStringArray(node),
+    expected: 'a string literal, regular expression literal, or inline array of string literals',
+  },
+};
+
+const STORY_PROPERTIES: Record<string, StaticPropertyCheck> = {
+  tags: META_PROPERTIES.tags,
+};
+
+interface StoryCandidate {
+  exportName: string;
+  object: TSESTree.ObjectExpression;
+  isFactory: boolean;
+}
+
+export default createStorybookRule({
+  name: 'static-csf-properties',
+  defaultOptions: [],
+  meta: {
+    type: 'problem',
+    severity: 'error',
+    hasSuggestions: true,
+    docs: {
+      description: 'CSF properties that Storybook reads statically must be analyzable',
+      categories: [CategoryId.CSF, CategoryId.RECOMMENDED],
+    },
+    messages: {
+      dynamicProperty:
+        'Storybook indexes stories without running them, so `{{property}}` must be {{expected}}. A dynamic value breaks indexing for this file.',
+      propertyBeforeSpread:
+        'Storybook reads `{{property}}` statically, but a later spread can override it at runtime. Move it after the spread so the index matches what renders.',
+      movePropertyAfterSpread: 'Move `{{property}}` after the spread',
+      unresolvableFactoryMeta:
+        '`.meta()` must be given an inline object literal (or a `const` in this file holding one); otherwise Storybook indexes this file as if the meta were empty.',
+      invalidPreviewImport:
+        'The `preview` factory must be imported from your `.storybook/preview` file; Storybook cannot index this file otherwise.',
+    },
+    schema: [],
+  },
+
+  create(context) {
+    const isValidStaticValue = (check: StaticPropertyCheck, value: TSESTree.Node) => {
+      const resolved =
+        check.resolveIdentifier && isIdentifier(value)
+          ? (resolveIdentifierInit(context, value, { topLevelOnly: true }) ?? value)
+          : value;
+      return check.isValid(resolved);
+    };
+
+    const checkStaticObject = (
+      object: TSESTree.ObjectExpression,
+      checks: Record<string, StaticPropertyCheck>
+    ) => {
+      const lastSpreadIndex = object.properties.findLastIndex(isSpreadElement);
+
+      object.properties.forEach((prop, index) => {
+        if (!isProperty(prop)) {
+          return;
+        }
+
+        // mirror csf-tools' staticKey: string-literal keys count, computed identifiers do not
+        const { key } = prop;
+        const name =
+          isLiteral(key) && typeof key.value === 'string'
+            ? key.value
+            : isIdentifier(key) && !prop.computed
+              ? key.name
+              : undefined;
+        if (name === undefined || !Object.hasOwn(checks, name)) {
+          return;
+        }
+
+        const check = checks[name];
+        if (!isValidStaticValue(check, prop.value)) {
+          context.report({
+            node: prop,
+            messageId: 'dynamicProperty',
+            data: { property: name, expected: check.expected },
+          });
+          return;
+        }
+
+        if (index < lastSpreadIndex) {
+          const lastSpread = object.properties[lastSpreadIndex];
+          context.report({
+            node: prop,
+            messageId: 'propertyBeforeSpread',
+            data: { property: name },
+            suggest: [
+              {
+                messageId: 'movePropertyAfterSpread',
+                data: { property: name },
+                fix: (fixer) => {
+                  const propText = context.sourceCode.getText(prop);
+                  const nextToken = context.sourceCode.getTokenAfter(prop);
+                  const removalEnd = nextToken?.value === ',' ? nextToken.range[1] : prop.range[1];
+                  return [
+                    fixer.removeRange([prop.range[0], removalEnd]),
+                    fixer.insertTextAfter(lastSpread, `, ${propText}`),
+                  ];
+                },
+              },
+            ],
+          });
+        }
+      });
+    };
+
+    let meta: TSESTree.ObjectExpression | null = null;
+    let metaIsFactory = false;
+    const storyCandidates: StoryCandidate[] = [];
+    // story export name -> whether it is a factory story, mirroring csf-tools' registration
+    const exportedStories = new Map<string, boolean>();
+    const tagsAssignments: Array<{
+      exportName: string;
+      value: TSESTree.Expression;
+      node: TSESTree.AssignmentExpression;
+      declared: boolean;
+    }> = [];
+
+    const collectStoryCandidate = (exportName: string, init: TSESTree.Node) => {
+      let storyNode: TSESTree.Node | undefined = unwrapCsfTSWrappers(init);
+      let isFactory = false;
+      if (isCsfFactoryStoryCall(storyNode)) {
+        isFactory = true;
+        storyNode = storyNode.arguments[0];
+      }
+      if (storyNode && isObjectExpression(storyNode)) {
+        storyCandidates.push({ exportName, object: storyNode, isFactory });
+      }
+    };
+
+    return {
+      ExportDefaultDeclaration(node) {
+        const metaObject = getMetaObjectExpression(node, context);
+        if (metaObject) {
+          meta = metaObject;
+          checkStaticObject(metaObject, META_PROPERTIES);
+        }
+      },
+
+      CallExpression(node: TSESTree.CallExpression) {
+        const factoryMeta = parseFactoryMetaCall(node, context);
+        if (!factoryMeta) {
+          return;
+        }
+        if (!factoryMeta.validPreviewImport) {
+          context.report({ node, messageId: 'invalidPreviewImport' });
+          return;
+        }
+        metaIsFactory = true;
+        if (factoryMeta.metaObject) {
+          meta = factoryMeta.metaObject;
+          checkStaticObject(factoryMeta.metaObject, META_PROPERTIES);
+        } else {
+          context.report({ node: node.arguments[0] ?? node, messageId: 'unresolvableFactoryMeta' });
+        }
+      },
+
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        const declaration = node.declaration;
+        if (isVariableDeclaration(declaration)) {
+          declaration.declarations.forEach((declarator) => {
+            if (isIdentifier(declarator.id) && declarator.init) {
+              exportedStories.set(
+                declarator.id.name,
+                isCsfFactoryStoryCall(unwrapCsfTSWrappers(declarator.init))
+              );
+              collectStoryCandidate(declarator.id.name, declarator.init);
+            }
+          });
+          return;
+        }
+        if (isFunctionDeclaration(declaration) && isIdentifier(declaration.id)) {
+          exportedStories.set(declaration.id.name, false);
+          return;
+        }
+        if (!declaration) {
+          // export { X as Y }: csf-tools resolves the local initializer
+          node.specifiers.forEach((specifier) => {
+            if (specifier.exportKind === 'type' || !isIdentifier(specifier.local)) {
+              return;
+            }
+            const exportName = isIdentifier(specifier.exported)
+              ? specifier.exported.name
+              : String(specifier.exported.value);
+            const init = resolveIdentifierInit(context, specifier.local, { topLevelOnly: true });
+            if (init) {
+              if (exportName === 'default') {
+                // export { X as default } is a CSF3 meta
+                const metaObject = unwrapCsfTSWrappers(init);
+                if (isObjectExpression(metaObject)) {
+                  meta = metaObject;
+                  checkStaticObject(metaObject, META_PROPERTIES);
+                }
+                return;
+              }
+              collectStoryCandidate(exportName, init);
+            }
+          });
+        }
+      },
+
+      ExpressionStatement(node: TSESTree.ExpressionStatement) {
+        // Story.tags = [...] after the declaration is read by the indexer like an object property
+        const { expression } = node;
+        if (
+          node.parent.type === 'Program' &&
+          isAssignmentExpression(expression) &&
+          isMemberExpression(expression.left) &&
+          isIdentifier(expression.left.object) &&
+          isIdentifier(expression.left.property) &&
+          expression.left.property.name === 'tags'
+        ) {
+          tagsAssignments.push({
+            exportName: expression.left.object.name,
+            value: expression.right,
+            node: expression,
+            declared: exportedStories.has(expression.left.object.name),
+          });
+        }
+      },
+
+      'Program:exit'() {
+        if (!meta && !metaIsFactory) {
+          return;
+        }
+
+        const nonStoryExports = meta ? getNonStoryExportsConfig(meta) : {};
+
+        storyCandidates.forEach(({ exportName, object, isFactory }) => {
+          if (exportName === '__namedExportsOrder' || !isExportStory(exportName, nonStoryExports)) {
+            return;
+          }
+          // Mixing factory and non-factory styles breaks the file for other reasons;
+          // the indexer only reads annotations from exports matching the meta's style
+          if (metaIsFactory !== isFactory) {
+            return;
+          }
+          checkStaticObject(object, STORY_PROPERTIES);
+        });
+
+        tagsAssignments.forEach(({ exportName, value, node, declared }) => {
+          if (
+            !declared ||
+            exportName === '__namedExportsOrder' ||
+            !isExportStory(exportName, nonStoryExports) ||
+            metaIsFactory !== exportedStories.get(exportName)
+          ) {
+            return;
+          }
+          const check = STORY_PROPERTIES.tags;
+          if (!isValidStaticValue(check, value)) {
+            context.report({
+              node,
+              messageId: 'dynamicProperty',
+              data: { property: 'tags', expected: check.expected },
+            });
+          }
+        });
+      },
+    };
+  },
+});

@@ -23,8 +23,7 @@ ruleTester.run('no-title-property-in-meta', rule, {
     'export default { component: Button } as Meta<typeof Button>',
     'export default { component: Button } satisfies Meta<typeof Button>',
     'export default { ...props }',
-    // CSF4 factory pattern: meta is a function call result, not an object literal
-    // getMetaObjectExpression() returns null for CallExpressions, so the rule skips it
+    // `.meta()` only counts as a CSF factory when its root is imported from a preview file
     dedent`
       const meta = preview.meta({ component: Button, title: 'Button' })
       export default meta
@@ -36,9 +35,56 @@ ruleTester.run('no-title-property-in-meta', rule, {
       `,
       filename: 'MyComponent.stories.ts',
     },
+    dedent`
+      import preview from '../../.storybook/preview'
+      const meta = preview.meta({ component: Button })
+    `,
   ],
 
   invalid: [
+    {
+      code: dedent`
+        import preview from '../../.storybook/preview'
+        const meta = preview.meta({ component: Button, title: 'Button' })
+      `,
+      errors: [
+        {
+          messageId: 'noTitleInMeta',
+          type: AST_NODE_TYPES.Property,
+          suggestions: [
+            {
+              messageId: 'removeTitleInMeta',
+              output: dedent`
+                import preview from '../../.storybook/preview'
+                const meta = preview.meta({ component: Button,  })
+              `,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      code: dedent`
+        import preview from '../../.storybook/preview'
+        const meta = preview.type<{ args: { theme: string } }>().meta({ component: Button, title: 'Button' })
+      `,
+      filename: 'MyComponent.stories.ts',
+      errors: [
+        {
+          messageId: 'noTitleInMeta',
+          type: AST_NODE_TYPES.Property,
+          suggestions: [
+            {
+              messageId: 'removeTitleInMeta',
+              output: dedent`
+                import preview from '../../.storybook/preview'
+                const meta = preview.type<{ args: { theme: string } }>().meta({ component: Button,  })
+              `,
+            },
+          ],
+        },
+      ],
+    },
     {
       code: "export default { title: 'Button', component: Button }",
       errors: [

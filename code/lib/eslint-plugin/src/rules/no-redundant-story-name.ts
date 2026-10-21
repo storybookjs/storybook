@@ -5,10 +5,14 @@
  */
 import { storyNameFromExport } from '../utils/csf-helpers.ts';
 
+import type { TSESTree } from '@typescript-eslint/types';
+
+import { isCsfFactoryStoryCall, unwrapTSExpression } from '../utils/index.ts';
 import {
   isExpressionStatement,
   isIdentifier,
   isLiteral,
+  isMemberExpression,
   isMetaProperty,
   isObjectExpression,
   isProperty,
@@ -65,8 +69,20 @@ export default createStorybookRule({
             return;
           }
           const { id, init } = declaration;
-          if (isIdentifier(id) && isObjectExpression(init)) {
-            const storyNameNode = init.properties.find(
+          // CSF3 object exports and CSF4 `meta.story({ ... })` exports carry the same shape.
+          // `.extend()` is excluded: it inherits the base story's name, so an override matching
+          // the export name still changes what renders.
+          let storyObject: TSESTree.Node | null | undefined = init && unwrapTSExpression(init);
+          if (
+            isCsfFactoryStoryCall(storyObject) &&
+            isMemberExpression(storyObject.callee) &&
+            isIdentifier(storyObject.callee.property) &&
+            storyObject.callee.property.name === 'story'
+          ) {
+            storyObject = storyObject.arguments[0];
+          }
+          if (isIdentifier(id) && isObjectExpression(storyObject)) {
+            const storyNameNode = storyObject.properties.find(
               (prop) =>
                 isProperty(prop) &&
                 isIdentifier(prop.key) &&
@@ -92,7 +108,10 @@ export default createStorybookRule({
                   {
                     messageId: 'removeRedundantName',
                     fix: function (fixer) {
-                      return fixer.remove(storyNameNode);
+                      const nextToken = context.sourceCode.getTokenAfter(storyNameNode);
+                      return nextToken?.value === ','
+                        ? fixer.removeRange([storyNameNode.range[0], nextToken.range[1]])
+                        : fixer.remove(storyNameNode);
                     },
                   },
                 ],

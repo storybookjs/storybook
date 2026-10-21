@@ -27,7 +27,7 @@
     "lint": "yarn lint:js",
     "lint:ejs": "ejslint **/*.ejs",
     "lint:js": "yarn lint:js:cmd . --quiet",
-    "lint:js:cmd": "oxlint --report-unused-disable-directives-severity=error",
+    "lint:js:cmd": "oxlint --report-unused-disable-directives-severity=error --no-error-on-unmatched-pattern",
     "lint:package": "yarn --cwd ../scripts lint:package",
     "local-registry": "yarn --cwd ../scripts local-registry",
     "publish-sandboxes": "yarn --cwd ../scripts publish",

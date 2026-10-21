@@ -40,6 +40,8 @@ export const optimizeViteDeps = [
   '@storybook/nextjs-vite/link.mock',
   '@storybook/nextjs-vite/navigation.mock',
   '@storybook/nextjs-vite/router.mock',
+  'styled-jsx',
+  'styled-jsx/style',
   '@storybook/nextjs-vite > styled-jsx',
   '@storybook/nextjs-vite > styled-jsx/style',
   '@opentelemetry/api',

@@ -249,6 +249,18 @@ describe('success', () => {
     duplicateStoryWithNewName(parsed, 'A', 'MyCopy');
     expect(printCsf(parsed).code).toContain(`export const MyCopy = { ...Base, name: 'My Copy' };`);
   });
+  test('copies a story exported under a name other than its binding', () => {
+    const parsed = loadCsf(
+      [
+        `export default { title: 'A' };`,
+        `const Local = { args: { a: 1 } };`,
+        `export { Local as A };`,
+      ].join('\n'),
+      { makeTitle }
+    ).parse();
+    duplicateStoryWithNewName(parsed, 'A', 'B');
+    expect(printCsf(parsed).code.split('\n').at(-1)).toBe(`export const B = { args: {} };`);
+  });
 });
 
 describe('refuses before it adds the copy', () => {

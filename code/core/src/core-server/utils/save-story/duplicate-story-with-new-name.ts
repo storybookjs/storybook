@@ -25,7 +25,12 @@ export const duplicateStoryWithNewName = (
         : `Cannot create a story from ${storyName} because it is another name for a story in this file. Create the new story from that story instead.`
     );
   }
-  const node = csf._storyExports[storyName];
+  // A story without an editor, such as `export const A = makeStory()`, still names its binding.
+  const target = source?.ok ? source.object.target : source?.diagnostic.target;
+  const node =
+    target?.kind === 'story'
+      ? csf.editor.scopes.program.bindings.get(target.localName)?.node
+      : undefined;
   if (node?.type !== 'VariableDeclarator' || !node.init) {
     throw new SaveStoryError(`cannot clone Node`);
   }
@@ -35,7 +40,7 @@ export const duplicateStoryWithNewName = (
 
   // A factory story, such as `meta.story({})` or `Primary.extend({})`, is a call too.
   if (
-    !csf._stories[storyName]?.__stats.factory &&
+    !csf.stories.find(({ exportName }) => exportName === storyName)?.factory &&
     (story.type === 'ArrowFunctionExpression' || story.type === 'CallExpression')
   ) {
     throw new SaveStoryError(`Creating a new story based on a CSF2 story is not supported`);

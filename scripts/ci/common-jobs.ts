@@ -2,6 +2,7 @@
 import glob from 'fast-glob';
 import { join } from 'path/posix';
 
+import { isGlobalInput } from './affected-tests.ts';
 import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   type CachePlatform,
@@ -413,6 +414,86 @@ export const defineAffectedCheck = (changedFiles: readonly string[]) =>
     }),
     [commonJobsNoOpJob]
   );
+
+const LINT_CONFIG = /(^|\/)\.oxlintrc\.json$/;
+const FORMAT_CONFIG = /(^|\/)\.oxfmtrc\.json$/;
+
+/**
+ * Run `command` with the changed files under `dir` as arguments, relative to `dir`, because oxlint
+ * rejects paths outside its working directory. Nothing runs when no changed file is under `dir`.
+ */
+const runOnChangedFiles = (
+  name: string,
+  dir: string,
+  changedFiles: readonly string[],
+  command: string
+) => {
+  const files = dir
+    ? changedFiles
+        .filter((file) => file.startsWith(`${dir}/`))
+        .map((file) => file.slice(dir.length + 1))
+    : changedFiles;
+
+  return files.length === 0
+    ? []
+    : [
+        {
+          run: {
+            name,
+            ...(dir ? { working_directory: dir } : {}),
+            environment: { FILES: files.join('\n') },
+            command: `printf '%s\\n' "$FILES" | tr '\\n' '\\0' | xargs -0 ${command}`,
+          },
+        },
+      ];
+};
+
+/**
+ * Format-check and lint only the changed files. Both tools work per file, and the lint rules that
+ * read other files are warnings, which `--quiet` drops. A config or global input change checks
+ * everything.
+ */
+export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) => {
+  const checkAll = (config: RegExp) =>
+    changedFiles.some((file) => isGlobalInput(file) || config.test(file));
+
+  return defineJob(
+    'Lint and format (affected)',
+    (workflowName) => ({
+      executor: {
+        name: 'sb_node_22_classic',
+        class: 'medium',
+      },
+      steps: [
+        ...workflow.restoreLinux(),
+        ...(checkAll(FORMAT_CONFIG)
+          ? [{ run: { name: 'Format check', command: 'yarn fmt:check' } }]
+          : runOnChangedFiles(
+              'Format check changed files',
+              '',
+              changedFiles,
+              'yarn oxfmt --check --no-error-on-unmatched-pattern'
+            )),
+        ...(checkAll(LINT_CONFIG)
+          ? [
+              { run: { name: 'Lint code JS', working_directory: 'code', command: 'yarn lint:js' } },
+              { run: { name: 'Lint scripts', working_directory: 'scripts', command: 'yarn lint' } },
+            ]
+          : ['code', 'scripts'].flatMap((dir) =>
+              runOnChangedFiles(
+                `Lint changed ${dir} files`,
+                dir,
+                changedFiles,
+                'yarn lint:js:cmd --quiet --no-error-on-unmatched-pattern'
+              )
+            )),
+        ...workflow.reportOnFailure(workflowName),
+        ...workflow.cancelOnFailure(),
+      ],
+    }),
+    [commonJobsNoOpJob]
+  );
+};
 
 /**
  * Run the unit tests related to `changedFiles`, following imports through the built `dist` files

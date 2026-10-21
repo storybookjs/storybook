@@ -10,10 +10,16 @@ import { isGlobalInput } from './affected-tests.ts';
 import {
   build_linux,
   defineAffectedCheck,
+  defineAffectedLintAndFormat,
   defineAffectedUnitTests,
+  internalStorybookBuildE2e,
+  internalStorybookE2e,
+  testsStories_linux,
   testsUnit_linux,
 } from './common-jobs.ts';
+import { defineEmptyInitFeatures, defineEmptyInitFlow } from './init-empty.ts';
 import { defineSandboxFlow, sandboxesNoOpJob } from './sandboxes.ts';
+import { defineMcpTestStorybook, definePortableStoryTest } from './test-storybooks.ts';
 import type { JobOrNoOpJob } from './utils/types.ts';
 
 const DEFAULT_FOCUS_SANDBOX = 'react-vite/default-ts' satisfies TemplateKey;
@@ -63,6 +69,56 @@ export function selectChromaticSiblings(
   );
 }
 
+const INIT_PATHS = [
+  'code/lib/create-storybook/',
+  'code/lib/cli-storybook/',
+  'code/core/src/cli/',
+  'code/frameworks/react-vite/',
+];
+
+const INTERNAL_STORYBOOK_PATHS = [
+  'code/core/src/manager/',
+  'code/core/src/manager-api/',
+  'code/core/src/components/',
+  'code/core/src/theming/',
+  'code/.storybook/',
+  'code/e2e-internal/',
+];
+
+const portableStoryTest = (directory: string, sourcePath: string) => ({
+  job: definePortableStoryTest(directory),
+  paths: [
+    sourcePath,
+    'code/core/src/preview-api/',
+    `test-storybooks/portable-stories-kitchen-sink/${directory}/`,
+  ],
+});
+
+/** Jobs a focused run adds when the diff touches one of their paths or any global input. */
+export const PATH_TRIGGERED_JOBS: readonly { job: JobOrNoOpJob; paths: readonly string[] }[] = [
+  { job: defineEmptyInitFlow('react-vite-ts'), paths: INIT_PATHS },
+  {
+    job: defineEmptyInitFeatures(),
+    paths: [...INIT_PATHS, 'code/addons/docs/', 'code/addons/vitest/', 'code/addons/a11y/'],
+  },
+  portableStoryTest('react', 'code/renderers/react/'),
+  portableStoryTest('vue3', 'code/renderers/vue3/'),
+  portableStoryTest('svelte', 'code/renderers/svelte/'),
+  portableStoryTest('nextjs', 'code/frameworks/nextjs/'),
+  {
+    job: defineMcpTestStorybook(),
+    paths: ['code/addons/mcp/', 'code/lib/mcp/', 'test-storybooks/mcp/'],
+  },
+  { job: internalStorybookE2e, paths: INTERNAL_STORYBOOK_PATHS },
+  { job: internalStorybookBuildE2e, paths: INTERNAL_STORYBOOK_PATHS },
+  { job: testsStories_linux, paths: INTERNAL_STORYBOOK_PATHS },
+];
+
+export const selectPathTriggeredJobs = (changedFiles: readonly string[]): JobOrNoOpJob[] =>
+  PATH_TRIGGERED_JOBS.filter(({ paths }) =>
+    changedFiles.some((file) => isGlobalInput(file) || paths.some((path) => file.startsWith(path)))
+  ).map(({ job }) => job);
+
 export function getChangedFiles(baseRef: string): string[] {
   return execFileSync('git', ['diff', '--name-only', `${baseRef}...HEAD`, '--'], {
     encoding: 'utf8',
@@ -72,9 +128,10 @@ export function getChangedFiles(baseRef: string): string[] {
 }
 
 /**
- * Select the `ci:normal` jobs a diff needs: the build, the typecheck and unit tests affected by the
- * diff (the full unit suite when a global input changed), every job of the focused sandbox, and a
- * Chromatic run for each sibling whose renderer changed.
+ * Select the `ci:normal` jobs a diff needs: the build, the typecheck, lint, format check and unit
+ * tests affected by the diff (the full unit suite when a global input changed), every job of the
+ * focused sandbox, a Chromatic run for each sibling whose renderer changed, and the
+ * {@link PATH_TRIGGERED_JOBS} whose paths changed.
  */
 export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
   const template = selectFocusSandbox(changedFiles);
@@ -84,6 +141,8 @@ export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
     build_linux,
     defineAffectedCheck(changedFiles),
     changedFiles.some(isGlobalInput) ? testsUnit_linux : defineAffectedUnitTests(changedFiles),
+    defineAffectedLintAndFormat(changedFiles),
+    ...selectPathTriggeredJobs(changedFiles),
     sandboxesNoOpJob,
     ...defineSandboxFlow(template).jobs,
     ...siblings.flatMap(({ createJob, chromaticJob }) =>

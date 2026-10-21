@@ -17,7 +17,7 @@ export async function transformCsf(
   code: string,
   id: string,
   options: EnrichCsfOptions
-) {
+): Promise<ReturnType<typeof formatCsf> | undefined> {
   if (!STORIES_REGEX.test(id)) {
     return;
   }

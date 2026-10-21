@@ -437,7 +437,7 @@ class Editor implements CsfObject {
       inspected.parent.replaceValue(inspected.property, text());
       return this.commit(path);
     }
-    const creation = creatable(this.editor, inspected, path, (keys) => keys.length > 1);
+    const creation = creatable(this.editor, inspected, path, 'when-creating-parents');
     if (!creation.ok) {
       return this.failure(creation.code, path, creation.node, creation.message);
     }
@@ -477,7 +477,7 @@ class Editor implements CsfObject {
     const text = () => printValue(value, quote, { indent, expand: 'multiline' });
     const slot = valueAt(this.editor, inspected);
     if (!slot) {
-      const creation = creatable(this.editor, inspected, path, () => true);
+      const creation = creatable(this.editor, inspected, path, 'always');
       if (!creation.ok) {
         return this.failure(creation.code, path, creation.node, creation.message);
       }
@@ -629,8 +629,7 @@ class Editor implements CsfObject {
     if (destination.kind === 'property') {
       return this.failure('occupied-destination', to, destination.property);
     }
-    // A read refuses a missing key next to a spread or computed key, so there is none to carry.
-    const creation = creatable(this.editor, destination, to, () => false);
+    const creation = creatable(this.editor, destination, to, 'never');
     if (!creation.ok) {
       return this.failure(creation.code, to, creation.node, creation.message);
     }

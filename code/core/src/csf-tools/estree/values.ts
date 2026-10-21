@@ -45,13 +45,20 @@ const BABEL_ONLY_TYPES = new Set([
   'TSExpressionWithTypeArguments',
 ]);
 
-// A node some parser made: a node type with a position, as offsets, `loc` or `range`, which a copy
-// of it keeps. An object built by hand has no position, so it is data, whatever its `type`.
+// A node some parser or builder made, which `printValue` must not print as its fields: a node type
+// with a position, as offsets, `loc` or `range`, which a copy of it keeps, or a Babel-only type,
+// which a `@babel/types` builder such as `t.stringLiteral('x')` gives without a position. Any
+// other object built by hand is data, whatever its `type`; so is a `File`, common in data such as
+// `{ type: 'File', name: 'a.pdf' }`.
 const isParsedNode = (value: unknown): value is Node => {
-  if (
-    !isNode(value) ||
-    !(Object.hasOwn(visitorKeys, value.type) || BABEL_ONLY_TYPES.has(value.type))
-  ) {
+  if (!isNode(value)) {
+    return false;
+  }
+  const type: string = value.type;
+  if (type !== 'File' && BABEL_ONLY_TYPES.has(type)) {
+    return true;
+  }
+  if (!(Object.hasOwn(visitorKeys, type) || type === 'File')) {
     return false;
   }
   return (

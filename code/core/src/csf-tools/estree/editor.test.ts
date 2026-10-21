@@ -975,6 +975,27 @@ describe('removeStatement', () => {
     expect(editor.toString()).toBe(`const b = 2;`);
   });
 
+  it.each([
+    ['a run of statements', 'a(); b(); c();\n', [1, 2], 'a();\n'],
+    ['a run after a comment', 'a(); /* a */ b(); c();\nd();\n', [1, 2], 'a(); /* a */\nd();\n'],
+    ['every statement after the first', 'a(); b(); c(); d();\n', [1, 2, 3], 'a();\n'],
+  ])('leaves no space at the end of a line that loses %s', (_, code, removed, output) => {
+    const editor = new SourceEditor(code);
+    removeStatements(editor, new Set(removed.map((index) => editor.program.body[index])));
+    expect(editor.toString()).toBe(output);
+  });
+
+  it.each([1, 2])(
+    'inserts after a run of removed statements that ends the line, after statement %i',
+    (index) => {
+      const editor = new SourceEditor('a(); b(); c();\n');
+      const [, b, c] = editor.program.body;
+      removeStatements(editor, new Set([b, c]));
+      insertStatementAfter(editor, editor.program.body[index], 'x();');
+      expect(editor.toString()).toBe('a();\nx();\n');
+    }
+  );
+
   it('leaves the comment trailing the previous statement on a shared last line', () => {
     const editor = new SourceEditor(`import a from 'a'; /* a */ import b from 'b';`);
     removeStatement(editor, editor.program.body[1]);

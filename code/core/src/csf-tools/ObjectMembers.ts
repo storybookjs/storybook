@@ -10,7 +10,7 @@ import {
   unwrapExpression,
 } from './estree/ast.ts';
 import { type SourceEditor, printMemberAccess } from './estree/editor.ts';
-import type { Binding } from './estree/scope.ts';
+import { type Binding, isTSDeclaration } from './estree/scope.ts';
 
 type PropertyLookup =
   | { ok: true; property?: Property }
@@ -110,11 +110,12 @@ const callCannotBindThis = (literal: E.ObjectExpression, key: string | undefined
 // Code that only reads a binding cannot change which members its literal has. A member read is a
 // read, and so is a call of a member the literal holds as an arrow function: any other call can run
 // with `this` bound to the literal, as can spreading it into an array or arguments, which runs its
-// iterator. The binding itself escaping, such as into `Object.assign`, is not a read either.
+// iterator. The binding itself escaping, such as into `Object.assign`, is not a read either. A type
+// cannot touch the value: `typeof Base` in a type, or a `type Base` declaring the same name.
 const onlyRead = (editor: SourceEditor, binding: Binding, literal: E.ObjectExpression) =>
   binding.references.every((reference) => {
     if (reference.type !== 'Identifier') {
-      return reference.type === 'ExportNamedDeclaration';
+      return reference.type === 'ExportNamedDeclaration' || isTSDeclaration(reference);
     }
     let read: Node = reference;
     let members = 0;

@@ -592,13 +592,46 @@ const isAnnotatable = (node: Node | undefined) =>
       !node.callee.computed &&
       isIdentifier(node.callee.property, 'bind')));
 
+// A write through an alias, such as `B.args = {}` after `export const B = A`, changes the object
+// of the story it aliases: for each such story, the first write through one of its aliases.
+const writesThroughAliases = (csf: CsfFile, bindings: StoryBinding[]) => {
+  const writes = new Map<StoryBinding, { alias: StoryBinding; node: Node }>();
+  for (const alias of bindings) {
+    const init = alias.declaration.type === 'VariableDeclarator' ? alias.declaration.init : null;
+    const node = init ? unwrapExpression(init) : undefined;
+    const aliased = node?.type === 'Identifier' ? aliasedStory(csf, bindings, node) : undefined;
+    if (!aliased || aliased === alias || writes.has(aliased)) {
+      continue;
+    }
+    const { assignments, write } = assignmentsOf(csf, alias);
+    const at = write?.node ?? assignments[0]?.statement;
+    if (at) {
+      writes.set(aliased, { alias, node: at });
+    }
+  }
+  return writes;
+};
+
 const discoverStories = (
   csf: CsfFile,
   bindings: StoryBinding[],
   report: ReportDiagnostic
-): Discovered[] =>
-  bindings.flatMap((binding): Discovered[] => {
+): Discovered[] => {
+  const aliasWrites = writesThroughAliases(csf, bindings);
+  return bindings.flatMap((binding): Discovered[] => {
     const { declaration } = binding;
+    const aliasWrite = aliasWrites.get(binding);
+    if (aliasWrite) {
+      // The editor would edit an object that code it does not see changes too.
+      report({
+        code: 'ambiguous-binding',
+        target: storyTarget(binding),
+        path: [],
+        message: `Cannot mutate ${binding.exportName} because ${aliasWrite.alias.localName}, an alias of it, is written to`,
+        ...loc(csf, aliasWrite.node),
+      });
+      return [];
+    }
     const init = declaration.type === 'VariableDeclarator' ? declaration.init : declaration;
     const node = init ? unwrapExpression(init as Node) : undefined;
     if (node && factoryMember(node)) {
@@ -666,6 +699,7 @@ const discoverStories = (
     }
     return [{ target: storyTarget(binding), root: storyRoot(csf, binding, object, assignments) }];
   });
+};
 
 // What discovery found in a parse: the objects by their targets, and the diagnostics it reported.
 type Discovery = {

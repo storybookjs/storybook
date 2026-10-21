@@ -201,16 +201,59 @@ describe('CsfObject', () => {
     const csf = parse(`export default { title: 'X' };`);
     const [meta] = csf.objects({ stories: false });
 
-    expect(meta.set(['framework'], { type: 'StringLiteral', value: 'x' })).toEqual({
+    expect(meta.set(['framework'], { type: 'Literal', value: 'x' })).toEqual({
       ok: true,
       changed: true,
     });
     expect(
       meta.set(['control'], { type: 'button', data: { type: 'Identifier', name: 'plainData' } })
     ).toEqual({ ok: true, changed: true });
+    expect(meta.set(['file'], { type: 'File', name: 'a.pdf' })).toEqual({
+      ok: true,
+      changed: true,
+    });
     expect(printCsf(csf).code).toBe(
-      `export default { title: 'X', framework: { type: 'StringLiteral', value: 'x' }, control: { type: 'button', data: { type: 'Identifier', name: 'plainData' } } };`
+      `export default { title: 'X', framework: { type: 'Literal', value: 'x' }, control: { type: 'button', data: { type: 'Identifier', name: 'plainData' } }, file: { type: 'File', name: 'a.pdf' } };`
     );
+  });
+
+  // What `@babel/types` builders give: `t.stringLiteral('b')`, which has no position.
+  const babelString = (value: string) => ({ type: 'StringLiteral', value });
+
+  it.each([
+    ['a builder node', babelString('b'), 'StringLiteral'],
+    [
+      'a node with a builder node inside',
+      { type: 'ArrayExpression', elements: [babelString('b')] },
+      'StringLiteral',
+    ],
+    [
+      'a call with a builder argument',
+      {
+        type: 'CallExpression',
+        callee: { type: 'Identifier', name: 'f' },
+        arguments: [{ type: 'NumericLiteral', value: 1 }],
+      },
+      'NumericLiteral',
+    ],
+    ['an object property', { type: 'ObjectProperty', key: babelString('a') }, 'ObjectProperty'],
+  ])('rejects %s of a Babel-only type without a position', (_kind, node, type) => {
+    const source = `export default { framework: 'a', addons: ['x'] };`;
+    const config = loadConfig(source).parse();
+
+    expect(config.set(['framework'], node)).toMatchObject({
+      ok: false,
+      changed: false,
+      diagnostic: {
+        code: 'unsupported-value',
+        message: `Cannot set framework to a ${type} node that did not come from \`get\`, \`transform\`, \`parseExpression\` or \`parseModule\``,
+      },
+    });
+    expect(config.append(['addons'], node)).toMatchObject({
+      ok: false,
+      diagnostic: { code: 'unsupported-value' },
+    });
+    expect(printConfig(config).code).toBe(source);
   });
 
   it.each([
@@ -942,6 +985,12 @@ describe('CsfObject', () => {
         result: { writes: "{ ...shared, addons: [...(shared.addons ?? []), 'x'] }" },
       },
       {
+        before: 'const shared = { stories: [] };',
+        object: "{ addons: ['a'], ...shared }",
+        edit: "append(['addons'], 'x')",
+        result: { writes: "{ addons: ['a', 'x'], ...shared }" },
+      },
+      {
         before: "import { Base } from './base';",
         object: "{ ...Base, label: 'a' }",
         edit: "set(['label'], 'b')",
@@ -991,6 +1040,12 @@ describe('CsfObject', () => {
       },
       {
         before: "const Base = { title: 'B' };",
+        object: "{ label: 'a', ...Base }",
+        edit: "remove(['label'])",
+        result: { writes: '{ ...Base }' },
+      },
+      {
+        before: "const Base = { title: 'B' }; type Base = typeof Base;",
         object: "{ label: 'a', ...Base }",
         edit: "remove(['label'])",
         result: { writes: '{ ...Base }' },
@@ -2129,9 +2184,11 @@ describe('CsfObject element and argument paths', () => {
     const source = "export default { framework: getAbsolutePath?.('react') };";
 
     expect(loadConfig(source).parse().getValue(['framework', 0])).toBe('react');
-    expect(edit(source, (config) => config.append(['framework'], 'x'))).toBe(
-      "export default { framework: getAbsolutePath?.('react', 'x') };"
-    );
+    expect(
+      edit("export default { loaders: [mswLoader?.('a')] };", (config) =>
+        config.append(['loaders', 0], 'x')
+      )
+    ).toBe("export default { loaders: [mswLoader?.('a', 'x')] };");
     expect(edit(source, (config) => config.set(['framework', 0], 'vue'))).toBe(
       "export default { framework: getAbsolutePath?.('vue') };"
     );
@@ -2403,13 +2460,13 @@ describe('CsfObject append and prepend', () => {
 
   it('keeps the line of a line comment it appends to an empty call', () => {
     expect(
-      edit('export default { framework: getAbsolutePath() };', (config) =>
-        config.append(['framework'], parseExpression("'react' // c"))
+      edit('export default { loaders: [mswLoader()] };', (config) =>
+        config.append(['loaders', 0], parseExpression("'react' // c"))
       )
-    ).toBe("export default { framework: getAbsolutePath(\n  'react', // c\n) };");
+    ).toBe("export default { loaders: [mswLoader(\n  'react', // c\n)] };");
   });
 
-  it('refuses a field that holds neither an array nor a call, and an item it would create', () => {
+  it('refuses a field that holds no array literal, and an item it would create', () => {
     const source = "export default { addons: 5, framework: { name: 'x' }, loaders: [] };";
     const config = loadConfig(source).parse();
 
@@ -2418,7 +2475,7 @@ describe('CsfObject append and prepend', () => {
       diagnostic: {
         code: 'unsupported-value',
         path: ['addons'],
-        message: "Expected an array literal or a call at 'addons', got 'Literal'",
+        message: "Expected an array literal at 'addons', got 'Literal'",
       },
     });
     expect(config.prepend(['framework'], 'x')).toMatchObject({
@@ -2433,6 +2490,36 @@ describe('CsfObject append and prepend', () => {
     expect(config.changed).toBe(false);
     expect(printConfig(config).code).toBe(source);
   });
+
+  it.each(["['a', 'b'].filter(Boolean)", 'getAddons()', 'getAddons?.()', 'list'])(
+    'refuses a field that holds a call, %s, as an argument is no entry',
+    (call) => {
+      const source = `const list = getAddons();\nexport default { addons: ${call} };`;
+      const config = loadConfig(source).parse();
+      const type = call.includes('?.') ? 'ChainExpression' : 'CallExpression';
+
+      expect(config.append(['addons'], 'c')).toMatchObject({
+        ok: false,
+        changed: false,
+        diagnostic: {
+          code: 'unsupported-value',
+          path: ['addons'],
+          message: `Expected an array literal at 'addons', got '${type}'`,
+        },
+      });
+      expect(config.prepend(['addons'], 'c')).toMatchObject({
+        diagnostic: { code: 'unsupported-value' },
+      });
+      expect(config.appendValueToArray(['addons'], 'c')).toMatchObject({
+        diagnostic: {
+          code: 'unsupported-value',
+          message: `Expected an array literal at 'addons', got '${type}'`,
+        },
+      });
+      expect(config.changed).toBe(false);
+      expect(printConfig(config).code).toBe(source);
+    }
+  );
 
   it('refuses to add to a constant that other code refers to as well', () => {
     const source = "const addons = ['a'];\nexport default { addons, other: addons };";

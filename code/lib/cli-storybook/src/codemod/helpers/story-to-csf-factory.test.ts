@@ -1,19 +1,28 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { formatFileContent } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
+import { readFileSync } from 'node:fs';
+
+import { fs, vol } from 'memfs';
 import path from 'path';
 import { dedent } from 'ts-dedent';
 
 import { storyToCsfFactory } from './story-to-csf-factory.ts';
 
+vi.mock('node:fs', { spy: true });
 vi.mock('storybook/internal/node-logger', () => ({
   logger: {
     log: vi.fn(),
     warn: vi.fn(),
   },
 }));
+
+// Vitest reads its own modules through `node:fs` too, so only the tests that seed memfs read from it
+afterEach(() => {
+  vi.mocked(readFileSync).mockReset();
+});
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -63,7 +72,6 @@ describe('stories codemod', () => {
          * Copyright 2024
          */
         import preview from "#.storybook/preview";
-
         const meta = preview.meta({ title: "Component" });
         export const A = meta.story();
       `);
@@ -77,11 +85,7 @@ describe('stories codemod', () => {
           `)
       ).resolves.toMatchInlineSnapshot(`
         import preview from "#.storybook/preview";
-
-        const meta = preview.meta({
-          title: "Component",
-        });
-
+        const meta = preview.meta({ title: "Component" });
         export const A = meta.story();
       `);
     });
@@ -210,11 +214,7 @@ describe('stories codemod', () => {
           `)
       ).resolves.toMatchInlineSnapshot(`
         import preview from "#.storybook/preview";
-
-        const meta = preview.meta({
-          title: "Component",
-        });
-
+        const meta = preview.meta({ title: "Component" });
         const someData = {};
 
         export const A = meta.story();
@@ -293,6 +293,38 @@ describe('stories codemod', () => {
       `);
     });
 
+    it('keeps the exports of an imported Svelte CSF file that are not stories', async () => {
+      vol.reset();
+      vol.fromJSON({
+        '/project/src/Task.stories.svelte': dedent`
+          <script module>
+            export const TaskData = { task: { id: '1' } };
+          </script>
+        `,
+      });
+      vi.mocked(readFileSync).mockImplementation(fs.readFileSync as typeof readFileSync);
+
+      await expect(
+        storyToCsfFactory(
+          {
+            path: '/project/src/TaskList.stories.ts',
+            source: dedent`
+              import * as TaskStories from './Task.stories.svelte';
+
+              export default { title: 'TaskList' };
+
+              export const Default = {
+                args: { ...TaskStories.Default.args, task: TaskStories.TaskData.task },
+              };
+            `,
+          },
+          { useSubPathImports: true }
+        )
+      ).resolves.toContain(
+        'args: { ...TaskStories.Default.input.args, task: TaskStories.TaskData.task }'
+      );
+    });
+
     it('migrate cross-file story imports from `ImportedStories.Story.xyz` to `ImportedStories.Story.input.xyz`', async () => {
       await expect(
         transform(dedent`
@@ -324,9 +356,7 @@ describe('stories codemod', () => {
         import * as BaseStories from "./Button.stories";
         import { Primary as ImportedPrimary } from "./Card.stories";
 
-        const meta = preview.meta({
-          title: "Component",
-        });
+        const meta = preview.meta({ title: "Component" });
 
         export const A = meta.story({
           args: BaseStories.Primary.input.args,
@@ -934,6 +964,71 @@ describe('stories codemod', () => {
         `);
       });
 
+      it('migrates parenthesized expressions before satisfies and as', async () => {
+        await expect(
+          transform(dedent`
+            import type { StoryFn, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+
+            export default { component: Button };
+
+            export const P = ((args) => <Button {...args} />) satisfies
+              StoryFn<typeof Button>;
+            export const O = ({ args: { a: 1 } }) satisfies StoryObj;
+            export const A = ({ args: { a: 2 } }) as StoryObj;
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button } from "./Button";
+
+          const meta = preview.meta({ component: Button });
+
+          export const P = meta.story((args) => <Button {...args} />);
+          export const O = meta.story({ args: { a: 1 } });
+          export const A = meta.story({ args: { a: 2 } });
+        `);
+      });
+
+      it('migrates a parenthesized meta before satisfies', async () => {
+        const source = (meta: string) => dedent`
+          import type { Meta } from '@storybook/react';
+          import { Button } from './Button';
+
+          ${meta}
+          export const A = {};
+        `;
+        const migrated = dedent`
+          import preview from "#.storybook/preview";
+          import { Button } from "./Button";
+
+          const meta = preview.meta({ component: Button });
+          export const A = meta.story();
+        `;
+        await expect(
+          transform(source('export default ({ component: Button }) satisfies Meta;'))
+        ).resolves.toBe(`${migrated}\n`);
+        await expect(
+          transform(
+            source('const meta = (({ component: Button })) satisfies Meta;\nexport default meta;')
+          )
+        ).resolves.toBe(`${migrated}\n`);
+      });
+
+      it('migrates parenthesized expressions with a comment inside the parentheses', async () => {
+        const output = await transform(dedent`
+          import type { StoryObj } from '@storybook/react';
+          import { Button } from './Button';
+
+          export default { component: Button };
+
+          export const K = (/* c */ { args: {} }) satisfies StoryObj;
+          export const T = ({ args: {} } /* after */) satisfies StoryObj;
+        `);
+        expect(output).toContain('export const K = meta.story(');
+        expect(output).toContain('export const T = meta.story(');
+        expect(output).not.toContain('satisfies');
+      });
+
       it('keeps the custom args type of a story on that story', async () => {
         await expect(
           transform(dedent`
@@ -1099,6 +1194,21 @@ describe('stories codemod', () => {
         ).resolves.toContain('meta.type<{ args: (Small | Wide) & Themed }>().story()');
       });
 
+      it('puts a conditional type in parentheses when it is intersected', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+            import type { Small, Themed } from './types';
+
+            export default { component: Button } satisfies Meta<typeof Button>;
+
+            export const Default: StoryObj<typeof Button> = {};
+            export const Sized: StoryObj<Small extends Themed ? Small : never> = {} satisfies StoryObj<Themed>;
+          `)
+        ).resolves.toContain('.type<{ args: (Small extends Themed ? Small : never) & Themed }>()');
+      });
+
       it('leaves out of the custom args type of a story what the meta already has', async () => {
         await expect(
           transform(dedent`
@@ -1123,6 +1233,81 @@ describe('stories codemod', () => {
           export const Sized = meta
             .type<{ args: { size: number } | { width: number } }>()
             .story(() => <Button />);
+        `);
+      });
+
+      it('tells custom args types apart by their string literals', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+
+            const meta = { component: Button } satisfies Meta<{ href: 'http://x' }>;
+            export default meta;
+
+            export const Same: StoryObj<{ href: 'http://x' }> = {};
+            export const Spaced: StoryObj<{ href: 'http://x' } & { label: 'a  b' }> = {};
+            export const Single: StoryObj<{ href: /* c */ 'http://x' } & { label: 'a b' }> = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button } from "./Button";
+
+          const meta = preview
+            .type<{ args: { href: "http://x" } }>()
+            .meta({ component: Button });
+
+          export const Same = meta.story();
+          export const Spaced = meta.type<{ args: { label: "a  b" } }>().story();
+          export const Single = meta.type<{ args: { label: "a b" } }>().story();
+        `);
+      });
+
+      it('tells custom args types apart by their bigint literals', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+
+            const meta = { component: Button } satisfies Meta<{ id: 1n }>;
+            export default meta;
+
+            export const Same: StoryObj<{ id: 1n }> = {};
+            export const Other: StoryObj<{ id: 2n }> = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button } from "./Button";
+
+          const meta = preview.type<{ args: { id: 1n } }>().meta({ component: Button });
+
+          export const Same = meta.story();
+          export const Other = meta.type<{ args: { id: 2n } }>().story();
+        `);
+      });
+
+      it('leaves a namespaced component class out, as its args are inferred', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/angular';
+            import * as Components from './components';
+
+            const meta: Meta<Components.Button & { theme: string }> = {
+              component: Components.Button,
+            };
+            export default meta;
+
+            export const A: StoryObj<Components.Button> = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import * as Components from "./components";
+
+          const meta = preview.type<{ args: { theme: string } }>().meta({
+            component: Components.Button,
+          });
+
+          export const A = meta.story();
         `);
       });
 
@@ -1182,6 +1367,64 @@ describe('stories codemod', () => {
       });
     });
 
+    it('migrates story imports from Svelte CSF files', async () => {
+      await expect(
+        transform(dedent`
+          import * as HeaderStories from './Header.stories.svelte';
+
+          export default { title: 'Page' };
+
+          export const LoggedIn = { args: HeaderStories.LoggedIn.args };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#.storybook/preview";
+        import * as HeaderStories from "./Header.stories.svelte";
+
+        const meta = preview.meta({ title: "Page" });
+
+        export const LoggedIn = meta.story({ args: HeaderStories.LoggedIn.input.args });
+      `);
+    });
+
+    it('migrates a Svelte stories file', async () => {
+      await expect(
+        transform(dedent`
+          import type { Meta, StoryObj } from '@storybook/svelte';
+          import { fn } from 'storybook/test';
+
+          import Button from './Button.svelte';
+
+          const meta = {
+            title: 'Example/Button',
+            component: Button,
+            args: { onclick: fn() },
+          } satisfies Meta<typeof Button>;
+
+          export default meta;
+          type Story = StoryObj<typeof meta>;
+
+          export const Primary: Story = {
+            args: { primary: true, label: 'Button' },
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#.storybook/preview";
+        import { fn } from "storybook/test";
+
+        import Button from "./Button.svelte";
+
+        const meta = preview.meta({
+          title: "Example/Button",
+          component: Button,
+          args: { onclick: fn() },
+        });
+
+        export const Primary = meta.story({
+          args: { primary: true, label: "Button" },
+        });
+      `);
+    });
+
     it('should remove unused Story types', async () => {
       await expect(
         transform(
@@ -1234,9 +1477,7 @@ describe('stories codemod', () => {
           name: string;
         }
 
-        const meta = preview.meta({
-          title: "Table",
-        });
+        const meta = preview.meta({ title: "Table" });
 
         export const A = meta.story({
           render: () => {
@@ -1267,14 +1508,10 @@ describe('stories codemod', () => {
         import preview from "#.storybook/preview";
         import { Meta } from "@storybook/react";
         import { Button } from "./Button";
-
         type ThisShouldNotBeRemoved = Meta<typeof Button>;
         const something: ThisShouldNotBeRemoved = {};
 
-        const meta = preview.meta({
-          title: "Button",
-        });
-
+        const meta = preview.meta({ title: "Button" });
         export const A = meta.story();
       `);
     });
@@ -1453,11 +1690,9 @@ describe('stories codemod', () => {
         const meta = preview.meta({
           component: Component,
           args: { getUsers: fn(), onClick: fn() },
-
           beforeEach: ({ args }) => {
             mocked(args.getUsers).mockResolvedValue([]);
           },
-
           loaders: [
             async ({ args }) => {
               mocked(args.getUsers).mockClear();

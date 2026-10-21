@@ -1,5 +1,3 @@
-import url from 'node:url';
-
 import { describe, expect, it } from 'vitest';
 
 import { getStoryIdentifiers, getStoriesIdentifiers } from './identifiers.ts';
@@ -7,7 +5,6 @@ import { getStoryIdentifiers, getStoriesIdentifiers } from './identifiers.ts';
 import { getSvelteAST } from '../../../ast.ts';
 import { extractSvelteASTNodes } from '../../../extract/svelte/nodes.ts';
 import { extractStoryAttributesNodes } from '../../../extract/svelte/story/attributes.ts';
-import { StorybookSvelteCSFError } from '../../../../utils/error.ts';
 
 describe(getStoryIdentifiers.name, () => {
   it("extracts 'exportName' attribute when is a Text string", async () => {
@@ -94,10 +91,10 @@ describe(getStoryIdentifiers.name, () => {
       })
     ).toThrowErrorMatchingInlineSnapshot(
       `
-      [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0004 (NoStoryIdentifierError): Missing 'name' or 'exportName' attribute (prop) in a '<Story />' definition in the stories file:  '${url.pathToFileURL('invalid.stories.svelte')}'.
+      [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0004 (NoStoryIdentifierError): Missing 'name' or 'exportName' attribute (prop) in a '<Story />' definition in the stories file:  '<cwd>/invalid.stories.svelte'.
       All stories must either have a 'name' or an 'exportName' prop, or both.
 
-      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0004
+      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0004
       ]
     `
     );
@@ -218,13 +215,13 @@ describe(getStoryIdentifiers.name, () => {
       })
     ).toThrowErrorMatchingInlineSnapshot(
       `
-      [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0005 (InvalidStoryExportNameError): Invalid attribute 'exportName' value 'default' found in '<Story />' component inside stories file: ${url.pathToFileURL('invalid.stories.svelte')}
+      [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0005 (InvalidStoryExportNameError): Invalid attribute 'exportName' value 'default' found in '<Story />' component inside stories file: <cwd>/invalid.stories.svelte
 
         'exportName' value must be a valid JavaScript variable name.
         It must start with a letter, $ or _, followed by letters, numbers, $ or _.
         Reserved words like 'default' are also not allowed (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#reserved_words)
 
-      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0005
+      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0005
       ]
     `
     );
@@ -290,7 +287,7 @@ describe(getStoriesIdentifiers.name, () => {
       })
     ).toThrowErrorMatchingInlineSnapshot(
       `
-      [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0006 (DuplicateStoryIdentifiersError): Duplicate exportNames found between two '<Story />' definitions in stories file: ${url.pathToFileURL('duplicate-identifiers.stories.svelte')}
+      [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0006 (DuplicateStoryIdentifiersError): Duplicate exportNames found between two '<Story />' definitions in stories file: <cwd>/duplicate-identifiers.stories.svelte
 
       First instance: <Story name={undefined} exportName="SomeExportName" ... />
       Second instance: <Story name={undefined} exportName="SomeExportName" ... />
@@ -300,7 +297,7 @@ describe(getStoriesIdentifiers.name, () => {
       eg. 'Some story name!!' will be converted to 'SomeStoryName'.
       You can fix this collision by providing a unique 'exportName' prop with <Story exportName="SomeUniqueExportName" ... />.
 
-      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0006
+      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0006
       ]
     `
     );
@@ -326,7 +323,7 @@ describe(getStoriesIdentifiers.name, () => {
       })
     ).toThrowErrorMatchingInlineSnapshot(
       `
-      [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0006 (DuplicateStoryIdentifiersError): Duplicate exportNames found between two '<Story />' definitions in stories file: ${url.pathToFileURL('duplicate-identifiers.stories.svelte')}
+      [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0006 (DuplicateStoryIdentifiersError): Duplicate exportNames found between two '<Story />' definitions in stories file: <cwd>/duplicate-identifiers.stories.svelte
 
       First instance: <Story name={undefined} exportName="SomeStoryName" ... />
       Second instance: <Story name="some story name!!!" exportName="SomeStoryName" ... />
@@ -336,7 +333,7 @@ describe(getStoriesIdentifiers.name, () => {
       eg. 'Some story name!!' will be converted to 'SomeStoryName'.
       You can fix this collision by providing a unique 'exportName' prop with <Story exportName="SomeUniqueExportName" ... />.
 
-      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0006
+      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0006
       ]
     `
     );

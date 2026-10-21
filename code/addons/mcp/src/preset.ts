@@ -18,6 +18,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 import { getStoryIndex } from './utils/get-story-index.ts';
+import { toBaseUrl } from './utils/base-url.ts';
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
   existingAnnotations = []
@@ -39,7 +40,7 @@ export const experimental_devServer: PresetPropertyFn<
 
   const basePath = options.basePath ?? '/';
   const origin = `http://localhost:${options.port}`;
-  const baseUrl = `${origin}${basePath.replace(/\/$/, '')}`;
+  const baseUrl = toBaseUrl(origin, basePath);
   logger.debug(`MCP server base URL: ${baseUrl}`);
   const endpoint = addonOptions.endpoint ?? DEFAULT_MCP_ENDPOINT;
 
@@ -168,7 +169,7 @@ export const experimental_devServer: PresetPropertyFn<
       options,
       addonOptions,
       origin,
-      baseUrl,
+      basePath,
       endpoint,
       sources,
       ...manifestAccessFor(req),
@@ -202,7 +203,7 @@ export const experimental_devServer: PresetPropertyFn<
         options,
         addonOptions,
         origin,
-        baseUrl,
+        basePath,
         endpoint,
         sources,
         ...manifestAccessFor(req),

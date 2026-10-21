@@ -254,7 +254,7 @@ describe('mcpServerHandler', () => {
       req: initReq,
       res: initResponse,
       origin: 'http://localhost:6006',
-      baseUrl: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions,
       addonOptions,
       compositionAuth: new CompositionAuth(),
@@ -271,7 +271,7 @@ describe('mcpServerHandler', () => {
       req: listReq,
       res: listResponse,
       origin: 'http://localhost:6006',
-      baseUrl: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions,
       addonOptions,
       compositionAuth: new CompositionAuth(),
@@ -297,7 +297,7 @@ describe('mcpServerHandler', () => {
       req: mockReq,
       res: response,
       origin: 'http://localhost:6006',
-      baseUrl: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       addonOptions: {
         toolsets: {
@@ -375,7 +375,7 @@ describe('mcpServerHandler', () => {
       req: mockReq,
       res: response,
       origin: 'http://localhost:6006',
-      baseUrl: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       addonOptions: {
         toolsets: {
@@ -435,7 +435,7 @@ describe('mcpServerHandler', () => {
       req: mockReq,
       res: response,
       origin: 'http://localhost:6006',
-      baseUrl: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       addonOptions: {
         toolsets: {
@@ -484,7 +484,7 @@ describe('mcpServerHandler', () => {
       req: initReq,
       res: initResponse,
       origin: 'http://localhost:6006',
-      baseUrl: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       addonOptions: {
         toolsets: { dev: true, docs: true },
@@ -509,7 +509,7 @@ describe('mcpServerHandler', () => {
       req: listToolsReq,
       res: listResponse,
       origin: 'http://localhost:6006',
-      baseUrl: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       addonOptions: {
         toolsets: { dev: true, docs: true },

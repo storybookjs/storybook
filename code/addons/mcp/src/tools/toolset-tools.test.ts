@@ -274,14 +274,14 @@ describe('toolset-backed MCP tools', () => {
     });
   });
 
-  it('prefers the configured base URL over the request path in the toolset origin', async () => {
+  it('prefers the configured base path over the request path in the toolset origin', async () => {
     registerStubStoriesToolset({
       handler: async (_input, ctx) => ({ ok: true, data: { stories: [] }, markdown: ctx.origin }),
     });
 
     const result = await callToolsetMethod(
       makeServer({
-        baseUrl: 'http://localhost:6006/__storybook',
+        basePath: '/__storybook/',
         endpoint: '/mcp',
         request: new Request('http://localhost:6006/nested/mcp', { method: 'POST' }),
       }),
@@ -295,14 +295,14 @@ describe('toolset-backed MCP tools', () => {
     });
   });
 
-  it('still uses the request subpath when the base URL is the bare origin', async () => {
+  it('still uses the request subpath when Storybook is served from the root', async () => {
     registerStubStoriesToolset({
       handler: async (_input, ctx) => ({ ok: true, data: { stories: [] }, markdown: ctx.origin }),
     });
 
     const result = await callToolsetMethod(
       makeServer({
-        baseUrl: 'http://localhost:6006',
+        basePath: '/',
         endpoint: '/mcp',
         request: new Request('http://localhost:6006/nested/mcp', { method: 'POST' }),
       }),

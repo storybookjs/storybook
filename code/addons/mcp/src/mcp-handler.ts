@@ -14,6 +14,7 @@ import { buildServerInstructions } from 'storybook/internal/skills';
 import type { CompositionAuth } from './auth/index.ts';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 import { registerAddonMcpTools } from './tools/tool-registry.ts';
+import { toBaseUrl } from './utils/base-url.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
 // Promise that ensures single initialization, even with concurrent requests
@@ -85,8 +86,8 @@ type McpServerHandlerParams = {
   addonOptions: AddonOptionsOutput;
   /** Origin of the local Storybook, e.g. `http://localhost:6006`. */
   origin: string;
-  /** Origin plus the configured base path of the local Storybook, without a trailing slash. */
-  baseUrl: string;
+  /** URL path prefix the local Storybook is served from, `/` or `/seg/`. */
+  basePath: string;
   /**
    * The MCP endpoint path (e.g. `/mcp` or a user-configured override).
    * Used to derive the Storybook root from the incoming request URL inside
@@ -118,7 +119,7 @@ export const mcpServerHandler = async ({
   options,
   addonOptions,
   origin,
-  baseUrl,
+  basePath,
   endpoint = DEFAULT_MCP_ENDPOINT,
   sources,
   manifestProvider,
@@ -142,7 +143,7 @@ export const mcpServerHandler = async ({
     endpoint,
     toolsets: getToolsets(webRequest, addonOptions),
     origin,
-    baseUrl,
+    basePath,
     disableTelemetry: disableTelemetry!,
     a11yEnabled,
     request: webRequest,
@@ -163,7 +164,7 @@ export const mcpServerHandler = async ({
           status: 401,
           headers: {
             'Content-Type': 'text/plain',
-            'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(baseUrl),
+            'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(toBaseUrl(origin, basePath)),
           },
         })
       : new Response(body, { status: response.status, headers: response.headers });

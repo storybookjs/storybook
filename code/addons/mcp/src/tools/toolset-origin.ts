@@ -1,4 +1,5 @@
 import { DEFAULT_MCP_ENDPOINT } from '../constants.ts';
+import { toBaseUrl } from '../utils/base-url.ts';
 
 /**
  * Derives the Storybook root from the MCP request path.
@@ -36,15 +37,15 @@ function storybookRootFromRequest(
  */
 export function resolveToolsetOrigin(context: {
   origin?: string;
-  baseUrl?: string;
+  basePath?: string;
   request?: Request;
   endpoint?: string;
 }): string | undefined {
   if (!context.origin) {
     return undefined;
   }
-  if (context.baseUrl && context.baseUrl !== context.origin) {
-    return context.baseUrl;
+  if (context.basePath && context.basePath !== '/') {
+    return toBaseUrl(context.origin, context.basePath);
   }
   return context.request
     ? (storybookRootFromRequest(

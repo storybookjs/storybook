@@ -85,7 +85,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
     const description = await getToolDescription({
       origin: 'http://localhost:6006',
-      baseUrl: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       disableTelemetry: true,
       a11yEnabled: true,
@@ -112,7 +112,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
     const description = await getToolDescription({
       origin: 'http://localhost:6006',
-      baseUrl: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       disableTelemetry: true,
       a11yEnabled: true,
@@ -139,7 +139,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
     const description = await getToolDescription({
       origin: 'http://localhost:6006',
-      baseUrl: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       disableTelemetry: true,
       a11yEnabled: false,
@@ -170,7 +170,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
     const testContext: AddonContext = {
       origin: 'http://localhost:6006',
-      baseUrl: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       disableTelemetry: true,
     };
@@ -276,7 +276,7 @@ describe('getUIBuildingInstructionsTool', () => {
         sessionId: 'test-session',
         custom: {
           origin: 'http://localhost:6006',
-          baseUrl: 'http://localhost:6006',
+          basePath: '/',
           options: mockOptions as any,
           disableTelemetry: true,
         },
@@ -311,7 +311,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
     const testContext: AddonContext = {
       origin: 'http://localhost:6006',
-      baseUrl: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       disableTelemetry: true,
     };
@@ -349,7 +349,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
     const testContext: AddonContext = {
       origin: 'http://localhost:6006',
-      baseUrl: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       disableTelemetry: true,
     };
@@ -386,7 +386,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
     const testContext: AddonContext = {
       origin: 'http://localhost:6006',
-      baseUrl: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       disableTelemetry: false,
     };
@@ -419,7 +419,7 @@ describe('getUIBuildingInstructionsTool', () => {
   it('should handle missing options in context', async () => {
     const testContext = {
       origin: 'http://localhost:6006',
-      baseUrl: 'http://localhost:6006',
+      basePath: '/',
       disableTelemetry: true,
     } as any;
 

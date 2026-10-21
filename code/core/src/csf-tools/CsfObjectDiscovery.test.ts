@@ -371,6 +371,33 @@ describe('CsfObject discovery', () => {
       }
     );
 
+    it.each([
+      [
+        'an assignment',
+        'export const Secondary = Primary;\nSecondary.args = { x: 1 };',
+        'Secondary',
+      ],
+      [
+        'a nested write through a chain of aliases',
+        'export const Secondary = Primary;\nexport const Tertiary = Secondary;\nTertiary.args.x = 1;',
+        'Tertiary',
+      ],
+    ])('refuses a story whose alias receives %s, which changes its object', (_, aliases, alias) => {
+      const csf = parse(
+        `export default { title: 'Example' };\nexport const Primary = { args: { a: 1 } };\n${aliases}\n`
+      );
+
+      expect(csf.objects({ meta: false })).toEqual([]);
+      expect(csf.storyObject('Primary')).toMatchObject({ ok: false });
+      expect(csf.mutationDiagnostics).toContainEqual(
+        expect.objectContaining({
+          code: 'ambiguous-binding',
+          target: { kind: 'story', exportName: 'Primary', localName: 'Primary' },
+          message: `Cannot mutate Primary because ${alias}, an alias of it, is written to`,
+        })
+      );
+    });
+
     it('reports every story of a chain of aliases as an alias of the story that holds the object', () => {
       const csf = parse(`
         export default { title: 'Example' };

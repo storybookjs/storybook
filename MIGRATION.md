@@ -63,6 +63,7 @@
   - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
   - [Web Components: server-side docgen suffixes event, slot and part argType keys](#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys)
   - [Web Components: the default render binds args by key](#web-components-the-default-render-binds-args-by-key)
+  - [Web Components: the runtime Custom Elements Manifest API is deprecated](#web-components-the-runtime-custom-elements-manifest-api-is-deprecated)
   - [SvelteKit: Require v3 and up](#sveltekit-require-v3-and-up)
   - [Svelte CSF is built into the Svelte frameworks](#svelte-csf-is-built-into-the-svelte-frameworks)
   - [Svelte CSF: legacy story syntax removed](#svelte-csf-legacy-story-syntax-removed)
@@ -1768,6 +1769,44 @@ A decorator that calls element methods on the story result must read the element
   return result;
 },
 ```
+
+### Web Components: the runtime Custom Elements Manifest API is deprecated
+
+`setCustomElementsManifest()` and `setCustomElements()`, which hand the preview a Custom Elements Manifest from `.storybook/preview.ts`, are deprecated and will be removed in Storybook 12, together with the `getCustomElements()`, `isValidComponent()` and `isValidMetaData()` helpers.
+Calling either setter logs a deprecation warning.
+
+With server-side docgen, which is on by default (see [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)), `@storybook/web-components-vite` reads your elements from your sources, so you no longer need a manifest.
+Remove the call and its import from the preview; there is nothing to add:
+
+```ts
+// Before: .storybook/preview.ts
+import { setCustomElementsManifest } from '@storybook/web-components-vite';
+import customElements from '../custom-elements.json';
+
+setCustomElementsManifest(customElements);
+
+// After: .storybook/preview.ts
+// (nothing; Storybook reads your elements from your sources)
+```
+
+To keep a manifest you generate yourself, point `main` at the file instead:
+
+```ts
+// .storybook/main.ts
+export default {
+  framework: {
+    name: '@storybook/web-components-vite',
+    options: { customElementsManifest: '../custom-elements.json' },
+  },
+};
+```
+
+When the option is not set, Storybook reads the `customElements` field of the nearest `package.json`.
+Elements the manifest does not declare are still read from your sources.
+
+The `web-components-runtime-manifest` automigration removes the setter call and its import from the preview and, when the manifest came from a file the preview imported, keeps it by adding its path to `framework.options.customElementsManifest`.
+It does nothing when `features.docgenServer` is `false`, and it leaves the preview alone with a warning when the manifest it finds is not readable.
+You can also run it with `storybook automigrate web-components-runtime-manifest`.
 
 ### SvelteKit: Require v3 and up
 

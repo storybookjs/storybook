@@ -15,8 +15,11 @@ import {
 } from '../utils/index.ts';
 import {
   isArrayExpression,
+  isAssignmentExpression,
+  isFunctionDeclaration,
   isIdentifier,
   isLiteral,
+  isMemberExpression,
   isObjectExpression,
   isProperty,
   isSpreadElement,
@@ -112,6 +115,14 @@ export default createStorybookRule({
   },
 
   create(context) {
+    const isValidStaticValue = (check: StaticPropertyCheck, value: TSESTree.Node) => {
+      const resolved =
+        check.resolveIdentifier && isIdentifier(value)
+          ? (resolveIdentifierInit(context, value) ?? value)
+          : value;
+      return check.isValid(resolved);
+    };
+
     const checkStaticObject = (
       object: TSESTree.ObjectExpression,
       checks: Record<string, StaticPropertyCheck>
@@ -125,7 +136,7 @@ export default createStorybookRule({
 
         const { key } = prop;
         const quotedName =
-          isLiteral(key) && typeof key.value === 'string' && key.value in checks
+          isLiteral(key) && typeof key.value === 'string' && Object.hasOwn(checks, key.value)
             ? key.value
             : undefined;
         if (quotedName) {
@@ -145,7 +156,7 @@ export default createStorybookRule({
           return;
         }
 
-        if (!isIdentifier(key) || !(key.name in checks)) {
+        if (!isIdentifier(key) || !Object.hasOwn(checks, key.name)) {
           return;
         }
 
@@ -159,12 +170,7 @@ export default createStorybookRule({
         }
 
         const check = checks[key.name];
-        let value: TSESTree.Node = prop.value;
-        if (check.resolveIdentifier && isIdentifier(value)) {
-          value = resolveIdentifierInit(context, value) ?? value;
-        }
-
-        if (!check.isValid(value)) {
+        if (!isValidStaticValue(check, prop.value)) {
           context.report({
             node: prop,
             messageId: 'dynamicProperty',
@@ -202,6 +208,14 @@ export default createStorybookRule({
     let meta: TSESTree.ObjectExpression | null = null;
     let metaIsFactory = false;
     const storyCandidates: StoryCandidate[] = [];
+    // story export name -> whether it is a factory story, mirroring csf-tools' registration
+    const exportedStories = new Map<string, boolean>();
+    const tagsAssignments: Array<{
+      exportName: string;
+      value: TSESTree.Expression;
+      node: TSESTree.AssignmentExpression;
+      declared: boolean;
+    }> = [];
 
     const collectStoryCandidate = (exportName: string, init: TSESTree.Node) => {
       let storyNode: TSESTree.Node | undefined = unwrapCsfTSWrappers(init);
@@ -247,9 +261,17 @@ export default createStorybookRule({
         if (isVariableDeclaration(declaration)) {
           declaration.declarations.forEach((declarator) => {
             if (isIdentifier(declarator.id) && declarator.init) {
+              exportedStories.set(
+                declarator.id.name,
+                isCsfFactoryStoryCall(unwrapCsfTSWrappers(declarator.init))
+              );
               collectStoryCandidate(declarator.id.name, declarator.init);
             }
           });
+          return;
+        }
+        if (isFunctionDeclaration(declaration) && isIdentifier(declaration.id)) {
+          exportedStories.set(declaration.id.name, false);
           return;
         }
         if (!declaration) {
@@ -274,6 +296,26 @@ export default createStorybookRule({
               }
               collectStoryCandidate(exportName, init);
             }
+          });
+        }
+      },
+
+      ExpressionStatement(node: TSESTree.ExpressionStatement) {
+        // Story.tags = [...] after the declaration is read by the indexer like an object property
+        const { expression } = node;
+        if (
+          node.parent.type === 'Program' &&
+          isAssignmentExpression(expression) &&
+          isMemberExpression(expression.left) &&
+          isIdentifier(expression.left.object) &&
+          isIdentifier(expression.left.property) &&
+          expression.left.property.name === 'tags'
+        ) {
+          tagsAssignments.push({
+            exportName: expression.left.object.name,
+            value: expression.right,
+            node: expression,
+            declared: exportedStories.has(expression.left.object.name),
           });
         }
       },
@@ -305,6 +347,25 @@ export default createStorybookRule({
             return;
           }
           checkStaticObject(object, STORY_PROPERTIES);
+        });
+
+        tagsAssignments.forEach(({ exportName, value, node, declared }) => {
+          if (
+            !declared ||
+            exportName === '__namedExportsOrder' ||
+            !isExportStory(exportName, nonStoryExports) ||
+            metaIsFactory !== exportedStories.get(exportName)
+          ) {
+            return;
+          }
+          const check = STORY_PROPERTIES.tags;
+          if (!isValidStaticValue(check, value)) {
+            context.report({
+              node,
+              messageId: 'dynamicProperty',
+              data: { property: 'tags', expected: check.expected },
+            });
+          }
         });
       },
     };

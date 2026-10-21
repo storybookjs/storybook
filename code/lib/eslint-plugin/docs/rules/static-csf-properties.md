@@ -10,7 +10,7 @@
 Storybook builds its index (the sidebar, story URLs, and tag filtering) by analyzing story files statically, without executing them. A handful of CSF properties therefore must be written so the indexer can read them from the AST:
 
 - `title`, `id`, `tags`, `includeStories`, and `excludeStories` on the meta (the default export, or the `preview.meta()` call in CSF factories)
-- `tags` on individual stories
+- `tags` on individual stories, whether written as a property or assigned afterwards (`Primary.tags = [...]`)
 
 A dynamic value — a function call, a template literal, an imported constant — makes the whole file fail to index, or silently diverge from what renders at runtime. This rule reports exactly the forms the indexer cannot read:
 

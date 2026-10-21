@@ -2298,6 +2298,29 @@ describe('ConfigFile', () => {
       expect(printConfig(config).code).toBe(source);
     });
 
+    it.each([
+      [
+        'a constant that other code refers to as well',
+        "const addons = ['a'];\nexport default { addons };\nregister(addons);",
+        "Cannot edit 'addons' because it is a constant that other code refers to as well",
+      ],
+      [
+        'a config that mixes a default export with named exports',
+        "export const tags = [];\nexport default { addons: ['a'] };",
+        undefined,
+      ],
+    ])('refuses, like append, an array in %s, also without the entry', (_case, source, message) => {
+      for (const value of ['a', 'x']) {
+        const config = loadConfig(source).parse();
+
+        expect(config.removeEntryFromArray(['addons'], value)).toMatchObject({
+          ok: false,
+          diagnostic: message ? { message } : {},
+        });
+        expect(printConfig(config).code).toBe(source);
+      }
+    });
+
     it('reports a field that is not an array literal', () => {
       const config = loadConfig(`export default { addons: {} };`).parse();
       const result = config.removeEntryFromArray(['addons'], 'x');

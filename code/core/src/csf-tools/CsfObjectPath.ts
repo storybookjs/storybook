@@ -249,7 +249,7 @@ export const listAt = (
     code: 'unsupported-value',
     node,
     message: shared
-      ? `Cannot add to '${printCsfPath(path)}', a constant that other code refers to as well`
+      ? `Cannot edit '${printCsfPath(path)}' because it is a constant that other code refers to as well`
       : `Expected an array literal${isKey(last) ? '' : ' or a call'} at '${printCsfPath(path)}', got '${(resolved ?? node).type}'`,
   };
 };

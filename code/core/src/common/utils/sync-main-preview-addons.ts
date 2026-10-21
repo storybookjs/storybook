@@ -40,7 +40,7 @@ export async function syncPreviewAddonsWithMainConfig(
   }
   const existingAddons = previewConfig.inspectList(['addons']);
   if (existingAddons.kind === 'refused') {
-    logger.debug(`Not synchronizing the preview addons: ${existingAddons.diagnostic.message}`);
+    logger.warn(`Not synchronizing the preview addons: ${existingAddons.diagnostic.message}`);
     return previewConfig;
   }
   // An empty `addons` written after a spread would replace the addons it provides, which `append`

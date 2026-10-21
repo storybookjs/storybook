@@ -2507,7 +2507,7 @@ describe('CsfObject append and prepend', () => {
     expect(config.append(['addons'], 'b')).toMatchObject({
       diagnostic: {
         code: 'unsupported-value',
-        message: "Cannot add to 'addons', a constant that other code refers to as well",
+        message: "Cannot edit 'addons' because it is a constant that other code refers to as well",
       },
     });
     expect(printConfig(config).code).toBe(source);

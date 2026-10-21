@@ -238,6 +238,10 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
   onKeydown(event: KeyboardEvent) {
     if (this.storyRenders.find((r) => r.disableKeyListeners)) {
+      if (event.key === 'F6') {
+        // Temporary diagnostics for landmark navigation from the preview.
+        logger.info('[landmark navigation] F6 ignored: a render disabled key listeners');
+      }
       return;
     }
 
@@ -251,6 +255,15 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       event.preventDefault();
     } else if (focusInInput(event)) {
       return;
+    }
+    if (event.key === 'F6') {
+      // Temporary diagnostics for landmark navigation from the preview.
+      logger.info('[landmark navigation] F6 in the preview', {
+        shiftKey: event.shiftKey,
+        embedded: isLandmarkNavigation,
+        defaultPrevented: event.defaultPrevented,
+        target: (event.target as Element | null)?.tagName,
+      });
     }
 
     // We have to pick off the keys of the event that we need on the other side

@@ -600,16 +600,34 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
       // the preview iframe.
       if (data.event.key === 'F6') {
         const { key, altKey, ctrlKey, metaKey, shiftKey } = data.event;
-        document.getElementById(focusableUIElements.previewRegion)?.dispatchEvent(
-          new KeyboardEvent('keydown', {
-            key,
-            altKey,
-            ctrlKey,
-            metaKey,
-            shiftKey,
-            cancelable: true,
-          })
-        );
+        const region = document.getElementById(focusableUIElements.previewRegion);
+        const replay = new KeyboardEvent('keydown', {
+          key,
+          altKey,
+          ctrlKey,
+          metaKey,
+          shiftKey,
+          cancelable: true,
+        });
+        // Temporary diagnostics for landmark navigation from the preview.
+        const describe = (element: Element | null) =>
+          element && `${element.tagName}#${element.id}[role=${element.getAttribute('role')}]`;
+        logger.info('[landmark navigation] F6 received from the preview', {
+          shiftKey,
+          previewRegionFound: !!region,
+          activeElement: describe(document.activeElement),
+          landmarks: document.querySelectorAll('[data-sb-landmark]').length,
+        });
+        region?.dispatchEvent(replay);
+        logger.info('[landmark navigation] replayed on the preview landmark', {
+          handledByReactAria: replay.defaultPrevented,
+        });
+        setTimeout(() => {
+          logger.info('[landmark navigation] focus 100ms after the replay', {
+            activeElement: describe(document.activeElement),
+            managerHasFocus: document.hasFocus(),
+          });
+        }, 100);
       }
     });
   };

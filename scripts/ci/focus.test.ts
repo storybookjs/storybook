@@ -1,6 +1,26 @@
+import { existsSync } from 'node:fs';
+
+import { join } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
-import { getFocusJobs, selectChromaticSiblings, selectFocusSandbox } from './focus.ts';
+import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import {
+  FOCUS_PATH_ROOTS,
+  getFocusJobs,
+  selectChromaticSiblings,
+  selectFocusSandbox,
+} from './focus.ts';
+
+describe('focusPaths', () => {
+  it.each(Object.values(allTemplates).flatMap(({ focusPaths = [] }) => focusPaths))(
+    '%s is an existing directory under a framework, renderer, or builder root',
+    (path) => {
+      expect(FOCUS_PATH_ROOTS.some((root) => path.startsWith(root))).toBe(true);
+      expect(path.endsWith('/')).toBe(true);
+      expect(existsSync(join(import.meta.dirname, '../..', path))).toBe(true);
+    }
+  );
+});
 
 describe('selectFocusSandbox', () => {
   it.each([

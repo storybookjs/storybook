@@ -2,7 +2,6 @@ import { execFileSync } from 'node:child_process';
 
 import {
   allTemplates,
-  type FocusPathKind,
   normal,
   type Template,
   type TemplateKey,
@@ -13,20 +12,24 @@ import type { JobOrNoOpJob } from './utils/types.ts';
 
 const DEFAULT_FOCUS_SANDBOX = 'react-vite/default-ts' satisfies TemplateKey;
 
-const FOCUS_PATH_PRIORITY = [
-  'framework',
-  'renderer',
-  'builder',
-] as const satisfies readonly FocusPathKind[];
+/** Ordered by priority: a framework match picks the sandbox before a renderer or builder match. */
+export const FOCUS_PATH_ROOTS = ['code/frameworks/', 'code/renderers/', 'code/builders/'] as const;
+
+type FocusPathRoot = (typeof FOCUS_PATH_ROOTS)[number];
+
+const isChangedUnder = (
+  { focusPaths = [] }: Template,
+  root: FocusPathRoot,
+  changedFiles: readonly string[]
+) =>
+  focusPaths.some(
+    (path) => path.startsWith(root) && changedFiles.some((file) => file.startsWith(path))
+  );
 
 export function selectFocusSandbox(changedFiles: readonly string[]): TemplateKey {
-  for (const kind of FOCUS_PATH_PRIORITY) {
+  for (const root of FOCUS_PATH_ROOTS) {
     const sandbox = (Object.entries(allTemplates) as [TemplateKey, Template][]).find(
-      ([, { focusPathPrefixes }]) => {
-        const prefix = focusPathPrefixes?.[kind];
-
-        return prefix !== undefined && changedFiles.some((file) => file.startsWith(prefix));
-      }
+      ([, template]) => isChangedUnder(template, root, changedFiles)
     )?.[0];
 
     if (sandbox) {
@@ -44,11 +47,7 @@ export function selectChromaticSiblings(
 ): TemplateKey[] {
   const changedRenderers = new Set(
     Object.values(allTemplates)
-      .filter(({ focusPathPrefixes }) => {
-        const prefix = focusPathPrefixes?.renderer;
-
-        return prefix !== undefined && changedFiles.some((file) => file.startsWith(prefix));
-      })
+      .filter((candidate) => isChangedUnder(candidate, 'code/renderers/', changedFiles))
       .map(({ expected }) => expected.renderer)
   );
 

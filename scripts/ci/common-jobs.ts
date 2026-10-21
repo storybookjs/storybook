@@ -361,6 +361,20 @@ export const node26Smoke = defineJob('Node 26 smoke', () => ({
         command: ['node --version', 'sudo npm install -g npm@12', 'npm --version'].join('\n'),
       },
     },
+    {
+      run: {
+        // Node 25 stopped bundling corepack. Without it, sandboxes run the
+        // image's global yarn instead of the Yarn 4 their `packageManager`
+        // field pins, and `create-storybook` hangs.
+        name: 'Install corepack',
+        command: [
+          'sudo npm install -g corepack@0',
+          'sudo corepack enable',
+          'which yarn',
+          'yarn --version',
+        ].join('\n'),
+      },
+    },
     npm.install('.'),
     {
       run: {

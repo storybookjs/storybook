@@ -2554,12 +2554,23 @@ export const Composed = { ...Primary, name: 'Composed' };
       );
     });
 
+    it('commits the first write, so its node and the indexed stories show the argument', () => {
+      const csf = parse(source);
+      const [a] = csf.objects({ meta: false });
+      expect(csf.stories[0].parameters?.__isArgsStory).toBe(false);
+
+      expect(a.set(['args', 'a'], 1)).toEqual({ ok: true, changed: true });
+
+      expect(a.node && textOf(a.node)).toBe('{ args: { a: 1 } }');
+      expect(csf.stories[0].parameters?.__isArgsStory).toBe(true);
+    });
+
     it('writes another field into the argument the first write added', () => {
       const csf = parse(source);
       const [a] = csf.objects({ meta: false });
 
       expect(a.set(['args', 'a'], 1)).toEqual({ ok: true, changed: true });
-      expect(csf.editor.pending).toBe(true);
+      expect(csf.editor.pending).toBe(false);
       expect(a.set(['parameters', 'layout'], 'centered')).toEqual({ ok: true, changed: true });
       expect(a.node?.properties).toHaveLength(2);
 

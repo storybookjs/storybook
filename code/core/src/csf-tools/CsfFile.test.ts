@@ -3535,6 +3535,20 @@ describe('INDEX_FIELDS', () => {
     export const Secondary = () => null;
     Secondary.args = { primary: false };
   `;
+  const factory = dedent`
+    import preview from '#.storybook/preview';
+    import { Button } from './Button';
+    const meta = preview.meta({
+      title: 'Example/Button',
+      component: Button,
+      args: { label: 'A' },
+      argTypes: { label: { control: 'text' } },
+      parameters: { layout: 'centered' },
+      decorators: [],
+    });
+    export const Primary = meta.story({ args: { primary: true }, parameters: { docs: {} } });
+    export const Bare = meta.story();
+  `;
   const keys = [
     'title',
     'id',
@@ -3577,8 +3591,8 @@ describe('INDEX_FIELDS', () => {
     parseExpression("storiesOf('X')"),
     parseExpression("() => {\n  Primary.test('t', () => {});\n}"),
   ];
-  const load = () =>
-    loadCsf(source, { fileName: 'Button.stories.tsx', makeTitle: (title) => title! }).parse();
+  const load = (code: string) =>
+    loadCsf(code, { fileName: 'Button.stories.tsx', makeTitle: (title) => title! }).parse();
   const indexed = (csf: ReturnType<typeof load>) => {
     try {
       return JSON.stringify([csf.indexInputs, csf._stories, csf.meta]);
@@ -3588,29 +3602,36 @@ describe('INDEX_FIELDS', () => {
   };
 
   // Every change of a field and of a value inside it, committed before the file is indexed again.
-  const changes = [0, 1, 2].flatMap((target) =>
-    paths.flatMap((path) =>
-      values.map((value) => {
-        const csf = load();
-        const before = indexed(csf);
-        const object = csf.objects()[target];
-        const result = value === 'remove' ? object.remove(path) : object.set(path, value);
-        let changed = !result.ok && result.diagnostic.code === 'invalid-csf';
-        try {
-          csf.editor.commit();
-        } catch {
-          changed = true;
-        }
-        const callee = INDEXED_CALLEES.some((name) => JSON.stringify(value).includes(name));
-        return { target: object.target, path, callee, changed: changed || indexed(csf) !== before };
-      })
+  // A factory call without an argument, `bare`, gets one from its first write, which the index sees.
+  const changes = [source, factory].flatMap((code) =>
+    [0, 1, 2].flatMap((target) =>
+      paths.flatMap((path) =>
+        values.map((value) => {
+          const csf = load(code);
+          const before = indexed(csf);
+          const object = csf.objects()[target];
+          const bare = !object.node;
+          const result = value === 'remove' ? object.remove(path) : object.set(path, value);
+          const { pending } = csf.editor;
+          let changed = !result.ok && result.diagnostic.code === 'invalid-csf';
+          try {
+            csf.editor.commit();
+          } catch {
+            changed = true;
+          }
+          const callee = INDEXED_CALLEES.some((name) => JSON.stringify(value).includes(name));
+          changed ||= indexed(csf) !== before;
+          return { target: object.target, path, callee, bare, pending, changed };
+        })
+      )
     )
   );
 
   it('lists every field whose change the index sees, unless the value calls an indexed callee', () => {
     vi.spyOn(logger, 'warn').mockImplementation(() => {});
     const unlisted = changes.filter(
-      ({ target, path, callee, changed }) => changed && !callee && !indexedPath(target, path)
+      ({ target, path, callee, bare, changed }) =>
+        changed && !callee && !bare && !indexedPath(target, path)
     );
     expect([
       ...new Set(unlisted.map(({ target, path }) => `${target.kind}: ${printCsfPath(path)}`)),
@@ -3629,6 +3650,14 @@ describe('INDEX_FIELDS', () => {
       ['story', 'parameters'],
     ];
     expect(listed.filter(([kind, key]) => !seen(kind, key))).toEqual([]);
+  });
+
+  it('commits every change the index sees at the mutation that makes it', () => {
+    expect(
+      changes
+        .filter(({ pending, changed }) => pending && changed)
+        .map(({ target, path }) => `${target.kind}: ${printCsfPath(path)}`)
+    ).toEqual([]);
   });
 
   it('sees a value calling an indexed callee anywhere', () => {

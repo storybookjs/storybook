@@ -1420,16 +1420,20 @@ class Editor implements CsfObject {
   }
 
   // Leaves the mutation's edits pending, unless the index reads a path it changed, `paths`, it
-  // declares or removes bindings, its text mentions a binding the proofs count references of or a
-  // callee the index reads, it writes lines while an appended statement waits for a commit to be
-  // set apart, or the statements it edited no longer parse; then it commits.
+  // declares or removes bindings, it writes into a root that cannot name its member spans, such as
+  // the argument a factory call without one gets, which the index sees, its text mentions a binding
+  // the proofs count references of or a callee the index reads, it writes lines while an appended
+  // statement waits for a commit to be set apart, or the statements it edited no longer parse; then
+  // it commits.
   private stage(path: CsfPath, paths: readonly CsfPath[] = [path]): CsfMutationResult {
     const from = this.editor._batch === this.#batch ? this.#from : 0;
     const own = this.editor._batch.touched.slice(from);
     const ownNames = this.target.kind === 'story' ? [this.target.localName] : [];
+    const root = this.host.root();
     if (
       paths.some((changed) => this.host.index?.reads(changed)) ||
-      this.host.root()?.declares ||
+      root?.declares ||
+      !root?.members ||
       (this.editor._appendedWithoutBlankLine.length > 0 &&
         own.some((written) => written.text.includes('\n'))) ||
       this.mentions(own, ownNames) ||

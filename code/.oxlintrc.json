@@ -218,7 +218,7 @@
       }
     },
     {
-      "files": ["renderers/react/src/__test__/*.stories.*"],
+      "files": ["renderers/*/src/__test__/**/*.stories.*"],
       "rules": {
         "storybook/default-exports": "off"
       }

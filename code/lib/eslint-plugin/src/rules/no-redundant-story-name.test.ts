@@ -20,6 +20,8 @@ ruleTester.run('no-redundant-story-name', rule, {
   valid: [
     "export const PrimaryButton = { name: 'The Primary Button' }",
     "export const PrimaryButton = meta.story({ name: 'The Primary Button' })",
+    // extended stories inherit the base story's name, so a matching override is not redundant
+    "export const PrimaryButton = BaseButton.extend({ name: 'Primary Button' })",
     "export const PrimaryButton: Story = { name: 'The Primary Button' }",
     `
       const Default = {}

@@ -12,6 +12,7 @@ import {
   isExpressionStatement,
   isIdentifier,
   isLiteral,
+  isMemberExpression,
   isMetaProperty,
   isObjectExpression,
   isProperty,
@@ -68,9 +69,16 @@ export default createStorybookRule({
             return;
           }
           const { id, init } = declaration;
-          // CSF3 object exports and CSF4 `meta.story({ ... })` exports carry the same shape
+          // CSF3 object exports and CSF4 `meta.story({ ... })` exports carry the same shape.
+          // `.extend()` is excluded: it inherits the base story's name, so an override matching
+          // the export name still changes what renders.
           let storyObject: TSESTree.Node | null | undefined = init && unwrapTSExpression(init);
-          if (isCsfFactoryStoryCall(storyObject)) {
+          if (
+            isCsfFactoryStoryCall(storyObject) &&
+            isMemberExpression(storyObject.callee) &&
+            isIdentifier(storyObject.callee.property) &&
+            storyObject.callee.property.name === 'story'
+          ) {
             storyObject = storyObject.arguments[0];
           }
           if (isIdentifier(id) && isObjectExpression(storyObject)) {

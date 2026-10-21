@@ -8,7 +8,7 @@ import type { TSESTree } from '@typescript-eslint/types';
 
 import {
   getAllNamedExports,
-  getDescriptor,
+  getNonStoryExportsConfig,
   getMetaObjectExpression,
   isFactoryStoryExport,
   isValidStoryExport,
@@ -59,17 +59,6 @@ export default createStorybookRule({
     let metaIsFactory = false;
     const namedExports: TSESTree.Identifier[] = [];
 
-    const readNonStoryExportsConfig = (metaObject: TSESTree.ObjectExpression) => {
-      try {
-        nonStoryExportsConfig = {
-          excludeStories: getDescriptor(metaObject, 'excludeStories'),
-          includeStories: getDescriptor(metaObject, 'includeStories'),
-        };
-      } catch {
-        //
-      }
-    };
-
     return {
       ImportSpecifier(node) {
         if ('name' in node.imported && node.imported.name === 'storiesOf') {
@@ -79,7 +68,7 @@ export default createStorybookRule({
       ExportDefaultDeclaration: function (node) {
         meta = getMetaObjectExpression(node, context);
         if (meta) {
-          readNonStoryExportsConfig(meta);
+          nonStoryExportsConfig = getNonStoryExportsConfig(meta);
         }
       },
       CallExpression: function (node) {
@@ -88,7 +77,7 @@ export default createStorybookRule({
           metaIsFactory = true;
           if (factoryMeta.metaObject) {
             meta = factoryMeta.metaObject;
-            readNonStoryExportsConfig(factoryMeta.metaObject);
+            nonStoryExportsConfig = getNonStoryExportsConfig(factoryMeta.metaObject);
           }
         }
       },

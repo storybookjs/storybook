@@ -6,7 +6,7 @@ import { isExportStory } from '../utils/csf-helpers.ts';
 import type { TSESTree } from '@typescript-eslint/types';
 
 import {
-  getDescriptor,
+  getNonStoryExportsConfig,
   getMetaObjectExpression,
   isCsfFactoryStoryCall,
   parseFactoryMetaCall,
@@ -113,7 +113,7 @@ export default createStorybookRule({
     const isValidStaticValue = (check: StaticPropertyCheck, value: TSESTree.Node) => {
       const resolved =
         check.resolveIdentifier && isIdentifier(value)
-          ? (resolveIdentifierInit(context, value) ?? value)
+          ? (resolveIdentifierInit(context, value, { topLevelOnly: true }) ?? value)
           : value;
       return check.isValid(resolved);
     };
@@ -255,7 +255,7 @@ export default createStorybookRule({
             const exportName = isIdentifier(specifier.exported)
               ? specifier.exported.name
               : String(specifier.exported.value);
-            const init = resolveIdentifierInit(context, specifier.local);
+            const init = resolveIdentifierInit(context, specifier.local, { topLevelOnly: true });
             if (init) {
               if (exportName === 'default') {
                 // export { X as default } is a CSF3 meta
@@ -297,17 +297,7 @@ export default createStorybookRule({
           return;
         }
 
-        let nonStoryExports = {};
-        try {
-          nonStoryExports = meta
-            ? {
-                includeStories: getDescriptor(meta, 'includeStories'),
-                excludeStories: getDescriptor(meta, 'excludeStories'),
-              }
-            : {};
-        } catch {
-          //
-        }
+        const nonStoryExports = meta ? getNonStoryExportsConfig(meta) : {};
 
         storyCandidates.forEach(({ exportName, object, isFactory }) => {
           if (exportName === '__namedExportsOrder' || !isExportStory(exportName, nonStoryExports)) {

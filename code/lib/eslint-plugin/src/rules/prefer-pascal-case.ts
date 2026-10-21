@@ -9,7 +9,7 @@ import type { TSESTree } from '@typescript-eslint/types';
 import type { TSESLint } from '@typescript-eslint/utils';
 
 import {
-  getDescriptor,
+  getNonStoryExportsConfig,
   getMetaObjectExpression,
   isFactoryStoryExport,
   parseFactoryMetaCall,
@@ -131,17 +131,6 @@ export default createStorybookRule({
     const namedExports: TSESTree.Identifier[] = [];
     let hasStoriesOfImport = false;
 
-    const readNonStoryExportsConfig = (metaObject: TSESTree.ObjectExpression) => {
-      try {
-        nonStoryExportsConfig = {
-          excludeStories: getDescriptor(metaObject, 'excludeStories'),
-          includeStories: getDescriptor(metaObject, 'includeStories'),
-        };
-      } catch {
-        //
-      }
-    };
-
     return {
       ImportSpecifier(node) {
         if ('name' in node.imported && node.imported.name === 'storiesOf') {
@@ -151,7 +140,7 @@ export default createStorybookRule({
       ExportDefaultDeclaration: function (node) {
         meta = getMetaObjectExpression(node, context);
         if (meta) {
-          readNonStoryExportsConfig(meta);
+          nonStoryExportsConfig = getNonStoryExportsConfig(meta);
         }
       },
       CallExpression: function (node: TSESTree.CallExpression) {
@@ -159,7 +148,7 @@ export default createStorybookRule({
         if (factoryMeta?.validPreviewImport) {
           metaIsFactory = true;
           if (factoryMeta.metaObject) {
-            readNonStoryExportsConfig(factoryMeta.metaObject);
+            nonStoryExportsConfig = getNonStoryExportsConfig(factoryMeta.metaObject);
           }
         }
       },

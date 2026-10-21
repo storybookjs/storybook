@@ -108,7 +108,10 @@ export default createStorybookRule({
                   {
                     messageId: 'removeRedundantName',
                     fix: function (fixer) {
-                      return fixer.remove(storyNameNode);
+                      const nextToken = context.sourceCode.getTokenAfter(storyNameNode);
+                      return nextToken?.value === ','
+                        ? fixer.removeRange([storyNameNode.range[0], nextToken.range[1]])
+                        : fixer.remove(storyNameNode);
                     },
                   },
                 ],

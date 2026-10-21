@@ -74,12 +74,13 @@ export const unwrapTSExpression = (node: TSESTree.Node): TSESTree.Node =>
 
 /**
  * Initializer of the variable an identifier refers to, when csf-tools would resolve it: a single
- * `VariableDeclarator` in this file, optionally required to never be reassigned.
+ * `VariableDeclarator`, optionally required to never be reassigned or to sit at the top level of
+ * the file (csf-tools only searches top-level declarations for property values).
  */
 export const resolveIdentifierInit = (
   context: RuleContext,
   identifier: TSESTree.Identifier,
-  { requireConstant = false } = {}
+  { requireConstant = false, topLevelOnly = false } = {}
 ): TSESTree.Expression | null => {
   const variable = ASTUtils.findVariable(getScope(context, identifier), identifier.name);
   const def = variable?.defs.length === 1 ? variable.defs[0] : undefined;
@@ -88,6 +89,16 @@ export const resolveIdentifierInit = (
   }
   if (requireConstant && variable?.references.some((ref) => ref.isWrite() && !ref.init)) {
     return null;
+  }
+  if (topLevelOnly) {
+    const declaration = def.node.parent;
+    const container =
+      declaration.parent?.type === 'ExportNamedDeclaration'
+        ? declaration.parent.parent
+        : declaration.parent;
+    if (container?.type !== 'Program') {
+      return null;
+    }
   }
   return def.node.init;
 };
@@ -161,7 +172,22 @@ export const getFactoryMetaObjectExpression = (
   return factoryMeta?.validPreviewImport ? factoryMeta.metaObject : null;
 };
 
-/** Whether an expression is a CSF factory story call: `meta.story({ ... })` or `meta.extend()`. */
+// `meta.type<T>()` returns its receiver, so type calls are transparent when finding the root
+const withoutTypeCalls = (node: TSESTree.Node): TSESTree.Node =>
+  isCallExpression(node) &&
+  node.arguments.length === 0 &&
+  isMemberExpression(node.callee) &&
+  !node.callee.computed &&
+  isIdentifier(node.callee.property) &&
+  node.callee.property.name === 'type'
+    ? withoutTypeCalls(node.callee.object)
+    : node;
+
+/**
+ * Whether an expression is a CSF factory story call: `meta.story({ ... })` or `meta.extend()`,
+ * rooted at an identifier like csf-tools requires — so builder chains such as
+ * `z.object({}).extend({ ... })` do not count.
+ */
 export const isCsfFactoryStoryCall = (
   node: TSESTree.Node | null | undefined
 ): node is TSESTree.CallExpression =>
@@ -169,7 +195,8 @@ export const isCsfFactoryStoryCall = (
   isMemberExpression(node.callee) &&
   !node.callee.computed &&
   isIdentifier(node.callee.property) &&
-  ['story', 'extend'].includes(node.callee.property.name);
+  ['story', 'extend'].includes(node.callee.property.name) &&
+  isIdentifier(withoutTypeCalls(node.callee.object));
 
 /**
  * Whether an exported identifier produces a story in a factory file: only `meta.story()` /
@@ -217,6 +244,20 @@ export const getDescriptor = (
       return property.value.value;
     default:
       throw new Error(`Unexpected descriptor: ${type}`);
+  }
+};
+
+/** Include/exclude story filters of a meta object; empty when the descriptors are unreadable. */
+export const getNonStoryExportsConfig = (
+  meta: TSESTree.ObjectExpression
+): IncludeExcludeOptions => {
+  try {
+    return {
+      includeStories: getDescriptor(meta, 'includeStories'),
+      excludeStories: getDescriptor(meta, 'excludeStories'),
+    };
+  } catch {
+    return {};
   }
 };
 

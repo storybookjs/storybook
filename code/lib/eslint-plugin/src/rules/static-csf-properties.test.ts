@@ -152,6 +152,39 @@ const scenarios: Scenario[] = [
     indexable: true,
   },
   {
+    name: 'builder chains ending in .extend() are not factory stories',
+    code: dedent`
+      import { z } from 'zod'
+      import preview from '../../.storybook/preview'
+      const meta = preview.meta({ component: Button })
+      export const Primary = meta.story({})
+      export const schema = z.object({}).extend({ tags: z.array(z.string()) })
+    `,
+    indexable: true,
+  },
+  {
+    name: 'factory stories behind .type() chains',
+    code: dedent`
+      import preview from '../../.storybook/preview'
+      const meta = preview.meta({ component: Button })
+      export const Primary = meta.type().story({ tags: computeTags() })
+    `,
+    indexable: false,
+    errors: [{ messageId: 'dynamicProperty', type: AST_NODE_TYPES.Property }],
+  },
+  {
+    name: 'constants inside functions are not resolved',
+    code: dedent`
+      import preview from '../../.storybook/preview'
+      export function makeMeta() {
+        const title = 'Button'
+        return preview.meta({ title })
+      }
+    `,
+    indexable: false,
+    errors: [{ messageId: 'dynamicProperty', type: AST_NODE_TYPES.Property }],
+  },
+  {
     name: 'member .meta() calls unrelated to Storybook are ignored',
     code: dedent`
       import { z } from 'zod'

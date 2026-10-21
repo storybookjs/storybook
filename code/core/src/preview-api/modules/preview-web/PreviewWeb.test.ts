@@ -963,9 +963,30 @@ describe('PreviewWeb', () => {
         mockChannel.emit.mockClear();
         docsRenderer.render.mockClear();
         emitter.emit(UPDATE_GLOBALS, { globals: { a: 'd' } });
-        await waitForEvents([GLOBALS_UPDATED]);
+        await waitForEvents([DOCS_RENDERED]);
 
         expect(docsRenderer.render).toHaveBeenCalled();
+      });
+
+      it('waits for inline stories to rerender before rerendering the docs container', async () => {
+        document.location.search = '?id=component-one--docs&viewMode=docs';
+        const preview = await createAndRenderPreview();
+        const [inlineStoryRerender, finishInlineStoryRerender] = createGate();
+        const rerenderInlineStory = vi.fn(() => inlineStoryRerender);
+        preview.storyRenders.push({
+          rerender: rerenderInlineStory,
+        } as unknown as (typeof preview.storyRenders)[number]);
+        const rerenderDocs = vi.spyOn(preview.currentRender!, 'rerender');
+
+        const updateGlobals = preview.onUpdateGlobals({ globals: { a: 'd' } });
+        await vi.waitFor(() => expect(rerenderInlineStory).toHaveBeenCalled());
+
+        expect(rerenderDocs).not.toHaveBeenCalled();
+
+        finishInlineStoryRerender();
+        await updateGlobals;
+
+        expect(rerenderDocs).toHaveBeenCalledOnce();
       });
     });
   });

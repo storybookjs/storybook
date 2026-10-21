@@ -1,7 +1,11 @@
 import type { StrictArgTypes, StrictInputType } from 'storybook/internal/types';
 
 import { deprecationMessage, firstValue, trimmedOrUndefined } from '../utils.ts';
-import { classifyDeclaration, type DeclarationApi } from '../manifest/declaration-api.ts';
+import {
+  classifyDeclaration,
+  foldsIntoAttributeRow,
+  type DeclarationApi,
+} from '../manifest/declaration-api.ts';
 import type {
   ManifestAttribute,
   ManifestClassField,
@@ -53,8 +57,7 @@ interface ToArgTypeOptions {
 /**
  * Suffixed keys keep categories clear of attributes (the `@wc-toolkit/storybook-helpers`
  * convention); the attributes/properties spread last wins the clashes left and bare `--x`
- * names. Within attributes and properties, property rows are written first and
- * attribute rows last, so the same precedence holds in every input order.
+ * names. An attribute named like an unrelated property gets the `-attr` key so both rows survive.
  */
 export function mapArgTypes(declaration: ManifestDeclaration): StrictArgTypes {
   const api = classifyDeclaration(declaration);
@@ -74,9 +77,7 @@ export function mapArgTypes(declaration: ManifestDeclaration): StrictArgTypes {
 
 function mapAttributesAndProperties(api: DeclarationApi): StrictArgTypes {
   const argTypes: StrictArgTypes = {};
-  const properties = api.fields.filter(
-    (field) => !api.attributes.some(({ attribute }) => attribute.name === field.name)
-  );
+  const properties = api.fields.filter((field) => !foldsIntoAttributeRow(field, api.attributes));
 
   for (const field of properties) {
     const attribute = api.attributes.find(({ field: backingField }) => backingField === field);
@@ -88,7 +89,10 @@ function mapAttributesAndProperties(api: DeclarationApi): StrictArgTypes {
   }
 
   for (const { attribute, field } of api.attributes) {
-    argTypes[attribute.name] = toArgType({
+    const key = Object.hasOwn(argTypes, attribute.name)
+      ? toArgKey('attributes', attribute.name)
+      : attribute.name;
+    argTypes[key] = toArgType({
       key: attribute.name,
       category: 'attributes',
       sources: field ? [field, attribute] : [attribute],

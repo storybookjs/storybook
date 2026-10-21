@@ -17,7 +17,6 @@ const managerApiPath = join(currentDirPath, '../core/src/manager-api/index.mock.
 const previewApiPath = join(currentDirPath, '../core/src/preview-api/index.ts');
 const themingCreatePath = join(currentDirPath, '../core/src/theming/create.ts');
 const themingEmotionPath = join(currentDirPath, '../core/src/theming/emotion.ts');
-const themingPath = join(currentDirPath, '../core/src/theming/index.ts');
 const imageContextPath = join(currentDirPath, '../frameworks/nextjs/src/image-context.ts');
 
 const config = defineMain({
@@ -179,7 +178,8 @@ const config = defineMain({
                 'storybook/preview-api': previewApiPath,
                 'storybook/theming/create': themingCreatePath,
                 'storybook/theming/emotion': themingEmotionPath,
-                'storybook/theming': themingPath,
+                // addon-designs still imports styled/css/jsx from storybook/theming.
+                'storybook/theming': themingEmotionPath,
                 'sb-original/image-context': imageContextPath,
               }
             : {

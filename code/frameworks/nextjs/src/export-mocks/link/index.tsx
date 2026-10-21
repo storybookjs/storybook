@@ -45,6 +45,10 @@ const normalizePathTrailingSlash = (path: string) => {
   return `${removeTrailingSlash(pathname)}${query}${hash}`;
 };
 
+/* Mirrors the hash rule in next/dist/shared/lib/router/utils/format-url. */
+const formatHash = (hash?: string | null) =>
+  hash ? (hash.startsWith('#') ? hash : `#${hash}`) : '';
+
 const MockLink = React.forwardRef<HTMLAnchorElement, any>(function MockLink(
   {
     href,
@@ -65,7 +69,7 @@ const MockLink = React.forwardRef<HTMLAnchorElement, any>(function MockLink(
   const resolvedHref = as ?? href;
   const rawHref =
     typeof resolvedHref === 'object'
-      ? `${resolvedHref.pathname || ''}${resolvedHref.query ? '?' + new URLSearchParams(resolvedHref.query).toString() : ''}${resolvedHref.hash && !resolvedHref.hash.startsWith('#') ? '#' : ''}${resolvedHref.hash || ''}`
+      ? `${resolvedHref.pathname || ''}${resolvedHref.query ? '?' + new URLSearchParams(resolvedHref.query).toString() : ''}${formatHash(resolvedHref.hash)}`
       : resolvedHref;
   const hrefString = typeof rawHref === 'string' ? normalizePathTrailingSlash(rawHref) : rawHref;
 

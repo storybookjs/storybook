@@ -1,21 +1,36 @@
-import { type NodePath, types as t } from 'storybook/internal/babel';
-
 import type { CsfFile } from './CsfFile.ts';
+import { csfFactoryReceiver, isCsfFactoryCall, withoutTypeCalls } from './CsfFile.ts';
 import {
   type CsfMutationDiagnostic,
+  type CsfMutationDiagnosticCode,
   type CsfObject,
+  type CsfObjectHost,
   type CsfObjectOptions,
   type CsfObjectTarget,
   createCsfObject,
 } from './CsfObject.ts';
+import { type MemberInsert, type ObjectRoot, detachedMember, literalRoot } from './ObjectRoot.ts';
 import {
-  csfFactoryReceiver,
-  isCsfFactoryCall,
-  metaObjectPath,
-  pathForNode,
+  type E,
+  type Node,
+  type Property,
+  isFunction,
+  isIdentifier,
+  isStringLiteral,
+  locationOf,
+  outerSpan,
+  staticKey,
   unwrapExpression,
-  withoutTypeCalls,
-} from './story-shape/index.ts';
+} from './estree/ast.ts';
+import {
+  insertStatementAfter,
+  printKey,
+  printMemberAccess,
+  printMembers,
+  removeStatements,
+} from './estree/editor.ts';
+import { placeableValueSource } from './estree/values.ts';
+import type { Binding } from './estree/scope.ts';
 
 type ReportDiagnostic = (diagnostic: CsfMutationDiagnostic) => void;
 type MarkChanged = () => void;
@@ -23,16 +38,22 @@ type MarkChanged = () => void;
 type StoryBinding = {
   exportName: string;
   localName: string;
-  declaration: NodePath<t.VariableDeclarator | t.FunctionDeclaration>;
+  declaration: E.VariableDeclarator | E.Function;
 };
 
-type AnnotationCandidate = {
-  target: Extract<CsfObjectTarget, { kind: 'story-annotation' }>;
-  annotation: 'parameters' | 'argTypes';
-  root?: NodePath<t.ObjectExpression>;
-  node: t.Node;
-  message?: string;
+// The object an editor works on, before it is wrapped into a `CsfObject`.
+type Discovered = { target: CsfObjectTarget; root: ObjectRoot };
+
+// A top-level `Story.name = value` statement, as a member of the story.
+type Assignment = {
+  statement: E.ExpressionStatement;
+  left: E.MemberExpression;
+  property: Property;
 };
+
+type Rejection = { code: CsfMutationDiagnosticCode; node: Node; path: string[]; message: string };
+
+const loc = (csf: CsfFile, node: Node) => ({ loc: locationOf(csf._code, node.start, node.end) });
 
 const storyTarget = ({ exportName, localName }: StoryBinding): CsfObjectTarget => ({
   kind: 'story',
@@ -40,175 +61,137 @@ const storyTarget = ({ exportName, localName }: StoryBinding): CsfObjectTarget =
   localName,
 });
 
-const reportBindingFailure = (
-  exportName: string,
-  localName: string,
-  node: t.Node,
-  report: ReportDiagnostic
-) =>
-  report({
-    code: 'ambiguous-binding',
-    target: { kind: 'story', exportName, localName },
-    path: [],
-    message: `Cannot mutate ${exportName} because ${localName} is not a unique constant binding`,
-    ...(node.loc ? { loc: node.loc } : {}),
-  });
+const exportedName = (node: E.ModuleExportName) =>
+  node.type === 'Identifier' ? node.name : (node as E.StringLiteral).value;
 
 const addQualifiedBinding = (
-  candidate: NodePath<t.Node>,
+  csf: CsfFile,
+  node: Node,
   exportName: string,
   localName: string,
   bindings: Map<string, StoryBinding>,
   report: ReportDiagnostic,
   isStory: boolean
 ) => {
-  const binding = candidate.scope.getBinding(localName);
+  const binding = csf.editor.scopes.program.bindings.get(localName);
   if (
     !binding?.constant ||
-    (!binding.path.isVariableDeclarator() && !binding.path.isFunctionDeclaration())
+    (binding.node.type !== 'VariableDeclarator' && binding.node.type !== 'FunctionDeclaration')
   ) {
     if (isStory) {
-      reportBindingFailure(exportName, localName, candidate.node, report);
+      report({
+        code: 'ambiguous-binding',
+        target: { kind: 'story', exportName, localName },
+        path: [],
+        message: `Cannot mutate ${exportName} because ${localName} is not a unique constant binding`,
+        ...loc(csf, node),
+      });
     }
   } else {
     bindings.set(`${localName}:${exportName}`, {
       exportName,
       localName,
-      declaration: binding.path,
+      declaration: binding.node as E.VariableDeclarator | E.Function,
     });
   }
 };
 
-const addDirectBindings = (
-  statement: NodePath<t.ExportNamedDeclaration>,
-  bindings: Map<string, StoryBinding>,
-  report: ReportDiagnostic,
-  csf: CsfFile
-) => {
-  const declaration = statement.get('declaration');
-  if (declaration.isVariableDeclaration()) {
-    for (const declarator of declaration.get('declarations')) {
-      const id = declarator.get('id');
-      if (id.isIdentifier()) {
-        addQualifiedBinding(
-          id,
-          id.node.name,
-          id.node.name,
-          bindings,
-          report,
-          id.node.name in csf._stories
-        );
-      }
-    }
-  } else if (declaration.isFunctionDeclaration() && declaration.node.id) {
-    const name = declaration.node.id.name;
-    addQualifiedBinding(declaration, name, name, bindings, report, name in csf._stories);
-  }
-};
-
-const addAliasedBindings = (
-  statement: NodePath<t.ExportNamedDeclaration>,
-  bindings: Map<string, StoryBinding>,
-  report: ReportDiagnostic,
-  csf: CsfFile
-) => {
-  if (statement.node.source) {
-    for (const specifier of statement.get('specifiers')) {
-      if (!specifier.isExportSpecifier() || !t.isIdentifier(specifier.node.local)) {
-        continue;
-      }
-      const exportName = t.isIdentifier(specifier.node.exported)
-        ? specifier.node.exported.name
-        : specifier.node.exported.value;
-      if (exportName !== 'default' && exportName in csf._stories) {
-        report({
-          code: 'unsupported-initializer',
-          target: { kind: 'story', exportName, localName: specifier.node.local.name },
-          path: [],
-          message: `Cannot mutate re-exported story ${exportName} automatically`,
-          ...(specifier.node.loc ? { loc: specifier.node.loc } : {}),
-        });
-      }
-    }
-    return;
-  }
-  for (const specifier of statement.get('specifiers')) {
-    if (!specifier.isExportSpecifier() || !t.isIdentifier(specifier.node.local)) {
-      continue;
-    }
-    const exportName = t.isIdentifier(specifier.node.exported)
-      ? specifier.node.exported.name
-      : specifier.node.exported.value;
-    if (exportName === 'default') {
-      continue;
-    }
-    const localName = specifier.node.local.name;
-    addQualifiedBinding(
-      specifier,
-      exportName,
-      localName,
-      bindings,
-      report,
-      exportName in csf._stories
-    );
-  }
-};
-
-const factoryMember = (node: t.Node | undefined): 'story' | 'extend' | undefined => {
-  const unwrapped = node && unwrapExpression(node);
-  if (!unwrapped || !t.isCallExpression(unwrapped) || !t.isMemberExpression(unwrapped.callee)) {
-    return undefined;
-  }
-  const property = unwrapped.callee.property;
-  if (unwrapped.callee.computed || !t.isIdentifier(property)) {
-    return undefined;
-  }
-  return property.name === 'story' || property.name === 'extend' ? property.name : undefined;
-};
-
 const storyBindings = (csf: CsfFile, report: ReportDiagnostic): StoryBinding[] => {
   const bindings = new Map<string, StoryBinding>();
-  for (const statement of csf._file.path.get('body')) {
-    if (!statement.isExportNamedDeclaration() || statement.node.exportKind === 'type') {
+  for (const statement of csf.program.body) {
+    if (statement.type !== 'ExportNamedDeclaration' || statement.exportKind === 'type') {
       continue;
     }
-    addDirectBindings(statement, bindings, report, csf);
-    addAliasedBindings(statement, bindings, report, csf);
+    const { declaration } = statement;
+    if (declaration?.type === 'VariableDeclaration') {
+      for (const declarator of declaration.declarations) {
+        if (declarator.id.type === 'Identifier') {
+          const { name } = declarator.id;
+          addQualifiedBinding(
+            csf,
+            declarator.id,
+            name,
+            name,
+            bindings,
+            report,
+            name in csf._stories
+          );
+        }
+      }
+    } else if (declaration?.type === 'FunctionDeclaration' && declaration.id) {
+      const { name } = declaration.id;
+      addQualifiedBinding(csf, declaration, name, name, bindings, report, name in csf._stories);
+    }
+    for (const specifier of statement.specifiers) {
+      if (specifier.local.type !== 'Identifier') {
+        continue;
+      }
+      const exportName = exportedName(specifier.exported);
+      if (statement.source) {
+        if (exportName !== 'default' && exportName in csf._stories) {
+          report({
+            code: 'unsupported-initializer',
+            target: { kind: 'story', exportName, localName: specifier.local.name },
+            path: [],
+            message: `Cannot mutate re-exported story ${exportName} automatically`,
+            ...loc(csf, specifier),
+          });
+        }
+        continue;
+      }
+      if (exportName === 'default') {
+        continue;
+      }
+      addQualifiedBinding(
+        csf,
+        specifier,
+        exportName,
+        specifier.local.name,
+        bindings,
+        report,
+        exportName in csf._stories
+      );
+    }
   }
   const candidates = [...bindings.values()].filter((binding) => binding.exportName in csf._stories);
-  const unique = new Map<t.Node, StoryBinding>();
+  const unique = new Map<Node, StoryBinding>();
   for (const candidate of candidates) {
-    const previous = unique.get(candidate.declaration.node);
-    if (
-      !previous ||
-      (!(previous.exportName in csf._stories) && candidate.exportName in csf._stories)
-    ) {
-      unique.set(candidate.declaration.node, candidate);
+    if (!unique.has(candidate.declaration)) {
+      unique.set(candidate.declaration, candidate);
     }
   }
   return [...unique.values()];
 };
 
+const variableInit = (binding: Binding | undefined) =>
+  binding?.constant && binding.node.type === 'VariableDeclarator' ? binding.node.init : undefined;
+
+const factoryMember = (node: Node | null | undefined): 'story' | 'extend' | undefined => {
+  const unwrapped = node && unwrapExpression(node);
+  if (unwrapped?.type !== 'CallExpression' || unwrapped.callee.type !== 'MemberExpression') {
+    return undefined;
+  }
+  const property = unwrapped.callee.property;
+  if (unwrapped.callee.computed || property.type !== 'Identifier') {
+    return undefined;
+  }
+  return property.name === 'story' || property.name === 'extend' ? property.name : undefined;
+};
+
 const isFactoryMeta = (csf: CsfFile, name: string, seen = new Set<string>()): boolean => {
-  const binding = csf._file.path.scope.getBinding(name);
-  if (
-    seen.has(name) ||
-    !csf._metaFactoryCall ||
-    !binding?.constant ||
-    !binding.path.isVariableDeclarator() ||
-    !t.isExpression(binding.path.node.init)
-  ) {
+  const init = variableInit(csf.editor.scopes.program.bindings.get(name));
+  if (seen.has(name) || !csf._metaFactoryCall || !init) {
     return false;
   }
   seen.add(name);
-  const initializer = withoutTypeCalls(unwrapExpression(binding.path.node.init));
+  const initializer = withoutTypeCalls(unwrapExpression(init));
   return (
     initializer === csf._metaFactoryCall ||
-    (t.isIdentifier(initializer) && isFactoryMeta(csf, initializer.name, seen))
+    (initializer.type === 'Identifier' && isFactoryMeta(csf, initializer.name, seen))
   );
 };
 
-const isFactoryStory = (csf: CsfFile, node: t.Node, seen = new Set<string>()): boolean => {
+const isFactoryStory = (csf: CsfFile, node: Node, seen = new Set<string>()): boolean => {
   if (!isCsfFactoryCall(node)) {
     return false;
   }
@@ -220,51 +203,45 @@ const isFactoryStory = (csf: CsfFile, node: t.Node, seen = new Set<string>()): b
     return false;
   }
   seen.add(receiver);
-  const binding = csf._file.path.scope.getBinding(receiver);
-  const initializer =
-    binding?.constant && binding.path.isVariableDeclarator() ? binding.path.node.init : undefined;
+  const initializer = variableInit(csf.editor.scopes.program.bindings.get(receiver));
   return initializer ? isFactoryStory(csf, unwrapExpression(initializer), seen) : false;
 };
 
 const factoryMetaConfigurationIsSafe = (csf: CsfFile): boolean => {
   const argument = csf._metaFactoryCall?.arguments[0];
-  if (!argument || !t.isIdentifier(argument)) {
+  if (argument?.type !== 'Identifier') {
     return true;
   }
-  const binding = csf._file.path.scope.getBinding(argument.name);
+  const binding = csf.editor.scopes.program.bindings.get(argument.name);
   if (
     !binding?.constant ||
-    !binding.path.isVariableDeclarator() ||
-    !binding.path.parentPath?.isVariableDeclaration({ kind: 'const' })
+    binding.node.type !== 'VariableDeclarator' ||
+    binding.declaration?.type !== 'VariableDeclaration' ||
+    binding.declaration.kind !== 'const'
   ) {
     return false;
   }
-  const initializer = binding.path.node.init;
-  if (!initializer || !t.isObjectExpression(unwrapExpression(initializer))) {
+  const initializer = binding.node.init;
+  if (!initializer || unwrapExpression(initializer).type !== 'ObjectExpression') {
     return false;
   }
-  return binding.referencePaths.length === 1 && binding.referencePaths[0].node === argument;
+  return binding.references.length === 1 && binding.references[0] === argument;
 };
 
-const discoverMeta = (
-  csf: CsfFile,
-  report: ReportDiagnostic,
-  markChanged: MarkChanged
-): CsfObject[] => {
+const discoverMeta = (csf: CsfFile, report: ReportDiagnostic): Discovered[] => {
   if (csf._metaIsFactory && csf._metaFactoryCall && !factoryMetaConfigurationIsSafe(csf)) {
     report({
       code: 'unsupported-initializer',
       target: { kind: 'meta' },
       path: [],
       message: 'Cannot mutate CSF factory meta with an identifier-backed configuration',
-      ...(csf._metaFactoryCall.loc ? { loc: csf._metaFactoryCall.loc } : {}),
+      ...loc(csf, csf._metaFactoryCall),
     });
     return [];
   }
-  const meta = metaObjectPath(csf);
-  if (meta) {
+  if (csf._metaNode && !csf._metaNodeIsSynthetic) {
     const binding = csf._metaVariableName
-      ? meta.scope.getBinding(csf._metaVariableName)
+      ? csf.editor.scopes.program.bindings.get(csf._metaVariableName)
       : undefined;
     if (binding && !binding.constant) {
       report({
@@ -272,11 +249,11 @@ const discoverMeta = (
         target: { kind: 'meta' },
         path: [],
         message: `Cannot mutate meta because ${csf._metaVariableName} is not a unique constant binding`,
-        ...(binding.path.node.loc ? { loc: binding.path.node.loc } : {}),
+        ...loc(csf, binding.node),
       });
       return [];
     }
-    return [createCsfObject({ kind: 'meta' }, meta, [], report, markChanged)];
+    return [{ target: { kind: 'meta' }, root: literalRoot(csf.editor, csf._metaNode) }];
   }
   if (csf._metaIsFactory && csf._metaFactoryCall) {
     report({
@@ -284,193 +261,329 @@ const discoverMeta = (
       target: { kind: 'meta' },
       path: [],
       message: 'Cannot mutate CSF factory meta automatically; move the field manually',
-      ...(csf._metaFactoryCall.loc ? { loc: csf._metaFactoryCall.loc } : {}),
+      ...loc(csf, csf._metaFactoryCall),
     });
   }
   return [];
 };
 
+const annotationName = (left: E.MemberExpression) =>
+  !left.computed && left.property.type === 'Identifier'
+    ? left.property.name
+    : left.computed && isStringLiteral(left.property)
+      ? left.property.value
+      : undefined;
+
+// Where a reference to a story neither writes to it nor lets other code see its annotations.
+const NON_SHARING_PARENTS = new Set([
+  'ExportSpecifier',
+  'TSTypeQuery',
+  'JSXOpeningElement',
+  'JSXClosingElement',
+]);
+
+// The `Story.name = value` statements of a story, found through the references to its binding.
+// Any other write to it, such as a nested or a compound one, is a `write` rejection. A reference
+// that could share the story, such as an alias or a call that receives it, is a `shared` one: it
+// only matters for a story whose assignments are edited, as it could add them to another story.
+const assignmentsOf = (csf: CsfFile, binding: StoryBinding) => {
+  const editor = csf.editor;
+  const parentOf = (node: Node) => editor.parentOf(node);
+  const assignments: Assignment[] = [];
+  let shared: Rejection | undefined;
+  const references = editor.scopes.program.bindings.get(binding.localName)?.references ?? [];
+  for (const reference of references) {
+    // An `export` of the declaration counts as a reference.
+    if (reference.type !== 'Identifier' && reference.type !== 'JSXIdentifier') {
+      continue;
+    }
+    const parent = parentOf(reference);
+    if (
+      parent &&
+      (NON_SHARING_PARENTS.has(parent.type) ||
+        (parent.type === 'CallExpression' && parent.callee === reference))
+    ) {
+      continue;
+    }
+    if (parent?.type !== 'MemberExpression' || parent.object !== reference) {
+      shared ??= {
+        code: 'ambiguous-binding',
+        node: reference,
+        path: [],
+        message: `Cannot mutate ${binding.exportName} because ${binding.localName} is shared with other code`,
+      };
+      continue;
+    }
+    let outer: Node = parent;
+    for (
+      let next = parentOf(outer);
+      next?.type === 'MemberExpression' && next.object === outer;
+      next = parentOf(outer)
+    ) {
+      outer = next;
+    }
+    const user = parentOf(outer);
+    const writes =
+      (user?.type === 'AssignmentExpression' && user.left === outer) ||
+      user?.type === 'UpdateExpression' ||
+      (user?.type === 'UnaryExpression' && user.operator === 'delete');
+    if (!writes) {
+      continue;
+    }
+    const statement = parentOf(user);
+    if (
+      outer !== parent ||
+      user.type !== 'AssignmentExpression' ||
+      statement?.type !== 'ExpressionStatement' ||
+      parentOf(statement)?.type !== 'Program'
+    ) {
+      const write: Rejection = {
+        code: 'ambiguous-binding',
+        node: user,
+        path: [],
+        message: `Cannot mutate ${binding.exportName} because ${binding.localName} is written to outside its top-level annotations`,
+      };
+      return { assignments, write };
+    }
+    const name = annotationName(parent);
+    if (name === undefined) {
+      const write: Rejection = {
+        code: 'dynamic-key',
+        node: parent.property,
+        path: [],
+        message: `Cannot mutate ${binding.exportName} because an annotation name is computed at runtime`,
+      };
+      return { assignments, write };
+    }
+    if (user.operator !== '=') {
+      const write: Rejection = {
+        code: 'unsupported-initializer',
+        node: user,
+        path: [name],
+        message: `Cannot mutate ${binding.localName}.${name} because it uses ${user.operator} assignment`,
+      };
+      return { assignments, write };
+    }
+    const property = detachedMember(parent.property, user.right, parent.computed, statement);
+    assignments.push({ statement, left: parent, property });
+  }
+  assignments.sort((a, b) => a.statement.start - b.statement.start);
+  return { assignments, shared };
+};
+
+// Own properties of a function that throw when a strict-mode module assigns them.
+const FUNCTION_OWN_KEYS = new Set(['name', 'length', 'caller', 'arguments']);
+
+// A story edited as one object: the members of its object literal, if it has one, then its
+// `Story.name = value` assignments, which run after it. A missing member goes into the object
+// literal, or else into a new assignment after the story's last one.
+const storyRoot = (
+  csf: CsfFile,
+  binding: StoryBinding,
+  object: E.ObjectExpression | undefined,
+  assignments: Assignment[]
+): ObjectRoot => {
+  const editor = csf.editor;
+  const literal = object && literalRoot(editor, object);
+  const byProperty = new Map(assignments.map((assignment) => [assignment.property, assignment]));
+  const own = (members: readonly Property[]) => members.filter((member) => !byProperty.has(member));
+  const declaration = csf.program.body.find(
+    (statement) =>
+      statement.start <= binding.declaration.start && binding.declaration.end <= statement.end
+  )!;
+  // `removed` are statements the same edits remove, which the new ones cannot follow.
+  const assign = (members: MemberInsert[], removed: ReadonlySet<Node> = new Set()) => {
+    const after =
+      assignments.findLast(({ statement }) => !removed.has(statement))?.statement ?? declaration;
+    const end = editor.semicolons ? ';' : '';
+    for (const { key, value } of members) {
+      insertStatementAfter(
+        editor,
+        after,
+        `${binding.localName}${printMemberAccess(key, editor.quote)} = ${value}${end}`
+      );
+    }
+  };
+  const statementsOf = (members: readonly Property[]) =>
+    new Set<Node>(members.flatMap((member) => byProperty.get(member)?.statement ?? []));
+  const remove = (members: Property[]) => {
+    const inObject = own(members);
+    if (inObject.length > 0) {
+      literal!.remove(inObject);
+    }
+    const statements = statementsOf(members);
+    if (statements.size > 0) {
+      removeStatements(editor, statements);
+    }
+  };
+  const take = (member: Property, key: string): MemberInsert => {
+    const assignment = byProperty.get(member);
+    if (!assignment) {
+      return literal!.take(member, key);
+    }
+    const value = placeableValueSource(editor, member);
+    return { key, value, text: `${printKey(key, editor.quote)}: ${value}` };
+  };
+  const append = (members: MemberInsert[]) => (literal ? literal.append(members) : assign(members));
+  return {
+    properties: [...(object?.properties ?? []), ...assignments.map(({ property }) => property)],
+    // Moving an assignment's value moves when it is evaluated.
+    detached: assignments.length > 0,
+    node: object,
+    append,
+    prepend: (members) => (literal ? literal.prepend(members) : assign(members)),
+    remove,
+    replaceValue: (member, text) => {
+      const assignment = byProperty.get(member);
+      if (!assignment) {
+        literal!.replaceValue(member, text);
+        return;
+      }
+      const { start, end } = outerSpan(assignment.property.value);
+      editor.edits.overwrite(start, end, text);
+    },
+    rename: (member, key) => {
+      const assignment = byProperty.get(member);
+      if (!assignment) {
+        literal!.rename(member, key);
+        return;
+      }
+      const { left } = assignment;
+      editor.edits.overwrite(
+        outerSpan(left.object).end,
+        left.end,
+        printMemberAccess(key, editor.quote)
+      );
+    },
+    // `CsfObject` refuses a group of members from both the object and the assignments.
+    group: (members, key) => {
+      if (literal && own(members).length === members.length) {
+        literal.group(members, key);
+        return;
+      }
+      const texts = members.map((member) => take(member, staticKey(member)!).text);
+      const value = texts.some((text) => text.includes('\n'))
+        ? printMembers(texts, editor.indent)
+        : `{ ${texts.join(', ')} }`;
+      const statements = statementsOf(members);
+      removeStatements(editor, statements);
+      assign([{ key, value, text: '' }], statements);
+    },
+    take,
+    refuseKey: object
+      ? undefined
+      : (key) =>
+          FUNCTION_OWN_KEYS.has(key)
+            ? `Cannot add ${binding.localName}.${key} because a function's ${key} cannot be assigned${key === 'name' ? '; set storyName instead' : ''}`
+            : undefined,
+  };
+};
+
+// A story without an object literal is a function or a bound template, which its assignments
+// annotate. Any other value may be shared, so annotating it could change other stories.
+const isAnnotatable = (node: Node | undefined) =>
+  !!node &&
+  (isFunction(node) ||
+    (node.type === 'CallExpression' &&
+      node.callee.type === 'MemberExpression' &&
+      !node.callee.computed &&
+      isIdentifier(node.callee.property, 'bind')));
+
 const discoverStories = (
   csf: CsfFile,
   bindings: StoryBinding[],
-  report: ReportDiagnostic,
-  markChanged: MarkChanged
-): CsfObject[] =>
-  bindings.flatMap((binding) => {
-    const declaration = binding.declaration;
-    const init = declaration.isVariableDeclarator() ? declaration.get('init') : declaration;
-    const node = init.node ? unwrapExpression(init.node) : undefined;
+  report: ReportDiagnostic
+): Discovered[] =>
+  bindings.flatMap((binding): Discovered[] => {
+    const { declaration } = binding;
+    const init = declaration.type === 'VariableDeclarator' ? declaration.init : declaration;
+    const node = init ? unwrapExpression(init as Node) : undefined;
     if (node && factoryMember(node)) {
-      const argument = t.isCallExpression(node) ? node.arguments[0] : undefined;
+      const argument = node.type === 'CallExpression' ? node.arguments[0] : undefined;
       const argumentNode =
-        argument && t.isExpression(argument) ? unwrapExpression(argument) : undefined;
+        argument && argument.type !== 'SpreadElement' ? unwrapExpression(argument) : undefined;
       if (
-        t.isCallExpression(node) &&
+        node.type === 'CallExpression' &&
         isFactoryStory(csf, node) &&
         node.arguments.length === 1 &&
-        argumentNode &&
-        t.isObjectExpression(argumentNode)
+        argumentNode?.type === 'ObjectExpression'
       ) {
-        const root = pathForNode(csf._file.path, argumentNode);
-        return root ? [createCsfObject(storyTarget(binding), root, [], report, markChanged)] : [];
+        return [{ target: storyTarget(binding), root: literalRoot(csf.editor, argumentNode) }];
       }
       report({
         code: 'unsupported-initializer',
         target: storyTarget(binding),
         path: [],
         message: `Cannot mutate CSF factory story ${binding.exportName} because its configuration is not an inline object literal`,
-        ...(node.loc ? { loc: node.loc } : {}),
+        ...loc(csf, node),
       });
       return [];
     }
-    const expression = init.isExpression() ? init : undefined;
-    const unwrapped = expression && unwrapExpression(expression.node);
-    const root =
-      unwrapped && t.isObjectExpression(unwrapped)
-        ? pathForNode(csf._file.path, unwrapped)
-        : undefined;
-    return root ? [createCsfObject(storyTarget(binding), root, [], report, markChanged)] : [];
+    const object = node?.type === 'ObjectExpression' ? node : undefined;
+    const { assignments, write, shared } = assignmentsOf(csf, binding);
+    const reject = ({ code, node: at, path, message }: Rejection): Discovered[] => {
+      report({ code, target: storyTarget(binding), path, message, ...loc(csf, at) });
+      return [];
+    };
+    if (write) {
+      return reject(write);
+    }
+    if (assignments.length === 0 && object) {
+      return [{ target: storyTarget(binding), root: literalRoot(csf.editor, object) }];
+    }
+    if (assignments.length === 0 && !isAnnotatable(node)) {
+      return reject({
+        code: 'unsupported-initializer',
+        node: node ?? declaration,
+        path: [],
+        message: `Cannot mutate story ${binding.exportName} because it is not a story object, function or bound template`,
+      });
+    }
+    if (shared) {
+      return reject(shared);
+    }
+    if (!object && !isAnnotatable(node)) {
+      const name = annotationName(assignments[0].left)!;
+      return reject({
+        code: 'unsupported-initializer',
+        node: assignments[0].property.value,
+        path: [name],
+        message: `Cannot mutate ${binding.localName}.${name} because ${binding.localName} is not a story object, function or bound template`,
+      });
+    }
+    return [{ target: storyTarget(binding), root: storyRoot(csf, binding, object, assignments) }];
   });
 
-const annotationCandidates = (
+const discover = (
   csf: CsfFile,
-  statement: NodePath<t.Statement>,
-  bindings: Map<string, StoryBinding>
-): AnnotationCandidate[] => {
-  if (!statement.isExpressionStatement()) {
-    return [];
-  }
-  const expression = statement.get('expression');
-  if (!expression.isAssignmentExpression()) {
-    return [];
-  }
-  const left = expression.get('left');
-  const right = expression.get('right');
-  if (!left.isMemberExpression() || !right.isExpression()) {
-    return [];
-  }
-  const object = left.get('object');
-  const property = left.get('property');
-  if (!object.isIdentifier()) {
-    return [];
-  }
-  const propertyName =
-    !left.node.computed && property.isIdentifier()
-      ? property.node.name
-      : left.node.computed && property.isStringLiteral()
-        ? property.node.value
-        : undefined;
-  const binding = bindings.get(object.node.name);
-  if (!propertyName && left.node.computed && binding) {
-    return [
-      {
-        target: {
-          kind: 'story-annotation',
-          exportName: binding.exportName,
-          localName: binding.localName,
-          annotation: 'parameters',
-        },
-        annotation: 'parameters',
-        node: property.node,
-        message: `Cannot mutate ${binding.localName} annotation because its computed name is not a static string literal`,
-      },
-    ];
-  }
-  if (!propertyName) {
-    return [];
-  }
-  const annotation =
-    propertyName === 'parameters' || propertyName === 'argTypes' ? propertyName : undefined;
-  if (!annotation || !binding) {
-    return [];
-  }
-  const rootNode = unwrapExpression(right.node);
+  options: CsfObjectOptions,
+  report: ReportDiagnostic
+): Discovered[] => {
+  csf._assertIndexed();
+  const includeStories = options.stories ?? true;
+  const bindings = includeStories ? storyBindings(csf, report) : [];
   return [
-    {
-      target: {
-        kind: 'story-annotation',
-        exportName: binding.exportName,
-        localName: binding.localName,
-        annotation,
-      },
-      annotation,
-      root:
-        expression.node.operator === '=' && t.isObjectExpression(rootNode)
-          ? pathForNode(csf._file.path, rootNode)
-          : undefined,
-      node: right.node,
-      ...(expression.node.operator === '='
-        ? {}
-        : {
-            message: `Cannot mutate ${binding.localName}.${annotation} because it uses ${expression.node.operator} assignment`,
-          }),
-    },
+    ...((options.meta ?? true) ? discoverMeta(csf, report) : []),
+    ...(includeStories ? discoverStories(csf, bindings, report) : []),
   ];
 };
 
-const reportOrCreateAnnotation = (
-  matches: AnnotationCandidate[],
-  report: ReportDiagnostic,
-  markChanged: MarkChanged
-): CsfObject[] => {
-  const [candidate] = matches;
-  if (matches.length > 1) {
-    report({
-      code: 'ambiguous-binding',
-      target: candidate.target,
-      path: [candidate.annotation],
-      message: `Cannot mutate repeated ${candidate.target.localName}.${candidate.annotation} assignments`,
-      ...(candidate.node.loc ? { loc: candidate.node.loc } : {}),
-    });
-    return [];
-  }
-  if (!candidate.root) {
-    report({
-      code: 'unsupported-initializer',
-      target: candidate.target,
-      path: [candidate.annotation],
-      message:
-        candidate.message ??
-        `Cannot mutate ${candidate.target.localName}.${candidate.annotation} because its value is not an object literal`,
-      ...(candidate.node.loc ? { loc: candidate.node.loc } : {}),
-    });
-    return [];
-  }
-  return [
-    createCsfObject(candidate.target, candidate.root, [candidate.annotation], report, markChanged),
-  ];
-};
-
-const discoverAnnotations = (
-  csf: CsfFile,
-  storyBindings: StoryBinding[],
-  report: ReportDiagnostic,
-  markChanged: MarkChanged
-): CsfObject[] => {
-  const bindings = new Map(storyBindings.map((binding) => [binding.localName, binding]));
-  const candidates = new Map<string, AnnotationCandidate[]>();
-  for (const statement of csf._file.path.get('body')) {
-    for (const candidate of annotationCandidates(csf, statement, bindings)) {
-      const identity = `${candidate.target.localName}:${candidate.annotation}`;
-      candidates.set(identity, [...(candidates.get(identity) ?? []), candidate]);
-    }
-  }
-  return [...candidates.values()].flatMap((matches) =>
-    reportOrCreateAnnotation(matches, report, markChanged)
-  );
-};
+const sameTarget = (a: CsfObjectTarget, b: CsfObjectTarget) =>
+  JSON.stringify(a) === JSON.stringify(b);
 
 export const discoverCsfObjects = (
   csf: CsfFile,
   options: CsfObjectOptions,
   report: ReportDiagnostic,
   markChanged: MarkChanged
-): readonly CsfObject[] => {
-  const includeStories = options.stories ?? true;
-  const bindings = includeStories ? storyBindings(csf, report) : [];
-  return [
-    ...((options.meta ?? true) ? discoverMeta(csf, report, markChanged) : []),
-    ...(includeStories ? discoverStories(csf, bindings, report, markChanged) : []),
-    ...(includeStories ? discoverAnnotations(csf, bindings, report, markChanged) : []),
-  ];
-};
+): readonly CsfObject[] =>
+  discover(csf, options, report).map(({ target }) => {
+    const host: CsfObjectHost = {
+      editor: csf.editor,
+      root: () =>
+        // Edits re-parse the file, so the object is found again by its target.
+        discover(csf, options, () => {}).find((candidate) => sameTarget(candidate.target, target))
+          ?.root,
+    };
+    return createCsfObject(target, host, report, markChanged);
+  });

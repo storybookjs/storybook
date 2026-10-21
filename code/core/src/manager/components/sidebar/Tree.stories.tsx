@@ -325,28 +325,16 @@ export const DocsOnlySingleStoryComponents = {
     return (
       <Tree
         refId={DEFAULT_REF_ID}
-        // @ts-expect-error (non strict)
         data={{
-          ...{
-            single: {
-              type: 'component',
-              name: 'Single',
-              id: 'single',
-              parent: null,
-              depth: 0,
-              children: ['single--docs'],
-            },
-            'single--docs': {
-              type: 'docs',
-              id: 'single--docs',
-              title: 'Single',
-              name: 'Single',
-              tags: [],
-              prepared: true,
-              depth: 1,
-              parent: 'single',
-              importPath: './single.stories.js',
-            },
+          'single--docs': {
+            type: 'docs',
+            id: 'single--docs',
+            title: 'Single',
+            name: 'Single',
+            tags: [],
+            prepared: true,
+            depth: 0,
+            importPath: './single.stories.js',
           },
           ...Object.keys(index).reduce((acc, key) => {
             if (key === 'tooltip-tooltipselect--default') {
@@ -374,6 +362,48 @@ export const DocsOnlySingleStoryComponents = {
         onSelectStoryId={setSelectedId}
       />
     );
+  },
+};
+
+/** A component whose stories are all hidden (`!dev`) shows as a single docs page. */
+export const ComponentWithOnlyDocsLeft: Story = {
+  render: () => (
+    <Tree
+      refId={DEFAULT_REF_ID}
+      data={{
+        'docs-only': {
+          type: 'component',
+          name: 'Docs Only',
+          id: 'docs-only',
+          depth: 0,
+          children: ['docs-only--docs'],
+          tags: [],
+        },
+        'docs-only--docs': {
+          type: 'docs',
+          id: 'docs-only--docs',
+          title: 'Docs Only',
+          name: 'Docs',
+          tags: ['autodocs'],
+          prepared: true,
+          depth: 1,
+          parent: 'docs-only',
+          importPath: './docs-only.stories.js',
+        },
+      }}
+      selectedStoryId={null}
+      onSelectStoryId={fn().mockName('onSelectStoryId')}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-item-id="docs-only--docs"]')).not.toBeNull()
+    );
+    const docsItem = canvasElement.querySelector('[data-item-id="docs-only--docs"]');
+
+    await expect(docsItem).toHaveAttribute('data-nodetype', 'document');
+    await expect(docsItem).toHaveTextContent('Docs Only');
+    await expect(canvasElement.querySelector('[data-item-id="docs-only"]')).toBeNull();
   },
 };
 

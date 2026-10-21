@@ -47,7 +47,14 @@ const Panel: FC<any> = (props) => {
   const panels = useMemo(() => {
     const allPanels = api.getElements(Addon_TypesEnum.PANEL);
 
-    if (!allPanels || type !== 'story') {
+    if (!allPanels) {
+      return allPanels;
+    }
+
+    // With no story entry yet (index not loaded), the filter still runs with
+    // undefined parameters — the same input disabled callbacks already get
+    // when an entry exists but is not prepared (e.g. switching docs to story).
+    if (story && type !== 'story') {
       return allPanels;
     }
 
@@ -64,7 +71,7 @@ const Panel: FC<any> = (props) => {
     });
 
     return filteredPanels;
-  }, [api, type, parameters]);
+  }, [api, story]);
 
   return (
     <AddonPanel

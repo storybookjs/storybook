@@ -58,3 +58,34 @@ describe('docgenServerTemplates', () => {
     ).toBe(false);
   });
 });
+
+describe('React prerelease sandboxes', () => {
+  it('pins React and React DOM to canary and types to latest', () => {
+    const vite = baseTemplates['react-vite/prerelease-ts'];
+    const webpack = baseTemplates['react-webpack/prerelease-ts'];
+
+    expect(vite.modifications).toMatchObject({
+      extraDependencies: ['react@canary', 'react-dom@canary'],
+      extraDevDependencies: ['prop-types', '@types/react@latest', '@types/react-dom@latest'],
+      resolutions: {
+        '@types/react': 'npm:@types/react@latest',
+        '@types/react-dom': 'npm:@types/react-dom@latest',
+        react: 'npm:react@canary',
+        'react-dom': 'npm:react-dom@canary',
+      },
+    });
+    expect(vite.minAgeGateExemptions).toEqual(['react', 'react-dom', 'scheduler']);
+
+    expect(webpack.script).toBe(
+      'npx create-webpack5-react {{beforeDir}} --version-react="canary" --version-react-dom="canary"'
+    );
+    expect(webpack.modifications).toMatchObject({
+      extraDevDependencies: ['prop-types', '@types/react@latest', '@types/react-dom@latest'],
+      resolutions: {
+        '@types/react': 'npm:@types/react@latest',
+        '@types/react-dom': 'npm:@types/react-dom@latest',
+      },
+    });
+    expect(webpack.minAgeGateExemptions).toEqual(['react', 'react-dom', 'scheduler']);
+  });
+});

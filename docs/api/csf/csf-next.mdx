@@ -6,17 +6,17 @@ tab:
   title: CSF Next (Preview)
 ---
 
-<If notRenderer={['react', 'vue', 'angular', 'web-components']}>
+<If notRenderer={['react', 'vue', 'angular', 'web-components', 'svelte']}>
 
 <Callout variant="info" icon="🧪">
 
-CSF Next is currently in [preview](../../releases/features.mdx#preview) and only supported in [React](?renderer=react), [Vue](?renderer=vue), [Angular](?renderer=angular), and [Web Components](?renderer=web-components) projects.
+CSF Next is currently in [preview](../../releases/features.mdx#preview) and only supported in [React](?renderer=react), [Vue](?renderer=vue), [Angular](?renderer=angular), [Web Components](?renderer=web-components), and [Svelte](?renderer=svelte) projects.
 
 </Callout>
 
 </If>
 
-<If renderer={['react', 'vue', 'angular', 'web-components']}>
+<If renderer={['react', 'vue', 'angular', 'web-components', 'svelte']}>
 
 <Callout variant="warning" icon="🧪">
 
@@ -46,6 +46,12 @@ export default defineMain({
   addons: ['@storybook/addon-a11y'],
 });
 ```
+
+<If renderer="svelte">
+
+To index Svelte CSF files, add `svelte` to the file extensions in `stories`, such as `'../src/**/*.stories.@(js|ts|svelte)'`.
+
+</If>
 
 ### `definePreview`
 
@@ -95,6 +101,32 @@ const meta = preview.meta({
   },
 });
 ```
+
+<If renderer="svelte">
+
+In a Svelte CSF file, `preview.meta` replaces `defineMeta`. It returns the meta, which has the `Story` component:
+
+```svelte title="Button.stories.svelte"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+
+  import Button from './Button.svelte';
+
+  const { Story } = preview.meta({
+    component: Button,
+    parameters: {
+      // type-safe!
+      layout: 'centered',
+    },
+  });
+</script>
+
+<Story name="Primary" args={{ primary: true, label: 'Button' }} />
+```
+
+A Svelte CSF file compiles to CSF Next stories, so a project can use `.stories.svelte` and `.stories.ts` files together.
+
+</If>
 
 <Callout variant="info" icon="💡">
 
@@ -220,11 +252,46 @@ export const WithIcon = meta.type<{ args: { icon: string } }>().story({
 
 `meta.type` accepts the same type argument as [`preview.type`](#previewtypemeta), and the two can be combined.
 
+<If renderer="svelte">
+
+In a Svelte CSF file, `meta.type` returns a meta with its own `Story` component. Rename it when you destructure it, and use it for the stories that need the extra args:
+
+```svelte title="Button.stories.svelte"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+
+  import Button from './Button.svelte';
+  import Icon from './Icon.svelte';
+
+  const meta = preview.meta({ component: Button });
+  const { Story } = meta;
+  const { Story: IconStory } = meta.type<{ args: { icon: string } }>();
+</script>
+
+<Story name="Primary" args={{ label: 'Button' }} />
+
+<!-- 👇 `icon` is typed, and required, in the stories of IconStory only -->
+<IconStory name="With icon" args={{ label: 'Button', icon: 'star' }}>
+  {#snippet template({ icon, ...args })}
+    <Icon name={icon} />
+    <Button {...args} />
+  {/snippet}
+</IconStory>
+```
+
+</If>
+
 An arg you add must be set in that story, unless you declare it as optional (`meta.type<{ args: { icon?: string } }>()`). Args that the meta already sets stay optional, except the ones you redeclare in `meta.type`: the story must set those again, because the meta's value was not checked against the new type.
 
 #### `<Story>.extend`
 
 You can use the `.extend` method to create a new story based on an existing one, with the option to override or add new properties.
+
+<If renderer="svelte">
+
+The stories of a Svelte CSF file have no `.extend` method. Use it in `.stories.ts` files.
+
+</If>
 
 <details>
 <summary>Property merging details</summary>
@@ -310,6 +377,12 @@ export const PrimaryDisabled = Primary.extend({
 
 (⚠️ **Experimental**)
 
+<If renderer="svelte">
+
+The stories of a Svelte CSF file have no `.test` method. Use it in `.stories.ts` files.
+
+</If>
+
 A more ergonomic way to define [tests for your stories](../../writing-tests/index.mdx). While this API is still experimental, it is [documented in the RFC to gather feedback](https://github.com/storybookjs/storybook/discussions/30119) and must be enabled via the [`experimentalTestSyntax` feature flag](../main-config/main-config-features.mdx#experimentaltestsyntax).
 
 ```ts title="Button.stories.js|ts"
@@ -348,6 +421,12 @@ If your project has multiple Storybook configurations, run the command with the 
 <CodeSnippets path="csf-factories-automigrate-with-config-directory.md" />
 
 It will run through each of the manual upgrade steps below on all of your story files.
+
+<If renderer="svelte">
+
+In Svelte CSF files (`.stories.svelte`), the command changes `defineMeta` to `preview.meta` and imports the preview. The `Story` components stay the same. When a file reuses a story of another stories file, such as `HeaderStories.LoggedIn.args`, the command changes it to `HeaderStories.LoggedIn.input.args`.
+
+</If>
 
 <details>
 <summary>Upgrading from CSF 2 to 3</summary>
@@ -455,6 +534,30 @@ import { Button } from './Button';
 
 Note that importing or manually applying the component props type to the meta or stories is no longer necessary. Thanks to the factory function pattern, the types are now inferred automatically.
 
+<If renderer="svelte">
+
+In a Svelte CSF file, import the preview and call `preview.meta` instead of `defineMeta`:
+
+```diff title="Button.stories.svelte"
+<script module lang="ts">
++ import preview from '../.storybook/preview';
+- import { defineMeta } from '@storybook/your-framework';
+
+  import Button from './Button.svelte';
+
++ const { Story } = preview.meta({
+- const { Story } = defineMeta({
+    // ...meta object is unchanged
+  });
+</script>
+
+<!-- ...stories are unchanged -->
+```
+
+With `preview.meta`, a story must set every required arg that the meta doesn't set. This includes the arg that a story template uses, such as `children`.
+
+</If>
+
 <details>
 <summary>Handling complex types</summary>
 
@@ -484,7 +587,7 @@ type CustomProps = React.ComponentProps<typeof Button> & { customProp: string };
 - };
 ```
 
-A type that also holds the props of the component, like the one above, keeps working in React and Vue.
+A type that also holds the props of the component, like the one above, keeps working in React, Vue, and Svelte.
 
 In Angular and Web Components, leave the component class out of the type and only pass your custom args, such as `preview.type<{ args: { customProp: string } }>()`. The args of the component are already inferred, all of them optional. A type that you pass to `preview.type` is used as it is, so a component class would make every one of its members a required arg.
 

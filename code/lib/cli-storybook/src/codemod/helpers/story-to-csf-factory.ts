@@ -1,5 +1,6 @@
 import { types as t, traverse } from 'storybook/internal/babel';
-import { isValidPreviewPath, loadCsf, printCsf } from 'storybook/internal/csf-tools';
+import { isValidPreviewPath } from 'storybook/internal/csf/csf-utils';
+import { loadCsf, printCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
 import path from 'path';

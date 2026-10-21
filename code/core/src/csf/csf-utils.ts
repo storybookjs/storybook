@@ -4,7 +4,11 @@
  * helpers.
  */
 export { isExportStory, storyNameFromExport, type IncludeExcludeOptions } from './export-story.ts';
-export { isValidPreviewPath } from './preview-path.ts';
+
+const PREVIEW_FILE_REGEX = /\/preview(.(js|jsx|mjs|ts|tsx))?$/;
+
+/** Whether an import path points at a `.storybook/preview` file, making it a CSF factory source. */
+export const isValidPreviewPath = (filepath: string) => PREVIEW_FILE_REGEX.test(filepath);
 
 /**
  * Remove punctuation and illegal characters from a story ID, so it is safe to use in URLs and CSS

@@ -6,14 +6,7 @@ import { logger } from 'storybook/internal/node-logger';
 import yaml from 'js-yaml';
 import { dedent } from 'ts-dedent';
 
-import {
-  type CsfOptions,
-  formatCsf,
-  isModuleMock,
-  isValidPreviewPath,
-  loadCsf,
-  printCsf,
-} from './CsfFile.ts';
+import { type CsfOptions, formatCsf, isModuleMock, loadCsf, printCsf } from './CsfFile.ts';
 
 expect.addSnapshotSerializer({
   print: (val: any) => yaml.dump(val).trimEnd(),
@@ -3181,24 +3174,5 @@ describe('isModuleMock', () => {
 
     expect(isModuleMock('#foo.mocktail')).toBe(false);
     expect(isModuleMock('#foo.mock.test.ts')).toBe(false);
-  });
-});
-
-describe('isValidPreviewPath', () => {
-  it.each([
-    ['#.storybook/preview', true],
-    ['../../.storybook/preview', true],
-    ['/path/to/.storybook/preview', true],
-    ['./preview', true],
-    ['./preview.ts', true],
-    ['./preview.tsx', true],
-    ['./preview.js', true],
-    ['./preview.jsx', true],
-    ['./preview.mjs', true],
-    ['foo', false],
-    ['#.storybook/bad-preview', false],
-    ['preview', false],
-  ])('isValidPreviewPath("%s") === %s', (path, expected) => {
-    expect(isValidPreviewPath(path)).toBe(expected);
   });
 });

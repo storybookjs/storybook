@@ -10,8 +10,8 @@ import {
   type CsfMutationResult,
   type CsfObject,
   type CsfValue,
-  printCsfPath,
 } from './CsfObject.ts';
+import { printCsfPath } from './CsfObjectPath.ts';
 import {
   type E as ESTree,
   parseExpression,

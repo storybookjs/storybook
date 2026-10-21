@@ -14,10 +14,10 @@ import {
   type CsfMutationResult,
   type CsfObject,
   type CsfObjectHost,
-  type CsfPath,
   type CsfValue,
   createCsfObject,
 } from './CsfObject.ts';
+import type { CsfPath } from './CsfObjectPath.ts';
 import { literalRoot } from './ObjectRoot.ts';
 import {
   type E,

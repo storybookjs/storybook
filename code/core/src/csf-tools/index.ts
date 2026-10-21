@@ -9,10 +9,9 @@ export type {
   CsfObjectLookup,
   CsfObjectOptions,
   CsfObjectTarget,
-  CsfPath,
   CsfValue,
 } from './CsfObject.ts';
-export { printCsfPath } from './CsfObject.ts';
+export { type CsfPath, printCsfPath } from './CsfObjectPath.ts';
 export * from './ConfigFile.ts';
 export * from './jsdoc.ts';
 export * from './enrichCsf.ts';

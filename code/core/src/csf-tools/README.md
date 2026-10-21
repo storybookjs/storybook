@@ -25,7 +25,7 @@ if (!found?.ok) {
 found.object.set(['args', 'label'], 'Hi');
 ```
 
-Each editor reads and writes static paths with `get`, `getValue`, `inspect`, `set`, `transform`, `remove`, `rename`, `move`, `group`, `append`, and `prepend`.
+Each editor reads and writes static paths with `get`, `getValue`, `inspect`, `inspectList`, `set`, `transform`, `remove`, `rename`, `move`, `group`, `append`, and `prepend`.
 `get` returns an AST expression; `getValue` reads plain values from literals, nested arrays and objects, and local constants without executing code. Reads never return a partially decoded object.
 
 `get` and `getValue` return `undefined` both for a field that is missing and for one that cannot be read statically: a path that does not fit a value, such as a key into an array or a call, or one that a spread, a computed key, or a duplicate field leaves unproven, and for `getValue` a value it cannot evaluate, such as a call or a function. A field written as `undefined` is `undefined` too, but `get` returns its expression. Reads add no diagnostics, so they never stop a later write: a mutation proves the shape it edits again and reports its own. `inspect` tells the cases apart and gives the reason. It reads the expression like `get`, without evaluating it:
@@ -94,14 +94,14 @@ To read a tree, `walk` visits its nodes depth-first, `staticKey` reads an object
 
 A path is a list of keys and indexes. A string is a key of an object literal; a number is an item of the array or call the path reaches, an element or an argument, at its position in the source, where spreads and holes count. `printCsfPath` prints a path as diagnostics do, `parameters.msw.handlers[0]`, and a path of keys alone as `path.join('.')`.
 
-For an array literal written at the field, that position is the index in `get(path).elements`, so a consumer finds an item with its own predicate and addresses it. `get` returns the expression as written, so for `const addons = [...]; export default { addons }` it returns the identifier, while `['addons', 0]` follows the constant to its first element.
+`inspectList(path)` reads the list at a path as `append` and `prepend` would act on it, by their rule, without editing or reporting: `{ kind: 'list', node }` with a detached copy of the array literal, or of the call at an item path such as `['loaders', 0]`; `{ kind: 'missing' }` when they would create it, also next to a spread they would carry forward; or `{ kind: 'refused', diagnostic }` with the diagnostic they would refuse with. Its positions are those of the item paths, through a constant only the edited object refers to, so a consumer finds an item with its own predicate and addresses it. `get` returns the expression as written instead: for `const addons = [...]; export default { addons }` it returns the identifier.
 
 ```ts
 // export default { addons: ['a', 'x'] }
-const addons = main.get(['addons']);
+const addons = main.inspectList(['addons']);
 const index =
-  addons?.type === 'ArrayExpression'
-    ? addons.elements.findIndex((element) => isStringLiteral(element) && element.value === 'x')
+  addons.kind === 'list' && addons.node.type === 'ArrayExpression'
+    ? addons.node.elements.findIndex((element) => isStringLiteral(element) && element.value === 'x')
     : -1;
 if (index >= 0) {
   main.remove(['addons', index]);
@@ -138,7 +138,7 @@ if (config.changed && config.mutationDiagnostics.length === 0) {
 
 `ConfigFile.changed` and `ConfigFile.mutationDiagnostics` track these editor operations. Existing `getFieldNode` reads reflect editor changes. `writeConfig` rejects files with mutation diagnostics to avoid writing partial edits.
 
-`appendValueToArray` and `appendNodeToArray` are deprecated: use `append`. `removeEntryFromArray`, deprecated too, removes the first entry of an array that names a value: a string, a `{ name }` object, or a call like `getAbsolutePath(value)`; find the entry's index and `remove([...path, index])` it instead, keeping in mind that `get(path)` returns the field as written. The three helpers edit the array literal the field resolves to, through local constants and type assertions, and return a `CsfMutationResult` like the editor operations. A field that is not an array literal, a call included, leaves the file as it is and adds an `unsupported-value` diagnostic; a missing field or entry is a no-op for `removeEntryFromArray`, unless a spread or a computed key leaves the field unproven. Like `append` and `remove`, they refuse an array that a later spread could replace, and one in a constant that other code refers to as well.
+`appendValueToArray` and `appendNodeToArray` are deprecated: use `append`. `removeEntryFromArray`, deprecated too, removes the first entry of an array that names a value: a string, a `{ name }` object, or a call like `getAbsolutePath(value)`; find the entry's index in the list `inspectList(path)` returns and `remove([...path, index])` it instead. The three helpers edit the array literal the field resolves to, through local constants and type assertions, and return a `CsfMutationResult` like the editor operations. A field that is not an array literal, a call included, leaves the file as it is and adds an `unsupported-value` diagnostic; a missing field or entry is a no-op for `removeEntryFromArray`, unless a spread or a computed key leaves the field unproven. Like `append` and `remove`, they refuse an array that a later spread could replace, and one in a constant that other code refers to as well.
 
 Discovery rejects shared or reassigned bindings, unresolved re-exports, and conditional or repeated CommonJS assignments. Inline object methods and exported function declarations can be transformed as function expressions while retaining their declaration form. Path edits use the same spread, duplicate-key, occupied-destination, and dynamic-value checks as story edits. Unsupported input produces diagnostics without rewriting that input.
 

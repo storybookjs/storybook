@@ -2,11 +2,11 @@ import {
   type CsfPath,
   type Located,
   type Slot,
-  addableList,
   creatable,
   insertAt,
   isInvalidIndex,
   isKey,
+  listAt,
   locate,
   printCsfPath,
   unsafePath,
@@ -24,7 +24,13 @@ import {
   staticKey,
   unwrapExpression,
 } from './estree/ast.ts';
-import { type SourceEditor, detachedTextOf, printKey, printValue } from './estree/editor.ts';
+import {
+  type SourceEditor,
+  detachedSource,
+  detachedTextOf,
+  printKey,
+  printValue,
+} from './estree/editor.ts';
 import {
   type CsfValue,
   UNRESOLVED,
@@ -75,6 +81,16 @@ export type CsfInspection =
   | { kind: 'value'; node: CsfExpression }
   | { kind: 'missing' }
   | { kind: 'unreadable'; diagnostic: CsfMutationDiagnostic };
+
+/**
+ * What `append` and `prepend` would act on at a path: the list they add to, a detached copy of the
+ * array literal or, at an item path, the call, whose arguments are its items; a missing one they
+ * create; or the diagnostic they would refuse with.
+ */
+export type CsfListInspection =
+  | { kind: 'list'; node: E.ArrayExpression | E.CallExpression }
+  | { kind: 'missing' }
+  | { kind: 'refused'; diagnostic: CsfMutationDiagnostic };
 
 /**
  * Outcome of a mutation. A refused one leaves the file as it was, also when its edit would leave a
@@ -290,6 +306,20 @@ export interface CsfObject {
    * ```
    */
   prepend(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult;
+  /**
+   * Read what `append` and `prepend` would act on at a path, by the rule they apply, without
+   * editing or reporting: the list, `missing` when they would create it, or the diagnostic they
+   * would refuse it with.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig('export default { addons: [a], tags: tags() };').parse();
+   * object.inspectList(['addons']).kind; // 'list'
+   * object.inspectList(['loaders']); // { kind: 'missing' }
+   * object.inspectList(['tags']).kind; // 'refused'
+   * ```
+   */
+  inspectList(path: CsfPath): CsfListInspection;
 }
 
 export interface CsfObjectOptions {
@@ -469,40 +499,36 @@ class Editor implements CsfObject {
     if (unprintable) {
       return unprintable;
     }
-    const inspected = this.locate(path, 'set');
-    if (inspected.ok === false) {
-      return this.failure(inspected.code, path, inspected.node);
+    const list = listAt(this.editor, this.root(), path);
+    if (list.ok === false) {
+      return this.failure(list.code, path, list.node, list.message);
     }
     const { quote, indent } = this.editor;
-    const text = () => printValue(value, quote, { indent, expand: 'multiline' });
-    const slot = valueAt(this.editor, inspected);
-    if (!slot) {
-      const creation = creatable(this.editor, inspected, path, 'always');
-      if (!creation.ok) {
-        return this.failure(creation.code, path, creation.node, creation.message);
-      }
-      insertAt(this.editor, this.root(), path, { items: [text()], first: end === 'prepend' });
-      return this.commit(path);
+    const text = printValue(value, quote, { indent, expand: 'multiline' });
+    if (list.kind === 'missing') {
+      insertAt(this.editor, this.root(), path, { items: [text], first: end === 'prepend' });
+    } else {
+      listRoot(this.editor, list.list)[end]([text]);
     }
-    const { scopes } = this.editor;
-    const last = path[path.length - 1];
-    const resolved = slot.expression && resolveExpression(scopes, slot.expression);
-    const list = addableList(resolved, last);
-    if (!list) {
-      const node = slot.expression ?? slot.node;
-      const shared =
-        slot.expression && addableList(resolveExpression(scopes, slot.expression, 'read'), last);
-      return this.failure(
-        'unsupported-value',
-        path,
-        node,
-        shared
-          ? `Cannot add to '${printCsfPath(path)}', a constant that other code refers to as well`
-          : `Expected an array literal${isKey(last) ? '' : ' or a call'} at '${printCsfPath(path)}', got '${(resolved ?? node).type}'`
-      );
-    }
-    listRoot(this.editor, list)[end]([text()]);
     return this.commit(path);
+  }
+
+  inspectList(path: CsfPath): CsfListInspection {
+    const list: ReturnType<typeof listAt> =
+      path.length === 0 || unsafePath(path)
+        ? { ok: false, code: 'unsupported-member', node: this.anchor() }
+        : listAt(this.editor, this.root(), path);
+    if (list.ok === false) {
+      const diagnostic = this.diagnostic(list.code, path, list.node, list.message);
+      return { kind: 'refused', diagnostic };
+    }
+    if (list.kind === 'missing') {
+      return { kind: 'missing' };
+    }
+    // `f?.(a)` parses as the chain around the call.
+    const copy = readOnly(parseExpression(detachedSource(this.editor, list.list)));
+    const node = copy.type === 'ChainExpression' ? copy.expression : copy;
+    return { kind: 'list', node: node as E.ArrayExpression | E.CallExpression };
   }
 
   transform(

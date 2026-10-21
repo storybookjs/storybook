@@ -82,7 +82,7 @@ const listNode = (value: Node | undefined) => {
 // item such as `['loaders', 0]` for `loaders: [mswLoader()]`, also a call, whose arguments are its
 // items. A field is a list only when it holds an array literal: an argument added to a call such as
 // `addons: base.filter(Boolean)` would change the call instead of adding an entry.
-export const addableList = (value: Node | undefined, last: string | number) => {
+const addableList = (value: Node | undefined, last: string | number) => {
   const list = listNode(value);
   return list?.type === 'CallExpression' && isKey(last) ? undefined : list;
 };
@@ -213,6 +213,45 @@ export const creatable = (
     }
   }
   return { ok: true, keys };
+};
+
+// The list `append` and `prepend` add to at the end of a path, `missing` when they create it, or why
+// they refuse it. The caller has checked the path.
+export const listAt = (
+  editor: SourceEditor,
+  root: ObjectRoot,
+  path: CsfPath
+):
+  | { ok: true; kind: 'list'; list: E.ArrayExpression | E.CallExpression }
+  | { ok: true; kind: 'missing' }
+  | Refusal => {
+  const located = locate(editor, root, path, 'set');
+  if (located.ok === false) {
+    return located;
+  }
+  const slot = valueAt(editor, located);
+  if (!slot) {
+    const creation = creatable(editor, located, path, 'always');
+    return creation.ok ? { ok: true, kind: 'missing' } : creation;
+  }
+  const { scopes } = editor;
+  const last = path[path.length - 1];
+  const resolved = slot.expression && resolveExpression(scopes, slot.expression);
+  const list = addableList(resolved, last);
+  if (list) {
+    return { ok: true, kind: 'list', list };
+  }
+  const node = slot.expression ?? slot.node;
+  const shared =
+    slot.expression && addableList(resolveExpression(scopes, slot.expression, 'read'), last);
+  return {
+    ok: false,
+    code: 'unsupported-value',
+    node,
+    message: shared
+      ? `Cannot add to '${printCsfPath(path)}', a constant that other code refers to as well`
+      : `Expected an array literal${isKey(last) ? '' : ' or a call'} at '${printCsfPath(path)}', got '${(resolved ?? node).type}'`,
+  };
 };
 
 // Writes the missing containers at `missing` into `parent`, the first one a member of it, which

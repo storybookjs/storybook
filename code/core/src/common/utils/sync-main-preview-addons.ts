@@ -38,23 +38,14 @@ export async function syncPreviewAddonsWithMainConfig(
   if (!isCsfFactory) {
     return previewConfig;
   }
-  const inspected = previewConfig.inspect(['addons']);
-  const existingAddons = previewConfig._arrayAt(['addons']);
-  if (existingAddons.kind === 'other') {
+  const existingAddons = previewConfig.inspectList(['addons']);
+  if (existingAddons.kind === 'refused') {
     logger.debug(`Not synchronizing the preview addons: ${existingAddons.diagnostic.message}`);
     return previewConfig;
   }
-  // A spread can provide a missing `addons`, which `append` carries forward, but it could replace
-  // one the preview writes.
-  if (
-    inspected.kind === 'unreadable' &&
-    !(existingAddons.kind === 'missing' && inspected.diagnostic.code === 'spread-field')
-  ) {
-    logger.debug(`Not synchronizing the preview addons: ${inspected.diagnostic.message}`);
-    return previewConfig;
-  }
-
-  if (inspected.kind === 'missing') {
+  // An empty `addons` written after a spread would replace the addons it provides, which `append`
+  // carries forward instead.
+  if (existingAddons.kind === 'missing' && previewConfig.inspect(['addons']).kind === 'missing') {
     previewConfig.set(['addons'], []);
   }
 
@@ -81,7 +72,7 @@ export async function syncPreviewAddonsWithMainConfig(
 
       if (
         existingAddons.kind === 'missing' ||
-        (existingAddons.kind === 'array' &&
+        (existingAddons.node.type === 'ArrayExpression' &&
           !existingAddons.node.elements.some(
             (element) => element?.type === 'Identifier' && element.name === annotations.importName
           ))

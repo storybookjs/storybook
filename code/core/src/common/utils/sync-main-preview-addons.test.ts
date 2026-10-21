@@ -243,6 +243,27 @@ describe('syncPreviewAddonsWithMainConfig', () => {
     expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining(reason));
   });
 
+  it('leaves alone, with a debug log, an addons constant that other code refers to as well', async () => {
+    const originalCode = dedent`
+      import { definePreview } from "@storybook/react/preview";
+
+      const addons = [];
+      register(addons);
+      export default definePreview({ addons });
+    `;
+    const preview = loadConfig(originalCode).parse();
+
+    (getAddonAnnotations as Mock).mockImplementation(() => {
+      return { importName: 'addonA11yAnnotations', importPath: '@storybook/addon-a11y/preview' };
+    });
+
+    const result = await syncPreviewAddonsWithMainConfig(mainConfig, preview, configDir);
+
+    expect(printConfig(result).code).toBe(originalCode);
+    expect(result.mutationDiagnostics).toEqual([]);
+    expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('other code refers to'));
+  });
+
   it('should add an empty addons array if no addons are installed', async () => {
     const originalCode = dedent`
       import { definePreview } from "@storybook/react/preview";

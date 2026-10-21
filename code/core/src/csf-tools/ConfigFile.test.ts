@@ -4,7 +4,7 @@ import { dedent } from 'ts-dedent';
 
 import { formatConfig, loadConfig, printConfig } from './ConfigFile.ts';
 import type { CsfExpression } from './CsfObject.ts';
-import { parseExpression } from './estree/ast.ts';
+import { parseExpression, textOf } from './estree/ast.ts';
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -2130,6 +2130,70 @@ describe('ConfigFile', () => {
         const config: StorybookConfig = { };
         export default config;
       `);
+    });
+  });
+
+  describe('inspectList', () => {
+    it.each([
+      ['an array literal', "export default { addons: ['a'] };", ['addons'], "['a']"],
+      [
+        'the array of a constant only the config refers to',
+        "const addons = ['a'] as const;\nexport default { addons };",
+        ['addons'],
+        "['a']",
+      ],
+      [
+        'the call at an item path',
+        'export default { loaders: [mswLoader()] };',
+        ['loaders', 0],
+        'mswLoader()',
+      ],
+    ])('reads %s, which append adds to', (_case, source, path, text) => {
+      const config = loadConfig(source).parse();
+      const list = config.inspectList(path);
+
+      expect(list.kind === 'list' && textOf(list.node)).toBe(text);
+      expect(config.mutationDiagnostics).toEqual([]);
+    });
+
+    it.each([
+      ['a missing field', 'export default { tags: [] };'],
+      [
+        'a field a spread may provide, which append carries forward',
+        'export default { ...shared };',
+      ],
+    ])('reads %s as missing, which append creates', (_case, source) => {
+      const config = loadConfig(source).parse();
+
+      expect(config.inspectList(['addons'])).toEqual({ kind: 'missing' });
+      expect(config.append(['addons'], 'b')).toEqual({ ok: true, changed: true });
+    });
+
+    it.each([
+      ['holds a call', 'export default { addons: getAddons() };', 'unsupported-value'],
+      [
+        'a later spread could replace',
+        "export default { addons: ['a'], ...shared };",
+        'spread-field',
+      ],
+      [
+        'is a constant that other code refers to as well',
+        "const addons = ['a'];\nexport default { addons };\nregister(addons);",
+        'unsupported-value',
+      ],
+      ['a computed key could provide', 'export default { [key]: [] };', 'dynamic-key'],
+    ])('refuses, with the diagnostic of append, a field that %s', (_case, source, code) => {
+      const config = loadConfig(source).parse();
+      const list = config.inspectList(['addons']);
+
+      expect(list).toMatchObject({ kind: 'refused', diagnostic: { code, path: ['addons'] } });
+      expect(config.mutationDiagnostics).toEqual([]);
+      expect(config.append(['addons'], 'b')).toEqual({
+        ok: false,
+        changed: false,
+        diagnostic: list.kind === 'refused' && list.diagnostic,
+      });
+      expect(printConfig(config).code).toBe(source);
     });
   });
 

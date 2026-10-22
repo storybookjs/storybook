@@ -46,8 +46,10 @@ export {
 export const ignoreSsrWarning =
   '/* emotion-disable-server-rendering-unsafe-selector-warning-please-do-not-use-this-the-warning-exists-for-a-reason */';
 
-// `'.'` does not name this package entry once the file is resolved as
-// `storybook/theming/emotion`, so the merge would miss the exported Theme.
+/*
+ * `'.'` does not name this entry once the file resolves as `storybook/theming/emotion`.
+ * The interface merge would miss the exported Theme.
+ */
 declare module 'storybook/theming/emotion' {
   interface Theme extends StorybookTheme {}
 }

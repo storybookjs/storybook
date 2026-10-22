@@ -121,21 +121,14 @@ function createTypesFallbackResolverPlugin(isExternal: (id: string) => boolean):
   };
 }
 
-// On one `storybook/theming` entry,
-// `declare module '.' { interface Theme extends StorybookTheme {} }` worked because Emotion's
-// empty `interface Theme {}` was inlined into that same .d.ts.
-//
-// `storybook/theming` exports `create`, `themes`, `ThemeVars`, and `ThemeVarsPartial`, with no
-// React. `storybook/theming/emotion` exports `styled`, `css`, `jsx`, `useTheme`, and the theme
-// data. dist is deleted before emit, so `storybook/theming/emotion` resolves through `code` and
-// component .d.ts files name `import("@emotion/react").Theme`. The declaration bundler hoists
-// that empty interface into a shared chunk. An augmentation in emotion.d.ts does not fill the
-// chunk, so `theme.color` fails to typecheck.
-//
-// Rewrite those `import("@emotion/react")` and `import("@emotion/styled")` queries, outside the
-// theming entry, to `import("storybook/theming/emotion")` before bundling. Emotion stays
-// inlined. This is not `dtsExternal`: that left `@emotion/react` imports in the published types
-// and was removed.
+/*
+ * One `storybook/theming` entry could use `declare module '.'` because Emotion's empty Theme was
+ * inlined into that same .d.ts. Two entries make component .d.ts files name
+ * `import("@emotion/react").Theme`, which the declaration bundler hoists into a shared chunk the
+ * augmentation cannot fill. The rewrite points those queries at `storybook/theming/emotion`
+ * before bundling. Emotion stays inlined. This is not `dtsExternal`, which would leave
+ * `@emotion/react` imports in the published types.
+ */
 function retargetEmotionTypeQueries(emitDir: string, specifier: string): void {
   const files = ts.sys.readDirectory(emitDir, ['.d.ts', '.d.mts', '.d.cts']);
   const pairs = [

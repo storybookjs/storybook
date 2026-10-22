@@ -215,7 +215,8 @@ export class UniversalStore<
    * has been prepared by Storybook, which is almost instantly.
    *
    * A follower will be ready when the state has been synced with the leader's state, within a few
-   * hundred milliseconds.
+   * hundred milliseconds. If no leader answers within 1 second the promise rejects, but a call made
+   * after the leader answers later resolves.
    */
   public untilReady() {
     // A store that already has its own channel and environment is prepared (e.g. an isolated
@@ -232,7 +233,8 @@ export class UniversalStore<
    * The syncing construct is used to keep track of if the instance's state has been synced with the
    * other instances. A leader will immediately have the promise resolved. A follower will initially
    * be in a PENDING state, and resolve when the leader has sent the existing state, or reject if no
-   * leader has responded before the timeout.
+   * leader has responded before the timeout. A rejected follower becomes RESOLVED, with a resolved
+   * promise, when the leader's state arrives later.
    */
   private syncing?: {
     state: (typeof ProgressState)[keyof typeof ProgressState];
@@ -300,8 +302,12 @@ export class UniversalStore<
       let syncingReject: (error: Error) => void;
       const syncingPromise = new Promise<void>((resolve, reject) => {
         syncingResolve = () => {
-          if (this.syncing!.state !== ProgressState.PENDING) {
+          if (this.syncing!.state === ProgressState.RESOLVED) {
             return;
+          }
+          if (this.syncing!.state === ProgressState.REJECTED) {
+            // The leader answered after the timeout, so readiness no longer waits on the rejection.
+            this.syncing!.promise = Promise.resolve();
           }
           this.syncing!.state = ProgressState.RESOLVED;
           resolve();
@@ -607,8 +613,21 @@ export class UniversalStore<
       // Ignore events from self
       this.debug('handleChannelEvents: Ignoring event from self', { channelEvent });
       return;
-    } else if (
-      this.syncing?.state === ProgressState.PENDING &&
+    }
+
+    const isTimedOutFollower =
+      this.actor.type === UniversalStore.ActorType.FOLLOWER &&
+      this.syncing?.state === ProgressState.REJECTED;
+
+    if (isTimedOutFollower && event.type === UniversalStore.InternalEventType.LEADER_CREATED) {
+      // A leader created after the timeout never got this follower's request, so ask it.
+      this.debug('handleChannelEvents: Requesting existing state from new leader', { event });
+      this.requestExistingState();
+      return;
+    }
+
+    if (
+      (this.syncing?.state === ProgressState.PENDING || isTimedOutFollower) &&
       event.type !== UniversalStore.InternalEventType.EXISTING_STATE_RESPONSE
     ) {
       // Ignore events while syncing because it can cause sync issues if the state is updated
@@ -669,13 +688,7 @@ export class UniversalStore<
             // ignore the response if this follower has already synced
             break;
           }
-          if (this.syncing?.state === ProgressState.REJECTED) {
-            // The leader answered after the timeout, so recover instead of staying in an error state.
-            this.syncing.state = ProgressState.RESOLVED;
-            this.syncing.promise = Promise.resolve();
-          } else {
-            this.syncing!.resolve?.();
-          }
+          this.syncing!.resolve?.();
           // notify internal listeners that the state has changed because of the sync
           const setStateEvent: SetStateEvent<State> = {
             type: UniversalStore.InternalEventType.SET_STATE,
@@ -686,12 +699,6 @@ export class UniversalStore<
           };
           this.state = event.payload;
           this.emitToListeners(setStateEvent, eventInfo);
-          break;
-        case UniversalStore.InternalEventType.LEADER_CREATED:
-          if (this.syncing?.state === ProgressState.REJECTED) {
-            // A leader created after the timeout never got this follower's request, so ask it.
-            this.requestExistingState();
-          }
           break;
       }
     }

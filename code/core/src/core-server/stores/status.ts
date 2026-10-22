@@ -34,7 +34,9 @@ export async function getSyncedStatuses(): Promise<StatusesByStoryIdAndTypeId> {
   try {
     await bundle.universalStatusStore.untilReady();
   } catch (error) {
-    // A follower that timed out ignores late answers, so the next read has to sync a fresh one.
+    // A timed-out follower keeps returning its rejected `untilReady()` until a late answer reaches
+    // it, so the next read syncs a fresh follower with its own wait. The discarded one stays
+    // subscribed to the channel, as a UniversalStore cannot be unsubscribed.
     if (cache.store === bundle) {
       instances.delete(UNIVERSAL_STATUS_STORE_OPTIONS.id);
       cache.store = undefined;

@@ -743,6 +743,58 @@ You should reuse the existing instance instead of trying to create a new one.`);
         expect(() => follower.setState({ count: 2 })).not.toThrow();
       });
 
+      it('should ignore state updates between the timeout and the recovery', async () => {
+        // Arrange - a follower whose leader did not answer within the timeout
+        const follower = UniversalStore.create({
+          id: 'env1:test',
+          leader: false,
+        });
+        vi.advanceTimersByTime(1000);
+        await expect(follower.untilReady()).rejects.toBeInstanceOf(
+          UniversalStoreFollowerTimeoutError
+        );
+        const onStateChange = vi.fn();
+        follower.onStateChange(onStateChange);
+        const leaderActor = {
+          id: 'late-leader',
+          type: UniversalStore.ActorType.LEADER,
+          environment: UniversalStore.Environment.SERVER,
+        };
+
+        // Act - the leader updates its state before its late answer arrives
+        mockChannel.emit('UNIVERSAL_STORE:env2:test', {
+          event: {
+            type: UniversalStore.InternalEventType.SET_STATE,
+            payload: { state: { count: 5 }, previousState: { count: 4 } },
+          },
+          eventInfo: { actor: leaderActor },
+        });
+        vi.advanceTimersByTime(0);
+
+        // Assert - the update should not be applied while the follower is not synced
+        expect(follower.getState()).toEqual(undefined);
+        expect(follower.status).toBe(UniversalStore.Status.ERROR);
+        expect(onStateChange).not.toHaveBeenCalled();
+
+        // Act - the late answer arrives with the leader's current state
+        mockChannel.emit('UNIVERSAL_STORE:env2:test', {
+          event: {
+            type: UniversalStore.InternalEventType.EXISTING_STATE_RESPONSE,
+            payload: { count: 5 },
+          },
+          eventInfo: { actor: leaderActor },
+        });
+        vi.advanceTimersByTime(0);
+
+        // Assert - recovery should report the change, so state subscribers re-render
+        expect(follower.status).toBe(UniversalStore.Status.READY);
+        expect(onStateChange).toHaveBeenCalledExactlyOnceWith(
+          { count: 5 },
+          undefined,
+          expect.objectContaining({ actor: leaderActor })
+        );
+      });
+
       it('should request the existing state again when a leader is created after the timeout', async () => {
         // Arrange - a follower that timed out because no leader existed yet
         const follower = UniversalStore.create({
@@ -834,6 +886,38 @@ You should reuse the existing instance instead of trying to create a new one.`);
 
         // Assert - the follower should keep its synced state
         expect(follower.getState()).toEqual({ count: 0 });
+      });
+
+      it('should not request the existing state again at the timeout once it has synced', async () => {
+        // Arrange - a follower synced with its leader before the timeout
+        UniversalStore.create({
+          id: 'env1:test',
+          leader: true,
+          initialState: { count: 0 },
+        });
+        const follower = UniversalStore.create({
+          id: 'env2:test',
+          leader: false,
+        });
+        await vi.waitFor(
+          () => {
+            expect(follower.status).toBe(UniversalStore.Status.READY);
+          },
+          { timeout: 200 }
+        );
+        mockChannel.emit.mockClear();
+
+        // Act - the timeout fires
+        vi.advanceTimersByTime(1000);
+
+        // Assert - the follower should stay synced without asking the leader again
+        expect(mockChannel.emit).not.toHaveBeenCalledWith(
+          expect.any(String),
+          expect.objectContaining({
+            event: { type: UniversalStore.InternalEventType.EXISTING_STATE_REQUEST },
+          })
+        );
+        expect(follower.status).toBe(UniversalStore.Status.READY);
       });
 
       it('should emit a FOLLOWER_CREATED event when a follower is created', async () => {

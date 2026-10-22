@@ -1,3 +1,5 @@
+import { workflows } from './types.ts';
+
 /** These are parameters that the CircleCI API is called with. */
 export const parameters = {
   ghBaseBranch: {
@@ -18,7 +20,7 @@ export const parameters = {
   },
   workflow: {
     default: 'skipped',
-    description: 'Which workflows to run, comma-separated (e.g. `normal,windows`)',
+    description: `Which workflows to run, comma-separated, out of ${workflows.join(', ')} (e.g. \`normal,windows\`)`,
     type: 'string',
   },
 };

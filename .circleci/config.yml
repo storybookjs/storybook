@@ -23,7 +23,7 @@ parameters:
     type: string
   workflow:
     default: skipped
-    description: Which workflows to run, comma-separated (e.g. `normal,windows`)
+    description: Which workflows to run, comma-separated, out of daily, merged, normal, docs, windows (e.g. `normal,windows`)
     type: string
 
 jobs:

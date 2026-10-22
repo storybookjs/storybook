@@ -144,6 +144,13 @@ describe('refreshBeforeStorybookLockfile', () => {
     expect(yarnCommands()).toEqual(['yarn install --mode=update-lockfile']);
   });
 
+  it('sets the age gate as a duration string', async () => {
+    await refreshBeforeStorybookLockfile({ cwd: SANDBOX });
+
+    const scripts = vi.mocked(runCommand).mock.calls.map(([script]) => script);
+    expect(scripts).toContain('yarn config set npmMinimalAgeGate 7d');
+  });
+
   it('upgrades only the quarantined package, leaving every other range alone', async () => {
     failResolveSteps(quarantined('@angular/build@npm:^22.1.3'));
 

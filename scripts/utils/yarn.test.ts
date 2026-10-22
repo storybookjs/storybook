@@ -6,8 +6,9 @@ import * as memfs from 'memfs';
 import { vol } from 'memfs';
 import yml from 'yaml';
 
+import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { exec } from './exec.ts';
-import { installYarn2 } from './yarn.ts';
+import { configureYarn2ForVerdaccio, installYarn2 } from './yarn.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('./exec.ts', () => ({ exec: vi.fn() }));
@@ -101,6 +102,15 @@ describe('installYarn2', () => {
 
     // The published sandbox predates Storybook, so its `.yarnrc.yml` cannot name them.
     expect(readConfig().npmPreapprovedPackages).toContain('@analogjs/vite-plugin-angular');
+  });
+
+  it('does not discard peer warnings for the rsbuild templates that match real keys', async () => {
+    for (const key of ['vue3-rsbuild/default-ts', 'lit-rsbuild/default-ts'] as AllTemplatesKey[]) {
+      vi.mocked(exec).mockClear();
+      await configureYarn2ForVerdaccio({ cwd: SANDBOX, dryRun: false, debug: false, key });
+      expect(yarnCommands()).toContain('YN0013');
+      expect(yarnCommands()).not.toContain('YN0060');
+    }
   });
 
   it('does not write a yarnPath next to the pinned packageManager', async () => {

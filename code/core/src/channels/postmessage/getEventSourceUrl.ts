@@ -1,5 +1,7 @@
 import { logger } from 'storybook/internal/client-logger';
 
+import { POOL_FRAME_ATTRIBUTE } from '../../shared/constants/frame-pool.ts';
+
 /**
  * When multiple iframes match the event origin (e.g. composed refs from the same origin),
  * disambiguate by refId: the preview includes refId in the URL, so we pick the iframe whose src
@@ -20,10 +22,26 @@ const pickFrameByRefId = (
   );
 };
 
+const toSourceUrl = (frame: HTMLIFrameElement) => {
+  const { protocol, host, pathname } = new URL(
+    frame.getAttribute('src') ?? '',
+    document.location.toString()
+  );
+  return `${protocol}//${host}${pathname}`;
+};
+
 export const getEventSourceUrl = (event: MessageEvent, refId?: string): string | null => {
   const frames: HTMLIFrameElement[] = Array.from(
     document.querySelectorAll('iframe[data-is-storybook]')
   );
+  // The frames of the pool all show the same preview: the sender is the frame of its window.
+  const sender = frames.find(
+    (element) =>
+      element.hasAttribute(POOL_FRAME_ATTRIBUTE) && element.contentWindow === event.source
+  );
+  if (sender) {
+    return toSourceUrl(sender);
+  }
   // try to find the originating iframe by matching it's contentWindow
   // This might not be cross-origin safe
   const candidates = frames.filter((element) => {
@@ -56,11 +74,9 @@ export const getEventSourceUrl = (event: MessageEvent, refId?: string): string |
     return origin === event.origin;
   });
 
-  const src = pickFrameByRefId(candidates, refId)?.getAttribute('src');
-
-  if (src) {
-    const { protocol, host, pathname } = new URL(src, document.location.toString());
-    return `${protocol}//${host}${pathname}`;
+  const picked = pickFrameByRefId(candidates, refId);
+  if (picked?.getAttribute('src')) {
+    return toSourceUrl(picked);
   }
 
   if (candidates.length > 1) {

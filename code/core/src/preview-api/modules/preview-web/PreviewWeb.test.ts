@@ -2282,6 +2282,85 @@ describe('PreviewWeb', () => {
       });
     });
 
+    it('renders the story with the globals and autoplay the manager sends', async () => {
+      document.location.search = '?id=component-one--a';
+      const preview = await createAndRenderPreview();
+      vi.mocked(componentOneExports.b.play!).mockClear();
+
+      emitter.emit(SET_CURRENT_STORY, {
+        storyId: 'component-one--b',
+        viewMode: 'story',
+        autoplay: false,
+        globals: { a: 'c' },
+      });
+      await vi.waitFor(() => {
+        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledWith(
+          expect.objectContaining({
+            id: 'component-one--b',
+            storyContext: expect.objectContaining({ globals: expect.objectContaining({ a: 'c' }) }),
+          }),
+          'story-element'
+        );
+      });
+      await waitForRenderPhase('finished');
+
+      // @ts-expect-error Ignore protected property
+      expect((preview.storyStoreValue as StoryStore<Renderer>)!.userGlobals.get()).toEqual(
+        expect.objectContaining({ a: 'c' })
+      );
+      expect(componentOneExports.b.play).not.toHaveBeenCalled();
+    });
+
+    it('renders the story with the args the manager sends from its URL', async () => {
+      document.location.search = '?id=component-one--a';
+      await createAndRenderPreview();
+
+      emitter.emit(SET_CURRENT_STORY, {
+        storyId: 'component-one--b',
+        viewMode: 'story',
+        args: 'foo:url',
+      });
+
+      await vi.waitFor(() => {
+        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledWith(
+          expect.objectContaining({
+            id: 'component-one--b',
+            storyContext: expect.objectContaining({
+              args: expect.objectContaining({ foo: 'url' }),
+            }),
+          }),
+          'story-element'
+        );
+      });
+    });
+
+    it('renders the story it shows again with the args the manager sends from its URL', async () => {
+      document.location.search = '?id=component-one--a';
+      await createAndRenderPreview();
+      mockChannel.emit.mockClear();
+
+      emitter.emit(SET_CURRENT_STORY, {
+        storyId: 'component-one--a',
+        viewMode: 'story',
+        args: 'foo:url',
+      });
+
+      await vi.waitFor(() => {
+        expect(mockChannel.emit).toHaveBeenCalledWith(STORY_ARGS_UPDATED, {
+          storyId: 'component-one--a',
+          args: { foo: 'url', one: 1 },
+        });
+      });
+      expect(projectAnnotations.renderToCanvas).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          storyContext: expect.objectContaining({
+            args: expect.objectContaining({ foo: 'url' }),
+          }),
+        }),
+        'story-element'
+      );
+    });
+
     it('renders loading error if the story specified does not exist', async () => {
       document.location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();

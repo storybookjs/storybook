@@ -627,6 +627,49 @@ export interface StorybookFeatures {
   viteAppBuilder?: boolean;
 
   /**
+   * Show stories and docs pages in a pool of a few previews that the manager keeps, instead of one
+   * preview that boots each story that needs a document of its own (those that docs show in an
+   * iframe) in a frame of its own. The previews are all equal: the one shown full size is the
+   * preview, and switches from story to story instead of loading again. A docs page is a preview
+   * too, sized to its content and scrolled by the manager, and its stories that need a document of
+   * their own are other previews of the pool, laid over their blocks. A story seen in docs opens in
+   * the same preview at once. A shown preview never reloads, and a story keeps its preview as long
+   * as the pool has room, up to `max` previews, which bounds the memory a docs page with many such
+   * stories takes.
+   *
+   * Limits: the table of contents of a docs page stays in view, but does not mark the heading in
+   * view as the page scrolls, as the docs page itself no longer scrolls. Content sized to the window
+   * (`100vh`) of a docs page shows at the height of the manager's preview area.
+   *
+   * @default false
+   * @experimental This feature is in early development and may change significantly in future releases.
+   */
+  experimentalFramePool?:
+    | boolean
+    | {
+        /**
+         * The frames that boot up front, before a story needs them.
+         *
+         * @default 2
+         */
+        size?: number;
+        /**
+         * The most frames there ever are. A story keeps its frame as long as the pool has room: the
+         * pool grows, a frame at a time, for each story that comes near the screen, and at `max` a
+         * story takes the frame seen least recently.
+         *
+         * @default 10
+         */
+        max?: number;
+        /**
+         * On a screen at most 600px wide, the most frames there ever are, instead of `max`.
+         *
+         * @default 3
+         */
+        mobileMax?: number;
+      };
+
+  /**
    * Only show input controls in Angular.
    *
    * @deprecated On `@storybook/angular-vite`, use the `propsTable` framework option instead:

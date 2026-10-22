@@ -10,6 +10,7 @@ import { global } from '@storybook/global';
 import { Helmet } from 'react-helmet-async';
 import { Consumer, addons, type Combo } from 'storybook/manager-api';
 
+import { getFramePoolOptions } from '../../../shared/constants/frame-pool.ts';
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { isReviewCollectionStoryRoute } from '../../../shared/review/routes.ts';
 import { ReviewToolbarHeader } from '../review/components/ReviewToolbarHeader.tsx';
@@ -69,6 +70,16 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
 
       if (viewMode.match(/docs|story/)) {
         const { refId, id } = entry;
+        if (!refId && getFramePoolOptions(global.FEATURES?.experimentalFramePool)) {
+          // The frame pool shows the entry in a frame of its own (FramesRenderer.tsx); the
+          // manager's own listeners still hear of the selection.
+          api.getChannel()?.receive({
+            type: SET_CURRENT_STORY,
+            args: [{ storyId: id, viewMode }],
+            from: 'manager',
+          });
+          return;
+        }
         api.emit(SET_CURRENT_STORY, {
           storyId: id,
           viewMode,

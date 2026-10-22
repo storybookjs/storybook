@@ -88,6 +88,17 @@ export {
 } from './preview-web.ts';
 export type { SelectionStore, View } from './preview-web.ts';
 
+/** FRAME POOL API */
+export {
+  getFramePool as experimental_getFramePool,
+  rendersInFrame as experimental_rendersInFrame,
+} from './preview-web.ts';
+export type {
+  FramePoolClient as experimental_FramePool,
+  FrameLease as experimental_FrameLease,
+  FrameLeaseRequest as experimental_FrameLeaseRequest,
+} from './preview-web.ts';
+
 /** OPEN SERVICE API (preview leaf — register only; types on `storybook/open-service`) */
 export { getService, registerService } from '../shared/open-service/preview.ts';
 export {

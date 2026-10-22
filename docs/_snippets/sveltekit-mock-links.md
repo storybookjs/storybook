@@ -30,6 +30,7 @@
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF 3"
+<!-- ⚠️ CSF 3 is deprecated and will be removed in Storybook 12 -->
 <script module>
   import { defineMeta } from '@storybook/sveltekit';
 
@@ -92,6 +93,7 @@
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF 3"
+<!-- ⚠️ CSF 3 is deprecated and will be removed in Storybook 12 -->
 <script module>
   import { defineMeta } from '@storybook/sveltekit';
 

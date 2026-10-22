@@ -49,6 +49,7 @@ export const Example = meta.story({
 ```
 
 ```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 // Replace your-framework with nextjs or nextjs-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -78,6 +79,7 @@ export const Example: Story = {
 ```
 
 ```js filename="RouterBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import RouterBasedComponent from './RouterBasedComponent';
 
 export default {

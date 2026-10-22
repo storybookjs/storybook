@@ -25,6 +25,7 @@ export const Base = meta.story();
 ```
 
 ```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular-vite';
 
 import { YourComponent } from './your.component';

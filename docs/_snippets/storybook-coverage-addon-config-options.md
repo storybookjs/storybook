@@ -166,6 +166,7 @@ export default defineMain({
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 // For Vite support add the following import
 // import type { AddonOptionsVite } from '@storybook/addon-coverage';
 
@@ -196,6 +197,7 @@ export default config;
 ```
 
 ```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 export default {
   stories: [],
   addons: [

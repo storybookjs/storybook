@@ -78,6 +78,7 @@ export const GoBack = meta.story({
 ```
 
 ```ts filename="MyForm.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 // Replace your-framework with nextjs or nextjs-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -120,6 +121,7 @@ export const GoBack: Story = {
 ```
 
 ```js filename="MyForm.stories.js" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import { expect } from 'storybook/test';
 
 // Replace your-framework with nextjs or nextjs-vite

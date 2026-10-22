@@ -259,6 +259,7 @@ export class ThemeProvider extends LitElement {
 ```
 
 ```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="Preview (CSF 3)"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import { html } from 'lit';
 
 const preview = {
@@ -322,6 +323,7 @@ export default definePreview({
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="Preview (CSF 3)"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import { html } from 'lit';
 
 import type { Preview } from '@storybook/web-components-vite';
@@ -422,6 +424,7 @@ export default preview;
 ```
 
 ```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import React from 'react';
 
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
@@ -444,6 +447,7 @@ export default preview;
 ```
 
 ```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import React from 'react';
 
 import { ThemeProvider } from 'styled-components';

@@ -33,6 +33,7 @@ export const WithListener = meta.story({
 ```
 
 ```js filename="lit-events.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import './lit-events';
 
 export default {
@@ -48,6 +49,7 @@ export const WithListener = {
 ```
 
 ```ts filename="lit-events.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import './lit-events';

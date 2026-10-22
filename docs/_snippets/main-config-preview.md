@@ -201,6 +201,7 @@ export default defineMain({
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="Body (CSF 3)"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 
@@ -217,6 +218,7 @@ export default config;
 ```
 
 ```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="Body (CSF 3)"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 export default {
   previewBody: (body) => `
     ${body}
@@ -228,6 +230,7 @@ export default {
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="Head (CSF 3)"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 
@@ -246,6 +249,7 @@ export default config;
 ```
 
 ```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="Head (CSF 3)"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 export default {
   previewHead: (head) => `
     ${head}

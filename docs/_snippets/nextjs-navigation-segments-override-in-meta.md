@@ -35,6 +35,7 @@ const meta = preview.meta({
 ```
 
 ```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 // Replace your-framework with nextjs or nextjs-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -55,6 +56,7 @@ export default meta;
 ```
 
 ```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import NavigationBasedComponent from './NavigationBasedComponent';
 
 export default {

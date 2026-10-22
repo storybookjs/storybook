@@ -260,6 +260,7 @@ export default definePreview({
 ```
 
 ```tsx filename=".storybook/preview.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import * as React from 'react';
 import { MDXProvider } from '@mdx-js/react';
 
@@ -298,6 +299,7 @@ export default preview;
 ```
 
 ```jsx filename=".storybook/preview.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import * as React from 'react';
 import { MDXProvider } from '@mdx-js/react';
 

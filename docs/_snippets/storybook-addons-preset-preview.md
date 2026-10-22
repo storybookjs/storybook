@@ -31,6 +31,7 @@ export default definePreview({
 ```
 
 ```ts filename="example-addon/src/preview.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import type { Renderer, ProjectAnnotations } from 'storybook/internal/types';
 import { PARAM_KEY } from './constants';
 import { CustomDecorator } from './decorators';
@@ -46,6 +47,7 @@ export default preview;
 ```
 
 ```js filename="example-addon/src/preview.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import { PARAM_KEY } from './constants';
 
 import { CustomDecorator } from './decorators';

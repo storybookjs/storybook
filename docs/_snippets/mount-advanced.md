@@ -91,6 +91,7 @@ export const Basic = meta.story({
 ```
 
 ```tsx filename="Page.stories.tsx" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import type { Meta, StoryObj } from '@storybook/angular';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
@@ -161,6 +162,7 @@ export const Basic: Story = {
 ```
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF 3"
+<!-- ⚠️ CSF 3 is deprecated and will be removed in Storybook 12 -->
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -234,6 +236,7 @@ export const Basic: Story = {
 ```
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF 3"
+<!-- ⚠️ CSF 3 is deprecated and will be removed in Storybook 12 -->
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -333,6 +336,7 @@ export const Basic = meta.story({
 ```
 
 ```tsx filename="Page.stories.tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 // Replace your-framework with the framework you are using, e.g., react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -367,6 +371,7 @@ export const Basic: Story = {
 ```
 
 ```jsx filename="Page.stories.jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
 import { Page } from './Page';
@@ -395,6 +400,7 @@ export const Basic = {
 ```
 
 ```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
@@ -429,6 +435,7 @@ export const Basic: Story = {
 ```
 
 ```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
 import Page from './Page.vue';

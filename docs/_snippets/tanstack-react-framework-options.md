@@ -14,6 +14,7 @@ export default defineMain({
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import type { StorybookConfig } from '@storybook/tanstack-react';
 
 const config: StorybookConfig = {

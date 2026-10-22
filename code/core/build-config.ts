@@ -4,7 +4,12 @@ import { x as exec } from 'tinyexec';
 
 import type { BuildEntries } from '../../scripts/build/utils/entry-utils.ts';
 
+import { retargetEmotionTypeQueries } from './scripts/retarget-emotion-type-queries.ts';
+
 const config: BuildEntries = {
+  transformEmittedDeclarations({ emitDir, packageName }) {
+    retargetEmotionTypeQueries(emitDir, `${packageName}/theming/emotion`);
+  },
   prebuild: async (cwd) => {
     await exec('jiti', [path.join(import.meta.dirname, 'scripts', 'generate-source-files.ts')], {
       nodeOptions: {

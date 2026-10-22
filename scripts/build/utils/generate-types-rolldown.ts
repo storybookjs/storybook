@@ -121,40 +121,6 @@ function createTypesFallbackResolverPlugin(isExternal: (id: string) => boolean):
   };
 }
 
-/*
- * One `storybook/theming` entry could use `declare module '.'` because Emotion's empty Theme was
- * inlined into that same .d.ts. Two entries make component .d.ts files name
- * `import("@emotion/react").Theme`, which the declaration bundler hoists into a shared chunk the
- * augmentation cannot fill. The rewrite points those queries at `storybook/theming/emotion`
- * before bundling. Emotion stays inlined. This is not `dtsExternal`, which would leave
- * `@emotion/react` imports in the published types.
- */
-function retargetEmotionTypeQueries(emitDir: string, specifier: string): void {
-  const files = ts.sys.readDirectory(emitDir, ['.d.ts', '.d.mts', '.d.cts']);
-  const pairs = [
-    ['import("@emotion/styled")', `import("${specifier}")`],
-    ['import("@emotion/react")', `import("${specifier}")`],
-    ["import('@emotion/styled')", `import('${specifier}')`],
-    ["import('@emotion/react')", `import('${specifier}')`],
-  ] as const;
-  for (const file of files) {
-    if (file.split(sep).includes('theming')) {
-      continue;
-    }
-    const text = ts.sys.readFile(file);
-    if (!text?.includes('@emotion/')) {
-      continue;
-    }
-    let next = text;
-    for (const [from, to] of pairs) {
-      next = next.replaceAll(from, to);
-    }
-    if (next !== text) {
-      ts.sys.writeFile(file, next);
-    }
-  }
-}
-
 /** Compiler options shared by both declaration emitters (TS 6 API and TS 7 CLI). */
 function dtsEmitCompilerOptions(outDir: string) {
   return {
@@ -387,14 +353,11 @@ export async function generateTypesFiles(
       emitPackageDeclarations(wrapperTsconfig, emitDir);
     }
 
-    const emotionExport = dtsBuildEntries
-      .find((entry) => entry.entryPoint === './src/theming/emotion.ts')
-      ?.exportEntries?.find((entry) => entry.endsWith('/emotion'));
-    if (emotionExport) {
+    if (data.transformEmittedDeclarations) {
       const packageJson = JSON.parse(await readFile(join(cwd, 'package.json'), 'utf8')) as {
         name: string;
       };
-      retargetEmotionTypeQueries(emitDir, `${packageJson.name}${emotionExport.slice(1)}`);
+      data.transformEmittedDeclarations({ emitDir, packageName: packageJson.name });
     }
 
     const input: Record<string, string> = Object.fromEntries(

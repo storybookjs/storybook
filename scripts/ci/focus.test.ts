@@ -62,11 +62,20 @@ describe('selectFocusSandboxes', () => {
   });
 
   it.each([
-    ['code/renderers/vue3/src/render.ts', ['vue3-vite/default-ts', 'vue3-vite/default-js']],
-    [
-      'code/renderers/svelte/src/render.ts',
-      ['svelte-vite/default-ts', 'svelte-kit/skeleton-ts', 'svelte-vite/default-js'],
-    ],
+    ['code/renderers/react/src/render.ts', 'react-vite/default-ts'],
+    ['code/renderers/vue3/src/render.ts', 'vue3-vite/default-ts'],
+    ['code/renderers/svelte/src/render.ts', 'svelte-vite/default-ts'],
+    ['code/renderers/web-components/src/render.ts', 'lit-vite/default-ts'],
+    ['code/renderers/html/src/render.ts', 'html-vite/default-ts'],
+    ['code/renderers/preact/src/render.ts', 'preact-vite/default-ts'],
+  ])(
+    'maps the renderer change %s to its first template in cadence order',
+    (changedFile, expected) => {
+      expect(selectFocusSandboxes([changedFile])).toEqual([expected]);
+    }
+  );
+
+  it.each([
     [
       'code/builders/builder-webpack5/src/index.ts',
       ['angular-cli/default-ts', 'nextjs/default-ts', 'react-webpack/18-ts', 'nextjs/15-ts'],
@@ -92,7 +101,6 @@ describe('selectFocusSandboxes', () => {
   });
 
   it.each([
-    'code/renderers/react/src/render.ts',
     'code/builders/builder-vite/src/index.ts',
     'code/core/src/manager/App.tsx',
     'docs/get-started/introduction.mdx',
@@ -184,6 +192,22 @@ describe('getFocusJobs', () => {
     expect(ids.filter((id) => id.startsWith('tanstack-react-start-'))).toEqual([
       'tanstack-react-start-latest--vite---typescript---create',
       'tanstack-react-start-latest--vite---typescript---chromatic',
+    ]);
+  });
+
+  it('runs one Svelte template in full and the others as Chromatic siblings', () => {
+    const ids = jobIds(['code/renderers/svelte/src/render.ts']);
+
+    expect(ids.filter((id) => id.startsWith('svelte-latest--vite---typescript---'))).toHaveLength(
+      5
+    );
+    expect(ids.filter((id) => id.startsWith('sveltekit-'))).toEqual([
+      'sveltekit-latest--vite---typescript---create',
+      'sveltekit-latest--vite---typescript---chromatic',
+    ]);
+    expect(ids.filter((id) => id.startsWith('svelte-latest--vite---javascript---'))).toEqual([
+      'svelte-latest--vite---javascript---create',
+      'svelte-latest--vite---javascript---chromatic',
     ]);
   });
 

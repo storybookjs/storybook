@@ -81,9 +81,9 @@ const isChanged = (dirs: readonly string[], changedFiles: readonly string[]) =>
 
 /**
  * Select the public templates that load a changed package, at the highest-priority role that
- * matches. A changed framework picks all of its templates. A changed renderer, builder, or shared
- * library that the default sandbox loads is tested there alone, and Chromatic siblings cover the
- * renderer's other templates.
+ * matches. A changed framework picks all of its templates. A changed renderer picks the first of
+ * its templates in cadence order, and Chromatic siblings cover the others. A changed builder or
+ * shared library that the default sandbox loads is tested there alone.
  */
 export function selectFocusSandboxes(changedFiles: readonly string[]): TemplateKey[] {
   for (const role of ROLES) {
@@ -91,6 +91,9 @@ export function selectFocusSandboxes(changedFiles: readonly string[]): TemplateK
       (key) => !allTemplates[key].isInternal && isChanged(templateDirs(key)[role], changedFiles)
     );
 
+    if (role === 'renderer' && sandboxes.length > 0) {
+      return [sandboxes[0]];
+    }
     if (role !== 'framework' && sandboxes.includes(DEFAULT_FOCUS_SANDBOX)) {
       return [DEFAULT_FOCUS_SANDBOX];
     }

@@ -57,10 +57,11 @@ describe('loadStorybook', () => {
     expect(vi.mocked(safeResolveModule)).toHaveBeenCalledWith({
       specifier: builderPresetPath,
     });
+    // The builder preset enters the second pass as a critical load; see load.ts for the rationale.
     expect(secondPassPresets()).toEqual([
       '/storybook/dist/core-server/presets/common-preset.js',
       '/framework/preset',
-      builderPresetPath,
+      { name: builderPresetPath, critical: true },
     ]);
   });
 

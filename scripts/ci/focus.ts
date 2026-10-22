@@ -80,45 +80,34 @@ const isChanged = (dirs: readonly string[], changedFiles: readonly string[]) =>
   dirs.some((dir) => changedFiles.some((file) => file.startsWith(dir)));
 
 /**
- * Select the public templates that load a changed package, at the highest-priority role that
- * matches. A changed framework or renderer picks the first of its templates in cadence order, and
- * Chromatic siblings cover the others. A changed builder or shared library that the default sandbox
- * loads is tested there alone, and otherwise in every template that loads it.
+ * Select the first public template in cadence order that loads a changed package, at the
+ * highest-priority role that matches. Chromatic siblings cover the other templates loading it.
  */
-export function selectFocusSandboxes(changedFiles: readonly string[]): TemplateKey[] {
+export function selectFocusSandbox(changedFiles: readonly string[]): TemplateKey {
   for (const role of ROLES) {
-    const sandboxes = FOCUS_TEMPLATES.filter(
+    const sandbox = FOCUS_TEMPLATES.find(
       (key) => !allTemplates[key].isInternal && isChanged(templateDirs(key)[role], changedFiles)
     );
 
-    if ((role === 'framework' || role === 'renderer') && sandboxes.length > 0) {
-      return [sandboxes[0]];
-    }
-    if (sandboxes.includes(DEFAULT_FOCUS_SANDBOX)) {
-      return [DEFAULT_FOCUS_SANDBOX];
-    }
-    if (sandboxes.length > 0) {
-      return sandboxes;
+    if (sandbox) {
+      return sandbox;
     }
   }
 
-  return [DEFAULT_FOCUS_SANDBOX];
+  return DEFAULT_FOCUS_SANDBOX;
 }
 
-/** Select the templates that run Chromatic and whose framework or renderer source changed. */
+/** Select the other templates that run Chromatic and load a changed package. */
 export function selectChromaticSiblings(
-  focused: readonly TemplateKey[],
+  focused: TemplateKey,
   changedFiles: readonly string[]
 ): TemplateKey[] {
-  return FOCUS_TEMPLATES.filter((sibling) => {
-    const { framework, renderer } = templateDirs(sibling);
-
-    return (
-      !focused.includes(sibling) &&
+  return FOCUS_TEMPLATES.filter(
+    (sibling) =>
+      sibling !== focused &&
       !allTemplates[sibling].skipTasks?.includes('chromatic') &&
-      isChanged([...framework, ...renderer], changedFiles)
-    );
-  });
+      isChanged(Object.values(templateDirs(sibling)).flat(), changedFiles)
+  );
 }
 
 const INIT_PATHS = [
@@ -183,7 +172,7 @@ export function getChangedFiles(baseRef: string): string[] {
 
 /** Select the jobs a diff can affect. */
 export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
-  const focused = selectFocusSandboxes(changedFiles);
+  const focused = selectFocusSandbox(changedFiles);
   const siblings = selectChromaticSiblings(focused, changedFiles).map(defineSandboxFlow);
 
   return [
@@ -195,7 +184,7 @@ export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
     defineAffectedLintAndFormat(changedFiles),
     ...selectPathTriggeredJobs(changedFiles),
     sandboxesNoOpJob,
-    ...focused.flatMap((template) => defineSandboxFlow(template).jobs),
+    ...defineSandboxFlow(focused).jobs,
     ...siblings.flatMap(({ createJob, chromaticJob }) => [createJob, chromaticJob]),
   ];
 }

@@ -90,9 +90,6 @@
     },
     "@types/react-dom": {
       "optional": true
-    },
-    "typescript": {
-      "optional": true
     }
   },
   "publishConfig": {

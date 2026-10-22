@@ -141,6 +141,62 @@ function parseTags(prop: Node | null | undefined) {
   }) as Tag[];
 }
 
+function resolveTags(tags: Node, program: E.Program) {
+  return parseTags(tags.type === 'Identifier' ? findVarInitialization(tags.name, program) : tags);
+}
+
+// The tags of a parent story. A parent that isn't exported isn't indexed on its own, so tags that
+// aren't static don't fail the file: the story inherits none of them.
+function inheritedTags(tags: Node, program: E.Program) {
+  try {
+    return resolveTags(tags, program);
+  } catch {
+    return [];
+  }
+}
+
+// The tags a `Story.extend()` call inherits from its chain of parent stories, and whether one of
+// them has a play function. A `meta.story()` call inherits nothing.
+function extendedStoryTags(
+  call: CsfFactoryCall,
+  program: E.Program,
+  visited = new Set<string>()
+): { tags: string[]; play: boolean } {
+  if (call.callee.property.name !== 'extend') {
+    return { tags: [], play: false };
+  }
+  // Follow `const Alias = Story` to the story
+  let parentName = csfFactoryReceiver(call).name;
+  let parent: Node | null = null;
+  while (!visited.has(parentName)) {
+    visited.add(parentName);
+    const init = findVarInitialization(parentName, program);
+    parent = init && unwrapExpression(init);
+    if (parent?.type !== 'Identifier') {
+      break;
+    }
+    parentName = parent.name;
+  }
+  if (!isCsfFactoryCall(parent)) {
+    return { tags: [], play: false };
+  }
+  const inherited = extendedStoryTags(parent, program, visited);
+  const config = parent.arguments[0] && unwrapExpression(parent.arguments[0]);
+  const annotations = config?.type === 'ObjectExpression' ? config.properties : [];
+  const tags = annotations.find(
+    (property): property is E.ObjectProperty =>
+      property.type === 'Property' && staticKey(property) === 'tags' && !property.method
+  );
+  return {
+    tags: [...inherited.tags, ...(tags ? inheritedTags(tags.value, program) : [])],
+    play:
+      inherited.play ||
+      annotations.some(
+        (property) => property.type === 'Property' && staticKey(property) === 'play'
+      ),
+  };
+}
+
 function parseTestTags(optionsNode: Node | null | undefined, program: E.Program) {
   if (!optionsNode) {
     return [] as string[];
@@ -372,6 +428,8 @@ export class CsfFile {
   _metaNodeIsSynthetic: boolean | undefined;
 
   _storyAnnotations: Record<string, Record<string, Node>> = {};
+
+  _storyFactoryCalls: Record<string, CsfFactoryCall> = {};
 
   _templates: Record<string, Node> = {};
 
@@ -628,6 +686,7 @@ export class CsfFile {
     this._metaFactoryCall = undefined;
     this._metaNodeIsSynthetic = undefined;
     this._storyAnnotations = {};
+    this._storyFactoryCalls = {};
     this._templates = {};
     this._namedExportsOrder = undefined;
     this.imports = [];
@@ -872,6 +931,7 @@ export class CsfFile {
         let storyIsFactory = false;
         if (isCsfFactoryCall(storyNode)) {
           storyIsFactory = true;
+          this._storyFactoryCalls[exportName] = storyNode;
           storyNode = storyNode.arguments[0] as Node | undefined;
         }
 
@@ -985,6 +1045,7 @@ export class CsfFile {
           const unwrappedDecl = unwrapExpression(decl);
           if (this._metaIsFactory && isCsfFactoryCall(unwrappedDecl)) {
             storyIsFactory = true;
+            this._storyFactoryCalls[exportName] = unwrappedDecl;
             storyNode = unwrappedDecl.arguments[0] as Node | undefined;
           }
           // A story from another file is kept: its declaration isn't in this file
@@ -1215,12 +1276,14 @@ export class CsfFile {
         acc[key] = { ...story, id, parameters };
         const storyAnnotations = this._storyAnnotations[key];
         const { tags, play } = storyAnnotations;
-        if (tags) {
-          const node =
-            tags.type === 'Identifier' ? findVarInitialization(tags.name, this.program) : tags;
-          acc[key].tags = parseTags(node);
+        const factoryCall = this._storyFactoryCalls[key];
+        const inherited = factoryCall
+          ? extendedStoryTags(factoryCall, this.program)
+          : { tags: [], play: false };
+        if (tags || inherited.tags.length > 0) {
+          acc[key].tags = [...inherited.tags, ...(tags ? resolveTags(tags, this.program) : [])];
         }
-        if (play) {
+        if (play || inherited.play) {
           acc[key].tags = [...(acc[key].tags || []), Tag.PLAY_FN];
         }
         const stats = acc[key].__stats;

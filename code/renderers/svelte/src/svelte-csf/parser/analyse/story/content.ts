@@ -15,6 +15,8 @@ interface Params {
     component: SvelteAST.Component;
     svelte: Awaited<ReturnType<typeof extractSvelteASTNodes>>;
   };
+  // Overrides the `asChild` prop of the component, for a story that inherits it
+  asChild?: boolean;
   originalCode: string;
   filename?: string;
 }
@@ -122,10 +124,8 @@ export function getStoryContentRawCode(params: Params): string {
    * </Story>
    * ```
    */
-  const { asChild } = extractStoryAttributesNodes({
-    component,
-    attributes: ['asChild'],
-  });
+  const asChild =
+    params.asChild ?? extractStoryAttributesNodes({ component, attributes: ['asChild'] }).asChild;
 
   const { fragment } = component;
   const firstNode = fragment.nodes[0];

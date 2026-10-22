@@ -121,3 +121,35 @@
 
 {/* @ts-expect-error name is missing */ null}
 <Story args={{ label: 'Label' }} />
+
+<Story extend="Required args" name="Extend without args" />
+
+<Story extend="Required args" name="Extend with children" asChild>
+  <p>Static content</p>
+</Story>
+
+<Story extend="Required args" name="Extend with template">
+  {#snippet template(args, context)}
+    {expectTypeOf(args.label).toEqualTypeOf<string>()}
+    {expectTypeOf(context.args.disabled).toEqualTypeOf<boolean>()}
+    <Button {...args} />
+  {/snippet}
+</Story>
+
+<Story extend="Required args" name="Extend with static template">
+  {#snippet template()}
+    <p>Static content</p>
+  {/snippet}
+</Story>
+
+<Story
+  extend="Required args"
+  name="Extend wrong arg type"
+  args={{
+    // @ts-expect-error label must be a string
+    label: 1,
+  }}
+/>
+
+{/* @ts-expect-error extend must be a string */ null}
+<Story extend={1} name="Extend not a string" />

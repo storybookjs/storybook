@@ -3012,6 +3012,66 @@ describe('CsfFile', () => {
         `);
       });
 
+      it('combines the tags of the parent stories of an extend call', () => {
+        const { stories } = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            const Base = meta.story({ tags: ['base'], play: async () => {} });
+            export const A = Base.extend({ tags: ['a'] });
+            export const B = A.extend({});
+            export const C = A.extend({ tags: ['!base', 'c'] });
+            export const D = meta.story({ tags: ['d'] });
+          `,
+          { makeTitle }
+        ).parse();
+
+        expect(Object.fromEntries(stories.map(({ name, tags }) => [name, tags]))).toEqual({
+          A: ['base', 'a', 'play-fn'],
+          B: ['base', 'a', 'play-fn'],
+          C: ['base', 'a', '!base', 'c', 'play-fn'],
+          D: ['d'],
+        });
+      });
+
+      it('combines the tags of a parent story that the extend call reads through an alias', () => {
+        const { stories } = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            export const A = meta.story({ tags: ['a'], play: async () => {} });
+            const Alias = A;
+            export const B = Alias.extend({ tags: ['b'] });
+          `,
+          { makeTitle }
+        ).parse();
+
+        expect(Object.fromEntries(stories.map(({ name, tags }) => [name, tags]))).toEqual({
+          A: ['a', 'play-fn'],
+          B: ['a', 'b', 'play-fn'],
+        });
+      });
+
+      it('indexes a story whose parent story is not exported and has tags it cannot read', () => {
+        const { stories } = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            import { sharedTags } from './tags';
+            const meta = config.meta({ component: 'foo' });
+            const Base = meta.story({ tags: sharedTags });
+            const Spread = meta.story({ tags: [...sharedTags, 'spread'], play: async () => {} });
+            export const A = Base.extend({ tags: ['a'] });
+            export const B = Spread.extend({ tags: ['b'] });
+          `,
+          { makeTitle }
+        ).parse();
+
+        expect(Object.fromEntries(stories.map(({ name, tags }) => [name, tags]))).toEqual({
+          A: ['a'],
+          B: ['b', 'play-fn'],
+        });
+      });
+
       it('story test - index snapshot', () => {
         expect(
           parse(

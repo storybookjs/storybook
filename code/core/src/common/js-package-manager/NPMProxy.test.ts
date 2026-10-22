@@ -344,6 +344,31 @@ describe('NPM Proxy', () => {
       });
     });
 
+    it('finds installations nested beneath non-matching nodes (e.g. npm workspace members)', async () => {
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify({
+          dependencies: {
+            // a workspace root lists each workspace package as an entry of its
+            // own; gate packages live beneath them, not at the top level
+            '@acme/components': {
+              version: '1.0.0',
+              dependencies: {
+                '@storybook/sveltekit': { version: '10.0.0' },
+              },
+            },
+          },
+        }),
+      } as any);
+
+      const installations = await npmProxy.findInstallations(['@storybook/*']);
+
+      expect(installations).toMatchObject({
+        dependencies: {
+          '@storybook/sveltekit': [{ version: '10.0.0' }],
+        },
+      });
+    });
+
     it('retries with --depth=0 when the deep listing exits non-zero (e.g. peer dependency issues)', async () => {
       mockedExecuteCommand.mockReset();
       mockedExecuteCommand

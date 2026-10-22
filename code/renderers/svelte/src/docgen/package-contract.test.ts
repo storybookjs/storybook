@@ -5,9 +5,10 @@ import { expect, it } from 'vitest';
 
 const manifest = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
 
-// TypeScript 7 has no compiler API. A peer would let pnpm and Yarn link the project's TypeScript 7
-// in place of the renderer's own copy, for the docgen engine and for svelte2tsx.
-it('gives the docgen engine its own TypeScript with the compiler API', () => {
-  expect(manifest.dependencies.typescript).toBe('^5.9.0 || ^6.0.0');
-  expect(manifest.peerDependencies).not.toHaveProperty('typescript');
+// The project owns the TypeScript that the docgen engine and svelte2tsx use. On TypeScript 7, the
+// startup check warns with the side-by-side setup, because TypeScript 7 has no compiler API.
+it('takes TypeScript from the project as a required peer dependency', () => {
+  expect(manifest.peerDependencies.typescript).toBe('^5.9.0 || ^6.0.0 || ^7.0.0');
+  expect(manifest.peerDependenciesMeta ?? {}).not.toHaveProperty('typescript');
+  expect(manifest.dependencies).not.toHaveProperty('typescript');
 });

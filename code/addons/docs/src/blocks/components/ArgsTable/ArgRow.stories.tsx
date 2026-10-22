@@ -388,7 +388,9 @@ export const LongDetail = {
     await expect(content).toBeDefined();
     // The detail content renders after the popover opens, so wait for it to overflow.
     await waitFor(() => expect(content!.scrollHeight).toBeGreaterThan(content!.clientHeight));
-    await expect(content!.getBoundingClientRect().bottom).toBeLessThanOrEqual(window.innerHeight);
+    const { top, bottom } = content!.getBoundingClientRect();
+    await expect(top).toBeGreaterThanOrEqual(0);
+    await expect(bottom).toBeLessThanOrEqual(window.innerHeight);
   },
 } satisfies StoryObj<typeof ArgRow>;
 

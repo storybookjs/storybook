@@ -58,9 +58,7 @@ export const useFramePool = (
   pool ??= new FramePool({
     size: options.size,
     // On a phone few stories fit the screen, and little memory the page.
-    max: globalThis.matchMedia?.('(max-width: 600px)').matches
-      ? options.mobileMax
-      : Number.POSITIVE_INFINITY,
+    max: globalThis.matchMedia?.('(max-width: 600px)').matches ? options.mobileMax : options.max,
     src: (entry, options) => framePoolSrc(api, latest.current, entry, options),
     userGlobals: () => api.getUserGlobals() ?? {},
     hasPlay: (storyId) => !!api.getData(storyId)?.tags?.includes('play-fn'),

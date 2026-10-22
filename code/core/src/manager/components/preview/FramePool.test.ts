@@ -22,6 +22,7 @@ import {
   FRAME_POOL_SHOWN,
   type FramePoolSlot,
   POOL_FRAME_REPLAY_ATTRIBUTE,
+  getFramePoolOptions,
 } from '../../../shared/constants/frame-pool.ts';
 import { ACTIVE_FRAME_ID, FramePool, type FramePoolDeps } from './FramePool.ts';
 import { SERVICE_SYNC_REQUEST } from '../../../shared/open-service/service-channel.ts';
@@ -99,7 +100,7 @@ const activeFrame = () => container.querySelector<HTMLIFrameElement>(`#${ACTIVE_
 const createPool = (deps: Partial<FramePoolDeps> = {}) => {
   const pool = new FramePool({
     size: 1,
-    max: Number.POSITIVE_INFINITY,
+    max: 10,
     // happy-dom loads no `iframe.html`.
     src: (entry) => `about:blank?id=${entry.id}&viewMode=${entry.viewMode}`,
     userGlobals: () => ({}),
@@ -534,27 +535,84 @@ describe('FramePool', () => {
     expect(pool.host.scrollTop).toBe(1_234);
   });
 
-  it('shrinks back to `size` once frames are no longer needed', async () => {
+  it('keeps the frames of the stories scrolled past, below `max`', async () => {
     const pool = createPool();
     pool.select({ id: 'a--docs', viewMode: 'docs' });
     const [docs] = framesOf();
-    renderDocs(docs, 'a--docs', [slot('1', 'a--one', 100), slot('2', 'a--two', 400)]);
+    const stories = ['a--one', 'a--two', 'a--three', 'a--four', 'a--five'];
+    renderDocs(
+      docs,
+      'a--docs',
+      stories.map((storyId, index) => slot(`${index}`, storyId, index * 900))
+    );
+    const renderNew = async (rounds = 8) => {
+      for (let round = 0; round < rounds; round++) {
+        await tick();
+        framesOf()
+          .slice(1)
+          .filter((frame) => !postedTo(frame).some(({ type }) => type === 'rendered'))
+          .forEach((frame) => {
+            renderStory(frame, storyIdOf(frame)!);
+            postedTo(frame).push({ type: 'rendered', args: [] });
+          });
+      }
+    };
+    // The first two stories show; the others wait for their frames to boot one at a time.
+    await renderNew(2);
+    const [, first] = framesOf();
+    expect(framesOf()).toHaveLength(3);
+
+    // Down to the last story, faster than frames boot, and back up.
+    for (const scrollTop of [900, 1_800, 2_700, 3_600, 2_700, 1_800, 900]) {
+      pool.host.scrollTop = scrollTop;
+      pool.host.dispatchEvent(new Event('scroll'));
+      await tick();
+    }
+    await renderNew();
+    pool.host.scrollTop = 0;
+    pool.host.dispatchEvent(new Event('scroll'));
+    await renderNew();
+
+    expect(framesOf()).toHaveLength(6);
+    expect(framesOf().map(storyIdOf)).toEqual(['a--docs', ...stories]);
+    framesOf().forEach((frame) =>
+      expect(typesOf(postedTo(frame))).not.toContain(SET_CURRENT_STORY)
+    );
+    expect(first.style.visibility).toBe('visible');
+    expect(first.style.top).toBe('0px');
+  });
+
+  it('takes, at `max`, the frame seen least recently, never the page shown', async () => {
+    const pool = createPool({ max: 3 });
+    pool.select({ id: 'a--docs', viewMode: 'docs' });
+    const [docs] = framesOf();
+    renderDocs(docs, 'a--docs', [
+      slot('1', 'a--one', 0),
+      slot('2', 'a--two', 900),
+      slot('3', 'a--three', 1_800),
+    ]);
     for (let round = 0; round < 3; round++) {
       await tick();
       framesOf()
         .slice(1)
         .forEach((frame) => renderStory(frame, storyIdOf(frame)!));
     }
-    expect(framesOf()).toHaveLength(3);
+    await tick();
+    const [, first, second] = framesOf();
+    expect(framesOf().map(storyIdOf)).toEqual(['a--docs', 'a--one', 'a--two']);
 
-    pool.select({ id: 'a--one', viewMode: 'story' });
-    await tick(5_000);
-    expect(framesOf()).toHaveLength(3);
+    // The second story comes in view, the first one leaves it: the third takes the first's frame.
+    pool.host.scrollTop = 900;
+    pool.host.dispatchEvent(new Event('scroll'));
+    await tick();
 
-    await tick(6_000);
-    expect(framesOf()).toHaveLength(1);
-    expect(activeFrame()).toBe(framesOf()[0]);
-    expect(storyIdOf(framesOf()[0])).toBe('a--one');
+    expect(framesOf()).toEqual([docs, first, second]);
+    expect(postedTo(first).filter(({ type }) => type === SET_CURRENT_STORY)).toEqual([
+      expect.objectContaining({ args: [expect.objectContaining({ storyId: 'a--three' })] }),
+    ]);
+    expect(typesOf(postedTo(second))).not.toContain(SET_CURRENT_STORY);
+    expect(typesOf(postedTo(docs))).not.toContain(SET_CURRENT_STORY);
+    expect(activeFrame()).toBe(docs);
   });
   it('evicts hidden docs frames under `mobileMax`, for the page shown and for its stories', async () => {
     const pool = createPool({ max: 2 });
@@ -734,5 +792,17 @@ describe('framePoolSrc', () => {
         },
       ],
     ]);
+  });
+});
+
+describe('getFramePoolOptions', () => {
+  it('keeps 10 frames at most on a desktop and 3 on a phone, and boots 2 up front', () => {
+    expect(getFramePoolOptions(true)).toEqual({ size: 2, max: 10, mobileMax: 3 });
+    expect(getFramePoolOptions({ max: 6, mobileMax: 2 })).toEqual({
+      size: 2,
+      max: 6,
+      mobileMax: 2,
+    });
+    expect(getFramePoolOptions(false)).toBeUndefined();
   });
 });

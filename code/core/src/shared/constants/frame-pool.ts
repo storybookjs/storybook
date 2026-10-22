@@ -46,6 +46,7 @@ export interface FramePoolShown {
 
 export interface FramePoolOptions {
   size: number;
+  max: number;
   mobileMax: number;
 }
 
@@ -56,8 +57,13 @@ export const getFramePoolOptions = (
   if (!feature) {
     return undefined;
   }
-  const size = (typeof feature === 'object' && feature.size) || 2;
-  return { size, mobileMax: (typeof feature === 'object' && feature.mobileMax) || size };
+  const options = typeof feature === 'object' ? feature : {};
+  const size = options.size || 2;
+  return {
+    size,
+    max: Math.max(options.max || 10, size),
+    mobileMax: options.mobileMax || Math.min(3, Math.max(options.max || 10, size)),
+  };
 };
 
 /**

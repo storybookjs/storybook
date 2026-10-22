@@ -48,8 +48,6 @@ const WARM_DELAY = 1_000;
 // A docs page reports that it rendered before its inline stories start to: a frame is idle once it
 // reported nothing about a render for this long.
 const QUIET = 250;
-// A hidden frame that no story needed for this long goes, down to `size` frames.
-const SHRINK_DELAY = 10_000;
 // A free frame still busy this long after it was freed makes room for what is needed now: it may
 // never end. The page shown waits no longer than for a frame that just ended to go quiet.
 const STUCK_AFTER = { view: 300, slot: 1_000 };
@@ -147,6 +145,8 @@ interface Frame {
   args: Map<StoryId, Args>;
   owner?: Lease;
   freedAt: number;
+  // When it was last in view, or shown.
+  seenAt: number;
   // What its docs page reports, once it rendered, and where the reader left it.
   docsRendered: boolean;
   slots: FramePoolSlot[];
@@ -185,8 +185,8 @@ const setStyle = (element: HTMLElement, values: Record<string, string>) => {
  * the document, which would load it again: the pool owns the host they lie in.
  *
  * A frame switches only once its renders ended: a preview that tears down a render that still runs
- * reloads itself. The pool grows by one booting frame at a time, to the stories in view, and
- * shrinks back to `size` once frames are no longer needed.
+ * reloads itself. A story keeps its frame as long as the pool has room: it grows by one booting
+ * frame at a time, nearest first, up to `max`, and at `max` takes the frame seen least recently.
  */
 export class FramePool {
   /** The element the frames lie in, which scrolls a docs page. */
@@ -206,8 +206,6 @@ export class FramePool {
   private pumpScheduled = false;
 
   private releaseTimer?: ReturnType<typeof setTimeout>;
-
-  private shrinkTimer?: ReturnType<typeof setTimeout>;
 
   private stuckTimer?: ReturnType<typeof setTimeout>;
 
@@ -480,25 +478,11 @@ export class FramePool {
     return top > clientHeight ? top - clientHeight : 0;
   }
 
-  private inView() {
-    return this.leases().filter((lease) => this.distance(lease) <= 0).length;
-  }
-
-  // The frames the pool keeps: those in view, or `size`.
-  private capacity() {
-    return Math.min(this.deps.max, Math.max(this.deps.size, this.inView()));
-  }
-
-  // The frames there ever are: those in view and `size`, while other frames end what they do.
-  private limit() {
-    return Math.min(this.deps.max, this.inView() + this.deps.size);
-  }
-
-  // The frames of stories out of view, the farthest first: a story in view comes before them.
+  // The frames of stories out of view, the least recently seen first.
   private away() {
     return this.frames
       .filter((frame) => frame.owner?.kind === 'slot' && this.distance(frame.owner) > 0)
-      .sort((a, b) => this.distance(b.owner!) - this.distance(a.owner!));
+      .sort(bySeen);
   }
 
   private leaseEntry(lease: Lease): FramePoolEntry {
@@ -548,8 +532,9 @@ export class FramePool {
     return this.frames.some((frame) => frame.booting);
   }
 
-  // A free frame that shows the lease's entry, the free one that ended longest ago, or a new one.
-  // The page shown gets a new one up to `max`, without waiting for another frame to boot first.
+  // A free frame that shows the lease's entry, the free one seen least recently, or a new one up
+  // to `max`: a story keeps its frame as long as the pool has room. Frames boot one at a time, but
+  // neither the page shown nor a story in view waits for frames that boot for what is out of view.
   private frameFor(lease: Lease) {
     const free = this.frames.filter((frame) => !frame.owner);
     const showing = free.find((frame) => this.shows(frame, lease));
@@ -558,36 +543,29 @@ export class FramePool {
     }
     const reusable = free
       .filter((frame) => this.idle(frame) && !this.lacksPlay(frame, lease))
-      .sort((a, b) => a.freedAt - b.freedAt)[0];
+      .sort(bySeen)[0];
     if (reusable) {
       return reusable;
     }
-    // A story in view also gets a frame for each one that a story out of view holds while it
-    // renders, and does not wait for frames that boot for what is out of view.
-    const inView = lease.kind === 'slot' && this.distance(lease) <= 0;
-    const held = inView ? this.away().filter((frame) => this.running(frame)).length : 0;
+    const inView = lease.kind === 'view' || this.distance(lease) <= 0;
     const booting = this.frames.some(
       (frame) => frame.booting && (!inView || (frame.owner && this.distance(frame.owner) <= 0))
     );
-    const room =
-      lease.kind === 'view'
-        ? this.frames.length < this.capacity() ||
-          (free.length === 0 && this.frames.length < this.limit())
-        : this.frames.length < Math.min(this.limit(), this.capacity() + held) && !booting;
-    return room ? this.create(this.leaseEntry(lease), lease) : undefined;
+    return this.frames.length < this.deps.max && (lease.kind === 'view' || !booting)
+      ? this.create(this.leaseEntry(lease), lease)
+      : undefined;
   }
 
-  // The frame of the story farthest from the screen, which waits again.
+  // At `max`, the frame of a story out of view, farther than the lease, that was seen least
+  // recently: it waits again. Never the page shown, nor a story in view.
   private evictFor(lease: Lease) {
+    if (this.frames.length < this.deps.max) {
+      return undefined;
+    }
     const near = Math.max(this.distance(lease), 0);
-    const frame = this.frames
-      .filter(
-        (candidate) =>
-          candidate.owner?.kind === 'slot' &&
-          this.idle(candidate) &&
-          this.distance(candidate.owner) > near
-      )
-      .sort((a, b) => this.distance(b.owner!) - this.distance(a.owner!))[0];
+    const frame = this.away().find(
+      (candidate) => this.idle(candidate) && this.distance(candidate.owner!) > near
+    );
     if (frame) {
       const evicted = frame.owner as SlotLease;
       this.free(frame);
@@ -596,27 +574,27 @@ export class FramePool {
     return frame;
   }
 
-  // When the free frames cannot show the lease soon, a new one comes: a frame still busy a while
-  // after it was freed, as a docs page no longer shown whose render never ends, or one that shows
-  // the story without its play. It comes in addition up to the limit; at the limit, such a frame
-  // goes for it, the one shown least recently first and the one still on the screen last. A story
-  // in view takes, as a last resort, the frame of the story farthest out of view, also while that
-  // one still renders.
+  // At `max`, when no frame can show the lease soon, one goes for a new one: a free frame still
+  // busy a while after it was freed, as a docs page no longer shown whose render never ends, or one
+  // that shows the story without its play, the one seen least recently first and the one still on
+  // the screen last. A story in view takes, as a last resort, the frame of a story out of view that
+  // still renders.
   private replaceFor(lease: Lease) {
+    if (this.frames.length < this.deps.max) {
+      return undefined;
+    }
     const now = performance.now();
     const patience = STUCK_AFTER[lease.kind];
     const free = this.frames.filter((frame) => !frame.owner);
-    const [
-      frame = lease.kind === 'slot' && this.distance(lease) <= 0
-        ? this.away().find((candidate) => this.running(candidate))
-        : undefined,
-    ] = free
-      .filter(
-        (candidate) =>
-          this.lacksPlay(candidate, lease) ||
-          (this.running(candidate) && now - candidate.freedAt >= patience)
-      )
-      .sort((a, b) => Number(a === this.stale) - Number(b === this.stale) || a.freedAt - b.freedAt);
+    const inView = lease.kind === 'slot' && this.distance(lease) <= 0;
+    const [frame = inView ? this.away().find((candidate) => this.running(candidate)) : undefined] =
+      free
+        .filter(
+          (candidate) =>
+            this.lacksPlay(candidate, lease) ||
+            (this.running(candidate) && now - candidate.freedAt >= patience)
+        )
+        .sort((a, b) => Number(a === this.stale) - Number(b === this.stale) || bySeen(a, b));
     const waits = free
       .filter((candidate) => this.running(candidate) && now - candidate.freedAt < patience)
       .map((candidate) => candidate.freedAt + patience - now);
@@ -624,7 +602,6 @@ export class FramePool {
       clearTimeout(this.stuckTimer);
       this.stuckTimer = setTimeout(() => this.schedulePump(), Math.min(...waits));
     }
-    const inView = lease.kind === 'slot' && this.distance(lease) <= 0;
     if (
       !frame ||
       (lease.kind === 'slot' &&
@@ -642,9 +619,7 @@ export class FramePool {
       this.free(frame);
       this.setShown(evicted, false);
     }
-    if (this.frames.length >= this.limit()) {
-      this.remove(frame);
-    }
+    this.remove(frame);
     return this.create(this.leaseEntry(lease), lease);
   }
 
@@ -665,7 +640,6 @@ export class FramePool {
       void this.show(frame, lease);
     }
     this.warmUp();
-    this.shrink();
     this.layout();
   }
 
@@ -686,30 +660,6 @@ export class FramePool {
     const storyId = this.deps.firstStory();
     if (this.warm && storyId && this.frames.length < this.deps.size && !this.booting()) {
       this.create({ id: storyId, viewMode: 'story' });
-    }
-  }
-
-  // Removes the frames above `size` that no story needed for a while, and that show nothing.
-  private shrink() {
-    clearTimeout(this.shrinkTimer);
-    const now = performance.now();
-    const spare = this.frames
-      .filter(
-        (frame) => !frame.owner && frame !== this.active && frame !== this.stale && !frame.booting
-      )
-      .sort((a, b) => a.freedAt - b.freedAt);
-    let excess = this.frames.length - this.deps.size;
-    for (const frame of spare) {
-      if (excess <= 0) {
-        return;
-      }
-      const due = frame.freedAt + SHRINK_DELAY - now;
-      if (due > 0) {
-        this.shrinkTimer = setTimeout(() => this.schedulePump(), due);
-        return;
-      }
-      this.remove(frame);
-      excess -= 1;
     }
   }
 
@@ -805,6 +755,7 @@ export class FramePool {
       unheard: new Map(),
       args: new Map(),
       freedAt: performance.now(),
+      seenAt: 0,
       docsRendered: false,
       slots: [],
       height: 0,
@@ -1005,6 +956,7 @@ export class FramePool {
   // scrolls; a story of that page lies over its block; the rest lies off the screen.
   private layout() {
     const { host, active } = this;
+    const now = performance.now();
     const docs = !!active && this.isDocsView(active);
     if (active) {
       host.style.overflowY = docs ? 'auto' : 'hidden';
@@ -1012,6 +964,7 @@ export class FramePool {
     for (const frame of this.frames) {
       const { owner } = frame;
       if (frame === active) {
+        frame.seenAt = now;
         setStyle(frame.iframe, {
           position: 'absolute',
           left: '0px',
@@ -1023,6 +976,9 @@ export class FramePool {
         });
       } else if (docs && owner?.kind === 'slot' && owner.shown) {
         const { top, left, width, height } = owner.slot.rect;
+        if (this.distance(owner) <= 0) {
+          frame.seenAt = now;
+        }
         setStyle(frame.iframe, {
           position: 'absolute',
           left: `${left}px`,
@@ -1041,6 +997,8 @@ export class FramePool {
 }
 
 const isStoryChanged = ({ type }: ChannelEvent) => type === STORY_CHANGED;
+
+const bySeen = (a: Frame, b: Frame) => a.seenAt - b.seenAt;
 
 // The event that ends the render of `entry` in a preview: '*' is whatever the preview picks.
 const rendered =

@@ -3,7 +3,11 @@ import { existsSync } from 'node:fs';
 import { join } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
-import { allTemplates, daily } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import {
+  allTemplates,
+  daily,
+  type TemplateKey,
+} from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import {
   FOCUS_TEMPLATES,
   PATH_TRIGGERED_JOBS,
@@ -39,27 +43,21 @@ describe('FOCUS_TEMPLATES', () => {
 
 describe('selectFocusSandboxes', () => {
   it.each([
-    ['code/frameworks/angular/src/server/index.ts', ['angular-cli/default-ts']],
-    [
-      'code/frameworks/angular-vite/src/preset.ts',
-      ['angular-vite/default-ts', 'angular-vite/21-ts'],
-    ],
-    ['code/frameworks/nextjs/src/preset.ts', ['nextjs/default-ts', 'nextjs/15-ts']],
-    ['code/frameworks/nextjs-vite/src/preset.ts', ['nextjs-vite/default-ts', 'nextjs-vite/15-ts']],
-    [
-      'code/frameworks/react-vite/src/preset.ts',
-      ['react-vite/default-ts', 'react-vite/default-js'],
-    ],
-    ['code/frameworks/react-webpack5/src/preset.ts', ['react-webpack/18-ts']],
-    ['code/frameworks/sveltekit/src/preset.ts', ['svelte-kit/skeleton-ts']],
-    [
-      'code/frameworks/tanstack-react/src/preset.ts',
-      ['tanstack-react-router/default-ts', 'tanstack-react-start/default-ts'],
-    ],
-    ['code/frameworks/react-native-web-vite/src/preset.ts', ['react-native-web-vite/expo-ts']],
-  ])('maps the framework change %s to every template of it', (changedFile, expected) => {
-    expect(selectFocusSandboxes([changedFile])).toEqual(expected);
-  });
+    ['code/frameworks/angular/src/server/index.ts', 'angular-cli/default-ts'],
+    ['code/frameworks/angular-vite/src/preset.ts', 'angular-vite/default-ts'],
+    ['code/frameworks/nextjs/src/preset.ts', 'nextjs/default-ts'],
+    ['code/frameworks/nextjs-vite/src/preset.ts', 'nextjs-vite/default-ts'],
+    ['code/frameworks/react-vite/src/preset.ts', 'react-vite/default-ts'],
+    ['code/frameworks/react-webpack5/src/preset.ts', 'react-webpack/18-ts'],
+    ['code/frameworks/sveltekit/src/preset.ts', 'svelte-kit/skeleton-ts'],
+    ['code/frameworks/tanstack-react/src/preset.ts', 'tanstack-react-router/default-ts'],
+    ['code/frameworks/react-native-web-vite/src/preset.ts', 'react-native-web-vite/expo-ts'],
+  ])(
+    'maps the framework change %s to its first template in cadence order',
+    (changedFile, expected) => {
+      expect(selectFocusSandboxes([changedFile])).toEqual([expected]);
+    }
+  );
 
   it.each([
     ['code/renderers/react/src/render.ts', 'react-vite/default-ts'],
@@ -114,7 +112,7 @@ describe('selectFocusSandboxes', () => {
         'code/builders/builder-webpack5/src/index.ts',
         'code/frameworks/angular-vite/src/preset.ts',
       ])
-    ).toEqual(['angular-vite/default-ts', 'angular-vite/21-ts']);
+    ).toEqual(['angular-vite/default-ts']);
   });
 
   it('never picks a prerelease or internal template', () => {
@@ -133,10 +131,33 @@ describe('selectChromaticSiblings', () => {
   it.each([
     ['core', 'code/core/src/manager/App.tsx'],
     ['a builder', 'code/builders/builder-vite/src/index.ts'],
-    ['the React Vite framework', 'code/frameworks/react-vite/src/preset.ts'],
   ])('selects nothing when only %s changed', (_, changedFile) => {
     expect(selectChromaticSiblings(['react-vite/default-ts'], [changedFile])).toEqual([]);
   });
+
+  it.each([
+    [
+      'code/frameworks/react-vite/src/preset.ts',
+      'react-vite/default-ts',
+      ['bench/react-vite-default-ts-test-build', 'react-vite/default-js'],
+    ],
+    ['code/frameworks/nextjs-vite/src/preset.ts', 'nextjs-vite/default-ts', ['nextjs-vite/15-ts']],
+    [
+      'code/frameworks/angular-vite/src/preset.ts',
+      'angular-vite/default-ts',
+      ['angular-vite/21-ts'],
+    ],
+    [
+      'code/frameworks/tanstack-react/src/preset.ts',
+      'tanstack-react-router/default-ts',
+      ['tanstack-react-start/default-ts'],
+    ],
+  ])(
+    'selects the other templates of the changed framework %s',
+    (changedFile, focused, expected) => {
+      expect(selectChromaticSiblings([focused as TemplateKey], [changedFile])).toEqual(expected);
+    }
+  );
 
   it('selects every other non-prerelease ci:daily template of a changed renderer that runs Chromatic', () => {
     const siblings = selectChromaticSiblings(
@@ -362,6 +383,12 @@ const NIGHTLY_ONLY_JOBS: Record<string, string> = {
     'benchmark sandbox; focus runs its create and Chromatic jobs as a React sibling',
   'bench--react-webpack-18-ts--test-build---dev':
     'benchmark sandbox; focus runs its create and Chromatic jobs as a React sibling',
+  'tanstack-react-start-latest--vite---typescript---dev':
+    'TanStack Router runs the tanstack-react framework in full; focus runs Start as a sibling',
+  'tanstack-react-start-latest--vite---typescript---vitest':
+    'TanStack Router runs the tanstack-react framework in full; focus runs Start as a sibling',
+  'tanstack-react-start-latest--vite---typescript---e2e':
+    'TanStack Router runs the tanstack-react framework in full; focus runs Start as a sibling',
 };
 
 describe('ci:normal coverage', () => {

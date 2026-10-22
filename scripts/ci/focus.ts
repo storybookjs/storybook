@@ -81,9 +81,9 @@ const isChanged = (dirs: readonly string[], changedFiles: readonly string[]) =>
 
 /**
  * Select the public templates that load a changed package, at the highest-priority role that
- * matches. A changed framework picks all of its templates. A changed renderer picks the first of
- * its templates in cadence order, and Chromatic siblings cover the others. A changed builder or
- * shared library that the default sandbox loads is tested there alone.
+ * matches. A changed framework or renderer picks the first of its templates in cadence order, and
+ * Chromatic siblings cover the others. A changed builder or shared library that the default sandbox
+ * loads is tested there alone, and otherwise in every template that loads it.
  */
 export function selectFocusSandboxes(changedFiles: readonly string[]): TemplateKey[] {
   for (const role of ROLES) {
@@ -91,10 +91,10 @@ export function selectFocusSandboxes(changedFiles: readonly string[]): TemplateK
       (key) => !allTemplates[key].isInternal && isChanged(templateDirs(key)[role], changedFiles)
     );
 
-    if (role === 'renderer' && sandboxes.length > 0) {
+    if ((role === 'framework' || role === 'renderer') && sandboxes.length > 0) {
       return [sandboxes[0]];
     }
-    if (role !== 'framework' && sandboxes.includes(DEFAULT_FOCUS_SANDBOX)) {
+    if (sandboxes.includes(DEFAULT_FOCUS_SANDBOX)) {
       return [DEFAULT_FOCUS_SANDBOX];
     }
     if (sandboxes.length > 0) {
@@ -105,17 +105,20 @@ export function selectFocusSandboxes(changedFiles: readonly string[]): TemplateK
   return [DEFAULT_FOCUS_SANDBOX];
 }
 
-/** Select the templates that run Chromatic and whose renderer source changed. */
+/** Select the templates that run Chromatic and whose framework or renderer source changed. */
 export function selectChromaticSiblings(
   focused: readonly TemplateKey[],
   changedFiles: readonly string[]
 ): TemplateKey[] {
-  return FOCUS_TEMPLATES.filter(
-    (sibling) =>
+  return FOCUS_TEMPLATES.filter((sibling) => {
+    const { framework, renderer } = templateDirs(sibling);
+
+    return (
       !focused.includes(sibling) &&
       !allTemplates[sibling].skipTasks?.includes('chromatic') &&
-      isChanged(templateDirs(sibling).renderer, changedFiles)
-  );
+      isChanged([...framework, ...renderer], changedFiles)
+    );
+  });
 }
 
 const INIT_PATHS = [

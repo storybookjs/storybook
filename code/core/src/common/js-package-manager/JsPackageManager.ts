@@ -774,8 +774,6 @@ export abstract class JsPackageManager {
     return false;
   }
 
-  protected abstract runInstall(options?: { force?: boolean }): ResultPromise;
-
   protected abstract runAddDeps(
     dependencies: string[],
     installAsDevDependencies: boolean,

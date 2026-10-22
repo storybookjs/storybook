@@ -7,7 +7,7 @@ import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
 import { compile } from 'svelte/compiler';
 import { dedent } from 'ts-dedent';
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { transformStory } from './index.ts';
 import { transformStoriesCode } from '../index.ts';
@@ -162,6 +162,26 @@ describe(transformStory.name, () => {
     `);
   });
 
+  async function transformStories(originalCode: string, filename: string) {
+    const compiledCode = compile(originalCode, { filename, dev: true }).js.code;
+    const code = new MagicString(compiledCode);
+
+    await transformStoriesCode({
+      code,
+      nodes: {
+        svelte: await extractSvelteASTNodes({
+          ast: getSvelteAST({ code: originalCode, filename }),
+          filename,
+        }),
+        compiled: await extractCompiledASTNodes({ ast: parseAst(compiledCode), filename }),
+      },
+      filename,
+      originalCode,
+    });
+
+    return code.toString();
+  }
+
   it('names the stories file when the defineMeta component value is invalid', async ({
     expect,
   }) => {
@@ -177,22 +197,33 @@ describe(transformStory.name, () => {
 
       <Story name="Default" />
     `;
-    const compiledCode = compile(originalCode, { filename, dev: true }).js.code;
-    const code = new MagicString(compiledCode);
 
-    await expect(
-      transformStoriesCode({
-        code,
-        nodes: {
-          svelte: await extractSvelteASTNodes({
-            ast: getSvelteAST({ code: originalCode, filename }),
-            filename,
-          }),
-          compiled: await extractCompiledASTNodes({ ast: parseAst(compiledCode), filename }),
-        },
-        filename,
-        originalCode,
-      })
-    ).rejects.toThrow(`The issue occurred in Stories file: ${url.pathToFileURL(filename).href}`);
+    await expect(transformStories(originalCode, filename)).rejects.toThrow(
+      `The issue occurred in Stories file: ${url.pathToFileURL(filename).href}`
+    );
+  });
+
+  it.each([
+    ['a named import of an object', 'import { Input } from "./input.ts";', 'Input.Select'],
+    ['a namespace import', 'import * as ns from "./components.ts";', 'ns.Button'],
+  ])('accepts a member-expression component on %s', async (_, importStatement, componentValue) => {
+    const filename = 'MemberExpression.stories.svelte';
+    const originalCode = dedent`
+      <script module>
+        import { defineMeta } from "${SVELTE_CSF_RENDERER_IMPORT_SOURCE}";
+
+        ${importStatement}
+
+        const { Story } = defineMeta({
+          component: ${componentValue},
+        });
+      </script>
+
+      <Story name="Default" />
+    `;
+
+    await expect(transformStories(originalCode, filename)).resolves.toContain(
+      `rawCode: "<${componentValue} {...args} />"`
+    );
   });
 });

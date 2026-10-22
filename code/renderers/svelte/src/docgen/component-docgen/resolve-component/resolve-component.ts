@@ -152,17 +152,26 @@ export async function resolveStoryComponent(
     const nodes = await extractSvelteASTNodes({ ast, filename: storyPath });
     const component = getDefineMetaComponentValue({ nodes, filename: storyPath });
     if (!component) return undefined;
+
+    // `Input.Select` names the component through an imported object, so the import is matched by
+    // the object's name and the property is the export name — `ns.Button` on a namespace import
+    // is `import { Button } from …` written another way, the same rule core's resolver applies.
+    const member = component.type === 'MemberExpression' ? component : undefined;
+    const localName = member ? member.object.name : component.name;
+
     for (const statement of ast.module?.content.body ?? []) {
       if (statement.type !== 'ImportDeclaration') continue;
       const specifier = statement.specifiers.find(
-        (candidate) => candidate.local.name === component.name
+        (candidate) => candidate.local.name === localName
       );
       if (specifier) {
+        // A plain identifier keeps the import's imported name, which may be aliased or `default`.
+        const exportName = member ? member.property.name : importedName(specifier);
         return locate(
           storyPath,
           String(statement.source.value),
-          importedName(specifier),
-          component.name
+          exportName,
+          member ? member.property.name : component.name
         );
       }
     }

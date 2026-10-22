@@ -43,6 +43,21 @@ it.each(['define-meta', 'preview-meta'])(
   }
 );
 
+it.each([
+  [
+    'a member expression of a named import of an object',
+    'member-expression.stories.svelte',
+    'Select',
+  ],
+  ['a member expression of a namespace import', 'namespace-import.stories.svelte', 'Button'],
+])('resolves the component of a Svelte CSF file that uses %s', async (_, file, name) => {
+  expect(await resolveStoryComponent(entryFor(`svelte-csf/${file}`))).toEqual({
+    componentPath: join(fixtures, 'svelte-csf', `${name}.svelte`),
+    exportName: name,
+    name,
+  });
+});
+
 it('reports an unresolved component import', async () => {
   await expect(resolveStoryComponent(entryFor('unresolved/missing.stories.ts'))).rejects.toThrow(
     'Could not resolve `./Missing.svelte` export `default`'

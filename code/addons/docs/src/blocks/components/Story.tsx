@@ -1,11 +1,14 @@
 /* oxlint-disable react-classic/destructuring-assignment */
 import type { FunctionComponent } from 'react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 
 import { ErrorFormatter, Loader } from 'storybook/internal/components';
 import type { DocsContextProps, PreparedStory } from 'storybook/internal/types';
 
+import { experimental_getFramePool } from 'storybook/preview-api';
 import { styled } from 'storybook/theming';
+
+import { DocsContext } from '../blocks/DocsContext';
 
 import { getStoryHref } from '../getStoryHref';
 import { IFrame } from './IFrame';
@@ -92,6 +95,40 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
   );
 };
 
+// With `features.experimentalFramePool`, a story in a frame of the preview's pool: one of a few
+// previews that the docs pages and the story view share, which switches to the story once it is
+// among the nearest to the screen, and lies over this place.
+const PooledStory: FunctionComponent<IFrameStoryProps> = ({
+  story,
+  height = '500px',
+  autoplay,
+}) => {
+  const context = useContext(DocsContext);
+  const place = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState(false);
+  const globals = context.getStoryContext(story).globals;
+  const globalsKey = JSON.stringify(globals);
+  useEffect(() => {
+    const pool = experimental_getFramePool();
+    if (!pool || !place.current) {
+      return () => {};
+    }
+    const lease = pool.lease({
+      storyId: story.id,
+      globals: JSON.parse(globalsKey),
+      autoplay,
+      place: place.current,
+      onShow: setShown,
+    });
+    return () => lease.release();
+  }, [story.id, globalsKey, autoplay]);
+  return (
+    <div ref={place} style={{ width: '100%', height, position: 'relative' }}>
+      {!shown && <StorySkeleton />}
+    </div>
+  );
+};
+
 // The preview in the iframe decides whether to play before its first render, so the URL says it.
 const IFrameStory: FunctionComponent<IFrameStoryProps> = ({
   story,
@@ -161,6 +198,8 @@ const Story: FunctionComponent<StoryProps> = (props) => {
     <div id={storyBlockIdFromId(props)} className="sb-story sb-unstyled" data-story-block="true">
       {inline ? (
         <InlineStory {...(props as InlineStoryProps)} />
+      ) : experimental_getFramePool() ? (
+        <PooledStory {...(props as IFrameStoryProps)} />
       ) : (
         <IFrameStory {...(props as IFrameStoryProps)} />
       )}

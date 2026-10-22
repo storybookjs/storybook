@@ -19,3 +19,6 @@ export type { DocsRenderFunction } from './docs-context/DocsRenderFunction.ts';
 export { emitTransformCode } from './emitTransformCode.ts';
 
 export { pauseAnimations, waitForAnimations } from './render/animation-utils.ts';
+
+export { getFramePool, rendersInFrame } from './FramePool.ts';
+export type { FramePool, FrameLease, FrameLeaseRequest, FrameEvent } from './FramePool.ts';

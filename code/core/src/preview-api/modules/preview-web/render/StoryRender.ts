@@ -32,6 +32,8 @@ import type { Render, RenderType } from './Render.ts';
 import { PREPARE_ABORTED } from './Render.ts';
 import { isTestEnvironment, pauseAnimations, waitForAnimations } from './animation-utils.ts';
 import { markDocumentRoot } from './documentRoot.ts';
+import { getFramePool, rendersInFrame } from '../FramePool.ts';
+import { type StoryInFrame, renderInFrame } from './renderInFrame.ts';
 
 const { AbortController } = globalThis;
 
@@ -80,6 +82,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   private teardownRender: TeardownRenderToCanvas = () => {};
 
   private releaseDocumentRoot = () => {};
+
+  // With `features.experimentalFramePool`, the story view shows a story that needs a document of
+  // its own from a frame of the pool, which renders and plays it (FramePool.ts).
+  private inFrame?: StoryInFrame;
 
   public torndown = false;
 
@@ -187,6 +193,24 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   }
 
   async renderToElement(canvasElement: TRenderer['canvasElement']) {
+    const pool = this.viewMode === 'story' ? getFramePool() : undefined;
+    if (pool && this.story && rendersInFrame(this.story.parameters)) {
+      const { id, args, initialArgs } = this.storyContext();
+      this.inFrame = renderInFrame({
+        pool,
+        channel: this.channel,
+        storyId: id,
+        globals: this.store.userGlobals.get(),
+        args,
+        initialArgs,
+        autoplay: this.renderOptions.autoplay ?? true,
+        onShow: () => {
+          this.phase = 'finished';
+          this.callbacks.showMain();
+        },
+      });
+      return;
+    }
     this.canvasElement = canvasElement;
 
     // FIXME: this comment
@@ -515,6 +539,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
    * playing.
    */
   async rerender() {
+    if (this.inFrame) {
+      const { args } = this.storyContext();
+      return this.inFrame.update(this.store.userGlobals.get(), args);
+    }
     if (this.isPending() && this.phase !== 'playing') {
       this.rerenderEnqueued = true;
     } else {
@@ -523,6 +551,9 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   }
 
   async remount() {
+    if (this.inFrame) {
+      return this.inFrame.remount();
+    }
     this.cancelRender();
     await this.runTeardown({});
     // A teardown that started meanwhile is for good, so this render must not mount again.
@@ -579,6 +610,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
   private async runTeardown({ keepRenderedDom = false }: { keepRenderedDom?: boolean }) {
     this.torndown = true;
+    if (this.inFrame) {
+      this.inFrame.release();
+      return;
+    }
     this.endReplaced();
     this.releaseDocumentRoot();
     this.releaseDocumentRoot = () => {};

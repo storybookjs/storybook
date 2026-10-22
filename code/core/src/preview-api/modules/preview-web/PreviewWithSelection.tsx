@@ -93,6 +93,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   private latestSelectionRequest = 0;
 
   // Read from the URL the preview was opened with: a story may change `location` later.
+  // `SET_CURRENT_STORY` may change it.
   private autoplay = shouldAutoplay({ search: globalWindow.location?.search ?? '' });
 
   constructor(
@@ -254,7 +255,18 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     }
   }
 
-  async onSetCurrentStory(selection: { storyId: StoryId; viewMode?: ViewMode }) {
+  async onSetCurrentStory({
+    autoplay,
+    ...selection
+  }: {
+    storyId: StoryId;
+    viewMode?: ViewMode;
+    // Whether the story plays: a frame of a pool (FramePool.ts) is told so for each story it shows.
+    autoplay?: boolean;
+  }) {
+    if (autoplay !== undefined) {
+      this.autoplay = autoplay;
+    }
     /**
      * At the end of the initialization promise we will read the current story from the selection
      * store, so make sure we've updated it with the new selection or we'll lose track of it at the

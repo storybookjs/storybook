@@ -627,6 +627,35 @@ export interface StorybookFeatures {
   viteAppBuilder?: boolean;
 
   /**
+   * Render the stories that need a document of their own, those that docs show in an iframe, in a
+   * few previews that the preview keeps: the story view and the docs pages borrow them, and switch
+   * them from story to story instead of booting a new one for each. A preview never reloads, and the
+   * pool grows only for the stories in view, which bounds the memory that a docs page with many
+   * such stories takes.
+   *
+   * @default false
+   * @experimental This feature is in early development and may change significantly in future releases.
+   */
+  experimentalFramePool?:
+    | boolean
+    | {
+        /**
+         * The frames kept for the stories near the screen, which load before they come in view. The
+         * pool grows beyond it for each story in view: everything in view shows.
+         *
+         * @default 2
+         */
+        size?: number;
+        /**
+         * On a screen at most 600px wide, the most frames there ever are, also when more stories are
+         * in view.
+         *
+         * @default size
+         */
+        mobileMax?: number;
+      };
+
+  /**
    * Only show input controls in Angular.
    *
    * @deprecated On `@storybook/angular-vite`, use the `propsTable` framework option instead:

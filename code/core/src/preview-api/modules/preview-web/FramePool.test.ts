@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CURRENT_STORY_WAS_SET, DOCS_RENDERED } from 'storybook/internal/core-events';
 
-import { mockChannel } from '../../../channels/mock-channel.ts';
+import { Channel } from 'storybook/internal/channels';
 import {
   FRAME_POOL_LAYOUT,
   FRAME_POOL_SHOWN,
@@ -29,7 +29,7 @@ const element = (parent: HTMLElement = document.body, id?: string) => {
 };
 
 let docs: HTMLElement;
-let channel: ReturnType<typeof mockChannel>;
+let channel: Channel;
 let posted: ReturnType<typeof vi.fn<(message: any, options?: unknown) => void>>;
 
 const layouts = () =>
@@ -62,7 +62,8 @@ beforeEach(() => {
     toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame', 'performance'],
   });
   vi.stubGlobal('innerHeight', 800);
-  channel = mockChannel();
+  // The channel type the client takes, as the package exports it.
+  channel = new Channel({ transport: { setHandler: () => {}, send: () => {} } });
   posted = vi.fn<(message: any, options?: unknown) => void>();
   vi.spyOn(window, 'postMessage').mockImplementation(posted);
   docs = element(document.body, 'storybook-docs');

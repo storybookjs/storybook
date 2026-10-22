@@ -21,6 +21,7 @@ export default defineMain({
 ```
 
 ```diff filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 - import type { StorybookConfig } from '@storybook/your-previous-framework';
 + import type { StorybookConfig } from '@storybook/nextjs-vite';
 
@@ -34,6 +35,7 @@ export default config;
 ```
 
 ```diff filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 export default {
   // ...
 -  framework: '@storybook/react-webpack5',

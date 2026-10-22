@@ -127,6 +127,7 @@ export default defineMain({
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, angular, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 
@@ -148,6 +149,7 @@ export default config;
 ```
 
 ```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 export default {
   viteFinal: async (config, options) => {
     // Update config here

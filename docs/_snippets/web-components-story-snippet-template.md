@@ -43,6 +43,7 @@ export const CustomMarkup = meta.story({
 ```
 
 ```js filename="lit-slots-and-css.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import { html } from 'lit';
 
 import './lit-slots-and-css';
@@ -64,6 +65,7 @@ export const CustomMarkup = {
 ```
 
 ```ts filename="lit-slots-and-css.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import { html } from 'lit';
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 

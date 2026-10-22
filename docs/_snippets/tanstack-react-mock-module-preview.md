@@ -9,6 +9,7 @@ export default definePreview({});
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import { sb } from 'storybook/test';
 
 // Prevents postgres (Node-only) from loading in the browser

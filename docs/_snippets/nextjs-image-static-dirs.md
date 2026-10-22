@@ -29,6 +29,7 @@ export default defineMain({
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 // Replace your-framework with nextjs or nextjs-vite
 import type { StorybookConfig } from '@storybook/your-framework';
 
@@ -46,6 +47,7 @@ export default config;
 ```
 
 ```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 export default {
   // ...
   staticDirs: [

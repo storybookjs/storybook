@@ -13,8 +13,6 @@ const preview = definePreview({
 export default preview;
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using, e.g. nextjs, nextjs-vite, react-vite, etc.
 import { definePreview } from '@storybook/your-framework';
@@ -43,8 +41,6 @@ const preview = definePreview({
 
 export default preview;
 ```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/web-components-vite';

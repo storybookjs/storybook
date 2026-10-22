@@ -1,5 +1,3 @@
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import { defineMain } from '@storybook/vue3-vite/node';
 

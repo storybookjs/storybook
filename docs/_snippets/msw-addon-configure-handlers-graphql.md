@@ -207,8 +207,6 @@ export function createApollo(httpLink: HttpLink): ApolloClientOptions<any> {
 export class MockGraphQLModule {}
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```jsx filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import * as React from 'react';
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
@@ -1248,8 +1246,6 @@ export const MockedError = meta.story({
   },
 });
 ```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="YourPage.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import { graphql, HttpResponse, delay } from 'msw';

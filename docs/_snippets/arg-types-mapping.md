@@ -176,8 +176,6 @@ const meta = preview.meta({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename="Example.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 

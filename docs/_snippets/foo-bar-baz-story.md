@@ -71,8 +71,6 @@ export const Baz = meta.story();
 <Story name="Baz" />
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename="FooBar.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
@@ -160,8 +158,6 @@ const meta = preview.meta({
 
 export const Baz = meta.story();
 ```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="FooBar.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';

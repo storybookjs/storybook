@@ -69,8 +69,6 @@ export const PrimaryInAlert: Story = {
 };
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```jsx filename="Button.stories.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
@@ -130,8 +128,6 @@ export const PrimaryInAlert = meta.story({
   },
 });
 ```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';

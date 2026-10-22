@@ -1,5 +1,3 @@
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```jsx filename="my-component/component.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import { useArgs } from 'storybook/preview-api';
 

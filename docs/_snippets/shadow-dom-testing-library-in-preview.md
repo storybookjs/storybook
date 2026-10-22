@@ -20,8 +20,6 @@ export default definePreview({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/web-components-vite';
 

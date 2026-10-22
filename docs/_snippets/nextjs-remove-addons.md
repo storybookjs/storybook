@@ -1,5 +1,3 @@
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Replace your-framework with nextjs or nextjs-vite
 import { defineMain } from '@storybook/your-framework/node';

@@ -1,5 +1,3 @@
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename="example-addon/src/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';

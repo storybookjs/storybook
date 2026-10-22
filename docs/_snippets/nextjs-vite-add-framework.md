@@ -1,5 +1,3 @@
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```diff filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 - import { defineMain } from '@storybook/your-previous-framework/node';
 + import { defineMain } from '@storybook/nextjs-vite/node';

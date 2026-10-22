@@ -71,8 +71,6 @@ const meta: Meta<MyComponent> = {
 export default meta;
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
@@ -190,8 +188,6 @@ const meta = preview.meta({
   });
 </script>
 ```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';

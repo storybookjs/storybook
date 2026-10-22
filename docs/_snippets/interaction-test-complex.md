@@ -393,8 +393,6 @@ export const Submits = meta.story({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename="EventForm.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import { fn, expect, mocked } from 'storybook/test';
 
@@ -437,8 +435,6 @@ export const Submits = meta.story({
   },
 });
 ```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="EventForm.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import { fn, expect, mocked } from 'storybook/test';

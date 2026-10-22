@@ -10,14 +10,15 @@
   import { storyNameToExportName } from '@storybook/svelte/internal/svelte-csf/component-helpers';
   import type { Cmp, StoryProps } from '@storybook/svelte/internal/svelte-csf/component-helpers';
 
-  type Props = StoryProps<TArgs, TCmp, TChildren>;
+  type Props = StoryProps<TArgs, TCmp, TChildren> & { extend?: string };
   let {
     children,
     name,
     exportName: exportNameProp,
     play,
     template,
-    asChild = false,
+    asChild,
+    extend,
     ...restProps
   }: Props = $props();
   const exportName = exportNameProp ?? storyNameToExportName(name!);
@@ -25,14 +26,25 @@
   let extractor = useStoriesExtractor<TCmp>();
   let renderer = useStoryRenderer<TCmp>();
 
-  let isCurrentlyViewed = $derived(
-    !extractor.isExtracting && renderer.currentStoryExportName === exportName
+  let rendersContent = $derived(
+    !extractor.isExtracting && renderer.contentExportName === exportName
+  );
+  let runsPlay = $derived(!extractor.isExtracting && renderer.playExportName === exportName);
+  let rendersAsChild = $derived(
+    renderer.asChildExportName === exportName ? !!asChild : renderer.asChild
   );
 
   if (extractor.isExtracting) {
-    extractor.register({ children, name, exportName, play, ...restProps } as Parameters<
-      (typeof extractor)['register']
-    >[0]);
+    extractor.register({
+      children,
+      name,
+      exportName,
+      play,
+      template,
+      asChild,
+      extend,
+      ...restProps,
+    } as Parameters<(typeof extractor)['register']>[0]);
   }
 
   function injectIntoPlayFunction(
@@ -51,17 +63,17 @@
   }
 
   $effect(() => {
-    if (isCurrentlyViewed) {
+    if (runsPlay) {
       injectIntoPlayFunction(renderer.storyContext, play);
     }
   });
 </script>
 
-{#if isCurrentlyViewed}
+{#if rendersContent}
   {#if isSnippet(template)}
     {@render template(renderer.args as TArgs, renderer.storyContext as any)}
   {:else if isSnippet(children)}
-    {#if asChild}
+    {#if rendersAsChild}
       {@render children()}
     {:else if renderer.storyContext.component}
       {/* @ts-ignore */ null}

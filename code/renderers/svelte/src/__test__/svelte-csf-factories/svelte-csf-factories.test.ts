@@ -4,7 +4,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { isStory } from 'storybook/internal/csf';
 
 import { composeStories } from '../../portable-stories.ts';
+import * as ExtendTemplateStories from '../../../template/stories/svelte-csf/extend.stories.svelte';
 import * as ButtonStories from './button.stories.svelte';
+import * as ExtendStories from './extend.stories.svelte';
 import * as GenericComponentStories from './generic-component.stories.svelte';
 import * as InteractionsStories from './interactions.stories.svelte';
 import * as MetaTypeStories from './meta-type.stories.svelte';
@@ -17,6 +19,8 @@ afterEach(() => {
 
 const files = {
   ButtonStories,
+  ExtendStories,
+  ExtendTemplateStories,
   GenericComponentStories,
   InteractionsStories,
   MetaTypeStories,
@@ -40,6 +44,16 @@ it('exports the stories of the Story components from meta.type<>()', () => {
   expect(Object.keys(MetaTypeStories).filter((key) => key !== '__namedExportsOrder')).toEqual([
     'Primary',
     'Icon',
+  ]);
+});
+
+it('keeps the file order of the stories that extend a later story', () => {
+  expect((ExtendTemplateStories as Record<string, unknown>).__namedExportsOrder).toEqual([
+    'PrimarySmall',
+    'Primary',
+    'PrimaryLarge',
+    'PrimaryLargeStarred',
+    'PrimaryLargeStarredEnabled',
   ]);
 });
 

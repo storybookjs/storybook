@@ -439,6 +439,84 @@ it('builds the snippets of a Svelte CSF file whose story shares a name with a mo
   expect(payload?.stories['example--other']?.snippet).toContain('<Button label="Other" />');
 });
 
+it('builds the snippets of Svelte CSF stories that extend a story, with its content and args', async () => {
+  const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
+  vol.fromJSON({
+    [svelteEntry.importPath]: `<script module>
+    import preview from './.storybook/preview';
+    import Button from './Button.svelte';
+    const { Story } = preview.meta({ title: 'Example', component: Button });
+  </script>
+  <Story extend="Button" name="Small" args={{ size: 'small' }} />
+  <Story name="Button" args={{ primary: true, size: 'medium' }}>Click me</Story>
+  <Story extend="Small" name="Starred" args={{ disabled: true }}>
+    {#snippet template(args)}<Button {...args}>★</Button>{/snippet}
+  </Story>
+  <Story extend="Starred" name="Starred Enabled" args={{ disabled: false }} />
+  <Story extend="Button" name="Static" asChild />`,
+  });
+  const payload = await buildStoryDocsPayload({ entry: svelteEntry });
+  const snippets = Object.fromEntries(
+    Object.values(payload?.stories ?? {}).map(({ name, snippet }) => [
+      name,
+      snippet?.split('\n\n').at(-1),
+    ])
+  );
+  expect(snippets).toEqual({
+    Button: '<Button primary size="medium">\n  Click me\n</Button>',
+    Small: '<Button primary size="small">\n  Click me\n</Button>',
+    Starred: '<Button primary size="small" disabled>★</Button>',
+    'Starred Enabled': '<Button primary size="small" disabled={false}>★</Button>',
+    Static: 'Click me',
+  });
+});
+
+it('builds the snippet of a Svelte CSF story that extends a story with named args', async () => {
+  const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
+  vol.fromJSON({
+    [svelteEntry.importPath]: `<script module>
+    import preview from './.storybook/preview';
+    import Button from './Button.svelte';
+    const { Story } = preview.meta({ title: 'Example', component: Button });
+    const sharedArgs = { primary: true };
+  </script>
+  <Story name="Primary" args={sharedArgs}>Click me</Story>
+  <Story extend="Primary" name="Small" args={{ size: 'small' }} />`,
+  });
+  const payload = await buildStoryDocsPayload({ entry: svelteEntry });
+  expect(payload?.stories['example--small']).toMatchObject({
+    snippet: expect.stringContaining('<Button primary size="small">'),
+  });
+  expect(payload?.stories['example--small']?.warning).toBeUndefined();
+});
+
+it('builds the snippet of a Svelte CSF story that extends a story and has only whitespace or a comment as children', async () => {
+  const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
+  vol.fromJSON({
+    [svelteEntry.importPath]: `<script module>
+    import preview from './.storybook/preview';
+    import Button from './Button.svelte';
+    const { Story } = preview.meta({ title: 'Example', component: Button });
+  </script>
+  <Story name="Primary" args={{ primary: true }}>Click me</Story>
+  <Story extend="Primary" name="Spaces">
+  </Story>
+  <Story extend="Primary" name="Comment"><!-- A note --></Story>`,
+  });
+  const payload = await buildStoryDocsPayload({ entry: svelteEntry });
+  const snippets = Object.fromEntries(
+    Object.values(payload?.stories ?? {}).map(({ name, snippet }) => [
+      name,
+      snippet?.split('\n\n').at(-1),
+    ])
+  );
+  expect(snippets).toEqual({
+    Primary: '<Button primary>\n  Click me\n</Button>',
+    Spaces: '<Button primary>\n  Click me\n</Button>',
+    Comment: '<Button primary>\n  Click me\n</Button>',
+  });
+});
+
 it('documents only the stories of a Svelte CSF file whose module script exports a helper', async () => {
   const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
   vol.fromJSON({

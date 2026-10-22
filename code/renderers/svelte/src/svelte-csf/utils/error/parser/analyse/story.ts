@@ -297,3 +297,149 @@ export class StoryAsChildWithoutChildrenError extends StorybookSvelteCSFError {
     `;
   }
 }
+
+export class StoryExtendWithoutFactoryError extends StorybookSvelteCSFError {
+  readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseStory;
+  readonly code = 10;
+  public documentation = true;
+
+  constructor({
+    filename,
+    component,
+  }: {
+    filename: StorybookSvelteCSFError['filename'];
+    component: NonNullable<StorybookSvelteCSFError['component']>;
+  }) {
+    super({ component, filename });
+  }
+
+  template(): string {
+    return dedent`
+      A '${this.quickStoryRawCodeIdentifier}' has the 'extend' prop, but the stories file calls 'defineMeta()'.
+      Only the stories of 'preview.meta()' can extend another story.
+      Found in file: ${this.filepathURL}
+    `;
+  }
+}
+
+export class StoryExtendNotFoundError extends StorybookSvelteCSFError {
+  readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseStory;
+  readonly code = 11;
+  public documentation = true;
+
+  public extend: string;
+  public suggestedName: string | undefined;
+
+  constructor({
+    filename,
+    component,
+    extend,
+    suggestedName,
+  }: {
+    filename: StorybookSvelteCSFError['filename'];
+    component: NonNullable<StorybookSvelteCSFError['component']>;
+    extend: StoryExtendNotFoundError['extend'];
+    suggestedName?: StoryExtendNotFoundError['suggestedName'];
+  }) {
+    super({ component, filename });
+    this.extend = extend;
+    this.suggestedName = suggestedName;
+  }
+
+  template(): string {
+    return dedent`
+      A '${this.quickStoryRawCodeIdentifier}' extends the story '${this.extend}', but no story in the file has the name '${this.extend}'.
+      The 'extend' prop takes the 'name' of a story in the same file, not its 'exportName'.${
+        this.suggestedName ? `\nDid you mean extend="${this.suggestedName}"?` : ''
+      }
+      Found in file: ${this.filepathURL}
+    `;
+  }
+}
+
+export class StoryExtendUnnamedError extends StorybookSvelteCSFError {
+  readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseStory;
+  readonly code = 12;
+  public documentation = true;
+
+  public extend: string;
+
+  constructor({
+    filename,
+    component,
+    extend,
+  }: {
+    filename: StorybookSvelteCSFError['filename'];
+    component: NonNullable<StorybookSvelteCSFError['component']>;
+    extend: StoryExtendUnnamedError['extend'];
+  }) {
+    super({ component, filename });
+    this.extend = extend;
+  }
+
+  template(): string {
+    return dedent`
+      A '${this.quickStoryRawCodeIdentifier}' extends the story with the exportName '${this.extend}', but that story has no 'name' prop.
+      The 'extend' prop takes the 'name' of a story. Give the story a name, for example <Story name="${this.extend}" />, and extend that name.
+      Found in file: ${this.filepathURL}
+    `;
+  }
+}
+
+export class StoryExtendDuplicateNameError extends StorybookSvelteCSFError {
+  readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseStory;
+  readonly code = 13;
+  public documentation = true;
+
+  public extend: string;
+
+  constructor({
+    filename,
+    component,
+    extend,
+  }: {
+    filename: StorybookSvelteCSFError['filename'];
+    component: NonNullable<StorybookSvelteCSFError['component']>;
+    extend: StoryExtendDuplicateNameError['extend'];
+  }) {
+    super({ component, filename });
+    this.extend = extend;
+  }
+
+  template(): string {
+    return dedent`
+      A '${this.quickStoryRawCodeIdentifier}' extends the story '${this.extend}', but more than one story in the file has the name '${this.extend}'.
+      Give the story to extend a unique name.
+      Found in file: ${this.filepathURL}
+    `;
+  }
+}
+
+export class StoryExtendCycleError extends StorybookSvelteCSFError {
+  readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseStory;
+  readonly code = 14;
+  public documentation = true;
+
+  public names: string[];
+
+  constructor({
+    filename,
+    component,
+    names,
+  }: {
+    filename: StorybookSvelteCSFError['filename'];
+    component: NonNullable<StorybookSvelteCSFError['component']>;
+    names: StoryExtendCycleError['names'];
+  }) {
+    super({ component, filename });
+    this.names = names;
+  }
+
+  template(): string {
+    return dedent`
+      Stories extend each other in a cycle: ${this.names.map((name) => `'${name}'`).join(' extends ')}.
+      Remove the 'extend' prop from one of these stories.
+      Found in file: ${this.filepathURL}
+    `;
+  }
+}

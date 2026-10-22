@@ -1,5 +1,3 @@
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename="MyForm.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import { expect, fn } from 'storybook/test';
 

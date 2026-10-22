@@ -176,8 +176,6 @@ export const Open = meta.story({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename="Dialog.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import { screen } from 'storybook/test';
 
@@ -221,8 +219,6 @@ export const Open = meta.story({
   },
 });
 ```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="Dialog.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import { screen } from 'storybook/test';

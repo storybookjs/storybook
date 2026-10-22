@@ -94,8 +94,6 @@ export const Empty: Story = {
 };
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
@@ -210,8 +208,6 @@ export const Empty: Story = {};
 <!-- Always an empty list, not super interesting -->
 <Story name="Empty" />
 ```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';

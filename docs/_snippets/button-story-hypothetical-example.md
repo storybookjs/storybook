@@ -1,5 +1,3 @@
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 

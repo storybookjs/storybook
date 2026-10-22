@@ -1,5 +1,3 @@
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import path from 'node:path';
 

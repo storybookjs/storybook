@@ -1,5 +1,3 @@
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="With Webpack (CSF Next 🧪)"
 // Replace your-framework with the framework you are using (e.g., react-webpack5, nextjs)
 import { defineMain } from '@storybook/your-framework/node';
@@ -25,8 +23,6 @@ export default defineMain({
   },
 });
 ```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="With Vite (CSF Next 🧪)"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs-vite)
@@ -115,8 +111,6 @@ export default defineMain({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="With Webpack (CSF Next 🧪)"
 import { defineMain } from '@storybook/web-components-webpack5/node';
 
@@ -158,8 +152,6 @@ export default defineMain({
   },
 });
 ```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="With Vite (CSF Next 🧪)"
 import { defineMain } from '@storybook/web-components-vite/node';

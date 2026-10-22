@@ -19,21 +19,21 @@ import type { JobOrNoOpJob } from './utils/types.ts';
 const DEFAULT_FOCUS_SANDBOX = 'react-vite/default-ts' satisfies TemplateKey;
 
 /** Ordered by priority: a framework match picks the sandbox before a renderer or builder match. */
-export const FOCUS_PATH_ROOTS = ['code/frameworks/', 'code/renderers/', 'code/builders/'] as const;
+export const TESTED_PATH_ROOTS = ['code/frameworks/', 'code/renderers/', 'code/builders/'] as const;
 
-type FocusPathRoot = (typeof FOCUS_PATH_ROOTS)[number];
+type TestedPathRoot = (typeof TESTED_PATH_ROOTS)[number];
 
 const isChangedUnder = (
-  { focusPaths = [] }: Template,
-  root: FocusPathRoot,
+  { testedPaths = [] }: Template,
+  root: TestedPathRoot,
   changedFiles: readonly string[]
 ) =>
-  focusPaths.some(
+  testedPaths.some(
     (path) => path.startsWith(root) && changedFiles.some((file) => file.startsWith(path))
   );
 
 export function selectFocusSandbox(changedFiles: readonly string[]): TemplateKey {
-  for (const root of FOCUS_PATH_ROOTS) {
+  for (const root of TESTED_PATH_ROOTS) {
     const sandbox = (Object.entries(allTemplates) as [TemplateKey, Template][]).find(
       ([, template]) => isChangedUnder(template, root, changedFiles)
     )?.[0];

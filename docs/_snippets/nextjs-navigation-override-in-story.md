@@ -1,17 +1,21 @@
-```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF 3"
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
 import NavigationBasedComponent from './NavigationBasedComponent';
 
-export default {
+const meta = preview.meta({
   component: NavigationBasedComponent,
   parameters: {
     nextjs: {
       appDirectory: true,
     },
   },
-};
+});
 
 // Interact with the links to see the route change events in the Actions panel.
-export const Example = {
+export const Example = meta.story({
   parameters: {
     nextjs: {
       navigation: {
@@ -22,7 +26,36 @@ export const Example = {
       },
     },
   },
-};
+});
+```
+
+```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import NavigationBasedComponent from './NavigationBasedComponent';
+
+const meta = preview.meta({
+  component: NavigationBasedComponent,
+  parameters: {
+    nextjs: {
+      appDirectory: true,
+    },
+  },
+});
+
+// Interact with the links to see the route change events in the Actions panel.
+export const Example = meta.story({
+  parameters: {
+    nextjs: {
+      navigation: {
+        pathname: '/profile',
+        query: {
+          user: '1',
+        },
+      },
+    },
+  },
+});
 ```
 
 ```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
@@ -58,22 +91,20 @@ export const Example: Story = {
 };
 ```
 
-```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF 3"
 import NavigationBasedComponent from './NavigationBasedComponent';
 
-const meta = preview.meta({
+export default {
   component: NavigationBasedComponent,
   parameters: {
     nextjs: {
       appDirectory: true,
     },
   },
-});
+};
 
 // Interact with the links to see the route change events in the Actions panel.
-export const Example = meta.story({
+export const Example = {
   parameters: {
     nextjs: {
       navigation: {
@@ -84,36 +115,5 @@ export const Example = meta.story({
       },
     },
   },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import NavigationBasedComponent from './NavigationBasedComponent';
-
-const meta = preview.meta({
-  component: NavigationBasedComponent,
-  parameters: {
-    nextjs: {
-      appDirectory: true,
-    },
-  },
-});
-
-// Interact with the links to see the route change events in the Actions panel.
-export const Example = meta.story({
-  parameters: {
-    nextjs: {
-      navigation: {
-        pathname: '/profile',
-        query: {
-          user: '1',
-        },
-      },
-    },
-  },
-});
+};
 ```

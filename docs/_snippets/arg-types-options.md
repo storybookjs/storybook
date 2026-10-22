@@ -1,20 +1,3 @@
-```ts filename="Example.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import type { Meta } from '@storybook/angular';
-
-import { Example } from './example.component';
-
-const meta: Meta<Example> = {
-  component: Example,
-  argTypes: {
-    icon: {
-      options: ['arrow-up', 'arrow-down', 'loading'],
-    },
-  },
-};
-
-export default meta;
-```
-
 ```ts filename="Example.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
@@ -28,6 +11,36 @@ const meta = preview.meta({
     },
   },
 });
+```
+
+```ts filename="Example.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-example',
+  argTypes: {
+    icon: {
+      options: ['arrow-up', 'arrow-down', 'loading'],
+    },
+  },
+});
+```
+
+```svelte filename="Example.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
+
+  import Example from './Example.svelte';
+
+  const { Story } = preview.meta({
+    component: Example,
+    argTypes: {
+      icon: {
+        options: ['arrow-up', 'arrow-down', 'loading'],
+      },
+    },
+  });
+</script>
 ```
 
 ```svelte filename="Example.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
@@ -48,52 +61,17 @@ const meta = preview.meta({
 </script>
 ```
 
-```svelte filename="Example.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
-<script module>
-  import preview from '../.storybook/preview';
+```js filename="Example.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
 
-  import Example from './Example.svelte';
-
-  const { Story } = preview.meta({
-    component: Example,
-    argTypes: {
-      icon: {
-        options: ['arrow-up', 'arrow-down', 'loading'],
-      },
-    },
-  });
-</script>
-```
-
-```js filename="Example.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
-import { Example } from './Example';
-
-export default {
-  component: Example,
+const meta = preview.meta({
+  component: 'demo-example',
   argTypes: {
     icon: {
       options: ['arrow-up', 'arrow-down', 'loading'],
     },
   },
-};
-```
-
-```svelte filename="Example.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Example from './Example.svelte';
-
-  const { Story } = defineMeta({
-    component: Example,
-    argTypes: {
-      icon: {
-        options: ['arrow-up', 'arrow-down', 'loading'],
-      },
-    },
-  });
-</script>
+});
 ```
 
 ```svelte filename="Example.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
@@ -113,74 +91,22 @@ export default {
 </script>
 ```
 
-```ts filename="Example.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
-import type { Meta } from '@storybook/your-framework';
+```svelte filename="Example.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
-import { Example } from './Example';
+  import Example from './Example.svelte';
 
-const meta = {
-  component: Example,
-  argTypes: {
-    icon: {
-      options: ['arrow-up', 'arrow-down', 'loading'],
+  const { Story } = defineMeta({
+    component: Example,
+    argTypes: {
+      icon: {
+        options: ['arrow-up', 'arrow-down', 'loading'],
+      },
     },
-  },
-} satisfies Meta<typeof Example>;
-
-export default meta;
-```
-
-```js filename="Example.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
-export default {
-  component: 'demo-example',
-  argTypes: {
-    icon: {
-      options: ['arrow-up', 'arrow-down', 'loading'],
-    },
-  },
-};
-```
-
-```ts filename="Example.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
-import type { Meta } from '@storybook/web-components-vite';
-
-const meta: Meta = {
-  component: 'demo-example',
-  argTypes: {
-    icon: {
-      options: ['arrow-up', 'arrow-down', 'loading'],
-    },
-  },
-};
-
-export default meta;
-```
-
-```js filename="Example.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'demo-example',
-  argTypes: {
-    icon: {
-      options: ['arrow-up', 'arrow-down', 'loading'],
-    },
-  },
-});
-```
-
-```ts filename="Example.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'demo-example',
-  argTypes: {
-    icon: {
-      options: ['arrow-up', 'arrow-down', 'loading'],
-    },
-  },
-});
+  });
+</script>
 ```
 
 ```ts filename="Example.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
@@ -245,4 +171,78 @@ const meta = preview.meta({
     },
   },
 });
+```
+
+```ts filename="Example.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+import type { Meta } from '@storybook/angular';
+
+import { Example } from './example.component';
+
+const meta: Meta<Example> = {
+  component: Example,
+  argTypes: {
+    icon: {
+      options: ['arrow-up', 'arrow-down', 'loading'],
+    },
+  },
+};
+
+export default meta;
+```
+
+```ts filename="Example.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import type { Meta } from '@storybook/your-framework';
+
+import { Example } from './Example';
+
+const meta = {
+  component: Example,
+  argTypes: {
+    icon: {
+      options: ['arrow-up', 'arrow-down', 'loading'],
+    },
+  },
+} satisfies Meta<typeof Example>;
+
+export default meta;
+```
+
+```js filename="Example.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+import { Example } from './Example';
+
+export default {
+  component: Example,
+  argTypes: {
+    icon: {
+      options: ['arrow-up', 'arrow-down', 'loading'],
+    },
+  },
+};
+```
+
+```ts filename="Example.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+import type { Meta } from '@storybook/web-components-vite';
+
+const meta: Meta = {
+  component: 'demo-example',
+  argTypes: {
+    icon: {
+      options: ['arrow-up', 'arrow-down', 'loading'],
+    },
+  },
+};
+
+export default meta;
+```
+
+```js filename="Example.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+export default {
+  component: 'demo-example',
+  argTypes: {
+    icon: {
+      options: ['arrow-up', 'arrow-down', 'loading'],
+    },
+  },
+};
 ```

@@ -8,10 +8,15 @@ const preview: Preview = {
 export default preview;
 ```
 
-```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 3"
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import React from 'react';
 
-export default {
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+export default definePreview({
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>
@@ -20,16 +25,16 @@ export default {
       </div>
     ),
   ],
-};
+});
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 import React from 'react';
 
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
-import type { Preview } from '@storybook/your-framework';
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
 
-const preview: Preview = {
+export default definePreview({
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>
@@ -38,9 +43,7 @@ const preview: Preview = {
       </div>
     ),
   ],
-};
-
-export default preview;
+});
 ```
 
 ```jsx filename=".storybook/preview.js" renderer="solid" language="js"
@@ -90,15 +93,32 @@ const preview: Preview = {
 export default preview;
 ```
 
-```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF 3"
-export default {
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+export default definePreview({
   decorators: [
     (story) => ({
       components: { story },
       template: '<div style="margin: 3em;"><story /></div>',
     }),
   ],
-};
+});
+```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+export default definePreview({
+  decorators: [
+    (story) => ({
+      components: { story },
+      template: '<div style="margin: 3em;"><story /></div>',
+    }),
+  ],
+});
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF 3"
@@ -115,32 +135,15 @@ const preview: Preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import { definePreview } from '@storybook/vue3-vite';
-
-export default definePreview({
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF 3"
+export default {
   decorators: [
     (story) => ({
       components: { story },
       template: '<div style="margin: 3em;"><story /></div>',
     }),
   ],
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import { definePreview } from '@storybook/vue3-vite';
-
-export default definePreview({
-  decorators: [
-    (story) => ({
-      components: { story },
-      template: '<div style="margin: 3em;"><story /></div>',
-    }),
-  ],
-});
+};
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
@@ -171,13 +174,13 @@ const preview: Preview = {
 export default preview;
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import React from 'react';
 
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { definePreview } from '@storybook/your-framework';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Preview } from '@storybook/your-framework';
 
-export default definePreview({
+const preview: Preview = {
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>
@@ -186,18 +189,15 @@ export default definePreview({
       </div>
     ),
   ],
-});
+};
+
+export default preview;
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 3"
 import React from 'react';
 
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { definePreview } from '@storybook/your-framework';
-
-export default definePreview({
+export default {
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>
@@ -206,7 +206,7 @@ export default definePreview({
       </div>
     ),
   ],
-});
+};
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"

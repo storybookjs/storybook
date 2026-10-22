@@ -1,10 +1,27 @@
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 3"
-export default {
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+// Replace your-framework with nextjs or nextjs-vite
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
   // ...
   features: {
     experimentalRSC: true,
   },
-};
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+// Replace your-framework with nextjs or nextjs-vite
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
+  // ...
+  features: {
+    experimentalRSC: true,
+  },
+});
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
@@ -21,28 +38,11 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-// Replace your-framework with nextjs or nextjs-vite
-import { defineMain } from '@storybook/your-framework/node';
-
-export default defineMain({
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 3"
+export default {
   // ...
   features: {
     experimentalRSC: true,
   },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-// Replace your-framework with nextjs or nextjs-vite
-import { defineMain } from '@storybook/your-framework/node';
-
-export default defineMain({
-  // ...
-  features: {
-    experimentalRSC: true,
-  },
-});
+};
 ```

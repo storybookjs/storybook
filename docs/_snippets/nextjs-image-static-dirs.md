@@ -1,5 +1,10 @@
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 3"
-export default {
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+// Replace your-framework with nextjs or nextjs-vite
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
   // ...
   staticDirs: [
     {
@@ -7,7 +12,22 @@ export default {
       to: 'src/components/fonts',
     },
   ],
-};
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+// Replace your-framework with nextjs or nextjs-vite
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
+  // ...
+  staticDirs: [
+    {
+      from: '../src/components/fonts',
+      to: 'src/components/fonts',
+    },
+  ],
+});
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
@@ -27,11 +47,8 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-// Replace your-framework with nextjs or nextjs-vite
-import { defineMain } from '@storybook/your-framework/node';
-
-export default defineMain({
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 3"
+export default {
   // ...
   staticDirs: [
     {
@@ -39,22 +56,5 @@ export default defineMain({
       to: 'src/components/fonts',
     },
   ],
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-// Replace your-framework with nextjs or nextjs-vite
-import { defineMain } from '@storybook/your-framework/node';
-
-export default defineMain({
-  // ...
-  staticDirs: [
-    {
-      from: '../src/components/fonts',
-      to: 'src/components/fonts',
-    },
-  ],
-});
+};
 ```

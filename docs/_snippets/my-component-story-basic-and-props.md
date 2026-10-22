@@ -1,3 +1,23 @@
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './my-component.component';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Basic = meta.story();
+
+export const WithProp = meta.story({
+  render: () => ({
+    props: {
+      prop: 'value',
+    },
+  }),
+});
+```
+
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
@@ -21,10 +41,10 @@ export const WithProp: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { MyComponent } from './my-component.component';
+import { MyComponent } from './MyComponent';
 
 const meta = preview.meta({
   component: MyComponent,
@@ -33,26 +53,24 @@ const meta = preview.meta({
 export const Basic = meta.story();
 
 export const WithProp = meta.story({
-  render: () => ({
-    props: {
-      prop: 'value',
-    },
-  }),
+  render: () => <MyComponent prop="value" />,
 });
 ```
 
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
 import { MyComponent } from './MyComponent';
 
-export default {
+const meta = preview.meta({
   component: MyComponent,
-};
+});
 
-export const Basic = {};
+export const Basic = meta.story();
 
-export const WithProp = {
+export const WithProp = meta.story({
   render: () => <MyComponent prop="value" />,
-};
+});
 ```
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
@@ -75,36 +93,18 @@ export const WithProp: Story = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { MyComponent } from './MyComponent';
 
-const meta = preview.meta({
+export default {
   component: MyComponent,
-});
+};
 
-export const Basic = meta.story();
+export const Basic = {};
 
-export const WithProp = meta.story({
+export const WithProp = {
   render: () => <MyComponent prop="value" />,
-});
-```
-
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const Basic = meta.story();
-
-export const WithProp = meta.story({
-  render: () => <MyComponent prop="value" />,
-});
+};
 ```
 
 ```jsx filename="MyComponent.story.js|jsx" renderer="solid" language="js"
@@ -140,27 +140,6 @@ export const WithProp: Story = {
 };
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import MyComponent from './MyComponent.svelte';
-
-  const { Story } = defineMeta({
-    component: MyComponent,
-  });
-</script>
-
-<Story name="Basic">
-  <MyComponent />
-</Story>
-
-<Story name="WithProp">
-  <MyComponent prop="value" />
-</Story>
-```
-
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
 <script module>
   import preview from '../.storybook/preview';
@@ -181,7 +160,7 @@ export const WithProp: Story = {
 </Story>
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -222,26 +201,73 @@ export const WithProp: Story = {
 </Story>
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story name="Basic">
+  <MyComponent />
+</Story>
+
+<Story name="WithProp">
+  <MyComponent prop="value" />
+</Story>
+```
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
 import MyComponent from './MyComponent.vue';
 
-export default {
+const meta = preview.meta({
   component: MyComponent,
-};
+});
 
-export const Basic = {
+export const Basic = meta.story({
   render: () => ({
     components: { MyComponent },
     template: '<MyComponent />',
   }),
-};
+});
 
-export const WithProp = {
+export const WithProp = meta.story({
   render: () => ({
     components: { MyComponent },
     template: '<MyComponent prop="value" />',
   }),
-};
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Basic = meta.story({
+  render: () => ({
+    components: { MyComponent },
+    template: '<MyComponent />',
+  }),
+});
+
+export const WithProp = meta.story({
+  render: () => ({
+    components: { MyComponent },
+    template: '<MyComponent prop="value" />',
+  }),
+});
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
@@ -271,67 +297,58 @@ export const WithProp: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import MyComponent from './MyComponent.vue';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const Basic = meta.story({
-  render: () => ({
-    components: { MyComponent },
-    template: '<MyComponent />',
-  }),
-});
-
-export const WithProp = meta.story({
-  render: () => ({
-    components: { MyComponent },
-    template: '<MyComponent prop="value" />',
-  }),
-});
-```
-
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import MyComponent from './MyComponent.vue';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const Basic = meta.story({
-  render: () => ({
-    components: { MyComponent },
-    template: '<MyComponent />',
-  }),
-});
-
-export const WithProp = meta.story({
-  render: () => ({
-    components: { MyComponent },
-    template: '<MyComponent prop="value" />',
-  }),
-});
-```
-
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
-import { html } from 'lit';
 
 export default {
-  title: 'Path/To/MyComponent',
-  component: 'my-component',
+  component: MyComponent,
 };
 
-export const Basic = {};
+export const Basic = {
+  render: () => ({
+    components: { MyComponent },
+    template: '<MyComponent />',
+  }),
+};
 
 export const WithProp = {
-  render: () => html`<my-component prop="value" />`,
+  render: () => ({
+    components: { MyComponent },
+    template: '<MyComponent prop="value" />',
+  }),
 };
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const Basic = meta.story();
+
+export const WithProp = meta.story({
+  render: () => html`<my-component prop="value" />`,
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const Basic = meta.story();
+
+export const WithProp = meta.story({
+  render: () => html`<my-component prop="value" />`,
+});
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
@@ -353,34 +370,17 @@ export const WithProp: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
+export default {
+  title: 'Path/To/MyComponent',
   component: 'my-component',
-});
+};
 
-export const Basic = meta.story();
+export const Basic = {};
 
-export const WithProp = meta.story({
+export const WithProp = {
   render: () => html`<my-component prop="value" />`,
-});
-```
-
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import { html } from 'lit';
-
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'my-component',
-});
-
-export const Basic = meta.story();
-
-export const WithProp = meta.story({
-  render: () => html`<my-component prop="value" />`,
-});
+};
 ```

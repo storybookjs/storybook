@@ -1,3 +1,61 @@
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
+  framework: '@storybook/your-framework',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  webpackFinal: async (config, { configType }) => {
+    if (configType === 'DEVELOPMENT') {
+      // Modify config for development
+    }
+    if (configType === 'PRODUCTION') {
+      // Modify config for production
+    }
+    return config;
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
+  framework: '@storybook/your-framework',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  webpackFinal: async (config, { configType }) => {
+    if (configType === 'DEVELOPMENT') {
+      // Modify config for development
+    }
+    if (configType === 'PRODUCTION') {
+      // Modify config for production
+    }
+    return config;
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/angular/node';
+
+export default defineMain({
+  framework: '@storybook/angular',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  webpackFinal: async (config, { configType }) => {
+    if (configType === 'DEVELOPMENT') {
+      // Modify config for development
+    }
+    if (configType === 'PRODUCTION') {
+      // Modify config for production
+    }
+    return config;
+  },
+});
+```
+
 ```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 3"
 export default {
   // Replace your-framework with the framework you are using, e.g. react-webpack5, nextjs, angular, etc.
@@ -34,62 +92,4 @@ const config: StorybookConfig = {
 };
 
 export default config;
-```
-
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { defineMain } from '@storybook/your-framework/node';
-
-export default defineMain({
-  framework: '@storybook/your-framework',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  webpackFinal: async (config, { configType }) => {
-    if (configType === 'DEVELOPMENT') {
-      // Modify config for development
-    }
-    if (configType === 'PRODUCTION') {
-      // Modify config for production
-    }
-    return config;
-  },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { defineMain } from '@storybook/your-framework/node';
-
-export default defineMain({
-  framework: '@storybook/your-framework',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  webpackFinal: async (config, { configType }) => {
-    if (configType === 'DEVELOPMENT') {
-      // Modify config for development
-    }
-    if (configType === 'PRODUCTION') {
-      // Modify config for production
-    }
-    return config;
-  },
-});
-```
-
-```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import { defineMain } from '@storybook/angular/node';
-
-export default defineMain({
-  framework: '@storybook/angular',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  webpackFinal: async (config, { configType }) => {
-    if (configType === 'DEVELOPMENT') {
-      // Modify config for development
-    }
-    if (configType === 'PRODUCTION') {
-      // Modify config for production
-    }
-    return config;
-  },
-});
 ```

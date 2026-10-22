@@ -1,12 +1,16 @@
-```js filename="RouterBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF 3"
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="RouterBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
 import RouterBasedComponent from './RouterBasedComponent';
 
-export default {
+const meta = preview.meta({
   component: RouterBasedComponent,
-};
+});
 
 // Interact with the links to see the route change events in the Actions panel.
-export const Example = {
+export const Example = meta.story({
   parameters: {
     nextjs: {
       router: {
@@ -18,7 +22,32 @@ export const Example = {
       },
     },
   },
-};
+});
+```
+
+```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import RouterBasedComponent from './RouterBasedComponent';
+
+const meta = preview.meta({
+  component: RouterBasedComponent,
+});
+
+// Interact with the links to see the route change events in the Actions panel.
+export const Example = meta.story({
+  parameters: {
+    nextjs: {
+      router: {
+        pathname: '/profile/[id]',
+        asPath: '/profile/1',
+        query: {
+          id: '1',
+        },
+      },
+    },
+  },
+});
 ```
 
 ```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
@@ -50,17 +79,15 @@ export const Example: Story = {
 };
 ```
 
-```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="RouterBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF 3"
 import RouterBasedComponent from './RouterBasedComponent';
 
-const meta = preview.meta({
+export default {
   component: RouterBasedComponent,
-});
+};
 
 // Interact with the links to see the route change events in the Actions panel.
-export const Example = meta.story({
+export const Example = {
   parameters: {
     nextjs: {
       router: {
@@ -72,32 +99,5 @@ export const Example = meta.story({
       },
     },
   },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="RouterBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import RouterBasedComponent from './RouterBasedComponent';
-
-const meta = preview.meta({
-  component: RouterBasedComponent,
-});
-
-// Interact with the links to see the route change events in the Actions panel.
-export const Example = meta.story({
-  parameters: {
-    nextjs: {
-      router: {
-        pathname: '/profile/[id]',
-        asPath: '/profile/1',
-        query: {
-          id: '1',
-        },
-      },
-    },
-  },
-});
+};
 ```

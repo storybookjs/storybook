@@ -1,7 +1,11 @@
-```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF 3"
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
 import NavigationBasedComponent from './NavigationBasedComponent';
 
-export default {
+const meta = preview.meta({
   component: NavigationBasedComponent,
   parameters: {
     nextjs: {
@@ -14,7 +18,28 @@ export default {
       },
     },
   },
-};
+});
+```
+
+```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import NavigationBasedComponent from './NavigationBasedComponent';
+
+const meta = preview.meta({
+  component: NavigationBasedComponent,
+  parameters: {
+    nextjs: {
+      appDirectory: true,
+      navigation: {
+        segments: [
+          ['slug', 'hello'],
+          ['framework', 'nextjs'],
+        ],
+      },
+    },
+  },
+});
 ```
 
 ```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
@@ -40,12 +65,10 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF 3"
 import NavigationBasedComponent from './NavigationBasedComponent';
 
-const meta = preview.meta({
+export default {
   component: NavigationBasedComponent,
   parameters: {
     nextjs: {
@@ -58,28 +81,5 @@ const meta = preview.meta({
       },
     },
   },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import NavigationBasedComponent from './NavigationBasedComponent';
-
-const meta = preview.meta({
-  component: NavigationBasedComponent,
-  parameters: {
-    nextjs: {
-      appDirectory: true,
-      navigation: {
-        segments: [
-          ['slug', 'hello'],
-          ['framework', 'nextjs'],
-        ],
-      },
-    },
-  },
-});
+};
 ```

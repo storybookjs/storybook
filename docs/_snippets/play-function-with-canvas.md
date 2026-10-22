@@ -1,24 +1,3 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/angular';
-
-import { MyComponent } from './my-component.component';
-
-const meta: Meta<MyComponent> = {
-  component: MyComponent,
-};
-export default meta;
-
-type Story = StoryObj<MyComponent>;
-
-export const ExampleStory: Story = {
-  play: async ({ canvas, userEvent }) => {
-    // Starts querying from the component's root element
-    await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('button'));
-  },
-};
-```
-
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
@@ -26,175 +5,6 @@ import { MyComponent } from './my-component.component';
 
 const meta = preview.meta({
   component: MyComponent,
-});
-
-export const ExampleStory = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    // Starts querying from the component's root element
-    await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('button'));
-  },
-});
-```
-
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import MyComponent from './MyComponent.svelte';
-
-  const { Story } = defineMeta({
-    component: MyComponent,
-  });
-</script>
-
-<Story
-  name="ExampleStory"
-  play={async ({ canvas, userEvent }) => {
-    // Starts querying from the component's root element
-    await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('button'));
-  }} />
-```
-
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
-<script module>
-  import preview from '../.storybook/preview';
-
-  import MyComponent from './MyComponent.svelte';
-
-  const { Story } = preview.meta({
-    component: MyComponent,
-  });
-</script>
-
-<Story
-  name="ExampleStory"
-  play={async ({ canvas, userEvent }) => {
-    // Starts querying from the component's root element
-    await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('button'));
-  }} />
-```
-
-```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
-import { MyComponent } from './MyComponent';
-
-export default {
-  component: MyComponent,
-};
-
-export const ExampleStory = {
-  play: async ({ canvas, userEvent }) => {
-    // Starts querying from the component's root element
-    await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('button'));
-  },
-};
-```
-
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import MyComponent from './MyComponent.svelte';
-
-  const { Story } = defineMeta({
-    component: MyComponent,
-  });
-</script>
-
-<Story
-  name="ExampleStory"
-  play={async ({ canvas, userEvent }) => {
-    // Starts querying from the component's root element
-    await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('button'));
-  }} />
-```
-
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
-<script module lang="ts">
-  import preview from '../.storybook/preview';
-
-  import MyComponent from './MyComponent.svelte';
-
-  const { Story } = preview.meta({
-    component: MyComponent,
-  });
-</script>
-
-<Story
-  name="ExampleStory"
-  play={async ({ canvas, userEvent }) => {
-    // Starts querying from the component's root element
-    await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('button'));
-  }} />
-```
-
-```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { MyComponent } from './MyComponent';
-
-const meta = {
-  component: MyComponent,
-} satisfies Meta<typeof MyComponent>;
-export default meta;
-
-type Story = StoryObj<typeof meta>;
-
-export const ExampleStory: Story = {
-  play: async ({ canvas, userEvent }) => {
-    // Starts querying from the component's root element
-    await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('button'));
-  },
-};
-```
-
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
-export default {
-  component: 'demo-my-component',
-};
-
-export const ExampleStory = {
-  play: async ({ canvas, userEvent }) => {
-    // Starts querying from the component's root element
-    await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('button'));
-  },
-};
-```
-
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/web-components-vite';
-
-const meta: Meta = {
-  component: 'demo-my-component',
-};
-export default meta;
-
-type Story = StoryObj;
-
-export const ExampleStory: Story = {
-  play: async ({ canvas, userEvent }) => {
-    // Starts querying from the component's root element
-    await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('button'));
-  },
-};
-```
-
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'demo-my-component',
 });
 
 export const ExampleStory = meta.story({
@@ -220,6 +30,104 @@ export const ExampleStory = meta.story({
     await userEvent.click(canvas.getByRole('button'));
   },
 });
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = preview.meta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="ExampleStory"
+  play={async ({ canvas, userEvent }) => {
+    // Starts querying from the component's root element
+    await userEvent.type(canvas.getByTestId('example-element'), 'something');
+    await userEvent.click(canvas.getByRole('button'));
+  }} />
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="ExampleStory"
+  play={async ({ canvas, userEvent }) => {
+    // Starts querying from the component's root element
+    await userEvent.type(canvas.getByTestId('example-element'), 'something');
+    await userEvent.click(canvas.getByRole('button'));
+  }} />
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-my-component',
+});
+
+export const ExampleStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    // Starts querying from the component's root element
+    await userEvent.type(canvas.getByTestId('example-element'), 'something');
+    await userEvent.click(canvas.getByRole('button'));
+  },
+});
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = preview.meta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="ExampleStory"
+  play={async ({ canvas, userEvent }) => {
+    // Starts querying from the component's root element
+    await userEvent.type(canvas.getByTestId('example-element'), 'something');
+    await userEvent.click(canvas.getByRole('button'));
+  }} />
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="ExampleStory"
+  play={async ({ canvas, userEvent }) => {
+    // Starts querying from the component's root element
+    await userEvent.type(canvas.getByTestId('example-element'), 'something');
+    await userEvent.click(canvas.getByRole('button'));
+  }} />
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
@@ -296,4 +204,96 @@ export const ExampleStory = meta.story({
     await userEvent.click(canvas.getByRole('button'));
   },
 });
+```
+
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from '@storybook/angular';
+
+import { MyComponent } from './my-component.component';
+
+const meta: Meta<MyComponent> = {
+  component: MyComponent,
+};
+export default meta;
+
+type Story = StoryObj<MyComponent>;
+
+export const ExampleStory: Story = {
+  play: async ({ canvas, userEvent }) => {
+    // Starts querying from the component's root element
+    await userEvent.type(canvas.getByTestId('example-element'), 'something');
+    await userEvent.click(canvas.getByRole('button'));
+  },
+};
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
+
+import { MyComponent } from './MyComponent';
+
+const meta = {
+  component: MyComponent,
+} satisfies Meta<typeof MyComponent>;
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const ExampleStory: Story = {
+  play: async ({ canvas, userEvent }) => {
+    // Starts querying from the component's root element
+    await userEvent.type(canvas.getByTestId('example-element'), 'something');
+    await userEvent.click(canvas.getByRole('button'));
+  },
+};
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+import { MyComponent } from './MyComponent';
+
+export default {
+  component: MyComponent,
+};
+
+export const ExampleStory = {
+  play: async ({ canvas, userEvent }) => {
+    // Starts querying from the component's root element
+    await userEvent.type(canvas.getByTestId('example-element'), 'something');
+    await userEvent.click(canvas.getByRole('button'));
+  },
+};
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
+
+const meta: Meta = {
+  component: 'demo-my-component',
+};
+export default meta;
+
+type Story = StoryObj;
+
+export const ExampleStory: Story = {
+  play: async ({ canvas, userEvent }) => {
+    // Starts querying from the component's root element
+    await userEvent.type(canvas.getByTestId('example-element'), 'something');
+    await userEvent.click(canvas.getByRole('button'));
+  },
+};
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+export default {
+  component: 'demo-my-component',
+};
+
+export const ExampleStory = {
+  play: async ({ canvas, userEvent }) => {
+    // Starts querying from the component's root element
+    await userEvent.type(canvas.getByTestId('example-element'), 'something');
+    await userEvent.click(canvas.getByRole('button'));
+  },
+};
 ```

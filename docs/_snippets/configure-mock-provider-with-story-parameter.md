@@ -1,19 +1,43 @@
-```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF 3"
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
 import { Button } from './Button';
 
-export default {
+const meta = preview.meta({
   component: Button,
-};
+});
 
 // Wrapped in light theme
-export const Basic = {};
+export const Basic = meta.story();
 
 // Wrapped in dark theme
-export const Dark = {
+export const Dark = meta.story({
   parameters: {
     theme: 'dark',
   },
-};
+});
+```
+
+```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+// Wrapped in light theme
+export const Basic = meta.story();
+
+// Wrapped in dark theme
+export const Dark = meta.story({
+  parameters: {
+    theme: 'dark',
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
@@ -40,44 +64,20 @@ export const Dark: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
-const meta = preview.meta({
+export default {
   component: Button,
-});
+};
 
 // Wrapped in light theme
-export const Basic = meta.story();
+export const Basic = {};
 
 // Wrapped in dark theme
-export const Dark = meta.story({
+export const Dark = {
   parameters: {
     theme: 'dark',
   },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-});
-
-// Wrapped in light theme
-export const Basic = meta.story();
-
-// Wrapped in dark theme
-export const Dark = meta.story({
-  parameters: {
-    theme: 'dark',
-  },
-});
+};
 ```

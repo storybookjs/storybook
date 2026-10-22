@@ -1,44 +1,6 @@
-```js filename=".storybook/preview.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
-import { themes } from 'storybook/theming';
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-export default {
-  parameters: {
-    controls: {
-      matchers: {
-        color: /(background|color)$/i,
-        date: /Date$/,
-      },
-    },
-    docs: {
-      theme: themes.dark, // The replacement theme to use
-    },
-  },
-};
-```
-
-```ts filename=".storybook/preview.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
-import type { Preview } from '@storybook/your-framework';
-import { themes } from 'storybook/theming';
-
-const preview: Preview = {
-  parameters: {
-    controls: {
-      matchers: {
-        color: /(background|color)$/i,
-        date: /Date$/,
-      },
-    },
-    docs: {
-      theme: themes.dark, // The replacement theme to use
-    },
-  },
-};
-
-export default preview;
-```
-
-```ts filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 import addonDocs from '@storybook/addon-docs';
@@ -60,9 +22,7 @@ export default definePreview({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 import addonDocs from '@storybook/addon-docs';
@@ -149,27 +109,6 @@ export default definePreview({
 });
 ```
 
-```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import { definePreview } from '@storybook/web-components-vite';
-import addonDocs from '@storybook/addon-docs';
-import { themes } from 'storybook/theming';
-
-export default definePreview({
-  addons: [addonDocs()],
-  parameters: {
-    controls: {
-      matchers: {
-        color: /(background|color)$/i,
-        date: /Date$/,
-      },
-    },
-    docs: {
-      theme: themes.dark, // The replacement theme to use
-    },
-  },
-});
-```
-
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
@@ -191,4 +130,65 @@ export default definePreview({
     },
   },
 });
+```
+
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/web-components-vite';
+import addonDocs from '@storybook/addon-docs';
+import { themes } from 'storybook/theming';
+
+export default definePreview({
+  addons: [addonDocs()],
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+    docs: {
+      theme: themes.dark, // The replacement theme to use
+    },
+  },
+});
+```
+
+```ts filename=".storybook/preview.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import type { Preview } from '@storybook/your-framework';
+import { themes } from 'storybook/theming';
+
+const preview: Preview = {
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+    docs: {
+      theme: themes.dark, // The replacement theme to use
+    },
+  },
+};
+
+export default preview;
+```
+
+```js filename=".storybook/preview.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+import { themes } from 'storybook/theming';
+
+export default {
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+    docs: {
+      theme: themes.dark, // The replacement theme to use
+    },
+  },
+};
 ```

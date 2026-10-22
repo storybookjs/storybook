@@ -1,18 +1,43 @@
-```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
 import { Button } from './Button';
 
-export default {
+const meta = preview.meta({
   component: Button,
-};
+});
 
-export const Sample = {
+export const Sample = meta.story({
   render: () => ({
     template: '<button :label=label />',
     data: {
       label: 'hello button',
     },
   }),
-};
+});
+```
+
+<!-- These serve as abstract examples to inform how frameworks can be built, so "common" is fine here -->
+
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Sample = meta.story({
+  render: () => ({
+    template: '<button :label=label />',
+    data: {
+      label: 'hello button',
+    },
+  }),
+});
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
@@ -38,44 +63,19 @@ export const Sample: Story = {
 };
 ```
 
-<!-- These serve as abstract examples to inform how frameworks can be built, so "common" is fine here -->
-
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
-const meta = preview.meta({
+export default {
   component: Button,
-});
+};
 
-export const Sample = meta.story({
+export const Sample = {
   render: () => ({
     template: '<button :label=label />',
     data: {
       label: 'hello button',
     },
   }),
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-});
-
-export const Sample = meta.story({
-  render: () => ({
-    template: '<button :label=label />',
-    data: {
-      label: 'hello button',
-    },
-  }),
-});
+};
 ```

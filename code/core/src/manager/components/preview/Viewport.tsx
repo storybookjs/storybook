@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import { ActionList } from 'storybook/internal/components';
 
@@ -202,11 +202,14 @@ export const Viewport = ({
   id,
   src,
   scale,
+  frame,
 }: {
   active: boolean;
   id: string;
   src: string;
   scale: number;
+  /** What shows in place of the iframe of `src`. */
+  frame?: ReactNode;
 }) => {
   const { width, height, isCustom, isDefault, lastSelectedOption, resize, rotate, select } =
     useViewport();
@@ -362,7 +365,17 @@ export const Viewport = ({
             transformOrigin: 'top left',
           }}
         >
-          <IFrame allowFullScreen active={active} key={id} id={id} title={id} src={src} scale={1} />
+          {frame ?? (
+            <IFrame
+              allowFullScreen
+              active={active}
+              key={id}
+              id={id}
+              title={id}
+              src={src}
+              scale={1}
+            />
+          )}
           {!isDefault && (
             <>
               <ScrollEdge data-edge="right" />

@@ -1,0 +1,67 @@
+import type { Globals, Parameters, StoryId } from 'storybook/internal/types';
+
+/** The query parameter that marks a preview as a frame of the manager's pool. */
+export const FRAME_POOL_PARAM = 'framePool';
+
+/** Marks an iframe of the manager's pool. */
+export const POOL_FRAME_ATTRIBUTE = 'data-storybook-pool-frame';
+
+/**
+ * Marks the shown frame of the pool while the manager has yet to hear what it reported before it
+ * was shown: until then, the pool hands its events to the manager, in order.
+ */
+export const POOL_FRAME_REPLAY_ATTRIBUTE = 'data-storybook-pool-frame-replay';
+
+/** Docs frame → manager: the story blocks of its docs page that want a frame, and where they lie. */
+export const FRAME_POOL_LAYOUT = 'storybook/frame-pool/layout';
+
+/** Manager → docs frame: whether a frame shows the story over a block. */
+export const FRAME_POOL_SHOWN = 'storybook/frame-pool/shown';
+
+export interface FramePoolRect {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
+export interface FramePoolSlot {
+  id: string;
+  storyId: StoryId;
+  globals: Globals;
+  autoplay: boolean;
+  // In the coordinates of the docs document, which does not scroll.
+  rect: FramePoolRect;
+}
+
+export interface FramePoolLayout {
+  slots: FramePoolSlot[];
+}
+
+export interface FramePoolShown {
+  id: string;
+  shown: boolean;
+}
+
+export interface FramePoolOptions {
+  size: number;
+  mobileMax: number;
+}
+
+/** The options of `features.experimentalFramePool`, or `undefined` when it is off. */
+export const getFramePoolOptions = (
+  feature: boolean | Partial<FramePoolOptions> | undefined
+): FramePoolOptions | undefined => {
+  if (!feature) {
+    return undefined;
+  }
+  const size = (typeof feature === 'object' && feature.size) || 2;
+  return { size, mobileMax: (typeof feature === 'object' && feature.mobileMax) || size };
+};
+
+/**
+ * Whether a story renders in a frame of its own: as docs decide to show it in an iframe, by its
+ * layout or `docs.story.inline`.
+ */
+export const rendersInFrame = (parameters: Parameters) =>
+  parameters.layout === 'document' || parameters.docs?.story?.inline === false;

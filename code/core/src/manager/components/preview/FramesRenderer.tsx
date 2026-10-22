@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import React, { Fragment, useRef } from 'react';
+import React, { Fragment, useEffect, useRef } from 'react';
 
 import { Button } from 'storybook/internal/components';
 
@@ -8,6 +8,8 @@ import { Consumer } from 'storybook/manager-api';
 import { Global, styled } from 'storybook/theming';
 import type { CSSObject } from 'storybook/theming';
 
+import { ACTIVE_FRAME_ID, type FramePoolEntry } from './FramePool.ts';
+import { FramePoolHost, useFramePool } from './FramePoolHost.tsx';
 import { Viewport } from './Viewport.tsx';
 import type { FramesRendererProps } from './utils/types.tsx';
 
@@ -63,6 +65,16 @@ export const FramesRenderer: FC<FramesRendererProps> = ({
   const version = refs[refId]?.version;
   const active = getActive(refId, refs);
   const { current: frames } = useRef<Record<string, string>>({});
+  const pool = useFramePool(api, queryParams, version);
+  const local = !(refId && refs[refId]);
+
+  useEffect(() => {
+    pool?.select(
+      local && (viewMode === 'story' || viewMode === 'docs')
+        ? { id: storyId, viewMode: viewMode as FramePoolEntry['viewMode'] }
+        : undefined
+    );
+  }, [pool, local, storyId, viewMode]);
 
   const refsToLoad = Object.values(refs).filter((ref) => {
     return ref.type === 'auto-inject' || ref.id === refId;
@@ -109,7 +121,14 @@ export const FramesRenderer: FC<FramesRendererProps> = ({
         }}
       </Consumer>
       {Object.entries(frames).map(([id, src]) => (
-        <Viewport key={id} id={id} src={src} active={id === active} scale={scale} />
+        <Viewport
+          key={id}
+          id={id}
+          src={src}
+          active={id === active}
+          scale={scale}
+          frame={pool && id === ACTIVE_FRAME_ID ? <FramePoolHost pool={pool} /> : undefined}
+        />
       ))}
     </Fragment>
   );

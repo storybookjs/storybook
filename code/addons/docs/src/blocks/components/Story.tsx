@@ -95,9 +95,9 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
   );
 };
 
-// With `features.experimentalFramePool`, a story in a frame of the preview's pool: one of a few
-// previews that the docs pages and the story view share, which switches to the story once it is
-// among the nearest to the screen, and lies over this place.
+// With `features.experimentalFramePool`, a story in a frame of the manager's pool: one of a few
+// previews that the docs pages and the story view share, which the manager lays over this place
+// once the story is among the nearest to the screen.
 const PooledStory: FunctionComponent<IFrameStoryProps> = ({
   story,
   height = '500px',
@@ -106,8 +106,7 @@ const PooledStory: FunctionComponent<IFrameStoryProps> = ({
   const context = useContext(DocsContext);
   const place = useRef<HTMLDivElement>(null);
   const [shown, setShown] = useState(false);
-  const globals = context.getStoryContext(story).globals;
-  const globalsKey = JSON.stringify(globals);
+  const globalsKey = JSON.stringify(context.getStoryContext(story).userGlobals);
   useEffect(() => {
     const pool = experimental_getFramePool();
     if (!pool || !place.current) {
@@ -120,7 +119,10 @@ const PooledStory: FunctionComponent<IFrameStoryProps> = ({
       place: place.current,
       onShow: setShown,
     });
-    return () => lease.release();
+    return () => {
+      lease.release();
+      setShown(false);
+    };
   }, [story.id, globalsKey, autoplay]);
   return (
     <div ref={place} style={{ width: '100%', height, position: 'relative' }}>

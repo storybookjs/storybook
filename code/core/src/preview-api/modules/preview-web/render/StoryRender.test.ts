@@ -612,30 +612,6 @@ describe('StoryRender', () => {
       }
     );
 
-    it('waits for a render that its abort does not stop at once instead of reloading, with the frame pool', async () => {
-      globalThis.FEATURES = { ...globalThis.FEATURES, experimentalFramePool: true };
-      try {
-        vi.mocked(window.location.reload).mockClear();
-        const [loaderGate, openLoaderGate] = createGate();
-        const { render } = renderStory({ applyLoaders: vi.fn(() => loaderGate) as any });
-
-        render.renderToElement({} as any);
-        await vi.waitFor(() => expect(render.phase).toBe('loading'));
-        let tornDown = false;
-        const teardown = render.teardown().then(() => (tornDown = true));
-        await new Promise((resolve) => setTimeout(resolve, 50));
-        expect(tornDown).toBe(false);
-
-        openLoaderGate();
-        await teardown;
-
-        expect(render.phase).toBe('aborted');
-        expect(window.location.reload).not.toHaveBeenCalled();
-      } finally {
-        globalThis.FEATURES = { ...globalThis.FEATURES, experimentalFramePool: undefined };
-      }
-    });
-
     it('reports no end when torn down during prepare', async () => {
       const [importGate, openImportGate] = createGate();
       const channel = new Channel({});

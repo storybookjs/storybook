@@ -49,7 +49,6 @@ import { CsfDocsRender } from './render/CsfDocsRender.ts';
 import { MdxDocsRender } from './render/MdxDocsRender.ts';
 import { StoryRender } from './render/StoryRender.ts';
 import { setupContentResizeBroadcast } from './setupContentResizeBroadcast.ts';
-import { getFramePool } from './FramePool.ts';
 import { setupStoryFreezer } from './setupStoryFreezer.ts';
 
 const globalWindow = globalThis;
@@ -258,12 +257,15 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
   async onSetCurrentStory({
     autoplay,
+    globals,
     ...selection
   }: {
     storyId: StoryId;
     viewMode?: ViewMode;
-    // Whether the story plays: a frame of a pool (FramePool.ts) is told so for each story it shows.
+    // The manager tells a frame of its pool whether the story plays, and the globals it renders
+    // with: the story the frame showed is not rendered again with them first.
     autoplay?: boolean;
+    globals?: Globals;
   }) {
     if (autoplay !== undefined) {
       this.autoplay = autoplay;
@@ -276,6 +278,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     this.selectionStore.setSelection({ viewMode: 'story', ...selection });
 
     await this.storeInitializationPromise;
+    if (globals) {
+      this.storyStoreValue?.userGlobals.update(globals);
+    }
 
     this.channel.emit(CURRENT_STORY_WAS_SET, this.selectionStore.selection);
     this.renderSelection();
@@ -541,7 +546,6 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     }
 
     this.mountedRender = render;
-    this.warmFramePool();
     if (isStoryRender(render)) {
       invariant(!!render.story);
       this.storyRenders.push(render);
@@ -559,23 +563,6 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
         // This argument is used for docs, which is currently only compatible with HTMLElements
         this.renderStoryToElement.bind(this) as any
       );
-    }
-  }
-
-  // With `features.experimentalFramePool`, the pool boots its frames once the first entry renders,
-  // on the first story of the index: a frame has to boot on some story, and switches anyway.
-  private framePoolWarmed = false;
-
-  private warmFramePool() {
-    const pool = getFramePool();
-    if (this.framePoolWarmed || !pool || !this.storyStoreValue) {
-      return;
-    }
-    this.framePoolWarmed = true;
-    const { entries } = this.storyStoreValue.storyIndex;
-    const first = Object.values(entries).find((entry) => entry.type === 'story');
-    if (first) {
-      pool.warm(first.id, this.storyStoreValue.userGlobals.get());
     }
   }
 

@@ -6,6 +6,10 @@ import { isJSON, parse, stringify } from 'telejson';
 import invariant from 'tiny-invariant';
 
 import { InvalidChannelPageError } from '../../preview-errors.ts';
+import {
+  POOL_FRAME_ATTRIBUTE,
+  POOL_FRAME_REPLAY_ATTRIBUTE,
+} from '../../shared/constants/frame-pool.ts';
 import { LOOPBACK_HOSTNAMES, matchesHostname } from '../../shared/utils/local-hosts.ts';
 import type {
   BufferedEvent,
@@ -379,9 +383,25 @@ export class PostMessageTransport implements ChannelTransport {
     }
   }
 
+  // With `features.experimentalFramePool`, the manager shows one frame of its pool at a time, and
+  // only that one speaks on the channel, once the pool replayed what it said before: the pool
+  // listens to the others itself.
+  private isHiddenPoolFrame(rawEvent: MessageEvent): boolean {
+    if (this.config.page !== 'manager' || !rawEvent.source) {
+      return false;
+    }
+    const frame = Array.from(
+      document.querySelectorAll<HTMLIFrameElement>(`iframe[${POOL_FRAME_ATTRIBUTE}]`)
+    ).find(({ contentWindow }) => contentWindow === rawEvent.source);
+    return (
+      !!frame &&
+      (frame.dataset.isStorybook !== 'true' || frame.hasAttribute(POOL_FRAME_REPLAY_ATTRIBUTE))
+    );
+  }
+
   private handleEvent(rawEvent: MessageEvent): void {
     try {
-      if (!this.isAllowedSender(rawEvent)) {
+      if (!this.isAllowedSender(rawEvent) || this.isHiddenPoolFrame(rawEvent)) {
         return;
       }
 

@@ -1,5 +1,4 @@
 import type { Channel } from 'storybook/internal/channels';
-import { logger } from 'storybook/internal/client-logger';
 import {
   PLAY_FUNCTION_THREW_EXCEPTION,
   STORY_FINISHED,
@@ -33,13 +32,8 @@ import type { Render, RenderType } from './Render.ts';
 import { PREPARE_ABORTED } from './Render.ts';
 import { isTestEnvironment, pauseAnimations, waitForAnimations } from './animation-utils.ts';
 import { markDocumentRoot } from './documentRoot.ts';
-import { getFramePool, rendersInFrame } from '../FramePool.ts';
-import { type StoryInFrame, renderInFrame } from './renderInFrame.ts';
 
 const { AbortController } = globalThis;
-
-// How long a teardown waits for an aborted render to end, with `features.experimentalFramePool`.
-const PENDING_TEARDOWN_TIMEOUT = 10_000;
 
 export type RenderPhase =
   | 'preparing'
@@ -86,10 +80,6 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   private teardownRender: TeardownRenderToCanvas = () => {};
 
   private releaseDocumentRoot = () => {};
-
-  // With `features.experimentalFramePool`, the story view shows a story that needs a document of
-  // its own from a frame of the pool, which renders and plays it (FramePool.ts).
-  private inFrame?: StoryInFrame;
 
   public torndown = false;
 
@@ -197,24 +187,6 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   }
 
   async renderToElement(canvasElement: TRenderer['canvasElement']) {
-    const pool = this.viewMode === 'story' ? getFramePool() : undefined;
-    if (pool && this.story && rendersInFrame(this.story.parameters)) {
-      const { id, args, initialArgs } = this.storyContext();
-      this.inFrame = renderInFrame({
-        pool,
-        channel: this.channel,
-        storyId: id,
-        globals: this.store.userGlobals.get(),
-        args,
-        initialArgs,
-        autoplay: this.renderOptions.autoplay ?? true,
-        onShow: () => {
-          this.phase = 'finished';
-          this.callbacks.showMain();
-        },
-      });
-      return;
-    }
     this.canvasElement = canvasElement;
 
     // FIXME: this comment
@@ -543,10 +515,6 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
    * playing.
    */
   async rerender() {
-    if (this.inFrame) {
-      const { args } = this.storyContext();
-      return this.inFrame.update(this.store.userGlobals.get(), args);
-    }
     if (this.isPending() && this.phase !== 'playing') {
       this.rerenderEnqueued = true;
     } else {
@@ -555,9 +523,6 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   }
 
   async remount() {
-    if (this.inFrame) {
-      return this.inFrame.remount();
-    }
     this.cancelRender();
     await this.runTeardown({});
     // A teardown that started meanwhile is for good, so this render must not mount again.
@@ -614,10 +579,6 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
   private async runTeardown({ keepRenderedDom = false }: { keepRenderedDom?: boolean }) {
     this.torndown = true;
-    if (this.inFrame) {
-      this.inFrame.release();
-      return;
-    }
     this.endReplaced();
     this.releaseDocumentRoot();
     this.releaseDocumentRoot = () => {};
@@ -627,46 +588,25 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       await this.store.cleanupStory(this.story);
     }
 
-    const unmount = async () => {
-      // When the same story is about to be re-rendered (e.g. after an HMR update), keep
-      // the current DOM mounted until the new render commits: unmounting it here collapses
-      // the document, which makes the browser clamp the scroll position to 0 (#22057).
-      if (!keepRenderedDom) {
-        await this.teardownRender();
-        // A render that never got a canvas never had `location`; another story may still have it.
-        if (this.canvasElement) {
-          this.callbacks.reclaimLocation?.();
-        }
-      }
-    };
-
     // Check if we're done loading/rendering/playing. If not, we may have to reload the page.
     // Wait several ticks that may be needed to handle the abort, then try again.
     // Note that there's a max of 5 nested timeouts before they're no longer "instant".
     for (let i = 0; i < 3; i += 1) {
       if (!this.isPending()) {
-        await unmount();
+        // When the same story is about to be re-rendered (e.g. after an HMR update), keep
+        // the current DOM mounted until the new render commits: unmounting it here collapses
+        // the document, which makes the browser clamp the scroll position to 0 (#22057).
+        if (!keepRenderedDom) {
+          await this.teardownRender();
+          // A render that never got a canvas never had `location`; another story may still have it.
+          if (this.canvasElement) {
+            this.callbacks.reclaimLocation?.();
+          }
+        }
         return;
       }
 
       await new Promise((resolve) => setTimeout(resolve, 0));
-    }
-
-    // With `features.experimentalFramePool`, a reload of this preview reloads every frame of its
-    // pool too, and a frame of the pool must never reload: the aborted render ends instead, at the
-    // next step of its loaders, its mount or its play function that checks the signal.
-    if (globalThis.FEATURES?.experimentalFramePool) {
-      const until = Date.now() + PENDING_TEARDOWN_TIMEOUT;
-      while (this.isPending() && Date.now() < until) {
-        await new Promise((resolve) => setTimeout(resolve, 20));
-      }
-      if (this.isPending()) {
-        logger.warn(
-          `Story "${this.id}" was still ${this.phase} ${PENDING_TEARDOWN_TIMEOUT} ms after it was torn down; it is unmounted without reloading the preview.`
-        );
-      }
-      await unmount();
-      return;
     }
 
     // If we still haven't completed, reload the page (iframe) to ensure we have a clean slate

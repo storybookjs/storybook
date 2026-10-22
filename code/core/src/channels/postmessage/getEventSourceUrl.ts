@@ -20,10 +20,23 @@ const pickFrameByRefId = (
   );
 };
 
+const toSourceUrl = (frame: HTMLIFrameElement) => {
+  const { protocol, host, pathname } = new URL(
+    frame.getAttribute('src') ?? '',
+    document.location.toString()
+  );
+  return `${protocol}//${host}${pathname}`;
+};
+
 export const getEventSourceUrl = (event: MessageEvent, refId?: string): string | null => {
   const frames: HTMLIFrameElement[] = Array.from(
     document.querySelectorAll('iframe[data-is-storybook]')
   );
+  // Several frames may show the same preview, as those of the frame pool do.
+  const sender = frames.find((element) => element.contentWindow === event.source);
+  if (sender) {
+    return toSourceUrl(sender);
+  }
   // try to find the originating iframe by matching it's contentWindow
   // This might not be cross-origin safe
   const candidates = frames.filter((element) => {
@@ -56,11 +69,9 @@ export const getEventSourceUrl = (event: MessageEvent, refId?: string): string |
     return origin === event.origin;
   });
 
-  const src = pickFrameByRefId(candidates, refId)?.getAttribute('src');
-
-  if (src) {
-    const { protocol, host, pathname } = new URL(src, document.location.toString());
-    return `${protocol}//${host}${pathname}`;
+  const picked = pickFrameByRefId(candidates, refId);
+  if (picked?.getAttribute('src')) {
+    return toSourceUrl(picked);
   }
 
   if (candidates.length > 1) {

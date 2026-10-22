@@ -94,8 +94,9 @@ export {
   rendersInFrame as experimental_rendersInFrame,
 } from './preview-web.ts';
 export type {
-  FramePool as experimental_FramePool,
+  FramePoolClient as experimental_FramePool,
   FrameLease as experimental_FrameLease,
+  FrameLeaseRequest as experimental_FrameLeaseRequest,
 } from './preview-web.ts';
 
 /** OPEN SERVICE API (preview leaf — register only; types on `storybook/open-service`) */

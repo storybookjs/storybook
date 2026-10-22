@@ -22,9 +22,8 @@ export const RENDERERS_WITH_TYPESCRIPT_DOCGEN: readonly SupportedRenderer[] = [
 /** The `typescript` dependency that `storybook init` and upgrades add to projects without one. */
 export const TYPESCRIPT_FOR_DOCGEN_PACKAGE = 'typescript@^6';
 
-// TypeScript 7.0 ships no compiler API, and a later 7.x API may reuse the old names with a different
-// design, so only the version tells whether the `ts.*` namespace is the one docgen is built on.
-const hasCompilerApi = (version: string) => Number(version.split('.')[0]) < 7;
+/** Return whether a TypeScript version has the compiler API (`ts.*`) that docgen is built on. */
+export const hasTypeScriptCompilerApi = (version: string) => Number(version.split('.')[0]) < 7;
 
 const isModuleNotFound = (error: unknown) =>
   error instanceof Error &&
@@ -51,7 +50,7 @@ export function getTypeScriptForDocgenError(
   if (typeof version !== 'string') {
     return new TypeScriptMissingForDocgenError();
   }
-  return hasCompilerApi(version)
+  return hasTypeScriptCompilerApi(version)
     ? undefined
     : new TypeScriptWithoutCompilerApiError({ version });
 }
@@ -113,7 +112,7 @@ export async function loadTypeScriptCompilerApi<TypeScript extends { version: st
     }
     throw cause;
   }
-  if (!hasCompilerApi(typescript.version)) {
+  if (!hasTypeScriptCompilerApi(typescript.version)) {
     throw new TypeScriptWithoutCompilerApiError({ version: typescript.version });
   }
   return typescript;

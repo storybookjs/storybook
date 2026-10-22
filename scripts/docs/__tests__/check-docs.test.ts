@@ -14,8 +14,10 @@ import {
   checkFrontmatterQuotes,
   checkRedundantSidebarTitle,
   checkBareUrls,
+  checkSnippetCsfOrder,
   runAllChecks,
 } from '../check-docs';
+import { fixSnippetCsfOrder } from '../fix-snippet-order';
 
 async function writeFile(filePath: string, content: string) {
   await fs.mkdir(path.dirname(filePath), { recursive: true });
@@ -357,6 +359,123 @@ describe('check-docs', () => {
       );
       const errors = await checkBareUrls(docsDir);
       expect(errors).toEqual([]);
+    });
+  });
+
+  describe('checkSnippetCsfOrder', () => {
+    const block = (attrs: string, body = 'code') => `\`\`\`ts ${attrs}\n${body}\n\`\`\``;
+    const csf3 = (renderer = 'react', language = 'ts', title = 'CSF 3') =>
+      block(
+        `renderer="${renderer}" language="${language}" tabTitle="${title}"`,
+        `${renderer} ${title}`
+      );
+    const next = (renderer = 'react', language = 'ts', title = 'CSF Next 🧪') =>
+      block(
+        `renderer="${renderer}" language="${language}" tabTitle="${title}"`,
+        `${renderer} ${title}`
+      );
+
+    it('passes when CSF Next comes first', async () => {
+      await writeFile(path.join(snippetsDir, 'foo.md'), [next(), csf3()].join('\n\n'));
+      const errors = await checkSnippetCsfOrder(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('errors when CSF 3 comes first', async () => {
+      await writeFile(path.join(snippetsDir, 'foo.md'), [csf3(), next()].join('\n\n'));
+      const errors = await checkSnippetCsfOrder(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].line).toBe(1);
+      expect(errors[0].message).toContain('CSF 3 snippet comes before its CSF Next snippet');
+    });
+    it('compares only blocks with the same renderer and language', async () => {
+      await writeFile(
+        path.join(snippetsDir, 'foo.md'),
+        [csf3('vue'), next('react'), csf3('react', 'js'), next('react', 'ts')].join('\n\n')
+      );
+      const errors = await checkSnippetCsfOrder(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('pairs titles that share a base, like "Head (CSF 3)"', async () => {
+      await writeFile(
+        path.join(snippetsDir, 'foo.md'),
+        [
+          csf3('react', 'ts', 'Head (CSF 3)'),
+          next('react', 'ts', 'Body (CSF Next 🧪)'),
+          next('react', 'ts', 'Head (CSF Next 🧪)'),
+        ].join('\n\n')
+      );
+      const errors = await checkSnippetCsfOrder(docsDir);
+      expect(errors.length).toBe(1);
+    });
+    it('errors when a common CSF 3 block comes before a renderer CSF Next block', async () => {
+      await writeFile(
+        path.join(snippetsDir, 'foo.md'),
+        [csf3('common'), next('react')].join('\n\n')
+      );
+      const errors = await checkSnippetCsfOrder(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].line).toBe(1);
+    });
+    it('fixes the order across common and renderer blocks', async () => {
+      const file = path.join(snippetsDir, 'foo.md');
+      await writeFile(
+        file,
+        [csf3('common'), next('react'), next('vue'), block('renderer="svelte"'), ''].join('\n\n')
+      );
+
+      await fixSnippetCsfOrder(docsDir);
+
+      expect(await fs.readFile(file, 'utf8')).toBe(
+        [next('react'), next('vue'), csf3('common'), block('renderer="svelte"'), ''].join('\n\n')
+      );
+      expect(await checkSnippetCsfOrder(docsDir)).toEqual([]);
+    });
+    it('pairs "Svelte CSF" with "Svelte CSF Next 🧪"', async () => {
+      const file = path.join(snippetsDir, 'foo.md');
+      await writeFile(
+        file,
+        [csf3('svelte', 'ts', 'Svelte CSF'), next('svelte', 'ts', 'Svelte CSF Next 🧪'), ''].join(
+          '\n\n'
+        )
+      );
+
+      expect((await checkSnippetCsfOrder(docsDir)).length).toBe(1);
+      await fixSnippetCsfOrder(docsDir);
+      expect(await fs.readFile(file, 'utf8')).toBe(
+        [next('svelte', 'ts', 'Svelte CSF Next 🧪'), csf3('svelte', 'ts', 'Svelte CSF'), ''].join(
+          '\n\n'
+        )
+      );
+    });
+    it('fixes the order, moving attached comments with their block', async () => {
+      const file = path.join(snippetsDir, 'foo.md');
+      await writeFile(
+        file,
+        [
+          csf3('react', 'js'),
+          csf3('react', 'ts'),
+          block('renderer="vue" language="ts"'),
+          next('react', 'ts'),
+          '<!-- comment -->\n\n' + next('react', 'js'),
+          '',
+        ].join('\n\n')
+      );
+
+      const changed = await fixSnippetCsfOrder(docsDir);
+
+      expect(changed).toEqual([file]);
+      expect(await fs.readFile(file, 'utf8')).toBe(
+        [
+          '<!-- comment -->\n\n' + next('react', 'js'),
+          next('react', 'ts'),
+          block('renderer="vue" language="ts"'),
+          csf3('react', 'ts'),
+          csf3('react', 'js'),
+          '',
+        ].join('\n\n')
+      );
+      expect(await checkSnippetCsfOrder(docsDir)).toEqual([]);
+      expect(await fixSnippetCsfOrder(docsDir)).toEqual([]);
     });
   });
 

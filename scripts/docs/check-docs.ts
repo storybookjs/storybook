@@ -1,6 +1,13 @@
 import path from 'path';
 import fs from 'node:fs/promises';
-import { getMdxFiles, readFileLines, getHeadingSlugs, getLineContexts } from './utils';
+import {
+  getMdxFiles,
+  getSnippetFiles,
+  readFileLines,
+  getHeadingSlugs,
+  getLineContexts,
+  getMisorderedCsfSegments,
+} from './utils';
 import { esMain } from '../utils/esmain.ts';
 
 export interface RelativeLinkError {
@@ -414,6 +421,27 @@ export async function checkBareUrls(docsDir: string): Promise<DocLineError[]> {
 }
 
 /**
+ * Checks that each CSF Next snippet comes before its CSF 3 counterpart in snippet files.
+ */
+export async function checkSnippetCsfOrder(docsDir: string): Promise<DocLineError[]> {
+  const snippetFiles = await getSnippetFiles(docsDir);
+  const errors: DocLineError[] = [];
+
+  for (const file of snippetFiles) {
+    const lines = await readFileLines(file);
+    for (const segment of getMisorderedCsfSegments(lines)) {
+      errors.push({
+        file,
+        line: segment.fenceLine + 1,
+        message:
+          'CSF 3 snippet comes before its CSF Next snippet. Run `yarn --cwd scripts docs:fix-snippet-order` to fix.',
+      });
+    }
+  }
+  return errors;
+}
+
+/**
  * Runs all checks and prints a summary. Exits 1 if any errors are found.
  */
 export async function runAllChecks(docsDir: string) {
@@ -429,6 +457,7 @@ export async function runAllChecks(docsDir: string) {
     fmQuotes,
     redundantSidebar,
     bareUrls,
+    snippetCsfOrder,
   ] = await Promise.all([
     checkRelativeLinks(docsDir),
     checkCodeSnippetPaths(docsDir),
@@ -441,6 +470,7 @@ export async function runAllChecks(docsDir: string) {
     checkFrontmatterQuotes(docsDir),
     checkRedundantSidebarTitle(docsDir),
     checkBareUrls(docsDir),
+    checkSnippetCsfOrder(docsDir),
   ]);
   const all = [
     ...rel.map((e) => ({ ...e, type: 'relative-link' })),
@@ -454,6 +484,7 @@ export async function runAllChecks(docsDir: string) {
     ...fmQuotes.map((e) => ({ ...e, type: 'frontmatter-quotes' })),
     ...redundantSidebar.map((e) => ({ ...e, type: 'redundant-sidebar-title' })),
     ...bareUrls.map((e) => ({ ...e, type: 'bare-url' })),
+    ...snippetCsfOrder.map((e) => ({ ...e, type: 'snippet-csf-order' })),
   ];
   if (all.length === 0) {
     console.log('✅ Docs check: no errors found.');
@@ -471,6 +502,7 @@ export async function runAllChecks(docsDir: string) {
     'frontmatter-quotes': 'FrontmatterQuotes',
     'redundant-sidebar-title': 'RedundantSidebarTitle',
     'bare-url': 'BareUrl',
+    'snippet-csf-order': 'SnippetCsfOrder',
   };
   for (const err of all) {
     const loc = `${err.file}:${err.line}`;

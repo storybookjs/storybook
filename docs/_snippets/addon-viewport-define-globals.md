@@ -1,27 +1,3 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/angular';
-
-import { Button } from './button.component';
-
-const meta: Meta<Button> = {
-  component: Button,
-  globals: {
-    // 👇 Set viewport for all component stories
-    viewport: { value: 'tablet', isRotated: false },
-  },
-};
-
-export default meta;
-type Story = StoryObj<Button>;
-
-export const OnPhone: Story = {
-  globals: {
-    // 👇 Override viewport for this story
-    viewport: { value: 'mobile1', isRotated: false },
-  },
-};
-```
-
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
@@ -43,28 +19,23 @@ export const OnPhone = meta.story({
 });
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
 
-  import Button from './Button.svelte';
+const meta = preview.meta({
+  component: 'demo-button',
+  globals: {
+    // 👇 Set viewport for all component stories
+    viewport: { value: 'tablet', isRotated: false },
+  },
+});
 
-  const { Story } = defineMeta({
-    component: Button,
-    globals: {
-      // 👇 Set viewport for all component stories
-      viewport: { value: "tablet", isRotated: false },
-    },
-  });
-</script>
-
-<Story
-  name="OnPhone"
-  globals={{
-    viewport: { value: "mobile1", isRotated: false },
-  }}
-/>
+export const OnPhone = meta.story({
+  globals: {
+    // 👇 Override viewport for this story
+    viewport: { value: 'mobile1', isRotated: false },
+  },
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
@@ -90,7 +61,7 @@ export const OnPhone = meta.story({
 />
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -137,109 +108,31 @@ export const OnPhone = meta.story({
 />
 ```
 
-```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
-import { Button } from './Button';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
-export default {
-  component: Button,
-  globals: {
-    // 👇 Set viewport for all component stories
-    viewport: { value: 'tablet', isRotated: false },
-  },
-};
+  import Button from './Button.svelte';
 
-export const OnPhone = {
-  globals: {
-    // 👇 Override viewport for this story
-    viewport: { value: 'mobile1', isRotated: false },
-  },
-};
-```
+  const { Story } = defineMeta({
+    component: Button,
+    globals: {
+      // 👇 Set viewport for all component stories
+      viewport: { value: "tablet", isRotated: false },
+    },
+  });
+</script>
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { Button } from './Button';
-
-const meta = {
-  component: Button,
-  globals: {
-    // 👇 Set viewport for all component stories
-    viewport: { value: 'tablet', isRotated: false },
-  },
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const OnPhone: Story = {
-  globals: {
-    // 👇 Override viewport for this story
-    viewport: { value: 'mobile1', isRotated: false },
-  },
-};
-```
-
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
-export default {
-  component: 'demo-button',
-  globals: {
-    // 👇 Set viewport for all component stories
-    viewport: { value: 'tablet', isRotated: false },
-  },
-};
-
-export const OnPhone = {
-  globals: {
-    // 👇 Override viewport for this story
-    viewport: { value: 'mobile1', isRotated: false },
-  },
-};
-```
-
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/web-components-vite';
-
-const meta: Meta = {
-  component: 'demo-button',
-  globals: {
-    // 👇 Set viewport for all component stories
-    viewport: { value: 'tablet', isRotated: false },
-  },
-};
-
-export default meta;
-type Story = StoryObj;
-
-export const OnPhone: Story = {
-  globals: {
-    // 👇 Override viewport for this story
-    viewport: { value: 'mobile1', isRotated: false },
-  },
-};
+<Story
+  name="OnPhone"
+  globals={{
+    viewport: { value: "mobile1", isRotated: false },
+  }}
+/>
 ```
 
 ```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'demo-button',
-  globals: {
-    // 👇 Set viewport for all component stories
-    viewport: { value: 'tablet', isRotated: false },
-  },
-});
-
-export const OnPhone = meta.story({
-  globals: {
-    // 👇 Override viewport for this story
-    viewport: { value: 'mobile1', isRotated: false },
-  },
-});
-```
-
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -278,8 +171,6 @@ export const OnPhone = meta.story({
   },
 });
 ```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
@@ -323,8 +214,6 @@ export const OnPhone = meta.story({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
@@ -344,4 +233,111 @@ export const OnPhone = meta.story({
     viewport: { value: 'mobile1', isRotated: false },
   },
 });
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from '@storybook/angular';
+
+import { Button } from './button.component';
+
+const meta: Meta<Button> = {
+  component: Button,
+  globals: {
+    // 👇 Set viewport for all component stories
+    viewport: { value: 'tablet', isRotated: false },
+  },
+};
+
+export default meta;
+type Story = StoryObj<Button>;
+
+export const OnPhone: Story = {
+  globals: {
+    // 👇 Override viewport for this story
+    viewport: { value: 'mobile1', isRotated: false },
+  },
+};
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
+
+import { Button } from './Button';
+
+const meta = {
+  component: Button,
+  globals: {
+    // 👇 Set viewport for all component stories
+    viewport: { value: 'tablet', isRotated: false },
+  },
+} satisfies Meta<typeof Button>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const OnPhone: Story = {
+  globals: {
+    // 👇 Override viewport for this story
+    viewport: { value: 'mobile1', isRotated: false },
+  },
+};
+```
+
+```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+import { Button } from './Button';
+
+export default {
+  component: Button,
+  globals: {
+    // 👇 Set viewport for all component stories
+    viewport: { value: 'tablet', isRotated: false },
+  },
+};
+
+export const OnPhone = {
+  globals: {
+    // 👇 Override viewport for this story
+    viewport: { value: 'mobile1', isRotated: false },
+  },
+};
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
+
+const meta: Meta = {
+  component: 'demo-button',
+  globals: {
+    // 👇 Set viewport for all component stories
+    viewport: { value: 'tablet', isRotated: false },
+  },
+};
+
+export default meta;
+type Story = StoryObj;
+
+export const OnPhone: Story = {
+  globals: {
+    // 👇 Override viewport for this story
+    viewport: { value: 'mobile1', isRotated: false },
+  },
+};
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+export default {
+  component: 'demo-button',
+  globals: {
+    // 👇 Set viewport for all component stories
+    viewport: { value: 'tablet', isRotated: false },
+  },
+};
+
+export const OnPhone = {
+  globals: {
+    // 👇 Override viewport for this story
+    viewport: { value: 'mobile1', isRotated: false },
+  },
+};
 ```

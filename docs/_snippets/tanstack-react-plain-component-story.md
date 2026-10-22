@@ -1,3 +1,26 @@
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const Default = meta.story({
+  parameters: {
+    tanstack: {
+      router: {
+        route: {
+          path: '/demo/form/address',
+        },
+        query: { view: 'list' },
+      },
+    },
+  },
+});
+```
+
 ```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/tanstack-react';
 
@@ -23,27 +46,4 @@ export const Default: Story = {
     },
   },
 };
-```
-
-```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { Page } from './Page';
-
-const meta = preview.meta({
-  component: Page,
-});
-
-export const Default = meta.story({
-  parameters: {
-    tanstack: {
-      router: {
-        route: {
-          path: '/demo/form/address',
-        },
-        query: { view: 'list' },
-      },
-    },
-  },
-});
 ```

@@ -1,11 +1,15 @@
-```js filename=".storybook/preview.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
-import { withThemeByDataAttribute } from '@storybook/addon-themes';
+```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+import addonThemes from '@storybook/addon-themes';
 
 import '../src/index.css'; // Your application's global CSS file
 
-const preview = {
+export default definePreview({
+  addons: [addonThemes()],
   decorators: [
-    withThemeByDataAttribute({
+    addonThemes.withThemeByDataAttribute({
       themes: {
         light: 'light',
         dark: 'dark',
@@ -14,9 +18,30 @@ const preview = {
       attributeName: 'data-theme',
     }),
   ],
-};
+});
+```
 
-export default preview;
+```ts filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { Renderer, definePreview } from '@storybook/your-framework';
+
+import addonThemes from '@storybook/addon-themes';
+
+import '../src/index.css'; // Your application's global CSS file
+
+export default definePreview({
+  addons: [addonThemes()],
+  decorators: [
+    addonThemes.withThemeByDataAttribute<Renderer>({
+      themes: {
+        light: 'light',
+        dark: 'dark',
+      },
+      defaultTheme: 'light',
+      attributeName: 'data-theme',
+    }),
+  ],
+});
 ```
 
 ```ts filename=".storybook/preview.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
@@ -43,18 +68,14 @@ const preview: Preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { Renderer, definePreview } from '@storybook/your-framework';
-
-import addonThemes from '@storybook/addon-themes';
+```js filename=".storybook/preview.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+import { withThemeByDataAttribute } from '@storybook/addon-themes';
 
 import '../src/index.css'; // Your application's global CSS file
 
-export default definePreview({
-  addons: [addonThemes()],
+const preview = {
   decorators: [
-    addonThemes.withThemeByDataAttribute<Renderer>({
+    withThemeByDataAttribute({
       themes: {
         light: 'light',
         dark: 'dark',
@@ -63,30 +84,7 @@ export default definePreview({
       attributeName: 'data-theme',
     }),
   ],
-});
-```
+};
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { definePreview } from '@storybook/your-framework';
-
-import addonThemes from '@storybook/addon-themes';
-
-import '../src/index.css'; // Your application's global CSS file
-
-export default definePreview({
-  addons: [addonThemes()],
-  decorators: [
-    addonThemes.withThemeByDataAttribute({
-      themes: {
-        light: 'light',
-        dark: 'dark',
-      },
-      defaultTheme: 'light',
-      attributeName: 'data-theme',
-    }),
-  ],
-});
+export default preview;
 ```

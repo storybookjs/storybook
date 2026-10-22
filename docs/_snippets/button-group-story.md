@@ -1,3 +1,34 @@
+```ts filename="ButtonGroup.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { CommonModule } from '@angular/common';
+
+import { moduleMetadata } from '@storybook/angular';
+
+import preview from '../.storybook/preview';
+
+import { ButtonGroup } from './button-group.component';
+import { Button } from './button.component';
+
+//👇 Imports the Button stories
+import * as ButtonStories from './Button.stories';
+
+const meta = preview.meta({
+  component: ButtonGroup,
+  decorators: [
+    moduleMetadata({
+      declarations: [Button],
+      imports: [CommonModule],
+    }),
+  ],
+});
+
+export const Pair = meta.story({
+  args: {
+    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
+    orientation: 'horizontal',
+  },
+});
+```
+
 ```ts filename="ButtonGroup.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import { type Meta, type StoryObj, moduleMetadata } from '@storybook/angular';
 
@@ -30,27 +61,16 @@ export const Pair: Story = {
 };
 ```
 
-```ts filename="ButtonGroup.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import { CommonModule } from '@angular/common';
-
-import { moduleMetadata } from '@storybook/angular';
-
+```js filename="ButtonGroup.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { ButtonGroup } from './button-group.component';
-import { Button } from './button.component';
+import { ButtonGroup } from '../ButtonGroup';
 
 //👇 Imports the Button stories
 import * as ButtonStories from './Button.stories';
 
 const meta = preview.meta({
   component: ButtonGroup,
-  decorators: [
-    moduleMetadata({
-      declarations: [Button],
-      imports: [CommonModule],
-    }),
-  ],
 });
 
 export const Pair = meta.story({
@@ -61,46 +81,24 @@ export const Pair = meta.story({
 });
 ```
 
-```js filename="ButtonGroup.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
-import { ButtonGroup } from '../ButtonGroup';
-
-//👇 Imports the Button stories
-import * as ButtonStories from './Button.stories';
-
-export default {
-  component: ButtonGroup,
-};
-
-export const Pair = {
-  args: {
-    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
-    orientation: 'horizontal',
-  },
-};
-```
-
-```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
 
 import { ButtonGroup } from '../ButtonGroup';
 
 //👇 Imports the Button stories
 import * as ButtonStories from './Button.stories';
 
-const meta = {
+const meta = preview.meta({
   component: ButtonGroup,
-} satisfies Meta<typeof ButtonGroup>;
+});
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Pair: Story = {
+export const Pair = meta.story({
   args: {
-    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
+    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
     orientation: 'horizontal',
   },
-};
+});
 ```
 
 ```js filename="ButtonGroup.stories.js|jsx" renderer="solid" language="js"
@@ -144,30 +142,6 @@ export const Pair: Story = {
 };
 ```
 
-```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import ButtonGroup from './ButtonGroup.svelte';
-
-  //👇 Imports the Button stories
-  import * as ButtonStories from './Button.stories.svelte';
-
-  const { Story } = defineMeta({
-    component: ButtonGroup,
-  });
-</script>
-
-<Story
-  name="Pair"
-  args={{
-    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
-    orientation: 'horizontal',
-  }}
-/>
-```
-
 ```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
 <script module>
   import preview from '../.storybook/preview';
@@ -191,7 +165,7 @@ export const Pair: Story = {
 />
 ```
 
-```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -238,52 +212,43 @@ export const Pair: Story = {
 />
 ```
 
-```js filename="ButtonGroup.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
-import ButtonGroup from './ButtonGroup.vue';
+```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
-//👇 Imports the Button stories
-import * as ButtonStories from './Button.stories';
+  import ButtonGroup from './ButtonGroup.svelte';
 
-export default {
-  component: ButtonGroup,
-};
+  //👇 Imports the Button stories
+  import * as ButtonStories from './Button.stories.svelte';
 
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Pair = {
-  render: (args) => ({
-    components: { ButtonGroup },
-    setup() {
-      return { args };
-    },
-    template: '<ButtonGroup v-bind="args" />',
-  }),
-  args: {
+  const { Story } = defineMeta({
+    component: ButtonGroup,
+  });
+</script>
+
+<Story
+  name="Pair"
+  args={{
     buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
     orientation: 'horizontal',
-  },
-};
+  }}
+/>
 ```
 
-```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/vue3-vite';
+```js filename="ButtonGroup.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
 
 import ButtonGroup from './ButtonGroup.vue';
 
 //👇 Imports the Button stories
 import * as ButtonStories from './Button.stories';
 
-const meta = {
+const meta = preview.meta({
   component: ButtonGroup,
-} satisfies Meta<typeof ButtonGroup>;
+});
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Pair: Story = {
+export const Pair = meta.story({
   render: (args) => ({
     components: { ButtonGroup },
     setup() {
@@ -292,10 +257,73 @@ export const Pair: Story = {
     template: '<ButtonGroup v-bind="args" />',
   }),
   args: {
-    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
+    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
     orientation: 'horizontal',
   },
-};
+});
+```
+
+```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import ButtonGroup from './ButtonGroup.vue';
+
+//👇 Imports the Button stories
+import * as ButtonStories from './Button.stories';
+
+const meta = preview.meta({
+  component: ButtonGroup,
+});
+
+export const Pair = meta.story({
+  render: (args) => ({
+    components: { ButtonGroup },
+    setup() {
+      return { args };
+    },
+    template: '<ButtonGroup v-bind="args" />',
+  }),
+  args: {
+    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
+    orientation: 'horizontal',
+  },
+});
+```
+
+```js filename="ButtonGroup.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 Imports the Button stories
+import * as ButtonStories from './Button.stories';
+
+const meta = preview.meta({
+  component: 'demo-button-group',
+});
+
+export const Pair = meta.story({
+  args: {
+    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
+    orientation: 'horizontal',
+  },
+});
+```
+
+```ts filename="ButtonGroup.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 Imports the Button stories
+import * as ButtonStories from './Button.stories';
+
+const meta = preview.meta({
+  component: 'demo-button-group',
+});
+
+export const Pair = meta.story({
+  args: {
+    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
+    orientation: 'horizontal',
+  },
+});
 ```
 
 ```js filename="ButtonGroup.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
@@ -335,55 +363,22 @@ export const Pair: Story = {
 };
 ```
 
-```js filename="ButtonGroup.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-// 👇 Imports the Button stories
-import * as ButtonStories from './Button.stories';
-
-const meta = preview.meta({
-  component: 'demo-button-group',
-});
-
-export const Pair = meta.story({
-  args: {
-    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
-    orientation: 'horizontal',
-  },
-});
-```
-
-```ts filename="ButtonGroup.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-// 👇 Imports the Button stories
-import * as ButtonStories from './Button.stories';
-
-const meta = preview.meta({
-  component: 'demo-button-group',
-});
-
-export const Pair = meta.story({
-  args: {
-    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
-    orientation: 'horizontal',
-  },
-});
-```
-
-```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
+```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import ButtonGroup from './ButtonGroup.vue';
 
 //👇 Imports the Button stories
 import * as ButtonStories from './Button.stories';
 
-const meta = preview.meta({
+const meta = {
   component: ButtonGroup,
-});
+} satisfies Meta<typeof ButtonGroup>;
 
-export const Pair = meta.story({
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Pair: Story = {
   render: (args) => ({
     components: { ButtonGroup },
     setup() {
@@ -392,27 +387,28 @@ export const Pair = meta.story({
     template: '<ButtonGroup v-bind="args" />',
   }),
   args: {
-    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
+    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
     orientation: 'horizontal',
   },
-});
+};
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="ButtonGroup.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="ButtonGroup.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import ButtonGroup from './ButtonGroup.vue';
 
 //👇 Imports the Button stories
 import * as ButtonStories from './Button.stories';
 
-const meta = preview.meta({
+export default {
   component: ButtonGroup,
-});
+};
 
-export const Pair = meta.story({
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Pair = {
   render: (args) => ({
     components: { ButtonGroup },
     setup() {
@@ -421,50 +417,50 @@ export const Pair = meta.story({
     template: '<ButtonGroup v-bind="args" />',
   }),
   args: {
-    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
+    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
     orientation: 'horizontal',
   },
-});
+};
 ```
 
-```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
+```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { ButtonGroup } from '../ButtonGroup';
 
 //👇 Imports the Button stories
 import * as ButtonStories from './Button.stories';
 
-const meta = preview.meta({
+const meta = {
   component: ButtonGroup,
-});
+} satisfies Meta<typeof ButtonGroup>;
 
-export const Pair = meta.story({
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Pair: Story = {
   args: {
-    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
+    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
     orientation: 'horizontal',
   },
-});
+};
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="ButtonGroup.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="ButtonGroup.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { ButtonGroup } from '../ButtonGroup';
 
 //👇 Imports the Button stories
 import * as ButtonStories from './Button.stories';
 
-const meta = preview.meta({
+export default {
   component: ButtonGroup,
-});
+};
 
-export const Pair = meta.story({
+export const Pair = {
   args: {
-    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
+    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
     orientation: 'horizontal',
   },
-});
+};
 ```

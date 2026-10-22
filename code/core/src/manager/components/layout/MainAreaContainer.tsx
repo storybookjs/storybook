@@ -4,6 +4,8 @@ import { Match } from 'storybook/internal/router';
 
 import { styled } from 'storybook/theming';
 
+import { getFramePoolOptions } from '../../../shared/constants/frame-pool.ts';
+
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 import { useLandmark } from '../../hooks/useLandmark.ts';
 
@@ -81,13 +83,17 @@ const MainAreaContainer = React.memo<MainAreaContainerProps>(function MainAreaCo
   slotMain,
   slotPages,
 }) {
+  // With `features.experimentalFramePool`, the preview area stays while pages show: its frames
+  // would boot again, all at once, if it went.
+  const keepMain = !!getFramePoolOptions(globalThis.FEATURES?.experimentalFramePool);
   return (
     <>
-      {showPages ? (
-        <PagesContainer>{slotPages}</PagesContainer>
-      ) : (
+      {showPages && <PagesContainer>{slotPages}</PagesContainer>}
+      {(!showPages || keepMain) && (
         <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>
-          {({ match }) => <MainInnerContainer shown={!!match}>{slotMain}</MainInnerContainer>}
+          {({ match }) => (
+            <MainInnerContainer shown={!showPages && !!match}>{slotMain}</MainInnerContainer>
+          )}
         </Match>
       )}
     </>

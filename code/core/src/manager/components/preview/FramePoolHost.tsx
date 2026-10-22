@@ -4,18 +4,41 @@ import type { API, State } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { FRAME_POOL_PARAM, getFramePoolOptions } from '../../../shared/constants/frame-pool.ts';
-import { FramePool } from './FramePool.ts';
+import { FramePool, type FramePoolEntry } from './FramePool.ts';
 
-const Host = styled.div(({ theme }) => ({
+const Container = styled.div(({ theme }) => ({
   position: 'relative',
   width: '100%',
   height: '100%',
-  overflowX: 'hidden',
-  overflowY: 'hidden',
+  overflow: 'hidden',
   backgroundColor: theme.background.preview,
 }));
 
 let pool: FramePool | undefined;
+
+/**
+ * The URL of a new frame of the pool, which boots on `entry`. Only the selected story gets the args
+ * of the manager's URL, which are the selected story's.
+ */
+export const framePoolSrc = (
+  api: Pick<API, 'getStoryHrefs'>,
+  { queryParams = {}, version }: { queryParams?: State['customQueryParams']; version?: string },
+  entry: FramePoolEntry,
+  { autoplay, selected }: { autoplay: boolean; selected: boolean }
+) => {
+  const { args: _args, ...params } = queryParams;
+  return api.getStoryHrefs(entry.id, {
+    queryParams: {
+      ...params,
+      ...(version && { version }),
+      [FRAME_POOL_PARAM]: 'frame',
+      ...(!autoplay && { autoplay: 'false' }),
+    },
+    ...(!selected && { inheritArgs: false }),
+    refId: undefined,
+    viewMode: entry.viewMode,
+  }).previewHref;
+};
 
 /**
  * The manager's pool of preview frames, with `features.experimentalFramePool` on. The first call
@@ -38,18 +61,7 @@ export const useFramePool = (
     max: globalThis.matchMedia?.('(max-width: 600px)').matches
       ? options.mobileMax
       : Number.POSITIVE_INFINITY,
-    src: (entry, { autoplay, selected }) =>
-      api.getStoryHrefs(entry.id, {
-        queryParams: {
-          ...latest.current.queryParams,
-          ...(latest.current.version && { version: latest.current.version }),
-          [FRAME_POOL_PARAM]: 'frame',
-          ...(!autoplay && { autoplay: 'false' }),
-        },
-        ...(!selected && { inheritArgs: false }),
-        refId: undefined,
-        viewMode: entry.viewMode,
-      }).previewHref,
+    src: (entry, options) => framePoolSrc(api, latest.current, entry, options),
     userGlobals: () => api.getUserGlobals() ?? {},
     hasPlay: (storyId) => !!api.getData(storyId)?.tags?.includes('play-fn'),
     firstStory: () =>
@@ -59,7 +71,10 @@ export const useFramePool = (
   return pool;
 };
 
-/** Where the frames of the pool lie: React never renders into it, so it never moves them. */
+/**
+ * Where the pool's host lies. The pool owns the host and its frames, and React never renders into
+ * it, so it never moves them.
+ */
 export const FramePoolHost = ({ pool: framePool }: { pool: FramePool }) => {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -67,5 +82,5 @@ export const FramePoolHost = ({ pool: framePool }: { pool: FramePool }) => {
       framePool.attach(ref.current);
     }
   }, [framePool]);
-  return <Host ref={ref} data-storybook-frame-pool="" />;
+  return <Container ref={ref} />;
 };

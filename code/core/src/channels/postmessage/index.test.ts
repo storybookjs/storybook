@@ -4,6 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
 
 import { InvalidChannelPageError } from '../../preview-errors.ts';
+import {
+  POOL_FRAME_ATTRIBUTE,
+  POOL_FRAME_REPLAY_ATTRIBUTE,
+} from '../../shared/constants/frame-pool.ts';
 import type { ChannelHandler, Config } from '../types.ts';
 import { KEY, PostMessageTransport } from './index.ts';
 
@@ -300,6 +304,58 @@ describe('PostMessageTransport origin validation', () => {
       receiveFrom({} as Window, EVIL_ORIGIN, { key: KEY, event: { type: 'someEvent', args: [] } });
 
       expect(handler).not.toHaveBeenCalled();
+    });
+
+    describe('with the frame pool', () => {
+      // Frames of the pool all show `iframe.html`; the shown one has `data-is-storybook="true"`.
+      const registerPoolFrames = (...frames: { shown: boolean; held?: boolean }[]) => {
+        const iframes = frames.map(({ shown, held }) => {
+          const iframe = document.createElement('iframe');
+          iframe.setAttribute(POOL_FRAME_ATTRIBUTE, '');
+          iframe.setAttribute('data-is-storybook', shown ? 'true' : 'false');
+          iframe.setAttribute('src', `${OWN_ORIGIN}/iframe.html?id=a--one&framePool=frame`);
+          if (held) {
+            iframe.setAttribute(POOL_FRAME_REPLAY_ATTRIBUTE, '');
+          }
+          Object.defineProperty(iframe, 'contentWindow', { value: {} as Window });
+          return iframe;
+        });
+        vi.spyOn(document, 'querySelectorAll').mockReturnValue(
+          iframes as unknown as ReturnType<typeof document.querySelectorAll>
+        );
+        return iframes.map(({ contentWindow }) => contentWindow);
+      };
+      const message = { key: KEY, event: { type: 'someEvent', args: [] } };
+
+      it('accepts a channel message from the shown frame, with the path of its src as source', () => {
+        const [, shown] = registerPoolFrames({ shown: false }, { shown: true });
+        createTransport('manager');
+
+        receiveFrom(shown, OWN_ORIGIN, message);
+
+        expect(handler).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'someEvent', source: `${OWN_ORIGIN}/iframe.html` })
+        );
+      });
+
+      it('drops channel messages from frames that are not shown', () => {
+        const [hidden] = registerPoolFrames({ shown: false }, { shown: true });
+        createTransport('manager');
+
+        receiveFrom(hidden, OWN_ORIGIN, message);
+
+        expect(handler).not.toHaveBeenCalled();
+        expect(logger.warn).not.toHaveBeenCalled();
+      });
+
+      it('drops channel messages from the shown frame while the pool holds it', () => {
+        const [shown] = registerPoolFrames({ shown: true, held: true });
+        createTransport('manager');
+
+        receiveFrom(shown, OWN_ORIGIN, message);
+
+        expect(handler).not.toHaveBeenCalled();
+      });
     });
 
     it('drops channel messages from a review thumbnail without warning', () => {

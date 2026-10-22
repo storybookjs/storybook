@@ -7,8 +7,9 @@ export const FRAME_POOL_PARAM = 'framePool';
 export const POOL_FRAME_ATTRIBUTE = 'data-storybook-pool-frame';
 
 /**
- * Marks the shown frame of the pool while the manager has yet to hear what it reported before it
- * was shown: until then, the pool hands its events to the manager, in order.
+ * Marks the shown frame of the pool while the manager does not hear it yet: until its preview set
+ * the story it switches to, as what it reports before is of the story it showed; and until the pool
+ * handed the manager what the frame reported before it was shown, in order.
  */
 export const POOL_FRAME_REPLAY_ATTRIBUTE = 'data-storybook-pool-frame-replay';
 

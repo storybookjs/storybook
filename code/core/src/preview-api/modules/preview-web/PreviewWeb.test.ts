@@ -2282,6 +2282,35 @@ describe('PreviewWeb', () => {
       });
     });
 
+    it('renders the story with the globals and autoplay the manager sends', async () => {
+      document.location.search = '?id=component-one--a';
+      const preview = await createAndRenderPreview();
+      vi.mocked(componentOneExports.b.play!).mockClear();
+
+      emitter.emit(SET_CURRENT_STORY, {
+        storyId: 'component-one--b',
+        viewMode: 'story',
+        autoplay: false,
+        globals: { a: 'c' },
+      });
+      await vi.waitFor(() => {
+        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledWith(
+          expect.objectContaining({
+            id: 'component-one--b',
+            storyContext: expect.objectContaining({ globals: expect.objectContaining({ a: 'c' }) }),
+          }),
+          'story-element'
+        );
+      });
+      await waitForRenderPhase('finished');
+
+      // @ts-expect-error Ignore protected property
+      expect((preview.storyStoreValue as StoryStore<Renderer>)!.userGlobals.get()).toEqual(
+        expect.objectContaining({ a: 'c' })
+      );
+      expect(componentOneExports.b.play).not.toHaveBeenCalled();
+    });
+
     it('renders loading error if the story specified does not exist', async () => {
       document.location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();

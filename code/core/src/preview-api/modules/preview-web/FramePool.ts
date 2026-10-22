@@ -1,4 +1,5 @@
 import type { Channel } from 'storybook/internal/channels';
+import { CURRENT_STORY_WAS_SET } from 'storybook/internal/core-events';
 import type { Globals, StoryId } from 'storybook/internal/types';
 
 import {
@@ -36,11 +37,22 @@ interface Lease extends FrameLeaseRequest {
 
 // A docs page in a frame of the pool does not scroll: the manager sizes the frame to its content
 // and scrolls it, with the frames over its story blocks. The docs wrapper fills the window at
-// least, which would keep the frame from ever getting smaller.
+// least, which would keep the frame from ever getting smaller. The table of contents stays in the
+// part of the frame that the manager shows.
 const DOCS_STYLE = `
   html:has(#storybook-docs:not([hidden])) { overflow: hidden; }
   #storybook-docs .sbdocs-wrapper { min-height: 0; }
+  #storybook-docs nav[aria-labelledby='table-of-contents'] {
+    box-sizing: border-box;
+    top: var(--sb-frame-pool-top, 0px);
+    bottom: auto;
+    height: var(--sb-frame-pool-height, 100vh);
+  }
 `;
+
+// A report this soon after the window grew, by as much as it grew, is of content that grows with
+// the window, as with `min-height: 100vh`: following it would grow the frame without end.
+const FEEDBACK_WINDOW = 500;
 
 /**
  * The manager's pool of preview frames, as a docs page in one of them sees it: a story block asks
@@ -57,12 +69,23 @@ export class FramePoolClient {
 
   private lastHeight = 0;
 
+  private viewportHeight = innerHeight;
+
+  private grown = { by: 0, at: -Infinity };
+
   private readonly resizeObserver = new ResizeObserver(() => this.scheduleReport());
 
   constructor(private readonly channel: Channel) {
     channel.on(FRAME_POOL_SHOWN, ({ id, shown }: FramePoolShown) =>
       this.leases.get(id)?.onShow?.(shown)
     );
+    // The manager forgets what a frame reported when it switches: a docs page reports again, also
+    // when it is the one the frame showed before.
+    channel.on(CURRENT_STORY_WAS_SET, () => {
+      this.lastLayout = '[]';
+      this.lastHeight = 0;
+      this.scheduleReport();
+    });
     const style = document.createElement('style');
     style.textContent = DOCS_STYLE;
     document.head.append(style);
@@ -71,6 +94,33 @@ export class FramePoolClient {
       childList: true,
       subtree: true,
     });
+    addEventListener('resize', () => {
+      this.grown = { by: innerHeight - this.viewportHeight, at: performance.now() };
+      this.viewportHeight = innerHeight;
+    });
+    this.followHost();
+  }
+
+  // Tells the docs page which part of it the manager shows: the host the frame lies in scrolls.
+  private followHost() {
+    let parent: HTMLElement | null | undefined;
+    try {
+      parent = frameElement?.parentElement;
+    } catch {
+      return;
+    }
+    if (!parent) {
+      return;
+    }
+    const host = parent;
+    const { style } = document.documentElement;
+    const update = () => {
+      style.setProperty('--sb-frame-pool-top', `${host.scrollTop}px`);
+      style.setProperty('--sb-frame-pool-height', `${host.clientHeight}px`);
+    };
+    host.addEventListener('scroll', update, { passive: true });
+    new ResizeObserver(update).observe(host);
+    update();
   }
 
   lease(request: FrameLeaseRequest): FrameLease {
@@ -101,6 +151,7 @@ export class FramePoolClient {
 
   // Reports where the story blocks lie, and how tall the docs page is, when either changed.
   private report() {
+    // A block that takes no room, as in a collapsed section, needs no frame.
     const slots = [...this.leases.values()]
       .filter(({ place }) => place.isConnected)
       .map(({ id, storyId, globals, autoplay, place }): FramePoolSlot => {
@@ -117,7 +168,8 @@ export class FramePoolClient {
             height: Math.round(rect.height),
           },
         };
-      });
+      })
+      .filter(({ rect }) => rect.width > 0 && rect.height > 0);
     const layout = JSON.stringify(slots);
     if (layout !== this.lastLayout) {
       this.lastLayout = layout;
@@ -133,7 +185,12 @@ export class FramePoolClient {
     const height = Math.ceil(
       rect.bottom + scrollY + (parseFloat(paddingBottom) || 0) + (parseFloat(marginBottom) || 0)
     );
-    if (height > 0 && height !== this.lastHeight) {
+    const feedback =
+      this.lastHeight > 0 &&
+      height - this.lastHeight === this.grown.by &&
+      this.grown.by > 0 &&
+      performance.now() - this.grown.at < FEEDBACK_WINDOW;
+    if (height > 0 && height !== this.lastHeight && !feedback) {
       this.lastHeight = height;
       parent.postMessage(
         JSON.stringify({

@@ -384,8 +384,8 @@ export class PostMessageTransport implements ChannelTransport {
   }
 
   // With `features.experimentalFramePool`, the manager shows one frame of its pool at a time, and
-  // only that one speaks on the channel, once the pool replayed what it said before: the pool
-  // listens to the others itself.
+  // only that one speaks on the channel, unless the pool holds it (POOL_FRAME_REPLAY_ATTRIBUTE):
+  // the pool listens to the others itself, and hands the manager what it should hear of them.
   private isHiddenPoolFrame(rawEvent: MessageEvent): boolean {
     if (this.config.page !== 'manager' || !rawEvent.source) {
       return false;

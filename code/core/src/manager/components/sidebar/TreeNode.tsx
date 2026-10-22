@@ -85,7 +85,6 @@ const StyledTreeItem = styled(TreeItem)<{
   '&:hover, &[data-focus-visible]': {
     color: $textColor ?? theme.barHoverColor,
     outline: 'none',
-    svg: { color: $textColor ?? theme.barHoverColor },
   },
   '&:hover [data-indent-line], &[data-focus-visible] [data-indent-line]': {
     backgroundColor: transparentize(0.52, theme.color.secondary),

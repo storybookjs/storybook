@@ -259,14 +259,14 @@ const LayoutContainer = styled.div<{
   panelPosition: LayoutState['panelPosition'];
   showPanel: boolean;
   showSidebar: boolean;
-}>(({ panelPosition, showPanel, showSidebar }) => ({
+}>(({ theme, panelPosition, showPanel, showSidebar }) => ({
   position: 'relative',
   width: '100%',
   height: ['100vh', '100dvh'],
   overflow: 'hidden',
   display: 'flex',
   flexDirection: 'column',
-  colorScheme: 'light dark',
+  colorScheme: theme.base,
 
   [MEDIA_DESKTOP_BREAKPOINT]: {
     display: 'grid',

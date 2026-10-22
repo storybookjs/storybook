@@ -140,6 +140,104 @@ describe('argtypes-default-value', () => {
     expect(result.story).not.toContain('defaultValue');
   });
 
+  it('migrates a story declared as another story through the story it names', async () => {
+    const result = await migrate({
+      story: [
+        'export default { title: "Example" };',
+        "export const Primary = { argTypes: { label: { defaultValue: 'A', control: 'text' } } };",
+        'export const Secondary = Primary;',
+        'export const Tertiary = Secondary as typeof Primary;',
+      ].join('\n'),
+    });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).toContain("control: 'text'");
+    expect(result.story).not.toContain('defaultValue');
+    expect(result.story).toContain('export const Secondary = Primary;');
+  });
+
+  it('migrates a story exported under two names through its first export', async () => {
+    const result = await migrate({
+      story: [
+        'export default { title: "Example" };',
+        "export const Primary = { argTypes: { label: { defaultValue: 'A', control: 'text' } } };",
+        'export { Primary as Secondary };',
+        'export const Tertiary = Primary;',
+        'export { Tertiary as Quaternary };',
+      ].join('\n'),
+    });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).not.toContain('defaultValue');
+    expect(result.story).toContain('export { Primary as Secondary };');
+  });
+
+  it('fails a story exported under two names when its first export cannot be edited', async () => {
+    const story = [
+      'export default { title: "Example" };',
+      "export const Primary = makeStory({ argTypes: { label: { defaultValue: 'A' } } });",
+      'export { Primary as Secondary };',
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      { file: storyPath, kind: 'story', message: expect.stringContaining('Primary') },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
+  it('fails a story declared as a value it cannot edit', async () => {
+    const story = [
+      'export default { title: "Example" };',
+      "const base = { argTypes: { label: { defaultValue: 'A' } } };",
+      "export const Primary = { argTypes: { label: { defaultValue: 'B' } } };",
+      'export const Secondary = base;',
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      {
+        file: storyPath,
+        kind: 'story',
+        message: expect.stringContaining('Secondary'),
+      },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
+  it('fails an alias of a story it cannot edit, through that story', async () => {
+    const story = [
+      'export default { title: "Example" };',
+      "export const Primary = makeStory({ argTypes: { label: { defaultValue: 'A' } } });",
+      'export const Secondary = Primary;',
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      { file: storyPath, kind: 'story', message: expect.stringContaining('Primary') },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
+  it('fails a story whose alias receives an assignment, through that story', async () => {
+    const story = [
+      'export default { title: "Example" };',
+      "export const Primary = { argTypes: { label: { defaultValue: 'A' } } };",
+      'export const Secondary = Primary;',
+      "Secondary.args = { label: 'B' };",
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      {
+        file: storyPath,
+        kind: 'story',
+        message: expect.stringContaining('Cannot mutate Primary because Secondary, an alias of it'),
+      },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
   it('leaves a spread inside the arg unchanged when the editor cannot remove it', async () => {
     const story =
       "import { shared } from './shared';\nexport default { argTypes: { label: { ...shared, defaultValue: 'A' } } };";

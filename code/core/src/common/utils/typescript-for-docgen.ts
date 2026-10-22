@@ -3,12 +3,24 @@ import { fileURLToPath } from 'node:url';
 
 import { once } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
+import { SupportedRenderer } from 'storybook/internal/types';
 
 import {
   TypeScriptMissingForDocgenError,
   TypeScriptWithoutCompilerApiError,
 } from '../../server-errors.ts';
 import { loadMainConfig } from './load-main-config.ts';
+
+/** Renderers whose docgen needs `typescript`, which they declare as a peer dependency. */
+export const RENDERERS_WITH_TYPESCRIPT_DOCGEN: readonly SupportedRenderer[] = [
+  SupportedRenderer.REACT,
+  SupportedRenderer.SVELTE,
+  SupportedRenderer.VUE3,
+  SupportedRenderer.WEB_COMPONENTS,
+];
+
+/** The `typescript` dependency that `storybook init` and upgrades add to projects without one. */
+export const TYPESCRIPT_FOR_DOCGEN_PACKAGE = 'typescript@^6';
 
 // TypeScript 7.0 ships no compiler API, and a later 7.x API may reuse the old names with a different
 // design, so only the version tells whether the `ts.*` namespace is the one docgen is built on.

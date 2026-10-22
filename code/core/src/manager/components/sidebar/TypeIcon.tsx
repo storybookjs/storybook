@@ -13,7 +13,7 @@ export const TypeIcon = styled.svg<{
   flex: '0 0 auto',
   color: (() => {
     if (type === 'group') {
-      return theme.base === 'dark' ? '#AF86D5' : '#874ABF';
+      return theme.base === 'dark' ? theme.color.primary : theme.color.ultraviolet;
     }
 
     if (type === 'component') {

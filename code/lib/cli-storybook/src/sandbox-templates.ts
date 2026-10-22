@@ -59,7 +59,7 @@ export type Template = {
   /**
    * Directories under `code/frameworks/`, `code/renderers/`, or `code/builders/` for which `ci:focus`
    * picks this template. A framework match wins over a renderer match, and a renderer match wins
-   * over a builder match.
+   * over a builder match. Every template claiming a matched directory is picked.
    */
   focusPaths?: string[];
 
@@ -480,6 +480,7 @@ export const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
+    focusPaths: ['code/frameworks/tanstack-react/'],
     modifications: {
       useCsfFactory: true,
       extraDevDependencies: ['prop-types'],

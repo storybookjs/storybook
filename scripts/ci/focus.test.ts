@@ -9,9 +9,11 @@ import {
   PATH_TRIGGERED_JOBS,
   getFocusJobs,
   selectChromaticSiblings,
-  selectFocusSandbox,
+  selectFocusSandboxes,
   selectPathTriggeredJobs,
 } from './focus.ts';
+import { ensureRequiredJobs } from './utils/helpers.ts';
+import { getJobs } from './workflow-jobs.ts';
 
 const ROOT = join(import.meta.dirname, '../..');
 
@@ -53,7 +55,7 @@ describe('focusPaths', () => {
   );
 });
 
-describe('selectFocusSandbox', () => {
+describe('selectFocusSandboxes', () => {
   it.each([
     ['code/frameworks/angular-vite/src/preset.ts', 'angular-vite/default-ts'],
     ['code/frameworks/angular/src/server/index.ts', 'angular-cli/default-ts'],
@@ -63,7 +65,6 @@ describe('selectFocusSandbox', () => {
     ['code/frameworks/vue3-vite/src/preset.ts', 'vue3-vite/default-ts'],
     ['code/frameworks/svelte-vite/src/preset.ts', 'svelte-vite/default-ts'],
     ['code/frameworks/sveltekit/src/preset.ts', 'svelte-kit/skeleton-ts'],
-    ['code/frameworks/tanstack-react/src/preset.ts', 'tanstack-react-router/default-ts'],
     ['code/frameworks/preact-vite/src/preset.ts', 'preact-vite/default-ts'],
     ['code/frameworks/html-vite/src/preset.ts', 'html-vite/default-ts'],
     ['code/frameworks/web-components-vite/src/preset.ts', 'lit-vite/default-ts'],
@@ -78,20 +79,29 @@ describe('selectFocusSandbox', () => {
     ['code/builders/builder-webpack5/src/index.ts', 'react-webpack/18-ts'],
     ['code/builders/builder-vite/src/index.ts', 'react-vite/default-ts'],
   ])('maps %s to %s', (changedFile, expectedSandbox) => {
-    expect(selectFocusSandbox([changedFile])).toBe(expectedSandbox);
+    expect(selectFocusSandboxes([changedFile])).toEqual([expectedSandbox]);
   });
 
   it('prefers a framework match over a shared builder match', () => {
     expect(
-      selectFocusSandbox([
+      selectFocusSandboxes([
         'code/builders/builder-vite/src/index.ts',
         'code/frameworks/angular-vite/src/preset.ts',
       ])
-    ).toBe('angular-vite/default-ts');
+    ).toEqual(['angular-vite/default-ts']);
   });
 
   it('uses the React Vite sandbox when no renderer, builder, or framework changed', () => {
-    expect(selectFocusSandbox(['docs/get-started/introduction.mdx'])).toBe('react-vite/default-ts');
+    expect(selectFocusSandboxes(['docs/get-started/introduction.mdx'])).toEqual([
+      'react-vite/default-ts',
+    ]);
+  });
+
+  it('picks every template that shares the changed framework directory', () => {
+    expect(selectFocusSandboxes(['code/frameworks/tanstack-react/src/preset.ts'])).toEqual([
+      'tanstack-react-router/default-ts',
+      'tanstack-react-start/default-ts',
+    ]);
   });
 });
 
@@ -101,14 +111,14 @@ describe('selectChromaticSiblings', () => {
     ['a builder', 'code/builders/builder-vite/src/index.ts'],
     ['the React Vite framework', 'code/frameworks/react-vite/src/preset.ts'],
   ])('selects nothing when only %s changed', (_, changedFile) => {
-    expect(selectChromaticSiblings('react-vite/default-ts', [changedFile])).toEqual([]);
+    expect(selectChromaticSiblings(['react-vite/default-ts'], [changedFile])).toEqual([]);
   });
 
   it('selects the renderer siblings when a framework change picked the focused sandbox', () => {
-    const siblings = selectChromaticSiblings('nextjs/default-ts', [
-      'code/frameworks/nextjs/src/preset.ts',
-      'code/renderers/react/src/render.ts',
-    ]);
+    const siblings = selectChromaticSiblings(
+      ['nextjs/default-ts'],
+      ['code/frameworks/nextjs/src/preset.ts', 'code/renderers/react/src/render.ts']
+    );
 
     expect(siblings).toContain('react-vite/default-ts');
     expect(siblings).not.toContain('nextjs/default-ts');
@@ -116,7 +126,7 @@ describe('selectChromaticSiblings', () => {
 
   it('selects templates with the changed renderer under a different framework', () => {
     expect(
-      selectChromaticSiblings('svelte-vite/default-ts', ['code/renderers/svelte/src/render.ts'])
+      selectChromaticSiblings(['svelte-vite/default-ts'], ['code/renderers/svelte/src/render.ts'])
     ).toEqual(['svelte-kit/skeleton-ts']);
   });
 });
@@ -224,11 +234,12 @@ describe('selectPathTriggeredJobs', () => {
     );
   });
 
-  it('adds the internal Storybook E2E and story tests for a manager change', () => {
+  it('adds the internal Storybook E2E, story tests, and Chromatic for a manager change', () => {
     expect(triggeredIds('code/core/src/manager/App.tsx')).toEqual([
       'internal-storybook-e2e',
       'internal-storybook-build-e2e',
       'tests-stories--linux',
+      'local-storybook---chromatic',
     ]);
   });
 });
@@ -279,4 +290,50 @@ describe('defineAffectedLintAndFormat', () => {
       stepNames
     );
   });
+});
+
+/** `ci:normal` jobs that no focused run selects, and why. The nightly `ci:daily` run covers them. */
+const NIGHTLY_ONLY_JOBS: Record<string, string> = {
+  eslint: 'replaced by lint-and-format--affected',
+  'format-check': 'replaced by lint-and-format--affected',
+  'typescript-validation': 'replaced by typescript-validation--affected',
+  'knip-validation': 'runs with --no-exit-code, so it cannot fail a run',
+  'benchmark-packages': 'measures bundle sizes, not correctness',
+  'bench--react-vite-default-ts---create': 'benchmark sandbox',
+  'bench--react-vite-default-ts---dev': 'benchmark sandbox',
+  'bench--react-webpack-18-ts---create': 'benchmark sandbox',
+  'bench--react-webpack-18-ts---dev': 'benchmark sandbox',
+  'bench--react-vite-default-ts--no-docs---create': 'benchmark sandbox',
+  'bench--react-vite-default-ts--no-docs---dev': 'benchmark sandbox',
+  'bench--react-vite-default-ts--test-build---dev':
+    'benchmark sandbox; focus runs its create and Chromatic jobs as a React sibling',
+  'bench--react-webpack-18-ts--test-build---dev':
+    'benchmark sandbox; focus runs its create and Chromatic jobs as a React sibling',
+};
+
+describe('ci:normal coverage', () => {
+  const ids = (jobs: Parameters<typeof ensureRequiredJobs>[0]) =>
+    ensureRequiredJobs(jobs).map(({ id }) => id);
+
+  const selectableByFocus = new Set(
+    [
+      ['yarn.lock'],
+      ...Object.values(allTemplates).flatMap(({ focusPaths = [] }) =>
+        focusPaths.map((path) => [`${path}src/index.ts`])
+      ),
+    ].flatMap((changedFiles) => ids(getFocusJobs(changedFiles)))
+  );
+  const normalJobs = ids(getJobs('normal', 'origin/next'));
+
+  it.each(normalJobs)('%s runs in ci:focus or is listed as nightly-only', (id) => {
+    expect(selectableByFocus.has(id) || id in NIGHTLY_ONLY_JOBS).toBe(true);
+  });
+
+  it.each(Object.keys(NIGHTLY_ONLY_JOBS))(
+    'nightly-only %s is a ci:normal job that ci:focus never selects',
+    (id) => {
+      expect(normalJobs).toContain(id);
+      expect(selectableByFocus.has(id)).toBe(false);
+    }
+  );
 });

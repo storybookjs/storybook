@@ -4,91 +4,20 @@ import { join } from 'node:path';
 import { program } from 'commander';
 import yml from 'yaml';
 
-import {
-  benchmarkPackages,
-  build_linux,
-  build_windows,
-  check,
-  commonJobsNoOpJob,
-  defineCircleciCompletion,
-  docgenMemoryGate,
-  docgenPerfGate,
-  knip,
-  lint,
-  fmt,
-  internalStorybookBuildE2e,
-  internalStorybookE2e,
-  storybookChromatic,
-  testUnit_windows,
-  testsStories_linux,
-  testsUnit_linux,
-} from './common-jobs.ts';
-import { getInitEmpty, initEmptyNoOpJob } from './init-empty.ts';
-import { getChangedFiles, getFocusJobs } from './focus.ts';
-import { getSandboxes, getWindowsSandboxes, sandboxesNoOpJob } from './sandboxes.ts';
-import { getTestStorybooks, testStorybooksNoOpJob } from './test-storybooks.ts';
+import { defineCircleciCompletion } from './common-jobs.ts';
 import { executors } from './utils/executors.ts';
 import { ensureRequiredJobs } from './utils/helpers.ts';
 import { orbs } from './utils/orbs.ts';
 import { parameters } from './utils/parameters.ts';
 import { setTrustedAuthor } from './utils/runtime.ts';
-import type {
-  JobImplementationObj,
-  JobOrNoOpJob,
-  NoOpJobImplementationObj,
-} from './utils/types.ts';
-import { type Workflow, isWorkflowOrAbove, workflows } from './utils/types.ts';
+import type { JobImplementationObj, NoOpJobImplementationObj } from './utils/types.ts';
+import { type Workflow, workflows } from './utils/types.ts';
+import { getJobs } from './workflow-jobs.ts';
 
 const dirname = import.meta.dirname;
 
 /** Workflows that a PR can merge on, so they end in the `circleci-completion` status check. */
 const isMergeGating = (workflow: Workflow) => workflow !== 'windows';
-
-function getJobs(workflow: Workflow, baseRef: string): JobOrNoOpJob[] {
-  const jobs: JobOrNoOpJob[] = [];
-  if (workflow === 'focus') {
-    jobs.push(...getFocusJobs(getChangedFiles(baseRef)));
-  } else if (isWorkflowOrAbove(workflow, 'docs')) {
-    jobs.push(fmt);
-  } else if (workflow === 'windows') {
-    jobs.push(build_windows, testUnit_windows, ...getWindowsSandboxes());
-  } else {
-    const sandboxes = getSandboxes(workflow);
-    const testStorybooks = getTestStorybooks();
-    const initEmpty = getInitEmpty(workflow);
-
-    if (isWorkflowOrAbove(workflow, 'daily')) {
-      jobs.push(build_windows, testUnit_windows, docgenMemoryGate, docgenPerfGate);
-    }
-
-    jobs.push(
-      build_linux,
-      testsUnit_linux,
-      testsStories_linux,
-
-      commonJobsNoOpJob,
-      lint,
-      fmt,
-      check,
-      knip,
-
-      storybookChromatic,
-      internalStorybookE2e,
-      internalStorybookBuildE2e,
-      benchmarkPackages,
-
-      sandboxesNoOpJob,
-      ...sandboxes,
-
-      testStorybooksNoOpJob,
-      ...testStorybooks,
-
-      initEmptyNoOpJob,
-      ...initEmpty
-    );
-  }
-  return jobs;
-}
 
 /**
  * Generate the CircleCI config for the union of the given workflows.

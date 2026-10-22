@@ -14,6 +14,7 @@ import {
   defineAffectedUnitTests,
   internalStorybookBuildE2e,
   internalStorybookE2e,
+  storybookChromatic,
   testsStories_linux,
   testsUnit_linux,
 } from './common-jobs.ts';
@@ -38,23 +39,30 @@ const isChangedUnder = (
     (path) => path.startsWith(root) && changedFiles.some((file) => file.startsWith(path))
   );
 
-export function selectFocusSandbox(changedFiles: readonly string[]): TemplateKey {
+/**
+ * Select every public template that claims a changed path under the highest-priority root that
+ * matches. Internal templates such as the benchmarks inherit `focusPaths` from the template they
+ * extend, so they are never picked here.
+ */
+export function selectFocusSandboxes(changedFiles: readonly string[]): TemplateKey[] {
   for (const root of FOCUS_PATH_ROOTS) {
-    const sandbox = (Object.entries(allTemplates) as [TemplateKey, Template][]).find(
-      ([, template]) => isChangedUnder(template, root, changedFiles)
-    )?.[0];
+    const sandboxes = (Object.entries(allTemplates) as [TemplateKey, Template][])
+      .filter(
+        ([, template]) => !template.isInternal && isChangedUnder(template, root, changedFiles)
+      )
+      .map(([key]) => key);
 
-    if (sandbox) {
-      return sandbox;
+    if (sandboxes.length > 0) {
+      return sandboxes;
     }
   }
 
-  return DEFAULT_FOCUS_SANDBOX;
+  return [DEFAULT_FOCUS_SANDBOX];
 }
 
 /** Select the PR-workflow templates whose renderer source changed. */
 export function selectChromaticSiblings(
-  template: TemplateKey,
+  focused: readonly TemplateKey[],
   changedFiles: readonly string[]
 ): TemplateKey[] {
   const changedRenderers = new Set(
@@ -65,7 +73,7 @@ export function selectChromaticSiblings(
 
   return normal.filter(
     (sibling) =>
-      sibling !== template && changedRenderers.has(allTemplates[sibling].expected.renderer)
+      !focused.includes(sibling) && changedRenderers.has(allTemplates[sibling].expected.renderer)
   );
 }
 
@@ -112,6 +120,7 @@ export const PATH_TRIGGERED_JOBS: readonly { job: JobOrNoOpJob; paths: readonly 
   { job: internalStorybookE2e, paths: INTERNAL_STORYBOOK_PATHS },
   { job: internalStorybookBuildE2e, paths: INTERNAL_STORYBOOK_PATHS },
   { job: testsStories_linux, paths: INTERNAL_STORYBOOK_PATHS },
+  { job: storybookChromatic, paths: INTERNAL_STORYBOOK_PATHS },
 ];
 
 export const selectPathTriggeredJobs = (changedFiles: readonly string[]): JobOrNoOpJob[] =>
@@ -130,12 +139,12 @@ export function getChangedFiles(baseRef: string): string[] {
 /**
  * Select the `ci:normal` jobs a diff needs: the build, the typecheck, lint, format check and unit
  * tests affected by the diff (the full unit suite when a global input changed), every job of the
- * focused sandbox, a Chromatic run for each sibling whose renderer changed, and the
+ * focused sandboxes, a Chromatic run for each sibling whose renderer changed, and the
  * {@link PATH_TRIGGERED_JOBS} whose paths changed.
  */
 export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
-  const template = selectFocusSandbox(changedFiles);
-  const siblings = selectChromaticSiblings(template, changedFiles).map(defineSandboxFlow);
+  const focused = selectFocusSandboxes(changedFiles);
+  const siblings = selectChromaticSiblings(focused, changedFiles).map(defineSandboxFlow);
 
   return [
     build_linux,
@@ -144,7 +153,7 @@ export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
     defineAffectedLintAndFormat(changedFiles),
     ...selectPathTriggeredJobs(changedFiles),
     sandboxesNoOpJob,
-    ...defineSandboxFlow(template).jobs,
+    ...focused.flatMap((template) => defineSandboxFlow(template).jobs),
     ...siblings.flatMap(({ createJob, chromaticJob }) =>
       chromaticJob ? [createJob, chromaticJob] : []
     ),

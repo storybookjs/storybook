@@ -4,11 +4,9 @@ import path from 'node:path';
 
 import { expect, test } from '@playwright/test';
 
-type ChannelSocket = {
-  isClosed(): boolean;
-  url(): string;
-  waitForEvent(event: 'close', options?: { timeout?: number }): Promise<unknown>;
-};
+import { restoreFile } from './helpers/files.ts';
+import { trackSockets, type TrackedSocket } from './helpers/sockets.ts';
+import { waitForStorybookIndex } from './helpers/storybook.ts';
 
 type ProbeWindow = Window & { __probe?: string };
 
@@ -26,19 +24,7 @@ test.afterEach(async ({ request }) => {
   await restoreFile(PREVIEW_FILE, ORIGINAL_PREVIEW_FILE);
   await restoreFile(VITE_CONFIG_FILE, ORIGINAL_VITE_CONFIG_FILE);
 
-  await expect
-    .poll(
-      async () => {
-        try {
-          const response = await request.get('/__storybook/index.json');
-          return response.ok();
-        } catch {
-          return false;
-        }
-      },
-      { timeout: 30_000 }
-    )
-    .toBe(true);
+  await waitForStorybookIndex(request);
 });
 
 test('the app itself is served at the root', async ({ page }) => {
@@ -82,6 +68,7 @@ test('a story edit updates the preview without reloading the app tab', async ({ 
   const appPage = await context.newPage();
   const managerPage = await context.newPage();
   const preview = managerPage.frameLocator('#storybook-preview-iframe');
+  const previewHmrSockets = trackSockets(managerPage, '__storybook-hmr');
 
   try {
     await appPage.goto('/');
@@ -91,7 +78,7 @@ test('a story edit updates the preview without reloading the app tab', async ({ 
 
     await managerPage.goto('/__storybook/?path=/story/example-button--primary');
     await expect(preview.getByRole('button', { name: 'Button' })).toBeVisible();
-    await managerPage.waitForTimeout(500);
+    await expect.poll(() => hasReceived(previewHmrSockets, '"connected"')).toBe(true);
 
     await writeFile(STORY_FILE, originalStory.replace("label: 'Button',", "label: 'Button HMR',"));
 
@@ -103,7 +90,7 @@ test('a story edit updates the preview without reloading the app tab', async ({ 
       .toBe('alive');
 
     await writeFile(PREVIEW_FILE, `${originalPreview}\n// hmr probe\n`);
-    await managerPage.waitForTimeout(1_500);
+    await expect.poll(() => hasReceived(previewHmrSockets, 'preview.ts')).toBe(true);
     await expect
       .poll(async () => appPage.evaluate(() => (window as ProbeWindow).__probe))
       .toBe('alive');
@@ -177,40 +164,22 @@ test('served modules carry sourcemaps and unknown modules are not the host page'
 test('the plugin survives a host server restart', async ({ page, request }) => {
   const originalStory = await readFile(STORY_FILE, 'utf8');
   const originalViteConfig = await readFile(VITE_CONFIG_FILE, 'utf8');
-  const channelSockets: ChannelSocket[] = [];
-
-  page.on('websocket', (socket) => {
-    if (socket.url().includes('storybook-server-channel')) {
-      channelSockets.push(socket);
-    }
-  });
+  const channelSockets = trackSockets(page, 'storybook-server-channel');
+  const openSockets = (): TrackedSocket['socket'][] =>
+    channelSockets.map(({ socket }) => socket).filter((socket) => !socket.isClosed());
 
   try {
     await page.goto('/__storybook/?path=/story/example-button--primary');
     const preview = page.frameLocator('#storybook-preview-iframe');
     await expect(preview.getByRole('button', { name: 'Button' })).toBeVisible();
-    await expect
-      .poll(() => channelSockets.filter((socket) => !socket.isClosed()).length)
-      .toBeGreaterThan(0);
-    const openBeforeRestart = channelSockets.filter((socket) => !socket.isClosed());
+    await expect.poll(() => openSockets().length).toBeGreaterThan(0);
+    const openBeforeRestart = openSockets();
     const countBeforeRestart = channelSockets.length;
 
     await writeFile(VITE_CONFIG_FILE, `${originalViteConfig}\n`);
     await Promise.all(openBeforeRestart.map((socket) => socket.waitForEvent('close')));
 
-    await expect
-      .poll(
-        async () => {
-          try {
-            const response = await request.get('/__storybook/index.json');
-            return response.ok();
-          } catch {
-            return false;
-          }
-        },
-        { timeout: 30_000 }
-      )
-      .toBe(true);
+    await waitForStorybookIndex(request);
 
     await page.reload();
     await expect(preview.getByRole('button', { name: 'Button' })).toBeVisible({
@@ -219,9 +188,9 @@ test('the plugin survives a host server restart', async ({ page, request }) => {
     await expect.poll(() => channelSockets.length).toBeGreaterThan(countBeforeRestart);
 
     const restarted = channelSockets[channelSockets.length - 1];
-    expect(restarted.isClosed()).toBe(false);
-    await page.waitForTimeout(2_000);
-    expect(restarted.isClosed()).toBe(false);
+    // Server frames prove the restarted channel is attached, not just accepted.
+    await expect.poll(() => restarted.received.length).toBeGreaterThan(0);
+    expect(restarted.socket.isClosed()).toBe(false);
 
     await writeFile(
       STORY_FILE,
@@ -230,39 +199,21 @@ test('the plugin survives a host server restart', async ({ page, request }) => {
     await expect(preview.getByRole('button', { name: 'Button after restart' })).toBeVisible({
       timeout: 15_000,
     });
+    expect(restarted.socket.isClosed()).toBe(false);
   } finally {
     await restoreFile(STORY_FILE, originalStory);
     const restoredViteConfig = await restoreFile(VITE_CONFIG_FILE, originalViteConfig);
 
     if (restoredViteConfig) {
       await Promise.all(
-        channelSockets
-          .filter((socket) => !socket.isClosed())
-          .map((socket) => socket.waitForEvent('close', { timeout: 30_000 }))
+        openSockets().map((socket) => socket.waitForEvent('close', { timeout: 30_000 }))
       );
 
-      await expect
-        .poll(
-          async () => {
-            try {
-              const response = await request.get('/__storybook/index.json');
-              return response.ok();
-            } catch {
-              return false;
-            }
-          },
-          { timeout: 30_000 }
-        )
-        .toBe(true);
+      await waitForStorybookIndex(request);
     }
   }
 });
 
-async function restoreFile(file: string, original: string): Promise<boolean> {
-  if ((await readFile(file, 'utf8')) !== original) {
-    await writeFile(file, original);
-    return true;
-  }
-
-  return false;
+function hasReceived(sockets: TrackedSocket[], text: string): boolean {
+  return sockets.some(({ received }) => received.some((payload) => payload.includes(text)));
 }

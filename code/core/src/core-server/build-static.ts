@@ -38,9 +38,6 @@ export type BuildStaticStandaloneOptions = CLIOptions &
   BuilderOptions & { outputDir: string };
 
 export async function buildStaticStandalone(options: BuildStaticStandaloneOptions) {
-  // lets a Vite plugin loaded through vite.config.ts tell a CLI run from an embedded one
-  process.env.STORYBOOK_CLI = 'true';
-
   options.configType = 'PRODUCTION';
 
   if (options.outputDir === '') {
@@ -81,10 +78,10 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   const channel = new Channel({});
   let presets = await loadAllPresets({
     corePresets: [commonPreset, ...corePresets],
-    overridePresets: [commonOverridePreset],
     isCritical: true,
     channel,
     ...options,
+    overridePresets: [commonOverridePreset],
   });
 
   const { renderer } = await presets.apply('core', {});
@@ -107,10 +104,10 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       ...(resolvedRenderer ? [resolvedRenderer] : []),
       ...corePresets,
     ],
-    overridePresets: [...(previewBuilder.overridePresets || []), commonOverridePreset],
     build,
     channel,
     ...options,
+    overridePresets: [...(previewBuilder.overridePresets || []), commonOverridePreset],
   });
 
   const [features, core, staticDirs] = await Promise.all([

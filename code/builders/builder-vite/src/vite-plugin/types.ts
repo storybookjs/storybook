@@ -6,13 +6,14 @@ export type UserOptions = {
    */
   configDir?: string;
   /**
-   * static Storybook output directory, resolved against Vite's project root.
+   * Static Storybook output directory, resolved against Vite's project root.
    *
    * @default './storybook-static'
    */
   outputDir?: string;
   /**
-   * Mounting point of Storybook in the Vite dev server
+   * Mounting point of Storybook in the Vite dev server, normalised to a leading slash and no
+   * trailing slash.
    *
    * @default '/__storybook'
    */

@@ -7,12 +7,18 @@ export * from './build-dev.ts';
 export * from './build-index.ts';
 export * from './withTelemetry.ts';
 export { default as build } from './standalone.ts';
-export { mapStaticDir, useStatics } from './utils/server-statics.ts';
+export { mapStaticDir } from './utils/server-statics.ts';
 export { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 export { getStoriesPathsFromConfig } from './utils/get-stories-paths-from-config.ts';
 export type { ComponentArgTypesData } from './utils/get-dummy-args-from-argtypes.ts';
 
 export { loadStorybook as experimental_loadStorybook } from './load.ts';
+export { createStorybookApp, type StorybookApp } from './dev-server.ts';
+export { getWsToken } from './presets/wsToken.ts';
+export {
+  getMcpMetadataFromMainConfig,
+  writeStorybookRuntimeInstanceRecord,
+} from './utils/runtime-instance-registry.ts';
 
 export { Tag } from '../shared/constants/tags.ts';
 export { analyzeMdx } from './utils/analyze-mdx.ts';
@@ -124,8 +130,6 @@ export { getBuilders } from './utils/get-builders.ts';
 export { getServerChannel, prepareHeadlessUniversalStores } from './utils/get-server-channel.ts';
 export { isValidHost, type HostValidationOptions } from './utils/getHostValidationMiddleware.ts';
 export { resetServicesPresetOnce as experimental_resetServicesPresetOnce } from './utils/apply-services-preset-once.ts';
-export { registerIndexJsonRoute } from './utils/index-json.ts';
-export { doTelemetry } from './utils/doTelemetry.ts';
 export {
   getTestProviderStoreById as experimental_getTestProviderStore,
   fullTestProviderStore as internal_fullTestProviderStore,

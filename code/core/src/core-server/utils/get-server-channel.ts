@@ -19,6 +19,9 @@ import { CORE_EVENT_SENDERS } from './event-senders.ts';
 import { type HostValidationOptions, isValidHost } from './getHostValidationMiddleware.ts';
 import { isValidToken } from './validate-token.ts';
 
+/** Only the pathname of an upgrade request is read, so any absolute base parses it. */
+const URL_PARSE_BASE = 'http://localhost';
+
 /** Anything that emits Node's `upgrade` event: an `http.Server`, or an emitter that forwards one. */
 export type UpgradeEmitter = {
   on(
@@ -64,7 +67,7 @@ export class ServerChannelTransport {
 
     server.on('upgrade', (request: IncomingMessage, socket, head) => {
       try {
-        const url = request.url && new URL(request.url, options.localAddress ?? 'http://localhost');
+        const url = request.url && new URL(request.url, URL_PARSE_BASE);
         if (!url || url.pathname !== SERVER_CHANNEL_PATH) {
           return;
         }

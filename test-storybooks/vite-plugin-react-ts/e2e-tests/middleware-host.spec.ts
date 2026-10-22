@@ -5,11 +5,8 @@ import path from 'node:path';
 import { expect, test } from '@playwright/test';
 
 import { type DevServer, startDevServer } from './helpers/dev-server.ts';
-
-type ChannelSocket = {
-  isClosed(): boolean;
-  url(): string;
-};
+import { restoreFile } from './helpers/files.ts';
+import { trackSockets } from './helpers/sockets.ts';
 
 const FIXTURE = path.resolve(import.meta.dirname, '..');
 const STORY_FILE = path.join(FIXTURE, 'src/Button.stories.tsx');
@@ -68,27 +65,12 @@ test("a story edit updates the preview through the host's HMR server", async ({ 
 });
 
 test('the server channel connects through the custom server', async ({ page }) => {
-  const channelSockets: ChannelSocket[] = [];
-
-  page.on('websocket', (socket) => {
-    if (socket.url().includes('storybook-server-channel')) {
-      channelSockets.push(socket);
-    }
-  });
+  const channelSockets = trackSockets(page, 'storybook-server-channel');
 
   await page.goto('/__storybook/');
   await expect.poll(() => channelSockets.length).toBe(1);
 
-  expect(channelSockets[0].isClosed()).toBe(false);
-  await page.waitForTimeout(2_000);
-  expect(channelSockets[0].isClosed()).toBe(false);
+  // Server frames prove the channel is attached through the custom server, not just accepted.
+  await expect.poll(() => channelSockets[0].received.length).toBeGreaterThan(0);
+  expect(channelSockets[0].socket.isClosed()).toBe(false);
 });
-
-async function restoreFile(file: string, original: string): Promise<boolean> {
-  if ((await readFile(file, 'utf8')) !== original) {
-    await writeFile(file, original);
-    return true;
-  }
-
-  return false;
-}

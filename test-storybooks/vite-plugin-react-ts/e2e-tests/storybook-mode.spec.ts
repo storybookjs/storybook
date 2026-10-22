@@ -5,6 +5,7 @@ import path from 'node:path';
 import { expect, test } from '@playwright/test';
 
 import { type DevServer, startDevServer, VITE_BIN } from './helpers/dev-server.ts';
+import { restoreFile } from './helpers/files.ts';
 
 const FIXTURE = path.resolve(import.meta.dirname, '..');
 const STORY_FILE = path.join(FIXTURE, 'src/Button.stories.tsx');
@@ -77,12 +78,3 @@ test('a story edit updates the preview', async ({ page }) => {
     });
   }
 });
-
-async function restoreFile(file: string, original: string): Promise<boolean> {
-  if ((await readFile(file, 'utf8')) !== original) {
-    await writeFile(file, original);
-    return true;
-  }
-
-  return false;
-}

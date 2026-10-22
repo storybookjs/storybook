@@ -105,6 +105,26 @@ describe('commonConfig', () => {
     expect(config.plugins).toBeDefined();
   });
 
+  it('strips the embedded Storybook plugin from the user config and keeps other plugins', async () => {
+    loadConfigFromFileMock.mockReturnValueOnce(
+      Promise.resolve({
+        config: {
+          plugins: [
+            { name: 'storybook:vite-plugin' },
+            [{ name: 'user-plugin' }, { name: 'storybook:vite-plugin' }],
+          ],
+        },
+        path: '',
+        dependencies: [],
+      })
+    );
+
+    const config = await commonConfig(dummyOptions, 'development');
+
+    expect(config.plugins?.[0]).toEqual([{ name: 'user-plugin' }]);
+    expect(JSON.stringify(config.plugins)).not.toContain('storybook:vite-plugin');
+  });
+
   it('should pass configLoader option to loadConfigFromFile', async () => {
     const optionsWithConfigLoader: Options = {
       ...dummyOptions,

@@ -1,4 +1,4 @@
-import type { Options } from 'storybook/internal/types';
+import type { CoreConfig, Options } from 'storybook/internal/types';
 
 import type { InlineConfig, ServerOptions } from 'vite';
 
@@ -29,4 +29,13 @@ export const viteFinal = (
       path: vitePlugin.hmrPath,
     },
   },
+});
+
+/** Storybook's own host check must accept the hosts the Vite host server already accepted. */
+export const core = (
+  config: CoreConfig,
+  { vitePlugin }: Options & VitePluginPresetOptions
+): CoreConfig => ({
+  ...config,
+  allowedHosts: vitePlugin.allowedHosts ?? config.allowedHosts,
 });

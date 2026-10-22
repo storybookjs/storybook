@@ -2,8 +2,10 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 
 import type { Connect } from 'vite';
 
-type PrefixHandler = (req: IncomingMessage, res: ServerResponse) => void;
+/** Handles a request whose URL had the prefix stripped. */
+export type PrefixHandler = (req: IncomingMessage, res: ServerResponse) => void;
 
+/** Routes requests under `basePath` to `handler` and lets every other request through. */
 export function createPrefixGuard(
   basePath: string,
   handler: PrefixHandler

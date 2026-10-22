@@ -9,13 +9,13 @@ import {
   textOf,
   collectImportBindings,
   createStoryArgsResolver,
+  detachedTextOf,
   isCanonicalCsf2BindCall,
   isStringLiteral,
   lineIndent,
   metaObject,
   normalizeStoryDeclaration,
   parseModule,
-  placeableTextOf,
   reindent,
   resolveRenderFunction,
   storyShapeError,
@@ -87,8 +87,9 @@ function importedBoundStory(
     return undefined;
   }
 
+  const print = valuePrinter('    ');
   const values = Object.entries(args).map(
-    ([key, value]) => `    ${JSON.stringify(key)}: ${placeableTextOf(value)}`
+    ([key, value]) => `    ${JSON.stringify(key)}: ${print(value)}`
   );
   const argsObject = values.length ? `{\n${values.join(',\n')}\n}` : '{}';
   return {
@@ -160,8 +161,9 @@ function buildSnippet(
 
   // No function: synthesize `<Component {...attrs}/>`
   invariant(componentName, 'Could not generate snippet without component name.');
-  const attrs = injectedAttributes(merged, new Set());
-  const children = toJsxChildren(merged.children);
+  const print = valuePrinter('');
+  const attrs = injectedAttributes(merged, new Set(), print);
+  const children = toJsxChildren(merged.children, print);
   const opening = [componentName, ...attrs].join(' ');
   const element = children ? `<${opening}>${children}</${componentName}>` : `<${opening} />`;
   return `const ${storyName} = () => ${element};`;
@@ -253,9 +255,17 @@ function readsArgs(source: string): boolean {
   return reads;
 }
 
+type ValuePrinter = (node: Node) => string;
+
+// Prints an arg value for a snippet line indented by `indent`.
+const valuePrinter =
+  (indent: string): ValuePrinter =>
+  (node) =>
+    reindent(detachedTextOf(node), '', indent);
+
 const isValidJsxAttrName = (n: string) => /^[A-Za-z_][A-Za-z0-9_:-]*$/.test(n);
 
-const toAttr = (key: string, value: Node) => {
+const toAttr = (key: string, value: Node, print: ValuePrinter) => {
   if (value.type === 'Literal' && typeof value.value === 'boolean') {
     return value.value ? key : `${key}={false}`;
   }
@@ -264,32 +274,36 @@ const toAttr = (key: string, value: Node) => {
   if (isStringLiteral(value) && !/["&\r\n]/.test(value.value)) {
     return `${key}="${value.value}"`;
   }
-  return `${key}={${placeableTextOf(value)}}`;
+  return `${key}={${print(value)}}`;
 };
 
 // Attributes for every arg not already set by name, with invalid names collected in a spread.
-function injectedAttributes(merged: Args, existing: ReadonlySet<string>): string[] {
+function injectedAttributes(
+  merged: Args,
+  existing: ReadonlySet<string>,
+  print: ValuePrinter
+): string[] {
   const entries = Object.entries(merged).filter(
     ([k, v]) => v != null && k !== 'children' && !existing.has(k)
   );
-  const attrs = entries.filter(([k]) => isValidJsxAttrName(k)).map(([k, v]) => toAttr(k, v));
+  const attrs = entries.filter(([k]) => isValidJsxAttrName(k)).map(([k, v]) => toAttr(k, v, print));
   const invalid = entries.filter(([k]) => !isValidJsxAttrName(k));
   if (invalid.length > 0) {
-    const members = invalid.map(([k, v]) => `${JSON.stringify(k)}: ${placeableTextOf(v)}`);
+    const members = invalid.map(([k, v]) => `${JSON.stringify(k)}: ${print(v)}`);
     attrs.push(`{...{ ${members.join(', ')} }}`);
   }
   return attrs;
 }
 
 // JSX text cannot hold braces or tags, decodes entities and folds line breaks.
-const toJsxChildren = (node: Node | null | undefined) =>
+const toJsxChildren = (node: Node | null | undefined, print: ValuePrinter) =>
   !node
     ? ''
     : isStringLiteral(node) && !/[{}<>&\r\n]/.test(node.value)
       ? node.value
       : isJsx(node)
-        ? textOf(node)
-        : `{${placeableTextOf(node)}}`;
+        ? print(node)
+        : `{${print(node)}}`;
 
 /** Return `key` if expression is `args.key` (incl. optional chaining), else `null`. */
 function getArgsMemberKey(expr: Node) {
@@ -318,6 +332,7 @@ function rewriteJsx(
   edits: Edit[]
 ): boolean {
   let changed = false;
+  const printAt = (offset: number) => valuePrinter(lineIndent(code, offset));
 
   if (node.type === 'JSXElement') {
     const opening = node.openingElement;
@@ -336,7 +351,8 @@ function rewriteJsx(
           a.type === 'JSXAttribute' && a.name.type === 'JSXIdentifier' ? [a.name.name] : []
         )
       );
-      const pieces = injectedAttributes(merged, existing).join(' ');
+      const print = printAt(attrs[firstSpread].start);
+      const pieces = injectedAttributes(merged, existing, print).join(' ');
       attrs.forEach((a, index) => {
         if (!isArgsSpread(a)) {
           return;
@@ -349,7 +365,7 @@ function rewriteJsx(
       });
 
       if (node.children.length === 0 && merged.children) {
-        const children = toJsxChildren(merged.children);
+        const children = toJsxChildren(merged.children, printAt(opening.start));
         if (opening.selfClosing) {
           const name = code.slice(opening.name.start, opening.name.end);
           const lastEnd = attrs.length > 0 ? attrs[attrs.length - 1].end : tagEnd;
@@ -370,7 +386,11 @@ function rewriteJsx(
       }
       const key = getArgsMemberKey(a.value.expression);
       if (key !== null && Object.hasOwn(merged, key)) {
-        edits.push({ start: a.start, end: a.end, text: toAttr(a.name.name, merged[key]) });
+        edits.push({
+          start: a.start,
+          end: a.end,
+          text: toAttr(a.name.name, merged[key], printAt(a.start)),
+        });
         changed = true;
       }
     }
@@ -384,7 +404,11 @@ function rewriteJsx(
       getArgsMemberKey(child.expression) === 'children' &&
       merged.children
     ) {
-      edits.push({ start: child.start, end: child.end, text: toJsxChildren(merged.children) });
+      edits.push({
+        start: child.start,
+        end: child.end,
+        text: toJsxChildren(merged.children, printAt(child.start)),
+      });
       changed = true;
     }
   }

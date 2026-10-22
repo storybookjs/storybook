@@ -14,6 +14,7 @@ import {
   loadCsf,
   printCsf,
 } from './CsfFile.ts';
+import { parseExpression } from './estree/ast.ts';
 
 expect.addSnapshotSerializer({
   print: (val: any) => yaml.dump(val).trimEnd(),
@@ -26,7 +27,10 @@ const makeTitle = (userTitle?: string) => {
 
 const parse = (code: string, includeParameters?: boolean) => {
   const { stories, meta } = loadCsf(code, { makeTitle }).parse();
-  const filtered = includeParameters ? stories : stories.map(({ parameters, ...rest }) => rest);
+  const filtered = stories.map(({ exportName, factory, ...story }) => {
+    const { parameters, ...rest } = story;
+    return includeParameters ? story : rest;
+  });
   return { meta, stories: filtered };
 };
 
@@ -50,6 +54,29 @@ describe('CsfFile', () => {
 
     expect(csf.program.body).toHaveLength(4);
     expect(csf.stories.map(({ name }) => name)).toEqual(['B', 'C', 'D']);
+  });
+
+  it('tells a CSF factory story from other stories', () => {
+    const factoryFile = loadCsf(
+      dedent`
+        import { config } from '#.storybook/preview';
+        const meta = config.meta({ component: 'foo' });
+        export const A = meta.story({});
+        export const B = A.extend({});
+        export { B as C };
+      `,
+      { makeTitle }
+    ).parse();
+    const csf3 = loadCsf("export default { title: 'A' };\nexport const A = {};\n", {
+      makeTitle,
+    }).parse();
+
+    expect(factoryFile.stories.map(({ exportName, factory }) => [exportName, factory])).toEqual([
+      ['A', true],
+      ['B', true],
+      ['C', true],
+    ]);
+    expect(csf3.stories.map(({ factory }) => factory)).toEqual([false]);
   });
 
   it('prints an edited CRLF source with CRLF line endings', () => {
@@ -1327,6 +1354,15 @@ describe('CsfFile', () => {
       }
     );
 
+    it('rejects an export of `global`, which `declare global` does not declare', () => {
+      expect(() =>
+        loadCsf('export default {};\ndeclare global {}\nexport { global };', {
+          makeTitle,
+          fileName: 'foo/bar.stories.ts',
+        }).parse()
+      ).toThrow("Export 'global' is not defined");
+    });
+
     it.each([
       'type X = {};\nexport { X };',
       'type X = {};\nexport { type X };',
@@ -1657,6 +1693,155 @@ describe('CsfFile', () => {
       `;
       const csf = loadCsf(input, { makeTitle }).parse();
       expect(csf.imports).toMatchInlineSnapshot();
+    });
+  });
+
+  describe('setImport and removeImport', () => {
+    const load = (code: string) => loadCsf(code, { makeTitle }).parse();
+
+    it('merges named imports into the value import of the module and keeps import type apart', () => {
+      const csf = load(dedent`
+        import type { Meta } from '@storybook/react';
+        import type { Mock } from 'storybook/test';
+        import { expect } from 'storybook/test';
+        import { Button } from './Button';
+
+        export default { component: Button } satisfies Meta;
+        export const Primary = {};
+      `);
+
+      expect(csf.setImport(['expect', 'userEvent', 'fn as mockFn'], 'storybook/test')).toEqual({
+        ok: true,
+        changed: true,
+      });
+      expect(csf.setImport(['userEvent'], 'storybook/test')).toEqual({ ok: true, changed: false });
+      expect(csf.changed).toBe(true);
+      expect(printCsf(csf).code).toBe(dedent`
+        import type { Meta } from '@storybook/react';
+        import type { Mock } from 'storybook/test';
+        import { expect, userEvent, fn as mockFn } from 'storybook/test';
+        import { Button } from './Button';
+
+        export default { component: Button } satisfies Meta;
+        export const Primary = {};
+      `);
+    });
+
+    it('adds an import after the others with the quotes and semicolons of the file', () => {
+      const csf = load(dedent`
+        import { Button } from "./Button"
+
+        export default { component: Button }
+        export const Primary = {}
+      `);
+
+      csf.setImport(['expect'], 'storybook/test');
+
+      expect(printCsf(csf).code).toBe(dedent`
+        import { Button } from "./Button"
+        import { expect } from "storybook/test"
+
+        export default { component: Button }
+        export const Primary = {}
+      `);
+    });
+
+    it('removes every import of a name, but only the matching import of an alias', () => {
+      const csf = load(dedent`
+        import { expect, fn } from 'storybook/test';
+        import { fn as spy, userEvent } from 'storybook/test';
+        import { userEvent as user } from 'storybook/test';
+
+        export default { title: 'A' };
+        export const Primary = {};
+      `);
+
+      expect(csf.removeImport(['fn', 'userEvent as user'], 'storybook/test')).toEqual({
+        ok: true,
+        changed: true,
+      });
+      expect(csf.removeImport(['fn'], 'storybook/test')).toEqual({ ok: true, changed: false });
+      expect(printCsf(csf).code).toBe(dedent`
+        import { expect } from 'storybook/test';
+        import { userEvent } from 'storybook/test';
+
+        export default { title: 'A' };
+        export const Primary = {};
+      `);
+    });
+
+    it('refuses a removal that leaves a file the CSF indexer rejects', () => {
+      const source = dedent`
+        import { Primary } from './Shared.stories';
+
+        export default { title: 'A' };
+        export { Primary };
+      `;
+      const csf = load(source);
+
+      const result = csf.removeImport(['Primary'], './Shared.stories');
+
+      expect(result).toEqual({
+        ok: false,
+        changed: false,
+        diagnostic: {
+          code: 'invalid-csf',
+          target: { kind: 'file' },
+          path: [],
+          message: expect.stringContaining("Export 'Primary' is not defined"),
+        },
+      });
+      expect(csf.mutationDiagnostics).toEqual([result.ok ? undefined : result.diagnostic]);
+      expect(printCsf(csf).code).toBe(source);
+      expect(csf.changed).toBe(false);
+      expect(csf.stories.map(({ name }) => name)).toEqual(['Primary']);
+    });
+
+    it('rolls back with the transaction it runs in', () => {
+      const source = dedent`
+        export default { title: 'A' };
+        export const Primary = { args: { label: 'Hi', text: 'Hi' } };
+      `;
+      const csf = load(source);
+      const [story] = csf.objects({ meta: false });
+
+      const kept = csf.transaction(() => {
+        csf.setImport(['fn'], 'storybook/test');
+        story.set(['args', 'onClick'], parseExpression('fn()'));
+        story.rename(['args', 'label'], 'text');
+      });
+
+      expect(kept).toBe(false);
+      expect(printCsf(csf).code).toBe(source);
+      expect(csf.changed).toBe(false);
+    });
+
+    it('rolls back the transaction it is refused in', () => {
+      const source = dedent`
+        import { fn } from 'storybook/test';
+        import { Primary } from './Shared.stories';
+
+        export default { title: 'A' };
+        export { Primary };
+      `;
+      const csf = load(source);
+
+      const kept = csf.transaction(() => {
+        csf.removeImport(['fn'], 'storybook/test');
+        csf.removeImport(['Primary'], './Shared.stories');
+      });
+
+      expect(kept).toBe(false);
+      expect(printCsf(csf).code).toBe(source);
+      expect(csf.changed).toBe(false);
+    });
+
+    it('throws for a name that is not an identifier, leaving the file as it was', () => {
+      const source = "export default { title: 'A' };\nexport const Primary = {};";
+      const csf = load(source);
+
+      expect(() => csf.setImport(['a-b'], 'x')).toThrow('import name');
+      expect(printCsf(csf).code).toBe(source);
     });
   });
 

@@ -32,12 +32,12 @@ const Wrapper = styled.div<{
   hasCloseButton: boolean;
   padding: NonNullable<PopoverProps['padding']>;
 }>(
-  ({ hasCloseButton, padding }) => ({
+  ({ theme, hasCloseButton, padding }) => ({
     display: 'inline-block',
     position: 'relative',
     minHeight: hasCloseButton ? 36 : undefined,
     zIndex: 2147483647,
-    colorScheme: 'light dark',
+    colorScheme: theme.base,
     padding,
   }),
   ({ theme, hasChrome }) =>

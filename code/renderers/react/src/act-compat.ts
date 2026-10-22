@@ -62,14 +62,22 @@ function withGlobalActEnvironment(actImplementation: (callback: () => void) => P
   };
 }
 
+// Renders without `act()`.
+const withoutAct = (cb: (...args: any[]) => any) => cb();
+
 export const getAct = async ({ disableAct = false }: { disableAct?: boolean } = {}) => {
   if (process.env.NODE_ENV === 'production' || disableAct) {
-    return (cb: (...args: any[]) => any) => cb();
+    return withoutAct;
   }
 
   let reactAct: typeof React.act;
   if (typeof clonedReact.act === 'function') {
     reactAct = clonedReact.act;
+  } else if (Number.parseInt(clonedReact.version, 10) >= 19) {
+    // React 19 has `act` only in its development build: this is its production build. The
+    // app's React can be production where this file is not, as a bundler gives this file the
+    // NODE_ENV of the host and the app's React its own.
+    return withoutAct;
   } else {
     // Lazy loading this makes sure that @storybook/react can be loaded in SSR contexts
     // For example when SSR'ing portable stories

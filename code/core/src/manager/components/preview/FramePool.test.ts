@@ -600,6 +600,95 @@ describe('FramePool', () => {
     expect(storyIdOf(activeFrame()!)).toBe('c--docs');
     expect(framesOf()).toHaveLength(2);
   });
+  it('gives a story in view a frame while a story out of view holds one to render', async () => {
+    const pool = createPool({ size: 2, max: 3 });
+    pool.select({ id: 'a--docs', viewMode: 'docs' });
+    const [docs] = framesOf();
+    renderDocs(docs, 'a--docs', []);
+    // The warm frame boots on a story that the page shows further down, and renders slowly.
+    await tick(1_500);
+    const [, warm] = framesOf();
+    expect(storyIdOf(warm)).toBe('a--one');
+    say(warm, CURRENT_STORY_WAS_SET, { storyId: 'a--one', viewMode: 'story' });
+    say(warm, STORY_RENDER_PHASE_CHANGED, { storyId: 'a--one', renderId: 1, newPhase: 'loading' });
+
+    // The block in view takes its room only once its layout settled, after the one below.
+    say(docs, FRAME_POOL_LAYOUT, { slots: [slot('2', 'a--one', 1_500)] });
+    await tick();
+    say(docs, FRAME_POOL_LAYOUT, { slots: [slot('1', 'a--top', 100), slot('2', 'a--one', 1_500)] });
+    await tick();
+
+    const top = framesOf().find((frame) => storyIdOf(frame) === 'a--top');
+    expect(top).toBeDefined();
+    expect(framesOf()).toHaveLength(3);
+    renderStory(top!, 'a--top');
+    await tick();
+    expect(top!.style.visibility).toBe('visible');
+    expect(top!.style.top).toBe('100px');
+  });
+
+  it('takes, at `max`, the frame of a story out of view that still renders for one in view', async () => {
+    const pool = createPool({ size: 2, max: 2 });
+    pool.select({ id: 'a--docs', viewMode: 'docs' });
+    const [docs] = framesOf();
+    renderDocs(docs, 'a--docs', [slot('2', 'a--one', 1_500)]);
+    await tick();
+    const [, below] = framesOf();
+    say(below, CURRENT_STORY_WAS_SET, { storyId: 'a--one', viewMode: 'story' });
+    say(below, STORY_RENDER_PHASE_CHANGED, { storyId: 'a--one', renderId: 1, newPhase: 'loading' });
+
+    say(docs, FRAME_POOL_LAYOUT, { slots: [slot('1', 'a--top', 100), slot('2', 'a--one', 1_500)] });
+    await tick();
+
+    expect(below.isConnected).toBe(false);
+    expect(framesOf().map(storyIdOf)).toEqual(['a--docs', 'a--top']);
+  });
+  it('takes the blocks of a docs page only once it rendered, not those of the page before', async () => {
+    const pool = createPool({ max: 1 });
+    pool.select({ id: 'a--docs', viewMode: 'docs' });
+    const [frame] = framesOf();
+    renderDocs(frame, 'a--docs', []);
+    await tick();
+
+    pool.select({ id: 'b--docs', viewMode: 'docs' });
+    await tick();
+    say(frame, CURRENT_STORY_WAS_SET, { storyId: 'b--docs', viewMode: 'docs' });
+    // The blocks of the page before, until it unmounted.
+    say(frame, FRAME_POOL_LAYOUT, { slots: [slot('1', 'a--one', 100)] });
+    await tick(2_000);
+    expect((pool as unknown as { slots: unknown[] }).slots).toEqual([]);
+
+    say(frame, DOCS_RENDERED, 'b--docs');
+    say(frame, FRAME_POOL_LAYOUT, { slots: [slot('2', 'b--one', 300)] });
+    await tick();
+    expect(
+      (pool as unknown as { slots: { slot: FramePoolSlot }[] }).slots.map(
+        ({ slot: { storyId } }) => storyId
+      )
+    ).toEqual(['b--one']);
+  });
+  it('lays a story over the docs page also when its frame comes before the page in the host', async () => {
+    const pool = createPool({ size: 2 });
+    pool.select({ id: 'a--one', viewMode: 'story' });
+    const [first] = framesOf();
+    renderStory(first, 'a--one');
+    await tick(1_500);
+    const [, second] = framesOf();
+    renderStory(second, 'a--one');
+    await tick();
+
+    // The docs page goes to the frame freed longest ago, after the frame of its story.
+    pool.select({ id: 'a--docs', viewMode: 'docs' });
+    await tick();
+    expect(activeFrame()).toBe(second);
+    renderDocs(second, 'a--docs', [slot('1', 'a--one', 100)]);
+    await tick();
+
+    expect(framesOf()).toEqual([first, second]);
+    expect(first.style.visibility).toBe('visible');
+    expect(first.style.top).toBe('100px');
+    expect(Number(first.style.zIndex)).toBeGreaterThan(Number(second.style.zIndex));
+  });
 });
 
 describe('framePoolSrc', () => {

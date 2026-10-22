@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { CURRENT_STORY_WAS_SET } from 'storybook/internal/core-events';
+import { CURRENT_STORY_WAS_SET, DOCS_RENDERED } from 'storybook/internal/core-events';
 
 import { mockChannel } from '../../../channels/mock-channel.ts';
 import {
@@ -132,6 +132,12 @@ describe('FramePoolClient', () => {
 
     expect(layouts()).toHaveLength(2);
     expect(heights()).toEqual([2_000, 2_000]);
+
+    // And once the docs page rendered, when the manager listens to its blocks.
+    channel.emit(DOCS_RENDERED, 'a--docs');
+    await frame();
+
+    expect(layouts()).toHaveLength(3);
   });
 
   it('does not follow content that grows with the window', async () => {

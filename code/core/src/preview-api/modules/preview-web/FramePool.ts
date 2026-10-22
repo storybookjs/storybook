@@ -1,5 +1,5 @@
 import type { Channel } from 'storybook/internal/channels';
-import { CURRENT_STORY_WAS_SET } from 'storybook/internal/core-events';
+import { CURRENT_STORY_WAS_SET, DOCS_RENDERED } from 'storybook/internal/core-events';
 import type { Globals, StoryId } from 'storybook/internal/types';
 
 import {
@@ -79,13 +79,15 @@ export class FramePoolClient {
     channel.on(FRAME_POOL_SHOWN, ({ id, shown }: FramePoolShown) =>
       this.leases.get(id)?.onShow?.(shown)
     );
-    // The manager forgets what a frame reported when it switches: a docs page reports again, also
-    // when it is the one the frame showed before.
-    channel.on(CURRENT_STORY_WAS_SET, () => {
+    // The manager forgets what a frame reported when it switches, and hears the blocks of a docs
+    // page once it rendered: a docs page reports again then, also when the frame showed it before.
+    const reportAgain = () => {
       this.lastLayout = '[]';
       this.lastHeight = 0;
       this.scheduleReport();
-    });
+    };
+    channel.on(CURRENT_STORY_WAS_SET, reportAgain);
+    channel.on(DOCS_RENDERED, reportAgain);
     const style = document.createElement('style');
     style.textContent = DOCS_STYLE;
     document.head.append(style);

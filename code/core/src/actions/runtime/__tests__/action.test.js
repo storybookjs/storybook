@@ -95,6 +95,20 @@ describe('serializing React synthetic events', () => {
     expect(emitted.nativeEvent.view === foreignWindow).toBe(false);
     expect(emitted.nativeEvent.view).toEqual({});
   });
+
+  it('keeps a non-Window `view` whose `window` getter throws', () => {
+    const channel = createChannel();
+    const view = { payload: 'kept' };
+    Object.defineProperty(view, 'window', {
+      get: () => {
+        throw new Error('not a window');
+      },
+    });
+
+    action('test-action')(createSyntheticEvent(view));
+
+    expect(getChannelData(channel).view).toBe(view);
+  });
 });
 
 describe('Depth config', () => {

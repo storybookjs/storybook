@@ -805,11 +805,9 @@ export abstract class JsPackageManager {
 
   /** Returns the installed version of a specified package */
   public async getInstalledVersion(packageName: string): Promise<string | null> {
-    const cacheKey = packageName;
+    const cacheKey = `${this.instanceDir}::${packageName}`;
 
     try {
-      // Create cache key that includes both working directory and package name for isolation
-
       // Check cache first
       const cachedVersion = JsPackageManager.installedVersionCache.get(cacheKey);
       if (cachedVersion !== undefined) {

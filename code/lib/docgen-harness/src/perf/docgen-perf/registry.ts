@@ -11,8 +11,14 @@ import type { EngineId } from './types.ts';
 const reactScenarios = (profile: SuiteProfile): ScenarioSpec[] =>
   profile.react.map((scenario) => ({ name: scenario.shape, params: { ...scenario } }));
 
-const vueScenarios = (profile: SuiteProfile): ScenarioSpec[] =>
-  profile.vue.map((scenario) => ({ name: scenario.name, params: { ...scenario } }));
+const workspaceScenarios = (profile: SuiteProfile): ScenarioSpec[] =>
+  profile.workspace.map((scenario) => ({ name: scenario.name, params: { ...scenario } }));
+
+const svelteScenarios = (profile: SuiteProfile): ScenarioSpec[] =>
+  [...profile.workspace, ...profile.svelte].map((scenario) => ({
+    name: scenario.name,
+    params: { ...scenario },
+  }));
 
 const reactArgs = ({ params }: ScenarioSpec): string[] => [
   '--shape',
@@ -27,7 +33,7 @@ const reactArgs = ({ params }: ScenarioSpec): string[] => [
   String(params.saves),
 ];
 
-const vueArgs = ({ params }: ScenarioSpec): string[] => [
+const workspaceArgs = ({ params }: ScenarioSpec): string[] => [
   '--scenario',
   String(params.name),
   '--packages',
@@ -39,6 +45,7 @@ const vueArgs = ({ params }: ScenarioSpec): string[] => [
   '--fan-out',
   String(params.fanOut),
   ...(params.heavyLib ? ['--heavy-lib'] : []),
+  ...(params.libModules ? ['--lib-modules', String(params.libModules)] : []),
   '--saves',
   String(params.saves),
 ];
@@ -76,14 +83,14 @@ export const ENGINES: BenchEngine[] = [
   new SeriesChildEngine({
     id: 'vue-docgen-api',
     child: 'engines/vue-docgen-api.ts',
-    scenarios: vueScenarios,
-    args: vueArgs,
+    scenarios: workspaceScenarios,
+    args: workspaceArgs,
   }),
   new SeriesChildEngine({
     id: 'vue-component-meta',
     child: 'engines/vue-component-meta.ts',
-    scenarios: vueScenarios,
-    args: vueArgs,
+    scenarios: workspaceScenarios,
+    args: workspaceArgs,
     pin: 'vue-component-meta',
   }),
   // Same child, pinned to a second, explicitly-versioned copy of the package - a version-pair
@@ -92,10 +99,19 @@ export const ENGINES: BenchEngine[] = [
   new SeriesChildEngine({
     id: 'vue-component-meta-next',
     child: 'engines/vue-component-meta.ts',
-    scenarios: vueScenarios,
+    scenarios: workspaceScenarios,
     inDefaultRun: false,
-    args: vueArgs,
+    args: workspaceArgs,
     pin: 'vue-component-meta-next',
+  }),
+  // Svelte's svelte2tsx engine as builder docgen and the docgen server run it. No budget row yet, so
+  // it stays out of the default run.
+  new SeriesChildEngine({
+    id: 'svelte-legacy',
+    child: 'engines/svelte-docgen.ts',
+    scenarios: svelteScenarios,
+    inDefaultRun: false,
+    args: (scenario) => [...workspaceArgs(scenario), '--engine', 'legacy'],
   }),
   new CompodocEngine(),
   // Always fails. The gate names it explicitly to prove the gate reports a failing engine as a

@@ -2,13 +2,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Button } from './Button.tsx';
 
+type Story = StoryObj<typeof meta>;
+
 const meta = {
   title: 'Example/Button',
   component: Button,
 } satisfies Meta<typeof Button>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {
   args: {

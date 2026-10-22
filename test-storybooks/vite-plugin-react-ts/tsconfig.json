@@ -9,7 +9,8 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "types": ["node", "vite/client"]
   },
-  "include": ["src", "vite.config.ts", ".storybook"]
+  "include": ["src", "vite.config.ts", ".storybook", "playwright.config.ts", "e2e-tests"]
 }

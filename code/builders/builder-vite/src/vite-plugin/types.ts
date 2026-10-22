@@ -1,21 +1,18 @@
 export type UserOptions = {
   /**
-   * The directory where the Storybook configuration is located, resolved against the Vite
-   * configuration file's directory (or `process.cwd()`).
+   * The Storybook configuration directory, resolved against `process.cwd()`.
    *
    * @default '.storybook'
    */
   configDir?: string;
   /**
-   * The directory where a static Storybook is written by `vite build --mode storybook`, resolved
-   * against Vite's project root.
+   * static Storybook output directory, resolved against Vite's project root.
    *
    * @default './storybook-static'
    */
   outputDir?: string;
   /**
-   * The base URL path where Storybook is mounted inside the Vite dev server. Normalized to a
-   * leading-slash, no-trailing-slash form (e.g. `'storybook/'` becomes `'/storybook'`).
+   * Mounting point of Storybook in the Vite dev server
    *
    * @default '/__storybook'
    */

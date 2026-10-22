@@ -5,7 +5,7 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e-tests',
   outputDir: './test-results',
-  timeout: (process.env.CI ? 60 : 30) * 1000,
+  timeout: (process.env.CI ? 90 : 45) * 1000,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 0,
@@ -18,31 +18,37 @@ export default defineConfig({
             'junit',
             {
               embedAnnotationsAsProperties: true,
-              outputFile: path.join(
-                import.meta.dirname,
-                '..',
-                '..',
-                'test-results',
-                'vite-plugin-e2e.xml'
-              ),
+              outputFile: path.join(import.meta.dirname, 'test-results', 'vite-plugin-e2e.xml'),
             },
           ],
         ] as const)
       : []),
   ],
   use: {
-    baseURL: 'http://127.0.0.1:5173',
     trace: 'retain-on-failure',
   },
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'embedded',
+      testMatch: /embedded\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:5173' },
+    },
+    {
+      name: 'storybook-mode',
+      testMatch: /storybook-mode\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:5175' },
+    },
+    {
+      name: 'middleware-host',
+      testMatch: /middleware-host\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:5176' },
     },
   ],
   webServer: {
     command: 'yarn dev --host 127.0.0.1 --port 5173 --strictPort',
-    url: 'http://127.0.0.1:5173',
-    reuseExistingServer: !process.env.CI,
+    cwd: import.meta.dirname,
+    env: { STORYBOOK_DISABLE_TELEMETRY: '1' },
+    url: 'http://127.0.0.1:5173/__storybook/index.json',
+    reuseExistingServer: false,
   },
 });

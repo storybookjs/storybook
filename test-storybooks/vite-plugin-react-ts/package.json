@@ -12,9 +12,7 @@
   },
   "resolutions": {
     "@storybook/builder-vite": "file:../../code/builders/builder-vite",
-    "@storybook/csf-plugin": "file:../../code/lib/csf-plugin",
     "@storybook/react": "file:../../code/renderers/react",
-    "@storybook/react-dom-shim": "file:../../code/lib/react-dom-shim",
     "@storybook/react-vite": "file:../../code/frameworks/react-vite",
     "storybook": "file:../../code/core"
   },

@@ -1,12 +1,12 @@
+import type { ReactElement } from 'react';
+
 export interface ButtonProps {
-  /** Text shown inside the button */
   label: string;
-  /** Use the primary visual style */
   primary?: boolean;
   onClick?: () => void;
 }
 
-export function Button({ label, primary = false, onClick }: ButtonProps) {
+export function Button({ label, primary = false, onClick }: ButtonProps): ReactElement {
   return (
     <button
       type="button"

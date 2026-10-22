@@ -1,5 +1,4 @@
 import { writeFile } from 'node:fs/promises';
-import type { ServerResponse } from 'node:http';
 import { basename } from 'node:path';
 
 import type { ChannelLike } from 'storybook/internal/channels';
@@ -14,20 +13,6 @@ import { watchStorySpecifiers } from './watch-story-specifiers.ts';
 import { watchConfig } from './watchConfig.ts';
 
 export const DEBOUNCE = 100;
-
-const INDEX_JSON_ALLOWED_HEADERS = 'Origin, X-Requested-With, Content-Type, Accept';
-
-/**
- * Sets the CORS headers for the index.json response. This is necessary to allow cross-origin requests to the index.json endpoint.
- * Mimic the behavior of SB dev
- */
-export function setIndexJsonCorsHeaders(res: ServerResponse): void {
-  if (res.getHeader('Access-Control-Allow-Origin') != null) {
-    return;
-  }
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', INDEX_JSON_ALLOWED_HEADERS);
-}
 
 export async function writeIndexJson(
   outputFile: string,
@@ -77,7 +62,11 @@ export function registerIndexJsonRoute({
     try {
       const index = await (await storyIndexGeneratorPromise).getIndex();
       res.setHeader('Content-Type', 'application/json');
-      setIndexJsonCorsHeaders(res);
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader(
+        'Access-Control-Allow-Headers',
+        'Origin, X-Requested-With, Content-Type, Accept'
+      );
       res.end(JSON.stringify(index));
     } catch (err) {
       res.statusCode = 500;

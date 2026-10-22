@@ -72,7 +72,6 @@ describe('registerIndexJsonRoute', () => {
     send: vi.fn(),
     status: vi.fn(),
     setHeader: vi.fn(),
-    getHeader: vi.fn(),
     flushHeaders: vi.fn(),
     write,
     flush: vi.fn(),

@@ -1,54 +1,77 @@
-import type { Channel } from 'storybook/internal/channels';
-import { optionalEnvToBoolean } from 'storybook/internal/common';
-import {
-  experimental_loadStorybook,
-  internal_universalStatusStore,
-  internal_universalTestProviderStore,
-  type StoryIndexGenerator,
-} from 'storybook/internal/core-server';
-import { setTelemetryVitePlugin } from 'storybook/internal/telemetry';
-import type { CoreConfig, Presets } from 'storybook/internal/types';
-
-import { getPort } from 'get-port-please';
-import { createProxyMiddleware } from 'http-proxy-middleware';
-import { join, resolve } from 'pathe';
-import polka from 'polka';
-import {
-  BuildEnvironment,
-  DevEnvironment,
-  resolveConfig,
-  type InlineConfig,
-  type PluginOption,
-  type UserConfig,
-  type ViteBuilder,
-} from 'vite';
-
-import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
 import EventEmitter from 'node:events';
-import { commonConfig, type PluginConfigType } from '../vite-config.ts';
-import { buildStaticStorybook } from './build.ts';
-import { createServerChannel } from './middlewares/channel.ts';
-import { registerStorybookMiddleware } from './middlewares/dispatch.ts';
-import { buildManager } from './middlewares/manager.ts';
-import { createStaticMiddlewares } from './middlewares/static.ts';
-import { createProxyPathFilter, SERVER_CHANNEL_PATH } from './proxy-path-filter.ts';
-import { emitDevTelemetry, reportTelemetryError } from './telemetry.ts';
+import type { IncomingMessage, Server as HttpServer, ServerResponse } from 'node:http';
+import type { Duplex } from 'node:stream';
+
+import { SERVER_CHANNEL_PATH, type Channel } from 'storybook/internal/channels';
+import {
+  normalizeStories,
+  optionalEnvToBoolean,
+  resolvePathInStorybookCache,
+} from 'storybook/internal/common';
+
+import {
+  buildStaticStandalone,
+  doTelemetry,
+  experimental_loadStorybook,
+  getBuilders,
+  getServerChannel,
+  internal_universalStatusStore,
+  internal_universalTestProviderStore,
+  registerIndexJsonRoute,
+  type StoryIndexGenerator,
+  useStatics,
+  withTelemetry,
+} from 'storybook/internal/core-server';
+import type { Builder, CoreConfig, Options, Presets } from 'storybook/internal/types';
+
+import polka, { type Polka } from 'polka';
+import { resolve } from 'pathe';
+import type {
+  ConfigEnv,
+  HmrOptions,
+  HttpServer as ViteHttpServer,
+  PluginOption,
+  UserConfig,
+  ViteBuilder,
+} from 'vite';
+
+import { createPrefixGuard } from './prefix-guard.ts';
+import type { VitePluginPresetOptions } from './preset.ts';
+import { startPreview } from './preview-lifecycle.ts';
+import { isPluginDisabled, withPluginDisabled } from './self-guard.ts';
 import type { UserOptions } from './types.ts';
 
-// use to guard against duplicate plugin activation
-const ViteAsyncLocalStorage = new AsyncLocalStorage<true>();
-const PLUGIN_NAME = 'storybook-env';
+export type { UserOptions as experimental_VitePluginUserOptions } from './types.ts';
 
-/**
- * The app config was already merged before `viteFinal`; reloading it would re-add app plugins after
- * framework presets had filtered them.
- */
-const APP_CONFIG_ALREADY_LOADED = { configFile: false } as const;
+type StorybookApp = {
+  options: Options;
+  app: Polka;
+  previewBuilder: Builder<unknown>;
+};
+
+type ServerChannelOptions = Parameters<typeof getServerChannel>[1];
+
+const PLUGIN_NAME = 'storybook:vite-plugin';
+const HMR_PATH = '/__storybook-hmr';
+
+// The plugin is bundled into `dist/index.js`, while the preset is its own `dist/vite-plugin/` entry.
+const PRESET_PATH = new URL(
+  import.meta.url.endsWith('.ts') ? './preset.ts' : './vite-plugin/preset.js',
+  import.meta.url
+).href;
+
+const GLOBAL_WITH_CHANNEL = globalThis as typeof globalThis & {
+  __SB_CHANNEL_UPGRADE__?: EventEmitter;
+  __SB_CHANNEL__?: Channel;
+  __SB_CHANNEL_INITIALIZED__?: Promise<void>;
+  __SB_CHANNEL_OWNER__?: string;
+  STORYBOOK_WEBSOCKET_TOKEN?: string;
+};
 
 export function experimental_vitePlugin(options?: UserOptions): PluginOption {
-  // prevent nested activation and deactivate self when ran through CLI
-  if (ViteAsyncLocalStorage.getStore() || optionalEnvToBoolean(process.env.STORYBOOK_CLI)) {
+  // Avoid nested activation and activation through the Storybook CLI.
+  if (isPluginDisabled() || optionalEnvToBoolean(process.env.STORYBOOK_CLI)) {
     return [];
   }
   return main(options);
@@ -61,62 +84,75 @@ function normalizeBase(base: string): string {
 }
 
 function main(options?: UserOptions): PluginOption {
-  setTelemetryVitePlugin();
-
   const finalOptions = {
     base: normalizeBase(options?.base ?? '/__storybook'),
     configDir: resolve(options?.configDir ?? '.storybook'),
     outputDir: options?.outputDir ?? './storybook-static',
   };
+  const telemetryOptions = {
+    cliOptions: {
+      configDir: finalOptions.configDir,
+      disableTelemetry: optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY),
+    },
+    skipPrompt: true,
+  };
+  let basePath = finalOptions.base === '/' ? '/' : `${finalOptions.base}/`;
+  let storybookPromise: Promise<StorybookApp> | undefined;
+  // The preview server is bound to the host HTTP server and must be replaced on restart.
+  let previewApp = polka();
 
-  const projectRoot = resolve(finalOptions.configDir, '..');
-
-  let storybookPromise:
-    | Promise<{
-        sb: Awaited<ReturnType<typeof experimental_loadStorybook>>;
-        finalConfig: InlineConfig;
-      }>
-    | undefined;
-
-  // load and cache config
-  const loadStorybook = (command: 'serve' | 'build' = 'serve', appConfig?: UserConfig) =>
-    (storybookPromise ??= ViteAsyncLocalStorage.run(true, async () => {
-      const channel =
-        command === 'serve' ? getOrCreateServerChannel(finalOptions.configDir) : undefined;
+  const loadStorybookApp = (
+    channel: Channel,
+    server: HttpServer,
+    vitePlugin: VitePluginPresetOptions['vitePlugin']
+  ): Promise<StorybookApp> =>
+    (storybookPromise ??= withPluginDisabled(async () => {
       const sb = await experimental_loadStorybook({
         configDir: finalOptions.configDir,
-        packageJson: {},
+        channel,
+        overridePresets: [{ name: PRESET_PATH, options: { vitePlugin } }],
+      });
+      // Manager addon bundles use the CLI's dev cache rather than the static output directory.
+      sb.outputDir = resolvePathInStorybookCache('public', sb.cacheKey);
+      await initializeServerChannelOnce(channel, sb.presets);
+
+      const app = polka();
+      const storyIndexGeneratorPromise =
+        sb.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+      registerIndexJsonRoute({
+        app,
+        storyIndexGeneratorPromise,
+        channel,
+        configDir: sb.configDir,
+        normalizedStories: normalizeStories(await sb.presets.apply('stories'), {
+          configDir: sb.configDir,
+          workingDir: process.cwd(),
+        }),
+      });
+      await sb.presets.apply('experimental_devServer', app);
+      const [previewBuilder, managerBuilder] = await getBuilders(sb);
+      await useStatics(app, sb);
+      await managerBuilder.start({
+        startTime: process.hrtime(),
+        options: sb,
+        router: app,
+        server,
         channel,
       });
+      app.use((req, res) => handlePolkaApp(previewApp, req, res));
 
-      sb.configType = command === 'build' ? 'PRODUCTION' : 'DEVELOPMENT';
+      const core = await sb.presets.apply<CoreConfig>('core', {});
+      doTelemetry(app, core, storyIndexGeneratorPromise, sb);
 
-      if (channel) {
-        await initializeServerChannelOnce(channel, sb.presets);
-      }
-
-      const configType: PluginConfigType = command === 'build' ? 'build' : 'development';
-      const mergedConfig = await commonConfig(sb, configType, appConfig);
-      const finalConfig = (await sb.presets.apply('viteFinal', mergedConfig)) as InlineConfig;
-
-      finalConfig.plugins = await withoutInternalPlugins(finalConfig.plugins ?? []);
-
-      return { sb, finalConfig };
+      return { options: sb, app, previewBuilder };
     }));
-  let basePath = finalOptions.base === '/' ? '/' : `${finalOptions.base}/`;
 
-  const activePolkaServers = new Set<ReturnType<typeof polka>>();
-  const closePolkaServer = (instance: ReturnType<typeof polka>) => {
-    if (!activePolkaServers.has(instance)) {
-      return;
-    }
-    activePolkaServers.delete(instance);
-    instance.server?.close();
-  };
-
-  const applyToStorybookOnly = (_: unknown, env: { command: string; mode: string }) => {
-    // don't activate the plugin if we're running Vitest, since that will load Storybook's Vite config and cause issues with Vitest's Vite config
+  const applyToStorybookOnly = (_: unknown, env: ConfigEnv): boolean => {
+    // Vitest loads the host config but must not start a nested Storybook server.
     if (process.env.VITEST) {
+      return false;
+    }
+    if (env.isPreview) {
       return false;
     }
     return env.command === 'serve' || env.mode === 'storybook';
@@ -126,274 +162,135 @@ function main(options?: UserOptions): PluginOption {
     name: PLUGIN_NAME,
     apply: applyToStorybookOnly,
 
-    async config(config, { command, mode }) {
-      const { sb } = await loadStorybook(command, config).catch(async (error) => {
-        await reportTelemetryError(error, command === 'build' ? 'build' : 'dev');
-        throw error;
-      });
-
+    config(_, { command, mode }): UserConfig {
       if (mode === 'storybook') {
         basePath = '/';
       }
-      return {
-        envPrefix: ['VITE_', 'STORYBOOK_'],
-        ...(mode === 'storybook' ? { server: { fs: { allow: [finalOptions.configDir] } } } : {}),
-        environments: { storybook: { consumer: 'client' } },
-        ...(mode === 'storybook' && command === 'build'
-          ? {
-              builder: {
-                buildApp: async (builder: ViteBuilder) => {
-                  try {
-                    await buildStaticStorybook({
-                      basePath,
-                      builder,
-                      options: sb,
-                      outputDir: finalOptions.outputDir,
-                      root: builder.config.root ?? config.root,
-                    });
-                  } catch (error) {
-                    const core = await sb.presets
-                      .apply<CoreConfig>('core', {})
-                      .catch(() => ({}) as CoreConfig);
-                    await reportTelemetryError(error, 'build', core.disableTelemetry);
-                    throw error;
-                  }
-                },
-              },
-            }
-          : {}),
-      };
-    },
-
-    configEnvironment(name) {
-      if (name !== 'storybook') {
-        return;
+      if (!(command === 'build' && mode === 'storybook')) {
+        return {};
       }
       return {
-        build: {
-          async createEnvironment() {
-            const { finalConfig } = await loadStorybook('build');
-            const sbConfig = await resolveConfig(
-              {
-                ...finalConfig,
-                ...APP_CONFIG_ALREADY_LOADED,
-                root: finalConfig.root ?? projectRoot,
-                cacheDir: 'node_modules/.cache/storybook-vite-deps',
-                base: basePath,
-                build: {
-                  ...finalConfig.build,
-                  outDir: finalOptions.outputDir,
-                  emptyOutDir: false,
-                },
-              },
-              'build',
-              'production',
-              'production'
+        builder: {
+          buildApp: async (builder: ViteBuilder): Promise<void> => {
+            await withPluginDisabled(() =>
+              withTelemetry('build', telemetryOptions, () =>
+                buildStaticStandalone({
+                  configDir: finalOptions.configDir,
+                  outputDir: resolve(builder.config.root, finalOptions.outputDir),
+                })
+              )
             );
-
-            return new BuildEnvironment('client', sbConfig);
-          },
-        },
-        dev: {
-          async createEnvironment(name, config, context) {
-            const { finalConfig } = await loadStorybook('serve');
-
-            const sbConfig = await resolveConfig(
-              {
-                ...finalConfig,
-                ...APP_CONFIG_ALREADY_LOADED,
-                root: finalConfig.root ?? projectRoot,
-                plugins: [
-                  ...(finalConfig.plugins ?? []),
-                  {
-                    name: 'storybook:enforce-env-base',
-                    enforce: 'post',
-                    config: () => ({ base: basePath, server: { hmr: config.server?.hmr } }),
-                  },
-                ],
-                cacheDir: 'node_modules/.cache/storybook-vite-deps',
-                base: basePath,
-              },
-              'serve'
-            );
-
-            Object.defineProperty(sbConfig, 'webSocketToken', {
-              value: config.webSocketToken,
-              configurable: !0,
-              writable: !0,
-            });
-
-            return new DevEnvironment('client', sbConfig, {
-              ...context,
-              hot: true,
-              transport: {
-                send: (p) => context.ws.send(p),
-                // @ts-expect-error wtf ?
-                on: (e, listener) => context.ws.on(e, listener),
-                // @ts-expect-error wtf ?
-                off: (e, listener) => context.ws.off(e, listener),
-              },
-            });
+            // Prevent Vite from falling back to building every host environment.
+            for (const environment of Object.values(builder.environments)) {
+              environment.isBuilt = true;
+            }
           },
         },
       };
     },
 
-    async configureServer(server) {
-      const { sb } = await loadStorybook();
-      const storyIndexGenerator =
-        await sb.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+    async configureServer(host): Promise<void> {
+      const upgradeServer = host.httpServer ?? hmrServerOf(host.config.server.hmr);
+      if (!upgradeServer) {
+        throw new Error(
+          'The Storybook Vite plugin needs the host HTTP server to attach its WebSockets.When Vite runs in middleware mode, pass your server as `server.hmr.server`.'
+        );
+      }
 
-      const coreOptions = await sb.presets.apply<CoreConfig>('core', {});
-
-      const staticHandlers = await createStaticMiddlewares(sb, '/');
-
-      const port = await getPort({ random: true, host: '127.0.0.1' });
-      const polkaServer = polka();
-      polkaServer.listen(port, '127.0.0.1');
-      activePolkaServers.add(polkaServer);
-      server.httpServer?.once('close', () => closePolkaServer(polkaServer));
-      sb.port = server.config.server.port;
-      await sb.presets.apply('experimental_devServer', polkaServer, sb);
-      const sharedUpgrades = getSharedUpgradeEmitter();
-
-      if (server.httpServer) {
-        server.httpServer?.prependListener('upgrade', (req) => {
-          const protocol = req.headers['sec-websocket-protocol'];
-          if (
-            basePath !== '/' &&
-            (protocol === 'vite-hmr' || protocol === 'vite-ping') &&
-            req.url?.startsWith(basePath)
-          ) {
-            req.url = req.url.slice(basePath.length - 1) || '/';
-          }
+      await withTelemetry('dev', telemetryOptions, async () => {
+        const channel = getOrCreateServerChannel(finalOptions.configDir, {
+          allowedHosts: host.config.server.allowedHosts,
+          host: typeof host.config.server.host === 'string' ? host.config.server.host : undefined,
         });
+        forwardServerChannelUpgrades(upgradeServer, getSharedUpgradeEmitter());
+        const builderServer = toBuilderServer(upgradeServer);
 
-        server.httpServer.on('upgrade', (req, socket, head) => {
-          if (req.url?.startsWith(SERVER_CHANNEL_PATH)) {
-            sharedUpgrades.emit('upgrade', req, socket, head);
-          }
+        const storybook = await loadStorybookApp(channel, builderServer, {
+          base: basePath,
+          hmrPath: HMR_PATH,
+          allowedHosts: host.config.server.allowedHosts,
         });
-      } else {
-        // vite is in middleware mode
-        const hmrOpts = server.config.server.hmr;
-        const hostServer = typeof hmrOpts == 'object' && hmrOpts && hmrOpts.server;
-        if (hostServer) {
-          const hostHmrBase = server.config.base || '/';
-          const originals = hostServer.rawListeners('upgrade');
-          hostServer.removeAllListeners('upgrade');
-          hostServer.on('upgrade', (req, socket, head) => {
-            if (req?.url?.startsWith(SERVER_CHANNEL_PATH)) {
-              sharedUpgrades.emit('upgrade', req, socket, head);
-              return;
-            }
-            const protocol = req.headers['sec-websocket-protocol'];
-            if (
-              (protocol === 'vite-hmr' || protocol === 'vite-ping') &&
-              req.url?.startsWith(basePath)
-            ) {
-              const queryIndex = req.url.indexOf('?');
-              req.url = hostHmrBase + (queryIndex >= 0 ? req.url.slice(queryIndex) : '');
-            }
-            for (const fn of originals) fn.call(hostServer, req, socket, head);
-          });
+        const reportPort = (): void => {
+          const address = upgradeServer.address();
+          if (address && typeof address === 'object') {
+            storybook.options.port = address.port;
+          }
+        };
+        if (upgradeServer.listening) {
+          reportPort();
+        } else {
+          upgradeServer.once('listening', reportPort);
         }
-      }
 
-      const addonsDir = join(
-        server.config.root,
-        'node_modules/.cache/storybook-vite-manager/sb-addons'
-      );
-      const managerHtml = await buildManager(sb, basePath, SERVER_CHANNEL_PATH, addonsDir);
-
-      // derived here (not at plugin creation) so the storybook-mode basePath override applies
-      const baseNoSlash = basePath.replace(/\/+$/, '');
-      const baseEscaped = baseNoSlash.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-      registerStorybookMiddleware(server, {
-        options: sb,
-        basePath,
-        managerHtml,
-        addonsDir,
-        storyIndexGenerator,
-        staticHandlers,
-        proxy: createProxyMiddleware({
-          target: `http://127.0.0.1:${port}`,
-          changeOrigin: true,
-          ws: true,
-          pathFilter: createProxyPathFilter({
-            basePath,
-            channelPath: SERVER_CHANNEL_PATH,
-          }),
-          pathRewrite: (path) =>
-            baseNoSlash ? path.replace(new RegExp(`^${baseEscaped}`), '') : path,
-        }),
+        previewApp = polka();
+        const closePreview = await withPluginDisabled(() =>
+          startPreview(storybook.previewBuilder, {
+            startTime: process.hrtime(),
+            options: storybook.options,
+            router: previewApp,
+            server: builderServer,
+            channel,
+          })
+        );
+        upgradeServer.once('close', () => {
+          void closePreview();
+        });
+        host.middlewares.use(
+          createPrefixGuard(basePath, (req, res) => handlePolkaApp(storybook.app, req, res))
+        );
       });
-      storyIndexGenerator.onInvalidated(() => {
-        const virtualStoriesId = '\0virtual:/@storybook/builder-vite/storybook-stories.js';
-        server.watcher.emit('change', virtualStoriesId);
-      });
-
-      await emitDevTelemetry({
-        configDir: sb.configDir,
-        disableTelemetry: coreOptions.disableTelemetry,
-        storyIndexGenerator,
-      });
-    },
-
-    closeBundle() {
-      for (const instance of [...activePolkaServers]) {
-        closePolkaServer(instance);
-      }
     },
   };
 }
 
-async function withoutInternalPlugins(plugins: PluginOption[]): Promise<PluginOption[]> {
-  const resolved = await Promise.all(plugins);
-  const result: PluginOption[] = [];
-  for (const plugin of resolved) {
-    if (Array.isArray(plugin)) {
-      result.push(await withoutInternalPlugins(plugin));
-    } else if (!plugin || (plugin.name !== PLUGIN_NAME && !/devtools/i.test(plugin.name))) {
-      result.push(plugin);
-    }
-  }
-  return result;
-}
-
-const globalWithChannel = globalThis as typeof globalThis & {
-  __SB_CHANNEL_UPGRADE__?: EventEmitter;
-  __SB_CHANNEL__?: Channel;
-  __SB_CHANNEL_INITIALIZED__?: Promise<void>;
-  __SB_CHANNEL_OWNER__?: string;
-  STORYBOOK_WEBSOCKET_TOKEN?: string;
-};
-
 function getSharedUpgradeEmitter(): EventEmitter {
-  return (globalWithChannel.__SB_CHANNEL_UPGRADE__ ??= new EventEmitter());
+  return (GLOBAL_WITH_CHANNEL.__SB_CHANNEL_UPGRADE__ ??= new EventEmitter());
 }
 
-function getOrCreateServerChannel(configDir: string): Channel {
-  globalWithChannel.__SB_CHANNEL_OWNER__ ??= configDir;
-  if (globalWithChannel.__SB_CHANNEL_OWNER__ !== configDir) {
+function getOrCreateServerChannel(
+  configDir: string,
+  options: Omit<ServerChannelOptions, 'token'>
+): Channel {
+  GLOBAL_WITH_CHANNEL.__SB_CHANNEL_OWNER__ ??= configDir;
+  if (GLOBAL_WITH_CHANNEL.__SB_CHANNEL_OWNER__ !== configDir) {
     throw new Error(
-      `The Storybook Vite plugin is already running for '${globalWithChannel.__SB_CHANNEL_OWNER__}' in this process, ` +
+      `The Storybook Vite plugin is already running for '${GLOBAL_WITH_CHANNEL.__SB_CHANNEL_OWNER__}' in this process, ` +
         `so it cannot also serve '${configDir}'. Run each Storybook in its own dev-server process.`
     );
   }
-  return (globalWithChannel.__SB_CHANNEL__ ??= createServerChannel(
-    getSharedUpgradeEmitter(),
-    SERVER_CHANNEL_PATH,
-    (globalWithChannel.STORYBOOK_WEBSOCKET_TOKEN ??= randomUUID())
-  ));
+  return (GLOBAL_WITH_CHANNEL.__SB_CHANNEL__ ??= getServerChannel(getSharedUpgradeEmitter(), {
+    ...options,
+    token: (GLOBAL_WITH_CHANNEL.STORYBOOK_WEBSOCKET_TOKEN ??= randomUUID()),
+  }));
 }
 
 function initializeServerChannelOnce(channel: Channel, presets: Presets): Promise<void> {
-  return (globalWithChannel.__SB_CHANNEL_INITIALIZED__ ??= (async () => {
-    // void touch to creates the server-side leaders.
+  return (GLOBAL_WITH_CHANNEL.__SB_CHANNEL_INITIALIZED__ ??= (async () => {
+    // Accessing actors creates the server-side leaders.
     void internal_universalStatusStore.actor;
     void internal_universalTestProviderStore.actor;
     await presets.apply('experimental_serverChannel', channel);
   })());
+}
+
+function hmrServerOf(hmr: HmrOptions | boolean | undefined): ViteHttpServer | undefined {
+  return typeof hmr === 'object' && hmr ? hmr.server : undefined;
+}
+
+function forwardServerChannelUpgrades(upgradeServer: ViteHttpServer, emitter: EventEmitter): void {
+  const forward = (req: IncomingMessage, socket: Duplex, head: Buffer): void => {
+    if (req.url?.startsWith(SERVER_CHANNEL_PATH)) {
+      emitter.emit('upgrade', req, socket, head);
+    }
+  };
+  upgradeServer.on('upgrade', forward);
+  upgradeServer.once('close', () => upgradeServer.off('upgrade', forward));
+}
+
+function toBuilderServer(server: ViteHttpServer): HttpServer {
+  return server as HttpServer;
+}
+
+function handlePolkaApp(app: Polka, req: IncomingMessage, res: ServerResponse): void {
+  (app.handler as (req: IncomingMessage, res: ServerResponse) => void)(req, res);
 }

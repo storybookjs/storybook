@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, type ReactElement } from 'react';
 
 import { Button } from './Button.tsx';
 
-export function App() {
+export function App(): ReactElement {
   const [count, setCount] = useState(0);
 
   return (

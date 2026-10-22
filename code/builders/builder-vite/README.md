@@ -47,8 +47,15 @@ export default defineConfig({
 });
 ```
 
-Run `vite build --mode storybook` to produce the static Storybook. `outputDir` is resolved against
-Vite's project root and defaults to `./storybook-static`.
+- `vite` serves the application as usual and mounts Storybook under `base` (default
+  `/__storybook`). Storybook's HMR and server-channel WebSockets share the application's port.
+- `vite --mode storybook` serves only Storybook, at the root.
+- `vite build --mode storybook` produces the static Storybook. `outputDir` is resolved against
+  Vite's project root and defaults to `./storybook-static`.
+- `configDir` defaults to `.storybook`, resolved against `process.cwd()`.
+
+In middleware mode, pass the host HTTP server as `server.hmr.server` so the plugin can attach its
+WebSockets to it.
 
 ### Getting started with Vite and Storybook (on a new project)
 

@@ -1,6 +1,5 @@
 import { readFile } from 'node:fs/promises';
 
-import { global } from '@storybook/global';
 import {
   JsPackageManagerFactory,
   cache,
@@ -19,6 +18,7 @@ import { CLI_COLORS, deprecate, logger, prompt } from 'storybook/internal/node-l
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import { detectAgent, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
+import { global } from '@storybook/global';
 
 import { join, relative, resolve } from 'pathe';
 import invariant from 'tiny-invariant';
@@ -36,8 +36,8 @@ import { outputStartupInformation } from './utils/output-startup-information.ts'
 import { outputStats } from './utils/output-stats.ts';
 import {
   getMcpMetadataFromMainConfig,
-  writeStorybookRuntimeInstanceRecord,
   type RuntimeInstanceRecord,
+  writeStorybookRuntimeInstanceRecord,
 } from './utils/runtime-instance-registry.ts';
 import { getServerAddresses, getServerChannelUrl, getServerPort } from './utils/server-address.ts';
 import { getServer } from './utils/server-init.ts';
@@ -80,6 +80,7 @@ export async function buildDevStandalone(
       previewConfigPath?: string;
     }
 ): Promise<{ port: number; address: string; networkAddress: string }> {
+  // lets a Vite plugin loaded through vite.config.ts tell a CLI run from an embedded one
   process.env.STORYBOOK_CLI = 'true';
 
   const { packageJson, versionUpdates } = options;

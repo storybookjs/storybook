@@ -7,6 +7,9 @@ import { dedent } from 'ts-dedent';
 
 import { enrichCsf } from './enrichCsf.ts';
 
+// The preset loader needs the real importModule instead of the stub from vitest-setup.ts.
+vi.unmock('../../../core/src/shared/utils/module.ts');
+
 vi.mock('my-preset', () => ({
   default: { experimental_enrichCsf: enrichCsf, features: { experimentalCodeExamples: true } },
 }));

@@ -22,15 +22,6 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-vi.mock('../../node-logger/index.ts', () => ({
-  logger: {
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
 vi.mock('../utils/command', { spy: true });
 const mockedExecuteCommand = vi.mocked(executeCommand);
 

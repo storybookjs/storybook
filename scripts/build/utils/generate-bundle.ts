@@ -23,9 +23,18 @@ import {
   type EsbuildContextOptions,
   getExternal,
 } from './entry-utils.ts';
-import { metafileDirFor } from './metafiles.ts';
 import { tiePreviewRuntimeSetup } from './preview-runtime-entry.ts';
 
+// repo root/bench/esbuild-metafiles/core
+const DIR_METAFILE_BASE = join(
+  import.meta.dirname,
+  '..',
+  '..',
+  '..',
+  'code',
+  'bench',
+  'esbuild-metafiles'
+);
 export const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 
 function rolldownGlobalExternalsPlugin(): RolldownPlugin {
@@ -90,6 +99,7 @@ export async function generateBundle({
 }) {
   const DIR_CWD = cwd;
   const DIR_REL = relative(DIR_CODE, DIR_CWD);
+  const PACKAGE_DIR_NAME = basename(DIR_CWD);
   const external = (await getExternal(DIR_CWD)).runtimeExternal;
   const { entries, postbuild } = entry;
 
@@ -278,7 +288,7 @@ export async function generateBundle({
         },
         plugins: [
           ...sharedOptions.plugins,
-          metafileWriterPlugin('node', metafileDirFor(DIR_CWD)),
+          metafileWriterPlugin('node', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
       })
     );
@@ -299,7 +309,7 @@ export async function generateBundle({
         supported: SUPPORTED_FEATURES,
         plugins: [
           ...sharedOptions.plugins,
-          metafileWriterPlugin('browser', metafileDirFor(DIR_CWD)),
+          metafileWriterPlugin('browser', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
       })
     );
@@ -330,7 +340,7 @@ export async function generateBundle({
         entryPoints: esbuildRuntimeEntries.map(({ entryPoint }) => entryPoint),
         plugins: [
           ...runtimeOptions.plugins,
-          metafileWriterPlugin('runtime', metafileDirFor(DIR_CWD)),
+          metafileWriterPlugin('runtime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
       })
     );
@@ -344,7 +354,7 @@ export async function generateBundle({
         plugins: [
           ...runtimeOptions.plugins,
           globalExternals(globalsModuleInfoMap),
-          metafileWriterPlugin('globalizedRuntime', metafileDirFor(DIR_CWD)),
+          metafileWriterPlugin('globalizedRuntime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
       })
     );

@@ -2,7 +2,7 @@
 import glob from 'fast-glob';
 import { join } from 'path/posix';
 
-import { isGlobalInput } from './affected-tests.ts';
+import { isGlobalInput } from './global-inputs.ts';
 import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   type CachePlatform,
@@ -375,7 +375,6 @@ export const testsUnit_linux = defineJob(
 );
 
 const CHANGED_FILES_PATH = '/tmp/changed-files.txt';
-const AFFECTED_TESTS_PATH = '/tmp/affected-tests.txt';
 
 const writeChangedFiles = (changedFiles: readonly string[]) => ({
   run: {
@@ -495,10 +494,7 @@ export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) => 
   );
 };
 
-/**
- * Run the unit tests related to `changedFiles`, following imports through the built `dist` files
- * that contain them.
- */
+/** Run the unit tests whose imports reach `changedFiles`. */
 export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
   defineJob(
     'Tests (linux, affected)',
@@ -513,14 +509,7 @@ export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
         {
           run: {
             name: 'Run affected tests',
-            command: [
-              `node ./scripts/ci/select-affected-tests.ts ${CHANGED_FILES_PATH} > ${AFFECTED_TESTS_PATH}`,
-              `if [ -s ${AFFECTED_TESTS_PATH} ]; then`,
-              `  NODE_OPTIONS=--max_old_space_size=4096 yarn vitest related --run --project '!storybook-ui' ${UNIT_TEST_REPORTERS} $(cat ${AFFECTED_TESTS_PATH})`,
-              'else',
-              '  echo "No changed file is related to a unit test."',
-              'fi',
-            ].join('\n'),
+            command: `NODE_OPTIONS=--max_old_space_size=4096 yarn vitest related --run --project '!storybook-ui' ${UNIT_TEST_REPORTERS} $(cat ${CHANGED_FILES_PATH})`,
           },
         },
         testResults.persist(`test-results`),

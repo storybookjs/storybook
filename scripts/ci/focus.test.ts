@@ -149,12 +149,15 @@ describe('getFocusJobs', () => {
     ]);
   });
 
-  it('runs the full unit suite instead of the affected tests when a global input changed', () => {
-    const ids = jobIds(['code/core/src/manager/App.tsx', 'yarn.lock']);
+  it.each(['yarn.lock', 'code/addons/a11y/src/__snapshots__/a11yRunner.test.ts.snap'])(
+    'runs the full unit suite instead of the affected tests when %s changed',
+    (file) => {
+      const ids = jobIds(['code/core/src/manager/App.tsx', file]);
 
-    expect(ids).toContain('tests--linux');
-    expect(ids).not.toContain('tests--linux--affected');
-  });
+      expect(ids).toContain('tests--linux');
+      expect(ids).not.toContain('tests--linux--affected');
+    }
+  );
 
   it('adds only the create and Chromatic jobs of each sibling', () => {
     const ids = jobIds(['code/renderers/svelte/src/render.ts']);

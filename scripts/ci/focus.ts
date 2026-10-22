@@ -6,7 +6,7 @@ import {
   type Template,
   type TemplateKey,
 } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
-import { isGlobalInput } from './affected-tests.ts';
+import { isGlobalInput, isTestFixture } from './global-inputs.ts';
 import {
   build_linux,
   defineAffectedCheck,
@@ -146,7 +146,9 @@ export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
   return [
     build_linux,
     defineAffectedCheck(changedFiles),
-    changedFiles.some(isGlobalInput) ? testsUnit_linux : defineAffectedUnitTests(changedFiles),
+    changedFiles.some((file) => isGlobalInput(file) || isTestFixture(file))
+      ? testsUnit_linux
+      : defineAffectedUnitTests(changedFiles),
     defineAffectedLintAndFormat(changedFiles),
     ...selectPathTriggeredJobs(changedFiles),
     sandboxesNoOpJob,

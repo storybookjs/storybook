@@ -1,8 +1,8 @@
 import type { ESTree as E, ESTreeNode as Node, ImportBinding } from 'storybook/internal/csf-tools';
 import {
+  detachedTextOf,
   oneLineTextOf,
   reindent,
-  textOf,
   unwrapExpression,
   walk,
 } from 'storybook/internal/csf-tools';
@@ -17,11 +17,7 @@ import {
 
 // A handler runs inside the snippet's `<script>`, so it keeps its lines and comments, re-indented
 // from the story file to the snippet.
-export const handlerText = (node: Node): string => {
-  const code = textOf(node);
-  const closingIndent = /^[ \t]*/.exec(code.slice(code.lastIndexOf('\n') + 1))![0];
-  return reindent(code, closingIndent, '    ');
-};
+export const handlerText = (node: Node): string => reindent(detachedTextOf(node), '', '    ');
 
 export type HoleValue =
   | { kind: 'empty'; arg?: string }

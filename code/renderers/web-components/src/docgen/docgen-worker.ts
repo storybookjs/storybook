@@ -1,4 +1,4 @@
-import { createLazyDocgenMiddleware } from 'storybook/internal/common';
+import { createLazyDocgenMiddleware, loadTypeScriptCompilerApi } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware } from 'storybook/internal/types';
 
@@ -29,8 +29,11 @@ export const createDocgenProvider = ({
 /** A failed load must not take manifest docgen down with it. */
 async function loadSourceManager(previewFilePath?: string): Promise<SourceManager | undefined> {
   try {
-    const [typescript, generator] = await Promise.all([import('typescript'), loadGenerator()]);
-    return new SourceManager(typescript.default ?? typescript, generator, previewFilePath);
+    const [typescript, generator] = await Promise.all([
+      loadTypeScriptCompilerApi(() => import('typescript')),
+      loadGenerator(),
+    ]);
+    return new SourceManager(typescript, generator, previewFilePath);
   } catch (error) {
     logger.warn(
       `Web components docgen cannot generate declarations from sources: ${errorMessage(error)}`

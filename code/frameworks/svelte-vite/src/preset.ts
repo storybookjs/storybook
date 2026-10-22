@@ -1,3 +1,7 @@
+import {
+  getTypeScriptForDocgenError,
+  isDocgenServerDisabledInMainConfig,
+} from 'storybook/internal/common';
 import { deprecate } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
@@ -21,8 +25,14 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
   assertSvelteCsfAddonNotInstalled({ presetsList: options.presetsList, framework });
 
   const { docgen, docgenServerActive } = await resolveDocgenContext(options);
-  if (docgen && !docgenServerActive) {
-    deprecate(SVELTE_BUILDER_DOCGEN_DEPRECATION);
+  // Builder docgen runs on the same TypeScript engine as server docgen.
+  const typescriptUsable = !getTypeScriptForDocgenError((specifier) =>
+    import.meta.resolve(specifier)
+  );
+  if (docgen && !docgenServerActive && typescriptUsable) {
+    if (await isDocgenServerDisabledInMainConfig(options)) {
+      deprecate(SVELTE_BUILDER_DOCGEN_DEPRECATION);
+    }
     plugins.push(await svelteDocgen());
   }
 

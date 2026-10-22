@@ -126,6 +126,8 @@ export interface SnippetSegment {
   fenceLine: number;
   /** Line of the closing fence */
   end: number;
+  /** Language name after the opening fence, such as `ts` or `svelte` */
+  syntax: string;
   attributes: Record<string, string>;
 }
 
@@ -175,7 +177,13 @@ export function getSnippetSegments(lines: string[]): SnippetSegment[] {
       attributes[key] = value;
     }
 
-    segments.push({ start, fenceLine, end, attributes });
+    segments.push({
+      start,
+      fenceLine,
+      end,
+      syntax: lines[fenceLine].slice(fence.length).split(' ')[0],
+      attributes,
+    });
     i = end;
   }
 
@@ -324,4 +332,43 @@ export function getLegacyCsfTitleSegments(lines: string[]): SnippetSegment[] {
   return getSnippetSegments(lines).filter(({ attributes }) =>
     getRenamedCsfTabTitle(attributes.tabTitle)
   );
+}
+
+const CSF3_DEPRECATION_MESSAGE = '⚠️ CSF 3 is deprecated and will be removed in Storybook 12';
+
+/**
+ * Returns the deprecation comment a CSF 3 segment must start with, in the comment syntax of the
+ * segment's language.
+ */
+export function getCsf3DeprecationComment(syntax: string): string {
+  if (['svelte', 'html', 'vue'].includes(syntax)) return `<!-- ${CSF3_DEPRECATION_MESSAGE} -->`;
+  if (syntax === 'mdx') return `{/* ${CSF3_DEPRECATION_MESSAGE} */}`;
+  return `// ${CSF3_DEPRECATION_MESSAGE}`;
+}
+
+/**
+ * Returns the CSF 3 segments whose first line is not the deprecation comment.
+ */
+export function getCsf3SegmentsWithoutDeprecation(lines: string[]): SnippetSegment[] {
+  return getCsfSegments(getSnippetSegments(lines))
+    .filter(({ version }) => version === 'csf3')
+    .map(({ segment }) => segment)
+    .filter(
+      (segment) => lines[segment.fenceLine + 1] !== getCsf3DeprecationComment(segment.syntax)
+    );
+}
+
+/**
+ * Adds the deprecation comment as the first line of each CSF 3 segment that lacks it.
+ * Returns the updated lines, or `undefined` if nothing changed.
+ */
+export function addCsf3Deprecation(lines: string[]): string[] | undefined {
+  const segments = getCsf3SegmentsWithoutDeprecation(lines);
+  if (segments.length === 0) return undefined;
+
+  const result = [...lines];
+  for (const segment of segments.reverse()) {
+    result.splice(segment.fenceLine + 1, 0, getCsf3DeprecationComment(segment.syntax));
+  }
+  return result;
 }

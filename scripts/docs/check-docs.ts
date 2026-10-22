@@ -8,6 +8,8 @@ import {
   getLineContexts,
   getMisorderedCsfSegments,
   getLegacyCsfTitleSegments,
+  getCsf3SegmentsWithoutDeprecation,
+  getCsf3DeprecationComment,
   getRenamedCsfTabTitle,
 } from './utils';
 import { esMain } from '../utils/esmain.ts';
@@ -436,7 +438,7 @@ export async function checkSnippetCsfOrder(docsDir: string): Promise<DocLineErro
         file,
         line: segment.fenceLine + 1,
         message:
-          'CSF 3 snippet comes before its CSF 4 snippet. Run `yarn --cwd scripts docs:fix-snippet-order` to fix.',
+          'CSF 3 snippet comes before its CSF 4 snippet. Run `yarn --cwd scripts docs:fix-snippets` to fix.',
       });
     }
   }
@@ -466,6 +468,26 @@ export async function checkSnippetLegacyCsfTitle(docsDir: string): Promise<DocLi
 }
 
 /**
+ * Checks that each CSF 3 snippet starts with the deprecation comment.
+ */
+export async function checkSnippetCsf3Deprecation(docsDir: string): Promise<DocLineError[]> {
+  const snippetFiles = await getSnippetFiles(docsDir);
+  const errors: DocLineError[] = [];
+
+  for (const file of snippetFiles) {
+    const lines = await readFileLines(file);
+    for (const segment of getCsf3SegmentsWithoutDeprecation(lines)) {
+      errors.push({
+        file,
+        line: segment.fenceLine + 1,
+        message: `CSF 3 snippet must start with \`${getCsf3DeprecationComment(segment.syntax)}\`. Run \`yarn --cwd scripts docs:fix-snippets\` to fix.`,
+      });
+    }
+  }
+  return errors;
+}
+
+/**
  * Runs all checks and prints a summary. Exits 1 if any errors are found.
  */
 export async function runAllChecks(docsDir: string) {
@@ -483,6 +505,7 @@ export async function runAllChecks(docsDir: string) {
     bareUrls,
     snippetCsfOrder,
     snippetLegacyCsfTitle,
+    snippetCsf3Deprecation,
   ] = await Promise.all([
     checkRelativeLinks(docsDir),
     checkCodeSnippetPaths(docsDir),
@@ -497,6 +520,7 @@ export async function runAllChecks(docsDir: string) {
     checkBareUrls(docsDir),
     checkSnippetCsfOrder(docsDir),
     checkSnippetLegacyCsfTitle(docsDir),
+    checkSnippetCsf3Deprecation(docsDir),
   ]);
   const all = [
     ...rel.map((e) => ({ ...e, type: 'relative-link' })),
@@ -512,6 +536,7 @@ export async function runAllChecks(docsDir: string) {
     ...bareUrls.map((e) => ({ ...e, type: 'bare-url' })),
     ...snippetCsfOrder.map((e) => ({ ...e, type: 'snippet-csf-order' })),
     ...snippetLegacyCsfTitle.map((e) => ({ ...e, type: 'snippet-legacy-csf-title' })),
+    ...snippetCsf3Deprecation.map((e) => ({ ...e, type: 'snippet-csf3-deprecation' })),
   ];
   if (all.length === 0) {
     console.log('✅ Docs check: no errors found.');
@@ -531,6 +556,7 @@ export async function runAllChecks(docsDir: string) {
     'bare-url': 'BareUrl',
     'snippet-csf-order': 'SnippetCsfOrder',
     'snippet-legacy-csf-title': 'SnippetLegacyCsfTitle',
+    'snippet-csf3-deprecation': 'SnippetCsf3Deprecation',
   };
   for (const err of all) {
     const loc = `${err.file}:${err.line}`;

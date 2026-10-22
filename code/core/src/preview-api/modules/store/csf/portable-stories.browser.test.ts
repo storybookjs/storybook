@@ -37,3 +37,32 @@ it('removes animation listeners when afterEach throws', async () => {
 
   expect(getAnimations).toHaveBeenCalledOnce();
 });
+
+it('renders a story that owns the document to the <body>, and has the <body> the render left', async () => {
+  const bodies: HTMLElement[] = [];
+  const before = document.body;
+  const story = composeStory(
+    {
+      render: () => {},
+      parameters: { layout: 'document' },
+      play: async ({ canvasElement }) => {
+        bodies.push(canvasElement);
+      },
+    },
+    {},
+    {
+      renderToCanvas: (_, canvasElement) => {
+        bodies.push(canvasElement);
+        // As a render of a document does: a new <body>.
+        document.documentElement.replaceChild(document.createElement('body'), document.body);
+      },
+    }
+  );
+
+  await story.run();
+
+  expect(bodies).toEqual([before, document.body]);
+  expect(document.body).not.toBe(before);
+  // No container of its own.
+  expect(document.body.children).toHaveLength(0);
+});

@@ -185,6 +185,12 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
         if (unmount) {
           cleanups.push(unmount);
         }
+        // A story that owns the document renders to the <body>, and may leave a new one: its
+        // canvas is the <body> the render left, as in the preview (StoryRender). Not after an
+        // abort, which the render reports nothing of.
+        if (ownsDocument(context) && !context.abortSignal.aborted) {
+          context.canvasElement = globalThis.document.body;
+        }
         // `hooks` is loosely typed (`unknown`) on the portable story context.
         const hooks = context.hooks as HooksContext<TRenderer>;
         // Register the hook teardown BEFORE flushing so a throwing effect can't skip it: `clean()`
@@ -308,6 +314,11 @@ export function composeStories<TModule extends Store_CSFExports>(
   return composedStories;
 }
 
+// Whether a story owns the document, `layout: 'document'`: a portable story is shown as the
+// preview shows a story, never in a docs page.
+const ownsDocument = (context: StoryContextForRender<Renderer>) =>
+  context.parameters.layout === 'document';
+
 // TODO At some point this function should live in prepareStory and become the core of StoryRender.render as well.
 // Will make a follow up PR for that
 async function runStory<TRenderer extends Renderer>(
@@ -320,7 +331,10 @@ async function runStory<TRenderer extends Renderer>(
   cleanups.length = 0;
   const hookContext = hideArgTypes(context);
 
-  if (!context.canvasElement) {
+  if (!context.canvasElement && ownsDocument(context)) {
+    // The <body> the document has now, which an earlier render may have left.
+    context.canvasElement = globalThis.document.body;
+  } else if (!context.canvasElement) {
     const container = document.createElement('div');
     globalThis?.document?.body?.appendChild(container);
     context.canvasElement = container;

@@ -13,7 +13,7 @@ import { loadGenerator } from './component-docgen/source/generator.ts';
 import { SourceManager } from './component-docgen/source/source-manager.ts';
 
 const sourceFind = vi.hoisted(() => vi.fn());
-const typescript = vi.hoisted(() => ({ sys: {} }));
+const typescript = vi.hoisted(() => ({ version: '6.0.3', sys: {} }));
 const generator = { generate: vi.fn() };
 
 vi.mock('node:fs', { spy: true });

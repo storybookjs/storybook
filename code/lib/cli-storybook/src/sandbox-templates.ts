@@ -57,9 +57,8 @@ export type Template = {
   };
 
   /**
-   * Directories under `code/frameworks/`, `code/renderers/`, or `code/builders/` for which `ci:focus`
-   * picks this template. A framework match wins over a renderer match, and a renderer match wins
-   * over a builder match. Every template claiming a matched directory is picked.
+   * Directories under `code/frameworks/`, `code/renderers/`, or `code/builders/` whose changes make
+   * `ci:focus` run this template's sandbox.
    */
   focusPaths?: string[];
 

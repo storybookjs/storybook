@@ -32,7 +32,7 @@ const FILE_KINDS: readonly (readonly [FileKind, RegExp])[] = [
   ['source', /\.([cm]?[jt]sx?|vue|svelte)$/],
 ];
 
-export function classifyFile(file: string): FileKind {
+function classifyFile(file: string): FileKind {
   return FILE_KINDS.find(([, pattern]) => pattern.test(file))?.[0] ?? 'asset';
 }
 

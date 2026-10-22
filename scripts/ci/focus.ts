@@ -60,7 +60,7 @@ export function selectFocusSandboxes(changedFiles: readonly string[]): TemplateK
   return [DEFAULT_FOCUS_SANDBOX];
 }
 
-/** Select the PR-workflow templates whose renderer source changed. */
+/** Select the PR-workflow templates that run Chromatic and whose renderer source changed. */
 export function selectChromaticSiblings(
   focused: readonly TemplateKey[],
   changedFiles: readonly string[]
@@ -73,7 +73,9 @@ export function selectChromaticSiblings(
 
   return normal.filter(
     (sibling) =>
-      !focused.includes(sibling) && changedRenderers.has(allTemplates[sibling].expected.renderer)
+      !focused.includes(sibling) &&
+      !allTemplates[sibling].skipTasks?.includes('chromatic') &&
+      changedRenderers.has(allTemplates[sibling].expected.renderer)
   );
 }
 
@@ -136,12 +138,7 @@ export function getChangedFiles(baseRef: string): string[] {
     .filter(Boolean);
 }
 
-/**
- * Select the `ci:normal` jobs a diff needs: the build, the typecheck, lint, format check and unit
- * tests affected by the diff (the full unit suite when a global input changed), every job of the
- * focused sandboxes, a Chromatic run for each sibling whose renderer changed, and the
- * {@link PATH_TRIGGERED_JOBS} whose paths changed.
- */
+/** Select the `ci:normal` jobs a diff can affect. */
 export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
   const focused = selectFocusSandboxes(changedFiles);
   const siblings = selectChromaticSiblings(focused, changedFiles).map(defineSandboxFlow);
@@ -154,8 +151,6 @@ export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
     ...selectPathTriggeredJobs(changedFiles),
     sandboxesNoOpJob,
     ...focused.flatMap((template) => defineSandboxFlow(template).jobs),
-    ...siblings.flatMap(({ createJob, chromaticJob }) =>
-      chromaticJob ? [createJob, chromaticJob] : []
-    ),
+    ...siblings.flatMap(({ createJob, chromaticJob }) => [createJob, chromaticJob]),
   ];
 }

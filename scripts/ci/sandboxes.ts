@@ -357,11 +357,10 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     [createJob]
   );
 
-  const chromatic = !skipTasks?.includes('chromatic') ? chromaticJob : undefined;
   const jobs = [
     createJob,
     devJob,
-    chromatic,
+    !skipTasks?.includes('chromatic') ? chromaticJob : undefined,
     !skipTasks?.includes('vitest-integration') ? vitestJob : undefined,
     !skipTasks?.includes('e2e-tests') ? e2eJob : undefined,
   ].filter((job) => job !== undefined);
@@ -372,7 +371,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     jobs,
     createJob,
     devJob,
-    chromaticJob: chromatic,
+    chromaticJob,
   };
 }
 

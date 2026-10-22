@@ -31,8 +31,7 @@ function loadPackages(): BuiltPackage[] {
     { cwd: ROOT }
   ).map((file) => dirname(file));
 
-  // The build names metafile folders by package directory basename, so a shared basename makes
-  // them impossible to attribute.
+  // Packages that share a directory basename write to the same metafile folder.
   const dirsByBasename = Map.groupBy(dirs, (dir) => basename(dir));
 
   return dirs.map((dir) => ({

@@ -50,7 +50,7 @@ describe('focusPaths', () => {
     (path) => {
       expect(FOCUS_PATH_ROOTS.some((root) => path.startsWith(root))).toBe(true);
       expect(path.endsWith('/')).toBe(true);
-      expect(existsSync(join(import.meta.dirname, '../..', path))).toBe(true);
+      expect(existsSync(join(ROOT, path))).toBe(true);
     }
   );
 });

@@ -35,6 +35,8 @@ const vitest = vi.hoisted(() => ({
   provide: vi.fn(),
   runTestSpecifications: vi.fn(),
   cancelCurrentRun: vi.fn(),
+  enableCoverage: vi.fn(),
+  disableCoverage: vi.fn(),
   globTestSpecifications: vi.fn(),
   getModuleProjects: vi.fn(() => []),
   setGlobalTestNamePattern: setTestNamePattern,
@@ -664,9 +666,15 @@ describe('TestManager', () => {
     expect(mockStore.getState().currentRun.totalTestCount).toBe(1);
   });
 
-  it('should restart Vitest before a test run if coverage is enabled', async () => {
+  it('should enable coverage without restarting Vitest before a test run', async () => {
     const testManager = await startWithIndex();
     expect(createVitest).toHaveBeenCalledTimes(1);
+    expect(createVitest).toHaveBeenCalledWith(
+      Tag.TEST,
+      expect.objectContaining({
+        coverage: expect.objectContaining({ enabled: false, reportsDirectory: expect.any(String) }),
+      })
+    );
     createVitest.mockClear();
 
     mockStore.setState((s) => ({
@@ -681,13 +689,47 @@ describe('TestManager', () => {
       },
     });
 
-    expect(createVitest).toHaveBeenCalledTimes(1);
-    expect(createVitest).toHaveBeenCalledWith(
-      Tag.TEST,
-      expect.objectContaining({
-        coverage: expect.objectContaining({ enabled: true }),
-      })
+    expect(createVitest).not.toHaveBeenCalled();
+    expect(vitest.close).not.toHaveBeenCalled();
+    expect(vitest.enableCoverage).toHaveBeenCalledTimes(1);
+    expect(vitest.enableCoverage.mock.invocationCallOrder[0]).toBeGreaterThan(
+      vitest.cancelCurrentRun.mock.invocationCallOrder[0]
     );
+    expect(vitest.runTestSpecifications).toHaveBeenCalledTimes(1);
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        triggeredBy: 'global',
+      },
+    });
+
+    expect(vitest.enableCoverage).toHaveBeenCalledTimes(1);
+  });
+
+  it('should disable coverage without restarting Vitest when coverage is turned off', async () => {
+    const testManager = await startWithIndex();
+    mockStore.setState((s) => ({
+      ...s,
+      config: { coverage: true, a11y: false },
+    }));
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { triggeredBy: 'global' },
+    });
+    createVitest.mockClear();
+
+    mockStore.setState((s) => ({
+      ...s,
+      config: { coverage: false, a11y: false },
+    }));
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: { triggeredBy: 'global' },
+    });
+
+    expect(createVitest).not.toHaveBeenCalled();
+    expect(vitest.disableCoverage).toHaveBeenCalledTimes(1);
   });
 
   it('should not restart with coverage enabled Vitest before a focused test run', async () => {
@@ -709,5 +751,6 @@ describe('TestManager', () => {
     });
 
     expect(createVitest).not.toHaveBeenCalled();
+    expect(vitest.enableCoverage).not.toHaveBeenCalled();
   });
 });

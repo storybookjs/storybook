@@ -1,14 +1,27 @@
-import { babelParse, types as t } from 'storybook/internal/babel';
 import { findFilesUp } from 'storybook/internal/common';
-import type { ConfigFile } from 'storybook/internal/csf-tools';
+import {
+  type ConfigFile,
+  type ESTree as E,
+  type ESTreeNode as Node,
+  SourceEditor,
+  removeStatements,
+  setImportSpecifiers,
+} from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { SupportedRenderer } from 'storybook/internal/types';
 
 import { dirname, relative, resolve } from 'pathe';
+import { dedent } from 'ts-dedent';
 
 import type { FixFiles } from '../fix-files.ts';
 import { getRendererName } from '../helpers/mainConfigFile.ts';
-import { countReferences, removeTopLevelCall, topLevelCalls } from '../helpers/preview-call.ts';
+import {
+  countReferences,
+  isTopLevelCall,
+  removeTopLevelCall,
+  topLevelCalls,
+  topLevelReaders,
+} from '../helpers/preview-call.ts';
 import { findWorkspaceFiles, readJsonFile } from '../helpers/workspace-files.ts';
 import type { FixTransform } from '../pipeline.ts';
 import type { Fix } from '../types.ts';
@@ -19,6 +32,7 @@ const WEB_COMPONENTS_PACKAGES = new Set([
   '@storybook/web-components-vite',
 ]);
 const AUTOMIGRATE_COMMAND = 'storybook automigrate web-components-runtime-manifest';
+const MAX_STATEMENT_LENGTH = 80;
 
 type SetterName = (typeof SETTER_NAMES)[number];
 
@@ -29,6 +43,8 @@ export interface WebComponentsRuntimeManifestOptions {
   setterNames: SetterName[];
   /** Manifest path relative to the config dir; `null` when `package.json#customElements` already names it. */
   manifestPath: string | null;
+  /** Absolute paths of the manifests the docgen server will read. */
+  manifestFiles: string[];
 }
 
 export const webComponentsRuntimeManifest: Fix<WebComponentsRuntimeManifestOptions> = {
@@ -50,19 +66,19 @@ export const webComponentsRuntimeManifest: Fix<WebComponentsRuntimeManifestOptio
       return null;
     }
 
-    const program = parsePreview(await files.read(previewConfigPath));
-    if (!program) {
+    const preview = parsePreview(await files.read(previewConfigPath), previewConfigPath);
+    if (!preview) {
       return null;
     }
 
-    const setterNames = findReferencedSetterNames(program);
+    const setterNames = findReferencedSetterNames(preview);
     if (setterNames.length === 0) {
       return null;
     }
 
     const configDir = dirname(mainConfigPath);
     const source =
-      findPreviewImportManifest(program, setterNames, dirname(previewConfigPath)) ??
+      findPreviewImportManifest(preview.program, setterNames, dirname(previewConfigPath)) ??
       (await findPackageJsonManifest(files, configDir)) ??
       (await findWorkspaceManifest());
     if (!source) {
@@ -79,6 +95,7 @@ export const webComponentsRuntimeManifest: Fix<WebComponentsRuntimeManifestOptio
     return {
       setterNames,
       manifestPath,
+      manifestFiles: manifestPaths,
     };
   },
 
@@ -105,36 +122,36 @@ export const webComponentsRuntimeManifest: Fix<WebComponentsRuntimeManifestOptio
     {
       filter: { kind: ['preview'], code: 'setCustomElements' },
       editConfig: (preview, { id }): void => {
-        removePreviewWiring(preview, id, result.setterNames);
+        removePreviewWiring(preview, id, result);
       },
     },
   ],
 };
 
-const parsePreview = (source: string): t.Program | null => {
+const parsePreview = (source: string, fileName: string): SourceEditor | null => {
   try {
-    return babelParse(source).program;
+    return new SourceEditor(source, fileName);
   } catch {
     return null;
   }
 };
 
-const findReferencedSetterNames = (program: t.Program): SetterName[] =>
-  SETTER_NAMES.filter((name) => countReferences(program, name) > 0);
+const findReferencedSetterNames = (preview: SourceEditor): SetterName[] =>
+  SETTER_NAMES.filter((name) => countReferences(preview, name) > 0);
 
 const findPreviewImportManifest = (
-  program: t.Program,
+  program: E.Program,
   setterNames: SetterName[],
   previewDir: string
 ): ManifestSource | null => {
   for (const setterName of setterNames) {
     for (const node of topLevelCalls(program, setterName)) {
-      const { arguments: args } = node.expression as t.CallExpression;
+      const { arguments: args } = node.expression as E.CallExpression;
       if (args.length !== 1) {
         continue;
       }
       const [argument] = args;
-      if (!t.isIdentifier(argument)) {
+      if (argument.type !== 'Identifier') {
         continue;
       }
       const specifier = findDefaultJsonImportSpecifier(program, argument.name);
@@ -198,20 +215,19 @@ const logInvalidManifestWarning = (
   setterName: SetterName,
   path: string
 ): void =>
-  logger.warn(
-    `Left the ${setterName}() call in ${previewConfigPath} alone: ${path} is not a readable ` +
-      `Custom Elements Manifest. Generate one with @custom-elements-manifest/analyzer, then rerun ` +
-      `"${AUTOMIGRATE_COMMAND}".`
-  );
+  logger.warn(dedent`
+    Left the ${setterName}() call in ${previewConfigPath} alone: ${path} is not a readable Custom Elements Manifest.
+    Generate one with @custom-elements-manifest/analyzer, then rerun "${AUTOMIGRATE_COMMAND}".
+  `);
 
-const findDefaultJsonImportSpecifier = (program: t.Program, name: string): string | null => {
+const findDefaultJsonImportSpecifier = (program: E.Program, name: string): string | null => {
   for (const node of program.body) {
-    if (!t.isImportDeclaration(node) || !isRelativeJsonSpecifier(node.source.value)) {
+    if (node.type !== 'ImportDeclaration' || !isRelativeJsonSpecifier(node.source.value)) {
       continue;
     }
     if (
       node.specifiers.some(
-        (specifier) => t.isImportDefaultSpecifier(specifier) && specifier.local.name === name
+        (specifier) => specifier.type === 'ImportDefaultSpecifier' && specifier.local.name === name
       )
     ) {
       return node.source.value;
@@ -228,25 +244,116 @@ const logManualRemovalHint = (
   setterName: SetterName,
   reason: string
 ): void =>
-  logger.warn(
-    `Left the ${setterName} wiring in ${previewConfigPath} alone: ${reason}. ` +
-      `Remove the runtime call by hand when convenient.`
-  );
+  logger.warn(dedent`
+    Left the ${setterName} wiring in ${previewConfigPath} alone: ${reason}.
+    Remove the runtime call by hand when convenient.
+  `);
+
+const printStatement = (editor: SourceEditor, node: Node): string => {
+  const [firstLine] = editor.source(node).split('\n');
+  const line = firstLine.replace(/;$/, '');
+  return line.length > MAX_STATEMENT_LENGTH ? `${line.slice(0, MAX_STATEMENT_LENGTH)}...` : line;
+};
+
+const logSurvivingManifestImport = (
+  editor: SourceEditor,
+  previewConfigPath: string,
+  specifier: string,
+  readers: Node[]
+): void =>
+  logger.warn(dedent`
+    ${previewConfigPath} still imports ${specifier} for: ${readers.map((node) => `\`${printStatement(editor, node)}\``).join(', ')}.
+    Docgen now reads the manifest from disk, so changes made to it in the preview no longer apply, and the import makes the preview build fail when the manifest is invalid.
+    Move manifest transforms into your manifest generator (for example an analyzer plugin), then remove the import.
+  `);
+
+const findManifestImports = (
+  program: E.Program,
+  previewDir: string,
+  manifestFiles: string[]
+): Map<string, string> => {
+  const imports = new Map<string, string>();
+  for (const node of program.body) {
+    if (
+      node.type !== 'ImportDeclaration' ||
+      !isRelativeJsonSpecifier(node.source.value) ||
+      !manifestFiles.includes(resolve(previewDir, node.source.value))
+    ) {
+      continue;
+    }
+    for (const specifier of node.specifiers) {
+      if (specifier.type === 'ImportDefaultSpecifier') {
+        imports.set(specifier.local.name, node.source.value);
+      }
+    }
+  }
+  return imports;
+};
+
+const removeDefaultImport = (preview: ConfigFile, name: string): void => {
+  const editor = preview.editor;
+  const statementsToDrop = new Set<Node>();
+  for (const node of editor.program.body) {
+    if (node.type !== 'ImportDeclaration') {
+      continue;
+    }
+    const kept = node.specifiers.filter(
+      (specifier) => !(specifier.type === 'ImportDefaultSpecifier' && specifier.local.name === name)
+    );
+    if (kept.length === 0 && node.specifiers.length > 0) {
+      statementsToDrop.add(node);
+    } else if (kept.length < node.specifiers.length) {
+      setImportSpecifiers(editor, node, kept);
+    }
+  }
+  removeStatements(editor, statementsToDrop);
+  preview.editor.commit();
+};
 
 const removePreviewWiring = (
   preview: ConfigFile,
   previewConfigPath: string,
-  setterNames: SetterName[]
+  { setterNames, manifestFiles }: WebComponentsRuntimeManifestOptions
 ): void => {
+  const manifestImports = findManifestImports(
+    preview.program,
+    dirname(previewConfigPath),
+    manifestFiles
+  );
+  const keptImports = new Map(manifestImports);
+  let removedAnySetter = false;
   for (const setterName of setterNames) {
-    const reason = removeTopLevelCall(preview._ast.program, {
+    const result = removeTopLevelCall(preview, {
       callee: setterName,
       calleeSources: WEB_COMPONENTS_PACKAGES,
     });
-    if (reason) {
-      logManualRemovalHint(previewConfigPath, setterName, reason);
+    if (!result.removed) {
+      logManualRemovalHint(previewConfigPath, setterName, result.reason);
       continue;
     }
+    removedAnySetter = true;
     logger.debug(`Removed the ${setterName} wiring from ${previewConfigPath}`);
+    for (const name of result.keptArguments) {
+      const specifier = findDefaultJsonImportSpecifier(preview.program, name);
+      if (specifier) {
+        keptImports.set(name, specifier);
+      }
+    }
+  }
+  if (!removedAnySetter) {
+    return;
+  }
+
+  for (const [name, specifier] of keptImports) {
+    const editor = preview.editor;
+    // A setter call left in place already got the manual-removal hint.
+    const readers = topLevelReaders(editor, name).filter(
+      (node) => !SETTER_NAMES.some((setterName) => isTopLevelCall(node, setterName))
+    );
+    if (readers.length > 0) {
+      logSurvivingManifestImport(editor, previewConfigPath, specifier, readers);
+    } else if (manifestImports.has(name) && countReferences(editor, name) === 0) {
+      removeDefaultImport(preview, name);
+    }
   }
 };

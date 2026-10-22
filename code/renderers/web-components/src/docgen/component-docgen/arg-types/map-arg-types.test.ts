@@ -9,8 +9,6 @@ import type {
 } from '../manifest/types.ts';
 import { mapArgTypes } from './map-arg-types.ts';
 
-const TYPE_PROPERTY = 'parsedType';
-
 const declaration = (value: Partial<ManifestDeclaration>): ManifestDeclaration => ({
   customElement: true,
   kind: 'class',
@@ -22,7 +20,6 @@ const declaration = (value: Partial<ManifestDeclaration>): ManifestDeclaration =
 type MapArgTypesCase = {
   name: string;
   declaration: ManifestDeclaration;
-  typeProperty?: string;
   expected: Record<string, unknown>;
 };
 
@@ -79,7 +76,7 @@ function orderInvariantCases(): MapArgTypesCase[] {
       },
     })),
     ...permutations(collidingFields).map((members, index): MapArgTypesCase => ({
-      name: `attribute key wins over same-name field ${index + 1}`,
+      name: `attribute named like an unrelated field gets the -attr key ${index + 1}`,
       declaration: declaration({
         attributes: [{ name: 'b', fieldName: 'a' }],
         members,
@@ -96,6 +93,16 @@ function orderInvariantCases(): MapArgTypesCase[] {
           },
         },
         b: {
+          name: 'b',
+          description: undefined,
+          type: { name: 'number' },
+          table: {
+            category: 'properties',
+            type: { summary: 'number' },
+            defaultValue: { summary: undefined },
+          },
+        },
+        'b-attr': {
           name: 'b',
           description: undefined,
           type: { name: 'boolean' },
@@ -136,6 +143,24 @@ describe('mapArgTypes', () => {
             category: 'attributes',
             type: { summary: 'string' },
             defaultValue: { summary: '"Label"' },
+          },
+        },
+      },
+    },
+    {
+      name: 'attribute without fieldName + field with the same name',
+      declaration: declaration({
+        attributes: [{ name: 'label', type: { text: 'string' } }],
+        members: [{ kind: 'field', name: 'label', type: { text: 'string' } }],
+      }),
+      expected: {
+        label: {
+          name: 'label',
+          type: { name: 'string' },
+          table: {
+            category: 'attributes',
+            type: { summary: 'string' },
+            defaultValue: { summary: undefined },
           },
         },
       },
@@ -491,7 +516,7 @@ describe('mapArgTypes', () => {
       },
     },
     {
-      name: 'alt type wins for SBType while raw type is preserved',
+      name: 'parsedType wins for SBType while raw type is preserved',
       declaration: declaration({
         members: [
           {
@@ -516,7 +541,7 @@ describe('mapArgTypes', () => {
       },
     },
     {
-      name: 'blank alt type falls back to raw type text',
+      name: 'blank parsedType falls back to raw type text',
       declaration: declaration({
         members: [
           {
@@ -535,32 +560,6 @@ describe('mapArgTypes', () => {
           table: {
             category: 'properties',
             type: { summary: "'a' | 'b'" },
-            defaultValue: { summary: undefined },
-          },
-        },
-      },
-    },
-    {
-      name: 'custom type property',
-      declaration: declaration({
-        members: [
-          {
-            kind: 'field',
-            name: 'size',
-            type: { text: 'Size' },
-            resolvedType: { text: "'small' | 'large'" },
-          } as ManifestClassField & { resolvedType: { text: string } },
-        ],
-      }),
-      typeProperty: 'resolvedType',
-      expected: {
-        size: {
-          name: 'size',
-          description: undefined,
-          type: { name: 'enum', value: ['small', 'large'] },
-          table: {
-            category: 'properties',
-            type: { summary: 'Size' },
             defaultValue: { summary: undefined },
           },
         },
@@ -663,17 +662,16 @@ describe('mapArgTypes', () => {
       },
     },
     {
-      name: 'event reads the custom type property',
+      name: 'event reads the parsed type',
       declaration: declaration({
         events: [
           {
             name: 'value-change',
             type: { text: 'ValueChangeEvent' },
-            resolvedType: { text: 'CustomEvent<{ value: number }>' },
-          } as ManifestEvent & { resolvedType: { text: string } },
+            parsedType: { text: 'CustomEvent<{ value: number }>' },
+          } as ManifestEvent & { parsedType: { text: string } },
         ],
       }),
-      typeProperty: 'resolvedType',
       expected: {
         'value-change-event': {
           name: 'value-change',
@@ -915,9 +913,73 @@ describe('mapArgTypes', () => {
   ] satisfies {
     name: string;
     declaration: ManifestDeclaration;
-    typeProperty?: string;
     expected: Record<string, unknown>;
-  }[])('$name', ({ declaration, typeProperty, expected }) => {
-    expect(mapArgTypes(declaration, typeProperty ?? TYPE_PROPERTY)).toEqual(expected);
+  }[])('$name', ({ declaration, expected }) => {
+    expect(mapArgTypes(declaration)).toEqual(expected);
+  });
+
+  it('keeps a property named like an attribute backed by another field', () => {
+    expect(
+      mapArgTypes(
+        declaration({
+          attributes: [{ name: 'value', fieldName: 'defaultValue', type: { text: 'string' } }],
+          members: [
+            { kind: 'field', name: 'defaultValue', type: { text: 'string' }, default: "''" },
+            { kind: 'field', name: 'value', type: { text: 'string' } },
+          ],
+        })
+      )
+    ).toMatchInlineSnapshot(`
+      {
+        "defaultValue": {
+          "description": undefined,
+          "name": "defaultValue",
+          "table": {
+            "category": "properties",
+            "defaultValue": {
+              "summary": "''",
+            },
+            "type": {
+              "summary": "string",
+            },
+          },
+          "type": {
+            "name": "string",
+          },
+        },
+        "value": {
+          "description": undefined,
+          "name": "value",
+          "table": {
+            "category": "properties",
+            "defaultValue": {
+              "summary": undefined,
+            },
+            "type": {
+              "summary": "string",
+            },
+          },
+          "type": {
+            "name": "string",
+          },
+        },
+        "value-attr": {
+          "description": undefined,
+          "name": "value",
+          "table": {
+            "category": "attributes",
+            "defaultValue": {
+              "summary": "''",
+            },
+            "type": {
+              "summary": "string",
+            },
+          },
+          "type": {
+            "name": "string",
+          },
+        },
+      }
+    `);
   });
 });

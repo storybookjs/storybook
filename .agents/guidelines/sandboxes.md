@@ -1,6 +1,6 @@
 # Sandbox Notes
 
-This document is canonical for sandbox generation and use: where sandboxes live, the sandbox command shape, and the common templates. `AGENTS.md` owns the pointer to this file and the sandbox-failure fallback.
+This document is canonical for sandbox generation and use: where sandboxes live, the sandbox command shape, and the common templates. `AGENTS.md` owns the pointer to this file.
 
 Sandboxes are generated outside the repository at `../storybook-sandboxes/` by default.
 

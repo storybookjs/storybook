@@ -18,6 +18,7 @@ export const StyledHighlight: Story = {
     componentWrapperDecorator((story) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
           [
@@ -25,7 +26,7 @@ export const StyledHighlight: Story = {
               id: 'button-name',
               title: 'Login',
               description: 'Navigate to the login page',
-              clickEvent: 'my-menu-click-event',
+              clickable: true,
             },
             {
               id: 'h2-home',
@@ -60,6 +61,7 @@ export const StyledHighlight = meta.story({
     componentWrapperDecorator((story) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
           [
@@ -67,7 +69,7 @@ export const StyledHighlight = meta.story({
               id: 'button-name',
               title: 'Login',
               description: 'Navigate to the login page',
-              clickEvent: 'my-menu-click-event',
+              clickable: true,
             },
             {
               id: 'h2-home',
@@ -98,6 +100,7 @@ export const StyledHighlight = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
           [
@@ -105,7 +108,7 @@ export const StyledHighlight = {
               id: 'button-name',
               title: 'Login',
               description: 'Navigate to the login page',
-              clickEvent: 'my-menu-click-event',
+              clickable: true,
             },
             {
               id: 'h2-home',
@@ -142,6 +145,7 @@ export const StyledHighlight: Story = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
           [
@@ -149,7 +153,7 @@ export const StyledHighlight: Story = {
               id: 'button-name',
               title: 'Login',
               description: 'Navigate to the login page',
-              clickEvent: 'my-menu-click-event',
+              clickable: true,
             },
             {
               id: 'h2-home',
@@ -185,6 +189,7 @@ export const StyledHighlight: Story = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
           [
@@ -192,7 +197,7 @@ export const StyledHighlight: Story = {
               id: 'button-name',
               title: 'Login',
               description: 'Navigate to the login page',
-              clickEvent: 'my-menu-click-event',
+              clickable: true,
             },
             {
               id: 'h2-home',
@@ -223,6 +228,7 @@ export const StyledHighlight = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
           [
@@ -230,7 +236,7 @@ export const StyledHighlight = {
               id: 'button-name',
               title: 'Login',
               description: 'Navigate to the login page',
-              clickEvent: 'my-menu-click-event',
+              clickable: true,
             },
             {
               id: 'h2-home',
@@ -266,6 +272,7 @@ export const StyledHighlight = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
           [
@@ -273,7 +280,7 @@ export const StyledHighlight = {
               id: 'button-name',
               title: 'Login',
               description: 'Navigate to the login page',
-              clickEvent: 'my-menu-click-event',
+              clickable: true,
             },
             {
               id: 'h2-home',
@@ -310,6 +317,7 @@ export const StyledHighlight: Story = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
           [
@@ -317,7 +325,7 @@ export const StyledHighlight: Story = {
               id: 'button-name',
               title: 'Login',
               description: 'Navigate to the login page',
-              clickEvent: 'my-menu-click-event',
+              clickable: true,
             },
             {
               id: 'h2-home',
@@ -348,6 +356,7 @@ export const StyledHighlight = {
     () => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
           [
@@ -355,7 +364,7 @@ export const StyledHighlight = {
               id: 'button-name',
               title: 'Login',
               description: 'Navigate to the login page',
-              clickEvent: 'my-menu-click-event',
+              clickable: true,
             },
             {
               id: 'h2-home',
@@ -393,6 +402,7 @@ export const StyledHighlight: Story = {
     () => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
           [
@@ -400,7 +410,7 @@ export const StyledHighlight: Story = {
               id: 'button-name',
               title: 'Login',
               description: 'Navigate to the login page',
-              clickEvent: 'my-menu-click-event',
+              clickable: true,
             },
             {
               id: 'h2-home',
@@ -435,6 +445,7 @@ export const StyledHighlight = meta.story({
     () => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
           [
@@ -442,7 +453,7 @@ export const StyledHighlight = meta.story({
               id: 'button-name',
               title: 'Login',
               description: 'Navigate to the login page',
-              clickEvent: 'my-menu-click-event',
+              clickable: true,
             },
             {
               id: 'h2-home',
@@ -479,6 +490,7 @@ export const StyledHighlight = meta.story({
     () => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
           [
@@ -486,7 +498,7 @@ export const StyledHighlight = meta.story({
               id: 'button-name',
               title: 'Login',
               description: 'Navigate to the login page',
-              clickEvent: 'my-menu-click-event',
+              clickable: true,
             },
             {
               id: 'h2-home',
@@ -517,6 +529,7 @@ export const StyledHighlight = {
     (story) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
           [
@@ -524,7 +537,7 @@ export const StyledHighlight = {
               id: 'button-name',
               title: 'Login',
               description: 'Navigate to the login page',
-              clickEvent: 'my-menu-click-event',
+              clickable: true,
             },
             {
               id: 'h2-home',
@@ -558,6 +571,7 @@ export const StyledHighlight: Story = {
     (story) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
           [
@@ -565,7 +579,7 @@ export const StyledHighlight: Story = {
               id: 'button-name',
               title: 'Login',
               description: 'Navigate to the login page',
-              clickEvent: 'my-menu-click-event',
+              clickable: true,
             },
             {
               id: 'h2-home',
@@ -596,6 +610,7 @@ export const StyledHighlight = meta.story({
     (story) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
           [
@@ -603,7 +618,7 @@ export const StyledHighlight = meta.story({
               id: 'button-name',
               title: 'Login',
               description: 'Navigate to the login page',
-              clickEvent: 'my-menu-click-event',
+              clickable: true,
             },
             {
               id: 'h2-home',
@@ -634,6 +649,7 @@ export const StyledHighlight = meta.story({
     (story) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
           [
@@ -641,7 +657,7 @@ export const StyledHighlight = meta.story({
               id: 'button-name',
               title: 'Login',
               description: 'Navigate to the login page',
-              clickEvent: 'my-menu-click-event',
+              clickable: true,
             },
             {
               id: 'h2-home',
@@ -674,6 +690,7 @@ export const StyledHighlight = meta.story({
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
           [
@@ -681,7 +698,7 @@ export const StyledHighlight = meta.story({
               id: 'button-name',
               title: 'Login',
               description: 'Navigate to the login page',
-              clickEvent: 'my-menu-click-event',
+              clickable: true,
             },
             {
               id: 'h2-home',
@@ -716,6 +733,7 @@ export const StyledHighlight = meta.story({
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
           [
@@ -723,7 +741,7 @@ export const StyledHighlight = meta.story({
               id: 'button-name',
               title: 'Login',
               description: 'Navigate to the login page',
-              clickEvent: 'my-menu-click-event',
+              clickable: true,
             },
             {
               id: 'h2-home',

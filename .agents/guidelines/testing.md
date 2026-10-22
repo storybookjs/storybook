@@ -1,24 +1,35 @@
 # Testing Expectations
 
-This document is canonical for detailed testing practice: watch-mode commands, component and unit test guidance, `memfs` filesystem tests, and global stubbing rules. `AGENTS.md` owns the pointer to this file and the core testing expectations.
+This document is canonical for testing practice: which kind of test to write, how to run each suite, component and unit test guidance, `memfs` filesystem tests, global stubbing rules, and type tests.
+`AGENTS.md` owns the pointer to this file.
 
-Watch-mode commands:
+> [!IMPORTANT]
+> **For React components, write Storybook stories with `play` functions. Do NOT write `*.test.tsx` unit tests.**
+> Behavior, accessibility, and interaction assertions belong in `*.stories.tsx` co-located with the component, executed via the Storybook Vitest project.
+> Unit tests (`*.test.ts(x)`) are reserved for pure utilities, hooks, and non-React modules where rendering is not involved.
 
-```bash
-yarn test:watch
-yarn storybook:vitest
-```
+| Suite                     | Command                                                                                                          |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Story tests (components)  | `yarn storybook:vitest`, or `vitest run --config code/vitest.config.storybook.ts <story-file>`                   |
+| Unit tests                | `yarn test <pattern>` (e.g. `yarn test csf-tools`); the full suite is large, so run focused patterns while iterating |
+| Unit tests in watch mode  | `yarn test:watch`                                                                                                |
+| Visual validation         | Storybook UI or Chromatic                                                                                        |
+| E2E                       | `yarn task e2e-tests --start-from auto` or `yarn task e2e-tests-dev --start-from auto`                           |
+| Smoke checks              | `yarn task smoke-test --start-from auto`                                                                         |
+| Tools attach coverage     | `cd code && yarn playwright test -c e2e-internal/playwright.config.ts e2e-internal/tools-attach.spec.ts` (same checkout as the running internal UI) |
+
+Fork CI compiles with `--no-link` before unit tests to generate the declarations required by distribution contract tests.
 
 When writing tests for components:
 
 - Add or update `<Component>.stories.tsx` with stories covering each behavior; use `play` functions with `expect`, `userEvent`, `within` from `storybook/test`
 - Mock external context (e.g. `ManagerContext.Provider`) inside story decorators or `beforeEach`
-- Run `vitest --config code/vitest.config.storybook.ts <story-file>` to verify play assertions
 
 When writing unit tests (utilities, hooks, non-React modules):
 
 - Export functions that need direct tests
 - Test real behavior, not just syntax patterns
+- Make the input and expected result easy to read together. For a mapper with stable output, prefer `toMatchInlineSnapshot` when it shows the full result more clearly, as in the automigration fix tests.
 - Use coverage when useful: `yarn vitest run --coverage <test-file>`
 - Mock external dependencies like file system access and loggers
 - Use Node's path.resolve to wrap expected FS paths when writing path-related tests, so they work on Windows

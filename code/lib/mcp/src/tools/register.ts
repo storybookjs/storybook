@@ -306,8 +306,9 @@ export async function addGetDocumentationTool(
       // Skipped when the manifest itself could not be read: that is a transport failure, not a
       // lookup with an outcome to report.
       if (data) {
-        const { entry } = data as {
+        const { entry, resolvedStorybookId } = data as {
           entry?: { kind: string; component?: unknown; doc?: unknown };
+          resolvedStorybookId?: string;
         };
         const found = entry
           ? entry.kind === 'component'
@@ -322,6 +323,7 @@ export async function addGetDocumentationTool(
                 input,
                 foundDocumentation: found as never,
                 resultText: result.content[0].text,
+                resolvedStorybookId,
               }
             : { context: context!, input }
         );

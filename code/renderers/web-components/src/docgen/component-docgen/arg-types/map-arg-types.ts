@@ -1,7 +1,11 @@
 import type { StrictArgTypes, StrictInputType } from 'storybook/internal/types';
 
 import { deprecationMessage, firstValue, trimmedOrUndefined } from '../utils.ts';
-import { classifyDeclaration, type DeclarationApi } from '../manifest/declaration-api.ts';
+import {
+  classifyDeclaration,
+  foldsIntoAttributeRow,
+  type DeclarationApi,
+} from '../manifest/declaration-api.ts';
 import type {
   ManifestAttribute,
   ManifestClassField,
@@ -14,7 +18,7 @@ import type {
   ManifestSlot,
 } from '../manifest/types.ts';
 import { formatParameters } from '../manifest/members.ts';
-import { readCssPropertySyntax, readTypeText } from './alt-type.ts';
+import { readCssPropertySyntax, readTypeText } from '../manifest/type-text.ts';
 import { DEFAULT_SLOT_NAME, toArgKey } from '../../../arg-keys.ts';
 import { parseTypeText, type ServiceControl } from './parse-type-text.ts';
 
@@ -48,39 +52,32 @@ interface ToArgTypeOptions {
   key: string;
   category: ArgTypeCategory;
   sources: ArgTypeSource[];
-  typeProperty: string;
 }
 
 /**
  * Suffixed keys keep categories clear of attributes (the `@wc-toolkit/storybook-helpers`
  * convention); the attributes/properties spread last wins the clashes left and bare `--x`
- * names. Within attributes and properties, property rows are written first and
- * attribute rows last, so the same precedence holds in every input order.
+ * names. An attribute named like an unrelated property gets the `-attr` key so both rows survive.
  */
-export function mapArgTypes(
-  declaration: ManifestDeclaration,
-  typeProperty: string
-): StrictArgTypes {
+export function mapArgTypes(declaration: ManifestDeclaration): StrictArgTypes {
   const api = classifyDeclaration(declaration);
 
   return {
     ...Object.fromEntries([
-      ...api.events.flatMap((event) => eventEntries(event, typeProperty)),
+      ...api.events.flatMap(eventEntries),
       ...api.methods.map(methodEntry),
       ...api.slots.map((slot) => namedEntry(slot, 'slots')),
       ...api.cssParts.map((part) => namedEntry(part, 'cssParts')),
       ...api.cssStates.map((state) => namedEntry(state, 'cssStates')),
-      ...api.cssProperties.map((property) => cssPropertyEntry(property, typeProperty)),
+      ...api.cssProperties.map(cssPropertyEntry),
     ]),
-    ...mapAttributesAndProperties(api, typeProperty),
+    ...mapAttributesAndProperties(api),
   };
 }
 
-function mapAttributesAndProperties(api: DeclarationApi, typeProperty: string): StrictArgTypes {
+function mapAttributesAndProperties(api: DeclarationApi): StrictArgTypes {
   const argTypes: StrictArgTypes = {};
-  const properties = api.fields.filter(
-    (field) => !api.attributes.some(({ attribute }) => attribute.name === field.name)
-  );
+  const properties = api.fields.filter((field) => !foldsIntoAttributeRow(field, api.attributes));
 
   for (const field of properties) {
     const attribute = api.attributes.find(({ field: backingField }) => backingField === field);
@@ -88,29 +85,28 @@ function mapAttributesAndProperties(api: DeclarationApi, typeProperty: string): 
       key: field.name,
       category: 'properties',
       sources: attribute ? [field, attribute.attribute] : [field],
-      typeProperty,
     });
   }
 
   for (const { attribute, field } of api.attributes) {
-    argTypes[attribute.name] = toArgType({
+    const key = Object.hasOwn(argTypes, attribute.name)
+      ? toArgKey('attributes', attribute.name)
+      : attribute.name;
+    argTypes[key] = toArgType({
       key: attribute.name,
       category: 'attributes',
       sources: field ? [field, attribute] : [attribute],
-      typeProperty,
     });
   }
 
   return argTypes;
 }
 
-function toArgType({ key, category, sources, typeProperty }: ToArgTypeOptions): StrictInputType {
+function toArgType({ key, category, sources }: ToArgTypeOptions): StrictInputType {
   const rawTypeText = firstValue(sources, (source) =>
     typeof source.type?.text === 'string' ? source.type.text : undefined
   );
-  const text = firstValue(sources, (source) =>
-    trimmedOrUndefined(readTypeText(source, typeProperty))
-  );
+  const text = firstValue(sources, (source) => trimmedOrUndefined(readTypeText(source)));
   const parsed =
     parseTypeText(text) ??
     (category === 'attributes'
@@ -130,11 +126,8 @@ function toArgType({ key, category, sources, typeProperty }: ToArgTypeOptions): 
   });
 }
 
-function eventEntries(
-  event: ManifestEvent,
-  typeProperty: string
-): Array<[string, StrictInputType]> {
-  const text = readTypeText(event, typeProperty) ?? 'CustomEvent';
+function eventEntries(event: ManifestEvent): Array<[string, StrictInputType]> {
+  const text = readTypeText(event) ?? 'CustomEvent';
 
   return [
     [
@@ -169,11 +162,8 @@ function namedEntry(
   ];
 }
 
-function cssPropertyEntry(
-  property: ManifestCssCustomProperty,
-  typeProperty: string
-): [string, StrictInputType] {
-  const syntax = readCssPropertySyntax(property, typeProperty);
+function cssPropertyEntry(property: ManifestCssCustomProperty): [string, StrictInputType] {
+  const syntax = readCssPropertySyntax(property);
 
   return [
     toArgKey('cssProperties', property.name),

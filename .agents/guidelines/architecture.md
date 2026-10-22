@@ -1,6 +1,6 @@
 # Architecture
 
-This document is canonical for repo structure and architecture: renderer vs builder vs framework, the core package layout, key flows, open services and toolsets, and agent-facing skills. `AGENTS.md` owns the pointer to this file and the kickstart commands.
+This document is canonical for repo structure and architecture: renderer vs builder vs framework, the core package layout, key flows, open services and toolsets, and agent-facing skills. `AGENTS.md` owns the pointer to this file.
 
 ## Repository Structure
 
@@ -114,7 +114,7 @@ the fields to change and provide migration-specific error guidance.
 
 ## Agent-facing skills
 
-- `storybook skills` serves the `stories`, `write-story`, and `setup` documents as Markdown.
+- `storybook skills` serves the `ui-workflow`, `component-docs`, `write-story`, and `setup` documents as Markdown.
 - Pure content lives in `code/core/src/cli/skills/content/` and is exported through
   `storybook/internal/skills`; addon-mcp consumes the same builders.
 - Keep `cli/skills/content/**` independent of `core-server`. A lint rule enforces the boundary.

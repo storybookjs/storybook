@@ -14,11 +14,24 @@ import slash from 'slash';
 import { dedent } from 'ts-dedent';
 
 import { SupportedLanguage } from 'storybook/internal/types';
-import { babelParse, types as t, traverse } from '../../code/core/src/babel/index.ts';
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager/index.ts';
 import storybookPackages from '../../code/core/src/common/versions.ts';
-import type { ConfigFile } from '../../code/core/src/csf-tools/index.ts';
-import { readConfig as csfReadConfig, writeConfig } from '../../code/core/src/csf-tools/index.ts';
+import {
+  type ConfigFile,
+  type CsfValue,
+  type ESTree as E,
+  type ESTreeNode as Node,
+  appendToList,
+  argumentList,
+  readConfig as csfReadConfig,
+  insertAfterImports,
+  objectList,
+  parseExpression,
+  staticKey,
+  textOf,
+  walk,
+  writeConfig,
+} from '../../code/core/src/csf-tools/index.ts';
 
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService.ts';
@@ -96,66 +109,51 @@ async function pathExists(path: string) {
   }
 }
 
-const propKey = (p: t.ObjectProperty) => {
-  if (t.isIdentifier(p.key)) {
-    return p.key.name;
-  }
-
-  if (t.isStringLiteral(p.key)) {
-    return p.key.value;
-  }
-
-  return null;
-};
-
-const makeObjectExpression = (path: string[], value: t.Expression): t.Expression => {
-  if (path.length === 0) {
-    return value;
-  }
-
-  const [first, ...rest] = path;
-  return t.objectExpression([
-    t.objectProperty(t.identifier(first), makeObjectExpression(rest, value)),
-  ]);
-};
+const makeObjectSource = (path: string[], value: string) =>
+  path.reduceRight((inner, key) => `{ ${key}: ${inner} }`, value);
 
 const updateObjectExpression = (
+  config: ConfigFile,
   path: string[],
-  expr: t.Expression,
-  existing: t.ObjectExpression
+  value: string,
+  existing: E.ObjectExpression
 ) => {
+  const editor = config.editor;
   const [first, ...rest] = path;
-  const existingField = (existing.properties as t.ObjectProperty[]).find(
-    (p) => propKey(p) === first
-  ) as t.ObjectProperty;
+  const existingField = existing.properties.find((p) => staticKey(p) === first) as
+    | E.ObjectProperty
+    | undefined;
 
   if (!existingField) {
-    existing.properties.push(
-      t.objectProperty(t.identifier(first), makeObjectExpression(rest, expr))
-    );
-  } else if (t.isObjectExpression(existingField.value) && rest.length > 0) {
-    updateObjectExpression(rest, expr, existingField.value);
+    appendToList(editor, objectList(editor, existing), [
+      `${first}: ${makeObjectSource(rest, value)}`,
+    ]);
+  } else if (existingField.value.type === 'ObjectExpression' && rest.length > 0) {
+    updateObjectExpression(config, rest, value, existingField.value);
   } else {
-    existingField.value = makeObjectExpression(rest, expr);
+    editor.edits.overwrite(
+      existingField.value.start,
+      existingField.value.end,
+      makeObjectSource(rest, value)
+    );
   }
 };
 
-const findPluginCall = (name: string, ast: t.File): t.CallExpression | undefined => {
-  let call: t.CallExpression | undefined;
-  traverse(ast, {
-    CallExpression: {
-      enter(path) {
-        if (call) {
-          return;
-        }
-
-        const { callee } = path.node;
-        if (t.isIdentifier(callee) && callee.name === name) {
-          call = path.node;
-          path.stop();
-        }
-      },
-    },
+const findPluginCall = (name: string, program: E.Program): E.CallExpression | undefined => {
+  let call: E.CallExpression | undefined;
+  walk(program, (node: Node) => {
+    if (call) {
+      return false;
+    }
+    if (
+      node.type === 'CallExpression' &&
+      node.callee.type === 'Identifier' &&
+      node.callee.name === name
+    ) {
+      call = node;
+      return false;
+    }
+    return undefined;
   });
   return call;
 };
@@ -174,7 +172,7 @@ function setPluginParam(
     paramValue: unknown;
   }
 ) {
-  const call = findPluginCall(pluginName, config._ast);
+  const call = findPluginCall(pluginName, config.program);
   if (!call) {
     throw new Error(`Could not find a call to the "${pluginName}" plugin in this file.`);
   }
@@ -185,23 +183,29 @@ function setPluginParam(
     );
   }
 
+  const valueNode = config.valueToNode(paramValue);
+  if (!valueNode) {
+    throw new Error(`Unexpected value ${JSON.stringify(paramValue)}`);
+  }
+  const value = textOf(valueNode);
+
   if (paramPos === call.arguments.length) {
-    call.arguments.push(t.objectExpression([]));
+    appendToList(config.editor, argumentList(config.editor, call), [
+      makeObjectSource(paramPath, value),
+    ]);
+    config.editor.commit();
+    return;
   }
 
   const param = call.arguments[paramPos];
-  if (!t.isObjectExpression(param)) {
+  if (param.type !== 'ObjectExpression') {
     throw new Error(
       `Expected argument ${paramPos} of "${pluginName}" to be an object, got '${param.type}'.`
     );
   }
 
-  const valueNode = config.valueToNode(paramValue);
-  if (!valueNode) {
-    throw new Error(`Unexpected value ${JSON.stringify(paramValue)}`);
-  }
-
-  updateObjectExpression(paramPath, valueNode, param);
+  updateObjectExpression(config, paramPath, value, param);
+  config.editor.commit();
 }
 
 const logger = console;
@@ -411,11 +415,7 @@ function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
       ],
     },
   })`;
-  mainConfig.set(
-    ['webpackFinal'],
-    // @ts-expect-error (Property 'expression' does not exist on type 'BlockStatement')
-    babelParse(webpackFinalCode).program.body[0].expression
-  );
+  mainConfig.set(['webpackFinal'], parseExpression(webpackFinalCode.trim()));
 }
 
 /*
@@ -450,8 +450,7 @@ function setSandboxViteFinal(mainConfig: ConfigFile, template: TemplateKey) {
     },
     ${temporaryAliasWorkaround}
   })`;
-  // @ts-expect-error (Property 'expression' does not exist on type 'BlockStatement')
-  mainConfig.set(['viteFinal'], babelParse(viteFinalCode).program.body[0].expression);
+  mainConfig.set(['viteFinal'], parseExpression(viteFinalCode.trim()));
 }
 
 // Update the stories field to ensure that no TS files
@@ -914,7 +913,7 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
   };
 
   Object.entries(configToAdd).forEach(([field, value]) =>
-    mainConfig.set([field], t.valueToNode(value))
+    mainConfig.set([field], value as CsfValue)
   );
 
   const previewHeadCode = `
@@ -941,8 +940,7 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
         }
       </style>
     \``;
-  // @ts-expect-error (Property 'expression' does not exist on type 'BlockStatement')
-  mainConfig.set(['previewHead'], babelParse(previewHeadCode).program.body[0].expression);
+  mainConfig.set(['previewHead'], parseExpression(previewHeadCode.trim()));
 
   // Simulate Storybook Lite
   if (disableDocs) {
@@ -992,7 +990,7 @@ export const addStaticDirs: Task['run'] = async ({ key, sandboxDir }) => {
   await writeConfig(mainConfig);
 };
 
-export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
+export const extendPreview: Task['run'] = async ({ key, template, sandboxDir }) => {
   logger.log('📝 Extending preview.js');
   const previewConfig = await readConfig({ cwd: sandboxDir, fileName: 'preview' });
 
@@ -1005,11 +1003,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     if (mainConfig.getValue(['features', 'docgenServer']) === false) {
       previewConfig.setImport(['setCompodocJson'], '@storybook/addon-docs/angular');
       previewConfig.setImport('docJson', '../documentation.json');
-      previewConfig._ast.program.body.push(
-        t.expressionStatement(
-          t.callExpression(t.identifier('setCompodocJson'), [t.identifier('docJson')])
-        )
-      );
+      previewConfig.setBodyDeclaration('setCompodocJson(docJson);');
     }
   }
 
@@ -1020,12 +1014,17 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     previewConfig.setImport(null, storiesDir);
     if (template.expected.renderer === '@storybook/vue3') {
       previewConfig.setImport(null, '../src/stories/renderers/vue3/preview.js');
+      const variant = template.modifications?.storiesVariant ?? key.replaceAll('/', '-');
+      const variantPreview = `src/stories/renderers/vue3_${variant}/preview`;
+      if (existsSync(join(sandboxDir, `${variantPreview}.ts`))) {
+        previewConfig.setImport(null, `../${variantPreview}`);
+      }
     }
     previewConfig.setImport(
       { namespace: 'templateAnnotations' },
       '../template-stories/core/preview'
     );
-    previewConfig.appendNodeToArray(['addons'], t.identifier('templateAnnotations'));
+    previewConfig.appendNodeToArray(['addons'], parseExpression('templateAnnotations'));
   }
 
   if (template.expected.builder.includes('vite')) {
@@ -1043,20 +1042,19 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
 
   previewConfig.setImport(['sb'], 'storybook/test');
 
-  const mockStatements = babelParse(`
-    sb.mock('../template-stories/core/test/ModuleMocking.utils.ts');
-    sb.mock('../template-stories/core/test/ModuleSpyMocking.utils.ts', { spy: true });
-    sb.mock('../template-stories/core/test/ModuleAutoMocking.utils.ts');
-    sb.mock('../template-stories/core/test/ClearModuleMocksMocking.api.ts', { spy: true });
-    sb.mock(import('lodash-es'));
-    sb.mock(import('lodash-es/add'));
-    sb.mock(import('lodash-es/sum'));
-    sb.mock(import('uuid'));
-  `).program.body;
+  const mockStatements = [
+    "sb.mock('../template-stories/core/test/ModuleMocking.utils.ts');",
+    "sb.mock('../template-stories/core/test/ModuleSpyMocking.utils.ts', { spy: true });",
+    "sb.mock('../template-stories/core/test/ModuleAutoMocking.utils.ts');",
+    "sb.mock('../template-stories/core/test/ClearModuleMocksMocking.api.ts', { spy: true });",
+    "sb.mock(import('lodash-es'));",
+    "sb.mock(import('lodash-es/add'));",
+    "sb.mock(import('lodash-es/sum'));",
+    "sb.mock(import('uuid'));",
+  ].join('\n');
 
-  const body = previewConfig._ast.program.body;
-  const lastImportIndex = body.findLastIndex((node) => t.isImportDeclaration(node));
-  body.splice(lastImportIndex + 1, 0, ...mockStatements);
+  insertAfterImports(previewConfig.editor, mockStatements);
+  previewConfig.editor.commit();
 
   await writeConfig(previewConfig);
 };

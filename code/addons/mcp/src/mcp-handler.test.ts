@@ -540,52 +540,11 @@ describe('mcpServerHandler', () => {
     expect(toolNames).toContain('docs-show-story');
   });
 
-  it('registers stories-changed when the changeDetection feature flag is on', async () => {
-    const mockOptions = createMockOptions({
-      port: 6009,
-      presets: {
-        apply: vi.fn(async (key: string, defaultValue?: any) => {
-          if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: true };
-          return defaultValue;
-        }),
-      },
-    });
+  it('registers stories-changed and review-create', async () => {
+    const toolNames = await getRegisteredToolNames(createMockOptions({ port: 6009 }), 6009);
 
-    const toolNames = await getRegisteredToolNames(mockOptions, 6009);
     expect(toolNames).toContain('stories-changed');
-  });
-
-  it('registers review-create when the changeDetection feature flag is on', async () => {
-    const mockOptions = createMockOptions({
-      port: 6010,
-      presets: {
-        apply: vi.fn(async (key: string, defaultValue?: any) => {
-          if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: true };
-          return defaultValue;
-        }),
-      },
-    });
-
-    const toolNames = await getRegisteredToolNames(mockOptions, 6010);
     expect(toolNames).toContain('review-create');
-  });
-
-  it('does not list review-create when changeDetection is off', async () => {
-    const mockOptions = createMockOptions({
-      port: 6015,
-      presets: {
-        apply: vi.fn(async (key: string, defaultValue?: any) => {
-          if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: false };
-          return defaultValue;
-        }),
-      },
-    });
-
-    const toolNames = await getRegisteredToolNames(mockOptions, 6015);
-    expect(toolNames).not.toContain('review-create');
   });
 });
 

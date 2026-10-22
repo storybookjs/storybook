@@ -26,8 +26,6 @@ export type EventType =
   | 'core-config'
   | 'remove'
   | 'save-story'
-  | 'create-new-story-file'
-  | 'create-new-story-file-search'
   | 'open-in-editor'
   | 'testing-module-watch-mode'
   | 'testing-module-completed-report'

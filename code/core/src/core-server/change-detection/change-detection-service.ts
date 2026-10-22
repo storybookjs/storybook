@@ -123,7 +123,6 @@ export class ChangeDetectionService {
   private rerunAfterCurrentScan = false;
   private readinessResolved = false;
   private statusPipelineStarted = false;
-  private changeDetectionEnabled = false;
   private previousStatuses = new Map<string, Status>();
   private gitDiffProvider: GitDiffProvider | undefined;
   private indexBaselineService: IndexBaselineService | undefined;
@@ -153,17 +152,8 @@ export class ChangeDetectionService {
     return getService('core/module-graph', { internal: true });
   }
 
-  private getModuleGraphIndex() {
-    return getService('core/module-graph-index', { internal: true });
-  }
-
-  /** True while the service is live and change-detection status publishing is enabled. */
-  private isActive(): boolean {
-    return !this.disposed && this.changeDetectionEnabled;
-  }
-
   private onGraphReady(): void {
-    if (!this.isActive()) {
+    if (this.disposed) {
       return;
     }
 
@@ -171,7 +161,7 @@ export class ChangeDetectionService {
   }
 
   private onGraphChange(): void {
-    if (!this.isActive()) {
+    if (this.disposed) {
       return;
     }
 
@@ -179,7 +169,7 @@ export class ChangeDetectionService {
   }
 
   private onGraphError(error: Error): void {
-    if (!this.isActive()) {
+    if (this.disposed) {
       return;
     }
 
@@ -188,7 +178,7 @@ export class ChangeDetectionService {
   }
 
   private onGraphUnavailable(reason: string, error?: Error): void {
-    if (!this.isActive()) {
+    if (this.disposed) {
       return;
     }
 
@@ -198,7 +188,7 @@ export class ChangeDetectionService {
   }
 
   private onModuleGraphStatus(status: ModuleGraphStatus): void {
-    if (!this.isActive()) {
+    if (this.disposed) {
       return;
     }
 
@@ -220,19 +210,7 @@ export class ChangeDetectionService {
     }
   }
 
-  start(enabled: boolean | undefined): void {
-    if (enabled === false) {
-      logger.debug('Change detection disabled.');
-      this.resolveReadiness({
-        status: 'unavailable',
-        reason: 'disabled',
-      });
-      return;
-    }
-
-    logger.debug('Change detection enabled.');
-    this.changeDetectionEnabled = true;
-
+  start(): void {
     const moduleGraph = this.getModuleGraph();
     this.unsubscribeModuleGraphStatus = moduleGraph.queries.status.subscribe(
       undefined,
@@ -412,8 +390,7 @@ export class ChangeDetectionService {
     const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
     const statuses = new Map<string, Status>();
     const scannedFilesArray = [...scannedFiles];
-    const moduleGraphIndex = this.getModuleGraphIndex();
-    const lookupResults = await moduleGraphIndex.queries.storiesForFiles.loaded({
+    const lookupResults = await this.getModuleGraph().commands.storiesForFiles({
       files: scannedFilesArray,
     });
 

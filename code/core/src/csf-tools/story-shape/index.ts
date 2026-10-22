@@ -4,14 +4,19 @@ export {
   type ComponentImportRef,
   type ImportRef,
 } from './import-statements.ts';
+export { authoredSource, type AuthoredSource } from './authored-source.ts';
 export {
   collectImportBindings,
   importedName,
   isTypeSpecifier,
   type ImportBinding,
 } from './imports.ts';
-export { extractStoryJSDocInfo, jsDocTagsForPath } from './jsdoc.ts';
-export { normalizeStoryDeclaration, type NormalizedStoryDeclaration } from './normalize-story.ts';
+export { extractStoryJSDocInfo, jsDocTagsForNode } from './jsdoc.ts';
+export {
+  normalizeStoryDeclaration,
+  storyShapeError,
+  type NormalizedStoryDeclaration,
+} from './normalize-story.ts';
 export {
   createStoryReferenceResolver,
   parseReferenceModule,
@@ -23,7 +28,7 @@ export {
   resolveBindingMembers,
   resolveObjectMembers,
   resolveReferencedValue,
-  sourceOf,
+  oneLineTextOf,
   type ReferenceContext,
   type ReferenceModule,
   type ResolvedMembers,
@@ -37,19 +42,23 @@ export {
   type ResolvedStoryArgs,
   type StoryArgsResolver,
 } from './resolve-story-args.ts';
-export { resolveRenderFunction, type RenderFunctionPath, type RenderResolution } from './render.ts';
+export {
+  resolveEffectiveRender,
+  resolveRenderFunction,
+  type RenderFunction,
+  type RenderResolution,
+} from './render.ts';
 export {
   csfFactoryReceiver,
   isCanonicalCsf2BindCall,
   isCsfFactoryCall,
-  keyOf,
-  metaObjectPath,
-  pathForNode,
+  metaObject,
   propertyValue,
   resolveIdentifierInit,
   resolveReturnedObjectExpression,
   returnedExpression,
-  returnedExpressionPath,
-  unwrapExpression,
+  templateParts,
   withoutTypeCalls,
+  type FunctionNode,
+  type TemplateParts,
 } from './utils.ts';

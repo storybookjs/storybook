@@ -70,9 +70,10 @@ or `--input` key the tool does not declare is an invalid-input error, and the CL
 and lists the valid ones.
 
 `docs` honours the project's `refs`: with composed Storybooks, `docs list` prints one section per
-source and `docs show` / `docs show-story` take `--storybookId`, which defaults to `local`. Remote
-manifests are fetched without credentials and with a 3 second timeout in every mode; a ref that
-cannot be read gets its own error section.
+source and `docs show` / `docs show-story` take `--storybookId`, which defaults to `local`. When that
+source does not have the id, `docs show` shows it from the one other source that has it, and
+otherwise suggests the closest ids. Remote manifests are fetched without credentials and with a 3
+second timeout in every mode; a ref that cannot be read gets its own error section.
 
 ```bash
 npx storybook tools docs list

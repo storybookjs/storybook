@@ -84,12 +84,13 @@ It is advisable to add a `.storybook/tsconfig.json` file so that you apply chang
 
 A common error is that an addon tries to access the "channel", but the channel is not set. It can happen in a few different cases:
 
-1. You're trying to access addon channel (e.g., by calling `setOptions`) in a non-browser environment like Jest. You may need to add a channel mock:
+1. You're trying to access addon channel (e.g., by calling `setOptions`) in a non-browser environment like Jest. You may need to add a transport-less channel:
 
    ```js
-   import { addons, mockChannel } from 'storybook/preview-api';
+   import { addons } from 'storybook/preview-api';
+   import { Channel } from 'storybook/internal/channels';
 
-   addons.setChannel(mockChannel());
+   addons.setChannel(new Channel({}));
    ```
 
 2. In React Native, it's a special case documented in [#1192](https://github.com/storybookjs/storybook/issues/1192)

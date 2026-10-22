@@ -162,9 +162,9 @@ export const configureYarn2ForVerdaccio = async ({
     key.includes('react-vite/prerelease') ||
     key.includes('react-webpack/prerelease') ||
     key.includes('react-rsbuild/default-ts') ||
-    key.includes('vue-rsbuild/default-ts') ||
+    key.includes('vue3-rsbuild/default-ts') ||
     key.includes('html-rsbuild/default-ts') ||
-    key.includes('web-components-rsbuild/default-ts')
+    key.includes('lit-rsbuild/default-ts')
   ) {
     // Don't error with INCOMPATIBLE_PEER_DEPENDENCY for SvelteKit sandboxes, it is expected to happen with @sveltejs/vite-plugin-svelte
     command.push(

@@ -105,19 +105,17 @@ export const ENGINES: BenchEngine[] = [
     pin: 'vue-component-meta-next',
   }),
   // Svelte's svelte2tsx engine as builder docgen runs it, and as the docgen server's component-meta
-  // manager runs it. No budget rows yet, so both stay out of the default run.
+  // manager runs it.
   new SeriesChildEngine({
     id: 'svelte-legacy',
     child: 'engines/svelte-docgen.ts',
     scenarios: svelteScenarios,
-    inDefaultRun: false,
     args: (scenario) => [...workspaceArgs(scenario), '--engine', 'legacy'],
   }),
   new SeriesChildEngine({
     id: 'svelte-component-meta',
     child: 'engines/svelte-docgen.ts',
     scenarios: svelteScenarios,
-    inDefaultRun: false,
     args: (scenario) => [...workspaceArgs(scenario), '--engine', 'component-meta'],
   }),
   new CompodocEngine(),

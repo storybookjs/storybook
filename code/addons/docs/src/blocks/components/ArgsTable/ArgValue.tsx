@@ -139,13 +139,6 @@ const ArgText: FC<ArgTextProps> = ({ text, simple }) => {
   return <Text simple={simple}>{text}</Text>;
 };
 
-const getSummaryItems = (summary: string) => {
-  if (!summary) {
-    return [summary];
-  }
-  return uniq(splitSummary(summary));
-};
-
 const renderSummaryItems = (summaryItems: string[]) => {
   return summaryItems
     .slice(0, ITEMS_BEFORE_EXPANSION)
@@ -174,7 +167,7 @@ const ArgSummary: FC<ArgSummaryProps> = ({ value, initialExpandedArgs }) => {
   const summaryAsString = typeof summary.toString === 'function' ? summary.toString() : summary;
 
   if (detail == null) {
-    const summaryItems = getSummaryItems(summaryAsString);
+    const summaryItems = uniq(splitSummary(summaryAsString));
     const itemsCount = summaryItems.length;
     const hasManyItems = itemsCount > ITEMS_BEFORE_EXPANSION;
 

@@ -30,23 +30,35 @@ const packageDirsByName = new Map(
 
 const allTestedPaths = Object.values(allTemplates).flatMap(({ testedPaths = [] }) => testedPaths);
 
+const workspaceDependencyDirs = (dir: string) => {
+  const { dependencies = {} } = JSON.parse(readFileSync(join(ROOT, dir, 'package.json'), 'utf8'));
+  return Object.keys(dependencies).flatMap((name) => packageDirsByName.get(name) ?? []);
+};
+
 describe('testedPaths', () => {
+  const normalPackageDirs = [
+    ...new Set(
+      normal.flatMap((key) =>
+        Object.values(allTemplates[key].expected).flatMap(
+          (name) => packageDirsByName.get(name) ?? []
+        )
+      )
+    ),
+  ];
+
   it.each(
     [
-      ...new Set(
-        normal.flatMap((key) =>
-          Object.values(allTemplates[key].expected).flatMap(
-            (name) => packageDirsByName.get(name) ?? []
-          )
-        )
-      ),
+      ...new Set([
+        ...normalPackageDirs,
+        ...normalPackageDirs.flatMap(workspaceDependencyDirs).filter((dir) => /^code\/(lib|presets)\//.test(dir)),
+      ]),
     ].sort()
   )('%s, used by a ci:normal sandbox, selects a focus sandbox', (dir) => {
     expect(allTestedPaths).toContain(dir);
   });
 
   it.each(allTestedPaths)(
-    '%s is an existing directory under a framework, renderer, or builder root',
+    '%s is an existing directory under a tested path root',
     (path) => {
       expect(TESTED_PATH_ROOTS.some((root) => path.startsWith(root))).toBe(true);
       expect(path.endsWith('/')).toBe(true);
@@ -78,8 +90,18 @@ describe('selectFocusSandboxes', () => {
     ['code/renderers/react/src/render.ts', 'react-vite/default-ts'],
     ['code/builders/builder-webpack5/src/index.ts', 'react-webpack/18-ts'],
     ['code/builders/builder-vite/src/index.ts', 'react-vite/default-ts'],
+    ['code/lib/vite-plugin-storybook-nextjs/src/index.ts', 'nextjs-vite/default-ts'],
+    ['code/lib/angular-cm/src/index.ts', 'angular-vite/default-ts'],
   ])('maps %s to %s', (changedFile, expectedSandbox) => {
     expect(selectFocusSandboxes([changedFile])).toEqual([expectedSandbox]);
+  });
+
+  it.each([
+    ['code/lib/core-webpack/src/to-importFn.ts', ['react-webpack/18-ts', 'angular-cli/default-ts']],
+    ['code/presets/react-webpack/src/index.ts', ['nextjs/default-ts', 'react-webpack/18-ts']],
+    ['code/lib/angular-compodoc/src/index.ts', ['angular-cli/default-ts', 'angular-vite/default-ts']],
+  ])('maps the shared package %s to every sandbox using it', (changedFile, expectedSandboxes) => {
+    expect(selectFocusSandboxes([changedFile]).sort()).toEqual(expectedSandboxes.sort());
   });
 
   it('prefers a framework match over a shared builder match', () => {
@@ -223,18 +245,28 @@ describe('selectPathTriggeredJobs', () => {
     expect(triggeredIds('code/addons/docs/src/preset.ts')).toEqual(['init-features']);
   });
 
-  it("adds a renderer's portable stories job, and all of them for a preview-api change", () => {
+  it("adds a renderer's portable stories job, and all of them for a preview-api or CSF change", () => {
     expect(triggeredIds('code/renderers/vue3/src/portable-stories.ts')).toEqual([
       'test-storybooks-portable-vue3',
     ]);
-    expect(triggeredIds('code/core/src/preview-api/modules/store/csf/portable-stories.ts')).toEqual(
-      [
+    for (const file of [
+      'code/core/src/preview-api/modules/store/csf/portable-stories.ts',
+      'code/core/src/csf/csf-utils.ts',
+    ]) {
+      expect(triggeredIds(file)).toEqual([
         'test-storybooks-portable-react',
         'test-storybooks-portable-vue3',
         'test-storybooks-portable-svelte',
         'test-storybooks-portable-nextjs',
-      ]
-    );
+      ]);
+    }
+  });
+
+  it('adds the React portable stories job, which runs the Vitest plugin, for a Vitest addon change', () => {
+    expect(triggeredIds('code/addons/vitest/src/vitest-plugin/index.ts')).toEqual([
+      'init-features',
+      'test-storybooks-portable-react',
+    ]);
   });
 
   it('adds the internal Storybook E2E, story tests, and Chromatic for a manager change', () => {

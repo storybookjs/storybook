@@ -26,7 +26,13 @@ import type { JobOrNoOpJob } from './utils/types.ts';
 const DEFAULT_FOCUS_SANDBOX = 'react-vite/default-ts' satisfies TemplateKey;
 
 /** Ordered by priority: a framework match picks the sandbox before a renderer or builder match. */
-export const TESTED_PATH_ROOTS = ['code/frameworks/', 'code/renderers/', 'code/builders/'] as const;
+export const TESTED_PATH_ROOTS = [
+  'code/frameworks/',
+  'code/renderers/',
+  'code/builders/',
+  'code/lib/',
+  'code/presets/',
+] as const;
 
 type TestedPathRoot = (typeof TESTED_PATH_ROOTS)[number];
 
@@ -95,11 +101,12 @@ const INTERNAL_STORYBOOK_PATHS = [
   'code/e2e-internal/',
 ];
 
-const portableStoryTest = (directory: string, sourcePath: string) => ({
+const portableStoryTest = (directory: string, sourcePaths: readonly string[]) => ({
   job: definePortableStoryTest(directory),
   paths: [
-    sourcePath,
+    ...sourcePaths,
     'code/core/src/preview-api/',
+    'code/core/src/csf/',
     `test-storybooks/portable-stories-kitchen-sink/${directory}/`,
   ],
 });
@@ -111,10 +118,10 @@ export const PATH_TRIGGERED_JOBS: readonly { job: JobOrNoOpJob; paths: readonly 
     job: defineEmptyInitFeatures(),
     paths: [...INIT_PATHS, 'code/addons/docs/', 'code/addons/vitest/', 'code/addons/a11y/'],
   },
-  portableStoryTest('react', 'code/renderers/react/'),
-  portableStoryTest('vue3', 'code/renderers/vue3/'),
-  portableStoryTest('svelte', 'code/renderers/svelte/'),
-  portableStoryTest('nextjs', 'code/frameworks/nextjs/'),
+  portableStoryTest('react', ['code/renderers/react/', 'code/addons/vitest/']),
+  portableStoryTest('vue3', ['code/renderers/vue3/']),
+  portableStoryTest('svelte', ['code/renderers/svelte/']),
+  portableStoryTest('nextjs', ['code/frameworks/nextjs/']),
   {
     job: defineMcpTestStorybook(),
     paths: ['code/addons/mcp/', 'code/lib/mcp/', 'test-storybooks/mcp/'],

@@ -57,8 +57,9 @@ export type Template = {
   };
 
   /**
-   * Directories under `code/frameworks/`, `code/renderers/`, or `code/builders/` whose changes this
-   * template's sandbox tests, so CI that runs only what a diff affects picks this sandbox for them.
+   * Directories under `code/frameworks/`, `code/renderers/`, `code/builders/`, `code/lib/`, or
+   * `code/presets/` whose changes this template's sandbox tests, so CI that runs only what a diff
+   * affects picks this sandbox for them.
    */
   testedPaths?: string[];
 
@@ -187,7 +188,7 @@ export const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-webpack5',
     },
-    testedPaths: ['code/frameworks/nextjs/'],
+    testedPaths: ['code/frameworks/nextjs/', 'code/presets/react-webpack/'],
     modifications: {
       useCsfFactory: true,
       mainConfig: {
@@ -270,7 +271,7 @@ export const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
-    testedPaths: ['code/frameworks/nextjs-vite/'],
+    testedPaths: ['code/frameworks/nextjs-vite/', 'code/lib/vite-plugin-storybook-nextjs/'],
     modifications: {
       useCsfFactory: true,
       mainConfig: {
@@ -372,7 +373,12 @@ export const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-webpack5',
     },
-    testedPaths: ['code/frameworks/react-webpack5/', 'code/builders/builder-webpack5/'],
+    testedPaths: [
+      'code/frameworks/react-webpack5/',
+      'code/builders/builder-webpack5/',
+      'code/lib/core-webpack/',
+      'code/presets/react-webpack/',
+    ],
     modifications: {
       useCsfFactory: true,
       extraDevDependencies: ['prop-types'],
@@ -685,7 +691,11 @@ export const baseTemplates = {
       renderer: '@storybook/angular',
       builder: '@storybook/builder-webpack5',
     },
-    testedPaths: ['code/frameworks/angular/'],
+    testedPaths: [
+      'code/frameworks/angular/',
+      'code/lib/core-webpack/',
+      'code/lib/angular-compodoc/',
+    ],
     skipTasks: ['bench', 'vitest-integration'],
     initOptions: { builder: SupportedBuilder.WEBPACK5 },
   },
@@ -747,7 +757,11 @@ export const baseTemplates = {
       renderer: '@storybook/angular-vite',
       builder: '@storybook/builder-vite',
     },
-    testedPaths: ['code/frameworks/angular-vite/'],
+    testedPaths: [
+      'code/frameworks/angular-vite/',
+      'code/lib/angular-cm/',
+      'code/lib/angular-compodoc/',
+    ],
     skipTasks: ['bench'],
     initOptions: { builder: SupportedBuilder.VITE },
   },

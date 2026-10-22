@@ -49,6 +49,7 @@ import { CsfDocsRender } from './render/CsfDocsRender.ts';
 import { MdxDocsRender } from './render/MdxDocsRender.ts';
 import { StoryRender } from './render/StoryRender.ts';
 import { setupContentResizeBroadcast } from './setupContentResizeBroadcast.ts';
+import { getFramePool } from './FramePool.ts';
 import { setupStoryFreezer } from './setupStoryFreezer.ts';
 
 const globalWindow = globalThis;
@@ -540,6 +541,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     }
 
     this.mountedRender = render;
+    this.warmFramePool(storyId);
     if (isStoryRender(render)) {
       invariant(!!render.story);
       this.storyRenders.push(render);
@@ -557,6 +559,26 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
         // This argument is used for docs, which is currently only compatible with HTMLElements
         this.renderStoryToElement.bind(this) as any
       );
+    }
+  }
+
+  // With `features.experimentalFramePool`, the pool boots its frames once the first entry renders,
+  // on the story selected, or else the first story.
+  private framePoolWarmed = false;
+
+  private warmFramePool(selectedId: StoryId) {
+    const pool = getFramePool();
+    if (this.framePoolWarmed || !pool || !this.storyStoreValue) {
+      return;
+    }
+    this.framePoolWarmed = true;
+    const { entries } = this.storyStoreValue.storyIndex;
+    const storyId =
+      entries[selectedId]?.type === 'story'
+        ? selectedId
+        : Object.values(entries).find((entry) => entry.type === 'story')?.id;
+    if (storyId) {
+      pool.warm(storyId, this.storyStoreValue.userGlobals.get());
     }
   }
 

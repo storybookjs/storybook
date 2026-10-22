@@ -14,6 +14,7 @@ import {
 } from 'storybook/internal/core-events';
 import type { Args, Globals, StoryId } from 'storybook/internal/types';
 
+import { EVENTS as INSTRUMENTER_EVENTS } from '../../../../instrumenter/EVENTS.ts';
 import type { FrameEvent, FramePool } from '../FramePool.ts';
 
 // What the story's preview reports about the story, which the manager's panels show. Its events
@@ -33,6 +34,16 @@ const STORY_EVENTS = new Set<string>([
 // An addon's events, such as the actions and the interactions of the play function, are named
 // `storybook/<addon>/<event>`.
 const relays = ({ type }: FrameEvent) => STORY_EVENTS.has(type) || type.startsWith('storybook/');
+
+// The debugger of the interactions panel: the play function runs in the frame, so its controls go
+// there.
+const DEBUGGER_EVENTS = [
+  INSTRUMENTER_EVENTS.START,
+  INSTRUMENTER_EVENTS.BACK,
+  INSTRUMENTER_EVENTS.GOTO,
+  INSTRUMENTER_EVENTS.NEXT,
+  INSTRUMENTER_EVENTS.END,
+];
 
 export interface StoryInFrame {
   /** The story with new globals or args: the frame renders it again. */
@@ -85,6 +96,18 @@ export function renderInFrame({
       }
     },
   });
+  // This preview's instrumenter answers a debugger control with a remount, which the frame's own
+  // instrumenter does too: in the same task, that remount is the control's, and the frame gets the
+  // control only.
+  let remount: ReturnType<typeof setTimeout> | undefined;
+  const forwarders = DEBUGGER_EVENTS.map((type) => {
+    const forward = (...args: unknown[]) => {
+      clearTimeout(remount);
+      lease.send(type, ...args);
+    };
+    channel.on(type, forward);
+    return () => channel.off(type, forward);
+  });
   return {
     update: (newGlobals, newArgs) => {
       if (JSON.stringify(newGlobals) !== shownGlobals) {
@@ -97,7 +120,14 @@ export function renderInFrame({
         lease.send(UPDATE_STORY_ARGS, { storyId, updatedArgs: newArgs });
       }
     },
-    remount: () => lease.send(FORCE_REMOUNT, { storyId }),
-    release: () => lease.release(),
+    remount: () => {
+      clearTimeout(remount);
+      remount = setTimeout(() => lease.send(FORCE_REMOUNT, { storyId }));
+    },
+    release: () => {
+      clearTimeout(remount);
+      forwarders.forEach((stop) => stop());
+      lease.release();
+    },
   };
 }

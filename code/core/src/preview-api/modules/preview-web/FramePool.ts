@@ -64,6 +64,9 @@ interface Frame {
   globals: string;
   // Whether that render ended: only then may the frame switch.
   ended: boolean;
+  // Whether its first render ended: frames boot one after the other, so that the first one to boot
+  // is not slowed down by the next.
+  booted: boolean;
   onEnded: (() => void)[];
   owner?: Lease;
   // When it was last freed: the longest free is reused first.
@@ -89,6 +92,8 @@ export class FramePool {
   private pumpScheduled = false;
 
   private following = false;
+
+  private warmUp?: Pick<Lease, 'storyId' | 'globals' | 'autoplay'>;
 
   constructor(
     private readonly size: number,
@@ -164,7 +169,7 @@ export class FramePool {
     return this.layer;
   }
 
-  private createFrame(lease: Lease): Frame {
+  private createFrame(lease: Pick<Lease, 'storyId' | 'globals' | 'autoplay'>): Frame {
     const iframe = document.createElement('iframe');
     iframe.title = lease.storyId;
     iframe.setAttribute('data-storybook-frame', '');
@@ -198,6 +203,7 @@ export class FramePool {
       globals:
         entries.length === Object.keys(lease.globals).length ? globalsKey(lease.globals) : '',
       ended: false,
+      booted: false,
       onEnded: [],
       freedAt: 0,
     };
@@ -226,7 +232,7 @@ export class FramePool {
       ...this.waiting,
       ...this.frames.flatMap(({ owner }) => (owner ? [owner] : [])),
     ].filter((other) => this.distance(other) <= 0).length;
-    if (this.frames.length < Math.min(this.max, Math.max(this.size, inView))) {
+    if (this.frames.length < Math.min(this.max, Math.max(this.size, inView)) && !this.booting()) {
       return this.createFrame(lease);
     }
     return undefined;
@@ -277,8 +283,24 @@ export class FramePool {
     frame.onEnded.push(() => clearTimeout(timeout));
   }
 
+  private booting() {
+    return this.frames.some((frame) => !frame.booted);
+  }
+
+  /**
+   * Boots frames ahead of the stories that will need them, up to `size`, a second after the first render: the
+   * first story that needs a frame then only switches one, instead of waiting for it to boot. A
+   * frame boots on `storyId`, which any story can be.
+   */
+  warm(storyId: StoryId, globals: Globals) {
+    this.warmUp = { storyId, globals, autoplay: false };
+    // A second after the first render, which the boot of a frame would slow down.
+    setTimeout(() => this.schedulePump(), 1000);
+  }
+
   private end(frame: Frame) {
     frame.ended = true;
+    frame.booted = true;
     const callbacks = frame.onEnded.splice(0);
     callbacks.forEach((callback) => callback());
     this.schedulePump();
@@ -367,6 +389,9 @@ export class FramePool {
       }
       this.waiting.shift();
       void this.show(frame, lease);
+    }
+    if (this.warmUp && this.frames.length < this.size && !this.booting()) {
+      this.createFrame(this.warmUp);
     }
   }
 

@@ -45,6 +45,19 @@ const report = (iframe: HTMLIFrameElement, storyId: string, newPhase: string) =>
     })
   );
 
+// Each frame's preview renders its first story, one frame after the other.
+const bootAll = async () => {
+  const booted = new Set<HTMLIFrameElement>();
+  for (let round = 0; round < 10; round++) {
+    await settle();
+    for (const frame of framesOf().filter((candidate) => !booted.has(candidate))) {
+      booted.add(frame);
+      posted(frame);
+      report(frame, new URL(frame.src, location.href).searchParams.get('id')!, 'finished');
+    }
+  }
+};
+
 const place = () => {
   const element = document.createElement('div');
   document.body.append(element);
@@ -140,8 +153,22 @@ describe('FramePool', () => {
     for (const storyId of ['a--1', 'a--2', 'a--3', 'a--4']) {
       pool.lease({ storyId, globals: {}, autoplay: true, place: place() });
     }
-    await settle();
+    await bootAll();
     expect(framesOf()).toHaveLength(4);
+  });
+
+  it('boots one frame at a time', async () => {
+    const pool = new FramePool(2, Infinity);
+    pool.lease({ storyId: 'a--1', globals: {}, autoplay: true, place: place() });
+    pool.lease({ storyId: 'a--2', globals: {}, autoplay: true, place: place() });
+    await settle();
+    expect(framesOf()).toHaveLength(1);
+
+    const [first] = framesOf();
+    posted(first);
+    report(first, 'a--1', 'finished');
+    await settle();
+    expect(framesOf()).toHaveLength(2);
   });
 
   it('keeps to its most, also with more stories in view', async () => {
@@ -149,7 +176,7 @@ describe('FramePool', () => {
     for (const storyId of ['a--1', 'a--2', 'a--3', 'a--4']) {
       pool.lease({ storyId, globals: {}, autoplay: true, place: place() });
     }
-    await settle();
+    await bootAll();
     expect(framesOf()).toHaveLength(2);
   });
 });

@@ -188,7 +188,7 @@ export abstract class JsPackageManager {
     return false;
   }
 
-  async installDependencies(options?: { force?: boolean }) {
+  async installDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     try {
       await prompt.executeTaskWithSpinner(() => this.runInstall(options), {
         id: 'install-dependencies',
@@ -220,10 +220,17 @@ export abstract class JsPackageManager {
     installContext: 'create' | 'upgrade';
   }): Promise<void> {}
 
-  async dedupeDependencies(options?: { force?: boolean }) {
+  async dedupeDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     await prompt.executeTask(
       (_signal) =>
-        this.runInternalCommand('dedupe', [...(options?.force ? ['--force'] : [])], this.cwd),
+        this.runInternalCommand(
+          'dedupe',
+          [
+            ...(options?.force ? ['--force'] : []),
+            ...(options?.legacyPeerDeps ? ['--legacy-peer-deps'] : []),
+          ],
+          this.cwd
+        ),
       {
         intro: 'Deduplicating dependencies...',
         error: 'An error occurred while deduplicating dependencies.',
@@ -756,7 +763,10 @@ export abstract class JsPackageManager {
     const resolutions = this.getResolutions(packageJson, versions);
     this.writePackageJson({ ...packageJson, ...resolutions }, operationDir);
   }
-  protected abstract runInstall(options?: { force?: boolean }): ResultPromise;
+  protected abstract runInstall(options?: {
+    force?: boolean;
+    legacyPeerDeps?: boolean;
+  }): ResultPromise;
 
   protected abstract runAddDeps(
     dependencies: string[],

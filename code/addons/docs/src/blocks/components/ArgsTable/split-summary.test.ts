@@ -11,6 +11,8 @@ describe('splitSummary', () => {
     ['[string | number, boolean] | null', ['[string | number, boolean]', 'null']],
     ['{ value: string | number } | null', ['{ value: string | number }', 'null']],
     ['((value: string | number) => void) | null', ['((value: string | number) => void)', 'null']],
+    ['Array<() => void> | null', ['Array<() => void>', 'null']],
+    ['{ a?: string | number } | null', ['{ a?: string | number }', 'null']],
     [
       'Map<string, Array<number | null>> | undefined',
       ['Map<string, Array<number | null>>', 'undefined'],
@@ -29,6 +31,9 @@ describe('splitSummary', () => {
     'string | number>',
     '() => string | number',
     '`a|b` | null',
+    'getDefault(a) || fallback()',
+    '(x) || {}',
+    'T extends Array<infer U> ? U : never | null',
   ])('preserves ambiguous or malformed summary %s', (summary) => {
     expect(splitSummary(summary)).toEqual([summary]);
   });

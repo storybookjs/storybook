@@ -23,6 +23,9 @@ export function splitSummary(summary: string): string[] {
       quote = character;
       continue;
     }
+    if (character === '?' && closingDelimiters.length === 0) {
+      return [summary];
+    }
 
     const openingIndex = '([{<'.indexOf(character);
     if (openingIndex !== -1) {
@@ -36,6 +39,9 @@ export function splitSummary(summary: string): string[] {
         return [summary];
       }
     } else if (character === '|' && closingDelimiters.length === 0) {
+      if (summary[index + 1] === '|') {
+        return [summary];
+      }
       items.push(summary.slice(start, index).trim());
       start = index + 1;
     }

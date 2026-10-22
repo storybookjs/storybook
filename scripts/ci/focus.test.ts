@@ -1,129 +1,123 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 
 import { join } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
-import { allTemplates, normal } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { allTemplates, daily } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import {
-  TESTED_PATH_ROOTS,
+  FOCUS_TEMPLATES,
   PATH_TRIGGERED_JOBS,
   getFocusJobs,
   selectChromaticSiblings,
   selectFocusSandboxes,
   selectPathTriggeredJobs,
+  templateDirs,
 } from './focus.ts';
 import { ensureRequiredJobs } from './utils/helpers.ts';
 import { getJobs } from './workflow-jobs.ts';
 
 const ROOT = join(import.meta.dirname, '../..');
 
-const packageDirsByName = new Map(
-  TESTED_PATH_ROOTS.flatMap((root) =>
-    readdirSync(join(ROOT, root))
-      .filter((dir) => existsSync(join(ROOT, root, dir, 'package.json')))
-      .map((dir) => {
-        const { name } = JSON.parse(readFileSync(join(ROOT, root, dir, 'package.json'), 'utf8'));
-        return [name as string, `${root}${dir}/`] as const;
-      })
-  )
-);
+describe('FOCUS_TEMPLATES', () => {
+  it('holds every ci:daily template except the prerelease ones', () => {
+    const prerelease = daily.filter((key) => !FOCUS_TEMPLATES.includes(key));
 
-const allTestedPaths = Object.values(allTemplates).flatMap(({ testedPaths = [] }) => testedPaths);
-
-const workspaceDependencyDirs = (dir: string) => {
-  const { dependencies = {} } = JSON.parse(readFileSync(join(ROOT, dir, 'package.json'), 'utf8'));
-  return Object.keys(dependencies).flatMap((name) => packageDirsByName.get(name) ?? []);
-};
-
-describe('testedPaths', () => {
-  const normalPackageDirs = [
-    ...new Set(
-      normal.flatMap((key) =>
-        Object.values(allTemplates[key].expected).flatMap(
-          (name) => packageDirsByName.get(name) ?? []
-        )
-      )
-    ),
-  ];
-
-  it.each(
-    [
-      ...new Set([
-        ...normalPackageDirs,
-        ...normalPackageDirs.flatMap(workspaceDependencyDirs).filter((dir) => /^code\/(lib|presets)\//.test(dir)),
-      ]),
-    ].sort()
-  )('%s, used by a ci:normal sandbox, selects a focus sandbox', (dir) => {
-    expect(allTestedPaths).toContain(dir);
+    expect(prerelease.length).toBeGreaterThan(0);
+    expect(prerelease.every((key) => key.includes('prerelease'))).toBe(true);
   });
 
-  it.each(allTestedPaths)(
-    '%s is an existing directory under a tested path root',
-    (path) => {
-      expect(TESTED_PATH_ROOTS.some((root) => path.startsWith(root))).toBe(true);
-      expect(path.endsWith('/')).toBe(true);
-      expect(existsSync(join(ROOT, path))).toBe(true);
+  it.each(FOCUS_TEMPLATES)(
+    '%s loads packages from existing directories of this repository',
+    (key) => {
+      const dirs = Object.values(templateDirs(key)).flat();
+
+      expect(dirs.length).toBeGreaterThan(0);
+      expect(dirs.every((dir) => existsSync(join(ROOT, dir)))).toBe(true);
     }
   );
 });
 
 describe('selectFocusSandboxes', () => {
   it.each([
-    ['code/frameworks/angular-vite/src/preset.ts', 'angular-vite/default-ts'],
-    ['code/frameworks/angular/src/server/index.ts', 'angular-cli/default-ts'],
-    ['code/frameworks/nextjs-vite/src/preset.ts', 'nextjs-vite/default-ts'],
-    ['code/frameworks/nextjs/src/preset.ts', 'nextjs/default-ts'],
-    ['code/frameworks/react-webpack5/src/preset.ts', 'react-webpack/18-ts'],
-    ['code/frameworks/vue3-vite/src/preset.ts', 'vue3-vite/default-ts'],
-    ['code/frameworks/svelte-vite/src/preset.ts', 'svelte-vite/default-ts'],
-    ['code/frameworks/sveltekit/src/preset.ts', 'svelte-kit/skeleton-ts'],
-    ['code/frameworks/preact-vite/src/preset.ts', 'preact-vite/default-ts'],
-    ['code/frameworks/html-vite/src/preset.ts', 'html-vite/default-ts'],
-    ['code/frameworks/web-components-vite/src/preset.ts', 'lit-vite/default-ts'],
-    ['code/frameworks/react-native-web-vite/src/preset.ts', 'react-native-web-vite/expo-ts'],
-    ['code/frameworks/react-vite/src/preset.ts', 'react-vite/default-ts'],
-    ['code/renderers/vue3/src/render.ts', 'vue3-vite/default-ts'],
-    ['code/renderers/svelte/src/render.ts', 'svelte-vite/default-ts'],
-    ['code/renderers/preact/src/render.ts', 'preact-vite/default-ts'],
-    ['code/renderers/html/src/render.ts', 'html-vite/default-ts'],
-    ['code/renderers/web-components/src/render.ts', 'lit-vite/default-ts'],
-    ['code/renderers/react/src/render.ts', 'react-vite/default-ts'],
-    ['code/builders/builder-webpack5/src/index.ts', 'react-webpack/18-ts'],
-    ['code/builders/builder-vite/src/index.ts', 'react-vite/default-ts'],
-    ['code/lib/vite-plugin-storybook-nextjs/src/index.ts', 'nextjs-vite/default-ts'],
-    ['code/lib/angular-cm/src/index.ts', 'angular-vite/default-ts'],
-  ])('maps %s to %s', (changedFile, expectedSandbox) => {
-    expect(selectFocusSandboxes([changedFile])).toEqual([expectedSandbox]);
+    ['code/frameworks/angular/src/server/index.ts', ['angular-cli/default-ts']],
+    [
+      'code/frameworks/angular-vite/src/preset.ts',
+      ['angular-vite/default-ts', 'angular-vite/21-ts'],
+    ],
+    ['code/frameworks/nextjs/src/preset.ts', ['nextjs/default-ts', 'nextjs/15-ts']],
+    ['code/frameworks/nextjs-vite/src/preset.ts', ['nextjs-vite/default-ts', 'nextjs-vite/15-ts']],
+    [
+      'code/frameworks/react-vite/src/preset.ts',
+      ['react-vite/default-ts', 'react-vite/default-js'],
+    ],
+    ['code/frameworks/react-webpack5/src/preset.ts', ['react-webpack/18-ts']],
+    ['code/frameworks/sveltekit/src/preset.ts', ['svelte-kit/skeleton-ts']],
+    [
+      'code/frameworks/tanstack-react/src/preset.ts',
+      ['tanstack-react-router/default-ts', 'tanstack-react-start/default-ts'],
+    ],
+    ['code/frameworks/react-native-web-vite/src/preset.ts', ['react-native-web-vite/expo-ts']],
+  ])('maps the framework change %s to every template of it', (changedFile, expected) => {
+    expect(selectFocusSandboxes([changedFile])).toEqual(expected);
   });
 
   it.each([
-    ['code/lib/core-webpack/src/to-importFn.ts', ['react-webpack/18-ts', 'angular-cli/default-ts']],
-    ['code/presets/react-webpack/src/index.ts', ['nextjs/default-ts', 'react-webpack/18-ts']],
-    ['code/lib/angular-compodoc/src/index.ts', ['angular-cli/default-ts', 'angular-vite/default-ts']],
-  ])('maps the shared package %s to every sandbox using it', (changedFile, expectedSandboxes) => {
-    expect(selectFocusSandboxes([changedFile]).sort()).toEqual(expectedSandboxes.sort());
+    ['code/renderers/vue3/src/render.ts', ['vue3-vite/default-ts', 'vue3-vite/default-js']],
+    [
+      'code/renderers/svelte/src/render.ts',
+      ['svelte-vite/default-ts', 'svelte-kit/skeleton-ts', 'svelte-vite/default-js'],
+    ],
+    [
+      'code/builders/builder-webpack5/src/index.ts',
+      ['angular-cli/default-ts', 'nextjs/default-ts', 'react-webpack/18-ts', 'nextjs/15-ts'],
+    ],
+    [
+      'code/lib/core-webpack/src/to-importFn.ts',
+      ['angular-cli/default-ts', 'nextjs/default-ts', 'react-webpack/18-ts', 'nextjs/15-ts'],
+    ],
+    [
+      'code/presets/react-webpack/src/index.ts',
+      ['nextjs/default-ts', 'react-webpack/18-ts', 'nextjs/15-ts'],
+    ],
+    [
+      'code/lib/vite-plugin-storybook-nextjs/src/index.ts',
+      ['nextjs-vite/default-ts', 'nextjs-vite/15-ts'],
+    ],
+    [
+      'code/lib/angular-compodoc/src/index.ts',
+      ['angular-cli/default-ts', 'angular-vite/default-ts', 'angular-vite/21-ts'],
+    ],
+  ])('maps the shared package change %s to every template loading it', (changedFile, expected) => {
+    expect(selectFocusSandboxes([changedFile])).toEqual(expected);
+  });
+
+  it.each([
+    'code/renderers/react/src/render.ts',
+    'code/builders/builder-vite/src/index.ts',
+    'code/core/src/manager/App.tsx',
+    'docs/get-started/introduction.mdx',
+  ])('tests %s in the React Vite sandbox alone', (changedFile) => {
+    expect(selectFocusSandboxes([changedFile])).toEqual(['react-vite/default-ts']);
   });
 
   it('prefers a framework match over a shared builder match', () => {
     expect(
       selectFocusSandboxes([
-        'code/builders/builder-vite/src/index.ts',
+        'code/builders/builder-webpack5/src/index.ts',
         'code/frameworks/angular-vite/src/preset.ts',
       ])
-    ).toEqual(['angular-vite/default-ts']);
+    ).toEqual(['angular-vite/default-ts', 'angular-vite/21-ts']);
   });
 
-  it('uses the React Vite sandbox when no renderer, builder, or framework changed', () => {
-    expect(selectFocusSandboxes(['docs/get-started/introduction.mdx'])).toEqual([
-      'react-vite/default-ts',
-    ]);
-  });
+  it('never picks a prerelease or internal template', () => {
+    const selectable = daily.flatMap((key) =>
+      Object.values(templateDirs(key)).flatMap((dirs) =>
+        dirs.flatMap((dir) => selectFocusSandboxes([`${dir}src/index.ts`]))
+      )
+    );
 
-  it('picks every template that shares the changed framework directory', () => {
-    expect(selectFocusSandboxes(['code/frameworks/tanstack-react/src/preset.ts'])).toEqual([
-      'tanstack-react-router/default-ts',
-      'tanstack-react-start/default-ts',
-    ]);
+    expect(selectable.some((key) => key.includes('prerelease'))).toBe(false);
+    expect(selectable.some((key) => allTemplates[key].isInternal)).toBe(false);
   });
 });
 
@@ -136,20 +130,23 @@ describe('selectChromaticSiblings', () => {
     expect(selectChromaticSiblings(['react-vite/default-ts'], [changedFile])).toEqual([]);
   });
 
-  it('selects the renderer siblings when a framework change picked the focused sandbox', () => {
+  it('selects every other non-prerelease ci:daily template of a changed renderer that runs Chromatic', () => {
     const siblings = selectChromaticSiblings(
-      ['nextjs/default-ts'],
-      ['code/frameworks/nextjs/src/preset.ts', 'code/renderers/react/src/render.ts']
+      ['react-vite/default-ts'],
+      ['code/renderers/react/src/render.ts']
     );
 
-    expect(siblings).toContain('react-vite/default-ts');
-    expect(siblings).not.toContain('nextjs/default-ts');
-  });
-
-  it('selects templates with the changed renderer under a different framework', () => {
-    expect(
-      selectChromaticSiblings(['svelte-vite/default-ts'], ['code/renderers/svelte/src/render.ts'])
-    ).toEqual(['svelte-kit/skeleton-ts']);
+    expect(siblings).toEqual(
+      expect.arrayContaining([
+        'nextjs/default-ts',
+        'nextjs/15-ts',
+        'react-vite/default-js',
+        'bench/react-vite-default-ts-test-build',
+      ])
+    );
+    expect(siblings).not.toContain('react-vite/default-ts');
+    expect(siblings).not.toContain('nextjs/prerelease');
+    expect(siblings).not.toContain('bench/react-vite-default-ts-nodocs');
   });
 });
 
@@ -182,15 +179,12 @@ describe('getFocusJobs', () => {
   );
 
   it('adds only the create and Chromatic jobs of each sibling', () => {
-    const ids = jobIds(['code/renderers/svelte/src/render.ts']);
+    const ids = jobIds(['code/renderers/react/src/render.ts']);
 
-    expect(ids).toEqual(
-      expect.arrayContaining([
-        'sveltekit-latest--vite---typescript---create',
-        'sveltekit-latest--vite---typescript---chromatic',
-      ])
-    );
-    expect(ids.filter((id) => id.startsWith('sveltekit-'))).toHaveLength(2);
+    expect(ids.filter((id) => id.startsWith('tanstack-react-start-'))).toEqual([
+      'tanstack-react-start-latest--vite---typescript---create',
+      'tanstack-react-start-latest--vite---typescript---chromatic',
+    ]);
   });
 
   it('leaves out siblings that skip Chromatic', () => {
@@ -353,8 +347,10 @@ describe('ci:normal coverage', () => {
   const selectableByFocus = new Set(
     [
       ['yarn.lock'],
-      ...Object.values(allTemplates).flatMap(({ testedPaths = [] }) =>
-        testedPaths.map((path) => [`${path}src/index.ts`])
+      ...FOCUS_TEMPLATES.flatMap((key) =>
+        Object.values(templateDirs(key)).flatMap((dirs) =>
+          dirs.map((dir) => [`${dir}src/index.ts`])
+        )
       ),
     ].flatMap((changedFiles) => ids(getFocusJobs(changedFiles)))
   );

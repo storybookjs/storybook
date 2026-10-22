@@ -1,9 +1,11 @@
 import { execFileSync } from 'node:child_process';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+
+import { join } from 'pathe';
 
 import {
   allTemplates,
-  normal,
-  type Template,
+  daily,
   type TemplateKey,
 } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { isGlobalInput, isTestFixture } from './global-inputs.ts';
@@ -25,39 +27,73 @@ import type { JobOrNoOpJob } from './utils/types.ts';
 
 const DEFAULT_FOCUS_SANDBOX = 'react-vite/default-ts' satisfies TemplateKey;
 
-/** Ordered by priority: a framework match picks the sandbox before a renderer or builder match. */
-export const TESTED_PATH_ROOTS = [
-  'code/frameworks/',
-  'code/renderers/',
-  'code/builders/',
-  'code/lib/',
-  'code/presets/',
-] as const;
+/** Prerelease templates install upstream canaries, so they would fail PRs for upstream reasons. */
+export const FOCUS_TEMPLATES = daily.filter((key) => !key.includes('prerelease'));
 
-type TestedPathRoot = (typeof TESTED_PATH_ROOTS)[number];
+const ROOT = join(import.meta.dirname, '../..');
 
-const isChangedUnder = (
-  { testedPaths = [] }: Template,
-  root: TestedPathRoot,
-  changedFiles: readonly string[]
-) =>
-  testedPaths.some(
-    (path) => path.startsWith(root) && changedFiles.some((file) => file.startsWith(path))
+export const packageDirs = new Map(
+  ['code/frameworks', 'code/renderers', 'code/builders', 'code/lib', 'code/presets'].flatMap(
+    (root) =>
+      readdirSync(join(ROOT, root))
+        .filter((dir) => existsSync(join(ROOT, root, dir, 'package.json')))
+        .map((dir) => {
+          const {
+            name,
+            dependencies = {},
+            devDependencies = {},
+          } = JSON.parse(readFileSync(join(ROOT, root, dir, 'package.json'), 'utf8'));
+          // Packages bundle some workspace libraries from their devDependencies.
+          return [
+            name as string,
+            {
+              dir: `${root}/${dir}/`,
+              dependencies: [...Object.keys(dependencies), ...Object.keys(devDependencies)],
+            },
+          ];
+        })
+  )
+);
+
+/** Ordered by priority: a framework match picks the sandboxes before a renderer match, and so on. */
+const ROLES = ['framework', 'renderer', 'builder', 'dependency'] as const;
+
+type Role = (typeof ROLES)[number];
+
+/** The workspace directories a template's sandbox loads, by the role they play in it. */
+export function templateDirs(key: TemplateKey): Record<Role, string[]> {
+  const { framework, renderer, builder } = allTemplates[key].expected;
+  const dirsOf = (names: string[]) => names.flatMap((name) => packageDirs.get(name)?.dir ?? []);
+  const dependencies = [framework, renderer, builder].flatMap(
+    (name) => packageDirs.get(name)?.dependencies ?? []
   );
 
+  return {
+    framework: dirsOf([framework]),
+    renderer: dirsOf([renderer]),
+    builder: dirsOf([builder]),
+    dependency: dirsOf(dependencies).filter((dir) => /^code\/(lib|presets)\//.test(dir)),
+  };
+}
+
+const isChanged = (dirs: readonly string[], changedFiles: readonly string[]) =>
+  dirs.some((dir) => changedFiles.some((file) => file.startsWith(dir)));
+
 /**
- * Select every public template that claims a changed path under the highest-priority root that
- * matches. Internal templates such as the benchmarks inherit `testedPaths` from the template they
- * extend, so they are never picked here.
+ * Select the public templates that load a changed package, at the highest-priority role that
+ * matches. A changed framework picks all of its templates. A changed renderer, builder, or shared
+ * library that the default sandbox loads is tested there alone, and Chromatic siblings cover the
+ * renderer's other templates.
  */
 export function selectFocusSandboxes(changedFiles: readonly string[]): TemplateKey[] {
-  for (const root of TESTED_PATH_ROOTS) {
-    const sandboxes = (Object.entries(allTemplates) as [TemplateKey, Template][])
-      .filter(
-        ([, template]) => !template.isInternal && isChangedUnder(template, root, changedFiles)
-      )
-      .map(([key]) => key);
+  for (const role of ROLES) {
+    const sandboxes = FOCUS_TEMPLATES.filter(
+      (key) => !allTemplates[key].isInternal && isChanged(templateDirs(key)[role], changedFiles)
+    );
 
+    if (role !== 'framework' && sandboxes.includes(DEFAULT_FOCUS_SANDBOX)) {
+      return [DEFAULT_FOCUS_SANDBOX];
+    }
     if (sandboxes.length > 0) {
       return sandboxes;
     }
@@ -66,22 +102,16 @@ export function selectFocusSandboxes(changedFiles: readonly string[]): TemplateK
   return [DEFAULT_FOCUS_SANDBOX];
 }
 
-/** Select the PR-workflow templates that run Chromatic and whose renderer source changed. */
+/** Select the templates that run Chromatic and whose renderer source changed. */
 export function selectChromaticSiblings(
   focused: readonly TemplateKey[],
   changedFiles: readonly string[]
 ): TemplateKey[] {
-  const changedRenderers = new Set(
-    Object.values(allTemplates)
-      .filter((candidate) => isChangedUnder(candidate, 'code/renderers/', changedFiles))
-      .map(({ expected }) => expected.renderer)
-  );
-
-  return normal.filter(
+  return FOCUS_TEMPLATES.filter(
     (sibling) =>
       !focused.includes(sibling) &&
       !allTemplates[sibling].skipTasks?.includes('chromatic') &&
-      changedRenderers.has(allTemplates[sibling].expected.renderer)
+      isChanged(templateDirs(sibling).renderer, changedFiles)
   );
 }
 
@@ -145,7 +175,7 @@ export function getChangedFiles(baseRef: string): string[] {
     .filter(Boolean);
 }
 
-/** Select the `ci:normal` jobs a diff can affect. */
+/** Select the jobs a diff can affect. */
 export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
   const focused = selectFocusSandboxes(changedFiles);
   const siblings = selectChromaticSiblings(focused, changedFiles).map(defineSandboxFlow);

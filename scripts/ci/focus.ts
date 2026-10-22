@@ -27,8 +27,13 @@ import type { JobOrNoOpJob } from './utils/types.ts';
 
 const DEFAULT_FOCUS_SANDBOX = 'react-vite/default-ts' satisfies TemplateKey;
 
-/** Prerelease templates install upstream canaries, so they would fail PRs for upstream reasons. */
-export const FOCUS_TEMPLATES = daily.filter((key) => !key.includes('prerelease'));
+/**
+ * Prerelease templates install upstream canaries, so they would fail PRs for upstream reasons.
+ * Internal templates, such as the benchmarks, vary a public template for the nightly run.
+ */
+export const FOCUS_TEMPLATES = daily.filter(
+  (key) => !key.includes('prerelease') && !allTemplates[key].isInternal
+);
 
 const ROOT = join(import.meta.dirname, '../..');
 
@@ -80,14 +85,12 @@ const isChanged = (dirs: readonly string[], changedFiles: readonly string[]) =>
   dirs.some((dir) => changedFiles.some((file) => file.startsWith(dir)));
 
 /**
- * Select the first public template in cadence order that loads a changed package, at the
- * highest-priority role that matches. Chromatic siblings cover the other templates loading it.
+ * Select the first template in cadence order that loads a changed package, at the highest-priority
+ * role that matches. Chromatic siblings cover the other templates loading it.
  */
 export function selectFocusSandbox(changedFiles: readonly string[]): TemplateKey {
   for (const role of ROLES) {
-    const sandbox = FOCUS_TEMPLATES.find(
-      (key) => !allTemplates[key].isInternal && isChanged(templateDirs(key)[role], changedFiles)
-    );
+    const sandbox = FOCUS_TEMPLATES.find((key) => isChanged(templateDirs(key)[role], changedFiles));
 
     if (sandbox) {
       return sandbox;

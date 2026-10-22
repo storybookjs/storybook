@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
-import { allTemplates, daily } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { allTemplates, daily, normal } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import {
   FOCUS_TEMPLATES,
   PATH_TRIGGERED_JOBS,
@@ -13,17 +13,21 @@ import {
   selectPathTriggeredJobs,
   templateDirs,
 } from './focus.ts';
+import { defineSandboxFlow } from './sandboxes.ts';
 import { ensureRequiredJobs } from './utils/helpers.ts';
 import { getJobs } from './workflow-jobs.ts';
 
 const ROOT = join(import.meta.dirname, '../..');
 
 describe('FOCUS_TEMPLATES', () => {
-  it('holds every ci:daily template except the prerelease ones', () => {
-    const prerelease = daily.filter((key) => !FOCUS_TEMPLATES.includes(key));
+  it('holds every ci:daily template except the prerelease and internal ones', () => {
+    const excluded = daily.filter((key) => !FOCUS_TEMPLATES.includes(key));
 
-    expect(prerelease.length).toBeGreaterThan(0);
-    expect(prerelease.every((key) => key.includes('prerelease'))).toBe(true);
+    expect(excluded).toEqual(
+      daily.filter((key) => key.includes('prerelease') || allTemplates[key].isInternal)
+    );
+    expect(excluded.some((key) => key.startsWith('bench/'))).toBe(true);
+    expect(excluded.some((key) => key.includes('prerelease'))).toBe(true);
   });
 
   it.each(FOCUS_TEMPLATES)(
@@ -101,22 +105,13 @@ describe('selectChromaticSiblings', () => {
   });
 
   it.each([
-    [
-      'code/frameworks/react-vite/src/preset.ts',
-      ['bench/react-vite-default-ts-test-build', 'react-vite/default-js'],
-    ],
+    ['code/frameworks/react-vite/src/preset.ts', ['react-vite/default-js']],
     ['code/frameworks/nextjs-vite/src/preset.ts', ['nextjs-vite/15-ts']],
     ['code/frameworks/angular-vite/src/preset.ts', ['angular-vite/21-ts']],
     ['code/frameworks/tanstack-react/src/preset.ts', ['tanstack-react-start/default-ts']],
     [
       'code/builders/builder-webpack5/src/index.ts',
-      [
-        'nextjs/default-ts',
-        'bench/react-webpack-18-ts-test-build',
-        'react-webpack/18-ts',
-        'nextjs/15-ts',
-        'internal/react18-webpack-babel',
-      ],
+      ['nextjs/default-ts', 'react-webpack/18-ts', 'nextjs/15-ts'],
     ],
   ])('selects the other templates loading %s that run Chromatic', (changedFile, expected) => {
     expect(selectChromaticSiblings(selectFocusSandbox([changedFile]), [changedFile])).toEqual(
@@ -124,22 +119,20 @@ describe('selectChromaticSiblings', () => {
     );
   });
 
-  it('selects every other non-prerelease ci:daily template of a changed renderer that runs Chromatic', () => {
-    const siblings = selectChromaticSiblings('react-vite/default-ts', [
-      'code/renderers/react/src/render.ts',
+  it('selects every other public, non-prerelease ci:daily template of a changed renderer', () => {
+    expect(
+      selectChromaticSiblings('react-vite/default-ts', ['code/renderers/react/src/render.ts'])
+    ).toEqual([
+      'nextjs/default-ts',
+      'nextjs-vite/default-ts',
+      'tanstack-react-router/default-ts',
+      'tanstack-react-start/default-ts',
+      'react-webpack/18-ts',
+      'nextjs/15-ts',
+      'nextjs-vite/15-ts',
+      'react-vite/default-js',
+      'react-native-web-vite/expo-ts',
     ]);
-
-    expect(siblings).toEqual(
-      expect.arrayContaining([
-        'nextjs/default-ts',
-        'nextjs/15-ts',
-        'react-vite/default-js',
-        'bench/react-vite-default-ts-test-build',
-      ])
-    );
-    expect(siblings).not.toContain('react-vite/default-ts');
-    expect(siblings).not.toContain('nextjs/prerelease');
-    expect(siblings).not.toContain('bench/react-vite-default-ts-nodocs');
   });
 });
 
@@ -337,16 +330,6 @@ const NIGHTLY_ONLY_JOBS: Record<string, string> = {
   'typescript-validation': 'replaced by typescript-validation--affected',
   'knip-validation': 'runs with --no-exit-code, so it cannot fail a run',
   'benchmark-packages': 'measures bundle sizes, not correctness',
-  'bench--react-vite-default-ts---create': 'benchmark sandbox',
-  'bench--react-vite-default-ts---dev': 'benchmark sandbox',
-  'bench--react-webpack-18-ts---create': 'benchmark sandbox',
-  'bench--react-webpack-18-ts---dev': 'benchmark sandbox',
-  'bench--react-vite-default-ts--no-docs---create': 'benchmark sandbox',
-  'bench--react-vite-default-ts--no-docs---dev': 'benchmark sandbox',
-  'bench--react-vite-default-ts--test-build---dev':
-    'benchmark sandbox; focus runs its create and Chromatic jobs as a React sibling',
-  'bench--react-webpack-18-ts--test-build---dev':
-    'benchmark sandbox; focus runs its create and Chromatic jobs as a React sibling',
   'tanstack-react-start-latest--vite---typescript---dev':
     'TanStack Router runs the tanstack-react framework in full; focus runs Start as a sibling',
   'tanstack-react-start-latest--vite---typescript---vitest':
@@ -370,10 +353,26 @@ describe('ci:normal coverage', () => {
     ].flatMap((changedFiles) => ids(getFocusJobs(changedFiles)))
   );
   const normalJobs = ids(getJobs('normal', 'origin/next'));
+  const internalTemplateJobs = new Set(
+    normal
+      .filter((key) => allTemplates[key].isInternal)
+      .flatMap((key) => defineSandboxFlow(key).jobs.map(({ id }) => id))
+  );
 
-  it.each(normalJobs)('%s runs in ci:focus or is listed as nightly-only', (id) => {
-    expect(selectableByFocus.has(id) || id in NIGHTLY_ONLY_JOBS).toBe(true);
-  });
+  it.each(normalJobs.filter((id) => !internalTemplateJobs.has(id)))(
+    '%s runs in ci:focus or is listed as nightly-only',
+    (id) => {
+      expect(selectableByFocus.has(id) || id in NIGHTLY_ONLY_JOBS).toBe(true);
+    }
+  );
+
+  it.each([...internalTemplateJobs])(
+    '%s, of an internal template, never runs in ci:focus',
+    (id) => {
+      expect(normalJobs).toContain(id);
+      expect(selectableByFocus.has(id)).toBe(false);
+    }
+  );
 
   it.each(Object.keys(NIGHTLY_ONLY_JOBS))(
     'nightly-only %s is a ci:normal job that ci:focus never selects',

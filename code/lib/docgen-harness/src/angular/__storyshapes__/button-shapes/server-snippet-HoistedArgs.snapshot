@@ -14,8 +14,6 @@ import { ShapeButtonComponent } from './shape-button.component.ts';
 })
 export class DemoComponent {
   loadingError = new Error('Failed to load cards.');
-  items = Array.from({
-    length: 3,
-  }, (_, index) => index);
+  items = Array.from({ length: 3 }, (_, index) => index);
   clicked(event: unknown) {}
 }

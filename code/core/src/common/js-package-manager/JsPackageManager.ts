@@ -190,16 +190,17 @@ export abstract class JsPackageManager {
 
   async installDependencies(options?: { force?: boolean }) {
     try {
-      await prompt.executeTaskWithSpinner(() => this.runInstall(options), {
+      const executeTask = this.installUsesTerminal
+        ? prompt.executeTask
+        : prompt.executeTaskWithSpinner;
+      await executeTask(() => this.runInstall(options), {
         id: 'install-dependencies',
         intro: 'Installing dependencies...',
         error: 'Installation of dependencies failed!',
         success: 'Dependencies installed',
       });
     } catch (error) {
-      // The spinner only shows a generic message, and callers like the init flow continue without
-      // printing the thrown error. Surface the captured output tail so package-manager errors
-      // (e.g. an npm ERESOLVE) name themselves instead of surfacing later as a missing binary.
+      // Callers like init can continue without printing the thrown error, so surface captured output.
       const tail = getInstallErrorTail(error);
       if (tail) {
         logger.error(tail);
@@ -756,6 +757,10 @@ export abstract class JsPackageManager {
     const resolutions = this.getResolutions(packageJson, versions);
     this.writePackageJson({ ...packageJson, ...resolutions }, operationDir);
   }
+  protected get installUsesTerminal(): boolean {
+    return false;
+  }
+
   protected abstract runInstall(options?: { force?: boolean }): ResultPromise;
 
   protected abstract runAddDeps(

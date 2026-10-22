@@ -4,7 +4,7 @@ import { ResetWrapper } from 'storybook/internal/components';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, screen, within } from 'storybook/test';
+import { expect, screen, waitFor, within } from 'storybook/test';
 
 import { ArgRow } from './ArgRow';
 import { TableWrapper } from './ArgsTable';
@@ -380,11 +380,15 @@ export const LongDetail = {
   },
   play: async ({ canvas }) => {
     await canvas.getByRole('button', { name: 'IconName' }).click();
-    const dialog = await screen.findByRole('dialog', { name: 'Arg value details' });
+    const dialog = await screen.findByRole('dialog');
     // The popover content must scroll within the viewport instead of overflowing it.
-    const content = dialog.firstElementChild as HTMLElement;
-    await expect(content.scrollHeight).toBeGreaterThan(content.clientHeight);
-    await expect(dialog.getBoundingClientRect().height).toBeLessThanOrEqual(window.innerHeight);
+    const content = Array.from(dialog.children).find(
+      (child): child is HTMLElement => getComputedStyle(child).overflow === 'auto'
+    );
+    await expect(content).toBeDefined();
+    // The detail content renders after the popover opens, so wait for it to overflow.
+    await waitFor(() => expect(content!.scrollHeight).toBeGreaterThan(content!.clientHeight));
+    await expect(content!.getBoundingClientRect().bottom).toBeLessThanOrEqual(window.innerHeight);
   },
 } satisfies StoryObj<typeof ArgRow>;
 

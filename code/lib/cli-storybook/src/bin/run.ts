@@ -92,7 +92,9 @@ const command = (name: string) =>
 command('init')
   .description('Initialize Storybook into your project')
   .option('-f --force', 'Force add Storybook')
-  .option('-s --skip-install', 'Skip installing deps')
+  .addOption(new Option('-s, --skip-install', 'Skip installing deps').hideHelp())
+  .option('--install', 'Install dependencies', true)
+  .option('--no-install', 'Skip installing dependencies')
   .addOption(
     new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
       Object.values(PackageManagerName)
@@ -117,7 +119,9 @@ command('add <addon>')
     )
   )
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
-  .option('--skip-install', 'Skip installing deps')
+  .addOption(new Option('--skip-install', 'Skip installing deps').hideHelp())
+  .option('--install', 'Install dependencies', true)
+  .option('--no-install', 'Skip installing dependencies')
   .option('-s --skip-postinstall', 'Skip package specific postinstall config modifications')
   .option('-y --yes', 'Skip prompting the user')
   .option('--skip-doctor', 'Skip doctor check')
@@ -125,7 +129,7 @@ command('add <addon>')
     return withTelemetry('add', { cliOptions: options }, async () => {
       logger.intro(`Setting up your project for ${addonName}`);
 
-      await add(addonName, options);
+      await add(addonName, { ...options, skipInstall: options.skipInstall || !options.install });
 
       await telemetry('add', { addon: addonName, source: 'cli' });
       logger.outro('Done!');
@@ -140,7 +144,9 @@ command('remove <addon>')
     )
   )
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
-  .option('-s --skip-install', 'Skip installing deps')
+  .addOption(new Option('-s, --skip-install', 'Skip installing deps').hideHelp())
+  .option('--install', 'Install dependencies', true)
+  .option('--no-install', 'Skip installing dependencies')
   .action((addonName: string, options: any) =>
     withTelemetry('remove', { cliOptions: options }, async () => {
       logger.intro(`Removing ${addonName} from your Storybook`);
@@ -151,7 +157,7 @@ command('remove <addon>')
       await remove(addonName, {
         configDir: options.configDir,
         packageManager,
-        skipInstall: options.skipInstall,
+        skipInstall: options.skipInstall || !options.install,
       });
       await telemetry('remove', { addon: addonName, source: 'cli' });
       logger.outro('Done!');
@@ -181,7 +187,8 @@ command('upgrade')
   )
   .option('-f --force', 'force the upgrade, skipping autoblockers')
   .option('-n --dry-run', 'Only check for upgrades, do not install')
-  .option('--skip-install', 'Skip installing deps')
+  .option('--install', 'Install dependencies', true)
+  .option('--no-install', 'Skip installing dependencies')
   .option('-s --skip-check', 'Skip postinstall version and automigration checks')
   .option(
     '--skip-automigrations',
@@ -191,13 +198,14 @@ command('upgrade')
     '-c, --config-dir <dir-name...>',
     'Directory(ies) where to load Storybook configurations from'
   )
-  .action(async (options: UpgradeOptions) => {
+  .action(async (options: UpgradeOptions & { install: boolean }) => {
+    const { install, ...upgradeOptions } = options;
     await withTelemetry(
       'upgrade',
       { cliOptions: { ...options, configDir: options.configDir?.[0] } },
       async () => {
         logger.intro(`Storybook upgrade - v${versions.storybook}`);
-        await upgrade(options);
+        await upgrade({ ...upgradeOptions, skipInstall: !install });
         logger.outro('Storybook upgrade completed!');
       }
     ).catch(handleCommandFailure(options.logfile));
@@ -280,13 +288,19 @@ command('automigrate [fixId]')
   )
   .option('-l --list', 'List available migrations')
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configurations to migrate')
-  .option('-s --skip-install', 'Skip installing deps')
+  .addOption(new Option('-s, --skip-install', 'Skip installing deps').hideHelp())
+  .option('--install', 'Install dependencies', true)
+  .option('--no-install', 'Skip installing dependencies')
   .option('--skip-doctor', 'Skip doctor check')
   .option('--glob <pattern>', 'Glob pattern for story files (for csf-factories codemod)')
   .action(async (fixId, options) => {
     withTelemetry('automigrate', { cliOptions: options }, async () => {
       logger.intro(fixId ? `Running ${fixId} automigration` : 'Running automigrations');
-      await doAutomigrate({ fixId, ...options });
+      await doAutomigrate({
+        fixId,
+        ...options,
+        skipInstall: options.skipInstall || !options.install,
+      });
       logger.outro('Done');
     }).catch(handleCommandFailure(options.logfile));
   });

@@ -55,6 +55,21 @@ describe('Yarn 2 Proxy', () => {
       );
     });
 
+    it('keeps the original error when Yarn 6 finds no candidates', async () => {
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+        await Promise.resolve(fn());
+      });
+      const originalError = new Error('➤ · No candidates found for npm:not-a-package');
+      mockedExecuteCommand.mockRejectedValueOnce(originalError);
+
+      const error = await yarn2Proxy.installDependencies().then(
+        () => null,
+        (caughtError) => caughtError
+      );
+
+      expect(error).toBe(originalError);
+    });
+
     it('should rethrow minimum-age-gate install errors as handled errors', async () => {
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
         await Promise.resolve(fn());
@@ -153,7 +168,7 @@ describe('Yarn 2 Proxy', () => {
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'yarn',
-          args: ['npm', 'info', 'storybook', '--fields', 'version', '--json'],
+          args: ['npm', 'info', 'storybook', '--json'],
         })
       );
       expect(version).toEqual('5.3.19');
@@ -169,7 +184,7 @@ describe('Yarn 2 Proxy', () => {
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'yarn',
-          args: ['npm', 'info', 'storybook', '--fields', 'versions', '--json'],
+          args: ['npm', 'info', 'storybook', '--json'],
         })
       );
       expect(version).toEqual('5.3.19');
@@ -255,6 +270,7 @@ describe('Yarn 2 Proxy', () => {
 
     afterEach(() => {
       vi.useRealTimers();
+      vi.unstubAllGlobals();
     });
 
     it('should update npmPreapprovedPackages in non-interactive mode when npmMinimalAgeGate blocks Storybook', async () => {
@@ -284,6 +300,12 @@ describe('Yarn 2 Proxy', () => {
         installContext: 'create',
       });
 
+      expect(mockedExecuteCommand).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'yarn',
+          args: ['config', 'get', 'npmPreapprovedPackages', '--json'],
+        })
+      );
       expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
         expect.objectContaining({
           command: 'yarn',
@@ -379,6 +401,52 @@ describe('Yarn 2 Proxy', () => {
               'chromatic',
             ]),
           ],
+        })
+      );
+    });
+
+    it('reads a Yarn 6 age gate in seconds and does not treat it as minutes', async () => {
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '86400s\n' } as any)
+        .mockResolvedValueOnce({ stdout: '[]\n' } as any)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            name: 'storybook',
+            version: '10.3.2',
+            time: { '10.3.2': '2026-05-01T00:00:00.000Z' },
+          }),
+        } as any);
+
+      await yarn2Proxy.precheckStorybookPackageInstall({
+        storybookVersion: '10.3.2',
+        nonInteractive: true,
+        installContext: 'create',
+      });
+
+      expect(vi.mocked(prompt.executeTaskWithSpinner)).not.toHaveBeenCalled();
+      expect(mockedExecuteCommand).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          args: expect.arrayContaining(['set', 'npmPreapprovedPackages']),
+        })
+      );
+    });
+
+    it('does not overwrite npmPreapprovedPackages when Yarn prints an unreadable list', async () => {
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({
+          stdout: 'unimplemented; use --json to display container contents for now\n',
+        } as any);
+
+      await yarn2Proxy.precheckStorybookPackageInstall({
+        storybookVersion: '10.4.0-alpha.17',
+        nonInteractive: true,
+        installContext: 'create',
+      });
+
+      expect(mockedExecuteCommand).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          args: expect.arrayContaining(['set', 'npmPreapprovedPackages']),
         })
       );
     });

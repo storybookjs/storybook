@@ -1,1 +1,102 @@
-{}
+{
+  "level": {
+    "description": "Numeric level.",
+    "name": "level",
+    "options": [
+      1,
+      2,
+      3,
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "1 | 2 | 3",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": true,
+      "value": [
+        1,
+        2,
+        3,
+      ],
+    },
+  },
+  "mode": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Automatic mode.",
+    "name": "mode",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "boolean | "auto"",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "boolean | "auto"",
+    },
+  },
+  "size": {
+    "description": "Size variant.",
+    "name": "size",
+    "options": [
+      "small",
+      "medium",
+      "large",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": ""medium"",
+      },
+      "type": {
+        "summary": ""small" | "medium" | "large"",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": false,
+      "value": [
+        "small",
+        "medium",
+        "large",
+      ],
+    },
+  },
+  "tone": {
+    "description": "Tone variant.",
+    "name": "tone",
+    "options": [
+      "info",
+      "warn",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": ""info" | "warn"",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": false,
+      "value": [
+        "info",
+        "warn",
+      ],
+    },
+  },
+}

@@ -1,0 +1,10 @@
+<script>
+  import BindableRest from './BindableRest.svelte';
+</script>
+
+<BindableRest
+  value="Accepted"
+  checked
+  disabled
+  placeholder="ignored"
+ />

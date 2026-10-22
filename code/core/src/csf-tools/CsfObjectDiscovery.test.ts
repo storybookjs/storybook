@@ -199,6 +199,7 @@ describe('CsfObject discovery', () => {
           code: 'aliased-story',
           target: { kind: 'story', exportName: other, localName: 'L' },
           message: `Cannot mutate ${other} without changing ${first}, which exports the same story`,
+          aliasOf: first,
         }),
       ]);
     }
@@ -354,6 +355,7 @@ describe('CsfObject discovery', () => {
         target: { kind: 'story', exportName, localName: exportName },
         path: [],
         message: `Cannot mutate ${exportName} without changing ${aliased}, which exports the same story`,
+        aliasOf: aliased,
       });
 
     it.each(['Primary', 'Primary as Story', 'Primary satisfies Story'])(
@@ -914,6 +916,7 @@ describe('CsfFile.storyObject', () => {
         target: { kind: 'story', exportName, localName },
         path: [],
         message: `Cannot mutate ${exportName} without changing ${owner}, which exports the same story`,
+        aliasOf: owner,
       }),
     });
 
@@ -983,6 +986,7 @@ describe('CsfFile.storyObject', () => {
           code: 'aliased-story',
           target: { kind: 'story', exportName: 'Secondary', localName: 'Secondary' },
           message: 'Cannot mutate Secondary without changing Primary, which exports the same story',
+          aliasOf: 'Primary',
         }),
       });
     });
@@ -1030,6 +1034,7 @@ describe('CsfFile.storyObject', () => {
           code: 'aliased-story',
           target: { kind: 'story', exportName: 'Secondary', localName: 'Secondary' },
           message: 'Cannot mutate Secondary without changing Primary, which exports the same story',
+          aliasOf: 'Primary',
         }),
       });
       expect(csf.mutationDiagnostics).toEqual([found?.ok === false && found.diagnostic]);

@@ -35,6 +35,7 @@
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
+  - [Vite: `preview-stats.json` contains the full bundler graph](#vite-preview-statsjson-contains-the-full-bundler-graph)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
   - [Next.js: most Node.js built-in polyfills removed from `@storybook/nextjs`](#nextjs-most-nodejs-built-in-polyfills-removed-from-storybooknextjs)
   - [`storySort` in the preview replaced by `storySorts` in main](#storysort-in-the-preview-replaced-by-storysorts-in-main)
@@ -978,7 +979,7 @@ The manager resolves `SELECT_STORY` payloads from `storyId` or `title`/`name`, a
 ### `docgenServer` is stable and enabled by default
 
 The `experimentalDocgenServer` feature is now `docgenServer`, and Storybook no longer reads the old name.
-Server-side component metadata extraction is enabled by default for every React and Vue 3 framework, including Webpack-based ones, for `@storybook/angular-vite`, and for `@storybook/web-components-vite`.
+Server-side component metadata extraction is enabled by default for every React and Vue 3 framework, including Webpack-based ones, for `@storybook/angular-vite`, for `@storybook/web-components-vite`, and for `@storybook/svelte-vite` and `@storybook/sveltekit`.
 React and Vue 3 extract component metadata with TypeScript, so for them the default is only on when the `typescript` package is installed; a JavaScript project without it keeps builder docgen.
 Other frameworks keep builder docgen.
 
@@ -995,9 +996,23 @@ For Angular-Vite, `framework.options.compodoc: false` does not disable the docge
 ### Builder docgen is deprecated
 
 Client-side docgen that runs in the builder is deprecated and will be removed in Storybook 12.
-This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`.
+This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`, and the Svelte `docgen` framework option in `@storybook/svelte-vite` and `@storybook/sveltekit` (including the sveltedoc-shaped `__docgen`).
 Builder docgen only runs when `features.docgenServer` is `false`, and Storybook now prints a deprecation warning when it does.
 Remove `docgenServer: false` to use server-side docgen.
+
+#### Svelte
+
+Server-side docgen is enabled by default for `@storybook/svelte-vite` and `@storybook/sveltekit`. It brings its own TypeScript 6 to read components, so it does not need `typescript` in your project, and it works in projects on TypeScript 7. Setting `framework.options.docgen: false` still disables builder docgen without a warning. The deprecated APIs stay available until Storybook 12.
+
+The server output changes the Controls panel:
+
+- `Snippet` props are in the slots category, and callback props are in the events category. Both have no control.
+- Callback props have the type `function`, with their signature as `raw`.
+- Literal unions get an enum control with options. A prop that can also be `null` or `undefined` gets the control of its other type.
+- Props that a component inherits from a whole attribute interface, such as `HTMLButtonAttributes`, are not listed. Props it picks from one, such as `Pick<HTMLButtonAttributes, 'disabled'>`, are.
+- JSDoc tags, the `@component` description and `$bindable` metadata are included.
+
+The Code panel snippet starts with a `<script>` block that imports the components and values it uses, from the paths in the story file. It also copies the story file declarations that the markup reads. Args are printed as you wrote them, for example `onclick={fn()}`.
 
 ### Node.js 22.12 or higher
 
@@ -1273,6 +1288,15 @@ If you're using framework-specific Vite plugins, ensure they are compatible with
 
 For more information on upgrading Vite, see the [Vite Migration Guide](https://vite.dev/guide/migration).
 
+### Vite: `preview-stats.json` contains the full bundler graph
+
+The `preview-stats.json` file that `@storybook/builder-vite` writes for `storybook build --stats-json` now contains the full bundler graph. In previous versions the builder dropped some nodes before it wrote the file. It now also writes:
+
+- Virtual modules such as `/virtual:/@storybook/builder-vite/project-annotations.js` and their edges
+- Proxy modules that Vite and Rollup insert between your code and its dependencies, for example `\0./node_modules/react/index.js?commonjs-es-import`
+- Sub-modules with a query string, for example `./src/Button.vue?vue&type=style&index=0&lang.css` next to `./src/Button.vue`
+
+Chromatic TurboSnap reads this file. It needs `chromatic-cli` [v18.13.1](https://github.com/chromaui/chromatic-cli/releases/tag/v18.13.1) or later, which merges these nodes into the files they stand for. With an older version, a changed Vue or Svelte component can trace to zero stories. Upgrade `chromatic-cli` to v18.13.1 or later before you upgrade Storybook.
 
 ### Next.js: Require v15 and up
 
@@ -1425,11 +1449,11 @@ An addon that supports both Storybook 10 and 11 can detect the new API with `typ
 - `getHeaderComments(statement)` is removed. The editor keeps a file's header comments in place: `prependStatement` inserts below them, also in a file without statements, and `appendStatement` separates a multi-line statement from its neighbour with a blank line.
 - `CsfObject` mutations index the story file again after every edit, where they used to leave the index as it was and return `{ ok: true }`. An edit whose result is valid JavaScript but not valid CSF, for example a meta `tags` that is no longer an array of string literals, is rolled back and returns `{ ok: false, changed: false, diagnostic }` with code `'invalid-csf'`. A refused mutation always leaves the file as it was, so the index stays readable. An edit whose result does not parse throws, and is rolled back too. The `ok: false` arm of `CsfMutationResult` now carries `changed: false`.
 - `SourceEditor#edits`, the pending edits of an `editor`, is a `SourceEdits`: text edits addressed by offsets into `code`, with `append`, `appendLeft`, `appendRight`, `overwrite`, `remove`, `slice`, `hasChanged`, `generateMap` and `toString`. `SourceEditor#generateMap()` returns a `GeneratedMap`.
-- `getAutomockCode(code, isSpy, fileName)` and `extractMockCalls(options, root, findMockRedirect)` in `storybook/internal/mocking-utils` parse the code themselves and no longer take a parser: drop the parser argument and pass the module's file name to `getAutomockCode`. `rewriteSbMockImportCalls(code, fileName)` requires the file name as well. `babelParser` is no longer exported; builders that passed it, such as `storybook-builder-rsbuild` 3.6, need a release that drops the argument. `automockModule` is no longer exported.
+- `getAutomockCode(code, isSpy, fileName)` and `extractMockCalls(options, root, findMockRedirect)` in `storybook/internal/mocking-utils` parse the code themselves and no longer take a parser: drop the parser argument and pass the module's file name to `getAutomockCode`. `rewriteSbMockImportCalls(code, fileName, { inputSourceMap })` requires the file name as well; its map sets `file` to that name and goes through `inputSourceMap` to the original when given, so a loader no longer adds `file` itself and can chain the map it received. The map is still `null` when nothing was rewritten. `babelParser` is no longer exported; builders that passed it, such as `storybook-builder-rsbuild` 3.6, need a release that drops the argument. `automockModule` is no longer exported.
 - The story-shape helpers no longer take Babel paths: `jsDocTagsForPath` is `jsDocTagsForNode`, `metaObjectPath` is `metaObject`, `RenderFunctionPath` is `RenderFunction`, and `pathForNode` and `returnedExpressionPath` are removed in favor of `returnedExpression` and plain nodes. `keyOf` is `staticKey`, which returns `undefined` instead of `null` for a key it cannot read, and reads numeric and template-literal keys as well. `sourceOf` is `oneLineTextOf`: the node's source text with its line breaks collapsed and its comments kept, where `sourceOf` was a concise Babel reprint without comments; it takes nodes of `CsfFile.program`, `ConfigFile.program`, `parseExpression` or `parseModule`.
 - The `getAbsolutePath` wrapper helpers in `storybook/internal/common` produce source text instead of Babel nodes. `getAbsolutePathWrapperAsCallExpression(isTs, names)`, which returned the wrapper's function declaration, is replaced by `getAbsolutePathWrapperDeclaration(config, isTs, names)`, which returns the declaration's source, indented like `config`, for `ConfigFile#setBodyDeclaration`. `getAbsolutePathCall(config, value)` returns the source of a call to the config's wrapper. `wrapValueWithGetAbsolutePathWrapper(config, node)` is replaced by `wrapValuesWithGetAbsolutePathWrapper(config, nodes)`, which wraps every node in the array and commits the edits to `config`.
 - `new CsfFile(code, options)` and `new ConfigFile(code, fileName)` take source code instead of a Babel AST.
-- `formatCsf(csf, { sourceMaps, sourceFileName, inputSourceMap })` replaces the Babel generator options; `printCsf` and `printConfig` take no options, and all three print a file whose first line ends in CRLF with CRLF line endings, and any other file with `\n`. A file that mixes line endings is printed with its first line's ending throughout, and a file with lone CR line endings with `\n`.
+- `formatCsf(csf, { sourceMaps, sourceFileName, inputSourceMap })` replaces the Babel generator options. It is typed `{ code, map }` with `sourceMaps: true` and `string` without it, so a caller no longer casts the result; `printCsf` and `printConfig` take no options, and all three print a file whose first line ends in CRLF with CRLF line endings, and any other file with `\n`. A file that mixes line endings is printed with its first line's ending throughout, and a file with lone CR line endings with `\n`.
 - `ConfigFile#setBodyDeclaration(code)` takes the declaration's source text instead of a Babel node.
 - The Vitest config helpers `canUpdateVitestConfigFile`, `getTargetConfigObject`, `getEffectiveMergeConfigCall`, `getConfigObjectFromMergeArg` and `resolveExpression` moved from `storybook/internal/babel` to `storybook/internal/cli`. `canUpdateVitestConfigFile` still takes the file's source; the others take an ESTree `Program`, such as `parseModule(code, fileName).program`, instead of a Babel `File`, and return ESTree nodes. `isDefineConfigLike` and `isImportedDefineConfigLikeIdentifier` are no longer exported. `unwrapTSExpression` is now `unwrapExpression` in `storybook/internal/csf-tools`, and also unwraps non-null assertions (`value!`).
 

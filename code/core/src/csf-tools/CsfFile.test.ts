@@ -27,7 +27,7 @@ const makeTitle = (userTitle?: string) => {
 
 const parse = (code: string, includeParameters?: boolean) => {
   const { stories, meta } = loadCsf(code, { makeTitle }).parse();
-  const filtered = stories.map(({ exportName, ...story }) => {
+  const filtered = stories.map(({ exportName, factory, ...story }) => {
     const { parameters, ...rest } = story;
     return includeParameters ? story : rest;
   });
@@ -54,6 +54,29 @@ describe('CsfFile', () => {
 
     expect(csf.program.body).toHaveLength(4);
     expect(csf.stories.map(({ name }) => name)).toEqual(['B', 'C', 'D']);
+  });
+
+  it('tells a CSF factory story from other stories', () => {
+    const factoryFile = loadCsf(
+      dedent`
+        import { config } from '#.storybook/preview';
+        const meta = config.meta({ component: 'foo' });
+        export const A = meta.story({});
+        export const B = A.extend({});
+        export { B as C };
+      `,
+      { makeTitle }
+    ).parse();
+    const csf3 = loadCsf("export default { title: 'A' };\nexport const A = {};\n", {
+      makeTitle,
+    }).parse();
+
+    expect(factoryFile.stories.map(({ exportName, factory }) => [exportName, factory])).toEqual([
+      ['A', true],
+      ['B', true],
+      ['C', true],
+    ]);
+    expect(csf3.stories.map(({ factory }) => factory)).toEqual([false]);
   });
 
   it('prints an edited CRLF source with CRLF line endings', () => {

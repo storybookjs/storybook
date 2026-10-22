@@ -1,8 +1,13 @@
 import { type ESTree, SourceEditor, generateUid } from 'storybook/internal/csf-tools';
 
 import { getSvelteAST } from '../../svelte-csf/parser/ast.ts';
-import { getStoriesIdentifiers } from '../../svelte-csf/parser/analyse/story/attributes/identifiers.ts';
 import { getStoryContentRawCode } from '../../svelte-csf/parser/analyse/story/content.ts';
+import {
+  getExtendableStories,
+  getStoryContent,
+  getStoryParents,
+} from '../../svelte-csf/parser/analyse/story/extend.ts';
+import { getStoryChain } from '../../svelte-csf/utils/story-chain.ts';
 import { getDefineMetaFirstArgumentObjectExpression } from '../../svelte-csf/parser/extract/svelte/define-meta.ts';
 import { extractSvelteASTNodes } from '../../svelte-csf/parser/extract/svelte/nodes.ts';
 import {
@@ -60,17 +65,27 @@ export async function readSvelteCsfFile(source: string, filename: string): Promi
   ]);
 
   const stories = new Map<string, StoryMarkup>();
-  const identifiers = getStoriesIdentifiers({ nodes, filename });
-  for (const [index, story] of nodes.storyComponents.entries()) {
-    const { exportName, name } = identifiers[index];
-    const value = extractStoryAttributesNodes({ component: story.component, attributes: ['args'] })
-      .args?.value;
-    const chunk = Array.isArray(value) ? value[0] : value;
-    const args =
-      chunk && chunk !== true && chunk.type === 'ExpressionTag'
-        ? source.slice(span(chunk.expression).start, span(chunk.expression).end)
-        : '{}';
-    const storyObject = `{ name: ${JSON.stringify(name)}, args: ${args} }`;
+  const storyNodes = getExtendableStories(nodes, filename);
+  const parents = getStoryParents({ stories: storyNodes, isFactory: nodes.isFactory, filename });
+  const ownArgs = new Map(
+    storyNodes.map(({ component, exportName }) => {
+      const value = extractStoryAttributesNodes({ component, attributes: ['args'] }).args?.value;
+      const chunk = Array.isArray(value) ? value[0] : value;
+      return [
+        exportName,
+        chunk && chunk !== true && chunk.type === 'ExpressionTag'
+          ? source.slice(span(chunk.expression).start, span(chunk.expression).end)
+          : '{}',
+      ];
+    })
+  );
+  for (const story of storyNodes) {
+    const { exportName } = story;
+    // The args of the stories it extends come first, so its own args override them
+    const args = getStoryChain(parents, exportName)
+      .map((name) => ownArgs.get(name)!)
+      .reduce((merged, parentArgs) => `{ ...${parentArgs}, ...${merged} }`);
+    const storyObject = `{ name: ${JSON.stringify(story.name)}, args: ${args} }`;
     // Svelte CSF exports a story under a name of its own, so the module script may declare it too.
     if (scopes.names.has(exportName)) {
       const local = generateUid(scopes, exportName);
@@ -78,12 +93,14 @@ export async function readSvelteCsfFile(source: string, filename: string): Promi
     } else {
       csfSource += `\nexport const ${exportName} = ${storyObject};`;
     }
+    const content = getStoryContent(storyNodes, parents, exportName);
     const template = getStoryContentRawCode({
-      nodes: { component: story.component, svelte: nodes },
+      nodes: { component: content.component, svelte: nodes },
+      asChild: content.asChild,
       originalCode: source,
       filename,
     });
-    const parameter = templateParameter(story.component, nodes, filename);
+    const parameter = templateParameter(content.component, nodes, filename);
     stories.set(exportName, {
       // Without a meta component, a story with no markup of its own renders nothing static.
       template: template.startsWith('<undefined ') ? undefined : template,

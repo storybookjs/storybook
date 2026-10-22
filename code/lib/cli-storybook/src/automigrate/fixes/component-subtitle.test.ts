@@ -76,18 +76,11 @@ describe('component-subtitle', () => {
     });
 
     expect(failures).toEqual([]);
-    expect(preview).toMatchInlineSnapshot(`
-      "export default { parameters: { docs: {
-        subtitle: 'Preview'
-      } } };"
-    `);
+    expect(preview).toMatchInlineSnapshot(
+      `"export default { parameters: { docs: { subtitle: 'Preview' } } };"`
+    );
     expect(story).toMatchInlineSnapshot(`
-      "export default { parameters: {
-        docs: {
-          source: { type: 'code' },
-          subtitle: 'Meta'
-        }
-      } };
+      "export default { parameters: { docs: { source: { type: 'code' }, subtitle: 'Meta' } } };
       export const Primary = { parameters: { componentSubtitle: 'Story' } };"
     `);
   });
@@ -98,11 +91,9 @@ describe('component-subtitle', () => {
         "export default { parameters: { componentSubtitle: 'Legacy', docs: { subtitle: 'Current' } } };",
     });
 
-    expect(story).toMatchInlineSnapshot(`
-      "export default { parameters: {
-        docs: { subtitle: 'Current' }
-      } };"
-    `);
+    expect(story).toMatchInlineSnapshot(
+      `"export default { parameters: { docs: { subtitle: 'Current' } } };"`
+    );
   });
 
   it('skips a file it cannot migrate safely and reports it', async () => {
@@ -113,6 +104,18 @@ describe('component-subtitle', () => {
 
     expect(result.failures).toEqual([
       { file: storyPath, kind: 'story', message: expect.any(String) },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
+  it('reports a componentSubtitle that a later spread may override', async () => {
+    const story =
+      "import { shared } from './shared';\nexport default { parameters: { componentSubtitle: 'A', ...shared } };";
+
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      { file: storyPath, kind: 'story', message: expect.stringContaining('spread') },
     ]);
     expect(result.story).toBe(story);
   });

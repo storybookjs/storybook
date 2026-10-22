@@ -1,1 +1,181 @@
-{}
+{
+  "class": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "class",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string | ClassArray | ClassDictionary",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "string | ClassArray | ClassDictionary",
+    },
+  },
+  "disabled": {
+    "control": {
+      "type": "boolean",
+    },
+    "description": undefined,
+    "name": "disabled",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+  "id": {
+    "control": {
+      "type": "text",
+    },
+    "description": undefined,
+    "name": "id",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+  "kind": {
+    "description": "Button kind.",
+    "name": "kind",
+    "options": [
+      "filled",
+      "outline",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": ""filled"",
+      },
+      "type": {
+        "summary": ""filled" | "outline"",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": false,
+      "value": [
+        "filled",
+        "outline",
+      ],
+    },
+  },
+  "onClick": {
+    "control": false,
+    "description": "Click callback.",
+    "name": "onClick",
+    "table": {
+      "category": "events",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "(e: MouseEvent) => void",
+      },
+    },
+    "type": {
+      "name": "function",
+      "raw": "(e: MouseEvent) => void",
+      "required": false,
+    },
+  },
+  "size": {
+    "description": "Button size.",
+    "name": "size",
+    "options": [
+      "small",
+      "large",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": ""small"",
+      },
+      "type": {
+        "summary": ""small" | "large"",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": false,
+      "value": [
+        "small",
+        "large",
+      ],
+    },
+  },
+  "slot_default": {
+    "control": false,
+    "description": undefined,
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{}",
+      },
+    },
+  },
+  "slot_icon-before": {
+    "control": false,
+    "description": undefined,
+    "name": "icon-before",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{}",
+      },
+    },
+  },
+  "type": {
+    "description": undefined,
+    "name": "type",
+    "options": [
+      "button",
+      "submit",
+      "reset",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": ""button" | "submit" | "reset"",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": false,
+      "value": [
+        "button",
+        "submit",
+        "reset",
+      ],
+    },
+  },
+}

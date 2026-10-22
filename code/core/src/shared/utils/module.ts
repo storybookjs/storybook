@@ -47,28 +47,30 @@ export const resolvePackageDir = (
 };
 
 let typescriptLoaderRegistration: Promise<void> | null = null;
+let typescriptLoaderRegistrationError: unknown = null;
 
 function registerTypescriptLoader() {
-  if (!typescriptLoaderRegistration) {
-    typescriptLoaderRegistration = (async () => {
-      if (semver.gte(process.versions.node, '26.0.0')) {
-        try {
-          const { load } = await import('storybook/internal/bin/loader');
-          nodeModule.registerHooks({ load });
-        } catch {
-          // Fallback in case nodejs/node#62786 caused an exception
-          const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
-          nodeModule.register(typescriptLoaderUrl, import.meta.url);
-        }
-      } else {
-        const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
-        nodeModule.register(typescriptLoaderUrl, import.meta.url);
+  typescriptLoaderRegistration ??= (async () => {
+    if (semver.gte(process.versions.node, '26.0.0')) {
+      try {
+        const { load } = await import('storybook/internal/bin/loader');
+        nodeModule.registerHooks({ load });
+        return;
+      } catch {
+        // Fallback in case nodejs/node#62786 caused an exception
       }
-    })().catch((e) => {
-      typescriptLoaderRegistration = null;
-      throw e;
-    });
-  }
+    }
+
+    const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
+    nodeModule.register(typescriptLoaderUrl, import.meta.url);
+  })().catch(async (error) => {
+    typescriptLoaderRegistrationError = error;
+    // Lazy import: this module is also loaded by build scripts under plain Node while core's dist
+    // does not exist yet, where a top-level import would fail to resolve.
+    const { logger } = await import('storybook/internal/node-logger');
+    // Some runtimes (e.g. Jest's sandbox) forbid module hooks; importing may still succeed without them.
+    logger.debug(`Storybook's TypeScript loader hooks could not be registered: ${error}`);
+  });
   return typescriptLoaderRegistration;
 }
 
@@ -116,6 +118,11 @@ export async function importModule(
         in Node 20 requireError will always be "Error [ERR_REQUIRE_CYCLE_MODULE]: Cannot require() ES Module"
         in Node 22 requireError will always be "Error [ERR_INTERNAL_ASSERTION]: Unexpected module status 5. Cannot require() ES Module"
       */
+      // If hook registration failed earlier (e.g. a broken install), attach it as the cause so the
+      // real problem is visible behind the generic import error.
+      if (typescriptLoaderRegistrationError && importError instanceof Error) {
+        importError.cause = typescriptLoaderRegistrationError;
+      }
       throw importError;
     }
   }

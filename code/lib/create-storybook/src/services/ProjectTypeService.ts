@@ -18,6 +18,33 @@ import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from '../generators/types.ts';
 
+// `remix` >=3 is Remix 3. `@remix-run/dev` is Remix 2 and stays on the React path.
+export function isRemix3VersionRange(versionRange: string | null | undefined): boolean {
+  if (!versionRange || !semver.validRange(versionRange)) {
+    return false;
+  }
+  return (semver.minVersion(versionRange)?.major ?? 0) >= 3;
+}
+
+/** `catalog:` and `workspace:` are not ranges. Resolve those before the version check. */
+export async function dependsOnRemix3(
+  rawSpecifier: string | null | undefined,
+  resolveNonSemver: () => Promise<string | null>
+): Promise<boolean> {
+  if (isRemix3VersionRange(rawSpecifier)) {
+    return true;
+  }
+  if (!rawSpecifier || semver.validRange(rawSpecifier)) {
+    return false;
+  }
+
+  try {
+    return isRemix3VersionRange(await resolveNonSemver());
+  } catch {
+    return false;
+  }
+}
+
 type TemplateMatcher = {
   files?: boolean[];
   dependencies?: boolean[];
@@ -137,6 +164,15 @@ export class ProjectTypeService {
           return dependencies?.every(Boolean) ?? true;
         },
       },
+      {
+        preset: ProjectType.HTML,
+        dependencies: {
+          remix: (versionRange) => isRemix3VersionRange(versionRange),
+        },
+        matcherFunction: ({ dependencies }) => {
+          return dependencies?.every(Boolean) ?? false;
+        },
+      },
       // DO NOT MOVE ANY TEMPLATES BELOW THIS LINE
       // React is part of every Template, after Storybook is initialized once
       {
@@ -210,6 +246,21 @@ export class ProjectTypeService {
     return detectIncompatiblePackageVersions(this.jsPackageManager);
   }
 
+  /** `catalog:` and `workspace:` are not semver ranges. Resolve those before the version check. */
+  private async detectNonSemverRemix3(packageJson: PackageJsonWithMaybeDeps): Promise<boolean> {
+    const raw = packageJson.dependencies?.remix ?? packageJson.devDependencies?.remix;
+    if (typeof raw !== 'string' || semver.validRange(raw)) {
+      return false;
+    }
+
+    try {
+      const resolved = await this.jsPackageManager.getDeclaredVersionSpecifier('remix');
+      return isRemix3VersionRange(resolved);
+    } catch {
+      return false;
+    }
+  }
+
   private eqMajor(versionRange: string, major: number) {
     // Uses validRange to avoid a throw from minVersion if an invalid range gets passed
     if (semver.validRange(versionRange)) {
@@ -227,6 +278,9 @@ export class ProjectTypeService {
         return ProjectType.HTML;
       }
       const { packageJson } = this.jsPackageManager.primaryPackageJson;
+      if (await this.detectNonSemverRemix3(packageJson)) {
+        return ProjectType.HTML;
+      }
       return this.detectFrameworkPreset(packageJson);
     } catch {
       return ProjectType.UNDETECTED;

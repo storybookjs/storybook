@@ -57,7 +57,7 @@ export class FrameworkDetectionCommand {
       }
     } else {
       // Detect builder from project configuration
-      builder = await this.frameworkDetectionService.detectBuilder();
+      builder = await this.frameworkDetectionService.detectBuilder(metadata.renderer);
     }
 
     // Get framework and renderer from metadata

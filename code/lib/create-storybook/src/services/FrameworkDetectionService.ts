@@ -1,13 +1,13 @@
 import { type JsPackageManager, getProjectRoot } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
-import type { SupportedRenderer } from 'storybook/internal/types';
-import { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
+import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
 
 import { createPromptCancelOptions } from '../prompt-cancel.ts';
 import { TelemetryService } from './TelemetryService.ts';
+import { dependsOnRemix3 } from './ProjectTypeService.ts';
 
 const viteConfigFiles = ['vite.config.ts', 'vite.config.js', 'vite.config.mjs'];
 const webpackConfigFiles = ['webpack.config.js'];
@@ -33,7 +33,7 @@ export class FrameworkDetectionService {
     throw new Error(`Could not find framework for renderer: ${renderer} and builder: ${builder}`);
   }
 
-  async detectBuilder() {
+  async detectBuilder(renderer?: SupportedRenderer) {
     const viteConfig = find.any(viteConfigFiles, { last: getProjectRoot() });
     const webpackConfig = find.any(webpackConfigFiles, { last: getProjectRoot() });
     const rsbuildConfig = find.any(rsbuildConfigFiles, { last: getProjectRoot() });
@@ -56,6 +56,22 @@ export class FrameworkDetectionService {
 
     if (hasRsbuild) {
       detectedBuilders.push(SupportedBuilder.RSBUILD);
+    }
+
+    // Remix 3 ships no bundler. Only the HTML renderer lacks Webpack; a React init keeps it.
+    if (
+      renderer === SupportedRenderer.HTML &&
+      (await dependsOnRemix3(dependencies.remix, () =>
+        this.jsPackageManager.getDeclaredVersionSpecifier('remix')
+      ))
+    ) {
+      if (detectedBuilders.includes(SupportedBuilder.VITE)) {
+        return SupportedBuilder.VITE;
+      }
+      if (detectedBuilders.includes(SupportedBuilder.RSBUILD)) {
+        return SupportedBuilder.RSBUILD;
+      }
+      return SupportedBuilder.VITE;
     }
 
     // If exactly one builder is detected, return it

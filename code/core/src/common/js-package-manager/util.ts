@@ -232,3 +232,21 @@ export const getInstallErrorTail = (error: unknown, lines: number = INSTALL_ERRO
   const allLines = output.split('\n');
   return allLines.slice(-lines).join('\n').trim();
 };
+
+/** The package manager error code (e.g. npm `ERESOLVE`, pnpm `ERR_PNPM_…`) in captured output. */
+export function extractPackageManagerErrorCode(logs: string): string | undefined {
+  const npmMatch = logs.match(/npm\s+(?:ERR!|error)\s+code\s+([A-Z0-9_]+)/i);
+  if (npmMatch) {
+    return npmMatch[1];
+  }
+
+  const pnpmMatch = logs.match(/(ERR_PNPM_[A-Z0-9_]+)/);
+  if (pnpmMatch) {
+    return pnpmMatch[1];
+  }
+
+  return undefined;
+}
+
+export const isNpmPeerResolutionError = (error: unknown): boolean =>
+  extractPackageManagerErrorCode(getErrorLogs(error)) === 'ERESOLVE';

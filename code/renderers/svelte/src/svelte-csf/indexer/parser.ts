@@ -26,11 +26,15 @@ import {
   StoryAsChildWithoutChildrenError,
 } from '../utils/error/parser/analyse/story.ts';
 import { extractStoryTemplateSnippetBlock } from '../parser/extract/svelte/story/template.ts';
+import { type ExtendableStory, getStoryParents } from '../parser/analyse/story/extend.ts';
+import { getStoryChain } from '../utils/story-chain.ts';
 
 interface Results {
   meta: Pick<IndexInput, 'title' | 'tags' | 'metaId'>;
   stories: Array<Pick<IndexInput, 'exportName' | 'name' | 'tags'>>;
 }
+
+type IndexedStory = ExtendableStory & { tags: string[] };
 
 // Script blocks and comments are matched first, as they can contain "<style"
 const styleBlocks =
@@ -56,12 +60,15 @@ export async function parseForIndexer(filename: string): Promise<Results> {
   ]);
 
   const svelteAST = getIndexableAST(code, filename);
-  const results: Results & {
+  const results: Omit<Results, 'stories'> & {
     hasMetaImport?: boolean;
+    isFactory: boolean;
     storyNames: string[];
+    stories: IndexedStory[];
   } = {
     meta: {},
     stories: [],
+    isFactory: false,
     storyNames: [],
   };
 
@@ -125,6 +132,7 @@ export async function parseForIndexer(filename: string): Promise<Results> {
       }
 
       state.storyNames = meta.storyNames;
+      state.isFactory = meta.isFactory;
 
       if (meta.call.arguments[0]?.type !== 'ObjectExpression') {
         throw new GetDefineMetaFirstArgumentError({
@@ -195,7 +203,16 @@ export async function parseForIndexer(filename: string): Promise<Results> {
       if (state.storyNames.includes(name)) {
         const storyAttributes = extractStoryAttributesNodes({
           component: node,
-          attributes: ['exportName', 'name', 'tags', 'template', 'asChild', 'children', 'play'],
+          attributes: [
+            'exportName',
+            'name',
+            'tags',
+            'template',
+            'asChild',
+            'children',
+            'play',
+            'extend',
+          ],
         });
         const templateSnippet = extractStoryTemplateSnippetBlock(node);
 
@@ -213,7 +230,8 @@ export async function parseForIndexer(filename: string): Promise<Results> {
           throw new StoryTemplateAndAsChildError({ component: node, filename });
         }
 
-        if (hasAsChild && !hasChildren) {
+        // A story that extends another story can inherit the children
+        if (hasAsChild && !hasChildren && !storyAttributes.extend) {
           throw new StoryAsChildWithoutChildrenError({ component: node, filename });
         }
 
@@ -233,6 +251,7 @@ export async function parseForIndexer(filename: string): Promise<Results> {
         }
 
         state.stories.push({
+          component: node,
           exportName,
           name: storyName,
           tags,
@@ -249,10 +268,19 @@ export async function parseForIndexer(filename: string): Promise<Results> {
     throw new MissingDefineMetaImportError(filename);
   }
 
-  const { meta, stories } = results;
+  const { meta, stories, isFactory } = results;
+  const parents = getStoryParents({ stories, isFactory, filename });
+  const byExportName = new Map(stories.map((story) => [story.exportName, story]));
 
   return {
     meta,
-    stories,
+    // A story has the tags of the stories it extends, before its own
+    stories: stories.map(({ exportName, name }) => ({
+      exportName,
+      name,
+      tags: getStoryChain(parents, exportName)
+        .reverse()
+        .flatMap((storyExportName) => byExportName.get(storyExportName)!.tags),
+    })),
   };
 }

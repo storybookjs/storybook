@@ -6,6 +6,7 @@ import ts from 'typescript';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { buildDocgenPayload } from '../../../../renderers/svelte/src/docgen/component-docgen/build-docgen.ts';
+import { SvelteComponentMetaManager } from '../../../../renderers/svelte/src/docgen/component-docgen/component-meta/svelte-project-manager.ts';
 import { buildStoryDocsPayload } from '../../../../renderers/svelte/src/docgen/story-docs/build-story-docs.ts';
 import { createIndexer } from '../../../../renderers/svelte/src/svelte-csf/indexer/index.ts';
 import {
@@ -32,7 +33,7 @@ const payload = (storyFile = 'input.stories.ts') =>
         importPath: join(fixtureDir, storyFile),
       },
     },
-    { cache: createDocgenCache() }
+    { componentMetaManager: new SvelteComponentMetaManager() }
   );
 
 describe('server metadata for legacy components', () => {

@@ -34,6 +34,14 @@ describe('loaders', () => {
     expect(emittedArgs()).toBe(event);
   });
 
+  it('logs a mock call without arguments as an empty list', () => {
+    loaders[0](context);
+
+    fn().mockName('onClose')();
+
+    expect(emittedArgs()).toEqual([]);
+  });
+
   it('forwards multiple mock-call arguments in order', () => {
     loaders[0](context);
 

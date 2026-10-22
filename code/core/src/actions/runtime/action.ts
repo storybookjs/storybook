@@ -118,7 +118,7 @@ export function action(name: string, options: ActionOptions = {}): HandlerFuncti
     const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
     const minDepth = 5; // anything less is really just storybook internals
     const serializedArgs = args.map(serializeArg);
-    const normalizedArgs = args.length > 1 ? serializedArgs : serializedArgs[0];
+    const normalizedArgs = args.length === 1 ? serializedArgs[0] : serializedArgs;
 
     const actionDisplayToEmit: ActionDisplay = {
       id,

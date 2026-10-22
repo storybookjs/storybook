@@ -1,23 +1,12 @@
-import { existsSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 
 import type { Plugin } from 'esbuild';
 import { basename, dirname, join, normalize, parse } from 'pathe';
 
 /*
- * Manager entries are self-invoking modules (see `wrapManagerEntries`): their entire behavior is
- * import-time side effects. Once esbuild honors `"sideEffects": false` in package.json, it would
- * tree-shake such entries away entirely when the package they belong to declares it. The wrapper
- * files exist only to import their entry for those side effects, so whatever a wrapper imports is
- * marked side-effectful. This keeps the fix from PR #21335 (`manager.js` ignored when
- * `sideEffects: false` in `package.json`) working, for which `ignoreAnnotations: true` was a
- * blanket workaround.
- *
- * Marking entries alone is not enough: an entry's own package can declare `"sideEffects": false`
- * too, and its registration imports one level below the entry (`import './register.js'`, or a
- * split `import './chunk-XYZ.js'`) would then be dropped while the entry itself survives. Modules
- * resolving inside the package root of a manager entry are therefore marked side-effectful as
- * well. Packages merely imported BY an entry (e.g. @storybook/icons) are outside every entry's
- * package root and keep their declared behavior, staying tree-shakable.
+ * Manager entries run only for their side effects: mark each entry, and every module inside the
+ * entry's own package, `sideEffects: true`, so the package's `"sideEffects": false` cannot drop
+ * the registration (#21335). Dependencies that an entry imports stay tree-shakable.
  */
 
 /*
@@ -27,8 +16,26 @@ import { basename, dirname, join, normalize, parse } from 'pathe';
 const reentryGuard = Symbol('preserve-manager-entry-side-effects-reentry');
 
 /*
- * The nearest package root of an entry file, stopping at `node_modules`: modules under a nested
- * node_modules belong to dependencies, not to the entry's own package.
+ * Reads the package.json directly in `dir`, tolerating its absence or malformed JSON: such a
+ * manifest carries no `name` or `sideEffects` annotation, and walking past it errs toward marking
+ * more modules as side-effectful, never fewer.
+ */
+const readPackageJson = (dir: string): { name?: unknown; sideEffects?: unknown } | undefined => {
+  try {
+    return JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT' || error instanceof SyntaxError) {
+      return undefined;
+    }
+    throw error;
+  }
+};
+
+/*
+ * The nearest package root of a file: the closest ancestor directory whose package.json has a
+ * `name` or a `sideEffects` field (the annotation esbuild applies), skipping inner manifests like
+ * `dist/esm/package.json` that only carry `{"type": "module"}`. Stops at `node_modules`: modules
+ * under a nested node_modules belong to dependencies, not to the entry's own package.
  */
 export const findPackageRoot = (file: string): string | undefined => {
   let dir = dirname(file);
@@ -36,63 +43,88 @@ export const findPackageRoot = (file: string): string | undefined => {
     if (basename(dir) === 'node_modules') {
       return undefined;
     }
-    if (existsSync(join(dir, 'package.json'))) {
+    const pkg = readPackageJson(dir);
+    if (pkg && (pkg.name != null || pkg.sideEffects != null)) {
       return dir;
     }
   }
   return undefined;
 };
 
-export function preserveManagerEntrySideEffectsPlugin(wrappedEntries: string[]): Plugin {
-  // esbuild reports paths with forward slashes on every platform; the wrappers are generated with
-  // native separators on Windows, so normalize once here instead of comparing raw strings.
-  const wrappers = new Set(wrappedEntries.map((p) => normalize(p)));
-  const entryRoots = new Set<string>();
-
-  const isInsideEntryPackage = (path: string) =>
-    [...entryRoots].some((root) => {
-      if (!path.startsWith(`${root}/`)) {
+/*
+ * True when `path` resolves inside one of `packageRoots`, unless it is reached through a nested
+ * `node_modules`: modules there belong to dependencies of the entry's package, not to the package
+ * itself. Roots and paths are normalized first, so a native Windows path (`C:\...`) matches its
+ * `C:/...` root.
+ */
+export const createInsideEntryPackageMatcher =
+  (packageRoots: Iterable<string>) =>
+  (path: string): boolean => {
+    const normalizedPath = normalize(path);
+    return [...packageRoots].some((root) => {
+      const canonicalRoot = normalize(root);
+      if (!normalizedPath.startsWith(`${canonicalRoot}/`)) {
         return false;
       }
-      const relativePath = path.slice(root.length + 1);
+      const relativePath = normalizedPath.slice(canonicalRoot.length + 1);
       return !relativePath.split('/').includes('node_modules');
     });
+  };
+
+export function preserveManagerEntrySideEffectsPlugin(wrappedEntries: string[]): Plugin {
+  // esbuild reports importers and resolved paths as real paths (symlinks resolved) with native
+  // separators on Windows, so canonicalize the wrapper paths the same way before comparing.
+  const wrappers = new Set(wrappedEntries.map((p) => normalize(realpathSync(p))));
+  const entryRoots = new Set<string>();
+  const isInsideEntryPackage = createInsideEntryPackageMatcher(entryRoots);
 
   return {
     name: 'preserve-manager-entry-side-effects',
     setup(build) {
       build.onResolve({ filter: /.*/ }, async (args) => {
-        if (
-          args.pluginData === reentryGuard ||
-          (!wrappers.has(args.importer) && entryRoots.size === 0)
-        ) {
+        if (args.pluginData === reentryGuard) {
+          return undefined;
+        }
+        // Entry points themselves have no importer and are always emitted; every protected import
+        // originates from a wrapper or from inside an entry's package, so skip everything else
+        // without resolving.
+        if (!args.importer) {
+          return undefined;
+        }
+        const importer = normalize(args.importer);
+        if (!wrappers.has(importer) && !isInsideEntryPackage(args.importer)) {
           return undefined;
         }
         // Resolve through esbuild instead of joining paths by hand: bare specifiers,
         // extensionless and directory imports must resolve identically to default resolution.
-        const { path, external } = await build.resolve(args.path, {
+        const result = await build.resolve(args.path, {
           importer: args.importer,
           kind: args.kind,
           resolveDir: args.resolveDir,
           namespace: args.namespace,
           pluginData: reentryGuard,
         });
-        if (!path || external) {
+        if (!result.path || result.external) {
           return undefined;
         }
-        // A wrapper imports its entry for its side effects only; keep it and record the entry's
-        // package root for the general rule below.
-        if (wrappers.has(args.importer)) {
-          const packageRoot = findPackageRoot(path);
+        const resolved = normalize(result.path);
+        // A wrapper imports its entry for its side effects only, so the entry is always marked;
+        // its package root is recorded to protect the entry's own registration imports too.
+        if (wrappers.has(importer)) {
+          const packageRoot = findPackageRoot(resolved);
           if (packageRoot) {
-            entryRoots.add(packageRoot);
+            entryRoots.add(normalize(packageRoot));
           }
-          return { path, sideEffects: true };
+        } else if (!isInsideEntryPackage(resolved)) {
+          return undefined;
         }
-        if (isInsideEntryPackage(path)) {
-          return { path, sideEffects: true };
-        }
-        return undefined;
+        return {
+          path: result.path,
+          namespace: result.namespace,
+          suffix: result.suffix,
+          pluginData: result.pluginData,
+          sideEffects: true,
+        };
       });
     },
   };

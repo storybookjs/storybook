@@ -1,4 +1,4 @@
-```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import { definePreview, componentWrapperDecorator } from '@storybook/angular';
 
 export default definePreview({
@@ -22,7 +22,7 @@ export default definePreview({
 });
 ```
 
-```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 4"
 import React from 'react';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
@@ -57,7 +57,7 @@ export default definePreview({
 });
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 4"
 import React from 'react';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
@@ -156,7 +156,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF 4"
 import { definePreview } from '@storybook/vue3-vite';
 
 export default definePreview({
@@ -180,7 +180,7 @@ export default definePreview({
 });
 ```
 
-```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import { definePreview } from '@storybook/vue3-vite';
 
 export default definePreview({
@@ -280,7 +280,7 @@ export default preview;
 </div>
 ```
 
-```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import { html } from 'lit';
 
 import { definePreview } from '@storybook/web-components-vite';
@@ -306,7 +306,7 @@ export default definePreview({
 });
 ```
 
-```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import { html } from 'lit';
 
 import { definePreview } from '@storybook/web-components-vite';

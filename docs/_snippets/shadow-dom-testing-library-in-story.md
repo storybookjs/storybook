@@ -1,4 +1,4 @@
-```ts filename="Example.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Example.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 export const ShadowDOMExample = meta.story({
   async play({ canvas }) {
     // 👇 Will find an element even if it's within a shadow root
@@ -7,7 +7,7 @@ export const ShadowDOMExample = meta.story({
 });
 ```
 
-```js filename="Example.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="Example.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 export const ShadowDOMExample = meta.story({
   async play({ canvas }) {
     // 👇 Will find an element even if it's within a shadow root

@@ -1,4 +1,4 @@
-```js filename="lit-slots-and-css.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="lit-slots-and-css.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 import { html } from 'lit';
 
@@ -20,7 +20,7 @@ export const CustomMarkup = meta.story({
 });
 ```
 
-```ts filename="lit-slots-and-css.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="lit-slots-and-css.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 import { html } from 'lit';
 

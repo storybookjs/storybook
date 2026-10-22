@@ -1,4 +1,4 @@
-```js filename="lit-events.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="lit-events.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import './lit-events';
@@ -15,7 +15,7 @@ export const WithListener = meta.story({
 });
 ```
 
-```ts filename="lit-events.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="lit-events.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import './lit-events';

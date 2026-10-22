@@ -1,4 +1,4 @@
-```js filename="MyForm.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="MyForm.stories.js" renderer="react" language="js" tabTitle="CSF 4"
 import { expect } from 'storybook/test';
 
 // Replace your-framework with nextjs or nextjs-vite
@@ -23,7 +23,7 @@ export const GoBack = meta.story({
 });
 ```
 
-```ts filename="MyForm.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyForm.stories.ts" renderer="react" language="ts" tabTitle="CSF 4"
 import { expect } from 'storybook/test';
 
 /*

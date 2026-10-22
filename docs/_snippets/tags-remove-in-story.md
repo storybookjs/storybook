@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Button } from './button.component';
@@ -35,7 +35,7 @@ export const ExperimentalFeatureStory: Story = {
 };
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF 4"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -52,7 +52,7 @@ export const ExperimentalFeatureStory: Story = {
 <Story name="ExperimentalFeatureStory" tags={['!stable', 'experimental']} />
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF 3"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -70,7 +70,7 @@ export const ExperimentalFeatureStory: Story = {
 <Story name="ExperimentalFeatureStory" tags={['!stable', 'experimental']} />
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF 4"
 <script module lang="ts">
   import preview from '../.storybook/preview';
 
@@ -87,7 +87,7 @@ export const ExperimentalFeatureStory: Story = {
 <Story name="ExperimentalFeatureStory" tags={['!stable', 'experimental']} />
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF 3"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -105,7 +105,7 @@ export const ExperimentalFeatureStory: Story = {
 <Story name="ExperimentalFeatureStory" tags={['!stable', 'experimental']} />
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -120,7 +120,7 @@ export const ExperimentalFeatureStory = meta.story({
 });
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -168,7 +168,7 @@ export const ExperimentalFeatureStory = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Button } from './Button';
@@ -206,7 +206,7 @@ export const ExperimentalFeatureStory: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Button } from './Button';
@@ -238,7 +238,7 @@ export const ExperimentalFeatureStory = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import Button from './Button.vue';
@@ -255,7 +255,7 @@ export const ExperimentalFeatureStory = meta.story({
 });
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import Button from './Button.vue';

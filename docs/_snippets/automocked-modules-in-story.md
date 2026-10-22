@@ -1,4 +1,4 @@
-```ts filename="AuthButton.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="AuthButton.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import { expect, mocked } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -29,7 +29,7 @@ export const LogIn = meta.story({
 });
 ```
 
-```ts filename="AuthButton.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="AuthButton.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import { expect, mocked } from 'storybook/test';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -58,7 +58,7 @@ export const LogIn = meta.story({
 });
 ```
 
-```ts filename="AuthButton.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="AuthButton.stories.ts" renderer="react" language="ts" tabTitle="CSF 4"
 import { expect, mocked } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -89,7 +89,7 @@ export const LogIn = meta.story({
 });
 ```
 
-```js filename="AuthButton.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="AuthButton.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import { expect } from 'storybook/test';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -118,7 +118,7 @@ export const LogIn = meta.story({
 });
 ```
 
-```svelte filename="AuthButton.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="AuthButton.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF 4"
 <script module lang="ts">
   import preview from '../.storybook/preview';
   import { expect, mocked } from 'storybook/test';
@@ -151,7 +151,7 @@ export const LogIn = meta.story({
 />
 ```
 
-```svelte filename="AuthButton.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="AuthButton.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF 3"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -185,7 +185,7 @@ export const LogIn = meta.story({
 />
 ```
 
-```svelte filename="AuthButton.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="AuthButton.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF 4"
 <script module>
   import preview from '../.storybook/preview';
   import { expect } from 'storybook/test';
@@ -218,7 +218,7 @@ export const LogIn = meta.story({
 />
 ```
 
-```svelte filename="AuthButton.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="AuthButton.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF 3"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -252,7 +252,7 @@ export const LogIn = meta.story({
 />
 ```
 
-```ts filename="AuthButton.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="AuthButton.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import { expect, mocked } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -283,7 +283,7 @@ export const LogIn = meta.story({
 });
 ```
 
-```js filename="AuthButton.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="AuthButton.stories.js" renderer="react" language="js" tabTitle="CSF 4"
 import { expect } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -347,7 +347,7 @@ export const LogIn: Story = {
 };
 ```
 
-```js filename="AuthButton.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="AuthButton.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
 import { expect } from 'storybook/test';
 
 import preview from '../.storybook/preview';

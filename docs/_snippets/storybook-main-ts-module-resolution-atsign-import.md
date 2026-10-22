@@ -1,4 +1,4 @@
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 4"
 // Replace your-framework with the framework you are using, e.g. react-webpack5, nextjs, etc.
 import { defineMain } from '@storybook/your-framework/node';
 
@@ -19,7 +19,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 4"
 // Replace your-framework with the framework you are using, e.g. react-webpack5, nextjs, etc.
 import { defineMain } from '@storybook/your-framework/node';
 
@@ -40,7 +40,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import { defineMain } from '@storybook/angular/node';
 
 import path from 'path';

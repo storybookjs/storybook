@@ -1,4 +1,4 @@
-```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { DocumentScreen } from './your-page.component';
@@ -21,7 +21,7 @@ export const Simple = meta.story({
 });
 ```
 
-```ts filename="YourPage.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourPage.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 // 👇 Imports the required stories
@@ -42,7 +42,7 @@ export const Simple = meta.story({
 });
 ```
 
-```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF 4"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -68,7 +68,7 @@ export const Simple = meta.story({
 />
 ```
 
-```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF 3"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -95,7 +95,7 @@ export const Simple = meta.story({
 />
 ```
 
-```js filename="YourPage.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="YourPage.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 // 👇 Imports the required stories
@@ -116,7 +116,7 @@ export const Simple = meta.story({
 });
 ```
 
-```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF 4"
 <script module lang="ts">
   import preview from '../.storybook/preview';
 
@@ -142,7 +142,7 @@ export const Simple = meta.story({
 />
 ```
 
-```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF 3"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -169,7 +169,7 @@ export const Simple = meta.story({
 />
 ```
 
-```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { DocumentScreen } from './YourPage';
@@ -192,7 +192,7 @@ export const Simple = meta.story({
 });
 ```
 
-```js filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { DocumentScreen } from './YourPage';
@@ -215,7 +215,7 @@ export const Simple = meta.story({
 });
 ```
 
-```ts filename="YourPage.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourPage.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import DocumentScreen from './YourPage.vue';
@@ -264,7 +264,7 @@ export const Simple: Story = {
 };
 ```
 
-```js filename="YourPage.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="YourPage.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import DocumentScreen from './YourPage.vue';

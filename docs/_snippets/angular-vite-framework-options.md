@@ -1,4 +1,4 @@
-```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import { defineMain } from '@storybook/angular-vite/node';
 
 const config = defineMain({

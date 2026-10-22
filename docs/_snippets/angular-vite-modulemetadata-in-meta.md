@@ -1,4 +1,4 @@
-```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import { moduleMetadata } from '@storybook/angular-vite';
 import preview from '../.storybook/preview';
 

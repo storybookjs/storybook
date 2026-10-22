@@ -1,4 +1,4 @@
-```jsx filename="my-component/component.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename="my-component/component.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import { useArgs } from 'storybook/preview-api';
 
 import preview from '../.storybook/preview';
@@ -31,7 +31,7 @@ export const Example = meta.story({
 });
 ```
 
-```tsx filename="my-component/component.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename="my-component/component.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
 import { useArgs } from 'storybook/preview-api';
 
 import preview from '../.storybook/preview';

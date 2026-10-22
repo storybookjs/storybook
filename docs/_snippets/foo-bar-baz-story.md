@@ -1,4 +1,4 @@
-```ts filename="FooBar.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="FooBar.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Foo } from './foo.component';
@@ -15,7 +15,7 @@ const meta = preview.meta({
 export const Baz = meta.story();
 ```
 
-```ts filename="FooBar.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="FooBar.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Foo } from './Foo';
@@ -32,7 +32,7 @@ const meta = preview.meta({
 export const Baz = meta.story();
 ```
 
-```svelte filename="FooBar.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="FooBar.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF 4"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -51,7 +51,7 @@ export const Baz = meta.story();
 <Story name="Baz" />
 ```
 
-```svelte filename="FooBar.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="FooBar.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF 3"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -71,7 +71,7 @@ export const Baz = meta.story();
 <Story name="Baz" />
 ```
 
-```js filename="FooBar.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="FooBar.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Foo } from './Foo';
@@ -88,7 +88,7 @@ const meta = preview.meta({
 export const Baz = meta.story();
 ```
 
-```svelte filename="FooBar.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="FooBar.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF 4"
 <script module lang="ts">
   import preview from '../.storybook/preview';
 
@@ -107,7 +107,7 @@ export const Baz = meta.story();
 <Story name="Baz" />
 ```
 
-```svelte filename="FooBar.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="FooBar.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF 3"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -127,7 +127,7 @@ export const Baz = meta.story();
 <Story name="Baz" />
 ```
 
-```ts filename="FooBar.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="FooBar.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import Foo from './Foo.vue';
@@ -144,7 +144,7 @@ const meta = preview.meta({
 export const Baz = meta.story();
 ```
 
-```ts filename="FooBar.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="FooBar.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -159,7 +159,7 @@ const meta = preview.meta({
 export const Baz = meta.story();
 ```
 
-```js filename="FooBar.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="FooBar.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import Foo from './Foo.vue';
@@ -196,7 +196,7 @@ type Story = StoryObj<Foo>;
 export const Baz: Story = {};
 ```
 
-```js filename="FooBar.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="FooBar.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({

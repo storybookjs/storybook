@@ -156,24 +156,31 @@ export async function resolveStoryComponent(
     // `Input.Select` names the component through an imported object, so the import is matched by
     // the object's name and the property is the export name — `ns.Button` on a namespace import
     // is `import { Button } from …` written another way, the same rule core's resolver applies.
-    const member = component.type === 'MemberExpression' ? component : undefined;
-    const localName = member ? member.object.name : component.name;
+    const localName =
+      component.type === 'MemberExpression' ? component.object.name : component.name;
 
     for (const statement of ast.module?.content.body ?? []) {
       if (statement.type !== 'ImportDeclaration') continue;
       const specifier = statement.specifiers.find(
         (candidate) => candidate.local.name === localName
       );
-      if (specifier) {
-        // A plain identifier keeps the import's imported name, which may be aliased or `default`.
-        const exportName = member ? member.property.name : importedName(specifier);
+      if (!specifier) continue;
+
+      if (component.type === 'MemberExpression') {
         return locate(
           storyPath,
           String(statement.source.value),
-          exportName,
-          member ? member.property.name : component.name
+          component.property.name,
+          component.property.name
         );
       }
+      // A plain identifier keeps the import's imported name, which may be aliased or `default`.
+      return locate(
+        storyPath,
+        String(statement.source.value),
+        importedName(specifier),
+        component.name
+      );
     }
     return undefined;
   }

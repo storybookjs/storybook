@@ -6,7 +6,7 @@ import type { StorybookInstanceRecord } from '../instances/types.ts';
 import { projectPathsEqual } from '../instances/project-path.ts';
 
 export type InstallationCheck =
-  | { ok: true }
+  | { ok: true; callerPath: string }
   | { ok: false; reason: 'different-installation'; callerPath: string; instancePath: string }
   | { ok: false; reason: 'unknown-installation' };
 
@@ -35,5 +35,5 @@ export function checkInstallation(
     return { ok: false, reason: 'different-installation', callerPath, instancePath };
   }
 
-  return { ok: true };
+  return { ok: true, callerPath };
 }

@@ -9,6 +9,7 @@ import {
   formatNoInstance,
   formatOldServer,
   formatPortMismatch,
+  formatVersionMismatch,
   formatUnknownInstallation,
 } from './attach-messages.ts';
 
@@ -35,6 +36,8 @@ const sibling: StorybookInstanceRecord = {
   url: 'http://localhost:6007',
   port: 6007,
 };
+
+const SAME_INSTALLATION = '/work/my app/node_modules/storybook';
 
 const mismatch = {
   callerPath: '/work/my app/node_modules/storybook',
@@ -113,6 +116,65 @@ describe('attach failure messages', () => {
       They must be the same installation. From your project directory, restart Storybook (for example \`npx storybook dev\`) and re-run this command from there."
     `);
   });
+
+  it('asks to restart the running instance when it is the older side of a version mismatch', () => {
+    expect(
+      formatVersionMismatch({
+        instancePath: SAME_INSTALLATION,
+        instanceVersion: '10.5.1',
+        callerVersion: '10.5.2',
+      })
+    ).toMatchInlineSnapshot(`
+      "The running Storybook and this CLI are different versions of \`/work/my app/node_modules/storybook\` and cannot exchange service messages:
+      - running instance: version 10.5.1
+      - this CLI: version 10.5.2
+      The running instance is the older side. From your project directory, restart Storybook (for example \`npx storybook dev\`) and re-run this command from there."
+    `);
+  });
+
+  it('asks to restart the CLI when it is the older side of a version mismatch', () => {
+    expect(
+      formatVersionMismatch({
+        instancePath: SAME_INSTALLATION,
+        instanceVersion: '10.5.2',
+        callerVersion: '10.5.1',
+      })
+    ).toMatchInlineSnapshot(`
+      "The running Storybook and this CLI are different versions of \`/work/my app/node_modules/storybook\` and cannot exchange service messages:
+      - running instance: version 10.5.2
+      - this CLI: version 10.5.1
+      This CLI is the older side: it was loaded before the running instance was started from the updated package. Start this command (or the tools host that created it) again and retry."
+    `);
+  });
+
+  it('treats a record without a version as the older side instead of guessing', () => {
+    expect(formatVersionMismatch({ instancePath: SAME_INSTALLATION, callerVersion: '10.5.2' }))
+      .toMatchInlineSnapshot(`
+      "The running Storybook and this CLI are different versions of \`/work/my app/node_modules/storybook\` and cannot exchange service messages:
+      - running instance: version unknown
+      - this CLI: version 10.5.2
+      The running instance is the older side. From your project directory, restart Storybook (for example \`npx storybook dev\`) and re-run this command from there."
+    `);
+  });
+
+  it.each([
+    { instanceVersion: 'abc', callerVersion: '10.5.2' },
+    { instanceVersion: '10.5.2', callerVersion: 'abc' },
+  ])(
+    'prints a non-semver version as-is and asks to restart Storybook ($instanceVersion vs $callerVersion)',
+    ({ instanceVersion, callerVersion }) => {
+      const message = formatVersionMismatch({
+        instancePath: SAME_INSTALLATION,
+        instanceVersion,
+        callerVersion,
+      });
+
+      expect(message).toContain(`- running instance: version ${instanceVersion}`);
+      expect(message).toContain(`- this CLI: version ${callerVersion}`);
+      expect(message).toContain('The running instance is the older side.');
+      expect(message).toContain('restart Storybook');
+    }
+  );
 
   it('renders unknown facts on a mismatch without guessing them', () => {
     expect(

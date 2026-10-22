@@ -189,8 +189,10 @@ const CSF_TAB_TITLE_REGEX = /\(?CSF (Next 🧪|3)\)?/;
 /**
  * Returns which CSF version a snippet's `tabTitle` names, and the rest of the title. Titles like
  * `Head (CSF 3)` and `Head (CSF Next 🧪)` share the base `Head`, so they pair up.
+ * `Svelte CSF` is the CSF 3 counterpart of `Svelte CSF Next 🧪`.
  */
 function parseCsfTabTitle(tabTitle = ''): { version?: CsfVersion; base: string } {
+  if (tabTitle === 'Svelte CSF') return { version: 'csf3', base: 'Svelte' };
   const match = tabTitle.match(CSF_TAB_TITLE_REGEX);
   if (!match) return { base: tabTitle };
   return {

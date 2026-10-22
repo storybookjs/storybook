@@ -1,5 +1,7 @@
 import { logger } from 'storybook/internal/client-logger';
 
+import { POOL_FRAME_ATTRIBUTE } from '../../shared/constants/frame-pool.ts';
+
 /**
  * When multiple iframes match the event origin (e.g. composed refs from the same origin),
  * disambiguate by refId: the preview includes refId in the URL, so we pick the iframe whose src
@@ -32,8 +34,11 @@ export const getEventSourceUrl = (event: MessageEvent, refId?: string): string |
   const frames: HTMLIFrameElement[] = Array.from(
     document.querySelectorAll('iframe[data-is-storybook]')
   );
-  // Several frames may show the same preview, as those of the frame pool do.
-  const sender = frames.find((element) => element.contentWindow === event.source);
+  // The frames of the pool all show the same preview: the sender is the frame of its window.
+  const sender = frames.find(
+    (element) =>
+      element.hasAttribute(POOL_FRAME_ATTRIBUTE) && element.contentWindow === event.source
+  );
   if (sender) {
     return toSourceUrl(sender);
   }

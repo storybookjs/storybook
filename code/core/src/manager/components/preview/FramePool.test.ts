@@ -104,6 +104,7 @@ const createPool = (deps: Partial<FramePoolDeps> = {}) => {
     // happy-dom loads no `iframe.html`.
     src: (entry) => `about:blank?id=${entry.id}&viewMode=${entry.viewMode}`,
     userGlobals: () => ({}),
+    urlArgs: () => undefined,
     hasPlay: () => false,
     firstStory: () => 'a--one',
     receive: vi.fn(),
@@ -614,7 +615,7 @@ describe('FramePool', () => {
     expect(typesOf(postedTo(docs))).not.toContain(SET_CURRENT_STORY);
     expect(activeFrame()).toBe(docs);
   });
-  it('evicts hidden docs frames under `mobileMax`, for the page shown and for its stories', async () => {
+  it('evicts hidden docs frames at `max`, for the page shown and for its stories', async () => {
     const pool = createPool({ max: 2 });
     // A docs page whose inline story never ends its render.
     pool.select({ id: 'a--docs', viewMode: 'docs' });
@@ -702,7 +703,7 @@ describe('FramePool', () => {
     expect(framesOf().map(storyIdOf)).toEqual(['a--docs', 'a--top']);
   });
   it('takes the blocks of a docs page only once it rendered, not those of the page before', async () => {
-    const pool = createPool({ max: 1 });
+    const pool = createPool();
     pool.select({ id: 'a--docs', viewMode: 'docs' });
     const [frame] = framesOf();
     renderDocs(frame, 'a--docs', []);
@@ -714,16 +715,13 @@ describe('FramePool', () => {
     // The blocks of the page before, until it unmounted.
     say(frame, FRAME_POOL_LAYOUT, { slots: [slot('1', 'a--one', 100)] });
     await tick(2_000);
-    expect((pool as unknown as { slots: unknown[] }).slots).toEqual([]);
+    expect(framesOf().map(storyIdOf)).not.toContain('a--one');
 
     say(frame, DOCS_RENDERED, 'b--docs');
     say(frame, FRAME_POOL_LAYOUT, { slots: [slot('2', 'b--one', 300)] });
     await tick();
-    expect(
-      (pool as unknown as { slots: { slot: FramePoolSlot }[] }).slots.map(
-        ({ slot: { storyId } }) => storyId
-      )
-    ).toEqual(['b--one']);
+    expect(framesOf().map(storyIdOf)).toContain('b--one');
+    expect(framesOf().map(storyIdOf)).not.toContain('a--one');
   });
   it('lays a story over the docs page also when its frame comes before the page in the host', async () => {
     const pool = createPool({ size: 2 });
@@ -747,37 +745,131 @@ describe('FramePool', () => {
     expect(first.style.top).toBe('100px');
     expect(Number(first.style.zIndex)).toBeGreaterThan(Number(second.style.zIndex));
   });
+  it('boots no frame for a story farther than a screen from the view, until it comes near', async () => {
+    const pool = createPool();
+    pool.select({ id: 'a--docs', viewMode: 'docs' });
+    const [docs] = framesOf();
+    renderDocs(docs, 'a--docs', [
+      slot('1', 'a--one', 100),
+      slot('2', 'a--two', 1_200),
+      slot('3', 'a--three', 3_000),
+    ]);
+    for (let round = 0; round < 4; round++) {
+      await tick();
+      framesOf()
+        .slice(1)
+        .forEach((frame) => renderStory(frame, storyIdOf(frame)!));
+    }
+    expect(framesOf().map(storyIdOf)).toEqual(['a--docs', 'a--one', 'a--two']);
+
+    pool.host.scrollTop = 1_500;
+    pool.host.dispatchEvent(new Event('scroll'));
+    await tick();
+    expect(framesOf().map(storyIdOf)).toEqual(['a--docs', 'a--one', 'a--two', 'a--three']);
+  });
+
+  it('boots no more frames up front than `max`', async () => {
+    const pool = createPool({ size: 3, max: 2 });
+    pool.select({ id: 'a--one', viewMode: 'story' });
+    for (let round = 0; round < 4; round++) {
+      framesOf().forEach((frame) => renderStory(frame, storyIdOf(frame)!));
+      await tick(1_500);
+    }
+    expect(framesOf()).toHaveLength(2);
+  });
+
+  it('hands the selected story the args of the URL, which no frame holds in its URL', async () => {
+    const urlArgs = (storyId: string) => (storyId === 'b--two' ? 'label:Hi' : undefined);
+    const pool = createPool({ urlArgs, max: 1 });
+    // A frame that boots on the selected story gets them once it rendered.
+    pool.select({ id: 'b--two', viewMode: 'story' });
+    const [frame] = framesOf();
+    expect(frame.src).not.toContain('args');
+    expect(postedTo(frame)).toEqual([]);
+    renderStory(frame, 'b--two');
+    await tick();
+    expect(postedTo(frame).filter(({ type }) => type === SET_CURRENT_STORY)).toEqual([
+      expect.objectContaining({
+        args: [{ storyId: 'b--two', viewMode: 'story', args: 'label:Hi' }],
+      }),
+    ]);
+
+    // A frame that switches to it gets them with the switch; another story gets none.
+    say(frame, STORY_RENDER_PHASE_CHANGED, {
+      storyId: 'b--two',
+      renderId: 2,
+      newPhase: 'finished',
+    });
+    pool.select({ id: 'a--one', viewMode: 'story' });
+    await tick();
+    renderStory(frame, 'a--one');
+    await tick();
+    pool.select({ id: 'b--two', viewMode: 'story' });
+    await tick();
+    const switches = postedTo(frame)
+      .filter(({ type }) => type === SET_CURRENT_STORY)
+      .map(({ args: [payload] }) => payload as { storyId: string; args?: string });
+    expect(switches.slice(1).map(({ storyId, args }) => [storyId, args])).toEqual([
+      ['a--one', undefined],
+      ['b--two', 'label:Hi'],
+    ]);
+  });
+
+  it('shows a story of a zoomed docs block at its scale', async () => {
+    const pool = createPool();
+    pool.select({ id: 'a--docs', viewMode: 'docs' });
+    const [docs] = framesOf();
+    renderDocs(docs, 'a--docs', [{ ...slot('1', 'a--one', 100), scale: 2 }]);
+    await tick();
+    const [, story] = framesOf();
+    renderStory(story, 'a--one');
+    await tick();
+
+    expect(story.style.width).toBe('600px');
+    expect(story.style.height).toBe('400px');
+    expect(story.style.transform).toBe('scale(0.5)');
+  });
+
+  it('tells the docs page which part of it the host shows', async () => {
+    const roots = new WeakMap<HTMLIFrameElement, HTMLElement>();
+    vi.spyOn(HTMLIFrameElement.prototype, 'contentDocument', 'get').mockImplementation(function (
+      this: HTMLIFrameElement
+    ) {
+      if (!roots.has(this)) {
+        roots.set(this, document.createElement('html'));
+      }
+      return { documentElement: roots.get(this) } as unknown as Document;
+    });
+    const pool = createPool();
+    pool.select({ id: 'a--docs', viewMode: 'docs' });
+    const [docs] = framesOf();
+    renderDocs(docs, 'a--docs', []);
+    await tick();
+
+    pool.host.scrollTop = 700;
+    pool.host.dispatchEvent(new Event('scroll'));
+    await tick();
+
+    const root = docs.contentDocument!.documentElement;
+    expect(root.style.getPropertyValue('--sb-frame-pool-top')).toBe('700px');
+    expect(root.style.getPropertyValue('--sb-frame-pool-height')).toBe('800px');
+  });
 });
 
 describe('framePoolSrc', () => {
   const api = { getStoryHrefs: vi.fn(() => ({ managerHref: '', previewHref: 'iframe.html' })) };
   const queryParams = { args: 'label:Edited', custom: 'yes' };
 
-  it('gives the args of the URL to the selected story only', () => {
-    framePoolSrc(
-      api,
-      { queryParams },
-      { id: 'a--one', viewMode: 'story' },
-      {
-        autoplay: true,
-        selected: true,
-      }
-    );
-    framePoolSrc(
-      api,
-      { queryParams },
-      { id: 'a--two', viewMode: 'story' },
-      {
-        autoplay: false,
-        selected: false,
-      }
-    );
+  it('never gives a frame the args of the URL, which a frame that reloads would apply to its next story', () => {
+    framePoolSrc(api, { queryParams }, { id: 'a--one', viewMode: 'story' }, { autoplay: true });
+    framePoolSrc(api, { queryParams }, { id: 'a--two', viewMode: 'story' }, { autoplay: false });
 
     expect(api.getStoryHrefs.mock.calls).toEqual([
       [
         'a--one',
         {
           queryParams: { custom: 'yes', framePool: 'frame' },
+          inheritArgs: false,
           refId: undefined,
           viewMode: 'story',
         },
@@ -803,6 +895,7 @@ describe('getFramePoolOptions', () => {
       max: 6,
       mobileMax: 2,
     });
+    expect(getFramePoolOptions({ size: 4, max: 3 })).toEqual({ size: 3, max: 3, mobileMax: 3 });
     expect(getFramePoolOptions(false)).toBeUndefined();
   });
 });

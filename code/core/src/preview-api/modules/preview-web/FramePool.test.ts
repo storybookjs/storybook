@@ -96,6 +96,19 @@ describe('FramePoolClient', () => {
     expect(heights()).toHaveLength(1);
   });
 
+  it('reports the zoom of a block', async () => {
+    const client = createClient();
+    const place = element(docs);
+    placeAt(place, 400, 200);
+    client.lease({ storyId: 'a--one', globals: {}, autoplay: true, place, scale: 2 });
+    await frame();
+
+    const [[, layout]] = vi
+      .mocked(channel.emit)
+      .mock.calls.filter(([type]) => type === FRAME_POOL_LAYOUT);
+    expect((layout as FramePoolLayout).slots[0].scale).toBe(2);
+  });
+
   it('skips a story block that takes no room', async () => {
     const client = createClient();
     const collapsed = element(docs);

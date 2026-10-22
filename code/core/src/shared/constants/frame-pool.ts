@@ -33,6 +33,8 @@ export interface FramePoolSlot {
   autoplay: boolean;
   // In the coordinates of the docs document, which does not scroll.
   rect: FramePoolRect;
+  /** The zoom of the docs block: the story shows at `1 / scale`. */
+  scale?: number;
 }
 
 export interface FramePoolLayout {
@@ -58,17 +60,17 @@ export const getFramePoolOptions = (
     return undefined;
   }
   const options = typeof feature === 'object' ? feature : {};
-  const size = options.size || 2;
-  return {
-    size,
-    max: Math.max(options.max || 10, size),
-    mobileMax: options.mobileMax || Math.min(3, Math.max(options.max || 10, size)),
-  };
+  const max = Math.max(1, options.max ?? 10);
+  const mobileMax = Math.max(1, options.mobileMax ?? Math.min(3, max));
+  // Frames that boot up front never exceed the most frames there are, on a phone too.
+  return { size: Math.min(options.size ?? 2, max), max, mobileMax };
 };
 
 /**
- * Whether a story renders in a frame of its own: as docs decide to show it in an iframe, by its
- * layout or `docs.story.inline`.
+ * Whether docs render a story in a frame of its own rather than inline, in the docs page's own
+ * document: the block's `inline` prop, else `parameters.docs.story.inline`, and always for a story
+ * that owns the document (`layout: 'document'`), which would own the docs page's too.
  */
-export const rendersInFrame = (parameters: Parameters) =>
-  parameters.layout === 'document' || parameters.docs?.story?.inline === false;
+export const rendersInFrame = (parameters: Parameters | undefined, inline?: boolean) =>
+  parameters?.layout === 'document' ||
+  !(inline ?? (parameters?.docs?.story?.inline as boolean | undefined) ?? false);

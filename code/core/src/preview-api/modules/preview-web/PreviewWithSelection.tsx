@@ -8,6 +8,7 @@ import {
   PREVIEW_KEYDOWN,
   SET_CURRENT_STORY,
   STORY_CHANGED,
+  STORY_ARGS_UPDATED,
   STORY_ERRORED,
   STORY_MISSING,
   STORY_PREPARED,
@@ -45,6 +46,7 @@ import type { Selection, SelectionStore } from './SelectionStore.ts';
 import type { View } from './View.ts';
 import { shouldAutoplay } from './embedMode.ts';
 import { getEmbedResizeViewport } from './getEmbedResizeViewport.ts';
+import { parseArgsParam } from './parseArgsParam.ts';
 import { CsfDocsRender } from './render/CsfDocsRender.ts';
 import { MdxDocsRender } from './render/MdxDocsRender.ts';
 import { StoryRender } from './render/StoryRender.ts';
@@ -258,14 +260,17 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   async onSetCurrentStory({
     autoplay,
     globals,
+    args,
     ...selection
   }: {
     storyId: StoryId;
     viewMode?: ViewMode;
     // The manager tells a frame of its pool whether the story plays, and the globals it renders
-    // with: the story the frame showed is not rendered again with them first.
+    // with: the story the frame showed is not rendered again with them first. It hands the
+    // selected story the args of its URL, as a frame's own URL holds none.
     autoplay?: boolean;
     globals?: Globals;
+    args?: string;
   }) {
     if (autoplay !== undefined) {
       this.autoplay = autoplay;
@@ -283,7 +288,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     }
 
     this.channel.emit(CURRENT_STORY_WAS_SET, this.selectionStore.selection);
-    this.renderSelection();
+    this.renderSelection({ persistedArgs: args ? parseArgsParam(args) : undefined });
   }
 
   onUpdateQueryParams(queryParams: any) {
@@ -458,6 +463,14 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       !viewModeChanged
     ) {
       this.currentRender = lastRender;
+      // The args a frame of the manager's pool gets for the story it shows already.
+      if (persistedArgs && isStoryRender(lastRender)) {
+        await lastRender.rerender();
+        this.channel.emit(STORY_ARGS_UPDATED, {
+          storyId,
+          args: this.storyStoreValue.args.get(storyId),
+        });
+      }
       this.channel.emit(STORY_UNCHANGED, storyId);
       this.view.showMain();
       return;

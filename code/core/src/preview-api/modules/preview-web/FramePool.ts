@@ -25,6 +25,8 @@ export interface FrameLeaseRequest {
   place: HTMLElement;
   /** Called with `true` once a frame shows the story over `place`, and `false` when it left. */
   onShow?: (shown: boolean) => void;
+  /** The zoom of the docs block: the story shows at `1 / scale`. */
+  scale?: number;
 }
 
 export interface FrameLease {
@@ -38,7 +40,7 @@ interface Lease extends FrameLeaseRequest {
 // A docs page in a frame of the pool does not scroll: the manager sizes the frame to its content
 // and scrolls it, with the frames over its story blocks. The docs wrapper fills the window at
 // least, which would keep the frame from ever getting smaller. The table of contents stays in the
-// part of the frame that the manager shows.
+// part of the frame that the manager shows, which the manager writes into the custom properties.
 const DOCS_STYLE = `
   html:has(#storybook-docs:not([hidden])) { overflow: hidden; }
   #storybook-docs .sbdocs-wrapper { min-height: 0; }
@@ -100,29 +102,6 @@ export class FramePoolClient {
       this.grown = { by: innerHeight - this.viewportHeight, at: performance.now() };
       this.viewportHeight = innerHeight;
     });
-    this.followHost();
-  }
-
-  // Tells the docs page which part of it the manager shows: the host the frame lies in scrolls.
-  private followHost() {
-    let parent: HTMLElement | null | undefined;
-    try {
-      parent = frameElement?.parentElement;
-    } catch {
-      return;
-    }
-    if (!parent) {
-      return;
-    }
-    const host = parent;
-    const { style } = document.documentElement;
-    const update = () => {
-      style.setProperty('--sb-frame-pool-top', `${host.scrollTop}px`);
-      style.setProperty('--sb-frame-pool-height', `${host.clientHeight}px`);
-    };
-    host.addEventListener('scroll', update, { passive: true });
-    new ResizeObserver(update).observe(host);
-    update();
   }
 
   lease(request: FrameLeaseRequest): FrameLease {
@@ -156,13 +135,14 @@ export class FramePoolClient {
     // A block that takes no room, as in a collapsed section, needs no frame.
     const slots = [...this.leases.values()]
       .filter(({ place }) => place.isConnected)
-      .map(({ id, storyId, globals, autoplay, place }): FramePoolSlot => {
+      .map(({ id, storyId, globals, autoplay, place, scale }): FramePoolSlot => {
         const rect = place.getBoundingClientRect();
         return {
           id,
           storyId,
           globals,
           autoplay,
+          ...(scale && scale !== 1 && { scale }),
           rect: {
             top: Math.round(rect.top + scrollY),
             left: Math.round(rect.left + scrollX),

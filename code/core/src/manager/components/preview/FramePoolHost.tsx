@@ -17,14 +17,15 @@ const Container = styled.div(({ theme }) => ({
 let pool: FramePool | undefined;
 
 /**
- * The URL of a new frame of the pool, which boots on `entry`. Only the selected story gets the args
- * of the manager's URL, which are the selected story's.
+ * The URL of a new frame of the pool, which boots on `entry`. It holds no args: a frame that reloads
+ * may show another story by then, and its preview keeps the URL's parameters. The pool hands the
+ * selected story the args of the manager's URL itself.
  */
 export const framePoolSrc = (
   api: Pick<API, 'getStoryHrefs'>,
   { queryParams = {}, version }: { queryParams?: State['customQueryParams']; version?: string },
   entry: FramePoolEntry,
-  { autoplay, selected }: { autoplay: boolean; selected: boolean }
+  { autoplay }: { autoplay: boolean }
 ) => {
   const { args: _args, ...params } = queryParams;
   return api.getStoryHrefs(entry.id, {
@@ -34,7 +35,7 @@ export const framePoolSrc = (
       [FRAME_POOL_PARAM]: 'frame',
       ...(!autoplay && { autoplay: 'false' }),
     },
-    ...(!selected && { inheritArgs: false }),
+    inheritArgs: false,
     refId: undefined,
     viewMode: entry.viewMode,
   }).previewHref;
@@ -55,12 +56,21 @@ export const useFramePool = (
   if (!options || typeof document === 'undefined') {
     return undefined;
   }
+  // On a phone few stories fit the screen, and little memory the page.
+  const max = globalThis.matchMedia?.('(max-width: 600px)').matches
+    ? options.mobileMax
+    : options.max;
   pool ??= new FramePool({
-    size: options.size,
-    // On a phone few stories fit the screen, and little memory the page.
-    max: globalThis.matchMedia?.('(max-width: 600px)').matches ? options.mobileMax : options.max,
+    size: Math.min(options.size, max),
+    max,
     src: (entry, options) => framePoolSrc(api, latest.current, entry, options),
     userGlobals: () => api.getUserGlobals() ?? {},
+    urlArgs: (storyId) => {
+      const { args } = latest.current.queryParams ?? {};
+      return api.getUrlState().storyId === storyId && typeof args === 'string' && args
+        ? args
+        : undefined;
+    },
     hasPlay: (storyId) => !!api.getData(storyId)?.tags?.includes('play-fn'),
     firstStory: () =>
       Object.values(api.getIndex()?.entries ?? {}).find((entry) => entry.type === 'story')?.id,

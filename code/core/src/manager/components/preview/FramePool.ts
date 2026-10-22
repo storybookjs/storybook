@@ -89,8 +89,10 @@ export interface FramePoolDeps {
   size: number;
   max: number;
   /** The URL of a new frame that boots on `entry`. */
-  src: (entry: FramePoolEntry, options: { autoplay: boolean; selected: boolean }) => string;
+  src: (entry: FramePoolEntry, options: { autoplay: boolean }) => string;
   userGlobals: () => Globals;
+  /** The args the manager's URL holds for the story, when it is the selected one. */
+  urlArgs: (storyId: StoryId) => string | undefined;
   hasPlay: (storyId: StoryId) => boolean;
   firstStory: () => StoryId | undefined;
   /** Hands an event of the shown frame to the manager's listeners. */
@@ -143,6 +145,9 @@ interface Frame {
   unheard: Map<string, ChannelEvent>;
   // The args of the stories its preview prepared.
   args: Map<StoryId, Args>;
+  // The args of the manager's URL, which a frame that boots on the selected story gets once it
+  // rendered: a frame's URL holds no args, as a frame that reloads may show another story.
+  bootArgs?: string;
   owner?: Lease;
   freedAt: number;
   // When it was last in view, or shown.
@@ -331,6 +336,7 @@ export class FramePool {
     }
     frame.hold = undefined;
     frame.iframe.removeAttribute(POOL_FRAME_REPLAY_ATTRIBUTE);
+    this.hearUnheard(frame);
     const log = frame.log.slice();
     if (hold.announce && frame.entry.viewMode === 'story' && !log.some(isStoryChanged)) {
       this.deps.receive(
@@ -476,6 +482,11 @@ export class FramePool {
       return -bottom;
     }
     return top > clientHeight ? top - clientHeight : 0;
+  }
+
+  // Whether a lease is in view, or within a screen of it.
+  private near(lease: Lease) {
+    return this.distance(lease) <= this.host.clientHeight;
   }
 
   // The frames of stories out of view, the least recently seen first.
@@ -631,7 +642,11 @@ export class FramePool {
       .filter((lease) => !lease.frame)
       .sort((a, b) => this.distance(a) - this.distance(b));
     for (const lease of waiting) {
-      const frame = this.frameFor(lease) ?? this.evictFor(lease) ?? this.replaceFor(lease);
+      // A story farther than a screen from the view gets no frame until it comes near, unless a
+      // frame shows it already.
+      const frame = this.near(lease)
+        ? (this.frameFor(lease) ?? this.evictFor(lease) ?? this.replaceFor(lease))
+        : this.frames.find((candidate) => !candidate.owner && this.shows(candidate, lease));
       if (!frame) {
         break;
       }
@@ -658,7 +673,8 @@ export class FramePool {
   // rendered: a story then only switches a frame, instead of waiting for one to boot.
   private warmUp() {
     const storyId = this.deps.firstStory();
-    if (this.warm && storyId && this.frames.length < this.deps.size && !this.booting()) {
+    const size = Math.min(this.deps.size, this.deps.max);
+    if (this.warm && storyId && this.frames.length < size && !this.booting()) {
       this.create({ id: storyId, viewMode: 'story' });
     }
   }
@@ -698,11 +714,14 @@ export class FramePool {
         height: 0,
         scrollTop: 0,
       });
+      const args =
+        lease.kind === 'view' && entry.viewMode === 'story' && this.deps.urlArgs(entry.id);
       this.post(frame, SET_CURRENT_STORY, {
         storyId: entry.id,
         viewMode: entry.viewMode,
         autoplay,
         globals,
+        ...(args && { args }),
       });
       this.expect(frame, rendered(entry));
     } else if (frame.globals !== globalsKey(globals)) {
@@ -738,7 +757,7 @@ export class FramePool {
     iframe.allowFullscreen = true;
     iframe.style.cssText = 'border:0;display:block;width:100%;height:100%';
     setStyle(iframe, HIDDEN);
-    iframe.src = this.deps.src(entry, { autoplay, selected: lease?.kind === 'view' });
+    iframe.src = this.deps.src(entry, { autoplay });
     const frame: Frame = {
       iframe,
       name,
@@ -754,6 +773,9 @@ export class FramePool {
       log: [],
       unheard: new Map(),
       args: new Map(),
+      bootArgs:
+        (lease?.kind === 'view' && entry.viewMode === 'story' && this.deps.urlArgs(entry.id)) ||
+        undefined,
       freedAt: performance.now(),
       seenAt: 0,
       docsRendered: false,
@@ -803,6 +825,16 @@ export class FramePool {
     frame.busy = undefined;
     if (frame.booting) {
       frame.booting = false;
+      const { bootArgs, entry } = frame;
+      frame.bootArgs = undefined;
+      if (bootArgs && entry.viewMode === 'story' && frame.owner?.kind === 'view') {
+        this.post(frame, SET_CURRENT_STORY, {
+          storyId: entry.id,
+          viewMode: 'story',
+          args: bootArgs,
+        });
+        this.expect(frame, rendered(entry));
+      }
       if (!this.warm) {
         setTimeout(() => {
           this.warm = true;
@@ -952,6 +984,19 @@ export class FramePool {
     frame.iframe.contentWindow?.postMessage(data, location.origin);
   }
 
+  // Tells the docs page which part of it the host shows, as the page itself does not scroll: its
+  // table of contents stays in view. The manager writes it, so the frame holds nothing of the host.
+  private tellView(frame: Frame) {
+    let root: HTMLElement | undefined;
+    try {
+      root = frame.iframe.contentDocument?.documentElement;
+    } catch {
+      return;
+    }
+    root?.style.setProperty('--sb-frame-pool-top', `${this.host.scrollTop}px`);
+    root?.style.setProperty('--sb-frame-pool-height', `${this.host.clientHeight}px`);
+  }
+
   // Lays each frame out by its role: the shown one fills the host, or is the docs page the host
   // scrolls; a story of that page lies over its block; the rest lies off the screen.
   private layout() {
@@ -960,6 +1005,9 @@ export class FramePool {
     const docs = !!active && this.isDocsView(active);
     if (active) {
       host.style.overflowY = docs ? 'auto' : 'hidden';
+    }
+    if (docs) {
+      this.tellView(active);
     }
     for (const frame of this.frames) {
       const { owner } = frame;
@@ -971,11 +1019,14 @@ export class FramePool {
           top: '0px',
           width: '100%',
           height: docs && frame.height ? `${frame.height}px` : '100%',
+          transform: 'none',
           visibility: 'visible',
           'z-index': '0',
         });
       } else if (docs && owner?.kind === 'slot' && owner.shown) {
         const { top, left, width, height } = owner.slot.rect;
+        // A zoomed docs block shows the story at its scale, as docs scale an iframe of a story.
+        const scale = owner.slot.scale ?? 1;
         if (this.distance(owner) <= 0) {
           frame.seenAt = now;
         }
@@ -983,8 +1034,10 @@ export class FramePool {
           position: 'absolute',
           left: `${left}px`,
           top: `${top}px`,
-          width: `${width}px`,
-          height: `${height}px`,
+          width: `${width * scale}px`,
+          height: `${height * scale}px`,
+          transform: scale !== 1 ? `scale(${1 / scale})` : 'none',
+          'transform-origin': 'top left',
           visibility: 'visible',
           // Over the docs page, whatever their order in the host, which never changes.
           'z-index': '1',

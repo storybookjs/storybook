@@ -327,6 +327,50 @@ describe('PostMessageTransport origin validation', () => {
       };
       const message = { key: KEY, event: { type: 'someEvent', args: [] } };
 
+      // Frames in the document, which the transport finds by their attributes.
+      const mountPoolFrames = (...shown: boolean[]) =>
+        shown.map((isShown) => {
+          const iframe = document.createElement('iframe');
+          iframe.setAttribute(POOL_FRAME_ATTRIBUTE, '');
+          iframe.setAttribute('data-is-storybook', isShown ? 'true' : 'false');
+          iframe.setAttribute('data-is-loaded', 'true');
+          // happy-dom loads no page in it.
+          iframe.setAttribute('src', 'about:blank?id=a--one&framePool=frame');
+          const postMessage = vi.fn();
+          Object.defineProperty(iframe, 'contentWindow', {
+            value: { postMessage, location: { href: `${OWN_ORIGIN}/iframe.html` } },
+          });
+          document.body.append(iframe);
+          return postMessage;
+        });
+
+      it('sends only to the shown frame', () => {
+        const [hidden, shown, alsoHidden] = mountPoolFrames(false, true, false);
+        const transport = createTransport('manager');
+
+        void transport.send({ type: 'someEvent', args: [], from: 'manager' });
+
+        expect(shown).toHaveBeenCalledTimes(1);
+        expect(hidden).not.toHaveBeenCalled();
+        expect(alsoHidden).not.toHaveBeenCalled();
+        document.body.replaceChildren();
+      });
+
+      it('never sends the args the manager updates to a frame that is not shown', () => {
+        const [hidden, shown] = mountPoolFrames(false, true);
+        const transport = createTransport('manager');
+
+        void transport.send({
+          type: 'updateStoryArgs',
+          args: [{ storyId: 'a--one', updatedArgs: { label: 'Edited' } }],
+          from: 'manager',
+        });
+
+        expect(shown).toHaveBeenCalledWith(expect.stringContaining('Edited'), OWN_ORIGIN);
+        expect(hidden).not.toHaveBeenCalled();
+        document.body.replaceChildren();
+      });
+
       it('accepts a channel message from the shown frame, with the path of its src as source', () => {
         const [, shown] = registerPoolFrames({ shown: false }, { shown: true });
         createTransport('manager');

@@ -104,6 +104,7 @@ const PooledStory: FunctionComponent<IFrameStoryProps> = ({
   autoplay,
 }) => {
   const context = useContext(DocsContext);
+  const { scale } = useContext(ZoomContext);
   const place = useRef<HTMLDivElement>(null);
   const [shown, setShown] = useState(false);
   const globalsKey = JSON.stringify(context.getStoryContext(story).userGlobals);
@@ -118,12 +119,13 @@ const PooledStory: FunctionComponent<IFrameStoryProps> = ({
       autoplay,
       place: place.current,
       onShow: setShown,
+      scale,
     });
     return () => {
       lease.release();
       setShown(false);
     };
-  }, [story.id, globalsKey, autoplay]);
+  }, [story.id, globalsKey, autoplay, scale]);
   return (
     <div ref={place} style={{ width: '100%', height, position: 'relative' }}>
       {!shown && <StorySkeleton />}

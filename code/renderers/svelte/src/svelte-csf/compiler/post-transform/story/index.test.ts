@@ -5,10 +5,14 @@ import url from 'node:url';
 import { print } from 'esrap';
 import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
+import { compile } from 'svelte/compiler';
+import { dedent } from 'ts-dedent';
 import { describe, it } from 'vitest';
 
 import { transformStory } from './index.ts';
+import { transformStoriesCode } from '../index.ts';
 
+import { SVELTE_CSF_RENDERER_IMPORT_SOURCE } from '../../../constants.ts';
 import { getSvelteAST } from '../../../parser/ast.ts';
 import { extractSvelteASTNodes } from '../../../parser/extract/svelte/nodes.ts';
 import { extractCompiledASTNodes } from '../../../parser/extract/compiled/nodes.ts';
@@ -156,5 +160,39 @@ describe(transformStory.name, () => {
       	}
       })"
     `);
+  });
+
+  it('names the stories file when the defineMeta component value is invalid', async ({
+    expect,
+  }) => {
+    const filename = path.resolve(__dirname, '../../../__tests__/stories/Invalid.stories.svelte');
+    const originalCode = dedent`
+      <script module>
+        import { defineMeta } from "${SVELTE_CSF_RENDERER_IMPORT_SOURCE}";
+
+        const { Story } = defineMeta({
+          component: 'Not a component',
+        });
+      </script>
+
+      <Story name="Default" />
+    `;
+    const compiledCode = compile(originalCode, { filename, dev: true }).js.code;
+    const code = new MagicString(compiledCode);
+
+    await expect(
+      transformStoriesCode({
+        code,
+        nodes: {
+          svelte: await extractSvelteASTNodes({
+            ast: getSvelteAST({ code: originalCode, filename }),
+            filename,
+          }),
+          compiled: await extractCompiledASTNodes({ ast: parseAst(compiledCode), filename }),
+        },
+        filename,
+        originalCode,
+      })
+    ).rejects.toThrow(`The issue occurred in Stories file: ${url.pathToFileURL(filename).href}`);
   });
 });

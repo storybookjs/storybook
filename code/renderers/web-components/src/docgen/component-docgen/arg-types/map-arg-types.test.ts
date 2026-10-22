@@ -904,6 +904,7 @@ describe('mapArgTypes', () => {
           name: 'open',
           description: 'Set while open.',
           type: { name: 'string' },
+          control: false,
           table: {
             category: 'css states',
           },

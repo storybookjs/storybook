@@ -210,6 +210,7 @@ const aliasDiagnostic = (
   path: [],
   message: `Cannot mutate ${alias.exportName} without changing ${story.exportName}, which exports the same story`,
   ...loc(csf, node),
+  aliasOf: story.exportName,
 });
 
 // The stories that have an editor, and for each one declared as another story, such as

@@ -15,7 +15,7 @@ import {
   STORY_RENDERED,
 } from 'storybook/internal/core-events';
 import { storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
-import { printCsf, readCsf } from 'storybook/internal/csf-tools';
+import { parseExpression, printCsf, readCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { isExampleStoryId, telemetry } from 'storybook/internal/telemetry';
 import type { Options } from 'storybook/internal/types';
@@ -24,10 +24,11 @@ import { isValidIdentifier } from '../../../csf-tools/estree/ast.ts';
 import { duplicateStoryWithNewName } from './duplicate-story-with-new-name.ts';
 import { updateArgsInCsfFile } from './update-args-in-csf-file.ts';
 import { SaveStoryError } from './utils.ts';
-import { emptyFunction } from './valueToSource.ts';
 
 const parseArgs = (args: string): Record<string, any> =>
-  JSON.parse(args, (_, value) => (value === '__sb_empty_function_arg__' ? emptyFunction : value));
+  JSON.parse(args, (_, value) =>
+    value === '__sb_empty_function_arg__' ? parseExpression('() => {}') : value
+  );
 
 export function initializeSaveStory(channel: Channel, options: Options) {
   channel.on(SAVE_STORY_REQUEST, async ({ id, payload }: RequestData<SaveStoryRequestPayload>) => {
@@ -61,13 +62,14 @@ export function initializeSaveStory(channel: Channel, options: Options) {
       });
 
       const parsed = csf.parse();
-      const stories = Object.entries(parsed._stories);
 
       const [componentId, storyId] = csfId.split('--');
       newStoryName = name && storyNameFromExport(name);
       newStoryId = newStoryName && toId(componentId, newStoryName);
 
-      const [storyName] = stories.find(([key, value]) => value.id.endsWith(`--${storyId}`)) || [];
+      const storyName = parsed.stories.find((story) =>
+        story.id.endsWith(`--${storyId}`)
+      )?.exportName;
       if (!storyName) {
         throw new SaveStoryError(`Source story not found.`);
       }
@@ -77,11 +79,11 @@ export function initializeSaveStory(channel: Channel, options: Options) {
 
       sourceStoryName = storyNameFromExport(storyName);
 
-      await updateArgsInCsfFile(
-        parsed,
-        name ? duplicateStoryWithNewName(parsed, storyName, name) : csf.getStoryExport(storyName),
-        args ? parseArgs(args) : {}
-      );
+      // A refusal throws, so a refused edit of the args is never written with the copy it was for.
+      if (name) {
+        duplicateStoryWithNewName(parsed, storyName, name);
+      }
+      updateArgsInCsfFile(parsed, name || storyName, args ? parseArgs(args) : {});
 
       const code = await formatFileContent(sourceFilePath, printCsf(csf).code);
 
@@ -126,8 +128,10 @@ export function initializeSaveStory(channel: Channel, options: Options) {
         error: error instanceof SaveStoryError ? error.message : 'Unknown error',
       } satisfies ResponseData<SaveStoryResponsePayload>);
 
+      // The panel shows the message; the csf-tools diagnostic behind it is for the log.
+      const cause = error?.cause?.message ? `\nCaused by: ${error.cause.message}` : '';
       logger.error(
-        `Error writing to ${sourceFilePath}:\n${error.stack || error.message || error.toString()}`
+        `Error writing to ${sourceFilePath}:\n${error.stack || error.message || error.toString()}${cause}`
       );
 
       if (!(error instanceof SaveStoryError)) {

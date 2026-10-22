@@ -72,6 +72,11 @@ export interface CsfMutationDiagnostic {
   path: CsfPath;
   message: string;
   loc?: SourceLocation;
+  /**
+   * For `aliased-story`, the export name of the story whose object the alias shares: `Primary` for
+   * `Secondary` in `export const Secondary = Primary` or `export { Primary, Primary as Secondary }`.
+   */
+  aliasOf?: string;
 }
 
 /**
@@ -460,7 +465,7 @@ class Editor implements CsfObject {
       return this.failure(inspected.code, path, inspected.node);
     }
     const { quote, indent } = this.editor;
-    const text = () => printValue(value, quote, { indent, expand: 'multiline' });
+    const text = () => printValue(value, quote, { indent });
     if (inspected.kind === 'item') {
       inspected.parent.replace(inspected.index, text());
       return this.commit(path);
@@ -503,7 +508,7 @@ class Editor implements CsfObject {
       return this.failure(list.code, path, list.node, list.message);
     }
     const { quote, indent } = this.editor;
-    const text = printValue(value, quote, { indent, expand: 'multiline' });
+    const text = printValue(value, quote, { indent });
     if (list.kind === 'missing') {
       insertAt(this.editor, this.root(), path, { items: [text], first: end === 'prepend' });
     } else {

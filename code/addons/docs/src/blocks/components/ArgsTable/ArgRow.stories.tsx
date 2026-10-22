@@ -361,6 +361,33 @@ export const LongFunc = {
   },
 } satisfies StoryObj<typeof ArgRow>;
 
+export const LongDetail = {
+  args: {
+    row: {
+      key: 'icon',
+      name: 'Icon',
+      description: 'The type detail is taller than the viewport.',
+      table: {
+        type: {
+          summary: 'IconName',
+          detail: Array.from({ length: 150 }, (_, i) => `'icon${i}'`).join('\n| '),
+        },
+      },
+      control: {
+        type: 'text',
+      },
+    },
+  },
+  play: async ({ canvas }) => {
+    await canvas.getByRole('button', { name: 'IconName' }).click();
+    const dialog = await screen.findByRole('dialog', { name: 'Arg value details' });
+    // The popover content must scroll within the viewport instead of overflowing it.
+    const content = dialog.firstElementChild as HTMLElement;
+    await expect(content.scrollHeight).toBeGreaterThan(content.clientHeight);
+    await expect(dialog.getBoundingClientRect().height).toBeLessThanOrEqual(window.innerHeight);
+  },
+} satisfies StoryObj<typeof ArgRow>;
+
 const enumeration =
   '"search" | "arrow-to-bottom" | "arrow-to-right" | "bell" | "check" | "check-circle"';
 export const Enum = {

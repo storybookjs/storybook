@@ -12,6 +12,7 @@ Build your stories with [vite](https://vitejs.dev/) for fast startup times and n
   - [TypeScript](#typescript)
   - [React Docgen](#react-docgen)
   - [Note about working directory](#note-about-working-directory)
+  - [Experimental TurboSnap configuration evidence](#experimental-turbosnap-configuration-evidence)
 - [Known issues](#known-issues)
 - [Contributing](#contributing)
 
@@ -152,6 +153,44 @@ If you're using TypeScript, we encourage you to experiment and see which option 
 The builder will by default enable Vite's [server.fs.strict](https://vitejs.dev/config/#server-fs-strict)
 option, for increased security. The default project `root` is set to the parent directory of the
 Storybook configuration directory. This can be overridden in [viteFinal](https://storybook.js.org/docs/api/main-config-vite-final?ref=readme).
+
+### Experimental TurboSnap configuration evidence
+
+Production builds requested with `--stats-json` may include a versioned `turbosnapConfig` record in
+`preview-stats.json`. The existing `modules` graph is unchanged. Consumers can use a complete record
+to distinguish story-only helpers inside the configuration directory from inputs that affect every
+story. Unattributed configuration files must retain their existing conservative coverage.
+
+The initial supported profile is intentionally limited to `@storybook/html-vite` with Vite 7.3.6,
+esbuild 0.28.1, and Rollup 4.53.2,
+a declarative `main` configuration, the built-in presets, and ordinary JavaScript, TypeScript, and
+JSON runtime modules. Relative JSON/JSONC TypeScript configuration inheritance with explicit `.json`
+extensions is recorded as dependency edges. TypeScript project references, extensionless inheritance,
+and package-based inheritance are unsupported. Additional Vite versions require validation of their
+built-in transformation pipeline before they can emit complete evidence.
+Resolved compiler package manifests and discovered dependency lockfiles are build inputs. An
+`ESBUILD_BINARY_PATH` override is unsupported. The profile assumes the published compiler packages;
+same-version source patches or replacement native executables are outside this initial contract.
+
+Addons, executable configuration, user Vite configuration or plugins, copied static directories,
+existing Vite public directories, HTML sidecars, stylesheet processing, runtime assets, worker or
+other queried module imports, mocks,
+`import.meta` other than the production HMR guard, computed dynamic imports, and symlinked configuration inputs produce incomplete
+evidence. Unsupported builds retain the consumer's existing configuration-directory handling.
+This record does not establish dependency completeness for arbitrary custom build pipelines.
+
+Version 1 binds evidence to the exact module graph with a SHA-256 `modulesHash`, and records the
+configuration-directory inventory, SHA-256 source identities and real paths, required absent
+control paths, build-input roots, and dependency edges. `environmentHash` identifies Vite's resolved
+injected values without including their contents. Consumers must validate these bindings before
+using the record, retain global coverage for build-input closures and preview composition, and
+apply their own exclusion rules to dependency edges. The inventory and module-graph binding are
+freshness checks; hashing them globally would remove the benefit of story-specific tracing.
+
+Consumers must fall back when metadata is missing, incomplete, unsupported, stale, or inconsistent.
+Changing the classification algorithm or moving between selective and fallback modes must also
+invalidate the relevant baseline compatibility hash. This producer does not change TurboSnap 1
+selection or interpret Chromatic's `untraced` option.
 
 ## Known issues
 

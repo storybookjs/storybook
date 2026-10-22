@@ -27,6 +27,7 @@ import {
 } from './plugins/index.ts';
 import { viteCorePlugins as corePlugins } from './preset.ts';
 import type { BuilderOptions } from './types.ts';
+import type { ConfigEvidence } from './turbosnap-config.ts';
 
 export type PluginConfigType = 'build' | 'development';
 
@@ -137,7 +138,8 @@ export async function resolveVitePublicDir(
 // Vite config that is common to development and production mode
 export async function commonConfig(
   options: Options,
-  _type: PluginConfigType
+  _type: PluginConfigType,
+  configEvidence?: ConfigEvidence
 ): Promise<ViteInlineConfig> {
   const { mergeConfig } = await import('vite');
 
@@ -158,7 +160,7 @@ export async function commonConfig(
   // shared between @storybook/builder-vite and @storybook/addon-vitest.
   const sbConfig: InlineConfig = {
     configFile: false,
-    plugins: await pluginConfig(options),
+    plugins: await pluginConfig(options, configEvidence),
     root: projectRoot,
     // Allow storybook deployed as subfolder. See https://github.com/storybookjs/builder-vite/issues/238
     base: './',
@@ -176,7 +178,7 @@ export async function commonConfig(
   return config;
 }
 
-export async function pluginConfig(options: Options) {
+export async function pluginConfig(options: Options, configEvidence?: ConfigEvidence) {
   const plugins = [
     // Shared core plugins (resolve conditions, envPrefix, fs.allow, externals, env vars, etc.)
     ...(await corePlugins([], options)),
@@ -184,7 +186,7 @@ export async function pluginConfig(options: Options) {
     // Entry plugin: virtual modules for stories, addon setup, and main app entry
     ...(await storybookEntryPlugin(options)),
     // Builder-specific: webpack-compatible stats for turbosnap/chromatic
-    pluginWebpackStats({ workingDir: process.cwd() }),
+    pluginWebpackStats({ workingDir: process.cwd(), configEvidence }),
   ] as PluginOption[];
 
   return plugins;

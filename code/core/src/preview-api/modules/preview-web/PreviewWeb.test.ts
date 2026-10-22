@@ -3764,6 +3764,78 @@ describe('PreviewWeb', () => {
   });
 
   describe('onKeydown', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('forwards F6 from inputs and keeps the browser from acting on it, so landmarks can be navigated from anywhere in the story', async () => {
+      vi.stubGlobal('parent', {});
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+
+      const event = {
+        key: 'F6',
+        shiftKey: true,
+        preventDefault: vi.fn(),
+        target: { tagName: 'input', getAttribute: vi.fn().mockReturnValue(null) },
+      };
+      preview.onKeydown(event as any);
+
+      expect(event.preventDefault).toHaveBeenCalled();
+      expect(mockChannel.emit).toHaveBeenCalledWith(PREVIEW_KEYDOWN, {
+        event: expect.objectContaining({ key: 'F6', shiftKey: true }),
+      });
+    });
+
+    it('keeps a story from wrapping around its own React Aria landmarks, so F6 moves on to the manager', async () => {
+      vi.stubGlobal('parent', {});
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      await createAndRenderPreview();
+
+      const wrap = new CustomEvent('react-aria-landmark-navigation', {
+        detail: { direction: 'forward' },
+        bubbles: true,
+        cancelable: true,
+      });
+      globalThis.dispatchEvent(wrap);
+
+      expect(wrap.defaultPrevented).toBe(true);
+    });
+
+    it('lets a story wrap around its own React Aria landmarks when it is the top-level document', async () => {
+      vi.stubGlobal('parent', globalThis.self);
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      await createAndRenderPreview();
+
+      const wrap = new CustomEvent('react-aria-landmark-navigation', {
+        detail: { direction: 'forward' },
+        bubbles: true,
+        cancelable: true,
+      });
+      globalThis.dispatchEvent(wrap);
+
+      expect(wrap.defaultPrevented).toBe(false);
+    });
+
+    it('leaves F6 to the browser when the preview is the top-level document', async () => {
+      vi.stubGlobal('parent', globalThis.self);
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+
+      const event = {
+        key: 'F6',
+        preventDefault: vi.fn(),
+        target: { tagName: 'input', getAttribute: vi.fn().mockReturnValue(null) },
+      };
+      preview.onKeydown(event as any);
+
+      expect(event.preventDefault).not.toHaveBeenCalled();
+      expect(mockChannel.emit).not.toHaveBeenCalledWith(
+        PREVIEW_KEYDOWN,
+        expect.objectContaining({})
+      );
+    });
+
     it('emits PREVIEW_KEYDOWN for regular elements', async () => {
       document.location.search = '?id=component-one--docs&viewMode=docs';
       const preview = await createAndRenderPreview();

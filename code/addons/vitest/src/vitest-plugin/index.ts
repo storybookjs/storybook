@@ -69,12 +69,9 @@ const extractTagsFromPreview = async (configDir: string) => {
     return [];
   }
   const previewConfig = await readConfig(previewConfigPath);
-  const tags = previewConfig.getValue(['tags']) ?? [];
-  if (
-    previewConfig.mutationDiagnostics.some(({ code }) => code === 'unsupported-value') ||
-    !Array.isArray(tags) ||
-    !tags.every((tag) => typeof tag === 'string')
-  ) {
+  const tags =
+    previewConfig.inspect(['tags']).kind === 'value' ? previewConfig.getValue(['tags']) : [];
+  if (!Array.isArray(tags) || !tags.every((tag) => typeof tag === 'string')) {
     throw new HandledError('Preview tags must be a static array of strings');
   }
   return tags;

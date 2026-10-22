@@ -148,7 +148,8 @@ export const CustomFooter = {
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Page from './Page.svelte';
 
@@ -166,13 +167,54 @@ export const CustomFooter = {
 </Story>
 ```
 
-```svelte filename="Page.stories.svelte" renderer="svelte" language="ts"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import preview from '../.storybook/preview';
+
+  import Page from './Page.svelte';
+
+  const { Story } = preview.meta({
+    component: Page
+  });
+</script>
+
+<Story name="CustomFooter" args={{ footer: 'Built with Storybook' }}>
+  {#snippet template(args)}
+    <Page {...args} >
+      <footer>{args.footer}</footer>
+    </Page>
+  {/snippet}
+</Story>
+```
+
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Page from './Page.svelte';
 
   const { Story } = defineMeta({
+    component: Page
+  });
+</script>
+
+<Story name="CustomFooter" args={{ footer: 'Built with Storybook' }}>
+  {#snippet template(args)}
+    <Page {...args} >
+      <footer>{args.footer}</footer>
+    </Page>
+  {/snippet}
+</Story>
+```
+
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+
+  import Page from './Page.svelte';
+
+  const { Story } = preview.meta({
     component: Page
   });
 </script>

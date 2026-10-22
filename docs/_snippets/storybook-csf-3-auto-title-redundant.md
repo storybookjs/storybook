@@ -45,7 +45,8 @@ export const Basic = meta.story({
 
 ```svelte filename="components/MyComponent/MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -58,19 +59,19 @@ export const Basic = meta.story({
 <Story name="Default" args={{ something: 'Something else' }} />
 ```
 
-```js filename="components/MyComponent/MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import MyComponent from './MyComponent.svelte';
+```svelte filename="components/MyComponent/MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: MyComponent,
-  title: 'components/MyComponent/MyComponent',
-};
+  import MyComponent from './MyComponent.svelte';
 
-export const Basic = {
-  args: {
-    something: 'Something else',
-  },
-};
+  const { Story } = preview.meta({
+    component: MyComponent,
+    title: 'components/MyComponent/MyComponent',
+  });
+</script>
+
+<Story name="Default" args={{ something: 'Something else' }} />
 ```
 
 ```js filename="components/MyComponent/MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
@@ -90,7 +91,8 @@ export const Basic = {
 
 ```svelte filename="components/MyComponent/MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -103,29 +105,19 @@ export const Basic = {
 <Story name="Default" args={{ something: 'Something else'}} />
 ```
 
-```ts filename="components/MyComponent/MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="components/MyComponent/MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import MyComponent from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
-const meta = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  component: MyComponent,
-  title: 'components/MyComponent/MyComponent',
-} satisfies Meta<typeof MyComponent>;
+  const { Story } = preview.meta({
+    component: MyComponent,
+    title: 'components/MyComponent/MyComponent',
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Basic: Story = {
-  args: {
-    something: 'Something else',
-  },
-};
+<Story name="Default" args={{ something: 'Something else'}} />
 ```
 
 ```ts filename="components/MyComponent/MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

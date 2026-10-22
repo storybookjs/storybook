@@ -45,7 +45,8 @@ export const OnPhone = meta.story({
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -66,28 +67,33 @@ export const OnPhone = meta.story({
 />
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Button from './Button.svelte';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: Button,
-  globals: {
-    // 👇 Set viewport for all component stories
-    viewport: { value: 'tablet', isRotated: false },
-  },
-};
+  import Button from './Button.svelte';
 
-export const OnPhone = {
-  globals: {
-    // 👇 Override viewport for this story
-    viewport: { value: 'mobile1', isRotated: false },
-  },
-};
+  const { Story } = preview.meta({
+    component: Button,
+    globals: {
+      // 👇 Set viewport for all component stories
+      viewport: { value: "tablet", isRotated: false },
+    },
+  });
+</script>
+
+<Story
+  name="OnPhone"
+  globals={{
+    viewport: { value: "mobile1", isRotated: false },
+  }}
+/>
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -108,29 +114,27 @@ export const OnPhone = {
 />
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import Button from './Button.svelte';
+  import Button from './Button.svelte';
 
-const meta = {
-  component: Button,
-  globals: {
-    // 👇 Set viewport for all component stories
-    viewport: { value: 'tablet', isRotated: false },
-  },
-} satisfies Meta<typeof Button>;
+  const { Story } = preview.meta({
+    component: Button,
+    globals: {
+      // 👇 Set viewport for all component stories
+      viewport: { value: "tablet", isRotated: false },
+    },
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const OnPhone: Story = {
-  globals: {
-    // 👇 Override viewport for this story
-    viewport: { value: 'mobile1', isRotated: false },
-  },
-};
+<Story
+  name="OnPhone"
+  globals={{
+    viewport: { value: "mobile1", isRotated: false },
+  }}
+/>
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"

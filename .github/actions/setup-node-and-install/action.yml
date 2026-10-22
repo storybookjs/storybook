@@ -15,9 +15,12 @@ runs:
       with:
         node-version-file: '.nvmrc'
 
-    - name: Update npm to latest
+    # Pin the major. `@latest` became npm 12, and an unpinned install would
+    # pick up npm 13 the day it is published. npm 12 requires
+    # ^22.22.2 || ^24.15.0 || >=26, which .nvmrc (22.22.3) satisfies.
+    - name: Install npm 12
       shell: bash
-      run: npm install -g npm@latest
+      run: npm install -g npm@12
 
     # Restore only — save is gated below. actions/cache's post-job save step uses a
     # runner-internal token that bypasses `permissions:`, so splitting is the only

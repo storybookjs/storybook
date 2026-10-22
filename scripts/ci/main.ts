@@ -19,6 +19,7 @@ import {
   internalStorybookBuildE2e,
   internalStorybookE2e,
   storybookChromatic,
+  node26Smoke,
   testUnit_windows,
   testsStories_linux,
   testsUnit_linux,
@@ -61,6 +62,7 @@ function getJobs(workflow: Workflow): JobOrNoOpJob[] {
     jobs.push(
       build_linux,
       testsUnit_linux,
+      node26Smoke,
       testsStories_linux,
 
       commonJobsNoOpJob,

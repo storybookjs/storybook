@@ -1,5 +1,5 @@
 const GLOBAL_INPUTS = [
-  /(^|\/)(package\.json|yarn\.lock|\.yarnrc[^/]*|nx\.json|\.nvmrc|tsconfig[^/]*\.json|vite(st)?[.-](config|workspace|shared|setup)[^/]*)$/,
+  /(^|\/)(package\.json|yarn\.lock|\.yarnrc[^/]*|nx\.json|\.nvmrc|tsconfig[^/]*\.json|vite(st)?((\.[\w-]+)*\.(config|workspace|shared|setup)|-setup)\.[^/]*)$/,
   /^(\.yarn\/patches|code\/__mocks__)\//,
 ];
 

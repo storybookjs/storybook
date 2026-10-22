@@ -14,6 +14,7 @@ describe('isGlobalInput', () => {
     'code/vitest.shared.ts',
     'code/vitest-setup.ts',
     'code/vitest.config.storybook.ts',
+    'code/lib/eslint-plugin/vitest.integration.config.ts',
     'code/addons/a11y/vitest.config.ts',
     'code/builders/builder-vite/vite.config.ts',
     'code/__mocks__/fs.ts',
@@ -27,6 +28,9 @@ describe('isGlobalInput', () => {
     'code/core/src/manager/App.test.tsx',
     'code/addons/a11y/README.md',
     'docs/get-started/introduction.mdx',
+    'code/builders/builder-vite/src/vite-config.ts',
+    'code/core/src/cli/vitest-config.ts',
+    'code/lib/cli-storybook/src/automigrate/fixes/vitest-setup-file.ts',
   ])('does not treat %s as a global input', (file) => {
     expect(isGlobalInput(file)).toBe(false);
   });

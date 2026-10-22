@@ -38,6 +38,17 @@ Reading both rows together is the point.
 `whole-index` is what a full manifest build costs, which is what agent and MCP consumers need.
 `first-story` is what a developer waits for before Controls populate, and it is the number to watch when judging whether the docgen server feels fast.
 
+### The Svelte engines and `large-program`
+
+Svelte runs over the same workspace projects as Vue, with runes components in place of SFCs, so the Svelte and Vue rows measure their engines over identical type graphs.
+`svelte-legacy` is `generateDocgen` as builder docgen runs it: a program built per extraction, with every source file re-stat'ed to find what changed.
+`svelte-component-meta` is the docgen server's `SvelteComponentMetaManager`, a component-meta manager: one program and checker per tsconfig, rebuilt only when a file event arrives.
+
+The workspace scenarios hold a few hundred files at most, and there the two engines are close.
+Real apps put thousands of dependency declarations in the program, and the legacy engine's per-request cost grows with that count, because rebuilding even an unchanged program visits every file.
+`large-program` adds that dimension: a flat project whose heavy library references thousands of `.d.ts` modules, which the program holds but no component's props resolve through.
+It is the scenario where the per-request difference between the two Svelte engines shows, as it does on real projects.
+
 ## Determinism method
 
 ### Fixed synthetic projects

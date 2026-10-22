@@ -104,14 +104,21 @@ export const ENGINES: BenchEngine[] = [
     args: workspaceArgs,
     pin: 'vue-component-meta-next',
   }),
-  // Svelte's svelte2tsx engine as builder docgen and the docgen server run it. No budget row yet, so
-  // it stays out of the default run.
+  // Svelte's svelte2tsx engine as builder docgen runs it, and as the docgen server's component-meta
+  // manager runs it. No budget rows yet, so both stay out of the default run.
   new SeriesChildEngine({
     id: 'svelte-legacy',
     child: 'engines/svelte-docgen.ts',
     scenarios: svelteScenarios,
     inDefaultRun: false,
     args: (scenario) => [...workspaceArgs(scenario), '--engine', 'legacy'],
+  }),
+  new SeriesChildEngine({
+    id: 'svelte-component-meta',
+    child: 'engines/svelte-docgen.ts',
+    scenarios: svelteScenarios,
+    inDefaultRun: false,
+    args: (scenario) => [...workspaceArgs(scenario), '--engine', 'component-meta'],
   }),
   new CompodocEngine(),
   // Always fails. The gate names it explicitly to prove the gate reports a failing engine as a

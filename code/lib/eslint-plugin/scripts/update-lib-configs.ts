@@ -43,9 +43,7 @@ function formatCategory(category: TCategory) {
     * in order to update its content, execute "yarn update-rules" or rebuild this package.
     */
     export default {
-      // This file is bundled in an index.js file at the root
-      // so the reference is relative to the src directory
-      extends: './configs/${extendsCategoryId}',
+      extends: 'plugin:storybook/${extendsCategoryId}',
       overrides: [{
         files: [${STORIES_GLOBS.join(', ')}],
         rules: ${formatRules(category.rules)}

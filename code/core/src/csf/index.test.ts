@@ -108,6 +108,12 @@ describe('combineTags', () => {
     ],
     [['a', 'b', '!b'], ['a']],
     [['b', '!b', 'b'], ['b']],
+    [
+      ['a', '', 'b'],
+      ['a', 'b'],
+    ],
+    [['a', ' ', '\t'], ['a']],
+    [['', '!'], []],
   ])('combineTags(%o) -> %o', (tags, expected) => {
     expect(combineTags(...tags)).toEqual(expected);
   });

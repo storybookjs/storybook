@@ -1,4 +1,4 @@
-```ts filename="SettingsProfile.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="SettingsProfile.stories.ts" renderer="react" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 // 👇 Route file is part of the app route tree

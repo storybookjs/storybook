@@ -1,4 +1,4 @@
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="With Webpack (CSF Next 🧪)"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="With Webpack (CSF 4)"
 // Replace your-framework with the framework you are using (e.g., react-webpack5, nextjs)
 import { defineMain } from '@storybook/your-framework/node';
 
@@ -24,7 +24,7 @@ export default defineMain({
 });
 ```
 
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="With Vite (CSF Next 🧪)"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="With Vite (CSF 4)"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
 
@@ -42,7 +42,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="With Webpack (CSF Next 🧪)"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="With Webpack (CSF 4)"
 // Replace your-framework with the framework you are using (e.g., react-webpack5, nextjs)
 import { defineMain } from '@storybook/your-framework/node';
 
@@ -68,7 +68,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="With Vite (CSF Next 🧪)"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="With Vite (CSF 4)"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
 
@@ -86,7 +86,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="With Webpack (CSF Next 🧪)"
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="With Webpack (CSF 4)"
 import { defineMain } from '@storybook/web-components-webpack5/node';
 
 export default defineMain({
@@ -111,7 +111,7 @@ export default defineMain({
 });
 ```
 
-```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="With Webpack (CSF Next 🧪)"
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="With Webpack (CSF 4)"
 import { defineMain } from '@storybook/web-components-webpack5/node';
 
 export default defineMain({
@@ -136,7 +136,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="With Vite (CSF Next 🧪)"
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="With Vite (CSF 4)"
 import { defineMain } from '@storybook/web-components-vite/node';
 
 import graphql from 'vite-plugin-graphql-loader';
@@ -153,7 +153,7 @@ export default defineMain({
 });
 ```
 
-```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="With Vite (CSF Next 🧪)"
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="With Vite (CSF 4)"
 import { defineMain } from '@storybook/web-components-vite/node';
 
 import graphql from 'vite-plugin-graphql-loader';

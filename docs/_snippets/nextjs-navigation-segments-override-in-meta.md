@@ -1,4 +1,4 @@
-```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import NavigationBasedComponent from './NavigationBasedComponent';
@@ -16,7 +16,7 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import NavigationBasedComponent from './NavigationBasedComponent';

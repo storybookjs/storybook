@@ -1,4 +1,4 @@
-```ts filename="ProfileForm.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="ProfileForm.stories.ts" renderer="react" language="ts" tabTitle="CSF 4"
 import { expect, mocked } from 'storybook/test';
 
 import preview from '../.storybook/preview';

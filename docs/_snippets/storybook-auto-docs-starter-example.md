@@ -20,7 +20,7 @@ Buttons are often used for form submissions and to toggle elements into view.
 ```
 
 <!-- prettier-ignore -->
-```mdx filename="Button.mdx" renderer="svelte" language="mdx" tabTitle="Svelte CSF"
+```mdx filename="Button.mdx" renderer="svelte" language="mdx" tabTitle="Svelte CSF 3"
 import { Meta, Story } from '@storybook/addon-docs/blocks';
 
 import * as ButtonStories from './Button.stories.svelte';

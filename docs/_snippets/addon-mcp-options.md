@@ -1,4 +1,4 @@
-```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 4"
 // Replace your-framework with the framework you are using (e.g., react-vite, angular-vite, vue3-vite)
 import { defineMain } from '@storybook/your-framework/node';
 
@@ -19,7 +19,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 4"
 // Replace your-framework with the framework you are using (e.g., react-vite, angular-vite, vue3-vite)
 import { defineMain } from '@storybook/your-framework/node';
 

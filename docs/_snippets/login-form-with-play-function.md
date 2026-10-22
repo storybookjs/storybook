@@ -1,4 +1,4 @@
-```ts filename="LoginForm.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="LoginForm.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import { expect } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -67,7 +67,7 @@ export const FilledForm: Story = {
 };
 ```
 
-```js filename="LoginForm.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="LoginForm.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import { expect } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -100,7 +100,7 @@ export const FilledForm = meta.story({
 });
 ```
 
-```ts filename="LoginForm.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="LoginForm.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
 import { expect } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -200,7 +200,7 @@ export const FilledForm: Story = {
 };
 ```
 
-```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF 4"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -240,7 +240,7 @@ export const FilledForm: Story = {
 />
 ```
 
-```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF 3"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -281,7 +281,7 @@ export const FilledForm: Story = {
 />
 ```
 
-```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF 4"
 <script module lang="ts">
   import preview from '../.storybook/preview';
 
@@ -321,7 +321,7 @@ export const FilledForm: Story = {
 />
 ```
 
-```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF 3"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -362,7 +362,7 @@ export const FilledForm: Story = {
 />
 ```
 
-```js filename="LoginForm.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="LoginForm.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
 import { expect } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -404,7 +404,7 @@ export const FilledForm = meta.story({
 });
 ```
 
-```ts filename="LoginForm.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="LoginForm.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import { expect } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -531,7 +531,7 @@ export const FilledForm = {
 };
 ```
 
-```js filename="LoginForm.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="LoginForm.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import { expect } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -562,7 +562,7 @@ export const FilledForm = meta.story({
 });
 ```
 
-```ts filename="LoginForm.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="LoginForm.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import { expect } from 'storybook/test';
 
 import preview from '../.storybook/preview';

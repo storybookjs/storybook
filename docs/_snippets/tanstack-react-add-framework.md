@@ -1,4 +1,4 @@
-```diff filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```diff filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 4"
 - import { defineMain } from '@storybook/react-vite/node';
 + import { defineMain } from '@storybook/tanstack-react/node';
 

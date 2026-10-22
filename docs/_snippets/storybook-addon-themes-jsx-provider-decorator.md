@@ -1,4 +1,4 @@
-```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 4"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 
@@ -30,7 +30,7 @@ export default definePreview({
 });
 ```
 
-```ts filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 4"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { Renderer, definePreview } from '@storybook/your-framework';
 

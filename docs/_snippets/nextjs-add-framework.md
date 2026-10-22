@@ -1,4 +1,4 @@
-```diff filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```diff filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 4"
 - import { defineMain } from '@storybook/your-previous-framework/node';
 + import { defineMain } from '@storybook/nextjs/node';
 
@@ -9,7 +9,7 @@ export default defineMain({
 });
 ```
 
-```diff filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```diff filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 4"
 - import { defineMain } from '@storybook/your-previous-framework/node';
 + import { defineMain } from '@storybook/nextjs/node';
 

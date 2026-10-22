@@ -39,10 +39,8 @@ export const AwaitsDocsLayoutEffects: Story = {
         {
           componentId: context.componentId,
           title: context.title,
-          kind: context.kind,
           id: context.id,
           name: context.name,
-          story: context.story,
           tags: context.tags,
           showMain: () => {},
           showError: () => {},

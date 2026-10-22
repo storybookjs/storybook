@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 
-import { generate, parser, types as t } from 'storybook/internal/babel';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig } from 'storybook/internal/types';
@@ -9,6 +8,8 @@ import { transformSync } from 'esbuild';
 import { walk } from 'estree-walker';
 import { basename, normalize } from 'pathe';
 
+import { parseModule } from '../csf-tools/estree/ast.ts';
+import { type InputSourceMap, SourceEditor } from '../csf-tools/estree/editor.ts';
 import { resolveMock } from './resolve.ts';
 
 const DEFAULT_MODULE_DIRECTORIES = ['/node_modules/'];
@@ -34,27 +35,45 @@ interface ExtractMockCallsOptions {
   configDir: string;
 }
 
+const isStringLiteral = (node: any): boolean =>
+  node?.type === 'Literal' && typeof node.value === 'string';
+
+// `import('foo')`, whose specifier `sb.mock` accepts in place of the string.
+const isStaticImport = (node: any): boolean =>
+  node?.type === 'ImportExpression' && isStringLiteral(node.source);
+
+/** A source map as a plain object, which loaders such as webpack's and babel-loader accept. */
+export interface MockRewriteSourceMap {
+  version: number;
+  file: string;
+  sources: string[];
+  /**
+   * Typed as webpack's and Rollup's map types expect. An entry is `null` only when the input map
+   * carried no content for its source, which webpack and Vite accept at runtime.
+   */
+  sourcesContent: string[];
+  names: string[];
+  mappings: string;
+  sourceRoot?: string;
+}
+
+export interface RewriteSbMockImportCallsOptions {
+  /** Map of `code` to its original, when it came from an earlier transform. */
+  inputSourceMap?: InputSourceMap;
+}
+
 /**
- * A wrapper around the babel parser that enables the necessary plugins to handle modern JavaScript
- * features, including TSX.
- *
- * @param code - The code to parse.
- * @returns The parsed code.
+ * Rewrite `sb.mock(import('...'), ...)` to `sb.mock('...', ...)`. The map goes from the original
+ * of `code`, through `inputSourceMap` when given, to the output, and is `null` when nothing changed.
  */
-export const babelParser = (code: string) => {
-  return parser.parse(code, {
-    sourceType: 'module',
-    // Enable plugins to handle modern JavaScript features, including TSX.
-    plugins: ['typescript', 'jsx', 'classProperties', 'objectRestSpread'],
-    errorRecovery: true,
-  }).program;
-};
+export function rewriteSbMockImportCalls(
+  code: string,
+  fileName: string,
+  options: RewriteSbMockImportCallsOptions = {}
+): { code: string; map: MockRewriteSourceMap | null } {
+  const editor = new SourceEditor(code, fileName);
 
-/** Utility to rewrite sb.mock(import('...'), ...) to sb.mock('...', ...) */
-export function rewriteSbMockImportCalls(code: string) {
-  const ast = babelParser(code);
-
-  walk(ast as any, {
+  walk(editor.program as any, {
     enter(node: any) {
       if (
         node.type === 'CallExpression' &&
@@ -64,17 +83,25 @@ export function rewriteSbMockImportCalls(code: string) {
         node.callee.property.type === 'Identifier' &&
         node.callee.property.name === 'mock' &&
         node.arguments.length > 0 &&
-        node.arguments[0].type === 'CallExpression' &&
-        node.arguments[0].callee.type === 'Import' &&
-        node.arguments[0].arguments.length === 1 &&
-        node.arguments[0].arguments[0].type === 'StringLiteral'
+        isStaticImport(node.arguments[0])
       ) {
         // Replace sb.mock(import('foo'), ...) with sb.mock('foo', ...)
-        node.arguments[0] = t.stringLiteral(node.arguments[0].arguments[0].value);
+        const [argument] = node.arguments;
+        editor.edits.overwrite(argument.start, argument.end, JSON.stringify(argument.source.value));
       }
     },
   });
-  return generate(ast, {}, code);
+  if (!editor.pending) {
+    return { code, map: null };
+  }
+  // `sb.mock` needs the rewrite, so an input map the editor cannot read only costs the mapping.
+  const map = editor.generateMap({ inputSourceMap: options.inputSourceMap });
+  return {
+    code: editor.toString(),
+    // A plain object: babel-loader, next in the webpack chain, rejects a string map. Its
+    // `sourcesContent` is typed as the loaders expect, as `MockRewriteSourceMap` says.
+    map: { ...map, file: fileName, sourcesContent: map.sourcesContent as string[] },
+  };
 }
 
 /**
@@ -84,13 +111,6 @@ export function rewriteSbMockImportCalls(code: string) {
  */
 export function extractMockCalls(
   options: ExtractMockCallsOptions,
-  parse: (
-    input: string,
-    options?: {
-      allowReturnOutsideFunction?: boolean;
-      jsx?: boolean;
-    }
-  ) => t.Node,
   root: string,
   findMockRedirect: (
     root: string,
@@ -101,7 +121,7 @@ export function extractMockCalls(
   try {
     const previewConfigCode = readFileSync(options.previewConfigPath, 'utf-8');
     const { code: jsCode } = transformSync(previewConfigCode, { loader: 'tsx', format: 'esm' });
-    const ast = parse(jsCode);
+    const ast = parseModule(jsCode, options.previewConfigPath).program;
     const mocks: MockCall[] = [];
 
     /** Helper to check if an ObjectExpression node has spy: true */
@@ -111,10 +131,10 @@ export function extractMockCalls(
       }
       for (const prop of objectExpression.properties) {
         if (
-          prop.type === 'ObjectProperty' &&
+          prop.type === 'Property' &&
           ((prop.key.type === 'Identifier' && prop.key.name === 'spy') ||
-            (prop.key.type === 'StringLiteral' && prop.key.value === 'spy')) &&
-          prop.value.type === 'BooleanLiteral' &&
+            (isStringLiteral(prop.key) && prop.key.value === 'spy')) &&
+          prop.value.type === 'Literal' &&
           prop.value.value === true
         ) {
           return true;
@@ -124,8 +144,7 @@ export function extractMockCalls(
     }
 
     walk(ast as any, {
-      // @ts-expect-error - Node comes from babel
-      async enter(node: t.Node) {
+      async enter(node: any) {
         if (
           node.type !== 'CallExpression' ||
           node.callee.type !== 'MemberExpression' ||
@@ -141,16 +160,12 @@ export function extractMockCalls(
           return;
         }
 
-        let path: string | undefined;
         // Support sb.mock('foo', ...) and sb.mock(import('foo'), ...)
-        if (node.arguments[0].type === 'StringLiteral') {
-          path = node.arguments[0].value as string;
-        } else if (
-          node.arguments[0].type === 'CallExpression' &&
-          node.arguments[0].callee.type === 'Import' &&
-          node.arguments[0].arguments[0].type === 'StringLiteral'
-        ) {
-          path = node.arguments[0].arguments[0].value;
+        let path: string;
+        if (isStringLiteral(node.arguments[0])) {
+          path = node.arguments[0].value;
+        } else if (isStaticImport(node.arguments[0])) {
+          path = node.arguments[0].source.value;
         } else {
           return;
         }

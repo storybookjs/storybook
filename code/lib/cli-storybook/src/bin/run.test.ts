@@ -4,10 +4,12 @@ import { run } from './run.ts';
 
 const mockAdd = vi.hoisted(() => vi.fn());
 const mockSandbox = vi.hoisted(() => vi.fn());
+const mockUpgrade = vi.hoisted(() => vi.fn());
 const mockTelemetry = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 
 vi.mock('../add.ts', () => ({ add: mockAdd }));
 vi.mock('../sandbox.ts', () => ({ sandbox: mockSandbox }));
+vi.mock('../upgrade.ts', () => ({ upgrade: mockUpgrade }));
 vi.mock('storybook/internal/cli', () => ({
   globalSettings: vi.fn().mockResolvedValue(undefined),
 }));
@@ -60,6 +62,17 @@ describe('run', () => {
     expect(mockAdd).toHaveBeenCalledWith(
       '@storybook/addon-essentials',
       expect.objectContaining({ yes: true })
+    );
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  test('upgrade forwards --skip-install without consuming --skip-check', async () => {
+    mockUpgrade.mockResolvedValueOnce(undefined);
+
+    await run(['node', 'storybook', 'upgrade', '--skip-install', '--skip-check']);
+
+    expect(mockUpgrade).toHaveBeenCalledWith(
+      expect.objectContaining({ skipInstall: true, skipCheck: true })
     );
     expect(exitSpy).not.toHaveBeenCalled();
   });

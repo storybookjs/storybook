@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { allTemplates, normal } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import {
-  FOCUS_PATH_ROOTS,
+  TESTED_PATH_ROOTS,
   PATH_TRIGGERED_JOBS,
   getFocusJobs,
   selectChromaticSiblings,
@@ -18,7 +18,7 @@ import { getJobs } from './workflow-jobs.ts';
 const ROOT = join(import.meta.dirname, '../..');
 
 const packageDirsByName = new Map(
-  FOCUS_PATH_ROOTS.flatMap((root) =>
+  TESTED_PATH_ROOTS.flatMap((root) =>
     readdirSync(join(ROOT, root))
       .filter((dir) => existsSync(join(ROOT, root, dir, 'package.json')))
       .map((dir) => {
@@ -28,9 +28,9 @@ const packageDirsByName = new Map(
   )
 );
 
-const allFocusPaths = Object.values(allTemplates).flatMap(({ focusPaths = [] }) => focusPaths);
+const allTestedPaths = Object.values(allTemplates).flatMap(({ testedPaths = [] }) => testedPaths);
 
-describe('focusPaths', () => {
+describe('testedPaths', () => {
   it.each(
     [
       ...new Set(
@@ -42,13 +42,13 @@ describe('focusPaths', () => {
       ),
     ].sort()
   )('%s, used by a ci:normal sandbox, selects a focus sandbox', (dir) => {
-    expect(allFocusPaths).toContain(dir);
+    expect(allTestedPaths).toContain(dir);
   });
 
-  it.each(allFocusPaths)(
+  it.each(allTestedPaths)(
     '%s is an existing directory under a framework, renderer, or builder root',
     (path) => {
-      expect(FOCUS_PATH_ROOTS.some((root) => path.startsWith(root))).toBe(true);
+      expect(TESTED_PATH_ROOTS.some((root) => path.startsWith(root))).toBe(true);
       expect(path.endsWith('/')).toBe(true);
       expect(existsSync(join(ROOT, path))).toBe(true);
     }
@@ -318,8 +318,8 @@ describe('ci:normal coverage', () => {
   const selectableByFocus = new Set(
     [
       ['yarn.lock'],
-      ...Object.values(allTemplates).flatMap(({ focusPaths = [] }) =>
-        focusPaths.map((path) => [`${path}src/index.ts`])
+      ...Object.values(allTemplates).flatMap(({ testedPaths = [] }) =>
+        testedPaths.map((path) => [`${path}src/index.ts`])
       ),
     ].flatMap((changedFiles) => ids(getFocusJobs(changedFiles)))
   );

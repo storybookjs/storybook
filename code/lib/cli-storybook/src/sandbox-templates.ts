@@ -57,10 +57,10 @@ export type Template = {
   };
 
   /**
-   * Directories under `code/frameworks/`, `code/renderers/`, or `code/builders/` whose changes make
-   * `ci:focus` run this template's sandbox.
+   * Directories under `code/frameworks/`, `code/renderers/`, or `code/builders/` whose changes this
+   * template's sandbox tests, so CI that runs only what a diff affects picks this sandbox for them.
    */
-  focusPaths?: string[];
+  testedPaths?: string[];
 
   expectedFailures?: Array<{
     feature: string;
@@ -187,7 +187,7 @@ export const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-webpack5',
     },
-    focusPaths: ['code/frameworks/nextjs/'],
+    testedPaths: ['code/frameworks/nextjs/'],
     modifications: {
       useCsfFactory: true,
       mainConfig: {
@@ -270,7 +270,7 @@ export const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
-    focusPaths: ['code/frameworks/nextjs-vite/'],
+    testedPaths: ['code/frameworks/nextjs-vite/'],
     modifications: {
       useCsfFactory: true,
       mainConfig: {
@@ -313,7 +313,7 @@ export const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
-    focusPaths: [
+    testedPaths: [
       'code/frameworks/react-vite/',
       'code/renderers/react/',
       'code/builders/builder-vite/',
@@ -372,7 +372,7 @@ export const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-webpack5',
     },
-    focusPaths: ['code/frameworks/react-webpack5/', 'code/builders/builder-webpack5/'],
+    testedPaths: ['code/frameworks/react-webpack5/', 'code/builders/builder-webpack5/'],
     modifications: {
       useCsfFactory: true,
       extraDevDependencies: ['prop-types'],
@@ -458,7 +458,7 @@ export const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
-    focusPaths: ['code/frameworks/tanstack-react/'],
+    testedPaths: ['code/frameworks/tanstack-react/'],
     modifications: {
       useCsfFactory: true,
       extraDevDependencies: ['prop-types'],
@@ -479,7 +479,7 @@ export const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
-    focusPaths: ['code/frameworks/tanstack-react/'],
+    testedPaths: ['code/frameworks/tanstack-react/'],
     modifications: {
       useCsfFactory: true,
       extraDevDependencies: ['prop-types'],
@@ -516,7 +516,7 @@ export const baseTemplates = {
       renderer: '@storybook/vue3',
       builder: '@storybook/builder-vite',
     },
-    focusPaths: ['code/frameworks/vue3-vite/', 'code/renderers/vue3/'],
+    testedPaths: ['code/frameworks/vue3-vite/', 'code/renderers/vue3/'],
     modifications: {
       extraDevDependencies: ['@storybook/addon-mcp'],
       editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
@@ -597,7 +597,7 @@ export const baseTemplates = {
       renderer: '@storybook/html',
       builder: '@storybook/builder-vite',
     },
-    focusPaths: ['code/frameworks/html-vite/', 'code/renderers/html/'],
+    testedPaths: ['code/frameworks/html-vite/', 'code/renderers/html/'],
     skipTasks: ['e2e-tests', 'bench'],
     initOptions: {
       type: ProjectType.HTML,
@@ -640,7 +640,7 @@ export const baseTemplates = {
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
     },
-    focusPaths: ['code/frameworks/svelte-vite/', 'code/renderers/svelte/'],
+    testedPaths: ['code/frameworks/svelte-vite/', 'code/renderers/svelte/'],
     modifications: {
       useCsfFactory: true,
     },
@@ -656,7 +656,7 @@ export const baseTemplates = {
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
     },
-    focusPaths: ['code/frameworks/sveltekit/'],
+    testedPaths: ['code/frameworks/sveltekit/'],
     modifications: {
       useCsfFactory: true,
     },
@@ -685,7 +685,7 @@ export const baseTemplates = {
       renderer: '@storybook/angular',
       builder: '@storybook/builder-webpack5',
     },
-    focusPaths: ['code/frameworks/angular/'],
+    testedPaths: ['code/frameworks/angular/'],
     skipTasks: ['bench', 'vitest-integration'],
     initOptions: { builder: SupportedBuilder.WEBPACK5 },
   },
@@ -747,7 +747,7 @@ export const baseTemplates = {
       renderer: '@storybook/angular-vite',
       builder: '@storybook/builder-vite',
     },
-    focusPaths: ['code/frameworks/angular-vite/'],
+    testedPaths: ['code/frameworks/angular-vite/'],
     skipTasks: ['bench'],
     initOptions: { builder: SupportedBuilder.VITE },
   },
@@ -788,7 +788,7 @@ export const baseTemplates = {
       renderer: '@storybook/web-components',
       builder: '@storybook/builder-vite',
     },
-    focusPaths: ['code/frameworks/web-components-vite/', 'code/renderers/web-components/'],
+    testedPaths: ['code/frameworks/web-components-vite/', 'code/renderers/web-components/'],
     modifications: {
       useCsfFactory: true,
       // The renderer turns the docgen server on by default; the components manifest brings this
@@ -852,7 +852,7 @@ export const baseTemplates = {
       renderer: '@storybook/preact',
       builder: '@storybook/builder-vite',
     },
-    focusPaths: ['code/frameworks/preact-vite/', 'code/renderers/preact/'],
+    testedPaths: ['code/frameworks/preact-vite/', 'code/renderers/preact/'],
     modifications: {
       // create-vite still scaffolds Preact 10.
       extraDependencies: ['preact-render-to-string', 'preact@^11'],
@@ -926,7 +926,7 @@ export const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
-    focusPaths: ['code/frameworks/react-native-web-vite/'],
+    testedPaths: ['code/frameworks/react-native-web-vite/'],
     modifications: {
       useCsfFactory: true,
       // The React renderer's template-stories (e.g. js-argtypes.stories.jsx) import

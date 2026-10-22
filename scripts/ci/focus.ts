@@ -26,26 +26,26 @@ import type { JobOrNoOpJob } from './utils/types.ts';
 const DEFAULT_FOCUS_SANDBOX = 'react-vite/default-ts' satisfies TemplateKey;
 
 /** Ordered by priority: a framework match picks the sandbox before a renderer or builder match. */
-export const FOCUS_PATH_ROOTS = ['code/frameworks/', 'code/renderers/', 'code/builders/'] as const;
+export const TESTED_PATH_ROOTS = ['code/frameworks/', 'code/renderers/', 'code/builders/'] as const;
 
-type FocusPathRoot = (typeof FOCUS_PATH_ROOTS)[number];
+type TestedPathRoot = (typeof TESTED_PATH_ROOTS)[number];
 
 const isChangedUnder = (
-  { focusPaths = [] }: Template,
-  root: FocusPathRoot,
+  { testedPaths = [] }: Template,
+  root: TestedPathRoot,
   changedFiles: readonly string[]
 ) =>
-  focusPaths.some(
+  testedPaths.some(
     (path) => path.startsWith(root) && changedFiles.some((file) => file.startsWith(path))
   );
 
 /**
  * Select every public template that claims a changed path under the highest-priority root that
- * matches. Internal templates such as the benchmarks inherit `focusPaths` from the template they
+ * matches. Internal templates such as the benchmarks inherit `testedPaths` from the template they
  * extend, so they are never picked here.
  */
 export function selectFocusSandboxes(changedFiles: readonly string[]): TemplateKey[] {
-  for (const root of FOCUS_PATH_ROOTS) {
+  for (const root of TESTED_PATH_ROOTS) {
     const sandboxes = (Object.entries(allTemplates) as [TemplateKey, Template][])
       .filter(
         ([, template]) => !template.isInternal && isChangedUnder(template, root, changedFiles)

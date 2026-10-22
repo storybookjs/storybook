@@ -483,6 +483,50 @@ export const Shortcut = meta.story({
     children: 'Button',
     shortcut: ['Control', 'Shift', 'H'],
   },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole('button')).toHaveAttribute(
+      'aria-keyshortcuts',
+      'Control+Shift+H'
+    );
+  },
+});
+
+/**
+ * When the manager disables keyboard shortcuts, it sets `data-shortcuts-enabled="false"` on the
+ * body. Buttons then stop showing and announcing their shortcut.
+ */
+export const ShortcutWhenShortcutsDisabled = meta.story({
+  args: {
+    ariaLabel: false,
+    children: 'Button',
+    tooltip: 'Save',
+    shortcut: ['Control', 'Shift', 'H'],
+  },
+  beforeEach: () => {
+    const previous = document.body.getAttribute('data-shortcuts-enabled');
+    document.body.setAttribute('data-shortcuts-enabled', 'false');
+    return () => {
+      if (previous === null) {
+        document.body.removeAttribute('data-shortcuts-enabled');
+      } else {
+        document.body.setAttribute('data-shortcuts-enabled', previous);
+      }
+    };
+  },
+  play: async ({ canvas, step, userEvent }) => {
+    const button = canvas.getByRole('button');
+    await expect(button).not.toHaveAttribute('aria-keyshortcuts');
+
+    await userEvent.tab();
+    await expect(button).toHaveFocus();
+    await expect(await screen.findByRole('tooltip')).toHaveTextContent(/^Save$/);
+    await userEvent.keyboard('{Escape}');
+
+    await step('Shortcut returns when shortcuts are enabled again', async () => {
+      document.body.setAttribute('data-shortcuts-enabled', 'true');
+      await waitFor(() => expect(button).toHaveAttribute('aria-keyshortcuts', 'Control+Shift+H'));
+    });
+  },
 });
 
 export const ShortcutAndTooltip = meta.story({

@@ -1,5 +1,5 @@
 import type { FC, ReactNode, SyntheticEvent } from 'react';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 
 import { Button, ScrollArea, TabsView } from 'storybook/internal/components';
 import { Location, Route } from 'storybook/internal/router';
@@ -96,15 +96,17 @@ const Pages: FC<{
       });
     }
 
-    tabsToInclude.push({
-      id: 'shortcuts',
-      title: 'Keyboard shortcuts',
-      children: (
-        <RouteWrapper path="shortcuts">
-          <ShortcutsPage key="shortcuts" />
-        </RouteWrapper>
-      ),
-    });
+    if (enableShortcuts) {
+      tabsToInclude.push({
+        id: 'shortcuts',
+        title: 'Keyboard shortcuts',
+        children: (
+          <RouteWrapper path="shortcuts">
+            <ShortcutsPage key="shortcuts" />
+          </RouteWrapper>
+        ),
+      });
+    }
 
     if (enableWhatsNew) {
       tabsToInclude.push({
@@ -119,7 +121,7 @@ const Pages: FC<{
     }
 
     return tabsToInclude;
-  }, [enableWhatsNew]);
+  }, [enableShortcuts, enableWhatsNew]);
 
   return (
     <Location>
@@ -160,6 +162,15 @@ const SettingsPages: FC = () => {
   const api = useStorybookApi();
   const state = useStorybookState();
   const changeTab = (tab: string) => api.changeSettingsTab(tab);
+
+  // The shortcuts page is hidden when shortcuts are disabled, so send direct visits to the About page.
+  const isHiddenShortcutsPage =
+    !state.ui.enableShortcuts && !!state.path?.includes('settings/shortcuts');
+  useEffect(() => {
+    if (isHiddenShortcutsPage) {
+      api.changeSettingsTab('about');
+    }
+  }, [api, isHiddenShortcutsPage]);
 
   return (
     <Pages

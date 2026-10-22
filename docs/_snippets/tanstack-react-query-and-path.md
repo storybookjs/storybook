@@ -1,3 +1,37 @@
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Route } from './Page';
+
+const meta = preview.meta({
+  parameters: {
+    tanstack: {
+      router: {
+        route: Route,
+      },
+    },
+  },
+});
+
+export const WithHash = meta.story({
+  parameters: {
+    tanstack: {
+      // 👇 Provide the URL fragment (hash) for the route
+      router: { path: '/#section-name' },
+    },
+  },
+});
+
+export const WithSearch = meta.story({
+  parameters: {
+    tanstack: {
+      // 👇 Provide the query string for the route
+      router: { query: { tab: 'details', page: '2' } },
+    },
+  },
+});
+```
+
 ```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/tanstack-react';
 
@@ -33,38 +67,4 @@ export const WithSearch: Story = {
     },
   },
 };
-```
-
-```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { Route } from './Page';
-
-const meta = preview.meta({
-  parameters: {
-    tanstack: {
-      router: {
-        route: Route,
-      },
-    },
-  },
-});
-
-export const WithHash = meta.story({
-  parameters: {
-    tanstack: {
-      // 👇 Provide the URL fragment (hash) for the route
-      router: { path: '/#section-name' },
-    },
-  },
-});
-
-export const WithSearch = meta.story({
-  parameters: {
-    tanstack: {
-      // 👇 Provide the query string for the route
-      router: { query: { tab: 'details', page: '2' } },
-    },
-  },
-});
 ```

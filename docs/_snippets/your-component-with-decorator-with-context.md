@@ -1,14 +1,13 @@
-```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
 <script module>
   import { setContext } from 'svelte';
 
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
+  import preview from '../.storybook/preview';
 
   import YourComponent from './YourComponent.svelte';
   import MarginDecorator from './MarginDecorator.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     component: YourComponent,
     decorators: [
       (story, { globals }) => {
@@ -21,16 +20,17 @@
 </script>
 ```
 
-```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
   import { setContext } from 'svelte';
 
-  import preview from '../.storybook/preview';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import YourComponent from './YourComponent.svelte';
   import MarginDecorator from './MarginDecorator.svelte';
 
-  const { Story } = preview.meta({
+  const { Story } = defineMeta({
     component: YourComponent,
     decorators: [
       (story, { globals }) => {
@@ -58,17 +58,16 @@
 </div>
 ```
 
-```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
 <script module lang="ts">
   import { setContext } from 'svelte';
 
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
+  import preview from '../.storybook/preview';
 
   import YourComponent from './YourComponent.svelte';
   import MarginDecorator from './MarginDecorator.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     component: YourComponent,
     decorators: [
       (story, { globals }) => {
@@ -81,16 +80,17 @@
 </script>
 ```
 
-```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module lang="ts">
   import { setContext } from 'svelte';
 
-  import preview from '../.storybook/preview';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import YourComponent from './YourComponent.svelte';
   import MarginDecorator from './MarginDecorator.svelte';
 
-  const { Story } = preview.meta({
+  const { Story } = defineMeta({
     component: YourComponent,
     decorators: [
       (story, { globals }) => {

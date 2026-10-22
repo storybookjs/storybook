@@ -1,28 +1,3 @@
-```ts filename="Button.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
-// ...rest of story file
-
-export const IndividualA11yRulesExample: Story = {
-  parameters: {
-    a11y: {
-      config: {
-        rules: [
-          {
-            // The autocomplete rule will not run based on the CSS selector provided
-            id: 'autocomplete-valid',
-            selector: '*:not([autocomplete="nope"])',
-          },
-          {
-            // Setting the enabled option to false will disable checks for this particular rule on all stories.
-            id: 'image-alt',
-            enabled: false,
-          },
-        ],
-      },
-    },
-  },
-};
-```
-
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
@@ -54,10 +29,16 @@ export const IndividualA11yRulesExample = meta.story({
 });
 ```
 
-```js filename="Button.stories.js" renderer="common" language="js" tabTitle="CSF 3"
-// ...rest of story file
+```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
 
-export const IndividualA11yRulesExample = {
+import Button from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const IndividualA11yRulesExample = meta.story({
   parameters: {
     a11y: {
       config: {
@@ -76,24 +57,22 @@ export const IndividualA11yRulesExample = {
       },
     },
   },
-};
+});
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-  import Button from './Button.svelte';
+```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
 
-  const { Story } = defineMeta({
-    component: Button,
-  });
-</script>
+import Button from './Button';
 
-<Story
-  name="IndividualA11yRulesExample"
-  parameters={{
+const meta = preview.meta({
+  component: Button,
+});
+
+export const IndividualA11yRulesExample = meta.story({
+  parameters: {
     a11y: {
       config: {
         rules: [
@@ -110,8 +89,8 @@ export const IndividualA11yRulesExample = {
         ],
       },
     },
-  }}
-/>
+  },
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
@@ -148,7 +127,7 @@ export const IndividualA11yRulesExample = {
 />
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -217,17 +196,21 @@ export const IndividualA11yRulesExample = {
 />
 ```
 
-```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
-import Button from './Button';
+  import Button from './Button.svelte';
 
-const meta = preview.meta({
-  component: Button,
-});
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
 
-export const IndividualA11yRulesExample = meta.story({
-  parameters: {
+<Story
+  name="IndividualA11yRulesExample"
+  parameters={{
     a11y: {
       config: {
         rules: [
@@ -244,41 +227,8 @@ export const IndividualA11yRulesExample = meta.story({
         ],
       },
     },
-  },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import Button from './Button';
-
-const meta = preview.meta({
-  component: Button,
-});
-
-export const IndividualA11yRulesExample = meta.story({
-  parameters: {
-    a11y: {
-      config: {
-        rules: [
-          {
-            // The autocomplete rule will not run based on the CSS selector provided
-            id: 'autocomplete-valid',
-            selector: '*:not([autocomplete="nope"])',
-          },
-          {
-            // Setting the enabled option to false will disable checks for this particular rule on all stories.
-            id: 'image-alt',
-            enabled: false,
-          },
-        ],
-      },
-    },
-  },
-});
+  }}
+/>
 ```
 
 ```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
@@ -345,6 +295,114 @@ export const IndividualA11yRulesExample = meta.story({
 });
 ```
 
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+});
+
+export const IndividualA11yRulesExample = meta.story({
+  parameters: {
+    a11y: {
+      config: {
+        rules: [
+          {
+            // The autocomplete rule will not run based on the CSS selector provided
+            id: 'autocomplete-valid',
+            selector: '*:not([autocomplete="nope"])',
+          },
+          {
+            // Setting the enabled option to false will disable checks for this particular rule on all stories.
+            id: 'image-alt',
+            enabled: false,
+          },
+        ],
+      },
+    },
+  },
+});
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+});
+
+export const IndividualA11yRulesExample = meta.story({
+  parameters: {
+    a11y: {
+      config: {
+        rules: [
+          {
+            // The autocomplete rule will not run based on the CSS selector provided
+            id: 'autocomplete-valid',
+            selector: '*:not([autocomplete="nope"])',
+          },
+          {
+            // Setting the enabled option to false will disable checks for this particular rule on all stories.
+            id: 'image-alt',
+            enabled: false,
+          },
+        ],
+      },
+    },
+  },
+});
+```
+
+```js filename="Button.stories.js" renderer="common" language="js" tabTitle="CSF 3"
+// ...rest of story file
+
+export const IndividualA11yRulesExample = {
+  parameters: {
+    a11y: {
+      config: {
+        rules: [
+          {
+            // The autocomplete rule will not run based on the CSS selector provided
+            id: 'autocomplete-valid',
+            selector: '*:not([autocomplete="nope"])',
+          },
+          {
+            // Setting the enabled option to false will disable checks for this particular rule on all stories.
+            id: 'image-alt',
+            enabled: false,
+          },
+        ],
+      },
+    },
+  },
+};
+```
+
+```ts filename="Button.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// ...rest of story file
+
+export const IndividualA11yRulesExample: Story = {
+  parameters: {
+    a11y: {
+      config: {
+        rules: [
+          {
+            // The autocomplete rule will not run based on the CSS selector provided
+            id: 'autocomplete-valid',
+            selector: '*:not([autocomplete="nope"])',
+          },
+          {
+            // Setting the enabled option to false will disable checks for this particular rule on all stories.
+            id: 'image-alt',
+            enabled: false,
+          },
+        ],
+      },
+    },
+  },
+};
+```
+
 ```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 // ...rest of story file
 
@@ -393,62 +451,4 @@ export const IndividualA11yRulesExample: Story = {
     },
   },
 };
-```
-
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'demo-button',
-});
-
-export const IndividualA11yRulesExample = meta.story({
-  parameters: {
-    a11y: {
-      config: {
-        rules: [
-          {
-            // The autocomplete rule will not run based on the CSS selector provided
-            id: 'autocomplete-valid',
-            selector: '*:not([autocomplete="nope"])',
-          },
-          {
-            // Setting the enabled option to false will disable checks for this particular rule on all stories.
-            id: 'image-alt',
-            enabled: false,
-          },
-        ],
-      },
-    },
-  },
-});
-```
-
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'demo-button',
-});
-
-export const IndividualA11yRulesExample = meta.story({
-  parameters: {
-    a11y: {
-      config: {
-        rules: [
-          {
-            // The autocomplete rule will not run based on the CSS selector provided
-            id: 'autocomplete-valid',
-            selector: '*:not([autocomplete="nope"])',
-          },
-          {
-            // Setting the enabled option to false will disable checks for this particular rule on all stories.
-            id: 'image-alt',
-            enabled: false,
-          },
-        ],
-      },
-    },
-  },
-});
 ```

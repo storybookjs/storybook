@@ -3,12 +3,16 @@ import { join } from 'pathe';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// eslint-disable-next-line depend/ban-dependencies
+import { globSync } from 'glob';
+
 import { prompt } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { NPMProxy } from './NPMProxy.ts';
+import type { PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
@@ -23,6 +27,8 @@ vi.mock('storybook/internal/node-logger', () => ({
 }));
 
 vi.mock(import('../utils/command.ts'), { spy: true });
+// eslint-disable-next-line depend/ban-dependencies
+vi.mock(import('glob'), { spy: true });
 
 const mockedExecuteCommand = vi.mocked(executeCommand);
 
@@ -95,6 +101,51 @@ describe('NPM Proxy', () => {
         );
       } finally {
         await rm(workspaceRoot, { recursive: true, force: true });
+      }
+    });
+
+    it('matches the workspace root when paths are win32-shaped and glob is posix', async () => {
+      // The workspace match must survive the two sides of the comparison differing in path
+      // shape: `packageJsonPaths` carries win32 separators and casing while glob may hand back
+      // a posix-shaped string. node:path's `dirname` cannot split a win32 string on Linux, so
+      // the expected cwd below is '.' — the point is that the root matched at all instead of
+      // falling back to the package's own directory.
+      const rootPackageJsonPath = 'D:\\ws\\package.json';
+      const appPackageJsonPath = 'D:\\ws\\packages\\app\\package.json';
+
+      npmProxy = new NPMProxy();
+      npmProxy.packageJsonPaths = [appPackageJsonPath, rootPackageJsonPath];
+
+      const rootPackageJson: PackageJsonWithDepsAndDevDeps = {
+        workspaces: ['packages/*'],
+        dependencies: {},
+        devDependencies: {},
+      };
+      const appPackageJson: PackageJsonWithDepsAndDevDeps = {
+        dependencies: {},
+        devDependencies: {},
+      };
+      vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation((path) =>
+        path === rootPackageJsonPath ? rootPackageJson : appPackageJson
+      );
+      vi.mocked(globSync).mockReturnValueOnce(['d:/ws/packages/app/package.json']);
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(async (fn: any) => {
+        await Promise.resolve(fn());
+      });
+      mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+      try {
+        await npmProxy.installDependencies({ force: true });
+
+        expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            command: 'npm',
+            args: ['install', '--force'],
+            cwd: '.',
+          })
+        );
+      } finally {
+        vi.restoreAllMocks();
       }
     });
 

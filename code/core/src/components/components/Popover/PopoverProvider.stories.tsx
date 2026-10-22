@@ -4,6 +4,7 @@ import { expect, fn, screen, userEvent, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import preview from '../../../../../.storybook/preview.tsx';
+import { Button } from '../Button/Button.tsx';
 import { OverlayTriggerDecorator, Trigger } from '../shared/overlayHelpers.tsx';
 import { PopoverProvider } from './PopoverProvider.tsx';
 
@@ -260,5 +261,90 @@ export const WithLongContent = meta.story({
         </p>
       </div>
     ),
+  },
+});
+
+export const EscapeDismissalSuppressesFocusRestoreTooltip = meta.story({
+  args: {
+    children: <Button ariaLabel="Trigger button">Trigger</Button>,
+    popover: 'Popover content',
+  },
+  render: (args) => (
+    <div>
+      <PopoverProvider {...args} />
+      <Button ariaLabel="Other button">Other</Button>
+    </div>
+  ),
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByRole('button', { name: 'Trigger button' });
+
+    await step('Open popover with click', async () => {
+      await userEvent.click(trigger);
+      await expect(screen.getByText('Popover content')).toBeInTheDocument();
+    });
+
+    await step('Dismiss with Escape: the trigger tooltip must not open', async () => {
+      await userEvent.keyboard('{Escape}');
+      await expect(screen.queryByText('Popover content')).not.toBeInTheDocument();
+      await expect(screen.queryByTestId('tooltip')).not.toBeInTheDocument();
+    });
+
+    await step('The next Escape reaches the document instead of being swallowed', async () => {
+      const shortcutListener = fn();
+      document.addEventListener('keydown', shortcutListener);
+      try {
+        await userEvent.keyboard('{Escape}');
+        await expect(shortcutListener).toHaveBeenCalledTimes(1);
+      } finally {
+        document.removeEventListener('keydown', shortcutListener);
+      }
+    });
+  },
+});
+
+export const KeyboardFocusTooltipStillOpens = meta.story({
+  args: {
+    children: <Button ariaLabel="Trigger button">Trigger</Button>,
+    popover: 'Popover content',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await userEvent.tab();
+    await expect(canvas.getByRole('button', { name: 'Trigger button' })).toHaveFocus();
+    await expect(await screen.findByTestId('tooltip')).toBeInTheDocument();
+  },
+});
+
+export const FocusRestoreSuppressionIsOnceOnly = meta.story({
+  args: {
+    children: <Button ariaLabel="Trigger button">Trigger</Button>,
+    popover: 'Popover content',
+  },
+  render: (args) => (
+    <div>
+      <PopoverProvider {...args} />
+      <Button ariaLabel="Other button">Other</Button>
+    </div>
+  ),
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByRole('button', { name: 'Trigger button' });
+
+    await step('Open and dismiss with Escape: no tooltip', async () => {
+      await userEvent.click(trigger);
+      await expect(screen.getByText('Popover content')).toBeInTheDocument();
+      await userEvent.keyboard('{Escape}');
+      await expect(screen.queryByText('Popover content')).not.toBeInTheDocument();
+      await expect(screen.queryByTestId('tooltip')).not.toBeInTheDocument();
+    });
+
+    await step('A later keyboard refocus still opens the tooltip', async () => {
+      await userEvent.tab();
+      await userEvent.tab({ shift: true });
+      await expect(canvas.getByRole('button', { name: 'Trigger button' })).toHaveFocus();
+      await expect(await screen.findByTestId('tooltip')).toBeInTheDocument();
+    });
   },
 });

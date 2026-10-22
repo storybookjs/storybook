@@ -1,5 +1,5 @@
-import type { DOMAttributes, ReactElement, ReactNode } from 'react';
-import React, { cloneElement, useCallback, useState } from 'react';
+import type { DOMAttributes, FocusEvent, ReactElement, ReactNode } from 'react';
+import React, { cloneElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
 
@@ -7,7 +7,11 @@ import { Pressable } from 'react-aria-components/Pressable';
 import { DialogTrigger } from 'react-aria-components/Dialog';
 import { Popover as PopoverUpstream } from 'react-aria-components/Popover';
 
-import { type PopperPlacement, convertToReactAriaPlacement } from '../shared/overlayHelpers.tsx';
+import {
+  type PopperPlacement,
+  convertToReactAriaPlacement,
+  PopoverDismissalProvider,
+} from '../shared/overlayHelpers.tsx';
 import { Popover } from './Popover.tsx';
 
 export interface PopoverProviderProps {
@@ -85,6 +89,8 @@ export const PopoverProvider = ({
   const placement = convertToReactAriaPlacement(placementProp);
 
   const [isOpen, setIsOpen] = useState(defaultVisible ?? false);
+  const suppressFocusRestoreRef = useRef(false);
+
   const onOpenChange = useCallback(
     (isOpen: boolean) => {
       setIsOpen(isOpen);
@@ -92,6 +98,45 @@ export const PopoverProvider = ({
     },
     [onVisibleChange]
   );
+
+  // The function only reads a ref, so a once-created object keeps identity stable for consumers
+  // that memoize against it.
+  const dismissal = useMemo(
+    () => ({
+      consumeFocusRestoreSuppression: () => {
+        const suppressed = suppressFocusRestoreRef.current;
+        suppressFocusRestoreRef.current = false;
+        return suppressed;
+      },
+    }),
+    []
+  );
+  const handleTriggerBlur = (event: FocusEvent<Element>) => {
+    children.props.onBlur?.(event);
+    suppressFocusRestoreRef.current = false;
+  };
+  // The Escape keydown that dismisses the popover would read as keyboard focus once React Aria
+  // restores focus to the trigger, so suppress the tooltip that restore would open. Observed at
+  // document level in the capture phase so the arming happens before the dismissal and regardless
+  // of which element holds focus; only while the popover is open.
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    const handleDocumentKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        suppressFocusRestoreRef.current = true;
+      }
+    };
+    document.addEventListener('keydown', handleDocumentKeyDown, true);
+    return () => document.removeEventListener('keydown', handleDocumentKeyDown, true);
+  }, [isOpen]);
+  // Typed explicitly so onBlur stays type-checked while aria-haspopup remains allowed: cloneElement
+  // props only inherit the child's DOMAttributes, which does not include ARIA attributes.
+  const triggerProps: DOMAttributes<Element> & { 'aria-haspopup': 'dialog' } = {
+    'aria-haspopup': 'dialog',
+    onBlur: handleTriggerBlur,
+  };
   const onHide = useCallback(() => onOpenChange(false), [onOpenChange]);
 
   return (
@@ -101,16 +146,17 @@ export const PopoverProvider = ({
       onOpenChange={onOpenChange}
       {...props}
     >
-      <Pressable>
-        {
-          /* React-aria does not inject aria-haspopup='dialog' to support legacy screen readers, so we do it ourselves. */
-          cloneElement(
-            children,
-            // @ts-expect-error aria-haspopup is a valid ARIA attribute but cloneElement types are too strict
-            { 'aria-haspopup': 'dialog' }
-          )
-        }
-      </Pressable>
+      <PopoverDismissalProvider value={dismissal}>
+        <Pressable
+          onPressStart={() => {
+            suppressFocusRestoreRef.current = false;
+          }}
+        >
+          {/* React-aria does not inject aria-haspopup='dialog' to support legacy screen readers, so we do it ourselves. */}
+          {/* @ts-expect-error cloneElement widens the element type on return, which Pressable's children reject; the merged props are type-checked at triggerProps above. */}
+          {cloneElement(children, triggerProps)}
+        </Pressable>
+      </PopoverDismissalProvider>
       <PopoverUpstream
         aria-label={ariaLabel}
         placement={placement}

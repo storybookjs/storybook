@@ -648,6 +648,20 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
+  protected async runGetPeerDependencies(
+    packageSpec: string
+  ): Promise<Record<string, string> | undefined> {
+    const result = await executeCommand({
+      command: 'pnpm',
+      args: ['info', packageSpec, 'peerDependencies', '--json'],
+      cwd: this.cwd,
+      stdio: 'pipe',
+    });
+    // pnpm prints nothing when the version has no peer dependencies.
+    const output = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+    return output ? JSON.parse(output) : undefined;
+  }
+
   protected mapDependencies(input: PnpmListOutput, pattern: string[]): InstallationMetadata {
     const acc: Record<string, PackageMetadata[]> = {};
     const existingVersions: Record<string, string[]> = {};

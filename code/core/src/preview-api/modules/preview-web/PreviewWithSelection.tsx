@@ -541,7 +541,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     }
 
     this.mountedRender = render;
-    this.warmFramePool(storyId);
+    this.warmFramePool();
     if (isStoryRender(render)) {
       invariant(!!render.story);
       this.storyRenders.push(render);
@@ -563,22 +563,19 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   }
 
   // With `features.experimentalFramePool`, the pool boots its frames once the first entry renders,
-  // on the story selected, or else the first story.
+  // on the first story of the index: a frame has to boot on some story, and switches anyway.
   private framePoolWarmed = false;
 
-  private warmFramePool(selectedId: StoryId) {
+  private warmFramePool() {
     const pool = getFramePool();
     if (this.framePoolWarmed || !pool || !this.storyStoreValue) {
       return;
     }
     this.framePoolWarmed = true;
     const { entries } = this.storyStoreValue.storyIndex;
-    const storyId =
-      entries[selectedId]?.type === 'story'
-        ? selectedId
-        : Object.values(entries).find((entry) => entry.type === 'story')?.id;
-    if (storyId) {
-      pool.warm(storyId, this.storyStoreValue.userGlobals.get());
+    const first = Object.values(entries).find((entry) => entry.type === 'story');
+    if (first) {
+      pool.warm(first.id, this.storyStoreValue.userGlobals.get());
     }
   }
 

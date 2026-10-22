@@ -1,4 +1,5 @@
 import type { Channel } from 'storybook/internal/channels';
+import { logger } from 'storybook/internal/client-logger';
 import {
   PLAY_FUNCTION_THREW_EXCEPTION,
   STORY_FINISHED,
@@ -36,6 +37,9 @@ import { getFramePool, rendersInFrame } from '../FramePool.ts';
 import { type StoryInFrame, renderInFrame } from './renderInFrame.ts';
 
 const { AbortController } = globalThis;
+
+// How long a teardown waits for an aborted render to end, with `features.experimentalFramePool`.
+const PENDING_TEARDOWN_TIMEOUT = 10_000;
 
 export type RenderPhase =
   | 'preparing'
@@ -623,25 +627,46 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       await this.store.cleanupStory(this.story);
     }
 
+    const unmount = async () => {
+      // When the same story is about to be re-rendered (e.g. after an HMR update), keep
+      // the current DOM mounted until the new render commits: unmounting it here collapses
+      // the document, which makes the browser clamp the scroll position to 0 (#22057).
+      if (!keepRenderedDom) {
+        await this.teardownRender();
+        // A render that never got a canvas never had `location`; another story may still have it.
+        if (this.canvasElement) {
+          this.callbacks.reclaimLocation?.();
+        }
+      }
+    };
+
     // Check if we're done loading/rendering/playing. If not, we may have to reload the page.
     // Wait several ticks that may be needed to handle the abort, then try again.
     // Note that there's a max of 5 nested timeouts before they're no longer "instant".
     for (let i = 0; i < 3; i += 1) {
       if (!this.isPending()) {
-        // When the same story is about to be re-rendered (e.g. after an HMR update), keep
-        // the current DOM mounted until the new render commits: unmounting it here collapses
-        // the document, which makes the browser clamp the scroll position to 0 (#22057).
-        if (!keepRenderedDom) {
-          await this.teardownRender();
-          // A render that never got a canvas never had `location`; another story may still have it.
-          if (this.canvasElement) {
-            this.callbacks.reclaimLocation?.();
-          }
-        }
+        await unmount();
         return;
       }
 
       await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    // With `features.experimentalFramePool`, a reload of this preview reloads every frame of its
+    // pool too, and a frame of the pool must never reload: the aborted render ends instead, at the
+    // next step of its loaders, its mount or its play function that checks the signal.
+    if (globalThis.FEATURES?.experimentalFramePool) {
+      const until = Date.now() + PENDING_TEARDOWN_TIMEOUT;
+      while (this.isPending() && Date.now() < until) {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+      if (this.isPending()) {
+        logger.warn(
+          `Story "${this.id}" was still ${this.phase} ${PENDING_TEARDOWN_TIMEOUT} ms after it was torn down; it is unmounted without reloading the preview.`
+        );
+      }
+      await unmount();
+      return;
     }
 
     // If we still haven't completed, reload the page (iframe) to ensure we have a clean slate

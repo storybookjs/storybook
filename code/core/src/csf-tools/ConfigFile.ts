@@ -1,28 +1,52 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import {
-  type RecastOptions,
-  babelParse,
-  generate,
-  recast,
-  types as t,
-  traverse,
-} from 'storybook/internal/babel';
 import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 import invariant from 'tiny-invariant';
 
 import type { PrintResultType } from './PrintResultType.ts';
-import { createConfigObject } from './ConfigObject.ts';
+import { createConfigObject, locateConfigRoot } from './ConfigObject.ts';
 import {
+  type CsfExpression,
+  type CsfInspection,
+  type CsfListInspection,
   type CsfMutationDiagnostic,
   type CsfMutationResult,
   type CsfObject,
+  type CsfObjectHost,
   type CsfValue,
   createCsfObject,
 } from './CsfObject.ts';
-import { unwrapExpression } from './story-shape/utils.ts';
+import type { CsfPath } from './CsfObjectPath.ts';
+import { literalRoot } from './ObjectRoot.ts';
+import {
+  type E,
+  EstreeParseError,
+  type Node,
+  isIdentifier,
+  isStringLiteral,
+  locationOf,
+  parseExpression,
+  staticKey,
+  unwrapExpression,
+  walk,
+} from './estree/ast.ts';
+import {
+  SourceEditor,
+  appendStatement,
+  appendToList,
+  printValue,
+  removeFromList,
+} from './estree/editor.ts';
+import {
+  type ImportBindings,
+  removeImport,
+  setImport,
+  setRequireImport,
+} from './estree/imports.ts';
+import { isDeclared } from './estree/scope.ts';
+import { findVarInitialization } from './findVarInitialization.ts';
 
 export interface CallArgumentsOptions {
   importedName: string;
@@ -30,62 +54,58 @@ export interface CallArgumentsOptions {
   moduleNames: Iterable<string>;
 }
 
+// Only logged: a mutation of such an export fails with a diagnostic of its own.
 const getCsfParsingErrorMessage = ({
+  fileName,
   expectedType,
   foundType,
   node,
 }: {
+  fileName: string | undefined;
   expectedType: string;
   foundType: string | undefined;
   node: any | undefined;
 }) => {
   return dedent`
-      CSF Parsing error: Expected '${expectedType}' but found '${foundType}' instead in '${node?.type}'.
+      CSF Parsing error in ${fileName ?? 'a config file'}: Expected '${expectedType}' but found '${foundType}' instead in '${node?.type}'.
     `;
 };
 
-const propKey = (p: t.ObjectProperty) => {
-  if (t.isIdentifier(p.key)) {
-    return p.key.name;
-  }
-
-  if (t.isStringLiteral(p.key)) {
-    return p.key.value;
-  }
-  return null;
-};
-
-const _getPath = (path: string[], node: t.Node): t.Node | undefined => {
+const _getPath = (path: string[], node: Node | null | undefined): Node | undefined => {
   if (path.length === 0) {
-    return node;
+    return node ?? undefined;
   }
-  if (t.isObjectExpression(node)) {
+  if (node?.type === 'ObjectExpression') {
     const [first, ...rest] = path;
-    const field = (node.properties as t.ObjectProperty[]).find((p) => propKey(p) === first);
+    const field = node.properties.find((p) => staticKey(p) === first) as
+      | E.ObjectProperty
+      | undefined;
     if (field) {
-      return _getPath(rest, (field as t.ObjectProperty).value);
+      return _getPath(rest, field.value);
     }
   }
   return undefined;
 };
 
-const _getPathProperties = (path: string[], node: t.Node): t.ObjectProperty[] | undefined => {
+const _getPathProperties = (path: string[], node: Node): E.ObjectProperty[] | undefined => {
   if (path.length === 0) {
-    if (t.isObjectExpression(node)) {
-      return node.properties as t.ObjectProperty[];
+    if (node.type === 'ObjectExpression') {
+      return node.properties as E.ObjectProperty[];
     }
     throw new Error('Expected object expression');
   }
-  if (t.isObjectExpression(node)) {
+  if (node.type === 'ObjectExpression') {
     const [first, ...rest] = path;
-    const field = (node.properties as t.ObjectProperty[]).find((p) => propKey(p) === first);
+    const field = node.properties.find((p) => staticKey(p) === first) as
+      | E.ObjectProperty
+      | undefined;
     if (field) {
       // FXIME handle spread etc.
       if (rest.length === 0) {
-        return node.properties as t.ObjectProperty[];
+        return node.properties as E.ObjectProperty[];
       }
 
-      return _getPathProperties(rest, (field as t.ObjectProperty).value);
+      return _getPathProperties(rest, field.value);
     }
   }
   return undefined;
@@ -93,44 +113,25 @@ const _getPathProperties = (path: string[], node: t.Node): t.ObjectProperty[] | 
 
 const _findVarDeclarator = (
   identifier: string,
-  program: t.Program
-): t.VariableDeclarator | null | undefined => {
-  let declarator: t.VariableDeclarator | null | undefined = null;
-  let declarations: t.VariableDeclarator[] | null = null;
-
-  program.body.find((node: t.Node) => {
-    if (t.isVariableDeclaration(node)) {
-      declarations = node.declarations;
-    } else if (t.isExportNamedDeclaration(node) && t.isVariableDeclaration(node.declaration)) {
-      declarations = node.declaration.declarations;
+  program: E.Program
+): E.VariableDeclarator | undefined => {
+  for (const statement of program.body) {
+    const declaration =
+      statement.type === 'ExportNamedDeclaration' ? statement.declaration : statement;
+    if (declaration?.type !== 'VariableDeclaration') {
+      continue;
     }
-
-    return (
-      declarations &&
-      declarations.find((decl: t.VariableDeclarator) => {
-        if (
-          t.isVariableDeclarator(decl) &&
-          t.isIdentifier(decl.id) &&
-          decl.id.name === identifier
-        ) {
-          declarator = decl;
-          return true; // stop looking
-        }
-        return false;
-      })
-    );
-  });
-  return declarator;
-};
-
-const _findVarInitialization = (identifier: string, program: t.Program) => {
-  const declarator = _findVarDeclarator(identifier, program);
-  return declarator?.init;
+    const declarator = declaration.declarations.find((decl) => isIdentifier(decl.id, identifier));
+    if (declarator) {
+      return declarator;
+    }
+  }
+  return undefined;
 };
 
 export class ConfigFile implements CsfObject {
   /**
-   * Identify the config, meta, story, annotation, or call argument this editor represents.
+   * Identify the config, meta, story, or call argument this editor represents.
    *
    * @example
    * ```ts
@@ -160,8 +161,24 @@ export class ConfigFile implements CsfObject {
   }
 
   /**
-   * Read diagnostics from unsupported discovery, reads, or mutations. `writeConfig` refuses to
-   * write a config with diagnostics, even if another edit succeeded.
+   * Find the config object literal in the current parse, or `undefined` for a config made of named
+   * exports or one whose config object cannot be located. It is the file's own node, not a copy: do
+   * not change it, and read it again after a mutation, which parses the file again.
+   *
+   * @example
+   * ```ts
+   * const config = loadConfig('export default definePreview({ tags: [] });').parse();
+   * textOf(config.node!); // '{ tags: [] }'
+   * ```
+   */
+  get node(): E.ObjectExpression | undefined {
+    const located = locateConfigRoot(this, 'read');
+    return located.ok ? located.root.node : undefined;
+  }
+
+  /**
+   * Read diagnostics from unsupported discovery or mutations. `writeConfig` refuses to write a
+   * config with diagnostics, even if another edit succeeded.
    *
    * @example
    * ```ts
@@ -176,7 +193,10 @@ export class ConfigFile implements CsfObject {
   }
 
   /**
-   * Read a copy of the Babel expression at a property path. Missing fields return `undefined`.
+   * Read a detached copy of the expression at a path of keys and indexes, such as `['addons', 0]`.
+   * Missing fields return `undefined`; so does a path that does not fit a value, such as a key into
+   * an array, or one a spread, computed key, or duplicate field leaves unproven. `inspect` tells
+   * these apart.
    *
    * @example
    * ```ts
@@ -185,14 +205,33 @@ export class ConfigFile implements CsfObject {
    * object.get(['missing']); // undefined
    * ```
    */
-  get(path: readonly string[]): t.Expression | undefined {
-    const editor = this._editor();
-    return editor.ok ? editor.object.get(path) : undefined;
+  get(path: CsfPath): CsfExpression | undefined {
+    const reader = this._reader();
+    return reader.ok ? reader.object.get(path) : undefined;
   }
 
   /**
-   * Read plain values without executing code. Missing fields return `undefined`; unresolved
-   * expressions also return `undefined` and add a mutation diagnostic.
+   * Read the expression at a path like `get`, telling a missing field from one that cannot
+   * be read statically, and why.
+   *
+   * @example
+   * ```ts
+   * const config = loadConfig('export default { tags: [], args: { ...base } };').parse();
+   * config.inspect(['tags']).kind; // 'value'
+   * config.inspect(['missing']); // { kind: 'missing' }
+   * config.inspect(['args', 'size']).kind; // 'unreadable'
+   * ```
+   */
+  inspect(path: CsfPath): CsfInspection {
+    const reader = this._reader();
+    return reader.ok
+      ? reader.object.inspect(path)
+      : { kind: 'unreadable', diagnostic: { ...reader.diagnostic, path: [...path] } };
+  }
+
+  /**
+   * Read plain values without executing code, following local constants. Missing fields and
+   * expressions it cannot evaluate, such as calls and functions, return `undefined`.
    *
    * @example
    * ```ts
@@ -202,14 +241,14 @@ export class ConfigFile implements CsfObject {
    * object.getValue(['missing']); // undefined
    * ```
    */
-  getValue(path: readonly string[]): CsfValue {
-    const editor = this._editor();
-    return editor.ok ? editor.object.getValue(path) : undefined;
+  getValue(path: CsfPath): CsfValue {
+    const reader = this._reader();
+    return reader.ok ? reader.object.getValue(path) : undefined;
   }
 
   /**
-   * Set a plain value or Babel expression, creating missing parents. Accepts nested arrays and
-   * objects; top-level expression-shaped objects are interpreted as AST nodes.
+   * Set a plain value or an expression from `get`, `parseExpression` or `parseModule`, creating
+   * missing parents at keys. An index replaces the element or argument it addresses.
    *
    * @example
    * ```ts
@@ -219,33 +258,35 @@ export class ConfigFile implements CsfObject {
    * object.getValue(['parameters']); // { a11y: { test: 'todo', enabled: true } }
    * ```
    */
-  set(path: readonly string[], value: CsfValue | t.Expression): CsfMutationResult {
+  set(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
     return this._mutate((object) => object.set(path, value));
   }
 
   /**
-   * Replace a value using its live Babel expression. Reused nodes preserve their source formatting.
-   * Return a new node, or `undefined` to leave the value unchanged. Do not mutate or retain the input
-   * node: such changes bypass change tracking and diagnostics.
+   * Replace a value derived from its current expression. Return a new expression, or `undefined`
+   * (or the input) to leave the value unchanged.
    *
    * @example
    * ```ts
    * const object = loadConfig("export default { tags: ['docs'] };").parse();
    * object.transform(['tags'], (value) =>
-   *   t.arrayExpression([t.spreadElement(value), t.stringLiteral('autodocs')])
+   *   parseExpression(`[...${placeableTextOf(value)}, 'autodocs']`)
    * ); // { ok: true, changed: true }
    * object.getValue(['tags']); // ['docs', 'autodocs']
    * ```
    */
   transform(
-    path: readonly string[],
-    derive: (value: t.Expression) => t.Expression | undefined
+    path: CsfPath,
+    derive: (value: CsfExpression) => CsfExpression | undefined
   ): CsfMutationResult {
     return this._mutate((object) => object.transform(path, derive));
   }
 
   /**
-   * Remove a property and recursively clean up empty parents. Missing fields are a no-op.
+   * Remove a property and recursively clean up the objects it leaves empty. At an index, remove
+   * that one element or argument and keep the list, also when it is left empty. Missing fields are
+   * a no-op. An index on a field that holds a call addresses the call's arguments, whatever the
+   * callee, such as `filter` in `[...].filter(Boolean)`.
    *
    * @example
    * ```ts
@@ -255,7 +296,7 @@ export class ConfigFile implements CsfObject {
    * object.remove(['parameters']); // { ok: true, changed: false }
    * ```
    */
-  remove(path: readonly string[]): CsfMutationResult {
+  remove(path: CsfPath): CsfMutationResult {
     return this._mutate((object) => object.remove(path));
   }
 
@@ -270,7 +311,7 @@ export class ConfigFile implements CsfObject {
    * object.getValue(['a11y']); // { context: '#root' }
    * ```
    */
-  rename(path: readonly string[], name: string): CsfMutationResult {
+  rename(path: CsfPath, name: string): CsfMutationResult {
     return this._mutate((object) => object.rename(path, name));
   }
 
@@ -287,7 +328,7 @@ export class ConfigFile implements CsfObject {
    * object.getValue(['globals']); // undefined
    * ```
    */
-  move(from: readonly string[], to: readonly string[]): CsfMutationResult {
+  move(from: CsfPath, to: CsfPath): CsfMutationResult {
     return this._mutate((object) => object.move(from, to));
   }
 
@@ -303,245 +344,347 @@ export class ConfigFile implements CsfObject {
    * object.getValue(['showNav']); // undefined
    * ```
    */
-  group(path: readonly string[], names: readonly string[]): CsfMutationResult {
+  group(path: CsfPath, names: readonly string[]): CsfMutationResult {
     return this._mutate((object) => object.group(path, names));
   }
 
-  _mutate(operation: (object: CsfObject) => CsfMutationResult): CsfMutationResult {
-    const editor = this._editor();
-    return editor.ok === true
-      ? operation(editor.object)
-      : { ok: false, changed: false, diagnostic: editor.diagnostic };
+  /**
+   * Apply mutations together: when `fn` throws, returns `false`, or any mutation in it returns
+   * `{ ok: false }`, every edit made in it is rolled back, those of array and import helpers too.
+   * Its diagnostics stay, to report why. Returns whether the edits were kept.
+   *
+   * @example
+   * ```ts
+   * const config = loadConfig("export default { layout: 'centered', tags: ['a'] };").parse();
+   * config.transaction(() => {
+   *   config.remove(['layout']);
+   *   config.set(['tags', 'value'], 'b');
+   * }); // false: `tags` is an array, so the removal is rolled back too
+   * ```
+   */
+  transaction(fn: () => boolean | void): boolean {
+    return this.editor.transaction(fn);
   }
 
-  _editor() {
+  // The transaction running, if any, resets the flag when it rolls back, also when it was started
+  // on `editor` directly.
+  _markChanged() {
+    if (!this._changed) {
+      this._changed = true;
+      this.editor._onRollback(() => {
+        this._changed = false;
+      });
+    }
+  }
+
+  /**
+   * Add a plain value or an expression after the last element of the array at a path, or the last
+   * argument of the call at an item path such as `['loaders', 0]`. A missing array is created,
+   * carrying the spreads before it forward like a missing parent. A field is a list only when it
+   * holds an array literal: one that holds a call, such as `[...].filter(Boolean)`, is refused, as
+   * an argument of `filter` would be no entry. A method, such as `addons() {}`, is refused as the
+   * `Property` it is written as.
+   *
+   * @example
+   * ```ts
+   * const config = loadConfig("export default { addons: ['a'] };").parse();
+   * config.append(['addons'], 'b'); // { ok: true, changed: true }
+   * config.getValue(['addons']); // ['a', 'b']
+   * ```
+   */
+  append(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
+    return this._mutate((object) => object.append(path, value));
+  }
+
+  /**
+   * Add a plain value or an expression before the first element of the array at a path, or the
+   * first argument of the call at an item path. A missing array is created, and a field holding a
+   * call refused, like for `append`.
+   *
+   * @example
+   * ```ts
+   * const config = loadConfig("export default { addons: ['a'] };").parse();
+   * config.prepend(['addons'], 'b'); // { ok: true, changed: true }
+   * config.getValue(['addons']); // ['b', 'a']
+   * ```
+   */
+  prepend(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
+    return this._mutate((object) => object.prepend(path, value));
+  }
+
+  /**
+   * Read what `append` and `prepend` would act on at a path, by the rule they apply, without
+   * editing or reporting: the list, `missing` when they would create it, or the diagnostic they
+   * would refuse it with. A refusal of the added value is not foreseen. The list is a detached copy
+   * of the array literal the field resolves to, through type assertions and a local constant only
+   * the config refers to, or of the call at an item path.
+   *
+   * @example
+   * ```ts
+   * const config = loadConfig('export default { addons: [a], tags: tags() };').parse();
+   * config.inspectList(['addons']).kind; // 'list'
+   * config.inspectList(['loaders']); // { kind: 'missing' }
+   * config.inspectList(['tags']).kind; // 'refused'
+   * ```
+   */
+  inspectList(path: CsfPath): CsfListInspection {
     const editor = createConfigObject(
       this,
-      (diagnostic) => this._mutationDiagnostics.push(diagnostic),
-      () => {
-        this._changed = true;
-        this._exports = {};
-        this._exportDecls = {};
-        this.parse();
-      }
+      'mutate',
+      () => {},
+      () => {}
     );
-    if (editor.ok === false) {
-      this._mutationDiagnostics.push(editor.diagnostic);
-    }
-    return editor;
+    return editor.ok === true
+      ? editor.object.inspectList(path)
+      : { kind: 'refused', diagnostic: editor.diagnostic };
   }
 
-  _ast: t.File;
+  _mutate(operation: (object: CsfObject) => CsfMutationResult): CsfMutationResult {
+    const editor = createConfigObject(
+      this,
+      'mutate',
+      (diagnostic) => this._mutationDiagnostics.push(diagnostic),
+      () => {
+        this._markChanged();
+      }
+    );
+    return editor.ok === true ? operation(editor.object) : this._reject(editor.diagnostic);
+  }
 
-  _code: string;
+  _reject(diagnostic: CsfMutationDiagnostic): CsfMutationResult {
+    this._mutationDiagnostics.push(diagnostic);
+    this.editor._refuse();
+    return { ok: false, changed: false, diagnostic };
+  }
 
-  _exports: Record<string, t.Expression> = {};
+  _reader() {
+    return createConfigObject(
+      this,
+      'read',
+      () => {},
+      () => {}
+    );
+  }
+
+  /** Edit the file's source directly, for edits that have no path. Commit to parse it again. */
+  editor: SourceEditor;
+
+  _exports: Record<string, Node> = {};
 
   // FIXME: this is a hack. this is only used in the case where the user is
   // modifying a named export that's a scalar. The _exports map is not suitable
   // for that. But rather than refactor the whole thing, we just use this as a stopgap.
-  _exportDecls: Record<string, t.VariableDeclarator | t.FunctionDeclaration> = {};
+  _exportDecls: Record<string, E.VariableDeclarator | E.Function> = {};
 
-  _exportsObject: t.ObjectExpression | undefined;
-
-  _quotes: 'single' | 'double' | undefined;
+  _exportsObject: E.ObjectExpression | undefined;
 
   fileName?: string;
 
   hasDefaultExport = false;
 
-  constructor(ast: t.File, code: string, fileName?: string) {
-    this._ast = ast;
-    this._code = code;
+  constructor(code: string, fileName?: string) {
+    this.editor = new SourceEditor(code, fileName, () => {
+      this._exports = {};
+      this._exportDecls = {};
+      this._exportsObject = undefined;
+      this.hasDefaultExport = false;
+      this.parse();
+    });
     this.fileName = fileName;
   }
 
-  _parseExportsObject(exportsObject: t.ObjectExpression) {
-    this._exportsObject = exportsObject;
-    (exportsObject.properties as t.ObjectProperty[]).forEach((p) => {
-      const exportName = propKey(p);
-      if (exportName) {
-        const exportVal = this._resolveDeclaration(p.value as t.Node);
-        this._exports[exportName] = exportVal as t.Expression;
-      }
-    });
+  /** Read the program of the current parse. */
+  get program(): E.Program {
+    return this.editor.program;
   }
 
-  /** Unwraps TS assertions/satisfies from a node, to get the underlying node. */
-  _unwrap = (node: t.Node | undefined | null): any => {
-    if (t.isTSAsExpression(node) || t.isTSSatisfiesExpression(node)) {
-      return this._unwrap(node.expression);
+  /** @deprecated Use `editor`. */
+  get _editor(): SourceEditor {
+    return this.editor;
+  }
+
+  /** @deprecated Use `program`. */
+  get _program(): E.Program {
+    return this.program;
+  }
+
+  get _code(): string {
+    return this.editor.code;
+  }
+
+  _parseExportsObject(exportsObject: E.ObjectExpression) {
+    this._exportsObject = exportsObject;
+    for (const p of exportsObject.properties) {
+      const exportName = staticKey(p);
+      if (exportName) {
+        this._exports[exportName] = this._resolveDeclaration((p as E.ObjectProperty).value);
+      }
     }
-    return node;
-  };
+  }
 
   /**
    * Resolve a declaration node by unwrapping TS assertions/satisfies and following identifiers to
    * resolve the correct node in case it's an identifier.
    */
-  _resolveDeclaration = (node: t.Node, parent: t.Node = this._ast.program) => {
-    const decl = this._unwrap(node);
-    if (t.isIdentifier(decl) && t.isProgram(parent)) {
-      const initialization = _findVarInitialization(decl.name, parent);
-      return initialization ? this._unwrap(initialization) : decl;
+  _resolveDeclaration = (node: Node, isTopLevel = true) => {
+    const decl = unwrapExpression(node);
+    if (decl?.type === 'Identifier' && isTopLevel) {
+      const initialization = findVarInitialization(decl.name, this.program);
+      return initialization ? unwrapExpression(initialization) : decl;
     }
     return decl;
   };
 
   parse() {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const self = this;
-    traverse(this._ast, {
-      ExportDefaultDeclaration: {
-        enter({ node, parent }) {
-          self.hasDefaultExport = true;
-          let decl = self._resolveDeclaration(node.declaration as t.Node, parent);
+    walk(this.program, (node, parent) => {
+      const isTopLevel = parent?.type === 'Program';
+      if (node.type === 'ExportDefaultDeclaration') {
+        this.hasDefaultExport = true;
+        let decl = this._resolveDeclaration(node.declaration as Node, isTopLevel);
 
-          // csf factory - unwrap call expressions like definePreview({...}) or definePreview({...}).type<T>()
-          while (t.isCallExpression(decl)) {
-            if (t.isObjectExpression(decl.arguments[0])) {
-              decl = decl.arguments[0];
-              break;
-            } else if (
-              t.isMemberExpression(decl.callee) &&
-              t.isCallExpression(decl.callee.object)
-            ) {
-              decl = decl.callee.object;
-            } else {
-              break;
+        // csf factory - unwrap call expressions like definePreview({...}) or definePreview({...}).type<T>()
+        while (decl?.type === 'CallExpression') {
+          if (decl.arguments[0]?.type === 'ObjectExpression') {
+            decl = decl.arguments[0];
+            break;
+          } else if (
+            decl.callee.type === 'MemberExpression' &&
+            decl.callee.object.type === 'CallExpression'
+          ) {
+            decl = decl.callee.object;
+          } else {
+            break;
+          }
+        }
+
+        if (decl?.type === 'ObjectExpression') {
+          this._parseExportsObject(decl);
+        } else {
+          logger.debug(
+            getCsfParsingErrorMessage({
+              fileName: this.fileName,
+              expectedType: 'ObjectExpression',
+              foundType: decl?.type,
+              node: decl || node.declaration,
+            })
+          );
+        }
+      } else if (node.type === 'ExportNamedDeclaration') {
+        if (node.declaration?.type === 'VariableDeclaration') {
+          // export const X = ...;
+          for (const decl of node.declaration.declarations) {
+            if (decl.id.type === 'Identifier') {
+              const exportName = decl.id.name;
+              this._exports[exportName] = this._resolveDeclaration(decl.init as Node, isTopLevel);
+              this._exportDecls[exportName] = decl;
             }
           }
-
-          if (t.isObjectExpression(decl)) {
-            self._parseExportsObject(decl);
-          } else {
-            logger.warn(
-              getCsfParsingErrorMessage({
-                expectedType: 'ObjectExpression',
-                foundType: decl?.type,
-                node: decl || node.declaration,
-              })
-            );
+        } else if (node.declaration?.type === 'FunctionDeclaration') {
+          // export function X() {...};
+          const decl = node.declaration;
+          if (decl.id) {
+            this._exportDecls[decl.id.name] = decl;
+            this._exports[decl.id.name] = decl;
           }
-        },
-      },
-      ExportNamedDeclaration: {
-        enter({ node, parent }) {
-          if (t.isVariableDeclaration(node.declaration)) {
-            // export const X = ...;
-            node.declaration.declarations.forEach((decl) => {
-              if (t.isVariableDeclarator(decl) && t.isIdentifier(decl.id)) {
-                const { name: exportName } = decl.id;
-                const exportVal = self._resolveDeclaration(decl.init as t.Node, parent);
-                self._exports[exportName] = exportVal;
-                self._exportDecls[exportName] = decl;
-              }
-            });
-          } else if (t.isFunctionDeclaration(node.declaration)) {
-            // export function X() {...};
-            const decl = node.declaration;
-            if (t.isIdentifier(decl.id)) {
-              const { name: exportName } = decl.id;
-              self._exportDecls[exportName] = decl;
-              self._exports[exportName] = t.toExpression(t.cloneNode(decl));
+        } else if (node.specifiers.length > 0) {
+          // export { X };
+          for (const spec of node.specifiers) {
+            if (spec.local.type !== 'Identifier') {
+              continue;
             }
-          } else if (node.specifiers) {
-            // export { X };
-            node.specifiers.forEach((spec) => {
-              if (
-                t.isExportSpecifier(spec) &&
-                t.isIdentifier(spec.local) &&
-                (t.isIdentifier(spec.exported) || t.isStringLiteral(spec.exported))
-              ) {
-                const { name: localName } = spec.local;
-                const exportName = t.isIdentifier(spec.exported)
-                  ? spec.exported.name
-                  : spec.exported.value;
+            const localName = spec.local.name;
+            const exportName =
+              spec.exported.type === 'Identifier'
+                ? spec.exported.name
+                : (spec.exported as E.StringLiteral).value;
+            if (isTopLevel && !node.source && !isDeclared(this.editor, spec.local)) {
+              throw new EstreeParseError(
+                `Export '${localName}' is not defined`,
+                this.fileName,
+                locationOf(this._code, spec.local.start, spec.local.start)
+              );
+            }
 
-                const decl =
-                  _findVarDeclarator(localName, self._ast.program) ??
-                  self._ast.program.body.find(
-                    (statement): statement is t.FunctionDeclaration =>
-                      t.isFunctionDeclaration(statement) && statement.id?.name === localName
-                  );
-                // decl can be empty in case X from `import { X } from ....` because it is not handled in _findVarDeclarator
-                if (decl) {
-                  const value = t.isFunctionDeclaration(decl)
-                    ? t.toExpression(t.cloneNode(decl))
-                    : decl.init
-                      ? self._resolveDeclaration(decl.init, parent)
-                      : undefined;
-                  if (exportName === 'default' && t.isObjectExpression(value)) {
-                    self.hasDefaultExport = true;
-                    self._parseExportsObject(value);
-                    return;
-                  }
-                  self._exports[exportName] = value;
-                  self._exportDecls[exportName] = decl;
-                }
+            const decl =
+              _findVarDeclarator(localName, this.program) ??
+              this.program.body.find(
+                (statement): statement is E.Function =>
+                  statement.type === 'FunctionDeclaration' && statement.id?.name === localName
+              );
+            // decl can be empty in case X from `import { X } from ....` because it is not handled in _findVarDeclarator
+            if (decl) {
+              const value =
+                decl.type !== 'VariableDeclarator'
+                  ? decl
+                  : decl.init
+                    ? this._resolveDeclaration(decl.init, isTopLevel)
+                    : undefined;
+              if (exportName === 'default' && value?.type === 'ObjectExpression') {
+                this.hasDefaultExport = true;
+                this._parseExportsObject(value);
+                continue;
               }
-            });
-          } else {
-            logger.warn(
-              getCsfParsingErrorMessage({
-                expectedType: 'VariableDeclaration',
-                foundType: node.declaration?.type,
-                node: node.declaration,
-              })
-            );
+              if (value) {
+                this._exports[exportName] = value;
+              }
+              this._exportDecls[exportName] = decl;
+            }
           }
-        },
-      },
-      ExpressionStatement: {
-        enter({ node, parent }) {
-          if (t.isAssignmentExpression(node.expression) && node.expression.operator === '=') {
-            const { left, right } = node.expression;
-            if (
-              t.isMemberExpression(left) &&
-              t.isIdentifier(left.object) &&
-              left.object.name === 'module' &&
-              t.isIdentifier(left.property) &&
-              left.property.name === 'exports'
-            ) {
-              let exportObject = right;
-              exportObject = self._resolveDeclaration(exportObject as t.Node, parent);
+        } else {
+          logger.debug(
+            getCsfParsingErrorMessage({
+              fileName: this.fileName,
+              expectedType: 'VariableDeclaration',
+              foundType: node.declaration?.type,
+              node: node.declaration,
+            })
+          );
+        }
+      } else if (
+        node.type === 'ExpressionStatement' &&
+        node.expression.type === 'AssignmentExpression' &&
+        node.expression.operator === '='
+      ) {
+        const { left, right } = node.expression;
+        if (
+          left.type === 'MemberExpression' &&
+          isIdentifier(left.object, 'module') &&
+          isIdentifier(left.property, 'exports')
+        ) {
+          const exportObject = this._resolveDeclaration(right, isTopLevel);
 
-              if (t.isObjectExpression(exportObject)) {
-                self._exportsObject = exportObject;
-                (exportObject.properties as t.ObjectProperty[]).forEach((p) => {
-                  const exportName = propKey(p);
-                  if (exportName) {
-                    const exportVal = self._resolveDeclaration(p.value as t.Node, parent);
-                    self._exports[exportName] = exportVal as t.Expression;
-                  }
-                });
-              } else {
-                logger.warn(
-                  getCsfParsingErrorMessage({
-                    expectedType: 'ObjectExpression',
-                    foundType: exportObject?.type,
-                    node: exportObject,
-                  })
+          if (exportObject?.type === 'ObjectExpression') {
+            this._exportsObject = exportObject;
+            for (const p of exportObject.properties as Node[]) {
+              const exportName = staticKey(p);
+              if (exportName) {
+                this._exports[exportName] = this._resolveDeclaration(
+                  (p as E.ObjectProperty).value,
+                  isTopLevel
                 );
               }
             }
+          } else {
+            logger.debug(
+              getCsfParsingErrorMessage({
+                fileName: this.fileName,
+                expectedType: 'ObjectExpression',
+                foundType: exportObject?.type,
+                node: exportObject,
+              })
+            );
           }
-        },
-      },
-      CallExpression: {
-        enter: ({ node }) => {
-          if (
-            t.isIdentifier(node.callee) &&
-            node.callee.name === 'definePreview' &&
-            node.arguments.length === 1 &&
-            t.isObjectExpression(node.arguments[0])
-          ) {
-            self._parseExportsObject(node.arguments[0]);
-          }
-        },
-      },
+        }
+      } else if (
+        node.type === 'CallExpression' &&
+        isIdentifier(node.callee, 'definePreview') &&
+        node.arguments.length === 1 &&
+        node.arguments[0].type === 'ObjectExpression'
+      ) {
+        this._parseExportsObject(node.arguments[0]);
+      }
     });
-    return self;
+    return this;
   }
 
   getFieldNode(path: string[]) {
@@ -605,19 +748,19 @@ export class ConfigFile implements CsfObject {
     }
 
     const pathNames: string[] = [];
-    if (t.isArrayExpression(node)) {
-      (node.elements as t.Expression[]).forEach((element) => {
-        pathNames.push(this._getPresetValue(element, 'name'));
-      });
+    if (node.type === 'ArrayExpression') {
+      for (const element of node.elements) {
+        pathNames.push(this._getPresetValue(element as Node, 'name'));
+      }
     }
 
     return pathNames;
   }
 
-  _getWrappedValue(node: t.Node) {
-    if (t.isCallExpression(node)) {
+  _getWrappedValue(node: Node) {
+    if (node.type === 'CallExpression') {
       const arg = node.arguments[0];
-      if (t.isStringLiteral(arg)) {
+      if (isStringLiteral(arg)) {
         return arg.value;
       }
     }
@@ -630,19 +773,18 @@ export class ConfigFile implements CsfObject {
    * 1. `{ node: 'value' }`
    * 2. `{ node: { fallbackProperty: 'value' } }`
    */
-  _getPresetValue(node: t.Node, fallbackProperty: string) {
+  _getPresetValue(node: Node, fallbackProperty: string) {
     let value;
-    if (t.isStringLiteral(node)) {
+    if (isStringLiteral(node)) {
       value = node.value;
-    } else if (t.isObjectExpression(node)) {
-      node.properties.forEach((prop) => {
+    } else if (node.type === 'ObjectExpression') {
+      for (const prop of node.properties) {
+        if (prop.type !== 'Property') {
+          continue;
+        }
         // { framework: { name: 'value' } }
-        if (
-          t.isObjectProperty(prop) &&
-          t.isIdentifier(prop.key) &&
-          prop.key.name === fallbackProperty
-        ) {
-          if (t.isStringLiteral(prop.value)) {
+        if (isIdentifier(prop.key, fallbackProperty)) {
+          if (isStringLiteral(prop.value)) {
             value = prop.value.value;
           } else {
             value = this._getWrappedValue(prop.value);
@@ -650,16 +792,11 @@ export class ConfigFile implements CsfObject {
         }
 
         // { "framework": { "name": "value" } }
-        if (
-          t.isObjectProperty(prop) &&
-          t.isStringLiteral(prop.key) &&
-          prop.key.value === 'name' &&
-          t.isStringLiteral(prop.value)
-        ) {
+        if (isStringLiteral(prop.key) && prop.key.value === 'name' && isStringLiteral(prop.value)) {
           value = prop.value.value;
         }
-      });
-    } else if (t.isCallExpression(node)) {
+      }
+    } else if (node.type === 'CallExpression') {
       value = this._getWrappedValue(node);
     }
 
@@ -672,167 +809,56 @@ export class ConfigFile implements CsfObject {
     return value;
   }
 
-  removeField(path: string[]) {
-    const removeProperty = (properties: t.ObjectProperty[], prop: string) => {
-      const index = properties.findIndex(
-        (p) =>
-          (t.isIdentifier(p.key) && p.key.name === prop) ||
-          (t.isStringLiteral(p.key) && p.key.value === prop)
-      );
-      if (index >= 0) {
-        properties.splice(index, 1);
-      }
-    };
-    // the structure of this._exports doesn't work for this use case
-    // so we have to manually bypass it here
-    if (path.length === 1) {
-      let removedRootProperty = false;
-      // removing the root export
-      this._ast.program.body.forEach((node) => {
-        // named export
-        if (t.isExportNamedDeclaration(node) && t.isVariableDeclaration(node.declaration)) {
-          const decl = node.declaration.declarations[0];
-          if (t.isIdentifier(decl.id) && decl.id.name === path[0]) {
-            this._ast.program.body.splice(this._ast.program.body.indexOf(node), 1);
-            removedRootProperty = true;
-          }
-        }
-        // default export
-        if (t.isExportDefaultDeclaration(node)) {
-          const resolved = this._resolveDeclaration(node.declaration as t.Node);
-          if (t.isObjectExpression(resolved)) {
-            const properties = resolved.properties as t.ObjectProperty[];
-            removeProperty(properties, path[0]);
-            removedRootProperty = true;
-          }
-        }
-        // module.exports
-        if (
-          t.isExpressionStatement(node) &&
-          t.isAssignmentExpression(node.expression) &&
-          t.isMemberExpression(node.expression.left) &&
-          t.isIdentifier(node.expression.left.object) &&
-          node.expression.left.object.name === 'module' &&
-          t.isIdentifier(node.expression.left.property) &&
-          node.expression.left.property.name === 'exports' &&
-          t.isObjectExpression(node.expression.right)
-        ) {
-          const properties = node.expression.right.properties as t.ObjectProperty[];
-          removeProperty(properties, path[0]);
-          removedRootProperty = true;
-        }
-      });
-
-      if (removedRootProperty) {
-        return;
-      }
-    }
-
-    const properties = this.getFieldProperties(path) as t.ObjectProperty[];
-    if (properties) {
-      const lastPath = path.at(-1) as string;
-      removeProperty(properties, lastPath);
-    }
+  /** @deprecated Use `append`, which takes a plain value too. */
+  appendValueToArray(path: string[], value: any): CsfMutationResult {
+    return this.append(path, this.valueToNode(value));
   }
 
-  appendValueToArray(path: string[], value: any) {
-    const node = this.valueToNode(value);
-
-    if (node) {
-      this.appendNodeToArray(path, node);
-    }
-  }
-
-  appendNodeToArray(path: string[], node: t.Expression) {
-    const current = this.getFieldNode(path);
-    if (!current) {
-      this.set(path, t.arrayExpression([node]));
-    } else if (t.isArrayExpression(current)) {
-      current.elements.push(node);
-    } else {
-      throw new Error(`Expected array at '${path.join('.')}', got '${current.type}'`);
-    }
+  /** @deprecated Use `append`. */
+  appendNodeToArray(path: string[], node: CsfExpression): CsfMutationResult {
+    return this.append(path, node);
   }
 
   /**
-   * Specialized helper to remove addons or other array entries that can either be strings or
-   * objects with a name property.
+   * Remove the first entry of the array literal at a path that names `value`: a string, a
+   * `{ name }` object, or a call like `getAbsolutePath(value)`. A missing field or entry is a no-op
+   * when the array can be edited; an array in a constant that other code refers to as well, or in a
+   * config that mixes a default export with named exports, is refused like `append` refuses it.
+   *
+   * @deprecated Find the entry's index in the list `inspectList(path)` returns, and
+   * `remove([...path, index])` it.
    */
-  removeEntryFromArray(path: string[], value: string) {
-    const current = this.getFieldNode(path);
-
-    if (!current) {
-      return;
+  removeEntryFromArray(path: string[], value: string): CsfMutationResult {
+    const current = this.inspect(path);
+    if (current.kind === 'unreadable') {
+      return this._reject(current.diagnostic);
     }
-    if (t.isArrayExpression(current)) {
-      const index = current.elements.findIndex((element) => {
-        if (t.isStringLiteral(element)) {
-          return element.value === value;
-        }
-        if (t.isObjectExpression(element)) {
-          const name = this._getPresetValue(element, 'name');
-          return name === value;
-        }
-        return this._getWrappedValue(element as t.Node) === value;
-      });
-      if (index >= 0) {
-        current.elements.splice(index, 1);
-      } else {
-        throw new Error(`Could not find '${value}' in array at '${path.join('.')}'`);
+    const list = this.inspectList(path);
+    if (list.kind === 'refused') {
+      return this._reject(list.diagnostic);
+    }
+    // A path of keys ends at an array literal, never at a call.
+    const entries =
+      list.kind === 'list' && list.node.type === 'ArrayExpression' ? list.node.elements : [];
+    const index = entries.findIndex((element) => {
+      if (isStringLiteral(element)) {
+        return element.value === value;
       }
-    } else {
-      throw new Error(`Expected array at '${path.join('.')}', got '${current.type}'`);
-    }
+      if (element?.type === 'ObjectExpression') {
+        const name = this._getPresetValue(element, 'name');
+        return name === value;
+      }
+      return element ? this._getWrappedValue(element) === value : false;
+    });
+    return index < 0 ? { ok: true, changed: false } : this.remove([...path, index]);
   }
 
-  _inferQuotes() {
-    if (!this._quotes) {
-      // first 500 tokens for efficiency
-      const occurrences = (this._ast.tokens || []).slice(0, 500).reduce(
-        (acc, token) => {
-          if (token.type.label === 'string') {
-            acc[this._code[token.start]] += 1;
-          }
-          return acc;
-        },
-        { "'": 0, '"': 0 }
-      );
-      this._quotes = occurrences["'"] > occurrences['"'] ? 'single' : 'double';
-    }
-    return this._quotes;
+  valueToNode(value: any): CsfExpression {
+    return parseExpression(printValue(value, this.editor.quote));
   }
 
-  valueToNode(value: any): t.Expression | undefined {
-    const quotes = this._inferQuotes();
-    let valueNode;
-    // we do this rather than types.valueToNode because apparently
-    // babel only preserves quotes if they are parsed from the original code.
-    if (quotes === 'single') {
-      const { code } = generate(t.valueToNode(value), { jsescOption: { quotes } });
-      const program = babelParse(`const __x = ${code}`);
-      traverse(program, {
-        VariableDeclaration: {
-          enter({ node }) {
-            if (
-              node.declarations.length === 1 &&
-              t.isVariableDeclarator(node.declarations[0]) &&
-              t.isIdentifier(node.declarations[0].id) &&
-              node.declarations[0].id.name === '__x'
-            ) {
-              valueNode = node.declarations[0].init;
-            }
-          },
-        },
-      });
-    } else {
-      // double quotes is the default so we can skip all that
-      valueNode = t.valueToNode(value);
-    }
-    return valueNode;
-  }
-
-  getBodyDeclarations(): t.Statement[] {
-    return this._ast.program.body;
+  getBodyDeclarations(): Node[] {
+    return this.program.body;
   }
 
   /**
@@ -855,261 +881,68 @@ export class ConfigFile implements CsfObject {
    * manager.changed; // true
    * ```
    */
-  callArguments({
-    importedName,
-    methodName,
-    moduleNames,
-  }: CallArgumentsOptions): readonly CsfObject[] {
-    const modules = new Set(moduleNames);
-    const imports = new Map<string, Set<t.Node>>();
-
-    traverse(this._ast, {
-      ImportDeclaration(path) {
-        if (!modules.has(path.node.source.value) || path.node.importKind === 'type') {
-          return;
-        }
-
-        for (const specifier of path.node.specifiers) {
-          if (
-            t.isImportSpecifier(specifier) &&
-            specifier.importKind !== 'type' &&
-            t.isIdentifier(specifier.imported, { name: importedName })
-          ) {
-            const bindingNodes = imports.get(specifier.local.name) ?? new Set<t.Node>();
-            bindingNodes.add(specifier);
-            imports.set(specifier.local.name, bindingNodes);
-          }
-        }
-      },
-      VariableDeclarator(path) {
-        const { id, init } = path.node;
-        if (
-          !t.isObjectPattern(id) ||
-          !t.isCallExpression(init) ||
-          !t.isIdentifier(init.callee, { name: 'require' }) ||
-          path.scope.getBinding('require') !== undefined ||
-          init.arguments.length !== 1 ||
-          !t.isStringLiteral(init.arguments[0]) ||
-          !modules.has(init.arguments[0].value)
-        ) {
-          return;
-        }
-
-        for (const property of id.properties) {
-          if (
-            t.isObjectProperty(property) &&
-            !property.computed &&
-            ((t.isIdentifier(property.key) && property.key.name === importedName) ||
-              (t.isStringLiteral(property.key) && property.key.value === importedName)) &&
-            t.isIdentifier(property.value)
-          ) {
-            const bindingNodes = imports.get(property.value.name) ?? new Set<t.Node>();
-            bindingNodes.add(path.node);
-            imports.set(property.value.name, bindingNodes);
-          }
-        }
-      },
-    });
-
-    const objects: CsfObject[] = [];
+  callArguments(options: CallArgumentsOptions): readonly CsfObject[] {
     const report = (diagnostic: CsfMutationDiagnostic) =>
       this._mutationDiagnostics.push(diagnostic);
-    const markChanged = () => {
-      this._changed = true;
-    };
-
-    traverse(this._ast, {
-      CallExpression(path) {
-        const { callee } = path.node;
-        if (
-          !t.isMemberExpression(callee) ||
-          !t.isIdentifier(callee.object) ||
-          !(
-            (t.isIdentifier(callee.property) &&
-              !callee.computed &&
-              callee.property.name === methodName) ||
-            (t.isStringLiteral(callee.property) && callee.property.value === methodName)
-          )
-        ) {
-          return;
-        }
-
-        const bindingNode = path.scope.getBinding(callee.object.name)?.path.node;
-        if (bindingNode && imports.get(callee.object.name)?.has(bindingNode)) {
-          const argument = path.node.arguments[0];
-          if (!argument) {
-            return;
-          }
-          const value = unwrapExpression(argument);
-          const target = { kind: 'call-argument', importedName, methodName } as const;
-          const binding = path.scope.getBinding(callee.object.name);
-          if (!binding?.constant || !t.isObjectExpression(value)) {
-            report({
-              code: !binding?.constant ? 'ambiguous-binding' : 'unsupported-initializer',
-              target,
-              path: [],
-              message: !binding?.constant
-                ? 'the imported binding is reassigned'
-                : 'the call argument is not an object literal',
-              ...(argument.loc ? { loc: argument.loc } : {}),
-            });
-            return;
-          }
-          objects.push(
-            createCsfObject(
-              target,
-              {
-                node: value,
-                scope: path.scope,
-                buildCodeFrameError: path.buildCodeFrameError.bind(path),
-              },
-              [],
-              report,
-              markChanged
-            )
-          );
-        }
-      },
+    const target = {
+      kind: 'call-argument',
+      importedName: options.importedName,
+      methodName: options.methodName,
+    } as const;
+    const calls = findCallArguments(this, options, report);
+    return calls.map((_, index) => {
+      const host: CsfObjectHost = {
+        editor: this.editor,
+        root: () => {
+          // Edits re-parse the file, so the argument is found again by its position among calls.
+          const node = findCallArguments(this, options, () => {})[index];
+          return node && literalRoot(this.editor, node);
+        },
+      };
+      return createCsfObject(target, host, report, () => {
+        this._markChanged();
+      });
     });
-
-    return objects;
   }
 
-  setBodyDeclaration(declaration: t.Declaration) {
-    this._ast.program.body.push(declaration);
+  /** Appends a statement, given as source, to the end of the file. */
+  setBodyDeclaration(declaration: string) {
+    appendStatement(this.editor, declaration);
+    this.editor.commit();
   }
 
   /**
-   * Import specifiers for a specific require import
+   * Add `require` bindings of a module: a string as `const name = require(…)`, an array of names or
+   * `'name as alias'` as destructured properties. A binding a top-level `require` of the module has
+   * already is skipped. Statements end with `;` unless most statements of the file omit it.
    *
    * @example
    *
    * ```ts
-   * // const { foo } = require('bar');
-   * setRequireImport(['foo'], 'bar');
+   * // const { foo, bar: baz } = require('bar');
+   * setRequireImport(['foo', 'bar as baz'], 'bar');
    *
    * // const foo = require('bar');
    * setRequireImport('foo', 'bar');
    * ```
    *
-   * @param importSpecifiers - The import specifiers to set. If a string is passed in, a default
-   *   import will be set. Otherwise, an array of named imports will be set
-   * @param fromImport - The module to import from
+   * @throws When a name is neither an identifier nor `'name as alias'`.
    */
-  setRequireImport(importSpecifier: string[] | string, fromImport: string) {
-    const requireDeclaration = this._ast.program.body.find((node) => {
-      const hasDeclaration =
-        t.isVariableDeclaration(node) &&
-        node.declarations.length === 1 &&
-        t.isVariableDeclarator(node.declarations[0]) &&
-        t.isCallExpression(node.declarations[0].init) &&
-        t.isIdentifier(node.declarations[0].init.callee) &&
-        node.declarations[0].init.callee.name === 'require' &&
-        t.isStringLiteral(node.declarations[0].init.arguments[0]) &&
-        (node.declarations[0].init.arguments[0].value === fromImport ||
-          node.declarations[0].init.arguments[0].value === fromImport.split('node:')[1]);
-      if (hasDeclaration) {
-        // @ts-expect-error the node declaration was found above already
-        fromImport = node.declarations[0].init.arguments[0].value;
-      }
-
-      return hasDeclaration;
-    }) as t.VariableDeclaration | undefined;
-
-    /**
-     * Returns true, when the given import declaration has the given import specifier
-     *
-     * @example
-     *
-     * ```ts
-     * // const { foo } = require('bar');
-     * hasImportSpecifier(declaration, 'foo');
-     * ```
-     */
-    const hasRequireSpecifier = (name: string) =>
-      t.isObjectPattern(requireDeclaration?.declarations[0].id) &&
-      requireDeclaration?.declarations[0].id.properties.find(
-        (specifier) =>
-          t.isObjectProperty(specifier) &&
-          t.isIdentifier(specifier.key) &&
-          specifier.key.name === name
-      );
-
-    /**
-     * Returns true, when the given import declaration has the given default import specifier
-     *
-     * @example
-     *
-     * ```ts
-     * // import foo from 'bar';
-     * hasImportSpecifier(declaration, 'foo');
-     * ```
-     */
-    const hasDefaultRequireSpecifier = (declaration: t.VariableDeclaration, name: string) =>
-      declaration.declarations.length === 1 &&
-      t.isVariableDeclarator(declaration.declarations[0]) &&
-      t.isIdentifier(declaration.declarations[0].id) &&
-      declaration.declarations[0].id.name === name;
-
-    // if the import specifier is a string, we're dealing with default imports
-    if (typeof importSpecifier === 'string') {
-      // If the import declaration with the given source exists
-      const addDefaultRequireSpecifier = () => {
-        this._ast.program.body.unshift(
-          t.variableDeclaration('const', [
-            t.variableDeclarator(
-              t.identifier(importSpecifier),
-              t.callExpression(t.identifier('require'), [t.stringLiteral(fromImport)])
-            ),
-          ])
-        );
-      };
-
-      if (requireDeclaration) {
-        if (!hasDefaultRequireSpecifier(requireDeclaration, importSpecifier)) {
-          // If the import declaration hasn't the specified default identifier, we add a new variable declaration
-          addDefaultRequireSpecifier();
-        }
-        // If the import declaration with the given source doesn't exist
-      } else {
-        // Add the import declaration to the top of the file
-        addDefaultRequireSpecifier();
-      }
-      // if the import specifier is an array, we're dealing with named imports
-    } else if (requireDeclaration) {
-      importSpecifier.forEach((specifier) => {
-        if (!hasRequireSpecifier(specifier)) {
-          (requireDeclaration.declarations[0].id as t.ObjectPattern).properties.push(
-            t.objectProperty(t.identifier(specifier), t.identifier(specifier), undefined, true)
-          );
-        }
-      });
-    } else {
-      this._ast.program.body.unshift(
-        t.variableDeclaration('const', [
-          t.variableDeclarator(
-            t.objectPattern(
-              importSpecifier.map((specifier) =>
-                t.objectProperty(t.identifier(specifier), t.identifier(specifier), undefined, true)
-              )
-            ),
-            t.callExpression(t.identifier('require'), [t.stringLiteral(fromImport)])
-          ),
-        ])
-      );
-    }
+  setRequireImport(importSpecifier: string[] | string, fromImport: string): CsfMutationResult {
+    return this._editImports((editor) => setRequireImport(editor, importSpecifier, fromImport));
   }
 
   /**
-   * Set import specifiers for a given import statement.
-   *
-   * Does not support setting type imports (yet)
+   * Add import bindings of a module: a string as the default import, an array of names or
+   * `'name as alias'` as named imports. A binding a value import of the module has already is
+   * skipped; one only a type-only import has becomes a value import. Statements end with `;` unless
+   * most statements of the file omit it.
    *
    * @example
    *
    * ```ts
-   * // import { foo } from 'bar';
-   * setImport(['foo'], 'bar');
+   * // import { foo, bar as baz } from 'bar';
+   * setImport(['foo', 'bar as baz'], 'bar');
    *
    * // import foo from 'bar';
    * setImport('foo', 'bar');
@@ -1121,317 +954,159 @@ export class ConfigFile implements CsfObject {
    * setImport(null, 'bar');
    * ```
    *
-   * @param importSpecifiers - The import specifiers to set. If a string is passed in, a default
-   *   import will be set. Otherwise, an array of named imports will be set
-   * @param fromImport - The module to import from
+   * @throws When a name is neither an identifier nor `'name as alias'`.
    */
-  setImport(importSpecifier: string[] | string | { namespace: string } | null, fromImport: string) {
-    const importDeclaration = this._ast.program.body.find((node) => {
-      const hasDeclaration =
-        t.isImportDeclaration(node) &&
-        (node.source.value === fromImport || node.source.value === fromImport.split('node:')[1]);
-
-      if (hasDeclaration) {
-        fromImport = node.source.value;
-      }
-
-      return hasDeclaration;
-    }) as t.ImportDeclaration | undefined;
-
-    const getNewImportSpecifier = (specifier: string) =>
-      t.importSpecifier(t.identifier(specifier), t.identifier(specifier));
-    /**
-     * Returns true, when the given import declaration has the given import specifier
-     *
-     * @example
-     *
-     * ```ts
-     * // import { foo } from 'bar';
-     * hasImportSpecifier(declaration, 'foo');
-     * ```
-     */
-    const hasImportSpecifier = (declaration: t.ImportDeclaration, name: string) =>
-      declaration.specifiers.find(
-        (specifier) =>
-          t.isImportSpecifier(specifier) &&
-          t.isIdentifier(specifier.imported) &&
-          specifier.imported.name === name
-      );
-
-    /**
-     * Returns true, when the given import declaration has the given default import specifier
-     *
-     * @example
-     *
-     * ```ts
-     * // import foo from 'bar';
-     * hasNamespaceImportSpecifier(declaration, 'foo');
-     * ```
-     */
-    const hasNamespaceImportSpecifier = (declaration: t.ImportDeclaration, name: string) =>
-      declaration.specifiers.find(
-        (specifier) =>
-          t.isImportNamespaceSpecifier(specifier) &&
-          t.isIdentifier(specifier.local) &&
-          specifier.local.name === name
-      );
-
-    /** Returns true when the given import declaration has a default import specifier */
-    const hasDefaultImportSpecifier = (declaration: t.ImportDeclaration, name: string) =>
-      declaration.specifiers.find(
-        (specifier) =>
-          t.isImportDefaultSpecifier(specifier) &&
-          t.isIdentifier(specifier.local) &&
-          specifier.local.name === name
-      );
-
-    // Handle side-effect imports (e.g., import 'foo')
-    if (importSpecifier === null) {
-      if (!importDeclaration) {
-        this._ast.program.body.unshift(t.importDeclaration([], t.stringLiteral(fromImport)));
-      }
-      // Handle default imports e.g. import foo from 'bar'
-    } else if (typeof importSpecifier === 'string') {
-      if (importDeclaration) {
-        if (!hasDefaultImportSpecifier(importDeclaration, importSpecifier)) {
-          importDeclaration.specifiers.push(
-            t.importDefaultSpecifier(t.identifier(importSpecifier))
-          );
-        }
-      } else {
-        this._ast.program.body.unshift(
-          t.importDeclaration(
-            [t.importDefaultSpecifier(t.identifier(importSpecifier))],
-            t.stringLiteral(fromImport)
-          )
-        );
-      }
-      // Handle named imports e.g. import { foo } from 'bar'
-    } else if (Array.isArray(importSpecifier)) {
-      if (importDeclaration) {
-        importSpecifier.forEach((specifier) => {
-          if (!hasImportSpecifier(importDeclaration, specifier)) {
-            importDeclaration.specifiers.push(getNewImportSpecifier(specifier));
-          }
-        });
-      } else {
-        this._ast.program.body.unshift(
-          t.importDeclaration(
-            importSpecifier.map(getNewImportSpecifier),
-            t.stringLiteral(fromImport)
-          )
-        );
-      }
-      // Handle namespace imports e.g. import * as foo from 'bar'
-    } else if (importSpecifier.namespace) {
-      if (importDeclaration) {
-        if (!hasNamespaceImportSpecifier(importDeclaration, importSpecifier.namespace)) {
-          importDeclaration.specifiers.push(
-            t.importNamespaceSpecifier(t.identifier(importSpecifier.namespace))
-          );
-        }
-      } else {
-        this._ast.program.body.unshift(
-          t.importDeclaration(
-            [t.importNamespaceSpecifier(t.identifier(importSpecifier.namespace))],
-            t.stringLiteral(fromImport)
-          )
-        );
-      }
-    }
+  setImport(importSpecifier: ImportBindings, fromImport: string): CsfMutationResult {
+    return this._editImports((editor) => setImport(editor, importSpecifier, fromImport));
   }
 
-  _removeRequireImport(
-    importSpecifier: string[] | string | { namespace: string } | null,
-    fromImport: string
-  ) {
-    // Find require declaration first.
-    const requireDeclarationIndex = this._ast.program.body.findIndex((node) => {
-      const hasDeclaration =
-        t.isVariableDeclaration(node) &&
-        node.declarations.length === 1 &&
-        t.isVariableDeclarator(node.declarations[0]) &&
-        t.isCallExpression(node.declarations[0].init) &&
-        t.isIdentifier(node.declarations[0].init.callee) &&
-        node.declarations[0].init.callee.name === 'require' &&
-        t.isStringLiteral(node.declarations[0].init.arguments[0]) &&
-        (node.declarations[0].init.arguments[0].value === fromImport ||
-          node.declarations[0].init.arguments[0].value === fromImport.split('node:')[1]);
+  /**
+   * Remove import and `require` bindings of a module: a string removes the default import, an
+   * array named imports. A name removes every import of that export, whatever its local name;
+   * `'name as alias'` removes only the import under that alias. Type-only imports are left as they
+   * are.
+   *
+   * @example
+   *
+   * ```ts
+   * // import { foo } from 'bar';
+   * removeImport(['foo'], 'bar');
+   *
+   * // import foo from 'bar';
+   * removeImport('foo', 'bar');
+   *
+   * // import * as foo from 'bar';
+   * removeImport({ namespace: 'foo' }, 'bar');
+   *
+   * // import 'bar';
+   * removeImport(null, 'bar');
+   * ```
+   */
+  removeImport(importSpecifier: ImportBindings, fromImport: string): CsfMutationResult {
+    return this._editImports((editor) => removeImport(editor, importSpecifier, fromImport));
+  }
 
-      return hasDeclaration;
+  // One that throws leaves the file as it was.
+  _editImports(edit: (editor: SourceEditor) => boolean): CsfMutationResult {
+    let changed = false;
+    this.editor.transaction(() => {
+      changed = edit(this.editor);
     });
-
-    if (requireDeclarationIndex === -1) {
-      return;
+    if (changed) {
+      this._markChanged();
     }
-
-    const requireDeclaration = this._ast.program.body[
-      requireDeclarationIndex
-    ] as t.VariableDeclaration;
-    const declarator = requireDeclaration.declarations[0];
-
-    // Handle side-effect requires - require() statements don't have side-effect only versions like imports
-    // so we skip this case for require statements
-    if (importSpecifier === null) {
-      return;
-    }
-
-    // Handle default requires e.g. const foo = require('bar')
-    if (typeof importSpecifier === 'string') {
-      // For default requires, if the identifier matches, remove the entire declaration
-      if (t.isIdentifier(declarator.id) && declarator.id.name === importSpecifier) {
-        this._ast.program.body.splice(requireDeclarationIndex, 1);
-      }
-      return;
-    }
-
-    // require() doesn't have namespace imports so we skip this.
-    // We only allow it in our param type to keep things consistent for removeImport.
-    if (typeof importSpecifier === 'object' && 'namespace' in importSpecifier) {
-      return;
-    }
-
-    // Handle named requires e.g. const { foo, bar } = require('baz')
-    if (Array.isArray(importSpecifier) && t.isObjectPattern(declarator.id)) {
-      const objectPattern = declarator.id as t.ObjectPattern;
-      importSpecifier.forEach((specifier) => {
-        const index = objectPattern.properties.findIndex(
-          (prop) =>
-            t.isObjectProperty(prop) && t.isIdentifier(prop.key) && prop.key.name === specifier
-        );
-
-        if (index !== -1) {
-          objectPattern.properties.splice(index, 1);
-        }
-      });
-
-      // If no properties left in the destructuring, remove the entire declaration
-      if (objectPattern.properties.length === 0) {
-        this._ast.program.body.splice(requireDeclarationIndex, 1);
-      }
-    }
-  }
-
-  _removeImport(
-    importSpecifier: string[] | string | { namespace: string } | null,
-    fromImport: string
-  ) {
-    // Find import declaration first.
-    const importDeclarationIndex = this._ast.program.body.findIndex(
-      (node) =>
-        t.isImportDeclaration(node) &&
-        (node.source.value === fromImport || node.source.value === fromImport.split('node:')[1])
-    );
-    if (importDeclarationIndex === -1) {
-      return;
-    }
-    const importDeclaration = this._ast.program.body[importDeclarationIndex] as t.ImportDeclaration;
-
-    // Remove side-effect imports (e.g., import 'foo') if exact match, else do nothing.
-    if (importSpecifier === null) {
-      if (importDeclaration.specifiers.length === 0) {
-        this._ast.program.body.splice(importDeclarationIndex, 1);
-      }
-
-      return;
-    }
-
-    // From now on, remove requested specifiers from the import declaration.
-    // Handle namespace imports e.g. import * as foo from 'bar'
-    if (typeof importSpecifier === 'object' && 'namespace' in importSpecifier) {
-      const index = importDeclaration.specifiers.findIndex(
-        (specifier) =>
-          t.isImportNamespaceSpecifier(specifier) &&
-          t.isIdentifier(specifier.local) &&
-          specifier.local.name === importSpecifier.namespace
-      );
-
-      if (index !== -1) {
-        importDeclaration.specifiers.splice(index, 1);
-      }
-    }
-
-    // Handle default imports e.g. import foo from 'bar'
-    if (typeof importSpecifier === 'string') {
-      const index = importDeclaration.specifiers.findIndex(
-        (specifier) =>
-          t.isImportDefaultSpecifier(specifier) &&
-          t.isIdentifier(specifier.local) &&
-          specifier.local.name === importSpecifier
-      );
-
-      if (index !== -1) {
-        importDeclaration.specifiers.splice(index, 1);
-      }
-    }
-
-    // Handle named imports e.g. import { foo } from 'bar'
-    if (Array.isArray(importSpecifier)) {
-      importSpecifier.forEach((specifier) => {
-        const index = importDeclaration.specifiers.findIndex(
-          (current) =>
-            t.isImportSpecifier(current) &&
-            t.isIdentifier(current.imported) &&
-            current.imported.name === specifier
-        );
-
-        if (index !== -1) {
-          importDeclaration.specifiers.splice(index, 1);
-        }
-      });
-    }
-
-    // If the import declaration has no specifiers left, remove it.
-    if (importDeclaration.specifiers.length === 0) {
-      this._ast.program.body.splice(importDeclarationIndex, 1);
-    }
-  }
-
-  /**
-   * Remove import specifiers for a given import statement.
-   *
-   * Does not support removing type imports (yet)
-   *
-   * @example
-   *
-   * ```ts
-   * // import { foo } from 'bar';
-   * setImport(['foo'], 'bar');
-   *
-   * // import foo from 'bar';
-   * setImport('foo', 'bar');
-   *
-   * // import * as foo from 'bar';
-   * setImport({ namespace: 'foo' }, 'bar');
-   *
-   * // import 'bar';
-   * setImport(null, 'bar');
-   * ```
-   *
-   * @param importSpecifiers - The import specifiers to remove. If a string is passed in, will only
-   *   remove the default import. Otherwise, named imports matching the array will be removed.
-   * @param fromImport - The module to import from
-   */
-  removeImport(
-    importSpecifier: string[] | string | { namespace: string } | null,
-    fromImport: string
-  ) {
-    this._removeRequireImport(importSpecifier, fromImport);
-    this._removeImport(importSpecifier, fromImport);
+    return { ok: true, changed };
   }
 }
 
-export const loadConfig = (code: string, fileName?: string) => {
-  const ast = babelParse(code);
-  return new ConfigFile(ast, code, fileName);
+// First object arguments of `importedName.methodName(...)` calls, in source order.
+const findCallArguments = (
+  config: ConfigFile,
+  { importedName, methodName, moduleNames }: CallArgumentsOptions,
+  report: (diagnostic: CsfMutationDiagnostic) => void
+): E.ObjectExpression[] => {
+  const editor = config.editor;
+  const modules = new Set(moduleNames);
+  const imports = new Map<string, Set<Node>>();
+  const addImport = (name: string, node: Node) =>
+    imports.set(name, (imports.get(name) ?? new Set()).add(node));
+
+  walk(editor.program, (node) => {
+    if (node.type === 'ImportDeclaration') {
+      if (!modules.has(node.source.value) || node.importKind === 'type') {
+        return;
+      }
+      for (const specifier of node.specifiers) {
+        if (
+          specifier.type === 'ImportSpecifier' &&
+          specifier.importKind !== 'type' &&
+          isIdentifier(specifier.imported, importedName)
+        ) {
+          addImport(specifier.local.name, specifier);
+        }
+      }
+    } else if (node.type === 'VariableDeclarator') {
+      const { id, init } = node;
+      if (
+        id.type !== 'ObjectPattern' ||
+        init?.type !== 'CallExpression' ||
+        !isIdentifier(init.callee, 'require') ||
+        editor.scopes.bindingOf(init.callee) !== undefined ||
+        init.arguments.length !== 1 ||
+        !isStringLiteral(init.arguments[0]) ||
+        !modules.has(init.arguments[0].value)
+      ) {
+        return;
+      }
+      for (const property of id.properties) {
+        if (
+          property.type === 'Property' &&
+          !property.computed &&
+          (isIdentifier(property.key, importedName) ||
+            (isStringLiteral(property.key) && property.key.value === importedName)) &&
+          property.value.type === 'Identifier'
+        ) {
+          addImport(property.value.name, node);
+        }
+      }
+    }
+  });
+
+  const objects: E.ObjectExpression[] = [];
+  walk(editor.program, (node) => {
+    if (node.type !== 'CallExpression') {
+      return;
+    }
+    const { callee } = node;
+    if (
+      callee.type !== 'MemberExpression' ||
+      callee.object.type !== 'Identifier' ||
+      !(
+        (isIdentifier(callee.property, methodName) && !callee.computed) ||
+        (isStringLiteral(callee.property) && callee.property.value === methodName)
+      )
+    ) {
+      return;
+    }
+    const binding = editor.scopes.bindingOf(callee.object);
+    if (!binding || !imports.get(callee.object.name)?.has(binding.node)) {
+      return;
+    }
+    const argument = node.arguments[0];
+    if (!argument) {
+      return;
+    }
+    const value = argument.type === 'SpreadElement' ? argument : unwrapExpression(argument);
+    if (!binding.constant || value.type !== 'ObjectExpression') {
+      report({
+        code: !binding.constant ? 'ambiguous-binding' : 'unsupported-initializer',
+        target: { kind: 'call-argument', importedName, methodName },
+        path: [],
+        message: !binding.constant
+          ? 'the imported binding is reassigned'
+          : 'the call argument is not an object literal',
+        loc: locationOf(editor.code, argument.start, argument.end),
+      });
+      return;
+    }
+    objects.push(value);
+  });
+  return objects;
 };
+
+export const loadConfig = (code: string, fileName?: string) => new ConfigFile(code, fileName);
 
 export const formatConfig = (config: ConfigFile): string => {
   return printConfig(config).code;
 };
 
-export const printConfig = (config: ConfigFile, options: RecastOptions = {}): PrintResultType => {
-  return recast.print(config._ast, { quote: config._inferQuotes(), ...options });
+/**
+ * Print the config with its edits. Untouched code is kept as written, except that every line ends
+ * like the first one: CRLF when that is CRLF, `\n` otherwise.
+ */
+export const printConfig = (config: ConfigFile): PrintResultType => {
+  const code = config.editor.toString();
+  return { code, toString: () => code };
 };
 
 export const readConfig = async (fileName: string) => {
@@ -1451,18 +1126,13 @@ export const writeConfig = async (config: ConfigFile, fileName?: string) => {
 };
 
 export const isCsfFactoryPreview = (previewConfig: ConfigFile) => {
-  const program = previewConfig._ast.program;
-  return !!program.body.find((node) => {
-    return (
-      t.isImportDeclaration(node) &&
+  return previewConfig.program.body.some(
+    (node) =>
+      node.type === 'ImportDeclaration' &&
       node.source.value.includes('storybook') &&
-      node.specifiers.some((specifier) => {
-        return (
-          t.isImportSpecifier(specifier) &&
-          t.isIdentifier(specifier.imported) &&
-          specifier.imported.name === 'definePreview'
-        );
-      })
-    );
-  });
+      node.specifiers.some(
+        (specifier) =>
+          specifier.type === 'ImportSpecifier' && isIdentifier(specifier.imported, 'definePreview')
+      )
+  );
 };

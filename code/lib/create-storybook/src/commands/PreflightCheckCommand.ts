@@ -7,12 +7,12 @@ import {
   isCI,
   invalidateProjectRootCache,
   warnOnYarn1,
+  getProcessAncestry,
 } from 'storybook/internal/common';
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
 import { dedent } from 'ts-dedent';
-import { getProcessAncestry } from 'process-ancestry';
 
 import type { CommandOptions } from '../generators/types.ts';
 import { currentDirectoryIsEmpty, scaffoldNewProject } from '../scaffold-new-project.ts';
@@ -139,8 +139,8 @@ export class PreflightCheckCommand {
       logger.warn(dedent`
           This version is behind the latest release, which is: ${latestVersion}!
           You likely ran the init command through npx, which can use a locally cached version.
-          
-          To get the latest, please run: ${CLI_COLORS.cta('npx storybook@latest init')}
+
+          To get the latest, please run: ${CLI_COLORS.cta(packageManager.getRemoteRunCommand(['storybook@latest', 'init']))}
           You may want to ${CLI_COLORS.cta('CTRL+C')} to stop, and run with the latest version instead.
         `);
     } else if (isPrerelease) {

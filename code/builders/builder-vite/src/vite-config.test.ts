@@ -5,11 +5,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { resolve } from 'node:path';
 
 import { Channel } from 'storybook/internal/channels';
+import { getProjectRoot } from 'storybook/internal/common';
 import type { Options, Presets } from 'storybook/internal/types';
 
+import * as find from 'empathic/find';
+import { normalize } from 'pathe';
 import { loadConfigFromFile } from 'vite';
 
 import { storybookConfigPlugin } from './plugins/storybook-config-plugin.ts';
+import type { BuilderOptions } from './types.ts';
 import { commonConfig, resolveVitePublicDir } from './vite-config.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -19,6 +23,16 @@ vi.mock('vite', async (importOriginal) => ({
   defaultClientConditions: undefined,
 }));
 const loadConfigFromFileMock = vi.mocked(loadConfigFromFile);
+
+vi.mock('empathic/find', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
+
+const { loggerWarnMock } = vi.hoisted(() => ({ loggerWarnMock: vi.fn() }));
+vi.mock('storybook/internal/node-logger', () => ({
+  // `once` passes straight through to the warn mock; deduping is node-logger's own tested behavior.
+  once: () => (message: string) => loggerWarnMock(message),
+  logger: { warn: loggerWarnMock, error: vi.fn(), log: vi.fn(), debug: vi.fn() },
+}));
 
 const dummyOptions: Options = {
   configType: 'DEVELOPMENT',
@@ -40,6 +54,42 @@ const dummyOptions: Options = {
   } as Presets,
   presetsList: [],
 };
+
+const presetsWith = (builderOptions: BuilderOptions): Presets =>
+  ({
+    apply: async (key: string) =>
+      ({
+        framework: { name: '' },
+        addons: [],
+        core: {
+          builder: {
+            name: '@storybook/builder-vite',
+            options: builderOptions,
+          },
+        },
+        options: {},
+      })[key],
+  }) as Presets;
+
+const mockExistsSync = async (pathToMock: string, exists: boolean) => {
+  const actual = await vi.importActual<typeof import('node:fs')>('node:fs');
+
+  vi.mocked(existsSync).mockImplementation((path) => {
+    if (path === resolve(pathToMock)) {
+      return exists;
+    }
+
+    return actual.existsSync(path);
+  });
+};
+
+afterEach(() => {
+  vi.mocked(existsSync).mockReset();
+  loadConfigFromFileMock.mockReset();
+  loggerWarnMock.mockClear();
+  vi.mocked(find.any).mockReset();
+  vi.mocked(getProjectRoot).mockReset();
+});
 
 describe('commonConfig', () => {
   it('should set configFile to false and include plugins', async () => {
@@ -72,22 +122,7 @@ describe('commonConfig', () => {
   it('should pass configLoader option to loadConfigFromFile', async () => {
     const optionsWithConfigLoader: Options = {
       ...dummyOptions,
-      presets: {
-        apply: async (key: string) =>
-          ({
-            framework: { name: '' },
-            addons: [],
-            core: {
-              builder: {
-                name: '@storybook/builder-vite',
-                options: {
-                  configLoader: 'native',
-                },
-              },
-            },
-            options: {},
-          })[key],
-      } as Presets,
+      presets: presetsWith({ configLoader: 'native' }),
     };
 
     // Inline mock: this test asserts a specific call signature, so it needs its
@@ -157,22 +192,6 @@ describe('resolveVitePublicDir', () => {
   const mockUserConfig = (config: Record<string, unknown>) =>
     loadConfigFromFileMock.mockResolvedValueOnce({ config, path: '', dependencies: [] });
 
-  const mockExistsSync = async (pathToMock: string, exists: boolean) => {
-    const actual = await vi.importActual<typeof import('node:fs')>('node:fs');
-
-    vi.mocked(existsSync).mockImplementation((path) => {
-      if (path === resolve(pathToMock)) {
-        return exists;
-      }
-
-      return actual.existsSync(path);
-    });
-  };
-
-  afterEach(() => {
-    vi.mocked(existsSync).mockReset();
-  });
-
   it('defaults to the public directory next to the Storybook config dir', async () => {
     await mockExistsSync('/project/public', true);
     mockUserConfig({});
@@ -199,5 +218,113 @@ describe('resolveVitePublicDir', () => {
     mockUserConfig({});
 
     expect(await resolveVitePublicDir(options, 'build')).toBeUndefined();
+  });
+});
+
+describe('discovery miss reporting', () => {
+  it('warns when configDir is nested and the Vite config sits at the project root', async () => {
+    // `resolve` gives the drive-letter, backslash form on Windows, as `find.any` does there.
+    const found = resolve('/project/vite.config.mjs');
+    const printed = normalize(found);
+    vi.mocked(getProjectRoot).mockReturnValue('/project');
+    vi.mocked(find.any).mockReturnValueOnce(found);
+    loadConfigFromFileMock.mockResolvedValueOnce(null);
+
+    await commonConfig(
+      { ...dummyOptions, configDir: '/project/configuration/storybook' },
+      'development'
+    );
+
+    expect(vi.mocked(find.any)).toHaveBeenCalledWith(expect.anything(), {
+      cwd: resolve('/project/configuration'),
+      last: '/project',
+    });
+    expect(loggerWarnMock).toHaveBeenCalledTimes(1);
+    expect(loggerWarnMock.mock.calls[0][0]).toContain(`found at "${printed}"`);
+    expect(loggerWarnMock.mock.calls[0][0]).toContain(
+      `core: { builder: { options: { viteConfigPath: '${printed}' } } }`
+    );
+    expect(loggerWarnMock.mock.calls[0][0]).toContain('viteConfigPath: null');
+  });
+
+  it('prints a Windows config path with forward slashes so the snippet stays pasteable', async () => {
+    vi.mocked(getProjectRoot).mockReturnValue('/project');
+    vi.mocked(find.any).mockReturnValueOnce('C:\\project\\vite.config.mjs');
+    loadConfigFromFileMock.mockResolvedValueOnce(null);
+
+    await commonConfig(
+      { ...dummyOptions, configDir: '/project/configuration/storybook' },
+      'development'
+    );
+
+    expect(loggerWarnMock).toHaveBeenCalledTimes(1);
+    expect(loggerWarnMock.mock.calls[0][0]).toContain('found at "C:/project/vite.config.mjs"');
+    expect(loggerWarnMock.mock.calls[0][0]).toContain(
+      "core: { builder: { options: { viteConfigPath: 'C:/project/vite.config.mjs' } } }"
+    );
+  });
+
+  it('stays quiet when no Vite config exists in the project at all', async () => {
+    vi.mocked(getProjectRoot).mockReturnValue('/project');
+    vi.mocked(find.any).mockReturnValueOnce(undefined);
+    loadConfigFromFileMock.mockResolvedValueOnce(null);
+
+    await commonConfig({ ...dummyOptions, configDir: '/project/.storybook' }, 'development');
+
+    expect(loggerWarnMock).not.toHaveBeenCalled();
+  });
+
+  it('stays quiet when discovery loads a config in the standard layout', async () => {
+    loadConfigFromFileMock.mockResolvedValueOnce({ config: {}, path: '', dependencies: [] });
+
+    await commonConfig({ ...dummyOptions, configDir: '/project/.storybook' }, 'development');
+
+    expect(vi.mocked(find.any)).not.toHaveBeenCalled();
+    expect(loggerWarnMock).not.toHaveBeenCalled();
+  });
+
+  it('stays quiet when an explicit viteConfigPath resolves to nothing', async () => {
+    loadConfigFromFileMock.mockResolvedValueOnce(null);
+
+    await commonConfig(
+      {
+        ...dummyOptions,
+        configDir: '/project/.storybook',
+        presets: presetsWith({ viteConfigPath: '/custom/vite.config.ts' }),
+      },
+      'development'
+    );
+
+    expect(vi.mocked(find.any)).not.toHaveBeenCalled();
+    expect(loggerWarnMock).not.toHaveBeenCalled();
+  });
+
+  it('loads nothing and stays quiet when viteConfigPath is explicitly null', async () => {
+    loadConfigFromFileMock.mockResolvedValueOnce(null);
+
+    await commonConfig(
+      {
+        ...dummyOptions,
+        configDir: '/project/.storybook',
+        presets: presetsWith({ viteConfigPath: null }),
+      },
+      'development'
+    );
+
+    expect(loadConfigFromFileMock).not.toHaveBeenCalled();
+    expect(vi.mocked(find.any)).not.toHaveBeenCalled();
+    expect(loggerWarnMock).not.toHaveBeenCalled();
+  });
+
+  it('stays quiet when the config dir sits outside the project root', async () => {
+    // The search is bounded by `last: getProjectRoot()`; when the config dir's parent is not
+    // inside the project root the search would run to the filesystem root, so no warning is made.
+    vi.mocked(getProjectRoot).mockReturnValue('/workspace');
+    loadConfigFromFileMock.mockResolvedValueOnce(null);
+
+    await commonConfig({ ...dummyOptions, configDir: '/project/.storybook' }, 'development');
+
+    expect(vi.mocked(find.any)).not.toHaveBeenCalled();
+    expect(loggerWarnMock).not.toHaveBeenCalled();
   });
 });

@@ -1,0 +1,3 @@
+<style>@scope {
+  :scope > style + lit-slots-and-css::part(panel) { color: rebeccapurple; }
+}</style><lit-slots-and-css style="--slot-panel-color: teal;">Body <b>text</b><button slot="actions">Confirm</button></lit-slots-and-css>

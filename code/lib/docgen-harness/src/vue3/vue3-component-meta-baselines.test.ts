@@ -22,10 +22,21 @@ import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 
-const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
-  .filter((entry) => entry.isDirectory())
-  .map((entry) => entry.name)
-  .sort();
+const tsxFixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__tsx-testfixtures__');
+
+const readFixtureCases = (dir: string) =>
+  readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+
+const fixtureCases = readFixtureCases(fixturesDir);
+
+// TSX fixtures live separately: the .vue-only recorders (legacy vue-docgen-api, api-description,
+// named-type-details, story-docs payloads) cannot parse scripts, and vue3-render would need a JSX
+// transform for the .vue toolchain. The component-meta recorder covers TSX because the shared
+// extraction is type-driven and file-type agnostic.
+const tsxFixtureCases = readFixtureCases(tsxFixturesDir);
 
 // Mirrors the checker construction in the production vite plugin
 // (frameworks/vue3-vite/src/plugins/vue-component-meta.ts): no fixture tsconfig exists,
@@ -37,6 +48,24 @@ const checkerOptions: MetaCheckerOptions = {
   schema: true,
 };
 const checker = createCheckerByJson(fixturesDir, { include: ['**/*'] }, checkerOptions);
+
+// The TSX fixtures import `vue` for defineComponent/SlotsType, so they need a module resolution
+// mode that resolves it (the .vue fixtures never import from 'vue' inside the component file).
+const tsxChecker = createCheckerByJson(
+  tsxFixturesDir,
+  {
+    include: ['**/*'],
+    compilerOptions: {
+      target: 'esnext',
+      module: 'esnext',
+      moduleResolution: 'bundler',
+      jsx: 'preserve',
+      strict: true,
+      skipLibCheck: true,
+    },
+  },
+  checkerOptions
+);
 
 // Copy of the production plugin's nested-schema pruning.
 function removeNestedSchemas(schema: PropertyMetaSchema) {
@@ -57,7 +86,10 @@ const lowercaseFirstLetter = (s: string) => s.charAt(0).toLowerCase() + s.slice(
 
 // Replicates the production plugin's meta processing so a recording represents what a real build
 // attaches, the undefined case included.
-async function buildComponentMetaDocgen(sfcPath: string): Promise<object | undefined> {
+async function buildComponentMetaDocgen(
+  checker: ReturnType<typeof createCheckerByJson>,
+  sfcPath: string
+): Promise<object | undefined> {
   let meta: ComponentMeta;
   try {
     const exportNames = checker.getExportNames(sfcPath);
@@ -138,63 +170,79 @@ type DocgenComponent = {
   __docgenInfo?: unknown;
 };
 
+/** Runs one fixture through the component-meta recorder shared by the .vue and .tsx suites. */
+const runComponentMetaFixture = async (
+  fixtureCase: string,
+  fixturesDirName: '__testfixtures__' | '__tsx-testfixtures__',
+  checker: ReturnType<typeof createCheckerByJson>
+) => {
+  const fixturesRoot = join(dirname(fileURLToPath(import.meta.url)), fixturesDirName);
+  const testDir = join(fixturesRoot, fixtureCase);
+  const componentFiles = readdirSync(testDir).filter((file) => /\.(vue|tsx)$/.test(file));
+  expect(componentFiles).toHaveLength(1);
+
+  const docgen = await buildComponentMetaDocgen(checker, join(testDir, componentFiles[0]!));
+
+  const storiesModule = await import(`./${fixturesDirName}/${fixtureCase}/input.stories.ts`);
+  const { default: meta, ...stories } = storiesModule;
+
+  const component: DocgenComponent = meta.component;
+  if (docgen) {
+    component.__docgenInfo = Object.assign(
+      { displayName: component.name ?? component.__name },
+      JSON.parse(JSON.stringify(docgen))
+    );
+  } else {
+    delete component.__docgenInfo;
+  }
+
+  const argTypes = extractArgTypes(component);
+  await recordArgTypesSnapshot({
+    path: join(testDir, 'cm-argtypes.snapshot'),
+    label: `${fixtureCase}/cm-argtypes.snapshot`,
+    candidate: argTypes!,
+  });
+
+  for (const [exportName, story] of Object.entries<{ args?: Record<string, unknown> }>(stories)) {
+    const ctx = {
+      title: meta.title,
+      component,
+      args: { ...meta.args, ...story.args },
+    };
+    const snippetPath = join(testDir, `cm-snippet-${exportName}.snapshot`);
+    const committedSnippet = existsSync(snippetPath)
+      ? readFileSync(snippetPath, 'utf8')
+      : undefined;
+    const snippet = generateSourceCode(ctx);
+    if (committedSnippet !== undefined) {
+      expectCurrentOrBetter({
+        kind: 'snippet',
+        framework: 'vue3',
+        baseline: committedSnippet,
+        candidate: snippet,
+      });
+    }
+    await expect(snippet).toMatchFileSnapshot(snippetPath);
+  }
+
+  // same stale-file guard as the legacy recorder, scoped to the cm- prefix
+  const snippetFilesOnDisk = readdirSync(testDir)
+    .filter((file) => file.startsWith('cm-snippet-') && file.endsWith('.snapshot'))
+    .sort();
+  const expectedSnippetFiles = Object.keys(stories)
+    .map((exportName) => `cm-snippet-${exportName}.snapshot`)
+    .sort();
+  expect(snippetFilesOnDisk).toEqual(expectedSnippetFiles);
+};
+
 describe('vue3 vue-component-meta baselines', () => {
   it.each(fixtureCases)('%s', async (fixtureCase) => {
-    const testDir = join(fixturesDir, fixtureCase);
-    const sfcFiles = readdirSync(testDir).filter((file) => file.endsWith('.vue'));
-    expect(sfcFiles).toHaveLength(1);
+    await runComponentMetaFixture(fixtureCase, '__testfixtures__', checker);
+  });
+});
 
-    const docgen = await buildComponentMetaDocgen(join(testDir, sfcFiles[0]));
-
-    const storiesModule = await import(`./__testfixtures__/${fixtureCase}/input.stories.ts`);
-    const { default: meta, ...stories } = storiesModule;
-
-    const component: DocgenComponent = meta.component;
-    if (docgen) {
-      component.__docgenInfo = Object.assign(
-        { displayName: component.name ?? component.__name },
-        JSON.parse(JSON.stringify(docgen))
-      );
-    } else {
-      delete component.__docgenInfo;
-    }
-
-    const argTypes = extractArgTypes(component);
-    await recordArgTypesSnapshot({
-      path: join(testDir, 'cm-argtypes.snapshot'),
-      label: `${fixtureCase}/cm-argtypes.snapshot`,
-      candidate: argTypes!,
-    });
-
-    for (const [exportName, story] of Object.entries<{ args?: Record<string, unknown> }>(stories)) {
-      const ctx = {
-        title: meta.title,
-        component,
-        args: { ...meta.args, ...story.args },
-      };
-      const snippetPath = join(testDir, `cm-snippet-${exportName}.snapshot`);
-      const committedSnippet = existsSync(snippetPath)
-        ? readFileSync(snippetPath, 'utf8')
-        : undefined;
-      const snippet = generateSourceCode(ctx);
-      if (committedSnippet !== undefined) {
-        expectCurrentOrBetter({
-          kind: 'snippet',
-          framework: 'vue3',
-          baseline: committedSnippet,
-          candidate: snippet,
-        });
-      }
-      await expect(snippet).toMatchFileSnapshot(snippetPath);
-    }
-
-    // same stale-file guard as the legacy recorder, scoped to the cm- prefix
-    const snippetFilesOnDisk = readdirSync(testDir)
-      .filter((file) => file.startsWith('cm-snippet-') && file.endsWith('.snapshot'))
-      .sort();
-    const expectedSnippetFiles = Object.keys(stories)
-      .map((exportName) => `cm-snippet-${exportName}.snapshot`)
-      .sort();
-    expect(snippetFilesOnDisk).toEqual(expectedSnippetFiles);
+describe('vue3 vue-component-meta baselines — tsx components', () => {
+  it.each(tsxFixtureCases)('%s', async (fixtureCase) => {
+    await runComponentMetaFixture(fixtureCase, '__tsx-testfixtures__', tsxChecker);
   });
 });

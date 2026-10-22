@@ -38,16 +38,16 @@ export const build: Task = {
 
     const buildTime = now() - start;
     const dir = join(sandboxDir, 'storybook-static');
-    const getSize = promisify(dirSize);
-    const buildSize = await getSize(dir).catch(() => 0);
-    const buildSbAddonsSize = await getSize(join(dir, 'sb-addons')).catch(() => 0);
-    const buildSbCommonSize = await getSize(join(dir, 'sb-common-assets')).catch(() => 0);
-    const buildSbManagerSize = await getSize(join(dir, 'sb-manager')).catch(() => 0);
-    const buildSbPreviewSize = await getSize(join(dir, 'sb-preview')).catch(() => 0);
+    const getSize = async (path: string) => (await promisify(dirSize)(path).catch(() => 0)) ?? 0;
+    const buildSize = await getSize(dir);
+    const buildSbAddonsSize = await getSize(join(dir, 'sb-addons'));
+    const buildSbCommonSize = await getSize(join(dir, 'sb-common-assets'));
+    const buildSbManagerSize = await getSize(join(dir, 'sb-manager'));
+    const buildSbPreviewSize = await getSize(join(dir, 'sb-preview'));
     const buildPrebuildSize =
       buildSbAddonsSize + buildSbCommonSize + buildSbManagerSize + buildSbPreviewSize;
 
-    const buildStaticSize = await getSize(join(dir, 'static')).catch(() => 0);
+    const buildStaticSize = await getSize(join(dir, 'static'));
     const buildPreviewSize = buildSize - buildPrebuildSize - buildStaticSize;
 
     await saveBench(

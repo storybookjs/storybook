@@ -2,7 +2,7 @@ import { logConfig, normalizeStories } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError } from 'storybook/internal/server-errors';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
-import type { Options } from 'storybook/internal/types';
+import type { Options, SecurityConfig } from 'storybook/internal/types';
 
 import compression from '@polka/compression';
 import polka from 'polka';
@@ -21,8 +21,10 @@ import { getHostValidationMiddleware } from './utils/getHostValidationMiddleware
 import { registerIndexJsonRoute } from './utils/index-json.ts';
 import { registerManifests } from './utils/manifests/manifests.ts';
 import { useStorybookMetadata } from './utils/metadata.ts';
+import { getSecurityHeadersMiddleware } from './utils/getSecurityHeadersMiddleware.ts';
 import { getMiddleware } from './utils/middleware.ts';
 import { openInBrowser } from './utils/open-browser/open-in-browser.ts';
+import { addLoopbackListener, getListenHost } from './utils/server-address.ts';
 import type { getServer } from './utils/server-init.ts';
 import { useStatics } from './utils/server-statics.ts';
 import { summarizeIndex } from './utils/summarizeIndex.ts';
@@ -32,6 +34,7 @@ export async function storybookDevServer(
   server: Awaited<ReturnType<typeof getServer>>
 ) {
   const core = await options.presets.apply('core');
+  const security = await options.presets.apply<SecurityConfig | undefined>('security');
 
   const app = polka({ server });
 
@@ -74,6 +77,7 @@ export async function storybookDevServer(
     })
   );
   app.use(getAccessControlMiddleware(core?.crossOriginIsolated ?? false));
+  app.use(getSecurityHeadersMiddleware(security));
   app.use(getCachingMiddleware());
 
   registerIndexJsonRoute({
@@ -126,60 +130,58 @@ export async function storybookDevServer(
   let previewResult: Awaited<ReturnType<(typeof previewBuilder)['start']>> =
     await Promise.resolve();
 
-  if (!options.ignorePreview) {
-    logger.debug('Starting preview..');
-    previewResult = await previewBuilder
-      .start({
-        startTime: process.hrtime(),
-        options,
-        router: app,
-        server,
-        channel: options.channel,
-      })
-      .catch(async (e: unknown) => {
-        logger.error('Failed to build the preview');
-        process.exitCode = 1;
+  logger.debug('Starting preview..');
+  previewResult = await previewBuilder
+    .start({
+      startTime: process.hrtime(),
+      options,
+      router: app,
+      server,
+      channel: options.channel,
+    })
+    .catch(async (e: unknown) => {
+      logger.error('Failed to build the preview');
+      process.exitCode = 1;
 
-        await disposeChangeDetectionRuntime();
-        await managerBuilder?.bail().catch(() => undefined);
-        // For some reason, even when Webpack fails e.g. wrong main.js config,
-        // the preview may continue to print to stdout, which can affect output
-        // when we catch this error and process those errors (e.g. telemetry)
-        // gets overwritten by preview progress output. Therefore, we should bail the preview too.
-        await previewBuilder?.bail().catch(() => undefined);
+      await disposeChangeDetectionRuntime();
+      await managerBuilder?.bail().catch(() => undefined);
+      // For some reason, even when Webpack fails e.g. wrong main.js config,
+      // the preview may continue to print to stdout, which can affect output
+      // when we catch this error and process those errors (e.g. telemetry)
+      // gets overwritten by preview progress output. Therefore, we should bail the preview too.
+      await previewBuilder?.bail().catch(() => undefined);
 
-        // re-throw the error
-        throw e;
-      });
+      // re-throw the error
+      throw e;
+    });
 
-    let adapter: ChangeDetectionAdapter | undefined;
-    try {
-      adapter = previewBuilder.changeDetectionAdapter?.();
-    } catch (err) {
-      logger.warn('Change detection: adapter initialisation failed');
-      logger.debug(err instanceof Error ? (err.stack ?? err.message) : String(err));
-    }
-
-    resolveChangeDetectionAdapter(adapter);
-
-    const isChangeDetectionStatusEnabled = features.changeDetection !== false;
-    if (isChangeDetectionStatusEnabled) {
-      changeDetectionService.start(true);
-    } else {
-      changeDetectionService.start(false);
-    }
+  let adapter: ChangeDetectionAdapter | undefined;
+  try {
+    adapter = previewBuilder.changeDetectionAdapter?.();
+  } catch (err) {
+    logger.warn('Change detection: adapter initialisation failed');
+    logger.debug(err instanceof Error ? (err.stack ?? err.message) : String(err));
   }
+
+  resolveChangeDetectionAdapter(adapter);
+
+  changeDetectionService.start();
 
   const listening = new Promise<void>((resolve, reject) => {
     server.once('error', reject);
-    app.listen({ port: options.port, host: options.host }, resolve);
-  });
+    // SECURITY: If no host is set, listen on 127.0.0.1. Node binds to 0.0.0.0 by default, which
+    // makes Storybook accessible on LAN (e.g. conference WiFi). `localhost` is not used because
+    // Node binds it to one address only, often ::1, which refuses clients that connect to 127.0.0.1.
+    app.listen({ port: options.port, host: getListenHost(options.host) }, resolve);
+  }).then(() => addLoopbackListener(server));
 
   try {
     const [indexGenerator] = await Promise.all([storyIndexGeneratorPromise, listening]);
 
     if (indexGenerator && !options.ci && !options.smokeTest && options.open) {
-      const url = options.host ? options.networkAddress : options.localAddress;
+      // Origin checks only trust loopback hostnames, and 0.0.0.0 also listens on 127.0.0.1.
+      const url =
+        options.host && options.host !== '0.0.0.0' ? options.networkAddress : options.localAddress;
       openInBrowser(options.previewOnly ? `${url}iframe.html?navigator=true` : url!).catch(() => {
         // the browser window could not be opened, this is non-critical, we just ignore the error
       });

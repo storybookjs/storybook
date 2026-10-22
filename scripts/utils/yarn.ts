@@ -37,7 +37,12 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 };
 
-export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
+export const installYarn2 = async ({
+  cwd,
+  dryRun,
+  debug,
+  key,
+}: YarnOptions & { key: AllTemplatesKey }) => {
   await mkdir(cwd, { recursive: true });
 
   // The published sandbox ships a lockfile and a `.yarnrc.yml` carrying the age gate.
@@ -47,7 +52,7 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   // Our own Storybook packages are published to Verdaccio seconds before this install,
   // so they can never satisfy the gate. Name them instead of switching it off, exactly
   // as sandbox generation does for the `after-storybook` install.
-  await preapproveLocallyPublishedPackages(cwd);
+  await preapproveLocallyPublishedPackages(cwd, allTemplates[key].minAgeGateExemptions);
 
   const command = [
     // No `yarn set version` here: the sandbox pins Yarn through the `packageManager`
@@ -92,7 +97,10 @@ export const addWorkaroundResolutions = async ({
   let additionalResolutions = {};
 
   // add additional resolutions for React 19
-  if (['nextjs/default-ts', 'nextjs/prerelease', 'react-native-web-vite/expo-ts'].includes(key)) {
+  if (
+    key !== undefined &&
+    ['nextjs/default-ts', 'nextjs/prerelease', 'react-native-web-vite/expo-ts'].includes(key)
+  ) {
     additionalResolutions = {
       react: '^19.0.0',
       'react-dom': '^19.0.0',

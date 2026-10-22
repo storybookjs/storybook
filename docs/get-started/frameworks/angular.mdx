@@ -127,6 +127,12 @@ If your component relies on application-wide providers, like the ones defined by
 
 <CodeSnippets path="angular-application-providers-in-meta-and-story.md" />
 
+<Callout variant="info">
+
+Use `applicationConfig` for providers that belong to the application bootstrap environment, such as providers passed to Angular's `bootstrapApplication`. Use `moduleMetadata` for declarations, imports, and providers needed by the story's Angular template. The decorators configure different scopes and can be used together when a story needs both.
+
+</Callout>
+
 ### Angular dependencies
 
 If your component has dependencies on other Angular directives and modules, these can be supplied using the `moduleMetadata` [decorator](../../writing-stories/decorators.mdx) either for all stories of a component or for individual stories.
@@ -290,7 +296,6 @@ These are common options you may need for the Angular builder:
 | `"assets"`                   | List of static application assets. <br /> `"assets": ["src/assets"]`                                                                                                                        |
 | `"initialPath"`              | URL path to be appended when visiting Storybook for the first time. <br /> `"initialPath": "docs/configure-your-project--docs"`                                                             |
 | `"webpackStatsJson"`         | Write Webpack Stats JSON to disk. <br /> `"webpackStatsJson": true`                                                                                                                         |
-| `"previewUrl"`               | Disables the default storybook preview and lets you use your own. <br /> `"previewUrl": "iframe.html"`                                                                                      |
 | `"loglevel"`                 | Controls level of logging during build. Can be one of: [trace, debug, info (default), warn, error, silent]. <br /> `"loglevel": "info"`                                                     |
 | `"sourceMap"`                | Configure [sourcemaps](https://angular.dev/reference/configs/workspace-config#source-map-configuration.). <br /> `"sourceMap": true`                                                        |
 | `"experimentalZoneless"`     | Configure [zoneless change detection](https://angular.dev/guide/zoneless). <br /> `"experimentalZoneless": true`                                                                            |

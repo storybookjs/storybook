@@ -71,10 +71,6 @@ const config: BuildEntries = {
         entryPoint: './src/csf-tools/index.ts',
       },
       {
-        exportEntries: ['./internal/babel'],
-        entryPoint: './src/babel/index.ts',
-      },
-      {
         exportEntries: ['./internal/bin/dispatcher'],
         entryPoint: './src/bin/dispatcher.ts',
         dts: false,
@@ -243,11 +239,13 @@ const config: BuildEntries = {
         exportEntries: ['./internal/preview/runtime'],
         entryPoint: './src/preview/runtime.ts',
         dts: false,
+        chunkedRuntime: true,
       },
       {
         exportEntries: ['./internal/manager/globals-runtime'],
         entryPoint: './src/manager/globals-runtime.ts',
         dts: false,
+        chunkedRuntime: true,
       },
       /**
        * It is required to be a runtime entry point, because it is used to inject the mocker runtime

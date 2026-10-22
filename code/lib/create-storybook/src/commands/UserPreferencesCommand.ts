@@ -36,6 +36,7 @@ export interface UserPreferencesOptions {
   renderer: SupportedRenderer;
   projectType: ProjectType;
   isTestFeatureAvailable: boolean;
+  isAiAvailable: boolean;
   isAiSetupAvailable: boolean;
 }
 
@@ -80,15 +81,17 @@ export class UserPreferencesCommand {
         ? await this.promptInstallType(skipPrompt, options.isTestFeatureAvailable)
         : 'recommended';
 
-    // Ask about AI setup (only available for compatible projects, e.g. React + Vite)
-    const useAiForSetup = options.isAiSetupAvailable ? await this.promptAiSetup(skipPrompt) : false;
+    const useAi = options.isAiAvailable
+      ? await this.promptAiSetup(skipPrompt, options.isAiSetupAvailable)
+      : false;
 
     const selectedFeatures = this.determineFeatures(
       installType,
       newUser,
       options.isTestFeatureAvailable,
       options.projectType,
-      useAiForSetup
+      useAi,
+      options.isAiSetupAvailable
     );
 
     return { newUser, selectedFeatures };
@@ -196,7 +199,8 @@ export class UserPreferencesCommand {
     newUser: boolean,
     isTestFeatureAvailable: boolean,
     projectType: ProjectType,
-    useAiForSetup: boolean
+    useAi: boolean,
+    isAiSetupAvailable: boolean
   ): Set<Feature> {
     const features = new Set<Feature>();
 
@@ -212,9 +216,11 @@ export class UserPreferencesCommand {
       }
     }
 
-    // If user has asked for AI setup, we provide the MCP addon and ensure test is included
-    if (useAiForSetup) {
+    if (useAi) {
       features.add(Feature.AI);
+    }
+
+    if (useAi && isAiSetupAvailable) {
       if (isTestFeatureAvailable) {
         features.add(Feature.TEST);
       }
@@ -229,17 +235,20 @@ export class UserPreferencesCommand {
   }
 
   /** Prompt user about AI-assisted Storybook setup */
-  private async promptAiSetup(skipPrompt: boolean): Promise<boolean> {
+  private async promptAiSetup(skipPrompt: boolean, isAiSetupAvailable: boolean): Promise<boolean> {
     const useAi = skipPrompt
       ? true
       : await prompt.confirm(
           {
-            message: 'Would you like to install AI features (MCP addon and prompt suggestions)?',
+            message: isAiSetupAvailable
+              ? 'Do you want AI features, like skills and prompts, in your Storybook?'
+              : 'Do you want AI features, like skills, in your Storybook?',
+            initialValue: true,
           },
           createPromptCancelOptions(this.telemetryService, 'ai-setup')
         );
 
-    if (useAi) {
+    if (useAi && isAiSetupAvailable) {
       await this.telemetryService.trackAiSetupNudge({ skipPrompt });
     }
 

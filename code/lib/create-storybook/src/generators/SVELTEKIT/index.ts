@@ -13,7 +13,6 @@ export default defineGeneratorModule({
   configure: async () => {
     return {
       extensions: ['js', 'ts', 'svelte'],
-      extraAddons: ['@storybook/addon-svelte-csf'],
     };
   },
 });

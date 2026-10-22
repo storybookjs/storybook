@@ -6,7 +6,7 @@ import type { FrameworkOptions } from './types.ts';
 
 type PropsTableInput = Pick<FrameworkOptions, 'propsTable'> | null | undefined;
 type Features =
-  | Pick<StorybookFeatures, 'angularFilterNonInputControls' | 'experimentalDocgenServer'>
+  | Pick<StorybookFeatures, 'angularFilterNonInputControls' | 'docgenServer'>
   | undefined;
 
 const MODES: readonly PropsTableMode[] = ['all', 'api', 'inputs'];
@@ -38,7 +38,7 @@ export const resolvePropsTable = (
  * Reports every props-table setting that will not do what it says.
  *
  * Call this from a hook that runs whatever the feature flags say: the docgen preset is skipped
- * entirely when `experimentalDocgenServer` is off, which is exactly the case one of these warnings
+ * entirely when `docgenServer` is off, which is exactly the case one of these warnings
  * is about.
  */
 export const warnAboutPropsTable = (
@@ -63,10 +63,10 @@ export const warnAboutPropsTable = (
     );
   }
 
-  if (configured === 'api' && features?.experimentalDocgenServer !== true) {
+  if (configured === 'api' && features?.docgenServer !== true) {
     logger.warn(
-      `\`propsTable: 'api'\` needs the \`experimentalDocgenServer\` feature, which is off, so the props table keeps showing every member. ` +
-        `Enable it with \`features: { experimentalDocgenServer: true }\`, or set \`propsTable: 'all'\` to say you want every member.`
+      `\`propsTable: 'api'\` needs the \`docgenServer\` feature, which is off, so the props table keeps showing every member. ` +
+        `Enable it with \`features: { docgenServer: true }\`, or set \`propsTable: 'all'\` to say you want every member.`
     );
   }
 };

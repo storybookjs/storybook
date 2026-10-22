@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { esMain } from '../utils/esmain.ts';
 import { getPullInfoFromCommits, getRepo } from './utils/get-changes.ts';
+import type { PullRequestInfo } from './utils/get-github-info.ts';
 import { getLatestTag, git } from './utils/git-client.ts';
 import { getLabelIds, getUnpickedPRs, githubGraphQlClient } from './utils/github-client.ts';
 
@@ -52,7 +53,7 @@ async function getPullRequestsFromLog({ repo }: { repo: string }) {
       repo,
       commits: cherryPicked.map((hash) => ({ hash })),
     })
-  ).filter((it) => it.id != null);
+  ).filter((it): it is PullRequestInfo & { id: string } => it.id != null);
 
   if (pullRequests.length === 0) {
     spinner2.fail(
@@ -74,7 +75,8 @@ export const run = async (options: unknown) => {
   }
 
   const repo = await getRepo();
-  const labelAll = typeof options === 'object' && 'all' in options && Boolean(options.all);
+  const labelAll =
+    typeof options === 'object' && options !== null && 'all' in options && Boolean(options.all);
 
   const pullRequestsToLabel = labelAll
     ? await getUnpickedPRs('next')

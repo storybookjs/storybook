@@ -1,6 +1,6 @@
 import { loadPreviewOrConfigFile } from 'storybook/internal/common';
 import type { StoryIndexGenerator } from 'storybook/internal/core-server';
-import { babelParser, extractMockCalls, findMockRedirect } from 'storybook/internal/mocking-utils';
+import { extractMockCalls, findMockRedirect } from 'storybook/internal/mocking-utils';
 import type { Options, PreviewAnnotation, StoryIndex } from 'storybook/internal/types';
 
 import { resolve } from 'pathe';
@@ -43,6 +43,9 @@ async function computeOptimizeDeps(options: Options) {
   ]);
 
   const index: StoryIndex = await storyIndexGenerator.getIndex();
+
+  // Include the user's preview file and all addon/framework/renderer preview annotations
+  // as optimizer entries so Vite can discover all transitive CJS dependencies automatically.
   const previewOrConfigFile = loadPreviewOrConfigFile({ configDir: options.configDir });
 
   const mockRedirectIncludeEntries = previewOrConfigFile
@@ -53,7 +56,6 @@ async function computeOptimizeDeps(options: Options) {
             coreOptions: { disableTelemetry: true },
             configDir: options.configDir,
           },
-          babelParser,
           projectRoot,
           findMockRedirect
         )
@@ -88,6 +90,7 @@ export function storybookOptimizeDepsPlugin(options: Options): Plugin {
   return {
     name: 'storybook:optimize-deps-plugin',
     async config(config, { command }) {
+      // optimizeDeps only applies to the dev server, not production builds
       if (command !== 'serve') {
         return;
       }

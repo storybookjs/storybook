@@ -21,13 +21,8 @@ vi.mock('store2', () => ({
 
 describe('store', () => {
   it('sensibly combines local+session storage for initial state', () => {
-    // Each storage is read twice: once for the migration check, once for the actual merge.
-    store2.session.get
-      .mockReturnValueOnce({ foo: 'bar', combined: { a: 'b' } })
-      .mockReturnValueOnce({ foo: 'bar', combined: { a: 'b' } });
-    store2.local.get
-      .mockReturnValueOnce({ foo: 'baz', another: 'value', combined: { c: 'd' } })
-      .mockReturnValueOnce({ foo: 'baz', another: 'value', combined: { c: 'd' } });
+    store2.session.get.mockReturnValueOnce({ foo: 'bar', combined: { a: 'b' } });
+    store2.local.get.mockReturnValueOnce({ foo: 'baz', another: 'value', combined: { c: 'd' } });
 
     const store = new Store({});
     expect(store.getInitialState()).toEqual({
@@ -36,6 +31,30 @@ describe('store', () => {
       // We don't combine subfields from the two sources.
       combined: { a: 'b' },
     });
+  });
+
+  it('omits v10.3 tag filters from local storage and deletes them', () => {
+    store2.local.get.mockReturnValueOnce({
+      includedTagFilters: ['legacy'],
+      excludedTagFilters: ['blocked'],
+      foo: 'local',
+    });
+    store2.session.get.mockReturnValueOnce({ bar: 'session' });
+
+    const store = new Store({});
+    expect(store.getInitialState()).toEqual({
+      foo: 'local',
+      bar: 'session',
+    });
+    expect(store2.local.set).toHaveBeenCalledWith(STORAGE_KEY, { foo: 'local' });
+  });
+
+  it('leaves local storage untouched when it holds no v10.3 tag filters', () => {
+    store2.local.get.mockReturnValueOnce({ foo: 'local' });
+    store2.session.get.mockReturnValueOnce({});
+
+    new Store({}).getInitialState();
+    expect(store2.local.set).not.toHaveBeenCalled();
   });
 
   it('passes getState right through', () => {

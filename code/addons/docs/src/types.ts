@@ -188,7 +188,7 @@ export interface DocsParameters {
     canvas?: Partial<CanvasBlockParameters>;
 
     /**
-     * Enable the Code panel.
+     * Show the Code panel by default. Set to `false` to hide it.
      *
      * @see https://storybook.js.org/docs/writing-docs/code-panel
      */

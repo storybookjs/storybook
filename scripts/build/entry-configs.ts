@@ -34,7 +34,6 @@ import createStorybookConfig from '../../code/lib/create-storybook/build-config.
 import docgenHarnessConfig from '../../code/lib/docgen-harness/build-config.ts';
 import eslintPluginConfig from '../../code/lib/eslint-plugin/build-config.ts';
 import mcpConfig from '../../code/lib/mcp/build-config.ts';
-import reactDomShimConfig from '../../code/lib/react-dom-shim/build-config.ts';
 import vitePluginStorybookNextjsConfig from '../../code/lib/vite-plugin-storybook-nextjs/build-config.ts';
 import presetReactWebpackConfig from '../../code/presets/react-webpack/build-config.ts';
 import presetServerWebpackConfig from '../../code/presets/server-webpack/build-config.ts';
@@ -90,7 +89,6 @@ export const buildEntries = {
   '@storybook/core-webpack': coreWebpackConfig,
   '@storybook/docgen-harness': docgenHarnessConfig,
   '@storybook/mcp': mcpConfig,
-  '@storybook/react-dom-shim': reactDomShimConfig,
   'create-storybook': createStorybookConfig,
   'eslint-plugin-storybook': eslintPluginConfig,
   'vite-plugin-storybook-nextjs': vitePluginStorybookNextjsConfig,

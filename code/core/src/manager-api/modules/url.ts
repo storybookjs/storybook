@@ -57,6 +57,11 @@ const mergeSerializedParams = (params: string, extraParams: string) => {
     .join(';');
 };
 
+const resolveIframeUrl = (baseUrl: string, { absolute }: { absolute: boolean }): string => {
+  const resolved = new URL('iframe.html', baseUrl);
+  return absolute ? resolved.href : `${resolved.pathname}${resolved.search}${resolved.hash}`;
+};
+
 // URL query params the manager consumes for layout/navigation. Everything else is a custom param
 // passed through to the preview iframe. Listing the boundary once keeps customQueryParams derived
 // identically at init (initialUrlSupport) and on every navigation (root.tsx), so they can't diverge.
@@ -81,7 +86,7 @@ const initialUrlSupport = ({
   state: { location, path, viewMode, storyId: storyIdFromUrl },
   singleStory,
 }: ModuleArgs) => {
-  const { full, panel, nav, shortcuts, addonPanel, tabs } = queryFromLocation(location);
+  const { full, panel, nav, shortcuts, addonPanel } = queryFromLocation(location);
 
   let navSize;
   let bottomPanelHeight;
@@ -117,7 +122,6 @@ const initialUrlSupport = ({
     bottomPanelHeight,
     rightPanelWidth,
     panelPosition: ['right', 'bottom'].includes(panel) ? panel : undefined,
-    showTabs: parseBoolean(tabs),
   };
   const ui: Partial<API_UI> = {
     enableShortcuts: parseBoolean(shortcuts),
@@ -267,10 +271,10 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       const networkAddress = global.STORYBOOK_NETWORK_ADDRESS ?? originAddress;
       const managerBase =
         base === 'origin' ? originAddress : base === 'network' ? networkAddress : pathname;
+      const previewBaseUrl = base ? managerBase : global.document?.baseURI || originAddress;
       const previewBase = refId
         ? refs[refId].url + '/iframe.html'
-        : global.PREVIEW_URL ||
-          `${managerBase.replace(/\/[^/]*\.html$/, '').replace(/\/?$/, '/')}iframe.html`;
+        : resolveIframeUrl(previewBaseUrl, { absolute: Boolean(base) });
 
       const refParam = refId ? `&refId=${encodeURIComponent(refId)}` : '';
       const { args = '', globals = '', ...otherParams } = queryParams;

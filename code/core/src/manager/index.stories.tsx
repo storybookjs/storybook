@@ -1,17 +1,16 @@
-import type { Channel } from 'storybook/internal/channels';
+import { Channel } from 'storybook/internal/channels';
 import { CHANNEL_CREATED, CHANNEL_WS_DISCONNECT } from 'storybook/internal/core-events';
 import { MemoryRouter } from 'storybook/internal/router';
 import type { Addon_Config, Addon_Types } from 'storybook/internal/types';
 import type { API_PreparedStoryIndex } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
 import { FailedIcon } from '@storybook/icons';
 
 import { HelmetProvider } from 'react-helmet-async';
 import { getChannel, setChannel } from 'storybook/internal/channels';
 
 import type { API, AddonStore } from 'storybook/manager-api';
-import { addons, mockChannel } from 'storybook/manager-api';
+import { addons } from 'storybook/manager-api';
 import { screen, within } from 'storybook/test';
 import { color } from 'storybook/theming';
 
@@ -24,7 +23,7 @@ const WS_DISCONNECTED_NOTIFICATION_ID = 'CORE/WS_DISCONNECTED';
 const MOCK_STORY_PATH = '/?path=/story/example-button--primary';
 
 const originalChannel = getChannel();
-const channel = mockChannel() as unknown as Channel;
+const channel = new Channel({});
 
 const originalGetItem = Storage.prototype.getItem;
 const originalSetItem = Storage.prototype.setItem;
@@ -109,8 +108,6 @@ const meta = preview.meta({
     },
   },
   beforeEach: () => {
-    global.PREVIEW_URL = 'about:blank';
-
     addons.setChannel(channel);
     channel.emit(CHANNEL_CREATED);
 

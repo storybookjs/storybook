@@ -9,7 +9,7 @@ import {
   normalizeStoryPath,
 } from 'storybook/internal/common';
 import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
-import { getStorySortParameter, loadConfig } from 'storybook/internal/csf-tools';
+import { loadConfig } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import { isExampleStoryId } from 'storybook/internal/telemetry';
 import type {
@@ -37,7 +37,7 @@ import * as TsconfigPaths from 'tsconfig-paths';
 import { resolveImport, supportedExtensions } from '../../common/index.ts';
 import { anchorBlockIdFromId } from '../../docs-tools/shared.ts';
 import { userOrAutoTitleFromSpecifier } from '../../shared/story-index/autoTitle.ts';
-import { sortStoriesV7 } from '../../shared/story-index/sortStories.ts';
+import { combineStorySorts, sortStoriesV7 } from '../../shared/story-index/sortStories.ts';
 import { Tag } from '../../shared/constants/tags.ts';
 import { isMdxEntry } from '../../shared/utils/story-index-filters.ts';
 import { IndexingError, MultipleIndexingError } from './IndexingError.ts';
@@ -71,6 +71,7 @@ export type StoryIndexGeneratorOptions = {
   docs: DocsOptions;
   build?: StorybookConfigRaw['build'];
   features?: StorybookConfigRaw['features'];
+  storySorts?: StorybookConfigRaw['storySorts'];
 };
 
 const makeAbsolute = (otherImport: Path, normalizedPath: Path, workingDir: Path) =>
@@ -231,8 +232,7 @@ export class StoryIndexGenerator {
       this.specifierToCache.set(specifier, cache)
     );
 
-    const previewCode = await this.getPreviewCode();
-    const projectTags = this.getProjectTags(previewCode);
+    const projectTags = this.getProjectTags(await this.getPreviewFile());
 
     // Extract stories for each file
     await this.ensureExtracted({ projectTags });
@@ -750,8 +750,7 @@ export class StoryIndexGenerator {
       throw this.lastError;
     }
 
-    const previewCode = await this.getPreviewCode();
-    const projectTags = this.getProjectTags(previewCode);
+    const projectTags = this.getProjectTags(await this.getPreviewFile());
 
     // Extract any entries that are currently missing
     // Pull out each file's stories into a list of stories, to be composed and sorted
@@ -787,7 +786,7 @@ export class StoryIndexGenerator {
 
       const sorted = await this.sortStories(
         indexEntries,
-        previewCode && getStorySortParameter(previewCode)
+        combineStorySorts(this.options.storySorts ?? [])
       );
 
       this.lastStats = stats;
@@ -875,27 +874,28 @@ export class StoryIndexGenerator {
     };
   }
 
-  async getPreviewCode() {
+  async getPreviewFile(): Promise<{ path: string; code: string } | undefined> {
     const previewFile = ['js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'mts']
       .map((ext) => join(this.options.configDir, `preview.${ext}`))
       .find((fname) => existsSync(fname));
 
-    return previewFile && (await readFile(previewFile, { encoding: 'utf8' })).toString();
+    return previewFile
+      ? { path: previewFile, code: (await readFile(previewFile, { encoding: 'utf8' })).toString() }
+      : undefined;
   }
 
-  getProjectTags(previewCode?: string) {
+  getProjectTags(preview?: { path: string; code: string }) {
     let projectTags = [] as Tag[];
     const defaultTags = [Tag.DEV, Tag.TEST, Tag.MANIFEST];
-    if (previewCode) {
+    if (preview) {
       try {
-        const projectAnnotations = loadConfig(previewCode).parse();
-        const tags = projectAnnotations.getValue(['tags']) ?? [];
+        const projectAnnotations = loadConfig(preview.code, preview.path).parse();
+        const tags =
+          projectAnnotations.inspect(['tags']).kind === 'value'
+            ? projectAnnotations.getValue(['tags'])
+            : [];
         invariant(
-          !projectAnnotations.mutationDiagnostics.some(
-            ({ code }) => code === 'unsupported-value'
-          ) &&
-            Array.isArray(tags) &&
-            tags.every((tag) => typeof tag === 'string'),
+          Array.isArray(tags) && tags.every((tag) => typeof tag === 'string'),
           'Preview tags must be a static array of strings'
         );
         projectTags = tags;
@@ -911,7 +911,7 @@ export class StoryIndexGenerator {
 
           Received:
 
-          ${previewCode}
+          ${preview.code}
         `);
       }
     }

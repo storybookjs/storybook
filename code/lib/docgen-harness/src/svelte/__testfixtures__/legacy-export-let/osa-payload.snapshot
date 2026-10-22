@@ -1,0 +1,9 @@
+{
+  "description": undefined,
+  "id": "sveltefixtures-legacyexportlet",
+  "jsDocTags": {},
+  "name": "LegacyExportLet",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": undefined,
+}

@@ -21,8 +21,7 @@ import { buildEntries, hasPrebuild, isBuildEntries } from './entry-configs.ts';
 import { measure } from './utils/entry-utils.ts';
 import { generateBundle } from './utils/generate-bundle.ts';
 import { generatePackageJsonFile } from './utils/generate-package-json.ts';
-import { generateTypesFiles } from './utils/generate-types.ts';
-import { generateTypesFiles as generateTypesFilesRolldown } from './utils/generate-types-rolldown.ts';
+import { generateTypesFiles } from './utils/generate-types-rolldown.ts';
 
 const {
   values: {
@@ -51,6 +50,11 @@ if (dtsResolver !== 'tsc' && dtsResolver !== 'oxc' && dtsResolver !== 'hybrid') 
   throw new Error(`Invalid --dts-resolver: ${dtsResolver} (expected 'hybrid', 'tsc' or 'oxc')`);
 }
 const resolvedDtsResolver: 'tsc' | 'oxc' | 'hybrid' = dtsResolver;
+
+if (dtsBundler !== 'rolldown-tsgo' && dtsBundler !== 'rolldown') {
+  throw new Error(`Invalid --dts-bundler: ${dtsBundler} (expected 'rolldown-tsgo' or 'rolldown')`);
+}
+const resolvedDtsBundler: 'rolldown-tsgo' | 'rolldown' = dtsBundler;
 
 async function run() {
   const DIR_ROOT = join(import.meta.dirname, '..', '..');
@@ -99,24 +103,10 @@ async function run() {
     measure(async () => generateBundle({ cwd: DIR_CWD, entry, name, isWatch })),
     measure(async () => {
       if (isProduction) {
-        switch (entry.dtsBundler ?? dtsBundler) {
-          case 'rolldown':
-            await generateTypesFilesRolldown(DIR_CWD, entry, {
-              tsgo: false,
-              resolver: resolvedDtsResolver,
-            });
-            break;
-          case 'rolldown-tsgo':
-            await generateTypesFilesRolldown(DIR_CWD, entry, {
-              tsgo: true,
-              resolver: resolvedDtsResolver,
-            });
-            break;
-          case 'rollup':
-          default:
-            await generateTypesFiles(DIR_CWD, entry);
-            break;
-        }
+        await generateTypesFiles(DIR_CWD, entry, {
+          tsgo: (entry.dtsBundler ?? resolvedDtsBundler) === 'rolldown-tsgo',
+          resolver: resolvedDtsResolver,
+        });
       }
     }),
   ]);

@@ -143,8 +143,8 @@ Browse the documentation and look for the code snippets you want to contribute. 
 Open the file inside the `docs/_snippets` directory and adjust the content to match the code snippet you're willing to contribute. For example:
 
 ````md title="docs/_snippets/your-component.md"
-```ts filename="YourComponent.stories.ts" renderer="qwik" language="ts"
-import type { Meta, StoryObj } from 'storybook-framework-qwik';
+```ts filename="YourComponent.stories.ts" renderer="react" language="ts"
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import type { YourComponentProps } from './YourComponent';
 
@@ -156,7 +156,7 @@ const meta = {
 } satisfies Meta<YourComponentProps>;
 
 export default meta;
-type Story = StoryObj<YourComponentProps>;
+type Story = StoryObj<typeof meta>;
 
 export const FirstStory: Story = {
   args: {

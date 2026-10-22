@@ -430,6 +430,23 @@ describe('check-docs', () => {
       );
       expect(await checkSnippetCsfOrder(docsDir)).toEqual([]);
     });
+    it('pairs "Svelte CSF" with "Svelte CSF Next 🧪"', async () => {
+      const file = path.join(snippetsDir, 'foo.md');
+      await writeFile(
+        file,
+        [csf3('svelte', 'ts', 'Svelte CSF'), next('svelte', 'ts', 'Svelte CSF Next 🧪'), ''].join(
+          '\n\n'
+        )
+      );
+
+      expect((await checkSnippetCsfOrder(docsDir)).length).toBe(1);
+      await fixSnippetCsfOrder(docsDir);
+      expect(await fs.readFile(file, 'utf8')).toBe(
+        [next('svelte', 'ts', 'Svelte CSF Next 🧪'), csf3('svelte', 'ts', 'Svelte CSF'), ''].join(
+          '\n\n'
+        )
+      );
+    });
     it('fixes the order, moving attached comments with their block', async () => {
       const file = path.join(snippetsDir, 'foo.md');
       await writeFile(

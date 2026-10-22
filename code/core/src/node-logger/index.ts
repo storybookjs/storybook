@@ -93,9 +93,30 @@ export const logger = {
  * The legacy logger instance is kept for internal consumers, but its public
  * type must not expose npmlog's Node-specific declarations to browser projects.
  */
+interface LegacyLoggerStyle {
+  fg?: string;
+  bg?: string;
+  bold?: boolean;
+  inverse?: boolean;
+  underline?: boolean;
+  bell?: boolean;
+}
+
+interface LegacyLoggerMessage {
+  id: number;
+  level: string;
+  prefix: string;
+  message: string;
+  messageRaw: string;
+}
+
 interface LegacyLogger {
   (): any;
   level: string;
+  record: LegacyLoggerMessage[];
+  maxRecordSize: number;
+  prefixStyle: LegacyLoggerStyle;
+  headingStyle: LegacyLoggerStyle;
   heading: string;
   stream: any;
   log(level: string, prefix: string, message: any, ...args: any[]): void;
@@ -133,6 +154,7 @@ interface LegacyLogger {
   eventNames(): (string | symbol)[];
   getMaxListeners(): number;
   setMaxListeners(n: number): this;
+  [key: string]: any;
 }
 
 export const instance = npmLog as LegacyLogger;

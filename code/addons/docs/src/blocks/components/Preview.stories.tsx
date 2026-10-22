@@ -4,6 +4,7 @@ import React from 'react';
 import { Button, Spaced } from 'storybook/internal/components';
 import type { DocsContextProps, ModuleExport } from 'storybook/internal/types';
 
+import { expect } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import * as ButtonStories from '../examples/Button.stories';
@@ -317,6 +318,49 @@ export const WithCenteredIframe = (
     />
   </Preview>
 );
+
+// A story that owns the document, or has no layout, fills the canvas edge to edge.
+const fillsCanvas = async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+  const canvas = canvasElement.querySelector<HTMLElement>('.docs-story')!;
+  const iframe = canvas.querySelector('iframe')!;
+  await expect(iframe.getBoundingClientRect().width).toBe(canvas.clientWidth);
+};
+
+export const WithDocumentIframe = {
+  render: (
+    _args: unknown,
+    { loaded: { docsContext } }: { loaded: { docsContext: DocsContextProps } }
+  ) => (
+    <Preview inline={false} withToolbar layout="document">
+      <Story
+        inline={false}
+        story={getPreparedStory(docsContext, ButtonStories.Primary)}
+        autoplay={false}
+        primary={false}
+        height="100px"
+      />
+    </Preview>
+  ),
+  play: fillsCanvas,
+};
+
+export const WithNoneIframe = {
+  render: (
+    _args: unknown,
+    { loaded: { docsContext } }: { loaded: { docsContext: DocsContextProps } }
+  ) => (
+    <Preview inline={false} withToolbar layout="none">
+      <Story
+        inline={false}
+        story={getPreparedStory(docsContext, ButtonStories.Primary)}
+        autoplay={false}
+        primary={false}
+        height="100px"
+      />
+    </Preview>
+  ),
+  play: fillsCanvas,
+};
 
 export const WithCenteredMulti = (
   args: any,

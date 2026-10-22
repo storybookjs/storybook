@@ -5,7 +5,6 @@ import { type API_KeyCollection, shortcutToHumanString } from 'storybook/manager
 import type { PopperPlacement } from '../../shared/overlayHelpers.tsx';
 import { TooltipNote } from '../../tooltip/TooltipNote.tsx';
 import { TooltipProvider } from '../../tooltip/TooltipProvider.tsx';
-import { useShortcutsEnabled } from './useShortcutsEnabled.ts';
 
 export const InteractiveTooltipWrapper: React.FC<{
   children: ReactElement<DOMAttributes<Element>, string>;
@@ -14,10 +13,9 @@ export const InteractiveTooltipWrapper: React.FC<{
   tooltip?: string;
   tooltipPlacement?: PopperPlacement;
 }> = ({ children, disableAllTooltips, shortcut, tooltip, tooltipPlacement = 'top' }) => {
-  const shortcutsEnabled = useShortcutsEnabled();
   const shortcutLabel = useMemo(
-    () => (shortcut && shortcutsEnabled ? shortcutToHumanString(shortcut) : undefined),
-    [shortcut, shortcutsEnabled]
+    () => (shortcut ? shortcutToHumanString(shortcut) : undefined),
+    [shortcut]
   );
 
   // A shortcut alone still warrants a tooltip: buttons with visible text pass no `tooltip`

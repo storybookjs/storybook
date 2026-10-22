@@ -2,13 +2,26 @@ import { useSyncExternalStore } from 'react';
 
 const ATTRIBUTE = 'data-shortcuts-enabled';
 
+// One observer is shared by all subscribers, because every mounted Button subscribes.
+const listeners = new Set<() => void>();
+let observer: MutationObserver | undefined;
+
 const subscribe = (onChange: () => void) => {
   if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') {
     return () => {};
   }
-  const observer = new MutationObserver(onChange);
-  observer.observe(document.body, { attributes: true, attributeFilter: [ATTRIBUTE] });
-  return () => observer.disconnect();
+  listeners.add(onChange);
+  if (!observer) {
+    observer = new MutationObserver(() => listeners.forEach((listener) => listener()));
+    observer.observe(document.body, { attributes: true, attributeFilter: [ATTRIBUTE] });
+  }
+  return () => {
+    listeners.delete(onChange);
+    if (listeners.size === 0) {
+      observer?.disconnect();
+      observer = undefined;
+    }
+  };
 };
 
 const getSnapshot = () =>

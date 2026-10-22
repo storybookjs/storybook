@@ -884,9 +884,6 @@ export const baseTemplates = {
     // yarn portals.
     name: 'React Native Expo Latest (Vite | TypeScript)',
     script: 'npx create-expo-app -y --no-install {{beforeDir}}',
-    // No minAgeGateExemptions: an exempt `@expo/*` package can pull in a dependency
-    // that is itself still quarantined, which the gate cannot resolve. Generation fails
-    // for about a week after a new Expo SDK and clears once the SDK passes the gate.
     expected: {
       framework: '@storybook/react-native-web-vite',
       renderer: '@storybook/react',

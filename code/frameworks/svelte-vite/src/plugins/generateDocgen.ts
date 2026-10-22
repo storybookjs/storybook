@@ -256,6 +256,38 @@ export function createDocgenCache(): DocgenCache {
   };
 }
 
+function getModifiedTime(fileName: string): Date | undefined {
+  return ts.sys.getModifiedTime ? ts.sys.getModifiedTime(fileName) : undefined;
+}
+
+function getCachedSourceFile(
+  cache: DocgenCache,
+  cacheKey: string,
+  modifiedTime: Date | undefined
+): ts.SourceFile | undefined {
+  if (!modifiedTime) {
+    return undefined;
+  }
+
+  const cachedModifiedTime = cache.filenameToModifiedTime[cacheKey];
+
+  if (cachedModifiedTime?.getTime() === modifiedTime.getTime()) {
+    return cache.filenameToSourceFile[cacheKey];
+  }
+
+  return undefined;
+}
+
+function updateSourceFileCache(
+  cache: DocgenCache,
+  cacheKey: string,
+  sourceFile: ts.SourceFile,
+  modifiedTime: Date | undefined
+): void {
+  cache.filenameToSourceFile[cacheKey] = sourceFile;
+  cache.filenameToModifiedTime[cacheKey] = modifiedTime;
+}
+
 export function generateDocgen(targetFileName: string, cache: DocgenCache): Docgen {
   if (targetFileName.endsWith('.svelte')) {
     targetFileName = targetFileName + '.tsx';
@@ -311,14 +343,11 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
 
         const realFileName = fileName.slice(0, -4); // remove .tsx or .jsx
 
-        const modifiedTime: Date | undefined = ts.sys.getModifiedTime
-          ? ts.sys.getModifiedTime(realFileName)
-          : undefined;
-        if (modifiedTime) {
-          const cachedModifiedTime = cache.filenameToModifiedTime[fileName];
-          if (cachedModifiedTime?.getTime() === modifiedTime.getTime()) {
-            return cache.filenameToSourceFile[fileName];
-          }
+        const modifiedTime = getModifiedTime(realFileName);
+        const cachedSourceFile = getCachedSourceFile(cache, fileName, modifiedTime);
+
+        if (cachedSourceFile) {
+          return cachedSourceFile;
         }
 
         const content = originalHost.readFile(realFileName);
@@ -342,9 +371,7 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
           isTsFile ? ts.ScriptKind.TS : ts.ScriptKind.JS // Set to 'JS' to enable TypeScript to parse JSDoc.
         );
 
-        // update cache
-        cache.filenameToSourceFile[fileName] = sourceFile;
-        cache.filenameToModifiedTime[fileName] = modifiedTime;
+        updateSourceFileCache(cache, fileName, sourceFile, modifiedTime);
 
         return sourceFile;
       } else {
@@ -360,14 +387,11 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
         if (cachedSourceFile && staticCaching) {
           return cachedSourceFile;
         }
-        const modifiedTime: Date | undefined = ts.sys.getModifiedTime
-          ? ts.sys.getModifiedTime(fileName)
-          : undefined;
-        if (modifiedTime) {
-          const cachedModifiedTime = cache.filenameToModifiedTime[fileName];
-          if (cachedModifiedTime?.getTime() === modifiedTime.getTime()) {
-            return cache.filenameToSourceFile[fileName];
-          }
+        const modifiedTime = getModifiedTime(fileName);
+        const cachedSourceFileByModifiedTime = getCachedSourceFile(cache, fileName, modifiedTime);
+
+        if (cachedSourceFileByModifiedTime) {
+          return cachedSourceFileByModifiedTime;
         }
 
         const content = originalHost.readFile(fileName);
@@ -377,9 +401,7 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
 
         const sourceFile = ts.createSourceFile(fileName, content, languageVersion, true);
 
-        // update cache
-        cache.filenameToSourceFile[fileName] = sourceFile;
-        cache.filenameToModifiedTime[fileName] = modifiedTime;
+        updateSourceFileCache(cache, fileName, sourceFile, modifiedTime);
 
         return sourceFile;
       }

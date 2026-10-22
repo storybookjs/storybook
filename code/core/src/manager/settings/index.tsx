@@ -164,11 +164,12 @@ const SettingsPages: FC = () => {
   const changeTab = (tab: string) => api.changeSettingsTab(tab);
 
   // The shortcuts page is hidden when shortcuts are disabled, so send direct visits to the About page.
+  // Replace the history entry, so going back does not return to the hidden page.
   const isHiddenShortcutsPage =
     !state.ui.enableShortcuts && !!state.path?.includes('settings/shortcuts');
   useEffect(() => {
     if (isHiddenShortcutsPage) {
-      api.changeSettingsTab('about');
+      api.changeSettingsTab('about', { replace: true });
     }
   }, [api, isHiddenShortcutsPage]);
 

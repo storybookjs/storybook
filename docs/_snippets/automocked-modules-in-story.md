@@ -127,7 +127,8 @@ export const LogIn = {
 
 ```svelte filename="AuthButton.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
   import { expect, mocked } from 'storybook/test';
 
   import AuthButton from './AuthButton.svelte';
@@ -158,43 +159,43 @@ export const LogIn = {
 />
 ```
 
-```ts filename="AuthButton.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-import type { Meta, StoryObj } from '@storybook/your-framework';
-import { expect, mocked } from 'storybook/test';
+```svelte filename="AuthButton.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+  import { expect, mocked } from 'storybook/test';
 
-import AuthButton from './AuthButton.svelte';
+  import AuthButton from './AuthButton.svelte';
 
-import { v4 as uuidv4 } from 'uuid';
-import { getUserFromSession } from '../lib/session';
+  import { v4 as uuidv4 } from 'uuid';
+  import { getUserFromSession } from '../lib/session';
 
-const meta = {
-  component: AuthButton,
-  // 👇 This will run before each story is rendered
-  beforeEach: async () => {
-    // 👇 Force known, consistent behavior for mocked modules
-    mocked(uuidv4).mockReturnValue('1234-5678-90ab-cdef');
-    mocked(getUserFromSession).mockReturnValue({ name: 'John Doe' });
-  },
-} satisfies Meta<typeof AuthButton>;
-export default meta;
+  const { Story } = preview.meta({
+    component: AuthButton,
+    // 👇 This will run before each story is rendered
+    beforeEach: async () => {
+      // 👇 Force known, consistent behavior for mocked modules
+      mocked(uuidv4).mockReturnValue('1234-5678-90ab-cdef');
+      mocked(getUserFromSession).mockReturnValue({ name: 'John Doe' });
+    },
+  });
+</script>
 
-type Story = StoryObj<typeof meta>;
-
-export const LogIn: Story = {
-  play: async ({ canvas, userEvent }) => {
+<Story
+  name="LogIn"
+  play={async ({ canvas, userEvent }) => {
     const button = canvas.getByRole('button', { name: 'Sign in' });
     userEvent.click(button);
 
     // Assert that the getUserFromSession function was called
     expect(getUserFromSession).toHaveBeenCalled();
-  },
-};
+  }}
+/>
 ```
 
 ```svelte filename="AuthButton.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
   import { expect } from 'storybook/test';
 
   import { AuthButton } from './AuthButton.svelte';
@@ -225,33 +226,37 @@ export const LogIn: Story = {
 />
 ```
 
-```js filename="AuthButton.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import { expect } from 'storybook/test';
+```svelte filename="AuthButton.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
+  import { expect } from 'storybook/test';
 
-import AuthButton from './AuthButton.svelte';
+  import { AuthButton } from './AuthButton.svelte';
 
-import { v4 as uuidv4 } from 'uuid';
-import { getUserFromSession } from '../lib/session';
+  import { v4 as uuidv4 } from 'uuid';
+  import { getUserFromSession } from '../lib/session';
 
-export default {
-  component: AuthButton,
-  // 👇 This will run before each story is rendered
-  beforeEach: async () => {
-    // 👇 Force known, consistent behavior for mocked modules
-    uuidv4.mockReturnValue('1234-5678-90ab-cdef');
-    getUserFromSession.mockReturnValue({ name: 'John Doe' });
-  },
-};
+  const { Story } = preview.meta({
+    component: AuthButton,
+    // 👇 This will run before each story is rendered
+    beforeEach: async () => {
+      // 👇 Force known, consistent behavior for mocked modules
+      uuidv4.mockReturnValue('1234-5678-90ab-cdef');
+      getUserFromSession.mockReturnValue({ name: 'John Doe' });
+    },
+  });
+</script>
 
-export const LogIn = {
-  play: async ({ canvas, userEvent }) => {
+<Story
+  name="LogIn"
+  play={async ({ canvas, userEvent }) => {
     const button = canvas.getByRole('button', { name: 'Sign in' });
     userEvent.click(button);
 
     // Assert that the getUserFromSession function was called
     expect(getUserFromSession).toHaveBeenCalled();
-  },
-};
+  }}
+/>
 ```
 
 ```ts filename="AuthButton.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"

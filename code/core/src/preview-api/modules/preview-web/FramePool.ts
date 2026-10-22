@@ -175,10 +175,16 @@ export class FramePool {
       viewMode: 'story',
       [FRAME_POOL_PARAM]: 'frame',
     });
-    const globals = Object.entries(lease.globals)
-      .filter(([, value]) => ['string', 'number', 'boolean'].includes(typeof value))
-      .map(([key, value]) => `${key}:${value}`)
-      .join(';');
+    // As the manager writes `globals` in a URL (parseArgsParam.ts reads it): a boolean is `!true`
+    // or `!false`, which as `true` and `false` would be strings, and so both truthy.
+    // Globals that the URL cannot say, such as an object, follow with UPDATE_GLOBALS.
+    const entries = Object.entries(lease.globals).flatMap(([key, value]) => {
+      if (typeof value === 'boolean') {
+        return [`${key}:!${value}`];
+      }
+      return typeof value === 'string' && /^[\w -]*$/.test(value) ? [`${key}:${value}`] : [];
+    });
+    const globals = entries.join(';');
     if (globals) {
       params.set('globals', globals);
     }
@@ -189,7 +195,8 @@ export class FramePool {
     const frame: Frame = {
       iframe,
       storyId: lease.storyId,
-      globals: globalsKey(lease.globals),
+      globals:
+        entries.length === Object.keys(lease.globals).length ? globalsKey(lease.globals) : '',
       ended: false,
       onEnded: [],
       freedAt: 0,

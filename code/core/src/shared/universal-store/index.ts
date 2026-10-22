@@ -79,7 +79,8 @@ const ProgressState = {
  * @throws {Error} If constructed directly instead of using `create()`
  * @throws {Error} If created without setting a channel first
  * @throws {Error} If a follower is created with initial state
- * @throws {Error} If a follower cannot find its leader within 1 second
+ * @throws {Error} If a follower cannot find its leader within 1 second. The follower still syncs
+ *   if its leader answers later.
  */
 export class UniversalStore<
   State,
@@ -564,15 +565,24 @@ export class UniversalStore<
         { actor: this.actor }
       );
       // 1. Emit a request for the existing state
-      this.emitToChannel(
-        { type: UniversalStore.InternalEventType.EXISTING_STATE_REQUEST },
-        { actor: this.actor }
-      );
+      this.requestExistingState();
       // 2. Wait 1 sec for a response, then reject the syncing promise if not already resolved
       setTimeout(() => {
+        if (this.syncing!.state !== ProgressState.PENDING) {
+          return;
+        }
         this.syncing!.reject!(new UniversalStoreFollowerTimeoutError(this.id));
+        // A leader created while syncing never got the first request, so ask once more.
+        this.requestExistingState();
       }, 1000);
     }
+  }
+
+  private requestExistingState() {
+    this.emitToChannel(
+      { type: UniversalStore.InternalEventType.EXISTING_STATE_REQUEST },
+      { actor: this.actor }
+    );
   }
 
   private emitToListeners(event: any, eventInfo: EventInfo) {
@@ -655,11 +665,17 @@ export class UniversalStore<
           this.debug("handleChannelEvents: Setting state from leader's existing state response", {
             event,
           });
-          if (this.syncing?.state !== ProgressState.PENDING) {
+          if (this.syncing?.state === ProgressState.RESOLVED) {
             // ignore the response if this follower has already synced
             break;
           }
-          this.syncing!.resolve?.();
+          if (this.syncing?.state === ProgressState.REJECTED) {
+            // The leader answered after the timeout, so recover instead of staying in an error state.
+            this.syncing.state = ProgressState.RESOLVED;
+            this.syncing.promise = Promise.resolve();
+          } else {
+            this.syncing!.resolve?.();
+          }
           // notify internal listeners that the state has changed because of the sync
           const setStateEvent: SetStateEvent<State> = {
             type: UniversalStore.InternalEventType.SET_STATE,
@@ -670,6 +686,12 @@ export class UniversalStore<
           };
           this.state = event.payload;
           this.emitToListeners(setStateEvent, eventInfo);
+          break;
+        case UniversalStore.InternalEventType.LEADER_CREATED:
+          if (this.syncing?.state === ProgressState.REJECTED) {
+            // A leader created after the timeout never got this follower's request, so ask it.
+            this.requestExistingState();
+          }
           break;
       }
     }

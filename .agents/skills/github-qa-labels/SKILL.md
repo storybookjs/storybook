@@ -2,6 +2,8 @@
 name: github-qa-labels
 description: Label GitHub issues and PRs found during QA testing. Use when organizing QA findings with proper labels.
 allowed-tools: Bash
+metadata:
+  internal: true
 ---
 
 # GitHub QA Labels

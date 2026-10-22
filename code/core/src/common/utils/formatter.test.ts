@@ -37,7 +37,7 @@ describe('formatter', () => {
     const testPath = resolve(__dirname, '__tests-formatter__', 'withPrettierConfig');
 
     describe('prettier', async () => {
-      const prettierV3 = await import('prettier');
+      const prettierV3 = await vi.importActual<typeof import('prettier')>('prettier');
 
       it('formats content with prettier', async () => {
         mockPrettier.format.mockImplementation(prettierV3.format);
@@ -57,7 +57,7 @@ describe('formatter', () => {
     const testPath = resolve(__dirname, '__tests-formatter__', 'withoutPrettierConfig');
 
     describe('prettier-v3', async () => {
-      const prettierV3 = await import('prettier');
+      const prettierV3 = await vi.importActual<typeof import('prettier')>('prettier');
 
       it('formats content with prettier', async () => {
         mockPrettier.format.mockImplementation(prettierV3.format);
@@ -77,7 +77,7 @@ describe('formatter', () => {
     const testPath = resolve(__dirname, '__tests-formatter__', 'withoutEditorConfig');
 
     describe('prettier-v3', async () => {
-      const prettierV3 = await import('prettier');
+      const prettierV3 = await vi.importActual<typeof import('prettier')>('prettier');
 
       it('formats content with prettier', async () => {
         mockPrettier.format.mockImplementation(prettierV3.format);

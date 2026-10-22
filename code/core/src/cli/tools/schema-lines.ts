@@ -1,7 +1,4 @@
-/**
- * Renders JSON Schema nodes as the indented bullet lines both CLIs print under `Arguments:`, so
- * `storybook tools` and `storybook ai` describe the same schema identically.
- */
+/** Renders JSON Schema nodes as the indented bullet lines `storybook tools` prints under `Arguments:`. */
 import * as v from 'valibot';
 
 /**

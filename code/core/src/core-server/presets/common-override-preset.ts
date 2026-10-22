@@ -2,6 +2,9 @@ import type { PresetProperty, TestBuildFlags } from 'storybook/internal/types';
 
 import { removeMDXEntries } from '../utils/remove-mdx-entries.ts';
 
+export const features: PresetProperty<'features'> = async (input, options) =>
+  options?.build?.test?.disableDocgen ? { ...input, docgenServer: false } : input;
+
 export const framework: PresetProperty<'framework'> = async (config) => {
   // This will get called with the values from the user's main config, but before
   // framework preset from framework packages e.g. react-webpack5 gets called.

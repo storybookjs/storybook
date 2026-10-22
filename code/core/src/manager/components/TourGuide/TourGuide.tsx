@@ -11,6 +11,39 @@ import { ThemeProvider, convert, themes } from 'storybook/theming';
 import { HighlightElement } from './HighlightElement.tsx';
 import { TourTooltip } from './TourTooltip.tsx';
 
+/**
+ * A popper.js (v1) modifier that keeps the tooltip inside the viewport. Popper's `preventOverflow`
+ * runs at order 300 and the arrow is placed at order 500, so this runs between them: the tooltip
+ * moves, and the arrow is then placed against the target from the tooltip's final position.
+ * Offsets are relative to the tooltip's offset parent, so the parent's position is added back.
+ */
+const keepTooltipInViewport = {
+  enabled: true,
+  order: 350,
+  fn: <
+    T extends {
+      offsets: { popper: { top: number; height: number } };
+      instance: { popper: Element };
+    },
+  >(
+    data: T
+  ): T => {
+    const padding = 8;
+    const { popper } = data.offsets;
+    const parent = (data.instance.popper as HTMLElement).offsetParent;
+    const parentTop = parent ? parent.getBoundingClientRect().top : 0;
+    const bottomOverflow = parentTop + popper.top + popper.height - (window.innerHeight - padding);
+    if (bottomOverflow > 0) {
+      popper.top -= bottomOverflow;
+    }
+    const topOverflow = padding - (parentTop + popper.top);
+    if (topOverflow > 0) {
+      popper.top += topOverflow;
+    }
+    return data;
+  },
+};
+
 type StepDefinition = {
   key?: string;
   highlight?: string;
@@ -53,6 +86,23 @@ export const TourGuide = ({
   const [stepIndex, setStepIndex] = useState<number | null>(step ? null : 0);
   const theme = useTheme();
 
+  const resizeObserverRef = useRef<ResizeObserver | undefined>(undefined);
+  useEffect(() => () => resizeObserverRef.current?.disconnect(), []);
+
+  // Popper only repositions on scroll and window resize, so a tooltip whose content grows after it
+  // opens (such as a lazily loaded code snippet) would otherwise spill out of the viewport.
+  const followTooltipSize = useCallback(
+    (popper: { instance: { popper: Element; update: () => void } }, origin: string) => {
+      if (origin !== 'floater') {
+        return;
+      }
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = new ResizeObserver(() => popper.instance.update());
+      resizeObserverRef.current.observe(popper.instance.popper);
+    },
+    []
+  );
+
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const updateStepIndex = useCallback((index: number) => {
     clearTimeout(timeoutRef.current);
@@ -82,6 +132,9 @@ export const TourGuide = ({
         disableOverlay: true,
         spotlightClicks: true,
         offset: 0,
+        // Joyride would otherwise set `overflow: initial` on a target's scroll container when that
+        // container has nothing to scroll, which the sidebar's scroll area has on a short index.
+        disableScrollParentFix: true,
         ...step,
         content: (
           <>
@@ -128,7 +181,13 @@ export const TourGuide = ({
       callback={callback}
       tooltipComponent={TourTooltip}
       floaterProps={{
+        getPopper: followTooltipSize,
         disableAnimation: true,
+        // Popper's own overflow prevention does not hold in the manager, whose body is pinned:
+        // a tooltip next to a target low on the screen runs off the bottom, with its buttons out
+        // of reach. This modifier clamps the tooltip to the viewport after popper has placed it
+        // and before the arrow is positioned, so the arrow still points at the target.
+        options: { keepInViewport: keepTooltipInViewport },
         styles: {
           arrow: {
             length: 20,

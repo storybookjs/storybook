@@ -62,16 +62,6 @@ const projectJson = (
       : {
           'e2e-tests-dev': {},
         }),
-    ...(template.skipTasks && template.skipTasks.includes('test-runner')
-      ? {}
-      : {
-          'test-runner': {},
-        }),
-    ...(template.skipTasks && template.skipTasks.includes('test-runner-dev')
-      ? {}
-      : {
-          'test-runner-dev': {},
-        }),
   },
   tags,
 });

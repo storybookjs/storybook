@@ -3,7 +3,7 @@ import React, { createElement, isValidElement } from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
 import { SourceType, getDocgenSection } from 'storybook/internal/docs-tools';
-import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
+import type { PartialStoryFn, StoryContext, StoryContextForRender } from 'storybook/internal/types';
 
 import type { Options } from 'react-element-to-jsx-string';
 import type reactElementToJSXStringType from 'react-element-to-jsx-string';
@@ -250,7 +250,7 @@ const mdxToJsx = (node: any) => {
 
 export const jsxDecorator = (
   storyFn: PartialStoryFn<ReactRenderer>,
-  context: StoryContext<ReactRenderer>
+  context: StoryContextForRender<ReactRenderer>
 ) => {
   const jsx = useRef<undefined | string>(undefined);
   const story = storyFn();

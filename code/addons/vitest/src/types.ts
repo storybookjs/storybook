@@ -1,5 +1,5 @@
-import type { experimental_UniversalStore } from 'storybook/internal/core-server';
-import type { PreviewAnnotation, Status, StoryId, StoryIndex } from 'storybook/internal/types';
+import type { internal_UniversalStore } from 'storybook/internal/core-server';
+import type { Status, StoryId } from 'storybook/internal/types';
 import type { API_HashEntry } from 'storybook/internal/types';
 import type { Report } from 'storybook/preview-api';
 
@@ -69,8 +69,6 @@ export type StoreState = {
   };
   watching: boolean;
   cancelling: boolean;
-  index: StoryIndex;
-  previewAnnotations: PreviewAnnotation[];
   fatalError:
     | {
         message: string | undefined;
@@ -118,4 +116,4 @@ export type StoreEvent =
   | ToggleWatchingEvent
   | TestRunCompletedEvent;
 
-export type Store = ReturnType<typeof experimental_UniversalStore.create<StoreState, StoreEvent>>;
+export type Store = ReturnType<typeof internal_UniversalStore.create<StoreState, StoreEvent>>;

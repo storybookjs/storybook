@@ -29,7 +29,7 @@ export const addonsTool: Addon_BaseType = {
   title: 'addons',
   id: 'addons',
   type: types.TOOL,
-  match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
+  match: ({ viewMode }) => viewMode === 'story',
   render: () => {
     return (
       <Consumer filter={menuMapper}>

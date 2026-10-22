@@ -5,8 +5,14 @@ import type {
 
 import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
 
-import type { enhance } from './mocks/app/forms.ts';
-import type { goto, invalidate, invalidateAll } from './mocks/app/navigation.ts';
+import type {
+  goto,
+  invalidate,
+  invalidateAll,
+  pushState,
+  refreshAll,
+  replaceState,
+} from './mocks/app/navigation.ts';
 
 type FrameworkName = CompatibleString<'@storybook/sveltekit'>;
 type BuilderName = CompatibleString<'@storybook/builder-vite'>;
@@ -68,7 +74,7 @@ interface Page<
     id: RouteId;
   };
   status: number;
-  error: Error | null;
+  error: ({ message: string } & Record<string, any>) | null;
   data: Record<string, any>;
   state: Record<string, any>;
   form: any;
@@ -105,29 +111,33 @@ interface Navigation {
   complete: Promise<void>;
 }
 
+// The mocks ignore what a callback returns.
+type MockOf<F extends (...args: any[]) => unknown> = (...args: Parameters<F>) => void;
+
 export type SvelteKitParameters = Partial<{
   hrefs: Record<string, HrefConfig>;
-  state: {
+  state: Partial<{
     page: Partial<Page>;
     navigating: Partial<Navigation>;
     updated: { current: boolean };
-  };
-  /**
-   * @deprecated
-   * @see {@link https://svelte.dev/docs/kit/$app-stores}
-   */
-  stores: {
-    page: Record<string, any>;
-    navigating: Record<string, any>;
-    updated: boolean;
-  };
-  navigation: {
-    goto: typeof goto;
-    invalidate: typeof invalidate;
-    invalidateAll: typeof invalidateAll;
+  }>;
+  navigation: Partial<{
+    goto: MockOf<typeof goto>;
+    invalidate: MockOf<typeof invalidate>;
+    invalidateAll: MockOf<typeof invalidateAll>;
+    refreshAll: MockOf<typeof refreshAll>;
+    pushState: MockOf<typeof pushState>;
+    replaceState: MockOf<typeof replaceState>;
     afterNavigate: Record<string, any>;
-  };
-  forms: {
-    enhance: typeof enhance;
-  };
+  }>;
+  forms: Partial<{
+    enhance: (event: SubmitEvent) => void;
+  }>;
 }>;
+
+export interface SvelteKitTypes {
+  parameters: {
+    /** Mocks for the SvelteKit modules, such as `$app/state` and `$app/navigation`. */
+    sveltekit_experimental?: SvelteKitParameters;
+  };
+}

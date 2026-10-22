@@ -1,6 +1,5 @@
 {
   "count": {
-    "defaultValue": undefined,
     "description": "Number of repetitions.",
     "name": "count",
     "table": {
@@ -16,7 +15,6 @@
     },
   },
   "label": {
-    "defaultValue": undefined,
     "description": "Visible label.",
     "name": "label",
     "table": {

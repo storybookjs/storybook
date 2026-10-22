@@ -31,7 +31,7 @@ export type CompositionDocsSourcesOptions = {
   getRequest?: () => Request | undefined;
   /**
    * Reads the local Storybook — the source with no `url` — instead of fetching manifests from it.
-   * The dev server passes its service-backed access here when `experimentalDocgenServer` is on,
+   * The dev server passes its service-backed access here when `docgenServer` is on,
    * where the local `/manifests/*.json` are deliberately 404'd and the data lives in the services.
    */
   localAccess?: DocsAccess;

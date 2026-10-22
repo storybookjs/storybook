@@ -1,8 +1,8 @@
 import { writeFile } from 'node:fs/promises';
-import { basename, join } from 'node:path';
+import { basename, isAbsolute, join, relative } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
-import { formatFileContent } from 'storybook/internal/common';
+import { formatFileContent, getProjectRoot } from 'storybook/internal/common';
 import type {
   RequestData,
   ResponseData,
@@ -15,39 +15,20 @@ import {
   STORY_RENDERED,
 } from 'storybook/internal/core-events';
 import { storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
-import { printCsf, readCsf } from 'storybook/internal/csf-tools';
+import { parseExpression, printCsf, readCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { isExampleStoryId, telemetry } from 'storybook/internal/telemetry';
 import type { Options } from 'storybook/internal/types';
 
+import { isValidIdentifier } from '../../../csf-tools/estree/ast.ts';
 import { duplicateStoryWithNewName } from './duplicate-story-with-new-name.ts';
 import { updateArgsInCsfFile } from './update-args-in-csf-file.ts';
 import { SaveStoryError } from './utils.ts';
 
 const parseArgs = (args: string): Record<string, any> =>
-  JSON.parse(args, (_, value) => {
-    if (value === '__sb_empty_function_arg__') {
-      return () => {};
-    }
-    return value;
-  });
-
-// Removes extra newlines between story properties. See https://github.com/benjamn/recast/issues/242
-// Only updates the part of the code for the story with the given name.
-const removeExtraNewlines = (code: string, name: string) => {
-  const anything = '([\\s\\S])'; // Multiline match for any character.
-  const newline = '(\\r\\n|\\r|\\n)'; // Either newlines or carriage returns may be used in the file.
-  const closing = newline + '};' + newline; // Marks the end of the story definition.
-  const regex = new RegExp(
-    // Looks for an export by the given name, considers the first closing brace on its own line
-    // to be the end of the story definition.
-    `^(?<before>${anything}*)(?<story>export const ${name} =${anything}+?${closing})(?<after>${anything}*)$`
+  JSON.parse(args, (_, value) =>
+    value === '__sb_empty_function_arg__' ? parseExpression('() => {}') : value
   );
-  const { before, story, after } = code.match(regex)?.groups || {};
-  return story
-    ? before + story.replaceAll(/(\r\n|\r|\n)(\r\n|\r|\n)([ \t]*[a-z0-9_]+): /gi, '$2$3:') + after
-    : code;
-};
 
 export function initializeSaveStory(channel: Channel, options: Options) {
   channel.on(SAVE_STORY_REQUEST, async ({ id, payload }: RequestData<SaveStoryRequestPayload>) => {
@@ -60,21 +41,35 @@ export function initializeSaveStory(channel: Channel, options: Options) {
     let sourceStoryName: string | undefined;
 
     try {
+      if (name && !isValidIdentifier(name)) {
+        throw new SaveStoryError(`Invalid story name: ${JSON.stringify(name)}`);
+      }
+
       sourceFileName = basename(importPath);
       sourceFilePath = join(process.cwd(), importPath);
+
+      const pathFromProjectRoot = relative(getProjectRoot(), sourceFilePath);
+      if (
+        isAbsolute(pathFromProjectRoot) ||
+        // Windows strips trailing dots from path segments, so `...` is not a plain name there.
+        pathFromProjectRoot.split(/[\\/]/).some((segment) => /^\.{2,}$/.test(segment))
+      ) {
+        throw new SaveStoryError(`Invalid importPath: must resolve within the project root.`);
+      }
 
       const csf = await readCsf(sourceFilePath, {
         makeTitle: (userTitle: string) => userTitle || 'myTitle',
       });
 
       const parsed = csf.parse();
-      const stories = Object.entries(parsed._stories);
 
       const [componentId, storyId] = csfId.split('--');
       newStoryName = name && storyNameFromExport(name);
       newStoryId = newStoryName && toId(componentId, newStoryName);
 
-      const [storyName] = stories.find(([key, value]) => value.id.endsWith(`--${storyId}`)) || [];
+      const storyName = parsed.stories.find((story) =>
+        story.id.endsWith(`--${storyId}`)
+      )?.exportName;
       if (!storyName) {
         throw new SaveStoryError(`Source story not found.`);
       }
@@ -84,15 +79,13 @@ export function initializeSaveStory(channel: Channel, options: Options) {
 
       sourceStoryName = storyNameFromExport(storyName);
 
-      await updateArgsInCsfFile(
-        name ? duplicateStoryWithNewName(parsed, storyName, name) : csf.getStoryExport(storyName),
-        args ? parseArgs(args) : {}
-      );
+      // A refusal throws, so a refused edit of the args is never written with the copy it was for.
+      if (name) {
+        duplicateStoryWithNewName(parsed, storyName, name);
+      }
+      updateArgsInCsfFile(parsed, name || storyName, args ? parseArgs(args) : {});
 
-      const code = await formatFileContent(
-        sourceFilePath,
-        removeExtraNewlines(printCsf(csf).code, name || storyName)
-      );
+      const code = await formatFileContent(sourceFilePath, printCsf(csf).code);
 
       // Writing the CSF file should trigger HMR, which causes the story to rerender. Delay the
       // response until that happens, but don't wait too long.
@@ -135,8 +128,10 @@ export function initializeSaveStory(channel: Channel, options: Options) {
         error: error instanceof SaveStoryError ? error.message : 'Unknown error',
       } satisfies ResponseData<SaveStoryResponsePayload>);
 
+      // The panel shows the message; the csf-tools diagnostic behind it is for the log.
+      const cause = error?.cause?.message ? `\nCaused by: ${error.cause.message}` : '';
       logger.error(
-        `Error writing to ${sourceFilePath}:\n${error.stack || error.message || error.toString()}`
+        `Error writing to ${sourceFilePath}:\n${error.stack || error.message || error.toString()}${cause}`
       );
 
       if (!(error instanceof SaveStoryError)) {

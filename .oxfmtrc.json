@@ -9,7 +9,6 @@
   "sortPackageJson": false,
   "ignorePatterns": [
     "*.bundle.js",
-    "*.js.map",
     ".yarn",
     ".vscode",
     ".nx/cache",
@@ -18,16 +17,19 @@
     "build",
     "bench",
     "coverage",
-    "node_modules",
+    "**/agent-eval/baselines/**",
+    "**/agent-eval/.eval-cache/**",
+    "**/agent-eval/results/**",
+    "**/agent-eval/templates/*/public/mockServiceWorker.js",
     "storybook-static",
     "built-storybooks",
     "ember-output",
     "code/core/assets",
-    "code/core/report",
     "code/core/src/core-server/presets/common-manager.ts",
     "code/core/src/core-server/utils/__search-files-tests__",
     "code/core/src/core-server/utils/__mockdata__/src/Empty.stories.ts",
     "code/lib/codemod/src/transforms/__testfixtures__",
+    "code/renderers/svelte/src/svelte-csf/__tests__/__compiled__",
     "code/frameworks/angular/template/**",
     ".prettierrc",
     "test-storybooks",
@@ -44,25 +46,6 @@
       "options": {
         "singleQuote": true,
         "trailingComma": "all"
-      }
-    },
-    {
-      "files": ["*.md", "*.mdx"],
-      "options": {
-        "importOrderSeparation": false,
-        "importOrderSortSpecifiers": false
-      }
-    },
-    {
-      "files": ["*.component.html"],
-      "options": {
-        "parser": "angular"
-      }
-    },
-    {
-      "files": ["**/frameworks/angular/src/**/*.ts", "**/frameworks/angular/template/**/*.ts"],
-      "options": {
-        "parser": "babel-ts"
       }
     }
   ]

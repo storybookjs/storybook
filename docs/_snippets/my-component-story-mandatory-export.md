@@ -10,12 +10,8 @@ const meta: Meta<MyComponent> = {
    */
   title: 'Path/To/MyComponent',
   component: MyComponent,
-  decorators: [
-    /* ... */
-  ],
-  parameters: {
-    /* ... */
-  },
+  decorators: [/* ... */],
+  parameters: {/* ... */},
 };
 
 export default meta;
@@ -54,12 +50,8 @@ export default {
    */
   title: 'Path/To/MyComponent',
   component: MyComponent,
-  decorators: [
-    /* ... */
-  ],
-  parameters: {
-    /* ... */
-  },
+  decorators: [/* ... */],
+  parameters: {/* ... */},
 };
 ```
 
@@ -73,12 +65,8 @@ export default {
    */
   title: 'Path/To/MyComponent',
   component: MyComponent,
-  decorators: [
-    /* ... */
-  ],
-  parameters: {
-    /* ... */
-  },
+  decorators: [/* ... */],
+  parameters: {/* ... */},
 };
 ```
 
@@ -118,12 +106,8 @@ const meta = {
    */
   title: 'Path/To/MyComponent',
   component: MyComponent,
-  decorators: [
-    /* ... */
-  ],
-  parameters: {
-    /* ... */
-  },
+  decorators: [/* ... */],
+  parameters: {/* ... */},
 } satisfies Meta<typeof MyComponent>;
 
 export default meta;
@@ -142,12 +126,8 @@ const meta = {
    */
   title: 'Path/To/MyComponent',
   component: MyComponent,
-  decorators: [
-    /* ... */
-  ],
-  parameters: {
-    /* ... */
-  },
+  decorators: [/* ... */],
+  parameters: {/* ... */},
 } satisfies Meta<typeof MyComponent>;
 
 export default meta;
@@ -157,12 +137,8 @@ export default meta;
 export default {
   title: 'Path/To/MyComponent',
   component: 'my-component',
-  decorators: [
-    /* ... */
-  ],
-  parameters: {
-    /* ... */
-  },
+  decorators: [/* ... */],
+  parameters: {/* ... */},
 };
 ```
 
@@ -172,12 +148,8 @@ import type { Meta } from '@storybook/web-components-vite';
 const meta: Meta = {
   title: 'Path/To/MyComponent',
   component: 'my-component',
-  decorators: [
-    /* ... */
-  ],
-  parameters: {
-    /* ... */
-  },
+  decorators: [/* ... */],
+  parameters: {/* ... */},
 };
 
 export default meta;

@@ -22,15 +22,18 @@ describe('preview', () => {
   beforeAll(() => {
     mockAddons.getChannel.mockReturnValue(channel as any);
   });
-  beforeEach(channel.emit.mockReset);
+  beforeEach(() => {
+    channel.emit.mockReset();
+    window.history.replaceState({}, '', '/iframe.html');
+  });
   describe('linkTo()', () => {
     it('should select the title and name provided', () => {
       const handler = linkTo('title', 'name');
       handler();
 
       expect(channel.emit).toHaveBeenCalledWith(SELECT_STORY, {
-        kind: 'title',
-        story: 'name',
+        title: 'title',
+        name: 'name',
       });
     });
 
@@ -39,7 +42,7 @@ describe('preview', () => {
       handler();
 
       expect(channel.emit).toHaveBeenCalledWith(SELECT_STORY, {
-        kind: 'title',
+        title: 'title',
       });
     });
 
@@ -50,7 +53,7 @@ describe('preview', () => {
       handler();
 
       expect(channel.emit).toHaveBeenCalledWith(SELECT_STORY, {
-        story: 'name',
+        name: 'name',
       });
     });
 
@@ -73,8 +76,8 @@ describe('preview', () => {
       expect(channel.emit.mock.calls).toContainEqual([
         SELECT_STORY,
         {
-          kind: 'titlename',
-          story: 'nametitle',
+          title: 'titlename',
+          name: 'nametitle',
         },
       ]);
     });
@@ -85,12 +88,28 @@ describe('preview', () => {
       const href = await hrefTo('title', 'name');
       expect(href).toContain('?path=/story/title--name');
     });
+
+    it('should fall back to query.path when title is omitted', async () => {
+      window.history.replaceState({}, '', '/iframe.html?path=/story/current-title--current');
+
+      const href = await hrefTo(undefined, 'next-name');
+
+      expect(href).toContain('?path=/story/current-title--next-name');
+    });
   });
 
   describe('hrefToSync()', () => {
     it('should return story href synchronously', () => {
       const href = hrefToSync('title', 'name');
       expect(href).toContain('?path=/story/title--name');
+    });
+
+    it('should fall back to query.path when title is omitted', () => {
+      window.history.replaceState({}, '', '/iframe.html?path=/story/current-title--current');
+
+      const href = hrefToSync(undefined, 'next-name');
+
+      expect(href).toContain('?path=/story/current-title--next-name');
     });
   });
 });

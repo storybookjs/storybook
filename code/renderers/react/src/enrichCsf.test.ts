@@ -1,8 +1,7 @@
 import { expect, test, vi } from 'vitest';
 
-import { generate } from 'storybook/internal/babel';
 import { type InterPresetOptions, getPresets } from 'storybook/internal/common';
-import { loadCsf } from 'storybook/internal/csf-tools';
+import { formatCsf, loadCsf } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
 
@@ -28,43 +27,16 @@ test('should enrich csf with code parameters', async () => {
   const csf = loadCsf(code, { makeTitle: (x) => x ?? 'title' });
   csf.parse();
   await enrichCsf?.(csf, csf);
-  expect(generate(csf._ast).code).toMatchInlineSnapshot(`
+  expect(formatCsf(csf)).toMatchInlineSnapshot(`
     "import preview from '#.storybook/preview';
     import { Button } from './Button';
-    const meta = preview.meta({
-      component: Button
-    });
-    export const Primary = meta.story({
-      args: {
-        primary: true,
-        label: 'Button'
-      }
-    });
-    export const Secondary = meta.story({
-      args: {
-        label: 'Button'
-      }
-    });
-    Primary.input.parameters = {
-      ...Primary.input.parameters,
-      docs: {
-        ...Primary.input.parameters?.docs,
-        source: {
-          code: "const Primary = () => <Button primary label=\\"Button\\" />;\\n",
-          ...Primary.input.parameters?.docs?.source
-        }
-      }
-    };
-    Secondary.input.parameters = {
-      ...Secondary.input.parameters,
-      docs: {
-        ...Secondary.input.parameters?.docs,
-        source: {
-          code: "const Secondary = () => <Button label=\\"Button\\" />;\\n",
-          ...Secondary.input.parameters?.docs?.source
-        }
-      }
-    };"
+
+    const meta = preview.meta({ component: Button })
+
+    export const Primary = meta.story({ args: { primary: true,  label: 'Button' } });
+    export const Secondary = meta.story({ args: { label: 'Button' } });
+    Primary.input.parameters = { ...Primary.input.parameters, docs: { ...Primary.input.parameters?.docs, source: { code: "const Primary = () => <Button primary label=\\"Button\\" />;\\n", ...Primary.input.parameters?.docs?.source } } };
+    Secondary.input.parameters = { ...Secondary.input.parameters, docs: { ...Secondary.input.parameters?.docs, source: { code: "const Secondary = () => <Button label=\\"Button\\" />;\\n", ...Secondary.input.parameters?.docs?.source } } };"
   `);
 });
 
@@ -85,17 +57,10 @@ test('should not enrich when experimentalCodeExamples is disabled', async () => 
   const csf = loadCsf(code, { makeTitle: (x) => x ?? 'title' });
   csf.parse();
   await enrichCsf?.(csf, csf);
-  expect(generate(csf._ast).code).toMatchInlineSnapshot(`
+  expect(formatCsf(csf)).toMatchInlineSnapshot(`
     "import preview from '#.storybook/preview';
     import { Button } from './Button';
-    const meta = preview.meta({
-      component: Button
-    });
-    export const Primary = meta.story({
-      args: {
-        primary: true,
-        label: 'Button'
-      }
-    });"
+    const meta = preview.meta({ component: Button })
+    export const Primary = meta.story({ args: { primary: true,  label: 'Button' } });"
   `);
 });

@@ -1,0 +1,11 @@
+{
+  "name": "704-fix-a11y-flow",
+  "description": "Agentic reference, accessibility workflow.",
+  "type": "module",
+  "evals": {
+    "externalRepo": {
+      "repo": "yannbf/mealdrop",
+      "ref": "refs/tags/agentic-reference/droppy-70pc-v4"
+    }
+  }
+}

@@ -9,6 +9,7 @@ import type { ChannelEvent } from './types.ts';
 import { UniversalStoreFollowerTimeoutError } from '../../manager-errors.ts';
 
 vi.mock('./instances');
+vi.mock('./first-party-store-ids');
 
 const mockChannelListeners = new Map<string, Set<(...args: any[]) => void>>();
 

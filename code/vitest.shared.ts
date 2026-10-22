@@ -1,7 +1,10 @@
-import { resolve } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, join, resolve } from 'node:path';
 
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
+
+const require = createRequire(import.meta.url);
 
 /**
  * Loads .md/.html imports as text, matching the esbuild `loader` option in
@@ -18,6 +21,11 @@ export const textAssetLoaderPlugins: Plugin[] = ['.md', '.html'].map((extension)
 }));
 
 export const vitestCommonConfig = defineConfig({
+  resolve: {
+    // Projects that resolve the `browser` condition, such as Svelte's, would get the WASM build of
+    // oxc-parser, which is not installed. Storybook parses in Node, with the native binding.
+    alias: [{ find: /^oxc-parser$/, replacement: require.resolve('oxc-parser') }],
+  },
   test: {
     passWithNoTests: true,
     clearMocks: true,
@@ -26,5 +34,11 @@ export const vitestCommonConfig = defineConfig({
     globals: false,
     testTimeout: 10000,
     environment: 'node',
+    // `enabled` is set per project with `*.test-d.ts` files: Vitest warns once per enabling project.
+    typecheck: {
+      checker: join(dirname(require.resolve('typescript-native/package.json')), 'bin', 'tsc'),
+      // Diagnostics outside the type test files are `yarn task check`'s job.
+      ignoreSourceErrors: true,
+    },
   },
 });

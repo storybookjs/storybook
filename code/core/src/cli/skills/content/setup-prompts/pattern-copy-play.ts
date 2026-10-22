@@ -1,9 +1,9 @@
 /**
- * Prompt variant: `pattern-copy-play` (current default for `npx storybook ai setup`)
+ * Prompt variant: `pattern-copy-play`
  *
- * - Created: 2026-04-22 (eval iteration 2, default since this PR)
- * - Status: shipping default — produced by every `ai setup` invocation
- *   without `EVAL_SETUP_PROMPT` set.
+ * - Created: 2026-04-22 (eval iteration 2)
+ * - Status: available only to the eval harness, which sets
+ *   `EVAL_SETUP_PROMPT=pattern-copy-play`.
  * - Reference eval results:
  *   https://github.com/search?q=is:pr label:"prompt:pattern-copy-play" org:storybook-tmp&type=pullrequests
  *
@@ -34,7 +34,7 @@ function getDocsReferenceSection(projectInfo: ProjectInfo): string {
     - Decorators: ${docsUrl('writing-stories/decorators')}
     - Args: ${docsUrl('writing-stories/args')}
     - Play functions: ${docsUrl('writing-stories/play-function')}
-    - Vitest integration: ${docsUrl('writing-tests/vitest-plugin')}
+    - Vitest integration: ${docsUrl('writing-tests/integrations/vitest-addon')}
 
     Fetch these URLs directly when you need guidance on Storybook APIs or patterns.
   `;

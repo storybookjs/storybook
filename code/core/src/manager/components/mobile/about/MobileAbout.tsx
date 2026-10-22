@@ -65,7 +65,7 @@ export const MobileAbout: FC = () => {
                     <GithubIcon />
                   </ActionList.Icon>
                   <ActionList.Text>
-                    <span>Github</span>
+                    <span>GitHub</span>
                   </ActionList.Text>
                   <ActionList.Icon>
                     <ShareAltIcon />
@@ -100,6 +100,7 @@ export const MobileAbout: FC = () => {
               and the{' '}
               <Link
                 href="https://github.com/storybookjs/storybook/graphs/contributors"
+                target="_blank"
                 rel="noopener noreferrer"
               >
                 Storybook Community

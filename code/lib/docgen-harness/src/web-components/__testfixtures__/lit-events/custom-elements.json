@@ -34,14 +34,14 @@
             {
               "name": "my-change",
               "type": {
-                "text": "CustomEvent"
+                "text": "CustomEvent<{ value: string }>"
               },
               "description": "Fired when the value changes."
             },
             {
               "name": "my-close",
               "type": {
-                "text": "CustomEvent"
+                "text": "CustomEvent<void>"
               },
               "description": "Fired when the panel closes."
             }

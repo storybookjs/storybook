@@ -2,20 +2,16 @@
 title: Test runner
 sidebar:
   order: 2
-  title: Test runner (Webpack)
+  title: Test runner (unsupported)
 ---
-
-<If renderer={['react', 'vue', 'svelte']}>
 
 <Callout variant="warning">
 
-The test runner has been superseded by the [Vitest addon](./vitest-addon/index.mdx), which offers the same functionality, powered by the faster and more modern [Vitest](https://vitest.dev/) browser mode. It also enables the full Storybook Test experience, allowing you to run interaction, accessibility, and visual tests from your Storybook app.
+Official support for the test runner has ended. It still works with Storybook 11, but it no longer receives fixes or compatibility updates. See the [migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#test-runner-support-ended) for migration examples.
 
-If you are using a Vite-powered Storybook framework, we recommend using the Vitest addon instead of the test runner.
+The [Vitest addon](./vitest-addon/index.mdx) replaces the test runner. It is powered by the faster and more modern [Vitest](https://vitest.dev/) browser mode and enables the full Storybook Test experience, allowing you to run interaction, accessibility, and visual tests from your Storybook app. Follow the [migration guide](./vitest-addon/migration-guide.mdx) to switch.
 
 </Callout>
-
-</If>
 
 Storybook test runner turns all of your stories into executable tests. It is powered by [Jest](https://jestjs.io/) and [Playwright](https://playwright.dev/).
 
@@ -464,6 +460,7 @@ As the [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverag
 
 **More testing resources**
 
+- [See our complete guide to component testing](https://storybook.js.org/blog/component-testing-a-practical-guide-for-frontend-developers/)
 - [Interaction testing](../interaction-testing.mdx) for user behavior simulation
 - [Accessibility testing](../accessibility-testing.mdx) for accessibility
 - [Visual testing](../visual-testing.mdx) for appearance

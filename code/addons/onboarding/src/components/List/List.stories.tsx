@@ -7,13 +7,13 @@ import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { List } from './List.tsx';
 import { ListItem } from './ListItem/ListItem.tsx';
 
-const meta: Meta<typeof List> = {
+const meta = {
   component: List,
-};
+} satisfies Meta<typeof List>;
 
 export default meta;
 
-export const Default: StoryObj<typeof meta> = {
+export const Default: StoryObj<Meta<typeof List>> = {
   render: () => {
     const [workingIndex, setWorkingIndex] = useState(1);
 

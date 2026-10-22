@@ -43,18 +43,25 @@ it.each(['define-meta', 'preview-meta'])(
   }
 );
 
-it.each([
-  [
-    'a member expression of a named import of an object',
-    'member-expression.stories.svelte',
-    'Select',
-  ],
-  ['a member expression of a namespace import', 'namespace-import.stories.svelte', 'Button'],
-])('resolves the component of a Svelte CSF file that uses %s', async (_, file, name) => {
-  expect(await resolveStoryComponent(entryFor(`svelte-csf/${file}`))).toEqual({
-    componentPath: join(fixtures, 'svelte-csf', `${name}.svelte`),
-    exportName: name,
-    name,
+it.each(['member-expression', 'member-expression-trap'])(
+  'resolves the component of a Svelte CSF file with a member expression of a named import (%s)',
+  async (file) => {
+    expect(await resolveStoryComponent(entryFor(`svelte-csf/${file}.stories.svelte`))).toEqual({
+      componentPath: join(fixtures, 'svelte-csf/Select.svelte'),
+      // The property value binds the component's default export, not the property name.
+      exportName: 'default',
+      name: 'Select',
+    });
+  }
+);
+
+it('resolves the component of a Svelte CSF file with a member expression of a namespace import', async () => {
+  expect(
+    await resolveStoryComponent(entryFor('svelte-csf/namespace-import.stories.svelte'))
+  ).toEqual({
+    componentPath: join(fixtures, 'svelte-csf/Button.svelte'),
+    exportName: 'Button',
+    name: 'Button',
   });
 });
 

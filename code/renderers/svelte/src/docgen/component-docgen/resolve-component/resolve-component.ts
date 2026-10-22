@@ -139,6 +139,75 @@ function locate(storyPath: string, specifier: string, exportName: string, name: 
   return { componentPath, exportName, name };
 }
 
+// `import { Input } from './Input.ts'` with `component: Input.Select` names the component through
+// the object's declaration, not a module export. Finds the object the specifier binds, takes the
+// property's value, and resolves that binding — `undefined` when the object is not a plain object
+// literal or the property is not a simple identifier, so docgen declines rather than guesses.
+function declaredObjectReference(
+  modulePath: string,
+  objectExportName: string,
+  propertyKey: string
+): ResolvedSvelteComponent | undefined {
+  const program = moduleProgram(modulePath);
+  if (!program) return undefined;
+
+  // The object the story imports, declared as `export const Input = { … }` or `export default { … }`.
+  let objectExpression: E.ObjectExpression | undefined;
+  for (const statement of program.body) {
+    if (
+      statement.type === 'ExportNamedDeclaration' &&
+      statement.declaration?.type === 'VariableDeclaration'
+    ) {
+      const declarator = statement.declaration.declarations.find(
+        (candidate) =>
+          candidate.id.type === 'Identifier' &&
+          candidate.id.name === objectExportName &&
+          candidate.init?.type === 'ObjectExpression'
+      );
+      if (declarator && declarator.init?.type === 'ObjectExpression') {
+        objectExpression = declarator.init;
+      }
+    } else if (
+      statement.type === 'ExportDefaultDeclaration' &&
+      objectExportName === 'default' &&
+      statement.declaration.type === 'ObjectExpression'
+    ) {
+      objectExpression = statement.declaration;
+    }
+    if (objectExpression) break;
+  }
+  if (!objectExpression) return undefined;
+
+  const property = objectExpression.properties.find(
+    (candidate) =>
+      candidate.type === 'Property' &&
+      !candidate.computed &&
+      staticKey(candidate) === propertyKey &&
+      candidate.value.type === 'Identifier'
+  );
+  if (!property || property.type !== 'Property' || property.value.type !== 'Identifier') {
+    return undefined;
+  }
+  const binding = property.value.name;
+
+  // The value binds a component imported into this module, possibly aliased.
+  for (const statement of program.body) {
+    if (statement.type !== 'ImportDeclaration' || statement.importKind === 'type') continue;
+    const specifier = statement.specifiers.find((candidate) => candidate.local.name === binding);
+    if (specifier) {
+      return locate(
+        modulePath,
+        String(statement.source.value),
+        importedName(specifier),
+        propertyKey
+      );
+    }
+  }
+  // …or one this module declares and exports itself.
+  const componentPath = followExport(modulePath, binding);
+  return componentPath ? { componentPath, exportName: binding, name: propertyKey } : undefined;
+}
+
 export async function resolveStoryComponent(
   entry: IndexEntry
 ): Promise<ResolvedSvelteComponent | undefined> {
@@ -153,20 +222,28 @@ export async function resolveStoryComponent(
     const component = getDefineMetaComponentValue({ nodes, filename: storyPath });
     if (!component) return undefined;
 
-    // `Input.Select` names the component through an imported object, so the import is matched by
-    // the object's name and the property is the export name — `ns.Button` on a namespace import
-    // is `import { Button } from …` written another way, the same rule core's resolver applies.
-    const localName =
-      component.type === 'MemberExpression' ? component.object.name : component.name;
-
     for (const statement of ast.module?.content.body ?? []) {
       if (statement.type !== 'ImportDeclaration') continue;
+      const localName =
+        component.type === 'MemberExpression' ? component.object.name : component.name;
       const specifier = statement.specifiers.find(
         (candidate) => candidate.local.name === localName
       );
       if (!specifier) continue;
 
-      if (component.type === 'MemberExpression') {
+      // A plain identifier keeps the import's imported name, which may be aliased or `default`.
+      if (component.type !== 'MemberExpression') {
+        return locate(
+          storyPath,
+          String(statement.source.value),
+          importedName(specifier),
+          component.name
+        );
+      }
+
+      // `ns.Button` on a namespace import is `import { Button } from …` written another way, so the
+      // property is the export name — the same shortcut core's resolver applies to namespaces.
+      if (specifier.type === 'ImportNamespaceSpecifier') {
         return locate(
           storyPath,
           String(statement.source.value),
@@ -174,13 +251,14 @@ export async function resolveStoryComponent(
           component.property.name
         );
       }
-      // A plain identifier keeps the import's imported name, which may be aliased or `default`.
-      return locate(
-        storyPath,
-        String(statement.source.value),
-        importedName(specifier),
-        component.name
-      );
+
+      // A named object import (`import { Input }`) names the component through the object's
+      // declaration, not a module export — a module that also exports `Select` is not the component.
+      // Beyond that one level, docgen declines rather than guesses.
+      const objectModule = resolveImport(storyPath, String(statement.source.value));
+      return objectModule
+        ? declaredObjectReference(objectModule, importedName(specifier), component.property.name)
+        : undefined;
     }
     return undefined;
   }

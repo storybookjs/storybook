@@ -2,6 +2,13 @@
 # Posts the failed jobs of a nightly `next` run to #sb-agility and, on weekdays, asks Obvious to fix them.
 set -euo pipefail
 
+# Whoever reruns a workflow by hand is already looking at it, and CircleCI tags reruns.
+rerun=$(curl -sS --fail "https://circleci.com/api/v2/workflow/${CIRCLE_WORKFLOW_ID}" | jq -r '.tag // ""')
+if [[ "$rerun" == rerun-* ]]; then
+  echo "Not reporting a manual rerun ($rerun)."
+  exit 0
+fi
+
 : "${SLACK_SB_AGILITY_WEBHOOK_URL:?Set SLACK_SB_AGILITY_WEBHOOK_URL in the CircleCI project settings}"
 : "${OBVIOUS_SLACK_USER_ID:?Set OBVIOUS_SLACK_USER_ID in the CircleCI project settings}"
 

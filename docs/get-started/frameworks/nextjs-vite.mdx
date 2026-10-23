@@ -562,6 +562,16 @@ If your server components access data via the network, we recommend using the [M
 
 In the future we will provide better mocking support in Storybook and support for [Server Actions](https://nextjs.org/docs/app/api-reference/functions/server-actions).
 
+## Testing with Vitest
+
+When running Vitest tests against Next.js components — whether with the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx) or [portable stories](../../api/portable-stories/portable-stories-vitest.mdx) — Next.js features such as `next/image` and `next/font` must work outside Storybook's dev server. The `@storybook/nextjs-vite` package re-exports `storybookNextJsPlugin` from [`vite-plugin-storybook-nextjs`](https://github.com/storybookjs/storybook/tree/next/code/lib/vite-plugin-storybook-nextjs) for this purpose.
+
+When you use the Vitest addon with [automatic setup](../../writing-tests/integrations/vitest-addon/index.mdx#automatic-setup), the plugin is loaded through Storybook's Vite configuration. If you configure Vitest manually or use portable stories in your own `vitest.config.ts`, add `storybookNextJsPlugin()` to your Vitest plugins:
+
+<CodeSnippets path="vite-includeStorybookNextjsPlugin.md" />
+
+If you see errors like `Cannot find module 'sb-original/image-context'`, the plugin is likely missing from your Vitest configuration.
+
 ## FAQ
 
 ### How do I migrate from the `nextjs` (Webpack 5) addon?

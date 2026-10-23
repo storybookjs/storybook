@@ -19,7 +19,7 @@ describe('getFontFaceDeclarations', () => {
       filename: '/project/src/fonts.ts',
     });
 
-    expect(result.fontFaceCSS).toContain('font-display: swap;');
+    expect(result.fontFaceCSS).toContain('font-display: fallback;');
   });
 
   it('preserves the display option for each local font source', async () => {

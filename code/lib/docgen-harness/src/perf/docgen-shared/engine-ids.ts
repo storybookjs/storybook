@@ -5,6 +5,7 @@ export type EngineId =
   | 'react-legacy'
   | 'react-legacy-rdt'
   | 'react-osa'
+  | 'react-osa-native'
   | 'vue-docgen-api'
   | 'vue-component-meta'
   | 'vue-component-meta-next'

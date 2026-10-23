@@ -73,6 +73,25 @@ export const ENGINES: BenchEngine[] = [
     jiti: true,
     args: (scenario) => [...reactArgs(scenario), '--mode', 'refresh', '--scope', 'changed'],
   }),
+  // The same manager on the TypeScript 7.1 native API (the `typescript-native` alias). No budget
+  // row yet, so it stays out of the default run; `--engine react-osa --engine react-osa-native`
+  // measures the pair.
+  new SeriesChildEngine({
+    id: 'react-osa-native',
+    child: '../docgen-memory/memory-harness.ts',
+    scenarios: reactScenarios,
+    jiti: true,
+    inDefaultRun: false,
+    args: (scenario) => [
+      ...reactArgs(scenario),
+      '--mode',
+      'refresh',
+      '--scope',
+      'changed',
+      '--typescript',
+      'native',
+    ],
+  }),
   new SeriesChildEngine({
     id: 'vue-docgen-api',
     child: 'engines/vue-docgen-api.ts',

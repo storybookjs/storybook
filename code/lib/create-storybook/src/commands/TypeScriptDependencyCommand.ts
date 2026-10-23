@@ -1,9 +1,10 @@
 import {
   type JsPackageManager,
   RENDERERS_WITH_TYPESCRIPT_DOCGEN,
-  TYPESCRIPT_FOR_DOCGEN_PACKAGE,
-  hasTypeScriptCompilerApi,
+  getTypeScriptDocgenApi,
   isCI,
+  typeScriptDocgenApisFor,
+  typeScriptPackageForDocgen,
 } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { TypeScriptWithoutCompilerApiError } from 'storybook/internal/server-errors';
@@ -43,7 +44,9 @@ export class TypeScriptDependencyCommand {
   }: ExecuteTypeScriptDependencyParams): Promise<TypeScriptDependencyResult> {
     const result = await this.decide(packageManager, renderer);
     if (result === 'added') {
-      dependencyCollector.addDevDependencies([TYPESCRIPT_FOR_DOCGEN_PACKAGE]);
+      dependencyCollector.addDevDependencies([
+        typeScriptPackageForDocgen(typeScriptDocgenApisFor(renderer)),
+      ]);
     }
     if (result !== 'not-needed') {
       await this.telemetryService.trackTypeScriptDependency(result);
@@ -59,12 +62,14 @@ export class TypeScriptDependencyCommand {
       return 'not-needed';
     }
 
+    const apis = typeScriptDocgenApisFor(renderer);
     if (packageManager.isDependencyInstalled('typescript')) {
       const version = coerce(
         await packageManager.getDeclaredVersionSpecifier('typescript')
       )?.version;
-      if (version && !hasTypeScriptCompilerApi(version)) {
-        logger.warn(new TypeScriptWithoutCompilerApiError({ version }).message);
+      const api = version && getTypeScriptDocgenApi(version);
+      if (version && !(api && apis.includes(api))) {
+        logger.warn(new TypeScriptWithoutCompilerApiError({ version, apis }).message);
         return 'without-compiler-api';
       }
       return 'already-installed';
@@ -74,7 +79,7 @@ export class TypeScriptDependencyCommand {
       return 'added';
     }
     logger.info(
-      `Server-side docgen stays off until you add ${TYPESCRIPT_FOR_DOCGEN_PACKAGE} to your devDependencies.`
+      `Server-side docgen stays off until you add ${typeScriptPackageForDocgen(apis)} to your devDependencies.`
     );
     return 'declined';
   }

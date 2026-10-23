@@ -60,6 +60,7 @@
     "storybook": "workspace:*",
     "svelte": "^5.39.5",
     "typescript": "^6.0.3",
+    "typescript-native": "npm:typescript@7.1.0-beta",
     "vue": "^3.2.47",
     "vue-component-meta": "^3.3.9",
     "vue-component-meta-next": "npm:vue-component-meta@3.3.8",

@@ -278,6 +278,31 @@ And the retained slope is higher on `first-story` for both engines (0.12 and 0.1
 Every save adds a prop to the component it touches, and in this shape that is the same component every time, so its type genuinely grows across the run.
 The slope there measures that growth as well as any leak, which is why its budget is no tighter than the whole-index one.
 
+### The React native-API pair
+
+`react-osa-native` is `react-osa` on the native API of TypeScript 7.1 (the `typescript-native` alias) instead of the compiler API of this package's `typescript`.
+It is the same `ComponentMetaManager`, so the pair `react-native-api` compares the two APIs on equal work, and both children report the props they documented.
+It stays out of the default run until it has a budget row; measure it with `--engine react-osa --engine react-osa-native`.
+
+Pinned profile on the dev box (8 cores, Node 22, TypeScript 6.0.3 against 7.1.0-beta):
+
+| Engine / scenario            | Cold   | Warm | Peak transient | Retained growth | Retained slope |
+| ---------------------------- | ------ | ---- | -------------- | --------------- | -------------- |
+| react-osa/whole-index        | 2376ms | 37ms | 14.3MB         | -81.6MB         | 0.10MB/save    |
+| react-osa-native/whole-index | 5411ms | 28ms | 6.9MB          | -64.1MB         | 0.01MB/save    |
+| react-osa/first-story        | 1130ms | 44ms | 10.5MB         | 2.8MB           | 0.20MB/save    |
+| react-osa-native/first-story | 183ms  | 30ms | 3.6MB          | 0.6MB           | 0.07MB/save    |
+
+| Pair                             | Scenario    | Cold | Warm | Members      |
+| -------------------------------- | ----------- | ---- | ---- | ------------ |
+| react-osa over react-osa-native  | whole-index | 0.44 | 1.31 | 5100 vs 5100 |
+| react-osa over react-osa-native  | first-story | 6.18 | 1.45 | 17 vs 17     |
+
+The two shapes pull apart because the native API's cost is per request to the compiler process, not per program.
+`first-story` is dominated by the program build, which the native compiler does in a fraction of the LanguageService's time, so it is 6.18 faster cold.
+`whole-index` documents 1,200 stories in one batch; profiling its cold pass counted 34,335 requests before the facades batched the per-property calls and 6,642 after, and the pass stayed near 5.3s either way, because the remaining time is the compiler process's own work per request (903 batched requests at 2.2ms, `getApparentPropertiesOfType` at 2.7ms and `getResolvedSignature` at 1.5ms per component).
+Warm, both shapes favour the native API, and its retained growth and slope are the smaller of the pair.
+
 ### Budgets
 
 Recorded in `docgen-shared/budgets.ts`, keyed by engine and scenario, above the observed value by whatever margin that metric's own noise demands.

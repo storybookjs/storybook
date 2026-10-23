@@ -335,8 +335,16 @@ export class OpenServiceCyclicStateError extends StorybookError {
   }
 }
 
+/**
+ * The TypeScript APIs a renderer's docgen can run on: the compiler API of TypeScript 5.9 and 6, and
+ * the native API of TypeScript 7.1 and newer. See `typescript-for-docgen.ts` in `common`.
+ */
+type TypeScriptDocgenApis = readonly ('compiler' | 'native')[];
+
+const supportsNativeApi = (apis: TypeScriptDocgenApis = ['compiler']) => apis.includes('native');
+
 export class TypeScriptMissingForDocgenError extends StorybookError {
-  constructor(public data: { cause?: unknown } = {}) {
+  constructor(public data: { cause?: unknown; apis?: TypeScriptDocgenApis } = {}) {
     super({
       name: 'TypeScriptMissingForDocgenError',
       category: Category.CORE_COMMON,
@@ -346,31 +354,38 @@ export class TypeScriptMissingForDocgenError extends StorybookError {
       message: dedent`
         Storybook cannot find the \`typescript\` package. Storybook uses TypeScript to read your component types for Controls and the Docs args table, also in JavaScript projects.
 
-        Add \`typescript@^6\` to the devDependencies in package.json, install it with your package manager, then restart Storybook.`,
+        Add \`${supportsNativeApi(data.apis) ? 'typescript@^7.1' : 'typescript@^6'}\` to the devDependencies in package.json, install it with your package manager, then restart Storybook.`,
     });
   }
 }
 
 export class TypeScriptWithoutCompilerApiError extends StorybookError {
-  constructor(public data: { version: string }) {
+  constructor(public data: { version: string; apis?: TypeScriptDocgenApis }) {
     super({
       name: 'TypeScriptWithoutCompilerApiError',
       category: Category.CORE_COMMON,
       code: 34,
       documentation: 'https://storybook.js.org/docs/configure/integration/typescript#typescript-7',
-      message: dedent`
-        Storybook found TypeScript ${data.version} as the \`typescript\` package. TypeScript 7 does not include the compiler API that Storybook uses to read your component types for Controls and the Docs args table.
+      message: supportsNativeApi(data.apis)
+        ? dedent`
+          Storybook found TypeScript ${data.version} as the \`typescript\` package. TypeScript 7.0 does not include an API that Storybook can use to read your component types for Controls and the Docs args table. TypeScript 7.1 and newer do, and so does TypeScript 6.
 
-        If package.json has no \`typescript\` entry, your package manager installed TypeScript 7 for Storybook's peer dependency. Add \`typescript@^6\` to the devDependencies in package.json.
+          Upgrade to \`typescript@^7.1\` in the devDependencies in package.json. If package.json has no \`typescript\` entry, your package manager installed TypeScript 7.0 for Storybook's peer dependency; add the entry.
 
-        If your project uses TypeScript 7, install TypeScript 7 and TypeScript 6 side by side. In package.json, replace the \`typescript\` entry in devDependencies with these two entries:
+          Then install dependencies and restart Storybook.`
+        : dedent`
+          Storybook found TypeScript ${data.version} as the \`typescript\` package. TypeScript 7 does not include the compiler API that Storybook uses to read your component types for Controls and the Docs args table.
 
-          "@typescript/native": "npm:typescript@^${data.version}",
-          "typescript": "npm:@typescript/typescript6@^6.0.2"
+          If package.json has no \`typescript\` entry, your package manager installed TypeScript 7 for Storybook's peer dependency. Add \`typescript@^6\` to the devDependencies in package.json.
 
-        \`tsc\` stays on TypeScript 7, and the \`typescript\` package is TypeScript 6. Both entries are necessary.
+          If your project uses TypeScript 7, install TypeScript 7 and TypeScript 6 side by side. In package.json, replace the \`typescript\` entry in devDependencies with these two entries:
 
-        Then install dependencies and restart Storybook.`,
+            "@typescript/native": "npm:typescript@^${data.version}",
+            "typescript": "npm:@typescript/typescript6@^6.0.2"
+
+          \`tsc\` stays on TypeScript 7, and the \`typescript\` package is TypeScript 6. Both entries are necessary.
+
+          Then install dependencies and restart Storybook.`,
     });
   }
 }

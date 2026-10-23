@@ -1,7 +1,7 @@
-import { loadTypeScriptCompilerApi } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { ComponentMetaManager } from './componentMeta/ComponentMetaManager.ts';
+import { loadReactTypeScript } from './componentMeta/load-typescript.ts';
 
 let componentMetaManagerPromise: Promise<ComponentMetaManager | undefined> | undefined;
 
@@ -21,9 +21,7 @@ export function getSharedComponentMetaManager(): Promise<ComponentMetaManager | 
   if (!componentMetaManagerPromise) {
     componentMetaManagerPromise = (async () => {
       try {
-        return new ComponentMetaManager(
-          await loadTypeScriptCompilerApi(() => import('typescript'))
-        );
+        return new ComponentMetaManager(await loadReactTypeScript());
       } catch (err) {
         logger.debug(`[reactComponentMeta] Skipping component metadata extraction: ${err}`);
         return undefined;

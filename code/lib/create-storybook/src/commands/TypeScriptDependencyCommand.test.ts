@@ -60,14 +60,24 @@ afterEach(() => {
 });
 
 describe('TypeScriptDependencyCommand', () => {
-  it('asks, then adds typescript@^6 to a project without TypeScript', async () => {
+  it('asks, then adds typescript@^7.1 to a React project without TypeScript', async () => {
     const { result, devDependencies, telemetryService } = await run();
 
     expect(prompt.confirm).toHaveBeenCalledOnce();
     expect(result).toBe('added');
-    expect(devDependencies).toEqual(['typescript@^6']);
+    expect(devDependencies).toEqual(['typescript@^7.1']);
     expect(telemetryService.trackTypeScriptDependency).toHaveBeenCalledWith('added');
   });
+
+  it.each([SupportedRenderer.VUE3, SupportedRenderer.SVELTE, SupportedRenderer.WEB_COMPONENTS])(
+    'adds typescript@^6 to a %s project, whose docgen needs the compiler API',
+    async (renderer) => {
+      const { result, devDependencies } = await run({ renderer });
+
+      expect(result).toBe('added');
+      expect(devDependencies).toEqual(['typescript@^6']);
+    }
+  );
 
   describe('when the user declines', () => {
     beforeEach(() => {
@@ -115,8 +125,27 @@ describe('TypeScriptDependencyCommand', () => {
     expect(devDependencies).toEqual([]);
   });
 
-  it('warns with the side-by-side setup when the project is on TypeScript 7', async () => {
+  it('leaves a React project on TypeScript 7.1 alone', async () => {
+    const { result, devDependencies } = await run({ typescriptVersion: '7.1.0' });
+
+    expect(result).toBe('already-installed');
+    expect(devDependencies).toEqual([]);
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('tells a React project on TypeScript 7.0 to upgrade to 7.1', async () => {
     const { result, devDependencies } = await run({ typescriptVersion: '7.0.2' });
+
+    expect(result).toBe('without-compiler-api');
+    expect(devDependencies).toEqual([]);
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('typescript@^7.1'));
+  });
+
+  it('warns a Vue project on TypeScript 7 with the side-by-side setup', async () => {
+    const { result, devDependencies } = await run({
+      renderer: SupportedRenderer.VUE3,
+      typescriptVersion: '7.0.2',
+    });
 
     expect(result).toBe('without-compiler-api');
     expect(devDependencies).toEqual([]);
@@ -126,7 +155,7 @@ describe('TypeScriptDependencyCommand', () => {
   });
 
   it('warns when the project declares TypeScript 7 but has not installed it yet', async () => {
-    const { result } = await run({ typescriptVersion: '^7.0.2' });
+    const { result } = await run({ renderer: SupportedRenderer.VUE3, typescriptVersion: '^7.0.2' });
 
     expect(result).toBe('without-compiler-api');
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('npm:typescript@^7.0.2'));

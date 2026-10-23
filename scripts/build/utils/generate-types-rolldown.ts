@@ -454,8 +454,8 @@ export async function generateTypesFiles(
     // external that nothing in the kept types references is tree-shaken from the output, so the
     // flat file ends up importing only what its closure genuinely uses — which the entry's
     // producer-side guard then asserts is exactly the allowlist.
-    const portableExternalFn = (allowed: string[]) => (id: string) =>
-      externalFn(id) || allowed.some((dep) => id === dep || id.startsWith(`${dep}/`));
+    const portableExternalFn = (allowed: string[]) =>
+      createPackageMatcher([...external, ...allowed], sep);
 
     const outputs = [
       ...(Object.keys(sharedInput).length > 0 ? [await bundleDts(sharedInput, externalFn)] : []),

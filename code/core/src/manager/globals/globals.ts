@@ -13,6 +13,7 @@ export const globalsNameReferenceMap = {
   'storybook/manager-api': '__STORYBOOK_API__',
 
   'storybook/theming': '__STORYBOOK_THEMING__',
+  'storybook/theming/emotion': '__STORYBOOK_THEMING__',
   'storybook/theming/create': '__STORYBOOK_THEMING_CREATE__',
 
   'storybook/test': '__STORYBOOK_TEST__',

@@ -162,7 +162,7 @@
       "description": "URL path to be appended when visiting Storybook for the first time"
     },
     "statsJson": {
-      "type": ["boolean", "string"],
+      "type": ["string", "boolean"],
       "description": "Write stats JSON to disk",
       "default": false
     },

@@ -48,6 +48,8 @@ export type BuildEntries = {
    * This can be useful to expose non-compiled/non-js files such as Svelte components,
    */
   extraOutputs?: Record<string, any>;
+  /** Package-owned rewrite of pre-bundled declarations, applied before the dts bundler. */
+  transformEmittedDeclarations?: (context: { emitDir: string; packageName: string }) => void;
   /**
    * The function to run before the build
    *

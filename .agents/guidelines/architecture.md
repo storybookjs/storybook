@@ -105,16 +105,15 @@ the fields to change and provide migration-specific error guidance.
 ### Docgen server
 
 - `features.docgenServer` defaults to `true` when any loaded preset exports `experimental_docgenProvider`, and the main config overrides it.
-  Today that is the React and Vue 3 renderer presets and `@storybook/angular-vite`.
+  Today that is the React, Vue 3, Web Components and Svelte renderer presets and `@storybook/angular-vite`.
 - Ship a provider by exporting `experimental_docgenProvider` from a preset; do not add framework defaults or allowlists.
   A provider must not read `features.docgenServer`: only consumers gate on it.
-- Svelte and Web Components keep their providers unexported until they ship.
 - The `docgen-server` automigration only renames `experimentalDocgenServer`; legacy React and Vue extractor settings are not preserved.
   Angular `compodoc: false` controls only the legacy Compodoc run and is not a server opt-out.
 
 ## Agent-facing skills
 
-- `storybook skills` serves the `stories`, `write-story`, and `setup` documents as Markdown.
+- `storybook skills` serves the `ui-workflow`, `component-docs`, `write-story`, and `setup` documents as Markdown.
 - Pure content lives in `code/core/src/cli/skills/content/` and is exported through
   `storybook/internal/skills`; addon-mcp consumes the same builders.
 - Keep `cli/skills/content/**` independent of `core-server`. A lint rule enforces the boundary.

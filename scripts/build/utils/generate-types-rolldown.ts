@@ -21,8 +21,7 @@ const DTS_EXCLUDES = [
   '**/*.spec.*',
   '**/*.stories.*',
   '**/*.mockdata.*',
-  '**/__tests__/**',
-  '**/__mocks__/**',
+  '**/__*/**',
   '**/node_modules/**',
 ];
 
@@ -202,12 +201,13 @@ function emitPackageDeclarations(wrapperTsconfig: string, outDir: string): void 
   const errors = result.diagnostics.filter((d) => d.category === ts.DiagnosticCategory.Error);
   if (errors.length > 0) {
     console.error(
-      ts.formatDiagnosticsWithColorAndContext(errors, {
+      ts.formatDiagnostics(errors, {
         getCurrentDirectory: () => DIR_ROOT,
         getCanonicalFileName: (fileName) => fileName,
         getNewLine: () => ts.sys.newLine,
       })
     );
+    throw new Error(`Declaration emit reported ${errors.length} error(s) for ${wrapperTsconfig}`);
   }
   // `emitSkipped` is unreliable with `noCheck` (it reports true even though
   // every file was written), so gate on actual output instead.
@@ -243,17 +243,15 @@ function emitPackageDeclarationsNative(
   if (result.error) {
     throw result.error;
   }
-  // With `noCheck` + `noEmitOnError: false`, diagnostics are advisory (the
-  // JS-API path behaves the same); only fail when nothing was emitted.
   if (result.status !== 0) {
     console.error(`${result.stdout ?? ''}${result.stderr ?? ''}`);
+    throw new Error(
+      `Native declaration emit failed for ${emitTsconfig} (exit code ${result.status})`
+    );
   }
   const emitted = ts.sys.readDirectory(outDir, ['.d.ts', '.d.mts', '.d.cts']);
   if (emitted.length === 0) {
-    console.error(`${result.stdout ?? ''}${result.stderr ?? ''}`);
-    throw new Error(
-      `Native declaration emit produced no output for ${emitTsconfig} (exit code ${result.status})`
-    );
+    throw new Error(`Native declaration emit produced no output for ${emitTsconfig}`);
   }
 
   copyHandwrittenDeclarations(parseWrapperTsconfig(wrapperTsconfig).fileNames, outDir);
@@ -353,6 +351,13 @@ export async function generateTypesFiles(
       emitPackageDeclarationsNative(emitTsconfig, wrapperTsconfig, emitDir);
     } else {
       emitPackageDeclarations(wrapperTsconfig, emitDir);
+    }
+
+    if (data.transformEmittedDeclarations) {
+      const packageJson = JSON.parse(await readFile(join(cwd, 'package.json'), 'utf8')) as {
+        name: string;
+      };
+      data.transformEmittedDeclarations({ emitDir, packageName: packageJson.name });
     }
 
     const input: Record<string, string> = Object.fromEntries(

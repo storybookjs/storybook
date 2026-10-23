@@ -30,7 +30,8 @@ const meta = preview.meta({
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import { fn } from 'storybook/test';
 
@@ -44,16 +45,20 @@ const meta = preview.meta({
 </script>
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import { fn } from 'storybook/test';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-import Button from './Button.svelte';
+  import { fn } from 'storybook/test';
 
-export default {
-  component: Button,
-  // 👇 Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked
-  args: { onClick: fn() },
-};
+  import Button from './Button.svelte';
+
+  const { Story } = preview.meta({
+    component: Button,
+    // 👇 Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked
+    args: { onClick: fn() },
+  });
+</script>
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
@@ -70,7 +75,8 @@ export default {
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import { fn } from 'storybook/test';
 
@@ -84,21 +90,20 @@ export default {
 </script>
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta } from '@storybook/your-framework';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import { fn } from 'storybook/test';
+  import { fn } from 'storybook/test';
 
-import Button from './Button.svelte';
+  import Button from './Button.svelte';
 
-const meta = {
-  component: Button,
-  // 👇 Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked
-  args: { onClick: fn() },
-} satisfies Meta<typeof Button>;
-
-export default meta;
+  const { Story } = preview.meta({
+    component: Button,
+    // 👇 Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked
+    args: { onClick: fn() },
+  });
+</script>
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

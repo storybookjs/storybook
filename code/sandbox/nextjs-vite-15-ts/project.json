@@ -28,5 +28,5 @@
     "serve": {},
     "e2e-tests-dev": {}
   },
-  "tags": ["ci:daily"]
+  "tags": ["ci:merged", "ci:daily"]
 }

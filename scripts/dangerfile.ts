@@ -28,7 +28,7 @@ const Versions = {
   MAJOR: 'MAJOR',
 };
 
-const ciLabels = ['ci:focus', 'ci:normal', 'ci:daily', 'ci:docs'];
+const ciLabels = ['ci:focus', 'ci:normal', 'ci:merged', 'ci:daily', 'ci:docs'];
 const qaLabels = ['qa:needed', 'qa:skip', 'qa:success'];
 
 const { labels } = danger.github.issue;

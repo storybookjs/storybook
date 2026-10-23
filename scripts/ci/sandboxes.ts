@@ -506,6 +506,8 @@ const getListOfSandboxes = (workflow: Workflow) => {
   switch (workflow) {
     case 'normal':
       return sandboxTemplates.normal;
+    case 'merged':
+      return sandboxTemplates.merged;
     case 'daily':
       return sandboxTemplates.daily;
     default:

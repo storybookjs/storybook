@@ -8,8 +8,9 @@ import { CODE_DIRECTORY } from './utils/constants.ts';
 import { esMain } from './utils/esmain.ts';
 
 type Branch = 'main' | 'next' | 'alpha' | 'next-release' | 'latest-release';
+type Workflow = 'merged' | 'daily';
 
-const getFooter = async (branch: Branch, job: string) => {
+const getFooter = async (branch: Branch, workflow: Workflow, job: string) => {
   if (job === 'chromatic-sandboxes') {
     return `\n\nThis might not necessarily be a bug, it could be a visual diff that you have to review and approve. Please check it!`;
   }
@@ -23,7 +24,12 @@ const getFooter = async (branch: Branch, job: string) => {
     return `\n**Version: ${packageJson.version}**`;
   }
 
-  const mergeCommits = `git log --merges --since="24 hours ago" --pretty=format:"\`%h\` %<(12)%ar %s [%an]"`;
+  const mergeCommits =
+    workflow === 'merged'
+      ? // show single merge for merged workflow
+        `git log -1 --pretty=format:"\`%h\` %<(12)%ar %s [%an]"`
+      : // show last 24h merges for daily workflow
+        `git log --merges --since="24 hours ago" --pretty=format:"\`%h\` %<(12)%ar %s [%an]"`;
 
   const result = await execaCommand(mergeCommits, { shell: true, cleanup: true });
   const formattedResult = result.stdout
@@ -56,7 +62,7 @@ async function run() {
     template !== 'none' ? ` for **${template}**.` : '.'
   }`;
   const body = `\n\n**Branch**: \`${currentBranch}\`\n**Workflow:** ${workflow}`;
-  const footer = await getFooter(currentBranch as Branch, currentJob);
+  const footer = await getFooter(currentBranch as Branch, workflow as Workflow, currentJob);
 
   console.log(`${title}${body}${footer}`.replace(/\n/g, '\\n'));
 }

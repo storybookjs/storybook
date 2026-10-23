@@ -39,6 +39,7 @@ Add these labels to the PR:
 **CI (required, pick one):**
 
 - `ci:normal` - standard sandbox set; default for most code changes
+- `ci:merged` - merged sandbox set
 - `ci:daily` - daily sandbox set; use this when changes affect prerelease sandboxes or sandboxes pinned to a framework or React version other than latest
 - `ci:docs` - documentation-only changes (use with `documentation` category)
 

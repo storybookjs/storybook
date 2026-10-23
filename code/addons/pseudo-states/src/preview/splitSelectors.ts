@@ -9,10 +9,24 @@ export const splitSelectors = (selectors: string) => {
   let parentheses = 0;
   let brackets = 0;
   let selector = '';
+  let quote = '';
 
   for (let i = 0, len = selectors.length; i < len; i++) {
     const char = selectors[i];
-    if (char === '(') {
+    if (char === '\\') {
+      selector += char;
+      if (i + 1 < len) {
+        selector += selectors[++i];
+      }
+      continue;
+    }
+    if (quote) {
+      if (char === quote) {
+        quote = '';
+      }
+    } else if (char === '"' || char === "'") {
+      quote = char;
+    } else if (char === '(') {
       parentheses += 1;
     } else if (char === ')') {
       parentheses -= 1;

@@ -1,15 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('next/dist/compiled/@next/font/dist/local/validate-local-font-function-call.js', () => ({
-  validateLocalFontFunctionCall: vi.fn(() => ({
-    weight: '400',
-    style: 'normal',
-    display: 'swap',
-    variable: undefined,
-    declarations: [],
-  })),
-}));
-
 vi.mock('next/dist/compiled/loader-utils3/index.js', () => ({
   default: { getHashDigest: () => 'font-test' },
 }));
@@ -22,7 +12,7 @@ describe('getFontFaceDeclarations', () => {
       source: 'next/font/local',
       props: {
         src: './font.woff2',
-        display: 'swap',
+        display: 'fallback',
         metaSrc: { fontReferenceId: 'font-asset', fontPath: 'font.woff2' },
       },
       fontFamily: 'LocalFont',
@@ -37,7 +27,6 @@ describe('getFontFaceDeclarations', () => {
       source: 'next/font/local',
       props: {
         src: [{ path: './regular.woff2', weight: '400' }],
-        display: 'swap',
         metaSrc: [{ path: { fontReferenceId: 'regular', fontPath: 'regular.woff2' }, weight: '400' }],
       },
       fontFamily: 'LocalFont',

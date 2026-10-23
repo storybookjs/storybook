@@ -12,6 +12,7 @@ import * as find from 'empathic/find';
 import type { ResultPromise } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
+import { normalize } from 'pathe';
 import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
@@ -226,7 +227,9 @@ export class NPMProxy extends JsPackageManager {
               .filter((pattern: string) => pattern.startsWith('!'))
               .map((pattern: string) => `${pattern.slice(1)}/package.json`),
           }
-        ).includes(packageJsonPath)
+        )
+          .map(normalize)
+          .includes(normalize(packageJsonPath))
       );
     });
 
@@ -383,28 +386,28 @@ export class NPMProxy extends JsPackageManager {
 
     const recurse = ([name, packageInfo]: [string, NpmDependency]): void => {
       // transform pattern into regex where `*` is replaced with `.*`
-      if (!name || !pattern.some((p) => new RegExp(`^${p.replace(/\*/g, '.*')}$`).test(name))) {
-        return;
-      }
+      if (name && pattern.some((p) => new RegExp(`^${p.replace(/\*/g, '.*')}$`).test(name))) {
+        const value = {
+          version: packageInfo.version,
+          location: '',
+        };
 
-      const value = {
-        version: packageInfo.version,
-        location: '',
-      };
+        if (!existingVersions[name]?.includes(value.version)) {
+          if (acc[name]) {
+            acc[name].push(value);
+          } else {
+            acc[name] = [value];
+          }
+          existingVersions[name] = sort([...(existingVersions[name] || []), value.version]);
 
-      if (!existingVersions[name]?.includes(value.version)) {
-        if (acc[name]) {
-          acc[name].push(value);
-        } else {
-          acc[name] = [value];
-        }
-        existingVersions[name] = sort([...(existingVersions[name] || []), value.version]);
-
-        if (existingVersions[name].length > 1) {
-          duplicatedDependencies[name] = existingVersions[name];
+          if (existingVersions[name].length > 1) {
+            duplicatedDependencies[name] = existingVersions[name];
+          }
         }
       }
 
+      // keep walking non-matching nodes: intermediary entries such as workspace
+      // members hide matching dependencies beneath them
       if (packageInfo.dependencies) {
         Object.entries(packageInfo.dependencies).forEach(recurse);
       }

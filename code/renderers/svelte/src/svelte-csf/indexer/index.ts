@@ -17,6 +17,7 @@ export const createIndexer = (): Indexer => ({
           exportName: story.exportName,
           name: story.name,
           title: makeTitle(meta.title),
+          ...(meta.metaId ? { metaId: meta.metaId } : {}),
           tags: [...(meta.tags ?? []), ...(story.tags ?? []), SVELTE_CSF_V5_TAG],
         } satisfies IndexInput;
       });

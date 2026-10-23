@@ -39,7 +39,8 @@ export const InteractiveTooltipWrapper: React.FC<{
       tooltip={<TooltipNote note={tooltip} shortcut={shortcutLabel} />}
       disabled={disableAllTooltips}
     >
-      {children}
+      {/* @ts-expect-error: Only null prevents React Aria from describing the button with redundant tooltip text. */}
+      {React.cloneElement(children, { 'aria-describedby': null })}
     </TooltipProvider>
   ) : (
     <>{children}</>

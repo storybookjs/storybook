@@ -40,6 +40,9 @@ vi.mock(import('storybook/internal/node-logger'), async (importOriginal) => {
   return actual;
 });
 
+// Project collection evaluates a real main.js through core's source, so it needs the real
+// importModule instead of the stub from vitest-setup.ts.
+vi.unmock('../../../core/src/shared/utils/module.ts');
 vi.mock('storybook/internal/telemetry');
 vi.mock('./autoblock/index.ts', () => ({
   autoblock: vi.fn(async () => null),

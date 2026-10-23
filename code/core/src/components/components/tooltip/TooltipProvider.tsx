@@ -156,14 +156,9 @@ const TooltipProvider = ({
       trigger={triggerOnFocusOnly ? 'focus' : undefined}
       {...props}
     >
-      {/* We don't let react-aria set an aria-describedby attribute because it clashes with our intention to explicitly set an aria-label that can be different from the tooltip copy. Some screenreaders would announce the label AND description if we also allowed aria-describedby, which would decrease usability. */}
-      {/* The cast covers two intentional deviations: aria-describedby must be null (undefined
-          won't work and an empty string pollutes the DOM), and cloneElement's typings admit no
-          ref for a generically typed child. */}
       <Focusable>
         {
           React.cloneElement(child, {
-            'aria-describedby': null,
             ref: setTriggerRef,
           } as unknown as Partial<DOMAttributes<Element>>) as React.ComponentProps<
             typeof Focusable

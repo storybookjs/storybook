@@ -5,6 +5,7 @@ import {
   setupSandbox,
   writeCodexInAppBrowserMock,
   writeCodexPluginSkills,
+  writeStorybookAgentInstructions,
 } from '../lib/templates.ts';
 
 const model = 'gpt-6.1-sol?reasoningEffort=low';
@@ -22,6 +23,7 @@ export default {
     await setupSandbox(sandbox, { agent: 'codex', integration: 'plugin', model });
     await writeCodexPluginSkills(sandbox);
     await writeCodexInAppBrowserMock(sandbox);
+    await writeStorybookAgentInstructions(sandbox);
     await commitSandboxBaseline(sandbox);
   },
 } satisfies ExperimentConfig;

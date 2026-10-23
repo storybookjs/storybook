@@ -82,7 +82,6 @@ async function run() {
 
   const name = pkg.name;
 
-  // Only this package's config: importing the entry-configs.ts registry would load all of them.
   const { default: entry } = (await import(
     pathToFileURL(join(DIR_CWD, 'build-config.ts')).href
   )) as { default: BuildEntries };

@@ -885,19 +885,6 @@ export const baseTemplates = {
     // yarn portals.
     name: 'React Native Expo Latest (Vite | TypeScript)',
     script: 'npx create-expo-app -y --no-install {{beforeDir}}',
-    // create-expo-app pins the current SDK, whose packages are released
-    // together and are routinely younger than the gate window.
-    // `babel-preset-expo` is part of that set despite not matching `expo-*`.
-    // `multitars` is pulled in transitively by the Expo CLI toolchain.
-    minAgeGateExemptions: [
-      'expo',
-      'expo-*',
-      '@expo/*',
-      'babel-preset-expo',
-      'multitars',
-      'react-native',
-      '@react-native/*',
-    ],
     expected: {
       framework: '@storybook/react-native-web-vite',
       renderer: '@storybook/react',

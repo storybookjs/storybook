@@ -353,6 +353,13 @@ export async function generateTypesFiles(
       emitPackageDeclarations(wrapperTsconfig, emitDir);
     }
 
+    if (data.transformEmittedDeclarations) {
+      const packageJson = JSON.parse(await readFile(join(cwd, 'package.json'), 'utf8')) as {
+        name: string;
+      };
+      data.transformEmittedDeclarations({ emitDir, packageName: packageJson.name });
+    }
+
     const input: Record<string, string> = Object.fromEntries(
       Object.entries(entryMap).map(([name, sourcePath]) => [
         name,

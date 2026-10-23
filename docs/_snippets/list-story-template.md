@@ -273,9 +273,10 @@ export const OneItem = {
 };
 ```
 
-```svelte filename="List.stories.svelte" renderer="svelte" language="js"
+```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import List from './List.svelte';
   import ListItem from './ListItem.svelte';
@@ -311,9 +312,48 @@ export const OneItem = {
 />
 ```
 
-```svelte filename="List.stories.svelte" renderer="svelte" language="ts"
+```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import preview from '../.storybook/preview';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  //👇 Imports a specific story from ListItem stories
+  import { Unchecked } from './ListItem.stories.svelte';
+
+  const { Story } = preview.meta({
+    component: List,
+  });
+</script>
+
+<!--
+  The template construct will be spread to the existing stories.
+  It's based on Svelte's snippet syntax allowing you share the same UI with small variations.
+-->
+{#snippet template(args)}
+  <List {...args}>
+    {#each args.items as item}
+      <ListItem {...item} />
+    {/each}
+  </List>
+{/snippet}
+
+<Story name="Empty" args={{ items: [] }} {template} />
+
+<Story
+  name="One Item"
+  args={{
+    items: [{ ...Unchecked.args }],
+  }}
+  {template}
+/>
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import List from './List.svelte';
   import ListItem from './ListItem.svelte';
@@ -322,6 +362,44 @@ export const OneItem = {
   import { Unchecked } from './ListItem.stories.svelte';
 
   const { Story } = defineMeta({
+    component: List,
+  });
+</script>
+
+<!--
+  The template construct will be spread to the existing stories.
+  It's based on Svelte's snippet syntax allowing you share the same UI with small variations.
+-->
+{#snippet template(args)}
+  <List {...args}>
+    {#each args.items as item}
+      <ListItem {...item} />
+    {/each}
+  </List>
+{/snippet}
+
+<Story name="Empty" args={{ items: [] }} {template} />
+
+<Story
+  name="One Item"
+  args={{
+    items: [{ ...Unchecked.args }],
+  }}
+  {template}
+/>
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  //👇 Imports a specific story from ListItem stories
+  import { Unchecked } from './ListItem.stories.svelte';
+
+  const { Story } = preview.meta({
     component: List,
   });
 </script>

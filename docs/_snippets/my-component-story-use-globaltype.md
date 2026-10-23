@@ -202,7 +202,8 @@ export const StoryWithLocale = {
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from "@storybook/addon-svelte-csf";
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from "@storybook/your-framework";
 
   import MyComponent from "./MyComponent.svelte";
 
@@ -238,44 +239,48 @@ export const StoryWithLocale = {
 </Story>
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import MyComponent from './MyComponent.svelte';
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: MyComponent,
-};
+  import MyComponent from "./MyComponent.svelte";
 
-const getCaptionForLocale = (locale) => {
-  switch (locale) {
-    case 'es':
-      return 'Hola!';
-    case 'fr':
-      return 'Bonjour!';
-    case 'kr':
-      return '안녕하세요!';
-    case 'zh':
-      return '你好!';
-    default:
-      return 'Hello!';
-  }
-};
+  const { Story } = preview.meta({
+    component: MyComponent,
+  });
+</script>
 
-export const StoryWithLocale = {
-  render: (args, { globals: { locale } }) => {
-    const caption = getCaptionForLocale(locale);
-    return {
-      Component: MyComponent,
-      props: {
-        locale: caption,
-      },
-    };
-  },
-};
+<script>
+  const getCaptionForLocale = (locale) => {
+    switch (locale) {
+      case 'es':
+        return 'Hola!';
+      case 'fr':
+        return 'Bonjour!';
+      case "kr":
+        return '안녕하세요!';
+      case "zh":
+        return '你好!';
+      default:
+        return 'Hello!';
+    }
+  };
+</script>
+
+<Story name="StoryWithLocale">
+  {#snippet template(args, { globals: { locale } })}
+    <MyComponent
+      {...args}
+      locale={getCaptionForLocale(locale)}
+    />
+  {/snippet}
+</Story>
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from "@storybook/addon-svelte-csf";
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from "@storybook/your-framework";
 
   import MyComponent from "./MyComponent.svelte";
 
@@ -311,45 +316,42 @@ export const StoryWithLocale = {
 </Story>
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import MyComponent from './MyComponent.svelte';
+  import MyComponent from "./MyComponent.svelte";
 
-const meta = {
-  component: MyComponent,
-} satisfies Meta<typeof MyComponent>;
+  const { Story } = preview.meta({
+    component: MyComponent,
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
+<script lang="ts">
+  const getCaptionForLocale = (locale:string) => {
+    switch (locale) {
+      case 'es':
+        return 'Hola!';
+      case 'fr':
+        return 'Bonjour!';
+      case "kr":
+        return '안녕하세요!';
+      case "zh":
+        return '你好!';
+      default:
+        return 'Hello!';
+    }
+  };
+</script>
 
-const getCaptionForLocale = (locale) => {
-  switch (locale) {
-    case 'es':
-      return 'Hola!';
-    case 'fr':
-      return 'Bonjour!';
-    case 'kr':
-      return '안녕하세요!';
-    case 'zh':
-      return '你好!';
-    default:
-      return 'Hello!';
-  }
-};
-
-export const StoryWithLocale: Story = {
-  render: (args, { globals: { locale } }) => {
-    const caption = getCaptionForLocale(locale);
-    return {
-      Component: MyComponent,
-      props: {
-        locale: caption,
-      },
-    };
-  },
-};
+<Story name="StoryWithLocale">
+  {#snippet template(args, { globals: { locale } })}
+    <MyComponent
+      {...args}
+      locale={getCaptionForLocale(locale)}
+    />
+  {/snippet}
+</Story>
 ```
 
 ```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"

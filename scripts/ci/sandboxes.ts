@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module';
+
 import { join } from 'path';
 
 import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
@@ -19,6 +21,9 @@ import type { JobOrNoOpJob, Workflow } from './utils/types.ts';
 import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types.ts';
 
 const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';
+
+/** The Chromatic job runs the CLI through npx, so it needs none of the repository's node_modules. */
+const CHROMATIC_VERSION: string = createRequire(import.meta.url)('chromatic/package.json').version;
 
 /**
  * Verifies the committed docgen baselines against the sandbox that was just built.
@@ -267,7 +272,6 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         ...getSandboxSetupSteps(key),
         'checkout', // we need the full git history for chromatic
         workspace.attach(),
-        workspace.unpack(),
         workspace.unpackSandbox(id),
         {
           // we copy to the working directory to get git history, which chromatic needs for baselines
@@ -279,10 +283,14 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         {
           run: {
             name: 'Running Chromatic',
-            command: `yarn task chromatic --template ${key} --no-link -s chromatic`,
-            environment: {
-              STORYBOOK_SANDBOX_ROOT: `./sandbox`,
-            },
+            working_directory: join(LINUX_ROOT_DIR, WORKING_DIR, 'sandbox', path),
+            command: [
+              `npx --yes chromatic@${CHROMATIC_VERSION}`,
+              '--debug',
+              '--exit-zero-on-changes',
+              '--storybook-build-dir=storybook-static',
+              `--projectToken="$CHROMATIC_TOKEN_${key.toUpperCase().replace(/\/|-|\./g, '_')}"`,
+            ].join(' '),
           },
         },
       ],

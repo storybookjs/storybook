@@ -184,7 +184,7 @@ Disabling docgen can improve build performance for large projects, but [argTypes
 ## Defining stories with Svelte CSF
 
 
-Story files use the `.stories.svelte` extension. The `defineMeta` function is called in `<script module>` and returns a `Story` component. `render` has no effect; pass `args` or children instead.
+Story files use the `.stories.svelte` extension. The `defineMeta` function is called in `<script module>` and returns a `Story` component. A `render` passed to `defineMeta` sets the default template snippet for all stories; a `render` property on an individual `Story` has no effect, so use `args` or children for story-specific content.
 
 
 <CodeSnippet language="svelte" title="src/stories/MyComponent.stories.svelte">

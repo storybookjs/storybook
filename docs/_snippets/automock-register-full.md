@@ -106,6 +106,7 @@ export default definePreview({
 ```
 
 ```ts filename=".storybook/preview.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, vue3-vite, sveltekit)
 import type { Preview } from '@storybook/your-framework';
 import { sb } from 'storybook/test';
@@ -123,6 +124,7 @@ export default preview;
 ```
 
 ```js filename=".storybook/preview.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import { sb } from 'storybook/test';
 
 // 👇 Automatically replaces all exports from the `lib/session` local module with mock functions

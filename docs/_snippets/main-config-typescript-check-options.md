@@ -15,6 +15,7 @@ export default defineMain({
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 // Replace your-framework with the framework you are using, e.g. react-webpack5, nextjs, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 

@@ -79,6 +79,7 @@ export const Basic = meta.story({
 ```
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF 3 is deprecated and will be removed in Storybook 12 -->
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -161,6 +162,7 @@ export const Basic = meta.story({
 ```
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF 3 is deprecated and will be removed in Storybook 12 -->
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -298,6 +300,7 @@ export const Basic = meta.story({
 ```
 
 ```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import MockDate from 'mockdate';
@@ -328,6 +331,7 @@ export const Basic: Story = {
 ```
 
 ```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -359,6 +363,7 @@ export const Basic: Story = {
 ```
 
 ```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import MockDate from 'mockdate';
 
 import { Page } from './Page';
@@ -384,6 +389,7 @@ export const Basic = {
 ```
 
 ```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import MockDate from 'mockdate';
@@ -412,6 +418,7 @@ export const Basic: Story = {
 ```
 
 ```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import MockDate from 'mockdate';
 
 export default {

@@ -156,6 +156,7 @@ export const Submitted = meta.story({
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 // ...rest of story file
 
 export const Submitted = {
@@ -173,6 +174,7 @@ export const Submitted = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 // ...rest of story file
 
 export const Submitted: Story = {

@@ -53,6 +53,7 @@ export default definePreview({
 ```
 
 ```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import React from 'react';
 
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
@@ -82,6 +83,7 @@ export default preview;
 ```
 
 ```jsx filename=".storybook/preview.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import React from 'react';
 
 import { ThemeProvider } from 'styled-components';

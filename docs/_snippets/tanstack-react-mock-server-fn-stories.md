@@ -30,6 +30,7 @@ export const Failure = meta.story({
 ```
 
 ```ts filename="ProfileForm.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import type { Meta, StoryObj } from '@storybook/tanstack-react';
 import { expect, mocked } from 'storybook/test';
 

@@ -29,6 +29,7 @@ export default definePreview({
 ```
 
 ```ts filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 // Replace your-framework with nextjs or nextjs-vite
 import type { Preview } from '@storybook/your-framework';
 
@@ -46,6 +47,7 @@ export default preview;
 ```
 
 ```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 export default {
   // ...
   parameters: {

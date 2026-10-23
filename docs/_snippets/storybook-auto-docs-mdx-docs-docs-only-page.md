@@ -15,6 +15,7 @@ import * as ExampleComponentStories from './ExampleComponent.stories';
 
 <!-- prettier-ignore -->
 ```mdx filename="ExampleDocumentation.mdx" renderer="svelte" language="mdx" tabTitle="CSF 3"
+{/* ⚠️ CSF 3 is deprecated and will be removed in Storybook 12 */}
 import { Meta } from '@storybook/addon-docs/blocks';
 
 import * as ExampleComponentStories from './ExampleComponent.stories.svelte';

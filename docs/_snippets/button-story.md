@@ -61,6 +61,7 @@ export const Primary = meta.story({
 ```
 
 ```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import React, { useState } from 'react';
 
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
@@ -96,6 +97,7 @@ export const Primary = {
 ```
 
 ```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import React, { useState } from 'react';
 
 import { Button } from './Button';

@@ -8,6 +8,7 @@ export default defineMain({
 ```
 
 ```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import { StorybookConfig } from '@storybook/angular';
 
 const config: StorybookConfig = {

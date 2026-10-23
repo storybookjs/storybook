@@ -37,6 +37,7 @@ export default definePreview({
 ```
 
 ```tsx filename=".storybook/preview.tsx" renderer="react" language="tsx" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Preview } from '@storybook/tanstack-react';
 

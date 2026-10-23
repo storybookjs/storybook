@@ -31,6 +31,7 @@ export const Basic = meta.story({
 ```
 
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -205,6 +206,7 @@ export const Basic: Story = {
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF 3 is deprecated and will be removed in Storybook 12 -->
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -254,6 +256,7 @@ export const Basic: Story = {
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF 3 is deprecated and will be removed in Storybook 12 -->
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -397,6 +400,7 @@ export const Basic = meta.story({
 ```
 
 ```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import { html } from 'lit';
 
 export default {
@@ -421,6 +425,7 @@ export const Basic = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -450,6 +455,7 @@ export const Basic: Story = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
@@ -486,6 +492,7 @@ export const Basic: Story = {
 ```
 
 ```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import Button from './Button.vue';
 
 export default {
@@ -512,6 +519,7 @@ export const Basic = {
 ```
 
 ```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import * as React from 'react';
 
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
@@ -548,6 +556,7 @@ export const Basic: Story = {
 ```
 
 ```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import * as React from 'react';
 
 import { Button } from './Button';

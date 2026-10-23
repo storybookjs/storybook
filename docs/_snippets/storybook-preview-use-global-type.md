@@ -136,6 +136,7 @@ export default definePreview({
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import { type Preview, setup } from '@storybook/vue3-vite';
 
 import { VApp } from 'vuetify/components';
@@ -169,6 +170,7 @@ export default preview;
 ```
 
 ```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import { setup } from '@storybook/vue3-vite';
 
 import { VApp } from 'vuetify/components';
@@ -202,6 +204,7 @@ export default preview;
 ```
 
 ```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Preview } from '@storybook/your-framework';
 
@@ -226,6 +229,7 @@ export default preview;
 ```
 
 ```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import { ThemeProvider } from 'styled-components';
 
 import { MyThemes } from '../my-theme-folder/my-theme-file';

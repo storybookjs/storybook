@@ -23,6 +23,7 @@ export const LoggedIn = meta.story({
 ```
 
 ```ts filename="Navbar.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import type { Meta, StoryObj } from '@storybook/tanstack-react';
 import type { QueryClient } from '@tanstack/react-query';
 

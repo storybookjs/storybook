@@ -8,6 +8,7 @@ export default definePreview({
 ```
 
 ```diff filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 - import type { Preview } from '@storybook/react-vite';
 + import type { Preview } from '@storybook/tanstack-react';
 

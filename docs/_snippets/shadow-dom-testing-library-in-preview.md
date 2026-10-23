@@ -35,6 +35,7 @@ export default definePreview({
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import type { Preview } from '@storybook/web-components-vite';
 
 import { within as withinShadow } from 'shadow-dom-testing-library';
@@ -59,6 +60,7 @@ export default preview;
 ```
 
 ```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import { within as withinShadow } from 'shadow-dom-testing-library';
 
 export default {

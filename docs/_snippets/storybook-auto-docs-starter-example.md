@@ -21,6 +21,7 @@ Buttons are often used for form submissions and to toggle elements into view.
 
 <!-- prettier-ignore -->
 ```mdx filename="Button.mdx" renderer="svelte" language="mdx" tabTitle="CSF 3"
+{/* ⚠️ CSF 3 is deprecated and will be removed in Storybook 12 */}
 import { Meta, Story } from '@storybook/addon-docs/blocks';
 
 import * as ButtonStories from './Button.stories.svelte';

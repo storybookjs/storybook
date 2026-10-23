@@ -25,6 +25,7 @@ export const Default = meta.story();
 ```
 
 ```ts filename="SettingsProfile.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import type { Meta, StoryObj } from '@storybook/tanstack-react';
 
 // 👇 Route file is part of the app route tree

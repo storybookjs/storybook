@@ -37,6 +37,7 @@ export const WithCustomApplicationProvider = meta.story({
 ```
 
 ```ts filename="ChipsModule.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
 import { type Meta, type StoryObj, applicationConfig } from '@storybook/angular';
 
 import { BrowserAnimationsModule, provideAnimations } from '@angular/platform-browser/animations';

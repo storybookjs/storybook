@@ -24,6 +24,7 @@ export async function getFontFaceDeclarations(
   const {
     weight,
     style,
+    display,
     variable,
     declarations = [],
   } = validateLocalFontFunctionCall('', options.props);
@@ -48,6 +49,7 @@ export async function getFontFaceDeclarations(
           src: url(.${localFontPath});
           ${weight ? `font-weight: ${weight};` : ''}
           ${style ? `font-style: ${style};` : ''}
+          font-display: ${display};
           ${fontDeclarations}
       }`;
     }
@@ -60,6 +62,7 @@ export async function getFontFaceDeclarations(
           src: url(.${localFontPath});
           ${font.weight ? `font-weight: ${font.weight};` : ''}
           ${font.style ? `font-style: ${font.style};` : ''}
+          font-display: ${display};
           ${fontDeclarations}
         }`;
       })

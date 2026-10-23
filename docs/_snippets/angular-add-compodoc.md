@@ -1,4 +1,4 @@
-```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import { definePreview } from '@storybook/angular';
 
 // 👇 Add these

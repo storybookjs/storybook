@@ -1,4 +1,4 @@
-```js filename="example-addon/src/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="example-addon/src/preview.jsx" renderer="react" language="js" tabTitle="CSF 4"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 
@@ -13,7 +13,7 @@ export default definePreview({
 });
 ```
 
-```ts filename="example-addon/src/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="example-addon/src/preview.tsx" renderer="react" language="ts" tabTitle="CSF 4"
 import type { ProjectAnnotations, Renderer } from 'storybook/internal/types';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)

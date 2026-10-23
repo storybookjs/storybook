@@ -1,4 +1,4 @@
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 4"
 import { fileURLToPath } from 'node:url';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
@@ -33,7 +33,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 4"
 import { fileURLToPath } from 'node:url';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
@@ -68,7 +68,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import { fileURLToPath } from 'node:url';
 
 import { defineMain } from '@storybook/vue3-vite/node';
@@ -102,7 +102,7 @@ export default defineMain({
 });
 ```
 
-```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF 4"
 import { fileURLToPath } from 'node:url';
 
 import { defineMain } from '@storybook/vue3-vite/node';
@@ -136,7 +136,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import { fileURLToPath } from 'node:url';
 
 import { defineMain } from '@storybook/angular/node';
@@ -170,7 +170,7 @@ export default defineMain({
 });
 ```
 
-```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import { fileURLToPath } from 'node:url';
 
 import { defineMain } from '@storybook/web-components-vite/node';
@@ -204,7 +204,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import { fileURLToPath } from 'node:url';
 
 import { defineMain } from '@storybook/web-components-vite/node';

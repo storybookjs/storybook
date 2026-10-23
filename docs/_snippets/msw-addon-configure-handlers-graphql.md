@@ -1,4 +1,4 @@
-```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="story CSF Next 🧪"
+```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="story CSF 4"
 import { moduleMetadata } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
@@ -207,7 +207,7 @@ export function createApollo(httpLink: HttpLink): ApolloClientOptions<any> {
 export class MockGraphQLModule {}
 ```
 
-```jsx filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import * as React from 'react';
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import { graphql, HttpResponse, delay } from 'msw';
@@ -301,7 +301,7 @@ export const MockedError = meta.story({
 });
 ```
 
-```tsx filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
 import * as React from 'react';
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import { graphql, HttpResponse, delay } from 'msw';
@@ -394,7 +394,7 @@ export const MockedError = meta.story({
 });
 ```
 
-```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -470,7 +470,7 @@ export const MockedError = meta.story({
 />
 ```
 
-```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -571,7 +571,7 @@ export const MockedError = meta.story({
 </div>
 ```
 
-```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
 <script module lang="ts">
   import preview from '../.storybook/preview';
 
@@ -647,7 +647,7 @@ export const MockedError = meta.story({
 />
 ```
 
-```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -1172,7 +1172,7 @@ export const MockedError = {
 };
 ```
 
-```ts filename="YourPage.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourPage.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import { graphql, HttpResponse, delay } from 'msw';
 
 import preview from '../.storybook/preview';
@@ -1247,7 +1247,7 @@ export const MockedError = meta.story({
 });
 ```
 
-```js filename="YourPage.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="YourPage.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
 import { graphql, HttpResponse, delay } from 'msw';
 
 import preview from '../.storybook/preview';

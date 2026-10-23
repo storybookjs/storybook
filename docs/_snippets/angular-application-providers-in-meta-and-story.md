@@ -1,4 +1,4 @@
-```ts filename="ChipsModule.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="ChipsModule.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import { applicationConfig } from '@storybook/angular';
 
 import { BrowserAnimationsModule, provideAnimations } from '@angular/platform-browser/animations';

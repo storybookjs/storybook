@@ -1,4 +1,4 @@
-```js filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```js filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import { defineMain } from '@storybook/angular/node';
 
 const config = defineMain({

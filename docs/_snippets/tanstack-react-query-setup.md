@@ -1,4 +1,4 @@
-```tsx filename=".storybook/preview.tsx" renderer="react" language="tsx" tabTitle="CSF Next 🧪"
+```tsx filename=".storybook/preview.tsx" renderer="react" language="tsx" tabTitle="CSF 4"
 import { definePreview } from '@storybook/tanstack-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 

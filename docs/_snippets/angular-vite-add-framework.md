@@ -1,4 +1,4 @@
-```diff filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```diff filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 - import { defineMain } from '@storybook/angular/node';
 + import { defineMain } from '@storybook/angular-vite/node';
 

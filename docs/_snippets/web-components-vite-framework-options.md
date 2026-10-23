@@ -24,7 +24,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import { defineMain } from '@storybook/web-components-vite/node';
 
 export default defineMain({
@@ -37,7 +37,7 @@ export default defineMain({
 });
 ```
 
-```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import { defineMain } from '@storybook/web-components-vite/node';
 
 export default defineMain({

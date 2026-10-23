@@ -1,4 +1,4 @@
-```ts filename="Checkbox.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Checkbox.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Checkbox } from './checkbox.component';
@@ -14,7 +14,7 @@ export const Unchecked = meta.story({
 });
 ```
 
-```ts filename="Checkbox.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Checkbox.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -28,7 +28,7 @@ export const Unchecked = meta.story({
 });
 ```
 
-```svelte filename="Checkbox.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="Checkbox.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -47,7 +47,7 @@ export const Unchecked = meta.story({
 />
 ```
 
-```svelte filename="Checkbox.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="Checkbox.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -67,7 +67,7 @@ export const Unchecked = meta.story({
 />
 ```
 
-```js filename="Checkbox.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="Checkbox.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -81,7 +81,7 @@ export const Unchecked = meta.story({
 });
 ```
 
-```svelte filename="Checkbox.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="Checkbox.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
 <script module lang="ts">
   import preview from '../.storybook/preview';
 
@@ -100,7 +100,7 @@ export const Unchecked = meta.story({
 />
 ```
 
-```svelte filename="Checkbox.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="Checkbox.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -120,7 +120,7 @@ export const Unchecked = meta.story({
 />
 ```
 
-```ts filename="Checkbox.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Checkbox.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Checkbox } from './Checkbox';
@@ -136,7 +136,7 @@ export const Unchecked = meta.story({
 });
 ```
 
-```js filename="Checkbox.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="Checkbox.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Checkbox } from './Checkbox';
@@ -152,7 +152,7 @@ export const Unchecked = meta.story({
 });
 ```
 
-```ts filename="Checkbox.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Checkbox.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import Checkbox from './Checkbox.vue';
@@ -168,7 +168,7 @@ export const Unchecked = meta.story({
 });
 ```
 
-```js filename="Checkbox.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="Checkbox.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import Checkbox from './Checkbox.vue';

@@ -1,4 +1,4 @@
-```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
   import { setContext } from 'svelte';
 
@@ -20,7 +20,7 @@
 </script>
 ```
 
-```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
 <script module>
   import { setContext } from 'svelte';
 
@@ -58,7 +58,7 @@
 </div>
 ```
 
-```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
 <script module lang="ts">
   import { setContext } from 'svelte';
 
@@ -80,7 +80,7 @@
 </script>
 ```
 
-```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
 <script module lang="ts">
   import { setContext } from 'svelte';
 

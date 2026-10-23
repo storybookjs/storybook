@@ -1,4 +1,4 @@
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 4"
 import path from 'node:path';
 
 // Replace your-framework with nextjs or nextjs-vite
@@ -15,7 +15,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 4"
 import path from 'node:path';
 
 // Replace your-framework with nextjs or nextjs-vite

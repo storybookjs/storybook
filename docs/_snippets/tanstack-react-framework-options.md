@@ -1,4 +1,4 @@
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 4"
 import { defineMain } from '@storybook/tanstack-react/node';
 
 export default defineMain({

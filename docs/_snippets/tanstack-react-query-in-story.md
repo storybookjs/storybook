@@ -1,4 +1,4 @@
-```ts filename="Navbar.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Navbar.stories.ts" renderer="react" language="ts" tabTitle="CSF 4"
 import type { QueryClient } from '@tanstack/react-query';
 
 import preview from '../.storybook/preview';

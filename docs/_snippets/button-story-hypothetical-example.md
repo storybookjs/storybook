@@ -1,4 +1,4 @@
-```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Button } from './Button';
@@ -19,7 +19,7 @@ export const Sample = meta.story({
 
 <!-- These serve as abstract examples to inform how frameworks can be built, so "common" is fine here -->
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Button } from './Button';

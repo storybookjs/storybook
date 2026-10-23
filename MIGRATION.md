@@ -1017,7 +1017,7 @@ For Angular-Vite, `framework.options.compodoc: false` does not disable the docge
 Client-side docgen that runs in the builder is deprecated and will be removed in Storybook 12.
 This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`, and the Svelte `docgen` framework option in `@storybook/svelte-vite` and `@storybook/sveltekit` (including the sveltedoc-shaped `__docgen`).
 Builder docgen only runs when `features.docgenServer` is `false`, and Storybook now prints a deprecation warning when it does.
-Remove `docgenServer: false` to use server-side docgen.
+Install the `typescript` package and remove `docgenServer: false` to use server-side docgen; without `typescript` the project stays on builder docgen.
 
 #### Svelte
 
@@ -2194,9 +2194,9 @@ If the value is not a static object, move the fields yourself. This includes a v
 
 ### JavaScript init templates use JSDoc types instead of `propTypes`
 
-`storybook init` for React JavaScript projects now writes `Button.jsx` and `Header.jsx` templates whose props are typed with JSDoc, and no longer adds the `prop-types` package. React 19 ignores `propTypes` at runtime, and it has been deprecated since React 15.5.
+`storybook init` for React JavaScript projects now writes `Button.jsx` and `Header.jsx` templates whose props are typed with JSDoc, and no longer adds the `prop-types` package. React 19 no longer checks `propTypes` on function components, and `React.PropTypes` moved to the separate `prop-types` package in React 15.5.
 
-Server-side docgen, the default in Storybook 11, reads the JSDoc types, so a new project's Docs args table shows the same types and descriptions as the TypeScript template. The deprecated builder docgen (`react-docgen`, active only when `features.docgenServer` is `false`) does not: without `propTypes` it reports no prop types or descriptions for these templates and folds the JSDoc `@param` lines into the component description. Remove `docgenServer: false` to use server-side docgen.
+Server-side docgen, the default in Storybook 11, reads the JSDoc types, so a new project's Docs args table shows the same types and descriptions as the TypeScript template. The deprecated builder docgen (`react-docgen`, active only when `features.docgenServer` is `false`) does not: without `propTypes` it reports no prop types or descriptions for these templates and folds the JSDoc `@param` lines into the component description. Install the `typescript` package and remove `docgenServer: false` to use server-side docgen; without `typescript` the project stays on builder docgen.
 
 ## From version 10.6.1 to 10.6.2
 

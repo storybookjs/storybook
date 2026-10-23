@@ -36,6 +36,7 @@ import { toMerged } from 'es-toolkit/object';
 
 import { addons } from '../addons/index.ts';
 import type { StoryStore } from '../store/index.ts';
+import { Preview } from './Preview.tsx';
 import { PreviewWeb } from './PreviewWeb.tsx';
 import {
   componentOneExports,
@@ -71,7 +72,7 @@ vi.mock('@storybook/global', async (importOriginal) => ({
         search: '?id=*',
       },
     },
-    fetch: async () => mockFetchResult,
+    fetch: vi.fn(async () => mockFetchResult),
   },
 }));
 
@@ -2899,6 +2900,39 @@ describe('PreviewWeb', () => {
 
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_RENDERED, 'component-one--a');
       });
+    });
+  });
+
+  describe('getStoryIndexFromServer', () => {
+    const setBaseUrl = (href: string) => {
+      globalThis.document.head.querySelector('base')?.remove();
+      const base = globalThis.document.createElement('base');
+      base.href = href;
+      globalThis.document.head.append(base);
+    };
+
+    afterEach(() => {
+      globalThis.document.head.querySelector('base')?.remove();
+    });
+
+    it('fetches the index next to the URL the preview loaded at, after a story changed the URL', async () => {
+      setBaseUrl('http://localhost:6006/iframe.html?id=component-one--a');
+      const preview = await createAndRenderPreview();
+      setBaseUrl('http://localhost:6006/notes/7');
+
+      await preview.getStoryIndexFromServer();
+
+      expect(global.fetch).toHaveBeenLastCalledWith('http://localhost:6006/index.json');
+    });
+
+    it('fetches the relative index path without a document', async () => {
+      vi.stubGlobal('document', undefined);
+      const preview = new Preview(importFn, getProjectAnnotations, undefined, false);
+      vi.unstubAllGlobals();
+
+      await preview.getStoryIndexFromServer();
+
+      expect(global.fetch).toHaveBeenLastCalledWith('./index.json');
     });
   });
 

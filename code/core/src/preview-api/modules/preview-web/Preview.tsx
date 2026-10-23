@@ -55,6 +55,18 @@ const { fetch } = global;
 
 const STORY_INDEX_PATH = './index.json';
 
+function resolveStoryIndexUrl() {
+  // No document to resolve against, like in React Native
+  if (typeof document === 'undefined') {
+    return STORY_INDEX_PATH;
+  }
+  try {
+    return new URL(STORY_INDEX_PATH, document.baseURI).href;
+  } catch {
+    return STORY_INDEX_PATH;
+  }
+}
+
 export type MaybePromise<T> = Promise<T> | T;
 
 export class Preview<TRenderer extends Renderer> {
@@ -77,6 +89,9 @@ export class Preview<TRenderer extends Renderer> {
   protected resolveStoreInitializationPromise!: () => void;
 
   protected rejectStoreInitializationPromise!: (err: Error) => void;
+
+  // Resolved once, because a story can change the URL of the preview to a page of the app
+  private storyIndexUrl = resolveStoryIndexUrl();
 
   constructor(
     public importFn: ModuleImportFn,
@@ -201,7 +216,7 @@ export class Preview<TRenderer extends Renderer> {
   }
 
   async getStoryIndexFromServer() {
-    const result = await fetch(STORY_INDEX_PATH);
+    const result = await fetch(this.storyIndexUrl);
     if (result.status === 200) {
       return result.json() as any as StoryIndex;
     }

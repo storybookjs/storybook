@@ -20,8 +20,11 @@ describe('getFontFaceDeclarations', () => {
   it('preserves the display option for a single local font', async () => {
     const result = await getFontFaceDeclarations({
       source: 'next/font/local',
-      props: { src: './font.woff2', display: 'swap' },
-      metaSrc: { fontReferenceId: 'font-asset', fontPath: 'font.woff2' },
+      props: {
+        src: './font.woff2',
+        display: 'swap',
+        metaSrc: { fontReferenceId: 'font-asset', fontPath: 'font.woff2' },
+      },
       fontFamily: 'LocalFont',
       filename: '/project/src/fonts.ts',
     });
@@ -32,8 +35,11 @@ describe('getFontFaceDeclarations', () => {
   it('preserves the display option for each local font source', async () => {
     const result = await getFontFaceDeclarations({
       source: 'next/font/local',
-      props: { src: [{ path: './regular.woff2', weight: '400' }], display: 'swap' },
-      metaSrc: [{ path: { fontReferenceId: 'regular', fontPath: 'regular.woff2' }, weight: '400' }],
+      props: {
+        src: [{ path: './regular.woff2', weight: '400' }],
+        display: 'swap',
+        metaSrc: [{ path: { fontReferenceId: 'regular', fontPath: 'regular.woff2' }, weight: '400' }],
+      },
       fontFamily: 'LocalFont',
       filename: '/project/src/fonts.ts',
     });

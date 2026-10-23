@@ -21,8 +21,6 @@ export type TemplateKey =
   | keyof typeof internalTemplates
   | keyof typeof benchTemplates;
 
-export type Cadence = keyof typeof templatesByCadence;
-
 // Some properties e.g. experimentalTestSyntax are only available in framework specific types for StorybookConfig, therefore we loosen the type here otherwise it would always fail
 type LoosenedStorybookConfig = Omit<Partial<StorybookConfigRaw>, 'features'> & {
   features?:
@@ -1125,8 +1123,6 @@ export const daily: TemplateKey[] = [
   // 'html-rsbuild/default-ts',
   // 'react-native-web-vite/rn-cli-ts',
 ];
-
-export const templatesByCadence = { normal, daily };
 
 // Templates whose `mainConfig` is a function of the generated `ConfigFile`, so its features cannot be
 // read without running the sandbox generator. A new function-form template throws below instead of

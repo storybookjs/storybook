@@ -3,7 +3,7 @@ npx storybook@latest add @chromatic-com/storybook
 ```
 
 ```shell renderer="common" packageManager="pnpm"
-pnpm dlx storybook@latest add @chromatic-com/storybook
+pnpm --allow-build=esbuild dlx storybook@latest add @chromatic-com/storybook
 ```
 
 ```shell renderer="common" packageManager="yarn"

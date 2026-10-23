@@ -176,7 +176,7 @@ describe('UserPreferencesCommand', () => {
       const onCancel = vi.mocked(prompt.select).mock.calls[0]?.[1]?.onCancel;
       const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
 
-      await onCancel?.();
+      await onCancel?.('cancel');
 
       const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
       expect(telemetryService.trackPromptCancel).toHaveBeenCalledWith('new-user-ask-onboarding');

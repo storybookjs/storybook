@@ -1,7 +1,7 @@
 import type { ComponentProps, FC } from 'react';
 import React from 'react';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 export const CollapseIconWrapper = styled.div<{ isExpanded: boolean }>(({ theme, isExpanded }) => ({
   width: 14,

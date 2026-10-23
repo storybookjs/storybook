@@ -1,6 +1,5 @@
 import { expect, test } from 'vitest';
 
-import { recast, types as t } from 'storybook/internal/babel';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
@@ -11,10 +10,10 @@ function generateExample(code: string) {
   const csf = loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();
 
   const snippets = Object.keys(csf._storyExports).map(
-    (name) => getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle').node
+    (name) => getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle').code
   );
 
-  return recast.print(t.program(snippets)).code;
+  return snippets.join('\n');
 }
 
 /** Snippet plus what it still depends on, for the cases that resolve names rather than values. */
@@ -24,8 +23,7 @@ function generateResolved(code: string) {
   return Object.keys(csf._storyExports).map((name) => {
     const snippet = getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle');
     return {
-      // Recast defaults to `os.EOL`, which would carriage-return snippets built on Windows.
-      snippet: recast.print(snippet.node, { lineTerminator: '\n' }).code,
+      snippet: snippet.code,
       imports: snippet.imports.map((ref) => `${ref.importName} from ${ref.importId}`),
       unresolved: snippet.unresolved,
     };
@@ -109,11 +107,9 @@ test('Edge case identifier we can not find', () => {
   expect(() => generateExample(input)).toThrowErrorMatchingInlineSnapshot(
     `
     [SyntaxError: Expected story to be csf factory, function or an object expression
-      11 |
-      12 |
+    (13:27)
     > 13 |     export const Default = someImportOrWhatever;
-         |                            ^^^^^^^^^^^^^^^^^^^^
-      14 |   ]
+         |                            ^]
   `
   );
 });
@@ -187,14 +183,9 @@ test('Object', () => {
       }
     };
   `);
-  expect(generateExample(input)).toMatchInlineSnapshot(`
-    "const ObjectArgs = () => <Button
-        string="string"
-        number={1}
-        object={{ an: 'object'}}
-        complexObject={{...{a: 1}, an: 'object'}}
-        array={[1,2,3]}>Click me</Button>;"
-  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const ObjectArgs = () => <Button string="string" number={1} object={{ an: 'object'}} complexObject={{...{a: 1}, an: 'object'}} array={[1,2,3]}>Click me</Button>;"`
+  );
 });
 
 test('CSF1', () => {
@@ -259,11 +250,9 @@ test('render: Template (identifier referencing local function declaration)', () 
     function Template(args) { return <Button {...args} label="String"></Button> }
     export const Interactive: Story = { render: Template }
   `);
-  expect(generateExample(input)).toMatchInlineSnapshot(`
-    "function Interactive() {
-        return <Button label="String">Click me</Button>;
-    }"
-  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"function Interactive() { return <Button label="String">Click me</Button> }"`
+  );
 });
 
 test('render: Template (identifier referencing unresolvable function)', () => {
@@ -438,12 +427,46 @@ test('CustomRenderBlockBody only', async () => {
     };`
   );
   expect(generateExample(input)).toMatchInlineSnapshot(
-    `
-    "const CustomRenderBlockBody = () => {
-        return <Button foo="bar">Render</Button>;
-    };"
-  `
+    `"const CustomRenderBlockBody = () => { return <Button foo="bar">Render</Button> };"`
   );
+});
+
+test('async render with a block body', async () => {
+  const input = withCSF3(
+    `export const AsyncRender = {
+      render: async (args) => {
+        const data = await load();
+        return <Button {...args} data={data}>Render</Button>;
+      },
+      args: { foo: 'bar' }
+    };`
+  );
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const AsyncRender = async () => {
+      const data = await load();
+      return <Button foo="bar" data={data}>Render</Button>;
+    };"
+  `);
+});
+
+test('template literal inside a render body keeps its lines', async () => {
+  const input = withCSF3(
+    `export const Template = {
+      render: (args) => {
+        const code = \`line1
+line2\`;
+        return <Button {...args}>{code}</Button>;
+      },
+      args: { foo: 'bar' }
+    };`
+  );
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Template = () => {
+      const code = \`line1
+    line2\`;
+      return <Button foo="bar">{code}</Button>;
+    };"
+  `);
 });
 
 test('ObjectFalsyArgs only', async () => {
@@ -485,15 +508,9 @@ test('ObjectInvalidAttr only', async () => {
       args: { '1x': 'a', 'bad key': 'b', '@foo': 'c', '-dash': 'd' }
     };`
   );
-  expect(generateExample(input)).toMatchInlineSnapshot(`
-    "const ObjectInvalidAttr = () => <Button
-        {...{
-            "1x": 'a',
-            "bad key": 'b',
-            "@foo": 'c',
-            "-dash": 'd'
-        }}>Click me</Button>;"
-  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const ObjectInvalidAttr = () => <Button {...{ "1x": 'a', "bad key": 'b', "@foo": 'c', "-dash": 'd' }}>Click me</Button>;"`
+  );
 });
 
 test('Inline nested args in child element (string)', () => {
@@ -563,11 +580,11 @@ test('Deeply nested prop replacement (string)', () => {
   expect(generateExample(input)).toMatchInlineSnapshot(
     `
     "const DeepNestedProp = () => <Button>
-        <Level1>
-            <Level2>
-                <Leaf val="bar" />
-            </Level2>
-        </Level1>
+      <Level1>
+        <Level2>
+          <Leaf val="bar" />
+        </Level2>
+      </Level1>
     </Button>;"
   `
   );
@@ -591,11 +608,11 @@ test('Deeply nested prop replacement (boolean)', () => {
   expect(generateExample(input)).toMatchInlineSnapshot(
     `
     "const DeepNestedBoolean = () => <Button>
-        <Level1>
-            <Level2>
-                <Leaf active />
-            </Level2>
-        </Level1>
+      <Level1>
+        <Level2>
+          <Leaf active />
+        </Level2>
+      </Level1>
     </Button>;"
   `
   );
@@ -616,9 +633,9 @@ test('Deeply nested children expression', () => {
   expect(generateExample(input)).toMatchInlineSnapshot(
     `
     "const DeepNestedChildren = () => <Button>
-        <Level1>
-            <Level2>Click me</Level2>
-        </Level1>
+      <Level1>
+        <Level2>Click me</Level2>
+      </Level1>
     </Button>;"
   `
   );
@@ -643,12 +660,12 @@ test('Deeply nested multiple replacements', () => {
   expect(generateExample(input)).toMatchInlineSnapshot(
     `
     "const DeepNestedMultiple = () => <Button>
-        <Level1>
-            <Leaf1 a="x" />
-            <Level2>
-                <Leaf2 b="y" />
-            </Level2>
-        </Level1>
+      <Level1>
+        <Leaf1 a="x" />
+        <Level2>
+          <Leaf2 b="y" />
+        </Level2>
+      </Level1>
     </Button>;"
   `
   );
@@ -673,12 +690,12 @@ test('Deeply nested multiple replacements and using args spread', () => {
   expect(generateExample(input)).toMatchInlineSnapshot(
     `
     "const DeepNestedMultiple = () => <Button a="x" b="y">
-        <Level1>
-            <Leaf1 a="x" />
-            <Level2>
-                <Leaf2 b="y" />
-            </Level2>
-        </Level1>
+      <Level1>
+        <Leaf1 a="x" />
+        <Level2>
+          <Leaf2 b="y" />
+        </Level2>
+      </Level1>
     </Button>;"
   `
   );
@@ -698,8 +715,8 @@ test('top level args injection and spreading in different places', async () => {
   `);
   expect(generateExample(input)).toMatchInlineSnapshot(`
     "const MultipleSpreads = () => <div count={0}>
-        <Button disabled={false} count={0} empty="">Click me</Button>
-        <Button disabled={false} count={0} empty="">Click me</Button>
+      <Button disabled={false} count={0} empty="">Click me</Button>
+      <Button disabled={false} count={0} empty="">Click me</Button>
     </div>;"
   `);
 });
@@ -716,11 +733,11 @@ test('allow top level export functions', async () => {
   `);
   expect(generateExample(input)).toMatchInlineSnapshot(`
     "function Usage() {
-        return (
-            <div style={{ padding: 40 }}>
-                <Button>Click me</Button>
-            </div>
-        );
+      return (
+        <div style={{ padding: 40 }}>
+          <Button>Click me</Button>
+        </div>
+      );
     }"
   `);
 });
@@ -735,7 +752,7 @@ test('render method shorthand resolves like a render function', () => {
   `);
   expect(generateExample(input)).toMatchInlineSnapshot(`
     "const Default = () => {
-        return <Button>method body</Button>;
+      return <Button>method body</Button>;
     };"
   `);
 });
@@ -849,6 +866,33 @@ test('an imported bound story keeps its helper and resolved args', () => {
   ]);
 });
 
+test('a comma expression arg keeps its parentheses', () => {
+  const input = withCSF3(dedent`
+    export const Synthesized: Story = { args: { label: (f(), 'x'), '2x': (f(), 'y') } };
+    export const Rendered: Story = {
+      args: { label: (f(), 'x'), children: (f(), 'z') },
+      render: (args) => <Button {...args} />,
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Synthesized = () => <Button label={(f(), 'x')} {...{ "2x": (f(), 'y') }}>Click me</Button>;
+    const Rendered = () => <Button label={(f(), 'x')}>{(f(), 'z')}</Button>;"
+  `);
+});
+
+test('an imported bound story keeps the parentheses of a comma expression arg', () => {
+  const input = dedent`
+    import { renderMatch as Match } from './match-helper';
+    export default { title: 'Match' };
+    export const FirstHalf = Match.bind({});
+    FirstHalf.args = { home: (f(), 'Arsenal') };
+  `;
+
+  expect(generateExample(input)).toBe(
+    'const FirstHalf = () => Match.bind({})({\n    "home": (f(), \'Arsenal\')\n});'
+  );
+});
+
 test('args assembled at runtime are reported rather than dropped', () => {
   const input = withCSF3(dedent`
     export const Default: Story = { args: { ...buildArgs(), label: 'runtime' } };
@@ -875,7 +919,7 @@ test('args assigned to a function-declaration story are inlined', () => {
   `);
   expect(generateExample(input)).toMatchInlineSnapshot(`
     "function Usage() {
-        return <Button label="assigned">Click me</Button>;
+      return <Button label="assigned">Click me</Button>;
     }"
   `);
 });
@@ -909,7 +953,7 @@ test('a body still reading args after a partial inline keeps the parameter', () 
   `);
   expect(generateExample(input)).toMatchInlineSnapshot(`
     "function Usage(args) {
-        return <Button label="assigned" title={args.notAnArg}>Click me</Button>;
+      return <Button label="assigned" title={args.notAnArg}>Click me</Button>;
     }"
   `);
 });
@@ -920,14 +964,149 @@ test('an arg value keeps a shorthand property shorthand', () => {
     const base = { size: 'md' };
     export const Shorthand: Story = { args: { cfg: { dep, nested: { ...base } } } };
   `);
-  expect(generateExample(input)).toMatchInlineSnapshot(`
-    "const Shorthand = () => <Button
-        cfg={{
-            dep,
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `
+    "const Shorthand = () => <Button cfg={{
+      dep,
+      nested: {
+        size: 'md'
+      }
+    }}>Click me</Button>;"
+  `
+  );
+});
 
-            nested: {
-                size: 'md'
-            }
-        }}>Click me</Button>;"
+test('a string arg prints as an attribute only when JSX reads it back unchanged', () => {
+  const input = withCSF3(dedent`
+    export const Strings: Story = {
+      args: { quote: 'say "hi"', entity: 'a &amp; b', lines: 'a\\nb', path: 'C:\\\\temp' },
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Strings = () => <Button quote={'say "hi"'} entity={'a &amp; b'} lines={'a\\nb'} path="C:\\temp">Click me</Button>;"`
+  );
+});
+
+test('children that JSX text cannot hold stay an expression', () => {
+  const input = withCSF3(dedent`
+    export const Braces: Story = { args: { children: 'a {b} <c>' } };
+    export const Entity: Story = { args: { children: 'a &amp; b' } };
+    export const Lines: Story = { args: { children: 'a\\nb' } };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Braces = () => <Button>{'a {b} <c>'}</Button>;
+    const Entity = () => <Button>{'a &amp; b'}</Button>;
+    const Lines = () => <Button>{'a\\nb'}</Button>;"
+  `);
+});
+
+test('a read of a name every object inherits is not an arg', () => {
+  const input = withCSF3(dedent`
+    export const Inherited: Story = {
+      render: (args) => <Button title={args.constructor} />,
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Inherited = (args) => <Button title={args.constructor} />;"`
+  );
+});
+
+test('a multi-line arg lands at the indent of the line it is placed on', () => {
+  const input = withCSF3(dedent`
+    export const Spread: Story = {
+      args: {
+        style: {
+          color: 'red',
+        },
+      },
+      render: (args) => (
+        <div>
+          <Button {...args} />
+        </div>
+      ),
+    };
+
+    export const Read: Story = {
+      args: {
+        onClick: () => {
+          console.log('clicked');
+        },
+      },
+      render: (args) => (
+        <div>
+          <Button onClick={args.onClick} />
+        </div>
+      ),
+    };
+
+    export const Synthesized: Story = {
+      args: {
+        items: [
+          'one',
+          'two',
+        ],
+      },
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Spread = () => <div>
+      <Button style={{
+        color: 'red',
+      }}>Click me</Button>
+    </div>;
+    const Read = () => <div>
+      <Button onClick={() => {
+        console.log('clicked');
+      }} />
+    </div>;
+    const Synthesized = () => <Button items={[
+      'one',
+      'two',
+    ]}>Click me</Button>;"
+  `);
+});
+
+test('a rebuilt arg object keeps its members inside the line it is placed on', () => {
+  const input = withCSF3(dedent`
+    const base = { color: 'red' };
+
+    export const Rebuilt: Story = {
+      args: { style: { ...base, size: 2 } },
+      render: (args) => (
+        <div>
+          <Button {...args} />
+        </div>
+      ),
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Rebuilt = () => <div>
+      <Button style={{
+        color: 'red',
+        size: 2
+      }}>Click me</Button>
+    </div>;"
+  `);
+});
+
+test('a multi-line template literal arg keeps the lines of its value', () => {
+  const input = withCSF3(dedent`
+    export const Template: Story = {
+      args: {
+        code: \`first
+      second\`,
+      },
+      render: (args) => (
+        <div>
+          <Button code={args.code} />
+        </div>
+      ),
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Template = () => <div>
+      <Button code={\`first
+      second\`} />
+    </div>;"
   `);
 });

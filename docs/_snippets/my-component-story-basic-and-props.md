@@ -142,7 +142,8 @@ export const WithProp: Story = {
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -160,33 +161,30 @@ export const WithProp: Story = {
 </Story>
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import MyComponent from './MyComponent.svelte';
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: MyComponent,
-};
+  import MyComponent from './MyComponent.svelte';
 
-export const Basic = {};
+  const { Story } = preview.meta({
+    component: MyComponent,
+  });
+</script>
 
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const WithProp = {
-  render: () => ({
-    Component: MyComponent,
-    props: {
-      prop: 'value',
-    },
-  }),
-};
+<Story name="Basic">
+  <MyComponent />
+</Story>
+
+<Story name="WithProp">
+  <MyComponent prop="value" />
+</Story>
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -204,34 +202,24 @@ export const WithProp = {
 </Story>
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import MyComponent from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
-const meta = {
-  component: MyComponent,
-} satisfies Meta<typeof MyComponent>;
+  const { Story } = preview.meta({
+    component: MyComponent,
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
+<Story name="Basic">
+  <MyComponent />
+</Story>
 
-export const Basic: Story = {};
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const WithProp: Story = {
-  render: () => ({
-    Component: MyComponent,
-    props: {
-      prop: 'value',
-    },
-  }),
-};
+<Story name="WithProp">
+  <MyComponent prop="value" />
+</Story>
 ```
 
 ```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"

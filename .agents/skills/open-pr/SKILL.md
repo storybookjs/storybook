@@ -29,11 +29,10 @@ Detects base in order: tracked upstream → reflog checkout source → closest `
 
 ### 3. Ask for labels
 
-Use **AskQuestion** for three questions. Options from `.github/PULL_REQUEST_TEMPLATE.md`:
+Use **AskQuestion** for two questions. Options from `.github/PULL_REQUEST_TEMPLATE.md`:
 
 | Question   | Options                                                                                                                  |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------ |
-| CI label   | `ci:normal`, `ci:merged`, `ci:daily`                                                                                     |
 | QA label   | `qa:needed`, `qa:skip`                                                                                                   |
 | Type label | `bug`, `maintenance`, `dependencies`, `build`, `cleanup`, `documentation`, `feature request`, `BREAKING CHANGE`, `other` |
 
@@ -63,7 +62,7 @@ gh pr create \
 EOF
 )" \
   --assignee @me \
-  --label "<type>,<ci>,<qa>"
+  --label "<type>,<qa>"
 ```
 
 ### 6. Report and offer canary
@@ -76,4 +75,5 @@ Share the PR URL. Then **AskQuestion**: "Do you want to create a canary release 
 ## Notes
 
 - Always draft; always assign `@me`.
+- Don't add a `ci:*` label to the draft. When the PR is ready, follow the `pr` skill's **Command** section to mark it ready and add the label.
 - For canary details after publishing, see the `canary` skill.

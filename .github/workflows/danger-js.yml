@@ -43,6 +43,7 @@ on:
       - labeled
       - unlabeled
       - edited
+      - ready_for_review
     branches:
       - '**'
 

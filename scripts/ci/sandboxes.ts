@@ -162,7 +162,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     () => ({
       executor: {
         name: 'sb_node_22_browsers',
-        class: 'large',
+        class: key === 'angular-cli/default-ts' ? 'large' : 'medium+',
       },
       steps: [
         ...getSandboxSetupSteps(key),
@@ -261,7 +261,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     () => ({
       executor: {
         name: 'sb_node_22_classic',
-        class: 'medium',
+        class: 'small',
       },
       steps: [
         ...getSandboxSetupSteps(key),

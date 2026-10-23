@@ -13,12 +13,9 @@ import { styled } from 'storybook/theming';
 
 import type { SourceProps } from '.';
 import { Source } from '.';
-import type { StoryId } from 'storybook/internal/types';
-
 import { DocsContext } from '../blocks/DocsContext';
 import { getStoryId } from '../blocks/Story';
 import { useGlobalsParam } from '../blocks/useGlobalsParam';
-import { useStory } from '../blocks/useStory';
 import { getBlockBackgroundStyle } from './BlockBackgroundStyles';
 import { StorySkeleton } from './Story';
 import { Toolbar } from './Toolbar';
@@ -190,8 +187,7 @@ export const Preview: FC<PreviewProps> = ({
   const childProps = getChildProps(children);
 
   const storyId = !isLoading && childProps ? getStoryId(childProps, context) : undefined;
-  const story = useStory(storyId as StoryId, context);
-  const globalsParam = useGlobalsParam(story || undefined, context);
+  const globalsParam = useGlobalsParam(storyId, context);
 
   const hasSourceError = !!(withSource && withSource.error);
   const hasValidSource = !!(withSource && !withSource.error);

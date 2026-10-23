@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { GLOBALS_UPDATED } from 'storybook/internal/core-events';
 import type { Globals } from 'storybook/internal/csf';
 import { buildArgsParam } from 'storybook/internal/router';
-import type { DocsContextProps, PreparedStory } from 'storybook/internal/types';
+import type { DocsContextProps, StoryId } from 'storybook/internal/types';
 
 /**
  * Serializes the user's current globals the same way the manager does for its "Open in isolation
@@ -12,17 +12,23 @@ import type { DocsContextProps, PreparedStory } from 'storybook/internal/types';
  * URL. Returns an empty string when there is no story (e.g. a loading preview).
  */
 export const useGlobalsParam = (
-  story: PreparedStory | undefined,
+  storyId: StoryId | undefined,
   context: DocsContextProps
 ): string => {
-  const storyContext = story && context.getStoryContext(story);
-
-  const [param, setParam] = useState(() =>
-    storyContext ? buildArgsParam(storyContext.initialGlobals, storyContext.globals) : ''
-  );
+  const [param, setParam] = useState(() => {
+    if (!storyId) {
+      return '';
+    }
+    try {
+      const { initialGlobals, globals } = context.getStoryContext(context.storyById(storyId));
+      return buildArgsParam(initialGlobals, globals);
+    } catch {
+      return '';
+    }
+  });
 
   useEffect(() => {
-    if (!story) {
+    if (!storyId) {
       return undefined;
     }
     const onGlobalsUpdated = ({
@@ -36,7 +42,7 @@ export const useGlobalsParam = (
     };
     context.channel.on(GLOBALS_UPDATED, onGlobalsUpdated);
     return () => context.channel.off(GLOBALS_UPDATED, onGlobalsUpdated);
-  }, [context.channel, story]);
+  }, [context.channel, storyId]);
 
   return param;
 };

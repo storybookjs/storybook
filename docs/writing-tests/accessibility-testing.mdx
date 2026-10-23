@@ -60,10 +60,6 @@ Because the addon is built on top of `axe-core`, much of the configuration avail
 | `parameters.a11y.test`    | `undefined` | Determines test behavior when run with the Vitest addon. [More details below](#test-behavior).                                                                                                           |
 | `globals.a11y.manual`     | `undefined` | Set to `true` to prevent stories from being automatically analyzed when visited. [More details below](#disable-automated-checks)                                                                         |
 
-Standalone Vitest runs, such as those started from the CLI or in CI, default `parameters.a11y.options.resultTypes` to `['violations', 'incomplete']`. This keeps all violation and incomplete details while limiting `passes` and `inapplicable` results to at most one node per rule to reduce memory use.
-
-An explicit `resultTypes` value takes precedence. To keep all nodes in every result group, set it to `['violations', 'incomplete', 'passes', 'inapplicable']`. Checks run through the Storybook UI keep the full results by default.
-
 <details>
 <summary>Default `parameters.a11y.config`</summary>
 
@@ -223,6 +219,12 @@ Browser-based accessibility tests, like those found in Storybook, evaluate the r
 ### Why are my tests failing in different environments?
 
 With the [Vitest addon](./integrations/vitest-addon/index.mdx), your tests run in Vitest using your project's configuration with Playwright's Chromium browser. This can lead to inconsistent test results reported in the Storybook UI or CLI. The inconsistency can be due to `axe-core` reporting different results in different environments, such as browser versions or configurations. If you encounter this issue, we recommend reaching out using the default communication channels (e.g., [GitHub discussions](https://github.com/storybookjs/storybook/discussions/new?category=help), [Github issues](https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml)).
+
+### Why do my accessibility tests show limited result types in the CLI or CI?
+
+Test runs executed locally via the CLI or in a CI environment will include only a subset of result types, such as A11y violations and incomplete checks. Other result types, such as passes and inapplicable results, will be limited to at most one node per rule. This behavior helps reduce noise in test outputs and improve memory usage during the test execution.
+
+If you want to include all result details in your test outputs, you need to configure the `a11y` parameter to include an `options` object with the `resultTypes` property specifying the intended result types (e.g., `['violations', 'incomplete', 'passes', 'inapplicable']`).
 
 ### The addon panel does not show expected violations
 

@@ -5,6 +5,7 @@ import mcpAddonConfig from '../../code/addons/mcp/build-config.ts';
 import onboardingConfig from '../../code/addons/onboarding/build-config.ts';
 import pseudoStatesConfig from '../../code/addons/pseudo-states/build-config.ts';
 import themesConfig from '../../code/addons/themes/build-config.ts';
+import themesReactConfig from '../../code/addons/themes-react/build-config.ts';
 import vitestConfig from '../../code/addons/vitest/build-config.ts';
 import builderViteConfig from '../../code/builders/builder-vite/build-config.ts';
 import builderWebpack5Config from '../../code/builders/builder-webpack5/build-config.ts';
@@ -57,6 +58,7 @@ export const buildEntries = {
   '@storybook/addon-onboarding': onboardingConfig,
   'storybook-addon-pseudo-states': pseudoStatesConfig,
   '@storybook/addon-themes': themesConfig,
+  '@storybook/addon-themes-react': themesReactConfig,
   '@storybook/addon-vitest': vitestConfig,
 
   // builders

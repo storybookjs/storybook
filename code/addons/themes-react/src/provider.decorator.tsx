@@ -2,10 +2,10 @@ import React from 'react';
 
 import type { DecoratorFunction, Renderer } from 'storybook/internal/types';
 
+import { DecoratorHelpers, PARAM_KEY } from '@storybook/addon-themes';
 import { useMemo } from 'storybook/preview-api';
 
-import { PARAM_KEY } from '../constants.ts';
-import { initializeThemeState, pluckThemeFromContext } from './helpers.ts';
+const { initializeThemeState, pluckThemeFromContext } = DecoratorHelpers;
 
 type Theme = Record<string, any>;
 type ThemeMap = Record<string, Theme>;

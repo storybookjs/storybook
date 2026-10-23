@@ -7,4 +7,5 @@ export type { ThemesGlobals, ThemesTypes } from './types.ts';
 
 export default () => definePreviewAddon<ThemesTypes>(addonAnnotations);
 
+export { PARAM_KEY } from './constants.ts';
 export * from './decorators/index.ts';

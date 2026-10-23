@@ -56,6 +56,7 @@
     "@storybook/addon-mcp": "workspace:*",
     "@storybook/addon-onboarding": "workspace:*",
     "@storybook/addon-themes": "workspace:*",
+    "@storybook/addon-themes-react": "workspace:*",
     "@storybook/addon-vitest": "workspace:*",
     "@storybook/angular": "workspace:*",
     "@storybook/angular-vite": "workspace:*",

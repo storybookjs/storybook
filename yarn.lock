@@ -10025,6 +10025,20 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@storybook/addon-themes-react@workspace:*, @storybook/addon-themes-react@workspace:code/addons/themes-react":
+  version: 0.0.0-use.local
+  resolution: "@storybook/addon-themes-react@workspace:code/addons/themes-react"
+  dependencies:
+    react: "npm:^18.2.0"
+    react-dom: "npm:^18.2.0"
+    typescript: "npm:^6.0.3"
+  peerDependencies:
+    "@storybook/addon-themes": "workspace:^"
+    react: ^18.0.0 || ^19.0.0
+    storybook: "workspace:^"
+  languageName: unknown
+  linkType: soft
+
 "@storybook/addon-themes@workspace:*, @storybook/addon-themes@workspace:code/addons/themes":
   version: 0.0.0-use.local
   resolution: "@storybook/addon-themes@workspace:code/addons/themes"
@@ -10330,6 +10344,7 @@ __metadata:
     "@storybook/addon-mcp": "workspace:*"
     "@storybook/addon-onboarding": "workspace:*"
     "@storybook/addon-themes": "workspace:*"
+    "@storybook/addon-themes-react": "workspace:*"
     "@storybook/addon-vitest": "workspace:*"
     "@storybook/angular": "workspace:*"
     "@storybook/angular-vite": "workspace:*"

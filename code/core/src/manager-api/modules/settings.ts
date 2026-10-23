@@ -1,4 +1,5 @@
 import type { API_Settings, StoryId } from 'storybook/internal/types';
+import type { NavigateOptions } from 'storybook/internal/router';
 
 import type { ModuleFn } from '../lib/types.tsx';
 
@@ -16,8 +17,10 @@ export interface SubAPI {
    *
    * @param path - The path of the settings page to navigate to. The path NOT should include the
    *   `/settings` prefix.
+   * @param options - Options for the navigation, e.g. `{ replace: true }` to replace the current
+   *   history entry.
    */
-  changeSettingsTab: (path: string) => void;
+  changeSettingsTab: (path: string, options?: NavigateOptions) => void;
   /** Closes the settings screen and returns to the last tracked story or the first story. */
   closeSettings: () => void;
   /**
@@ -49,8 +52,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, navigate, fullAPI }): 
         fullAPI.selectFirstStory();
       }
     },
-    changeSettingsTab: (path: string) => {
-      navigate(`/settings/${path}`);
+    changeSettingsTab: (path: string, options?: NavigateOptions) => {
+      navigate(`/settings/${path}`, options);
     },
     isSettingsScreenActive,
     retrieveSelection() {

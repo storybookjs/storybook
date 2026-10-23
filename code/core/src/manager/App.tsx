@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import Events from 'storybook/internal/core-events';
 import type { Addon_PageType } from 'storybook/internal/types';
 
-import { addons } from 'storybook/manager-api';
+import { addons, useStorybookState } from 'storybook/manager-api';
 import { Global, createGlobal } from 'storybook/theming';
 
 import { ManagerErrorBoundary } from './components/error-boundary/ManagerErrorBoundary.tsx';
@@ -38,9 +38,9 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages }: Props)
 
   /**
    * Lets us tell the UI whether or not keyboard shortcuts are enabled, in places where it's not
-   * convenient to load the addons singleton to figure it out.
+   * convenient to read the manager state to figure it out.
    */
-  const { enableShortcuts = true } = addons.getConfig();
+  const { enableShortcuts = true } = useStorybookState().ui;
   useEffect(() => {
     document.body.setAttribute('data-shortcuts-enabled', enableShortcuts ? 'true' : 'false');
   }, [enableShortcuts]);

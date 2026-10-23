@@ -13,23 +13,10 @@ export const InteractiveTooltipWrapper: React.FC<{
   tooltip?: string;
   tooltipPlacement?: PopperPlacement;
 }> = ({ children, disableAllTooltips, shortcut, tooltip, tooltipPlacement = 'top' }) => {
-  const shortcutLabel = useMemo(() => {
-    if (!shortcut) {
-      return undefined;
-    }
-
-    // We read from document despite the lack of reactivity, because this
-    // option isn't changeable in the UI. If it was, we'd need to fetch the
-    // addons singleton. This component is used in Buttons, etc., which are
-    // public API and can be imported in MDX. So We rely on a declarative
-    // DOM attribute instead of relying on the manager API.
-    const hasShortcuts = document?.body?.getAttribute('data-shortcuts-enabled') !== 'false';
-    if (!hasShortcuts) {
-      return undefined;
-    }
-
-    return shortcutToHumanString(shortcut);
-  }, [shortcut]);
+  const shortcutLabel = useMemo(
+    () => (shortcut ? shortcutToHumanString(shortcut) : undefined),
+    [shortcut]
+  );
 
   // A shortcut alone still warrants a tooltip: buttons with visible text pass no `tooltip`
   // but their shortcut is only discoverable here.

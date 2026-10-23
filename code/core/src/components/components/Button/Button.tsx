@@ -11,6 +11,7 @@ import type { PopperPlacement } from '../shared/overlayHelpers.tsx';
 
 import { InteractiveTooltipWrapper } from './helpers/InteractiveTooltipWrapper.tsx';
 import { useAriaDescription } from './helpers/useAriaDescription.tsx';
+import { useShortcutsEnabled } from './helpers/useShortcutsEnabled.ts';
 
 export interface ButtonProps extends Omit<ComponentProps<typeof StyledButton>, 'as'> {
   as?: ComponentProps<typeof StyledButton>['as'] | typeof Slot;
@@ -104,9 +105,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const { ariaDescriptionAttrs, AriaDescription } = useAriaDescription(ariaDescription);
 
+    // Hide the shortcut from the tooltip and assistive technologies when shortcuts are disabled.
+    const shortcutsEnabled = useShortcutsEnabled();
+    const activeShortcut = shortcutsEnabled ? shortcut : undefined;
     const shortcutAttribute = useMemo(() => {
-      return shortcut ? shortcutToAriaKeyshortcuts(shortcut) : undefined;
-    }, [shortcut]);
+      return activeShortcut ? shortcutToAriaKeyshortcuts(activeShortcut) : undefined;
+    }, [activeShortcut]);
 
     const [isAnimating, setIsAnimating] = useState(false);
 
@@ -137,7 +141,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <>
         <InteractiveTooltipWrapper
           disableAllTooltips={disableAllTooltips}
-          shortcut={shortcut}
+          shortcut={activeShortcut}
           tooltip={finalTooltip}
           tooltipPlacement={tooltipPlacement}
         >

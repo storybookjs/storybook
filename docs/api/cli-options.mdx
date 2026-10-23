@@ -286,14 +286,14 @@ Prints instructions for AI agents as Markdown, tailored to your Storybook config
 storybook skills [options] [id]
 ```
 
-Run `storybook skills --help` to list the available skills.
+Run `storybook skills --help` to list the available skills. The [Storybook skills](../ai/skills.mdx) run `storybook skills ui-workflow` and `storybook skills component-docs` to get the workflow for UI changes and the commands that look up your components.
 
 Options include:
 
 | Option                          | Description                                                                                                                                                                                     |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `-h`, `--help`                  | Output usage information and the list of skills.<br />`storybook skills --help`                                                                                                                 |
-| `--cwd <path>`                  | Project directory of the target Storybook.<br />`storybook skills stories --cwd packages/ui`                                                                                                    |
+| `--cwd <path>`                  | Project directory of the target Storybook.<br />`storybook skills ui-workflow --cwd packages/ui`                                                                                                |
 | `-c`, `--config-dir <dir-name>` | Storybook configuration directory.<br />`storybook skills setup -c .storybook`                                                                                                                  |
 | `--all`                         | Print every skill in full.<br />`storybook skills --all`                                                                                                                                        |
 | `--disable-telemetry`           | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook skills setup --disable-telemetry`                                        |

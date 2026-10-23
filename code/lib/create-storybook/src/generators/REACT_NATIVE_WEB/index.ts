@@ -10,6 +10,7 @@ import {
 } from 'storybook/internal/types';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule.ts';
+import { rewriteExpoTsconfigFile } from './expoTsconfig.ts';
 
 // Export as module
 export default defineGeneratorModule({
@@ -20,6 +21,8 @@ export default defineGeneratorModule({
     builderOverride: SupportedBuilder.VITE,
   },
   configure: async (packageManager, { language }) => {
+    await rewriteExpoTsconfigFile(packageManager.primaryPackageJson.operationDir);
+
     // Add prop-types dependency if not using TypeScript
     const extraPackages = ['vite', 'react-native-web'];
     if (language === SupportedLanguage.JAVASCRIPT) {

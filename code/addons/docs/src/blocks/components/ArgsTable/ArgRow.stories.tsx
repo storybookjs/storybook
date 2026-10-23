@@ -429,7 +429,26 @@ export const ComplexUnion = {
       },
     },
   },
-};
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText('((a: string | SVGSVGElement) => void)')).toBeVisible();
+    await expect(canvas.getByText('RefObject<SVGSVGElement | number>')).toBeVisible();
+    await expect(canvas.getByText('[a|b]')).toBeVisible();
+    await expect(canvas.getByText('{a|b}')).toBeVisible();
+  },
+} satisfies StoryObj<typeof ArgRow>;
+
+export const ArrayAndTupleUnion = {
+  args: {
+    row: {
+      name: 'offset',
+      table: { type: { summary: 'Array<number> | [number, number]' } },
+    },
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText('Array<number>')).toBeVisible();
+    await expect(canvas.getByText('[number, number]')).toBeVisible();
+  },
+} satisfies StoryObj<typeof ArgRow>;
 
 export const Markdown = {
   args: {

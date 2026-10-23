@@ -9,6 +9,7 @@ import { uniq } from 'es-toolkit/array';
 import { styled } from 'storybook/theming/emotion';
 
 import type { PropSummaryValue } from './types';
+import { splitSummary } from './split-summary.ts';
 
 interface ArgValueProps {
   value?: PropSummaryValue;
@@ -138,16 +139,6 @@ const ArgText: FC<ArgTextProps> = ({ text, simple }) => {
   return <Text simple={simple}>{text}</Text>;
 };
 
-const getSummaryItems = (summary: string) => {
-  if (!summary) {
-    return [summary];
-  }
-  const splittedItems = summary.split('|');
-  const summaryItems = splittedItems.map((value) => value.trim());
-
-  return uniq(summaryItems);
-};
-
 const renderSummaryItems = (summaryItems: string[]) => {
   return summaryItems
     .slice(0, ITEMS_BEFORE_EXPANSION)
@@ -176,13 +167,7 @@ const ArgSummary: FC<ArgSummaryProps> = ({ value, initialExpandedArgs }) => {
   const summaryAsString = typeof summary.toString === 'function' ? summary.toString() : summary;
 
   if (detail == null) {
-    const cannotBeSafelySplitted = /[(){}[\]<>]/.test(summaryAsString);
-
-    if (cannotBeSafelySplitted) {
-      return <ArgText text={summaryAsString} />;
-    }
-
-    const summaryItems = getSummaryItems(summaryAsString);
+    const summaryItems = uniq(splitSummary(summaryAsString));
     const itemsCount = summaryItems.length;
     const hasManyItems = itemsCount > ITEMS_BEFORE_EXPANSION;
 

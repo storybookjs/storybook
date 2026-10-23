@@ -108,7 +108,7 @@ export function defineNoOpJob<K extends string>(name: K, requires = [] as JobOrN
 }
 
 /** Ordered from most to least thorough; a union config reports failures as its first workflow. */
-export const workflows = ['daily', 'merged', 'normal', 'docs', 'windows'] as const;
+export const workflows = ['daily', 'merged', 'normal', 'focus', 'docs', 'windows'] as const;
 
 export type Workflow = (typeof workflows)[number];
 

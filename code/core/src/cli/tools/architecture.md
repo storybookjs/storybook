@@ -169,7 +169,6 @@ the same no-instance text. Config drift and an unacknowledged command are post-a
 
 - A busy instance event loop can delay command acks and surface
   `OpenServiceRemoteCommandUnhandledError`.
-- UniversalStore follower hard timeout: same treatment.
 - Eager registration (workers, watchers, index builds) runs in the caller.
 - Disconnect rejects pending remote commands (`CHANNEL_WS_DISCONNECT`).
 - A parent SIGKILL can leave a config-loaded child running.

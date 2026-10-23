@@ -9,7 +9,7 @@ import { global } from '@storybook/global';
 import memoize from 'memoizerific';
 import type { PopperOptions, Config as ReactPopperTooltipConfig } from 'react-popper-tooltip';
 import { usePopperTooltip } from 'react-popper-tooltip';
-import { type Color, lighten, styled } from 'storybook/theming';
+import { type Color, lighten, styled } from 'storybook/theming/emotion';
 
 const { document } = global;
 

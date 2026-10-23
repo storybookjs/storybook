@@ -2,7 +2,7 @@ import React, { type HTMLAttributes, forwardRef } from 'react';
 
 import { CloseIcon } from '@storybook/icons';
 
-import { lighten, styled } from 'storybook/theming';
+import { lighten, styled } from 'storybook/theming/emotion';
 
 import { Button } from '../Button/Button.tsx';
 

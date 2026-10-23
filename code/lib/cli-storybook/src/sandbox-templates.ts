@@ -839,6 +839,23 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
+  'preact-vite/10-ts': {
+    name: 'Preact v10 (Vite | TypeScript)',
+    script: 'npm create vite --yes {{beforeDir}} -- --template preact-ts',
+    preferNoLink: true,
+    expected: {
+      framework: '@storybook/preact-vite',
+      renderer: '@storybook/preact',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      extraDependencies: ['preact-render-to-string', 'preact@^10'],
+      resolutions: {
+        preact: 'npm:preact@^10',
+      },
+    },
+    skipTasks: ['e2e-tests', 'bench'],
+  },
   /** This is currently broken, we generate components and stories that do not work */
   // 'qwik-vite/default-ts': {
   //   name: 'Qwik CLI Latest (Vite | TypeScript)',
@@ -885,19 +902,6 @@ export const baseTemplates = {
     // yarn portals.
     name: 'React Native Expo Latest (Vite | TypeScript)',
     script: 'npx create-expo-app -y --no-install {{beforeDir}}',
-    // create-expo-app pins the current SDK, whose packages are released
-    // together and are routinely younger than the gate window.
-    // `babel-preset-expo` is part of that set despite not matching `expo-*`.
-    // `multitars` is pulled in transitively by the Expo CLI toolchain.
-    minAgeGateExemptions: [
-      'expo',
-      'expo-*',
-      '@expo/*',
-      'babel-preset-expo',
-      'multitars',
-      'react-native',
-      '@react-native/*',
-    ],
     expected: {
       framework: '@storybook/react-native-web-vite',
       renderer: '@storybook/react',
@@ -1118,6 +1122,7 @@ export const daily: TemplateKey[] = [
   'nextjs/prerelease',
   // 'qwik-vite/default-ts',
   'preact-vite/default-js',
+  'preact-vite/10-ts',
   'html-vite/default-js',
   'internal/react18-webpack-babel',
   'react-native-web-vite/expo-ts',

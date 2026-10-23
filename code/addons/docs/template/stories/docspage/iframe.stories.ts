@@ -7,7 +7,7 @@ export default {
     docs: {
       story: {
         iframeHeight: '120px',
-        inline: true,
+        inline: false,
       },
     },
   },

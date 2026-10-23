@@ -85,21 +85,24 @@ export function pluginWebpackStats({
     name: 'storybook:rollup-plugin-webpack-stats',
     // We want this to run after the vite build plugins (https://vitejs.dev/guide/api-plugin.html#plugin-ordering)
     enforce: 'post',
-    configResolved(config) {
-      outputEvidence?.resolved(config);
-    },
+    ...(outputEvidence &&
+      ({
+        configResolved(config) {
+          outputEvidence.resolved(config);
+        },
+        writeBundle: {
+          order: 'post',
+          async handler(_options, bundle) {
+            await outputEvidence.bundle(bundle);
+          },
+        },
+      } satisfies Pick<Plugin, 'configResolved' | 'writeBundle'>)),
     moduleParsed(mod) {
       outputEvidence?.module(mod);
       record(mod.id);
       for (const depId of mod.importedIds.concat(mod.dynamicallyImportedIds)) {
         record(depId, mod.id);
       }
-    },
-    writeBundle: {
-      order: 'post',
-      async handler(_options, bundle) {
-        await outputEvidence?.bundle(bundle);
-      },
     },
 
     storybookGetStats() {
@@ -124,7 +127,11 @@ export function pluginWebpackStats({
       const stats = {
         modules,
       };
-      return { ...stats, turbosnapOutput: outputEvidence?.finish(), toJson: () => stats };
+      return {
+        ...stats,
+        ...(outputEvidence && { turbosnapOutput: outputEvidence.finish() }),
+        toJson: () => stats,
+      };
     },
   };
 }

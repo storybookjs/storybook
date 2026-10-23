@@ -17,9 +17,11 @@ import type { DocgenProvider } from '../../../shared/open-service/services/docge
 import type { StoryDocsProvider } from '../../../shared/open-service/services/story-docs/types.ts';
 import { Tag } from '../../../shared/constants/tags.ts';
 import { registerManifests, writeManifests } from './manifests.ts';
+import { renderComponentsManifest } from './render-components-manifest.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/node-logger');
+vi.mock('./render-components-manifest.ts', { spy: true });
 
 describe('manifests', () => {
   let mockGetIndex: ReturnType<typeof vi.fn<() => Promise<StoryIndex>>>;
@@ -328,141 +330,149 @@ describe('manifests', () => {
       expect(entryIds).not.toContain('story-without-manifest');
     });
 
-    it('writes ref-based components.json when docgenServer is enabled', async () => {
-      mockPresets = setupMockPresets({
-        componentsManifest: true,
-        docgenServer: true,
-      });
-      mockGetIndex.mockResolvedValue({
-        v: 5,
-        entries: {
-          'button--primary': {
-            type: 'story',
-            subtype: 'story',
-            id: 'button--primary',
-            name: 'Primary',
-            title: 'Button',
-            importPath: './button.stories.tsx',
-            tags: [Tag.MANIFEST],
+    it.each([undefined, false, true])(
+      'writes ref-based components.json with TurboSnap output=%s',
+      async (includeTurbosnapOutput) => {
+        mockPresets = setupMockPresets({
+          componentsManifest: true,
+          docgenServer: true,
+        });
+        mockGetIndex.mockResolvedValue({
+          v: 5,
+          entries: {
+            'button--primary': {
+              type: 'story',
+              subtype: 'story',
+              id: 'button--primary',
+              name: 'Primary',
+              title: 'Button',
+              importPath: './button.stories.tsx',
+              tags: [Tag.MANIFEST],
+            },
           },
-        },
-      } as StoryIndex);
+        } as StoryIndex);
 
-      mockManifests = {
-        components: {
-          v: 0,
-          components: {},
-          meta: { docgen: 'react-component-meta', durationMs: 0 },
-        },
-        docs: {
-          v: 0,
+        mockManifests = {
+          components: {
+            v: 0,
+            components: {},
+            meta: { docgen: 'react-component-meta', durationMs: 0 },
+          },
           docs: {
-            'intro--docs': {
-              id: 'intro--docs',
-              name: 'docs',
-              path: './Intro.mdx',
-              title: 'Intro',
-            },
-          },
-        },
-      };
-
-      const docgenProvider = vi.fn<DocgenProvider>(async () => ({
-        id: 'button',
-        name: 'Button',
-        path: './button.stories.tsx',
-        description: 'A button',
-        jsDocTags: {},
-      }));
-
-      const storyDocsProvider = vi.fn<StoryDocsProvider>(async () => ({
-        id: 'button',
-        name: 'Button',
-        path: './button.stories.tsx',
-        stories: {
-          'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
-        },
-      }));
-
-      registerDocgenService({
-        getIndex: () => mockGenerator.getIndex(),
-        docgenProvider,
-      });
-      registerStoryDocsService({
-        getIndex: () => mockGenerator.getIndex(),
-        storyDocsProvider,
-      });
-
-      vol.fromNestedJSON({
-        '/output/services/core/docgen/button.json': JSON.stringify({
-          components: {
-            button: {
-              id: 'button',
-              name: 'Button',
-              path: './button.stories.tsx',
-              description: 'A button',
-              jsDocTags: {},
-            },
-          },
-        }),
-        '/output/services/core/story-docs/button.json': JSON.stringify({
-          components: {
-            button: {
-              id: 'button',
-              name: 'Button',
-              path: './button.stories.tsx',
-              stories: {
-                'button--primary': {
-                  id: 'button--primary',
-                  name: 'Primary',
-                  snippet: '<Button />',
-                },
+            v: 0,
+            docs: {
+              'intro--docs': {
+                id: 'intro--docs',
+                name: 'docs',
+                path: './Intro.mdx',
+                title: 'Intro',
               },
             },
           },
-        }),
-      });
+        };
 
-      const clock = vi.spyOn(performance, 'now').mockReturnValueOnce(100).mockReturnValue(1350);
-      const diagnostic = await writeManifests('/output', mockPresets);
-      clock.mockRestore();
-      expect(diagnostic?.source).toBe(
-        vol.readFileSync('/output/manifests/components.html', 'utf8')
-      );
-      expect(diagnostic?.source).toContain('<strong>1.3s</strong>');
-      expect(diagnostic?.canonical).toBe(
-        diagnostic?.source.replace('<strong>1.3s</strong>', '<strong>0.0s</strong>')
-      );
+        const docgenProvider = vi.fn<DocgenProvider>(async () => ({
+          id: 'button',
+          name: 'Button',
+          path: './button.stories.tsx',
+          description: 'A button',
+          jsDocTags: {},
+        }));
 
-      const files = vol.toJSON();
-      const componentsJson = JSON.parse(files['/output/manifests/components.json'] as string);
-      expect(componentsJson.v).toBe(1);
-      expect(componentsJson.components.button).toEqual({
-        id: 'button',
-        name: 'Button',
-        description: 'A button',
-        docgen: { $ref: '../services/core/docgen/button.json#/components/button' },
-        stories: { $ref: '../services/core/story-docs/button.json#/components/button' },
-      });
-      const storyDocsJson = JSON.parse(
-        files['/output/services/core/story-docs/button.json'] as string
-      );
-      expect(storyDocsJson.components.button.stories).toEqual({
-        'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
-      });
-      expect(files['/output/manifests/docs.json']).toBeDefined();
-      expect(files['/output/manifests/components.html']).toContain('Button');
-      expect(files['/output/manifests/components.html']).toContain('Unattached Docs');
-      // Deep-link contract: every component-id key in components.json must be a stable anchor id on
-      // the matching card in components.html, so tooling can open `components.html#<id>`. Asserting
-      // against a key read from the emitted JSON guards against any upstream re-keying of the cards.
-      const [componentId] = Object.keys(componentsJson.components);
-      expect(componentId).toBe('button');
-      expect(files['/output/manifests/components.html']).toContain(`id="${componentId}"`);
-      // Both components.json and the HTML come from the on-disk snapshot, so the build must not
-      // re-extract docgen from the live service.
-      expect(docgenProvider).not.toHaveBeenCalled();
-    });
+        const storyDocsProvider = vi.fn<StoryDocsProvider>(async () => ({
+          id: 'button',
+          name: 'Button',
+          path: './button.stories.tsx',
+          stories: {
+            'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+          },
+        }));
+
+        registerDocgenService({
+          getIndex: () => mockGenerator.getIndex(),
+          docgenProvider,
+        });
+        registerStoryDocsService({
+          getIndex: () => mockGenerator.getIndex(),
+          storyDocsProvider,
+        });
+
+        vol.fromNestedJSON({
+          '/output/services/core/docgen/button.json': JSON.stringify({
+            components: {
+              button: {
+                id: 'button',
+                name: 'Button',
+                path: './button.stories.tsx',
+                description: 'A button',
+                jsDocTags: {},
+              },
+            },
+          }),
+          '/output/services/core/story-docs/button.json': JSON.stringify({
+            components: {
+              button: {
+                id: 'button',
+                name: 'Button',
+                path: './button.stories.tsx',
+                stories: {
+                  'button--primary': {
+                    id: 'button--primary',
+                    name: 'Primary',
+                    snippet: '<Button />',
+                  },
+                },
+              },
+            },
+          }),
+        });
+
+        const clock = vi.spyOn(performance, 'now').mockReturnValueOnce(100).mockReturnValue(1350);
+        const diagnostic = await writeManifests('/output', mockPresets, { includeTurbosnapOutput });
+        clock.mockRestore();
+        expect(renderComponentsManifest).toHaveBeenCalledTimes(includeTurbosnapOutput ? 2 : 1);
+        if (includeTurbosnapOutput) {
+          expect(diagnostic?.source).toBe(
+            vol.readFileSync('/output/manifests/components.html', 'utf8')
+          );
+          expect(diagnostic?.source).toContain('<strong>1.3s</strong>');
+          expect(diagnostic?.canonical).toBe(
+            diagnostic?.source.replace('<strong>1.3s</strong>', '<strong>0.0s</strong>')
+          );
+        } else {
+          expect(diagnostic).toBeUndefined();
+        }
+
+        const files = vol.toJSON();
+        const componentsJson = JSON.parse(files['/output/manifests/components.json'] as string);
+        expect(componentsJson.v).toBe(1);
+        expect(componentsJson.components.button).toEqual({
+          id: 'button',
+          name: 'Button',
+          description: 'A button',
+          docgen: { $ref: '../services/core/docgen/button.json#/components/button' },
+          stories: { $ref: '../services/core/story-docs/button.json#/components/button' },
+        });
+        const storyDocsJson = JSON.parse(
+          files['/output/services/core/story-docs/button.json'] as string
+        );
+        expect(storyDocsJson.components.button.stories).toEqual({
+          'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+        });
+        expect(files['/output/manifests/docs.json']).toBeDefined();
+        expect(files['/output/manifests/components.html']).toContain('Button');
+        expect(files['/output/manifests/components.html']).toContain('Unattached Docs');
+        // Deep-link contract: every component-id key in components.json must be a stable anchor id on
+        // the matching card in components.html, so tooling can open `components.html#<id>`. Asserting
+        // against a key read from the emitted JSON guards against any upstream re-keying of the cards.
+        const [componentId] = Object.keys(componentsJson.components);
+        expect(componentId).toBe('button');
+        expect(files['/output/manifests/components.html']).toContain(`id="${componentId}"`);
+        // Both components.json and the HTML come from the on-disk snapshot, so the build must not
+        // re-extract docgen from the live service.
+        expect(docgenProvider).not.toHaveBeenCalled();
+      }
+    );
 
     it('includes a componentless component in components.html, matching components.json', async () => {
       mockPresets = setupMockPresets({

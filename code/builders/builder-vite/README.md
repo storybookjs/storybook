@@ -162,6 +162,10 @@ This records the final emitted preview rather than assuming a complete list of f
 plugins, compilers, mocks, or configuration code. React and Next.js Vite builds use the same path;
 custom plugins and configuration are supported when their resulting output can be attributed.
 
+Evidence collection is enabled only by an explicit `--stats-json` request (or the legacy
+`--webpack-stats-json` alias). Ordinary builds do not load the evidence collectors, register their
+output hooks, hash the configuration/output inventories, or render extra diagnostic evidence.
+
 The record binds the module graph, configuration source inventory, and complete final output
 inventory with SHA-256 hashes. Consumers must verify every binding before using it. Story JavaScript
 and its dependencies receive per-story fingerprints; preview entries, inline/imported HTML scripts,

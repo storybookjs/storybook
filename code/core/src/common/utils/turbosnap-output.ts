@@ -1,7 +1,5 @@
-import { parseModule, walk } from 'storybook/internal/csf-tools';
-
 import { dirname, join } from 'pathe';
-import { parse, type DefaultTreeAdapterMap } from 'parse5';
+import type { DefaultTreeAdapterMap } from 'parse5';
 
 export function resolveTurbosnapOutputReference(
   value: string,
@@ -17,11 +15,15 @@ export function resolveTurbosnapOutputReference(
   return file ? { file, value: `${references.get(file)}${suffix}` } : undefined;
 }
 
-export function canonicalizeTurbosnapHtml(
+export async function canonicalizeTurbosnapHtml(
   source: string,
   fileName: string,
   references: ReadonlyMap<string, string>
-): { code: string; dependencies: string[] } {
+): Promise<{ code: string; dependencies: string[] }> {
+  const [{ parseModule, walk }, { parse }] = await Promise.all([
+    import('storybook/internal/csf-tools'),
+    import('parse5'),
+  ]);
   const changes: { start: number; end: number; value: string }[] = [];
   const dependencies = new Set<string>();
   function visit(node: DefaultTreeAdapterMap['node']) {

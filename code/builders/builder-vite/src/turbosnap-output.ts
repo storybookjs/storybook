@@ -541,7 +541,11 @@ export class ViteOutputEvidence {
         if (!owned.has(file)) for (const dependency of collect([file])) globalFiles.add(dependency);
       for (const output of Object.values(bundle)) {
         if (output.type !== 'asset' || !output.fileName.endsWith('.html')) continue;
-        const html = canonicalizeTurbosnapHtml(String(output.source), output.fileName, identities);
+        const html = await canonicalizeTurbosnapHtml(
+          String(output.source),
+          output.fileName,
+          identities
+        );
         hashes.set(output.fileName, digest(html.code));
         for (const file of collect(html.dependencies)) globalFiles.add(file);
         identities.set(output.fileName, output.fileName);

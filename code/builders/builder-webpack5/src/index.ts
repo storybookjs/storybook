@@ -8,7 +8,7 @@ import {
   WebpackInvocationError,
   WebpackMissingStatsError,
 } from 'storybook/internal/server-errors';
-import type { Builder, Options } from 'storybook/internal/types';
+import type { Builder, Options, TurbosnapOutputDraft } from 'storybook/internal/types';
 
 import { checkWebpackVersion } from '@storybook/core-webpack';
 
@@ -21,7 +21,6 @@ import webpackDevMiddleware from 'webpack-dev-middleware';
 import webpackHotMiddleware from 'webpack-hot-middleware';
 
 import { createWebpackChangeDetectionAdapter } from './change-detection-adapter/index.ts';
-import { createWebpackOutputEvidence } from './turbosnap-output.ts';
 
 export * from './types.ts';
 export * from './preview/virtual-module-mapping.ts';
@@ -288,13 +287,16 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     });
   }
 
-  let outputEvidence: Awaited<ReturnType<typeof createWebpackOutputEvidence>> | undefined;
-  compiler.hooks.emit.tapPromise(
-    { name: 'StorybookTurbosnapOutput', stage: Number.MAX_SAFE_INTEGER },
-    async (compilation) => {
-      outputEvidence = await createWebpackOutputEvidence(compilation, options);
-    }
-  );
+  let outputEvidence: TurbosnapOutputDraft | undefined;
+  if (options.statsJson || options.webpackStatsJson) {
+    const { createWebpackOutputEvidence } = await import('./turbosnap-output.ts');
+    compiler.hooks.emit.tapPromise(
+      { name: 'StorybookTurbosnapOutput', stage: Number.MAX_SAFE_INTEGER },
+      async (compilation) => {
+        outputEvidence = await createWebpackOutputEvidence(compilation, options);
+      }
+    );
+  }
 
   const webpackCompilation = new Promise<Stats>((succeed, fail) => {
     compiler.run((error, stats) => {
@@ -344,9 +346,9 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
 
   const [webpackCompilationOutput] = await Promise.all([webpackCompilation, previewFiles]);
 
-  Object.assign(webpackCompilationOutput, {
-    turbosnapOutput: outputEvidence,
-  });
+  if (outputEvidence) {
+    Object.assign(webpackCompilationOutput, { turbosnapOutput: outputEvidence });
+  }
 
   return webpackCompilationOutput;
 };

@@ -548,7 +548,7 @@ async function collectWebpackOutput(
       ),
       ...[...references].map(([file, value]): [string, string] => [file, value.identity]),
     ]);
-    const canonical = canonicalizeTurbosnapHtml(source, 'iframe.html', htmlReferences);
+    const canonical = await canonicalizeTurbosnapHtml(source, 'iframe.html', htmlReferences);
     for (const file of canonical.dependencies) {
       const chunk = chunks.find((candidate) => chunkFiles.get(candidate) === file);
       if (!chunk) {

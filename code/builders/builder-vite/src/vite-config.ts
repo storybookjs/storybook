@@ -27,7 +27,7 @@ import {
 } from './plugins/index.ts';
 import { viteCorePlugins as corePlugins } from './preset.ts';
 import type { BuilderOptions } from './types.ts';
-import { ViteOutputEvidence } from './turbosnap-output.ts';
+import type { ViteOutputEvidence } from './turbosnap-output.ts';
 
 export type PluginConfigType = 'build' | 'development';
 
@@ -178,6 +178,11 @@ export async function commonConfig(
 }
 
 export async function pluginConfig(options: Options) {
+  let outputEvidence: ViteOutputEvidence | undefined;
+  if (options.statsJson || options.webpackStatsJson) {
+    const { ViteOutputEvidence } = await import('./turbosnap-output.ts');
+    outputEvidence = new ViteOutputEvidence(process.cwd());
+  }
   const plugins = [
     // Shared core plugins (resolve conditions, envPrefix, fs.allow, externals, env vars, etc.)
     ...(await corePlugins([], options)),
@@ -187,10 +192,7 @@ export async function pluginConfig(options: Options) {
     // Builder-specific: webpack-compatible stats for turbosnap/chromatic
     pluginWebpackStats({
       workingDir: process.cwd(),
-      outputEvidence:
-        options.statsJson || options.webpackStatsJson
-          ? new ViteOutputEvidence(process.cwd())
-          : undefined,
+      outputEvidence,
     }),
   ] as PluginOption[];
 

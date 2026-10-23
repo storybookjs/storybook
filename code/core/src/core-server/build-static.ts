@@ -32,7 +32,6 @@ import { writeManifests } from './utils/manifests/manifests.ts';
 import { extractStorybookMetadata } from './utils/metadata.ts';
 import { outputStats } from './utils/output-stats.ts';
 import { summarizeIndex } from './utils/summarizeIndex.ts';
-import { createTurbosnapOutputFinalizer } from './utils/turbosnap-output.ts';
 
 export type BuildStaticStandaloneOptions = CLIOptions &
   LoadOptions &
@@ -58,7 +57,9 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   const statsOption = options.webpackStatsJson || options.statsJson;
   const statsDirectory = statsOption === true ? options.outputDir : statsOption;
   const finalizeOutput = statsDirectory
-    ? await createTurbosnapOutputFinalizer(options.configDir, options.outputDir, statsDirectory)
+    ? await import('./utils/turbosnap-output.ts').then(({ createTurbosnapOutputFinalizer }) =>
+        createTurbosnapOutputFinalizer(options.configDir, options.outputDir, statsDirectory)
+      )
     : undefined;
 
   const config = await loadMainConfig(options);
@@ -174,7 +175,9 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
         if (shouldWriteManifests) {
           // Ref-based components.json reads docgen snapshots from outputDir/services/ — manifests
           // must run after open-service static files are written.
-          componentsMetadata = await writeManifests(options.outputDir, presets);
+          componentsMetadata = await writeManifests(options.outputDir, presets, {
+            includeTurbosnapOutput: !!finalizeOutput,
+          });
         }
       })()
     );

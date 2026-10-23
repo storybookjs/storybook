@@ -18,6 +18,10 @@ Production preview stats include optional output evidence for TurboSnap 2. The e
 final emitted chunks, including loader and plugin effects, while preserving the existing module stats.
 Core verifies the recorded bytes after the build finishes and accounts for remaining output files.
 
+Collection requires an explicit `--stats-json` request (or the legacy `--webpack-stats-json` alias).
+Without it, the builder does not load the evidence collector or register its compilation hook, and
+core skips the evidence inventories, hashes, and extra diagnostic rendering.
+
 Story fingerprints cover whole reachable chunks. Shared code placed in a story chunk can therefore
 widen coverage to another story. Global preview imports and scripts or preloads in `iframe.html` keep
 their reachable chunks globally covered. Only the unchanged generated Storybook story loader is

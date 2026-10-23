@@ -249,7 +249,8 @@ async function writeDocgenServerManifests(
   outputDir: string,
   manifests: Manifests,
   manifestComponentIds: string[],
-  docsManifest?: DocsManifest
+  docsManifest: DocsManifest | undefined,
+  includeTurbosnapOutput: boolean
 ) {
   const hasOtherManifests = Object.keys(manifests).some((name) => name !== 'components');
   const shouldWriteHtml = manifestComponentIds.length > 0 || !!docsManifest;
@@ -317,6 +318,7 @@ async function writeDocgenServerManifests(
       resolvedDocsManifest
     );
     await writeFile(join(manifestsDir, 'components.html'), source);
+    if (!includeTurbosnapOutput) return;
     return {
       source,
       canonical: renderComponentsManifest(
@@ -352,7 +354,11 @@ async function writeLegacyManifests(
 }
 
 /** Writes manifest JSON (and HTML when applicable) to `outputDir/manifests/`. */
-export async function writeManifests(outputDir: string, presets: Presets) {
+export async function writeManifests(
+  outputDir: string,
+  presets: Presets,
+  { includeTurbosnapOutput = false }: { includeTurbosnapOutput?: boolean } = {}
+) {
   try {
     const features = await presets.apply('features');
     const manifestEntries = await getManifestEntries(presets);
@@ -364,7 +370,8 @@ export async function writeManifests(outputDir: string, presets: Presets) {
         outputDir,
         manifests,
         getManifestComponentIds(manifestEntries),
-        docsManifest
+        docsManifest,
+        includeTurbosnapOutput
       );
     }
 

@@ -62,7 +62,7 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
     6
   )}`;
 
-  const fontDeclarations = declarations
+  const fontDeclarations = [{ prop: 'font-display', value: display }, ...declarations]
     .map(({ prop, value }: { prop: string; value: string }) => `${prop}: ${value};`)
     .join('\n');
 
@@ -74,7 +74,6 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
 					src: url(${localFontSrc.fontReferenceId ? getPlaceholderFontUrl(localFontSrc.fontReferenceId) : `/@fs/${localFontSrc.fontPath}`});
           ${weight ? `font-weight: ${weight};` : ''}
           ${style ? `font-style: ${style};` : ''}
-          font-display: ${display};
 					${fontDeclarations}
 				}`;
       }
@@ -91,7 +90,6 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
 						src: url(${font.path.fontReferenceId ? getPlaceholderFontUrl(font.path.fontReferenceId) : `/@fs/${font.path.fontPath}`});
 						${font.weight ? `font-weight: ${font.weight};` : ''}
 						${font.style ? `font-style: ${font.style};` : ''}
-						font-display: ${display};
 						${fontDeclarations}
 					}`;
         })

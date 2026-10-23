@@ -447,6 +447,139 @@ describe('storybook-metadata', () => {
       `);
     });
 
+    it('should report the same fields for a project with a main config', async () => {
+      vi.mocked(isCI).mockImplementation(() => false);
+      vi.mocked(globalSettings).mockResolvedValue({
+        value: { userSince: 1717334400000 },
+      } as Settings);
+
+      const result = await computeStorybookMetadata({
+        packageJson: packageJsonMock,
+        configDir: '.storybook',
+        packageJsonPath,
+        mainConfig: mainJsMock,
+      });
+
+      expect(result).toMatchInlineSnapshot(
+        {
+          generatedAt: expect.any(Number),
+          storybookVersion: expect.any(String),
+        },
+        `
+        {
+          "addons": {},
+          "applicationFileCount": 10,
+          "builder": "@storybook/builder-vite",
+          "framework": {
+            "name": "@storybook/react-vite",
+            "options": {},
+          },
+          "generatedAt": Any<Number>,
+          "hasCustomBabel": false,
+          "hasCustomVite": false,
+          "hasCustomWebpack": false,
+          "hasModuleFederation": false,
+          "hasRouterPackage": false,
+          "hasStaticDirs": false,
+          "hasStorybookEslint": false,
+          "hasTurbopack": undefined,
+          "knownPackages": {
+            "dataFetchingPackages": {
+              "axios": ">=1.0.0",
+            },
+            "i18nPackages": {
+              "i18next": "22.0.0",
+            },
+            "rendererPackages": {
+              "react": "x.x.x",
+              "react-dom": "x.x.x",
+            },
+            "routerPackages": {
+              "react-router-dom": "^6.0.0",
+            },
+            "stateManagementPackages": {
+              "redux": "4.0.0",
+            },
+            "stylingPackages": {
+              "tailwindcss": "3.0.0",
+            },
+            "testPackages": {
+              "jest": "x.x.x",
+            },
+            "uiLibraryPackages": {
+              "@mui/material": "5.0.0",
+            },
+          },
+          "language": "javascript",
+          "monorepo": "Nx",
+          "packageJsonType": "unknown",
+          "packageManager": {
+            "agent": "yarn@berry",
+            "nodeLinker": "node_modules",
+            "type": "yarn",
+            "version": "3.1.1",
+          },
+          "portableStoriesFileCount": 5,
+          "refCount": 0,
+          "renderer": "@storybook/react",
+          "storybookPackages": {},
+          "storybookVersion": Any<String>,
+          "storybookVersionSpecifier": "",
+          "userSince": 1717334400000,
+        }
+      `
+      );
+    });
+
+    it('should not list an addon as a storybook package when it resolves to another package name', async () => {
+      vi.mocked(getActualPackageVersion).mockImplementation(async (name) => ({
+        name: name === 'aliased-addon' ? 'storybook-addon-real' : name,
+        version: 'x.x.x',
+      }));
+
+      const result = await computeStorybookMetadata({
+        packageJson: {
+          ...packageJsonMock,
+          devDependencies: {
+            '@storybook/react': 'x.y.z',
+            'aliased-addon': 'npm:storybook-addon-real@x.y.z',
+            'storybook-addon-real': 'x.y.z',
+          },
+        } as PackageJson,
+        configDir: '.storybook',
+        packageJsonPath,
+        mainConfig: {
+          ...mainJsMock,
+          addons: ['aliased-addon'],
+        },
+      });
+
+      expect(result.addons).toHaveProperty('storybook-addon-real');
+      expect(Object.keys(result.storybookPackages ?? {})).toEqual(['@storybook/react']);
+    });
+
+    it('should not load the storybook info twice at the same time', async () => {
+      let running = 0;
+      let maxRunning = 0;
+      vi.mocked(getStorybookInfo).mockImplementation(async () => {
+        running += 1;
+        maxRunning = Math.max(maxRunning, running);
+        await new Promise((resolve) => setTimeout(resolve, 1));
+        running -= 1;
+        return defaultInfo;
+      });
+
+      await computeStorybookMetadata({
+        packageJson: packageJsonMock,
+        configDir: '.storybook',
+        packageJsonPath,
+        mainConfig: mainJsMock,
+      });
+
+      expect(getStorybookInfo).toHaveBeenCalledTimes(2);
+      expect(maxRunning).toBe(1);
+    });
+
     it('should return user specified features', async () => {
       const features = {};
 

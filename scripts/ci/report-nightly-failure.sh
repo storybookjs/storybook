@@ -9,9 +9,6 @@ if [[ "$rerun" == rerun-* ]]; then
   exit 0
 fi
 
-: "${SLACK_SB_AGILITY_WEBHOOK_URL:?Set SLACK_SB_AGILITY_WEBHOOK_URL in the CircleCI project settings}"
-: "${OBVIOUS_SLACK_USER_ID:?Set OBVIOUS_SLACK_USER_ID in the CircleCI project settings}"
-
 workflow_url="https://app.circleci.com/pipelines/github/storybookjs/storybook/${PIPELINE_NUMBER}/workflows/${CIRCLE_WORKFLOW_ID}"
 
 failed_jobs=$(
@@ -27,11 +24,14 @@ if [ -z "$failed_jobs" ]; then
   exit 0
 fi
 
+: "${SLACK_SB_AGILITY_WEBHOOK_URL:?Set SLACK_SB_AGILITY_WEBHOOK_URL in the CircleCI project settings}"
+
 # Nobody follows up on Obvious's work on weekends, so a Saturday or Sunday report only lists the
 # failures; Monday's report asks Obvious if they still fail.
 if [ "$(date -u +%u)" -ge 6 ]; then
   request=''
 else
+  : "${OBVIOUS_SLACK_USER_ID:?Set OBVIOUS_SLACK_USER_ID in the CircleCI project settings}"
   request="<@${OBVIOUS_SLACK_USER_ID}> please fix these failures, or revert the PR that caused them if the fix is not straightforward. "
 fi
 

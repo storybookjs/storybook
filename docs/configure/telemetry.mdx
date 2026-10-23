@@ -159,6 +159,10 @@ Additionally, if Storybook's guided tour is enabled, it will generate the follow
 The data we collect is anonymous, not traceable to the source, and only meaningful in aggregate form. No data we collect is personally identifiable.
 In the future, we plan to share relevant data with the community through public dashboards (or similar data representation formats).
 
+## How is the data sent?
+
+Storybook sends each event to `https://storybook.js.org/event-log` when it occurs and does not wait for the reply, so telemetry does not slow down your commands. If a command finishes while an event has no reply yet, Storybook writes those events to a file in your operating system's temporary directory that only your user can read, and starts a short-lived background process. That process deletes the file, sends the events, and exits within about 30 seconds. When telemetry is turned off, no events are written and no background process is started.
+
 ## How to opt-out
 
 You may opt out of the telemetry within your Storybook configuration by setting the `disableTelemetry` configuration element to `true`.

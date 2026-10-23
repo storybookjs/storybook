@@ -59,7 +59,8 @@ jobs:
             yarn dlx jiti ./scripts/ci/main.ts \
               --workflow=<< pipeline.parameters.workflow >> \
               --base-ref="origin/$GH_BASE_BRANCH" \
-              --gh-trusted-author=<< pipeline.parameters.ghTrustedAuthor >>
+              --gh-trusted-author=<< pipeline.parameters.ghTrustedAuthor >> \
+              --branch="<< pipeline.git.branch >>"
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml
 workflows:

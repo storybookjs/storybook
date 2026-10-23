@@ -21,7 +21,6 @@
     "docs:check": "yarn --cwd scripts docs:check",
     "fmt:check": "oxfmt --check .",
     "fmt:write": "oxfmt .",
-    "get-report-message": "cd scripts; yarn get-report-message",
     "get-sandbox-dir": "cd scripts; yarn get-sandbox-dir",
     "i": "yarn",
     "postinstall": "husky",

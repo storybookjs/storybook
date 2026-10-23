@@ -17,9 +17,9 @@ import {
   resolveStoryComponent,
   resolveStorySubcomponents,
 } from './resolve-component/resolve-component.ts';
-import { generateDocgen, type DocgenCache } from './svelte2tsx/generate-docgen.ts';
+import type { SvelteComponentMetaManager } from './component-meta/svelte-project-manager.ts';
 
-export type BuildDocgenContext = { cache: DocgenCache };
+export type BuildDocgenContext = { componentMetaManager: SvelteComponentMetaManager };
 
 // The resolver follows symlinks, so a component path is taken relative to the story file as the
 // index wrote it; then a symlinked story folder, as in linked sandboxes, gives the same path.
@@ -80,7 +80,7 @@ export async function buildDocgenPayload(
 async function componentDocs(componentPath: string, context: BuildDocgenContext) {
   const source = await readFile(componentPath, 'utf8');
   const documentationSource = await preprocess(source, { style: () => ({ code: '' }) });
-  const docgen = generateDocgen(componentPath, context.cache, {
+  const docgen = context.componentMetaManager.generateDocgen(componentPath, {
     server: true,
     documentationSource: documentationSource.code,
   });

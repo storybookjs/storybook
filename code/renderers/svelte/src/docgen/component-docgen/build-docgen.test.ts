@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { expect, it } from 'vitest';
 
 import { buildDocgenPayload } from './build-docgen.ts';
-import { createDocgenCache } from './svelte2tsx/generate-docgen.ts';
+import { SvelteComponentMetaManager } from './component-meta/svelte-project-manager.ts';
 
 const fixtures = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 
@@ -24,7 +24,7 @@ const payloadFor = (importPath: string) =>
         tags: [],
       },
     },
-    { cache: createDocgenCache() }
+    { componentMetaManager: new SvelteComponentMetaManager() }
   );
 
 it('documents the subcomponents a meta lists', async () => {

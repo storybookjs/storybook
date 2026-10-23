@@ -40,6 +40,21 @@ describe('printTemplate', () => {
     ).toBe('<Panel title="Title: Save" count={3}><h1>Save</h1></Panel>');
   });
 
+  it('prints a string arg that is the whole attribute value in quotes', () => {
+    expect(print('<Panel title={args.title} />', "{ title: 'Save' }")).toBe(
+      '<Panel title="Save" />'
+    );
+  });
+
+  it('keeps an attribute in braces when quotes would change its value', () => {
+    expect(
+      print(
+        '<Panel title={args.quote} label={args.empty} count={args.count} />',
+        "{ quote: 'Say \"hi\"', empty: '', count: 3 }"
+      )
+    ).toBe("<Panel title={'Say \"hi\"'} label={''} count={3} />");
+  });
+
   it('keeps strings that contain markup as expressions', () => {
     expect(print('<Panel>{args.label}</Panel>', '{ label: "<b>Save</b>" }')).toBe(
       '<Panel>{"<b>Save</b>"}</Panel>'
@@ -75,7 +90,7 @@ describe('printTemplate', () => {
         '<Panel {...args} label="Explicit" /><Panel label="Earlier" {...args} />',
         "{ label: 'From args', disabled: true }"
       )
-    ).toBe('<Panel disabled label="Explicit" /><Panel label={\'From args\'} disabled />');
+    ).toBe('<Panel disabled label="Explicit" /><Panel label="From args" disabled />');
   });
 
   it.each([
@@ -133,7 +148,7 @@ describe('printTemplate', () => {
         name: 'props',
         aliases: {},
       })
-    ).toBe('<Button label="Save" title={\'Save\'} />');
+    ).toBe('<Button label="Save" title="Save" />');
   });
 
   it('reads the args that a template parameter destructures', () => {
@@ -200,7 +215,7 @@ describe('printTemplate', () => {
         name: 'rest',
         aliases: { label: 'label' },
       })
-    ).toBe("<Button label={'Save'} />");
+    ).toBe('<Button label="Save" />');
   });
 
   it('keeps the name of a shorthand property that reads a destructured arg', () => {

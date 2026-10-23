@@ -78,10 +78,10 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   const channel = new Channel({});
   let presets = await loadAllPresets({
     corePresets: [commonPreset, ...corePresets],
+    overridePresets: [commonOverridePreset],
     isCritical: true,
     channel,
     ...options,
-    overridePresets: [commonOverridePreset],
   });
 
   const { renderer } = await presets.apply('core', {});
@@ -104,10 +104,10 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       ...(resolvedRenderer ? [resolvedRenderer] : []),
       ...corePresets,
     ],
+    overridePresets: [...(previewBuilder.overridePresets || []), commonOverridePreset],
     build,
     channel,
     ...options,
-    overridePresets: [...(previewBuilder.overridePresets || []), commonOverridePreset],
   });
 
   const [features, core, staticDirs] = await Promise.all([

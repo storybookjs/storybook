@@ -186,10 +186,10 @@ export async function buildDevStandalone(
   // We hope to remove this in SB8
   let presets = await loadAllPresets({
     corePresets,
-    ...options,
     overridePresets: [
       import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
+    ...options,
     isCritical: true,
     channel: new Channel({
       transports: [
@@ -266,11 +266,11 @@ export async function buildDevStandalone(
       ...(resolvedRenderer ? [resolvedRenderer] : []),
       ...corePresets,
     ],
-    ...options,
     overridePresets: [
       ...(previewBuilder.overridePresets || []),
       import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
+    ...options,
     channel,
   });
 

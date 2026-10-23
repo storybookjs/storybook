@@ -49,6 +49,18 @@ const Tooltip: FunctionComponent<TooltipProps> = ({ onHide }) => (
   />
 );
 
+const expectTooltipColorScheme = (expected: 'light' | 'dark') => async () => {
+  await expect(await screen.findByText('Lorem ipsum dolor sit')).toBeInTheDocument();
+  const tooltip = await screen.findByTestId('tooltip');
+  expect(getComputedStyle(tooltip).colorScheme).toBe(expected);
+
+  const radio = document.createElement('input');
+  radio.type = 'radio';
+  tooltip.append(radio);
+  expect(getComputedStyle(radio).colorScheme).toBe(expected);
+  radio.remove();
+};
+
 export default {
   component: WithTooltip,
   decorators: [
@@ -99,6 +111,7 @@ export const SimpleClick: StoryObj<ComponentProps<typeof WithTooltip>> = {
 };
 
 export const SimpleClickStartOpen: StoryObj<ComponentProps<typeof WithTooltip>> = {
+  globals: { sb_theme: 'light' },
   args: {
     placement: 'top',
     startOpen: true,
@@ -108,9 +121,23 @@ export const SimpleClickStartOpen: StoryObj<ComponentProps<typeof WithTooltip>> 
       <Trigger>Click me!</Trigger>
     </WithTooltip>
   ),
-  play: async () => {
-    await expect(await screen.findByText('Lorem ipsum dolor sit')).toBeInTheDocument();
-  },
+  play: expectTooltipColorScheme('light'),
+};
+
+export const SimpleClickStartOpenDark: StoryObj<ComponentProps<typeof WithTooltip>> = {
+  ...SimpleClickStartOpen,
+  globals: { sb_theme: 'dark' },
+  play: expectTooltipColorScheme('dark'),
+};
+
+export const SimpleClickStartOpenWithoutChrome: StoryObj<ComponentProps<typeof WithTooltip>> = {
+  ...SimpleClickStartOpen,
+  args: { ...SimpleClickStartOpen.args, hasChrome: false },
+};
+
+export const SimpleClickStartOpenDarkWithoutChrome: StoryObj<ComponentProps<typeof WithTooltip>> = {
+  ...SimpleClickStartOpenDark,
+  args: { ...SimpleClickStartOpenDark.args, hasChrome: false },
 };
 
 export const SimpleClickCloseOnClick: StoryObj<ComponentProps<typeof WithTooltip>> = {

@@ -152,9 +152,30 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Desktop: Story = {};
+const expectColorScheme =
+  (expected: 'light' | 'dark') =>
+  async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const layout = canvasElement.firstElementChild;
+    expect(layout).not.toBeNull();
+    if (!layout) {
+      throw new Error('Layout root was not rendered');
+    }
+
+    expect(getComputedStyle(layout).colorScheme).toBe(expected);
+
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    layout.append(radio);
+    expect(getComputedStyle(radio).colorScheme).toBe(expected);
+    radio.remove();
+  };
+
+export const Desktop: Story = {
+  play: expectColorScheme('light'),
+};
 export const Dark: Story = {
   globals: { sb_theme: 'dark' },
+  play: expectColorScheme('dark'),
 };
 export const DesktopHorizontal: Story = {
   args: {

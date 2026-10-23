@@ -38,7 +38,7 @@ List items are used to group related content in a list. They must be nested with
 ```
 
 <!-- prettier-ignore -->
-```mdx filename="Page.mdx" renderer="svelte" language="mdx" tabTitle="Svelte CSF 3"
+```mdx filename="Page.mdx" renderer="svelte" language="mdx" tabTitle="CSF 3"
 {/* ⚠️ CSF 3 is deprecated and will be removed in Storybook 12 */}
 import { Canvas, Meta, Story } from '@storybook/addon-docs/blocks';
 

@@ -38,7 +38,7 @@ export const OnPhone = meta.story({
 });
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF 4"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -61,7 +61,7 @@ export const OnPhone = meta.story({
 />
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF 3"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
 <!-- ⚠️ CSF 3 is deprecated and will be removed in Storybook 12 -->
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
@@ -86,7 +86,7 @@ export const OnPhone = meta.story({
 />
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF 4"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
 <script module lang="ts">
   import preview from '../.storybook/preview';
 
@@ -109,7 +109,7 @@ export const OnPhone = meta.story({
 />
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF 3"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
 <!-- ⚠️ CSF 3 is deprecated and will be removed in Storybook 12 -->
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite

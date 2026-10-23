@@ -1264,7 +1264,7 @@ function getJSDocDefault(
   prop: ts.Symbol,
   checker: DocgenTypeChecker
 ): string | undefined {
-  const tags = prop.getJsDocTags(checker);
+  const tags = prop.getJsDocTags(checker as ts.TypeChecker);
   for (const tag of tags) {
     if (tag.name === 'default' || tag.name === 'defaultValue') {
       return typescript.displayPartsToString(tag.text) || undefined;
@@ -1292,7 +1292,9 @@ function extractPropItem(
   const propType = typeOverride ?? checker.getTypeOfSymbolAtLocation(prop, contextNode);
   const type = serializeType(typescript, checker, propType, isRequired);
 
-  const description = typescript.displayPartsToString(prop.getDocumentationComment(checker));
+  const description = typescript.displayPartsToString(
+    prop.getDocumentationComment(checker as ts.TypeChecker)
+  );
 
   const parent = getParentType(typescript, prop);
   const declarations = getAllDeclarationParents(typescript, prop);
@@ -1539,7 +1541,7 @@ export function serializeComponentDoc(
   for (const prop of allProperties) {
     if (
       excluded.has(prop.getName()) ||
-      prop.getJsDocTags(checker).some((tag) => tag.name === 'ignore')
+      prop.getJsDocTags(checker as ts.TypeChecker).some((tag) => tag.name === 'ignore')
     ) {
       continue;
     }

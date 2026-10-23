@@ -9,7 +9,11 @@
  */
 import type ts from 'typescript';
 
-/** The `ts.TypeChecker` methods the extractor calls. */
+/**
+ * The `ts.TypeChecker` methods the extractor calls. `ts.Symbol`'s own methods take a `ts.TypeChecker`,
+ * so the extractor casts the checker where it passes it to a symbol; both backends' symbols accept
+ * their own checker there.
+ */
 export type DocgenTypeChecker = Pick<
   ts.TypeChecker,
   | 'getAliasedSymbol'
@@ -33,51 +37,52 @@ export type DocgenSystem = Pick<
 >;
 
 /** The node type guards the extractor calls. */
-export type DocgenNodeGuards = Pick<
-  typeof ts,
-  | 'isArrowFunction'
-  | 'isAsExpression'
-  | 'isAwaitExpression'
-  | 'isBinaryExpression'
-  | 'isBindingElement'
-  | 'isBlock'
-  | 'isCallExpression'
-  | 'isClassDeclaration'
-  | 'isConditionalExpression'
-  | 'isEnumMember'
-  | 'isExportAssignment'
-  | 'isExportDeclaration'
-  | 'isExpressionStatement'
-  | 'isFunctionDeclaration'
-  | 'isFunctionExpression'
-  | 'isIdentifier'
-  | 'isImportDeclaration'
-  | 'isInterfaceDeclaration'
-  | 'isJsxOpeningElement'
-  | 'isJsxSelfClosingElement'
-  | 'isNamedExports'
-  | 'isNamedImports'
-  | 'isNamespaceImport'
-  | 'isNewExpression'
-  | 'isNonNullExpression'
-  | 'isNoSubstitutionTemplateLiteral'
-  | 'isNumericLiteral'
-  | 'isObjectBindingPattern'
-  | 'isObjectLiteralExpression'
-  | 'isParenthesizedExpression'
-  | 'isPropertyAccessExpression'
-  | 'isPropertyAssignment'
-  | 'isPropertyDeclaration'
-  | 'isPropertySignature'
-  | 'isSatisfiesExpression'
-  | 'isShorthandPropertyAssignment'
-  | 'isStringLiteral'
-  | 'isTypeAliasDeclaration'
-  | 'isTypeAssertionExpression'
-  | 'isTypeLiteralNode'
-  | 'isVariableDeclaration'
-  | 'isVariableStatement'
->;
+export const DOCGEN_NODE_GUARDS = [
+  'isArrowFunction',
+  'isAsExpression',
+  'isAwaitExpression',
+  'isBinaryExpression',
+  'isBindingElement',
+  'isBlock',
+  'isCallExpression',
+  'isClassDeclaration',
+  'isConditionalExpression',
+  'isEnumMember',
+  'isExportAssignment',
+  'isExportDeclaration',
+  'isExpressionStatement',
+  'isFunctionDeclaration',
+  'isFunctionExpression',
+  'isIdentifier',
+  'isImportDeclaration',
+  'isInterfaceDeclaration',
+  'isJsxOpeningElement',
+  'isJsxSelfClosingElement',
+  'isNamedExports',
+  'isNamedImports',
+  'isNamespaceImport',
+  'isNewExpression',
+  'isNonNullExpression',
+  'isNoSubstitutionTemplateLiteral',
+  'isNumericLiteral',
+  'isObjectBindingPattern',
+  'isObjectLiteralExpression',
+  'isParenthesizedExpression',
+  'isPropertyAccessExpression',
+  'isPropertyAssignment',
+  'isPropertyDeclaration',
+  'isPropertySignature',
+  'isSatisfiesExpression',
+  'isShorthandPropertyAssignment',
+  'isStringLiteral',
+  'isTypeAliasDeclaration',
+  'isTypeAssertionExpression',
+  'isTypeLiteralNode',
+  'isVariableDeclaration',
+  'isVariableStatement',
+] as const;
+
+export type DocgenNodeGuards = Pick<typeof ts, (typeof DOCGEN_NODE_GUARDS)[number]>;
 
 /** The `typescript` module members the extractor and the project use. */
 export interface DocgenTypeScript extends DocgenNodeGuards {

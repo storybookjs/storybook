@@ -11,6 +11,8 @@
  * The first matching JSX element wins, so for a component rendered with different type arguments
  * across stories, the documented type is the one the earliest story pins.
  */
+import { logger } from 'storybook/internal/node-logger';
+
 import type ts from 'typescript';
 
 import type { StoryRef } from '../getComponentImports.ts';
@@ -123,8 +125,9 @@ export function extractEntries(
         entryComponent.componentJsDocTags = doc.jsDocTags;
         entryComponent.importOverride = entryComponent.componentJsDocTags?.import?.[0]?.trim();
       }
-    } catch {
+    } catch (error) {
       // One bad component should not kill the entire batch.
+      logger.debug(`[reactComponentMeta] Extraction failed for ${entry.storyPath}: ${error}`);
       continue;
     }
   }

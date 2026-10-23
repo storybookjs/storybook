@@ -2,12 +2,7 @@ import { readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { ProjectType, cliStoriesTargetPath } from 'storybook/internal/cli';
-import {
-  SupportedBuilder,
-  SupportedFramework,
-  SupportedLanguage,
-  SupportedRenderer,
-} from 'storybook/internal/types';
+import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule.ts';
 
@@ -19,12 +14,8 @@ export default defineGeneratorModule({
     framework: SupportedFramework.REACT_NATIVE_WEB_VITE,
     builderOverride: SupportedBuilder.VITE,
   },
-  configure: async (packageManager, { language }) => {
-    // Add prop-types dependency if not using TypeScript
+  configure: async () => {
     const extraPackages = ['vite', 'react-native-web'];
-    if (language === SupportedLanguage.JAVASCRIPT) {
-      extraPackages.push('prop-types');
-    }
 
     return {
       extraPackages,

@@ -1,11 +1,18 @@
-import PropTypes from 'prop-types';
-
 import './button.css';
 
-/** Primary UI component for user interaction */
+/**
+ * Primary UI component for user interaction
+ *
+ * @param {object} props
+ * @param {boolean} [props.primary=false] Is this the principal call to action on the page?
+ * @param {string} [props.backgroundColor] What background color to use
+ * @param {'small' | 'medium' | 'large'} [props.size='medium'] How large should the button be?
+ * @param {string} props.label Button contents
+ * @param {() => void} [props.onClick] Optional click handler
+ */
 export const Button = ({
   primary = false,
-  backgroundColor = null,
+  backgroundColor,
   size = 'medium',
   label,
   ...props
@@ -21,17 +28,4 @@ export const Button = ({
       {label}
     </button>
   );
-};
-
-Button.propTypes = {
-  /** Is this the principal call to action on the page? */
-  primary: PropTypes.bool,
-  /** What background color to use */
-  backgroundColor: PropTypes.string,
-  /** How large should the button be? */
-  size: PropTypes.oneOf(['small', 'medium', 'large']),
-  /** Button contents */
-  label: PropTypes.string.isRequired,
-  /** Optional click handler */
-  onClick: PropTypes.func,
 };

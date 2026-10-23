@@ -1,3 +1,45 @@
+## 11.0.0-alpha.8
+
+- Addon-Docs: Prevent source transform from being applied twice on docs pages - [#36061](https://github.com/storybookjs/storybook/pull/36061), thanks @webdevsamran!
+- Angular: Read Component Metadata From Ivy Declarations - [#36780](https://github.com/storybookjs/storybook/pull/36780), thanks @dvmhmdsd!
+- Builder Vite: Report silent vite config discovery misses with a named warning - [#36788](https://github.com/storybookjs/storybook/pull/36788), thanks @obvious-autobuild!
+- Builder-Vite: Write the full bundler graph to preview-stats.json - [#36345](https://github.com/storybookjs/storybook/pull/36345), thanks @codykaup!
+- CLI: Keep hyperlinks out of piped output - [#36916](https://github.com/storybookjs/storybook/pull/36916), thanks @valentinpalkovic!
+- CLI: Preserve pnpm terminal for install confirmation - [#36928](https://github.com/storybookjs/storybook/pull/36928), thanks @valentinpalkovic!
+- CLI: Resolve Pnpm Catalog Ranges in Framework Detection - [#36929](https://github.com/storybookjs/storybook/pull/36929), thanks @valentinpalkovic!
+- CLI: SB-2390 Gate the SvelteKit 3 floor behind @storybook/sveltekit - [#36965](https://github.com/storybookjs/storybook/pull/36965), thanks @obvious-autobuild!
+- CSF Tools: Complete the public API from the ten ecosystem ports - [#36947](https://github.com/storybookjs/storybook/pull/36947), thanks @kasperpeulen!
+- CSF: Run csf-tools on OXC instead of Babel - [#36613](https://github.com/storybookjs/storybook/pull/36613), thanks @EastonShin!
+- Core: Exempt chromatic from release-age gates alongside the Chromatic addon - [#36910](https://github.com/storybookjs/storybook/pull/36910), thanks @valentinpalkovic!
+- Core: Exit 1 when a prompt aborts or stdin ends mid-run - [#36823](https://github.com/storybookjs/storybook/pull/36823), thanks @obvious-autobuild!
+- Core: Keep the module graph reverse index off the server channel - [#36815](https://github.com/storybookjs/storybook/pull/36815), thanks @jackeddisciple!
+- Core: Let one-shot commands exit while open-service waits for sync replies - [#36861](https://github.com/storybookjs/storybook/pull/36861), thanks @EastonShin!
+- Core: Move save-story, docs snippets and the mock rewrite onto the new csf-tools - [#36948](https://github.com/storybookjs/storybook/pull/36948), thanks @kasperpeulen!
+- Core: Skip TypeScript loader hook registration under Jest - [#36790](https://github.com/storybookjs/storybook/pull/36790), thanks @obvious-autobuild!
+- Manager: Align native control colors with selected theme - [#36877](https://github.com/storybookjs/storybook/pull/36877), thanks @naveedsajjdawan!
+- Manager: Delete v10.3 tag filters from local storage - [#36909](https://github.com/storybookjs/storybook/pull/36909), thanks @valentinpalkovic!
+- Manager: Improve UI stability on onboarding checklist - [#36341](https://github.com/storybookjs/storybook/pull/36341), thanks @Sidnioulz!
+- Manager: Type index titles by their contents - [#36659](https://github.com/storybookjs/storybook/pull/36659), thanks @valentinpalkovic!
+- Next.js: Prefix the hash of an object href with # in the next/link mocks - [#36967](https://github.com/storybookjs/storybook/pull/36967), thanks @fixfon!
+- PNPM: Preapprove esbuild postinstall when possible - [#36758](https://github.com/storybookjs/storybook/pull/36758), thanks @Sidnioulz!
+- Preview API: Keep nested globals when restoring them from the URL - [#36976](https://github.com/storybookjs/storybook/pull/36976), thanks @spokodev!
+- React renderer: Prebundle react so Vitest browser mode can link React's default export - [#36824](https://github.com/storybookjs/storybook/pull/36824), thanks @obvious-autobuild!
+- React: Alias preview React from the renderer preset - [#36841](https://github.com/storybookjs/storybook/pull/36841), thanks @ndelangen!
+- React: Keep react-docgen-typescript JSDoc tags in the components manifest - [#36857](https://github.com/storybookjs/storybook/pull/36857), thanks @smg99!
+- React: Parse each tsconfig once per components manifest run - [#36828](https://github.com/storybookjs/storybook/pull/36828), thanks @ump45nose!
+- Svelte: Accept preview.meta() in Svelte CSF files - [#36691](https://github.com/storybookjs/storybook/pull/36691), thanks @JReinhold!
+- Svelte: Add CSF factories with definePreview - [#36669](https://github.com/storybookjs/storybook/pull/36669), thanks @JReinhold!
+- Svelte: Add server-side docgen and story snippets - [#36763](https://github.com/storybookjs/storybook/pull/36763), thanks @valentinpalkovic!
+- Svelte: Extend a story of the same file with the extend prop in Svelte CSF - [#36964](https://github.com/storybookjs/storybook/pull/36964), thanks @JReinhold!
+- Svelte: Migrate Svelte CSF files to CSF factories and run the Svelte sandboxes with them - [#36702](https://github.com/storybookjs/storybook/pull/36702), thanks @JReinhold!
+- Svelte: Remove deprecated parameters.component path - [#36813](https://github.com/storybookjs/storybook/pull/36813), thanks @ndelangen!
+- TanstackReact: Fix accross typo in path-utils comment - [#36634](https://github.com/storybookjs/storybook/pull/36634), thanks @obvious-autobuild!
+- WC: Disable control for cssstate - [#36983](https://github.com/storybookjs/storybook/pull/36983), thanks @huang-julien!
+- WC: Keep properties named like an unrelated attribute - [#36862](https://github.com/storybookjs/storybook/pull/36862), thanks @huang-julien!
+- WC: Normalize multiline type text in WC arg type parsing - [#36805](https://github.com/storybookjs/storybook/pull/36805), thanks @huang-julien!
+- WC: Read WC meta.component through a spread of a local meta object - [#36812](https://github.com/storybookjs/storybook/pull/36812), thanks @huang-julien!
+- WC: Skip undefined and null args in the web components default render - [#36806](https://github.com/storybookjs/storybook/pull/36806), thanks @huang-julien!
+
 ## 11.0.0-alpha.7
 
 - Addon Themes: Declare the package as an ES module - [#36721](https://github.com/storybookjs/storybook/pull/36721), thanks @ump45nose!

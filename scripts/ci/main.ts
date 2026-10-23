@@ -103,7 +103,7 @@ function generateConfig(selected: Workflow[], baseRef: string) {
             ? {
                 [t.id]: {
                   requires: t.requires.map((r) =>
-                    t.requiresTerminal ? { [r.id]: 'terminal' } : r.id
+                    t.runsEvenIfRequirementsFail ? { [r.id]: 'terminal' } : r.id
                   ),
                 },
               }

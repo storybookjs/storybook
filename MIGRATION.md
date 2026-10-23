@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Theming imports](#theming-imports)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging)
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
@@ -625,6 +626,23 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 10.x to 11.0.0
+
+### Theming imports
+
+End users who only create a theme keep `import { create, themes } from 'storybook/theming'`. That module is the same as `storybook/theming/create`. `ThemeVars` and `ThemeVarsPartial` are exported there too.
+
+```ts
+import { create, themes, type ThemeVars, type ThemeVarsPartial } from 'storybook/theming';
+```
+
+Addon authors who build manager UI or docs blocks move Emotion and theme-data imports to `storybook/theming/emotion`. That is the supported entry for `styled`, `css`, `jsx`, `useTheme`, `ThemeProvider`, `color`, `typography`, `background`, `convert`, `ensure`, and the other theme types.
+
+```diff
+-import { styled, css, jsx, useTheme, ThemeProvider, color } from 'storybook/theming';
++import { styled, css, jsx, useTheme, ThemeProvider, color } from 'storybook/theming/emotion';
+```
+
+In the manager, `storybook/theming` still resolves to the Emotion implementation at runtime, so already-published manager addons keep running. Update the import anyway. TypeScript only knows `create`, `themes`, `ThemeVars`, and `ThemeVarsPartial` on `storybook/theming`, so importing `styled`, `css`, `jsx`, `useTheme`, or the other Emotion and theme-data helpers from that module is a type error. Preview and docs blocks have no runtime alias, so the same old import fails there at runtime.
 
 ### `storybook dev` now blocks remote iframe embedding
 

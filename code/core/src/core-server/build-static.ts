@@ -32,6 +32,7 @@ import { writeManifests } from './utils/manifests/manifests.ts';
 import { extractStorybookMetadata } from './utils/metadata.ts';
 import { outputStats } from './utils/output-stats.ts';
 import { summarizeIndex } from './utils/summarizeIndex.ts';
+import { createTurbosnapOutputFinalizer } from './utils/turbosnap-output.ts';
 
 export type BuildStaticStandaloneOptions = CLIOptions &
   LoadOptions &
@@ -53,6 +54,12 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   }
   await rm(options.outputDir, { recursive: true, force: true }).catch(() => {});
   await mkdir(options.outputDir, { recursive: true });
+
+  const statsOption = options.webpackStatsJson || options.statsJson;
+  const statsDirectory = statsOption === true ? options.outputDir : statsOption;
+  const finalizeOutput = statsDirectory
+    ? await createTurbosnapOutputFinalizer(options.configDir, options.outputDir, statsDirectory)
+    : undefined;
 
   const config = await loadMainConfig(options);
   const { framework } = config;
@@ -132,6 +139,8 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   };
 
   const effects: Promise<void>[] = [];
+  let projectMetadata: string | undefined;
+  let componentsMetadata: Awaited<ReturnType<typeof writeManifests>>;
 
   global.FEATURES = features;
   await applyServicesPresetOnce(presets);
@@ -165,7 +174,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
         if (shouldWriteManifests) {
           // Ref-based components.json reads docgen snapshots from outputDir/services/ — manifests
           // must run after open-service static files are written.
-          await writeManifests(options.outputDir, presets);
+          componentsMetadata = await writeManifests(options.outputDir, presets);
         }
       })()
     );
@@ -177,7 +186,11 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   if (!core?.disableProjectJson) {
     effects.push(
-      extractStorybookMetadata(join(options.outputDir, 'project.json'), options.configDir)
+      extractStorybookMetadata(join(options.outputDir, 'project.json'), options.configDir).then(
+        (serialized) => {
+          projectMetadata = serialized;
+        }
+      )
     );
   }
 
@@ -188,20 +201,15 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   logger.info('Building preview..');
 
   const startTime = process.hrtime();
-  await Promise.all([
+  const [previewStats] = await Promise.all([
     previewBuilder
       .build({
         startTime,
         options: fullOptions,
       })
-      .then(async (previewStats) => {
+      .then((stats) => {
         logger.trace({ message: 'Preview built', time: process.hrtime(startTime) });
-
-        const statsOption = options.webpackStatsJson || options.statsJson;
-        if (statsOption) {
-          const target = statsOption === true ? options.outputDir : statsOption;
-          await outputStats(target, previewStats);
-        }
+        return stats;
       })
       .catch((error) => {
         logger.error('Failed to build the preview');
@@ -210,6 +218,12 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       }),
     ...effects,
   ]);
+  if (statsDirectory && finalizeOutput) {
+    await outputStats(
+      statsDirectory,
+      await finalizeOutput(previewStats, projectMetadata, componentsMetadata)
+    );
+  }
 
   // Now the code has successfully built, we can count this as a 'build' event.
   // NOTE: we don't send the 'build' event for test runs as we want to be as fast as possible.

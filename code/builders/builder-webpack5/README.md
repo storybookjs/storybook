@@ -11,3 +11,35 @@ export default {
 ```
 
 Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=readme).
+
+## TurboSnap output evidence
+
+Production preview stats include optional output evidence for TurboSnap 2. The evidence fingerprints
+final emitted chunks, including loader and plugin effects, while preserving the existing module stats.
+Core verifies the recorded bytes after the build finishes and accounts for remaining output files.
+
+Story fingerprints cover whole reachable chunks. Shared code placed in a story chunk can therefore
+widen coverage to another story. Global preview imports and scripts or preloads in `iframe.html` keep
+their reachable chunks globally covered. Only the unchanged generated Storybook story loader is
+allowed to introduce story-scoped imports.
+
+The producer normalizes only validated generated chunk URL hashes in Webpack's runtime, their owned
+source-map references, and parsed HTML resource references. Unrecognized runtime formats, inline
+runtimes mixed with application code, ambiguous chunk identities, and unsupported source-map shapes
+produce incomplete evidence. A final file mutation also invalidates the evidence. TurboSnap then
+retains its existing conservative behavior.
+
+Code that references `currentScript` retains its chunk filename and the filenames of transitive
+importers in global coverage, including plugins that add script URL observations in a banner. This
+is conservative when Webpack automatically derives its public path. Output evidence does not prove
+arbitrary JavaScript cannot inspect other resource URLs through reflection or external runtime data.
+
+Run the repeatable React and Next.js build matrix from the repository root after compiling the
+packages:
+
+```sh
+yarn node scripts/turbosnap-output-matrix.ts --framework react-webpack5
+yarn node scripts/turbosnap-output-matrix.ts --framework nextjs
+```
+
+Pass `--cli /absolute/path/to/compiled-cli.js` to validate each fresh build with the CLI manifest command.

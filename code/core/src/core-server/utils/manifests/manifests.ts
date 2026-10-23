@@ -312,13 +312,18 @@ async function writeDocgenServerManifests(
       resolveDocsManifestRefs(docsManifest, load, fullTransform),
     ]);
 
-    await writeFile(
-      join(manifestsDir, 'components.html'),
-      renderComponentsManifest(
-        buildComponentsManifest(componentsWithDocs, resolveDocgenMeta(manifests, durationMs)),
-        resolvedDocsManifest
-      )
+    const source = renderComponentsManifest(
+      buildComponentsManifest(componentsWithDocs, resolveDocgenMeta(manifests, durationMs)),
+      resolvedDocsManifest
     );
+    await writeFile(join(manifestsDir, 'components.html'), source);
+    return {
+      source,
+      canonical: renderComponentsManifest(
+        buildComponentsManifest(componentsWithDocs, resolveDocgenMeta(manifests, 0)),
+        resolvedDocsManifest
+      ),
+    };
   }
 }
 
@@ -355,13 +360,12 @@ export async function writeManifests(outputDir: string, presets: Presets) {
     const docsManifest = isDocsManifest(manifests.docs) ? manifests.docs : undefined;
 
     if (isDocgenServerManifestMode(features)) {
-      await writeDocgenServerManifests(
+      return await writeDocgenServerManifests(
         outputDir,
         manifests,
         getManifestComponentIds(manifestEntries),
         docsManifest
       );
-      return;
     }
 
     await writeLegacyManifests(outputDir, manifests, docsManifest);

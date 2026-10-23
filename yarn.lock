@@ -33650,6 +33650,7 @@ __metadata:
     oxc-resolver: "npm:11.21.2"
     p-limit: "npm:^7.2.0"
     package-manager-detector: "npm:^1.1.0"
+    parse5: "npm:^8.0.0"
     pathe: "npm:^1.1.2"
     picocolors: "npm:^1.1.0"
     picomatch: "npm:^4.0.5"

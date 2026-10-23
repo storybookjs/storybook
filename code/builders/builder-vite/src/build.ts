@@ -2,7 +2,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
-import type { InlineConfig, Plugin, PluginOption } from 'vite';
+import type { InlineConfig } from 'vite';
 
 import { createViteLogger } from './logger.ts';
 import type { WebpackStatsPlugin } from './plugins/index.ts';
@@ -10,16 +10,6 @@ import { hasVitePlugins } from './utils/has-vite-plugins.ts';
 import { bundlerOptionsKey } from './utils/vite-features.ts';
 import { withoutVitePlugins } from './utils/without-vite-plugins.ts';
 import { commonConfig } from './vite-config.ts';
-import { createConfigEvidence } from './turbosnap-config.ts';
-
-async function plugins(options: PluginOption[] = []): Promise<Plugin[]> {
-  const resolved = await Promise.all(options);
-  return (
-    await Promise.all(
-      resolved.map((option) => (Array.isArray(option) ? plugins(option) : option ? [option] : []))
-    )
-  ).flat();
-}
 
 function findPlugin(config: InlineConfig, name: string) {
   return config.plugins?.find((p) => p && 'name' in p && p.name === name);
@@ -29,12 +19,7 @@ export async function build(options: Options) {
   const { build: viteBuild, mergeConfig } = await import('vite');
   const { presets } = options;
 
-  const configEvidence =
-    options.statsJson || options.webpackStatsJson ? await createConfigEvidence(options) : undefined;
-  const config = await commonConfig(options, 'build', configEvidence);
-  const builtinPlugins = configEvidence?.eligible
-    ? new Set(await plugins(config.plugins))
-    : undefined;
+  const config = await commonConfig(options, 'build');
 
   config.build = mergeConfig(config, {
     build: {
@@ -59,12 +44,6 @@ export async function build(options: Options) {
   } as InlineConfig).build;
 
   const finalConfig = (await presets.apply('viteFinal', config, options)) as InlineConfig;
-  if (
-    builtinPlugins &&
-    (await plugins(finalConfig.plugins)).some((plugin) => !builtinPlugins.has(plugin))
-  ) {
-    configEvidence?.reject('custom-vite-plugin');
-  }
 
   // Add a plugin to enforce key build properties that may be overwritten
   // by framework plugins like Nitro or Adonis. We run in `enforce: 'post'`

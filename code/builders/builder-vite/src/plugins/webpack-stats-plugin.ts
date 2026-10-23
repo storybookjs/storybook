@@ -5,7 +5,7 @@ import type { BuilderStats } from 'storybook/internal/types';
 import { isAbsolute, relative } from 'pathe';
 import type { Plugin } from 'vite';
 
-import type { ConfigEvidence } from '../turbosnap-config.ts';
+import type { ViteOutputEvidence } from '../turbosnap-output.ts';
 
 /*
  * Reason, Module are copied from chromatic types
@@ -23,7 +23,7 @@ interface Module {
 
 type WebpackStatsPluginOptions = {
   workingDir: string;
-  configEvidence?: ConfigEvidence;
+  outputEvidence?: ViteOutputEvidence;
 };
 
 const ROLLUP_VIRTUAL_PREFIX = '\0';
@@ -66,7 +66,7 @@ export type WebpackStatsPlugin = Plugin & { storybookGetStats: () => BuilderStat
 
 export function pluginWebpackStats({
   workingDir,
-  configEvidence,
+  outputEvidence,
 }: WebpackStatsPluginOptions): WebpackStatsPlugin {
   const importersById = new Map<string, Set<string>>();
 
@@ -86,14 +86,20 @@ export function pluginWebpackStats({
     // We want this to run after the vite build plugins (https://vitejs.dev/guide/api-plugin.html#plugin-ordering)
     enforce: 'post',
     configResolved(config) {
-      configEvidence?.resolved(config);
+      outputEvidence?.resolved(config);
     },
     moduleParsed(mod) {
-      configEvidence?.module(mod.id);
+      outputEvidence?.module(mod);
       record(mod.id);
       for (const depId of mod.importedIds.concat(mod.dynamicallyImportedIds)) {
         record(depId, mod.id);
       }
+    },
+    writeBundle: {
+      order: 'post',
+      async handler(_options, bundle) {
+        await outputEvidence?.bundle(bundle);
+      },
     },
 
     storybookGetStats() {
@@ -117,9 +123,8 @@ export function pluginWebpackStats({
       }));
       const stats = {
         modules,
-        ...(configEvidence ? { turbosnapConfig: configEvidence.finish(modules) } : {}),
       };
-      return { ...stats, toJson: () => stats };
+      return { ...stats, turbosnapOutput: outputEvidence?.finish(), toJson: () => stats };
     },
   };
 }

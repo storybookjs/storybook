@@ -12,9 +12,6 @@ import { viteMockPlugin } from './plugins/vite-mock/plugin.ts';
 import { previewRuntimePath } from './utils/preview-runtime-path.ts';
 import { resolveVitePublicDir } from './vite-config.ts';
 
-export const experimental_turbosnapPresetFiles = (_: string[], { presetsList }: Options) =>
-  presetsList?.map(({ name }) => name) ?? [];
-
 export const optimizeViteDeps: string[] = [previewRuntimePath];
 
 /**

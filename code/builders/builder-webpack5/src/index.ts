@@ -21,6 +21,7 @@ import webpackDevMiddleware from 'webpack-dev-middleware';
 import webpackHotMiddleware from 'webpack-hot-middleware';
 
 import { createWebpackChangeDetectionAdapter } from './change-detection-adapter/index.ts';
+import { createWebpackOutputEvidence } from './turbosnap-output.ts';
 
 export * from './types.ts';
 export * from './preview/virtual-module-mapping.ts';
@@ -287,6 +288,14 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     });
   }
 
+  let outputEvidence: Awaited<ReturnType<typeof createWebpackOutputEvidence>> | undefined;
+  compiler.hooks.emit.tapPromise(
+    { name: 'StorybookTurbosnapOutput', stage: Number.MAX_SAFE_INTEGER },
+    async (compilation) => {
+      outputEvidence = await createWebpackOutputEvidence(compilation, options);
+    }
+  );
+
   const webpackCompilation = new Promise<Stats>((succeed, fail) => {
     compiler.run((error, stats) => {
       if (error) {
@@ -334,6 +343,10 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
   });
 
   const [webpackCompilationOutput] = await Promise.all([webpackCompilation, previewFiles]);
+
+  Object.assign(webpackCompilationOutput, {
+    turbosnapOutput: outputEvidence,
+  });
 
   return webpackCompilationOutput;
 };

@@ -423,7 +423,16 @@ describe('manifests', () => {
         }),
       });
 
-      await writeManifests('/output', mockPresets);
+      const clock = vi.spyOn(performance, 'now').mockReturnValueOnce(100).mockReturnValue(1350);
+      const diagnostic = await writeManifests('/output', mockPresets);
+      clock.mockRestore();
+      expect(diagnostic?.source).toBe(
+        vol.readFileSync('/output/manifests/components.html', 'utf8')
+      );
+      expect(diagnostic?.source).toContain('<strong>1.3s</strong>');
+      expect(diagnostic?.canonical).toBe(
+        diagnostic?.source.replace('<strong>1.3s</strong>', '<strong>0.0s</strong>')
+      );
 
       const files = vol.toJSON();
       const componentsJson = JSON.parse(files['/output/manifests/components.json'] as string);

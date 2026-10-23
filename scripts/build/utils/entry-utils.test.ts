@@ -49,9 +49,7 @@ describe('createPackageMatcher', () => {
     expect(isCoreTypesExternal('typescript')).toBe(true);
     expect(isCoreTypesExternal('node:path')).toBe(true);
     expect(isCoreTypesExternal('path')).toBe(true);
-    expect(isCoreTypesExternal('/repo/node_modules/react-syntax-highlighter/dist/index.d.ts')).toBe(
-      true
-    );
+    expect(isCoreTypesExternal('/repo/node_modules/ast-types/lib/main.d.ts')).toBe(true);
     expect(isCoreTypesExternal('@babel/types')).toBe(false);
   });
 });

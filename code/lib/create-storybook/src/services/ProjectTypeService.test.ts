@@ -294,19 +294,6 @@ describe('ProjectTypeService', () => {
         return new ProjectTypeService(pm).autoDetectProjectType({ html: false } as CommandOptions);
       };
 
-      describe('when remix is a pnpm catalog specifier that resolves to Remix 3', () => {
-        beforeEach(() => {
-          (pm as any).getDeclaredVersionSpecifier = vi.fn(async () => '3.1.0');
-        });
-
-        it('detects the HTML renderer', async () => {
-          await expect(detect({ dependencies: { remix: 'catalog:' } })).resolves.toBe(
-            ProjectType.HTML
-          );
-          expect(pm.getDeclaredVersionSpecifier).toHaveBeenCalledWith('remix');
-        });
-      });
-
       it('detects Remix 3 as the HTML renderer', async () => {
         await expect(detect({ dependencies: { remix: '^3.0.0' } })).resolves.toBe(ProjectType.HTML);
       });

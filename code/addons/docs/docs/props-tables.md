@@ -125,7 +125,6 @@ const argTypes = {
   label: {
     name: 'label',
     type: { name: 'string', required: false },
-    defaultValue: 'Hello',
     description: 'demo description',
     table: {
       type: { summary: 'string' },
@@ -138,7 +137,7 @@ const argTypes = {
 }
 ```
 
-In this `ArgTypes` data structure, `name`, `type`, `defaultValue`, and `description` are standard fields in all `ArgTypes` (analogous to `PropTypes` in React). The `table` and `control` fields are addon-specific annotations. So, for example, the `table` annotation provides extra information to customize how `label` gets rendered, and the `control` annotation provides extra information for the control for editing the property.
+In this `ArgTypes` data structure, `name`, `type`, and `description` are standard fields in all `ArgTypes` (analogous to `PropTypes` in React). The `table` and `control` fields are addon-specific annotations. So, for example, the `table` annotation provides extra information to customize how `label` gets rendered, and the `control` annotation provides extra information for the control for editing the property.
 
 As a user, you can customize the prop table by selectively overriding these values. Consider the following modification to `Button.stories.js` from above:
 
@@ -167,7 +166,6 @@ const argTypes = {
   label: {
     name: 'label',
     type: { name: 'string', required: false },
-    defaultValue: 'Hello',
     description: 'overwritten description',
     table: {
       type: { summary: 'something short', detail: 'something really really long' },

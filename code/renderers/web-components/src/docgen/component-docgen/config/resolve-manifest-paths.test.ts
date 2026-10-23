@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -7,10 +7,7 @@ import { fs as memfs, vol } from 'memfs';
 
 import { findFilesUp } from 'storybook/internal/common';
 
-import {
-  MissingCustomElementsManifestError,
-  resolveManifestPaths,
-} from './resolve-manifest-paths.ts';
+import { resolveManifestPaths } from './resolve-manifest-paths.ts';
 
 vi.mock('node:fs', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
@@ -18,7 +15,6 @@ vi.mock('storybook/internal/common', { spy: true });
 beforeEach(() => {
   vi.clearAllMocks();
   vol.reset();
-  vi.mocked(existsSync).mockImplementation(memfs.existsSync);
   vi.mocked(findFilesUp).mockReturnValue([]);
   vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as typeof readFileSync);
 });
@@ -90,16 +86,11 @@ describe('resolveManifestPaths', () => {
     expect(resolveManifestPaths('/workspace/.storybook', {})).toEqual([]);
   });
 
-  it('throws when an explicit framework option path does not exist', () => {
+  it('returns the resolved path when an explicit framework option path does not exist', () => {
     const path = resolve('/workspace/.storybook/missing.json');
 
-    expect(() =>
+    expect(
       resolveManifestPaths('/workspace/.storybook', { customElementsManifest: 'missing.json' })
-    ).toThrowError(MissingCustomElementsManifestError);
-    expect(() =>
-      resolveManifestPaths('/workspace/.storybook', { customElementsManifest: 'missing.json' })
-    ).toThrow(
-      `The customElementsManifest framework option points to a file that does not exist: ${path}`
-    );
+    ).toEqual([path]);
   });
 });

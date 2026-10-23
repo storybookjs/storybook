@@ -1,0 +1,13 @@
+{
+  "name": "claude-plugin",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "targets": {
+    "compile": {
+      "command": "node ./scripts/render-codex-skills.ts",
+      "options": { "cwd": "{projectRoot}" },
+      "outputs": ["{workspaceRoot}/code/lib/codex-plugin/plugins/storybook/skills"]
+    }
+  },
+  "tags": ["library"]
+}

@@ -49,6 +49,11 @@ if (dtsResolver !== 'tsc' && dtsResolver !== 'oxc' && dtsResolver !== 'hybrid') 
 }
 const resolvedDtsResolver: 'tsc' | 'oxc' | 'hybrid' = dtsResolver;
 
+if (dtsBundler !== 'rolldown-tsgo' && dtsBundler !== 'rolldown') {
+  throw new Error(`Invalid --dts-bundler: ${dtsBundler} (expected 'rolldown-tsgo' or 'rolldown')`);
+}
+const resolvedDtsBundler: 'rolldown-tsgo' | 'rolldown' = dtsBundler;
+
 async function run() {
   const DIR_ROOT = join(import.meta.dirname, '..', '..');
   const DIR_CWD = cwd ? join(DIR_ROOT, cwd) : process.cwd();
@@ -97,19 +102,12 @@ async function run() {
     // The d.ts toolchain (typescript, rolldown, rolldown-plugin-dts) is imported lazily: dev
     // builds never need it, and in production its import no longer delays the esbuild start.
     measure(async () => {
-      if (!isProduction) {
-        return;
-      }
-      const bundler = entry.dtsBundler ?? dtsBundler;
-      if (bundler === 'rolldown' || bundler === 'rolldown-tsgo') {
+      if (isProduction) {
         const { generateTypesFiles } = await import('./utils/generate-types-rolldown.ts');
         await generateTypesFiles(DIR_CWD, entry, {
-          tsgo: bundler === 'rolldown-tsgo',
+          tsgo: (entry.dtsBundler ?? resolvedDtsBundler) === 'rolldown-tsgo',
           resolver: resolvedDtsResolver,
         });
-      } else {
-        const { generateTypesFiles } = await import('./utils/generate-types.ts');
-        await generateTypesFiles(DIR_CWD, entry);
       }
     }),
   ]);

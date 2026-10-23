@@ -6,7 +6,7 @@ import { deprecate } from 'storybook/internal/client-logger';
 import { sanitize } from 'storybook/internal/csf';
 import type { Addon_RenderOptions } from 'storybook/internal/types';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { FlexBar } from '../Bar/Bar.tsx';
 import { TabButton } from './Button.tsx';
@@ -229,7 +229,6 @@ function TabsImpl({
             const indexId = `index-${index}`;
 
             return (
-              // oxlint-disable-next-line jsx-a11y/interactive-supports-focus -- deprecated code, no need to maintain it
               <TabButton
                 id={`tabbutton-${sanitize(id) ?? indexId}`}
                 ref={(ref: HTMLButtonElement) => {

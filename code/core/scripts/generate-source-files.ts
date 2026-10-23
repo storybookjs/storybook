@@ -158,7 +158,8 @@ async function generateFrameworksFile(): Promise<void> {
 
 const localAlias = {
   'storybook/internal': join(CORE_ROOT_DIR, 'src'),
-  'storybook/theming': join(CORE_ROOT_DIR, 'src', 'theming'),
+  'storybook/theming/create': join(CORE_ROOT_DIR, 'src', 'theming', 'create.ts'),
+  'storybook/theming/emotion': join(CORE_ROOT_DIR, 'src', 'theming', 'emotion.ts'),
   'storybook/test': join(CORE_ROOT_DIR, 'src', 'test'),
   'storybook/test/preview': join(CORE_ROOT_DIR, 'src', 'test', 'preview'),
   'storybook/actions': join(CORE_ROOT_DIR, 'src', 'actions'),
@@ -179,7 +180,9 @@ async function generateExportsFile(): Promise<void> {
   for (const mod of globalPackages) {
     const key = mod.replace(/[/@]/g, '_');
     input[key] = `\0${key}`;
-    virtualModules[`\0${key}`] = `export * from '${mod}'`;
+    // The storybook/theming manager global is the emotion shim. The package export is create.
+    const source = mod === 'storybook/theming' ? 'storybook/theming/emotion' : mod;
+    virtualModules[`\0${key}`] = `export * from '${source}'`;
   }
 
   const bundle = await rolldown({

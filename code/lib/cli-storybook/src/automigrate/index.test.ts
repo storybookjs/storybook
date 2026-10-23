@@ -25,6 +25,7 @@ vi.mock('storybook/internal/node-logger', () => ({
     info: vi.fn(),
     debug: vi.fn(),
     step: vi.fn(),
+    SYMBOLS: { success: '✔', error: '✕' },
   },
   prompt: {
     confirm: vi.fn(),
@@ -157,7 +158,7 @@ describe('runFixes', () => {
     });
     expect(run1).toHaveBeenCalledWith(
       expect.objectContaining({
-        dryRun,
+        files: expect.objectContaining({ edit: expect.any(Function) }),
         mainConfigPath,
         packageManager,
         result: {
@@ -166,6 +167,23 @@ describe('runFixes', () => {
         skipInstall,
       })
     );
+  });
+
+  it('skips an opt-in fix with --yes unless the user named it', async () => {
+    const optIn = { ...fixes[0], id: 'opt-in', defaultSelected: false };
+
+    const unnamed = await runFixes({ ...common, fixes: [optIn], storybookVersion: '7.0.0' });
+    expect(unnamed.fixResults).toEqual({ 'opt-in': 'skipped' });
+    expect(run1).not.toHaveBeenCalled();
+
+    const named = await runFixes({
+      ...common,
+      fixes: [optIn],
+      fixId: 'opt-in',
+      storybookVersion: '7.0.0',
+    });
+    expect(named.fixResults).toEqual({ 'opt-in': 'succeeded' });
+    expect(run1).toHaveBeenCalled();
   });
 
   it('should fail if an error is thrown by migration', async () => {

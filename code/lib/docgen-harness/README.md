@@ -66,14 +66,17 @@ src/
 ├── web-components/
 │   ├── web-components-osa-baselines.test.ts
 │   ├── web-components-baselines.test.ts
+│   ├── web-components-story-docs.test.ts
 │   ├── web-components-legacy-gaps.test.ts
 │   ├── web-components-render.test.ts
+│   ├── story-docs/
 │   └── __testfixtures__/<case>/  # component, input.stories.ts, custom-elements.json,
 │                                 # optional custom-elements.v2.json/custom-elements.wca.json,
 │                                 # argtypes.snapshot, description.snapshot, optional v2-/wca- prefixed snapshots,
-│                                 # osa-argtypes.snapshot, osa-payload.snapshot,
+│                                 # osa-argtypes.snapshot, osa-payload.snapshot, osa-api-description.snapshot,
 │                                 # optional osa-v2-argtypes.snapshot and osa-v2-payload.snapshot,
-│                                 # snippet-<story>.snapshot
+│                                 # snippet-<story>.snapshot, osa-snippet-<story>.snapshot,
+│                                 # server-snippet-<story>.snapshot, story-docs.payload.snapshot
 └── perf/                         # the performance bench, see below
     ├── PERF-METHODOLOGY.md       # the measurement contract
     ├── docgen-perf/              # per-engine latency and memory suite, plus its engines/ and generators/
@@ -91,6 +94,8 @@ src/
   Such a stub accepts a candidate that adds populated structure (an empty enum/union/object is not an improvement) or resolves it to the scalar or single literal it already named; an unrelated scalar or literal is a lateral change and fails.
   The markers that record nothing at all accept any candidate: `empty-enum`, `undefined`, and the empty string from today's Angular and Vue spellings, plus Web Components records with an undefined sbType `name` or a structural sbType `name` without a `value`.
   The legacy Web Components extractor records manifest type text as the sbType `name`, so an unknown name is read as `{ name: 'other', value: <text> }` and compared by the same stub-resolution rule.
+  Under `legacyManifestRuntime`, scalar text requires the same scalar and literal-union text requires an enum that keeps every member.
+  Same-named matches also require the same category, so a lost attribute is not rescued by a same-named slot.
   A resolution the rule cannot recognize (legacy `TSFunctionType` becoming a `function` sbType, say) fails rather than guessing; re-record and review the diff.
   A recorded `table.type.summary` must survive (dropping it is a violation), but its text may change freely outside `strictTable`.
   `required`, `table.category`, `jsDocTags`, `control`/`action`, and description/default contents are deliberately not compared (except `required` under `strictTable`); each would lock in a recorded lie (#28706) or engine-specific vocabulary.
@@ -114,6 +119,8 @@ src/
 The comparator machine-checks a deliberate subset: baseline arg names, description presence, default presence, `table.type.summary` presence, and type fidelity for argTypes; represented binding names, root-element identity, and bare-attribute survival for Angular snippets.
 Everything else - description/default/summary text, `table.category`, `control`/`action`, per-arg `jsDocTags`, added args - is caught only by the byte-exact snapshot diffs reviewed at `-u` time, or by the sandbox gate's `change` findings.
 Two flags scope trust to where the baseline earns it: `legacyBaseline` (only on legs whose baseline is a legacy compodoc recording) waives the raw `false`/`NaN`/`null` defaults that pipeline invents, and `strictTable` (only on the ACM self-ratchet, whose baseline the same engine recorded) additionally gates `table.type.summary` text changes and `table.type.required` true->false flips.
+The web-components OSA recorder is the only user of `legacyManifestRuntime`, which waives legacy runtime re-keying and unresolved `void` event types.
+The same recorder is the only user of `waivedArgs`, which accepts losing manifest-hidden members such as private, protected, or static class members.
 The sandbox baseline gate runs in the daily CI tier, so a whole-project regression can merge green and surface up to a day later, detached from the offending PR.
 Known-accepted blind spots: enum members whose quoted and bare spellings collide normalize to the same member (`'"small"'` reads as `small`), and `\r`/`\r\n` in extracted strings are LF-normalized by vitest at write time, so a CR-bearing extraction can never record green (perma-loud, never silent).
 
@@ -146,18 +153,18 @@ Snapshots must stay deterministic: no timestamps, no absolute paths.
 - web-components: one component source plus `input.stories.ts` and `custom-elements.json`.
   Lit TypeScript fixtures include a per-case `tsconfig.json` with decorator settings; vanilla fixtures are plain `.js` and do not need one.
   Every story file keeps the default export's `component` as the target tag name string.
-  Optional hand-written 2.1.0 and WCA manifests live next to the capture and record under a prefix; snippets are not re-recorded for variants because the runtime snippet path does not read the manifest.
+  Optional hand-written 2.1.0, WCA and unflattened manifests live next to the capture and record under a prefix, except the server argTypes of an unflattened manifest, which must equal the capture's; snippets are not re-recorded for variants because the runtime snippet path does not read the manifest.
 
 ### Svelte story formats
 
 The Svelte harness records two snippet paths because Storybook currently has two production sources:
 
-- `snippet-<Story>.snapshot` is produced from `input.stories.svelte` by the published `@storybook/addon-svelte-csf` package pinned in devDependencies (5.1.2).
-  The recorder mounts the composed story and captures the `SNIPPET_RENDERED` channel event emitted by the addon's runtime.
+- `snippet-<Story>.snapshot` is produced from `input.stories.svelte` by Svelte CSF in `@storybook/svelte`.
+  The recorder mounts the composed story and captures the `SNIPPET_RENDERED` channel event emitted by the Svelte CSF runtime.
 - `plain-csf-snippet-<Story>.snapshot` is produced from optional `input.stories.ts` files by the Svelte renderer's legacy `generateSvelteSource(component, args, argTypes, null)` path.
-`story-descriptions.snapshot` records the docs description parameters that addon-svelte-csf creates from JSDoc above `defineMeta` and HTML comments above `<Story>`.
+`story-descriptions.snapshot` records the docs description parameters that Svelte CSF creates from JSDoc above `defineMeta` and HTML comments above `<Story>`.
 
-`svelte-osa-baselines.test.ts` drives the `@storybook/svelte` docgen provider directly in Node, with index entries built by the addon's own indexer from `input.stories.svelte`.
+`svelte-osa-baselines.test.ts` drives the `@storybook/svelte` docgen provider directly in Node, with index entries built by the Svelte CSF indexer from `input.stories.svelte`.
 It records `osa-argtypes.snapshot`, `osa-payload.snapshot`, and `osa-description.snapshot` even while the provider returns nothing, so each provider PR shows its progress as a snapshot diff; `osa-argtypes.snapshot` is ratcheted against its own previous recording.
 Parity with the legacy `argtypes.snapshot` is a per-fixture `it.fails` red marker in the same file: when one turns red, add the fixture to `LEGACY_PARITY`, which makes the legacy comparison a hard requirement for it.
 
@@ -186,6 +193,7 @@ npx -y @custom-elements-manifest/analyzer@0.11.0 analyze --litelement
 ```
 
 Drop `--litelement` for vanilla cases.
+Use `--fast` when capturing `fast-attributes` and `--stencil` when capturing `stencil-props`; copy `.tsx` component sources into the staging directory too.
 Move the emitted `custom-elements.json` back into the fixture directory and make sure `modules[].path` records relative file names only.
 
 ### Manifest shape variants (web-components)
@@ -193,12 +201,23 @@ Move the emitted `custom-elements.json` back into the fixture directory and make
 The default capture stays at CEM 1.0.0 because the analyzer still writes that version.
 The 2.1.0 variant is the same capture plus additive fields (`cssStates`, `readonly`), so a diff between `argtypes.snapshot` and `v2-argtypes.snapshot` shows exactly what a newer manifest buys.
 The WCA variant records the deprecated web-component-analyzer shape that the runtime still accepts.
+`lit-toolkit-shapes/custom-elements.json` additionally carries a hand-added `parsedType` on the `size` member, mirroring the wc-toolkit type-parser plugin output the OSA mapper reads for alias unions.
+The `stencil-props` capture shows that analyzer 0.11.0 emits attributes for Stencil `@Prop` fields without type annotations without adding `type`, does not read the Stencil `reflect` option as `reflects` or `attribute` on the member, and keeps Stencil `render` as a method. The `fast-attributes` capture shows that FAST `@attr({ mode: 'boolean' })` carries no boolean marker beyond the field type, and FAST events appear only through class-level `@fires`.
 
 ### Server-side recorder (web-components)
 
-`web-components-osa-baselines.test.ts` drives the `@storybook/web-components` docgen provider directly in Node. It parses each fixture story file through `loadCsf`, points the provider at the fixture's `custom-elements.json`, and records `osa-argtypes.snapshot`, `osa-description.snapshot`, and `osa-payload.snapshot`; the CEM 2.1.0 variant records `osa-v2-argtypes.snapshot` and `osa-v2-payload.snapshot`.
+`web-components-osa-baselines.test.ts` drives the `@storybook/web-components` docgen provider directly in Node. It parses each fixture story file through `loadCsf`, points the provider at the fixture's `custom-elements.json`, and records `osa-argtypes.snapshot`, `osa-description.snapshot`, `osa-payload.snapshot`, and `osa-api-description.snapshot`; the CEM 2.1.0 variant records `osa-v2-argtypes.snapshot` and `osa-v2-payload.snapshot`.
+`web-components-baselines.test.ts` also runs the renderer's default `render` with the docgen-server flag on for every story without a custom render, and records `osa-snippet-<story>.snapshot`, gated current-or-better against the legacy `snippet-<story>.snapshot`.
 The server recorder records CEM inputs only; the WCA shape is covered by the runtime recorder and rejected on the server path by the renderer's unit tests.
-The `osa-argtypes.snapshot` and `osa-v2-argtypes.snapshot` files are gated against the committed legacy `argtypes.snapshot` and `v2-argtypes.snapshot` files, while `osa-payload.snapshot` and `osa-v2-payload.snapshot` keep the raw declaration slice, summary, renderer, and any error reviewable without duplicating argTypes. `OSA_CLOSED` in `web-components-legacy-gaps.test.ts` is the server-side progress ledger: move a marker there when an OSA mapper fix closes it.
+The `osa-argtypes.snapshot` and `osa-v2-argtypes.snapshot` files are gated against the committed legacy `argtypes.snapshot` and `v2-argtypes.snapshot` files, while `osa-payload.snapshot` and `osa-v2-payload.snapshot` keep the raw declaration slice, summary, renderer, and any error reviewable without duplicating argTypes or the api description.
+The server mapper keys events, methods, slots, CSS parts and CSS states as `<name>-event`, `<name>-method`, `<name|default>-slot`, `<name>-part` and `<name>-state`, so they never collide with attributes.
+The server mapper has no `on<Name>` action twins because events bind from `<name>-event` args, and the legacy gate waives those preview-only action args.
+`OSA_CLOSED` in `web-components-legacy-gaps.test.ts` is the server-side progress ledger: move a marker there when an OSA mapper fix closes it.
+The OSA recordings self-ratchet against themselves. When the server mapper changes shape on purpose (dropping members, re-keying args), delete the affected `osa-*argtypes.snapshot` files and re-record; `-u` cannot pass the self-ratchet.
+The `legacyManifestRuntime` and `waivedArgs` waivers apply to the legacy gate only.
+The OSA payload may carry `warning` when a manifest fails to reload and the worker serves its last valid version; `lit-schema-warning` keeps a member without `kind` to show that a manifest with schema deviations still loads, without a warning. To reproduce a reload locally, enable the feature flag, edit the manifest while the dev server runs and open or reload a docs page; the worker re-reads a manifest whose mtime changed and logs it at debug level.
+
+`web-components-story-docs.test.ts` drives the Web Components story-docs provider directly in Node. It records `server-snippet-<story>.snapshot` and `story-docs.payload.snapshot` for legacy fixtures and fixtures under `story-docs/__testfixtures__/`; legacy fixtures are gated against both their committed `server-snippet-` recordings and the runtime `snippet-` baseline, while story-docs-only fixtures self-ratchet against `server-snippet-`. A story without a static snippet records `(no snippet: the Code panel falls back to the story source)`, followed by `warning: ...` lines when the payload carries static-analysis caveats.
 
 ## Known legacy gaps (vue3)
 
@@ -295,13 +314,11 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - Reflected Lit attributes can be missing when the snippet is read before asynchronous reflection.
 - `@summary` is recorded by the analyzer but never reaches the component description.
 - Class-level `@deprecated` never reaches the component description.
-- Component-level `jsDocTags` is always `{}` in the OSA payload; the CEM `deprecated` and `summary` fields never reach the tag map.
-- The JSDoc block above the CSF `meta` is ignored by the OSA provider, so its description and tags never reach the payload (other renderers resolve it through `extractComponentDescription`).
 - CEM 2.1.0 `cssStates` and `readonly` are ignored; the 1.0.0 and 2.1.0 recordings are identical.
 - The web-component-analyzer shape is accepted with no deprecation warning, and `schemaVersion` is never read (missing and unknown versions extract identically).
 - `@internal` members are stripped by the analyzer and never reach the manifest, so `lit-union-jsdoc`'s `renderCount` is a regression baseline, not a marker.
 - An inline `@deprecated` inside an `@attr` description is kept as description text by the analyzer (no `deprecated` field), so `vanilla-basic`'s `legacy-label` records the tag verbatim; an analyzer limitation, not a runtime gap.
-- Cross-file inheritance is fully resolved: the analyzer resolves superclass and mixin members into the tag's declaration, so `lit-inheritance-mixin/` is a regression baseline with no marker.
+- The analyzer flattens superclass and mixin members into the tag's declaration, so `lit-inheritance-mixin/custom-elements.json` is a regression baseline; its hand-written `custom-elements.unflattened.json` keeps the members on the parents and records the legacy gap under the `unflattened-` prefix; the server baselines assert that the resolver closes it by yielding the capture's argTypes exactly, including for an undocumented override. Same-manifest references carry the package name the way `@lit-labs/analyzer` output does.
 - `vanilla-multi-definition` targets only `multi-beta` correctly at this baseline version, so it is a regression baseline rather than a red marker.
 
 ## Issue-linked cases (web-components)

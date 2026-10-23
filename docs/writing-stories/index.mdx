@@ -34,7 +34,7 @@ components/
 
 <If renderer="svelte">
 
-We can define stories according to the [Component Story Format](../api/csf/index.mdx) (CSF), an ES6 module-based standard that is easy to write and portable between tools, or rely on the community-led project [`Svelte CSF`](https://storybook.js.org/addons/@storybook/addon-svelte-csf) which provides a similar experience.
+We can define stories according to the [Component Story Format](../api/csf/index.mdx) (CSF), an ES6 module-based standard that is easy to write and portable between tools, or use Svelte CSF, which ships with the Svelte frameworks and provides a similar experience.
 
 With Svelte CSF, the essential elements are the `defineMeta` function, which describes the component, and the `Story` component, which describes the stories. This pattern is different from the standard CSF, which uses a [default export](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_the_default_export) and [named exports](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_named_exports) to apply the same concepts.
 
@@ -94,7 +94,8 @@ Unlike regular CSF, when using Svelte CSF, you cannot use [`args`](./args.mdx) f
 
 ```svelte title="Alert.stories.svelte"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Alert from './Alert.svelte';
 
@@ -167,7 +168,8 @@ You can re-use the same render function across stories by applying it at the met
 
 ```svelte title="Button.stories.svelte"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
   import Button from './Button.svelte';
 
   const { Story } = defineMeta({

@@ -1,0 +1,5 @@
+<script>
+  import Panel from './Panel.svelte';
+</script>
+
+<Panel label="Default label" count={0} primary={false} />

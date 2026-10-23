@@ -166,6 +166,36 @@ describe('default value extraction', () => {
     });
   });
 
+  it('extracts defaults of a component exported through a variable alias', async () => {
+    const entry = await extract(
+      'Button',
+      dedent`
+        import React from 'react';
+        interface Props { size?: string; color?: string; label: string }
+        const Inner: React.FC<Props> = (props: Props) => <button />;
+        // @ts-ignore not present on react 19
+        Inner.defaultProps = { size: 'md' };
+        export const Button = Inner;
+      `
+    );
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: { size: { defaultValue: { value: "'md'" } }, label: { defaultValue: null } },
+    });
+
+    const other = await extract(
+      'Other',
+      dedent`
+        import React from 'react';
+        interface Props { color?: string }
+        const Destructured = ({ color = 'blue' }: Props) => <button />;
+        export const Other = Destructured;
+      `
+    );
+    expect(other.component?.reactComponentMeta).toMatchObject({
+      props: { color: { defaultValue: { value: "'blue'" } } },
+    });
+  });
+
   it('extracts static defaultProps from class components', async () => {
     const entry = await extract(
       'Button',

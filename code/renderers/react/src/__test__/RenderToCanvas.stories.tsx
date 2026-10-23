@@ -2,7 +2,10 @@ import React, { useLayoutEffect, useState } from 'react';
 
 import { expect } from 'storybook/test';
 
+import type { StoryContextForRender } from 'storybook/internal/types';
+
 import type { Meta, StoryObj } from '../index.ts';
+import type { ReactRenderer } from '../types.ts';
 import { renderToCanvas } from '../renderToCanvas.tsx';
 
 const LayoutEffectContent = () => {
@@ -36,16 +39,18 @@ export const AwaitsDocsLayoutEffects: Story = {
         {
           componentId: context.componentId,
           title: context.title,
-          kind: context.kind,
           id: context.id,
           name: context.name,
-          story: context.story,
           tags: context.tags,
           showMain: () => {},
           showError: () => {},
           showException: () => {},
           forceRemount: true,
-          storyContext: { ...context, viewMode: 'docs' },
+          storyContext: {
+            ...context,
+            argTypes: {},
+            viewMode: 'docs',
+          } as StoryContextForRender<ReactRenderer>,
           storyFn: () => <LayoutEffectContent />,
           unboundStoryFn: LayoutEffectContent,
         },

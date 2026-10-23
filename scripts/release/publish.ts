@@ -51,7 +51,7 @@ const MAX_PUBLISH_ATTEMPTS = 3;
 const REGISTRY_POLL_INTERVAL_MS = 15_000;
 const REGISTRY_POLL_TIMEOUT_MS = 15 * 60 * 1000;
 
-const validateOptions = (options: { [key: string]: any }): options is Options => {
+const validateOptions = (options: unknown): options is Options => {
   optionsSchema.parse(options);
   return true;
 };

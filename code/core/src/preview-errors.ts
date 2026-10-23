@@ -36,6 +36,17 @@ export enum Category {
   ADDON_A11Y = 'ADDON_A11Y',
 }
 
+export class InvalidChannelPageError extends StorybookError {
+  constructor(public data: { page: string }) {
+    super({
+      name: 'InvalidChannelPageError',
+      category: Category.PREVIEW_CHANNELS,
+      code: 1,
+      message: `The postMessage channel transport needs "config.page" to be "manager" or "preview", but received "${data.page}".`,
+    });
+  }
+}
+
 export class MissingStoryAfterHmrError extends StorybookError {
   constructor(public data: { storyId: string }) {
     super({
@@ -308,6 +319,26 @@ export class StatusTypeIdMismatchError extends StorybookError {
         null,
         2
       )}`,
+    });
+  }
+}
+
+export class ArgTypesRemovedFromStoryContextError extends StorybookError {
+  constructor(public data: { storyId: string }) {
+    super({
+      name: 'ArgTypesRemovedFromStoryContextError',
+      category: Category.PREVIEW_API,
+      code: 17,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-removed-from-loaders-beforeeach-play-and-aftereach',
+      message: dedent`
+        \`argTypes\` is no longer part of the story context passed to loaders, beforeEach, play and afterEach.
+
+        Story: ${data.storyId}
+
+        With server-side docgen the preview only holds the arg types you declared yourself, so this object was incomplete while looking complete.
+        - Read \`args\` for the values passed to the story.
+        - Inspect the resolved arg types in the Controls panel or the ArgTypes doc block.`,
     });
   }
 }

@@ -49,7 +49,6 @@ const meta = preview.meta({
   title: 'Tabs/TabList',
   component: TabList,
   args: {
-    tabs: DEFAULT_TABS,
     state: undefined,
   },
   parameters: {

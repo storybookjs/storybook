@@ -116,7 +116,8 @@ const meta = preview.meta({
 
 ```svelte filename="Gizmo.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Gizmo from './Gizmo.svelte';
 
@@ -173,59 +174,63 @@ const meta = preview.meta({
 </script>
 ```
 
-```js filename="Gizmo.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Gizmo from './Gizmo.svelte';
+```svelte filename="Gizmo.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: Gizmo,
-  argTypes: {
-    canRotate: {
-      control: 'boolean',
-    },
-    width: {
-      control: { type: 'number', min: 400, max: 1200, step: 50 },
-    },
-    height: {
-      control: { type: 'range', min: 200, max: 1500, step: 50 },
-    },
-    rawData: {
-      control: 'object',
-    },
-    coordinates: {
-      control: 'object',
-    },
-    texture: {
-      control: {
-        type: 'file',
-        accept: '.png',
+  import Gizmo from './Gizmo.svelte';
+
+  const { Story } = preview.meta({
+    component: Gizmo,
+    argTypes: {
+      canRotate: {
+        control: 'boolean',
+      },
+      width: {
+        control: { type: 'number', min: 400, max: 1200, step: 50 },
+      },
+      height: {
+        control: { type: 'range', min: 200, max: 1500, step: 50 },
+      },
+      rawData: {
+        control: 'object',
+      },
+      coordinates: {
+        control: 'object',
+      },
+      texture: {
+        control: {
+          type: 'file',
+          accept: '.png',
+        },
+      },
+      position: {
+        control: 'radio',
+        options: ['left', 'right', 'center'],
+      },
+      rotationAxis: {
+        control: 'check',
+        options: ['x', 'y', 'z'],
+      },
+      scaling: {
+        control: 'select',
+        options: [10, 50, 75, 100, 200],
+      },
+      label: {
+        control: 'text',
+      },
+      meshColors: {
+        control: {
+          type: 'color',
+          presetColors: ['#ff0000', '#00ff00', '#0000ff'],
+        },
+      },
+      revisionDate: {
+        control: 'date',
       },
     },
-    position: {
-      control: 'radio',
-      options: ['left', 'right', 'center'],
-    },
-    rotationAxis: {
-      control: 'check',
-      options: ['x', 'y', 'z'],
-    },
-    scaling: {
-      control: 'select',
-      options: [10, 50, 75, 100, 200],
-    },
-    label: {
-      control: 'text',
-    },
-    meshColors: {
-      control: {
-        type: 'color',
-        presetColors: ['#ff0000', '#00ff00', '#0000ff'],
-      },
-    },
-    revisionDate: {
-      control: 'date',
-    },
-  },
-};
+  });
+</script>
 ```
 
 ```js filename="Gizmo.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
@@ -285,7 +290,8 @@ export default {
 
 ```svelte filename="Gizmo.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Gizmo from './Gizmo.svelte';
 
@@ -342,64 +348,63 @@ export default {
 </script>
 ```
 
-```ts filename="Gizmo.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta } from '@storybook/your-framework';
+```svelte filename="Gizmo.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import Gizmo from './Gizmo.svelte';
+  import Gizmo from './Gizmo.svelte';
 
-const meta = {
-  component: Gizmo,
-  argTypes: {
-    canRotate: {
-      control: 'boolean',
-    },
-    width: {
-      control: { type: 'number', min: 400, max: 1200, step: 50 },
-    },
-    height: {
-      control: { type: 'range', min: 200, max: 1500, step: 50 },
-    },
-    rawData: {
-      control: 'object',
-    },
-    coordinates: {
-      control: 'object',
-    },
-    texture: {
-      control: {
-        type: 'file',
-        accept: '.png',
+  const { Story } = preview.meta({
+    component: Gizmo,
+    argTypes: {
+      canRotate: {
+        control: 'boolean',
+      },
+      width: {
+        control: { type: 'number', min: 400, max: 1200, step: 50 },
+      },
+      height: {
+        control: { type: 'range', min: 200, max: 1500, step: 50 },
+      },
+      rawData: {
+        control: 'object',
+      },
+      coordinates: {
+        control: 'object',
+      },
+      texture: {
+        control: {
+          type: 'file',
+          accept: '.png',
+        },
+      },
+      position: {
+        control: 'radio',
+        options: ['left', 'right', 'center'],
+      },
+      rotationAxis: {
+        control: 'check',
+        options: ['x', 'y', 'z'],
+      },
+      scaling: {
+        control: 'select',
+        options: [10, 50, 75, 100, 200],
+      },
+      label: {
+        control: 'text',
+      },
+      meshColors: {
+        control: {
+          type: 'color',
+          presetColors: ['#ff0000', '#00ff00', '#0000ff'],
+        },
+      },
+      revisionDate: {
+        control: 'date',
       },
     },
-    position: {
-      control: 'radio',
-      options: ['left', 'right', 'center'],
-    },
-    rotationAxis: {
-      control: 'check',
-      options: ['x', 'y', 'z'],
-    },
-    scaling: {
-      control: 'select',
-      options: [10, 50, 75, 100, 200],
-    },
-    label: {
-      control: 'text',
-    },
-    meshColors: {
-      control: {
-        type: 'color',
-        presetColors: ['#ff0000', '#00ff00', '#0000ff'],
-      },
-    },
-    revisionDate: {
-      control: 'date',
-    },
-  },
-} satisfies Meta<typeof Gizmo>;
-
-export default meta;
+  });
+</script>
 ```
 
 ```ts filename="Gizmo.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

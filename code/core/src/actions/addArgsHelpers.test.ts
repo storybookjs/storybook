@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { StoryContext } from 'storybook/internal/types';
+import type { StoryContextForEnhancers } from 'storybook/internal/types';
 
 import { addActionsFromArgTypes, inferActionsFromArgTypesRegex } from './addArgsHelpers.ts';
 
@@ -14,7 +14,7 @@ describe('actions parameter enhancers', () => {
         initialArgs: {},
         argTypes,
         parameters,
-      } as unknown as StoryContext);
+      } as unknown as StoryContextForEnhancers);
       expect(args).toEqual({
         onClick: expect.any(Function),
         onFocus: expect.any(Function),
@@ -26,7 +26,7 @@ describe('actions parameter enhancers', () => {
         initialArgs: { onClick: 'pre-existing value' },
         argTypes,
         parameters,
-      } as unknown as StoryContext);
+      } as unknown as StoryContextForEnhancers);
       expect(args).toEqual({ onFocus: expect.any(Function) });
     });
 
@@ -35,7 +35,7 @@ describe('actions parameter enhancers', () => {
         initialArgs: { onClick: null },
         argTypes,
         parameters,
-      } as unknown as StoryContext);
+      } as unknown as StoryContextForEnhancers);
       expect(args).toEqual({ onFocus: expect.any(Function) });
     });
 
@@ -44,7 +44,7 @@ describe('actions parameter enhancers', () => {
         initialArgs: {},
         argTypes,
         parameters,
-      } as unknown as StoryContext);
+      } as unknown as StoryContextForEnhancers);
       expect(args).toEqual({ onClick: expect.any(Function), onFocus: expect.any(Function) });
     });
 
@@ -53,7 +53,7 @@ describe('actions parameter enhancers', () => {
         initialArgs: { onClick: undefined },
         argTypes,
         parameters,
-      } as unknown as StoryContext);
+      } as unknown as StoryContextForEnhancers);
       expect(args).toEqual({ onClick: undefined, onFocus: expect.any(Function) });
     });
 
@@ -65,7 +65,7 @@ describe('actions parameter enhancers', () => {
           ...parameters,
           actions: { ...parameters.actions, disable: true },
         },
-      } as unknown as StoryContext);
+      } as unknown as StoryContextForEnhancers);
       expect(args).toEqual({});
     });
   });
@@ -81,7 +81,7 @@ describe('actions parameter enhancers', () => {
           initialArgs: {},
           argTypes,
           parameters: {},
-        } as unknown as StoryContext)
+        } as unknown as StoryContextForEnhancers)
       ).toEqual({
         onClick: expect.any(Function),
         onBlur: expect.any(Function),
@@ -94,7 +94,7 @@ describe('actions parameter enhancers', () => {
           argTypes: { onClick: { action: 'clicked!' } },
           initialArgs: { onClick: 'pre-existing value' },
           parameters: {},
-        } as unknown as StoryContext)
+        } as unknown as StoryContextForEnhancers)
       ).toEqual({});
     });
 
@@ -104,7 +104,7 @@ describe('actions parameter enhancers', () => {
           argTypes: { onClick: { action: 'clicked!' } },
           initialArgs: { onClick: null },
           parameters: {},
-        } as unknown as StoryContext)
+        } as unknown as StoryContextForEnhancers)
       ).toEqual({});
     });
 
@@ -114,7 +114,7 @@ describe('actions parameter enhancers', () => {
           argTypes: { onClick: { action: 'clicked!' } },
           initialArgs: {},
           parameters: {},
-        } as unknown as StoryContext)
+        } as unknown as StoryContextForEnhancers)
       ).toEqual({ onClick: expect.any(Function) });
     });
 
@@ -124,7 +124,7 @@ describe('actions parameter enhancers', () => {
           argTypes: { onClick: { action: 'clicked!' } },
           initialArgs: { onClick: undefined },
           parameters: {},
-        } as unknown as StoryContext)
+        } as unknown as StoryContextForEnhancers)
       ).toEqual({ onClick: undefined });
     });
 
@@ -134,7 +134,7 @@ describe('actions parameter enhancers', () => {
           initialArgs: {},
           argTypes,
           parameters: { actions: { disable: true } },
-        } as unknown as StoryContext)
+        } as unknown as StoryContextForEnhancers)
       ).toEqual({});
     });
   });

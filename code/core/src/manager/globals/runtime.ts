@@ -2,6 +2,7 @@ import * as REACT from 'react';
 import * as REACT_ARIA_FOCUS_SCOPE from 'react-aria/FocusScope';
 import * as REACT_DOM from 'react-dom';
 import * as REACT_DOM_CLIENT from 'react-dom/client';
+import * as REACT_JSX_RUNTIME from 'react/jsx-runtime';
 
 import * as CHANNELS from 'storybook/internal/channels';
 import * as CLIENT_LOGGER from 'storybook/internal/client-logger';
@@ -15,7 +16,7 @@ import * as ICONS from '@storybook/icons';
 
 import * as MANAGER_API from 'storybook/manager-api';
 import * as TEST from 'storybook/test';
-import * as THEMING from 'storybook/theming';
+import * as THEMING from 'storybook/theming/emotion';
 import * as THEMINGCREATE from 'storybook/theming/create';
 
 import type { globalsNameReferenceMap } from './globals.ts';
@@ -23,6 +24,12 @@ import type { globalsNameReferenceMap } from './globals.ts';
 // Here we map the name of a module to their VALUE in the global scope.
 export const globalsNameValueMap: Required<Record<keyof typeof globalsNameReferenceMap, any>> = {
   react: REACT,
+  'react/jsx-runtime': REACT_JSX_RUNTIME,
+  // The manager uses production React, whose development runtime does not provide jsxDEV.
+  'react/jsx-dev-runtime': {
+    Fragment: REACT_JSX_RUNTIME.Fragment,
+    jsxDEV: REACT_JSX_RUNTIME.jsx,
+  },
   'react-dom': REACT_DOM,
   'react-dom/client': REACT_DOM_CLIENT,
   'react-aria/FocusScope': REACT_ARIA_FOCUS_SCOPE,
@@ -31,6 +38,7 @@ export const globalsNameValueMap: Required<Record<keyof typeof globalsNameRefere
   'storybook/manager-api': MANAGER_API,
 
   'storybook/theming': THEMING,
+  'storybook/theming/emotion': THEMING,
   'storybook/theming/create': THEMINGCREATE,
 
   'storybook/test': TEST,

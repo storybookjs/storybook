@@ -13,7 +13,13 @@ const meta = {
 export default meta;
 
 export const ArgsDefaultRender: Story = {
-  args: { heading: 'Default render' },
+  args: {
+    heading: 'Default render',
+    'default-slot': 'Body <b>text</b>',
+    'actions-slot': '<button>Confirm</button>',
+    'panel-part': 'color: rebeccapurple;',
+    '--slot-panel-color': 'teal',
+  },
 };
 
 export const LitTemplate: Story = {

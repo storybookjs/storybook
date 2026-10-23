@@ -102,6 +102,7 @@ type Scenario =
   | 'plain-a-helper'
   | 'plain-b-base'
   | 'plain-b-helper'
+  | 'eager'
   | 'late';
 
 function configure(root: string, framework: string, scenario: Scenario) {
@@ -119,13 +120,14 @@ function configure(root: string, framework: string, scenario: Scenario) {
   const lateVite = `{name:'fixture-late-write',writeBundle:{order:'post',handler(options,bundle){const file=Object.keys(bundle).find(name=>name.endsWith('.js'));appendFileSync(join(options.dir,file),'\\n;globalThis.lateMutation=true;');}}}`;
   const hiddenWebpack = `{apply(compiler){compiler.hooks.thisCompilation.tap('Hidden',compilation=>compilation.hooks.processAssets.tap({name:'Hidden',stage:100},()=>{const chunk=[...compilation.chunks].find(value=>value.name?.startsWith('B-stories'));const file=[...chunk.files].find(name=>name.endsWith('.js'));const data=readFileSync(new URL('./fixture.json',import.meta.url),'utf8');compilation.updateAsset(file,asset=>new compiler.webpack.sources.RawSource(asset.source()+';globalThis.hidden='+data+';'));}));}}`;
   const lateWebpack = `{apply(compiler){compiler.hooks.afterEmit.tap('Late',compilation=>{const chunk=[...compilation.chunks].find(value=>value.name==='main');const file=[...chunk.files].find(name=>name.endsWith('.js'));appendFileSync(join(compiler.outputPath,file),'\\n;globalThis.lateMutation=true;');});}}`;
+  const eagerWebpack = `{apply(compiler){compiler.hooks.thisCompilation.tap('Eager',compilation=>compilation.hooks.processAssets.tap({name:'Eager',stage:compiler.webpack.Compilation.PROCESS_ASSETS_STAGE_REPORT},()=>{const chunks=[...compilation.chunks];const main=chunks.find(chunk=>chunk.name==='main');const story=chunks.find(chunk=>chunk.name?.startsWith('A-stories'));const module=[...compilation.modules].find(module=>module.nameForCondition()?.endsWith('/A.stories.jsx'));const call='__webpack_require__.e('+JSON.stringify(story.id)+').then(__webpack_require__.bind(__webpack_require__,'+JSON.stringify(compilation.chunkGraph.getModuleId(module))+'));';const file=[...main.files].find(name=>name.endsWith('.js'));compilation.updateAsset(file,asset=>{const before=asset.source().toString();const after=before.replace('__webpack_require__.O(',call+'__webpack_require__.O(');if(before===after)throw new Error('Missing Webpack startup');return new compiler.webpack.sources.RawSource(after);});}));}}`;
   const reactWebpack =
     framework === 'react-webpack5'
       ? `config.module.rules.push({test:/\\.[jt]sx?$/,exclude:/node_modules/,use:{loader:require.resolve('babel-loader'),options:{babelrc:false,configFile:false,presets:[[require.resolve('@babel/preset-react'),{runtime:'automatic'}]]}}});`
       : '';
   const final = vite
     ? `viteFinal(config){config.plugins.push(${hidden ? transform : scenario === 'late' ? lateVite : ''});return config;}`
-    : `webpackFinal(config){${reactWebpack}config.plugins.push(${hidden ? hiddenWebpack : scenario === 'late' ? lateWebpack : ''});return config;}`;
+    : `webpackFinal(config){${reactWebpack}config.plugins.push(${hidden ? hiddenWebpack : scenario === 'late' ? lateWebpack : scenario === 'eager' ? eagerWebpack : ''});return config;}`;
   write(
     root,
     '.storybook/main.ts',
@@ -233,7 +235,7 @@ function runCli(root: string, label: string, extra: string[] = []): Manifest | u
   return JSON.parse(result);
 }
 
-function verifyCli(root: string, scenario: Scenario) {
+function verifyCli(root: string, scenario: Scenario, fallback: boolean) {
   const manifest = runCli(root, scenario);
   if (!manifest) return {};
   const statsPath = join(root, 'storybook-static/preview-stats.json');
@@ -250,7 +252,7 @@ function verifyCli(root: string, scenario: Scenario) {
   } finally {
     writeFileSync(statsPath, original);
   }
-  if (scenario === 'late') {
+  if (fallback) {
     assert.equal(manifest.configAnalysis.mode, 'directory');
     assert.equal(manifest.configCoverage, undefined);
   } else {
@@ -373,23 +375,28 @@ for (const framework of frameworks) {
     'mock-helper',
     ...(framework.endsWith('vite')
       ? []
-      : (['plain-a-base', 'plain-a-helper', 'plain-b-base', 'plain-b-helper'] as const)),
+      : (['plain-a-base', 'plain-a-helper', 'plain-b-base', 'plain-b-helper', 'eager'] as const)),
     'late',
   ] satisfies Scenario[]) {
     configure(root, framework, scenario);
+    const fallback =
+      scenario === 'late' ||
+      scenario === 'eager' ||
+      (!framework.endsWith('vite') && scenario.startsWith('hidden'));
     // Core services may initialize caches on the first build after changing configuration.
     // Both final outputs are still validated; comparisons use a settled baseline.
     if (scenario.endsWith('base')) {
-      assert.equal(build(root, scenario).status, 'complete');
+      assert.equal(build(root, scenario).status, fallback ? 'incomplete' : 'complete');
     }
     const evidence = build(root, scenario);
-    const { manifest, excluded, narrowExcluded } = verifyCli(root, scenario);
-    if (scenario === 'late') {
+    const { manifest, excluded, narrowExcluded } = verifyCli(root, scenario, fallback);
+    if (fallback) {
       assert.equal(
         evidence.status,
         'incomplete',
-        `${framework}: late writes must invalidate evidence`
+        `${framework}/${scenario}: late output changes must invalidate evidence`
       );
+      if (scenario === 'eager') assert.equal(evidence.reason, 'unrecognized-webpack-final-output');
     } else {
       assert.equal(evidence.status, 'complete', `${framework}/${scenario}: ${evidence.reason}`);
       if (scenario.endsWith('base')) {

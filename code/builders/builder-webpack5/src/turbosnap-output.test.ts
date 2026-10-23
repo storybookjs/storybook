@@ -10,7 +10,9 @@ import { toImportFn } from '@storybook/core-webpack';
 import { resolve } from 'pathe';
 import { createFsFromVolume, Volume } from 'memfs';
 import webpack from 'webpack';
+import TerserWebpackPlugin from 'terser-webpack-plugin';
 
+import { trackWebpackChunkSources } from './turbosnap-chunks.ts';
 import { productionPreviewChunkFilename } from './preview/preview-filename.ts';
 import { canonicalizeWebpackRuntime, createWebpackOutputEvidence } from './turbosnap-output.ts';
 
@@ -110,7 +112,31 @@ describe('Webpack compiled story coverage', () => {
       previewImportsStory?: boolean;
       htmlStory?: boolean;
       modifiedStoryLoader?: boolean;
-      finalLoaderCall?: 'importFn' | 'context';
+      finalLoaderCall?:
+        | 'importFn'
+        | 'context'
+        | 'chunk'
+        | 'computed-chunk'
+        | 'aliased-chunk'
+        | 'aliased-runtime'
+        | 'handler'
+        | 'context-startup'
+        | 'valueof-runtime'
+        | 'computed-context'
+        | 'annotated-chunk'
+        | 'annotated-context'
+        | 'eval'
+        | 'factory-arguments'
+        | 'chunk-registration';
+      producerMutation?:
+        | 'render'
+        | 'chunk-asset'
+        | 'runtime-module'
+        | 'interceptor'
+        | 'spoofed-runtime';
+      finalLoaderTarget?: 'main' | 'story' | 'runtime';
+      minimize?: boolean;
+      repeatBuild?: boolean;
       filenameObservation?: boolean;
       duplicatedDependency?: boolean;
       htmlExtra?: 'present' | 'missing' | 'disk' | 'symlink';
@@ -125,6 +151,10 @@ describe('Webpack compiled story coverage', () => {
       htmlStory,
       modifiedStoryLoader,
       finalLoaderCall,
+      producerMutation,
+      finalLoaderTarget = 'main',
+      minimize = false,
+      repeatBuild,
       filenameObservation,
       duplicatedDependency,
       htmlExtra,
@@ -148,7 +178,7 @@ describe('Webpack compiled story coverage', () => {
       [`${root}/storybook-stories.js`]:
         generatedStoryLoader + (modifiedStoryLoader ? ';importFn("./src/A.stories.js");' : ''),
       [`${root}/preview.js`]: `import {shared} from './shared.js'; globalThis.base=shared;${previewImportsStory ? 'import "./src/A.stories.js";' : ''}`,
-      [`${root}/shared.js`]: `${concatenatedObserver ? 'export { currentUrl } from "./observer.js";' : ''}export const shared = "shared";${sharedObserver && !concatenatedObserver ? 'export function currentUrl(){return document.currentScript?.src;}' : ''}`,
+      [`${root}/shared.js`]: `${concatenatedObserver ? 'export { currentUrl } from "./observer.js";' : ''}/** @license fixture */ export const shared = "shared";${sharedObserver && !concatenatedObserver ? 'export function currentUrl(){return document.currentScript?.src;}' : ''}`,
       [`${root}/observer.js`]: 'export function currentUrl(){return document.currentScript?.src;}',
       [`${root}/src/A.stories.js`]: `${sharedObserver === 'used-by-a' ? 'import {currentUrl} from "../shared.js"; globalThis.observed=currentUrl();' : ''}${duplicatedDependency ? 'import {duplicate} from "../duplicate.js"; console.log(duplicate);' : ''}import data from "../.storybook/fixture.json"; export const Basic = data.label;`,
       [`${root}/src/B.stories.js`]: `${sharedObserver === 'unrelated' ? 'import {currentUrl} from "../shared.js"; globalThis.observed=currentUrl();' : ''}${duplicatedDependency ? 'import {duplicate} from "../duplicate.js"; console.log(duplicate);' : ''}import {shared} from "../shared.js"; export const Basic = shared;`,
@@ -175,6 +205,7 @@ describe('Webpack compiled story coverage', () => {
     const compiler = webpack({
       context: root,
       mode: 'production',
+      cache: repeatBuild ? { type: 'memory' } : false,
       devtool: false,
       entry: './entry.js',
       output: {
@@ -187,7 +218,13 @@ describe('Webpack compiled story coverage', () => {
       optimization: {
         runtimeChunk: true,
         moduleIds: 'named',
-        minimize: false,
+        minimize,
+        minimizer: [
+          new TerserWebpackPlugin({
+            parallel: false,
+            terserOptions: { mangle: false, keep_fnames: true },
+          }),
+        ],
         splitChunks: groupedStories
           ? {
               cacheGroups: {
@@ -213,6 +250,71 @@ describe('Webpack compiled story coverage', () => {
         {
           apply(compiler) {
             compiler.hooks.thisCompilation.tap('HiddenInput', (compilation) => {
+              if (producerMutation === 'interceptor') {
+                compiler.webpack.javascript.JavascriptModulesPlugin.getCompilationHooks(
+                  compilation
+                ).renderChunk.intercept({
+                  register(tap) {
+                    const original = tap.fn;
+                    return {
+                      ...tap,
+                      fn: (...args: unknown[]) =>
+                        new compiler.webpack.sources.ConcatSource(
+                          original(...args),
+                          ';globalThis.untracked = true;'
+                        ),
+                    };
+                  },
+                });
+              }
+              if (producerMutation === 'render') {
+                compiler.webpack.javascript.JavascriptModulesPlugin.getCompilationHooks(
+                  compilation
+                ).renderModuleContent.tap(
+                  'UntrackedRenderer',
+                  (source) =>
+                    new compiler.webpack.sources.ConcatSource(
+                      source,
+                      ';globalThis.untracked = true;'
+                    )
+                );
+              }
+              if (producerMutation === 'chunk-asset') {
+                compilation.hooks.chunkAsset.tap('UntrackedRenderer', (_chunk, file) => {
+                  compilation.updateAsset(
+                    file,
+                    (source) =>
+                      new compiler.webpack.sources.ConcatSource(
+                        source,
+                        ';globalThis.untracked = true;'
+                      )
+                  );
+                });
+              }
+              if (producerMutation === 'runtime-module' || producerMutation === 'spoofed-runtime') {
+                compilation.hooks.additionalChunkRuntimeRequirements.tap(
+                  'UntrackedRenderer',
+                  (chunk) => {
+                    if (!chunk.hasRuntime()) return;
+                    const runtime = new (class extends compiler.webpack.RuntimeModule {
+                      constructor() {
+                        super('untracked eager loading');
+                      }
+                      generate() {
+                        const story = [...compilation.chunks].find((candidate) =>
+                          candidate.name?.startsWith('A-stories')
+                        )!;
+                        return `__webpack_require__.e(${JSON.stringify(story.id)}).then(__webpack_require__.bind(__webpack_require__, "./src/A.stories.js"));`;
+                      }
+                    })();
+                    if (producerMutation === 'spoofed-runtime')
+                      Object.defineProperty(runtime, 'constructor', {
+                        value: compiler.webpack.runtime.LoadScriptRuntimeModule,
+                      });
+                    compilation.addRuntimeModule(chunk, runtime);
+                  }
+                );
+              }
               compilation.hooks.processAssets.tap(
                 { name: 'Html', stage: compiler.webpack.Compilation.PROCESS_ASSETS_STAGE_REPORT },
                 () => {
@@ -226,7 +328,13 @@ describe('Webpack compiled story coverage', () => {
                     chunk.name?.startsWith('A-stories')
                   );
                   if (finalLoaderCall) {
-                    const main = [...compilation.chunks].find((chunk) => chunk.name === 'main')!;
+                    const target = [...compilation.chunks].find((chunk) =>
+                      finalLoaderTarget === 'runtime'
+                        ? chunk.hasRuntime()
+                        : finalLoaderTarget === 'story'
+                          ? chunk.name?.startsWith('B-stories')
+                          : chunk.name === 'main'
+                    )!;
                     const loader = [...compilation.modules].find((module) =>
                       module.nameForCondition()?.endsWith('/storybook-stories.js')
                     )!;
@@ -235,16 +343,35 @@ describe('Webpack compiled story coverage', () => {
                     ].find(
                       (connection) => connection.dependency?.type === 'import() context lazy'
                     )!.resolvedModule!;
-                    const call =
-                      finalLoaderCall === 'importFn'
-                        ? 'importFn("./src/A.stories.js")'
-                        : `__webpack_require__(${JSON.stringify(compilation.chunkGraph.getModuleId(context))})("./A.stories.js")`;
-                    compilation.updateAsset([...main.files][0], (source) => {
+                    const calls = {
+                      importFn: 'importFn("./src/A.stories.js")',
+                      context: `__webpack_require__(${JSON.stringify(compilation.chunkGraph.getModuleId(context))})("./A.stories.js")`,
+                      chunk: `__webpack_require__.e(${JSON.stringify(story!.id)}).then(__webpack_require__.bind(__webpack_require__, "./src/A.stories.js"))`,
+                      'computed-chunk': `__webpack_require__["e"](${JSON.stringify(story!.id)})`,
+                      'aliased-chunk': `const load = __webpack_require__.e; load(${JSON.stringify(story!.id)})`,
+                      'aliased-runtime': `const runtime = __webpack_require__; runtime.e(${JSON.stringify(story!.id)}).then(runtime.bind(runtime, "./src/A.stories.js"))`,
+                      handler: `const promises=[]; __webpack_require__.f.j(${JSON.stringify(story!.id)},promises); Promise.all(promises).then(__webpack_require__.bind(__webpack_require__, "./src/A.stories.js"))`,
+                      'context-startup': 'webpackAsyncContext("./A.stories.js")',
+                      'valueof-runtime': `const runtime = __webpack_require__.valueOf(); runtime.e(${JSON.stringify(story!.id)}).then(runtime.bind(runtime, "./src/A.stories.js"))`,
+                      'computed-context': `__webpack_require__(${JSON.stringify(String(compilation.chunkGraph.getModuleId(context)).slice(0, 1))} + ${JSON.stringify(String(compilation.chunkGraph.getModuleId(context)).slice(1))})("./A.stories.js")`,
+                      'annotated-chunk': `/*#__PURE__*/(/*#__PURE__*/__webpack_require__.e(${JSON.stringify(story!.id)})).then(() => __webpack_require__("./src/A.stories.js"))`,
+                      'annotated-context': '/*#__PURE__*/webpackAsyncContext("./A.stories.js")',
+                      eval: `eval(${JSON.stringify(`__webpack_require__.e(${JSON.stringify(story!.id)}).then(__webpack_require__.bind(__webpack_require__, "./src/A.stories.js"))`)})`,
+                      'factory-arguments': `arguments[2].e(${JSON.stringify(story!.id)}).then(arguments[2].bind(arguments[2], "./src/A.stories.js"))`,
+                      'chunk-registration': `self[${JSON.stringify(compiler.options.output.chunkLoadingGlobal)}].push([["late-chunk"], {}, runtime => runtime.e(${JSON.stringify(story!.id)}).then(runtime.bind(runtime, "./src/A.stories.js"))])`,
+                    };
+                    compilation.updateAsset([...target.files][0], (source) => {
                       const previous = source.source().toString();
-                      const next = previous.replace(
-                        'new globalThis.PreviewWeb(',
-                        `${call}; new globalThis.PreviewWeb(`
-                      );
+                      const marker = ['context-startup', 'annotated-context'].includes(
+                        finalLoaderCall
+                      )
+                        ? 'module.exports = webpackAsyncContext;'
+                        : finalLoaderTarget === 'runtime'
+                          ? '__webpack_require__.O ='
+                          : finalLoaderTarget === 'story'
+                            ? '__webpack_require__.r(__webpack_exports__);'
+                            : 'new globalThis.PreviewWeb(';
+                      const next = previous.replace(marker, `${calls[finalLoaderCall]}; ${marker}`);
                       expect(next).not.toBe(previous);
                       return new compiler.webpack.sources.RawSource(next);
                     });
@@ -288,6 +415,7 @@ describe('Webpack compiled story coverage', () => {
       ],
     });
     if (!compiler) throw new Error('missing test compiler');
+    trackWebpackChunkSources(compiler);
     compiler.inputFileSystem = filesystem as unknown as NonNullable<
       typeof compiler.inputFileSystem
     >;
@@ -311,17 +439,32 @@ describe('Webpack compiled story coverage', () => {
         presets: { apply: async () => ['../src/*.stories.js'] },
       } as unknown as Options);
     });
-    await new Promise<void>((succeed, fail) =>
-      compiler.run((error, stats) => {
-        if (error || stats?.hasErrors()) fail(error ?? new Error(stats?.toString()));
-        else succeed();
-      })
-    );
+    const run = () =>
+      new Promise<webpack.Stats>((succeed, fail) =>
+        compiler.run((error, stats) => {
+          if (error || !stats || stats.hasErrors()) fail(error ?? new Error(stats?.toString()));
+          else succeed(stats);
+        })
+      );
+    await run();
+    if (repeatBuild) {
+      const cached = await run();
+      expect(
+        [...cached.compilation.modules].filter((module) =>
+          cached.compilation.builtModules.has(module)
+        ).length
+      ).toBe(0);
+    }
     await new Promise<void>((succeed, fail) =>
       compiler.close((error) => (error ? fail(error) : succeed()))
     );
     expect(evidence?.status, evidence?.reason).toBe(
-      finalLoaderCall || htmlExtra === 'missing' || htmlExtra === 'symlink'
+      finalLoaderCall ||
+        producerMutation ||
+        hiddenEffect ||
+        filenameObservation ||
+        htmlExtra === 'missing' ||
+        htmlExtra === 'symlink'
         ? 'incomplete'
         : 'complete'
     );
@@ -354,6 +497,25 @@ describe('Webpack compiled story coverage', () => {
     );
   });
 
+  it('keeps normal minified story loading selective', async () => {
+    const before = await build('before', { minimize: true });
+    const after = await build('after', { minimize: true });
+
+    expect(after.globalOutputHash).toBe(before.globalOutputHash);
+    expect(after.storyOutputHashes['./src/B.stories.js']).toBe(
+      before.storyOutputHashes['./src/B.stories.js']
+    );
+    expect(after.storyOutputHashes['./src/A.stories.js']).not.toBe(
+      before.storyOutputHashes['./src/A.stories.js']
+    );
+  });
+
+  it('validates cached compiler output on a repeated build', async () => {
+    const evidence = await build('before', { minimize: true, repeatBuild: true });
+
+    expect(evidence.status).toBe('complete');
+  });
+
   it('widens coverage when Webpack places both stories in the same output chunk', async () => {
     const before = await build('before', { groupedStories: true });
     const after = await build('after', { groupedStories: true });
@@ -363,11 +525,10 @@ describe('Webpack compiled story coverage', () => {
     );
   });
 
-  it('retains filename changes when a banner observes the current script URL', async () => {
-    const before = await build('before', { filenameObservation: true });
-    const after = await build('after', { filenameObservation: true });
+  it('rejects a banner added after the graph-producing render', async () => {
+    const evidence = await build('before', { filenameObservation: true });
 
-    expect(after.globalOutputHash).not.toBe(before.globalOutputHash);
+    expect(evidence.reason).toBe('unrecognized-webpack-final-output');
   });
 
   it('binds the filenames of callers of an exported script URL observer', async () => {
@@ -423,22 +584,14 @@ describe('Webpack compiled story coverage', () => {
     expect(nodeFs.readFile).not.toHaveBeenCalled();
   });
 
-  it('detects a side read that changes another story after module transforms', async () => {
-    const before = await build('before', { hiddenEffect: 'story' });
-    const after = await build('after', { hiddenEffect: 'story' });
+  it.each(['story', 'global'] as const)(
+    'rejects post-render plugin changes to a %s chunk',
+    async (hiddenEffect) => {
+      const evidence = await build('before', { hiddenEffect });
 
-    expect(after.globalOutputHash).toBe(before.globalOutputHash);
-    expect(after.storyOutputHashes['./src/B.stories.js']).not.toBe(
-      before.storyOutputHashes['./src/B.stories.js']
-    );
-  });
-
-  it('keeps hidden global effects global', async () => {
-    const before = await build('before', { hiddenEffect: 'global' });
-    const after = await build('after', { hiddenEffect: 'global' });
-
-    expect(after.globalOutputHash).not.toBe(before.globalOutputHash);
-  });
+      expect(evidence.reason).toBe('unrecognized-webpack-final-output');
+    }
+  );
 
   it('keeps a story imported by HTML globally covered', async () => {
     const before = await build('before', { htmlStory: true });
@@ -453,6 +606,76 @@ describe('Webpack compiled story coverage', () => {
       const evidence = await build('before', { finalLoaderCall });
 
       expect(evidence.reason).toBe('unrecognized-webpack-final-story-loader');
+    }
+  );
+
+  it.each([
+    'chunk',
+    'computed-chunk',
+    'aliased-chunk',
+    'aliased-runtime',
+    'handler',
+    'valueof-runtime',
+    'computed-context',
+    'context-startup',
+    'annotated-context',
+  ] as const)(
+    'rejects eager %s loads injected after module graph creation',
+    async (finalLoaderCall) => {
+      const evidence = await build('before', { finalLoaderCall });
+
+      expect(evidence.reason).toBe('unrecognized-webpack-final-output');
+    }
+  );
+
+  it.each(['story', 'runtime'] as const)(
+    'rejects a chunk load injected into a %s output',
+    async (finalLoaderTarget) => {
+      const evidence = await build('before', { finalLoaderCall: 'chunk', finalLoaderTarget });
+
+      expect(evidence.reason).toBe('unrecognized-webpack-final-output');
+    }
+  );
+
+  it('rejects annotated chunk loads in the emitted runtime', async () => {
+    const evidence = await build('before', {
+      finalLoaderCall: 'annotated-chunk',
+      finalLoaderTarget: 'runtime',
+    });
+
+    expect(evidence.reason).toBe('unrecognized-webpack-final-output');
+  });
+
+  it.each(['main', 'story', 'runtime'] as const)(
+    'rejects dynamic evaluation injected into %s',
+    async (finalLoaderTarget) => {
+      const evidence = await build('before', { finalLoaderCall: 'eval', finalLoaderTarget });
+
+      expect(evidence.reason).toBe('unrecognized-webpack-final-output');
+    }
+  );
+
+  it('rejects an eager load through a factory runtime argument', async () => {
+    const evidence = await build('before', {
+      finalLoaderCall: 'factory-arguments',
+      finalLoaderTarget: 'story',
+    });
+
+    expect(evidence.reason).toBe('unrecognized-webpack-final-output');
+  });
+
+  it('rejects an extra chunk-registration callback', async () => {
+    const evidence = await build('before', { finalLoaderCall: 'chunk-registration' });
+
+    expect(evidence.reason).toBe('unrecognized-webpack-final-output');
+  });
+
+  it.each(['render', 'chunk-asset', 'runtime-module', 'interceptor', 'spoofed-runtime'] as const)(
+    'rejects an unsupported %s producer',
+    async (producerMutation) => {
+      const evidence = await build('before', { producerMutation });
+
+      expect(evidence.reason).toBe('unsupported-webpack-output-renderer');
     }
   );
 

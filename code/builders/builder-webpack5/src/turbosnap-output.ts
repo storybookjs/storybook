@@ -12,6 +12,7 @@ import type { Chunk, Compilation, Module } from 'webpack';
 
 import { version } from '../package.json';
 
+import { getRenderedWebpackChunks, matchesRenderedWebpackChunk } from './turbosnap-chunks.ts';
 import {
   hasRecognizedWebpackStoryLoader,
   hasWebpackFilenameObservation,
@@ -297,6 +298,7 @@ async function collectWebpackOutput(
   options: Options,
   builder: TurbosnapOutputDraft['builder']
 ): Promise<TurbosnapOutputDraft> {
+  const renderedChunks = getRenderedWebpackChunks(compilation);
   const cwd = process.cwd();
   const storySpecs = normalizeStories(await options.presets.apply('stories', []), {
     configDir: options.configDir,
@@ -477,9 +479,29 @@ async function collectWebpackOutput(
       throw new IncompleteWebpackOutput('unsupported-webpack-inline-runtime');
     }
     let source = readAsset(file);
+    const rendered = renderedChunks.get(chunk);
+    if (!rendered) throw new IncompleteWebpackOutput('missing-webpack-rendered-chunk');
+    let original = rendered.source;
     if (hasWebpackFilenameObservation(compilation, source)) filenameObservers.add(chunk);
     if (runtime) {
+      const originalReferences = new Map<string, Reference>();
+      const originalExpected = new Map<string, string>();
+      for (const child of chunk.getAllAsyncChunks()) {
+        const captured = renderedChunks.get(child);
+        const childIdentity = identities.get(child);
+        if (!captured || !childIdentity || child.id === null)
+          throw new IncompleteWebpackOutput('missing-webpack-rendered-child');
+        originalReferences.set(captured.filename, {
+          identity: childIdentity,
+          contentHash: captured.contentHash,
+        });
+        originalExpected.set(String(child.id), captured.filename);
+      }
+      original = canonicalizeWebpackRuntime(original, originalReferences, originalExpected);
       source = canonicalizeWebpackRuntime(source, references, expected);
+    }
+    if (!(await matchesRenderedWebpackChunk(compilation, original, source))) {
+      throw new IncompleteWebpackOutput('unrecognized-webpack-final-output');
     }
     const related = compilation.getAsset(file)?.info.related;
     const hashes: string[] = [];

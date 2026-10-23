@@ -75,6 +75,9 @@ it.each([
   expect(compiler.hooks.emit.taps.some((tap) => tap.name === 'StorybookTurbosnapOutput')).toBe(
     requested
   );
+  expect(
+    compiler.hooks.thisCompilation.taps.some((tap) => tap.name === 'StorybookTurbosnapOutput')
+  ).toBe(requested);
   expect(result).toBeDefined();
   expect(Object.hasOwn(result!, 'turbosnapOutput')).toBe(requested);
   if (requested) expect(result).toHaveProperty('turbosnapOutput', evidence);

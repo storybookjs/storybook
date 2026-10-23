@@ -290,6 +290,8 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
   let outputEvidence: TurbosnapOutputDraft | undefined;
   if (options.statsJson || options.webpackStatsJson) {
     const { createWebpackOutputEvidence } = await import('./turbosnap-output.ts');
+    const { trackWebpackChunkSources } = await import('./turbosnap-chunks.ts');
+    trackWebpackChunkSources(compiler);
     compiler.hooks.emit.tapPromise(
       { name: 'StorybookTurbosnapOutput', stage: Number.MAX_SAFE_INTEGER },
       async (compilation) => {

@@ -33,6 +33,7 @@ export default definePreview({
   async beforeAll() {
     await init();
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -48,6 +49,7 @@ export default definePreview({
   async beforeAll() {
     await init();
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -60,6 +62,7 @@ export default definePreview({
   async beforeAll() {
     await init();
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -74,6 +77,7 @@ export default definePreview({
   async beforeAll() {
     await init();
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -86,6 +90,7 @@ export default definePreview({
   async beforeAll() {
     await init();
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -98,6 +103,7 @@ export default definePreview({
   async beforeAll() {
     await init();
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -112,5 +118,6 @@ export default definePreview({
   async beforeAll() {
     await init();
   },
+  addons: [/* ... */],
 });
 ```

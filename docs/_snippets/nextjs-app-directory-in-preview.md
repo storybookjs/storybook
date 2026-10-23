@@ -39,6 +39,7 @@ export default definePreview({
       appDirectory: true,
     },
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -56,5 +57,6 @@ export default definePreview({
       appDirectory: true,
     },
   },
+  addons: [/* ... */],
 });
 ```

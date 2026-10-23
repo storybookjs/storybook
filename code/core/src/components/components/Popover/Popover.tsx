@@ -39,6 +39,10 @@ const Wrapper = styled.div<{
     zIndex: 2147483647,
     colorScheme: theme.base,
     padding,
+    // Inherit the max-height that the overlay container sets to fit the viewport, and scroll.
+    maxHeight: 'inherit',
+    overflow: 'auto',
+    boxSizing: 'border-box',
   }),
   ({ theme, hasChrome }) =>
     hasChrome

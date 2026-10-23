@@ -444,8 +444,8 @@ export async function checkSnippetCsfOrder(docsDir: string): Promise<DocLineErro
 }
 
 /**
- * Checks that snippet tab titles use `CSF 4` and `Svelte CSF 3`, not the old `CSF Next` and
- * `Svelte CSF` names.
+ * Checks that snippet tab titles use `CSF 3` and `CSF 4`, not the old `CSF Next` and `Svelte CSF`
+ * names.
  */
 export async function checkSnippetLegacyCsfTitle(docsDir: string): Promise<DocLineError[]> {
   const snippetFiles = await getSnippetFiles(docsDir);

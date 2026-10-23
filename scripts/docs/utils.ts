@@ -255,7 +255,11 @@ export function getCsfSegmentGroups(segments: SnippetSegment[]): CsfSegment[][] 
  * A view is one renderer's blocks plus the `common` blocks, as the docs site shows them.
  */
 export function getMisorderedCsfSegments(lines: string[]): SnippetSegment[] {
-  const csfSegments = getCsfSegments(getSnippetSegments(lines));
+  const misordered = findMisorderedCsfSegments(getCsfSegments(getSnippetSegments(lines)));
+  return [...misordered].sort((a, b) => a.start - b.start);
+}
+
+function findMisorderedCsfSegments(csfSegments: CsfSegment[]): Set<SnippetSegment> {
   const renderers = new Set(csfSegments.map(({ segment }) => segment.attributes.renderer));
   const misordered = new Set<SnippetSegment>();
 
@@ -272,17 +276,21 @@ export function getMisorderedCsfSegments(lines: string[]): SnippetSegment[] {
       }
     }
   }
-  return [...misordered].sort((a, b) => a.start - b.start);
+  return misordered;
 }
 
 /**
  * Moves each CSF 4 segment before its CSF 3 counterpart. Segments trade places within the slots
- * their group already occupies, so all other content stays where it is.
+ * their group already occupies, so all other content stays where it is. Groups that are already
+ * in order in every reader's view stay as they are.
  * Returns the reordered lines, or `undefined` if nothing changed.
  */
 export function sortCsfSegments(lines: string[]): string[] | undefined {
+  const segments = getSnippetSegments(lines);
+  const misordered = findMisorderedCsfSegments(getCsfSegments(segments));
   const replacements = new Map<SnippetSegment, SnippetSegment>();
-  for (const group of getCsfSegmentGroups(getSnippetSegments(lines))) {
+  for (const group of getCsfSegmentGroups(segments)) {
+    if (!group.some(({ segment }) => misordered.has(segment))) continue;
     const sorted = [
       ...group.filter(({ version }) => version === 'csf4'),
       ...group.filter(({ version }) => version === 'csf3'),
@@ -309,12 +317,14 @@ export function sortCsfSegments(lines: string[]): string[] | undefined {
 
 /**
  * Returns the current name for a `tabTitle` that uses an old CSF name, or `undefined` if the title
- * is current. `CSF Next` is now `CSF 4`, and `Svelte CSF` is now `Svelte CSF 3`.
+ * is current. `CSF Next` is now `CSF 4`. Svelte titles drop the `Svelte` prefix: `Svelte CSF` is
+ * now `CSF 3`, and `Svelte CSF 3` and `Svelte CSF 4` are now `CSF 3` and `CSF 4`.
  */
 export function getRenamedCsfTabTitle(tabTitle = ''): string | undefined {
-  if (tabTitle === 'Svelte CSF') return 'Svelte CSF 3';
-  if (tabTitle.includes('CSF Next')) return tabTitle.replace(/CSF Next( 🧪)?/, 'CSF 4');
-  return undefined;
+  const renamed = tabTitle
+    .replace(/CSF Next( 🧪)?/, 'CSF 4')
+    .replace(/^Svelte CSF( [34])?$/, (_, version = ' 3') => `CSF${version}`);
+  return renamed === tabTitle ? undefined : renamed;
 }
 
 /**

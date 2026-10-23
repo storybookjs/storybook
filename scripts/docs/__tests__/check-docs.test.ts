@@ -431,22 +431,17 @@ describe('check-docs', () => {
       );
       expect(await checkSnippetCsfOrder(docsDir)).toEqual([]);
     });
-    it('pairs "Svelte CSF 3" with "Svelte CSF 4"', async () => {
+    it('does not move blocks that are in order in every view', async () => {
+      // A common block links the svelte and react blocks into one group, but each view is in order
+      const content = [csf4('svelte'), csf3('svelte'), csf4('react'), csf3('common'), ''].join(
+        '\n\n'
+      );
       const file = path.join(snippetsDir, 'foo.md');
-      await writeFile(
-        file,
-        [csf3('svelte', 'ts', 'Svelte CSF 3'), csf4('svelte', 'ts', 'Svelte CSF 4'), ''].join(
-          '\n\n'
-        )
-      );
+      await writeFile(file, content);
 
-      expect((await checkSnippetCsfOrder(docsDir)).length).toBe(1);
-      await fixSnippetCsfOrder(docsDir);
-      expect(await fs.readFile(file, 'utf8')).toBe(
-        [csf4('svelte', 'ts', 'Svelte CSF 4'), csf3('svelte', 'ts', 'Svelte CSF 3'), ''].join(
-          '\n\n'
-        )
-      );
+      expect(await checkSnippetCsfOrder(docsDir)).toEqual([]);
+      expect(await fixSnippetCsfOrder(docsDir)).toEqual([]);
+      expect(await fs.readFile(file, 'utf8')).toBe(content);
     });
     it('fixes the order, moving attached comments with their block', async () => {
       const file = path.join(snippetsDir, 'foo.md');
@@ -485,7 +480,7 @@ describe('check-docs', () => {
       await writeFile(
         path.join(snippetsDir, 'foo.md'),
         '```ts renderer="react" language="ts" tabTitle="Head (CSF 4)"\ncode\n```\n\n' +
-          '```svelte renderer="svelte" language="ts" tabTitle="Svelte CSF 3"\ncode\n```'
+          '```svelte renderer="svelte" language="ts" tabTitle="CSF 3"\ncode\n```'
       );
       const errors = await checkSnippetLegacyCsfTitle(docsDir);
       expect(errors).toEqual([]);
@@ -499,14 +494,18 @@ describe('check-docs', () => {
       expect(errors.length).toBe(1);
       expect(errors[0].message).toContain('Use "Head (CSF 4)" instead');
     });
-    it('errors for Svelte CSF tab titles', async () => {
+    it.each([
+      ['Svelte CSF', 'CSF 3'],
+      ['Svelte CSF 3', 'CSF 3'],
+      ['Svelte CSF 4', 'CSF 4'],
+    ])('errors for the "%s" tab title', async (tabTitle, renamed) => {
       await writeFile(
         path.join(snippetsDir, 'foo.md'),
-        '```svelte renderer="svelte" language="ts" tabTitle="Svelte CSF"\ncode\n```'
+        `\`\`\`svelte renderer="svelte" language="ts" tabTitle="${tabTitle}"\ncode\n\`\`\``
       );
       const errors = await checkSnippetLegacyCsfTitle(docsDir);
       expect(errors.length).toBe(1);
-      expect(errors[0].message).toContain('Use "Svelte CSF 3" instead');
+      expect(errors[0].message).toContain(`Use "${renamed}" instead`);
     });
   });
 

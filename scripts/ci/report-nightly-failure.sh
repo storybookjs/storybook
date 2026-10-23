@@ -2,11 +2,6 @@
 # Posts the failed jobs of a nightly `next` run to #sb-agility and, on weekdays, asks Obvious to fix them.
 set -euo pipefail
 
-if [ "${CIRCLE_BRANCH:-}" != "next" ]; then
-  echo "Only nightly runs on next are reported; this run is on ${CIRCLE_BRANCH:-an unknown branch}."
-  exit 0
-fi
-
 : "${SLACK_SB_AGILITY_WEBHOOK_URL:?Set SLACK_SB_AGILITY_WEBHOOK_URL in the CircleCI project settings}"
 : "${OBVIOUS_SLACK_USER_ID:?Set OBVIOUS_SLACK_USER_ID in the CircleCI project settings}"
 

@@ -77,7 +77,8 @@ export type JobImplementation = (workflow: Workflow) => JobImplementationObj;
 export function defineJob<K extends string, I extends JobImplementation>(
   name: K,
   implementation: I,
-  requires = [] as JobOrNoOpJob[]
+  requires = [] as JobOrNoOpJob[],
+  { requiresTerminal }: Pick<Job<K>, 'requiresTerminal'> = {}
 ): Job<K> {
   return {
     id: toId(name),
@@ -87,6 +88,7 @@ export function defineJob<K extends string, I extends JobImplementation>(
       ...implementation(workflow),
     }),
     requires,
+    requiresTerminal,
   };
 }
 

@@ -1,6 +1,7 @@
 import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../../utils/constants.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './constants.ts';
-import { type JobOrNoOpJob, type Workflow } from './types.ts';
+import { isNightly } from './runtime.ts';
+import { type JobOrNoOpJob } from './types.ts';
 
 /**
  * The `Persisting to workspace` step is bytes-bound: CircleCI gzips the
@@ -359,39 +360,17 @@ export const workflow = {
     },
   ],
   cancelOnFailure: () => {
+    // The nightly run keeps going so its failure report lists every failed job.
+    if (isNightly()) {
+      return [];
+    }
     return [
       {
         run: {
           name: 'Cancel current workflow',
           when: 'on_fail',
-          // The nightly run on `next` keeps going so its failure report lists every failed job.
           command:
-            '[ "$CIRCLE_BRANCH" = "next" ] || curl -X POST --header "Content-Type: application/json" "https://circleci.com/api/v2/workflow/${CIRCLE_WORKFLOW_ID}/cancel?circle-token=${WORKFLOW_CANCELER}"',
-        },
-      },
-    ];
-  },
-  reportOnFailure: (workflow: Workflow, template: string = 'none') => {
-    return [
-      {
-        run: {
-          name: 'Un-shallow git',
-          when: 'on_fail',
-          command: 'git fetch --unshallow',
-        },
-      },
-      {
-        run: {
-          name: 'Report failure',
-          when: 'on_fail',
-          command: 'echo "Workflow failed"',
-        },
-      },
-      {
-        'discord/status': {
-          only_for_branches: ['main', 'next', 'next-release', 'latest-release'].join(','),
-          fail_only: true,
-          failure_message: `$(yarn get-report-message ${workflow} ${template})`,
+            'curl -X POST --header "Content-Type: application/json" "https://circleci.com/api/v2/workflow/${CIRCLE_WORKFLOW_ID}/cancel?circle-token=${WORKFLOW_CANCELER}"',
         },
       },
     ];

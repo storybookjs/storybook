@@ -9,7 +9,7 @@ import { executors } from './utils/executors.ts';
 import { ensureRequiredJobs } from './utils/helpers.ts';
 import { orbs } from './utils/orbs.ts';
 import { parameters } from './utils/parameters.ts';
-import { setTrustedAuthor } from './utils/runtime.ts';
+import { isNightly, setNightly, setTrustedAuthor } from './utils/runtime.ts';
 import type { JobImplementationObj, NoOpJobImplementationObj } from './utils/types.ts';
 import { type Workflow, workflows } from './utils/types.ts';
 import { getJobs } from './workflow-jobs.ts';
@@ -62,7 +62,7 @@ function generateConfig(selected: Workflow[], baseRef: string) {
     const completion = defineCircleciCompletion([...ensuredJobs]);
     ensuredJobs.push(completion);
 
-    if (selected.includes('daily')) {
+    if (isNightly()) {
       ensuredJobs.push(defineNightlyFailureReport(completion));
     }
   }
@@ -129,6 +129,7 @@ program
     'Whether the pipeline can persist to shared caches',
     'false'
   )
+  .option('--branch <string>', 'The branch the pipeline runs on', '')
   .parse(process.argv);
 
 const opts = program.opts();
@@ -142,6 +143,7 @@ if (unknown.length > 0 || requested.length === 0) {
   );
 }
 const selected = workflows.filter((w) => requested.includes(w));
+setNightly(selected.includes('daily') && opts.branch === 'next');
 
 await fs.writeFile(
   join(dirname, '../../.circleci/config.generated.yml'),

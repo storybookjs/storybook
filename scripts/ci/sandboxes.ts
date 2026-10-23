@@ -371,6 +371,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     jobs,
     createJob,
     devJob,
+    chromaticJob,
   };
 }
 

@@ -4,99 +4,32 @@ import { join } from 'node:path';
 import { program } from 'commander';
 import yml from 'yaml';
 
-import {
-  benchmarkPackages,
-  build_linux,
-  build_windows,
-  check,
-  commonJobsNoOpJob,
-  defineCircleciCompletion,
-  docgenMemoryGate,
-  docgenPerfGate,
-  knip,
-  lint,
-  fmt,
-  internalStorybookBuildE2e,
-  internalStorybookE2e,
-  storybookChromatic,
-  testUnit_windows,
-  testsStories_linux,
-  testsUnit_linux,
-} from './common-jobs.ts';
-import { getInitEmpty, initEmptyNoOpJob } from './init-empty.ts';
-import { getSandboxes, getWindowsSandboxes, sandboxesNoOpJob } from './sandboxes.ts';
-import { getTestStorybooks, testStorybooksNoOpJob } from './test-storybooks.ts';
+import { defineCircleciCompletion } from './common-jobs.ts';
 import { executors } from './utils/executors.ts';
 import { ensureRequiredJobs } from './utils/helpers.ts';
 import { orbs } from './utils/orbs.ts';
 import { parameters } from './utils/parameters.ts';
 import { setTrustedAuthor } from './utils/runtime.ts';
-import type {
-  JobImplementationObj,
-  JobOrNoOpJob,
-  NoOpJobImplementationObj,
-} from './utils/types.ts';
-import { type Workflow, isWorkflowOrAbove, workflows } from './utils/types.ts';
+import type { JobImplementationObj, NoOpJobImplementationObj } from './utils/types.ts';
+import { type Workflow, workflows } from './utils/types.ts';
+import { getJobs } from './workflow-jobs.ts';
 
 const dirname = import.meta.dirname;
 
 /** Workflows that a PR can merge on, so they end in the `circleci-completion` status check. */
 const isMergeGating = (workflow: Workflow) => workflow !== 'windows';
 
-function getJobs(workflow: Workflow): JobOrNoOpJob[] {
-  const jobs: JobOrNoOpJob[] = [];
-  if (isWorkflowOrAbove(workflow, 'docs')) {
-    jobs.push(fmt);
-  } else if (workflow === 'windows') {
-    jobs.push(build_windows, testUnit_windows, ...getWindowsSandboxes());
-  } else {
-    const sandboxes = getSandboxes(workflow);
-    const testStorybooks = getTestStorybooks();
-    const initEmpty = getInitEmpty(workflow);
-
-    if (isWorkflowOrAbove(workflow, 'daily')) {
-      jobs.push(build_windows, testUnit_windows, docgenMemoryGate, docgenPerfGate);
-    }
-
-    jobs.push(
-      build_linux,
-      testsUnit_linux,
-      testsStories_linux,
-
-      commonJobsNoOpJob,
-      lint,
-      fmt,
-      check,
-      knip,
-
-      storybookChromatic,
-      internalStorybookE2e,
-      internalStorybookBuildE2e,
-      benchmarkPackages,
-
-      sandboxesNoOpJob,
-      ...sandboxes,
-
-      testStorybooksNoOpJob,
-      ...testStorybooks,
-
-      initEmptyNoOpJob,
-      ...initEmpty
-    );
-  }
-  return jobs;
-}
-
 /**
  * Generate the CircleCI config for the union of the given workflows.
  *
  * @param selected - The workflows to generate the config for, in `workflows` order. Jobs report
  *   failures as the first, most thorough one.
+ * @param baseRef - The git ref `focus` diffs against.
  * @returns The generated config for CircleCI in JS format.
  */
-function generateConfig(selected: Workflow[]) {
+function generateConfig(selected: Workflow[], baseRef: string) {
   const [workflow] = selected;
-  const jobs = selected.flatMap(getJobs);
+  const jobs = selected.flatMap((workflow) => getJobs(workflow, baseRef));
 
   /**
    * If you want to filter down to a particular job, e.g.for debugging purposes.. you can do that
@@ -179,6 +112,7 @@ program
     '-w, --workflow <string>',
     'Comma-separated workflows to generate the union config for (e.g. `normal,windows`)'
   )
+  .option('--base-ref <string>', 'Git ref to compare against for focused CI', 'origin/next')
   .option(
     '--gh-trusted-author <string>',
     'Whether the pipeline can persist to shared caches',
@@ -200,7 +134,7 @@ const selected = workflows.filter((w) => requested.includes(w));
 
 await fs.writeFile(
   join(dirname, '../../.circleci/config.generated.yml'),
-  yml.stringify(generateConfig(selected), null, {
+  yml.stringify(generateConfig(selected, opts.baseRef), null, {
     lineWidth: 1200,
     indent: 4,
   })

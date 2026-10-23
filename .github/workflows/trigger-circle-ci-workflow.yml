@@ -94,7 +94,7 @@ jobs:
             WORKFLOW=merged
           else
             WORKFLOW=$(echo "$LABELS" | jq -r '
-              map(select(startswith("ci:")) | ltrimstr("ci:") | select(IN("normal", "docs", "merged", "daily", "windows")))
+              map(select(startswith("ci:")) | ltrimstr("ci:") | select(IN("focus", "normal", "docs", "merged", "daily", "windows")))
               | join(",")')
           fi
           echo "workflow=$WORKFLOW" >> "$GITHUB_OUTPUT"

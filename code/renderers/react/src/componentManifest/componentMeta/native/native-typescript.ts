@@ -66,9 +66,14 @@ const swapCase = (path: string) =>
     return character === upper ? character.toLowerCase() : upper;
   });
 
+/** A request the native API can answer in a batch: the `gen` form of one of its methods. */
+export type NativeRequest<Result> = Generator<unknown, Result, unknown>;
+
 export interface NativeDocgenTypeScript extends DocgenTypeScript {
   /** Release the source files parsed outside a program since the last call. */
   releaseSourceFiles(): void;
+  /** Send up to two groups of independent requests in one round trip to the compiler process. */
+  batch<A, B = never>(first: NativeRequest<A>[], second?: NativeRequest<B>[]): [A[], B[]];
 }
 
 /**
@@ -120,6 +125,16 @@ export function createNativeDocgenTypeScript(
         lease.dispose();
       }
       leases = [];
+    },
+    batch: <A, B>(first: NativeRequest<A>[], second: NativeRequest<B>[] = []) => {
+      if (first.length === 0 && second.length === 0) {
+        return [[], []] as [A[], B[]];
+      }
+      const [a, b] = api.batch(
+        sync.all(...(first as Parameters<typeof sync.all>)),
+        sync.all(...(second as Parameters<typeof sync.all>))
+      );
+      return [a as A[], b as B[]];
     },
     displayPartsToString: (parts) => (parts ?? []).map((part) => part.text).join(''),
     forEachChild: ((node: ts.Node, visitor: unknown, visitArray: unknown) =>

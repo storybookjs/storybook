@@ -160,7 +160,7 @@ export class NativeComponentMetaProject
       )
     );
 
-    const facades = new NativeFacades(this.project.checker, this.project);
+    const facades = new NativeFacades(this.project, this.typescript);
     try {
       extractEntries(
         {

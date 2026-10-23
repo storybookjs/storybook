@@ -6,6 +6,12 @@
  * other`) keep working. AST nodes are not wrapped: the native API's remote nodes already have the
  * compiler API's shape (`kind`, `parent`, `getText()`, `forEachChild`, the child properties).
  *
+ * Every checker call is a round trip to the compiler process, and the extractor asks the same
+ * questions of every prop of a type in turn. So when a type lists its properties, the facades fetch
+ * the doc comments and tags of all of them in one batch, and the first `getTypeOfSymbolAtLocation`
+ * for one of them fetches the types, their text and their union members for the whole group. The
+ * answers are cached for the life of the facade set.
+ *
  * One facade set belongs to one snapshot's project. Objects from different snapshots must not be
  * mixed, so the project creates a new set whenever its snapshot changes.
  */
@@ -13,6 +19,7 @@ import type ts from 'typescript';
 import type { Node } from 'typescript-native/ast';
 import type {
   Checker,
+  JSDocTagInfo,
   LiteralType,
   Project,
   Signature as NativeSignature,
@@ -23,6 +30,7 @@ import type {
 } from 'typescript-native/sync';
 
 import type { DocgenTypeChecker } from '../docgen-typescript.ts';
+import type { NativeDocgenTypeScript } from './native-typescript.ts';
 
 const textPart = (text: string): ts.SymbolDisplayPart => ({ kind: 'text', text });
 
@@ -79,12 +87,12 @@ class SymbolFacade {
   }
 
   getDocumentationComment(): ts.SymbolDisplayPart[] {
-    const text = this.native.getDocumentationComment(this.facades.checker);
+    const text = this.facades.documentationComment(this.native);
     return text ? [textPart(text)] : [];
   }
 
   getJsDocTags(): ts.JSDocTagInfo[] {
-    return this.native.getJsDocTags(this.facades.checker).map(({ name, text }) => ({
+    return this.facades.jsDocTags(this.native).map(({ name, text }) => ({
       name,
       text: text === undefined ? undefined : [textPart(text)],
     }));
@@ -121,12 +129,7 @@ class TypeFacade {
 
   /** The members of a union or intersection type. */
   get types(): ts.Type[] {
-    if (!this.native.isUnionType() && !this.native.isIntersectionType()) {
-      return [];
-    }
-    return (this.native as UnionOrIntersectionType)
-      .getTypes()
-      .map((type) => this.facades.type(type));
+    return this.facades.memberTypes(this.native).map((type) => this.facades.type(type));
   }
 
   isUnion(): boolean {
@@ -150,11 +153,11 @@ class TypeFacade {
   }
 
   getProperties(): ts.Symbol[] {
-    return this.native.getProperties().map((symbol) => this.facades.symbol(symbol)!);
+    return this.facades.symbols(this.native.getProperties());
   }
 
   getApparentProperties(): ts.Symbol[] {
-    return this.native.getApparentProperties().map((symbol) => this.facades.symbol(symbol)!);
+    return this.facades.symbols(this.native.getApparentProperties());
   }
 
   getCallSignatures(): ts.Signature[] {
@@ -186,7 +189,7 @@ class SignatureFacade {
   }
 
   getParameters(): ts.Symbol[] {
-    return this.native.getParameters().map((symbol) => this.facades.symbol(symbol)!);
+    return this.native.getParameters().map((symbol) => this.facades.symbol(symbol));
   }
 
   getReturnType(): ts.Type {
@@ -216,57 +219,27 @@ class EmptyObjectTypeFacade {
   getConstraint = () => undefined;
 }
 
-/** Memoized facades over one project's native objects. */
+/** Memoized facades over one project's native objects, with the batched prefetches. */
 export class NativeFacades {
-  private readonly symbols = new WeakMap<NativeSymbol, SymbolFacade>();
-  private readonly types = new WeakMap<NativeType, TypeFacade>();
-  private readonly signatures = new WeakMap<NativeSignature, SignatureFacade>();
+  readonly checker: Checker;
+  private readonly symbolFacades = new WeakMap<NativeSymbol, SymbolFacade>();
+  private readonly typeFacades = new WeakMap<NativeType, TypeFacade>();
+  private readonly signatureFacades = new WeakMap<NativeSignature, SignatureFacade>();
   private readonly emptyObjectType = new EmptyObjectTypeFacade();
 
+  /** The properties a symbol was listed with, so one lookup can prefetch for all of them. */
+  private readonly groupOf = new WeakMap<NativeSymbol, readonly NativeSymbol[]>();
+  private readonly tags = new WeakMap<NativeSymbol, readonly JSDocTagInfo[]>();
+  private readonly docs = new WeakMap<NativeSymbol, string>();
+  private readonly typeAtLocation = new WeakMap<Node, Map<NativeSymbol, NativeType>>();
+  private readonly typeText = new WeakMap<NativeType, string>();
+  private readonly members = new WeakMap<NativeType, readonly NativeType[]>();
+
   constructor(
-    readonly checker: Checker,
-    readonly project: Project
-  ) {}
-
-  symbol(native: NativeSymbol): ts.Symbol;
-  symbol(native: NativeSymbol | undefined): ts.Symbol | undefined;
-  symbol(native: NativeSymbol | undefined): ts.Symbol | undefined {
-    if (!native) {
-      return undefined;
-    }
-    let facade = this.symbols.get(native);
-    if (!facade) {
-      facade = new SymbolFacade(native, this);
-      this.symbols.set(native, facade);
-    }
-    return facade as unknown as ts.Symbol;
-  }
-
-  type(native: NativeType): ts.Type;
-  type(native: NativeType | undefined): ts.Type | undefined;
-  type(native: NativeType | undefined): ts.Type | undefined {
-    if (!native) {
-      return undefined;
-    }
-    let facade = this.types.get(native);
-    if (!facade) {
-      facade = new TypeFacade(native, this);
-      this.types.set(native, facade);
-    }
-    return facade as unknown as ts.Type;
-  }
-
-  signature(native: NativeSignature): ts.Signature {
-    let facade = this.signatures.get(native);
-    if (!facade) {
-      facade = new SignatureFacade(native, this);
-      this.signatures.set(native, facade);
-    }
-    return facade as unknown as ts.Signature;
-  }
-
-  getEmptyObjectType(): ts.Type {
-    return this.emptyObjectType as unknown as ts.Type;
+    readonly project: Project,
+    private readonly typescript: NativeDocgenTypeScript
+  ) {
+    this.checker = project.checker;
   }
 
   /** The facades a checker from {@link createChecker} was built on. */
@@ -276,6 +249,162 @@ export class NativeFacades {
       throw new Error('The checker was not created by NativeFacades.createChecker');
     }
     return facades;
+  }
+
+  symbol(native: NativeSymbol): ts.Symbol;
+  symbol(native: NativeSymbol | undefined): ts.Symbol | undefined;
+  symbol(native: NativeSymbol | undefined): ts.Symbol | undefined {
+    if (!native) {
+      return undefined;
+    }
+    let facade = this.symbolFacades.get(native);
+    if (!facade) {
+      facade = new SymbolFacade(native, this);
+      this.symbolFacades.set(native, facade);
+    }
+    return facade as unknown as ts.Symbol;
+  }
+
+  /** The facades of a type's properties, with their docs and tags fetched in one batch. */
+  symbols(natives: readonly NativeSymbol[]): ts.Symbol[] {
+    this.prefetchDocs(natives);
+    return natives.map((native) => this.symbol(native));
+  }
+
+  type(native: NativeType): ts.Type;
+  type(native: NativeType | undefined): ts.Type | undefined;
+  type(native: NativeType | undefined): ts.Type | undefined {
+    if (!native) {
+      return undefined;
+    }
+    let facade = this.typeFacades.get(native);
+    if (!facade) {
+      facade = new TypeFacade(native, this);
+      this.typeFacades.set(native, facade);
+    }
+    return facade as unknown as ts.Type;
+  }
+
+  signature(native: NativeSignature): ts.Signature {
+    let facade = this.signatureFacades.get(native);
+    if (!facade) {
+      facade = new SignatureFacade(native, this);
+      this.signatureFacades.set(native, facade);
+    }
+    return facade as unknown as ts.Signature;
+  }
+
+  getEmptyObjectType(): ts.Type {
+    return this.emptyObjectType as unknown as ts.Type;
+  }
+
+  jsDocTags(symbol: NativeSymbol): readonly JSDocTagInfo[] {
+    let tags = this.tags.get(symbol);
+    if (!tags) {
+      tags = this.checker.getJsDocTagsOfSymbol(symbol);
+      this.tags.set(symbol, tags);
+    }
+    return tags;
+  }
+
+  documentationComment(symbol: NativeSymbol): string {
+    let doc = this.docs.get(symbol);
+    if (doc === undefined) {
+      doc = this.checker.getDocumentationCommentOfSymbol(symbol);
+      this.docs.set(symbol, doc);
+    }
+    return doc;
+  }
+
+  memberTypes(type: NativeType): readonly NativeType[] {
+    let members = this.members.get(type);
+    if (!members) {
+      members =
+        type.isUnionType() || type.isIntersectionType()
+          ? (type as UnionOrIntersectionType).getTypes()
+          : [];
+      this.members.set(type, members);
+    }
+    return members;
+  }
+
+  typeToString(type: NativeType): string {
+    let text = this.typeText.get(type);
+    if (text === undefined) {
+      text = this.checker.typeToString(type);
+      this.typeText.set(type, text);
+    }
+    return text;
+  }
+
+  typeOfSymbolAtLocation(symbol: NativeSymbol, location: Node): NativeType {
+    let byLocation = this.typeAtLocation.get(location);
+    if (!byLocation) {
+      byLocation = new Map();
+      this.typeAtLocation.set(location, byLocation);
+    }
+    const cached = byLocation.get(symbol);
+    if (cached) {
+      return cached;
+    }
+    const group = this.groupOf.get(symbol)?.filter((member) => !byLocation.has(member)) ?? [];
+    if (group.length > 1) {
+      this.prefetchTypes(group, location, byLocation);
+      const type = byLocation.get(symbol);
+      if (type) {
+        return type;
+      }
+    }
+    const type = this.checker.getTypeOfSymbolAtLocation(symbol, location);
+    byLocation.set(symbol, type);
+    return type;
+  }
+
+  /** One round trip for the doc comments and tags of a type's properties. */
+  private prefetchDocs(symbols: readonly NativeSymbol[]): void {
+    const missing = symbols.filter((symbol) => !this.docs.has(symbol));
+    for (const symbol of symbols) {
+      this.groupOf.set(symbol, symbols);
+    }
+    if (missing.length < 2) {
+      return;
+    }
+    const { checker } = this;
+    const [docs, tags] = this.typescript.batch(
+      missing.map((symbol) => checker.getDocumentationCommentOfSymbol.gen(symbol)),
+      missing.map((symbol) => checker.getJsDocTagsOfSymbol.gen(symbol))
+    );
+    missing.forEach((symbol, index) => {
+      this.docs.set(symbol, docs[index]);
+      this.tags.set(symbol, tags[index]);
+    });
+  }
+
+  /**
+   * One round trip for the types of a property group at a location, then one for their text and
+   * the members of the unions among them, which the extractor reads next.
+   */
+  private prefetchTypes(
+    symbols: readonly NativeSymbol[],
+    location: Node,
+    byLocation: Map<NativeSymbol, NativeType>
+  ): void {
+    const { checker } = this;
+    const [types] = this.typescript.batch(
+      symbols.map((symbol) => checker.getTypeOfSymbolAtLocation.gen(symbol, location))
+    );
+    symbols.forEach((symbol, index) => byLocation.set(symbol, types[index]));
+
+    const untexted = [...new Set(types)].filter((type) => !this.typeText.has(type));
+    const unions = untexted.filter(
+      (type) => (type.isUnionType() || type.isIntersectionType()) && !this.members.has(type)
+    );
+    const [texts, members] = this.typescript.batch(
+      untexted.map((type) => checker.typeToString.gen(type)),
+      unions.map((type) => (type as UnionOrIntersectionType).getTypes.gen())
+    );
+    untexted.forEach((type, index) => this.typeText.set(type, texts[index]));
+    unions.forEach((type, index) => this.members.set(type, members[index] ?? []));
   }
 
   /** The checker with the compiler API's method names and the facades' objects. */
@@ -301,16 +430,21 @@ export class NativeFacades {
       getTypeAtLocation: (node) => this.type(checker.getTypeAtLocation(asNode(node))),
       getTypeOfSymbol: (symbol) => this.type(checker.getTypeOfSymbol(unwrapSymbol(symbol))),
       getTypeOfSymbolAtLocation: (symbol, node) =>
-        this.type(checker.getTypeOfSymbolAtLocation(unwrapSymbol(symbol), asNode(node))),
+        this.type(this.typeOfSymbolAtLocation(unwrapSymbol(symbol), asNode(node))),
       getVoidType: () => this.type(checker.getVoidType()),
-      typeToString: (type, enclosingDeclaration, flags) =>
-        unwrapType(type)
-          ? checker.typeToString(
-              unwrapType(type),
+      typeToString: (type, enclosingDeclaration, flags) => {
+        const native = unwrapType(type);
+        if (!native) {
+          return '{}';
+        }
+        return enclosingDeclaration === undefined && flags === undefined
+          ? this.typeToString(native)
+          : checker.typeToString(
+              native,
               enclosingDeclaration && asNode(enclosingDeclaration),
               flags as number
-            )
-          : '{}',
+            );
+      },
     };
     Object.defineProperty(docgenChecker, NATIVE_FACADES, { value: this });
     return docgenChecker;

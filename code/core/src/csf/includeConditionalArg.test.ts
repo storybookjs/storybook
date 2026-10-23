@@ -160,4 +160,56 @@ describe('includeConditionalArg', () => {
       });
     });
   });
+
+  describe('function', () => {
+    it('should return true when function returns true', () => {
+      expect(
+        includeConditionalArg(
+          { if: (args) => args.a === 1 },
+          { a: 1 },
+          {}
+        )
+      ).toBe(true);
+    });
+
+    it('should return false when function returns false', () => {
+      expect(
+        includeConditionalArg(
+          { if: (args) => args.a === 1 },
+          { a: 2 },
+          {}
+        )
+      ).toBe(false);
+    });
+
+    it('should support multiple conditions via function', () => {
+      expect(
+        includeConditionalArg(
+          { if: (args) => args.type === 'pessoaFisica' && args.pais === 'Brasil' },
+          { type: 'pessoaFisica', pais: 'Brasil' },
+          {}
+        )
+      ).toBe(true);
+    });
+
+    it('should support multiple conditions via function returning false', () => {
+      expect(
+        includeConditionalArg(
+          { if: (args) => args.type === 'pessoaFisica' && args.pais === 'Brasil' },
+          { type: 'pessoaFisica', pais: 'Alemanha' },
+          {}
+        )
+      ).toBe(false);
+    });
+
+    it('should pass globals to the function', () => {
+      expect(
+        includeConditionalArg(
+          { if: (_args, globals) => globals.theme === 'dark' },
+          {},
+          { theme: 'dark' }
+        )
+      ).toBe(true);
+    });
+  });
 });

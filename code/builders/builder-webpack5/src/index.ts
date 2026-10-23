@@ -8,7 +8,7 @@ import {
   WebpackInvocationError,
   WebpackMissingStatsError,
 } from 'storybook/internal/server-errors';
-import type { Builder, Options } from 'storybook/internal/types';
+import type { Builder, Options, TurbosnapOutputDraft } from 'storybook/internal/types';
 
 import { checkWebpackVersion } from '@storybook/core-webpack';
 
@@ -287,6 +287,19 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     });
   }
 
+  let outputEvidence: TurbosnapOutputDraft | undefined;
+  if (options.statsJson || options.webpackStatsJson) {
+    const { createWebpackOutputEvidence } = await import('./turbosnap-output.ts');
+    const { trackWebpackChunkSources } = await import('./turbosnap-chunks.ts');
+    trackWebpackChunkSources(compiler);
+    compiler.hooks.emit.tapPromise(
+      { name: 'StorybookTurbosnapOutput', stage: Number.MAX_SAFE_INTEGER },
+      async (compilation) => {
+        outputEvidence = await createWebpackOutputEvidence(compilation, options);
+      }
+    );
+  }
+
   const webpackCompilation = new Promise<Stats>((succeed, fail) => {
     compiler.run((error, stats) => {
       if (error) {
@@ -334,6 +347,10 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
   });
 
   const [webpackCompilationOutput] = await Promise.all([webpackCompilation, previewFiles]);
+
+  if (outputEvidence) {
+    Object.assign(webpackCompilationOutput, { turbosnapOutput: outputEvidence });
+  }
 
   return webpackCompilationOutput;
 };

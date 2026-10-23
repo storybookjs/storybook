@@ -389,6 +389,7 @@
     "npmlog": "^7.0.0",
     "p-limit": "^7.2.0",
     "package-manager-detector": "^1.1.0",
+    "parse5": "^8.0.0",
     "pathe": "^1.1.2",
     "picocolors": "^1.1.0",
     "picomatch": "^4.0.5",

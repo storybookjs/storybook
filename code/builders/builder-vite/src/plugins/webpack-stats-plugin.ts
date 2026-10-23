@@ -5,6 +5,8 @@ import type { BuilderStats } from 'storybook/internal/types';
 import { isAbsolute, relative } from 'pathe';
 import type { Plugin } from 'vite';
 
+import type { ViteOutputEvidence } from '../turbosnap-output.ts';
+
 /*
  * Reason, Module are copied from chromatic types
  * https://github.com/chromaui/chromatic-cli/blob/145a5e295dde21042e96396c7e004f250d842182/bin-src/types.ts#L265-L276
@@ -21,6 +23,7 @@ interface Module {
 
 type WebpackStatsPluginOptions = {
   workingDir: string;
+  outputEvidence?: ViteOutputEvidence;
 };
 
 const ROLLUP_VIRTUAL_PREFIX = '\0';
@@ -61,7 +64,10 @@ function createNormalizer(workingDir: string, ids: Iterable<string>) {
 
 export type WebpackStatsPlugin = Plugin & { storybookGetStats: () => BuilderStats };
 
-export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): WebpackStatsPlugin {
+export function pluginWebpackStats({
+  workingDir,
+  outputEvidence,
+}: WebpackStatsPluginOptions): WebpackStatsPlugin {
   const importersById = new Map<string, Set<string>>();
 
   function record(id: string, importer?: string) {
@@ -79,7 +85,20 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
     name: 'storybook:rollup-plugin-webpack-stats',
     // We want this to run after the vite build plugins (https://vitejs.dev/guide/api-plugin.html#plugin-ordering)
     enforce: 'post',
+    ...(outputEvidence &&
+      ({
+        configResolved(config) {
+          outputEvidence.resolved(config);
+        },
+        writeBundle: {
+          order: 'post',
+          async handler(_options, bundle) {
+            await outputEvidence.bundle(bundle);
+          },
+        },
+      } satisfies Pick<Plugin, 'configResolved' | 'writeBundle'>)),
     moduleParsed(mod) {
+      outputEvidence?.module(mod);
       record(mod.id);
       for (const depId of mod.importedIds.concat(mod.dynamicallyImportedIds)) {
         record(depId, mod.id);
@@ -105,8 +124,14 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
         name,
         reasons: Array.from(importerNames, (moduleName) => ({ moduleName })),
       }));
-      const stats = { modules };
-      return { ...stats, toJson: () => stats };
+      const stats = {
+        modules,
+      };
+      return {
+        ...stats,
+        ...(outputEvidence && { turbosnapOutput: outputEvidence.finish() }),
+        toJson: () => stats,
+      };
     },
   };
 }

@@ -64,6 +64,7 @@ export * from './utils/utils.ts';
 export * from './utils/command.ts';
 export * from './utils/file-lock.ts';
 export * from './utils/process-ancestry.ts';
+export * from './utils/turbosnap-output.ts';
 export * from './node-version.ts';
 
 export { versions };

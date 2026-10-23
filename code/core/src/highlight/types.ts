@@ -95,3 +95,31 @@ export type Box = {
   width: number;
   height: number;
 };
+
+/** A single clickable target in the highlight menu, as sent from the preview to the manager. */
+export type HighlightMenuTarget = {
+  /** The id of the highlight the target belongs to, used to attribute `HIGHLIGHT_MENU_CLICK`s */
+  id: Highlight['id'];
+  /**
+   * A short, non-content label identifying the element (e.g. `div#id.class`), rendered in the
+   * manager menu's element list. Derived from the tag name, id and class names only, so the
+   * preview never sends renderable DOM content over the channel.
+   */
+  label: string;
+  details: ClickEventDetails;
+};
+
+/**
+ * Payload of the internal `HIGHLIGHT_MENU` event (preview → manager). `coords` are relative to the
+ * preview iframe's viewport; an empty `targets` array hides the menu.
+ */
+export type HighlightMenuState = {
+  targets: HighlightMenuTarget[];
+  selected: number | null;
+  coords: { x: number; y: number } | null;
+};
+
+/** Payload of the internal `HIGHLIGHT_MENU_INTERACTION` event (manager → preview). */
+export type HighlightMenuInteraction =
+  | { action: 'select' | 'focus'; index: number }
+  | { action: 'deselect' | 'blur' };

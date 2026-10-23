@@ -9,8 +9,10 @@ export default {
 };
 
 export const OneItem = {
+  render: ({ children, ...args }) => <List {...args}>{children}</List>,
   args: {
-    children: <Unchecked {...Unchecked.args} />,
+    //👇 In CSF 3, call the reused story's render function (it is not a component)
+    children: Unchecked.render({ ...Unchecked.args }),
   },
 };
 ```
@@ -32,8 +34,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const OneItem: Story = {
+  render: ({ children, ...args }) => <List {...args}>{children}</List>,
   args: {
-    children: <Unchecked {...Unchecked.args} />,
+    //👇 In CSF 3, call the reused story's render function (it is not a component)
+    children: Unchecked.render({ ...Unchecked.args }),
   },
 };
 ```
@@ -49,8 +53,9 @@ export default {
 };
 
 export const OneItem = {
+  render: ({ children, ...args }) => <List {...args}>{children}</List>,
   args: {
-    children: <Unchecked {...Unchecked.args} />,
+    children: Unchecked.render({ ...Unchecked.args }),
   },
 };
 ```
@@ -71,8 +76,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const OneItem: Story = {
+  render: ({ children, ...args }) => <List {...args}>{children}</List>,
   args: {
-    children: <Unchecked {...Unchecked.args} />,
+    children: Unchecked.render({ ...Unchecked.args }),
   },
 };
 ```
@@ -90,8 +96,9 @@ const meta = preview.meta({
 });
 
 export const OneItem = meta.story({
+  render: ({ children, ...args }) => <List {...args}>{children}</List>,
   args: {
-    children: <Unchecked {...Unchecked.input.args} />,
+    children: Unchecked.render({ ...Unchecked.input.args }),
   },
 });
 ```
@@ -111,8 +118,9 @@ const meta = preview.meta({
 });
 
 export const OneItem = meta.story({
+  render: ({ children, ...args }) => <List {...args}>{children}</List>,
   args: {
-    children: <Unchecked {...Unchecked.input.args} />,
+    children: Unchecked.render({ ...Unchecked.input.args }),
   },
 });
 ```

@@ -1,4 +1,4 @@
-import { findConfigFile } from 'storybook/internal/common';
+import { findConfigFile, isTypeScriptReadyForDocgen } from 'storybook/internal/common';
 import {
   extractMockCalls,
   findMockRedirect,
@@ -25,9 +25,9 @@ import type { FrameworkOptions } from './types.ts';
 import type { UserConfig, Plugin } from 'vite';
 
 export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
-// Turns `features.docgenServer` on by default; read through `presets.apply('isDocgenProviderEnabled')`
-// so the default never has to call the provider, which itself reads `features`.
-export const isDocgenProviderEnabled = true;
+// Default for `features.docgenServer`; a project without a usable `typescript` keeps builder docgen.
+export const isDocgenProviderEnabled = (_existing: unknown, options: Options) =>
+  isTypeScriptReadyForDocgen((specifier) => import.meta.resolve(specifier), options);
 export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
 
 export const addons: PresetProperty<'addons'> = [];

@@ -13,7 +13,7 @@
  * docgen-relevant TS option (`reactDocgenTypescriptOptions`, including `propFilter`) applies solely
  * to the `react-docgen-typescript` engine used by the legacy manifest path — not here.
  */
-import { createLazyDocgenMiddleware } from 'storybook/internal/common';
+import { createLazyDocgenMiddleware, loadTypeScriptCompilerApi } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware } from 'storybook/internal/types';
 
@@ -30,10 +30,11 @@ export const createDocgenProvider = (): DocgenMiddleware =>
   createLazyDocgenMiddleware({
     createManager: async () => {
       try {
-        const ts = await import('typescript');
-        return new ComponentMetaManager(ts.default ?? ts);
+        return new ComponentMetaManager(
+          await loadTypeScriptCompilerApi(() => import('typescript'))
+        );
       } catch (err) {
-        logger.debug(`[reactComponentMeta] Docgen provider disabled: ${err}`);
+        logger.warn(`React docgen is unavailable. ${err instanceof Error ? err.message : err}`);
         return undefined;
       }
     },

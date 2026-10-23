@@ -1,0 +1,105 @@
+import {
+  type JsPackageManager,
+  RENDERERS_WITH_TYPESCRIPT_DOCGEN,
+  TYPESCRIPT_FOR_DOCGEN_PACKAGE,
+  hasTypeScriptCompilerApi,
+  isCI,
+} from 'storybook/internal/common';
+import { logger, prompt } from 'storybook/internal/node-logger';
+import { TypeScriptWithoutCompilerApiError } from 'storybook/internal/server-errors';
+import type { SupportedRenderer } from 'storybook/internal/types';
+
+import { coerce } from 'semver';
+
+import type { DependencyCollector } from '../dependency-collector.ts';
+import type { CommandOptions } from '../generators/types.ts';
+import { createPromptCancelOptions } from '../prompt-cancel.ts';
+import { TelemetryService } from '../services/TelemetryService.ts';
+
+export type TypeScriptDependencyResult =
+  | 'added'
+  | 'declined'
+  | 'already-installed'
+  | 'without-compiler-api'
+  | 'not-needed';
+
+type ExecuteTypeScriptDependencyParams = {
+  packageManager: JsPackageManager;
+  renderer: SupportedRenderer;
+  dependencyCollector: DependencyCollector;
+};
+
+export class TypeScriptDependencyCommand {
+  constructor(
+    private readonly commandOptions: CommandOptions,
+    private readonly telemetryService = new TelemetryService(),
+    private readonly isInteractive = () => !!process.stdout.isTTY && !isCI()
+  ) {}
+
+  async execute({
+    packageManager,
+    renderer,
+    dependencyCollector,
+  }: ExecuteTypeScriptDependencyParams): Promise<TypeScriptDependencyResult> {
+    const result = await this.decide(packageManager, renderer);
+    if (result === 'added') {
+      dependencyCollector.addDevDependencies([TYPESCRIPT_FOR_DOCGEN_PACKAGE]);
+    }
+    if (result !== 'not-needed') {
+      await this.telemetryService.trackTypeScriptDependency(result);
+    }
+    return result;
+  }
+
+  private async decide(
+    packageManager: JsPackageManager,
+    renderer: SupportedRenderer
+  ): Promise<TypeScriptDependencyResult> {
+    if (!RENDERERS_WITH_TYPESCRIPT_DOCGEN.includes(renderer)) {
+      return 'not-needed';
+    }
+
+    if (packageManager.isDependencyInstalled('typescript')) {
+      const version = coerce(
+        await packageManager.getDeclaredVersionSpecifier('typescript')
+      )?.version;
+      if (version && !hasTypeScriptCompilerApi(version)) {
+        logger.warn(new TypeScriptWithoutCompilerApiError({ version }).message);
+        return 'without-compiler-api';
+      }
+      return 'already-installed';
+    }
+
+    if (await this.shouldAddTypeScript()) {
+      return 'added';
+    }
+    logger.info(
+      `Server-side docgen stays off until you add ${TYPESCRIPT_FOR_DOCGEN_PACKAGE} to your devDependencies.`
+    );
+    return 'declined';
+  }
+
+  private async shouldAddTypeScript(): Promise<boolean> {
+    const { installTypescript, yes } = this.commandOptions;
+    if (installTypescript !== undefined) {
+      return installTypescript;
+    }
+    if (yes || !this.isInteractive()) {
+      return true;
+    }
+    return prompt.confirm(
+      {
+        message:
+          'Storybook uses TypeScript to read your component types for Controls and the Docs args table, also in JavaScript projects. Do you want to install TypeScript?',
+        initialValue: true,
+      },
+      createPromptCancelOptions(this.telemetryService, 'typescript-dependency')
+    );
+  }
+}
+
+export const executeTypeScriptDependency = ({
+  options,
+  ...params
+}: ExecuteTypeScriptDependencyParams & { options: CommandOptions }) =>
+  new TypeScriptDependencyCommand(options).execute(params);

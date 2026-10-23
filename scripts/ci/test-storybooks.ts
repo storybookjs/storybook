@@ -70,6 +70,53 @@ export function definePortableStoryTest(directory: string) {
   );
 }
 
+export function defineVitePluginTest() {
+  const working_directory = 'test-storybooks/vite-plugin-react-ts';
+
+  return defineJob(
+    'test-storybooks-vite-plugin',
+    () => ({
+      executor: {
+        name: 'sb_playwright',
+        class: 'medium+',
+      },
+      steps: [
+        ...workflow.restoreLinux(),
+        {
+          run: {
+            name: 'Install dependencies',
+            working_directory,
+            command: 'yarn install --no-immutable',
+            environment: {
+              YARN_ENABLE_IMMUTABLE_INSTALLS: false,
+            },
+          },
+        },
+        {
+          run: {
+            name: 'Build production Storybook (vite build --mode storybook)',
+            working_directory,
+            command: [
+              'yarn storybook:build',
+              'test -f storybook-static/index.html',
+              'test -f storybook-static/iframe.html',
+            ].join('\n'),
+          },
+        },
+        {
+          run: {
+            name: 'Run Playwright E2E tests against the vite dev server',
+            working_directory,
+            command: 'yarn playwright-e2e',
+          },
+        },
+        artifact.persist(join(working_directory, 'test-results'), 'playwright'),
+      ],
+    }),
+    [testStorybooksNoOpJob]
+  );
+}
+
 export function defineMcpTestStorybook() {
   return defineJob(
     'test-storybooks-mcp',
@@ -126,6 +173,7 @@ export function getTestStorybooks() {
     definePortableStoryTest
   );
 
+  testStorybooks.push(defineVitePluginTest());
   testStorybooks.push(defineMcpTestStorybook());
 
   return testStorybooks;

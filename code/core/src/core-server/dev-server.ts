@@ -2,10 +2,10 @@ import { logConfig, normalizeStories } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError } from 'storybook/internal/server-errors';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
-import type { Options, SecurityConfig } from 'storybook/internal/types';
+import type { Builder, Options, SecurityConfig, ServerApp } from 'storybook/internal/types';
 
 import compression from '@polka/compression';
-import polka from 'polka';
+import polka, { type Polka } from 'polka';
 
 import type { ChangeDetectionAdapter } from '../shared/open-service/services/module-graph/engine/adapters/types.ts';
 import { resolveChangeDetectionAdapter } from '../shared/open-service/services/module-graph/server.ts';
@@ -29,10 +29,38 @@ import type { getServer } from './utils/server-init.ts';
 import { useStatics } from './utils/server-statics.ts';
 import { summarizeIndex } from './utils/summarizeIndex.ts';
 
-export async function storybookDevServer(
+/** A wired Storybook dev app, as returned by {@link createStorybookApp}. */
+export type StorybookApp = {
+  /** Serves the manager, the preview and Storybook's own routes. It is not listening yet. */
+  app: Polka;
+  /** The preview builder, which a host that replaces its HTTP server restarts against the new one. */
+  previewBuilder: Builder<unknown>;
+  previewResult: BuilderStartResult;
+  managerResult: BuilderStartResult;
+  storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
+  /** Stops change detection. */
+  disposeChangeDetection: () => Promise<void>;
+  /** Stops change detection and closes the manager and preview builders. */
+  close: () => Promise<void>;
+};
+
+type BuilderStartResult = Awaited<ReturnType<Builder<unknown>['start']>>;
+
+type DevHttpServer = Awaited<ReturnType<typeof getServer>>;
+
+/**
+ * Wires Storybook's dev app (middlewares, routes, manager and preview builders, change detection,
+ * manifests, telemetry) without listening, opening a browser or handling process signals.
+ *
+ * @param server The HTTP server the builders attach their WebSockets to.
+ * @param previewRouter Router the preview mounts its middlewares on, the app by default. A host
+ *   that restarts the preview passes a router of its own and routes requests to it.
+ */
+export async function createStorybookApp(
   options: Options,
-  server: Awaited<ReturnType<typeof getServer>>
-) {
+  server: DevHttpServer,
+  previewRouter?: ServerApp
+): Promise<StorybookApp> {
   const core = await options.presets.apply('core');
   const security = await options.presets.apply<SecurityConfig | undefined>('security');
 
@@ -58,7 +86,7 @@ export async function storybookDevServer(
     workingDir,
   });
 
-  const disposeChangeDetectionRuntime = async () => {
+  const disposeChangeDetection = async (): Promise<void> => {
     await changeDetectionService.dispose().catch(() => undefined);
   };
 
@@ -127,15 +155,12 @@ export async function storybookDevServer(
         channel: options.channel,
       });
 
-  let previewResult: Awaited<ReturnType<(typeof previewBuilder)['start']>> =
-    await Promise.resolve();
-
   logger.debug('Starting preview..');
-  previewResult = await previewBuilder
+  const previewResult = await previewBuilder
     .start({
       startTime: process.hrtime(),
       options,
-      router: app,
+      router: previewRouter ?? app,
       server,
       channel: options.channel,
     })
@@ -143,7 +168,7 @@ export async function storybookDevServer(
       logger.error('Failed to build the preview');
       process.exitCode = 1;
 
-      await disposeChangeDetectionRuntime();
+      await disposeChangeDetection();
       await managerBuilder?.bail().catch(() => undefined);
       // For some reason, even when Webpack fails e.g. wrong main.js config,
       // the preview may continue to print to stdout, which can affect output
@@ -167,6 +192,38 @@ export async function storybookDevServer(
 
   changeDetectionService.start();
 
+  if (features?.componentsManifest) {
+    registerManifests({ app, presets: options.presets });
+  }
+  // Count a 'dev' event only once the index is ready; a failing index is reported by the caller.
+  storyIndexGeneratorPromise.then(
+    () => doTelemetry(app, core, storyIndexGeneratorPromise, options),
+    () => undefined
+  );
+
+  return {
+    app,
+    previewBuilder,
+    previewResult,
+    managerResult,
+    storyIndexGeneratorPromise,
+    disposeChangeDetection,
+    close: async (): Promise<void> => {
+      await disposeChangeDetection();
+      await managerBuilder.bail().catch(() => undefined);
+      await previewBuilder.bail().catch(() => undefined);
+    },
+  };
+}
+
+/** Starts Storybook's dev server: {@link createStorybookApp}, then listen, open and signal handling. */
+export async function storybookDevServer(
+  options: Options,
+  server: DevHttpServer
+): Promise<Pick<StorybookApp, 'previewResult' | 'managerResult'>> {
+  const storybook = await createStorybookApp(options, server);
+  const { app, storyIndexGeneratorPromise } = storybook;
+
   const listening = new Promise<void>((resolve, reject) => {
     server.once('error', reject);
     // SECURITY: If no host is set, listen on 127.0.0.1. Node binds to 0.0.0.0 by default, which
@@ -187,19 +244,11 @@ export async function storybookDevServer(
       });
     }
   } catch (e) {
-    await disposeChangeDetectionRuntime();
-    await managerBuilder?.bail().catch(() => undefined);
-    await previewBuilder?.bail().catch(() => undefined);
+    await storybook.close();
     throw e;
   }
 
-  if (features?.componentsManifest) {
-    registerManifests({ app, presets: options.presets });
-  }
-  // Now the preview has successfully started, we can count this as a 'dev' event.
-  doTelemetry(app, core, storyIndexGeneratorPromise, options);
-
-  async function cancelTelemetry() {
+  async function cancelTelemetry(): Promise<void> {
     try {
       if (!isTelemetryModuleEnabled()) {
         return;
@@ -219,7 +268,7 @@ export async function storybookDevServer(
       } catch {}
       await telemetry('canceled', payload, { immediate: true });
     } finally {
-      await disposeChangeDetectionRuntime();
+      await storybook.disposeChangeDetection();
       // Always terminate on signal, even when telemetry is disabled.
       process.exit(0);
     }
@@ -228,5 +277,5 @@ export async function storybookDevServer(
   process.on('SIGINT', cancelTelemetry);
   process.on('SIGTERM', cancelTelemetry);
 
-  return { previewResult, managerResult };
+  return { previewResult: storybook.previewResult, managerResult: storybook.managerResult };
 }

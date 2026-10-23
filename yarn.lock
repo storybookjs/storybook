@@ -10233,6 +10233,7 @@ __metadata:
     knitwork: "npm:^1.1.0"
     magic-string: "npm:^1.1.0"
     pathe: "npm:^1.1.2"
+    polka: "npm:^1.0.0-next.28"
     ts-dedent: "npm:^2.2.0"
     vite: "npm:^7.0.4"
   peerDependencies:

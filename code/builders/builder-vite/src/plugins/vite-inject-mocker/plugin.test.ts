@@ -27,10 +27,10 @@ function makeHtml(headAttrs = '') {
 }
 
 describe('vite-inject-mocker plugin — transformIndexHtml', () => {
-  function createPlugin(command: 'build' | 'serve') {
+  function createPlugin(command: 'build' | 'serve', base = '/') {
     const plugin = viteInjectMockerRuntime({ previewConfigPath: null }) as any;
     // Simulate Vite calling configResolved
-    plugin.configResolved({ command } as any);
+    plugin.configResolved({ command, base } as any);
     return plugin;
   }
 
@@ -51,6 +51,13 @@ describe('vite-inject-mocker plugin — transformIndexHtml', () => {
     expect(result).toContain('src="/vite-inject-mocker-entry.js"');
     // Ensure it's not the relative form
     expect(result).not.toContain('src="./vite-inject-mocker-entry.js"');
+  });
+
+  it('prefixes the dev path with Vite base', () => {
+    const plugin = createPlugin('serve', '/__storybook/');
+    const result = plugin.transformIndexHtml(makeHtml());
+
+    expect(result).toContain('src="/__storybook/vite-inject-mocker-entry.js"');
   });
 
   it('injects the script tag right after <head>', () => {

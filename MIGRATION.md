@@ -19,7 +19,7 @@
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
-  - [TypeScript 5.9 or 6.x](#typescript-59-or-6x)
+  - [TypeScript 5.9 or newer](#typescript-59-or-newer)
   - [CSF Next: meta args no longer need `as const`](#csf-next-meta-args-no-longer-need-as-const)
   - [CSF Next: use `mocked()` for the mock API on args](#csf-next-use-mocked-for-the-mock-api-on-args)
   - [CSF Next: every key in meta args must be an arg](#csf-next-every-key-in-meta-args-must-be-an-arg)
@@ -1040,11 +1040,24 @@ Storybook accepts prerelease Node.js builds when their version meets this minimu
 
 During the Storybook 11 prerelease cycle, some releases still accept Node.js 20.19. This does not mean Node.js 20 will remain supported in the final release. Use Node.js 22.12 or higher when testing your migration.
 
-### TypeScript 5.9 or 6.x
+### TypeScript 5.9 or newer
 
-Storybook 11 requires TypeScript 5.9 or 6.x. Upgrade your project's TypeScript dependency before upgrading Storybook, then run your project's type check.
+Storybook 11 requires TypeScript 5.9 or newer. Upgrade your project's TypeScript dependency before upgrading Storybook, then run your project's type check.
 
 There is no automatic source migration. Updating the compiler can expose errors in application code or dependencies that require project-specific fixes. JavaScript-only projects do not need to install TypeScript.
+
+TypeScript 7 does not include the compiler API that Storybook uses to generate Controls and the Docs args table. Keep TypeScript 7 for `tsc`, and point the `typescript` package at TypeScript 6. npm, Yarn, and pnpm all accept this alias:
+
+```json
+{
+  "devDependencies": {
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
+  }
+}
+```
+
+`npx tsc` stays on TypeScript 7. Replacing only the `typescript` entry removes `tsc` and leaves `tsc6`. This is the [side-by-side setup from the TypeScript team](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0). The same steps are on the [TypeScript page](https://storybook.js.org/docs/configure/integration/typescript#typescript-7).
 
 ### CSF Next: meta args no longer need `as const`
 
@@ -1532,7 +1545,7 @@ If you implement toolsets using Storybook's internal open-service APIs, declare 
 
 ### Internal `satisfies` helper removed
 
-The `satisfies` function is no longer exported from `storybook/internal/common`. It existed to mimic TypeScript's `satisfies` operator before Storybook required TypeScript 4.9, and Storybook 11 [requires TypeScript 5.9 or higher](#typescript-59-or-6x).
+The `satisfies` function is no longer exported from `storybook/internal/common`. It existed to mimic TypeScript's `satisfies` operator before Storybook required TypeScript 4.9, and Storybook 11 [requires TypeScript 5.9 or newer](#typescript-59-or-newer).
 
 Replace calls with the native operator:
 

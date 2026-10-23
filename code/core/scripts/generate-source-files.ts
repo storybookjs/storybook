@@ -36,7 +36,12 @@ async function getWorkspace(): Promise<WorkspacePackage[]> {
       .map((relativePath) => join(ROOT_DIR, relativePath))
       .map(async (packagePath) => {
         const content = await readFile(join(packagePath, 'package.json'), 'utf-8').catch(
-          () => null
+          (error: NodeJS.ErrnoException) => {
+            if (error.code === 'ENOENT') {
+              return null;
+            }
+            throw error;
+          }
         );
         if (content === null) {
           // A deleted package can leave an empty folder behind on dev machines

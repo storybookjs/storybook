@@ -166,7 +166,6 @@ export const AlwaysOpen = meta.story({
   globals: { sb_theme: 'light' },
   args: {
     visible: true,
-    hasChrome: false,
     children: <Trigger>Always visible tooltip</Trigger>,
     popover: <SamplePopover />,
     placement: 'right-start',
@@ -175,6 +174,29 @@ export const AlwaysOpen = meta.story({
 });
 
 export const AlwaysOpenDark = meta.story({
+  globals: { sb_theme: 'dark' },
+  args: {
+    visible: true,
+    children: <Trigger>Always visible tooltip</Trigger>,
+    popover: <SamplePopover />,
+    placement: 'right-start',
+  },
+  play: expectPopoverColorScheme('dark'),
+});
+
+export const AlwaysOpenWithoutChrome = meta.story({
+  globals: { sb_theme: 'light' },
+  args: {
+    visible: true,
+    hasChrome: false,
+    children: <Trigger>Always visible tooltip</Trigger>,
+    popover: <SamplePopover />,
+    placement: 'right-start',
+  },
+  play: expectPopoverColorScheme('light'),
+});
+
+export const AlwaysOpenDarkWithoutChrome = meta.story({
   globals: { sb_theme: 'dark' },
   args: {
     visible: true,

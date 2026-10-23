@@ -113,7 +113,6 @@ export const SimpleClick: StoryObj<ComponentProps<typeof WithTooltip>> = {
 export const SimpleClickStartOpen: StoryObj<ComponentProps<typeof WithTooltip>> = {
   globals: { sb_theme: 'light' },
   args: {
-    hasChrome: false,
     placement: 'top',
     startOpen: true,
   },
@@ -129,6 +128,16 @@ export const SimpleClickStartOpenDark: StoryObj<ComponentProps<typeof WithToolti
   ...SimpleClickStartOpen,
   globals: { sb_theme: 'dark' },
   play: expectTooltipColorScheme('dark'),
+};
+
+export const SimpleClickStartOpenWithoutChrome: StoryObj<ComponentProps<typeof WithTooltip>> = {
+  ...SimpleClickStartOpen,
+  args: { ...SimpleClickStartOpen.args, hasChrome: false },
+};
+
+export const SimpleClickStartOpenDarkWithoutChrome: StoryObj<ComponentProps<typeof WithTooltip>> = {
+  ...SimpleClickStartOpenDark,
+  args: { ...SimpleClickStartOpenDark.args, hasChrome: false },
 };
 
 export const SimpleClickCloseOnClick: StoryObj<ComponentProps<typeof WithTooltip>> = {

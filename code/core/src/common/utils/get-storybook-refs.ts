@@ -83,23 +83,28 @@ export async function getRefs(options: Options) {
     return {};
   }
 
-  const refs = await options.presets.apply<Record<string, Ref>>('refs', await getAutoRefs(options));
+  const configured = await options.presets.apply<Record<string, Ref>>(
+    'refs',
+    await getAutoRefs(options)
+  );
 
-  Object.entries(refs).forEach(([key, value]: [string, Ref]) => {
-    if (value.disable) {
-      // Also delete the ref that is disabled in definedRefs
-      delete refs[key];
-
-      return;
-    }
-
-    refs[key.toLowerCase()] = {
-      ...value,
-      id: key.toLowerCase(),
-      title: value.title || toTitle(value.id || key),
-      url: stripTrailingSlash(value.url),
-    };
-  });
+  // Ref ids must be lowercase: the router lowercases the URL before extracting refId (router/utils.ts).
+  const refs: Record<string, Ref> = Object.fromEntries(
+    Object.entries(configured)
+      .filter(([, value]) => !value.disable)
+      .map(([key, value]): [string, Ref] => {
+        const id = key.toLowerCase();
+        return [
+          id,
+          {
+            ...value,
+            id,
+            title: value.title || toTitle(value.id || key),
+            url: stripTrailingSlash(value.url),
+          },
+        ];
+      })
+  );
 
   // verify the refs are publicly reachable, if they are not we'll fetch stories.json at runtime, otherwise the ref won't work
   await Promise.all(

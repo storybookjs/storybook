@@ -49,6 +49,7 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
   const {
     weight,
     style,
+    display,
     variable,
     declarations = [],
   } = validateLocalFontFunctionCall('', options.props);
@@ -72,6 +73,7 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
 					src: url(${localFontSrc.fontReferenceId ? getPlaceholderFontUrl(localFontSrc.fontReferenceId) : `/@fs/${localFontSrc.fontPath}`});
           ${weight ? `font-weight: ${weight};` : ''}
           ${style ? `font-style: ${style};` : ''}
+          font-display: ${display};
 					${fontDeclarations}
 				}`;
       }
@@ -88,6 +90,7 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
 						src: url(${font.path.fontReferenceId ? getPlaceholderFontUrl(font.path.fontReferenceId) : `/@fs/${font.path.fontPath}`});
 						${font.weight ? `font-weight: ${font.weight};` : ''}
 						${font.style ? `font-style: ${font.style};` : ''}
+						font-display: ${display};
 						${fontDeclarations}
 					}`;
         })

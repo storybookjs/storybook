@@ -2,11 +2,21 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
+import ts from 'typescript';
+
+import type { ReactTypeScript } from './ComponentMetaManager.ts';
 import type { NativeTypeScriptModules } from './native/native-typescript.ts';
 
 /** The TypeScript API the React component-meta tests run on; `native` needs the `typescript-native` alias. */
 export const DOCGEN_TS_API: 'compiler' | 'native' =
   process.env.STORYBOOK_DOCGEN_TS_API === 'native' ? 'native' : 'compiler';
+
+/** The `typescript` a test's ComponentMetaManager runs on, for {@link DOCGEN_TS_API}. */
+export async function loadTestTypeScript(): Promise<ReactTypeScript> {
+  return DOCGEN_TS_API === 'native'
+    ? { api: 'native', typescript: await loadNativeTypeScriptModules() }
+    : ts;
+}
 
 /** The native API's modules from the monorepo's `typescript-native` alias (TypeScript 7.1). */
 export async function loadNativeTypeScriptModules(): Promise<NativeTypeScriptModules> {

@@ -29,14 +29,14 @@ describe('typescript-dependency', () => {
   });
 
   it.each([
-    '@storybook/react-vite',
-    '@storybook/nextjs-vite',
-    '@storybook/vue3-vite',
-    '@storybook/svelte-vite',
-    '@storybook/sveltekit',
-    '@storybook/web-components-vite',
-  ])('applies to a %s project without typescript', async (framework) => {
-    await expect(check(framework, packageManagerWith({}))).resolves.toBe(true);
+    ['@storybook/react-vite', 'typescript@^7.1'],
+    ['@storybook/nextjs-vite', 'typescript@^7.1'],
+    ['@storybook/vue3-vite', 'typescript@^6'],
+    ['@storybook/svelte-vite', 'typescript@^6'],
+    ['@storybook/sveltekit', 'typescript@^6'],
+    ['@storybook/web-components-vite', 'typescript@^6'],
+  ])('applies to a %s project without typescript, adding %s', async (framework, dependency) => {
+    await expect(check(framework, packageManagerWith({}))).resolves.toEqual({ dependency });
   });
 
   it('skips an upgrade within Storybook 11', async () => {
@@ -56,7 +56,7 @@ describe('typescript-dependency', () => {
         storybookVersion: '11.1.0',
         requested: true,
       } as CheckOptions)
-    ).resolves.toBe(true);
+    ).resolves.toEqual({ dependency: 'typescript@^7.1' });
   });
 
   it('skips a project that already depends on typescript', async () => {
@@ -72,17 +72,17 @@ describe('typescript-dependency', () => {
     }
   );
 
-  it('adds typescript@^6 to devDependencies without installing', async () => {
+  it('adds the typescript dependency to devDependencies without installing', async () => {
     const packageManager = packageManagerWith({});
 
     await runFix(typescriptDependency, {
-      result: true,
+      result: { dependency: 'typescript@^6' },
       packageManager,
       mainConfigPath: '/project/.storybook/main.ts',
       configDir: '/project/.storybook',
       storiesPaths: [],
       storybookVersion: '11.0.0',
-    } as unknown as Omit<RunOptions<true>, 'files'>);
+    } as unknown as Omit<RunOptions<{ dependency: string }>, 'files'>);
 
     expect(packageManager.addDependencies).toHaveBeenCalledWith(
       { type: 'devDependencies', skipInstall: true },
@@ -99,17 +99,32 @@ describe('typescript-compiler-api', () => {
       ...upgrade,
     } as CheckOptions);
 
-  it('notifies a project on TypeScript 7 with the side-by-side setup', async () => {
+  it('tells a React project on TypeScript 7.0 to upgrade to 7.1', async () => {
     const result = await checkTs('@storybook/react-vite', { typescript: '^7.0.2' });
 
-    expect(result).toEqual({ version: '7.0.2' });
+    expect(result).toEqual({ version: '7.0.2', nativeApiSupported: true });
+    expect(typescriptCompilerApi.prompt(result!)).toContain('typescript@^7.1');
+    expect(typescriptCompilerApi.prompt(result!)).not.toContain('@typescript/native');
+  });
+
+  it('notifies a Vue project on TypeScript 7 with the side-by-side setup', async () => {
+    const result = await checkTs('@storybook/vue3-vite', { typescript: '^7.0.2' });
+
+    expect(result).toEqual({ version: '7.0.2', nativeApiSupported: false });
     expect(typescriptCompilerApi.prompt(result!)).toContain(
       '"typescript": "npm:@typescript/typescript6@^6.0.2"'
     );
   });
 
+  it('notifies a Vue project on TypeScript 7.1, which only React docgen can use', async () => {
+    await expect(checkTs('@storybook/vue3-vite', { typescript: '^7.1.0' })).resolves.toEqual({
+      version: '7.1.0',
+      nativeApiSupported: false,
+    });
+  });
+
   it('shows the two lines on upgrade, which prints a prompt only when it differs from the hint', async () => {
-    const result = await checkTs('@storybook/react-vite', { typescript: '7.0.2' });
+    const result = await checkTs('@storybook/vue3-vite', { typescript: '7.0.2' });
 
     expect(typescriptCompilerApi.prompt(result!)).not.toBe(typescriptCompilerApi.prompt());
   });
@@ -117,13 +132,15 @@ describe('typescript-compiler-api', () => {
   it('notifies an Angular project on TypeScript 7', async () => {
     await expect(checkTs('@storybook/angular-vite', { typescript: '7.0.2' })).resolves.toEqual({
       version: '7.0.2',
+      nativeApiSupported: false,
     });
   });
 
   it.each([
     ['TypeScript 6', { typescript: '^6.0.3' }],
+    ['TypeScript 7.1', { typescript: '^7.1.0' }],
     ['no TypeScript', {}],
-  ])('stays quiet with %s', async (_name, dependencies) => {
+  ])('stays quiet for a React project with %s', async (_name, dependencies) => {
     await expect(checkTs('@storybook/react-vite', dependencies)).resolves.toBeNull();
   });
 

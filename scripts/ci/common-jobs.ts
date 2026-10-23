@@ -613,7 +613,7 @@ export const defineNightlyFailureReport = (completion: JobOrNoOpJob) =>
       ],
     }),
     [completion],
-    { requiresTerminal: true }
+    { runsEvenIfRequirementsFail: true }
   );
 
 const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';

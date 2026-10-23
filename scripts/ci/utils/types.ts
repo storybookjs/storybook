@@ -7,7 +7,7 @@ export type Job<K extends string> = {
   implementation: (workflow: Workflow) => JobImplementationObj | NoOpJobImplementationObj;
   requires: JobOrNoOpJob[];
   /** Start once the required jobs have finished in any state, instead of only after they succeed. */
-  requiresTerminal?: boolean;
+  runsEvenIfRequirementsFail?: boolean;
 };
 
 export type JobOrNoOpJob = Job<string>;
@@ -78,7 +78,7 @@ export function defineJob<K extends string, I extends JobImplementation>(
   name: K,
   implementation: I,
   requires = [] as JobOrNoOpJob[],
-  { requiresTerminal }: Pick<Job<K>, 'requiresTerminal'> = {}
+  { runsEvenIfRequirementsFail }: Pick<Job<K>, 'runsEvenIfRequirementsFail'> = {}
 ): Job<K> {
   return {
     id: toId(name),
@@ -88,7 +88,7 @@ export function defineJob<K extends string, I extends JobImplementation>(
       ...implementation(workflow),
     }),
     requires,
-    requiresTerminal,
+    runsEvenIfRequirementsFail,
   };
 }
 

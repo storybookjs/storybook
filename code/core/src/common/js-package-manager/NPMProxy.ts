@@ -227,6 +227,7 @@ export class NPMProxy extends JsPackageManager {
               .filter((pattern: string) => pattern.startsWith('!'))
               .map((pattern: string) => `${pattern.slice(1)}/package.json`),
           }
+          // compare in pathe's normalized form; on Windows the two sides may differ in separator or drive-letter casing
         )
           .map(normalize)
           .includes(normalize(packageJsonPath))

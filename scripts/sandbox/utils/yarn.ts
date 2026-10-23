@@ -58,11 +58,10 @@ export async function localizeYarnConfigFiles(baseDir: string, beforeDir: string
 /**
  * 7-day age gate for generated sandboxes.
  *
- * - Yarn: `BEFORE_SANDBOX_MIN_AGE_GATE` / `BEFORE_SANDBOX_MIN_AGE_MINUTES`
+ * - Yarn: `BEFORE_SANDBOX_MIN_AGE_GATE`
  * - npm scaffold: `BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS` → `NPM_CONFIG_MIN_RELEASE_AGE`
  */
 export const BEFORE_SANDBOX_MIN_AGE_GATE = '7d';
-export const BEFORE_SANDBOX_MIN_AGE_MINUTES = 7 * 24 * 60;
 /** npm `min-release-age` is in days (npm 11.10+). */
 export const BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS = 7;
 export async function ensureNpmSupportsMinReleaseAge() {
@@ -175,7 +174,7 @@ export async function refreshBeforeStorybookLockfile({
   // named allowlist rather than switching it off, so a compromised release of
   // anything they do not explicitly track is still quarantined.
   await runCommand(
-    `yarn config set npmMinimalAgeGate ${BEFORE_SANDBOX_MIN_AGE_MINUTES}`,
+    `yarn config set npmMinimalAgeGate ${BEFORE_SANDBOX_MIN_AGE_GATE}`,
     { cwd, env },
     debug
   );
@@ -225,7 +224,7 @@ function narrowingDescriptor(name: string, range: string | undefined): string {
   // newer canaries without also admitting stable.
   if (semver.prerelease(floor)) {
     throw new Error(
-      `${name}@${range} is quarantined by the ${BEFORE_SANDBOX_MIN_AGE_MINUTES}min age gate, and narrowing a prerelease range would resolve it to a stable release. Add ${name} to the template's minAgeGateExemptions.`
+      `${name}@${range} is quarantined by the ${BEFORE_SANDBOX_MIN_AGE_GATE} age gate, and narrowing a prerelease range would resolve it to a stable release. Add ${name} to the template's minAgeGateExemptions.`
     );
   }
 
@@ -287,7 +286,7 @@ async function narrowQuarantinedRanges({
 
       if (NOT_A_DIRECT_DEPENDENCY.test(output)) {
         throw new Error(
-          `A transitively required package is quarantined by the ${BEFORE_SANDBOX_MIN_AGE_MINUTES}min age gate, and only its parent can move off it. Add it to the template's minAgeGateExemptions if it is trusted.`,
+          `A transitively required package is quarantined by the ${BEFORE_SANDBOX_MIN_AGE_GATE} age gate, and only its parent can move off it. Add it to the template's minAgeGateExemptions if it is trusted.`,
           { cause: error }
         );
       }
@@ -323,7 +322,7 @@ async function narrowQuarantinedRanges({
 
   if (!resolved) {
     throw new Error(
-      `Still hitting the ${BEFORE_SANDBOX_MIN_AGE_MINUTES}min age gate after ${MAX_NARROWING_ROUNDS} rounds of narrowing (${quarantined.join(', ')}).`
+      `Still hitting the ${BEFORE_SANDBOX_MIN_AGE_GATE} age gate after ${MAX_NARROWING_ROUNDS} rounds of narrowing (${quarantined.join(', ')}).`
     );
   }
 
@@ -332,7 +331,7 @@ async function narrowQuarantinedRanges({
   }
 
   console.warn(
-    `⚠️ narrowed ${descriptors.length} range(s) with no release older than the ${BEFORE_SANDBOX_MIN_AGE_MINUTES}min age gate: ${descriptors.join(', ')}`
+    `⚠️ narrowed ${descriptors.length} range(s) with no release older than the ${BEFORE_SANDBOX_MIN_AGE_GATE} age gate: ${descriptors.join(', ')}`
   );
 
   // So the committed lockfile is always the product of a plain `yarn install`.

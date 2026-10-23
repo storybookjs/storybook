@@ -1,4 +1,3 @@
-import { deprecate } from 'storybook/internal/client-logger';
 import { SourceType } from 'storybook/internal/docs-tools';
 import type {
   ArgTypes,
@@ -173,7 +172,7 @@ export const sourceDecorator: DecoratorFunction<SvelteRenderer> = (storyFn, cont
       return;
     }
 
-    const { parameters = {}, args = {}, component: ctxComponent } = context || {};
+    const { args = {}, component: ctxComponent } = context || {};
 
     // excludeDecorators from source generation as they'll generate the wrong code
     // instead get the component directly from the original story function instead
@@ -183,10 +182,6 @@ export const sourceDecorator: DecoratorFunction<SvelteRenderer> = (storyFn, cont
     );
     const { wrapper, slotProperty } = getWrapperProperties(component);
     if (wrapper) {
-      if (parameters.component) {
-        deprecate('parameters.component is deprecated. Using context.component instead.');
-      }
-
       component = ctxComponent;
     }
 

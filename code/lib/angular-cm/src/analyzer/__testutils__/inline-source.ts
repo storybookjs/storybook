@@ -60,9 +60,10 @@ const programFor = (files: Record<string, string>, options: ts.CompilerOptions):
 
   host.readFile = (fileName) => virtual.get(normalize(fileName)) ?? readRealFile(fileName);
   host.fileExists = (fileName) => virtual.has(normalize(fileName)) || realFileExists(fileName);
-  // Module resolution probes the containing directory before the file, and this one is not on disk.
+  // Module resolution probes the containing directory before the file, and these are not on disk.
   host.directoryExists = (directoryName) =>
-    normalize(directoryName) === VIRTUAL_DIR || (realDirectoryExists?.(directoryName) ?? true);
+    [...virtual.keys()].some((name) => name.startsWith(`${normalize(directoryName)}/`)) ||
+    (realDirectoryExists?.(directoryName) ?? true);
   host.realpath = (fileName) =>
     virtual.has(normalize(fileName)) ? fileName : (realpath?.(fileName) ?? fileName);
   host.getSourceFile = (fileName, languageVersion, onError, shouldCreate) => {

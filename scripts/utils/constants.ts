@@ -29,5 +29,8 @@ export const SCRIPT_TIMEOUT = 5 * 60 * 1000;
  * `min-release-age-exclude`, which templates with `minAgeGateExemptions` rely on during npx/npm
  * scaffolds. Lives here rather than in `sandbox/utils/yarn.ts` so the CI config generator can read
  * it without loading the sandbox generator, which needs built core packages at runtime.
+ *
+ * The `benchmark-packages` CI job also installs this version: npm 10.9.x deterministically crashes
+ * in Arborist (`Cannot read properties of null (reading 'edgesOut')`), fixed in npm 11.6+.
  */
 export const BEFORE_SANDBOX_NPM_MIN_VERSION = '11.17.0';

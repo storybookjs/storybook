@@ -36,7 +36,7 @@ export async function getFontFaceDeclarations(
     6
   )}`;
 
-  const fontDeclarations = declarations
+  const fontDeclarations = [{ prop: 'font-display', value: display }, ...declarations]
     .map(({ prop, value }: { prop: string; value: string }) => `${prop}: ${value};`)
     .join('\n');
 
@@ -49,7 +49,6 @@ export async function getFontFaceDeclarations(
           src: url(.${localFontPath});
           ${weight ? `font-weight: ${weight};` : ''}
           ${style ? `font-style: ${style};` : ''}
-          font-display: ${display};
           ${fontDeclarations}
       }`;
     }
@@ -62,7 +61,6 @@ export async function getFontFaceDeclarations(
           src: url(.${localFontPath});
           ${font.weight ? `font-weight: ${font.weight};` : ''}
           ${font.style ? `font-style: ${font.style};` : ''}
-          font-display: ${display};
           ${fontDeclarations}
         }`;
       })

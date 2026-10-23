@@ -20,6 +20,7 @@ export type LoaderOptions = {
   props: {
     src?: string | Array<{ path: string; weight?: string; style?: string }>;
     metaSrc?: LocalFontSrc;
+    display?: string;
   };
   /**
    * Font Family name

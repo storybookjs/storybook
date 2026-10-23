@@ -81,9 +81,13 @@ const ChildrenContainer = styled.div<PreviewProps & { layout: Layout }>(
       : {}
 );
 
+const FOCUS_RING_INSET = 4;
+
 const ActionBar = styled(Bar)({
   marginTop: -40,
   marginBottom: 40,
+  marginInline: -FOCUS_RING_INSET,
+  width: 'auto',
 });
 
 const TrailingSnippetWarning = styled(SnippetWarning)({
@@ -236,7 +240,10 @@ export const Preview: FC<PreviewProps> = ({
         )}
       </PreviewContainer>
       {(withSource || additionalActionItems.length > 0) && (
-        <ActionBar className="sbdocs sbdocs-preview-actions" innerStyle={{ paddingInline: 0 }}>
+        <ActionBar
+          className="sbdocs sbdocs-preview-actions"
+          innerStyle={{ paddingInline: FOCUS_RING_INSET }}
+        >
           {hasSourceError && (
             <Button
               lang="en"

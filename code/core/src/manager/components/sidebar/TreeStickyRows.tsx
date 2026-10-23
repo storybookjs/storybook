@@ -15,7 +15,7 @@ import {
   treeTopWithin,
   type FlatRows,
 } from './treeGeometry.ts';
-import { IndentLines, indentLineX, type SelectionLine } from './TreeIndentLines.tsx';
+import { IndentLines, type SelectionLine } from './TreeIndentLines.tsx';
 import { iconSwap, truncatedLabel } from './treeRowStyles.ts';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { SidebarLabelContext } from './types.ts';
@@ -37,75 +37,55 @@ const StickyStack = styled.div({
   right: 0,
 });
 
-const StickyRow = styled.button<{ $level: number }>(({ $level, theme }) => ({
-  position: 'relative',
-  display: 'flex',
-  alignItems: 'center',
-  width: '100%',
-  height: TREE_ROW_HEIGHT,
-  overflow: 'hidden',
-  border: 0,
-  margin: 0,
-  paddingBlock: 0,
-  paddingInlineEnd: 8,
-  paddingInlineStart: `calc(${$level} * ${TREE_INDENT_STEP}px + ${TREE_CONTENT_INSET}px)`,
-  gap: 6,
-  cursor: 'pointer',
-  textAlign: 'left',
-  font: 'inherit',
-  color: theme.color.defaultText,
-  // An opaque square backing, so that the sticky row hides the scrolling rows behind it.
-  backgroundColor: 'var(--sticky-row-background)',
-  // The hover highlight needs its own rounded inset layer, as on the scrolling rows. The square
-  // backing cannot carry it, because the rows behind would show through its rounded corners.
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    inset: 0,
-    borderRadius: 4,
-    pointerEvents: 'none',
-  },
-  '&:hover::before': {
-    background: theme.background.hoverable,
-  },
-  '& svg': {
-    flexShrink: 0,
-  },
+const StickyRow = styled.button<{ $level: number; $isRoot: boolean }>(
+  ({ $level, $isRoot, theme }) => ({
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    width: '100%',
+    height: TREE_ROW_HEIGHT,
+    overflow: 'hidden',
+    border: 0,
+    margin: 0,
+    paddingBlock: 0,
+    paddingInlineEnd: 8,
+    paddingInlineStart: `calc(${$level} * ${TREE_INDENT_STEP}px + ${TREE_CONTENT_INSET}px)`,
+    gap: 6,
+    cursor: 'pointer',
+    textAlign: 'left',
+    font: 'inherit',
+    fontSize: theme.typography.size.s2,
+    color: $isRoot ? theme.textMutedColor : theme.color.defaultText,
+    // An opaque square backing, so that the sticky row hides the scrolling rows behind it.
+    backgroundColor: 'var(--sticky-row-background)',
+    // The hover highlight needs its own rounded inset layer, as on the scrolling rows. The square
+    // backing cannot carry it, because the rows behind would show through its rounded corners.
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      inset: 0,
+      borderRadius: 4,
+      pointerEvents: 'none',
+    },
+    '&:hover': {
+      color: theme.barHoverColor,
+    },
+    '&:hover::before': {
+      background: theme.background.hoverable,
+    },
+    '& svg': {
+      flexShrink: 0,
+    },
 
-  // The same accent as the grid layer's, for this row's own segments.
-  '&:hover [data-indent-line], &[data-accent="true"] [data-indent-line]': {
-    backgroundColor: transparentize(0.52, theme.color.secondary),
-  },
+    // The same accent as the grid layer's, for this row's own segments.
+    '&:hover [data-indent-line], &[data-accent="true"] [data-indent-line]': {
+      backgroundColor: transparentize(0.52, theme.color.secondary),
+    },
 
-  // The same icon swap as the scrolling rows: type icon at rest, collapse chevron on hover.
-  ...iconSwap(['&:hover']),
-}));
-
-// Gradient sitting under the stack to help users separate the sticky header from TreeNodes.
-// We use a clip mask to cut off the gradient/shadow where indent lines are, so the lines
-// look continuous.
-const StickyShadow = styled.span({
-  position: 'absolute',
-  top: '100%',
-  left: 0,
-  right: 0,
-  height: SECTION_GAP,
-  pointerEvents: 'none',
-  background: 'linear-gradient(to bottom, var(--sticky-row-background), transparent)',
-});
-
-// Computes the clip mask, mirroring the logic used to draw indent lines.
-function shadowMask(stackSize: number): string {
-  const stops: string[] = [];
-  let previous = 0;
-  for (let level = 1; level <= stackSize; level += 1) {
-    const x = indentLineX(level);
-    stops.push(`black ${previous}px ${x}px`, `transparent ${x}px ${x + 1}px`);
-    previous = x + 1;
-  }
-  stops.push(`black ${previous}px 100%`);
-  return `linear-gradient(to right, ${stops.join(', ')})`;
-}
+    // The same icon swap as the scrolling rows: type icon at rest, collapse chevron on hover.
+    ...iconSwap(['&:hover']),
+  })
+);
 
 // position: relative lifts the content above the row's ::before hover highlight, which a
 // positioned pseudo-element would otherwise paint over.
@@ -117,10 +97,11 @@ const StickyRowIcon = styled.span({
 
 // The label must own the free space and truncate at a stable width, or the row content jumps
 // sideways as sticky rows replace each other during a scroll.
-const StickyLabel = styled.span({
+const StickyLabel = styled.span(({ theme }) => ({
   ...truncatedLabel,
   position: 'relative',
-});
+  fontSize: theme.typography.size.s2,
+}));
 
 /**
  * Computes the IDs of TreeNodes that need to be made into sticky rows, given a scroll offset.
@@ -249,12 +230,9 @@ export function TreeStickyRows({
     }
   };
 
-  const mask = shadowMask(ids.length);
-
   return (
     <StickyAnchor aria-hidden="true">
       <StickyStack data-testid="sticky-overlay">
-        <StickyShadow style={{ maskImage: mask, WebkitMaskImage: mask }} />
         {ids.map((id, slot) => {
           const entry = data[id];
           const rowIndex = rowsRef.current?.indexById.get(id);
@@ -266,6 +244,7 @@ export function TreeStickyRows({
             <StickyRow
               key={id}
               $level={level}
+              $isRoot={entry.type === 'root'}
               data-sticky-item-id={id}
               data-accent={id === accentId || undefined}
               type="button"

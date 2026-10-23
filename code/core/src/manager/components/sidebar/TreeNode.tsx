@@ -43,7 +43,8 @@ const StyledTreeItem = styled(TreeItem)<{
   $level: number;
   $textColor: string | null;
   $startsSection: boolean;
-}>(({ $level, theme, $textColor, $startsSection }) => ({
+  $isRoot: boolean;
+}>(({ $level, theme, $textColor, $startsSection, $isRoot }) => ({
   // General layout.
   position: 'relative',
   display: 'flex',
@@ -75,7 +76,8 @@ const StyledTreeItem = styled(TreeItem)<{
   },
 
   // Base colors.
-  color: $textColor ?? theme.color.defaultText,
+  fontSize: theme.typography.size.s2,
+  color: $textColor ?? ($isRoot ? theme.textMutedColor : theme.color.defaultText),
 
   // Hover colors. React-aria keeps data-focused on a row that a pointer press focused, long after
   // the pointer has left it, so the highlight follows the pointer and the keyboard focus ring
@@ -83,7 +85,6 @@ const StyledTreeItem = styled(TreeItem)<{
   '&:hover, &[data-focus-visible]': {
     color: $textColor ?? theme.barHoverColor,
     outline: 'none',
-    svg: { color: 'currentColor' },
   },
   '&:hover [data-indent-line], &[data-focus-visible] [data-indent-line]': {
     backgroundColor: transparentize(0.52, theme.color.secondary),
@@ -153,10 +154,11 @@ const StyledContent = styled.div({
   position: 'relative',
 });
 
-const StyledLabel = styled.span({
+const StyledLabel = styled.span(({ theme }) => ({
   ...truncatedLabel,
   marginInlineStart: 6,
-});
+  fontSize: theme.typography.size.s2,
+}));
 
 const MenuTriggerContainer = styled.span({
   margin: -2,
@@ -447,6 +449,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       $level={item.depth}
       $textColor={statusTextColor}
       $startsSection={startsSection}
+      $isRoot={item.type === 'root'}
       textValue={item.name}
       aria-label={ariaLabel}
       // The collection key must be the raw entry id: selection, expansion, and the delegated

@@ -78,7 +78,7 @@ jobs:
           LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
         run: |
           WORKFLOW=$(echo "$LABELS" | jq -r '
-            map(select(startswith("ci:")) | ltrimstr("ci:") | select(IN("focus", "normal", "docs", "merged", "daily", "windows")))
+            map(select(startswith("ci:")) | ltrimstr("ci:") | select(IN("focus", "normal", "docs", "daily", "windows")))
             | join(",")')
           echo "workflow=$WORKFLOW" >> "$GITHUB_OUTPUT"
       - id: trusted-author

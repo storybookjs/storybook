@@ -10,13 +10,18 @@ import {
 } from 'storybook/internal/common';
 import {
   type ESTree as E,
+  type ESTreeNode,
+  SourceEditor,
   collectImportBindings,
   loadCsf,
   metaObject,
   parseExpression,
   parseModule,
   propertyValue,
+  resolveReferencedValue,
   staticKey,
+  type ReferenceModule,
+  unwrapExpression,
 } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
@@ -121,13 +126,23 @@ function followExport(
   return undefined;
 }
 
+// The editor of the JS a module exposes: a `.svelte` file's module script, or the file itself.
+// `undefined` when it cannot be read or parsed.
+function moduleEditor(filePath: string) {
+  try {
+    const source = readFileSync(filePath, 'utf8');
+    if (!filePath.endsWith('.svelte')) return new SourceEditor(source, filePath);
+    const module = getIndexableAST(source, filePath).module?.content as
+      | { start: number; end: number }
+      | undefined;
+    return module && new SourceEditor(source.slice(module.start, module.end), `${filePath}.ts`);
+  } catch {
+    return undefined;
+  }
+}
+
 function moduleProgram(filePath: string) {
-  const source = readFileSync(filePath, 'utf8');
-  if (!filePath.endsWith('.svelte')) return parseModule(source, filePath).program;
-  const module = getIndexableAST(source, filePath).module?.content as
-    | { start: number; end: number }
-    | undefined;
-  return module && parseModule(source.slice(module.start, module.end), `${filePath}.ts`).program;
+  return moduleEditor(filePath)?.program;
 }
 
 function locate(storyPath: string, specifier: string, exportName: string, name: string) {
@@ -137,75 +152,6 @@ function locate(storyPath: string, specifier: string, exportName: string, name: 
     throw new Error(`Could not resolve \`${specifier}\` export \`${exportName}\``);
   }
   return { componentPath, exportName, name };
-}
-
-// `import { Input } from './Input.ts'` with `component: Input.Select` names the component through
-// the object's declaration, not a module export. Finds the object the specifier binds, takes the
-// property's value, and resolves that binding — `undefined` when the object is not a plain object
-// literal or the property is not a simple identifier, so docgen declines rather than guesses.
-function declaredObjectReference(
-  modulePath: string,
-  objectExportName: string,
-  propertyKey: string
-): ResolvedSvelteComponent | undefined {
-  const program = moduleProgram(modulePath);
-  if (!program) return undefined;
-
-  // The object the story imports, declared as `export const Input = { … }` or `export default { … }`.
-  let objectExpression: E.ObjectExpression | undefined;
-  for (const statement of program.body) {
-    if (
-      statement.type === 'ExportNamedDeclaration' &&
-      statement.declaration?.type === 'VariableDeclaration'
-    ) {
-      const declarator = statement.declaration.declarations.find(
-        (candidate) =>
-          candidate.id.type === 'Identifier' &&
-          candidate.id.name === objectExportName &&
-          candidate.init?.type === 'ObjectExpression'
-      );
-      if (declarator && declarator.init?.type === 'ObjectExpression') {
-        objectExpression = declarator.init;
-      }
-    } else if (
-      statement.type === 'ExportDefaultDeclaration' &&
-      objectExportName === 'default' &&
-      statement.declaration.type === 'ObjectExpression'
-    ) {
-      objectExpression = statement.declaration;
-    }
-    if (objectExpression) break;
-  }
-  if (!objectExpression) return undefined;
-
-  const property = objectExpression.properties.find(
-    (candidate) =>
-      candidate.type === 'Property' &&
-      !candidate.computed &&
-      staticKey(candidate) === propertyKey &&
-      candidate.value.type === 'Identifier'
-  );
-  if (!property || property.type !== 'Property' || property.value.type !== 'Identifier') {
-    return undefined;
-  }
-  const binding = property.value.name;
-
-  // The value binds a component imported into this module, possibly aliased.
-  for (const statement of program.body) {
-    if (statement.type !== 'ImportDeclaration' || statement.importKind === 'type') continue;
-    const specifier = statement.specifiers.find((candidate) => candidate.local.name === binding);
-    if (specifier) {
-      return locate(
-        modulePath,
-        String(statement.source.value),
-        importedName(specifier),
-        propertyKey
-      );
-    }
-  }
-  // …or one this module declares and exports itself.
-  const componentPath = followExport(modulePath, binding);
-  return componentPath ? { componentPath, exportName: binding, name: propertyKey } : undefined;
 }
 
 export async function resolveStoryComponent(
@@ -252,13 +198,42 @@ export async function resolveStoryComponent(
         );
       }
 
-      // A named object import (`import { Input }`) names the component through the object's
-      // declaration, not a module export — a module that also exports `Select` is not the component.
-      // Beyond that one level, docgen declines rather than guesses.
-      const objectModule = resolveImport(storyPath, String(statement.source.value));
-      return objectModule
-        ? declaredObjectReference(objectModule, importedName(specifier), component.property.name)
-        : undefined;
+      // A named object import (`import { Input }`) names the component through the object it
+      // binds, not a module export — a module that also exports `Select` is not the component.
+      // Core's reference resolver follows the object through spreads, aliases and export forms;
+      // where it cannot, docgen declines rather than guessing.
+      const module = ast.module?.content as { start: number; end: number } | undefined;
+      if (!module) return undefined;
+      const parsed = new Map<string, ReferenceModule | undefined>();
+      const referenced = resolveReferencedValue(
+        {
+          editor: new SourceEditor(source.slice(module.start, module.end), `${storyPath}.ts`),
+          filePath: storyPath,
+          resolveModule: (fromFile, specifier) => {
+            const target = resolveImport(fromFile, specifier);
+            if (!target) return undefined;
+            if (!parsed.has(target)) {
+              const editor = moduleEditor(target);
+              parsed.set(target, editor && { editor, filePath: target });
+            }
+            return parsed.get(target);
+          },
+        },
+        component as unknown as ESTreeNode
+      );
+      if (!referenced) return undefined;
+      const value = unwrapExpression(referenced.node);
+      if (value.type !== 'Identifier') return undefined;
+      // The chain lands on a name in the module that wrote it: a component import, or a binding
+      // this pass does not pretend to follow.
+      const binding = collectImportBindings(referenced.ctx.editor.program).get(value.name);
+      if (!binding) return undefined;
+      return locate(
+        referenced.ctx.filePath,
+        binding.importId,
+        binding.importName,
+        component.property.name
+      );
     }
     return undefined;
   }

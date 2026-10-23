@@ -14,7 +14,7 @@ import * as ExampleComponentStories from './ExampleComponent.stories';
 ```
 
 <!-- prettier-ignore -->
-```mdx filename="ExampleDocumentation.mdx" renderer="svelte" language="mdx" tabTitle="Svelte CSF 3"
+```mdx filename="ExampleDocumentation.mdx" renderer="svelte" language="mdx" tabTitle="CSF 3"
 import { Meta } from '@storybook/addon-docs/blocks';
 
 import * as ExampleComponentStories from './ExampleComponent.stories.svelte';

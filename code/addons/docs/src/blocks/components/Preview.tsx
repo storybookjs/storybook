@@ -30,6 +30,7 @@ export type PreviewProps = PropsWithChildren<{
   withSource?: SourceProps;
   isExpanded?: boolean;
   withToolbar?: boolean;
+  globals?: string;
   className?: string;
   additionalActions?: ActionItem[];
   onReloadStory?: () => void;
@@ -152,6 +153,7 @@ export const Preview: FC<PreviewProps> = ({
   children,
   withSource,
   withToolbar = false,
+  globals,
   isExpanded = false,
   additionalActions,
   className,
@@ -206,6 +208,7 @@ export const Preview: FC<PreviewProps> = ({
           <PositionedToolbar
             isLoading={isLoading}
             border
+            globals={globals}
             zoom={(z: number) => setScale(scale * z)}
             resetZoom={() => setScale(1)}
             storyId={!isLoading && childProps ? getStoryId(childProps, context) : undefined}

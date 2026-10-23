@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { dedent } from 'ts-dedent';
+import { useGlobals } from 'storybook/preview-api';
+import { expect, waitFor, within } from 'storybook/test';
 
 import * as ButtonStories from '../examples/Button.stories';
 import * as ParameterStories from '../examples/CanvasParameters.stories';
@@ -36,6 +38,17 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
+
+const UpdateViewportGlobal = ({ children }: React.PropsWithChildren) => {
+  const [, updateGlobals] = useGlobals();
+
+  useEffect(() => {
+    updateGlobals({ viewport: { value: 'mobile1' } });
+    return () => updateGlobals({ viewport: undefined });
+  }, [updateGlobals]);
+
+  return <>{children}</>;
+};
 
 export const OfAttached: Story = {
   args: {
@@ -72,6 +85,29 @@ export const PropWithToolbar: Story = {
   args: {
     of: ButtonStories.Primary,
     withToolbar: true,
+  },
+};
+
+export const PreservesGlobalsWhenOpeningInNewTab: Story = {
+  name: 'Preserves globals when opening in new tab',
+  tags: ['vitest'],
+  args: {
+    of: ButtonStories.Primary,
+    withToolbar: true,
+  },
+  render: (args) => (
+    <UpdateViewportGlobal>
+      <Canvas {...args} />
+    </UpdateViewportGlobal>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const link = await canvas.findByRole('link', { name: 'Open canvas in new tab' });
+
+    await waitFor(() => {
+      const url = new URL(link.getAttribute('href')!, window.location.href);
+      expect(url.searchParams.get('globals')).toContain('viewport.value:mobile1');
+    });
   },
 };
 

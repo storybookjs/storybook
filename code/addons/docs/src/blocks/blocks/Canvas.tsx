@@ -4,6 +4,7 @@ import type { FC } from 'react';
 
 import { FORCE_REMOUNT } from 'storybook/internal/core-events';
 import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
+import { buildArgsParam } from 'storybook/internal/router';
 import type { ModuleExport, ModuleExports } from 'storybook/internal/types';
 
 import type { Layout, PreviewProps as PurePreviewProps } from '../components';
@@ -14,6 +15,7 @@ import { useSourceProps } from './Source';
 import { SourceContext } from './SourceContainer';
 import type { StoryProps } from './Story';
 import { Story } from './Story';
+import { useGlobals } from './useGlobals';
 import { useOf } from './useOf';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
@@ -72,7 +74,9 @@ const CanvasImpl: FC<CanvasProps> = (props) => {
   }
 
   const { story } = useOf(of || 'story', ['story']);
+  const [globals] = useGlobals(story, docsContext);
   const sourceProps = useSourceProps({ ...source, ...(of && { of }) }, docsContext, sourceContext);
+  const globalsParam = buildArgsParam(docsContext.projectAnnotations.initialGlobals, globals);
 
   const layout =
     props.layout ?? story.parameters.layout ?? story.parameters.docs?.canvas?.layout ?? 'padded';
@@ -93,6 +97,7 @@ const CanvasImpl: FC<CanvasProps> = (props) => {
       withSource={sourceState === 'none' ? undefined : sourceProps}
       isExpanded={sourceState === 'shown'}
       withToolbar={withToolbar}
+      globals={globalsParam}
       additionalActions={additionalActions}
       className={className}
       layout={layout}

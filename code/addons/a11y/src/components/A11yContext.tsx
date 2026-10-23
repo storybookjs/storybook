@@ -35,7 +35,8 @@ import {
   useStorybookState,
 } from 'storybook/manager-api';
 import type { Report } from 'storybook/preview-api';
-import { convert, themes } from 'storybook/theming';
+import { themes } from 'storybook/theming';
+import { convert } from 'storybook/theming/emotion';
 
 import { getFriendlySummaryForAxeResult, getTitleForAxeResult } from '../axeRuleMappingHelper.ts';
 import {

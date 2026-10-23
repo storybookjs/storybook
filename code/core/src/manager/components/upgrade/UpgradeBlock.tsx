@@ -6,7 +6,7 @@ import { Button, Link, TabList, TabPanel, useTabsState } from 'storybook/interna
 import { CheckIcon, CopyIcon } from '@storybook/icons';
 
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';

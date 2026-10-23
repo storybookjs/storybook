@@ -5,7 +5,7 @@ import { Select } from 'storybook/internal/components';
 import { AccessibilityIcon } from '@storybook/icons';
 
 import { useGlobals } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { VISION_GLOBAL_KEY } from '../constants.ts';
 import { filterDefs, filters } from '../visionSimulatorFilters.ts';

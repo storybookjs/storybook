@@ -148,7 +148,8 @@ export const Secondary = {
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -185,49 +186,49 @@ export const Secondary = {
 />
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import Button from './Button.svelte';
+  import Button from './Button.svelte';
 
-const meta = {
-  component: Button,
-  parameters: {
-    docs: {
-      // 👇 Enable Code panel for all stories in this file
-      codePanel: true,
+  const { Story } = preview.meta({
+    component: Button,
+    parameters: {
+      docs: {
+        // 👇 Enable Code panel for all stories in this file
+        codePanel: true,
+      },
     },
-  },
-} satisfies Meta<typeof Button>;
-export default meta;
+  });
+</script>
 
-type Story = StoryObj<typeof meta>;
-
-// 👇 This story will display the Code panel
-export const Primary: Story = {
-  args: {
+<Story
+  name="Primary"
+  args={{
     children: 'Button',
-  },
-};
+  }}
+/>
 
-export const Secondary: Story = {
-  args: {
+<Story
+  name="Secondary"
+  args={{
     children: 'Button',
     variant: 'secondary',
-  },
-  parameters: {
+  }}
+  parameters={{
     docs: {
       // 👇 Disable Code panel for this specific story
       codePanel: false,
     },
-  },
-};
+  }}
+/>
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -264,38 +265,43 @@ export const Secondary: Story = {
 />
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Button from './Button.svelte';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: Button,
-  parameters: {
-    docs: {
-      // 👇 Enable Code panel for all stories in this file
-      codePanel: true,
+  import Button from './Button.svelte';
+
+  const { Story } = preview.meta({
+    component: Button,
+    parameters: {
+      docs: {
+        // 👇 Enable Code panel for all stories in this file
+        codePanel: true,
+      },
     },
-  },
-};
+  });
+</script>
 
-// 👇 This story will display the Code panel
-export const Primary = {
-  args: {
+<Story
+  name="Primary"
+  args={{
     children: 'Button',
-  },
-};
+  }}
+/>
 
-export const Secondary = {
-  args: {
+<Story
+  name="Secondary"
+  args={{
     children: 'Button',
     variant: 'secondary',
-  },
-  parameters: {
+  }}
+  parameters={{
     docs: {
       // 👇 Disable Code panel for this specific story
       codePanel: false,
     },
-  },
-};
+  }}
+/>
 ```
 
 ```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"

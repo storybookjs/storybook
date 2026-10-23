@@ -246,7 +246,8 @@ export const ExampleStory: Story = {
 
 ```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import YourComponent from './YourComponent.svelte';
 
@@ -285,49 +286,51 @@ export const ExampleStory: Story = {
 </Story>
 ```
 
-```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import YourComponent from './YourComponent.svelte';
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: YourComponent,
-  //👇 Creates specific argTypes
-  argTypes: {
-    propertyA: {
-      options: ['Item One', 'Item Two', 'Item Three'],
-      control: { type: 'select' }, // Automatically inferred when 'options' is defined
-    },
-    propertyB: {
-      options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
-    },
-  },
-};
+  import YourComponent from './YourComponent.svelte';
 
-const someFunction = (valuePropertyA, valuePropertyB) => {
-  // Do some logic here
-};
-
-export const ExampleStory = {
-  render: (args) => {
-    //👇 Assigns the function result to a variable
-    const someFunctionResult = someFunction(args.propertyA, args.propertyB);
-    return {
-      Component: YourComponent,
-      props: {
-        ...args,
-        someProperty: someFunctionResult,
+  const { Story } = preview.meta({
+      component: YourComponent,
+      //👇 Creates specific argTypes
+      argTypes: {
+        propertyA: {
+          options: ['Item One', 'Item Two', 'Item Three'],
+          control: { type: 'select' }, // Automatically inferred when 'options' is defined
+        },
+        propertyB: {
+          options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
+        },
       },
-    };
-  },
-  args: {
+  });
+
+  const someFunction = (valuePropertyA, valuePropertyB) => {
+    // Do some logic here
+  };
+</script>
+
+<Story
+  name="ExampleStory"
+  args={{
     propertyA: 'Item One',
     propertyB: 'Another Item One',
-  },
-};
+  }}
+>
+  {#snippet template(args)}
+    <YourComponent
+      {...args}
+      someProperty={someFunction(args.propertyA, args.propertyB)}
+    />
+  {/snippet}
+</Story>
 ```
 
 ```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import YourComponent from './YourComponent.svelte';
 
@@ -366,50 +369,45 @@ export const ExampleStory = {
 </Story>
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import YourComponent from './YourComponent.svelte';
+  import YourComponent from './YourComponent.svelte';
 
-const meta = {
-  component: YourComponent,
-  //👇 Creates specific argTypes
-  argTypes: {
-    propertyA: {
-      options: ['Item One', 'Item Two', 'Item Three'],
-      control: { type: 'select' }, // Automatically inferred when 'options' is defined
-    },
-    propertyB: {
-      options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
-    },
-  },
-} satisfies Meta<typeof YourComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-const someFunction = (valuePropertyA, valuePropertyB) => {
-  // Do some logic here
-};
-
-export const ExampleStory: Story = {
-  render: (args) => {
-    //👇 Assigns the function result to a variable
-    const someFunctionResult = someFunction(args.propertyA, args.propertyB);
-    return {
-      Component: YourComponent,
-      props: {
-        ...args,
-        someProperty: someFunctionResult,
+  const { Story } = preview.meta({
+      component: YourComponent,
+      //👇 Creates specific argTypes
+      argTypes: {
+        propertyA: {
+          options: ['Item One', 'Item Two', 'Item Three'],
+          control: { type: 'select' }, // Automatically inferred when 'options' is defined
+        },
+        propertyB: {
+          options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
+        },
       },
-    };
-  },
-  args: {
+  });
+
+  const someFunction = (valuePropertyA, valuePropertyB) => {
+    // Do some logic here
+  };
+</script>
+
+<Story
+  name="ExampleStory"
+  args={{
     propertyA: 'Item One',
     propertyB: 'Another Item One',
-  },
-};
+  }}
+>
+  {#snippet template(args)}
+    <YourComponent
+      {...args}
+      someProperty={someFunction(args.propertyA, args.propertyB)}
+    />
+  {/snippet}
+</Story>
 ```
 
 ```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"

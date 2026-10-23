@@ -111,10 +111,15 @@ export type StoryComponent<TArgs extends Record<string, any>, TCmp extends Cmp> 
   StoryProps<TArgs, TCmp>
 >;
 
+// The props of a `<Story>`. `extend` is a prop of the stories of `preview.meta()` only.
+export type RegisteredStoryProps<TCmp extends Cmp> = StoryProps<Record<string, any>, TCmp> & {
+  extend?: string;
+};
+
 // The contexts in static/svelte-csf/contexts/, which are JavaScript, use these types through JSDoc.
 export interface StoriesExtractorContextProps<TCmp extends Cmp> {
   isExtracting: boolean;
-  register: (storyCmpProps: StoryProps<Record<string, any>, TCmp>) => void;
+  register: (storyCmpProps: RegisteredStoryProps<TCmp>) => void;
 }
 
 export type StoriesExtractorContext<TCmp extends Cmp> = Readonly<
@@ -122,11 +127,19 @@ export type StoriesExtractorContext<TCmp extends Cmp> = Readonly<
 >;
 
 export type StoriesRepository<TCmp extends Cmp> = {
-  stories: Map<string, StoryProps<Record<string, any>, TCmp>>;
+  stories: Map<string, RegisteredStoryProps<TCmp>>;
 };
 
 export interface StoryRendererContextProps<TCmp extends Cmp> {
-  currentStoryExportName: string | undefined;
+  // The `<Story>` that renders its content, which is the one of a parent story when the story
+  // extends a story and has no content of its own
+  contentExportName: string | undefined;
+  // The `<Story>` whose play function runs
+  playExportName: string | undefined;
+  // The `<Story>` that sets `asChild`, which reads its own prop, and the value it had when the
+  // stories were extracted, for the other `<Story>` components
+  asChildExportName: string | undefined;
+  asChild: boolean;
   args: NonNullable<StoryAnnotations<Record<string, any>, TCmp>['args']>;
   storyContext: StoryContext<Record<string, any>>;
   metaRenderSnippet?: Snippet<

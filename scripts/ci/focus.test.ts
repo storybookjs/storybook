@@ -9,7 +9,7 @@ import {
   PATH_TRIGGERED_JOBS,
   getFocusJobs,
   selectChromaticSiblings,
-  selectFocusSandbox,
+  selectFocusSandboxes,
   selectPathTriggeredJobs,
   templateDirs,
 } from './focus.ts';
@@ -41,7 +41,7 @@ describe('FOCUS_TEMPLATES', () => {
   );
 });
 
-describe('selectFocusSandbox', () => {
+describe('selectFocusSandboxes', () => {
   it.each([
     ['code/frameworks/angular/src/server/index.ts', 'angular-cli/default-ts'],
     ['code/frameworks/angular-vite/src/preset.ts', 'angular-vite/default-ts'],
@@ -66,29 +66,44 @@ describe('selectFocusSandbox', () => {
     ['code/lib/angular-compodoc/src/index.ts', 'angular-cli/default-ts'],
     ['code/lib/angular-cm/src/index.ts', 'angular-vite/default-ts'],
   ])('maps %s to the first template loading it in cadence order', (changedFile, expected) => {
-    expect(selectFocusSandbox([changedFile])).toBe(expected);
+    expect(selectFocusSandboxes([changedFile])).toEqual([expected]);
   });
 
   it.each(['code/core/src/manager/App.tsx', 'docs/get-started/introduction.mdx'])(
     'uses the React Vite sandbox for %s, which no template package contains',
     (changedFile) => {
-      expect(selectFocusSandbox([changedFile])).toBe('react-vite/default-ts');
+      expect(selectFocusSandboxes([changedFile])).toEqual(['react-vite/default-ts']);
     }
   );
 
   it('prefers a framework match over a builder match', () => {
     expect(
-      selectFocusSandbox([
+      selectFocusSandboxes([
         'code/builders/builder-webpack5/src/index.ts',
         'code/frameworks/angular-vite/src/preset.ts',
       ])
-    ).toBe('angular-vite/default-ts');
+    ).toEqual(['angular-vite/default-ts']);
+  });
+
+  it('runs one template in full for each changed package', () => {
+    expect(
+      selectFocusSandboxes([
+        'code/renderers/react/src/render.ts',
+        'code/renderers/vue3/src/render.ts',
+      ])
+    ).toEqual(['react-vite/default-ts', 'vue3-vite/default-ts']);
+    expect(
+      selectFocusSandboxes([
+        'code/frameworks/nextjs/src/preset.ts',
+        'code/frameworks/sveltekit/src/preset.ts',
+      ])
+    ).toEqual(['svelte-kit/skeleton-ts', 'nextjs/default-ts']);
   });
 
   it('never picks a prerelease or internal template', () => {
     const selectable = daily.flatMap((key) =>
       Object.values(templateDirs(key)).flatMap((dirs) =>
-        dirs.map((dir) => selectFocusSandbox([`${dir}src/index.ts`]))
+        dirs.flatMap((dir) => selectFocusSandboxes([`${dir}src/index.ts`]))
       )
     );
 
@@ -100,7 +115,7 @@ describe('selectFocusSandbox', () => {
 describe('selectChromaticSiblings', () => {
   it('selects nothing when no template package changed', () => {
     expect(
-      selectChromaticSiblings('react-vite/default-ts', ['code/core/src/manager/App.tsx'])
+      selectChromaticSiblings(['react-vite/default-ts'], ['code/core/src/manager/App.tsx'])
     ).toEqual([]);
   });
 
@@ -114,14 +129,14 @@ describe('selectChromaticSiblings', () => {
       ['nextjs/default-ts', 'react-webpack/18-ts', 'nextjs/15-ts'],
     ],
   ])('selects the other templates loading %s that run Chromatic', (changedFile, expected) => {
-    expect(selectChromaticSiblings(selectFocusSandbox([changedFile]), [changedFile])).toEqual(
+    expect(selectChromaticSiblings(selectFocusSandboxes([changedFile]), [changedFile])).toEqual(
       expected
     );
   });
 
   it('selects every other public, non-prerelease ci:daily template of a changed renderer', () => {
     expect(
-      selectChromaticSiblings('react-vite/default-ts', ['code/renderers/react/src/render.ts'])
+      selectChromaticSiblings(['react-vite/default-ts'], ['code/renderers/react/src/render.ts'])
     ).toEqual([
       'nextjs/default-ts',
       'nextjs-vite/default-ts',

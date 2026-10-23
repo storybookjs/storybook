@@ -85,29 +85,39 @@ const isChanged = (dirs: readonly string[], changedFiles: readonly string[]) =>
   dirs.some((dir) => changedFiles.some((file) => file.startsWith(dir)));
 
 /**
- * Select the first template in cadence order that loads a changed package, at the highest-priority
- * role that matches. Chromatic siblings cover the other templates loading it.
+ * Select, for each changed package at the highest-priority role that matches, the first template in
+ * cadence order that loads it. Chromatic siblings cover the other templates loading it.
  */
-export function selectFocusSandbox(changedFiles: readonly string[]): TemplateKey {
+export function selectFocusSandboxes(changedFiles: readonly string[]): TemplateKey[] {
   for (const role of ROLES) {
-    const sandbox = FOCUS_TEMPLATES.find((key) => isChanged(templateDirs(key)[role], changedFiles));
+    const changedDirs = new Set(
+      FOCUS_TEMPLATES.flatMap((key) => templateDirs(key)[role]).filter((dir) =>
+        isChanged([dir], changedFiles)
+      )
+    );
 
-    if (sandbox) {
-      return sandbox;
+    if (changedDirs.size > 0) {
+      return [
+        ...new Set(
+          [...changedDirs].map((dir) =>
+            FOCUS_TEMPLATES.find((key) => templateDirs(key)[role].includes(dir))!
+          )
+        ),
+      ];
     }
   }
 
-  return DEFAULT_FOCUS_SANDBOX;
+  return [DEFAULT_FOCUS_SANDBOX];
 }
 
 /** Select the other templates that run Chromatic and load a changed package. */
 export function selectChromaticSiblings(
-  focused: TemplateKey,
+  focused: readonly TemplateKey[],
   changedFiles: readonly string[]
 ): TemplateKey[] {
   return FOCUS_TEMPLATES.filter(
     (sibling) =>
-      sibling !== focused &&
+      !focused.includes(sibling) &&
       !allTemplates[sibling].skipTasks?.includes('chromatic') &&
       isChanged(Object.values(templateDirs(sibling)).flat(), changedFiles)
   );
@@ -175,7 +185,7 @@ export function getChangedFiles(baseRef: string): string[] {
 
 /** Select the jobs a diff can affect. */
 export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
-  const focused = selectFocusSandbox(changedFiles);
+  const focused = selectFocusSandboxes(changedFiles);
   const siblings = selectChromaticSiblings(focused, changedFiles).map(defineSandboxFlow);
 
   return [
@@ -187,7 +197,7 @@ export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
     defineAffectedLintAndFormat(changedFiles),
     ...selectPathTriggeredJobs(changedFiles),
     sandboxesNoOpJob,
-    ...defineSandboxFlow(focused).jobs,
+    ...focused.flatMap((template) => defineSandboxFlow(template).jobs),
     ...siblings.flatMap(({ createJob, chromaticJob }) => [createJob, chromaticJob]),
   ];
 }

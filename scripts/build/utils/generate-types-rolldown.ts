@@ -1,13 +1,12 @@
-import { type ExecFileException, execFile } from 'node:child_process';
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { promisify } from 'node:util';
 
 import { basename, dirname, join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import type { Plugin } from 'rolldown';
+import { x } from 'tinyexec';
 import type TS from 'typescript';
 
 import type { BuildEntries } from './entry-utils.ts';
@@ -229,8 +228,6 @@ function emitPackageDeclarations(wrapperTsconfig: string, outDir: string): void 
   copyHandwrittenDeclarations(parsed.fileNames, outDir);
 }
 
-const execFileAsync = promisify(execFile);
-
 // The package's `exports` map only exposes the new API entry points, so resolve the package root
 // via package.json and use the helper behind its tsc launcher to locate the native binary, which
 // then runs without an intermediate node process.
@@ -242,27 +239,21 @@ async function resolveNativeTscPath(): Promise<string> {
   return getExePath();
 }
 
-// Like `spawnSync`: only spawn/IO failures throw; a non-zero exit or a signal is returned.
-async function runProcess(
-  file: string,
-  args: string[]
-): Promise<{ status: number | null; stdout: string; stderr: string }> {
-  try {
-    const { stdout, stderr } = await execFileAsync(file, args, {
-      encoding: 'utf8',
-      maxBuffer: 64 * 1024 * 1024,
-    });
-    return { status: 0, stdout, stderr };
-  } catch (error) {
-    const { code, stdout, stderr } = error as ExecFileException & {
-      stdout: string;
-      stderr: string;
-    };
-    if (typeof code === 'string') {
-      throw error;
-    }
-    return { status: code ?? null, stdout, stderr };
+/**
+ * Like `Promise.all`, but waits for every operation to settle before rethrowing the first failure,
+ * so the `finally` cleanup never deletes files a still-running native emit reads or writes.
+ */
+async function allSettledOrThrow<T extends readonly unknown[]>(
+  values: T
+): Promise<{ -readonly [K in keyof T]: Awaited<T[K]> }> {
+  const results = await Promise.allSettled(values);
+  const rejected = results.find((result) => result.status === 'rejected');
+  if (rejected) {
+    throw rejected.reason;
   }
+  return results.map((result) => (result as PromiseFulfilledResult<unknown>).value) as {
+    -readonly [K in keyof T]: Awaited<T[K]>;
+  };
 }
 
 /**
@@ -280,14 +271,20 @@ async function emitPackageDeclarationsNative(
 ): Promise<void> {
   // Spawned before anything else is awaited, so the esbuild bundle, the TypeScript load and the
   // config parse all overlap with the emit.
-  const [result, { fileNames }] = await Promise.all([
-    runProcess(tscPath, ['--project', emitTsconfig, '--pretty', 'false']),
-    Promise.resolve().then(() => parseWrapperTsconfig(wrapperTsconfig)),
-  ]);
-  if (result.status !== 0) {
-    console.error(`${result.stdout ?? ''}${result.stderr ?? ''}`);
+  const emit = x(tscPath, ['--project', emitTsconfig, '--pretty', 'false']);
+  let fileNames: readonly string[];
+  try {
+    ({ fileNames } = parseWrapperTsconfig(wrapperTsconfig));
+  } catch (error) {
+    emit.kill();
+    await Promise.allSettled([emit]);
+    throw error;
+  }
+  const result = await emit;
+  if (result.exitCode !== 0) {
+    console.error(`${result.stdout}${result.stderr}`);
     throw new Error(
-      `Native declaration emit failed for ${emitTsconfig} (exit code ${result.status})`
+      `Native declaration emit failed for ${emitTsconfig} (exit code ${result.exitCode})`
     );
   }
   const emitted = getTypeScript().sys.readDirectory(outDir, ['.d.ts', '.d.mts', '.d.cts']);
@@ -391,7 +388,7 @@ export async function generateTypesFiles(
     } else {
       emitPackageDeclarations(wrapperTsconfig, emitDir);
     }
-    const [, { rolldown }, { dts }] = await Promise.all([
+    const [, { rolldown }, { dts }] = await allSettledOrThrow([
       nativeEmit,
       import('rolldown'),
       import('rolldown-plugin-dts'),

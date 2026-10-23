@@ -10,7 +10,7 @@ import './header.css';
  * @param {() => void} [props.onLogout]
  * @param {() => void} [props.onCreateAccount]
  */
-export const Header = ({ user = null, onLogin, onLogout, onCreateAccount }) => (
+export const Header = ({ user, onLogin, onLogout, onCreateAccount }) => (
   <header>
     <div className="storybook-header">
       <div>

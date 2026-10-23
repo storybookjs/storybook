@@ -3,15 +3,17 @@ import {
   mkdtempSync,
   readFileSync,
   readdirSync,
+  realpathSync,
   rmSync,
   utimesSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir, userInfo } from 'node:os';
 import { execFile } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
-import { join, resolve } from 'pathe';
+import { dirname, join, normalize, resolve } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -193,6 +195,11 @@ describe('createRuntimeInstanceRecord', () => {
     storybookVersion: '10.5.0-alpha.0',
   };
 
+  // The package.json named `storybook` above this test file is the monorepo's core package.
+  const corePackageRoot = normalize(
+    realpathSync(resolve(dirname(fileURLToPath(import.meta.url)), '../../..'))
+  );
+
   it('creates a schemaVersion 1 runtime instance record', () => {
     const cwd = join(tmpdir(), 'storybook-project', '..', 'storybook-project');
 
@@ -204,10 +211,18 @@ describe('createRuntimeInstanceRecord', () => {
       url: 'http://localhost:6006',
       port: 6006,
       storybookVersion: '10.5.0-alpha.0',
+      storybookPath: corePackageRoot,
       startedAt: '2026-05-18T12:00:00.000Z',
       updatedAt: '2026-05-18T12:00:00.000Z',
       mcp: { status: 'not-installed' },
     });
+  });
+
+  it('records the realpathed root of the storybook package this process runs, independent of cwd', () => {
+    const record = createRuntimeInstanceRecord({ ...baseOptions, cwd: '/elsewhere' });
+
+    expect(record.storybookPath).toBe(corePackageRoot);
+    expect(record.cwd).toBe(resolve('/elsewhere'));
   });
 
   it('preserves a Storybook deployment subpath but drops UI query parameters', () => {

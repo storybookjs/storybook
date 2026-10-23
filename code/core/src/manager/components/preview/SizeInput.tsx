@@ -3,8 +3,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Form } from 'storybook/internal/components';
 
-import { useId } from '@react-aria/utils';
-import { styled } from 'storybook/theming';
+import { useId } from 'react-aria/useId';
+import { styled } from 'storybook/theming/emotion';
 
 const Wrapper = styled.span<{ prefix?: string }>(({ theme, prefix }) => ({
   position: 'relative',

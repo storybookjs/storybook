@@ -41,8 +41,6 @@ const createStorybookProgram = program
       Object.values(PackageManagerName)
     )
   )
-  // TODO: Remove in SB11
-  .option('--use-pnp', 'Enable pnp mode for Yarn 2+')
   .addOption(
     new Option('--parser <type>', 'jscodeshift parser').choices([
       'babel',

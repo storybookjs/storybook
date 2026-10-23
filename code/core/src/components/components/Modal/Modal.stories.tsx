@@ -1031,6 +1031,90 @@ export const WithPortalSelector = meta.story({
   },
 });
 
+// A modal opened while another modal is open (e.g. from within the mobile menu drawer) must stay
+// interactive: the parent modal's aria hiding must not make the new modal inert (regression test).
+export const StackedModals = meta.story({
+  args: {
+    children: undefined,
+  },
+  render: (args) => {
+    const [isOuterOpen, setOuterOpen] = useState(false);
+    const [isInnerOpen, setInnerOpen] = useState(false);
+
+    return (
+      <>
+        <Modal {...args} ariaLabel="Outer modal" open={isOuterOpen} onOpenChange={setOuterOpen}>
+          <Modal.Content>
+            <Modal.Header>
+              <Modal.Title>Outer Modal</Modal.Title>
+            </Modal.Header>
+            <Modal.Col>
+              <Button ariaLabel={false} onClick={() => setInnerOpen(true)}>
+                Open Inner Modal
+              </Button>
+              <Modal
+                {...args}
+                ariaLabel="Inner modal"
+                open={isInnerOpen}
+                onOpenChange={setInnerOpen}
+              >
+                <Modal.Content>
+                  <Modal.Header>
+                    <Modal.Title>Inner Modal</Modal.Title>
+                  </Modal.Header>
+                  <Modal.Col>
+                    <input type="text" aria-label="Inner input" />
+                  </Modal.Col>
+                </Modal.Content>
+              </Modal>
+            </Modal.Col>
+          </Modal.Content>
+        </Modal>
+        <Button ariaLabel={false} onClick={() => setOuterOpen(true)}>
+          Open Outer Modal
+        </Button>
+      </>
+    );
+  },
+  play: async ({ canvas, step }) => {
+    const dialogByLabel = (label: string) =>
+      document.querySelector(`[role="dialog"][aria-label="${label}"]`);
+
+    await step('Open outer modal', async () => {
+      await userEvent.click(canvas.getByText('Open Outer Modal'));
+      await waitFor(() => expect(dialogByLabel('Outer modal')).toBeInTheDocument());
+    });
+
+    await step('Open inner modal on top; only the outer modal becomes inert', async () => {
+      await userEvent.click(await screen.findByText('Open Inner Modal'));
+      await waitFor(() => expect(dialogByLabel('Inner modal')).toBeInTheDocument());
+      expect(dialogByLabel('Inner modal')).not.toHaveAttribute('inert');
+      await waitFor(() => expect(dialogByLabel('Outer modal')).toHaveAttribute('inert'));
+    });
+
+    await step('The inner modal is interactive', async () => {
+      const input = screen.getByLabelText('Inner input');
+      await userEvent.click(input);
+      await userEvent.type(input, 'abc');
+      expect(input).toHaveValue('abc');
+      expect(dialogByLabel('Inner modal')).toBeInTheDocument();
+    });
+
+    await step('Escape closes only the inner modal', async () => {
+      await userEvent.keyboard('{Escape}');
+      await waitFor(() => expect(dialogByLabel('Inner modal')).not.toBeInTheDocument());
+      expect(dialogByLabel('Outer modal')).toBeInTheDocument();
+      await waitFor(() => expect(dialogByLabel('Outer modal')).not.toHaveAttribute('inert'));
+      await waitFor(() => expect(screen.getByText('Open Inner Modal')).toHaveFocus());
+    });
+
+    await step('Escape closes the outer modal', async () => {
+      await userEvent.keyboard('{Escape}');
+      await waitFor(() => expect(dialogByLabel('Outer modal')).not.toBeInTheDocument());
+    });
+  },
+});
+
 export const WithContainerAndPortalSelector = meta.story({
   args: {
     children: <SampleModalContent />,

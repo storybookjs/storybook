@@ -27,7 +27,7 @@ export const manifests: PresetPropertyFn<
     (await presets?.apply<Partial<TypescriptOptions>>('typescript', {})) ?? {};
   const features = await presets?.apply('features', {});
 
-  if (features?.experimentalDocgenServer) {
+  if (features?.docgenServer) {
     /**
      * Docgen payloads live in the open service when this flag is on; core reads them via JSON refs
      * and the HTML debugger. We still emit an empty `components` manifest so renderer-owned metadata

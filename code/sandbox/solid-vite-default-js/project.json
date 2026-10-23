@@ -16,9 +16,7 @@
     "build": { "options": { "dir": "solid-vite-default-js" } },
     "chromatic": {},
     "serve": {},
-    "e2e-tests-dev": {},
-    "test-runner": {},
-    "test-runner-dev": {}
+    "e2e-tests-dev": {}
   },
   "tags": []
 }

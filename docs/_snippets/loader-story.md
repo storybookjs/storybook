@@ -178,7 +178,8 @@ export const Primary: Story = {
 
 ```svelte filename="TodoItem.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import TodoItem from './TodoItem.svelte';
 
@@ -204,37 +205,38 @@ export const Primary: Story = {
 />
 ```
 
-```js filename="TodoItem.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import TodoItem from './TodoItem.svelte';
+```svelte filename="TodoItem.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: TodoItem,
-};
+  import TodoItem from './TodoItem.svelte';
 
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Primary = {
-  render: (args, { loaded: { todo } }) => ({
-    Component: TodoItem,
-    props: {
-      ...args,
-      todo,
-    },
-  }),
-  loaders: [
+  const { Story } = preview.meta({
+    component: TodoItem,
+    render: template,
+  });
+</script>
+
+{#snippet template(args, { loaded: { todo } })}
+  <TodoItem {...args} {...todo} />
+{/snippet}
+
+<Story
+  name="Primary"
+  loaders={[
     async () => ({
-      todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
+      todo: await (
+        await fetch('https://jsonplaceholder.typicode.com/todos/1')
+      ).json(),
     }),
-  ],
-};
+  ]}
+/>
 ```
 
 ```svelte filename="TodoItem.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import TodoItem from './TodoItem.svelte';
 
@@ -260,38 +262,32 @@ export const Primary = {
 />
 ```
 
-```ts filename="TodoItem.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="TodoItem.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import TodoItem from './TodoItem.svelte';
+  import TodoItem from './TodoItem.svelte';
 
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/svelte/api/csf
- * to learn how to use render functions.
- */
-const meta = {
-  component: TodoItem,
-  render: (args, { loaded: { todo } }) => ({
-    Component: TodoItem,
-    props: {
-      ...args,
-      ...todo,
-    },
-  }),
-} satisfies Meta<typeof TodoItem>;
+  const { Story } = preview.meta({
+    component: TodoItem,
+    render: template,
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
+{#snippet template(args, { loaded: { todo } })}
+  <TodoItem {...args} {...todo} />
+{/snippet}
 
-export const Primary: Story = {
-  loaders: [
+<Story
+  name="Primary"
+  loaders={[
     async () => ({
-      todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
+      todo: await (
+        await fetch('https://jsonplaceholder.typicode.com/todos/1')
+      ).json(),
     }),
-  ],
-};
+  ]}
+/>
 ```
 
 ```js filename="TodoItem.stories.js" renderer="vue" language="js" tabTitle="CSF 3"

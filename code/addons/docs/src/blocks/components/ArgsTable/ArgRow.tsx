@@ -5,8 +5,7 @@ import { codeCommon } from 'storybook/internal/components';
 
 import Markdown from 'markdown-to-jsx';
 import { transparentize } from 'polished';
-import type { CSSObject } from 'storybook/theming';
-import { srOnlyStyles, srOnlyUnsetStyles, styled } from 'storybook/theming';
+import { type CSSObject, srOnlyStyles, srOnlyUnsetStyles, styled } from 'storybook/theming/emotion';
 
 import type { ArgControlProps } from './ArgControl';
 import { ArgControl } from './ArgControl';
@@ -110,7 +109,7 @@ export const ArgRow: FC<ArgRowProps> = (props) => {
   const { name, description } = row;
   const table = (row.table || {}) as TableAnnotation;
   const type = table.type || toSummary(row.type);
-  const defaultValue = table.defaultValue || row.defaultValue;
+  const defaultValue = table.defaultValue;
   const required = row.type?.required;
   const hasDescription = description != null && description !== '';
 

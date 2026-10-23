@@ -1,4 +1,7 @@
-// Framework-neutral scanning for a snippet's root element and its attribute names.
+// Framework-neutral scanning for a snippet's root element and its attribute names, plus the shared
+// structural comparison of that root.
+
+import type { Violation } from './types.ts';
 
 // The open tag runs to the first `>` outside quotes; the quoted alternatives absorb `>`, `=`,
 // and whitespace so value content can never leak into structure.
@@ -41,3 +44,29 @@ export const parseAttributes = (attrText: string): ParsedAttribute[] =>
     name: match[1],
     bare: match[2] === undefined,
   }));
+
+// Root identity gate: the tag must match, and a bare baseline attribute must survive under one of
+// the candidate's names (a candidate may add a value to it).
+export function compareRootStructure(
+  baseline: { tag: string; bareAttributes: Set<string> },
+  candidate: { tag: string; attributeNames: Set<string> }
+): Violation[] {
+  const violations: Violation[] = [];
+  if (baseline.tag !== candidate.tag) {
+    violations.push({
+      arg: 'snippet',
+      kind: 'changed-root',
+      message: `the baseline renders <${baseline.tag}> but the candidate renders <${candidate.tag}>`,
+    });
+  }
+  for (const bareAttribute of [...baseline.bareAttributes].sort()) {
+    if (!candidate.attributeNames.has(bareAttribute)) {
+      violations.push({
+        arg: bareAttribute,
+        kind: 'lost-attribute',
+        message: 'a bare attribute on the baseline root element is missing from the candidate',
+      });
+    }
+  }
+  return violations;
+}

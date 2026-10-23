@@ -16,9 +16,7 @@
     "dev": {},
     "build": { "options": { "dir": "qwik-vite-default-ts" } },
     "chromatic": {},
-    "serve": {},
-    "test-runner": {},
-    "test-runner-dev": {}
+    "serve": {}
   },
   "tags": []
 }

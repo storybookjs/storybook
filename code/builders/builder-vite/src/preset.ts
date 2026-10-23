@@ -1,5 +1,5 @@
 import { findConfigFile } from 'storybook/internal/common';
-import type { Options } from 'storybook/internal/types';
+import type { Options, PresetPropertyFn } from 'storybook/internal/types';
 
 import type { PluginOption } from 'vite';
 
@@ -9,8 +9,10 @@ import { storybookProjectAnnotationsPlugin } from './plugins/storybook-project-a
 import { storybookSanitizeEnvs } from './plugins/storybook-runtime-plugin.ts';
 import { viteInjectMockerRuntime } from './plugins/vite-inject-mocker/plugin.ts';
 import { viteMockPlugin } from './plugins/vite-mock/plugin.ts';
+import { previewRuntimePath } from './utils/preview-runtime-path.ts';
+import { resolveVitePublicDir } from './vite-config.ts';
 
-export const optimizeViteDeps: string[] = ['storybook/internal/preview/runtime'];
+export const optimizeViteDeps: string[] = [previewRuntimePath];
 
 /**
  * Preset that provides the core Storybook Vite plugins shared between `@storybook/builder-vite` and
@@ -39,3 +41,13 @@ export async function viteCorePlugins(
       : []),
   ];
 }
+
+export const staticDirs: PresetPropertyFn<'staticDirs'> = async (values = [], options) => {
+  // In dev mode Vite serves the public dir itself, after Storybook's `staticDirs` middleware.
+  if (options.configType !== 'PRODUCTION') {
+    return values;
+  }
+
+  const publicDir = await resolveVitePublicDir(options, 'build');
+  return publicDir ? [...values, { from: publicDir, to: '/' }] : values;
+};

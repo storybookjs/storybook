@@ -1,14 +1,14 @@
 import { versions } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
-import type { ToolsetTelemetry } from '../../shared/open-service/toolset-definition.ts';
+import type { ToolsetMethodReport } from '../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId, toCliMethodName } from '../../shared/open-service/toolset-names.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import {
   attachGateReasonFromError,
   createTools,
+  formatMultiInstanceNotice,
   isAttachGateError,
-  toolsCommandDimensions,
-  wrapMethodTelemetry,
   ToolsRuntimeError,
   type CreateToolsDeps,
   type CreateToolsOptions,
@@ -17,6 +17,7 @@ import {
   type ToolsClientInfo,
   type ToolsHostKind,
   type ToolsMode,
+  type ToolsetJsonSchema,
 } from './sdk/index.ts';
 import {
   discoverRunningInstance,
@@ -28,7 +29,12 @@ import {
   renderToolsHelpFromCatalog,
   renderToolsetHelpFromCatalog,
 } from './help.ts';
-import { parseToolsTokens, type ParsedToolsTokens, type ToolsOutputFlags } from './tool-tokens.ts';
+import {
+  parsePort,
+  parseToolsTokens,
+  type ParsedToolsTokens,
+  type ToolsOutputFlags,
+} from './tool-tokens.ts';
 
 /**
  * Why an invocation stopped before its handler executed, for the `tools-command` telemetry event.
@@ -70,6 +76,12 @@ export type ToolsRunResult = {
   fallbackNotice?: string;
   /** Why `auto` loaded locally instead of attaching. */
   fallbackReason?: ToolsAttachGateReason;
+  /** Set when the attached host chose among several matching instances; printed to stderr. */
+  multiInstanceNotice?: string;
+  /** True when the attached host chose among several matching instances; drives telemetry. */
+  multipleMatches?: boolean;
+  /** The handler's usage report, from the outcome of a run that reached the handler. */
+  report?: ToolsetMethodReport;
 };
 
 export type ToolsInvocation = {
@@ -78,6 +90,8 @@ export type ToolsInvocation = {
   /** Pass-through tokens after the tool name. */
   tokens: string[];
   target: ToolsTarget;
+  /** Raw `--port` value (commander-owned, given before the toolset name). */
+  port?: string;
   /** Values of the same flags when given before the toolset name (commander-owned). */
   flags?: ToolsOutputFlags;
   /** `true` from `--attach`, `false` from `--no-attach`, omitted for the attach-preferred default. */
@@ -95,8 +109,6 @@ const CLI_CLIENT_INFO: ToolsClientInfo = {
 export type ToolsRunDeps = {
   createTools?: (options?: CreateToolsOptions, deps?: CreateToolsDeps) => Promise<Tools>;
   discoverInstance?: typeof discoverRunningInstance;
-  /** Sink for the per-method toolset telemetry events; absent when telemetry is disabled. */
-  methodTelemetry?: ToolsetTelemetry;
 };
 
 /** `find-by-component` -> `findByComponent`, accepting an already-camelCase spelling unchanged. */
@@ -148,7 +160,7 @@ export async function runToolsCommand(
   deps: ToolsRunDeps = {}
 ): Promise<ToolsRunResult> {
   const normalized = normalizeHelpFlag(invocation);
-  const { tokens, target, flags = {}, attach } = normalized;
+  const { tokens, flags = {}, attach } = normalized;
 
   const parsed = parseToolsTokens(tokens, flags);
   const requestedMode = parsed.ok
@@ -165,8 +177,24 @@ export async function runToolsCommand(
     };
   }
 
+  const parsedPort = parsePort(normalized.port);
+  if (!parsedPort.ok) {
+    return {
+      exitCode: 1,
+      output: parsedPort.error,
+      outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+      outputPath: parsed.output,
+      requestedMode,
+      attachMode: requestedMode,
+    };
+  }
+  const target: ToolsTarget = {
+    ...normalized.target,
+    ...(parsedPort.port !== undefined ? { port: parsedPort.port } : {}),
+  };
+
   // `-o/--output` applies to whatever the run produced — help, intercepts, and tool results
-  // alike — matching the ai CLI, where the output file always receives the printed text.
+  // alike.
   const result = (
     partial: Omit<ToolsRunResult, 'outputPath' | 'attachMode' | 'requestedMode'>
   ): ToolsRunResult => ({
@@ -183,6 +211,7 @@ export async function runToolsCommand(
     tools = await create({
       cwd: target.cwd,
       configDir: target.configDir,
+      ...(target.port != null ? { port: target.port } : {}),
       mode: requestedMode,
       clientInfo: CLI_CLIENT_INFO,
     });
@@ -202,25 +231,11 @@ export async function runToolsCommand(
   }
 
   try {
-    const methodTelemetry =
-      tools.mode === 'local' && deps.methodTelemetry
-        ? wrapMethodTelemetry(
-            deps.methodTelemetry,
-            toolsCommandDimensions({
-              clientInfo: tools.clientInfo,
-              requestedMode: tools.requestedMode,
-              resolvedMode: tools.mode,
-              host: tools.host,
-              fallbackReason: tools.fallbackReason,
-            })
-          )
-        : deps.methodTelemetry;
-    const dispatchDeps: ToolsRunDeps = { ...deps, methodTelemetry };
     const dispatched = await dispatchTools(
       tools,
-      normalized,
+      { ...normalized, target },
       parsed,
-      dispatchDeps,
+      deps,
       requestedMode,
       result
     );
@@ -231,6 +246,9 @@ export async function runToolsCommand(
       host: tools.host,
       fallbackNotice: tools.fallbackNotice,
       fallbackReason: tools.fallbackReason,
+      ...(tools.storybook.siblings?.length
+        ? { multiInstanceNotice: formatMultiInstanceNotice(tools.storybook), multipleMatches: true }
+        : {}),
     };
   } finally {
     await tools.close();
@@ -302,13 +320,14 @@ async function dispatchTools(
   if (parsed.help) {
     return result({
       exitCode: 0,
-      output: renderMethodHelpFromCatalog(entry, method),
+      output: renderMethodHelpFromCatalog(method),
       outcome: { kind: 'help' },
     });
   }
 
   const { methodName } = parseToolsetMethodId(method.ref);
-  const commandPath = `npx storybook tools ${entry.id} ${toCliMethodName(methodName)}`;
+  const toolPath = `${entry.id} ${toCliMethodName(methodName)}`;
+  const commandPath = `npx storybook tools ${toolPath}`;
 
   if (tools.mode === 'local' && method.requiresDevServer) {
     const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(invocation.target);
@@ -319,10 +338,16 @@ async function dispatchTools(
     });
   }
 
+  // Warnings logged while a tool runs, such as an empty stories glob, would print on stdout ahead of
+  // the result. They are muted only at the default level, and only in-process: a child host's
+  // stderr, its errors included, is forwarded at warn level and has to stay visible.
+  const previousLogLevel = logger.getLogLevel();
+  if (previousLogLevel === 'info' && tools.host === 'in-process') {
+    logger.setLogLevel('error');
+  }
   try {
     const outcome = await tools.call(method.ref, parsed.args, {
       ...(tools.storybook.url ? { origin: tools.storybook.url } : {}),
-      ...(deps.methodTelemetry ? { telemetry: deps.methodTelemetry } : {}),
     });
     const output = parsed.json
       ? JSON.stringify(outcome.data, null, 2)
@@ -331,12 +356,13 @@ async function dispatchTools(
       exitCode: outcome.ok ? 0 : 1,
       output,
       outcome: { kind: outcome.ok ? 'success' : 'failure' },
+      ...(outcome.telemetry ? { report: outcome.telemetry } : {}),
     });
   } catch (error) {
     if (isInvalidInputError(error)) {
       return result({
         exitCode: 1,
-        output: formatValidationIssues(commandPath, error.data.issues ?? []),
+        output: formatValidationIssues(toolPath, error.data.issues ?? [], method.input),
         outcome: { kind: 'intercept', reason: 'invalid-arguments' },
       });
     }
@@ -348,6 +374,8 @@ async function dispatchTools(
       output: error instanceof Error ? error.message : String(error),
       outcome: { kind: 'error', error },
     });
+  } finally {
+    logger.setLogLevel(previousLogLevel);
   }
 }
 
@@ -414,18 +442,39 @@ type ValidationIssues = ReadonlyArray<{
   path?: ReadonlyArray<PropertyKey | { key?: unknown }>;
 }>;
 
-function formatValidationIssues(commandPath: string, issues: ValidationIssues): string {
+const TARGET_OPTIONS = ['cwd', 'config-dir', 'port'];
+
+function formatValidationIssues(
+  toolPath: string,
+  issues: ValidationIssues,
+  input: ToolsetJsonSchema | undefined
+): string {
+  const commandPath = `npx storybook tools ${toolPath}`;
+  const declaredKeys = input?.properties
+    ? Object.keys(input.properties as Record<string, unknown>)
+    : undefined;
+  let hasUnknownKey = false;
   const lines = issues.map((issue) => {
-    const path = issue.path
-      ?.map((segment) =>
+    const segments =
+      issue.path?.map((segment) =>
         typeof segment === 'object' && segment !== null ? String(segment.key) : String(segment)
-      )
-      .join('.');
+      ) ?? [];
+    const [key] = segments;
+    if (declaredKeys && segments.length === 1 && !declaredKeys.includes(key)) {
+      hasUnknownKey = true;
+      return TARGET_OPTIONS.includes(key)
+        ? `- Unknown flag \`--${key}\`. It selects the target Storybook, so it goes before the toolset name: \`npx storybook tools --${key} <value> ${toolPath}\`.`
+        : `- Unknown flag \`--${key}\`.`;
+    }
+    const path = segments.join('.');
     return path ? `- \`${path}\`: ${issue.message}` : `- ${issue.message}`;
   });
+  const validFlags = !declaredKeys?.length
+    ? 'This tool takes no arguments.'
+    : `Valid flags: ${declaredKeys.map((key) => `\`--${key}\``).join(', ')}.`;
   return `Invalid arguments for \`${commandPath}\`:
 
 ${lines.join('\n')}
-
+${hasUnknownKey ? `\n${validFlags}\n` : ''}
 Run \`${commandPath} --help\` for the expected arguments.`;
 }

@@ -229,7 +229,8 @@ export const ExampleStory = {
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -286,15 +287,15 @@ export const ExampleStory = {
 />
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import Button from './Button.svelte';
+  import Button from './Button.svelte';
 
-const meta = {
-  component: Button,
-  parameters: {
+  const { Story } = preview.meta({
+    component: Button,
+    parameters: {
     a11y: {
       /*
        * Axe's context parameter
@@ -327,28 +328,28 @@ const meta = {
       manual: true,
     },
   },
-} satisfies Meta<typeof Button>;
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const ExampleStory: Story = {
-  parameters: {
+<Story
+  name="ExampleStory"
+  parameters={{
     a11y: {
       // ...same config available as above
     },
-  },
-  globals: {
+  }}
+  globals={{
     a11y: {
       // ...same config available as above
     },
-  },
-};
+  }}
+/>
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -405,12 +406,15 @@ export const ExampleStory: Story = {
 />
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Button from './Button.svelte';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: Button,
-  parameters: {
+  import Button from './Button.svelte';
+
+  const { Story } = preview.meta({
+    component: Button,
+    parameters: {
     a11y: {
       /*
        * Axe's context parameter
@@ -443,20 +447,22 @@ export default {
       manual: true,
     },
   },
-};
+  });
+</script>
 
-export const ExampleStory = {
-  parameters: {
+<Story
+  name="ExampleStory"
+  parameters={{
     a11y: {
       // ...same config available as above
     },
-  },
-  globals: {
+  }}
+  globals={{
     a11y: {
       // ...same config available as above
     },
-  },
-};
+  }}
+/>
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"

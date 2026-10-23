@@ -1,0 +1,144 @@
+{
+  "customElementsManifest": {
+    "declaration": {
+      "attributes": [
+        {
+          "default": "0",
+          "description": "Current rating.",
+          "fieldName": "value",
+          "name": "value",
+        },
+        {
+          "default": "5",
+          "description": "Maximum number of stars.",
+          "fieldName": "max",
+          "name": "max",
+        },
+        {
+          "default": "'full'",
+          "description": "Visual variant.",
+          "fieldName": "variant",
+          "name": "variant",
+          "type": {
+            "text": "'compact' | 'full'",
+          },
+        },
+        {
+          "description": "Attribute name differs from the field.",
+          "fieldName": "labelText",
+          "name": "aria-label-text",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "default": "{}",
+          "description": "Complex prop, kept as an object.",
+          "fieldName": "labels",
+          "name": "labels",
+          "type": {
+            "text": "Record<number, string>",
+          },
+        },
+      ],
+      "customElement": true,
+      "description": "A Stencil rating control.",
+      "events": [
+        {
+          "description": "Emitted when the rating changes.",
+          "name": "ratingChange",
+          "type": {
+            "text": "EventEmitter<number>",
+          },
+        },
+        {
+          "description": "Emitted under a custom event name.",
+          "name": "stencil-reset",
+          "type": {
+            "text": "EventEmitter<void>",
+          },
+        },
+      ],
+      "kind": "class",
+      "members": [
+        {
+          "default": "0",
+          "description": "Current rating.",
+          "kind": "field",
+          "name": "value",
+          "type": {
+            "text": "number",
+          },
+        },
+        {
+          "default": "5",
+          "description": "Maximum number of stars.",
+          "kind": "field",
+          "name": "max",
+          "type": {
+            "text": "number",
+          },
+        },
+        {
+          "default": "'full'",
+          "description": "Visual variant.",
+          "kind": "field",
+          "name": "variant",
+          "type": {
+            "text": "'compact' | 'full'",
+          },
+        },
+        {
+          "description": "Attribute name differs from the field.",
+          "kind": "field",
+          "name": "labelText",
+          "type": {
+            "text": "string | undefined",
+          },
+        },
+        {
+          "default": "{}",
+          "description": "Complex prop, kept as an object.",
+          "kind": "field",
+          "name": "labels",
+          "type": {
+            "text": "Record<number, string>",
+          },
+        },
+        {
+          "default": "-1",
+          "description": "Internal hover state.",
+          "kind": "field",
+          "name": "hovered",
+          "type": {
+            "text": "number",
+          },
+        },
+        {
+          "description": "Resets the rating to zero.",
+          "kind": "method",
+          "name": "clear",
+          "return": {
+            "type": {
+              "text": "Promise<void>",
+            },
+          },
+        },
+        {
+          "kind": "method",
+          "name": "render",
+        },
+      ],
+      "name": "StencilProps",
+      "tagName": "stencil-props",
+    },
+    "manifestPath": "custom-elements.json",
+  },
+  "description": "A Stencil rating control.",
+  "id": "stencil-props",
+  "jsDocTags": {},
+  "name": "stencil-props",
+  "path": "./input.stories.ts",
+  "renderer": "web-components",
+  "summary": undefined,
+}

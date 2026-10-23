@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { types as t } from 'storybook/internal/babel';
-
 import { dedent } from 'ts-dedent';
 
-import { babelParseFile } from '../CsfFile.ts';
+import { parseExpression, isStringLiteral } from '../estree/ast.ts';
+import { SourceEditor } from '../estree/editor.ts';
 import { isSelfContained } from './resolve-arg-value.ts';
 import {
   type ReferenceContext,
@@ -12,11 +11,15 @@ import {
   resolveArgsRecord,
   resolveBindingMembers,
   resolveReferencedValue,
-  sourceOf,
+  oneLineTextOf,
 } from './resolve-members.ts';
 
+const indexed = (editor: SourceEditor) => {
+  editor.parentOf(editor.program);
+  return editor;
+};
 const moduleOf = (code: string, filePath: string): ReferenceModule => ({
-  program: babelParseFile({ code, filename: filePath }).path,
+  editor: indexed(new SourceEditor(code, filePath)),
   filePath,
 });
 
@@ -41,7 +44,7 @@ const argsOf = (code: string, storyName: string, ctx = contextOf({ 'entry.ts': c
   const record = resolveArgsRecord(story?.properties.args, ctx);
   return {
     args: Object.fromEntries(
-      Object.entries(record.properties).map(([key, node]) => [key, sourceOf(node)])
+      Object.entries(record.properties).map(([key, node]) => [key, oneLineTextOf(node)])
     ),
     unresolved: [...(story?.unresolved ?? []), ...record.unresolved],
   };
@@ -286,6 +289,65 @@ describe('spreads at the story config level', () => {
       Assigned.args = { label: 'assigned' };
     `;
     expect(argsOf(code, 'Assigned')).toEqual({ args: { label: "'assigned'" }, unresolved: [] });
+  });
+
+  it('resolves a story alias to a local function', () => {
+    const code = dedent`
+      const ParagraphStory = ({ text }) => text;
+      export const Example = ParagraphStory;
+    `;
+    expect(argsOf(code, 'Example')).toEqual({ args: {}, unresolved: [] });
+  });
+
+  it('keeps the input accessor when a CSF factory story is aliased', () => {
+    const code = dedent`
+      const meta = preview.meta({ component: Button });
+      const Primary = meta.story({ args: { label: 'saved' } });
+      const Alias = Primary;
+      export const Sibling = meta.story({ args: { ...Alias.input.args, size: 'small' } });
+    `;
+    expect(argsOf(code, 'Sibling')).toEqual({
+      args: { label: "'saved'", size: "'small'" },
+      unresolved: [],
+    });
+  });
+
+  it('applies assignments through aliases in source order', () => {
+    const code = dedent`
+      const Base = () => null;
+      const Alias = Base;
+      Alias.args = { label: 'first' };
+      Base.args = { label: 'last' };
+      export const Story = Alias;
+    `;
+    expect(argsOf(code, 'Story')).toEqual({ args: { label: "'last'" }, unresolved: [] });
+  });
+
+  it('does not read an imported alias with local names when externalization is unavailable', () => {
+    const ctx = contextOf({
+      'shared.ts': dedent`
+        const defaults = { label: 'remote' };
+        export const Shared = { args: { ...defaults } };
+      `,
+      'entry.ts': dedent`
+        import { Shared } from './shared';
+        const defaults = { label: 'local' };
+        export const Alias = Shared;
+      `,
+    });
+    expect(argsOf('', 'Alias', ctx)).toEqual({ args: {}, unresolved: ['Shared'] });
+  });
+
+  it('reads a self-contained imported alias when its values can be externalized', () => {
+    const ctx = contextOf(
+      {
+        'shared.ts': `export const Shared = { args: { label: 'remote' } };`,
+        'entry.ts': `import { Shared } from './shared'; export const Alias = Shared;`,
+      },
+      'entry.ts',
+      (node) => (isSelfContained(node) ? node : undefined)
+    );
+    expect(argsOf('', 'Alias', ctx)).toEqual({ args: { label: "'remote'" }, unresolved: [] });
   });
 
   it('prefers an assignment over the args the declaration carries', () => {
@@ -542,6 +604,19 @@ describe('CSF factories', () => {
     });
   });
 
+  it('reports parent args written as a comma expression, which it cannot read', () => {
+    const code = dedent`
+      import preview from './preview';
+      const meta = preview.meta({ component: Button });
+      export const Base = meta.story({ args: (track(), { label: 'base', primary: true }) });
+      export const Extended = Base.extend({ args: { label: 'extended' } });
+    `;
+    expect(argsOf(code, 'Extended')).toEqual({
+      args: { label: "'extended'" },
+      unresolved: ["...(track(), { label: 'base', primary: true })"],
+    });
+  });
+
   it('reports a bare spread of a factory story, which copies its methods and not its config', () => {
     const code = dedent`
       import preview from './preview';
@@ -585,7 +660,7 @@ describe('externalize', () => {
         `,
       },
       'entry.ts',
-      (node) => (t.isStringLiteral(node) ? node : undefined)
+      (node) => (isStringLiteral(node) ? node : undefined)
     );
     expect(argsOf('', 'Reuse', ctx)).toEqual({ args: {}, unresolved: ['...shared'] });
   });
@@ -593,12 +668,9 @@ describe('externalize', () => {
 
 describe('resolveReferencedValue', () => {
   const valueOf = (ctx: ReferenceContext, expression: string) => {
-    const node = (
-      babelParseFile({ code: `(${expression})`, filename: 'probe.ts' }).ast.program
-        .body[0] as t.ExpressionStatement
-    ).expression;
+    const node = parseExpression(expression);
     const resolved = resolveReferencedValue(ctx, node);
-    return resolved && { value: sourceOf(resolved.node), filePath: resolved.ctx.filePath };
+    return resolved && { value: oneLineTextOf(resolved.node), filePath: resolved.ctx.filePath };
   };
 
   it('reads a member of a local object', () => {

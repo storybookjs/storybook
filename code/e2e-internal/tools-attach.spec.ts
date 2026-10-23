@@ -1,5 +1,5 @@
 import { execFile } from 'child_process';
-import { mkdir } from 'fs/promises';
+import { mkdir, readFile, writeFile } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { promisify } from 'util';
@@ -59,6 +59,10 @@ const REVIEW_INPUT = JSON.stringify({
 });
 
 test.describe('storybook tools attach', () => {
+  // Declaration order matters (the full-extraction test must stay last — see its comment), which
+  // the config's fullyParallel would not preserve outside CI's single worker. Not 'serial': these
+  // tests are independent, so one failure must not skip the rest.
+  test.describe.configure({ mode: 'default' });
   test.setTimeout(90_000);
 
   test('fails with start-Storybook guidance when --attach finds no instance', async () => {
@@ -70,11 +74,13 @@ test.describe('storybook tools attach', () => {
     expect(result.output).not.toContain('Falling back');
   });
 
-  test('auto mode attaches for docs, preview, and review against the running internal UI', async () => {
+  test('auto mode attaches for docs, preview, review, and stories changed against the running internal UI', async () => {
     test.skip(
       !runsAgainstDevServer,
       'Live attach requires the running Storybook channel, which the static E2E job does not serve.'
     );
+    // Five CLI runs, and both docs calls extract every component manifest (~25s each on CI).
+    test.slow();
     const list = await runTools(['docs', 'list']);
     expect(list.exitCode, list.output).toBe(0);
     expect(list.output).toContain('example-button');
@@ -95,6 +101,36 @@ test.describe('storybook tools attach', () => {
 
     const review = await runTools(['review', 'create', '--input', REVIEW_INPUT]);
     expect(review.exitCode, review.output).toBe(0);
+
+    const changed = await runTools(['stories', 'changed']);
+    expect(changed.exitCode, changed.output).toBe(0);
+    expect(changed.output).not.toContain('Falling back');
+  });
+
+  test('attached stories changed lists the stories of a modified story file', async () => {
+    test.skip(
+      !runsAgainstDevServer,
+      'Live attach requires the running Storybook channel, which the static E2E job does not serve.'
+    );
+    // Covers the polling budget plus one CLI run that started just inside it, so a timeout cannot
+    // skip the restore below.
+    test.setTimeout(150_000);
+    const storyFile = join(process.cwd(), 'core/template/stories/names.stories.ts');
+    const original = await readFile(storyFile, 'utf8');
+    try {
+      await writeFile(storyFile, `${original}\n// tools-attach e2e\n`);
+
+      // Change detection picks the edit up asynchronously, after the file watcher and a git diff.
+      await expect(async () => {
+        const changed = await runTools(['--attach', 'stories', 'changed', '--json']);
+        expect(changed.exitCode, changed.output).toBe(0);
+        expect(changed.output).toMatch(
+          /"storyId": "core-names--prefix",\s+"statusValue": "status-value:modified"/
+        );
+      }).toPass({ timeout: 60_000 });
+    } finally {
+      await writeFile(storyFile, original);
+    }
   });
 
   test('--attach still joins the running internal UI', async () => {
@@ -123,15 +159,18 @@ test.describe('storybook tools attach', () => {
     expect(preview.output).toMatch(/--no-attach|requires a running Storybook/);
   });
 
-  test('auto mode falls back to local with a notice when no instance matches', async () => {
+  test('auto mode falls back to local silently when no instance matches', async () => {
     const emptyHome = join(tmpdir(), `storybook-tools-attach-empty-home-${process.pid}`);
     await mkdir(emptyHome, { recursive: true });
-    const result = await runTools(['docs', 'list'], process.cwd(), { HOME: emptyHome });
+    const result = await runTools(['docs', 'list'], process.cwd(), {
+      HOME: emptyHome,
+      USERPROFILE: emptyHome,
+    });
 
     expect(result.exitCode, result.output).toBe(0);
     expect(result.output).toContain('example-button');
-    expect(result.output).toContain('Falling back to loading this project');
-    expect(result.output).toContain('npm run storybook');
+    expect(result.output).not.toContain('Falling back');
+    expect(result.output).not.toContain('npm run storybook');
   });
 
   test('--no-attach from a different cwd loads via a project-local child host', async () => {
@@ -143,15 +182,33 @@ test.describe('storybook tools attach', () => {
     expect(list.output).toContain('example-button');
   });
 
-  test('attaches from a different cwd via a project-local child host', async () => {
+  test('attaches from a different cwd because the CLI is the same storybook installation', async () => {
     test.skip(
       !runsAgainstDevServer,
-      'Child-host attach requires the running Storybook channel, which the static E2E job does not serve.'
+      'Live attach requires the running Storybook channel, which the static E2E job does not serve.'
     );
     const list = await runTools(
       ['--cwd', process.cwd(), 'docs', 'list'],
       join(process.cwd(), '..')
     );
+    expect(list.exitCode, list.output).toBe(0);
+    expect(list.output).toContain('example-button');
+  });
+
+  // Deliberately last: the first-ever full extraction leaves the instance holding (and syncing to
+  // later clients) an all-components state large enough to grind a small CI box, which failed the
+  // unrelated attach test that used to follow it. Tracked in #36105.
+  test('attached docs list succeeds through the instance docgen services', async ({ page }) => {
+    test.skip(
+      !runsAgainstDevServer,
+      'Live attach requires the running Storybook channel, which the static E2E job does not serve.'
+    );
+    await page.goto(process.env.STORYBOOK_URL || 'http://localhost:6006');
+    // Every per-component extraction broadcasts the full accumulated docgen state to each channel
+    // client, so leave the manager page before fanning out to spare the CI dev server that load.
+    await page.goto('about:blank');
+
+    const list = await runTools(['--attach', 'docs', 'list'], process.cwd());
     expect(list.exitCode, list.output).toBe(0);
     expect(list.output).toContain('example-button');
   });

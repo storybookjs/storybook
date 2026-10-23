@@ -59,7 +59,7 @@ function methodBodyLines(method: ToolsetCatalogMethod): string[] {
   }
   const outputLines = argumentLines(method.output, false);
   if (outputLines && outputLines.length > 0) {
-    lines.push('', 'Output:', ...outputLines);
+    lines.push('', 'Output (`--json`):', ...outputLines);
   }
   return lines;
 }
@@ -124,14 +124,9 @@ export function renderToolsHelpFromCatalog(catalog: ToolsetCatalog): string {
     `${LOCAL_BADGE} tools run without a running Storybook.`,
     `${DEV_SERVER_BADGE} tools need a running Storybook dev server; start it first.`,
     'Individual `--key value` flags override entries of `--input`.',
+    'Run `npx storybook tools <toolset> <tool> --help` for the description, arguments and `--json` output of one tool.',
   ].join('\n');
-  const referenceIntro =
-    'Tool reference — every command in full (`npx storybook tools <toolset> <tool> --help` shows one alone):';
-  const sections = [header, notes, referenceIntro];
-  for (const toolset of catalog.toolsets) {
-    sections.push(renderToolsetSection(toolset));
-  }
-  return sections.join('\n\n');
+  return [header, notes].join('\n\n');
 }
 
 export function renderToolsetHelpFromCatalog(entry: ToolsetCatalogEntry): string {
@@ -142,10 +137,7 @@ export function renderToolsetHelpFromCatalog(entry: ToolsetCatalogEntry): string
   ].join('\n');
 }
 
-export function renderMethodHelpFromCatalog(
-  _entry: ToolsetCatalogEntry,
-  method: ToolsetCatalogMethod
-): string {
+export function renderMethodHelpFromCatalog(method: ToolsetCatalogMethod): string {
   return [
     `Usage: npx storybook tools ${cliPath(method)} [--key value ...]`,
     '',
@@ -158,11 +150,9 @@ export function renderMethodHelpFromCatalog(
 }
 
 /**
- * The complete agent discovery surface, in commander's conventional shape — Usage, Options, and a
- * `Commands:` listing with one-line summaries — followed by a full reference for every tool
- * (description, input schema, declared output schema) so agents learn the surface from this single
- * invocation instead of paying a project load per lookup. The Options block is the flags' only
- * documentation, since commander's own help is disabled in favor of this runtime-derived one.
+ * The overview, in commander's conventional shape: Usage, Options, and a `Commands:` listing with
+ * one-line summaries. The flags are documented here and nowhere else, since commander's own help
+ * is disabled in favor of this runtime-derived one.
  */
 export function renderToolsHelp(
   configDir: string,
@@ -188,5 +178,5 @@ export function renderMethodHelp(
   ctx: ToolsetCtx
 ): string {
   const entry = toCatalogEntry({ ...toolset, methods: { [methodKey]: method } }, ctx);
-  return renderMethodHelpFromCatalog(entry, entry.methods[0] as ToolsetCatalogMethod);
+  return renderMethodHelpFromCatalog(entry.methods[0] as ToolsetCatalogMethod);
 }

@@ -26,8 +26,8 @@ export const openInEditorTool: Addon_BaseType = {
   title: 'open-in-editor',
   id: 'open-in-editor',
   type: types.TOOL,
-  match: ({ viewMode, tabId }) =>
-    global.CONFIG_TYPE === 'DEVELOPMENT' && (viewMode === 'story' || viewMode === 'docs') && !tabId,
+  match: ({ viewMode }) =>
+    global.CONFIG_TYPE === 'DEVELOPMENT' && (viewMode === 'story' || viewMode === 'docs'),
   render: () => (
     <Consumer filter={mapper}>
       {({ importPath, isCompositionStory }) => {

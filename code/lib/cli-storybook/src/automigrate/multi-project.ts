@@ -8,10 +8,10 @@ import { shortenPath } from '../util.ts';
 import type { CollectProjectsSuccessResult } from '../util.ts';
 import { resolveRequestedFeatures } from './fixes/experimental-features.ts';
 import { allFixes } from './fixes/index.ts';
-import { rnstorybookConfig } from './fixes/rnstorybook-config.ts';
-import type { CheckOptions, Fix, FixId, RunOptions } from './types.ts';
+import { type FixFileFailure, pluralFiles, reportFileFailures } from './helpers/failure-report.ts';
+import { applyFixes, type CheckedFix, detectApplicable, runCheck } from './pipeline.ts';
+import type { Fix, FixId } from './types.ts';
 import { FixStatus } from './types.ts';
-import { RN_STORYBOOK_DIR } from '../../../../core/src/shared/constants/config-folder.ts';
 
 export interface ProjectAutomigrationData {
   configDir: string;
@@ -22,13 +22,15 @@ export interface ProjectAutomigrationData {
   storybookVersion: string;
   beforeVersion: string;
   storiesPaths: string[];
-  hasCsfFactoryPreview: boolean;
 }
 
 export interface AutomigrationCheckResultReport {
   result: any;
   status: 'check_succeeded' | 'check_failed' | 'not_applicable';
   project: ProjectAutomigrationData;
+  /** The fix's hooks went through every file and would change none. */
+  verified?: boolean;
+  recheck?: CheckedFix['recheck'];
 }
 
 export interface AutomigrationCheckResult<T = any> {
@@ -70,28 +72,16 @@ export async function collectAutomigrationsAcrossProjects(
     fix: Fix,
     project: ProjectAutomigrationData,
     status: 'check_succeeded' | 'check_failed' | 'not_applicable',
-    result?: any
+    result?: any,
+    verified?: boolean,
+    recheck?: CheckedFix['recheck']
   ) {
+    const report = { project, result, status, verified, recheck };
     const existing = automigrationMap.get(fix.id);
     if (existing) {
-      // Add project to existing automigration
-      existing.reports.push({
-        project,
-        result,
-        status,
-      });
+      existing.reports.push(report);
     } else {
-      // Create new automigration entry
-      automigrationMap.set(fix.id, {
-        fix,
-        reports: [
-          {
-            result,
-            status,
-            project,
-          },
-        ],
-      });
+      automigrationMap.set(fix.id, { fix, reports: [report] });
     }
   }
 
@@ -102,31 +92,27 @@ export async function collectAutomigrationsAcrossProjects(
     taskLog.message(`Checking automigrations for ${projectName}...`);
     logger.debug(`Processing project: ${projectName}`);
 
+    const checks: (CheckedFix & { failed?: boolean })[] = [];
+
     for (const fix of fixes) {
       try {
         logger.debug(`Checking fix ${fix.id} for project ${projectName}...`);
 
-        const checkOptions: CheckOptions = {
-          packageManager: project.packageManager,
-          configDir: project.configDir,
-          mainConfig: project.mainConfig,
-          storybookVersion: project.storybookVersion,
-          beforeVersion: project.beforeVersion,
-          requested: requestedFixIds?.includes(fix.id),
-          previewConfigPath: project.previewConfigPath,
-          mainConfigPath: project.mainConfigPath,
-          storiesPaths: project.storiesPaths,
-          hasCsfFactoryPreview: project.hasCsfFactoryPreview,
-        };
-        const result = await fix.check(checkOptions);
-
-        if (result !== null) {
-          collectResult(fix, project, 'check_succeeded', result);
-        } else {
-          collectResult(fix, project, 'not_applicable');
-        }
+        checks.push(
+          await runCheck(fix, {
+            packageManager: project.packageManager,
+            configDir: project.configDir,
+            mainConfig: project.mainConfig,
+            storybookVersion: project.storybookVersion,
+            beforeVersion: project.beforeVersion,
+            requested: requestedFixIds?.includes(fix.id),
+            previewConfigPath: project.previewConfigPath,
+            mainConfigPath: project.mainConfigPath,
+            storiesPaths: project.storiesPaths,
+          })
+        );
       } catch (error) {
-        collectResult(fix, project, 'check_failed');
+        checks.push({ fix, result: null, failed: true });
 
         logger.debug(
           `Failed to check fix ${fix.id} for project ${shortenPath(project.configDir)}.`
@@ -135,12 +121,33 @@ export async function collectAutomigrationsAcrossProjects(
         ErrorCollector.addError(error);
       }
     }
+
+    const applicable = await detectApplicable(
+      project,
+      checks.filter(({ result }) => result !== null)
+    );
+    for (const check of checks) {
+      const { fix, result, failed } = check;
+      if (failed) {
+        collectResult(fix, project, 'check_failed');
+      } else if (!applicable.includes(check)) {
+        collectResult(
+          fix,
+          project,
+          'not_applicable',
+          undefined,
+          result !== null && !!fix.transform && !fix.run
+        );
+      } else {
+        collectResult(fix, project, 'check_succeeded', result, undefined, check.recheck);
+      }
+    }
   }
 
   const allAutomigrations = Array.from(automigrationMap.values());
 
   const applicableAutomigrations = allAutomigrations.filter((am) =>
-    am.reports.every((rep) => rep.status !== 'not_applicable')
+    am.reports.some((rep) => rep.status !== 'not_applicable')
   );
   // Single pass through detectedAutomigrations to build both arrays
   const { successAutomigrations, failedAutomigrations } = applicableAutomigrations.reduce(
@@ -202,6 +209,20 @@ const formatProjectDirs = (list: AutomigrationCheckResult['reports']) => {
   return `${relativeDirs.slice(0, amountOfProjectsShown).join(', ')}${remaining > 0 ? ` and ${remaining} more...` : ''}`;
 };
 
+// A fix's prompt can say more with its check result, such as the files it changes, than the
+// one-line hint in the selection shows.
+export const logAutomigrationDetails = (automigrations: AutomigrationCheckResult[]) => {
+  for (const { fix, reports } of automigrations) {
+    const hint = fix.prompt();
+    for (const { result, status, project } of reports) {
+      const details = status === 'check_succeeded' ? fix.prompt(result) : hint;
+      if (details !== hint) {
+        logger.logBox(details, { title: `${fix.id} (${shortenPath(project.configDir) || '.'})` });
+      }
+    }
+  }
+};
+
 /** Prompts user to select which automigrations to run */
 export async function promptForAutomigrations(
   automigrations: AutomigrationCheckResult[],
@@ -222,6 +243,7 @@ export async function promptForAutomigrations(
 
   if (options.dryRun) {
     logSelection('Detected automigrations (dry run - no changes will be made):', automigrations);
+    logAutomigrationDetails(automigrations);
     return [];
   }
 
@@ -230,7 +252,19 @@ export async function promptForAutomigrations(
       ({ fix }) =>
         preselectedIds.has(fix.id) || fix.defaultSelected !== false || fix.promptType === 'auto'
     );
-    logSelection('Running all detected automigrations:', selected);
+    const optIn = automigrations.filter((am) => !selected.includes(am));
+    logSelection(
+      optIn.length > 0
+        ? 'Running these detected automigrations:'
+        : 'Running all detected automigrations:',
+      selected
+    );
+    if (optIn.length > 0) {
+      logSelection(
+        'Not run with --yes because they are opt-in (run `storybook automigrate <id>` to apply one):',
+        optIn
+      );
+    }
     return selected;
   }
 
@@ -279,17 +313,19 @@ export type AutomigrationResult = {
    * automigrations); it configures these addons afterwards (see `upgrade.ts`).
    */
   addonsToPostinstall?: string[];
+  /** Files that fixes could not transform; the other files of those fixes were migrated. */
+  fileFailures: FixFileFailure[];
 };
 /** Runs selected automigrations for each project */
 export async function runAutomigrationsForProjects(
   selectedAutomigrations: AutomigrationCheckResult[],
   options: MultiProjectRunAutomigrationOptions
 ): Promise<Record<ConfigDir, AutomigrationResult>> {
-  const { dryRun, skipInstall, automigrations, yes } = options;
+  const { skipInstall, automigrations, yes } = options;
   const projectResults: Record<ConfigDir, AutomigrationResult> = {};
 
   const applicableAutomigrations = selectedAutomigrations.filter((am) =>
-    am.reports.every((rep) => rep.status !== 'not_applicable')
+    am.reports.some((rep) => rep.status !== 'not_applicable')
   );
   const projectAutomigrationResults = new Map<
     ConfigDir,
@@ -298,34 +334,25 @@ export async function runAutomigrationsForProjects(
       project: ProjectAutomigrationData;
       result: any;
       status: AutomigrationCheckResultReport['status'];
+      recheck?: CheckedFix['recheck'];
     }[]
   >();
 
   // selectedAutomigrations -> { fix, reports } -> reports (status passed or failed or skipped) -> project
   for (const automigration of automigrations) {
     for (const report of automigration.reports) {
-      const { project, result, status } = report;
+      const { project } = report;
       const existing = projectAutomigrationResults.get(project.configDir) || [];
 
       if (existing.length > 0) {
-        existing.push({
-          fix: automigration.fix,
-          project,
-          result,
-          status,
-        });
+        existing.push({ ...report, fix: automigration.fix });
       } else {
-        projectAutomigrationResults.set(project.configDir, [
-          {
-            fix: automigration.fix,
-            project,
-            result,
-            status,
-          },
-        ]);
+        projectAutomigrationResults.set(project.configDir, [{ ...report, fix: automigration.fix }]);
       }
     }
   }
+
+  logAutomigrationDetails(applicableAutomigrations);
 
   // Run automigrations for each project
   let projectIndex = 0;
@@ -361,62 +388,67 @@ export async function runAutomigrationsForProjects(
     const fixFailures: Record<FixId, ErrorMessage> = {};
     // Core addons added by fixes that must be configured after the upgrade installs dependencies.
     const addonsToPostinstall: string[] = [];
+    const fileFailures: FixFileFailure[] = [];
 
-    for (const automigration of projectAutomigration) {
-      const { fix, result, project, status } = automigration;
-
-      if (status === 'not_applicable') {
-        fixResults[fix.id] = FixStatus.UNNECESSARY;
-        continue;
-      }
-
-      if (status === 'check_failed') {
-        fixResults[fix.id] = FixStatus.CHECK_FAILED;
-        continue;
-      }
-
-      // it is only skipped when the current automigration
-      // is either not selected by the user (for a particular proejct)
-      // therefore we need to check for configDir as well as fix id matches
-      const hasBeenSelected = selectedAutomigrations.some(
+    const isSelected = (fix: Fix) =>
+      selectedAutomigrations.some(
         (am) =>
           am.fix.id === fix.id &&
           am.reports.some((report) => report.project.configDir === project.configDir)
       );
-      if (!hasBeenSelected) {
+    const selected: CheckedFix[] = [];
+    for (const { fix, result, status, recheck } of projectAutomigration) {
+      if (status === 'not_applicable') {
+        fixResults[fix.id] = FixStatus.UNNECESSARY;
+      } else if (status === 'check_failed') {
+        fixResults[fix.id] = FixStatus.CHECK_FAILED;
+      } else if (!isSelected(fix)) {
         fixResults[fix.id] = FixStatus.SKIPPED;
+      } else if (fix.run || fix.transform) {
+        selected.push({ fix, result, recheck });
+      }
+    }
+
+    const outcomes = await applyFixes(
+      {
+        packageManager: project.packageManager,
+        mainConfigPath: project.mainConfigPath,
+        previewConfigPath: project.previewConfigPath,
+        mainConfig: project.mainConfig,
+        configDir: project.configDir,
+        skipInstall,
+        storybookVersion: project.storybookVersion,
+        storiesPaths: project.storiesPaths,
+        yes,
+        addonsToPostinstall,
+      },
+      selected
+    );
+    for (const [fixId, outcome] of outcomes) {
+      if (outcome.status === 'skipped') {
+        fixResults[fixId] = FixStatus.SKIPPED;
+        taskLog.message(CLI_COLORS.warning(`▲ ${fixId}: cancelled`));
         continue;
       }
-
-      try {
-        if (typeof fix.run === 'function') {
-          const runOptions: RunOptions<typeof result> = {
-            packageManager: project.packageManager,
-            result,
-            dryRun,
-            mainConfigPath: project.mainConfigPath,
-            previewConfigPath: project.previewConfigPath,
-            mainConfig: project.mainConfig,
-            configDir: project.configDir,
-            skipInstall,
-            storybookVersion: project.storybookVersion,
-            storiesPaths: project.storiesPaths,
-            yes,
-            addonsToPostinstall,
-          };
-
-          await fix.run(runOptions);
-          fixResults[fix.id] = FixStatus.SUCCEEDED;
-          taskLog.message(CLI_COLORS.success(`${logger.SYMBOLS.success} ${fix.id}`));
-        }
-      } catch (error) {
-        const errorMessage =
-          (error instanceof Error ? error.stack : String(error)) ?? 'Unknown error';
-        fixResults[fix.id] = FixStatus.FAILED;
-        fixFailures[fix.id] = sanitizeError(error as Error);
-        taskLog.message(CLI_COLORS.error(`${logger.SYMBOLS.error} ${automigration.fix.id}`));
-        logger.debug(errorMessage);
-        ErrorCollector.addError(error);
+      fileFailures.push(...outcome.fileFailures.map((failure) => ({ ...failure, fixId })));
+      const skipped = outcome.fileFailures.length;
+      if (outcome.status === 'failed') {
+        fixResults[fixId] = FixStatus.FAILED;
+        fixFailures[fixId] = sanitizeError(outcome.error as Error);
+        taskLog.message(CLI_COLORS.error(`${logger.SYMBOLS.error} ${fixId}`));
+        // Shown with the task log when the project fails, e.g. manual steps a fix could not take.
+        taskLog.message(
+          outcome.error instanceof Error ? outcome.error.message : String(outcome.error)
+        );
+        logger.debug(outcome.error instanceof Error ? outcome.error.stack : String(outcome.error));
+        ErrorCollector.addError(outcome.error);
+      } else {
+        fixResults[fixId] = FixStatus.SUCCEEDED;
+        taskLog.message(
+          CLI_COLORS.success(
+            `${logger.SYMBOLS.success} ${fixId}${skipped > 0 ? ` (${pluralFiles(skipped)} skipped)` : ''}`
+          )
+        );
       }
     }
 
@@ -435,6 +467,7 @@ export async function runAutomigrationsForProjects(
       automigrationStatuses: fixResults,
       automigrationErrors: fixFailures,
       addonsToPostinstall,
+      fileFailures,
     };
   }
 
@@ -461,7 +494,6 @@ export async function runAutomigrations(
     storybookVersion: project.currentCLIVersion,
     beforeVersion: project.beforeVersion,
     storiesPaths: project.storiesPaths,
-    hasCsfFactoryPreview: project.hasCsfFactoryPreview,
   }));
 
   const detectingAutomigrationTask = prompt.taskLog({
@@ -497,7 +529,7 @@ export async function runAutomigrations(
       logger.warn(
         checkFailed
           ? `Skipping --features ${name}: the '${fixId}' migration check failed. Run with --debug for details.`
-          : `Skipping --features ${name}: the '${fixId}' migration does not apply here. ${name} is either already set in your main config, unsupported by your Storybook version, or missing a prerequisite.`
+          : `Skipping --features ${name}: the '${fixId}' migration does not apply here. ${name} is either already set in your main config or unsupported by your framework or Storybook version.`
       );
     });
 
@@ -515,19 +547,21 @@ export async function runAutomigrations(
     skipInstall: options.skipInstall,
   });
 
-  // Special case handling for rnstorybook-config which renames the config dir
-  // TODO: Remove this as soon as the rn-storybook-config automigration is removed
-  Object.entries(automigrationResults).forEach(([configDir, resultData]) => {
-    if (resultData.automigrationStatuses[rnstorybookConfig.id] === FixStatus.SUCCEEDED) {
-      const project = projects.find((p) => p.configDir === configDir);
-      if (project) {
-        const oldConfigDir = project.configDir;
-        project.configDir = project.configDir.replace('.storybook', RN_STORYBOOK_DIR);
-        automigrationResults[project.configDir] = resultData;
-        delete automigrationResults[oldConfigDir];
-      }
-    }
-  });
+  if (!options.dryRun) {
+    const results = Object.values(automigrationResults);
+    const fileFailures = results.flatMap((result) => result.fileFailures);
+    await reportFileFailures(fileFailures, [
+      ...results.flatMap(({ automigrationStatuses }) =>
+        Object.keys(automigrationStatuses).filter(
+          (fixId) => automigrationStatuses[fixId] === FixStatus.SUCCEEDED
+        )
+      ),
+      ...fileFailures.map(({ fixId }) => fixId),
+      ...detectedAutomigrations
+        .filter(({ reports }) => reports.some(({ verified }) => verified))
+        .map(({ fix }) => fix.id),
+    ]);
+  }
 
   return {
     detectedAutomigrations,

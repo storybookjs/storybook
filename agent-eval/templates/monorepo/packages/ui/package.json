@@ -5,8 +5,8 @@
   "type": "module",
   "main": "./src/index.ts",
   "scripts": {
-    "storybook": "storybook dev",
     "build-storybook": "storybook build",
+    "storybook": "storybook dev",
     "test:stories": "vitest run --config ./vitest.storybook.config.ts --project storybook"
   },
   "dependencies": {
@@ -14,18 +14,16 @@
     "react-dom": "19.2.0"
   },
   "devDependencies": {
-    "@storybook/addon-a11y": "next",
-    "@storybook/addon-docs": "next",
-    "@storybook/addon-mcp": "file:../../local-packages/addon-mcp",
-    "@storybook/addon-vitest": "next",
-    "@storybook/mcp": "file:../../local-packages/mcp",
-    "@storybook/react": "next",
-    "@storybook/react-vite": "next",
+    "@storybook/addon-a11y": "workspace:*",
+    "@storybook/addon-docs": "workspace:*",
+    "@storybook/addon-vitest": "workspace:*",
+    "@storybook/react": "workspace:*",
+    "@storybook/react-vite": "workspace:*",
     "@types/react": "19.2.6",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react-swc": "4.2.2",
     "@vitest/browser-playwright": "4.0.6",
-    "storybook": "next",
+    "storybook": "workspace:*",
     "vite": "7.2.2"
   }
 }

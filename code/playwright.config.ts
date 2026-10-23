@@ -8,7 +8,7 @@ import { defineConfig, devices } from '@playwright/test';
 // process.env.STORYBOOK_TEMPLATE_NAME = 'react-vite/default-ts';
 
 /** Specs that mutate sandbox files; they must not run alongside other specs. */
-const MUTATING_SPECS = /(change-detection|docgen-hot-update)\.spec\.ts/;
+const MUTATING_SPECS = /(addon-onboarding|change-detection|docgen-hot-update)\.spec\.ts/;
 
 /** See https://playwright.dev/docs/test-configuration. */
 export default defineConfig({
@@ -86,7 +86,7 @@ export default defineConfig({
       dependencies: ['chromium'],
       fullyParallel: false,
       // `fullyParallel: false` only orders the tests inside one file; without a per-project
-      // worker cap the two mutating spec files still land on separate workers and write to the
+      // worker cap the mutating spec files still land on separate workers and write to the
       // same sandbox at once. This limit applies to this project alone.
       workers: 1,
       use: {

@@ -16,8 +16,6 @@ export {
 
 interface SetupYarnOptions {
   cwd: string;
-  // TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
-  pnp?: boolean;
 }
 
 /**
@@ -39,13 +37,11 @@ interface SetupYarnOptions {
  * The scratch `yarn.lock` exists only while `yarn set version` runs, then is
  * removed.
  */
-export async function setupYarn({ cwd, pnp = false }: SetupYarnOptions) {
+export async function setupYarn({ cwd }: SetupYarnOptions) {
   // `yarn set version` treats `cwd` as a project when a yarn.lock is present.
   await writeFile(join(cwd, 'yarn.lock'), '', { flag: 'a' });
   await runCommand(`yarn set version berry`, { cwd });
-  if (!pnp) {
-    await runCommand('yarn config set nodeLinker node-modules', { cwd });
-  }
+  await runCommand('yarn config set nodeLinker node-modules', { cwd });
   await rm(join(cwd, 'package.json'), { force: true });
   await rm(join(cwd, 'yarn.lock'), { force: true });
 }

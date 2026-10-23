@@ -1,13 +1,12 @@
 import { existsSync } from 'node:fs';
 import { dirname, sep } from 'node:path';
 
-import { babelParse, types as t } from 'storybook/internal/babel';
 import {
   findTsconfigPathForPath,
   getTsconfigPathsBaseDir,
   supportedExtensions,
 } from 'storybook/internal/common';
-import { extractJSDocInfo } from 'storybook/internal/csf-tools';
+import { extractJSDocInfo, parseModule } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
 import {
@@ -43,6 +42,21 @@ export function getMatchingDocgen(docgens: DocObj[], component: ComponentRef) {
   }
   if (docgens.length === 1) {
     return docgens[0];
+  }
+
+  if (component.importName === 'default') {
+    const defaultExports = docgens.filter((docgen) => docgen.exportName === 'default');
+    if (defaultExports.length === 1) {
+      return defaultExports[0];
+    }
+    const names = new Set([component.localImportName, component.componentName].filter(Boolean));
+    const matchingName = docgens.find(
+      (docgen) =>
+        names.has(docgen.actualName) || (docgen.displayName && names.has(docgen.displayName))
+    );
+    if (matchingName) {
+      return matchingName;
+    }
   }
 
   const matchingDocgen =
@@ -103,20 +117,21 @@ export const parseWithReactDocgen = cached(
 
 const getExportPaths = cached(
   (code: string, filePath: string) => {
-    let ast;
+    let program;
     try {
-      ast = babelParse(code);
+      program = parseModule(code, filePath).program;
     } catch {
       return [];
     }
 
     const basedir = dirname(filePath);
-    const body = ast.program.body;
-    return body
+    return program.body
       .flatMap((statement) =>
-        t.isExportAllDeclaration(statement)
+        statement.type === 'ExportAllDeclaration'
           ? [statement.source.value]
-          : t.isExportNamedDeclaration(statement) && !!statement.source && !statement.declaration
+          : statement.type === 'ExportNamedDeclaration' &&
+              !!statement.source &&
+              !statement.declaration
             ? [statement.source.value]
             : []
       )

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { AddonPanel, type SyntaxHighlighterFormatTypes } from 'storybook/internal/components';
 
 import { addons, types, useChannel, useParameter } from 'storybook/manager-api';
-import { ignoreSsrWarning, styled, useTheme } from 'storybook/theming';
+import { ignoreSsrWarning, styled, useTheme } from 'storybook/theming/emotion';
 
 import {
   ADDON_ID,
@@ -105,20 +105,7 @@ addons.register(ADDON_ID, (api) => {
     title: 'Code',
     type: types.PANEL,
     paramKey: PARAM_KEY,
-    /**
-     * This code panel can be enabled by adding this parameter:
-     *
-     * @example
-     *
-     * ```ts
-     *  parameters: {
-     *    docs: {
-     *      codePanel: true,
-     *    },
-     *  },
-     * ```
-     */
-    disabled: (parameters) => !parameters?.docs?.codePanel,
+    disabled: (parameters) => parameters?.docs?.codePanel === false,
     match: ({ viewMode }) => viewMode === 'story',
     render: ({ active }) => {
       const channel = api.getChannel();

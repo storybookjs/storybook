@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { beforeEach, expect, it, vi } from 'vitest';
 
@@ -9,7 +10,7 @@ vi.mock(import('node:fs'), { spy: true });
 const projectRoot = '/project';
 
 const mockNextConfig = (fileName: string, content: string) => {
-  vi.mocked(existsSync).mockImplementation((path) => path === `${projectRoot}/${fileName}`);
+  vi.mocked(existsSync).mockImplementation((path) => path === join(projectRoot, fileName));
   vi.mocked(readFileSync).mockReturnValue(content);
 };
 

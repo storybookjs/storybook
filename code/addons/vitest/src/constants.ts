@@ -28,8 +28,6 @@ export const storeOptions = {
     watching: false,
     cancelling: false,
     fatalError: undefined,
-    index: { entries: {}, v: 5 },
-    previewAnnotations: [],
     currentRun: {
       triggeredBy: undefined,
       config: {
@@ -64,6 +62,7 @@ export const FULL_RUN_TRIGGERS: RunTrigger[] = ['global', 'run-all'] as const;
 export const STORE_CHANNEL_EVENT_NAME = `UNIVERSAL_STORE:${storeOptions.id}`;
 export const STATUS_STORE_CHANNEL_EVENT_NAME = 'UNIVERSAL_STORE:storybook/status';
 export const TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME = 'UNIVERSAL_STORE:storybook/test-provider';
+export const STORY_INDEX_CHANNEL_EVENT_NAME = `${ADDON_ID}/story-index`;
 
 export const STATUS_TYPE_ID_COMPONENT_TEST = 'storybook/component-test';
 export const STATUS_TYPE_ID_A11Y = 'storybook/a11y';
@@ -71,6 +70,7 @@ export const STORYBOOK_TEST_PROVIDE_KEY = 'storybook/test-provided';
 export const STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY = 'storybook/core-ghost-stories';
 export const STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY = 'storybook/core-render-analysis';
 export const STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY = 'storybook/test-initial-globals';
+export const STORYBOOK_TEST_FEATURES_PROVIDE_KEY = 'storybook/test-features';
 
 // Channel event names for programmatic test triggering
 export const TRIGGER_TEST_RUN_REQUEST = `${ADDON_ID}/trigger-test-run-request`;

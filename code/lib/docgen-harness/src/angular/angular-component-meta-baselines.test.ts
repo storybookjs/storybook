@@ -68,12 +68,17 @@ describe('angular component-meta baselines', () => {
         exportName: componentExportName,
       });
       expect(result, `extractComponentMeta found no '${componentExportName}'`).toBeDefined();
-      const { entry, json } = result!;
+      const { entry, json, context } = result!;
 
       // The same calls the docgen worker makes, so the recorded baselines represent production
-      // output: `api` is the default and `inputs` is what the deprecated flag maps onto.
+      // output: `api` is the default and `inputs` is what the deprecated flag maps onto. The
+      // context rides along the same way, which is what turns named-type types into detail text.
       const extract = (propsTable: PropsTableMode) =>
-        extractArgTypesFromData(entry, { metadataJson: json, propsTable }) as StrictArgTypes;
+        extractArgTypesFromData(entry, {
+          metadataJson: json,
+          propsTable,
+          context,
+        }) as StrictArgTypes;
 
       const legacyGate = (prefix: LegacyArgTypesRecording) => {
         const label = `${fixtureCase}/${prefix}.snapshot`;

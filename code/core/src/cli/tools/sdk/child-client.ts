@@ -6,21 +6,14 @@ import {
   deserializeError,
   type SerializedError,
 } from '../../../shared/open-service/service-error-serialization.ts';
-import type {
-  AnyToolsetOutcome,
-  ToolsetTelemetry,
-} from '../../../shared/open-service/toolset-definition.ts';
+import type { InvokedToolsetOutcome } from '../../../shared/open-service/toolset-definition.ts';
 import {
   CHILD_HOST_PROTOCOL_VERSION,
   isChildMessage,
   type ChildHelloMessage,
   type ParentMessage,
 } from './child-protocol.ts';
-import {
-  reportSdkInvocation,
-  resolveCallTelemetry,
-  toolsCommandDimensions,
-} from './command-telemetry.ts';
+import { reportSdkInvocation } from './command-telemetry.ts';
 import {
   AttachUnavailableError,
   EnvironmentMismatchError,
@@ -50,6 +43,7 @@ export type SpawnChildHostDeps = {
 export async function spawnChildHost(
   args: {
     cwd: string;
+    installationPath?: string;
     options: CreateToolsOptions & { mode: 'local' };
     clientInfo: Required<ToolsClientInfo>;
     requestedMode: ToolsMode;
@@ -59,6 +53,7 @@ export async function spawnChildHost(
 export async function spawnChildHost(
   args: {
     cwd: string;
+    installationPath?: string;
     options: CreateToolsOptions & { mode: 'attached' };
     clientInfo: Required<ToolsClientInfo>;
     requestedMode: ToolsMode;
@@ -68,6 +63,7 @@ export async function spawnChildHost(
 export async function spawnChildHost(
   args: {
     cwd: string;
+    installationPath?: string;
     options: CreateToolsOptions;
     clientInfo: Required<ToolsClientInfo>;
     requestedMode: ToolsMode;
@@ -77,6 +73,7 @@ export async function spawnChildHost(
 export async function spawnChildHost(
   args: {
     cwd: string;
+    installationPath?: string;
     options: CreateToolsOptions;
     clientInfo: Required<ToolsClientInfo>;
     requestedMode: ToolsMode;
@@ -88,12 +85,15 @@ export async function spawnChildHost(
   const cwd = args.cwd;
   const resolvedMode: 'local' | 'attached' = args.options.mode === 'local' ? 'local' : 'attached';
 
+  const resolutionRoot = args.installationPath ?? cwd;
   let scriptPath: string;
   try {
-    scriptPath = (deps.resolveScript ?? resolveChildHostScript)(cwd);
+    scriptPath = (deps.resolveScript ?? resolveChildHostScript)(resolutionRoot);
   } catch (cause) {
     throw new SpawnFailedError({
-      reason: `Could not resolve \`storybook/internal/tools/child-host\` from ${cwd}. Install Storybook in that project, then retry.`,
+      reason: args.installationPath
+        ? `The running Storybook's installation at ${resolutionRoot} can no longer resolve \`storybook/internal/tools/child-host\`. From your project directory, restart Storybook (for example \`npx storybook dev\`) and re-run this command from there.`
+        : `Could not resolve \`storybook/internal/tools/child-host\` from ${resolutionRoot}. Install Storybook in that project, then retry.`,
       cause,
     });
   }
@@ -133,7 +133,6 @@ export async function spawnChildHost(
     string,
     { resolve: (value: unknown) => void; reject: (error: unknown) => void }
   >();
-  const pendingTelemetry = new Map<string, ToolsetTelemetry>();
   let closed = false;
   let nextId = 0;
 
@@ -173,15 +172,10 @@ export async function spawnChildHost(
   void disconnected.catch(() => {});
 
   child.on('message', (raw: unknown) => {
-    if (!isChildMessage(raw) || raw.type === 'hello') {
-      return;
-    }
-    if (raw.type === 'telemetry') {
-      void Promise.resolve()
-        .then(() => pendingTelemetry.get(raw.id)?.(raw.event, raw.payload))
-        .catch(() => {
-          // Method telemetry is never part of the call result.
-        });
+    // Only a result or an error settles a call. A child host from an older Storybook still sends a
+    // per-call `telemetry` envelope first; treating it as the reply would reject the call and drop
+    // the result that follows.
+    if (!isChildMessage(raw) || (raw.type !== 'result' && raw.type !== 'error')) {
       return;
     }
     const waiter = pending.get(raw.id);
@@ -266,13 +260,6 @@ export async function spawnChildHost(
     }
   };
 
-  const dimensions = toolsCommandDimensions({
-    clientInfo: args.clientInfo,
-    requestedMode: args.requestedMode,
-    resolvedMode,
-    host: 'child',
-  });
-
   return {
     mode: resolvedMode,
     host: 'child',
@@ -288,17 +275,10 @@ export async function spawnChildHost(
       ref: string,
       input: Record<string, unknown> = {},
       options: ToolsCallOptions = {}
-    ): Promise<AnyToolsetOutcome> {
+    ): Promise<InvokedToolsetOutcome> {
       assertOpen();
       options.signal?.throwIfAborted();
       const id = String(++nextId);
-      const telemetry = resolveCallTelemetry(options, dimensions, {
-        clientInfo: args.clientInfo,
-        configDir: hello.storybook.configDir,
-      });
-      if (telemetry) {
-        pendingTelemetry.set(id, telemetry);
-      }
       let onAbort: (() => void) | undefined;
       const aborted = options.signal
         ? new Promise<never>((_, reject) => {
@@ -318,7 +298,7 @@ export async function spawnChildHost(
         const work = request({ type: 'call', id, ref, input });
         const outcome = (await (aborted
           ? Promise.race([work, aborted])
-          : work)) as AnyToolsetOutcome;
+          : work)) as InvokedToolsetOutcome;
         await reportSdkInvocation({
           ref,
           clientInfo: args.clientInfo,
@@ -326,6 +306,7 @@ export async function spawnChildHost(
           resolvedMode,
           host: 'child',
           result: outcome,
+          report: outcome.telemetry,
           duration: Date.now() - start,
           configDir: hello.storybook.configDir,
         });
@@ -343,7 +324,6 @@ export async function spawnChildHost(
         });
         throw error;
       } finally {
-        pendingTelemetry.delete(id);
         if (onAbort) {
           options.signal?.removeEventListener('abort', onAbort);
         }

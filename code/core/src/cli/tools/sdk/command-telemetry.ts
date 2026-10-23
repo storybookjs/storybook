@@ -1,12 +1,12 @@
 import { telemetry } from 'storybook/internal/telemetry';
 
-import type { ToolsetTelemetry } from '../../../shared/open-service/toolset-definition.ts';
+import type { ToolsetMethodReport } from '../../../shared/open-service/toolset-definition.ts';
 import {
   parseToolsetMethodId,
   toCliMethodName,
 } from '../../../shared/open-service/toolset-names.ts';
 import { attachGateReasonFromError, type ToolsAttachGateReason } from './errors.ts';
-import type { ToolsCallOptions, ToolsClientInfo, ToolsHostKind, ToolsMode } from './types.ts';
+import type { ToolsClientInfo, ToolsHostKind, ToolsMode } from './types.ts';
 
 export type ToolsCommandOutcomeKind = 'success' | 'failure' | 'intercept' | 'error' | 'attach-gate';
 
@@ -19,13 +19,28 @@ export type ToolsCommandDimensions = {
   attachGate?: ToolsAttachGateReason;
 };
 
+// One record per CLI or SDK invocation; `toolset` and `tool` are absent when no part was parsed.
 export type ToolsCommandTelemetryPayload = ToolsCommandDimensions & {
-  command: string;
+  toolset?: string;
+  tool?: string;
   success: boolean;
   outcome: ToolsCommandOutcomeKind;
   interceptReason?: string;
+  multipleMatches?: boolean;
   duration?: number;
 };
+
+/** The record as sent: the run's fields plus the handler's event name and payload, when it ran. */
+export type ToolsCommandTelemetryRecord = ToolsCommandTelemetryPayload & {
+  event?: string;
+  [field: string]: unknown;
+};
+
+// Names are a fixed vocabulary of short identifiers; anything else is arbitrary agent input (a
+// typo'd path, a stray flag value) that must not be sent verbatim.
+export function sanitizeNamePart(part: string): string {
+  return /^[\w-]{1,64}$/.test(part) ? part : '(invalid)';
+}
 
 export function toolsCommandDimensions(args: {
   clientInfo: Pick<Required<ToolsClientInfo>, 'kind'>;
@@ -44,53 +59,36 @@ export function toolsCommandDimensions(args: {
   };
 }
 
-export function commandNameFromRef(ref: string): string {
+export function commandPartsFromRef(ref: string): { toolset: string; tool: string } {
   try {
     const { toolsetId, methodName } = parseToolsetMethodId(ref);
-    return `${toolsetId} ${toCliMethodName(methodName)}`;
+    return {
+      toolset: sanitizeNamePart(toolsetId),
+      tool: sanitizeNamePart(toCliMethodName(methodName)),
+    };
   } catch {
-    return '(invalid)';
+    return { toolset: '(invalid)', tool: '(invalid)' };
   }
 }
 
-export function wrapMethodTelemetry(
-  sink: ToolsetTelemetry,
-  dimensions: ToolsCommandDimensions
-): ToolsetTelemetry {
-  return async (event, payload) => {
-    await sink(event, { ...dimensions, ...payload });
-  };
-}
-
-export function defaultMethodTelemetrySink(configDir?: string): ToolsetTelemetry {
-  return async (event, payload) => {
-    await telemetry('tools-command', { event, ...payload }, { configDir });
-  };
-}
-
-export function resolveCallTelemetry(
-  options: ToolsCallOptions,
-  dimensions: ToolsCommandDimensions,
-  args: { clientInfo: Pick<Required<ToolsClientInfo>, 'kind'>; configDir?: string }
-): ToolsetTelemetry | undefined {
-  const isChildHost = process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
-  const sink =
-    options.telemetry ??
-    (!isChildHost && shouldReportSdkInvocation(args.clientInfo.kind)
-      ? defaultMethodTelemetrySink(args.configDir)
-      : undefined);
-  if (!sink) {
-    return undefined;
-  }
-  return isChildHost ? sink : wrapMethodTelemetry(sink, dimensions);
-}
-
+// The record describes the run and wins over the handler's payload; the report names the method
+// and wins over whatever the caller parsed, so a record always carries the registered spelling.
 export async function reportToolsCommandEvent(
-  payload: ToolsCommandTelemetryPayload,
-  options?: { configDir?: string }
+  record: ToolsCommandTelemetryPayload,
+  options: { report?: ToolsetMethodReport; configDir?: string } = {}
 ): Promise<void> {
+  const { report, configDir } = options;
+  const payload: ToolsCommandTelemetryRecord = report
+    ? {
+        ...report.payload,
+        ...record,
+        event: report.event,
+        toolset: report.toolset,
+        tool: report.tool,
+      }
+    : record;
   try {
-    await telemetry('tools-command', payload, options);
+    await telemetry('tools-command', payload, { configDir });
   } catch {
     // Telemetry is never part of the tool's result contract.
   }
@@ -112,7 +110,6 @@ export async function reportSdkAttachGate(args: {
   const attachGate = attachGateReasonFromError(args.error);
   await reportToolsCommandEvent(
     {
-      command: '(none)',
       success: false,
       outcome: 'attach-gate',
       ...toolsCommandDimensions({
@@ -133,6 +130,7 @@ export async function reportSdkInvocation(args: {
   host: ToolsHostKind;
   fallbackReason?: ToolsAttachGateReason;
   result: { ok: boolean } | { error: unknown };
+  report?: ToolsetMethodReport;
   duration: number;
   configDir?: string;
 }): Promise<void> {
@@ -140,30 +138,32 @@ export async function reportSdkInvocation(args: {
     return;
   }
   const dimensions = toolsCommandDimensions(args);
+  const invoked = commandPartsFromRef(args.ref);
+  const options = { report: args.report, configDir: args.configDir };
   if (!('ok' in args.result)) {
     const attachGate = attachGateReasonFromError(args.result.error);
     await reportToolsCommandEvent(
       {
-        command: commandNameFromRef(args.ref),
+        ...invoked,
         success: false,
         outcome: attachGate ? 'attach-gate' : 'error',
         duration: args.duration,
         ...dimensions,
         ...(attachGate ? { attachGate } : {}),
       },
-      { configDir: args.configDir }
+      options
     );
     return;
   }
   const success = args.result.ok;
   await reportToolsCommandEvent(
     {
-      command: commandNameFromRef(args.ref),
+      ...invoked,
       success,
       outcome: success ? 'success' : 'failure',
       duration: args.duration,
       ...dimensions,
     },
-    { configDir: args.configDir }
+    options
   );
 }

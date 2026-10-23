@@ -100,8 +100,23 @@ const useCode = ({
       // if this is an args story and there's a snippet
       (type === SourceType.AUTO && staticSnippet && isArgsStory);
 
-    codeToTransform = useSnippet ? staticSnippet : sourceParameters.originalSource || '';
-    transformer = props.transform ?? sourceParameters.transform;
+    const sourceKind: 'service' | 'emitted' | 'original' = useSnippet
+      ? serviceSnippet
+        ? 'service'
+        : 'emitted'
+      : 'original';
+
+    codeToTransform =
+      sourceKind === 'service'
+        ? serviceSnippet
+        : sourceKind === 'emitted'
+          ? snippet
+          : sourceParameters.originalSource || '';
+
+    // The emitted snippet is already transformed by emitTransformCode,
+    // so only props.transform applies to it.
+    transformer =
+      sourceKind === 'emitted' ? props.transform : (props.transform ?? sourceParameters.transform);
   }
 
   const transformedCode = useTransformCode(
@@ -229,7 +244,7 @@ const SourceWithStorySnippet = (props: SourceProps) => {
     }
   }, [docsContext, of]);
 
-  if (globalThis.FEATURES?.experimentalDocgenServer && story?.id) {
+  if (globalThis.FEATURES?.docgenServer && story?.id) {
     return (
       <SourceWithStoryDocsSnippet
         {...props}

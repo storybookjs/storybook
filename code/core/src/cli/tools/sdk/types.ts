@@ -1,7 +1,4 @@
-import type {
-  AnyToolsetOutcome,
-  ToolsetTelemetry,
-} from '../../../shared/open-service/toolset-definition.ts';
+import type { InvokedToolsetOutcome } from '../../../shared/open-service/toolset-definition.ts';
 import type { ToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
 import type { ToolsAttachGateReason } from './errors.ts';
 import type { ToolsetJsonSchema } from './json-schema.ts';
@@ -31,11 +28,22 @@ export type CreateToolsOptions = {
   cwd?: string;
   /** Directory to load the Storybook configuration from; relative paths resolve from `cwd`. */
   configDir?: string;
+  /** Port of a running Storybook; a known port targets that instance without cwd or config dir. */
+  port?: number;
   /** Defaults to `auto`. */
   mode?: ToolsMode;
   /** Whether the SDK may start a child host in the target project's own environment. */
   autoSpawn?: boolean;
   clientInfo?: ToolsClientInfo;
+};
+
+/** A running instance that also matched the target project but was not attached to. */
+export type ToolsSiblingInstance = {
+  url: string;
+  port: number;
+  pid: number;
+  cwd: string;
+  configDir?: string;
 };
 
 /** What the resolved host knows about the Storybook it serves. */
@@ -46,6 +54,15 @@ export type ToolsStorybookInfo = {
   url?: string;
   /** Process id of the running Storybook. */
   pid?: number;
+  /** Port of the running Storybook, as recorded by `storybook dev`. */
+  port?: number;
+  /** Directory the running Storybook was started from. */
+  cwd?: string;
+  /**
+   * Set when attach chose among several matching instances: the competing instances, best first,
+   * so callers can warn and name `port` as the way to target another one.
+   */
+  siblings?: ToolsSiblingInstance[];
 };
 
 /** One callable tool, described for an agent that has only this catalog to go on. */
@@ -81,7 +98,6 @@ export type ToolsCallOptions = {
   signal?: AbortSignal;
   /** Overrides the host's Storybook origin for this call. */
   origin?: string;
-  telemetry?: ToolsetTelemetry;
 };
 
 type ToolsBase = {
@@ -91,7 +107,7 @@ type ToolsBase = {
   requestedMode: ToolsMode;
   /** `in-process` unless this host is a project-local child. */
   host: ToolsHostKind;
-  /** Set when `auto` mode could not attach and loaded the project configuration instead. */
+  /** Set when `auto` mode could not attach for an unexpected reason and loaded locally instead. */
   fallbackNotice?: string;
   /** Why `auto` loaded locally instead of attaching. */
   fallbackReason?: ToolsAttachGateReason;
@@ -113,7 +129,7 @@ type ToolsBase = {
     ref: string,
     input?: Record<string, unknown>,
     options?: ToolsCallOptions
-  ): Promise<AnyToolsetOutcome>;
+  ): Promise<InvokedToolsetOutcome>;
   close(): Promise<void>;
 };
 

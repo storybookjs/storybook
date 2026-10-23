@@ -1,6 +1,6 @@
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/sveltekit';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -29,15 +29,20 @@
 />
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import MyComponent from './MyComponent.svelte';
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: MyComponent,
-};
+  import MyComponent from './MyComponent.svelte';
 
-export const MyStory = {
-  parameters: {
+  const { Story } = preview.meta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="MyStory"
+  parameters={{
     sveltekit_experimental: {
       hrefs: {
         '/basic-href': (to, event) => {
@@ -51,13 +56,13 @@ export const MyStory = {
         },
       },
     },
-  },
-};
+  }}
+/>
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/sveltekit';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -86,20 +91,20 @@ export const MyStory = {
 />
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/sveltekit';
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import MyComponent from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
-const meta = {
-  component: MyComponent,
-} satisfies Meta<typeof MyComponent>;
+  const { Story } = preview.meta({
+    component: MyComponent,
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const MyStory: Story = {
-  parameters: {
+<Story
+  name="MyStory"
+  parameters={{
     sveltekit_experimental: {
       hrefs: {
         '/basic-href': (to, event) => {
@@ -113,6 +118,6 @@ export const MyStory: Story = {
         },
       },
     },
-  },
-};
+  }}
+/>
 ```

@@ -24,6 +24,7 @@ import {
 } from '../../../shared/open-service/toolset-registry.ts';
 import { resolveStorybookConfigDir } from '../config-dir.ts';
 import type { ToolsTarget } from '../discover-instance.ts';
+import { projectPathsEqual } from '../instances/project-path.ts';
 import { ToolsRuntimeError } from './errors.ts';
 
 export type ToolsRuntime = {
@@ -54,7 +55,7 @@ export async function bootstrapToolsRuntime(
   deps: { setChangeDetectionHost?: typeof experimental_setChangeDetectionHost } = {}
 ): Promise<ToolsRuntime> {
   const cwd = resolve(target.cwd ?? process.cwd());
-  if (cwd !== process.cwd()) {
+  if (!projectPathsEqual(cwd, process.cwd())) {
     throw new ToolsRuntimeError({
       reason: 'mode-unavailable',
       message: `Local tools bootstrap requires process.cwd() to be the target project (${cwd}), not ${process.cwd()}.`,
@@ -103,6 +104,5 @@ async function startChangeDetectionInProcess(options: Options): Promise<void> {
     workingDir: process.cwd(),
   });
 
-  const features = await options.presets.apply('features');
-  changeDetectionService.start(features?.changeDetection !== false);
+  changeDetectionService.start();
 }

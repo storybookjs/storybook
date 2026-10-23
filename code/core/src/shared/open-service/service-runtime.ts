@@ -1,63 +1,6 @@
 /**
- * # service-runtime
- *
- * Builds the runtime surface for one registered service: state signal, sync queries with
- * `.loaded()` and `.subscribe()`, async commands, and the in-flight load registry that powers
- * dependency tracking for `.loaded()`.
- *
- * ## Mental model in one paragraph
- *
- * `query.get(input)` is a synchronous, pure read: it validates input, calls the handler against
- * current state, and returns the result immediately. It does **not** fire the query's `load` — a
- * read never starts background work. Loads fire only through `query.subscribe(...)` (reactively,
- * re-firing as tracked state changes) and `query.loaded(input)` (the "wait until fully loaded"
- * form). `.loaded()` must guarantee that **every dependency the handler transitively reads is
- * settled** before returning, even though those dependencies are not declared statically anywhere.
- * That guarantee is what the drain machinery in this file exists to provide. When a handler or load
- * body reads a *dependency* via `.get()` inside a `.loaded()` drain or a load body, that read still
- * triggers and awaits the dependency's load; a bare consumer `.get()` does not.
- *
- * ## Dependency-tracking algorithm
- *
- * `.loaded()` runs a *drain loop*:
- *
- * 1. Fire this query's own `load` and put the promise into a `LoadedSession` collector.
- * 2. Repeat:
- *    - Await everything currently in the collector with `Promise.allSettled`.
- *    - Mark those load keys as `settled` for the session.
- *    - Run the sync handler under the session as a *discovery pass*. Every sync read of a
- *      dependency query (via `ctx.self.queries.*` or `ctx.getService(...).queries.*`) consults
- *      the module-scoped `activeHandlerLoadSession`; if that dep's load is not already
- *      settled or on the ancestor chain, its promise is added to the collector.
- *    - If the discovery pass added new entries, loop again. Otherwise, exit.
- * 3. Final handler call (no session) returns the validated output.
- *
- * Inside a `load` body, `ctx.self.queries.*` are *wrapped* by {@link buildLoadWrappedQueries} so
- * the same registration happens against a load-local collector — the load promise only resolves
- * when its body **and** its own dependencies have settled. This propagates the "wait" through
- * async load bodies without needing AsyncLocalStorage.
- *
- * ## Why each piece exists
- *
- * - **{@link inFlightLoads}** dedups concurrent calls for the same `(runtime, service, query,
- *   input)` so two consumers asking for the same data share one load.
- * - **{@link LoadedSession.ancestorChain}** breaks cycles: a dep whose load key is already on the
- *   call chain is skipped (not added to any collector) so two queries that read each other do
- *   not self-deadlock.
- * - **{@link LoadedSession.settledKeys}** prevents the discovery loop from refiring already
- *   completed loads on each iteration — without it, every reread of a dep in the handler would
- *   re-trigger its load and the drain loop would never converge.
- * - **{@link MAX_DRAIN_ITERATIONS}** caps pathological cases (e.g. a handler reading a query with
- *   an ever-changing input key) so a buggy service surfaces a real error instead of hanging.
- *
- * ## Boundaries
- *
- * Cross-service `getService(...).queries.*` calls **inside a load body** are intentionally not
- * tracked into the load-local collector. Authors who need cross-service deps awaited from inside
- * a load should call `.loaded()` explicitly (e.g. `await ctx.getService(id).queries.foo
- * .loaded(input)`). Cross-service calls from a sync handler still go through the session-aware
- * path because handler reads are tracked by `activeHandlerLoadSession`, which is module-scoped
- * and stable for the duration of a sync handler call.
+ * Assembles the runtime for one registered service: the state signal, commands, and the static
+ * loader. Queries, loads, and the `.loaded()` drain live in `query-runtime.ts`.
  */
 import { batch } from '@preact/signals-core';
 import { deepSignal } from 'deepsignal/core';
@@ -66,13 +9,15 @@ import {
   OpenServiceInvalidStaticPathError,
   OpenServiceUnimplementedOperationError,
 } from '../../server-errors.ts';
+import { type RecordedPatch, recordPatch } from './patch-recorder.ts';
+import { clonePlain } from './plain-object.ts';
 import {
   buildQueries,
   buildReactiveLoadQueries,
   inFlightLoads,
   makeInFlightKey,
   makeLoadKey,
-  nextRuntimeId,
+  nextLoadScopeId,
   runLoadBody,
 } from './query-runtime.ts';
 import type { QueryRuntimeRefs, RuntimeQueryDefinition } from './query-runtime.ts';
@@ -97,6 +42,9 @@ import type {
   ServiceRegistryApi,
 } from './types.ts';
 
+/** Receives the ops one `setState` recipe wrote and their inverse, tagged with the command that ran it. */
+export type EntryAuthor = (entry: RecordedPatch & { command: string }) => void;
+
 /**
  * Internal runtime object returned while a service instance is being assembled.
  *
@@ -110,7 +58,18 @@ export type ServiceRuntime<
 > = {
   /** Returns a plain, detached snapshot of the current state for serialization. */
   getStateSnapshot(): TState;
-  commandSelf: CommandSelf<TState>;
+  /**
+   * Mutates the live state in one batch without recording or authoring an entry.
+   *
+   * For state that arrives from elsewhere (a peer's snapshot, a static file), never for writes this
+   * runtime authors.
+   */
+  applyLocal(mutate: (state: TState) => void): void;
+  /**
+   * Installs the receiver for every entry a `setState` recipe on this runtime produces. Before the
+   * channel is wired, entries are dropped.
+   */
+  attachEntryAuthor(author: EntryAuthor): void;
   queryCtx: QueryCtx<TState>;
   loadCtxForStatic: LoadCtx<TState>;
   commands: ServiceInstance<TState, TQueries, TCommands>['commands'];
@@ -166,28 +125,6 @@ export function resolveStaticPath(
 }
 
 /**
- * Creates the writable `self` object that backs every runtime ctx for one service instance.
- *
- * State is a deep reactive proxy: mutations applied to `state` notify only the fine-grained signals
- * for the fields that actually changed. Writes are wrapped in a batch so one command only notifies
- * subscribers after the full mutation completes.
- */
-function createCommandSelf<TState>(state: TState): CommandSelf<TState> {
-  return {
-    get state() {
-      return state;
-    },
-    setState(mutate) {
-      batch(() => {
-        mutate(state);
-      });
-    },
-    queries: {},
-    commands: {},
-  };
-}
-
-/**
  * Builds the runtime command map from the declarative command definitions.
  *
  * Each runtime command validates raw caller input, invokes the handler with parsed values, and
@@ -196,7 +133,7 @@ function createCommandSelf<TState>(state: TState): CommandSelf<TState> {
 function buildCommands<TState>(
   serviceId: ServiceId,
   commands: Commands<TState>,
-  createCommandCtx: () => CommandCtx<TState>
+  createCommandCtx: (commandName: string) => CommandCtx<TState>
 ): Command {
   return Object.fromEntries(
     Object.entries(commands).map(([name, def]) => {
@@ -217,7 +154,7 @@ function buildCommands<TState>(
             name,
             phase: 'input',
           });
-          const output = await def.handler(validatedInput, createCommandCtx());
+          const output = await def.handler(validatedInput, createCommandCtx(name));
 
           return validateSchema(def.output, output, {
             kind: 'command',
@@ -239,7 +176,7 @@ function buildQueryDefinitionsWithStaticLoader<TState>(
   serviceId: ServiceId,
   queries: Record<string, RuntimeQueryDefinition<TState>>,
   staticLoader: StaticLoader,
-  setState: CommandSelf<TState>['setState']
+  applyLocal: (mutate: (state: TState) => void) => void
 ): Map<string, RuntimeQueryDefinition<TState>> {
   return new Map(
     Object.entries(queries).map(([name, queryDef]) => {
@@ -266,7 +203,7 @@ function buildQueryDefinitionsWithStaticLoader<TState>(
             // and keyed per input via `staticPath(input)`, so re-running the same input produces
             // identical data and `preserveMissingKeys: true` never erases a sibling input's state —
             // there is no stale-write race to guard against.
-            setState((state) => {
+            applyLocal((state) => {
               applyStatePatch(state as Record<string, unknown>, snapshot, {
                 preserveMissingKeys: true,
               });
@@ -295,28 +232,54 @@ export function createServiceRuntime<
   },
   initialState: TState = def.initialState
 ): ServiceRuntime<TState, TQueries, TCommands> {
-  // `initialState` is the plain backing object that the deep-signal proxy writes through to; it
-  // stays in sync with every mutation and is the source for serialization snapshots. The runtime
-  // mutates it in place, so callers that share an object (e.g. a definition's `initialState`) must
-  // pass their own copy — `registerService` and the static build each do.
-  const rawState = initialState;
+  // The plain backing object the deep-signal proxy writes through to, and the source for
+  // serialization snapshots. Copied by value so the caller's object is never mutated and any
+  // reference it shares between two keys becomes two separate objects.
+  const rawState = clonePlain(initialState) as TState;
   // The deep reactive proxy is the single source of truth that query computations track, at
   // per-field granularity.
   const state = deepSignal(rawState as object) as TState;
   const getStateSnapshot = (): TState => structuredClone(rawState);
-  const commandSelf = createCommandSelf(state);
   const { registryApi, staticLoader } = runtimeOptions;
-  const createCommandCtx = (): CommandCtx<TState> => ({
-    self: commandSelf,
-    getService: registryApi.getService,
+
+  let author: EntryAuthor = () => {};
+  const applyLocal = (mutate: (state: TState) => void): void => {
+    batch(() => {
+      mutate(state);
+    });
+  };
+  const writeState = (command: string, mutate: (state: TState) => void): void => {
+    recordPatch(state as object, mutate as (draft: object) => void, (recorded) =>
+      author({ command, ...recorded })
+    );
+  };
+
+  const defaultQueries: Record<string, Query<unknown, unknown>> = {};
+  // Populated after the default queries exist (their wrappers reference the default `getState` /
+  // `loaded` / `subscribe`). See `buildReactiveLoadQueries`.
+  const reactiveLoadQueries: Record<string, Query<unknown, unknown>> = {};
+
+  const createCommandSelf = (
+    setState: CommandSelf<TState>['setState'],
+    commandsForSelf: () => CommandSelf<TState>['commands']
+  ): CommandSelf<TState> => ({
+    get state() {
+      return state;
+    },
+    setState,
+    queries: defaultQueries,
+    get commands() {
+      return commandsForSelf();
+    },
   });
 
-  const commands = buildCommands(def.id, def.commands, createCommandCtx) as ServiceInstance<
-    TState,
-    TQueries,
-    TCommands
-  >['commands'];
-  commandSelf.commands = commands as CommandSelf<TState>['commands'];
+  const commands = buildCommands(def.id, def.commands, (commandName) => ({
+    self: createCommandSelf(
+      (mutate) => writeState(commandName, mutate),
+      () => commands as CommandSelf<TState>['commands']
+    ),
+    getService: registryApi.getService,
+  })) as ServiceInstance<TState, TQueries, TCommands>['commands'];
 
   // The command map load bodies should call. Defaults to the raw local map (used by the static build
   // and before the channel is wired); `attachChannelCommands` swaps in the channel-routed map so
@@ -331,44 +294,35 @@ export function createServiceRuntime<
         def.id,
         def.queries as Record<string, RuntimeQueryDefinition<TState>>,
         staticLoader,
-        commandSelf.setState
+        applyLocal
       )
     : new Map<string, RuntimeQueryDefinition<TState>>(
         Object.entries(def.queries) as [string, RuntimeQueryDefinition<TState>][]
       );
-  const defaultQueries: Record<string, Query<unknown, unknown>> = {};
-  // Populated after the default queries exist (their wrappers reference the default `getState` /
-  // `loaded` / `subscribe`). See `buildReactiveLoadQueries`.
-  const reactiveLoadQueries: Record<string, Query<unknown, unknown>> = {};
 
   // Gated commands for reactive subscription loads: a stale run's writes are dropped once a newer
   // run has started (`isCurrent()` returns false), so superseded loads cannot clobber fresh state.
   const buildGatedCommands = (isCurrent: () => boolean): CommandSelf<TState>['commands'] => {
-    const gatedSelf: CommandSelf<TState> = {
-      get state() {
-        return state;
-      },
-      setState(mutate) {
-        if (!isCurrent()) {
-          return;
-        }
-        batch(() => {
-          mutate(state);
-        });
-      },
-      queries: defaultQueries,
-      commands: {},
-    };
-    const gated = buildCommands(def.id, def.commands, () => ({
-      self: gatedSelf,
-      getService: registryApi.getService,
-    }));
-    gatedSelf.commands = gated as CommandSelf<TState>['commands'];
+    const gated: CommandSelf<TState>['commands'] = buildCommands(
+      def.id,
+      def.commands,
+      (commandName) => ({
+        self: createCommandSelf(
+          (mutate) => {
+            if (isCurrent()) {
+              writeState(commandName, mutate);
+            }
+          },
+          () => gated
+        ),
+        getService: registryApi.getService,
+      })
+    ) as CommandSelf<TState>['commands'];
 
     // Route remote commands through the channel map (so a reactive load can invoke a peer command);
     // keep the gated local wrapper for locally-handled commands so stale-write protection holds.
     if (remoteCommandNames.size === 0) {
-      return gated as CommandSelf<TState>['commands'];
+      return gated;
     }
     const routed = Object.fromEntries(
       Object.keys(def.commands).map((name) => [
@@ -381,12 +335,11 @@ export function createServiceRuntime<
     return routed as CommandSelf<TState>['commands'];
   };
 
-  const runtimeId = nextRuntimeId();
+  const loadScopeId = nextLoadScopeId();
 
   const refs: QueryRuntimeRefs<TState> = {
     serviceId: def.id,
-    runtimeId,
-    commandSelf,
+    loadScopeId,
     state,
     registryApi,
     queryDefinitions,
@@ -405,7 +358,6 @@ export function createServiceRuntime<
   for (const [name, query] of Object.entries(buildReactiveLoadQueries(refs))) {
     reactiveLoadQueries[name] = query;
   }
-  commandSelf.queries = defaultQueries;
 
   const queries = defaultQueries as ServiceInstance<TState, TQueries, TCommands>['queries'];
   const queryCtxSelf: QuerySelf<TState> = {
@@ -441,7 +393,7 @@ export function createServiceRuntime<
 
     const loadKey = makeLoadKey(def.id, queryName, validatedInput);
     const ancestorChain = new Set<string>([loadKey]) as ReadonlySet<string>;
-    const inFlightKey = makeInFlightKey(runtimeId, loadKey);
+    const inFlightKey = makeInFlightKey(loadScopeId, loadKey);
 
     const promise = Promise.resolve()
       .then(() => runLoadBody(refs, queryName, queryDef, validatedInput, ancestorChain))
@@ -470,7 +422,10 @@ export function createServiceRuntime<
 
   return {
     getStateSnapshot,
-    commandSelf,
+    applyLocal,
+    attachEntryAuthor: (next) => {
+      author = next;
+    },
     queryCtx,
     loadCtxForStatic,
     commands,

@@ -14,6 +14,7 @@
  * to the `react-docgen-typescript` engine used by the legacy manifest path — not here.
  */
 import { createLazyDocgenMiddleware } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware } from 'storybook/internal/types';
 
 import { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
@@ -30,8 +31,9 @@ export const createDocgenProvider = (): DocgenMiddleware =>
     createManager: async () => {
       try {
         const ts = await import('typescript');
-        return new ComponentMetaManager(ts);
-      } catch {
+        return new ComponentMetaManager(ts.default ?? ts);
+      } catch (err) {
+        logger.debug(`[reactComponentMeta] Docgen provider disabled: ${err}`);
         return undefined;
       }
     },

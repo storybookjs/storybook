@@ -53,6 +53,31 @@ describe('js package manager util', () => {
     expect(parsePackageTimeMap('bad')).toBeNull();
   });
 
+  it('parses package time maps wrapped in an array', () => {
+    expect(
+      parsePackageTimeMap([
+        {
+          created: '2025-01-01T00:00:00.000Z',
+          '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+          invalid: null,
+        },
+      ])
+    ).toEqual({
+      created: '2025-01-01T00:00:00.000Z',
+      '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+    });
+  });
+
+  it.each([
+    { input: [], description: 'an empty array' },
+    { input: [{}, {}], description: 'multiple time maps' },
+    { input: [[{}]], description: 'a nested array' },
+    { input: [null], description: 'an array containing null' },
+    { input: ['2026-05-11T11:59:00.000Z'], description: 'an array containing a timestamp' },
+  ])('rejects $description as a package time map', ({ input }) => {
+    expect(parsePackageTimeMap(input)).toBeNull();
+  });
+
   it('computes package age in minutes', () => {
     expect(
       getAgeInMinutes(new Date('2026-05-11T11:00:00.000Z'), new Date('2026-05-11T12:30:00.000Z'))
@@ -80,10 +105,12 @@ describe('js package manager util', () => {
         '@storybook/*',
         'eslint-plugin-storybook',
         '@chromatic-com/storybook',
+        'chromatic',
       ])
     ).toBe(true);
     expect(hasStorybookMinimumAgeExclusions(['storybook', '@storybook/react-vite'])).toBe(false);
-    expect(hasStorybookMinimumAgeExclusions(['*storybook*'])).toBe(true);
+    expect(hasStorybookMinimumAgeExclusions(['*storybook*', 'chromatic'])).toBe(true);
+    expect(hasStorybookMinimumAgeExclusions(['*storybook*'])).toBe(false);
   });
 
   it('builds rerun guidance', () => {
@@ -113,6 +140,19 @@ describe('js package manager util', () => {
     expect(
       getRemotePackageRunnerArgs(PackageManagerName.BUN, '@storybook/cli', '10.3.2', ['upgrade'])
     ).toEqual(['@storybook/cli@10.3.2', 'upgrade']);
+    expect(
+      getRemotePackageRunnerArgs(
+        PackageManagerName.NPM,
+        '@storybook/cli',
+        'https://pkg.pr.new/storybookjs/storybook/@storybook/cli@deadbeef',
+        ['upgrade']
+      )
+    ).toEqual([
+      '--yes',
+      '--allow-remote=all',
+      '@storybook/cli@https://pkg.pr.new/storybookjs/storybook/@storybook/cli@deadbeef',
+      'upgrade',
+    ]);
   });
 
   it('builds package-manager-aware setup commands', () => {

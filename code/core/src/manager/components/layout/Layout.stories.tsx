@@ -9,7 +9,7 @@ import { startCase } from 'es-toolkit/string';
 import { action } from 'storybook/actions';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { isChromatic } from '../../../../../.storybook/isChromatic.ts';
 import {
@@ -120,7 +120,6 @@ const meta = {
     slotPanel: <MockPanel />,
     slotPages: <MockPage />,
     setManagerLayoutState: fn(),
-    hasTab: false,
   },
   globals: { sb_theme: 'light' },
   parameters: { layout: 'fullscreen' },
@@ -498,22 +497,41 @@ export const KeyboardRightPanelMinSize: Story = {
 };
 
 export const Mobile = {
+  globals: { viewport: { value: 'mobile1' } },
   parameters: {
-    viewport: {
-      defaultViewport: 'mobile1',
-    },
     chromatic: { viewports: [320] },
   },
 };
 export const MobileDark = {
   ...Mobile,
-  globals: { sb_theme: 'dark' },
+  globals: { ...Mobile.globals, sb_theme: 'dark' },
 };
 
 export const MobileDocs = {
   ...Mobile,
   args: {
     managerLayoutState: { ...defaultState, viewMode: 'docs' },
+  },
+};
+
+// Pages taller than the viewport must scroll internally on mobile; the layout root hides overflow,
+// so a pages container sized by its content would leave no way to reach the rest (regression test).
+export const MobilePages: Story = {
+  ...Mobile,
+  args: {
+    managerLayoutState: { ...defaultState, viewMode: 'settings' },
+    slotPages: (
+      <div data-testid="pages" style={{ overflow: 'auto' }}>
+        <div style={{ height: 2000 }}>tall page content</div>
+      </div>
+    ),
+  },
+  play: async ({ canvas }) => {
+    const main = await canvas.findByRole('main', { name: 'Main content' });
+    expect(main.getBoundingClientRect().height).toBeLessThanOrEqual(window.innerHeight);
+
+    const pages = canvas.getByTestId('pages');
+    expect(pages.scrollHeight).toBeGreaterThan(pages.clientHeight);
   },
 };
 

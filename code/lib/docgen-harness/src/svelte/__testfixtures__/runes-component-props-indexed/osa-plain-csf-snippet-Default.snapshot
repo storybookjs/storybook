@@ -1,0 +1,10 @@
+<script>
+  import Modal from './Modal.svelte';
+</script>
+
+<Modal
+  id="plain-modal"
+  open
+  confirmType="secondary"
+  error=""
+ />

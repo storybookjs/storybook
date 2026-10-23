@@ -2,6 +2,7 @@
 import glob from 'fast-glob';
 import { join } from 'path/posix';
 
+import { isGlobalInput } from './global-inputs.ts';
 import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   type CachePlatform,
@@ -111,6 +112,7 @@ export const fmt = defineJob('Format check', () => ({
         command: 'yarn fmt:check',
       },
     },
+    ...workflow.cancelOnFailure(),
   ],
 }));
 
@@ -182,7 +184,8 @@ export const internalStorybookE2e = defineJob(
   (workflowName) => ({
     executor: {
       name: 'sb_playwright',
-      class: 'medium+',
+      // The tools-attach.spec.ts CLIs build every manifest next to the dev server; OOMs on medium+.
+      class: 'large',
     },
     steps: [
       ...workflow.restoreLinux(),
@@ -191,7 +194,7 @@ export const internalStorybookE2e = defineJob(
           name: 'Run internal Storybook',
           working_directory: 'code',
           background: true,
-          command: 'STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true yarn storybook:ui',
+          command: 'yarn storybook:ui',
         },
       },
       server.wait(['6006']),
@@ -226,7 +229,7 @@ export const internalStorybookBuildE2e = defineJob(
         run: {
           name: 'Build internal storybook',
           working_directory: 'code',
-          command: 'STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true yarn storybook:ui:build',
+          command: 'yarn storybook:ui:build',
         },
       },
       {
@@ -340,6 +343,9 @@ export const knip = defineJob(
   [commonJobsNoOpJob]
 );
 
+const UNIT_TEST_REPORTERS =
+  '--reporter=junit --reporter=default --outputFile=./test-results/junit.xml';
+
 export const testsUnit_linux = defineJob(
   'Tests (linux)',
   (workflowName) => ({
@@ -353,8 +359,8 @@ export const testsUnit_linux = defineJob(
         run: {
           name: 'Run tests',
           command: [
-            'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "agent-eval/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
-            'echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
+            'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec,test-d}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "agent-eval/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
+            `echo "$TEST_FILES" | circleci tests run --command="xargs yarn test ${UNIT_TEST_REPORTERS}" --verbose`,
           ].join('\n'),
         },
       },
@@ -367,6 +373,154 @@ export const testsUnit_linux = defineJob(
   }),
   [commonJobsNoOpJob]
 );
+
+const CHANGED_FILES_PATH = '/tmp/changed-files.txt';
+
+const writeChangedFiles = (changedFiles: readonly string[]) => ({
+  run: {
+    name: 'Write changed files',
+    environment: { CHANGED_FILES: changedFiles.join('\n') },
+    command: `printf '%s\\n' "$CHANGED_FILES" > ${CHANGED_FILES_PATH}`,
+  },
+});
+
+/**
+ * Typecheck only the projects Nx considers affected by `changedFiles`. The restored workspace
+ * already holds every compiled package, so the `compile` dependencies are skipped.
+ */
+export const defineAffectedCheck = (changedFiles: readonly string[]) =>
+  defineJob(
+    'TypeScript validation (affected)',
+    (workflowName) => ({
+      executor: {
+        name: 'sb_node_22_classic',
+        class: 'xlarge',
+      },
+      steps: [
+        ...workflow.restoreLinux(),
+        writeChangedFiles(changedFiles),
+        {
+          run: {
+            name: 'TypeCheck affected projects',
+            // With Nx Cloud on, CI logs show only a cloud link per task instead of the type errors.
+            environment: { NX_NO_CLOUD: 'true' },
+            command: `yarn nx affected -t check --exclude-task-dependencies --parallel=4 --stdin < ${CHANGED_FILES_PATH}`,
+          },
+        },
+        ...workflow.reportOnFailure(workflowName),
+        ...workflow.cancelOnFailure(),
+      ],
+    }),
+    [commonJobsNoOpJob]
+  );
+
+const LINT_CONFIG = /(^|\/)\.oxlintrc\.json$/;
+const FORMAT_CONFIG = /(^|\/)\.oxfmtrc\.json$/;
+
+/**
+ * Run `command` with the changed files under `dir` as arguments, relative to `dir`, because oxlint
+ * rejects paths outside its working directory. Nothing runs when no changed file is under `dir`.
+ */
+const runOnChangedFiles = (
+  name: string,
+  dir: string,
+  changedFiles: readonly string[],
+  command: string
+) => {
+  const files = dir
+    ? changedFiles
+        .filter((file) => file.startsWith(`${dir}/`))
+        .map((file) => file.slice(dir.length + 1))
+    : changedFiles;
+
+  return files.length === 0
+    ? []
+    : [
+        {
+          run: {
+            name,
+            ...(dir ? { working_directory: dir } : {}),
+            environment: { FILES: files.join('\n') },
+            command: `printf '%s\\n' "$FILES" | tr '\\n' '\\0' | xargs -0 ${command}`,
+          },
+        },
+      ];
+};
+
+/**
+ * Format-check and lint only the changed files. Both tools work per file, and the lint rules that
+ * read other files are warnings, which `--quiet` drops. A config or global input change checks
+ * everything.
+ */
+export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) => {
+  const checkAll = (config: RegExp) =>
+    changedFiles.some((file) => isGlobalInput(file) || config.test(file));
+
+  return defineJob(
+    'Lint and format (affected)',
+    (workflowName) => ({
+      executor: {
+        name: 'sb_node_22_classic',
+        class: 'medium',
+      },
+      steps: [
+        ...workflow.restoreLinux(),
+        ...(checkAll(FORMAT_CONFIG)
+          ? [{ run: { name: 'Format check', command: 'yarn fmt:check' } }]
+          : runOnChangedFiles(
+              'Format check changed files',
+              '',
+              changedFiles,
+              'yarn oxfmt --check --no-error-on-unmatched-pattern'
+            )),
+        ...(checkAll(LINT_CONFIG)
+          ? [
+              { run: { name: 'Lint code JS', working_directory: 'code', command: 'yarn lint:js' } },
+              { run: { name: 'Lint scripts', working_directory: 'scripts', command: 'yarn lint' } },
+            ]
+          : ['code', 'scripts'].flatMap((dir) =>
+              runOnChangedFiles(
+                `Lint changed ${dir} files`,
+                dir,
+                changedFiles,
+                'yarn lint:js:cmd --quiet --no-error-on-unmatched-pattern'
+              )
+            )),
+        ...workflow.reportOnFailure(workflowName),
+        ...workflow.cancelOnFailure(),
+      ],
+    }),
+    [commonJobsNoOpJob]
+  );
+};
+
+/** Run the unit tests whose imports reach `changedFiles`. */
+export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
+  defineJob(
+    'Tests (linux, affected)',
+    (workflowName) => ({
+      executor: {
+        name: 'sb_node_22_classic',
+        class: 'large',
+      },
+      steps: [
+        ...workflow.restoreLinux(),
+        writeChangedFiles(changedFiles),
+        {
+          run: {
+            name: 'Run affected tests',
+            command: `NODE_OPTIONS=--max_old_space_size=4096 yarn vitest related --run --project '!storybook-ui' ${UNIT_TEST_REPORTERS} $(cat ${CHANGED_FILES_PATH})`,
+          },
+        },
+        testResults.persist(`test-results`),
+
+        git.check(),
+        ...workflow.reportOnFailure(workflowName),
+        ...workflow.cancelOnFailure(),
+      ],
+    }),
+    [commonJobsNoOpJob]
+  );
 
 export const testsStories_linux = defineJob(
   'Tests stories (linux)',
@@ -415,7 +569,7 @@ export const testUnit_windows = defineJob(
       {
         run: {
           command:
-            'yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml',
+            "yarn test --project '!agent-eval' --reporter=junit --reporter=default --outputFile=./test-results/junit.xml",
           name: 'Run unit tests',
         },
       },
@@ -505,6 +659,7 @@ export const benchmarkPackages = defineJob(
     },
     steps: [
       ...workflow.restoreLinux(),
+      npm.installPinnedVersion(),
       verdaccio.start(),
       server.wait([...verdaccio.ports]),
       {

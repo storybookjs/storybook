@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Posts the failed jobs of a nightly `next` run to #sb-agility and asks Obvious to fix them.
+# Posts the failed jobs of a nightly `next` run to #sb-agility and, on weekdays, asks Obvious to fix them.
 set -euo pipefail
 
 if [ "${CIRCLE_BRANCH:-}" != "next" ]; then
@@ -25,9 +25,17 @@ if [ -z "$failed_jobs" ]; then
   exit 0
 fi
 
+# Nobody follows up on Obvious's work on weekends, so a Saturday or Sunday report only lists the
+# failures; Monday's report asks Obvious if they still fail.
+if [ "$(date -u +%u)" -ge 6 ]; then
+  request=''
+else
+  request="<@${OBVIOUS_SLACK_USER_ID}> please fix these failures, or revert the PR that caused them if the fix is not straightforward. "
+fi
+
 text=$(
-  printf ':rotating_light: The nightly `ci:daily` run on `next` failed at <https://github.com/storybookjs/storybook/commit/%s|%s>.\n\n%s\n\n<@%s> please fix these failures, or revert the PR that caused them if the fix is not straightforward. <%s|Open the workflow>' \
-    "$CIRCLE_SHA1" "${CIRCLE_SHA1:0:7}" "$failed_jobs" "$OBVIOUS_SLACK_USER_ID" "$workflow_url"
+  printf ':rotating_light: The nightly `ci:daily` run on `next` failed at <https://github.com/storybookjs/storybook/commit/%s|%s>.\n\n%s\n\n%s<%s|Open the workflow>' \
+    "$CIRCLE_SHA1" "${CIRCLE_SHA1:0:7}" "$failed_jobs" "$request" "$workflow_url"
 )
 
 jq -n --arg text "$text" '{text: $text}' |

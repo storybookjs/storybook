@@ -11,7 +11,6 @@ export default defineGeneratorModule({
   },
   configure: async () => {
     return {
-      extraPackages: [],
       webpackCompiler: ({ builder }) => (builder === SupportedBuilder.WEBPACK5 ? 'swc' : undefined),
     };
   },

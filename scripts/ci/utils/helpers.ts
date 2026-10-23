@@ -1,7 +1,15 @@
 import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../../utils/constants.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './constants.ts';
-import { isNightly } from './runtime.ts';
 import { type JobOrNoOpJob } from './types.ts';
+
+export const cancelWorkflowStep = {
+  run: {
+    name: 'Cancel current workflow',
+    when: 'on_fail',
+    command:
+      'curl -X POST --header "Content-Type: application/json" "https://circleci.com/api/v2/workflow/${CIRCLE_WORKFLOW_ID}/cancel?circle-token=${WORKFLOW_CANCELER}"',
+  },
+};
 
 /**
  * The `Persisting to workspace` step is bytes-bound: CircleCI gzips the
@@ -359,22 +367,7 @@ export const workflow = {
       },
     },
   ],
-  cancelOnFailure: () => {
-    // The nightly run keeps going so its failure report lists every failed job.
-    if (isNightly()) {
-      return [];
-    }
-    return [
-      {
-        run: {
-          name: 'Cancel current workflow',
-          when: 'on_fail',
-          command:
-            'curl -X POST --header "Content-Type: application/json" "https://circleci.com/api/v2/workflow/${CIRCLE_WORKFLOW_ID}/cancel?circle-token=${WORKFLOW_CANCELER}"',
-        },
-      },
-    ];
-  },
+  cancelOnFailure: () => [cancelWorkflowStep],
 };
 
 /** Namespaces the cache per executor, so a Linux tree can never be restored on Windows. */

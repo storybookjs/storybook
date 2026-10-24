@@ -66,8 +66,9 @@ export class AuthenticationError extends Error {
   }
 }
 
-// A ref that does not answer in time is skipped like an unreachable one; the same budget core
-// gives a composed source's manifest fetch.
+// Every probe fetch, OAuth discovery included, gets this budget, so `initialize` always settles and
+// a ref that does not answer in time is skipped like an unreachable one; the same budget core gives
+// a composed source's manifest fetch.
 const REF_PROBE_TIMEOUT_MS = 3_000;
 
 export class CompositionAuth {
@@ -353,6 +354,7 @@ export class CompositionAuth {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
+        signal: AbortSignal.timeout(REF_PROBE_TIMEOUT_MS),
       });
       return response.status === 401;
     } catch {
@@ -370,7 +372,9 @@ export class CompositionAuth {
     if (!match?.[1]) return null;
 
     const resourceMetadataUrl = match[1];
-    const resourceResponse = await fetch(resourceMetadataUrl);
+    const resourceResponse = await fetch(resourceMetadataUrl, {
+      signal: AbortSignal.timeout(REF_PROBE_TIMEOUT_MS),
+    });
     if (!resourceResponse.ok) {
       logger.warn(
         `[addon-mcp] Failed to fetch OAuth resource metadata from ${resourceMetadataUrl}: ${resourceResponse.status}`
@@ -387,7 +391,9 @@ export class CompositionAuth {
 
     const authServer = resourceResult.output.authorization_servers[0];
     const serverMetadataUrl = `${authServer}/.well-known/oauth-authorization-server`;
-    const serverResponse = await fetch(serverMetadataUrl);
+    const serverResponse = await fetch(serverMetadataUrl, {
+      signal: AbortSignal.timeout(REF_PROBE_TIMEOUT_MS),
+    });
     if (!serverResponse.ok) {
       logger.warn(
         `[addon-mcp] Failed to fetch OAuth server metadata from ${serverMetadataUrl}: ${serverResponse.status}`

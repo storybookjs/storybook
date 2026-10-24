@@ -81,6 +81,7 @@ const ChildrenContainer = styled.div<PreviewProps & { layout: Layout }>(
       : {}
 );
 
+// Room for Button's default focus ring: 2px outline + 2px outlineOffset (Button.tsx).
 const FOCUS_RING_INSET = 4;
 
 const ActionBar = styled(Bar)({

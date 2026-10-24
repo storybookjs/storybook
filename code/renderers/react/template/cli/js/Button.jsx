@@ -12,13 +12,7 @@ import './button.css';
  * @param {string} props.label Button contents
  * @param {() => void} [props.onClick] Optional click handler
  */
-export const Button = ({
-  primary = false,
-  backgroundColor,
-  size = 'medium',
-  label,
-  ...props
-}) => {
+export const Button = ({ primary = false, backgroundColor, size = 'medium', label, ...props }) => {
   const mode = primary ? 'storybook-button--primary' : 'storybook-button--secondary';
   return (
     <button

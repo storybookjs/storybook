@@ -28,6 +28,29 @@ describe('checkRef', () => {
     expect(await checkRef('https://chromatic.com')).toBe(false);
   });
 
+  it('gives up on a ref that does not answer in time', async () => {
+    const fetchSpy = vi
+      .spyOn(global, 'fetch')
+      .mockImplementation(
+        (_url, init) =>
+          new Promise((_resolve, reject) =>
+            init?.signal?.addEventListener('abort', () => reject(init.signal!.reason))
+          )
+      );
+    vi.useFakeTimers();
+    try {
+      const pending = checkRef('https://chromatic.com');
+      await vi.advanceTimersByTimeAsync(3_000);
+      expect(await pending).toBe(false);
+      expect(fetchSpy).toHaveBeenCalledWith(
+        'https://chromatic.com/iframe.html',
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('returns false when fetch fails', async () => {
     vi.spyOn(global, 'fetch').mockRejectedValue(new Error('Network error'));
     expect(await checkRef('https://chromatic.com')).toBe(false);

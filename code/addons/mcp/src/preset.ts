@@ -92,44 +92,60 @@ export const experimental_devServer: PresetPropertyFn<
     return true;
   };
 
-  const { refs, compositionAuth, sources, multiSource } = await resolveCompositionSources(options);
-
-  // Composition (multi-source) is the only remaining consumer of the manifest-provider plumbing:
-  // single-source docs tools read the registered docs toolset instead. In docgen-server mode core
-  // 404s the local `/manifests/*.json`, so the local source reads this Storybook in-process
-  // through the same registration-based access selection the dev server uses when it is not
-  // composed — the docgen services when they actually registered, the inline manifests otherwise.
   const rawAvailability = await getToolAvailability(options);
-  const localAccess =
-    rawAvailability.docgenServer && refs.length > 0
-      ? createLocalDocsAccess({
-          storyIndex: { getIndex: () => getStoryIndex(options) },
-          getManifests: () => loadManifests(options.presets),
-        })
-      : undefined;
 
-  let createManifestProvider: ((req: IncomingMessage) => ManifestProvider) | undefined;
+  // Probing the composed refs is network I/O, so it runs while the builders start instead of
+  // holding up the dev server; the routes below await it, so only a request that arrives before
+  // the probe settles waits for it.
+  const composition = resolveCompositionSources(options).then(
+    ({ refs, compositionAuth, sources, multiSource }) => {
+      // Composition (multi-source) is the only remaining consumer of the manifest-provider plumbing:
+      // single-source docs tools read the registered docs toolset instead. In docgen-server mode core
+      // 404s the local `/manifests/*.json`, so the local source reads this Storybook in-process
+      // through the same registration-based access selection the dev server uses when it is not
+      // composed — the docgen services when they actually registered, the inline manifests otherwise.
+      const localAccess =
+        rawAvailability.docgenServer && refs.length > 0
+          ? createLocalDocsAccess({
+              storyIndex: { getIndex: () => getStoryIndex(options) },
+              getManifests: () => loadManifests(options.presets),
+            })
+          : undefined;
 
-  if (refs.length > 0) {
-    logger.info(`Initialized composition with ${refs.length} remote Storybook(s)`);
-    if (compositionAuth.requiresAuth) {
-      logger.info(`Auth required for: ${compositionAuth.authUrls.join(', ')}`);
+      let createManifestProvider: ((req: IncomingMessage) => ManifestProvider) | undefined;
+
+      if (refs.length > 0) {
+        logger.info(`Initialized composition with ${refs.length} remote Storybook(s)`);
+        if (compositionAuth.requiresAuth) {
+          logger.info(`Auth required for: ${compositionAuth.authUrls.join(', ')}`);
+        }
+
+        logger.info(`Sources: ${(sources ?? []).map((s) => s.id).join(', ')}`);
+
+        // Remote sources are fetched over HTTP; the local one is read through `localAccess` when
+        // docgen-server mode is on, and over HTTP from this origin otherwise.
+        createManifestProvider = () => compositionAuth.createManifestProvider(origin);
+      }
+
+      return {
+        sources,
+        compositionAuth,
+        manifestAccessFor: (req: IncomingMessage) => ({
+          manifestProvider: createManifestProvider?.(req),
+          localAccess,
+        }),
+        // Same gates the MCP server uses to register these tools, so the page can't
+        // claim a tool is available when it isn't (and vice versa).
+        availability: getEffectiveToolAvailability(rawAvailability, { multiSource }),
+      };
     }
-
-    logger.info(`Sources: ${(sources ?? []).map((s) => s.id).join(', ')}`);
-
-    // Remote sources are fetched over HTTP; the local one is read through `localAccess` when
-    // docgen-server mode is on, and over HTTP from this origin otherwise.
-    createManifestProvider = () => compositionAuth.createManifestProvider(origin);
-  }
-
-  const manifestAccessFor = (req: IncomingMessage) => ({
-    manifestProvider: createManifestProvider?.(req),
-    localAccess,
-  });
+  );
+  // A probe failure surfaces on the request that awaits it, not as an unhandled rejection.
+  composition.catch(() => undefined);
 
   // Serve .well-known/oauth-protected-resource for MCP auth
-  app!.get('/.well-known/oauth-protected-resource', (_req, res) => {
+  app!.get('/.well-known/oauth-protected-resource', async (_req, res) => {
+    const { compositionAuth } = await composition;
     const wellKnown = compositionAuth.buildWellKnown(origin);
     if (!wellKnown) {
       res.writeHead(404);
@@ -141,7 +157,11 @@ export const experimental_devServer: PresetPropertyFn<
     res.end(JSON.stringify(wellKnown));
   });
 
-  const requireAuth = (req: IncomingMessage, res: ServerResponse): boolean => {
+  const requireAuth = (
+    req: IncomingMessage,
+    res: ServerResponse,
+    compositionAuth: Awaited<typeof composition>['compositionAuth']
+  ): boolean => {
     const token = extractBearerToken(req.headers['authorization']);
     if (compositionAuth.requiresAuth && !token) {
       res.writeHead(401, {
@@ -154,9 +174,10 @@ export const experimental_devServer: PresetPropertyFn<
     return false;
   };
 
-  app!.post(endpoint, (req, res) => {
+  app!.post(endpoint, async (req, res) => {
     if (rejectDisallowedOrigin(req, res)) return;
-    if (requireAuth(req, res)) return;
+    const { sources, compositionAuth, manifestAccessFor } = await composition;
+    if (requireAuth(req, res, compositionAuth)) return;
     if (rejectNonJsonBody(req, res)) return;
 
     return mcpServerHandler({
@@ -171,25 +192,13 @@ export const experimental_devServer: PresetPropertyFn<
     });
   });
 
-  // Same gates the MCP server uses to register these tools, so the page can't
-  // claim a tool is available when it isn't (and vice versa).
-  const {
-    moduleGraphSupported,
-    docsEnabled,
-    docsHasManifests,
-    docsFeatureEnabled,
-    testSupported,
-    a11yEnabled,
-  } = getEffectiveToolAvailability(rawAvailability, { multiSource });
-
   const isDevEnabled = addonOptions.toolsets?.dev ?? true;
-  const isDocsEnabled = docsEnabled && (addonOptions.toolsets?.docs ?? true);
-  const isTestEnabled = testSupported && (addonOptions.toolsets?.test ?? true);
 
-  app!.get(endpoint, (req, res) => {
+  app!.get(endpoint, async (req, res) => {
     if (rejectDisallowedOrigin(req, res)) return;
+    const { sources, compositionAuth, manifestAccessFor, availability } = await composition;
     if (!req.headers['accept']?.includes('text/html')) {
-      if (requireAuth(req, res)) return;
+      if (requireAuth(req, res, compositionAuth)) return;
 
       return mcpServerHandler({
         req,
@@ -202,6 +211,17 @@ export const experimental_devServer: PresetPropertyFn<
         compositionAuth,
       });
     }
+
+    const {
+      moduleGraphSupported,
+      docsEnabled,
+      docsHasManifests,
+      docsFeatureEnabled,
+      testSupported,
+      a11yEnabled,
+    } = availability;
+    const isDocsEnabled = docsEnabled && (addonOptions.toolsets?.docs ?? true);
+    const isTestEnabled = testSupported && (addonOptions.toolsets?.test ?? true);
 
     // Browser request - send HTML
     res.writeHead(200, { 'Content-Type': 'text/html' });

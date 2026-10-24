@@ -37,18 +37,17 @@ describe('checkRef', () => {
             init?.signal?.addEventListener('abort', () => reject(init.signal!.reason))
           )
       );
-    vi.useFakeTimers();
-    try {
-      const pending = checkRef('https://chromatic.com');
-      await vi.advanceTimersByTimeAsync(3_000);
-      expect(await pending).toBe(false);
-      expect(fetchSpy).toHaveBeenCalledWith(
-        'https://chromatic.com/iframe.html',
-        expect.objectContaining({ signal: expect.any(AbortSignal) })
-      );
-    } finally {
-      vi.useRealTimers();
-    }
+    // Fake timers do not drive `AbortSignal.timeout`, so its signal is stubbed and aborted by hand.
+    const controller = new AbortController();
+    const timeoutSpy = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal);
+    const pending = checkRef('https://chromatic.com');
+    controller.abort(new DOMException('timed out', 'TimeoutError'));
+    expect(await pending).toBe(false);
+    expect(timeoutSpy).toHaveBeenCalledWith(3_000);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'https://chromatic.com/iframe.html',
+      expect.objectContaining({ signal: controller.signal })
+    );
   });
 
   it('returns false when fetch fails', async () => {

@@ -1,128 +1,106 @@
-import { generate, types as t } from 'storybook/internal/babel';
-import { isCsfFactoryCall, keyOf, unwrapExpression } from 'storybook/internal/csf-tools';
+import type { CsfFile, CsfValue, ESTree } from 'storybook/internal/csf-tools';
+import {
+  appendToList,
+  itemText,
+  objectList,
+  removeFromList,
+  staticKey,
+  textOf,
+  unwrapExpression,
+} from 'storybook/internal/csf-tools';
 
-import { SaveStoryError } from './utils.ts';
-import { valueToAST } from './valueToAST.ts';
+import { isValidIdentifier } from '../../../csf-tools/estree/ast.ts';
+import { printObject, replaceValue } from '../../../csf-tools/estree/editor.ts';
+import { isCopySafeSpread } from '../../../csf-tools/estree/values.ts';
+import { SaveStoryError, assertApplied, findStory } from './utils.ts';
 
-const isCopySafeSpread = (node: t.Node): boolean => {
-  const expression = unwrapExpression(node);
-  if (
-    t.isIdentifier(expression) ||
-    (t.isLiteral(expression) && !t.isTemplateLiteral(expression)) ||
-    t.isArrowFunctionExpression(expression) ||
-    t.isFunctionExpression(expression)
-  ) {
-    return true;
+// Edits accumulate on `csf`; print them with `printCsf`.
+export const updateArgsInCsfFile = (
+  csf: CsfFile,
+  exportName: string,
+  args: Record<string, CsfValue<ESTree.Expression>>
+) => {
+  for (const key of Object.keys(args)) {
+    if (!isValidIdentifier(key, false)) {
+      throw new SaveStoryError(`Invalid arg name: ${JSON.stringify(key)}`);
+    }
   }
-  if (t.isMemberExpression(expression) || t.isOptionalMemberExpression(expression)) {
-    return !expression.computed && isCopySafeSpread(expression.object);
-  }
-  if (t.isObjectExpression(expression)) {
-    return expression.properties.every((property) => {
-      if (t.isSpreadElement(property)) {
-        return isCopySafeSpread(property.argument);
-      }
-      if (
-        property.computed &&
-        !t.isStringLiteral(property.key) &&
-        !t.isNumericLiteral(property.key)
-      ) {
-        return false;
-      }
-      return t.isObjectMethod(property)
-        ? property.kind !== 'get'
-        : isCopySafeSpread(property.value);
-    });
-  }
-  if (t.isArrayExpression(expression)) {
-    return expression.elements.every(
-      (element) => !element || (!t.isSpreadElement(element) && isCopySafeSpread(element))
-    );
-  }
-  return false;
-};
-
-export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, any>) => {
-  const args = Object.fromEntries(
-    Object.entries(input).map(([k, v]) => {
-      if (!t.isValidIdentifier(k, false)) {
-        throw new SaveStoryError(`Invalid arg name: ${JSON.stringify(k)}`);
-      }
-      return [k, valueToAST(v)];
-    })
-  );
-
-  const story = unwrapExpression(t.isVariableDeclarator(node) && node.init ? node.init : node);
-  const isCsf4Story = isCsfFactoryCall(story);
-
-  if (!isCsf4Story && (t.isArrowFunctionExpression(story) || t.isCallExpression(story))) {
-    throw new SaveStoryError(`Updating a CSF2 story is not supported`);
-  }
-
-  const object = isCsf4Story ? story.arguments[0] && unwrapExpression(story.arguments[0]) : story;
-  if (!t.isObjectExpression(object)) {
-    return;
-  }
-
-  const properties = object.properties;
-  const lastSpreadIndex = properties.findLastIndex((property) => t.isSpreadElement(property));
-  const argsIndex = properties.findIndex(
-    (property) => t.isObjectProperty(property) && keyOf(property) === 'args'
-  );
-  const argsProperty = properties[argsIndex];
-  const argsObject = t.isObjectProperty(argsProperty) ? argsProperty.value : t.objectExpression([]);
-  if (!t.isObjectExpression(argsObject)) {
-    return;
-  }
-
-  if (argsIndex < lastSpreadIndex) {
-    const spreads = properties
-      .slice(argsIndex + 1)
-      .filter((property) => t.isSpreadElement(property));
-    const unsafeSpread = spreads.find((property) => !isCopySafeSpread(property.argument));
-    if (unsafeSpread) {
-      throw new SaveStoryError(
-        `Cannot save args: the spread \`${generate(unsafeSpread).code}\` cannot be copied safely. Add an \`args\` property after it, or edit args manually.`
+  const story = findStory(csf, exportName);
+  csf.transaction(() => {
+    const object = story.node;
+    if (object && Object.keys(args).length > 0) {
+      const { properties } = object;
+      const lastSpreadIndex = properties.findLastIndex(
+        (property) => property.type === 'SpreadElement'
       );
-    }
+      const argsProperties = properties.filter(
+        (property): property is ESTree.ObjectProperty =>
+          property.type === 'Property' && staticKey(property) === 'args'
+      );
+      const argsProperty = argsProperties[0];
+      const argsIndex = argsProperty ? properties.indexOf(argsProperty) : -1;
+      const argsObject = argsProperty && unwrapExpression(argsProperty.value);
 
-    const existingArgs = argsObject.properties.filter((property) => {
-      const key = t.isObjectProperty(property) ? keyOf(property) : null;
-      return key === null || !Object.hasOwn(args, key);
-    });
-    argsObject.properties = [
-      ...existingArgs,
-      ...spreads.map((property) =>
-        t.spreadElement(
-          t.optionalMemberExpression(
-            t.cloneNode(property.argument),
-            t.identifier('args'),
-            false,
-            true
+      if (
+        argsIndex < lastSpreadIndex &&
+        argsProperties.length <= 1 &&
+        properties
+          .slice(argsIndex + 1)
+          .every(
+            (property) => property.type === 'SpreadElement' || staticKey(property) !== undefined
+          ) &&
+        (!argsProperty || (argsProperty.kind === 'init' && argsObject?.type === 'ObjectExpression'))
+      ) {
+        const spreads = properties
+          .slice(argsIndex + 1)
+          .filter((property) => property.type === 'SpreadElement');
+        const unsafeSpread = spreads.find((spread) => !isCopySafeSpread(spread.argument));
+        if (unsafeSpread) {
+          throw new SaveStoryError(
+            `Cannot save args: the spread \`${textOf(unsafeSpread)}\` cannot be copied safely. Add an \`args\` property after it, or edit args manually.`
+          );
+        }
+        const { editor } = csf;
+        const inherited = spreads.map(({ argument }) => {
+          const source = textOf(argument);
+          const reference = ['Identifier', 'MemberExpression', 'ChainExpression'].includes(
+            argument.type
           )
-        )
-      ),
-    ];
-  }
+            ? source
+            : `(${source})`;
+          return `...${reference}?.args`;
+        });
+        if (argsProperty && argsObject?.type === 'ObjectExpression') {
+          const list = objectList(editor, argsObject);
+          const existing = argsObject.properties
+            .filter((property) => {
+              const key = staticKey(property);
+              return key === undefined || !Object.hasOwn(args, key);
+            })
+            .map((property) => itemText(editor, list, property));
+          replaceValue(
+            editor,
+            argsProperty,
+            printObject([...existing, ...inherited], editor.indent)
+          );
+          editor.commit();
 
-  argsObject.properties.forEach((property) => {
-    if (!t.isObjectProperty(property)) {
-      return;
+          const updated = story.node!;
+          const property = updated.properties.find((member) => staticKey(member) === 'args')!;
+          const updatedList = objectList(editor, updated);
+          const moved = itemText(editor, updatedList, property);
+          removeFromList(editor, updatedList, [property]);
+          appendToList(editor, updatedList, [moved]);
+        } else {
+          appendToList(editor, objectList(editor, object), [
+            `args: ${printObject(inherited, editor.indent)}`,
+          ]);
+        }
+        editor.commit();
+      }
     }
-    const key = keyOf(property);
-    if (key !== null && Object.hasOwn(args, key)) {
-      property.value = args[key];
-      delete args[key];
+    for (const [key, value] of Object.entries(args)) {
+      assertApplied(exportName, story.set(['args', key], value));
     }
   });
-  Object.entries(args).forEach(([key, value]) => {
-    argsObject.properties.push(t.objectProperty(t.identifier(key), value));
-  });
-
-  if (!argsProperty) {
-    properties.splice(lastSpreadIndex + 1, 0, t.objectProperty(t.identifier('args'), argsObject));
-  } else if (argsIndex < lastSpreadIndex) {
-    properties.splice(argsIndex, 1);
-    properties.splice(lastSpreadIndex, 0, argsProperty);
-  }
 };

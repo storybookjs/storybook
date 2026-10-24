@@ -1,14 +1,23 @@
-import { types as t } from 'storybook/internal/babel';
-import type { ImportBinding } from 'storybook/internal/csf-tools';
-import { sourceOf, unwrapExpression } from 'storybook/internal/csf-tools';
+import type { ESTree as E, ESTreeNode as Node, ImportBinding } from 'storybook/internal/csf-tools';
+import {
+  detachedTextOf,
+  oneLineTextOf,
+  reindent,
+  unwrapExpression,
+  walk,
+} from 'storybook/internal/csf-tools';
 
-import { evaluateArgValue } from './arg-values.ts';
+import { FAILED, evaluateArgValue, isFunctionNode, primitiveLiteralValue } from './arg-values.ts';
 import type { AliasValue, HtmlTemplate, TemplateScope } from './template-scope.ts';
 import {
   aliasValueForIdentifier,
   argReferenceForExpression,
   templateFromExpression,
 } from './template-scope.ts';
+
+// A handler runs inside the snippet's `<script>`, so it keeps its lines and comments, re-indented
+// from the story file to the snippet.
+export const handlerText = (node: Node): string => reindent(detachedTextOf(node), '', '    ');
 
 export type HoleValue =
   | { kind: 'empty'; arg?: string }
@@ -21,24 +30,25 @@ export type HoleValue =
 export interface HoleContext {
   bindings: Map<string, ImportBinding>;
   scope: TemplateScope;
-  storyArgs: Record<string, t.Node>;
+  storyArgs: Record<string, Node>;
 }
 
 const TEMPLATE_TAG_SOURCES = ['lit', 'lit-html', 'lit-element'];
 const IF_DEFINED_SOURCES = ['lit/directives/if-defined.js', 'lit-html/directives/if-defined.js'];
 
-export const resolveHoleValue = (expression: t.Expression, context: HoleContext): HoleValue => {
+export const resolveHoleValue = (expression: E.Expression, context: HoleContext): HoleValue => {
   const expressionNode = unwrapExpression(expression);
-  const alias = t.isIdentifier(expressionNode)
-    ? aliasValueForIdentifier(expressionNode, context.scope)
-    : undefined;
+  const alias =
+    expressionNode.type === 'Identifier'
+      ? aliasValueForIdentifier(expressionNode, context.scope)
+      : undefined;
   if (alias) {
-    return resolveAlias(alias, context, sourceOf(expression));
+    return resolveAlias(alias, context, oneLineTextOf(expression));
   }
 
   const arg = argReferenceForExpression(expression, context.scope);
   if (arg) {
-    return resolveArgReference(arg, context.storyArgs[arg.name], sourceOf(expression));
+    return resolveArgReference(arg, context.storyArgs[arg.name], oneLineTextOf(expression));
   }
 
   const unwrapped = expressionNode;
@@ -48,20 +58,24 @@ export const resolveHoleValue = (expression: t.Expression, context: HoleContext)
   if (isStaticLiteral(unwrapped)) {
     return { kind: 'value', value: literalValue(unwrapped) };
   }
-  if (t.isFunction(unwrapped)) {
-    return { handler: sourceOf(expression), kind: 'function' };
+  if (isFunctionNode(unwrapped)) {
+    return {
+      handler: handlerText(expression),
+      kind: 'function',
+      source: oneLineTextOf(expression),
+    };
   }
   const nested = templateFromExpression(unwrapped, context.bindings, context.scope);
   if (nested) {
-    return { kind: 'template', source: sourceOf(expression), template: nested };
+    return { kind: 'template', source: oneLineTextOf(expression), template: nested };
   }
   if (isIfDefinedCall(unwrapped, context.bindings)) {
-    const value = resolveHoleValue(unwrapped.arguments[0] as t.Expression, context);
+    const value = resolveHoleValue(unwrapped.arguments[0], context);
     return value.kind === 'value' && value.value !== null && value.value !== undefined
       ? value
       : { kind: 'nothing', ...(value.arg ? { arg: value.arg } : {}) };
   }
-  if (t.isConditionalExpression(unwrapped)) {
+  if (unwrapped.type === 'ConditionalExpression') {
     const test = resolveConditionalTest(unwrapped.test, context);
     if (test.kind === 'unresolved') {
       return test;
@@ -73,40 +87,17 @@ export const resolveHoleValue = (expression: t.Expression, context: HoleContext)
     return test.arg && !branch.arg ? { ...branch, arg: test.arg } : branch;
   }
 
-  return { kind: 'unresolved', source: sourceOf(expression) };
+  return { kind: 'unresolved', source: oneLineTextOf(expression) };
 };
 
-export const collectReferencedArgs = (
-  expression: t.Expression,
-  scope: TemplateScope
-): Set<string> => {
+export const collectReferencedArgs = (expression: Node, scope: TemplateScope): Set<string> => {
   const referenced = new Set<string>();
-  const visit = (node: t.Node): void => {
-    if (t.isExpression(node)) {
-      const args = referencedArgsForExpression(node, scope);
-      for (const arg of args) {
-        referenced.add(arg);
-      }
+  walk(expression, (node, parent) => {
+    if (isStaticName(node, parent)) {
+      return false;
     }
-
-    for (const key of t.VISITOR_KEYS[node.type] ?? []) {
-      if (skipsReferenceChild(node, key)) {
-        continue;
-      }
-      const child = node[key as keyof typeof node];
-      if (Array.isArray(child)) {
-        child.forEach((entry) => {
-          if (t.isNode(entry)) {
-            visit(entry);
-          }
-        });
-      } else if (t.isNode(child)) {
-        visit(child);
-      }
-    }
-  };
-
-  visit(expression);
+    referencedArgsForExpression(node, scope).forEach((arg) => referenced.add(arg));
+  });
   return referenced;
 };
 
@@ -139,14 +130,14 @@ export const listenerHandler = (value: HoleValue): string =>
 export const escapeText = (value: string): string =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-const resolveArg = (arg: string, node: t.Node | undefined): HoleValue => {
+const resolveArg = (arg: string, node: Node | undefined): HoleValue => {
   if (!node) {
     return { kind: 'value', arg, value: undefined };
   }
   const value = evaluateArgValue(node);
   switch (value.kind) {
     case 'function':
-      return { handler: sourceOf(node), kind: 'function', arg };
+      return { handler: handlerText(node), kind: 'function', arg, source: oneLineTextOf(node) };
     case 'unset':
       return { kind: 'value', arg, value: undefined };
     case 'unresolved':
@@ -177,7 +168,7 @@ const resolveAlias = (alias: AliasValue, context: HoleContext, source?: string):
 
 const resolveArgReference = (
   reference: { name: string; path: string[] },
-  node: t.Node | undefined,
+  node: Node | undefined,
   missingPathSource?: string
 ): HoleValue => {
   const value = resolveArg(reference.name, node);
@@ -205,11 +196,9 @@ const resolveArgReference = (
   return { arg: reference.name, kind: 'value', value: current };
 };
 
-const referencedArgsForExpression = (
-  expression: t.Expression,
-  scope: TemplateScope
-): Set<string> => {
-  const alias = t.isIdentifier(expression) ? aliasValueForIdentifier(expression, scope) : undefined;
+const referencedArgsForExpression = (expression: Node, scope: TemplateScope): Set<string> => {
+  const alias =
+    expression.type === 'Identifier' ? aliasValueForIdentifier(expression, scope) : undefined;
   if (alias) {
     return referencedArgsForAlias(alias);
   }
@@ -239,68 +228,51 @@ const referencedArgsForAlias = (alias: AliasValue): Set<string> => {
   }
 };
 
-const skipsReferenceChild = (node: t.Node, key: string): boolean =>
-  (t.isMemberExpression(node) && key === 'property' && !node.computed) ||
-  ((t.isObjectProperty(node) || t.isObjectMethod(node)) && key === 'key' && !node.computed);
+// A non-computed member property or object key is a name, not a reference to an arg.
+const isStaticName = (node: Node, parent: Node | null): boolean =>
+  (parent?.type === 'MemberExpression' && parent.property === node && !parent.computed) ||
+  (parent?.type === 'Property' && parent.key === node && parent.value !== node && !parent.computed);
 
-const isNothingExpression = (expression: t.Node, bindings: Map<string, ImportBinding>): boolean =>
-  t.isIdentifier(expression) &&
+const isNothingExpression = (expression: Node, bindings: Map<string, ImportBinding>): boolean =>
+  expression.type === 'Identifier' &&
   isImported(expression.name, 'nothing', TEMPLATE_TAG_SOURCES, bindings);
 
-const isStaticLiteral = (expression: t.Node): boolean =>
-  t.isNullLiteral(expression) ||
-  t.isStringLiteral(expression) ||
-  t.isNumericLiteral(expression) ||
-  t.isBooleanLiteral(expression) ||
-  t.isIdentifier(expression, { name: 'undefined' }) ||
-  (t.isUnaryExpression(expression) && expression.operator === 'void') ||
-  (t.isTemplateLiteral(expression) && expression.expressions.length === 0);
+const isStaticLiteral = (expression: Node): boolean =>
+  primitiveLiteralValue(expression) !== FAILED ||
+  (expression.type === 'Identifier' && expression.name === 'undefined') ||
+  (expression.type === 'UnaryExpression' && expression.operator === 'void') ||
+  (expression.type === 'TemplateLiteral' && expression.expressions.length === 0);
 
-const literalValue = (expression: t.Node): unknown => {
-  if (t.isNullLiteral(expression)) {
-    return null;
-  }
-  if (
-    t.isStringLiteral(expression) ||
-    t.isNumericLiteral(expression) ||
-    t.isBooleanLiteral(expression)
-  ) {
-    return expression.value;
-  }
-  if (t.isIdentifier(expression, { name: 'undefined' })) {
-    return undefined;
-  }
-  if (t.isUnaryExpression(expression) && expression.operator === 'void') {
-    return undefined;
-  }
-  if (t.isTemplateLiteral(expression)) {
+const literalValue = (expression: Node): unknown => {
+  if (expression.type === 'TemplateLiteral') {
     return expression.quasis[0]?.value.cooked ?? expression.quasis[0]?.value.raw ?? '';
   }
-  return undefined;
+  const value = primitiveLiteralValue(expression);
+  return value === FAILED ? undefined : value;
 };
 
 const isIfDefinedCall = (
-  expression: t.Node,
+  expression: Node,
   bindings: Map<string, ImportBinding>
-): expression is t.CallExpression & { arguments: [t.Expression] } =>
-  t.isCallExpression(expression) &&
+): expression is E.CallExpression & { arguments: [E.Expression] } =>
+  expression.type === 'CallExpression' &&
   expression.arguments.length === 1 &&
-  t.isExpression(expression.arguments[0]) &&
-  t.isIdentifier(expression.callee) &&
+  expression.arguments[0].type !== 'SpreadElement' &&
+  expression.callee.type === 'Identifier' &&
   isImported(expression.callee.name, 'ifDefined', IF_DEFINED_SOURCES, bindings);
 
 const resolveConditionalTest = (
-  expression: t.Expression,
+  expression: E.Expression,
   context: HoleContext
 ): { arg?: string; kind: 'value'; truthy: boolean } | { kind: 'unresolved'; source: string } => {
   const arg = argReferenceForExpression(expression, context.scope);
   if (arg) {
-    const value = resolveArgReference(arg, context.storyArgs[arg.name], sourceOf(expression));
+    const value = resolveArgReference(arg, context.storyArgs[arg.name], oneLineTextOf(expression));
     return value.kind === 'value' || value.kind === 'empty'
       ? { arg: arg.name, kind: 'value', truthy: value.kind === 'value' && Boolean(value.value) }
       : {
           kind: 'unresolved',
-          source: value.kind === 'unresolved' ? value.source : sourceOf(expression),
+          source: value.kind === 'unresolved' ? value.source : oneLineTextOf(expression),
         };
   }
   const unwrapped = unwrapExpression(expression);
@@ -310,7 +282,7 @@ const resolveConditionalTest = (
   if (isStaticLiteral(unwrapped)) {
     return { kind: 'value', truthy: Boolean(literalValue(unwrapped)) };
   }
-  return { kind: 'unresolved', source: sourceOf(expression) };
+  return { kind: 'unresolved', source: oneLineTextOf(expression) };
 };
 
 const templateAttributeText = (

@@ -1,0 +1,312 @@
+import { visitorKeys } from 'oxc-parser';
+
+import {
+  type E,
+  type Node,
+  type Property,
+  isIdentifier,
+  isNode,
+  isNumericLiteral,
+  moduleOf,
+  staticKey,
+  unwrapExpression,
+} from './ast.ts';
+import { type SourceEditor, detachedSource, detachedTextOf, functionFromMethod } from './editor.ts';
+import type { ScopeInfo } from './scope.ts';
+
+// Node types Babel produces that OXC's ESTree output has no equivalent for (`@babel/types`
+// `VISITOR_KEYS` minus `visitorKeys`, without Flow), so a Babel node is still told from data.
+const BABEL_ONLY_TYPES = new Set([
+  'File',
+  'InterpreterDirective',
+  'Directive',
+  'DirectiveLiteral',
+  'StringLiteral',
+  'NumericLiteral',
+  'BooleanLiteral',
+  'NullLiteral',
+  'BigIntLiteral',
+  'RegExpLiteral',
+  'DecimalLiteral',
+  'ObjectProperty',
+  'ObjectMethod',
+  'ClassMethod',
+  'ClassPrivateMethod',
+  'ClassProperty',
+  'ClassPrivateProperty',
+  'ClassAccessorProperty',
+  'PrivateName',
+  'Import',
+  'ExportNamespaceSpecifier',
+  'ExportDefaultSpecifier',
+  'OptionalMemberExpression',
+  'OptionalCallExpression',
+  'TSDeclareMethod',
+  'TSExpressionWithTypeArguments',
+]);
+
+// A node some parser or builder made, which `printValue` must not print as its fields: a node type
+// with a position, as offsets, `loc` or `range`, which a copy of it keeps, or a Babel-only type,
+// which a `@babel/types` builder such as `t.stringLiteral('x')` gives without a position. Any
+// other object built by hand is data, whatever its `type`; so is a `File`, common in data such as
+// `{ type: 'File', name: 'a.pdf' }`.
+const isParsedNode = (value: unknown): value is Node => {
+  if (!isNode(value)) {
+    return false;
+  }
+  const type: string = value.type;
+  if (type !== 'File' && BABEL_ONLY_TYPES.has(type)) {
+    return true;
+  }
+  if (!(Object.hasOwn(visitorKeys, type) || type === 'File')) {
+    return false;
+  }
+  return (
+    (typeof value.start === 'number' && typeof value.end === 'number') ||
+    ('loc' in value && typeof value.loc === 'object' && value.loc !== null) ||
+    ('range' in value && Array.isArray(value.range))
+  );
+};
+
+// A member's value as `detachedSource`; methods become function expressions.
+export const valueSource = (editor: SourceEditor, member: Property) =>
+  member.method || member.kind !== 'init'
+    ? functionFromMethod(editor, member)
+    : detachedSource(editor, member.value);
+
+// `valueSource` ready to be placed as another value, as `placeableTextOf` prints it.
+export const placeableValueSource = (editor: SourceEditor, member: Property) =>
+  member.method || member.kind !== 'init'
+    ? functionFromMethod(editor, member)
+    : detachedTextOf(member.value);
+
+/**
+ * A plain value, as `getValue` reads it. `CsfValue<CsfExpression>`, which `set` takes, can also hold
+ * expressions from `get`, `parseExpression` or `parseModule`, at any depth.
+ */
+export type CsfValue<Expression = never> =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | Expression
+  | readonly CsfValue<Expression>[]
+  | { readonly [key: string]: CsfValue<Expression> };
+
+// The first node in `value` without the parse tag, which `printValue` would print as data.
+export const nodeWithoutParse = (value: unknown): Node | undefined => {
+  if (typeof value !== 'object' || value === null || moduleOf(value)) {
+    return undefined;
+  }
+  if (isParsedNode(value)) {
+    return value;
+  }
+  for (const item of Object.values(value)) {
+    const node = nodeWithoutParse(item);
+    if (node) {
+      return node;
+    }
+  }
+  return undefined;
+};
+
+export const UNRESOLVED = Symbol('unresolved');
+
+export const isCopySafeSpread = (node: Node): boolean => {
+  const value = unwrapExpression(node);
+  switch (value.type) {
+    case 'Identifier':
+    case 'Literal':
+    case 'ArrowFunctionExpression':
+    case 'FunctionExpression':
+      return true;
+    case 'ChainExpression':
+      return isCopySafeSpread(value.expression);
+    case 'MemberExpression':
+      return !value.computed && isCopySafeSpread(value.object);
+    case 'ObjectExpression':
+      return value.properties.every((property) => {
+        if (property.type === 'SpreadElement') {
+          return isCopySafeSpread(property.argument);
+        }
+        return (
+          property.kind !== 'get' &&
+          staticKey(property) !== undefined &&
+          isCopySafeSpread(property.value)
+        );
+      });
+    case 'ArrayExpression':
+      return value.elements.every(
+        (element) =>
+          element === null || (element.type !== 'SpreadElement' && isCopySafeSpread(element))
+      );
+    default:
+      return false;
+  }
+};
+
+/** Whether evaluating the expression can have no side effect, so it may be moved freely. */
+export const isEvaluationInert = (node: Node): boolean => {
+  const value = unwrapExpression(node);
+  if (value.type === 'TemplateLiteral') {
+    return value.expressions.length === 0;
+  }
+  if (
+    value.type === 'Literal' ||
+    value.type === 'FunctionExpression' ||
+    value.type === 'ArrowFunctionExpression'
+  ) {
+    return true;
+  }
+  if (value.type === 'UnaryExpression') {
+    return ['!', 'void', 'typeof'].includes(value.operator)
+      ? isEvaluationInert(value.argument)
+      : isNumericLiteral(unwrapExpression(value.argument));
+  }
+  if (value.type === 'ArrayExpression') {
+    return value.elements.every((element) => element === null || isEvaluationInert(element));
+  }
+  if (value.type === 'ObjectExpression') {
+    return value.properties.every(
+      (property) =>
+        property.type === 'Property' &&
+        property.kind === 'init' &&
+        !property.method &&
+        !property.computed &&
+        staticKey(property) !== undefined &&
+        isEvaluationInert(property.value)
+    );
+  }
+  return false;
+};
+
+// `reading` holds the values being read, so a constant that contains itself is unresolved.
+export const readValue = (
+  scopes: ScopeInfo,
+  node: Node,
+  reading = new Set<Node>()
+): CsfValue | typeof UNRESOLVED => {
+  const value = resolveExpression(scopes, node, 'read');
+  if (!value || reading.has(value)) {
+    return UNRESOLVED;
+  }
+  reading.add(value);
+  const result = readResolved(scopes, value, reading);
+  reading.delete(value);
+  return result;
+};
+
+const readResolved = (
+  scopes: ScopeInfo,
+  value: Node,
+  reading: Set<Node>
+): CsfValue | typeof UNRESOLVED => {
+  if (value.type === 'Literal') {
+    if ('regex' in value || 'bigint' in value) {
+      return UNRESOLVED;
+    }
+    return (value as E.StringLiteral | E.NumericLiteral | E.BooleanLiteral | E.NullLiteral).value;
+  }
+  if (value.type === 'Identifier') {
+    return value.name === 'undefined' ? undefined : UNRESOLVED;
+  }
+  if (value.type === 'TemplateLiteral' && value.expressions.length === 0) {
+    return value.quasis[0].value.cooked ?? UNRESOLVED;
+  }
+  if (value.type === 'UnaryExpression') {
+    const argument = readValue(scopes, value.argument, reading);
+    if (typeof argument !== 'number') {
+      return UNRESOLVED;
+    }
+    if (value.operator === '-') {
+      return -argument;
+    }
+    return value.operator === '+' ? argument : UNRESOLVED;
+  }
+  if (value.type === 'ArrayExpression') {
+    const elements: CsfValue[] = [];
+    for (const element of value.elements) {
+      if (!element) {
+        elements.length++;
+        continue;
+      }
+      const item = readValue(
+        scopes,
+        element.type === 'SpreadElement' ? element.argument : element,
+        reading
+      );
+      if (item === UNRESOLVED) {
+        return UNRESOLVED;
+      }
+      if (element.type === 'SpreadElement') {
+        if (!Array.isArray(item)) {
+          return UNRESOLVED;
+        }
+        elements.push(...item);
+      } else {
+        elements.push(item);
+      }
+    }
+    return elements;
+  }
+  if (value.type === 'ObjectExpression') {
+    const entries: [string, CsfValue][] = [];
+    for (const property of value.properties) {
+      if (property.type === 'SpreadElement') {
+        const spread = readValue(scopes, property.argument, reading);
+        if (typeof spread !== 'object' || spread === null || Array.isArray(spread)) {
+          return UNRESOLVED;
+        }
+        entries.push(...Object.entries(spread));
+        continue;
+      }
+      const key = staticKey(property);
+      if (
+        property.kind !== 'init' ||
+        property.method ||
+        key === undefined ||
+        (key === '__proto__' && !property.computed)
+      ) {
+        return UNRESOLVED;
+      }
+      const item = readValue(scopes, property.value, reading);
+      if (item === UNRESOLVED) {
+        return UNRESOLVED;
+      }
+      entries.push([key, item]);
+    }
+    return Object.fromEntries(entries);
+  }
+  return UNRESOLVED;
+};
+
+// Follows identifiers to the initializers of their constants. An edit through a constant changes
+// every user of it, so a `write` follows only a constant this identifier is the one reference of.
+export const resolveExpression = (
+  scopes: ScopeInfo,
+  node: Node,
+  access: 'read' | 'write' = 'write'
+): Node | undefined => {
+  let value = unwrapExpression(node);
+  const visited = new Set<Node>();
+  while (isIdentifier(value) && !visited.has(value)) {
+    visited.add(value);
+    const binding = scopes.bindingOf(value);
+    if (!binding && value.name === 'undefined') {
+      return value;
+    }
+    if (
+      !binding?.constant ||
+      (access === 'write' &&
+        (binding.references.length !== 1 || binding.references[0] !== value)) ||
+      binding.node.type !== 'VariableDeclarator' ||
+      binding.node.id.type !== 'Identifier' ||
+      !binding.node.init
+    ) {
+      return undefined;
+    }
+    value = unwrapExpression(binding.node.init);
+  }
+  return value;
+};

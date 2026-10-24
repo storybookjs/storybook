@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 
 import { STORIES_COLLAPSE_ALL, STORIES_EXPAND_ALL } from 'storybook/internal/core-events';
 
-import type { StoriesHash } from 'storybook/manager-api';
+import type { IndexHash } from 'storybook/manager-api';
 import { useStorybookApi } from 'storybook/manager-api';
 
 import { getAncestorIds } from '../../utils/tree.ts';
@@ -17,7 +17,7 @@ export interface ExpandAction {
 }
 
 export interface ExpandedProps {
-  data: StoriesHash;
+  data: IndexHash;
   selectedStoryId: string | null;
 }
 
@@ -26,7 +26,7 @@ const initializeExpanded = ({
   initialExpanded,
   selectedStoryId,
 }: {
-  data: StoriesHash;
+  data: IndexHash;
   initialExpanded: ExpandedState;
   selectedStoryId: string | null;
 }) => {
@@ -60,7 +60,7 @@ export const useExpanded = ({
   const [expanded, setExpanded] = useReducer<
     Reducer<ExpandedState, ExpandAction>,
     {
-      data: StoriesHash;
+      data: IndexHash;
       initialExpanded: ExpandedState;
       selectedStoryId: string | null;
     }

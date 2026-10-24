@@ -7,6 +7,7 @@ import type {
   extractSvelteASTNodes,
 } from '../../../parser/extract/svelte/nodes.ts';
 import { getStoryContentRawCode } from '../../../parser/analyse/story/content.ts';
+import type { StoryContent } from '../../../parser/analyse/story/extend.ts';
 import {
   appendASTProperty,
   createASTObjectExpression,
@@ -19,6 +20,7 @@ interface Params {
       svelte: SvelteASTNodes['storyComponents'][number];
       compiled: Awaited<ReturnType<typeof extractStoriesNodesFromExportDefaultFn>>[number];
     };
+    content?: StoryContent;
     svelte: Awaited<ReturnType<typeof extractSvelteASTNodes>>;
   };
   filename?: string;
@@ -31,7 +33,7 @@ interface Params {
  */
 export function insertSvelteCSFToStoryParameters(params: Params) {
   const { nodes, filename, originalCode } = params;
-  const { component, svelte } = nodes;
+  const { component, content, svelte } = nodes;
 
   const storyPropsObjectExpression = getStoryPropsObjectExpression({
     node: component.compiled,
@@ -53,9 +55,10 @@ export function insertSvelteCSFToStoryParameters(params: Params) {
 
   const rawCode = getStoryContentRawCode({
     nodes: {
-      component: component.svelte.component,
+      component: content?.component ?? component.svelte.component,
       svelte,
     },
+    asChild: content?.asChild,
     originalCode,
   });
 

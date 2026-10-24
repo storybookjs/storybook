@@ -4,15 +4,15 @@ import { runInNewContext } from 'node:vm';
 
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { generate, parser } from 'storybook/internal/babel';
-import { loadCsf, printCsf, readCsf } from 'storybook/internal/csf-tools';
+import { loadCsf, parseExpression, printCsf, readCsf, textOf } from 'storybook/internal/csf-tools';
 
 import { transformSync } from 'esbuild';
 import { format } from 'prettier';
 
+import { duplicateStoryWithNewName } from './duplicate-story-with-new-name.ts';
 import { getDiff } from './getDiff.ts';
 import { updateArgsInCsfFile } from './update-args-in-csf-file.ts';
-import { SaveStoryError } from './utils.ts';
+import { SaveStoryError, assertApplied } from './utils.ts';
 
 const makeTitle = (userTitle: string) => userTitle;
 
@@ -20,7 +20,7 @@ const FILES = {
   typescriptConstructs: join(__dirname, 'mocks/typescript-constructs.stories.tsx'),
   csfVariances: join(__dirname, 'mocks/csf-variances.stories.tsx'),
   csf4Variances: join(__dirname, 'mocks/csf4-variances.stories.tsx'),
-  unsupportedCsfVariances: join(__dirname, 'mocks/unsupported-csf-variances.stories.tsx'),
+  csf2Variances: join(__dirname, 'mocks/csf2-variances.stories.tsx'),
   exportVariances: join(__dirname, 'mocks/export-variances.stories.tsx'),
   dataVariances: join(__dirname, 'mocks/data-variances.stories.tsx'),
 };
@@ -36,10 +36,9 @@ describe('success', () => {
 
     const parsed = CSF.parse();
     const names = Object.keys(parsed._stories);
-    const nodes = names.map((name) => CSF.getStoryExport(name));
 
-    nodes.forEach((node) => {
-      updateArgsInCsfFile(node, newArgs);
+    names.forEach((name) => {
+      updateArgsInCsfFile(parsed, name, newArgs);
     });
 
     const after = await format(printCsf(parsed).code, {
@@ -99,17 +98,188 @@ describe('success', () => {
         "
     `);
   });
-  test('Unsupported CSF Variances', async () => {
+  test('re-exported story', () => {
+    const parsed = loadCsf(
+      `export default { title: 'X' };\nconst Local = { args: { a: 1 } };\nexport { Local as Alias };`,
+      { makeTitle }
+    ).parse();
+
+    updateArgsInCsfFile(parsed, 'Alias', { a: 2 });
+
+    expect(printCsf(parsed).code).toMatchInlineSnapshot(`
+      "export default { title: 'X' };
+      const Local = { args: { a: 2 } };
+      export { Local as Alias };"
+    `);
+  });
+  test('story whose args spread another story', () => {
+    const parsed = loadCsf(
+      [
+        `export default { title: 'X' };`,
+        `export const Base = { args: { a: 1 } };`,
+        `export const Spread = { ...Base };`,
+        `export const SpreadArgs = { args: { ...Base.args, a: 2 } };`,
+      ].join('\n'),
+      { makeTitle }
+    ).parse();
+
+    updateArgsInCsfFile(parsed, 'Spread', { b: 2 });
+    updateArgsInCsfFile(parsed, 'SpreadArgs', { a: 3, b: 3 });
+
+    expect(printCsf(parsed).code).toMatchInlineSnapshot(`
+      "export default { title: 'X' };
+      export const Base = { args: { a: 1 } };
+      export const Spread = { ...Base, args: { ...Base?.args, b: 2 } };
+      export const SpreadArgs = { args: { ...Base.args, a: 3, b: 3 } };"
+    `);
+  });
+  test('refuses an arg a later spread could override, leaving the story as it was', () => {
+    const source = [
+      `export default { title: 'X' };`,
+      `export const Base = { args: { a: 1 } };`,
+      `export const A = { args: { a: 1, ...Base.args } };`,
+    ].join('\n');
+    const parsed = loadCsf(source, { makeTitle }).parse();
+
+    expect(() =>
+      updateArgsInCsfFile(parsed, 'A', { c: 2, a: 2 })
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Cannot save arg "a" of story A because a spread in the story could override it.]`
+    );
+    expect(printCsf(parsed).code).toBe(source);
+    expect(parsed.changed).toBe(false);
+  });
+  test('story exported under two names is saved through its first export', () => {
+    const parsed = loadCsf(
+      [
+        `export default { title: 'X' };`,
+        `export const Primary = { args: { a: 1 } };`,
+        `export { Primary as Secondary };`,
+      ].join('\n'),
+      { makeTitle }
+    ).parse();
+
+    updateArgsInCsfFile(parsed, 'Primary', { a: 2 });
+
+    expect(printCsf(parsed).code).toMatchInlineSnapshot(`
+      "export default { title: 'X' };
+      export const Primary = { args: { a: 2 } };
+      export { Primary as Secondary };"
+    `);
+  });
+  test('refuses the second export of a story, leaving the file as it was', () => {
+    const source = [
+      `export default { title: 'X' };`,
+      `export const Primary = { args: { a: 1 } };`,
+      `export { Primary as Secondary };`,
+    ].join('\n');
+    const parsed = loadCsf(source, { makeTitle }).parse();
+
+    expect(() =>
+      updateArgsInCsfFile(parsed, 'Secondary', { a: 2 })
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Cannot save story Secondary because it is the same story as Primary. Save Primary instead.]`
+    );
+    expect(printCsf(parsed).code).toBe(source);
+    expect(parsed.changed).toBe(false);
+  });
+  test('arg value shaped like an AST node is written as data', () => {
+    const parsed = loadCsf(`export default { title: 'X' };\nexport const A = {};`, {
+      makeTitle,
+    }).parse();
+
+    updateArgsInCsfFile(parsed, 'A', { node: { type: 'Identifier', name: 'x' } });
+
+    expect(printCsf(parsed).code).toMatchInlineSnapshot(`
+      "export default { title: 'X' };
+      export const A = { args: { node: { type: 'Identifier', name: 'x' } } };"
+    `);
+  });
+  test('factory story without an argument', () => {
+    const parsed = loadCsf(
+      [
+        `import preview from '#.storybook/preview';`,
+        `const meta = preview.meta({ title: 'X' });`,
+        `export const A = meta.story();`,
+      ].join('\n'),
+      { makeTitle }
+    ).parse();
+
+    updateArgsInCsfFile(parsed, 'A', { a: 1, b: 'x' });
+
+    expect(printCsf(parsed).code).toMatchInlineSnapshot(`
+      "import preview from '#.storybook/preview';
+      const meta = preview.meta({ title: 'X' });
+      export const A = meta.story({ args: { a: 1, b: 'x' } });"
+    `);
+  });
+  test('new story from a factory story without an argument', () => {
+    const parsed = loadCsf(
+      [
+        `import preview from '#.storybook/preview';`,
+        `const meta = preview.meta({ title: 'X' });`,
+        `export const A = meta.story();`,
+      ].join('\n'),
+      { makeTitle }
+    ).parse();
+
+    duplicateStoryWithNewName(parsed, 'A', 'B');
+    updateArgsInCsfFile(parsed, 'B', { a: 1 });
+
+    expect(printCsf(parsed).code).toMatchInlineSnapshot(`
+      "import preview from '#.storybook/preview';
+      const meta = preview.meta({ title: 'X' });
+      export const A = meta.story();
+      export const B = meta.story({ args: { a: 1 } });"
+    `);
+  });
+  test('reports why a story cannot be edited', () => {
+    const parsed = loadCsf(
+      [
+        `import preview from '#.storybook/preview';`,
+        `const meta = preview.meta({ title: 'X' });`,
+        `const config = {};`,
+        `export const A = meta.story(config);`,
+      ].join('\n'),
+      { makeTitle }
+    ).parse();
+
+    expect(() => updateArgsInCsfFile(parsed, 'A', { a: 1 })).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Cannot save story A because its configuration is not written inline in this file.]`
+    );
+  });
+  test('CSF2 Variances', async () => {
     const newArgs = { bordered: true, initial: 'test1' };
 
-    const CSF = await readCsf(FILES.unsupportedCsfVariances, { makeTitle });
+    const before = await format(await readFile(FILES.csf2Variances, 'utf-8'), {
+      parser: 'typescript',
+    });
+    const CSF = await readCsf(FILES.csf2Variances, { makeTitle });
     const parsed = CSF.parse();
     const names = Object.keys(parsed._stories);
-    const nodes = names.map((name) => CSF.getStoryExport(name));
 
-    for (const node of nodes) {
-      await expect(() => updateArgsInCsfFile(node, newArgs)).rejects.toThrowError();
-    }
+    names.forEach((name) => {
+      updateArgsInCsfFile(parsed, name, newArgs);
+    });
+
+    const after = await format(printCsf(parsed).code, {
+      parser: 'typescript',
+    });
+
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  ...
+        }> = (props) => <pre>{JSON.stringify(props)}</pre>;
+        
+        export const CSF2 = () => <MyComponent absolute bordered initial="test2" />;
+        
+      + CSF2.args = { bordered: true, initial: "test1" };
+      + 
+        
+        export const CSF2b = CSF2.bind({});
+        
+      + CSF2b.args = { bordered: true, initial: "test1" };
+      + "
+    `);
   });
   test('CSF Variances', async () => {
     const newArgs = { bordered: true, initial: 'test1' };
@@ -121,10 +291,9 @@ describe('success', () => {
 
     const parsed = CSF.parse();
     const names = Object.keys(parsed._stories);
-    const nodes = names.map((name) => CSF.getStoryExport(name));
 
-    nodes.forEach((node) => {
-      updateArgsInCsfFile(node, newArgs);
+    names.forEach((name) => {
+      updateArgsInCsfFile(parsed, name, newArgs);
     });
 
     const after = await format(printCsf(parsed).code, {
@@ -145,21 +314,14 @@ describe('success', () => {
       - export const Empty = {} satisfies Story;
       - 
       + export const Empty = {
-      +   args: {
-      +     bordered: true,
-      +     initial: "test1",
-      +   },
+      +   args: { bordered: true, initial: "test1" },
       + } satisfies Story;
       + 
         
         export const EmptyWithComment = {
+          // this is a useless comment, to test that it is preserved
         
-      -   // this is a useless comment, to test that it is preserved
-      - 
-      +   args: {
-      +     bordered: true,
-      +     initial: "test1",
-      +   },
+      +   args: { bordered: true, initial: "test1" },
       + 
         } satisfies Story;
         
@@ -174,14 +336,10 @@ describe('success', () => {
         } satisfies Story;
         
         export const RenderNoArgs = {
-        
-      +   args: {
-      +     bordered: true,
-      +     initial: "test1",
-      +   },
-      + 
-      + 
           render: (args) => <MyComponent {...args} />,
+        
+      +   args: { bordered: true, initial: "test1" },
+      + 
         } satisfies Story;
         
         export const RenderArgs = {
@@ -247,10 +405,9 @@ describe('success', () => {
 
     const parsed = CSF.parse();
     const names = Object.keys(parsed._stories);
-    const nodes = names.map((name) => CSF.getStoryExport(name));
 
-    nodes.forEach((node) => {
-      updateArgsInCsfFile(node, newArgs);
+    names.forEach((name) => {
+      updateArgsInCsfFile(parsed, name, newArgs);
     });
 
     const after = await format(printCsf(parsed).code, {
@@ -270,12 +427,7 @@ describe('success', () => {
         
       - export const Empty = meta.story({});
       - 
-      + export const Empty = meta.story({
-      +   args: {
-      +     bordered: true,
-      +     initial: "test1",
-      +   },
-      + });
+      + export const Empty = meta.story({ args: { bordered: true, initial: "test1" } });
       + 
         export const WithArgs = meta.story({
           args: {
@@ -308,13 +460,9 @@ describe('success', () => {
 
     const parsed = CSF.parse();
     const names = Object.keys(parsed._stories);
-    const nodes = names.map((name) => CSF.getStoryExport(name));
 
-    nodes.forEach((node) => {
-      if (node === undefined) {
-        return;
-      }
-      updateArgsInCsfFile(node, newArgs);
+    names.forEach((name) => {
+      updateArgsInCsfFile(parsed, name, newArgs);
     });
 
     const after = await format(printCsf(parsed).code, {
@@ -341,6 +489,28 @@ describe('success', () => {
         };
         
         const BlockExport: Story = {
+          args: {
+        
+      -     initial: "bar",
+      - 
+      +     initial: "test1",
+      +     bordered: true,
+      + 
+          },
+        };
+        
+        const NotYetRenamedExport: Story = {
+          args: {
+        
+      -     initial: "bar",
+      - 
+      +     initial: "test1",
+      +     bordered: true,
+      + 
+          },
+        };
+        
+        export { BlockExport, NotYetRenamedExport as RenamedExport };
         ..."
     `);
   });
@@ -349,7 +519,7 @@ describe('success', () => {
       myArray: ['FOO', 'BAR'],
       myArrayDeep: [['FOO'], ['BAR']],
       myBoolean: true,
-      myFunction: () => {},
+      myFunction: parseExpression('() => {}'),
       myNull: null,
       myNumber: 41,
       myObject: {
@@ -366,13 +536,9 @@ describe('success', () => {
 
     const parsed = CSF.parse();
     const names = Object.keys(parsed._stories);
-    const nodes = names.map((name) => CSF.getStoryExport(name));
 
-    nodes.forEach((node) => {
-      if (node === undefined) {
-        return;
-      }
-      updateArgsInCsfFile(node, newArgs);
+    names.forEach((name) => {
+      updateArgsInCsfFile(parsed, name, newArgs);
     });
 
     const after = await format(printCsf(parsed).code, {
@@ -400,19 +566,13 @@ describe('success', () => {
             myNull: null,
         
       -     myNumber: 42,
-      - 
-      +     myNumber: 41,
-      + 
-            myObject: {
-        
+      -     myObject: {
       -       foo: "bar",
-      - 
-      +       FOO: "BAR",
-      + 
-            },
-        
+      -     },
       -     myString: "foo",
       - 
+      +     myNumber: 41,
+      +     myObject: { FOO: "BAR" },
       +     myString: "FOO",
       + 
             myUndefined: undefined,
@@ -430,11 +590,7 @@ describe('success', () => {
       +     myFunction: () => {},
       +     myNull: null,
       +     myNumber: 41,
-      + 
-      +     myObject: {
-      +       FOO: "BAR",
-      +     },
-      + 
+      +     myObject: { FOO: "BAR" },
       +     myString: "FOO",
       +     myUndefined: undefined,
       +   },
@@ -442,6 +598,101 @@ describe('success', () => {
         } satisfies Story;
         "
     `);
+  });
+});
+
+describe('refusal messages', () => {
+  // Saves `a: 2` on `story` of `source`, and returns the error the controls panel shows.
+  const refusal = (source: string[], story = 'A') => {
+    const code = [`export default { title: 'X' };`, ...source].join('\n');
+    const parsed = loadCsf(code, { makeTitle }).parse();
+    let error: unknown;
+    try {
+      updateArgsInCsfFile(parsed, story, { a: 2 });
+    } catch (thrown) {
+      error = thrown;
+    }
+    expect(error).toBeInstanceOf(SaveStoryError);
+    expect(printCsf(parsed).code).toBe(code);
+    return error as SaveStoryError;
+  };
+
+  test('names the arg a spread could override, and keeps the diagnostic as the cause', () => {
+    const error = refusal([
+      `const Base = { args: {} };`,
+      `export const A = { args: { a: 1, ...Base.args } };`,
+    ]);
+    expect(error.message).toBe(
+      'Cannot save arg "a" of story A because a spread in the story could override it.'
+    );
+    expect(error.cause).toMatchObject({
+      code: 'spread-field',
+      message: 'Cannot mutate args.a because the target contains spread field',
+    });
+  });
+
+  test('explains args in a constant that other stories share', () => {
+    expect(
+      refusal([
+        `const shared = { a: 1 };`,
+        `export const A = { args: shared };`,
+        `export const B = { args: shared };`,
+      ]).message
+    ).toBe(
+      'Cannot save arg "a" of story A because the args of the story are not an object written in the story itself, for example a constant that other stories share.'
+    );
+  });
+
+  test('explains two args fields', () => {
+    expect(refusal([`export const A = { args: { a: 1 }, args: { b: 1 } };`]).message).toBe(
+      'Cannot save arg "a" of story A because the story sets it more than once.'
+    );
+  });
+
+  test('names the story an alias stands for', () => {
+    expect(refusal([`export const P = { args: { a: 1 } };`, `export const A = P;`]).message).toBe(
+      'Cannot save story A because it is the same story as P. Save P instead.'
+    );
+  });
+
+  test('names the first export of a binding that is not a story of its own', () => {
+    expect(
+      refusal([`const Local = { args: { a: 1 } };`, `export { Local as A, Local as B };`], 'B')
+        .message
+    ).toBe('Cannot save story B because it is the same story as A. Save A instead.');
+  });
+
+  test('explains a story that other code in the file changes', () => {
+    expect(refusal([`export const A = { args: {} };`, `A.args.x = 1;`]).message).toBe(
+      'Cannot save story A because other code in the file changes or shares the story.'
+    );
+  });
+
+  test('explains a story re-exported from another file', () => {
+    expect(refusal([`export { A } from './other';`]).message).toBe(
+      'Cannot save story A because its configuration is not written inline in this file.'
+    );
+  });
+
+  test('explains an edit that would leave an invalid story file', () => {
+    const diagnostic = {
+      code: 'invalid-csf',
+      target: { kind: 'story', exportName: 'A', localName: 'A' },
+      path: ['args', 'a'],
+      message: 'Edited args.a, but the result is not valid CSF: reason',
+    } as const;
+    expect(() =>
+      assertApplied('A', { ok: false, changed: false, diagnostic })
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Cannot save arg "a" of story A because the result would not be a valid story file.]`
+    );
+    expect(() =>
+      assertApplied('A', {
+        ok: false,
+        changed: false,
+        diagnostic: { ...diagnostic, code: 'cyclic-move' },
+      })
+    ).toThrowError(diagnostic.message);
   });
 });
 
@@ -456,34 +707,32 @@ describe.each([
     makeBase.mockReturnValue({ args: { label: 'base' } });
   });
 
-  test.each(['args', '"args"', '["args"]'])(
-    'updates %s without duplicating fields',
-    async (key) => {
-      const node = parser.parseExpression(story(`{ ${key}: { "label": "old", size: "small" } }`), {
-        plugins: ['typescript'],
-      });
-      const expected = parser.parseExpression(
-        story(`{ ${key}: { "label": "saved", size: "small" } }`),
-        {
-          plugins: ['typescript'],
-        }
-      );
+  const parseStory = (source: string) =>
+    loadCsf(
+      `${
+        variant === 'CSF4'
+          ? `import preview from '#.storybook/preview'; const meta = preview.meta({ title: 'Button' });`
+          : `export default { title: 'Button' };`
+      }
+     export const Saved = ${source};`,
+      { makeTitle }
+    ).parse();
 
-      await updateArgsInCsfFile(node, { label: 'saved' });
+  test.each(['args', '"args"', '["args"]'])('updates %s without duplicating fields', (key) => {
+    const csf = parseStory(story(`{ ${key}: { "label": "old", size: "small" } }`));
+    const expected = parseStory(story(`{ ${key}: { "label": "saved", size: "small" } }`));
 
-      expect(generate(node).code).toBe(generate(expected).code);
-    }
-  );
+    updateArgsInCsfFile(csf, 'Saved', { label: 'saved' });
 
-  test('preserves computed identifier keys', async () => {
-    const node = parser.parseExpression(
-      story('{ [args]: { label: "nested" }, args: { [label]: "keep" } }'),
-      { plugins: ['typescript'] }
-    );
+    expect(printCsf(csf).code).toBe(printCsf(expected).code);
+  });
 
-    await updateArgsInCsfFile(node, { label: 'saved' });
+  test('preserves computed identifier keys', () => {
+    const csf = parseStory(story('{ [args]: { label: "nested" }, args: { [label]: "keep" } }'));
 
-    const { code } = transformSync(`(${generate(node).code})`, { loader: 'ts' });
+    updateArgsInCsfFile(csf, 'Saved', { label: 'saved' });
+
+    const { code } = transformSync(`(${textOf(csf.getStoryExport('Saved'))})`, { loader: 'ts' });
     const result = runInNewContext(code, {
       args: 'parameters',
       label: 'other',
@@ -515,24 +764,20 @@ describe.each([
     '...{ args: { value: new Factory() } }',
     '...{ args: { values: [makeBase()] } }',
     '...{ args: { value: `${makeBase()}` } }',
-  ])('rejects saving through an unsafe spread: %s', async (properties) => {
-    const node = parser.parseExpression(story(`{ ${properties} }`), {
-      plugins: ['typescript'],
-      allowAwaitOutsideFunction: true,
-    });
-    const before = generate(node).code;
+  ])('rejects saving through an unsafe spread: %s', (properties) => {
+    const csf = parseStory(story(`{ ${properties} }`));
+    const before = printCsf(csf).code;
 
-    await expect(updateArgsInCsfFile(node, { label: 'saved' })).rejects.toThrow(SaveStoryError);
+    expect(() => updateArgsInCsfFile(csf, 'Saved', { label: 'saved' })).toThrow(SaveStoryError);
 
-    expect(generate(node).code).toBe(before);
+    expect(printCsf(csf).code).toBe(before);
+    expect(csf.changed).toBe(false);
   });
 
-  test('explains which spread prevents saving and how to proceed', async () => {
-    const node = parser.parseExpression(story('{ ...makeBase().input }'), {
-      plugins: ['typescript'],
-    });
+  test('explains which spread prevents saving and how to proceed', () => {
+    const csf = parseStory(story('{ ...makeBase().input }'));
 
-    await expect(updateArgsInCsfFile(node, { label: 'saved' })).rejects.toThrow(
+    expect(() => updateArgsInCsfFile(csf, 'Saved', { label: 'saved' })).toThrow(
       'Cannot save args: the spread `...makeBase().input` cannot be copied safely. Add an `args` property after it, or edit args manually.'
     );
   });
@@ -543,14 +788,12 @@ describe.each([
     'render() { return makeBase(); }',
     '["render"]() { return makeBase(); }',
     'render: (value = makeBase()) => value',
-  ])('preserves deferred calls in spread callbacks: %s', async (render) => {
-    const node = parser.parseExpression(story(`{ ...{ args: { size: "large" }, ${render} } }`), {
-      plugins: ['typescript'],
-    });
+  ])('preserves deferred calls in spread callbacks: %s', (render) => {
+    const csf = parseStory(story(`{ ...{ args: { size: "large" }, ${render} } }`));
 
-    await updateArgsInCsfFile(node, { label: 'saved' });
+    updateArgsInCsfFile(csf, 'Saved', { label: 'saved' });
 
-    const { code } = transformSync(`(${generate(node).code})`, { loader: 'ts' });
+    const { code } = transformSync(`(${textOf(csf.getStoryExport('Saved'))})`, { loader: 'ts' });
     const result = runInNewContext(code, { makeBase, meta: { story: (input: unknown) => input } });
     expect(result.args).toEqual({ size: 'large', label: 'saved' });
     expect(makeBase).not.toHaveBeenCalled();
@@ -561,16 +804,11 @@ describe.each([
 
   test.each(['', ', ...WithoutArgs'])(
     'does not repeat a call before local args: %s',
-    async (laterSpread) => {
-      const node = parser.parseExpression(
-        story(`{ ...makeBase(), args: { label: "old" } ${laterSpread} }`),
-        {
-          plugins: ['typescript'],
-        }
-      );
-      await updateArgsInCsfFile(node, { label: 'saved' });
+    (laterSpread) => {
+      const csf = parseStory(story(`{ ...makeBase(), args: { label: "old" } ${laterSpread} }`));
+      updateArgsInCsfFile(csf, 'Saved', { label: 'saved' });
 
-      const { code } = transformSync(`(${generate(node).code})`, { loader: 'ts' });
+      const { code } = transformSync(`(${textOf(csf.getStoryExport('Saved'))})`, { loader: 'ts' });
       const result = runInNewContext(code, {
         makeBase,
         WithoutArgs: {},
@@ -695,21 +933,23 @@ describe.each([
     };
     const newArgs = { label: 'saved' };
 
-    await updateArgsInCsfFile(csf.getStoryExport('Saved'), newArgs);
+    updateArgsInCsfFile(csf, 'Saved', newArgs);
 
     const saved = loadCsf(printCsf(csf).code, { makeTitle }).parse();
-    const expression = generate(saved.getStoryExport('Saved')).code;
+    const expression = textOf(saved.getStoryExport('Saved'));
     const { code } = transformSync(`(${expression})`, { loader: 'ts' });
     const result = runInNewContext(code, context);
 
     expect(result.args).toEqual({ ...expectedArgs, ...newArgs });
     expect(result.name).toBe('Saved story');
 
-    await updateArgsInCsfFile(saved.getStoryExport('Saved'), newArgs);
-    expect(printCsf(saved).code).toBe(printCsf(csf).code);
+    updateArgsInCsfFile(saved, 'Saved', newArgs);
+    expect(await format(printCsf(saved).code, { parser: 'typescript' })).toBe(
+      await format(printCsf(csf).code, { parser: 'typescript' })
+    );
 
-    await updateArgsInCsfFile(saved.getStoryExport('Saved'), { label: 'saved again' });
-    const updatedExpression = generate(saved.getStoryExport('Saved')).code;
+    updateArgsInCsfFile(saved, 'Saved', { label: 'saved again' });
+    const updatedExpression = textOf(saved.getStoryExport('Saved'));
     const updatedCode = transformSync(`(${updatedExpression})`, { loader: 'ts' }).code;
     const updated = runInNewContext(updatedCode, context);
     expect(updated.args).toEqual({ ...expectedArgs, label: 'saved again' });
@@ -723,18 +963,11 @@ test('prints composed args for a CSF3 story spread', async () => {
     { makeTitle }
   ).parse();
 
-  await updateArgsInCsfFile(csf.getStoryExport('Saved'), { label: 'saved' });
+  updateArgsInCsfFile(csf, 'Saved', { label: 'saved' });
 
   expect(await format(printCsf(csf).code, { parser: 'typescript' })).toMatchInlineSnapshot(`
     "export default { title: "Button" };
-    export const Saved = {
-      ...Base,
-
-      args: {
-        ...Base?.args,
-        label: "saved",
-      },
-    };
+    export const Saved = { ...Base, args: { ...Base?.args, label: "saved" } };
     "
   `);
 });
@@ -747,22 +980,18 @@ test('prints composed args for a CSF4 input spread', async () => {
     { makeTitle }
   ).parse();
 
-  await updateArgsInCsfFile(csf.getStoryExport('Saved'), { label: 'saved' });
+  updateArgsInCsfFile(csf, 'Saved', { label: 'saved' });
 
   expect(await format(printCsf(csf).code, { parser: 'typescript' })).toMatchInlineSnapshot(`
     "import preview from "#.storybook/preview";
     const meta = preview.meta({ title: "Button" });
     export const Saved = meta.story({
       ...Base.input,
-
-      args: {
-        ...Base.input?.args,
-        label: "saved",
-      },
+      args: { ...Base.input?.args, label: "saved" },
     });
     "
   `);
-  const expression = generate(csf.getStoryExport('Saved')).code;
+  const expression = textOf(csf.getStoryExport('Saved'));
   const result = runInNewContext(`(${expression})`, {
     Base: { input: { args: { label: 'base', size: 'large' } } },
     meta: { story: (input: unknown) => input },
@@ -771,57 +1000,107 @@ test('prints composed args for a CSF4 input spread', async () => {
 });
 
 describe('story expressions', () => {
+  const parseStory = (source: string) =>
+    loadCsf(
+      `import preview from '#.storybook/preview';
+       const meta = preview.meta({ title: 'Button' });
+       export const Base = meta.story({ args: { size: 'large' } });
+       export const Saved = ${source};`,
+      { makeTitle }
+    ).parse();
+
   test.each([
-    'meta.story({ args: { label: "old" } }) as Story',
-    'meta.story({ args: { label: "old" } } satisfies Story)',
-    'Base.extend({ args: { label: "old" } })',
-  ])('updates the story object in %s', async (source) => {
-    const node = parser.parseExpression(source, { plugins: ['typescript'] });
+    'meta.story({ args: { label: "old" }, ...Base.input }) as Story',
+    'meta.story({ args: { label: "old" }, ...Base.input } satisfies Story)',
+    'Base.extend({ args: { label: "old" }, ...Base.input })',
+  ])('updates the story object in %s', (source) => {
+    const csf = parseStory(source);
 
-    await updateArgsInCsfFile(node, { label: 'saved' });
+    updateArgsInCsfFile(csf, 'Saved', { label: 'saved' });
 
-    const { code } = transformSync(`(${generate(node).code})`, { loader: 'ts' });
+    const { code } = transformSync(`(${textOf(csf.getStoryExport('Saved'))})`, { loader: 'ts' });
     const result = runInNewContext(code, {
       meta: { story: (input: unknown) => input },
-      Base: { extend: (input: unknown) => input },
+      Base: { input: { args: { size: 'large' } }, extend: (input: unknown) => input },
     });
-    expect(result.args).toEqual({ label: 'saved' });
+    expect(result.args).toEqual({ size: 'large', label: 'saved' });
   });
 
   test.each([
     'meta.story(withDefaults({ args: { label: "old" } }))',
-    'meta.story()',
     'meta.story(storyArgs)',
     'meta.story(...[{ args: { label: "old" } }])',
-  ])('leaves unsupported story inputs unchanged: %s', async (source) => {
-    const node = parser.parseExpression(source);
-    const before = generate(node).code;
+    'meta.story({ args: { label: "old" }, [key]: {}, ...Base.input })',
+    'meta.story({ [key]: {}, ...Base.input })',
+    'meta.story({ args: { label: "old" }, args: {}, ...Base.input })',
+  ])('refuses unsupported story inputs without changing source: %s', (source) => {
+    const csf = parseStory(source);
+    const before = printCsf(csf).code;
 
-    await updateArgsInCsfFile(node, { label: 'saved' });
+    expect(() => updateArgsInCsfFile(csf, 'Saved', { label: 'saved' })).toThrow(SaveStoryError);
 
-    expect(generate(node).code).toBe(before);
+    expect(printCsf(csf).code).toBe(before);
+    expect(csf.changed).toBe(false);
   });
 
-  test('rejects a CSF2 story wrapped in a type assertion', async () => {
-    const node = parser.parseExpression('Template.bind({}) as Story', { plugins: ['typescript'] });
-
-    await expect(updateArgsInCsfFile(node, { label: 'saved' })).rejects.toThrow(SaveStoryError);
-  });
-
-  test('updates only top-level CSF4 args', async () => {
-    const node = parser.parseExpression(`meta.story({
+  test('updates only top-level CSF4 args', () => {
+    const csf = parseStory(`meta.story({
       args: { label: 'old', options: { label: 'nested' } },
       parameters: { args: { label: 'parameter' } },
     })`);
 
-    await updateArgsInCsfFile(node, { label: 'saved' });
+    updateArgsInCsfFile(csf, 'Saved', { label: 'saved' });
 
-    const result = runInNewContext(`(${generate(node).code})`, {
+    const result = runInNewContext(`(${textOf(csf.getStoryExport('Saved'))})`, {
       meta: { story: (input: unknown) => input },
     });
     expect(result).toEqual({
       args: { label: 'saved', options: { label: 'nested' } },
       parameters: { args: { label: 'parameter' } },
     });
+  });
+
+  test('rolls back composed args when a later arg cannot be saved', () => {
+    const csf = parseStory('meta.story({ args: { label: "old" }, ...Base.input })');
+    const before = printCsf(csf).code;
+
+    expect(() =>
+      updateArgsInCsfFile(csf, 'Saved', {
+        label: 'saved',
+        ['__proto__']: 'invalid',
+      })
+    ).toThrow(SaveStoryError);
+
+    expect(printCsf(csf).code).toBe(before);
+    expect(csf.changed).toBe(false);
+  });
+
+  test('preserves comments when moving args after a spread', async () => {
+    const csf = parseStory(`meta.story({
+      // Local defaults
+      args: {
+        label: 'old',
+        // Keep this option
+        disabled: true,
+      },
+      ...Base.input,
+    })`);
+
+    updateArgsInCsfFile(csf, 'Saved', { label: 'saved' });
+
+    expect(await format(textOf(csf.getStoryExport('Saved')), { parser: 'typescript' }))
+      .toMatchInlineSnapshot(`
+      "meta.story({
+        ...Base.input,
+        // Local defaults
+        args: {
+          // Keep this option
+          disabled: true,
+          ...Base.input?.args,
+          label: "saved",
+        },
+      });
+      "
+    `);
   });
 });

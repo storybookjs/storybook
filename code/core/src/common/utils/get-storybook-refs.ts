@@ -44,8 +44,11 @@ export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>
   );
 };
 
-// The manager build waits for this check, so a slow ref is treated as unreachable: the manager
-// then discovers it at runtime, as it does for a private one.
+// The manager build waits for this check, so a ref that does not answer in time is left `unknown`
+// rather than `server-checked`: the manager then loads it at runtime with credentials, as it does a
+// private ref, which a public host without `Access-Control-Allow-Credentials` refuses, and a failed
+// `index.json` shows "Loading of ref failed" instead of falling back to auto-inject. Before the
+// budget, such a ref held the whole dev server.
 const REF_CHECK_TIMEOUT_MS = 3_000;
 
 export const checkRef = async (url: string) => {

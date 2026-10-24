@@ -44,9 +44,14 @@ export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>
   );
 };
 
+// The manager build waits for this check, so a slow ref is treated as unreachable: the manager
+// then discovers it at runtime, as it does for a private one.
+const REF_CHECK_TIMEOUT_MS = 3_000;
+
 export const checkRef = async (url: string) => {
   try {
-    const { ok, status } = await fetch(`${url}/iframe.html`);
+    const signal = AbortSignal.timeout(REF_CHECK_TIMEOUT_MS);
+    const { ok, status } = await fetch(`${url}/iframe.html`, { signal });
     if (!ok || status !== 200) {
       return false;
     }
@@ -54,6 +59,7 @@ export const checkRef = async (url: string) => {
     // so the status is ok, but if we'd ask for JSON we might get a response saying we need to authenticate.
     const data = await fetch(`${url}/iframe.html`, {
       headers: { Accept: 'application/json' },
+      signal,
     });
     if (!data.ok) {
       return true;

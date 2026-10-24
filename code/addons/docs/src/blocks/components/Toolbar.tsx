@@ -5,7 +5,7 @@ import { Button, Toolbar as SharedToolbar } from 'storybook/internal/components'
 
 import { ShareAltIcon, SyncIcon, ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
 
-import { styled } from 'storybook/theming/emotion';
+import { styled } from 'storybook/theming';
 
 import { getStoryHref } from '../getStoryHref';
 

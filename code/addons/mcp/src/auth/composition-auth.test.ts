@@ -808,16 +808,16 @@ describe('CompositionAuth', () => {
               )
         )
       );
-      vi.useFakeTimers();
-      try {
-        const pending = auth.initialize([
-          { id: 'stalled', title: 'Stalled', url: 'https://stalled.example.com' },
-        ]);
-        await vi.advanceTimersByTimeAsync(3_000);
-        await pending;
-      } finally {
-        vi.useRealTimers();
-      }
+      // Fake timers do not drive `AbortSignal.timeout`, so the signal it returns is stubbed and
+      // aborted by hand, which also pins the budget it was created with.
+      const controller = new AbortController();
+      const timeoutSpy = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal);
+      const pending = auth.initialize([
+        { id: 'stalled', title: 'Stalled', url: 'https://stalled.example.com' },
+      ]);
+      await vi.waitFor(() => expect(timeoutSpy).toHaveBeenCalledWith(3_000));
+      controller.abort(new DOMException('timed out', 'TimeoutError'));
+      await pending;
 
       expect(auth.requiresAuth).toBe(false);
       expect(warnSpy).toHaveBeenCalledWith(

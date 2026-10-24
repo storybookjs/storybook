@@ -788,6 +788,43 @@ describe('CompositionAuth', () => {
       expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('different OAuth server'));
     });
 
+    it('skips a ref whose OAuth metadata endpoint never answers', async () => {
+      const auth = new CompositionAuth();
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((url: string, init?: RequestInit) =>
+          url.endsWith('/manifests/components.json')
+            ? Promise.resolve({
+                ok: false,
+                status: 401,
+                headers: new Headers({
+                  'WWW-Authenticate':
+                    'Bearer resource_metadata="https://stalled.example.com/.well-known/oauth-protected-resource"',
+                }),
+              })
+            : new Promise((_resolve, reject) =>
+                init?.signal?.addEventListener('abort', () => reject(init.signal!.reason))
+              )
+        )
+      );
+      vi.useFakeTimers();
+      try {
+        const pending = auth.initialize([
+          { id: 'stalled', title: 'Stalled', url: 'https://stalled.example.com' },
+        ]);
+        await vi.advanceTimersByTimeAsync(3_000);
+        await pending;
+      } finally {
+        vi.useRealTimers();
+      }
+
+      expect(auth.requiresAuth).toBe(false);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Skipping composed ref "Stalled"')
+      );
+    });
+
     it('gracefully skips refs that fail during auth discovery', async () => {
       const auth = new CompositionAuth();
       const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});

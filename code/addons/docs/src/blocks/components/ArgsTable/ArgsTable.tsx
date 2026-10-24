@@ -84,6 +84,8 @@ export const TableWrapper = styled.table<{
 
     th: {
       color: theme.textMutedColor,
+      // Browsers center a th that inherits the initial text-align (`start`).
+      textAlign: 'start',
       paddingTop: 10,
       paddingBottom: 10,
       paddingInline: 15,

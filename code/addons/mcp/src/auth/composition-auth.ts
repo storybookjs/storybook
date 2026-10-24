@@ -67,8 +67,7 @@ export class AuthenticationError extends Error {
 }
 
 // Every probe fetch, OAuth discovery included, gets this budget, so `initialize` always settles and
-// a ref that does not answer in time is skipped like an unreachable one; the same budget core gives
-// a composed source's manifest fetch.
+// a ref that does not answer in time is skipped like an unreachable one.
 const REF_PROBE_TIMEOUT_MS = 3_000;
 
 export class CompositionAuth {
@@ -83,55 +82,46 @@ export class CompositionAuth {
   async initialize(refs: ComposedRef[]): Promise<void> {
     // Probed concurrently, read in config order: `buildSources` keeps that order and the first
     // authenticated ref decides the OAuth server.
-    const results = await Promise.all(
-      refs.map((ref) =>
-        this.#checkRef(ref.url).then(
-          (result) => ({ result }),
-          (error) => ({ error })
-        )
-      )
-    );
+    const outcomes = await Promise.allSettled(refs.map((ref) => this.#checkRef(ref.url)));
     for (const [index, ref] of refs.entries()) {
-      try {
-        const outcome = results[index];
-        if ('error' in outcome) {
-          throw outcome.error;
-        }
-        const { result } = outcome;
-        if (result === 'manifest-not-found') {
-          logger.warn(
-            `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): components manifest not found at ${ref.url}/manifests/components.json. Enable the \`componentsManifest\` feature on that Storybook to compose it into MCP.`
-          );
-          continue;
-        }
-        if (result === 'manifest-invalid') {
-          logger.warn(
-            `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): its components manifest failed validation. This usually means a version mismatch between the composed Storybook and this one — upgrade the older side.`
-          );
-          continue;
-        }
-
-        this.#refsWithManifests.push(ref);
-
-        if (result === 'public') continue;
-
-        // Auth required
-        this.#authRequiredUrls.push(ref.url);
-        if (!this.#authRequirement) {
-          this.#authRequirement = result;
-        } else {
-          const existingServer = this.#authRequirement.resourceMetadata.authorization_servers[0];
-          const newServer = result.resourceMetadata.authorization_servers[0];
-          if (existingServer !== newServer) {
-            logger.warn(
-              `[addon-mcp] Composed ref "${ref.title}" uses a different OAuth server (${newServer}) than the first authenticated ref (${existingServer}). Only the first OAuth server will be used for authentication.`
-            );
-          }
-        }
-      } catch (error) {
+      const outcome = outcomes[index];
+      if (outcome.status === 'rejected') {
+        const error = outcome.reason;
         logger.warn(
           `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): the ref could not be reached (${error instanceof Error ? error.message : String(error)}). Refs are only checked at dev-server boot — restart Storybook once the ref is reachable.`
         );
+        continue;
+      }
+      const result = outcome.value;
+      if (result === 'manifest-not-found') {
+        logger.warn(
+          `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): components manifest not found at ${ref.url}/manifests/components.json. Enable the \`componentsManifest\` feature on that Storybook to compose it into MCP.`
+        );
+        continue;
+      }
+      if (result === 'manifest-invalid') {
+        logger.warn(
+          `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): its components manifest failed validation. This usually means a version mismatch between the composed Storybook and this one — upgrade the older side.`
+        );
+        continue;
+      }
+
+      this.#refsWithManifests.push(ref);
+
+      if (result === 'public') continue;
+
+      // Auth required
+      this.#authRequiredUrls.push(ref.url);
+      if (!this.#authRequirement) {
+        this.#authRequirement = result;
+      } else {
+        const existingServer = this.#authRequirement.resourceMetadata.authorization_servers[0];
+        const newServer = result.resourceMetadata.authorization_servers[0];
+        if (existingServer !== newServer) {
+          logger.warn(
+            `[addon-mcp] Composed ref "${ref.title}" uses a different OAuth server (${newServer}) than the first authenticated ref (${existingServer}). Only the first OAuth server will be used for authentication.`
+          );
+        }
       }
     }
   }

@@ -24,6 +24,7 @@ import { dedent } from 'ts-dedent';
 import { AddonService } from '../services/index.ts';
 import { configureMain, configurePreview } from './configure.ts';
 import type { FrameworkOptions, GeneratorOptions } from './types.ts';
+import { resolveWebpack5AjvPackageToInstall } from './webpack5Ajv.ts';
 
 const defaultOptions = {
   extraPackages: [],
@@ -197,11 +198,20 @@ export async function baseGenerator(
         })
       : extraPackages;
 
+  // Hoisted ESLint ajv@6 breaks webpack's schema-utils → ajv-keywords (needs ajv@8).
+  // Install ajv@8 when missing; never overwrite a user-owned incompatible direct range.
+  // See: https://github.com/storybookjs/storybook/issues/36176
+  const webpack5AjvPackage = resolveWebpack5AjvPackageToInstall({
+    builder,
+    declaredAjvRange: packageJson.dependencies?.ajv ?? packageJson.devDependencies?.ajv,
+  });
+
   const allPackages = [
     'storybook',
     ...(installFrameworkPackages ? [frameworkPackage] : []),
     ...addonPackages,
     ...(extraPackagesToInstall || []),
+    ...(webpack5AjvPackage ? [webpack5AjvPackage] : []),
   ].filter(Boolean);
 
   const packagesToInstall = [...new Set(allPackages)].filter(

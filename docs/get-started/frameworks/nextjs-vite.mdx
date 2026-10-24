@@ -151,7 +151,7 @@ The following features are not supported (yet). Support for these features might
 - [fallback](https://nextjs.org/docs/pages/api-reference/components/font#fallback) option
 - [adjustFontFallback](https://nextjs.org/docs/pages/api-reference/components/font#adjustfontfallback) option
 - [preload](https://nextjs.org/docs/pages/api-reference/components/font#preload) option gets ignored. Storybook handles Font loading its own way.
-- [display](https://nextjs.org/docs/pages/api-reference/components/font#display) option gets ignored. All fonts are loaded with display set to "block" to make Storybook load the font properly.
+- [display](https://nextjs.org/docs/pages/api-reference/components/font#display) is respected (defaulting to `swap`); `optional` is loaded as `block` so fonts render reliably.
 
 #### Mocking fonts during testing
 

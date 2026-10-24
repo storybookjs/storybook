@@ -9,7 +9,7 @@ import { CopyIcon, MarkupIcon } from '@storybook/icons';
 
 import { useId } from 'react-aria/useId';
 import { darken } from 'polished';
-import { styled } from 'storybook/theming/emotion';
+import { styled } from 'storybook/theming';
 
 import type { SourceProps } from '.';
 import { Source } from '.';

@@ -66,6 +66,10 @@ export class AuthenticationError extends Error {
   }
 }
 
+// A ref that does not answer in time is skipped like an unreachable one; the same budget core
+// gives a composed source's manifest fetch.
+const REF_PROBE_TIMEOUT_MS = 3_000;
+
 export class CompositionAuth {
   #authRequirement: AuthRequirement | null = null;
   #authRequiredUrls: string[] = [];
@@ -76,9 +80,23 @@ export class CompositionAuth {
 
   /** Initialize by checking which refs require authentication and have manifests. */
   async initialize(refs: ComposedRef[]): Promise<void> {
-    for (const ref of refs) {
+    // Probed concurrently, read in config order: `buildSources` keeps that order and the first
+    // authenticated ref decides the OAuth server.
+    const results = await Promise.all(
+      refs.map((ref) =>
+        this.#checkRef(ref.url).then(
+          (result) => ({ result }),
+          (error) => ({ error })
+        )
+      )
+    );
+    for (const [index, ref] of refs.entries()) {
       try {
-        const result = await this.#checkRef(ref.url);
+        const outcome = results[index];
+        if ('error' in outcome) {
+          throw outcome.error;
+        }
+        const { result } = outcome;
         if (result === 'manifest-not-found') {
           logger.warn(
             `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): components manifest not found at ${ref.url}/manifests/components.json. Enable the \`componentsManifest\` feature on that Storybook to compose it into MCP.`
@@ -289,6 +307,7 @@ export class CompositionAuth {
   async #checkRef(refUrl: string): Promise<'public' | NoManifestReason | AuthRequirement> {
     const response = await fetch(`${refUrl}/manifests/components.json`, {
       headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(REF_PROBE_TIMEOUT_MS),
     });
 
     // 401 with WWW-Authenticate = auth needed
@@ -322,6 +341,7 @@ export class CompositionAuth {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
+      signal: AbortSignal.timeout(REF_PROBE_TIMEOUT_MS),
     });
     return this.#parseAuthFromResponse(response);
   }

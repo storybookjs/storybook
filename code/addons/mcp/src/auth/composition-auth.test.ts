@@ -747,62 +747,37 @@ describe('CompositionAuth', () => {
       const auth = new CompositionAuth();
       const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
+      // Refs are probed concurrently, so responses are routed by URL rather than by call order.
+      const authServer = (origin: string) => ({
+        [`${origin}/manifests/components.json`]: {
+          ok: false,
+          status: 401,
+          headers: new Headers({
+            'WWW-Authenticate': `Bearer resource_metadata="${origin}/.well-known/oauth-protected-resource"`,
+          }),
+        },
+        [`${origin}/.well-known/oauth-protected-resource`]: {
+          ok: true,
+          json: () =>
+            Promise.resolve({ resource: `${origin}/mcp`, authorization_servers: [origin] }),
+        },
+        [`${origin}/.well-known/oauth-authorization-server`]: {
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              issuer: origin,
+              authorization_endpoint: `${origin}/authorize`,
+              token_endpoint: `${origin}/token`,
+            }),
+        },
+      });
+      const responses: Record<string, unknown> = {
+        ...authServer('https://private.chromatic.com'),
+        ...authServer('https://other.example.com'),
+      };
       vi.stubGlobal(
         'fetch',
-        vi
-          .fn()
-          // First ref: manifest returns 401
-          .mockResolvedValueOnce({
-            ok: false,
-            status: 401,
-            headers: new Headers({
-              'WWW-Authenticate':
-                'Bearer resource_metadata="https://chromatic.com/.well-known/oauth-protected-resource"',
-            }),
-          })
-          .mockResolvedValueOnce({
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                resource: 'https://chromatic.com/mcp',
-                authorization_servers: ['https://www.chromatic.com'],
-              }),
-          })
-          .mockResolvedValueOnce({
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                issuer: 'https://www.chromatic.com',
-                authorization_endpoint: 'https://www.chromatic.com/authorize',
-                token_endpoint: 'https://www.chromatic.com/token',
-              }),
-          })
-          // Second ref: manifest returns 401 with different server
-          .mockResolvedValueOnce({
-            ok: false,
-            status: 401,
-            headers: new Headers({
-              'WWW-Authenticate':
-                'Bearer resource_metadata="https://other.example.com/.well-known/oauth-protected-resource"',
-            }),
-          })
-          .mockResolvedValueOnce({
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                resource: 'https://other.example.com/mcp',
-                authorization_servers: ['https://other.example.com'],
-              }),
-          })
-          .mockResolvedValueOnce({
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                issuer: 'https://other.example.com',
-                authorization_endpoint: 'https://other.example.com/authorize',
-                token_endpoint: 'https://other.example.com/token',
-              }),
-          })
+        vi.fn((url: string) => Promise.resolve(responses[url] ?? { ok: false, status: 404 }))
       );
 
       await auth.initialize([

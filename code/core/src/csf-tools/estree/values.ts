@@ -113,6 +113,39 @@ export const nodeWithoutParse = (value: unknown): Node | undefined => {
 
 export const UNRESOLVED = Symbol('unresolved');
 
+export const isCopySafeSpread = (node: Node): boolean => {
+  const value = unwrapExpression(node);
+  switch (value.type) {
+    case 'Identifier':
+    case 'Literal':
+    case 'ArrowFunctionExpression':
+    case 'FunctionExpression':
+      return true;
+    case 'ChainExpression':
+      return isCopySafeSpread(value.expression);
+    case 'MemberExpression':
+      return !value.computed && isCopySafeSpread(value.object);
+    case 'ObjectExpression':
+      return value.properties.every((property) => {
+        if (property.type === 'SpreadElement') {
+          return isCopySafeSpread(property.argument);
+        }
+        return (
+          property.kind !== 'get' &&
+          staticKey(property) !== undefined &&
+          isCopySafeSpread(property.value)
+        );
+      });
+    case 'ArrayExpression':
+      return value.elements.every(
+        (element) =>
+          element === null || (element.type !== 'SpreadElement' && isCopySafeSpread(element))
+      );
+    default:
+      return false;
+  }
+};
+
 /** Whether evaluating the expression can have no side effect, so it may be moved freely. */
 export const isEvaluationInert = (node: Node): boolean => {
   const value = unwrapExpression(node);

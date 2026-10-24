@@ -184,4 +184,26 @@ describe('readRegistry', () => {
 
     await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([]);
   });
+
+  it('merges records from both the preferred and legacy registry dirs', async () => {
+    const legacyDir = '/legacy-registry';
+    const legacyRecord = { ...aliveRecord, instanceId: 'legacy-uuid' };
+    vol.fromNestedJSON({
+      [REGISTRY_DIR]: { 'alive.json': JSON.stringify(aliveRecord) },
+      [legacyDir]: { 'legacy.json': JSON.stringify(legacyRecord) },
+    });
+
+    const records = await readRegistry(REGISTRY_DIR, legacyDir);
+
+    expect(records).toEqual(expect.arrayContaining([aliveRecord, legacyRecord]));
+    expect(records).toHaveLength(2);
+  });
+
+  it('reads a dir only once when it is both the preferred and legacy path', async () => {
+    vol.fromNestedJSON({ [REGISTRY_DIR]: { 'alive.json': JSON.stringify(aliveRecord) } });
+
+    const records = await readRegistry(REGISTRY_DIR, REGISTRY_DIR);
+
+    expect(records).toEqual([aliveRecord]);
+  });
 });

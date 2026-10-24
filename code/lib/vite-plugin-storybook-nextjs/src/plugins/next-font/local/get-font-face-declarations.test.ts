@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/dist/compiled/loader-utils3/index.js', { spy: true });
 
+// @ts-expect-error no types
 import loaderUtils from 'next/dist/compiled/loader-utils3/index.js';
 import { getFontFaceDeclarations } from './get-font-face-declarations.ts';
 

@@ -2,9 +2,9 @@
 This script updates `lib/configs/flat/*.js` files from rule's meta data.
 */
 import fs from 'node:fs/promises';
-import path from 'node:path';
 
 import { format } from 'oxfmt';
+import { join, resolve } from 'pathe';
 import type { TCategory } from './utils/categories.ts';
 import { categories } from './utils/categories.ts';
 import {
@@ -19,6 +19,8 @@ function formatCategory(category: TCategory) {
   const extendsCategoryId = extendsCategories[category.categoryId];
   if (extendsCategoryId == null) {
     return `
+      import type { TSESLint } from '@typescript-eslint/utils';
+
       import storybookPlugin from '../../index.ts';
 
       /*
@@ -26,7 +28,7 @@ function formatCategory(category: TCategory) {
       * This file has been automatically generated,
       * in order to update its content, execute "yarn update-rules" or rebuild this package.
       */
-      export default [
+      const config: TSESLint.FlatConfig.ConfigArray = [
         {
           name: 'storybook:${category.categoryId}:setup',
           plugins: {
@@ -46,28 +48,34 @@ function formatCategory(category: TCategory) {
           files: [${MAIN_JS_FILE.join(', ')}],
           rules: ${formatSingleRule(category.rules, 'storybook/no-uninstalled-addons')}
         }
-      ]
+      ] satisfies TSESLint.FlatConfig.ConfigArray;
+
+      export default config;
     `;
   }
-  return `/*
+  return `import type { TSESLint } from '@typescript-eslint/utils';
+
+    /*
     * IMPORTANT!
     * This file has been automatically generated,
     * in order to update its content, execute "yarn update-rules" or rebuild this package.
     */
-    import config from './${extendsCategoryId}.ts'
+    import baseConfig from './${extendsCategoryId}.ts';
 
-    export default [
-      ...config,
+    const config: TSESLint.FlatConfig.ConfigArray = [
+      ...baseConfig,
       {
         name: 'storybook:${category.categoryId}:rules',
         files: [${STORIES_GLOBS.join(', ')}],
         rules: ${formatRules(category.rules)}
       }
-    ]
+    ] satisfies TSESLint.FlatConfig.ConfigArray;
+
+    export default config;
   `;
 }
 
-const FLAT_CONFIG_DIR = path.resolve(import.meta.dirname, '../src/configs/flat');
+const FLAT_CONFIG_DIR = resolve(import.meta.dirname, '../src/configs/flat');
 
 export async function update() {
   // setup config directory
@@ -76,7 +84,7 @@ export async function update() {
   // Update/add rule files
   await Promise.all(
     categories.map(async (category) => {
-      const filePath = path.join(FLAT_CONFIG_DIR, `${category.categoryId}.ts`);
+      const filePath = join(FLAT_CONFIG_DIR, `${category.categoryId}.ts`);
       const { code: content } = await format(
         `${category.categoryId}.ts`,
         formatCategory(category),

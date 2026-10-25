@@ -1,3 +1,5 @@
+import type { TSESLint } from '@typescript-eslint/utils';
+
 import storybookPlugin from '../../index.ts';
 
 /*
@@ -5,7 +7,7 @@ import storybookPlugin from '../../index.ts';
  * This file has been automatically generated,
  * in order to update its content, execute "yarn update-rules" or rebuild this package.
  */
-export default [
+const config: TSESLint.FlatConfig.ConfigArray = [
   {
     name: 'storybook:csf:setup',
     plugins: {
@@ -35,4 +37,6 @@ export default [
       'storybook/no-uninstalled-addons': 'error',
     } as const,
   },
-];
+] satisfies TSESLint.FlatConfig.ConfigArray;
+
+export default config;

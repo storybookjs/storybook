@@ -1,12 +1,14 @@
+import type { TSESLint } from '@typescript-eslint/utils';
+
 /*
  * IMPORTANT!
  * This file has been automatically generated,
  * in order to update its content, execute "yarn update-rules" or rebuild this package.
  */
-import config from './csf.ts';
+import baseConfig from './csf.ts';
 
-export default [
-  ...config,
+const config: TSESLint.FlatConfig.ConfigArray = [
+  ...baseConfig,
   {
     name: 'storybook:csf-strict:rules',
     files: ['**/*.stories.@(ts|tsx|js|jsx|mjs|cjs)', '**/*.story.@(ts|tsx|js|jsx|mjs|cjs)'],
@@ -17,4 +19,6 @@ export default [
       'storybook/no-title-property-in-meta': 'error',
     } as const,
   },
-];
+] satisfies TSESLint.FlatConfig.ConfigArray;
+
+export default config;

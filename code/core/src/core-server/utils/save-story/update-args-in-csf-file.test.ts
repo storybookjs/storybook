@@ -129,7 +129,7 @@ describe('success', () => {
     expect(printCsf(parsed).code).toMatchInlineSnapshot(`
       "export default { title: 'X' };
       export const Base = { args: { a: 1 } };
-      export const Spread = { ...Base, args: { ...Base?.args, b: 2 } };
+      export const Spread = { ...Base, args: { ...Base.args, b: 2 } };
       export const SpreadArgs = { args: { ...Base.args, a: 3, b: 3 } };"
     `);
   });
@@ -137,7 +137,7 @@ describe('success', () => {
     const source = [
       `export default { title: 'X' };`,
       `export const Base = { args: { a: 1 } };`,
-      `export const A = { args: { a: 1, ...Base.args } };`,
+      `export const A = { args: { a: 1, ...getArgs() } };`,
     ].join('\n');
     const parsed = loadCsf(source, { makeTitle }).parse();
 
@@ -620,7 +620,7 @@ describe('refusal messages', () => {
   test('names the arg a spread could override, and keeps the diagnostic as the cause', () => {
     const error = refusal([
       `const Base = { args: {} };`,
-      `export const A = { args: { a: 1, ...Base.args } };`,
+      `export const A = { args: { a: 1, ...getArgs() } };`,
     ]);
     expect(error.message).toBe(
       'Cannot save arg "a" of story A because a spread in the story could override it.'
@@ -707,13 +707,14 @@ describe.each([
     makeBase.mockReturnValue({ args: { label: 'base' } });
   });
 
-  const parseStory = (source: string) =>
+  const parseStory = (source: string, declarations = '') =>
     loadCsf(
       `${
         variant === 'CSF4'
           ? `import preview from '#.storybook/preview'; const meta = preview.meta({ title: 'Button' });`
           : `export default { title: 'Button' };`
       }
+     ${declarations}
      export const Saved = ${source};`,
       { makeTitle }
     ).parse();
@@ -764,6 +765,11 @@ describe.each([
     '...{ args: { value: new Factory() } }',
     '...{ args: { values: [makeBase()] } }',
     '...{ args: { value: `${makeBase()}` } }',
+    'args: { a: 1 }, ...{ __proto__: Base }',
+    '..."abc"',
+    '...(() => {})',
+    '...{ ...Base }',
+    '...Unknown, ...AnotherUnknown',
   ])('rejects saving through an unsafe spread: %s', (properties) => {
     const csf = parseStory(story(`{ ${properties} }`));
     const before = printCsf(csf).code;
@@ -774,11 +780,11 @@ describe.each([
     expect(csf.changed).toBe(false);
   });
 
-  test('explains which spread prevents saving and how to proceed', () => {
+  test('explains why an unsafe spread prevents saving', () => {
     const csf = parseStory(story('{ ...makeBase().input }'));
 
     expect(() => updateArgsInCsfFile(csf, 'Saved', { label: 'saved' })).toThrow(
-      'Cannot save args: the spread `...makeBase().input` cannot be copied safely. Add an `args` property after it, or edit args manually.'
+      'Cannot save arg "label" of story Saved because a spread in the story could override it.'
     );
   });
 
@@ -789,12 +795,16 @@ describe.each([
     '["render"]() { return makeBase(); }',
     'render: (value = makeBase()) => value',
   ])('preserves deferred calls in spread callbacks: %s', (render) => {
-    const csf = parseStory(story(`{ ...{ args: { size: "large" }, ${render} } }`));
+    const csf = parseStory(
+      story(`{ ...Base }`),
+      `const Base = { args: { size: "large" }, ${render} };`
+    );
 
     updateArgsInCsfFile(csf, 'Saved', { label: 'saved' });
 
     const { code } = transformSync(`(${textOf(csf.getStoryExport('Saved'))})`, { loader: 'ts' });
-    const result = runInNewContext(code, { makeBase, meta: { story: (input: unknown) => input } });
+    const Base = runInNewContext(`({ args: { size: "large" }, ${render} })`, { makeBase });
+    const result = runInNewContext(code, { Base, meta: { story: (input: unknown) => input } });
     expect(result.args).toEqual({ size: 'large', label: 'saved' });
     expect(makeBase).not.toHaveBeenCalled();
 
@@ -820,22 +830,17 @@ describe.each([
   );
 
   const onClick = () => {};
-  const inheritedArgs = { size: 'small', baseOnly: true, onClick };
+  const inheritedArgs = { size: 'small', onClick };
 
   test.each([
     [
-      'merges args from multiple spreads',
+      'uses only the last spread that provides args',
       '...Base, parameters: { layout: "centered" }, ...Override',
       inheritedArgs,
     ],
     ['inherits args from a single spread', '...Base', { size: 'large', baseOnly: true }],
     ['inherits args from a typed spread', '...(Base as Story)', { size: 'large', baseOnly: true }],
-    ['inherits args from a nested spread', '...{ ...Base }', { size: 'large', baseOnly: true }],
-    [
-      'preserves arrays in literal args',
-      '...{ args: { options: ["a", "b"] } }',
-      { options: ['a', 'b'] },
-    ],
+    ['preserves arrays in literal args', '...Options', { options: ['a', 'b'] }],
     [
       'preserves quoted args before a spread',
       '"args": { "size": "small" }, ...WithoutArgs',
@@ -843,14 +848,12 @@ describe.each([
     ],
     [
       'preserves prototype-named args before a spread',
-      'args: { constructor: "keep", toString: "keep", valueOf: "keep", hasOwnProperty: "keep" }, ...Base',
+      'args: { constructor: "keep", toString: "keep", valueOf: "keep", hasOwnProperty: "keep" }, ...WithoutArgs',
       {
         constructor: 'keep',
         toString: 'keep',
         valueOf: 'keep',
         hasOwnProperty: 'keep',
-        size: 'large',
-        baseOnly: true,
       },
     ],
     [
@@ -882,11 +885,7 @@ describe.each([
       { size: 'large', baseOnly: true },
     ],
     ['handles optional input spreads', '...UndefinedBase?.input', {}],
-    [
-      'merges args when a later spread has undefined args',
-      '...Base, ...Cleared',
-      { size: 'large', baseOnly: true },
-    ],
+    ['drops earlier args when the last spread clears them', '...Base, ...Cleared', {}],
     [
       'preserves existing args when a later spread has none',
       'args: { size: "small" }, ...WithoutArgs',
@@ -895,12 +894,12 @@ describe.each([
     [
       'moves existing args past spreads',
       'args: { label: "old", size: "medium", disabled: true }, ...Base, ...Override',
-      { ...inheritedArgs, disabled: true },
+      inheritedArgs,
     ],
     [
-      'merges args between spreads in source order',
+      'uses a later spread instead of intervening local args',
       '...Base, args: { label: "old", size: "medium", disabled: true }, ...Override',
-      { size: 'small', onClick, disabled: true },
+      { size: 'small', onClick },
     ],
     [
       'keeps local args from inheriting an overwritten spread',
@@ -913,15 +912,18 @@ describe.each([
       { disabled: true },
     ],
   ])('%s', async (_, properties, expectedArgs) => {
-    const csf = loadCsf(
-      `${
-        variant === 'CSF4'
-          ? `import preview from '#.storybook/preview'; const meta = preview.meta({ title: 'Button' });`
-          : `export default { title: 'Button' };`
-      }
-       export const Saved = ${story(`{ ${properties}, name: 'Saved story' }`)};`,
-      { makeTitle }
-    ).parse();
+    const csf = parseStory(
+      story(`{ ${properties}, name: 'Saved story' }`),
+      `
+      const Base = { args: { label: 'base', size: 'large', baseOnly: true } };
+      const Override = { args: { label: 'override', size: 'small', onClick } };
+      const Options = { args: { options: ['a', 'b'] } };
+      const WithoutArgs = { parameters: { layout: 'centered' } };
+      const UndefinedBase = undefined;
+      const NullBase = null;
+      const Cleared = { args: undefined };
+    `
+    );
     const context = {
       Base: { args: { label: 'base', size: 'large', baseOnly: true } },
       Override: { args: { label: 'override', size: 'small', onClick } },
@@ -929,6 +931,7 @@ describe.each([
       UndefinedBase: undefined,
       NullBase: null,
       Cleared: { args: undefined },
+      Options: { args: { options: ['a', 'b'] } },
       meta: { story: (input: unknown) => input },
     };
     const newArgs = { label: 'saved' };
@@ -967,7 +970,7 @@ test('prints composed args for a CSF3 story spread', async () => {
 
   expect(await format(printCsf(csf).code, { parser: 'typescript' })).toMatchInlineSnapshot(`
     "export default { title: "Button" };
-    export const Saved = { ...Base, args: { ...Base?.args, label: "saved" } };
+    export const Saved = { ...Base, args: { ...Base.args, label: "saved" } };
     "
   `);
 });
@@ -987,7 +990,7 @@ test('prints composed args for a CSF4 input spread', async () => {
     const meta = preview.meta({ title: "Button" });
     export const Saved = meta.story({
       ...Base.input,
-      args: { ...Base.input?.args, label: "saved" },
+      args: { ...Base.input.args, label: "saved" },
     });
     "
   `);
@@ -1090,17 +1093,22 @@ describe('story expressions', () => {
 
     expect(await format(textOf(csf.getStoryExport('Saved')), { parser: 'typescript' }))
       .toMatchInlineSnapshot(`
-      "meta.story({
-        ...Base.input,
-        // Local defaults
-        args: {
-          // Keep this option
-          disabled: true,
-          ...Base.input?.args,
-          label: "saved",
-        },
-      });
-      "
-    `);
+        "meta.story({
+          ...Base.input,
+          // Local defaults
+          args: {
+            ...{
+              args: {
+                label: "old",
+                // Keep this option
+                disabled: true,
+              },
+              ...Base.input,
+            }.args,
+            label: "saved",
+          },
+        });
+        "
+      `);
   });
 });

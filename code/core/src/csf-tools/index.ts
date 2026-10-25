@@ -10,6 +10,7 @@ export type {
   CsfObjectLookup,
   CsfObjectOptions,
   CsfObjectTarget,
+  CsfSetOptions,
   CsfValue,
 } from './CsfObject.ts';
 export { type CsfPath, printCsfPath } from './CsfObjectPath.ts';

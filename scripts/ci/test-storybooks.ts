@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { join } from 'path/posix';
+import { join } from 'pathe';
 
 import { build_linux } from './common-jobs.ts';
 import { artifact, workflow } from './utils/helpers.ts';

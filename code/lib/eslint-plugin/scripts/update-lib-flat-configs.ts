@@ -19,16 +19,16 @@ function formatCategory(category: TCategory) {
   const extendsCategoryId = extendsCategories[category.categoryId];
   if (extendsCategoryId == null) {
     return `
-      import type { TSESLint } from '@typescript-eslint/utils';
-
-      import storybookPlugin from '../../index.ts';
-
       /*
       * IMPORTANT!
       * This file has been automatically generated,
       * in order to update its content, execute "yarn update-rules" or rebuild this package.
       */
-      const config: TSESLint.FlatConfig.ConfigArray = [
+      import type { CompatibleFlatConfig } from '../../types/index.ts';
+
+      import storybookPlugin from '../../index.ts';
+
+      const config: CompatibleFlatConfig[] = [
         {
           name: 'storybook:${category.categoryId}:setup',
           plugins: {
@@ -48,28 +48,29 @@ function formatCategory(category: TCategory) {
           files: [${MAIN_JS_FILE.join(', ')}],
           rules: ${formatSingleRule(category.rules, 'storybook/no-uninstalled-addons')}
         }
-      ] satisfies TSESLint.FlatConfig.ConfigArray;
+      ];
 
       export default config;
     `;
   }
-  return `import type { TSESLint } from '@typescript-eslint/utils';
-
+  return `
     /*
     * IMPORTANT!
     * This file has been automatically generated,
     * in order to update its content, execute "yarn update-rules" or rebuild this package.
     */
+    import type { CompatibleFlatConfig } from '../../types/index.ts';
+
     import baseConfig from './${extendsCategoryId}.ts';
 
-    const config: TSESLint.FlatConfig.ConfigArray = [
+    const config: CompatibleFlatConfig[] = [
       ...baseConfig,
       {
         name: 'storybook:${category.categoryId}:rules',
         files: [${STORIES_GLOBS.join(', ')}],
         rules: ${formatRules(category.rules)}
       }
-    ] satisfies TSESLint.FlatConfig.ConfigArray;
+    ];
 
     export default config;
   `;

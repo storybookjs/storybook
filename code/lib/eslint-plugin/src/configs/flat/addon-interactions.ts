@@ -1,13 +1,13 @@
-import type { TSESLint } from '@typescript-eslint/utils';
-
-import storybookPlugin from '../../index.ts';
-
 /*
  * IMPORTANT!
  * This file has been automatically generated,
  * in order to update its content, execute "yarn update-rules" or rebuild this package.
  */
-const config: TSESLint.FlatConfig.ConfigArray = [
+import type { CompatibleFlatConfig } from '../../types/index.ts';
+
+import storybookPlugin from '../../index.ts';
+
+const config: CompatibleFlatConfig[] = [
   {
     name: 'storybook:addon-interactions:setup',
     plugins: {
@@ -36,6 +36,6 @@ const config: TSESLint.FlatConfig.ConfigArray = [
       'storybook/no-uninstalled-addons': 'error',
     } as const,
   },
-] satisfies TSESLint.FlatConfig.ConfigArray;
+];
 
 export default config;

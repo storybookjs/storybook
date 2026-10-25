@@ -71,6 +71,8 @@ export const meta = {
   version,
 };
 
+export type { CompatibleFlatConfig } from './types/index.ts';
+
 export default {
   configs,
   meta,

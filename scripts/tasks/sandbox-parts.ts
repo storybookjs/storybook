@@ -13,6 +13,7 @@ import { join, relative, resolve, sep } from 'path';
 import slash from 'slash';
 import { dedent } from 'ts-dedent';
 
+import { logger as nodeLogger } from 'storybook/internal/node-logger';
 import { SupportedLanguage } from 'storybook/internal/types';
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager/index.ts';
 import storybookPackages from '../../code/core/src/common/versions.ts';
@@ -262,7 +263,7 @@ export const rewriteExpoTsconfigExtends = (
   }
   let tsconfig: Record<string, unknown>;
   try {
-    tsconfig = JSON.parse(content) as Record<string, unknown>;
+    tsconfig = JSON5.parse(content);
   } catch {
     return null;
   }
@@ -290,7 +291,7 @@ const fixExpoTsconfigExtends = async ({ cwd, dryRun }: { cwd: string; dryRun?: b
   });
   if (patched && !dryRun) {
     await writeFile(tsconfigPath, patched);
-    logger.log(
+    nodeLogger.info(
       `📝 Patched tsconfig.json to extend ${EXPO_TSCONFIG_BASE_PATH} directly because the installed expo release does not resolve the "${EXPO_TSCONFIG_BASE}" specifier`
     );
   }

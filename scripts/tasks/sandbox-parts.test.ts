@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { vol } from 'memfs';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { isStringLiteral, parseModule, walk } from '../../code/core/src/csf-tools/estree/ast.ts';
 import type { PassedOptionValues, TemplateDetails } from '../task.ts';
@@ -237,5 +237,22 @@ describe('rewriteExpoTsconfigExtends', () => {
         directPathExists: true,
       })
     ).toBeNull();
+  });
+
+  it('rewrites JSON5 tsconfigs with comments and trailing commas', () => {
+    const commented = `{
+  // expo's default template
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+  }
+}`;
+
+    expect(
+      rewriteExpoTsconfigExtends(commented, {
+        extensionlessResolves: false,
+        directPathExists: true,
+      })
+    ).toContain('"./node_modules/expo/tsconfig.base.json"');
   });
 });

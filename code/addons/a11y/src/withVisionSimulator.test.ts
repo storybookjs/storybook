@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { once } from 'storybook/internal/client-logger';
-import type { StoryContext } from 'storybook/internal/types';
+import type { StoryContextForRender } from 'storybook/internal/types';
 
 import { useCallback, useEffect } from 'storybook/preview-api';
 

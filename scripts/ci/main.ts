@@ -1,8 +1,6 @@
 import fs from 'node:fs/promises';
 import { join } from 'node:path';
-
-import { program } from 'commander';
-import yml from 'yaml';
+import { parseArgs } from 'node:util';
 
 import { defineCircleciCompletion, defineNightlyFailureReport } from './common-jobs.ts';
 import { executors } from './utils/executors.ts';
@@ -127,29 +125,21 @@ function generateConfig(selected: Workflow[], baseRef: string, nightly: boolean)
 console.log('Generating CircleCI config...');
 console.log('--------------------------------');
 
-program
-  .description('Generate CircleCI config')
-  .requiredOption(
-    '-w, --workflow <string>',
-    'Comma-separated workflows to generate the union config for (e.g. `normal,windows`)'
-  )
-  .option('--base-ref <string>', 'Git ref to compare against for focused CI', 'origin/next')
-  .option(
-    '--gh-trusted-author <string>',
-    'Whether the pipeline can persist to shared caches',
-    'false'
-  )
-  .option('--branch <string>', 'The branch the pipeline runs on', '')
-  .parse(process.argv);
+const { values: opts } = parseArgs({
+  options: {
+    workflow: { type: 'string', short: 'w' },
+    'base-ref': { type: 'string', default: 'origin/next' },
+    'gh-trusted-author': { type: 'string', default: 'false' },
+    branch: { type: 'string', default: '' },
+  },
+});
+setTrustedAuthor(opts['gh-trusted-author'] === 'true');
 
-const opts = program.opts();
-setTrustedAuthor(opts.ghTrustedAuthor === 'true');
-
-const requested: string[] = opts.workflow.split(',').filter(Boolean);
+const requested = (opts.workflow ?? '').split(',').filter(Boolean);
 const unknown = requested.filter((w) => !(workflows as readonly string[]).includes(w));
 if (unknown.length > 0 || requested.length === 0) {
-  program.error(
-    `Unknown workflow "${opts.workflow}". Expected a comma-separated list of: ${workflows.join(', ')}`
+  throw new Error(
+    `Unknown workflow "${opts.workflow ?? ''}". Expected a comma-separated list of: ${workflows.join(', ')}`
   );
 }
 const selected = workflows.filter((w) => requested.includes(w));
@@ -157,9 +147,5 @@ const nightly = selected.includes('daily') && opts.branch === 'next';
 
 await fs.writeFile(
   join(dirname, '../../.circleci/config.generated.yml'),
-  yml.stringify(generateConfig(selected, opts.baseRef, nightly), null, {
-    lineWidth: 1200,
-    indent: 4,
-    aliasDuplicateObjects: false,
-  })
+  `${JSON.stringify(generateConfig(selected, opts['base-ref'], nightly), null, 2)}\n`
 );

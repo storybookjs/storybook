@@ -18,6 +18,14 @@ import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from '../generators/types.ts';
 
+// `remix` >=3 is Remix 3. `@remix-run/dev` is Remix 2 and stays on the React path.
+function isRemix3VersionRange(versionRange: string | null | undefined): boolean {
+  if (!versionRange || !semver.validRange(versionRange)) {
+    return false;
+  }
+  return (semver.minVersion(versionRange)?.major ?? 0) >= 3;
+}
+
 type TemplateMatcher = {
   files?: boolean[];
   dependencies?: boolean[];
@@ -135,6 +143,15 @@ export class ProjectTypeService {
         dependencies: ['solid-js'],
         matcherFunction: ({ dependencies }) => {
           return dependencies?.every(Boolean) ?? true;
+        },
+      },
+      {
+        preset: ProjectType.HTML,
+        dependencies: {
+          remix: (versionRange) => isRemix3VersionRange(versionRange),
+        },
+        matcherFunction: ({ dependencies }) => {
+          return dependencies?.every(Boolean) ?? false;
         },
       },
       // DO NOT MOVE ANY TEMPLATES BELOW THIS LINE
@@ -306,9 +323,10 @@ export class ProjectTypeService {
   ): Promise<boolean> {
     const version = packageJson.dependencies?.[name] || packageJson.devDependencies?.[name];
     if (version && typeof matcher === 'function') {
-      const resolvedVersion = version.startsWith('catalog:')
-        ? await this.jsPackageManager.getDeclaredVersionSpecifier(name)
-        : version;
+      // Tags (`latest`, `next`) and `catalog:` are not ranges. Matchers need the installed version.
+      const resolvedVersion = semver.validRange(version)
+        ? version
+        : await this.jsPackageManager.getDeclaredVersionSpecifier(name);
       return matcher(resolvedVersion ?? version);
     }
     return !!version;

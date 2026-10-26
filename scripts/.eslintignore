@@ -13,8 +13,6 @@ scripts/repros-generator
 *.bundle.js
 *.js.map
 *.d.ts
-examples/ember-cli/.storybook/preview-head.html
-ember-output
 .yarn
 !.remarkrc.js
 !.babelrc.js

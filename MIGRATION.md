@@ -1035,7 +1035,7 @@ The Code panel snippet starts with a `<script>` block that imports the component
 
 ### Node.js 22.12 or higher
 
-Storybook 11 targets Node.js 22.12 or higher. Before upgrading, update Node.js in your local development environment, CI jobs, and deployment environments that build Storybook. Update any Node.js version pins, such as `.nvmrc`, `.node-version`, or your CI configuration. Some Storybook 11 prereleases still start on Node.js 20.19. That exception does not carry into the final release, so test the migration on Node.js 22.12 or higher.
+Storybook 11 targets Node.js 22.12 or higher. Before upgrading, update Node.js in your local development environment, CI jobs, and deployment environments that build Storybook. Update any Node.js version pins, such as `.nvmrc`, `.node-version`, or your CI configuration.
 
 Storybook accepts prerelease Node.js builds when their version meets this minimum. For example, Node.js 26.1.0-rc.0 is supported, but 22.12.0-rc.0 is older than 22.12.0 and is not supported.
 

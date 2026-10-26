@@ -4,7 +4,7 @@ import React, { forwardRef } from 'react';
 import { ChevronRightIcon } from '@storybook/icons';
 
 import { darken } from 'polished';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 // Cmd/Ctrl/Shift/Alt + Click should trigger default browser behavior. Same applies to non-left clicks
 const LEFT_BUTTON = 0;

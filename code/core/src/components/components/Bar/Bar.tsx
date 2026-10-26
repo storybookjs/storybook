@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 
-import { type CSSObject, styled } from 'storybook/theming';
+import { type CSSObject, styled } from 'storybook/theming/emotion';
 
 export interface BarProps {
   backgroundColor?: string;

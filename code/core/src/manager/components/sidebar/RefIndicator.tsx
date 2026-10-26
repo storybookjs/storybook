@@ -15,7 +15,7 @@ import {
 } from '@storybook/icons';
 
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming';
+import { styled, useTheme } from 'storybook/theming/emotion';
 
 import type { MenuItem } from '../../container/Menu.tsx';
 import type { getStateType } from '../../utils/tree.ts';

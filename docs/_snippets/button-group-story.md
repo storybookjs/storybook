@@ -146,7 +146,8 @@ export const Pair: Story = {
 
 ```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import ButtonGroup from './ButtonGroup.svelte';
 
@@ -167,27 +168,33 @@ export const Pair: Story = {
 />
 ```
 
-```js filename="ButtonGroup.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import ButtonGroup from '../ButtonGroup.svelte';
+```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-//👇 Imports the Button stories
-import * as ButtonStories from './Button.stories';
+  import ButtonGroup from './ButtonGroup.svelte';
 
-export default {
-  component: ButtonGroup,
-};
+  //👇 Imports the Button stories
+  import * as ButtonStories from './Button.stories.svelte';
 
-export const Pair = {
-  args: {
+  const { Story } = preview.meta({
+    component: ButtonGroup,
+  });
+</script>
+
+<Story
+  name="Pair"
+  args={{
     buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
     orientation: 'horizontal',
-  },
-};
+  }}
+/>
 ```
 
 ```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import ButtonGroup from './ButtonGroup.svelte';
 
@@ -208,28 +215,27 @@ export const Pair = {
 />
 ```
 
-```ts filename="ButtonGroup.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import ButtonGroup from './ButtonGroup.svelte';
+  import ButtonGroup from './ButtonGroup.svelte';
 
-//👇 Imports the Button stories
-import * as ButtonStories from './Button.stories';
+  //👇 Imports the Button stories
+  import * as ButtonStories from './Button.stories.svelte';
 
-const meta = {
-  component: ButtonGroup,
-} satisfies Meta<typeof ButtonGroup>;
+  const { Story } = preview.meta({
+    component: ButtonGroup,
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Pair: Story = {
-  args: {
+<Story
+  name="Pair"
+  args={{
     buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
     orientation: 'horizontal',
-  },
-};
+  }}
+/>
 ```
 
 ```js filename="ButtonGroup.stories.js" renderer="vue" language="js" tabTitle="CSF 3"

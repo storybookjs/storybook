@@ -4,6 +4,7 @@ import {
   createStoryReferenceResolver,
   extractComponentDescription,
   extractDescription,
+  storyShapeError,
 } from 'storybook/internal/csf-tools';
 import type {
   ComponentManifest,
@@ -148,6 +149,7 @@ function getComponentDocgenData(component: ComponentRef | undefined, docgenEngin
   } else if (docgenEngine === 'react-docgen-typescript') {
     reactDocgenTypescript = component?.reactDocgenTypescript;
     docgenDescription = reactDocgenTypescript?.description;
+    docgenJsDocTags = component?.componentJsDocTags;
     docgenError = component?.reactDocgenTypescriptError;
   } else {
     reactComponentMeta = component?.reactComponentMeta
@@ -356,13 +358,14 @@ export function buildComponentDocgenFromResolved({
       error: docgenError ?? {
         name: error.name,
         message:
-          (csf._metaStatementPath?.buildCodeFrameError(error.message).message ?? error.message) +
-          `\n\n${entry.importPath}:\n${storyFile}`,
+          (csf._metaStatement
+            ? storyShapeError(error.message, csf._metaStatement, csf.editor).message
+            : error.message) + `\n\n${entry.importPath}:\n${storyFile}`,
       },
     };
   }
 
-  const metaJsDoc = extractDescription(csf._metaStatement) || undefined;
+  const metaJsDoc = extractDescription(csf._metaStatement, csf.editor) || undefined;
   const { description, summary, jsDocTags } = extractComponentDescription(
     metaJsDoc,
     docgenDescription,

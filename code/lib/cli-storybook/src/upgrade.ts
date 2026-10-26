@@ -1,4 +1,8 @@
-import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
+import {
+  hasStorybookSkills,
+  installSkills,
+  refreshAgentInstructions,
+} from 'storybook/internal/cli';
 import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
@@ -558,6 +562,11 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       !options.dryRun && hadSkills
         ? await installSkills({ packageManager: rootPackageManager, source: 'refresh' })
         : undefined;
+    // The skills of a plugin, or installed by hand, come with an AGENTS.md section that promises
+    // the same updates.
+    if (!options.dryRun && !hadSkills) {
+      await refreshAgentInstructions();
+    }
 
     // Run doctor for each project
     const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({

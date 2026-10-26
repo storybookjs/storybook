@@ -14,7 +14,7 @@ import { global } from '@storybook/global';
 import { ChevronDownIcon, LockIcon, SweepIcon, SyncIcon } from '@storybook/icons';
 
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import { Contained, Loader } from './Loader.tsx';

@@ -1,4 +1,4 @@
-import type { PartialStoryFn, PlayFunctionContext, StoryContext } from 'storybook/internal/types';
+import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import { global as globalThis } from '@storybook/global';
 
@@ -43,7 +43,7 @@ export const Single = {
       },
     },
   },
-  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
+  play: async ({ canvasElement }: StoryContext<any>) => {
     await expect(JSON.parse(within(canvasElement).getByTestId('pre').innerText)).toMatchObject({
       mappingArg: { name: 'ArrowRight' },
     });
@@ -64,7 +64,7 @@ export const Multiple = {
       },
     },
   },
-  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
+  play: async ({ canvasElement }: StoryContext<any>) => {
     await expect(JSON.parse(within(canvasElement).getByTestId('pre').innerText)).toMatchObject({
       mappingArg: [{ name: 'ArrowRight' }, { name: 'ArrowLeft' }],
     });

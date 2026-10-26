@@ -16,7 +16,7 @@ import {
 import { Feature } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import { coerce, satisfies } from 'semver';
+import { coerce } from 'semver';
 import stripJsonComments from 'strip-json-comments';
 import invariant from 'tiny-invariant';
 
@@ -48,60 +48,6 @@ export const writeFileAsJson = (jsonPath: string, content: unknown) => {
   writeFileSync(filePath, `${JSON.stringify(content, null, 2)}\n`);
   return true;
 };
-
-/**
- * Detect if any babel dependencies need to be added to the project This is currently used by
- * react-native generator
- *
- * @example
- *
- * ```ts
- * const babelDependencies = await getBabelDependencies(
- *   packageManager,
- *   npmOptions,
- *   packageJson
- * ); // you can then spread the result when using installDependencies
- * installDependencies(npmOptions, [
- *   `@storybook/react@${storybookVersion}`,
- *   ...babelDependencies,
- * ]);
- * ```
- *
- * @param packageJson The current package.json so we can inspect its contents
- * @returns Contains the packages and versions that need to be installed
- */
-export async function getBabelDependencies(packageManager: JsPackageManager) {
-  const dependenciesToAdd = [];
-  let babelLoaderVersion = '^8.0.0-0';
-
-  const babelCoreVersion = packageManager.getDependencyVersion('babel-core');
-
-  if (!babelCoreVersion) {
-    if (!packageManager.getDependencyVersion('@babel/core')) {
-      const babelCoreInstallVersion = await packageManager.getVersion('@babel/core');
-      dependenciesToAdd.push(`@babel/core@${babelCoreInstallVersion}`);
-    }
-  } else {
-    const latestCompatibleBabelVersion = await packageManager.latestVersion(
-      'babel-core',
-      babelCoreVersion
-    );
-    // Babel 6
-    if (latestCompatibleBabelVersion && satisfies(latestCompatibleBabelVersion, '^6.0.0')) {
-      babelLoaderVersion = '^7.0.0';
-    }
-  }
-
-  if (!packageManager.getDependencyVersion('babel-loader')) {
-    const babelLoaderInstallVersion = await packageManager.getVersion(
-      'babel-loader',
-      babelLoaderVersion
-    );
-    dependenciesToAdd.push(`babel-loader@${babelLoaderInstallVersion}`);
-  }
-
-  return dependenciesToAdd;
-}
 
 export function addToDevDependenciesIfNotPresent(
   packageJson: PackageJson,

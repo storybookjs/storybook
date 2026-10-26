@@ -187,7 +187,8 @@ export const Basic: Story = {
 
 ```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import YourComponent from './YourComponent.svelte';
 
@@ -205,24 +206,30 @@ export const Basic: Story = {
 />
 ```
 
-```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import YourComponent from './YourComponent.svelte';
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-//👇 This default export determines where your story goes in the story list
-export default {
-  component: YourComponent,
-};
+  import YourComponent from './YourComponent.svelte';
 
-export const Basic = {
-  args: {
-    //👇 The args you need here will depend on your component
-  },
-};
+  //👇 This export determines where your story goes in the story list
+  const { Story } = preview.meta({
+    component: YourComponent,
+  });
+</script>
+
+<Story
+  name="Basic"
+  args={{
+    /*👇 The args you need here will depend on your component */
+  }}
+/>
 ```
 
 ```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import YourComponent from './YourComponent.svelte';
 
@@ -240,25 +247,24 @@ export const Basic = {
 />
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import YourComponent from './YourComponent.svelte';
+  import YourComponent from './YourComponent.svelte';
 
-//👇 This default export determines where your story goes in the story list
-const meta = {
-  component: YourComponent,
-} satisfies Meta<typeof YourComponent>;
+  //👇 This export determines where your story goes in the story list
+  const { Story } = preview.meta({
+    component: YourComponent,
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Basic: Story = {
-  args: {
-    //👇 The args you need here will depend on your component
-  },
-};
+<Story
+  name="Basic"
+  args={{
+    /*👇 The args you need here will depend on your component */
+  }}
+/>
 ```
 
 ```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"

@@ -38,6 +38,17 @@ Reading both rows together is the point.
 `whole-index` is what a full manifest build costs, which is what agent and MCP consumers need.
 `first-story` is what a developer waits for before Controls populate, and it is the number to watch when judging whether the docgen server feels fast.
 
+### The Svelte engines and `large-program`
+
+Svelte runs over the same workspace projects as Vue, with runes components in place of SFCs, so the Svelte and Vue rows measure their engines over identical type graphs.
+`svelte-legacy` is `generateDocgen` as builder docgen runs it: a program built per extraction, with every source file re-stat'ed to find what changed.
+`svelte-component-meta` is the docgen server's `SvelteComponentMetaManager`, a component-meta manager: one program and checker per tsconfig, rebuilt only when a file event arrives.
+
+The workspace scenarios hold a few hundred files at most, and there the two engines are close.
+Real apps put thousands of dependency declarations in the program, and the legacy engine's per-request cost grows with that count, because rebuilding even an unchanged program visits every file.
+`large-program` adds that dimension: a flat project whose heavy library references thousands of `.d.ts` modules, which the program holds but no component's props resolve through.
+It is the scenario where the per-request difference between the two Svelte engines shows, as it does on real projects.
+
 ## Determinism method
 
 ### Fixed synthetic projects
@@ -210,9 +221,8 @@ Without that, a gate whose failure path had silently broken would be indistingui
 
 ### When it runs
 
-On CircleCI's daily tier, which is triggered by the `ci:daily` label on a pull request.
-Nothing schedules that tier, so this is on-demand protection rather than nightly protection.
-A regression that lands on a Tuesday is caught whenever someone next asks for a daily run, not overnight.
+On CircleCI's daily tier, which runs nightly on `next` and on demand via the `ci:daily` label on a pull request.
+A regression that lands on a Tuesday is caught by Tuesday night's run, which posts the failed jobs to #sb-agility.
 
 ### Memory budgets
 
@@ -236,6 +246,23 @@ Milliseconds are context, never a budget: the same suite runs three to four time
 | vue-component-meta/workspace       | 1060ms | 84ms   | n/a    | 12.8MB         | 3.6MB           | 0.19MB/save    |
 | vue-component-meta/base-type-touch | 1044ms | 84ms   | n/a    | 12.9MB         | 3.0MB           | 0.25MB/save    |
 | compodoc/default                   | 1315ms | 1336ms | 1315ms | 216.0MB        | n/a             | n/a            |
+
+The Svelte rows come from a later run of the same job (Node 22.22.1):
+
+| Engine / scenario                     | Cold   | Warm | Peak transient | Retained growth | Retained slope |
+| ------------------------------------- | ------ | ---- | -------------- | --------------- | -------------- |
+| svelte-legacy/flat                    | 1301ms | 23ms | 5.9MB          | 0.5MB           | 0.04MB/save    |
+| svelte-legacy/workspace               | 1311ms | 25ms | 6.4MB          | 0.6MB           | 0.04MB/save    |
+| svelte-legacy/base-type-touch         | 1208ms | 21ms | 6.1MB          | 0.3MB           | 0.04MB/save    |
+| svelte-legacy/large-program           | 6531ms | 59ms | 5.6MB          | 0.0MB           | 0.03MB/save    |
+| svelte-component-meta/flat            | 946ms  | 30ms | 6.2MB          | 1.2MB           | 0.13MB/save    |
+| svelte-component-meta/workspace       | 1017ms | 32ms | 6.7MB          | 1.4MB           | 0.13MB/save    |
+| svelte-component-meta/base-type-touch | 1030ms | 30ms | 6.6MB          | 1.0MB           | 0.18MB/save    |
+| svelte-component-meta/large-program   | 1734ms | 68ms | 7.0MB          | -6.5MB          | 0.18MB/save    |
+
+The two Svelte engines document the same members on every scenario, so their ratios are like-for-like: `svelte-legacy` over `svelte-component-meta` is 1.38, 1.29, 1.17 and 3.77 cold, and 0.77, 0.77, 0.73 and 0.86 warm, in the order above.
+The component-meta engine's cold pass wins because it builds one program, not one per component; the gap grows with the program's file count, which is what `large-program` exists to show.
+Its warm figure is a little higher because its first saves are the process's first program rebuilds, which the legacy engine's cold pass has already run many times.
 
 ### Pair ratios from the same run
 
@@ -295,7 +322,8 @@ Recorded in `docgen-shared/budgets.ts`, keyed by engine and scenario, above the 
 | vue-component-meta/workspace       | 0.22            | 40MB           | 20MB            | 1.5MB/save     | daily |
 | vue-component-meta/base-type-touch | 0.25            | 40MB           | 20MB            | 1.5MB/save     | daily |
 | compodoc/default                   | none            | 400MB          | n/a             | n/a            | daily |
-| svelte (stretch)                   | TBD             | TBD            | TBD             | TBD            | TBD   |
+| svelte-legacy/* (each scenario)    | 0.06            | 25MB           | 5MB             | 0.3MB/save     | daily |
+| svelte-component-meta/* (each)     | 0.12            | 30MB           | 10MB            | 1MB/save       | daily |
 | cem (stretch)                      | TBD             | TBD            | TBD             | TBD            | TBD   |
 
 Retained growth is a signed ceiling rather than a multiple of what was observed, because the number it bounds can be negative.
@@ -303,7 +331,7 @@ Retained growth is a signed ceiling rather than a multiple of what was observed,
 Its budget is therefore -50MB: the run has to still drop at least that far to be green.
 
 `react-legacy-rdt` and `vue-component-meta-next` are measurable but carry no budget: neither runs by default, and a budget on something CI never runs would be decoration.
-The two stretch rows wait on engines that do not exist yet.
+The `cem` stretch row waits on an engine that does not exist yet.
 
 The docgen-memory gate keeps its own, heavier `react-osa` row (90MB transient, 60MB growth, 3MB/save) over a 600-component project.
 It measures the same shape and the same save scope as `react-osa/whole-index` above; only the project size differs, which is why its budgets sit so much higher.

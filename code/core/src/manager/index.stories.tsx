@@ -12,7 +12,7 @@ import { getChannel, setChannel } from 'storybook/internal/channels';
 import type { API, AddonStore } from 'storybook/manager-api';
 import { addons } from 'storybook/manager-api';
 import { screen, within } from 'storybook/test';
-import { color } from 'storybook/theming';
+import { color } from 'storybook/theming/emotion';
 
 import preview from '../../../.storybook/preview.tsx';
 import './components/review/review-service-story-helpers.ts';

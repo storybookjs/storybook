@@ -2,7 +2,7 @@ import React, { Fragment } from 'react';
 
 import { global } from '@storybook/global';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 const { document } = global;
 

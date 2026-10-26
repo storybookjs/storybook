@@ -4,7 +4,6 @@ import {
   UNIVERSAL_STATUS_STORE_OPTIONS,
 } from '../../shared/status-store/index.ts';
 import { UniversalStore } from '../../shared/universal-store/index.ts';
-import { instances } from '../../shared/universal-store/instances.ts';
 import { getOrRecreateStore } from './server-store-leadership.ts';
 
 function createServerStatusStore(leader: boolean) {
@@ -31,16 +30,7 @@ export const getStatusStoreByTypeId: StatusStoreBundle['getStatusStoreByTypeId']
 // A follower holds its initial (empty) state until the leader answers, so wait for that sync.
 export async function getSyncedStatuses(): Promise<StatusesByStoryIdAndTypeId> {
   const bundle = getStatusStoreBundle();
-  try {
-    await bundle.universalStatusStore.untilReady();
-  } catch (error) {
-    // A follower that timed out ignores late answers, so the next read has to sync a fresh one.
-    if (cache.store === bundle) {
-      instances.delete(UNIVERSAL_STATUS_STORE_OPTIONS.id);
-      cache.store = undefined;
-    }
-    throw error;
-  }
+  await bundle.universalStatusStore.untilReady();
   return bundle.fullStatusStore.getAll();
 }
 

@@ -46,7 +46,8 @@ export const Open = meta.story({
 
 ```svelte filename="Dialog.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
   import { screen } from 'storybook/test';
 
   import Dialog from './Dialog.svelte';
@@ -67,22 +68,27 @@ export const Open = meta.story({
   }} />
 ```
 
-```js filename="Dialog.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Dialog from './Dialog.svelte';
+```svelte filename="Dialog.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
+  import { screen } from 'storybook/test';
 
-export default {
-  component: Dialog,
-};
+  import Dialog from './Dialog.svelte';
 
-export const Open = {
-  play: async ({ canvas, userEvent }) => {
+  const { Story } = preview.meta({
+    component: Dialog,
+  });
+</script>
+
+<Story
+  name="Open"
+  play={async ({ canvas, userEvent }) => {
     await userEvent.click(canvas.getByRole('button', { name: 'Open dialog' }));
 
     // Starts querying from the document
     const dialog = screen.getByRole('dialog');
     await expect(dialog).toBeVisible();
-  },
-};
+  }} />
 ```
 
 ```js filename="Dialog.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
@@ -107,7 +113,8 @@ export const Open = {
 
 ```svelte filename="Dialog.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
   import { screen } from 'storybook/test';
 
   import Dialog from './Dialog.svelte';
@@ -128,29 +135,27 @@ export const Open = {
   }} />
 ```
 
-```ts filename="Dialog.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-import type { Meta, StoryObj } from '@storybook/your-framework';
-import { screen } from 'storybook/test';
+```svelte filename="Dialog.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+  import { screen } from 'storybook/test';
 
-import Dialog from './Dialog.svelte';
+  import Dialog from './Dialog.svelte';
 
-const meta = {
-  component: Dialog,
-} satisfies Meta<typeof Dialog>;
-export default meta;
+  const { Story } = preview.meta({
+    component: Dialog,
+  });
+</script>
 
-type Story = StoryObj<typeof meta>;
-
-export const Open: Story = {
-  play: async ({ canvas, userEvent }) => {
+<Story
+  name="Open"
+  play={async ({ canvas, userEvent }) => {
     await userEvent.click(canvas.getByRole('button', { name: 'Open dialog' }));
 
     // Starts querying from the document
     const dialog = screen.getByRole('dialog');
     await expect(dialog).toBeVisible();
-  },
-};
+  }} />
 ```
 
 ```ts filename="Dialog.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

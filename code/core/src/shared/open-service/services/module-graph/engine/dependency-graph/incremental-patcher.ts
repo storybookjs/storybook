@@ -87,7 +87,6 @@ export class IncrementalPatcher {
    *
    * Most events in a dev session leave the reverse index untouched: a comment-only edit keeps the
    * same dependency set, and a write to a file the graph has never seen matches nothing at all.
-   * Callers detect movement via {@link ReverseIndexImpl.revision} before/after this call.
    */
   async patch(event: FileChangeEvent): Promise<void> {
     const path = normalize(event.path);

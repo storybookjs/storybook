@@ -67,6 +67,7 @@
     },
   },
   "active-state": {
+    "control": false,
     "description": "Set while active.",
     "name": "active",
     "table": {

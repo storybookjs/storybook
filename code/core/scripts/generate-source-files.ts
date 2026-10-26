@@ -4,14 +4,57 @@ import { readFile, readdir, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { isNotNil } from 'es-toolkit/predicate';
+// eslint-disable-next-line depend/ban-dependencies
+import { glob } from 'glob';
 import { format } from 'oxfmt';
 import { rolldown } from 'rolldown';
 import { dedent } from 'ts-dedent';
 
-import { getWorkspace } from '../../../scripts/utils/tools.ts';
-
 const CODE_DIR = join(import.meta.dirname, '..', '..', '..', 'code');
 const CORE_ROOT_DIR = join(CODE_DIR, 'core');
+const ROOT_DIR = join(CODE_DIR, '..');
+
+type WorkspacePackage = {
+  name: string;
+  version: string;
+  path: string;
+  publishConfig?: { access?: string };
+};
+
+async function getWorkspace(): Promise<WorkspacePackage[]> {
+  const {
+    workspaces: { packages: patterns },
+  } = JSON.parse(await readFile(join(ROOT_DIR, 'package.json'), 'utf-8'));
+
+  const workspaces: string[][] = await Promise.all(
+    patterns.map((pattern: string) => glob(pattern, { cwd: ROOT_DIR }))
+  );
+
+  const packages = await Promise.all(
+    workspaces
+      .flat()
+      .map((relativePath) => join(ROOT_DIR, relativePath))
+      .map(async (packagePath) => {
+        const content = await readFile(join(packagePath, 'package.json'), 'utf-8').catch(
+          (error: NodeJS.ErrnoException) => {
+            if (error.code === 'ENOENT') {
+              return null;
+            }
+            throw error;
+          }
+        );
+        if (content === null) {
+          // A deleted package can leave an empty folder behind on dev machines
+          console.warn(
+            `No package.json found in ${packagePath}. You might want to delete this folder.`
+          );
+          return null;
+        }
+        return { ...JSON.parse(content), path: packagePath } as WorkspacePackage;
+      })
+  );
+  return packages.filter(isNotNil);
+}
 
 // read code/frameworks subfolders and generate a list of available frameworks
 // save this list into ./code/core/src/types/frameworks.ts and export it as a union type.
@@ -51,7 +94,7 @@ async function writeGeneratedFile(destination: string, content: string): Promise
 async function generateVersionsFile(): Promise<void> {
   const destination = join(CORE_ROOT_DIR, 'src', 'common', 'versions.ts');
 
-  const workspace = (await getWorkspace()).filter(isNotNil);
+  const workspace = await getWorkspace();
 
   const versions = JSON.stringify(
     workspace
@@ -120,7 +163,8 @@ async function generateFrameworksFile(): Promise<void> {
 
 const localAlias = {
   'storybook/internal': join(CORE_ROOT_DIR, 'src'),
-  'storybook/theming': join(CORE_ROOT_DIR, 'src', 'theming'),
+  'storybook/theming/create': join(CORE_ROOT_DIR, 'src', 'theming', 'create.ts'),
+  'storybook/theming/emotion': join(CORE_ROOT_DIR, 'src', 'theming', 'emotion.ts'),
   'storybook/test': join(CORE_ROOT_DIR, 'src', 'test'),
   'storybook/test/preview': join(CORE_ROOT_DIR, 'src', 'test', 'preview'),
   'storybook/actions': join(CORE_ROOT_DIR, 'src', 'actions'),
@@ -141,7 +185,9 @@ async function generateExportsFile(): Promise<void> {
   for (const mod of globalPackages) {
     const key = mod.replace(/[/@]/g, '_');
     input[key] = `\0${key}`;
-    virtualModules[`\0${key}`] = `export * from '${mod}'`;
+    // The storybook/theming manager global is the emotion shim. The package export is create.
+    const source = mod === 'storybook/theming' ? 'storybook/theming/emotion' : mod;
+    virtualModules[`\0${key}`] = `export * from '${source}'`;
   }
 
   const bundle = await rolldown({

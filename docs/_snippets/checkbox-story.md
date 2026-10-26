@@ -31,20 +31,3 @@ Use checkboxes to select one or more options from a list of choices.
 
 <Canvas of={CheckboxStories.Unchecked} />
 ```
-
-<!-- prettier-ignore -->
-```mdx filename="Checkbox.mdx" renderer="svelte" language="mdx" tabTitle="CSF 3"
-import { Canvas, Meta } from '@storybook/addon-docs/blocks';
-
-import * as CheckboxStories from './Checkbox.stories';
-
-<Meta of={CheckboxStories} />
-
-# Checkbox
-
-A checkbox is a square box that can be activated or deactivated when ticked.
-
-Use checkboxes to select one or more options from a list of choices.
-
-<Canvas of={CheckboxStories.Unchecked} />
-```

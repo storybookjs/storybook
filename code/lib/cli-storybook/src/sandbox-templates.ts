@@ -21,8 +21,6 @@ export type TemplateKey =
   | keyof typeof internalTemplates
   | keyof typeof benchTemplates;
 
-export type Cadence = keyof typeof templatesByCadence;
-
 // Some properties e.g. experimentalTestSyntax are only available in framework specific types for StorybookConfig, therefore we loosen the type here otherwise it would always fail
 type LoosenedStorybookConfig = Omit<Partial<StorybookConfigRaw>, 'features'> & {
   features?:
@@ -624,6 +622,7 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
+      mainConfig: { features: { componentsManifest: true } },
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'bench'],
@@ -838,6 +837,23 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
+  'preact-vite/10-ts': {
+    name: 'Preact v10 (Vite | TypeScript)',
+    script: 'npm create vite --yes {{beforeDir}} -- --template preact-ts',
+    preferNoLink: true,
+    expected: {
+      framework: '@storybook/preact-vite',
+      renderer: '@storybook/preact',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      extraDependencies: ['preact-render-to-string', 'preact@^10'],
+      resolutions: {
+        preact: 'npm:preact@^10',
+      },
+    },
+    skipTasks: ['e2e-tests', 'bench'],
+  },
   /** This is currently broken, we generate components and stories that do not work */
   // 'qwik-vite/default-ts': {
   //   name: 'Qwik CLI Latest (Vite | TypeScript)',
@@ -884,19 +900,6 @@ export const baseTemplates = {
     // yarn portals.
     name: 'React Native Expo Latest (Vite | TypeScript)',
     script: 'npx create-expo-app -y --no-install {{beforeDir}}',
-    // create-expo-app pins the current SDK, whose packages are released
-    // together and are routinely younger than the gate window.
-    // `babel-preset-expo` is part of that set despite not matching `expo-*`.
-    // `multitars` is pulled in transitively by the Expo CLI toolchain.
-    minAgeGateExemptions: [
-      'expo',
-      'expo-*',
-      '@expo/*',
-      'babel-preset-expo',
-      'multitars',
-      'react-native',
-      '@react-native/*',
-    ],
     expected: {
       framework: '@storybook/react-native-web-vite',
       renderer: '@storybook/react',
@@ -1089,7 +1092,7 @@ export const normal: TemplateKey[] = [
   'tanstack-react-start/default-ts',
 ];
 
-export const merged: TemplateKey[] = [
+export const daily: TemplateKey[] = [
   ...normal,
   'react-webpack/18-ts',
   'nextjs/15-ts',
@@ -1102,10 +1105,6 @@ export const merged: TemplateKey[] = [
   // created. Fix: https://github.com/rstackjs/storybook-rsbuild/pull/603
   // Re-enable once storybook-builder-rsbuild releases a version that works with Storybook 11.
   // 'vue3-rsbuild/default-ts',
-];
-
-export const daily: TemplateKey[] = [
-  ...merged,
   'angular-vite/21-ts',
   'react-vite/default-js',
   'react-vite/prerelease-ts',
@@ -1117,6 +1116,7 @@ export const daily: TemplateKey[] = [
   'nextjs/prerelease',
   // 'qwik-vite/default-ts',
   'preact-vite/default-js',
+  'preact-vite/10-ts',
   'html-vite/default-js',
   'internal/react18-webpack-babel',
   'react-native-web-vite/expo-ts',
@@ -1128,8 +1128,6 @@ export const daily: TemplateKey[] = [
   // 'html-rsbuild/default-ts',
   // 'react-native-web-vite/rn-cli-ts',
 ];
-
-export const templatesByCadence = { normal, merged, daily };
 
 // Templates whose `mainConfig` is a function of the generated `ConfigFile`, so its features cannot be
 // read without running the sandbox generator. A new function-form template throws below instead of
@@ -1148,6 +1146,7 @@ export const enablesDocgenServer = (key: string, template: Template): boolean =>
     template.expected.renderer === '@storybook/react' ||
     template.expected.renderer === '@storybook/vue3' ||
     template.expected.renderer === '@storybook/web-components' ||
+    template.expected.renderer === '@storybook/svelte' ||
     template.expected.framework === '@storybook/angular-vite';
   return supported && features?.componentsManifest === true && features.docgenServer !== false;
 };

@@ -193,50 +193,21 @@ const expoTsconfig = `{
 `;
 
 describe('rewriteExpoTsconfigExtends', () => {
-  it('rewrites the package-style extends when the specifier fails to resolve and the direct file exists', () => {
-    const result = rewriteExpoTsconfigExtends(expoTsconfig, {
-      extensionlessResolves: false,
-      directPathExists: true,
-    });
+  it('rewrites the package-style expo extends to the direct json path', () => {
+    const result = rewriteExpoTsconfigExtends(expoTsconfig);
 
     expect(result).toContain('"extends": "./node_modules/expo/tsconfig.base.json"');
     expect(result).toContain('"@/*"');
   });
 
-  it('keeps the user-shaped tsconfig when the specifier resolves', () => {
-    expect(
-      rewriteExpoTsconfigExtends(expoTsconfig, {
-        extensionlessResolves: true,
-        directPathExists: true,
-      })
-    ).toBeNull();
-  });
-
-  it('keeps the tsconfig when expo did not ship the direct json file', () => {
-    expect(
-      rewriteExpoTsconfigExtends(expoTsconfig, {
-        extensionlessResolves: false,
-        directPathExists: false,
-      })
-    ).toBeNull();
-  });
-
   it('ignores tsconfigs that do not extend the expo base config', () => {
     expect(
-      rewriteExpoTsconfigExtends(`{ "extends": "@react-native/typescript-config/tsconfig.json" }`, {
-        extensionlessResolves: false,
-        directPathExists: true,
-      })
+      rewriteExpoTsconfigExtends(`{ "extends": "@react-native/typescript-config/tsconfig.json" }`)
     ).toBeNull();
   });
 
   it('ignores malformed tsconfig content', () => {
-    expect(
-      rewriteExpoTsconfigExtends('not json', {
-        extensionlessResolves: false,
-        directPathExists: true,
-      })
-    ).toBeNull();
+    expect(rewriteExpoTsconfigExtends('not json')).toBeNull();
   });
 
   it('rewrites JSON5 tsconfigs with comments and trailing commas', () => {
@@ -248,11 +219,8 @@ describe('rewriteExpoTsconfigExtends', () => {
   }
 }`;
 
-    expect(
-      rewriteExpoTsconfigExtends(commented, {
-        extensionlessResolves: false,
-        directPathExists: true,
-      })
-    ).toContain('"./node_modules/expo/tsconfig.base.json"');
+    expect(rewriteExpoTsconfigExtends(commented)).toContain(
+      '"./node_modules/expo/tsconfig.base.json"'
+    );
   });
 });

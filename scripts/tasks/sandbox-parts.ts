@@ -247,20 +247,17 @@ const EXPO_TSCONFIG_BASE = 'expo/tsconfig.base';
 const EXPO_TSCONFIG_BASE_PATH = './node_modules/expo/tsconfig.base.json';
 
 /**
- * Expo SDK 58.0.14–58.0.16 hide `tsconfig.base` from extensionless resolution: their `exports`
- * map only admits `./tsconfig.base.js` and `./tsconfig.base.d.ts`, neither of which exists, so
- * tsconfck (vite-tsconfig-paths) and Vite/Oxc's transform fail with "Tsconfig not found" and the
- * sandbox build dies on every story file. Extending the shipped JSON file by relative path
- * sidesteps the exports map entirely. Gated on the specifier actually failing to resolve, so it
- * stops applying once expo ships an SDK 58 release with a working map.
+ * Expo SDK 58 releases 58.0.0 through 58.0.16 hide `tsconfig.base` from extensionless
+ * resolution: their `exports` map only admits `./tsconfig.base.js` and `./tsconfig.base.d.ts`,
+ * neither of which exists, so tsconfck (vite-tsconfig-paths) and Vite/Oxc's transform fail with
+ * "Tsconfig not found" and the sandbox build dies on every story file. Expo 58.0.17 restored the
+ * `./tsconfig.base` export (https://unpkg.com/expo@58.0.17/package.json). The template lockfile
+ * still pins 58.0.14, so this rewrites the tsconfig to extend the shipped JSON file by relative
+ * path, which sidesteps the exports map entirely. The caller only applies the rewrite when the
+ * specifier actually fails to resolve, so this stops mattering once the template rolls to a
+ * fixed release.
  */
-export const rewriteExpoTsconfigExtends = (
-  content: string,
-  resolution: { extensionlessResolves: boolean; directPathExists: boolean }
-): string | null => {
-  if (resolution.extensionlessResolves || !resolution.directPathExists) {
-    return null;
-  }
+export const rewriteExpoTsconfigExtends = (content: string): string | null => {
   let tsconfig: Record<string, unknown>;
   try {
     tsconfig = JSON5.parse(content);
@@ -279,17 +276,22 @@ const fixExpoTsconfigExtends = async ({ cwd, dryRun }: { cwd: string; dryRun?: b
     return;
   }
   const content = await readFile(tsconfigPath, 'utf8');
+  // Cheap parse-only gate first: sandboxes whose tsconfig does not extend the Expo base never
+  // pay for the resolution probe or the node_modules stat.
+  const patched = rewriteExpoTsconfigExtends(content);
+  if (!patched) {
+    return;
+  }
   let extensionlessResolves = true;
   try {
     createRequire(join(cwd, 'package.json')).resolve(EXPO_TSCONFIG_BASE);
   } catch {
     extensionlessResolves = false;
   }
-  const patched = rewriteExpoTsconfigExtends(content, {
-    extensionlessResolves,
-    directPathExists: existsSync(join(cwd, 'node_modules', 'expo', 'tsconfig.base.json')),
-  });
-  if (patched && !dryRun) {
+  if (extensionlessResolves || !existsSync(join(cwd, EXPO_TSCONFIG_BASE_PATH))) {
+    return;
+  }
+  if (!dryRun) {
     await writeFile(tsconfigPath, patched);
     nodeLogger.info(
       `📝 Patched tsconfig.json to extend ${EXPO_TSCONFIG_BASE_PATH} directly because the installed expo release does not resolve the "${EXPO_TSCONFIG_BASE}" specifier`

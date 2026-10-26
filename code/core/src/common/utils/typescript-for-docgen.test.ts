@@ -67,6 +67,8 @@ beforeEach(() => {
   // No lockfile and no package manager user agent: install hints use npm.
   vi.mocked(find.up).mockReturnValue(undefined);
   vi.stubEnv('npm_config_user_agent', '');
+  // TypeScript 7.1 is stable for these tests unless a test says otherwise.
+  vi.stubEnv('STORYBOOK_TYPESCRIPT_7_1_STABLE', 'true');
 });
 
 afterEach(() => {
@@ -308,11 +310,17 @@ describe('loadTypeScriptCompilerApi', () => {
 });
 
 describe('checkBuilderDocgenPackages', () => {
-  const options = { configDir: '/project/.storybook' };
+  const NATIVE_PACKAGE_DIR = '/project/node_modules/@typescript/native';
+  let docgenSpecifier: string | undefined;
+  const options = {
+    configDir: '/project/.storybook',
+    presets: { apply: async () => ({ docgenSpecifier }) } as unknown as Options['presets'],
+  };
   const check = (
     installed: string[],
     packages: Record<string, string> = { 'react-docgen': '^8.0.2' },
-    note?: string
+    note?: string,
+    apis?: readonly ('compiler' | 'native')[]
   ) =>
     checkBuilderDocgenPackages({
       packages,
@@ -323,13 +331,22 @@ describe('checkBuilderDocgenPackages', () => {
       documentation:
         'https://storybook.js.org/docs/api/main-config/main-config-typescript#reactdocgen',
       note,
+      apis,
     });
 
   beforeEach(() => {
+    docgenSpecifier = undefined;
     vi.mocked(once.warn).mockImplementation(() => {});
     vi.mocked(loadMainConfig).mockResolvedValue({ stories: [] });
     installTypeScript('6.0.3');
   });
+
+  const pointDocgenSpecifierAtTypeScript = (version: string) => {
+    docgenSpecifier = NATIVE_PACKAGE_DIR;
+    vol.fromNestedJSON({
+      [`${NATIVE_PACKAGE_DIR}/package.json`]: JSON.stringify({ name: 'typescript', version }),
+    });
+  };
 
   describe('when the main config sets docgenServer: false', () => {
     beforeEach(() => {
@@ -367,12 +384,43 @@ describe('checkBuilderDocgenPackages', () => {
 
       await expect(check([])).rejects.toThrow('install `typescript@^6`');
     });
+
+    it('says the docgen server needs TypeScript 7.1 when it runs on the native API', async () => {
+      installTypeScript('7.0.2');
+
+      await expect(check([], undefined, undefined, BOTH_APIS)).rejects.toThrow(
+        'install `typescript@^7.1`'
+      );
+    });
+
+    it('names the docgenSpecifier package when that is TypeScript 7.0', async () => {
+      pointDocgenSpecifierAtTypeScript('7.0.2');
+
+      await expect(check([], undefined, undefined, BOTH_APIS)).rejects.toThrow(
+        `TypeScript 5.9, 6, or 7.1 and newer at \`${NATIVE_PACKAGE_DIR}\`, which \`typescript.docgenSpecifier\` names`
+      );
+    });
+
+    it('tells a project on TypeScript 7.1 to remove the setting', async () => {
+      installTypeScript('7.1.0');
+
+      await expect(check([], undefined, undefined, BOTH_APIS)).rejects.toThrow(
+        'Remove that setting to use server-side docgen'
+      );
+    });
   });
 
   it('stays silent when typescript is unusable, which the TypeScript warning covers', async () => {
     installTypeScript('7.0.2');
 
     await expect(check([])).resolves.toEqual(['react-docgen']);
+    expect(once.warn).not.toHaveBeenCalled();
+  });
+
+  it('stays silent when the docgenSpecifier package is TypeScript 7.0, which the TypeScript warning covers', async () => {
+    pointDocgenSpecifierAtTypeScript('7.0.2');
+
+    await expect(check([], undefined, undefined, BOTH_APIS)).resolves.toEqual(['react-docgen']);
     expect(once.warn).not.toHaveBeenCalled();
   });
 
@@ -430,5 +478,35 @@ describe('loadTypeScriptForDocgen', () => {
         importNativeApi: async () => native,
       })
     ).rejects.toThrow('Add `typescript@^7.1` to the devDependencies');
+  });
+});
+
+describe('before TypeScript 7.1 is stable', () => {
+  beforeEach(() => {
+    vi.stubEnv('STORYBOOK_TYPESCRIPT_7_1_STABLE', 'false');
+  });
+
+  it('adds TypeScript 6, because typescript@^7.1 installs nothing yet', () => {
+    expect(typeScriptPackageForDocgen(BOTH_APIS)).toBe('typescript@^6');
+  });
+
+  it('rejects TypeScript 7.0 with the side-by-side setup', async () => {
+    await expect(
+      loadTypeScriptForDocgen({
+        importCompilerApi: async () => ({ version: '7.0.2' }),
+        importNativeApi: async () => ({}),
+      })
+    ).rejects.toThrow('"typescript": "npm:@typescript/typescript6@^6.0.2"');
+  });
+
+  it('still loads the native API of an installed TypeScript 7.1', async () => {
+    const native = { sync: {}, ast: {} };
+
+    await expect(
+      loadTypeScriptForDocgen({
+        importCompilerApi: async () => ({ version: '7.1.0-beta' }),
+        importNativeApi: async () => native,
+      })
+    ).resolves.toEqual({ api: 'native', typescript: native });
   });
 });

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type JsPackageManager, addReactDocgenFallback } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
@@ -33,8 +33,14 @@ const check = (
 
 describe('typescript-7-react-docgen', () => {
   beforeEach(() => {
+    // The fix runs until TypeScript 7.1 is stable, whatever the shell sets.
+    vi.stubEnv('STORYBOOK_TYPESCRIPT_7_1_STABLE', 'false');
     vi.clearAllMocks();
     vi.mocked(addReactDocgenFallback).mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it.each(['@storybook/react-vite', '@storybook/nextjs', '@storybook/nextjs-vite'])(
@@ -103,5 +109,23 @@ describe('typescript-7-react-docgen', () => {
     } as unknown as Omit<RunOptions<true>, 'files'>);
 
     expect(addReactDocgenFallback).toHaveBeenCalledExactlyOnceWith(packageManager);
+  });
+
+  it('skips a project on TypeScript 7.1, whose docgen runs on the native API', async () => {
+    await expect(
+      check({ framework: '@storybook/react-vite' }, { typescript: '7.1.0-beta' })
+    ).resolves.toBeNull();
+  });
+
+  describe('once TypeScript 7.1 is stable', () => {
+    beforeEach(() => {
+      vi.stubEnv('STORYBOOK_TYPESCRIPT_7_1_STABLE', 'true');
+    });
+
+    it('skips a project on TypeScript 7.0, which typescript-native-api upgrades instead', async () => {
+      await expect(
+        check({ framework: '@storybook/react-vite' }, { typescript: '~7.0.2' })
+      ).resolves.toBeNull();
+    });
   });
 });

@@ -253,6 +253,9 @@ export const transformStoryIndexToStoriesHash = (
     const item = entriesById.get(id)!;
     storiesHash[id] = {
       tags: [],
+      // Storybooks older than 10 index their stories without a subtype. The sidebar tells
+      // stories from tests by it, so a missing one means a story.
+      ...(item.type === 'story' && { subtype: 'story' }),
       ...item,
       depth,
       parent,

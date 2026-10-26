@@ -333,4 +333,29 @@ describe('transformStoryIndexToStoriesHash', () => {
       expect(filtered['guides-button--primary']).toBeUndefined();
     });
   });
+
+  it('gives a story entry without a subtype the story subtype', () => {
+    // A composed Storybook older than 10 sends story entries with no subtype. The sidebar reads
+    // the subtype to tell stories from tests, so a missing one has to mean a story.
+    const legacyIndex = {
+      v: 5,
+      entries: {
+        'button--button': {
+          id: 'button--button',
+          type: 'story',
+          title: 'Button',
+          name: 'Button',
+          importPath: './button.stories.ts',
+          tags: [],
+        },
+      },
+    } as unknown as API_PreparedStoryIndex;
+    const result = transformStoryIndexToStoriesHash(legacyIndex, {
+      provider: { getConfig: () => ({ sidebar: {} }) } as any,
+      docsOptions: { docsMode: false },
+      filters: {},
+      allStatuses: {},
+    });
+    expect(result['button--button']).toMatchObject({ type: 'story', subtype: 'story' });
+  });
 });

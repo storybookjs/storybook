@@ -69,6 +69,7 @@ const StickyRow = styled.button<{ $level: number; $isRoot: boolean }>(
     },
     '&:hover': {
       color: theme.barHoverColor,
+      svg: { color: 'currentColor' },
     },
     '&:hover::before': {
       background: theme.background.hoverable,

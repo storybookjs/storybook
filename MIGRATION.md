@@ -37,6 +37,7 @@
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
   - [Vite: `preview-stats.json` contains the full bundler graph](#vite-preview-statsjson-contains-the-full-bundler-graph)
+  - [Webpack: requires webpack 5.101 or higher](#webpack-requires-webpack-5101-or-higher)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
   - [Next.js: most Node.js built-in polyfills removed from `@storybook/nextjs`](#nextjs-most-nodejs-built-in-polyfills-removed-from-storybooknextjs)
   - [`storySort` in the preview replaced by `storySorts` in main](#storysort-in-the-preview-replaced-by-storysorts-in-main)
@@ -1328,6 +1329,18 @@ The `preview-stats.json` file that `@storybook/builder-vite` writes for `storybo
 - Sub-modules with a query string, for example `./src/Button.vue?vue&type=style&index=0&lang.css` next to `./src/Button.vue`
 
 Chromatic TurboSnap reads this file. It needs `chromatic-cli` [v18.13.1](https://github.com/chromaui/chromatic-cli/releases/tag/v18.13.1) or later, which merges these nodes into the files they stand for. With an older version, a changed Vue or Svelte component can trace to zero stories. Upgrade `chromatic-cli` to v18.13.1 or later before you upgrade Storybook.
+
+### Webpack: requires webpack 5.101 or higher
+
+`@storybook/builder-webpack5` now uses `webpack-dev-middleware` 8, which requires webpack 5.101.0 or higher. This affects all webpack-based frameworks:
+
+- `@storybook/react-webpack5`
+- `@storybook/nextjs`
+- `@storybook/angular`
+- `@storybook/ember`
+- `@storybook/server-webpack5`
+
+If your project depends on webpack directly, upgrade it to 5.101.0 or higher. Otherwise your package manager can install a second copy of webpack for Storybook, and webpack plugins from your configuration may not work with Storybook's copy.
 
 ### Next.js: Require v15 and up
 

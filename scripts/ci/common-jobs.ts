@@ -376,12 +376,6 @@ export const node26Smoke = defineJob('Node 26 smoke', () => ({
     npm.install('.'),
     {
       run: {
-        name: 'Compile',
-        command: 'yarn task --task compile --start-from=auto --no-link',
-      },
-    },
-    {
-      run: {
         name: 'Run unit tests',
         // storybook-ui is the browser story project. The linux unit job never
         // runs it; stories have their own Playwright job.

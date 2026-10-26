@@ -1,4 +1,4 @@
-import { addReactDocgenFallback, hasTypeScriptCompilerApi } from 'storybook/internal/common';
+import { addReactDocgenFallback, isTypeScriptUsableForDocgen } from 'storybook/internal/common';
 import { SupportedRenderer } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -45,7 +45,7 @@ export const typescript7ReactDocgen: Fix<true> = {
       return null;
     }
     const version = coerce(await packageManager.getDeclaredVersionSpecifier('typescript'))?.version;
-    return version && !hasTypeScriptCompilerApi(version) ? true : null;
+    return version && !isTypeScriptUsableForDocgen(version) ? true : null;
   },
 
   prompt() {

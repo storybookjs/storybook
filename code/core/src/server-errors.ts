@@ -1,4 +1,5 @@
 import picocolors from 'picocolors';
+import type { TypeScriptDocgenApi } from './common/utils/typescript-for-docgen.ts';
 import { dedent } from 'ts-dedent';
 
 import type { ValidationMeta } from './shared/open-service/errors.ts';
@@ -361,9 +362,18 @@ const describeBuilderDocgenFallback = (fallback: BuilderDocgenFallback | undefin
 const withBuilderDocgenFallback = (message: string, fallback: BuilderDocgenFallback | undefined) =>
   [message, describeBuilderDocgenFallback(fallback)].filter(Boolean).join('\n\n');
 
+type TypeScriptDocgenApis = readonly TypeScriptDocgenApi[];
+
+const supportsNativeApi = (apis: TypeScriptDocgenApis = ['compiler']) => apis.includes('native');
+
 export class TypeScriptMissingForDocgenError extends StorybookError {
   constructor(
-    public data: { cause?: unknown; builderDocgenFallback?: BuilderDocgenFallback } = {}
+    public data: {
+      cause?: unknown;
+      apis?: TypeScriptDocgenApis;
+      specifier?: string;
+      builderDocgenFallback?: BuilderDocgenFallback;
+    } = {}
   ) {
     super({
       name: 'TypeScriptMissingForDocgenError',
@@ -372,10 +382,15 @@ export class TypeScriptMissingForDocgenError extends StorybookError {
       cause: data.cause,
       documentation: 'https://storybook.js.org/docs/configure/integration/typescript',
       message: withBuilderDocgenFallback(
-        dedent`
+        data.specifier
+        ? dedent`
+          Storybook cannot find the TypeScript package \`${data.specifier}\`, which \`typescript.docgenSpecifier\` in your main config names.
+
+          Set it to a package name, such as \`@typescript/native\`, or to the path of the package's folder, absolute or relative to the config directory. Do not include a subpath such as \`/sync\`. Then restart Storybook.`
+        : dedent`
           Storybook cannot find the \`typescript\` package. Storybook uses TypeScript to read your component types for Controls and the Docs args table, also in JavaScript projects.
 
-          Add \`typescript@^6\` to the devDependencies in package.json, install it with your package manager, then restart Storybook.`,
+          Add \`${supportsNativeApi(data.apis) ? 'typescript@^7.1' : 'typescript@^6'}\` to the devDependencies in package.json, install it with your package manager, then restart Storybook.`,
         data.builderDocgenFallback
       ),
     });
@@ -383,31 +398,49 @@ export class TypeScriptMissingForDocgenError extends StorybookError {
 }
 
 export class TypeScriptWithoutCompilerApiError extends StorybookError {
-  constructor(public data: { version: string; builderDocgenFallback?: BuilderDocgenFallback }) {
+  constructor(public data: {
+      version: string;
+      apis?: TypeScriptDocgenApis;
+      specifier?: string;
+      builderDocgenFallback?: BuilderDocgenFallback;
+    }) {
     super({
       name: 'TypeScriptWithoutCompilerApiError',
       category: Category.CORE_COMMON,
       code: 34,
       documentation: 'https://storybook.js.org/docs/configure/integration/typescript#typescript-7',
       message: withBuilderDocgenFallback(
-        dedent`
-        Storybook found TypeScript ${data.version} as the \`typescript\` package. TypeScript 7 does not include the compiler API that Storybook uses to read your component types for Controls and the Docs args table.
+        data.specifier
+        ? dedent`
+          Storybook found TypeScript ${data.version} at \`${data.specifier}\`, which \`typescript.docgenSpecifier\` in your main config names. TypeScript 7.0 does not include an API that Storybook can use to read your component types for Controls and the Docs args table.
 
-        If package.json has no \`typescript\` entry, your package manager installed TypeScript 7 for Storybook's peer dependency. Add \`typescript@^6\` to the devDependencies in package.json.
+          Install TypeScript 7.1 or newer under that name, or point \`typescript.docgenSpecifier\` at TypeScript 6. Then restart Storybook.`
+        : supportsNativeApi(data.apis)
+          ? dedent`
+          Storybook found TypeScript ${data.version} as the \`typescript\` package. TypeScript 7.0 does not include an API that Storybook can use to read your component types for Controls and the Docs args table. TypeScript 7.1 and newer do, and so does TypeScript 6.
 
-        If your project uses TypeScript 7, install TypeScript 7 and TypeScript 6 side by side. In package.json, replace the \`typescript\` entry in devDependencies with these two entries:
+          Upgrade to \`typescript@^7.1\` in the devDependencies in package.json. If package.json has no \`typescript\` entry, your package manager installed TypeScript 7.0 for Storybook's peer dependency; add the entry.
 
-          "@typescript/native": "npm:typescript@^${data.version}",
-          "typescript": "npm:@typescript/typescript6@^6.0.2"
+          Then install dependencies and restart Storybook.`
+          : dedent`
+          Storybook found TypeScript ${data.version} as the \`typescript\` package. TypeScript 7 does not include the compiler API that Storybook uses to read your component types for Controls and the Docs args table.
 
-        \`tsc\` stays on TypeScript 7, and the \`typescript\` package is TypeScript 6. Both entries are necessary.
+          If package.json has no \`typescript\` entry, your package manager installed TypeScript 7 for Storybook's peer dependency. Add \`typescript@^6\` to the devDependencies in package.json.
 
-        Then install dependencies and restart Storybook.`,
+          If your project uses TypeScript 7, install TypeScript 7 and TypeScript 6 side by side. In package.json, replace the \`typescript\` entry in devDependencies with these two entries:
+
+            "@typescript/native": "npm:typescript@^${data.version}",
+            "typescript": "npm:@typescript/typescript6@^6.0.2"
+
+          \`tsc\` stays on TypeScript 7, and the \`typescript\` package is TypeScript 6. Both entries are necessary.
+
+          Then install dependencies and restart Storybook.`,
         data.builderDocgenFallback
       ),
     });
   }
 }
+
 
 export class BuilderDocgenPackagesMissingError extends StorybookError {
   constructor(

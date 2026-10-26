@@ -1,11 +1,12 @@
 import {
   type JsPackageManager,
   RENDERERS_WITH_TYPESCRIPT_DOCGEN,
-  TYPESCRIPT_FOR_DOCGEN_PACKAGE,
   REACT_DOCGEN_FALLBACK_RANGE,
   recordReactDocgenFallback,
-  hasTypeScriptCompilerApi,
+  isTypeScriptUsableForDocgen,
   isCI,
+  typeScriptDocgenApisFor,
+  typeScriptPackageForDocgen,
 } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { TypeScriptWithoutCompilerApiError } from 'storybook/internal/server-errors';
@@ -49,7 +50,9 @@ export class TypeScriptDependencyCommand {
   }: ExecuteTypeScriptDependencyParams): Promise<TypeScriptDependencyResult> {
     const result = await this.decide(packageManager, framework, renderer);
     if (result === 'added') {
-      dependencyCollector.addDevDependencies([TYPESCRIPT_FOR_DOCGEN_PACKAGE]);
+      dependencyCollector.addDevDependencies([
+        typeScriptPackageForDocgen(typeScriptDocgenApisFor(renderer)),
+      ]);
     }
     if (result === 'without-compiler-api') {
       await this.handleTypeScriptWithoutCompilerApi(packageManager, renderer, dependencyCollector);
@@ -69,9 +72,10 @@ export class TypeScriptDependencyCommand {
       return 'not-needed';
     }
 
+    const apis = typeScriptDocgenApisFor(renderer);
     if (packageManager.isDependencyInstalled('typescript')) {
       const version = await this.getTypeScriptVersion(packageManager);
-      if (version && !hasTypeScriptCompilerApi(version)) {
+      if (version && !isTypeScriptUsableForDocgen(version, apis)) {
         return 'without-compiler-api';
       }
       return 'already-installed';
@@ -82,8 +86,8 @@ export class TypeScriptDependencyCommand {
     }
     logger.info(
       renderer === SupportedRenderer.REACT
-        ? `Server-side docgen stays off until you add ${TYPESCRIPT_FOR_DOCGEN_PACKAGE} to your devDependencies. Until then, Controls and the Docs args table show no props.`
-        : `Server-side docgen stays off until you add ${TYPESCRIPT_FOR_DOCGEN_PACKAGE} to your devDependencies.`
+        ? `Server-side docgen stays off until you add ${typeScriptPackageForDocgen(apis)} to your devDependencies. Until then, Controls and the Docs args table show no props.`
+        : `Server-side docgen stays off until you add ${typeScriptPackageForDocgen(apis)} to your devDependencies.`
     );
     return 'declined';
   }
@@ -111,7 +115,13 @@ export class TypeScriptDependencyCommand {
       builderDocgenFallback = { packageName: 'react-docgen', installed };
     }
     const version = (await this.getTypeScriptVersion(packageManager)) ?? '';
-    logger.warn(new TypeScriptWithoutCompilerApiError({ version, builderDocgenFallback }).message);
+    logger.warn(
+      new TypeScriptWithoutCompilerApiError({
+        version,
+        apis: typeScriptDocgenApisFor(renderer),
+        builderDocgenFallback,
+      }).message
+    );
   }
 
   private async shouldAddTypeScript(): Promise<boolean> {

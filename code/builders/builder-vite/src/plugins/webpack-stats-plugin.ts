@@ -59,10 +59,57 @@ function createNormalizer(workingDir: string, ids: Iterable<string>) {
   };
 }
 
+type WatchFileContext = { addWatchFile: (file: string) => void };
+type HookHandler = (this: WatchFileContext, ...args: unknown[]) => unknown;
+
+// The module id is an argument of these hooks: `load(id)` and `transform(code, id)`.
+const MODULE_ID_ARGUMENT = { load: 0, transform: 1 } as const;
+
 export type WebpackStatsPlugin = Plugin & { storybookGetStats: () => BuilderStats };
 
 export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): WebpackStatsPlugin {
   const importersById = new Map<string, Set<string>>();
+  const watchFilesById = new Map<string, Set<string>>();
+  // Keeps a hook from being wrapped twice if the config is resolved again.
+  const wrappedHandlers = new WeakSet<HookHandler>();
+
+  // Some files are read by a plugin and only declared with `this.addWatchFile()`, for example a Sass
+  // partial or an Angular `templateUrl`. They are never modules, so the bundler graph has no node
+  // for them. The bundler does not tell which module declared a watch file, so this wraps the
+  // `load` and `transform` hooks to record each call against the id of the module being processed.
+  // The id is captured per call, so hooks of different modules can run concurrently.
+  function interceptWatchFiles(plugin: Plugin, hookName: keyof typeof MODULE_ID_ARGUMENT) {
+    const hook = plugin[hookName] as HookHandler | { handler: HookHandler } | undefined;
+    const handler = typeof hook === 'function' ? hook : hook?.handler;
+    if (!handler || wrappedHandlers.has(handler)) {
+      return;
+    }
+
+    const wrapped: HookHandler = function (...args) {
+      const id = args[MODULE_ID_ARGUMENT[hookName]] as string;
+      const context = new Proxy(this, {
+        get(target, property) {
+          if (property === 'addWatchFile') {
+            return (file: string) => {
+              const files = watchFilesById.get(id) ?? new Set<string>();
+              files.add(file);
+              watchFilesById.set(id, files);
+              return target.addWatchFile(file);
+            };
+          }
+          const value = Reflect.get(target, property, target);
+          return typeof value === 'function' ? value.bind(target) : value;
+        },
+      });
+      return handler.apply(context, args);
+    };
+    wrappedHandlers.add(wrapped);
+
+    // Object hooks keep their `filter` and `order`.
+    Object.assign(plugin, {
+      [hookName]: typeof hook === 'function' ? wrapped : { ...hook, handler: wrapped },
+    });
+  }
 
   function record(id: string, importer?: string) {
     let importers = importersById.get(id);
@@ -79,10 +126,24 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
     name: 'storybook:rollup-plugin-webpack-stats',
     // We want this to run after the vite build plugins (https://vitejs.dev/guide/api-plugin.html#plugin-ordering)
     enforce: 'post',
+    configResolved(config) {
+      // The stats are only read after a build.
+      if (config.command !== 'build') {
+        return;
+      }
+      for (const plugin of config.plugins) {
+        interceptWatchFiles(plugin, 'load');
+        interceptWatchFiles(plugin, 'transform');
+      }
+    },
     moduleParsed(mod) {
       record(mod.id);
       for (const depId of mod.importedIds.concat(mod.dynamicallyImportedIds)) {
         record(depId, mod.id);
+      }
+      // A watch file is a dependency of the module that declared it.
+      for (const file of watchFilesById.get(mod.id) ?? []) {
+        record(file, mod.id);
       }
     },
 

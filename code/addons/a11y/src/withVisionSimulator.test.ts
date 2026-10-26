@@ -16,8 +16,8 @@ const mockedWarn = vi.mocked(once.warn);
 const mockedUseCallback = vi.mocked(useCallback);
 const mockedUseEffect = vi.mocked(useEffect);
 
-const createContext = (vision?: string): StoryContext => {
-  const context: StoryContext = {
+const createContext = (vision?: string): StoryContextForRender => {
+  const context: StoryContextForRender = {
     componentId: 'test',
     title: 'Test',
     kind: 'Test',

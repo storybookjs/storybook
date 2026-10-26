@@ -6,7 +6,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 import { isStringLiteral, parseModule, walk } from '../../code/core/src/csf-tools/estree/ast.ts';
 import type { PassedOptionValues, TemplateDetails } from '../task.ts';
-import { extendPreview } from './sandbox-parts.ts';
+import { extendPreview, rewriteExpoTsconfigExtends } from './sandbox-parts.ts';
 
 // Spy-only mocks: keep the real module shapes, then redirect the reads and writes that
 // `extendPreview` performs on the sandbox's preview config to `memfs`.
@@ -179,4 +179,63 @@ it('imports the Vue template preview of a CSF factory sandbox', async () => {
   expect(await readFile(PREVIEW_PATH, 'utf-8')).toContain(
     'import "../src/stories/renderers/vue3_vue3-vite-prerelease-ts/preview";'
   );
+});
+
+const expoTsconfig = `{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}
+`;
+
+describe('rewriteExpoTsconfigExtends', () => {
+  it('rewrites the package-style extends when the specifier fails to resolve and the direct file exists', () => {
+    const result = rewriteExpoTsconfigExtends(expoTsconfig, {
+      extensionlessResolves: false,
+      directPathExists: true,
+    });
+
+    expect(result).toContain('"extends": "./node_modules/expo/tsconfig.base.json"');
+    expect(result).toContain('"@/*"');
+  });
+
+  it('keeps the user-shaped tsconfig when the specifier resolves', () => {
+    expect(
+      rewriteExpoTsconfigExtends(expoTsconfig, {
+        extensionlessResolves: true,
+        directPathExists: true,
+      })
+    ).toBeNull();
+  });
+
+  it('keeps the tsconfig when expo did not ship the direct json file', () => {
+    expect(
+      rewriteExpoTsconfigExtends(expoTsconfig, {
+        extensionlessResolves: false,
+        directPathExists: false,
+      })
+    ).toBeNull();
+  });
+
+  it('ignores tsconfigs that do not extend the expo base config', () => {
+    expect(
+      rewriteExpoTsconfigExtends(`{ "extends": "@react-native/typescript-config/tsconfig.json" }`, {
+        extensionlessResolves: false,
+        directPathExists: true,
+      })
+    ).toBeNull();
+  });
+
+  it('ignores malformed tsconfig content', () => {
+    expect(
+      rewriteExpoTsconfigExtends('not json', {
+        extensionlessResolves: false,
+        directPathExists: true,
+      })
+    ).toBeNull();
+  });
 });

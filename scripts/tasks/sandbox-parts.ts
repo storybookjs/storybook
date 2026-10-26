@@ -242,6 +242,60 @@ export const create: Task['run'] = async ({ key, template, sandboxDir }, { dryRu
   }
 };
 
+const EXPO_TSCONFIG_BASE = 'expo/tsconfig.base';
+const EXPO_TSCONFIG_BASE_PATH = './node_modules/expo/tsconfig.base.json';
+
+/**
+ * Expo SDK 58.0.14–58.0.16 hide `tsconfig.base` from extensionless resolution: their `exports`
+ * map only admits `./tsconfig.base.js` and `./tsconfig.base.d.ts`, neither of which exists, so
+ * tsconfck (vite-tsconfig-paths) and Vite/Oxc's transform fail with "Tsconfig not found" and the
+ * sandbox build dies on every story file. Extending the shipped JSON file by relative path
+ * sidesteps the exports map entirely. Gated on the specifier actually failing to resolve, so it
+ * stops applying once expo ships an SDK 58 release with a working map.
+ */
+export const rewriteExpoTsconfigExtends = (
+  content: string,
+  resolution: { extensionlessResolves: boolean; directPathExists: boolean }
+): string | null => {
+  if (resolution.extensionlessResolves || !resolution.directPathExists) {
+    return null;
+  }
+  let tsconfig: Record<string, unknown>;
+  try {
+    tsconfig = JSON.parse(content) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+  if (tsconfig.extends !== EXPO_TSCONFIG_BASE) {
+    return null;
+  }
+  return `${JSON.stringify({ ...tsconfig, extends: EXPO_TSCONFIG_BASE_PATH }, null, 2)}\n`;
+};
+
+const fixExpoTsconfigExtends = async ({ cwd, dryRun }: { cwd: string; dryRun?: boolean }) => {
+  const tsconfigPath = join(cwd, 'tsconfig.json');
+  if (!existsSync(tsconfigPath)) {
+    return;
+  }
+  const content = await readFile(tsconfigPath, 'utf8');
+  let extensionlessResolves = true;
+  try {
+    createRequire(join(cwd, 'package.json')).resolve(EXPO_TSCONFIG_BASE);
+  } catch {
+    extensionlessResolves = false;
+  }
+  const patched = rewriteExpoTsconfigExtends(content, {
+    extensionlessResolves,
+    directPathExists: existsSync(join(cwd, 'node_modules', 'expo', 'tsconfig.base.json')),
+  });
+  if (patched && !dryRun) {
+    await writeFile(tsconfigPath, patched);
+    logger.log(
+      `📝 Patched tsconfig.json to extend ${EXPO_TSCONFIG_BASE_PATH} directly because the installed expo release does not resolve the "${EXPO_TSCONFIG_BASE}" specifier`
+    );
+  }
+};
+
 export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, debug }) => {
   const cwd = sandboxDir;
   await installYarn2({ cwd, dryRun, debug, key });
@@ -278,6 +332,10 @@ export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, 
       }
     );
   }
+
+  // After install, node_modules reflects what was actually resolved, so this can decide whether
+  // the sandbox's expo tsconfig needs the relative-path workaround.
+  await fixExpoTsconfigExtends({ cwd, dryRun });
 };
 
 export const init: Task['run'] = async (

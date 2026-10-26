@@ -1,12 +1,13 @@
 import type * as ts from 'typescript';
+import type { DocgenTypeChecker, DocgenTypeScript } from '@storybook/component-meta-typescript';
 
 import type { TypeIndex } from './type-index.ts';
 
 // `ts` is carried rather than imported because the runtime module is the user project's own
 // TypeScript.
 export interface AnalyzerContext {
-  ts: typeof ts;
-  checker: ts.TypeChecker;
+  ts: DocgenTypeScript;
+  checker: DocgenTypeChecker;
   /** Rendering a type through this also files it under `miscellaneous`. */
   types: TypeIndex;
   /** The file this context analyzes, which a bare type name resolves against. */

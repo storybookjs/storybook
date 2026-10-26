@@ -17,16 +17,16 @@ const unstable_cache: Mock<Procedure> = fn()
 const unstable_noStore: Mock<Procedure> = fn().mockName('next/cache::unstable_noStore');
 const refresh: Mock<Procedure> = fn().mockName('next/cache::refresh');
 
+// mock utilities/overrides (as of Next v15.0.0)
+const cacheLife: Mock<Procedure> = fn().mockName('next/cache::cacheLife');
+const cacheTag: Mock<Procedure> = fn().mockName('next/cache::cacheTag');
+
 // mock utilities/overrides (as of Next v16.3.0)
 const io: Mock<Procedure> = fn(async () => {}).mockName('next/cache::io');
 
 // mock utilities/overrides (as of Next v16.4.0)
 const navigation: Mock<Procedure> = fn(async () => {}).mockName('next/cache::navigation');
 const prefetch: Mock<Procedure> = fn(async () => {}).mockName('next/cache::prefetch');
-
-// mock utilities/overrides (as of Next v15.0.0)
-const cacheLife: Mock<Procedure> = fn().mockName('next/cache::cacheLife');
-const cacheTag: Mock<Procedure> = fn().mockName('next/cache::cacheTag');
 
 const unstable_cacheLife = cacheLife;
 const unstable_cacheTag = cacheTag;

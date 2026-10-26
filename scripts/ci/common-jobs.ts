@@ -43,7 +43,7 @@ const installWithCache = (platform: CachePlatform = 'linux') => [
     : []),
 ];
 
-export const build_linux = defineJob('Build (linux)', (workflowName) => ({
+export const build_linux = defineJob('Build (linux)', () => ({
   executor: {
     name: 'sb_node_22_classic',
     class: 'xlarge',
@@ -86,7 +86,6 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
       },
     },
     git.check(),
-    ...workflow.reportOnFailure(workflowName),
     artifact.persist(`code/bench/esbuild-metafiles`, 'bench'),
     workspace.awaitPack(),
     workspace.persist([
@@ -181,7 +180,7 @@ export const storybookChromatic = defineJob(
 
 export const internalStorybookE2e = defineJob(
   'Internal storybook E2E',
-  (workflowName) => ({
+  () => ({
     executor: {
       name: 'sb_playwright',
       // The tools-attach.spec.ts CLIs build every manifest next to the dev server; OOMs on medium+.
@@ -210,7 +209,6 @@ export const internalStorybookE2e = defineJob(
         'playwright-results'
       ),
       testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
-      ...workflow.reportOnFailure(workflowName),
     ],
   }),
   [commonJobsNoOpJob]
@@ -218,7 +216,7 @@ export const internalStorybookE2e = defineJob(
 
 export const internalStorybookBuildE2e = defineJob(
   'Internal storybook build E2E',
-  (workflowName) => ({
+  () => ({
     executor: {
       name: 'sb_playwright',
       class: 'medium+',
@@ -254,7 +252,6 @@ export const internalStorybookBuildE2e = defineJob(
         'playwright-results'
       ),
       testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
-      ...workflow.reportOnFailure(workflowName),
     ],
   }),
   [commonJobsNoOpJob]
@@ -262,7 +259,7 @@ export const internalStorybookBuildE2e = defineJob(
 
 export const check = defineJob(
   'TypeScript validation',
-  (workflowName) => ({
+  () => ({
     // xlarge because each of the 4 concurrent native-tsc processes in the
     // check task is itself multi-threaded (~4 threads), so throughput still
     // wants the full 8 vCPUs; roughly cost-neutral vs the previous serial run
@@ -287,7 +284,6 @@ export const check = defineJob(
           command: 'yarn check',
         },
       },
-      ...workflow.reportOnFailure(workflowName),
       ...workflow.cancelOnFailure(),
     ],
   }),
@@ -348,7 +344,7 @@ const UNIT_TEST_REPORTERS =
 
 export const testsUnit_linux = defineJob(
   'Tests (linux)',
-  (workflowName) => ({
+  () => ({
     executor: {
       name: 'sb_node_22_classic',
       class: 'large',
@@ -367,7 +363,6 @@ export const testsUnit_linux = defineJob(
       testResults.persist(`test-results`),
 
       git.check(),
-      ...workflow.reportOnFailure(workflowName),
       ...workflow.cancelOnFailure(),
     ],
   }),
@@ -391,7 +386,7 @@ const writeChangedFiles = (changedFiles: readonly string[]) => ({
 export const defineAffectedCheck = (changedFiles: readonly string[]) =>
   defineJob(
     'TypeScript validation (affected)',
-    (workflowName) => ({
+    () => ({
       executor: {
         name: 'sb_node_22_classic',
         class: 'xlarge',
@@ -407,7 +402,6 @@ export const defineAffectedCheck = (changedFiles: readonly string[]) =>
             command: `yarn nx affected -t check --exclude-task-dependencies --parallel=4 --stdin < ${CHANGED_FILES_PATH}`,
           },
         },
-        ...workflow.reportOnFailure(workflowName),
         ...workflow.cancelOnFailure(),
       ],
     }),
@@ -458,7 +452,7 @@ export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) => 
 
   return defineJob(
     'Lint and format (affected)',
-    (workflowName) => ({
+    () => ({
       executor: {
         name: 'sb_node_22_classic',
         class: 'medium',
@@ -486,7 +480,6 @@ export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) => 
                 'yarn lint:js:cmd --quiet --no-error-on-unmatched-pattern'
               )
             )),
-        ...workflow.reportOnFailure(workflowName),
         ...workflow.cancelOnFailure(),
       ],
     }),
@@ -498,7 +491,7 @@ export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) => 
 export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
   defineJob(
     'Tests (linux, affected)',
-    (workflowName) => ({
+    () => ({
       executor: {
         name: 'sb_node_22_classic',
         class: 'large',
@@ -515,7 +508,6 @@ export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
         testResults.persist(`test-results`),
 
         git.check(),
-        ...workflow.reportOnFailure(workflowName),
         ...workflow.cancelOnFailure(),
       ],
     }),
@@ -524,7 +516,7 @@ export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
 
 export const testsStories_linux = defineJob(
   'Tests stories (linux)',
-  (workflowName) => ({
+  () => ({
     executor: {
       name: 'sb_playwright',
       class: 'xlarge',
@@ -543,7 +535,6 @@ export const testsStories_linux = defineJob(
       testResults.persist(`test-results`),
 
       git.check(),
-      ...workflow.reportOnFailure(workflowName),
       ...workflow.cancelOnFailure(),
     ],
   }),
@@ -597,6 +588,32 @@ export const defineCircleciCompletion = (requires: JobOrNoOpJob[]) =>
       ],
     }),
     requires
+  );
+
+/** Report the failed jobs of a nightly `next` run to Slack, whatever state the workflow ends in. */
+export const defineNightlyFailureReport = (completion: JobOrNoOpJob) =>
+  defineJob(
+    'Nightly failure report',
+    () => ({
+      executor: {
+        name: 'sb_barebones',
+        class: 'small',
+      },
+      steps: [
+        git.checkout(),
+        {
+          run: {
+            name: 'Report failed jobs to Slack',
+            environment: {
+              PIPELINE_NUMBER: '<< pipeline.number >>',
+            },
+            command: 'bash scripts/ci/report-nightly-failure.sh',
+          },
+        },
+      ],
+    }),
+    [completion],
+    { runsEvenIfRequirementsFail: true }
   );
 
 const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';

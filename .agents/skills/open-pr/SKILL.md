@@ -62,7 +62,7 @@ gh pr create \
 EOF
 )" \
   --assignee @me \
-  --label "<type>,<ci>,<qa>"
+  --label "<type>,<qa>"
 ```
 
 ### 6. Report and offer canary

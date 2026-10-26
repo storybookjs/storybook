@@ -91,5 +91,5 @@ Replace `<branch>` with Chromatic's normalized slug (special chars → dashes, e
 Always create PRs in draft mode:
 
 ```bash
-gh pr create --draft --title "<Area>: <Description>" --body "<FILLED_TEMPLATE>" --label "<category>,<ci>,<qa>"
+gh pr create --draft --title "<Area>: <Description>" --body "<FILLED_TEMPLATE>" --label "<category>,<qa>"
 ```

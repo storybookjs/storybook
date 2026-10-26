@@ -1,6 +1,5 @@
 import type { executors } from './executors.ts';
 import { toId } from './helpers.ts';
-import type { parameters } from './parameters.ts';
 
 export type Job<K extends string> = {
   id: string;
@@ -108,7 +107,10 @@ export function defineNoOpJob<K extends string>(name: K, requires = [] as JobOrN
   };
 }
 
-export type Workflow = (typeof parameters.workflow.enum)[number];
+/** Ordered from most to least thorough; a union config reports failures as its first workflow. */
+export const workflows = ['daily', 'merged', 'normal', 'focus', 'docs', 'windows'] as const;
+
+export type Workflow = (typeof workflows)[number];
 
 /**
  * Checks if the current workflow is at least the minimum workflow.

@@ -1,8 +1,8 @@
 import type { SvelteAST } from '../../../ast.ts';
 import { isOneOf } from '../../../../utils/is-one-of.ts';
-import type { Cmp, StoryProps } from '../../../../types.ts';
+import type { Cmp, RegisteredStoryProps } from '../../../../types.ts';
 
-type StoryAttributes = Array<keyof StoryProps<Record<string, any>, Cmp>>;
+type StoryAttributes = Array<keyof RegisteredStoryProps<Cmp>>;
 
 interface Options<Attributes extends StoryAttributes> {
   component: SvelteAST.Component;

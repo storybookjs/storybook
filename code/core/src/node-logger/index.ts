@@ -6,7 +6,11 @@ import * as newLogger from './logger/logger.ts';
 
 export { prompt } from './prompts/index.ts';
 export { logTracker } from './logger/log-tracker.ts';
-export type { SpinnerInstance, TaskLogInstance } from './prompts/prompt-provider-base.ts';
+export type {
+  SpinnerInstance,
+  TaskLogInstance,
+  PromptCancelReason,
+} from './prompts/prompt-provider-base.ts';
 export { protectUrls, createHyperlink } from './wrap-utils.ts';
 export { CLI_COLORS } from './logger/colors.ts';
 export { ConsoleLogger, StyledConsoleLogger } from './logger/console.ts';

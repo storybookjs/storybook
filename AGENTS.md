@@ -31,6 +31,7 @@ Both start long-running dev servers.
 | open or update a PR                                       | [Pull requests](.agents/guidelines/pull-requests.md)                                                            |
 | touch `code/core` internals, presets, open services, or the tools CLI | [Architecture](.agents/guidelines/architecture.md)                                                  |
 | do sandbox, E2E, or CI-parity work                        | [NX and `yarn task`](.agents/guidelines/nx-and-yarn-task.md) and [Sandboxes](.agents/guidelines/sandboxes.md)   |
+| call a Chromatic tool or debug a Chromatic build          | [Chromatic projects](.agents/guidelines/chromatic-projects.md)                                                  |
 | add or change an automigration                            | [`code/lib/cli-storybook/src/automigrate/README.md`](code/lib/cli-storybook/src/automigrate/README.md)          |
 
 Contributor skills live in `.agents/skills/`; `.claude/skills/` references them.

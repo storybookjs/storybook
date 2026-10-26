@@ -634,7 +634,7 @@ const meta = preview.meta({
 ```
 
 ```ts filename="Gizmo.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta } from '@storybook/angular';
 
 import { Gizmo } from './gizmo.component';
@@ -694,7 +694,7 @@ export default meta;
 ```
 
 ```ts filename="Gizmo.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
@@ -755,7 +755,7 @@ export default meta;
 ```
 
 ```js filename="Gizmo.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
-// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { Gizmo } from './Gizmo';
 
 export default {
@@ -811,7 +811,7 @@ export default {
 ```
 
 ```ts filename="Gizmo.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -869,7 +869,7 @@ export default meta;
 ```
 
 ```js filename="Gizmo.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
-// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 export default {
   component: 'gizmo-element',
   argTypes: {

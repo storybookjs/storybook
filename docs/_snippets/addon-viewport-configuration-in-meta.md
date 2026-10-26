@@ -52,7 +52,7 @@ const meta = preview.meta({
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta } from '@storybook/angular';
 
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
@@ -229,7 +229,7 @@ const meta = preview.meta({
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta } from '@storybook/vue3-vite';
 
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
@@ -250,7 +250,7 @@ export default meta;
 ```
 
 ```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
-// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import MyComponent from './MyComponent.vue';
@@ -299,7 +299,7 @@ const meta = preview.meta({
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
-// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 export default {
@@ -314,7 +314,7 @@ export default {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta } from '@storybook/web-components-vite';
 
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
@@ -333,7 +333,7 @@ export default meta;
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
@@ -355,7 +355,7 @@ export default meta;
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
-// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import { MyComponent } from './MyComponent';

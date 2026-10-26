@@ -65,7 +65,7 @@ export const Example = meta.story({
 ```
 
 ```tsx filename="my-component/component.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
-// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { useArgs } from 'storybook/preview-api';
@@ -102,7 +102,7 @@ export const Example = {
 ```
 
 ```jsx filename="my-component/component.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
-// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { useArgs } from 'storybook/preview-api';
 
 import { Checkbox } from './checkbox';

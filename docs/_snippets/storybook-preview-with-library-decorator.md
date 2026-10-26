@@ -114,7 +114,7 @@ export default definePreview({
 ```
 
 ```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="library (CSF 3)"
-// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { setup } from '@storybook/vue3-vite';
 
 import { createPinia } from 'pinia';
@@ -135,7 +135,7 @@ export default {
 ```
 
 ```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="component (CSF 3)"
-// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { setup } from '@storybook/vue3-vite';
 
 import { library } from '@fortawesome/fontawesome-svg-core';
@@ -159,7 +159,7 @@ export default {
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="library (CSF 3)"
-// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { setup, type Preview } from '@storybook/vue3-vite';
 
 import { createPinia } from 'pinia';
@@ -182,7 +182,7 @@ export default preview;
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="component (CSF 3)"
-// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { setup, type Preview } from '@storybook/vue3-vite';
 
 import { library } from '@fortawesome/fontawesome-svg-core';

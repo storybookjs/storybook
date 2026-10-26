@@ -2948,6 +2948,75 @@ describe('PreviewWeb', () => {
     });
 
     describe('if called twice simultaneously', () => {
+      it('does not render a superseded selection when the previous teardown is slow', async () => {
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview();
+        const [teardownGate, openTeardownGate] = createGate();
+        const [teardownStartedGate, openTeardownStartedGate] = createGate();
+        const [importGate, openImportGate] = createGate();
+        const [importStartedGate, openImportStartedGate] = createGate();
+        const newComponentOneExports = toMerged(componentOneExports, {
+          a: { args: { foo: 'first update' } },
+        });
+        const finalComponentOneExports = toMerged(componentOneExports, {
+          a: { args: { foo: 'final update' } },
+        });
+        const newImportFn = vi.fn(async (path) =>
+          path === './src/ComponentOne.stories.js' ? newComponentOneExports : importFn(path)
+        );
+        const newImportFn2 = vi.fn(async (path) => {
+          openImportStartedGate();
+          await importGate;
+          return path === './src/ComponentOne.stories.js'
+            ? finalComponentOneExports
+            : importFn(path);
+        });
+        const cleanupStory = vi
+          // @ts-expect-error Ignore protected property
+          .spyOn(preview.storyStoreValue, 'cleanupStory')
+          .mockImplementationOnce(async () => {
+            openTeardownStartedGate();
+            await teardownGate;
+          });
+        const onUnhandledRejection = vi.fn();
+        process.on('unhandledRejection', onUnhandledRejection);
+
+        try {
+          mockChannel.emit.mockClear();
+          projectAnnotations.renderToCanvas.mockClear();
+          const firstUpdate = preview.onStoriesChanged({ importFn: newImportFn });
+          await teardownStartedGate;
+          const finalUpdate = preview.onStoriesChanged({ importFn: newImportFn2 });
+          await importStartedGate;
+
+          openTeardownGate();
+          await firstUpdate;
+          openImportGate();
+          await finalUpdate;
+          await waitForRender();
+          await new Promise((resolve) => setTimeout(resolve, 0));
+
+          expect(onUnhandledRejection).not.toHaveBeenCalled();
+          expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(1);
+          expect(projectAnnotations.renderToCanvas).toHaveBeenCalledWith(
+            expect.objectContaining({
+              storyContext: expect.objectContaining({
+                id: 'component-one--a',
+                initialArgs: expect.objectContaining({ foo: 'final update' }),
+              }),
+            }),
+            'story-element'
+          );
+          expect(preview.storyRenders.length).toEqual(1);
+          expect(preview.currentRender?.isPreparing()).toBe(false);
+        } finally {
+          openTeardownGate();
+          openImportGate();
+          cleanupStory.mockRestore();
+          process.off('unhandledRejection', onUnhandledRejection);
+        }
+      });
+
       it('does not get renders confused', async () => {
         const [blockImportFnGate, openBlockImportFnGate] = createGate();
         const [importFnCalledGate, openImportFnCalledGate] = createGate();

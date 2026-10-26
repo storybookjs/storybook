@@ -83,6 +83,7 @@
     "@angular/platform-browser-dynamic": "^21.2.14",
     "@storybook/angular-cm": "workspace:*",
     "@storybook/angular-compodoc": "workspace:*",
+    "@storybook/component-meta-typescript": "workspace:*",
     "@types/node": "^22.19.1",
     "empathic": "^2.0.0",
     "memfs": "^4.11.1",

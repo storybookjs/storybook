@@ -11,6 +11,17 @@ import type { EngineId } from './types.ts';
 const reactScenarios = (profile: SuiteProfile): ScenarioSpec[] =>
   profile.react.map((scenario) => ({ name: scenario.shape, params: { ...scenario } }));
 
+const angularScenarios = (profile: SuiteProfile): ScenarioSpec[] => [
+  { name: 'default', params: { ...profile.angular } },
+];
+
+const angularArgs = ({ params }: ScenarioSpec): string[] => [
+  '--components',
+  String(params.components),
+  '--props',
+  String(params.props),
+];
+
 const workspaceScenarios = (profile: SuiteProfile): ScenarioSpec[] =>
   profile.workspace.map((scenario) => ({ name: scenario.name, params: { ...scenario } }));
 
@@ -80,6 +91,25 @@ export const ENGINES: BenchEngine[] = [
     jiti: true,
     args: (scenario) => [...reactArgs(scenario), '--mode', 'refresh', '--scope', 'changed'],
   }),
+  // The same manager on the TypeScript 7.1 native API (the `typescript-native` alias). No budget
+  // row yet, so it stays out of the default run; `--engine react-osa --engine react-osa-native`
+  // measures the pair.
+  new SeriesChildEngine({
+    id: 'react-osa-native',
+    child: '../docgen-memory/memory-harness.ts',
+    scenarios: reactScenarios,
+    jiti: true,
+    inDefaultRun: false,
+    args: (scenario) => [
+      ...reactArgs(scenario),
+      '--mode',
+      'refresh',
+      '--scope',
+      'changed',
+      '--typescript',
+      'native',
+    ],
+  }),
   new SeriesChildEngine({
     id: 'vue-docgen-api',
     child: 'engines/vue-docgen-api.ts',
@@ -119,6 +149,24 @@ export const ENGINES: BenchEngine[] = [
     args: (scenario) => [...workspaceArgs(scenario), '--engine', 'component-meta'],
   }),
   new CompodocEngine(),
+  // The analyzer Angular's docgen server runs, on both TypeScript APIs. No budget rows yet, so they
+  // stay out of the default run; `--engine angular-cm --engine angular-cm-native` measures the pair.
+  new SeriesChildEngine({
+    id: 'angular-cm',
+    child: 'engines/angular-cm.ts',
+    scenarios: angularScenarios,
+    jiti: true,
+    inDefaultRun: false,
+    args: angularArgs,
+  }),
+  new SeriesChildEngine({
+    id: 'angular-cm-native',
+    child: 'engines/angular-cm.ts',
+    scenarios: angularScenarios,
+    jiti: true,
+    inDefaultRun: false,
+    args: (scenario) => [...angularArgs(scenario), '--typescript', 'native'],
+  }),
   // Always fails. The gate names it explicitly to prove the gate reports a failing engine as a
   // failure; nothing else ever runs it.
   new SeriesChildEngine({

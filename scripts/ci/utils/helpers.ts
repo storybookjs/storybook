@@ -1,6 +1,15 @@
-import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../../utils/constants.ts';
+import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../../utils/npm-constants.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './constants.ts';
-import { type JobOrNoOpJob, type Workflow } from './types.ts';
+import { type JobOrNoOpJob } from './types.ts';
+
+export const cancelWorkflowStep = {
+  run: {
+    name: 'Cancel current workflow',
+    when: 'on_fail',
+    command:
+      'curl -X POST --header "Content-Type: application/json" "https://circleci.com/api/v2/workflow/${CIRCLE_WORKFLOW_ID}/cancel?circle-token=${WORKFLOW_CANCELER}"',
+  },
+};
 
 /**
  * The `Persisting to workspace` step is bytes-bound: CircleCI gzips the
@@ -358,43 +367,7 @@ export const workflow = {
       },
     },
   ],
-  cancelOnFailure: () => {
-    return [
-      {
-        run: {
-          name: 'Cancel current workflow',
-          when: 'on_fail',
-          command:
-            'curl -X POST --header "Content-Type: application/json" "https://circleci.com/api/v2/workflow/${CIRCLE_WORKFLOW_ID}/cancel?circle-token=${WORKFLOW_CANCELER}"',
-        },
-      },
-    ];
-  },
-  reportOnFailure: (workflow: Workflow, template: string = 'none') => {
-    return [
-      {
-        run: {
-          name: 'Un-shallow git',
-          when: 'on_fail',
-          command: 'git fetch --unshallow',
-        },
-      },
-      {
-        run: {
-          name: 'Report failure',
-          when: 'on_fail',
-          command: 'echo "Workflow failed"',
-        },
-      },
-      {
-        'discord/status': {
-          only_for_branches: ['main', 'next', 'next-release', 'latest-release'].join(','),
-          fail_only: true,
-          failure_message: `$(yarn get-report-message ${workflow} ${template})`,
-        },
-      },
-    ];
-  },
+  cancelOnFailure: () => [cancelWorkflowStep],
 };
 
 /** Namespaces the cache per executor, so a Linux tree can never be restored on Windows. */

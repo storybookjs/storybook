@@ -13,10 +13,13 @@ import {
   getStorybookRerunInstruction,
   getVitestStorybookRunCommand,
   hasStorybookMinimumAgeExclusions,
+  isNpmPeerResolutionError,
   parsePackageData,
   parsePackageTimeMap,
   parsePositiveIntegerConfigValue,
   parseReleaseTime,
+  parseYarnMinimalAgeGateMinutes,
+  readPackageVersions,
 } from './util.ts';
 
 describe('js package manager util', () => {
@@ -31,6 +34,30 @@ describe('js package manager util', () => {
     expect(parsePositiveIntegerConfigValue('1440\n')).toBe(1440);
     expect(parsePositiveIntegerConfigValue('0')).toBeNull();
     expect(parsePositiveIntegerConfigValue('false')).toBeNull();
+  });
+
+  it('parses Yarn age-gate durations as minutes', () => {
+    expect(parseYarnMinimalAgeGateMinutes('1440\n')).toBe(1440);
+    expect(parseYarnMinimalAgeGateMinutes('86400s')).toBe(1440);
+    expect(parseYarnMinimalAgeGateMinutes('604800s\n')).toBe(10080);
+    expect(parseYarnMinimalAgeGateMinutes('7d')).toBe(7 * 24 * 60);
+    expect(parseYarnMinimalAgeGateMinutes('1w')).toBe(7 * 24 * 60);
+    expect(parseYarnMinimalAgeGateMinutes('2h')).toBe(120);
+    expect(parseYarnMinimalAgeGateMinutes('30m')).toBe(30);
+    expect(parseYarnMinimalAgeGateMinutes('90s')).toBe(1.5);
+    expect(parseYarnMinimalAgeGateMinutes('{"secs":604800,"nanos":0}')).toBe(10080);
+    expect(parseYarnMinimalAgeGateMinutes('0')).toBeNull();
+    expect(parseYarnMinimalAgeGateMinutes('false')).toBeNull();
+    expect(parseYarnMinimalAgeGateMinutes('not-a-duration')).toBeNull();
+  });
+
+  it('reads version lists from Yarn info and from a registry packument', () => {
+    expect(readPackageVersions(['1.0.0', '2.0.0'])).toEqual(['1.0.0', '2.0.0']);
+    expect(readPackageVersions({ '2.0.0': {}, '1.0.0': {}, created: 'nope' })).toEqual([
+      '1.0.0',
+      '2.0.0',
+    ]);
+    expect(readPackageVersions(null)).toBeNull();
   });
 
   it('parses release times', () => {
@@ -105,10 +132,12 @@ describe('js package manager util', () => {
         '@storybook/*',
         'eslint-plugin-storybook',
         '@chromatic-com/storybook',
+        'chromatic',
       ])
     ).toBe(true);
     expect(hasStorybookMinimumAgeExclusions(['storybook', '@storybook/react-vite'])).toBe(false);
-    expect(hasStorybookMinimumAgeExclusions(['*storybook*'])).toBe(true);
+    expect(hasStorybookMinimumAgeExclusions(['*storybook*', 'chromatic'])).toBe(true);
+    expect(hasStorybookMinimumAgeExclusions(['*storybook*'])).toBe(false);
   });
 
   it('builds rerun guidance', () => {
@@ -170,5 +199,12 @@ describe('js package manager util', () => {
         message: 'message',
       })
     ).toBe('short\nstderr\nmessage');
+  });
+
+  it('detects npm peer resolution errors from error logs', () => {
+    expect(isNpmPeerResolutionError(new Error('npm error code ERESOLVE'))).toBe(true);
+    expect(isNpmPeerResolutionError(new Error('npm ERR! code ERESOLVE'))).toBe(true);
+    expect(isNpmPeerResolutionError(new Error('npm error code EACCES'))).toBe(false);
+    expect(isNpmPeerResolutionError(new Error('something went wrong'))).toBe(false);
   });
 });

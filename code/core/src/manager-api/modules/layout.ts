@@ -11,8 +11,8 @@ import { global } from '@storybook/global';
 
 import { pick, toMerged } from 'es-toolkit/object';
 import { isEqual as deepEqual } from 'es-toolkit/predicate';
-import type { ThemeVars } from 'storybook/theming';
 import { create } from 'storybook/theming/create';
+import type { ThemeVars } from 'storybook/theming/emotion';
 
 import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 import merge from '../lib/merge.ts';

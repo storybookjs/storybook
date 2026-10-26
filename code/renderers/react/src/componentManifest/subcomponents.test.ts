@@ -28,8 +28,8 @@ describe('extractDeclaredSubcomponents', () => {
     ).parse();
 
     expect(extractDeclaredSubcomponents(csf)).toEqual([
-      { name: 'Loop', componentName: 'LoopA' },
-      { name: 'Item', componentName: 'Item' },
+      { componentName: 'LoopA', name: 'Loop', node: expect.anything() },
+      { componentName: 'Item', name: 'Item', node: expect.anything() },
     ]);
   });
 });

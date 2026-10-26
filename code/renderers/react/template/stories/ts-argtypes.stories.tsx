@@ -8,7 +8,7 @@ import type { StoryObj } from '@storybook/react';
 import { PureArgsTable as ArgsTable } from '@storybook/addon-docs/blocks';
 
 import { getService, inferControls } from 'storybook/preview-api';
-import { ThemeProvider, convert, themes } from 'storybook/theming';
+import { ThemeProvider, convert, themes } from 'storybook/theming/emotion';
 
 import { component as TsImportedTypesComponent } from './docgen-components/8143-ts-imported-types/input';
 import { component as TsReactFcGenericsComponent } from './docgen-components/8143-ts-react-fc-generics/input';

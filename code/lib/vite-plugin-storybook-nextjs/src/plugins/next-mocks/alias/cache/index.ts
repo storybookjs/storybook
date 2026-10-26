@@ -16,6 +16,7 @@ const unstable_cache: Mock<Procedure> = fn()
   .mockImplementation((cb: Callback) => cb);
 const unstable_noStore: Mock<Procedure> = fn().mockName('next/cache::unstable_noStore');
 const refresh: Mock<Procedure> = fn().mockName('next/cache::refresh');
+const io: Mock<Procedure> = fn().mockName('next/cache::io').mockResolvedValue(undefined);
 
 // mock utilities/overrides (as of Next v15.0.0)
 const cacheLife: Mock<Procedure> = fn().mockName('next/cache::cacheLife');
@@ -30,6 +31,7 @@ const cacheExports = {
   revalidatePath,
   updateTag,
   refresh,
+  io,
   unstable_noStore,
   cacheLife,
   cacheTag,
@@ -44,6 +46,7 @@ export {
   revalidatePath,
   unstable_noStore,
   refresh,
+  io,
   updateTag,
   cacheLife,
   cacheTag,

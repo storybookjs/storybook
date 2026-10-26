@@ -1,4 +1,8 @@
-import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
+import {
+  getComponentIdFromEntry,
+  getStoryImportPathFromEntry,
+  type TypeScriptSpecifierForDocgen,
+} from 'storybook/internal/common';
 import type { DocgenJsDocTags, DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
@@ -16,6 +20,7 @@ import { resolveStoryComponent } from './resolve-component.ts';
 // Structured-cloned onto the worker thread, so every field must be plain JSON data.
 export interface AngularDocgenOptions {
   propsTable: PropsTableMode;
+  typeScriptSpecifier?: TypeScriptSpecifierForDocgen;
 }
 
 export interface SnippetEnum {

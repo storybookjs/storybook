@@ -230,7 +230,6 @@ The first step is to add an entry to `code/lib/cli-storybook/src/sandbox-templat
 'react-vite/default-ts': {
     name: 'React Latest (Vite | TypeScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template react-ts',
-    inDevelopment: true,
     expected: {
       framework: '@storybook/react-vite',
       renderer: '@storybook/react',
@@ -239,14 +238,14 @@ The first step is to add an entry to `code/lib/cli-storybook/src/sandbox-templat
   },
 ```
 
-Add the `inDevelopment` flag until the PR is merged (you can fast-follow it with a second PR to remove the flag), as it'll make the development process much easier.
+The **`key`** `react-vite/default-ts` consists of two parts:
 
-The **`key`** `cra/default-js` consists of two parts:
+- The prefix is the framework and builder the repro app targets
+- The suffix is options that modify the default install, e.g. a specific version (`react-webpack/18-ts`) and the language
 
-- The prefix is the tool that was used to generate the repro app
-- The suffix is options that modify the default install, e.g. a specific version or options
-
-The **`script`** field is what generates the application environment. The `.` argument is “the current working directory” which is auto-generated based on the key (e.g. `repros/cra/default-js/before-storybook`). The `{{beforeDir}}` key can also be used, which will be replaced by the path of that directory.
+The **`script`** field is what generates the application environment.
+The `.` argument is “the current working directory” which is auto-generated based on the key (e.g. `repros/react-vite/default-ts/before-storybook`).
+The `{{beforeDir}}` key can also be used, which will be replaced by the path of that directory.
 
 The rest of the fields are self-explanatory:
 
@@ -258,15 +257,21 @@ The **`expected`** field reflects what framework/renderer/builder we expect `sb 
 
 ### Running a sandbox
 
-If your template has an `inDevelopment` flag, it will be generated (locally) as part of the sandbox process. You can create the sandbox with the following command, where `<template-key>` is replaced by the id of the selected template e.g. `cra/default-js`:
+The sandbox task downloads the template from the [sandboxes repository](https://github.com/storybookjs/sandboxes), which the nightly `generate-sandboxes` workflow publishes from every entry in `sandbox-templates.ts`.
+A new template is therefore only available to the sandbox task once its PR is merged and the next nightly generation has run.
+Until then, keep it out of the `normal` and `daily` CI lists, and check that its script and `storybook init` succeed by generating it locally, where `<template-key>` is replaced by the id of the template e.g. `react-vite/default-ts`:
+
+```bash
+yarn task --task generate --template <template-key> --no-link
+```
+
+The result is written to `repros/<template-key>/before-storybook` and `repros/<template-key>/after-storybook`.
+
+Once the template is published, you can create and start its sandbox with the following command:
 
 ```bash
 yarn task --task dev --template <template-key> --start-from=install
 ```
-
-Templates with `inDevelopment` will automatically run with `--no-link` flag as it is required for the local template generation to work.
-
-Once the PR is merged, the template will be generated on a nightly cadence and you can remove the `inDevelopment` flag and the sandbox will pull the code from our templates repository.
 
 ## Troubleshooting
 

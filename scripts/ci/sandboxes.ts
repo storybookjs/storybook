@@ -8,7 +8,6 @@ import { build_linux } from './common-jobs.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   artifact,
-  npm,
   sandboxArchive,
   server,
   testResults,
@@ -199,24 +198,6 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             ].join('\n'),
           },
         },
-        ...('inDevelopment' in data && data.inDevelopment
-          ? [
-              // Node's bundled npm silently ignores NPM_CONFIG_MIN_RELEASE_AGE during scaffold;
-              // `ensureNpmSupportsMinReleaseAge` fails the generate task on it.
-              npm.installPinnedVersion(),
-              {
-                run: {
-                  name: 'Generate Sandbox',
-                  command: `yarn task generate --template ${key} --no-link -s generate --debug`,
-                  environment: {
-                    STORYBOOK_SANDBOX_GENERATE: 1,
-                    STORYBOOK_TELEMETRY_DEBUG: 1,
-                    STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
-                  },
-                },
-              },
-            ]
-          : []),
         {
           run: {
             name: 'Create Sandbox',

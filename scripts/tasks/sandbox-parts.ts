@@ -35,7 +35,7 @@ import {
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task.ts';
 import { executeCLIStep, steps } from '../utils/cli-step.ts';
-import { CODE_DIRECTORY, REPROS_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants.ts';
+import { CODE_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants.ts';
 import { exec } from '../utils/exec.ts';
 import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir.ts';
 import { addPreviewAnnotations, readConfig } from '../utils/main-js.ts';
@@ -219,25 +219,17 @@ export const essentialsAddons = [
   'viewport',
 ];
 
-export const create: Task['run'] = async ({ key, template, sandboxDir }, { dryRun, debug }) => {
+export const create: Task['run'] = async ({ key, sandboxDir }, { dryRun, debug }) => {
   const parentDir = resolve(sandboxDir, '..');
   await mkdir(parentDir, { recursive: true });
 
-  if ('inDevelopment' in template && template.inDevelopment) {
-    const srcDir = join(REPROS_DIRECTORY, key, 'after-storybook');
-    if (!existsSync(srcDir)) {
-      throw new Error(`Missing repro directory '${srcDir}', did the generate task run?`);
-    }
-    await cp(srcDir, sandboxDir, { recursive: true });
-  } else {
-    await executeCLIStep(steps.repro, {
-      argument: key,
-      optionValues: { output: sandboxDir, init: false, debug, loglevel: 'debug' },
-      cwd: parentDir,
-      dryRun,
-      debug,
-    });
-  }
+  await executeCLIStep(steps.repro, {
+    argument: key,
+    optionValues: { output: sandboxDir, init: false, debug, loglevel: 'debug' },
+    cwd: parentDir,
+    dryRun,
+    debug,
+  });
 };
 
 export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, debug }) => {

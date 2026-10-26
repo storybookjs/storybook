@@ -6,7 +6,6 @@ setup: true
 orbs:
   git-shallow-clone: guitarrapc/git-shallow-clone@2.8.0
   continuation: circleci/continuation@2.0.1
-  node: circleci/node@7.2.1
 
 parameters:
   ghBaseBranch:
@@ -23,28 +22,53 @@ parameters:
     type: string
   workflow:
     default: skipped
-    description: Which workflows to run, comma-separated, out of daily, merged, normal, docs, windows (e.g. `normal,windows`)
+    description: Which workflows to run, comma-separated, out of daily, normal, focus, docs, windows (e.g. `normal,windows`)
     type: string
 
 jobs:
   generate-and-run-config:
-    executor:
-      name: node/default
-      resource_class: large
+    docker:
+      - image: cimg/node:22.22.3
+    resource_class: large
     steps:
-      - node/install:
-          install-yarn: true
-      - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1'
-      - run:
-          name: Install dependencies
-          command: yarn workspaces focus @storybook/scripts
+      # Only focus diffs against the base branch, so only it pays for 500 commits of history.
+      - when:
+          condition:
+            matches:
+              pattern: '(.*,)?focus(,.*)?'
+              value: << pipeline.parameters.workflow >>
+          steps:
+            - git-shallow-clone/checkout_advanced:
+                clone_options: '--depth 500 --filter=blob:none --no-tags'
+            - run:
+                name: Fetch base branch for focused CI
+                environment:
+                  GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
+                command: |
+                  git fetch --depth=500 --filter=blob:none --no-tags origin \
+                    "$GH_BASE_BRANCH:refs/remotes/origin/$GH_BASE_BRANCH"
+                  if ! git merge-base "origin/$GH_BASE_BRANCH" HEAD >/dev/null; then
+                    echo "No merge base found between origin/$GH_BASE_BRANCH and HEAD within 500 commits." >&2
+                    exit 1
+                  fi
+      - unless:
+          condition:
+            matches:
+              pattern: '(.*,)?focus(,.*)?'
+              value: << pipeline.parameters.workflow >>
+          steps:
+            - git-shallow-clone/checkout_advanced:
+                clone_options: '--depth 1'
       - run:
           name: Generate config
+          environment:
+            GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
           command: |
-            yarn dlx jiti ./scripts/ci/main.ts \
+            node --experimental-transform-types ./scripts/ci/main.ts \
               --workflow=<< pipeline.parameters.workflow >> \
-              --gh-trusted-author=<< pipeline.parameters.ghTrustedAuthor >>
+              --base-ref="origin/$GH_BASE_BRANCH" \
+              --gh-trusted-author=<< pipeline.parameters.ghTrustedAuthor >> \
+              --branch="<< pipeline.git.branch >>"
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml
 workflows:

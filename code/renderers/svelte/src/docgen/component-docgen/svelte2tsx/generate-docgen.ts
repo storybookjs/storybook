@@ -198,24 +198,49 @@ function initializerToDefaultValue(
   return { text: '...' };
 }
 
-function loadConfig(basepath: string): [ts.CompilerOptions, Set<string>] {
-  const configPath =
+const FORCED_OPTIONS: ts.CompilerOptions = {
+  sourceMap: false,
+  noEmit: true,
+  strict: true,
+  allowJs: true,
+  checkJs: true,
+  skipLibCheck: true,
+  skipDefaultLibCheck: true,
+};
+
+/**
+ * A parsed config, as a docgen program is built from it. `rootNames` are the config's `.svelte` files
+ * as svelte2tsx `.svelte.tsx` files, then the svelte2tsx shim; `fileNames` and `projectReferences` are
+ * what core's component-meta manager matches components against.
+ */
+export interface SvelteCommandLine {
+  fileNames: string[];
+  rootNames: string[];
+  options: ts.CompilerOptions;
+  projectReferences?: readonly ts.ProjectReference[];
+}
+
+export type DocgenOptions = { server?: boolean; documentationSource?: string };
+
+/** Map a `.svelte` component to the `.svelte.tsx` file svelte2tsx compiles it to. */
+export function virtualFileName(fileName: string): string {
+  return fileName.endsWith('.svelte') ? `${fileName}.tsx` : fileName;
+}
+
+function shimFileName(server: boolean): string {
+  const shimFilename = import.meta.resolve('svelte2tsx/svelte-shims-v4.d.ts');
+  return server ? fileURLToPath(shimFilename) : shimFilename;
+}
+
+// A tsconfig anywhere up the tree wins over a closer jsconfig.
+function findSvelteConfig(basepath: string): string | undefined {
+  return (
     ts.findConfigFile(basepath, ts.sys.fileExists) ||
-    ts.findConfigFile(basepath, ts.sys.fileExists, 'jsconfig.json');
+    ts.findConfigFile(basepath, ts.sys.fileExists, 'jsconfig.json')
+  );
+}
 
-  const forcedOptions = {
-    sourceMap: false,
-    noEmit: true,
-    strict: true,
-    allowJs: true,
-    checkJs: true,
-    skipLibCheck: true,
-    skipDefaultLibCheck: true,
-  };
-  if (!configPath) {
-    return [forcedOptions, new Set()];
-  }
-
+export function parseSvelteConfig(configPath: string, server = true): SvelteCommandLine {
   const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
   const config = ts.parseJsonConfigFileContent(
     configFile.config,
@@ -233,19 +258,30 @@ function loadConfig(basepath: string): [ts.CompilerOptions, Set<string>] {
     ]
   );
 
-  const fileNames = new Set(
-    config.fileNames
-      .filter((fileName) => fileName.endsWith('.svelte'))
-      .map((fileName) => fileName + '.tsx')
-  );
-
-  return [
-    {
+  return {
+    fileNames: config.fileNames,
+    projectReferences: config.projectReferences,
+    rootNames: [
+      ...config.fileNames
+        .filter((fileName) => fileName.endsWith('.svelte'))
+        .map((fileName) => fileName + '.tsx'),
+      shimFileName(server),
+    ],
+    options: {
       ...config.options,
-      ...forcedOptions,
+      ...FORCED_OPTIONS,
     },
-    fileNames,
-  ];
+  };
+}
+
+/** Build the config for a component no tsconfig or jsconfig covers. */
+export function inferredCommandLine(server = true): SvelteCommandLine {
+  return { fileNames: [], rootNames: [shimFileName(server)], options: FORCED_OPTIONS };
+}
+
+function loadConfig(basepath: string, server: boolean): SvelteCommandLine {
+  const configPath = findSvelteConfig(basepath);
+  return configPath ? parseSvelteConfig(configPath, server) : inferredCommandLine(server);
 }
 
 export interface DocgenCache {
@@ -301,7 +337,7 @@ function largeDeclarationSources(props: ts.Symbol[]): Set<object | string> {
 }
 
 // TypeScript 7's `typescript` package exports only its version, without the compiler API.
-function assertCompilerApi() {
+export function assertCompilerApi() {
   if (typeof ts.createProgram !== 'function') {
     // eslint-disable-next-line local-rules/no-uncategorized-errors
     throw new Error(
@@ -315,23 +351,40 @@ function assertCompilerApi() {
 export function generateDocgen(
   targetFileName: string,
   cache: DocgenCache,
-  options: { server?: boolean; documentationSource?: string } = {}
+  options: DocgenOptions = {}
 ): Docgen {
   assertCompilerApi();
-  if (targetFileName.endsWith('.svelte')) {
-    targetFileName = targetFileName + '.tsx';
-  }
+  targetFileName = virtualFileName(targetFileName);
 
   if (cache.options === undefined || !cache.rootNames?.has(targetFileName)) {
-    [cache.options, cache.rootNames] = loadConfig(targetFileName);
-
-    const shimFilename = import.meta.resolve('svelte2tsx/svelte-shims-v4.d.ts');
-    cache.rootNames.add(options.server ? fileURLToPath(shimFilename) : shimFilename);
-    cache.rootNames.add(targetFileName);
+    const commandLine = loadConfig(targetFileName, !!options.server);
+    cache.options = commandLine.options;
+    cache.rootNames = new Set([...commandLine.rootNames, targetFileName]);
   }
 
+  const program = createDocgenProgram(
+    Array.from(cache.rootNames),
+    cache.options,
+    cache,
+    cache.oldProgram
+  );
+  cache.oldProgram = program;
+  return extractDocgen(program, program.getTypeChecker(), targetFileName, options);
+}
+
+/**
+ * Build a program over `rootNames` whose host compiles `.svelte` files with svelte2tsx, reusing every
+ * source file whose mtime has not moved since `cache` saw it.
+ */
+export function createDocgenProgram(
+  rootNames: string[],
+  compilerOptions: ts.CompilerOptions,
+  cache: DocgenCache,
+  oldProgram?: ts.Program
+): ts.Program {
+  assertCompilerApi();
   // Create a custom host
-  const originalHost = ts.createCompilerHost(cache.options);
+  const originalHost = ts.createCompilerHost(compilerOptions);
   const host: ts.CompilerHost = {
     ...originalHost,
     readFile(fileName) {
@@ -450,15 +503,16 @@ export function generateDocgen(
     },
   };
 
-  const program = ts.createProgram({
-    rootNames: Array.from(cache.rootNames),
-    options: cache.options,
-    host,
-    oldProgram: cache.oldProgram,
-  });
-  cache.oldProgram = program;
+  return ts.createProgram({ rootNames, options: compilerOptions, host, oldProgram });
+}
 
-  const checker = program.getTypeChecker();
+/** Read the docs of `targetFileName`, a `.svelte.tsx` file of `program`, through `checker`. */
+export function extractDocgen(
+  program: ts.Program,
+  checker: ts.TypeChecker,
+  targetFileName: string,
+  options: DocgenOptions
+): Docgen {
   const sourceFile = program.getSourceFile(targetFileName);
   if (sourceFile === undefined) {
     return {

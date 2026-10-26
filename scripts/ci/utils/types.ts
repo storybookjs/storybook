@@ -6,6 +6,8 @@ export type Job<K extends string> = {
   name: K;
   implementation: (workflow: Workflow) => JobImplementationObj | NoOpJobImplementationObj;
   requires: JobOrNoOpJob[];
+  /** Start once the required jobs have finished in any state, instead of only after they succeed. */
+  runsEvenIfRequirementsFail?: boolean;
 };
 
 export type JobOrNoOpJob = Job<string>;
@@ -75,7 +77,8 @@ export type JobImplementation = (workflow: Workflow) => JobImplementationObj;
 export function defineJob<K extends string, I extends JobImplementation>(
   name: K,
   implementation: I,
-  requires = [] as JobOrNoOpJob[]
+  requires = [] as JobOrNoOpJob[],
+  { runsEvenIfRequirementsFail }: Pick<Job<K>, 'runsEvenIfRequirementsFail'> = {}
 ): Job<K> {
   return {
     id: toId(name),
@@ -85,6 +88,7 @@ export function defineJob<K extends string, I extends JobImplementation>(
       ...implementation(workflow),
     }),
     requires,
+    runsEvenIfRequirementsFail,
   };
 }
 
@@ -108,14 +112,14 @@ export function defineNoOpJob<K extends string>(name: K, requires = [] as JobOrN
 }
 
 /** Ordered from most to least thorough; a union config reports failures as its first workflow. */
-export const workflows = ['daily', 'merged', 'normal', 'docs', 'windows'] as const;
+export const workflows = ['daily', 'normal', 'focus', 'docs', 'windows'] as const;
 
 export type Workflow = (typeof workflows)[number];
 
 /**
  * Checks if the current workflow is at least the minimum workflow.
  *
- * `normal` → `merged` → `daily`
+ * `normal` → `daily`
  *
  * `docs` is unique, in that it's not considered below of above anything.
  *
@@ -123,7 +127,6 @@ export type Workflow = (typeof workflows)[number];
  *
  * ```ts
  * isWorkflowOrAbove('normal', 'normal'); // true
- * isWorkflowOrAbove('normal', 'merged'); // false
  * isWorkflowOrAbove('normal', 'daily'); // false
  * isWorkflowOrAbove('daily', 'normal'); // true
  * ```
@@ -136,10 +139,8 @@ export function isWorkflowOrAbove(current: Workflow, minimum: Workflow): boolean
   switch (current) {
     case 'normal':
       return minimum === 'normal';
-    case 'merged':
-      return minimum === 'normal' || minimum === 'merged';
     case 'daily':
-      return minimum === 'normal' || minimum === 'merged' || minimum === 'daily';
+      return minimum === 'normal' || minimum === 'daily';
     case 'docs':
       return minimum === 'docs';
     default:

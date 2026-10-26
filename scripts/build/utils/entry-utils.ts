@@ -107,6 +107,9 @@ export const getExternal = async (cwd: string) => {
     // reachable through devDep type imports (e.g. react-docgen-typescript); keeping it
     // external lets treeshaking drop the import when the kept types don't use it.
     'typescript',
+    // The TypeScript 7.1 alias, for the same reason: a bundled copy of its types is a different
+    // type from the module the tests and the docgen worker import.
+    'typescript-native',
     ...builtinModules.flatMap((m: string) => [m, `node:${m}`]),
   ];
 

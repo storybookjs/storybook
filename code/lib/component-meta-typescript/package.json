@@ -1,0 +1,50 @@
+{
+  "name": "@storybook/component-meta-typescript",
+  "version": "11.0.0-alpha.7",
+  "private": true,
+  "description": "The TypeScript layer of Storybook's component-meta docgen, on the compiler API and the native API of TypeScript 7.1",
+  "keywords": [
+    "storybook",
+    "typescript",
+    "docgen"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/component-meta-typescript",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/lib/component-meta-typescript"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "typescript-native": "npm:typescript@7.1.0-beta"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^",
+    "typescript": "^5.9.0 || ^6.0.0 || ^7.0.0"
+  }
+}

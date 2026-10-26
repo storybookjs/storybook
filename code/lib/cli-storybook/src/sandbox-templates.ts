@@ -31,9 +31,9 @@ type LoosenedStorybookConfig = Omit<Partial<StorybookConfigRaw>, 'features'> & {
 export type Template = {
   /**
    * Readable name for the template, used for feedback and the status page. Base templates follow
-   * `<framework> <"v"version|"Latest"|"Prerelease"> (<"Webpack"|"Vite"|"RsBuild"> | TypeScript)`,
-   * e.g. `Next.js v15 (Webpack | TypeScript)`. CI job ids are derived from it, so renaming a
-   * template renames its jobs.
+   * `<framework> <"v"version|"Latest"|"Prerelease"> (<"Webpack"|"Vite"|"RsBuild"> |
+   * <"JavaScript"|"TypeScript">)`, e.g. `Next.js v15 (Webpack | TypeScript)`. CI job ids are derived
+   * from it, so renaming a template renames its jobs.
    */
   name: string;
   /**
@@ -139,7 +139,9 @@ export type Template = {
 };
 
 type BaseTemplates = Template & {
-  name: `${string} ${`v${number}` | 'Latest' | 'Prerelease'} (${'Webpack' | 'Vite' | 'RsBuild'} | TypeScript)`;
+  name: `${string} ${`v${number}` | 'Latest' | 'Prerelease'} (${'Webpack' | 'Vite' | 'RsBuild'} | ${
+    | 'JavaScript'
+    | 'TypeScript'})`;
 };
 
 export const baseTemplates = {
@@ -272,6 +274,26 @@ export const baseTemplates = {
       extraDevDependencies: ['server-only', 'vite', 'prop-types'],
     },
     skipTasks: ['bench'],
+  },
+  'react-vite/default-js': {
+    name: 'React Latest (Vite | JavaScript)',
+    script: 'npm create vite --yes {{beforeDir}} -- --template react',
+    expected: {
+      framework: '@storybook/react-vite',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
+      extraDevDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          developmentModeForBuild: true,
+          experimentalTestSyntax: true,
+        },
+      },
+    },
+    skipTasks: ['e2e-tests', 'bench'],
   },
   'react-vite/default-ts': {
     name: 'React Latest (Vite | TypeScript)',
@@ -975,6 +997,7 @@ export const daily: TemplateKey[] = [
   // Re-enable once storybook-builder-rsbuild releases a version that works with Storybook 11.
   // 'vue3-rsbuild/default-ts',
   'angular-vite/21-ts',
+  'react-vite/default-js',
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',
   'vue3-vite/prerelease-ts',

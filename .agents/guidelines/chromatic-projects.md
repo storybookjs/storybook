@@ -6,6 +6,7 @@ Pass the project ID as `projectId` to the Chromatic tools. Sandbox projects are 
 | ---------------------------------------- | ---------------------------------- |
 | internal Storybook UI (`code/`)          | `Project:635781f3500dd2c49e189caf` |
 | `react-vite/default-ts`                  | `Project:630511d655df72125520f051` |
+| `react-vite/default-js`                  | `Project:6305104a03ce824473a88c65` |
 | `react-vite/prerelease-ts`               | `Project:6637a367fa5b4eaa26d92d25` |
 | `react-webpack/18-ts`                    | `Project:633c394125f29c2cbb5a4cac` |
 | `react-webpack/prerelease-ts`            | `Project:6637a3aad047d2bb1b3cbfe9` |

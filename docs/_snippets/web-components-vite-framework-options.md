@@ -3,7 +3,7 @@ export default {
   framework: {
     name: '@storybook/web-components-vite',
     options: {
-      // ...
+      customElementsManifest: '../custom-elements.json',
     },
   },
 };
@@ -16,7 +16,7 @@ const config: StorybookConfig = {
   framework: {
     name: '@storybook/web-components-vite',
     options: {
-      // ...
+      customElementsManifest: '../custom-elements.json',
     },
   },
 };
@@ -31,7 +31,7 @@ export default defineMain({
   framework: {
     name: '@storybook/web-components-vite',
     options: {
-      // ...
+      customElementsManifest: '../custom-elements.json',
     },
   },
 });
@@ -46,7 +46,7 @@ export default defineMain({
   framework: {
     name: '@storybook/web-components-vite',
     options: {
-      // ...
+      customElementsManifest: '../custom-elements.json',
     },
   },
 });

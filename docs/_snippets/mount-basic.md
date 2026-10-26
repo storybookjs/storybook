@@ -51,7 +51,8 @@ export const ChristmasUI = meta.story({
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Page from './Page.svelte';
 
@@ -62,7 +63,7 @@ export const ChristmasUI = meta.story({
 
 <Story
   name="ChristmasUI"
-  play={async ({ mount }) {
+  play={async ({ mount }) => {
     MockDate.set('2024-12-25');
     // 👇 Render the component with the mocked date
     await mount();
@@ -71,24 +72,32 @@ export const ChristmasUI = meta.story({
 />
 ```
 
-```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-import MockDate from 'mockdate';
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-// ...rest of story file
+  import Page from './Page.svelte';
 
-export const ChristmasUI: Story = {
-  async play({ mount }) {
+  const { Story } = preview.meta({
+    component: Page,
+  });
+</script>
+
+<Story
+  name="ChristmasUI"
+  play={async ({ mount }) => {
     MockDate.set('2024-12-25');
     // 👇 Render the component with the mocked date
     await mount();
     // ...rest of test
-  },
-};
+  }}
+/>
 ```
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Page from './Page.svelte';
 
@@ -99,7 +108,7 @@ export const ChristmasUI: Story = {
 
 <Story
   name="ChristmasUI"
-  play={async ({ mount }) {
+  play={async ({ mount }) => {
     MockDate.set('2024-12-25');
     // 👇 Render the component with the mocked date
     await mount();
@@ -108,19 +117,26 @@ export const ChristmasUI: Story = {
 />
 ```
 
-```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import MockDate from 'mockdate';
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-// ...rest of story file
+  import Page from './Page.svelte';
 
-export const ChristmasUI = {
-  async play({ mount }) {
+  const { Story } = preview.meta({
+    component: Page,
+  });
+</script>
+
+<Story
+  name="ChristmasUI"
+  play={async ({ mount }) => {
     MockDate.set('2024-12-25');
     // 👇 Render the component with the mocked date
     await mount();
     // ...rest of test
-  },
-};
+  }}
+/>
 ```
 
 ```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"

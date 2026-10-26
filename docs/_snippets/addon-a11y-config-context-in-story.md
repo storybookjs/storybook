@@ -154,7 +154,8 @@ export const ExampleStory = {
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -181,11 +182,20 @@ export const ExampleStory = {
 />
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// ...rest of story file
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-export const ExampleStory: Story = {
-  parameters: {
+  import Button from './Button.svelte';
+
+  const { Story } = preview.meta({
+    component: Button,
+  });
+</script>
+
+<Story
+  name="ExampleStory"
+  parameters={{
     a11y: {
       /*
        * Axe's context parameter
@@ -197,13 +207,14 @@ export const ExampleStory: Story = {
         exclude: ['.no-a11y-check'],
       },
     },
-  },
-};
+  }}
+/>
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -230,11 +241,20 @@ export const ExampleStory: Story = {
 />
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-// ...rest of story file
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export const ExampleStory = {
-  parameters: {
+  import Button from './Button.svelte';
+
+  const { Story } = preview.meta({
+    component: Button,
+  });
+</script>
+
+<Story
+  name="ExampleStory"
+  parameters={{
     a11y: {
       /*
        * Axe's context parameter
@@ -246,8 +266,8 @@ export const ExampleStory = {
         exclude: ['.no-a11y-check'],
       },
     },
-  },
-};
+  }}
+/>
 ```
 
 ```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"

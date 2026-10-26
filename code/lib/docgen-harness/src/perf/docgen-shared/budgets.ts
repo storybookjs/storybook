@@ -45,6 +45,18 @@ const VUE_DOCGEN_API_MEMORY = {
   maxRetainedSlopeMb: 0.2,
 };
 
+const SVELTE_LEGACY_MEMORY = {
+  maxTransientMb: 25,
+  maxRetainedGrowthMb: 5,
+  maxRetainedSlopeMb: 0.3,
+};
+
+const SVELTE_COMPONENT_META_MEMORY = {
+  maxTransientMb: 30,
+  maxRetainedGrowthMb: 10,
+  maxRetainedSlopeMb: 1,
+};
+
 /** Measured on CI with headroom; the run is recorded in PERF-METHODOLOGY.md. */
 export const PERF_BUDGETS: Partial<Record<PerfBudgetKey, PerfBudget>> = {
   // Warm is ~13ms against a ~1.7s cold pass, so the ratio moves easily on a noisy executor; the
@@ -107,6 +119,28 @@ export const PERF_BUDGETS: Partial<Record<PerfBudgetKey, PerfBudget>> = {
   'vue-component-meta/base-type-touch': {
     maxWarmColdRatio: 0.25,
     memory: { maxTransientMb: 40, maxRetainedGrowthMb: 20, maxRetainedSlopeMb: 1.5 },
+  },
+  // Observed on CI at 0.009-0.019 warm/cold, 5.6-6.4MB transient, 0-0.6MB growth and
+  // 0.03-0.04MB/save. Its warm/cold is low because its cold pass rebuilds the program per component.
+  'svelte-legacy/flat': { maxWarmColdRatio: 0.06, memory: SVELTE_LEGACY_MEMORY },
+  'svelte-legacy/workspace': { maxWarmColdRatio: 0.06, memory: SVELTE_LEGACY_MEMORY },
+  'svelte-legacy/base-type-touch': { maxWarmColdRatio: 0.06, memory: SVELTE_LEGACY_MEMORY },
+  'svelte-legacy/large-program': { maxWarmColdRatio: 0.06, memory: SVELTE_LEGACY_MEMORY },
+  // Observed on CI at 0.026-0.039 warm/cold, 6.2-6.9MB transient, -6.5 to 1.4MB growth and
+  // 0.13-0.18MB/save. Growth is negative on large-program because the first save releases the
+  // cold pass's state, as react-osa/whole-index does; the ceiling only catches a rise.
+  'svelte-component-meta/flat': { maxWarmColdRatio: 0.12, memory: SVELTE_COMPONENT_META_MEMORY },
+  'svelte-component-meta/workspace': {
+    maxWarmColdRatio: 0.12,
+    memory: SVELTE_COMPONENT_META_MEMORY,
+  },
+  'svelte-component-meta/base-type-touch': {
+    maxWarmColdRatio: 0.12,
+    memory: SVELTE_COMPONENT_META_MEMORY,
+  },
+  'svelte-component-meta/large-program': {
+    maxWarmColdRatio: 0.12,
+    memory: SVELTE_COMPONENT_META_MEMORY,
   },
   // No incrementality budget: compodoc re-runs the whole project every invocation by design, so its
   // warm figure is its cold figure. Peak memory is what is worth watching.

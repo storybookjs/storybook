@@ -37,5 +37,9 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
   const { mergeConfig } = await import('vite');
   return mergeConfig(config, {
     plugins,
+    build: {
+      // Storybook's own preview bundle exceeds Vite's default 500 kB warning threshold.
+      chunkSizeWarningLimit: 800,
+    },
   });
 };

@@ -8,5 +8,6 @@ describe('get-variable-name', () => {
     await expect(getComponentVariableName('foo bar')).resolves.toBe('FooBar');
     await expect(getComponentVariableName('0-foo-bar')).resolves.toBe('FooBar');
     await expect(getComponentVariableName('*Foo-bar-$')).resolves.toBe('FooBar$');
+    await expect(getComponentVariableName('a;b;c')).resolves.toBe('Abc');
   });
 });

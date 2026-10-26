@@ -45,8 +45,10 @@ export interface CoreConfig {
    */
   enableCrashReports?: boolean;
   /**
-   * Enable hostname validation for HTTP requests and WebSocket connections. Set to `[]` to disallow
-   * all hosts except known local/network address, or `true` to allow all hosts.
+   * Configures which hostnames can reach the dev server. Storybook validates the `Host` header of
+   * every request, and the `Origin` header of WebSocket connections, against this list. Requests
+   * that address Storybook as `localhost` or by the `--host` hostname are always allowed. Set to
+   * `true` to disable host validation (insecure and strongly discouraged).
    */
   allowedHosts?: string[] | true;
   /**
@@ -343,6 +345,38 @@ export interface TagOptions {
 
 export type TagsOptions = Record<Tag, Partial<TagOptions>>;
 
+export interface SecurityConfig {
+  /**
+   * In dev mode, the manager and preview can only be embedded by a website running on localhost.
+   * This prevents attacks that hijack a local Storybook embedded in an iframe from a malicious
+   * domain.
+   *
+   * If you need remote Storybooks to compose this Storybook while it is running in dev mode, you
+   * may set `insecureRemoteIframeEmbed` to `true`.
+   *
+   * Built Storybooks can still be embedded and composed without restrictions, and don't need this
+   * flag.
+   *
+   * @default false
+   */
+  insecureRemoteIframeEmbed?: boolean;
+
+  /**
+   * The manager and preview restrict who can communicate with them via `postMessage`. The manager
+   * only accepts messages from its own preview iframes. In dev mode, a preview only accepts
+   * messages from a manager on localhost, and both send messages only to the expected origin.
+   *
+   * If you need remote Storybooks to compose this Storybook while it is running in dev mode, you
+   * may set `insecureIframeMessaging` to `true`.
+   *
+   * Built previews accept messages from any origin, so composing a built Storybook doesn't need
+   * this flag.
+   *
+   * @default false
+   */
+  insecureIframeMessaging?: boolean;
+}
+
 /**
  * The interface for Storybook configuration used internally in presets The difference is that these
  * values are the raw values, AKA, not wrapped with `PresetValue<>`
@@ -360,6 +394,7 @@ export interface StorybookConfigRaw {
    */
   addons?: Preset[];
   core?: CoreConfig;
+  security?: SecurityConfig;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: {
@@ -515,6 +550,7 @@ export interface StorybookConfig {
    */
   addons?: StorybookConfigRaw['addons'];
   core?: PresetValue<StorybookConfigRaw['core']>;
+  security?: PresetValue<StorybookConfigRaw['security']>;
   /**
    * Sets a list of directories of static files to be loaded by Storybook server
    *

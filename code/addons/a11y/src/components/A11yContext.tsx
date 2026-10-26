@@ -10,7 +10,12 @@ import {
 } from 'storybook/internal/core-events';
 
 import type { ClickEventDetails, HighlightMenuItem } from 'storybook/highlight';
-import { HIGHLIGHT, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from 'storybook/highlight';
+import {
+  HIGHLIGHT,
+  HIGHLIGHT_MENU_CLICK,
+  REMOVE_HIGHLIGHT,
+  SCROLL_INTO_VIEW,
+} from 'storybook/highlight';
 import {
   experimental_getStatusStore,
   experimental_useStatusStore,
@@ -34,6 +39,9 @@ import type { TestDiscrepancy } from './TestDiscrepancyMessage';
 // These elements should not be highlighted because they usually cover the whole page.
 // They may still appear in the results and be selectable though.
 const unhighlightedSelectors = ['html', 'body', 'main'];
+
+const SELECTED_HIGHLIGHT_ID = `${ADDON_ID}/selected`;
+const OTHERS_HIGHLIGHT_ID = `${ADDON_ID}/others`;
 
 export interface A11yContextStore {
   parameters: A11yParameters;
@@ -213,7 +221,10 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   );
 
   const handleSelect = useCallback(
-    (itemId: string, details: ClickEventDetails) => {
+    (highlightId: string, itemId: string, details: ClickEventDetails) => {
+      if (highlightId !== SELECTED_HIGHLIGHT_ID && highlightId !== OTHERS_HIGHLIGHT_ID) {
+        return;
+      }
       const [type, id] = itemId.split('.');
       const { helpUrl, nodes } = results?.[type as RuleType]?.find((r) => r.id === id) || {};
       const openedWindow = helpUrl && window.open(helpUrl, '_blank', 'noopener,noreferrer');
@@ -264,7 +275,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     {
       [EVENTS.RESULT]: handleResult,
       [EVENTS.ERROR]: handleError,
-      [EVENTS.SELECT]: handleSelect,
+      [HIGHLIGHT_MENU_CLICK]: handleSelect,
       [STORY_CHANGED]: () => setSelectedItems(new Map()),
       [STORY_RENDER_PHASE_CHANGED]: handleReset,
       [STORY_FINISHED]: handleReport,
@@ -296,8 +307,8 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   }, [getInitialStatus, manual]);
 
   useEffect(() => {
-    emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/selected`);
-    emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/others`);
+    emit(REMOVE_HIGHLIGHT, SELECTED_HIGHLIGHT_ID);
+    emit(REMOVE_HIGHLIGHT, OTHERS_HIGHLIGHT_ID);
 
     if (!highlighted) {
       return;
@@ -313,7 +324,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       return target ? [String(target)] : [];
     });
     emit(HIGHLIGHT, {
-      id: `${ADDON_ID}/selected`,
+      id: SELECTED_HIGHLIGHT_ID,
       priority: 1,
       selectors: selected,
       styles: {
@@ -343,7 +354,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
             iconLeft: 'info',
             iconRight: 'shareAlt',
             title: 'Learn how to resolve this violation',
-            clickEvent: EVENTS.SELECT,
+            clickable: true,
             selectors,
           },
         ];
@@ -354,7 +365,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       .flatMap((r) => r.nodes.flatMap((n) => n.target).map(String))
       .filter((e) => ![...unhighlightedSelectors, ...selected].includes(e));
     emit(HIGHLIGHT, {
-      id: `${ADDON_ID}/others`,
+      id: OTHERS_HIGHLIGHT_ID,
       selectors: others,
       styles: {
         outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
@@ -383,7 +394,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
             iconLeft: 'info',
             iconRight: 'shareAlt',
             title: 'Learn how to resolve this violation',
-            clickEvent: EVENTS.SELECT,
+            clickable: true,
             selectors,
           },
         ];

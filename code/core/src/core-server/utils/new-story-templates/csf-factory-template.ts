@@ -1,6 +1,7 @@
 import { dedent } from 'ts-dedent';
 
 import { getComponentVariableName } from '../get-component-variable-name';
+import { escapeForTemplate } from '../safeString';
 
 interface CsfFactoryTemplateData {
   /** The components file name without the extension */
@@ -15,9 +16,10 @@ export async function getCsfFactoryTemplateForNewStoryFile(data: CsfFactoryTempl
   const importName = data.componentIsDefaultExport
     ? await getComponentVariableName(data.basenameWithoutExtension)
     : data.componentExportName;
+  const importPath = `./${escapeForTemplate(data.basenameWithoutExtension)}`;
   const importStatement = data.componentIsDefaultExport
-    ? `import ${importName} from './${data.basenameWithoutExtension}';`
-    : `import { ${importName} } from './${data.basenameWithoutExtension}';`;
+    ? `import ${importName} from '${importPath}';`
+    : `import { ${importName} } from '${importPath}';`;
   const previewImport = `import preview from '#.storybook/preview';`;
   return dedent`
   ${previewImport}

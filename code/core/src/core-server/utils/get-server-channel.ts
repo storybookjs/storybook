@@ -6,8 +6,10 @@ import { Channel, HEARTBEAT_INTERVAL } from 'storybook/internal/channels';
 import { isJSON, parse, stringify } from 'telejson';
 import WebSocket, { WebSocketServer } from 'ws';
 
+import type events from '../../core-events';
 import { logger } from '../../node-logger';
 import { UniversalStore } from '../../shared/universal-store';
+import { CORE_EVENT_SENDERS } from './event-senders';
 import { type HostValidationOptions, isValidHost } from './getHostValidationMiddleware';
 import { isValidToken } from './validate-token';
 
@@ -16,6 +18,10 @@ type Server = NonNullable<NonNullable<ConstructorParameters<typeof WebSocketServ
 type ServerChannelTransportOptions = HostValidationOptions & {
   token: string;
 };
+
+// A client declares its role through the `page` query parameter on the channel URL. Events the
+// dev server itself sends are classified as 'server' and are never accepted from a client.
+type ChannelClientRole = 'manager' | 'preview';
 
 /**
  * This class represents a channel transport that allows for a one-to-many relationship between the
@@ -48,22 +54,20 @@ export class ServerChannelTransport {
           throw new Error('Invalid websocket token');
         }
 
+        const role = url.searchParams.get('page');
+        if (role !== 'manager' && role !== 'preview') {
+          socket.end('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n');
+          return;
+        }
+
         this.socket.handleUpgrade(request, socket, head, (ws) => {
-          this.socket.emit('connection', ws, request);
+          this.addClient(ws, role);
         });
       } catch (error) {
         logger.warn(`Rejecting WebSocket connection: ${error}`);
         socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
         socket.destroy();
       }
-    });
-
-    this.socket.on('connection', (wss) => {
-      wss.on('message', (raw) => {
-        const data = raw.toString();
-        const event = typeof data === 'string' && isJSON(data) ? parse(data, {}) : data;
-        this.handler?.(event);
-      });
     });
 
     const interval = setInterval(() => {
@@ -88,7 +92,39 @@ export class ServerChannelTransport {
     this.handler = handler;
   }
 
-  send(event: any) {
+  private addClient(ws: WebSocket, role: ChannelClientRole) {
+    ws.on('message', (raw) => {
+      const data = raw.toString();
+      const event = typeof data === 'string' && isJSON(data) ? parse(data, {}) : data;
+      if (!this.isEventAllowedFrom(event, role)) {
+        return;
+      }
+      this.handler?.(event);
+    });
+  }
+
+  private readonly rejectedEvents = new Set<string>();
+
+  private isEventAllowedFrom(event: unknown, role: ChannelClientRole): boolean {
+    const type = typeof event === 'object' && event && 'type' in event ? event?.type : null;
+    if (typeof type !== 'string') {
+      return true;
+    }
+    const sender = CORE_EVENT_SENDERS[type as events];
+    if (sender === undefined || sender === 'any' || sender === role) {
+      return true;
+    }
+    const key = `${role}:${type}`;
+    if (!this.rejectedEvents.has(key)) {
+      this.rejectedEvents.add(key);
+      logger.warn(
+        `Ignored "${type}" event from a ${role} connection: only the ${sender} sends this event.`
+      );
+    }
+    return false;
+  }
+
+  send(event: unknown) {
     const data = stringify(event, { maxDepth: 15 });
 
     Array.from(this.socket.clients)

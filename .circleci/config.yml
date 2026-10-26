@@ -932,6 +932,10 @@ parameters:
         default: ""
         description: The PR number
         type: string
+    ghTrustedAuthor:
+        default: "false"
+        description: Whether the PR author is a trusted author who should be allowed to persist to shared caches
+        type: string
     workflow:
         default: skipped
         description: Which workflow to run

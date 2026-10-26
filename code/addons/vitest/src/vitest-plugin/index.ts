@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import type { Plugin } from 'vitest/config';
 import { mergeConfig } from 'vitest/config';
 import type { ViteUserConfig } from 'vitest/config';
+import type { ApiConfig } from 'vitest/node';
 
 import {
   DEFAULT_FILES_PATTERN,
@@ -45,6 +46,10 @@ const { StoryIndexGenerator, experimental_loadStorybook, mapStaticDir } =
   };
 
 const WORKING_DIR = process.cwd();
+
+// Vitest gates browser file writes and command execution on these options from 3.2.7 and 4.1.0.
+// Earlier versions ignore them.
+type BrowserApiConfig = ApiConfig & { allowWrite?: boolean; allowExec?: boolean };
 
 const defaultOptions: UserOptions = {
   storybookScript: undefined,
@@ -240,6 +245,15 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       finalOptions.includeStories = includeStories;
       const projectId = oneWayHash(finalOptions.configDir);
 
+      const userBrowserApi: BrowserApiConfig | number | undefined = testConfig?.browser?.api;
+      const userBrowserApiConfig =
+        typeof userBrowserApi === 'number' ? { port: userBrowserApi } : userBrowserApi;
+      const browserApi: BrowserApiConfig = {
+        ...userBrowserApiConfig,
+        allowWrite: userBrowserApiConfig?.allowWrite ?? false,
+        allowExec: userBrowserApiConfig?.allowExec ?? false,
+      };
+
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
         test: {
@@ -306,6 +320,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
                   screenshotFailures: false,
                 }
               : {}),
+
+            // Story code runs in the browser, and Vitest otherwise lets it write files and run
+            // commands in Node through the browser API whenever the server is bound to loopback.
+            api: browserApi,
           },
         },
 

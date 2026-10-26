@@ -60,7 +60,7 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
     plugins.unshift(
       // If react-docgen is specified, use it for everything, otherwise only use it for non-typescript files
       await reactDocgen({
-        include: reactDocgenOption === 'react-docgen' ? /\\.(mjs|tsx?|jsx?)$/ : /\\.(mjs|jsx?)$/,
+        include: reactDocgenOption === 'react-docgen' ? /\.(mjs|tsx?|jsx?)$/ : /\.(mjs|jsx?)$/,
       })
     );
   }

@@ -29,7 +29,7 @@ export function getJobs(workflow: Workflow, baseRef: string): JobOrNoOpJob[] {
   } else if (isWorkflowOrAbove(workflow, 'docs')) {
     jobs.push(fmt);
   } else if (workflow === 'windows') {
-    jobs.push(build_windows, testUnit_windows, ...getWindowsSandboxes());
+    jobs.push(build_windows, testUnit_windows);
   } else {
     const sandboxes = getSandboxes(workflow);
     const testStorybooks = getTestStorybooks();

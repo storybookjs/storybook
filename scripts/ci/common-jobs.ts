@@ -552,6 +552,16 @@ export const testUnit_windows = defineJob(
       shell: 'bash.exe',
     },
     steps: [
+      {
+        run: {
+          name: 'Diagnostics',
+          shell: 'powershell.exe',
+          command: [
+            '(Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors',
+            'Get-MpComputerStatus | Select-Object RealTimeProtectionEnabled, AMServiceEnabled | Format-List',
+          ].join('\n'),
+        },
+      },
       ...workflow.restoreWindows(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}`),
       {
         run: {

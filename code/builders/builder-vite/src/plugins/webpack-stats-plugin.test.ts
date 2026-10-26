@@ -380,13 +380,24 @@ describe('pluginWebpackStats', () => {
       expect(names).toEqual(['./src/Button.ts']);
     });
 
-    it('ignores files watched by a module that is not in the graph', () => {
-      const plugins = [watchInLoad('/project/src/unused.ts', '/project/src/unused.html')];
+    it('ignores files watched by a module that is never parsed', () => {
+      const plugin = watchInLoad('/project/src/unused.ts', '/project/src/unused.html');
+      const statsPlugin = pluginWebpackStats({ workingDir });
+      const moduleParsed = statsPlugin.moduleParsed as unknown as (mod: ParsedModule) => void;
+      const config: BuildConfig = { command: 'build', plugins: [plugin, statsPlugin] };
+      callHook(statsPlugin.configResolved, undefined, config);
+      const context = createContext();
 
-      const names = getStats({ '/project/src/Button.ts': [] }, plugins).modules.map(
-        (module: { name: string }) => module.name
-      );
+      // The module is loaded, so its watch file is recorded, but it never reaches moduleParsed.
+      callHook(plugin.load, context, '/project/src/unused.ts');
+      moduleParsed({ id: '/project/src/Button.ts', importedIds: [], dynamicallyImportedIds: [] });
 
+      const names = statsPlugin
+        .storybookGetStats()
+        .toJson()
+        .modules.map((module: { name: string }) => module.name);
+
+      expect(context.addWatchFile).toHaveBeenCalledWith('/project/src/unused.html');
       expect(names).toEqual(['./src/Button.ts']);
     });
 

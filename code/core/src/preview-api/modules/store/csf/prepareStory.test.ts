@@ -855,7 +855,6 @@ describe('prepareMeta', () => {
     // omitting the properties from preparedStory that are not in preparedMeta
     const {
       name: storyName,
-      story,
       applyLoaders,
       applyBeforeEach,
       applyAfterEach,

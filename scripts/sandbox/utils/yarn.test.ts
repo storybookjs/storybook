@@ -185,6 +185,31 @@ describe('refreshBeforeStorybookLockfile', () => {
     );
   });
 
+  it('names a quarantined transitive dependency instead of handing it to `yarn up`', async () => {
+    // `@expo/config-plugins` moved to `xcode: ^4.0.0` while `xcode@4.0.0` was still
+    // quarantined. Only the parent declares the range, so `yarn up xcode` cannot work.
+    failResolveSteps(quarantined('xcode@npm:^4.0.0'));
+
+    await expect(refreshBeforeStorybookLockfile({ cwd: SANDBOX })).rejects.toThrow(
+      /xcode.*not a direct dependency.*minAgeGateExemptions/s
+    );
+    expect(yarnCommands()).not.toContain(expect.stringContaining('yarn up'));
+  });
+
+  it('narrows a package once when Yarn reports it more than once', async () => {
+    const twice = Object.assign(new Error('yarn failed'), {
+      stdout: [
+        '➤ YN0016: │ rxjs@npm:~7.8.0: All versions satisfying "~7.8.0" are quarantined',
+        '➤ YN0016: │ rxjs@npm:~7.8.0: All versions satisfying "~7.8.0" are quarantined',
+      ].join('\n'),
+    });
+    failResolveSteps(twice);
+
+    await refreshBeforeStorybookLockfile({ cwd: SANDBOX });
+
+    expect(yarnCommands()).toContain(`yarn up 'rxjs@^7.0.0' --mode=update-lockfile`);
+  });
+
   it('refuses to narrow a prerelease pin down to a stable release', async () => {
     vol.writeFileSync(
       `${SANDBOX}/package.json`,

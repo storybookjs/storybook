@@ -38,7 +38,8 @@ const meta = preview.meta({
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -56,20 +57,24 @@ const meta = preview.meta({
 </script>
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import MyComponent from './MyComponent.svelte';
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: MyComponent,
-  tags: ['autodocs'],
-  parameters: {
-    docs: {
-      toc: {
-        disable: true, // 👈 Disables the table of contents
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = preview.meta({
+    component: MyComponent,
+    tags: ['autodocs'],
+    parameters: {
+      docs: {
+        toc: {
+          disable: true, // 👈 Disables the table of contents
+        },
       },
     },
-  },
-};
+  });
+</script>
 ```
 
 ```js filename="MyComponent.stories.js" renderer="common" language="js" tabTitle="CSF 3"
@@ -90,7 +95,8 @@ export default {
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -108,25 +114,24 @@ export default {
 </script>
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta } from '@storybook/your-framework';
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import MyComponent from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
-const meta = {
-  component: MyComponent,
-  tags: ['autodocs'],
-  parameters: {
-    docs: {
-      toc: {
-        disable: true, // 👈 Disables the table of contents
+  const { Story } = preview.meta({
+    component: MyComponent,
+    tags: ['autodocs'],
+    parameters: {
+      docs: {
+        toc: {
+          disable: true, // 👈 Disables the table of contents
+        },
       },
     },
-  },
-} satisfies Meta<typeof MyComponent>;
-
-export default meta;
+  });
+</script>
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

@@ -199,11 +199,8 @@ const QUARANTINED_RANGE = /YN0016:.*?(\S+)@npm:.*?are quarantined/g;
 const QUARANTINE_REPORTED = /are quarantined/;
 
 function parseQuarantinedPackages(output: string): string[] {
-  return [...output.matchAll(QUARANTINED_RANGE)].map(([, name]) => name);
+  return [...new Set([...output.matchAll(QUARANTINED_RANGE)].map(([, name]) => name))];
 }
-
-/** Yarn's wording when `yarn up` is handed a package the manifest does not declare. */
-const NOT_A_DIRECT_DEPENDENCY = /doesn't match any packages referenced by any workspace/;
 
 /**
  * The `yarn up` descriptor that moves a quarantined package onto its newest installable
@@ -284,13 +281,6 @@ async function narrowQuarantinedRanges({
         (error as { stderr?: string }).stderr ?? ''
       }`;
 
-      if (NOT_A_DIRECT_DEPENDENCY.test(output)) {
-        throw new Error(
-          `A transitively required package is quarantined by the ${BEFORE_SANDBOX_MIN_AGE_GATE} age gate, and only its parent can move off it. Add it to the template's minAgeGateExemptions if it is trusted.`,
-          { cause: error }
-        );
-      }
-
       const reported = parseQuarantinedPackages(output);
 
       // Yarn rejected a range but we could not read a package out of it, so the output
@@ -311,12 +301,20 @@ async function narrowQuarantinedRanges({
         throw error;
       }
 
+      const ranges = await Promise.all(fresh.map((name) => declaredRange(cwd, name)));
+
+      // `yarn up` only rewrites ranges the manifest declares. A transitive dependency's
+      // range belongs to its parent, so there is nothing here to narrow.
+      const transitive = fresh.filter((_, i) => ranges[i] === undefined);
+      if (transitive.length) {
+        throw new Error(
+          `${transitive.join(', ')} is quarantined by the ${BEFORE_SANDBOX_MIN_AGE_GATE} age gate but is not a direct dependency, so only its parent can move off it. This usually clears once it passes the gate. To unblock sooner, add it to the template's minAgeGateExemptions if it is trusted.`,
+          { cause: error }
+        );
+      }
+
       quarantined.push(...fresh);
-      descriptors.push(
-        ...(await Promise.all(
-          fresh.map(async (name) => narrowingDescriptor(name, await declaredRange(cwd, name)))
-        ))
-      );
+      descriptors.push(...fresh.map((name, i) => narrowingDescriptor(name, ranges[i])));
     }
   }
 

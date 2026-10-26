@@ -1,7 +1,7 @@
 import React, { type FC, useRef } from 'react';
 
 import { Button, Link, PopoverProvider } from 'storybook/internal/components';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { CheckIcon, CopyIcon, TransferIcon } from '@storybook/icons';
 import { useLandmark } from '../../../hooks/useLandmark.ts';

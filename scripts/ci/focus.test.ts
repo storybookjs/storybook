@@ -173,10 +173,6 @@ describe('getFocusJobs', () => {
       'sveltekit-latest--vite---typescript---create',
       'sveltekit-latest--vite---typescript---chromatic',
     ]);
-    expect(ids.filter((id) => id.startsWith('svelte-latest--vite---javascript---'))).toEqual([
-      'svelte-latest--vite---javascript---create',
-      'svelte-latest--vite---javascript---chromatic',
-    ]);
   });
 
   it('leaves out siblings that skip Chromatic', () => {

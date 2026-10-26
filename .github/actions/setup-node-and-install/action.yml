@@ -20,6 +20,7 @@ runs:
     # ^22.22.2 || ^24.15.0 || >=26, which .nvmrc (22.22.3) satisfies.
     - name: Install npm 12
       shell: bash
+      # zizmor: ignore[adhoc-packages]  # replaces the runner's npm before the lockfile install
       run: npm install -g npm@12
 
     # Restore only — save is gated below. actions/cache's post-job save step uses a

@@ -9,7 +9,7 @@ import { coverageConfigDefaults, defineConfig } from 'vitest/config';
  * @see https://circleci.com/docs/configuration-reference/#x86
  * @see .circleci/config.yml#L187
  */
-const threadCount = process.env.CI ? (process.platform === 'win32' ? 4 : 7) : undefined;
+const threadCount = process.env.CI ? (process.platform === 'win32' ? 8 : 7) : undefined;
 const shouldRunStorybookTests = !(process.env.CI && process.platform === 'win32');
 
 const projects = [

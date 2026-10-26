@@ -562,6 +562,16 @@ export const testUnit_windows = defineJob(
           ].join('\n'),
         },
       },
+      {
+        run: {
+          name: 'Disable Defender real-time scanning',
+          shell: 'powershell.exe',
+          command: [
+            'Set-MpPreference -DisableRealtimeMonitoring $true',
+            'Get-MpComputerStatus | Select-Object RealTimeProtectionEnabled | Format-List',
+          ].join('\n'),
+        },
+      },
       ...workflow.restoreWindows(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}`),
       {
         run: {

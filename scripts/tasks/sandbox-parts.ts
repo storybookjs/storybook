@@ -13,6 +13,7 @@ import { join, relative, resolve, sep } from 'path';
 import slash from 'slash';
 import { dedent } from 'ts-dedent';
 
+import { SupportedLanguage } from 'storybook/internal/types';
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager/index.ts';
 import storybookPackages from '../../code/core/src/common/versions.ts';
 import {
@@ -33,6 +34,7 @@ import {
 } from '../../code/core/src/csf-tools/index.ts';
 
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService.ts';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task.ts';
 import { executeCLIStep, steps } from '../utils/cli-step.ts';
 import { CODE_DIRECTORY, REPROS_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants.ts';
@@ -451,6 +453,21 @@ function setSandboxViteFinal(mainConfig: ConfigFile, template: TemplateKey) {
   mainConfig.set(['viteFinal'], parseExpression(viteFinalCode.trim()));
 }
 
+// Update the stories field to ensure that no TS files
+// that are linked from the renderer are picked up in non-TS projects
+function updateStoriesField(mainConfig: ConfigFile, isJs: boolean) {
+  const stories = mainConfig.getValue(['stories']) as string[];
+
+  // If the project is a JS project, let's make sure any linked in TS stories from the
+  // renderer inside src|stories are simply ignored.
+  // TODO: We should definitely improve the logic here, as it will break every time the stories field change format in the generated sandboxes.
+  const updatedStories = isJs
+    ? stories.map((specifier) => specifier.replace('|ts|tsx', ''))
+    : stories;
+
+  mainConfig.set(['stories'], [...updatedStories]);
+}
+
 // Add a stories field entry for the passed symlink
 function addStoriesEntry(
   mainConfig: ConfigFile,
@@ -704,6 +721,17 @@ export const addStories: Task['run'] = async (
     (await findFirstPath([join('src', 'stories'), 'stories'], { cwd })) || 'stories';
 
   const mainConfig = await readConfig({ fileName: 'main', cwd });
+  const packageManager = JsPackageManagerFactory.getPackageManager({}, sandboxDir);
+
+  // Package manager types differ slightly due to private methods and compilation differences of types
+  const projectTypeService = new ProjectTypeService(packageManager as any);
+
+  // Ensure that we match the right stories in the stories directory
+  updateStoriesField(
+    mainConfig,
+    (await projectTypeService.detectLanguage()) === SupportedLanguage.JAVASCRIPT
+  );
+
   const isCoreRenderer =
     template.expected.renderer.startsWith('@storybook/') &&
     template.expected.renderer !== '@storybook/server';

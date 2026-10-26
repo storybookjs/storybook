@@ -11,11 +11,10 @@ const subdirectories = (dir: string) =>
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name);
 
-// Pre-existing on `next`: no Angular template loads these, so their stories never run.
+// The angular-vite templates load `stories_angular-vite-*`, so these stories never run in a sandbox.
 const knownOrphanStoriesFolders = [
   '@storybook/angular-vite/stories_angular-cli-default-ts',
   '@storybook/angular-vite/stories_angular-cli-prerelease',
-  '@storybook/angular/stories_angular-cli-prerelease',
 ];
 
 describe('sandbox templates', () => {

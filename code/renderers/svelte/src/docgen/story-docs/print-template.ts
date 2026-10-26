@@ -80,7 +80,10 @@ export function printTemplate({
             isArgsSpread(attribute) && attribute.start > node.start
         )
       ) {
-        edits.push({ ...at(node), value: `${node.name}={${textOf(args[node.name])}}` });
+        edits.push({
+          ...at(node),
+          value: printProp(node.name, args[node.name])[0] ?? `${node.name}={undefined}`,
+        });
         return;
       }
       next();
@@ -143,7 +146,15 @@ export function printTemplate({
       const text = replaced.text;
       const quoted =
         parent?.type === 'Attribute' && /=\s*["']/.test(code.slice(at(parent).start, range.start));
-      if (parent?.type === 'Attribute' && code[at(parent).start] === '{') {
+      if (
+        parent?.type === 'Attribute' &&
+        parent.value === node &&
+        text !== undefined &&
+        isPlain(text)
+      ) {
+        // `title={args.title}` and `{title}` print a string as a spread prints it: `title="Save"`.
+        edits.push({ ...at(parent), value: `${parent.name}="${text}"` });
+      } else if (parent?.type === 'Attribute' && code[at(parent).start] === '{') {
         // `{label}` names the attribute after the variable it reads.
         edits.push({ ...at(parent), value: `${parent.name}={${replaced.value}}` });
       } else if (text !== undefined && quoted && !/[{}]/.test(text)) {
@@ -181,11 +192,7 @@ function printProp(key: string, value: Node): string[] {
   const node = unwrapExpression(value);
   if (node.type === 'Identifier' && node.name === 'undefined') return [];
   if (node.type === 'Literal' && node.value === true) return [key];
-  if (
-    node.type === 'Literal' &&
-    typeof node.value === 'string' &&
-    !/[{}<>"\\&\r\n\t]/.test(node.value)
-  ) {
+  if (node.type === 'Literal' && typeof node.value === 'string' && isPlain(node.value)) {
     return [`${key}="${node.value}"`];
   }
   return [`${key}={${textOf(value)}}`];
@@ -378,6 +385,11 @@ function isPrimary(node: Node): boolean {
     default:
       return false;
   }
+}
+
+// A string that reads the same in a quoted attribute as in an expression.
+function isPlain(value: string): boolean {
+  return !/[{}<>"\\&\r\n\t]/.test(value);
 }
 
 function escapeAttribute(value: string): string {

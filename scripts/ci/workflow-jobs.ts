@@ -37,13 +37,12 @@ export function getJobs(workflow: Workflow, baseRef: string): JobOrNoOpJob[] {
     const initEmpty = getInitEmpty(workflow);
 
     if (isWorkflowOrAbove(workflow, 'daily')) {
-      jobs.push(build_windows, testUnit_windows, docgenMemoryGate, docgenPerfGate);
+      jobs.push(build_windows, testUnit_windows, docgenMemoryGate, docgenPerfGate, node26Smoke);
     }
 
     jobs.push(
       build_linux,
       testsUnit_linux,
-      node26Smoke,
       testsStories_linux,
 
       commonJobsNoOpJob,

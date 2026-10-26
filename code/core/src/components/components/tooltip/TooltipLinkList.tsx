@@ -3,7 +3,7 @@ import React, { Fragment, useCallback } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import type { LinkWrapperType, ListItemProps } from './ListItem.tsx';
 import ListItem from './ListItem.tsx';

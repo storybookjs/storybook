@@ -1,4 +1,4 @@
-import type { PlayFunction, PlayFunctionContext } from 'storybook/internal/types';
+import type { PlayFunction } from 'storybook/internal/types';
 
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen } from 'storybook/test';

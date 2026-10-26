@@ -24,7 +24,8 @@ const meta = preview.meta({
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -35,13 +36,17 @@ const meta = preview.meta({
 </script>
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Button from './Button.svelte';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: Button,
-  parameters: { actions: { argTypesRegex: '^on.*' } },
-};
+  import Button from './Button.svelte';
+
+  const { Story } = preview.meta({
+    component: Button,
+    parameters: { actions: { argTypesRegex: '^on.*' } },
+  });
+</script>
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
@@ -55,7 +60,8 @@ export default {
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -66,18 +72,17 @@ export default {
 </script>
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta } from '@storybook/your-framework';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import Button from './Button.svelte';
+  import Button from './Button.svelte';
 
-const meta = {
-  component: Button,
-  parameters: { actions: { argTypesRegex: '^on.*' } },
-} satisfies Meta<typeof Button>;
-
-export default meta;
+  const { Story } = preview.meta({
+    component: Button,
+    parameters: { actions: { argTypesRegex: '^on.*' } },
+  });
+</script>
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

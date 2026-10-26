@@ -55,19 +55,17 @@ test.describe('addon-docs', () => {
     await showCodeButton.click();
     const sourceCode = root.locator('pre.prismjs');
     const expectedSource = dedent`{
-      args: {
-        label: 'Another'
-      },
+      args: { label: 'Another' },
       parameters: {
         docs: {
           source: {
-            type: 'code'
-          }
-        }
+            type: 'code',
+          },
+        },
       },
       play: async () => {
-        await new Promise(resolve => resolve('Play function'));
-      }
+        await new Promise((resolve) => resolve('Play function'));
+      },
     }`;
     await expect(sourceCode).toHaveText(expectedSource);
   });
@@ -233,6 +231,7 @@ test.describe('addon-docs', () => {
     let expectedReactVersionRange = /^19/;
     if (
       templateName.includes('internal/react18-webpack-babel') ||
+      templateName.includes('preact-vite/10-ts') ||
       templateName.includes('react-webpack/18-ts')
     ) {
       expectedReactVersionRange = /^18/;

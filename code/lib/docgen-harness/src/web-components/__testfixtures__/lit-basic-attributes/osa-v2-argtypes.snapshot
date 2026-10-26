@@ -81,6 +81,7 @@
     },
   },
   "open-state": {
+    "control": false,
     "description": "Set while the panel is open.",
     "name": "open",
     "table": {

@@ -3,7 +3,7 @@ import React, { type ComponentProps } from 'react';
 import { Link as LinkComponent } from 'storybook/internal/components';
 import type { TestProviderState } from 'storybook/internal/types';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import type { StoreState } from '../types.ts';
 import { GlobalErrorContext } from './GlobalErrorModal.tsx';

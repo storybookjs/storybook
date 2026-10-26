@@ -1,6 +1,6 @@
 import { SELECT_STORY, STORY_CHANGED } from 'storybook/internal/core-events';
 import { toId } from 'storybook/internal/csf';
-import type { ComponentTitle, StoryId, StoryKind, StoryName } from 'storybook/internal/types';
+import type { ComponentTitle, SelectStoryPayload, StoryName } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -9,16 +9,6 @@ import { addons, makeDecorator } from 'storybook/preview-api';
 import { PARAM_KEY } from './constants.ts';
 
 const { document, HTMLElement } = global;
-
-interface ParamsId {
-  storyId: StoryId;
-}
-interface ParamsCombo {
-  kind?: StoryKind;
-  title?: ComponentTitle;
-  story?: StoryName;
-  name?: StoryName;
-}
 
 function parseQuery(queryString: string) {
   const query: Record<string, string> = {};
@@ -33,7 +23,7 @@ function parseQuery(queryString: string) {
   return query;
 }
 
-export const navigate = (params: ParamsId | ParamsCombo) =>
+export const navigate = (params: SelectStoryPayload) =>
   addons.getChannel().emit(SELECT_STORY, params);
 
 const generateStoryUrl = (title: ComponentTitle | undefined, name: StoryName): string => {
@@ -78,11 +68,11 @@ export const linkTo =
     if (title?.match(/--/) && !name) {
       navigate({ storyId: title });
     } else if (name && title) {
-      navigate({ kind: title, story: name });
+      navigate({ title, name });
     } else if (title) {
-      navigate({ kind: title });
+      navigate({ title });
     } else if (name) {
-      navigate({ story: name });
+      navigate({ name });
     }
   };
 
@@ -92,10 +82,10 @@ const linksListener = (e: Event) => {
     return;
   }
   const element = target as HTMLElement;
-  const { sbKind: kind, sbStory: story } = element.dataset;
-  if (kind || story) {
+  const { sbKind, sbStory } = element.dataset;
+  if (sbKind || sbStory) {
     e.preventDefault();
-    navigate({ kind, story });
+    navigate({ title: sbKind, name: sbStory });
   }
 };
 

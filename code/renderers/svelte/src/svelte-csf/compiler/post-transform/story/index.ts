@@ -5,6 +5,7 @@ import { insertStoryHTMLCommentAsDescription } from './insert-description.ts';
 import { insertSvelteCSFToStoryParameters } from './insert-svelte-csf.ts';
 
 import type { extractStoriesNodesFromExportDefaultFn } from '../../../parser/extract/compiled/stories.ts';
+import type { StoryContent } from '../../../parser/analyse/story/extend.ts';
 import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.ts';
 
 interface Params {
@@ -14,6 +15,7 @@ interface Params {
       svelte: SvelteASTNodes['storyComponents'][number];
       compiled: Awaited<ReturnType<typeof extractStoriesNodesFromExportDefaultFn>>[number];
     };
+    content?: StoryContent;
     svelte: SvelteASTNodes;
   };
   filename?: string;

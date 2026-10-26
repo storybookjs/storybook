@@ -1,6 +1,5 @@
 /* eslint-env browser */
 import { MIN_TOUCH_AREA_SIZE } from './constants.ts';
-import { type IconName, iconPaths } from './icons.ts';
 import type { Box, ClickEventDetails, Highlight, HighlightOptions } from './types.ts';
 
 const svgElements = 'svg,path,rect,circle,line,polyline,polygon,ellipse,text'.split(',');
@@ -45,21 +44,6 @@ export const createElement = (type: string, props: Record<string, any> = {}, chi
 
   return element;
 };
-
-export const createIcon = (name: IconName) =>
-  iconPaths[name] &&
-  createElement(
-    'svg',
-    { width: '14', height: '14', viewBox: '0 0 14 14', xmlns: 'http://www.w3.org/2000/svg' },
-    iconPaths[name].map((d) =>
-      createElement('path', {
-        fill: 'currentColor',
-        'fill-rule': 'evenodd',
-        'clip-rule': 'evenodd',
-        d,
-      })
-    )
-  );
 
 export const normalizeOptions = (options: HighlightOptions): Highlight => {
   const { menu, ...rest } = options;
@@ -198,52 +182,9 @@ export const isTargeted = (
   return x >= left && x <= left + width && y >= top && y <= top + height;
 };
 
-/**
- * Convert coordinates from the preview iframe's viewport space to the manager's viewport space,
- * accounting for the iframe's position and any scaling applied to it (e.g. custom viewports).
- */
-export const previewToManagerCoords = (
-  coords: { x: number; y: number },
-  iframeRect: { left: number; top: number; width: number; height: number },
-  iframeSize: { width: number; height: number }
-) => ({
-  x: iframeRect.left + coords.x * (iframeRect.width / (iframeSize.width || 1)),
-  y: iframeRect.top + coords.y * (iframeRect.height / (iframeSize.height || 1)),
-});
-
-/**
- * Clamp coordinates so a menu of the given size stays within the viewport rectangle, optionally
- * keeping it horizontally centered on the anchor. The menu is kept between the rect's top and
- * bottom edges; when it is taller than the rect it is pinned to the top, and the caller should
- * constrain the menu's height so its contents stay reachable.
- */
-export const clampToRect = (
-  coords: { x: number; y: number },
-  size: { width: number; height: number },
-  rect: { left: number; top: number; right: number; bottom: number },
-  options: { margin?: number; topOffset?: number; centered?: boolean } = {}
-) => {
-  const { x, y } = coords;
-  const { width, height } = size;
-  const { margin = 5, topOffset = 0, centered = false } = options;
-  const leftOffset = centered ? width / 2 : 0;
-  return {
-    x: Math.max(Math.min(x, rect.right - leftOffset - margin), rect.left + leftOffset + margin),
-    // The top clamp also covers the short-rect case: if the menu does not fit, the upper bound
-    // falls below the lower bound and the menu is pinned just inside the top edge.
-    y: Math.max(Math.min(y, rect.bottom - height - margin - topOffset), rect.top + margin),
-  };
-};
-
 export const showPopover = (element: HTMLElement) => {
   if (window.HTMLElement.prototype.hasOwnProperty('showPopover')) {
     element.showPopover();
-  }
-};
-
-export const hidePopover = (element: HTMLElement) => {
-  if (window.HTMLElement.prototype.hasOwnProperty('showPopover')) {
-    element.hidePopover();
   }
 };
 

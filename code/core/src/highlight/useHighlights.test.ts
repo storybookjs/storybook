@@ -150,45 +150,34 @@ describe('useHighlights', () => {
     expect(lastMenuState!.coords).toBeNull();
   });
 
-  it('keeps the menu coordinates in sync when the preview scrolls', () => {
+  it('closes the menu when the preview scrolls', () => {
     clickAt(30, 30);
     expect(lastMenuState!.coords).toEqual({ x: 30, y: 30 });
 
-    // Scrolling moves the element up in the viewport by the scroll amount
     stubTargetRect({ top: -80, bottom: -30 });
     setScroll(0, 100);
-    expect(lastMenuState!.coords).toEqual({ x: 30, y: -70 });
+    expect(lastMenuState!.targets).toHaveLength(0);
+    expect(lastMenuState!.coords).toBeNull();
   });
 
-  it('keeps the menu coordinates in sync when the preview resizes', () => {
+  it('closes the menu when the preview resizes', () => {
     clickAt(30, 30);
     expect(lastMenuState!.coords).toEqual({ x: 30, y: 30 });
 
     stubTargetRect({ top: 120, bottom: 170 });
     window.dispatchEvent(new Event('resize'));
     flushFrames();
-    expect(lastMenuState!.coords).toEqual({ x: 30, y: 130 });
+    expect(lastMenuState!.targets).toHaveLength(0);
+    expect(lastMenuState!.coords).toBeNull();
   });
 
-  it('emits a single menu state update per scroll frame', () => {
-    clickAt(30, 30);
-    stubTargetRect({ top: -30, bottom: 20 });
-    const emitSpy = vi.spyOn(channel, 'emit');
-
-    setScroll(0, 50);
-
-    // The scroll listener and the sticky box remeasure share one rAF-coalesced emission
-    const menuEmits = emitSpy.mock.calls.filter(([type]) => type === HIGHLIGHT_MENU);
-    expect(menuEmits).toHaveLength(1);
-    expect(lastMenuState!.coords).toEqual({ x: 30, y: -20 });
-  });
-
-  it('keeps the menu anchored to its element when the layout changes', () => {
+  it('closes the menu when the layout changes', () => {
     clickAt(30, 30);
     expect(lastMenuState!.coords).toEqual({ x: 30, y: 30 });
 
     moveTarget({ top: 200, bottom: 250 });
-    expect(lastMenuState!.coords).toEqual({ x: 30, y: 210 });
+    expect(lastMenuState!.targets).toHaveLength(0);
+    expect(lastMenuState!.coords).toBeNull();
   });
 
   it('positions the menu at the newly clicked target right away', () => {
@@ -259,6 +248,59 @@ describe('useHighlights', () => {
 
     channel.emit(HIGHLIGHT_MENU_INTERACTION, { action: 'deselect' });
     expect(lastMenuState!.selected).toBeNull();
+  });
+
+  it('ignores malformed menu interactions without corrupting selection', () => {
+    const second = document.createElement('span');
+    second.id = 'other';
+    second.style.position = 'absolute';
+    second.getBoundingClientRect = () =>
+      ({
+        top: 15,
+        left: 15,
+        width: 60,
+        height: 60,
+        bottom: 75,
+        right: 75,
+        x: 15,
+        y: 15,
+      }) as DOMRect;
+    document.getElementById('storybook-root')!.appendChild(second);
+    channel.emit(HIGHLIGHT, {
+      id: 'h2',
+      selectors: ['#other'],
+      menu: [[{ id: 'item-2', title: 'Other' }]],
+    });
+    flushFrames();
+
+    clickAt(30, 30);
+    channel.emit(HIGHLIGHT_MENU_INTERACTION, { action: 'select', index: 1 });
+    expect(lastMenuState!.selected).toBe(1);
+
+    for (const interaction of [
+      null,
+      {},
+      { action: 'select' },
+      { action: 'select', index: -1 },
+      { action: 'select', index: 2 },
+      { action: 'select', index: 'length' },
+      { action: 'select', index: '__proto__' },
+      { action: 'focus', index: Number.NaN },
+      { action: 'unknown', index: 0 },
+    ]) {
+      channel.emit(HIGHLIGHT_MENU_INTERACTION, interaction);
+      expect(lastMenuState!.selected).toBe(1);
+    }
+  });
+
+  it('closes the menu on a close interaction', () => {
+    clickAt(30, 30);
+    expect(lastMenuState!.targets).toHaveLength(1);
+
+    channel.emit(HIGHLIGHT_MENU_INTERACTION, { action: 'close' });
+    expect(lastMenuState!.targets).toHaveLength(0);
+    expect(lastMenuState!.selected).toBeNull();
+    expect(lastMenuState!.coords).toBeNull();
   });
 
   it('clears the menu when the highlight is removed or reset', () => {

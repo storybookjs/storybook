@@ -1,14 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { HighlightOptions } from './types.ts';
-import {
-  clampToRect,
-  filterMenuGroups,
-  getTargetLabel,
-  normalizeOptions,
-  previewToManagerCoords,
-  useStore,
-} from './utils.ts';
+import { filterMenuGroups, getTargetLabel, normalizeOptions, useStore } from './utils.ts';
 
 describe('useStore', () => {
   it('should return the initial value', () => {
@@ -126,96 +119,5 @@ describe('filterMenuGroups', () => {
 
   it('returns undefined for an undefined menu', () => {
     expect(filterMenuGroups(undefined, ['#target'])).toBeUndefined();
-  });
-});
-
-describe('previewToManagerCoords', () => {
-  it('should map preview viewport coordinates onto the iframe position in the manager', () => {
-    expect(
-      previewToManagerCoords(
-        { x: 100, y: 50 },
-        { left: 300, top: 80, width: 800, height: 600 },
-        {
-          width: 800,
-          height: 600,
-        }
-      )
-    ).toEqual({ x: 400, y: 130 });
-  });
-
-  it('should account for a scaled iframe (e.g. a custom viewport or zoom)', () => {
-    expect(
-      previewToManagerCoords(
-        { x: 100, y: 50 },
-        { left: 300, top: 80, width: 400, height: 300 },
-        {
-          width: 800,
-          height: 600,
-        }
-      )
-    ).toEqual({ x: 350, y: 105 });
-  });
-
-  it('should not divide by a zero-sized iframe', () => {
-    expect(
-      previewToManagerCoords(
-        { x: 100, y: 50 },
-        { left: 0, top: 0, width: 0, height: 0 },
-        {
-          width: 0,
-          height: 0,
-        }
-      )
-    ).toEqual({ x: 0, y: 0 });
-  });
-});
-
-describe('clampToRect', () => {
-  const rect = { left: 100, top: 50, right: 900, bottom: 650 };
-
-  it('should keep coordinates as-is when already inside the rect', () => {
-    expect(clampToRect({ x: 400, y: 300 }, { width: 300, height: 200 }, rect)).toEqual({
-      x: 400,
-      y: 300,
-    });
-  });
-
-  it('should clamp coordinates to stay within the rect', () => {
-    expect(
-      clampToRect({ x: 950, y: 700 }, { width: 300, height: 200 }, rect, {
-        margin: 5,
-        topOffset: 15,
-      })
-    ).toEqual({ x: 895, y: 430 });
-  });
-
-  it('should clamp horizontally on both sides when centered', () => {
-    expect(
-      clampToRect({ x: 50, y: 300 }, { width: 300, height: 200 }, rect, {
-        margin: 5,
-        centered: true,
-      })
-    ).toEqual({ x: 255, y: 300 });
-    expect(
-      clampToRect({ x: 900, y: 300 }, { width: 300, height: 200 }, rect, {
-        margin: 5,
-        centered: true,
-      })
-    ).toEqual({ x: 745, y: 300 });
-  });
-
-  it('should clamp coordinates below the rect top edge', () => {
-    expect(
-      clampToRect({ x: 400, y: 10 }, { width: 300, height: 100 }, rect, { margin: 5 })
-    ).toEqual({ x: 400, y: 55 });
-  });
-
-  it('should pin a menu taller than the rect to its top edge', () => {
-    expect(
-      clampToRect({ x: 400, y: 300 }, { width: 300, height: 700 }, rect, {
-        margin: 5,
-        topOffset: 15,
-      })
-    ).toEqual({ x: 400, y: 55 });
   });
 });

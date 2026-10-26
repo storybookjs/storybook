@@ -3,44 +3,9 @@ import React from 'react';
 import { addons, useChannel } from 'storybook/preview-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
-import { isChromatic } from '../../../.storybook/isChromatic.ts';
 import preview from '../../../.storybook/preview.tsx';
 import { StoryContent } from './StoryContent.tsx';
-import {
-  HIGHLIGHT,
-  HIGHLIGHT_MENU_CLICK,
-  REMOVE_HIGHLIGHT,
-  SCROLL_INTO_VIEW,
-} from './constants.ts';
-import { useHighlightMenu } from './manager.ts';
-
-/**
- * The highlight menu is rendered by the manager, positioned over the preview iframe. Neither
- * Vitest nor Chromatic loads the manager, so boot the manager-side menu on the same (local)
- * channel to exercise the full preview → manager flow in a single document. Run it from a
- * decorator (not the play function) so the menu is listening before the highlights decorator emits
- * its `HIGHLIGHT` events, which populate the manager-side registry the menu renders from.
- */
-const setupHighlightMenu = () => {
-  const isVitest = (globalThis as { __vitest_browser__?: boolean }).__vitest_browser__;
-  if (!isVitest && !isChromatic()) {
-    return;
-  }
-  useHighlightMenu(addons.getChannel());
-};
-
-/** The menu is rendered in the manager document, except in Vitest and Chromatic where it is local. */
-const getHighlightMenu = () => {
-  const local = document.getElementById('storybook-highlights-menu');
-  if (local) {
-    return local;
-  }
-  try {
-    return parent.document.getElementById('storybook-highlights-menu');
-  } catch {
-    return null;
-  }
-};
+import { HIGHLIGHT, HIGHLIGHT_MENU, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants.ts';
 
 const highlight = (
   selectors: string[],
@@ -174,18 +139,23 @@ export const Selectable = meta.story({
   parameters: {
     highlights: [{ selectors: ['div', 'input'], options: { menu: [] } }],
   },
-  decorators: [
-    (storyFn) => {
-      setupHighlightMenu();
-      return storyFn();
-    },
-  ],
   play: async () => {
+    const onMenuState = fn();
+    addons.getChannel().on(HIGHLIGHT_MENU, onMenuState);
+
     await new Promise((resolve) => setTimeout(resolve, 200));
     await userEvent.pointer({
       coords: { pageX: 470, pageY: 240 },
       keys: '[MouseLeft]',
     });
+
+    await waitFor(() => expect(onMenuState).toHaveBeenCalled());
+    const state = onMenuState.mock.calls.at(-1)?.[0];
+    expect(state.targets.length).toBeGreaterThan(0);
+    expect(state.coords).not.toBeNull();
+    expect(typeof state.coords.x).toBe('number');
+
+    addons.getChannel().off(HIGHLIGHT_MENU, onMenuState);
   },
 });
 
@@ -225,15 +195,9 @@ export const Menu = meta.story({
       },
     ],
   },
-  decorators: [
-    (storyFn) => {
-      setupHighlightMenu();
-      return storyFn();
-    },
-  ],
   play: async ({ canvasElement }) => {
-    const onMenuClick = fn();
-    addons.getChannel().on(HIGHLIGHT_MENU_CLICK, onMenuClick);
+    const onMenuState = fn();
+    addons.getChannel().on(HIGHLIGHT_MENU, onMenuState);
     const clickAt = (element: Element) => {
       const { left, top, width, height } = element.getBoundingClientRect();
       return userEvent.pointer({
@@ -249,30 +213,16 @@ export const Menu = meta.story({
     await new Promise((resolve) => setTimeout(resolve, 200));
     await clickAt(canvasElement.querySelector('#inner')!);
 
-    const menu = await waitFor(() => {
-      const element = getHighlightMenu()!;
-      expect(element.querySelector('.element-list button')).not.toBeNull();
-      return element;
-    });
+    await waitFor(() => expect(onMenuState).toHaveBeenCalled());
+    const state = onMenuState.mock.calls.at(-1)?.[0];
+    expect(state.targets.length).toBeGreaterThan(0);
+    const target = state.targets.find(({ id }: { id: string }) => id === 'menu-highlight');
+    expect(target).toBeDefined();
+    expect(target.label).toContain('div');
+    // The preview only reports the target; menu content is rendered by the manager.
+    expect(document.getElementById('storybook-highlights-menu')).toBeNull();
 
-    // Chromatic does not load the manager, so the menu booted into the preview can open but its
-    // clicks would also be handled by the preview's own click listener. Stop after opening the
-    // menu so the snapshot captures it, and let Vitest run the interaction to completion instead.
-    if (isChromatic()) {
-      return;
-    }
-
-    await clickAt(menu.querySelector('.element-list button')!);
-
-    const menuItem = await waitFor(() => within(menu).getByText('Insufficient color contrast'));
-    await clickAt(menuItem);
-
-    addons.getChannel().off(HIGHLIGHT_MENU_CLICK, onMenuClick);
-    await expect(onMenuClick).toHaveBeenCalledWith(
-      'menu-highlight',
-      'color-contrast',
-      expect.objectContaining({ selectors: ['div'] })
-    );
+    addons.getChannel().off(HIGHLIGHT_MENU, onMenuState);
   },
 });
 

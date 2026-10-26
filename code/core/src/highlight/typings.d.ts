@@ -1,2 +1,1 @@
 declare var __STORYBOOK_HIGHLIGHT_INITIALIZED: boolean;
-declare var __STORYBOOK_HIGHLIGHT_MENU_INITIALIZED: boolean;

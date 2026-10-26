@@ -122,4 +122,4 @@ export type HighlightMenuState = {
 /** Payload of the internal `HIGHLIGHT_MENU_INTERACTION` event (manager → preview). */
 export type HighlightMenuInteraction =
   | { action: 'select' | 'focus'; index: number }
-  | { action: 'deselect' | 'blur' };
+  | { action: 'deselect' | 'blur' | 'close' };

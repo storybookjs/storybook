@@ -14,7 +14,7 @@ import {
   RESET_HIGHLIGHT,
   SCROLL_INTO_VIEW,
 } from './constants.ts';
-import type { Box, Highlight, HighlightMenuInteraction, HighlightOptions } from './types.ts';
+import type { Box, Highlight, HighlightOptions } from './types.ts';
 import {
   createElement,
   getEventDetails,
@@ -26,6 +26,7 @@ import {
   showPopover,
   useStore,
 } from './utils.ts';
+import { parseHighlightMenuInteraction } from './validation.ts';
 
 const rootId = 'storybook-highlights-root';
 const storybookRootId = 'storybook-root';
@@ -49,12 +50,12 @@ export const useHighlights = (channel: Channel) => {
   const hovered = useStore<Box[]>([]);
   const focused = useStore<Box | undefined>();
   const selected = useStore<Box | undefined>();
-  // The click position relative to the first target's element, in the element's viewport
-  // coordinates, used to keep the (manager-rendered) menu anchored to it while the preview
-  // scrolls, resizes or otherwise changes layout.
-  const menuAnchor = useStore<
-    { element: HTMLElement; offsetX: number; offsetY: number } | undefined
-  >();
+
+  const getBoxesKey = (value: Box[]) =>
+    value
+      .map(({ id, top, left, width, height }) => `${id}:${top}:${left}:${width}:${height}`)
+      .join('|');
+  let openBoxesKey: string | undefined;
 
   let root = document.getElementById(rootId);
 
@@ -215,20 +216,9 @@ export const useHighlights = (channel: Channel) => {
           return isTargeted(box, boxElement, coords);
         });
 
-        // Update the anchor and click coordinates before publishing the new targets, so the menu
-        // opens at the element just clicked rather than at the previously anchored target. The
-        // anchor stores the click position relative to the element in viewport coordinates, which
-        // keeps working for `position: fixed` elements and requires no scroll bookkeeping.
-        if (results.length) {
-          const { left, top } = results[0].element.getBoundingClientRect();
-          menuAnchor.set({
-            element: results[0].element,
-            offsetX: event.clientX - left,
-            offsetY: event.clientY - top,
-          });
-        } else {
-          menuAnchor.set(undefined);
-        }
+        // Update the click coordinates before publishing the new targets, so the menu opens at the
+        // element just clicked rather than at the previously clicked target.
+        openBoxesKey = results.length ? getBoxesKey(value) : undefined;
         clickCoords.set(results.length ? coords : undefined);
         targets.set(results);
       });
@@ -326,27 +316,24 @@ export const useHighlights = (channel: Channel) => {
   // and positioned over the preview iframe, so it can no longer be triggered by embedding the
   // preview on a malicious site. The preview tracks the state and sends it to the manager.
 
-  /** The menu anchor in the preview iframe's viewport coordinates. */
-  const getMenuCoords = () => {
-    const click = clickCoords.get();
-    if (!click) {
-      return undefined;
+  const closeMenu = () => {
+    if (!clickCoords.get() && !targets.get().length) {
+      return;
     }
-
-    const anchor = menuAnchor.get();
-    if (anchor && boxes.get().some((b) => b.element === anchor.element)) {
-      // The anchor is a viewport-space offset into the element, so the live bounding rect maps it
-      // back onto the element's current position, whatever its `position` or the page scroll.
-      const { left, top } = anchor.element.getBoundingClientRect();
-      return { x: left + anchor.offsetX, y: top + anchor.offsetY };
-    }
-
-    return { x: click.x - window.scrollX, y: click.y - window.scrollY };
+    openBoxesKey = undefined;
+    clickCoords.set(undefined);
+    targets.set([]);
+    selected.set(undefined);
+    focused.set(undefined);
   };
 
   const emitMenuState = () => {
     const targetList = targets.get();
-    const coords = targetList.length ? getMenuCoords() : undefined;
+    const click = clickCoords.get();
+    const coords =
+      targetList.length && click
+        ? { x: click.x - window.scrollX, y: click.y - window.scrollY }
+        : null;
     const selectedBox = selected.get();
     const selectedIndex = selectedBox
       ? targetList.findIndex((b) => b.element === selectedBox.element)
@@ -359,65 +346,52 @@ export const useHighlights = (channel: Channel) => {
         details: getEventDetails(box),
       })),
       selected: selectedIndex !== undefined && selectedIndex >= 0 ? selectedIndex : null,
-      coords: coords ?? null,
+      coords,
     });
   };
 
-  // Keep the manager-rendered menu in sync while it is open: box remeasurements (resizes, layout
-  // changes, DOM mutations, scrolled containers) re-emit through the same rAF-coalesced path as
-  // preview scrolling and window resizing, so the menu state is sent once per frame.
-  let menuSyncFrame: number | undefined;
-  const syncMenu = () => {
-    if (menuSyncFrame === undefined) {
-      menuSyncFrame = requestAnimationFrame(() => {
-        menuSyncFrame = undefined;
-        if (clickCoords.get()) {
-          emitMenuState();
-        }
-      });
-    }
-  };
+  // The menu is anchored at the click position. It closes instead of chasing the element when the
+  // preview scrolls, resizes or changes layout, so the manager never has to continuously reposition
+  // an open popover.
   clickCoords.subscribe((coords) => {
     if (coords) {
-      document.addEventListener('scroll', syncMenu);
-      window.addEventListener('resize', syncMenu);
+      document.addEventListener('scroll', closeMenu, true);
+      window.addEventListener('resize', closeMenu);
     } else {
-      document.removeEventListener('scroll', syncMenu);
-      window.removeEventListener('resize', syncMenu);
-      if (menuSyncFrame !== undefined) {
-        cancelAnimationFrame(menuSyncFrame);
-        menuSyncFrame = undefined;
-      }
+      document.removeEventListener('scroll', closeMenu, true);
+      window.removeEventListener('resize', closeMenu);
     }
   });
 
-  boxes.subscribe(() => {
-    if (clickCoords.get()) {
-      syncMenu();
+  boxes.subscribe((value) => {
+    if (clickCoords.get() && openBoxesKey !== undefined && getBoxesKey(value) !== openBoxesKey) {
+      closeMenu();
     }
   });
   targets.subscribe(emitMenuState);
   selected.subscribe(emitMenuState);
 
-  const handleMenuInteraction = (interaction: HighlightMenuInteraction) => {
-    const targetList = targets.get();
-    const box = 'index' in interaction ? targetList[interaction.index] : undefined;
-    switch (interaction.action) {
+  const handleMenuInteraction = (interaction: unknown) => {
+    const parsed = parseHighlightMenuInteraction(interaction, targets.get().length);
+    if (!parsed) {
+      return;
+    }
+
+    switch (parsed.action) {
       case 'select':
-        if (box) {
-          selected.set(box);
-        }
+        selected.set(targets.get()[parsed.index]);
         break;
       case 'deselect':
         selected.set(undefined);
         break;
       case 'focus':
-        if (box) {
-          focused.set(box);
-        }
+        focused.set(targets.get()[parsed.index]);
         break;
       case 'blur':
         focused.set(undefined);
+        break;
+      case 'close':
+        closeMenu();
         break;
     }
   };
@@ -445,12 +419,12 @@ export const useHighlights = (channel: Channel) => {
   };
 
   const resetState = () => {
+    openBoxesKey = undefined;
     highlights.set([]);
     elements.set(new Map());
     boxes.set([]);
     clickCoords.set(undefined);
     hoverCoords.set(undefined);
-    menuAnchor.set(undefined);
     targets.set([]);
     hovered.set([]);
     focused.set(undefined);
@@ -506,8 +480,8 @@ export const useHighlights = (channel: Channel) => {
   channel.on(RESET_HIGHLIGHT, resetState);
   channel.on(SCROLL_INTO_VIEW, scrollIntoView);
   channel.on(HIGHLIGHT_MENU_INTERACTION, handleMenuInteraction);
-  channel.on(STORY_RENDER_PHASE_CHANGED, ({ newPhase }: { newPhase: string }) => {
-    if (newPhase === 'loading') {
+  channel.on(STORY_RENDER_PHASE_CHANGED, (payload?: { newPhase?: string }) => {
+    if (payload?.newPhase === 'loading') {
       resetState();
     }
   });

@@ -10,6 +10,7 @@ import backgroundsManager from '../../backgrounds/manager.tsx';
 import measureManager from '../../measure/manager.tsx';
 import outlineManager from '../../outline/manager.tsx';
 import viewportManager from '../../viewport/manager.tsx';
+import highlightManager from '../../highlight/manager.tsx';
 
 export default [
   docgenManager,
@@ -21,4 +22,5 @@ export default [
   controlsManager,
   viewportManager,
   outlineManager,
+  highlightManager,
 ];

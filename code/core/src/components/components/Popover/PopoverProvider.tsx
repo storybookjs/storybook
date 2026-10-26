@@ -35,6 +35,9 @@ export interface PopoverProviderProps {
   /** Distance between the trigger and Popover. Customize only if you have a good reason to. */
   offset?: number;
 
+  /** Element that serves as the positioning boundary for the Popover. Defaults to the viewport. */
+  boundaryElement?: Element;
+
   /**
    * Placement of the Popover. Start and End variants involve additional JS dimension calculations
    * and should be used sparingly. Left and Right get inverted in RTL.
@@ -67,6 +70,7 @@ export const PopoverProvider = ({
   hasCloseButton = false,
   closeLabel,
   offset = 8,
+  boundaryElement,
   padding,
   popover,
   children,
@@ -115,6 +119,7 @@ export const PopoverProvider = ({
         aria-label={ariaLabel}
         placement={placement}
         offset={offset}
+        boundaryElement={boundaryElement}
         style={{ outline: 'none' }}
       >
         <Popover

@@ -11,7 +11,10 @@ import type { CSSObject } from 'storybook/theming';
 import { Viewport } from './Viewport.tsx';
 import type { FramesRendererProps } from './utils/types.tsx';
 
-const getActive = (refId: FramesRendererProps['refId'], refs: FramesRendererProps['refs']) => {
+export const getPreviewIframeId = (
+  refId: FramesRendererProps['refId'] | undefined,
+  refs: FramesRendererProps['refs']
+) => {
   if (refId && refs[refId]) {
     return `storybook-ref-${refId}`;
   }
@@ -61,7 +64,7 @@ export const FramesRenderer: FC<FramesRendererProps> = ({
   storyId = '*',
 }) => {
   const version = refs[refId]?.version;
-  const active = getActive(refId, refs);
+  const active = getPreviewIframeId(refId, refs);
   const { current: frames } = useRef<Record<string, string>>({});
 
   const refsToLoad = Object.values(refs).filter((ref) => {

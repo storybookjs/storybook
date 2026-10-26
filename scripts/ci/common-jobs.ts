@@ -1,4 +1,6 @@
 import { globSync, statSync } from 'node:fs';
+import { sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { join } from 'path/posix';
 
 import { isGlobalInput } from './global-inputs.ts';
@@ -22,12 +24,11 @@ import {
 import { isTrustedAuthor } from './utils/runtime.ts';
 import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
 
-const dirname = import.meta.dirname;
-
-const codeDir = join(dirname, '../../code');
+const codeDir = new URL('../../code/', import.meta.url);
 const packageDirs = ['*/src', '*/*/src'].flatMap((pattern) =>
-  globSync(pattern, { cwd: codeDir, exclude: ['node_modules/**'] })
-    .filter((dir) => statSync(join(codeDir, dir)).isDirectory())
+  globSync(pattern, { cwd: fileURLToPath(codeDir), exclude: ['node_modules/**'] })
+    .map((dir) => dir.split(sep).join('/'))
+    .filter((dir) => statSync(new URL(dir, codeDir)).isDirectory())
     .sort((a, b) => (a.replaceAll('/', '\0') < b.replaceAll('/', '\0') ? -1 : 1))
 );
 

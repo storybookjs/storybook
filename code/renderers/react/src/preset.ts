@@ -1,9 +1,13 @@
 import path, { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { getProjectRoot, isTypeScriptReadyForDocgen } from 'storybook/internal/common';
+import {
+  getProjectRoot,
+  isTypeScriptReadyForDocgen,
+  typeScriptDocgenApisFor,
+} from 'storybook/internal/common';
 import type { ArgTypes } from 'storybook/internal/csf';
-import type { Options, PresetProperty } from 'storybook/internal/types';
+import { type Options, type PresetProperty, SupportedRenderer } from 'storybook/internal/types';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
 import { aliasReactInWebpack, prependReactDedupePlugin } from './preview-react-alias.ts';
@@ -31,7 +35,9 @@ export { experimental_docgenProvider } from './docgen/preset.ts';
 
 // Default for `features.docgenServer`; a project without a usable `typescript` keeps builder docgen.
 export const isDocgenProviderEnabled = (_existing: unknown, options: Options) =>
-  isTypeScriptReadyForDocgen((specifier) => import.meta.resolve(specifier), options);
+  isTypeScriptReadyForDocgen((specifier) => import.meta.resolve(specifier), options, {
+    apis: typeScriptDocgenApisFor(SupportedRenderer.REACT),
+  });
 
 export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
 

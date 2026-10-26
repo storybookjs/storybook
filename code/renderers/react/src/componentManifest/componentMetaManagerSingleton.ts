@@ -1,5 +1,7 @@
-import { loadTypeScriptCompilerApi } from 'storybook/internal/common';
+import type { TypeScriptSpecifierForDocgen } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
+
+import { loadDocgenTypeScript } from '@storybook/component-meta-typescript';
 
 import { ComponentMetaManager } from './componentMeta/ComponentMetaManager.ts';
 
@@ -17,13 +19,13 @@ let componentMetaManagerPromise: Promise<ComponentMetaManager | undefined> | und
  * so enabling both the manifest generator and the docgen server keeps two full program sets resident
  * at once — acceptable today, but the reason this singleton is scoped to the manifest path only.
  */
-export function getSharedComponentMetaManager(): Promise<ComponentMetaManager | undefined> {
+export function getSharedComponentMetaManager(
+  typeScriptSpecifier?: TypeScriptSpecifierForDocgen
+): Promise<ComponentMetaManager | undefined> {
   if (!componentMetaManagerPromise) {
     componentMetaManagerPromise = (async () => {
       try {
-        return new ComponentMetaManager(
-          await loadTypeScriptCompilerApi(() => import('typescript'))
-        );
+        return new ComponentMetaManager(await loadDocgenTypeScript(typeScriptSpecifier));
       } catch (err) {
         logger.debug(`[reactComponentMeta] Skipping component metadata extraction: ${err}`);
         return undefined;

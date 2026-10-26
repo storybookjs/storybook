@@ -16,6 +16,7 @@ import {
   defineAffectedUnitTests,
   internalStorybookBuildE2e,
   internalStorybookE2e,
+  node26Smoke,
   storybookChromatic,
   testsStories_linux,
   testsUnit_linux,
@@ -168,6 +169,7 @@ export const PATH_TRIGGERED_JOBS: readonly { job: JobOrNoOpJob; paths: readonly 
   { job: internalStorybookBuildE2e, paths: INTERNAL_STORYBOOK_PATHS },
   { job: testsStories_linux, paths: INTERNAL_STORYBOOK_PATHS },
   { job: storybookChromatic, paths: INTERNAL_STORYBOOK_PATHS },
+  { job: node26Smoke, paths: [] },
 ];
 
 export const selectPathTriggeredJobs = (changedFiles: readonly string[]): JobOrNoOpJob[] =>

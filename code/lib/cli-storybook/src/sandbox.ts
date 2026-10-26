@@ -209,7 +209,7 @@ export const sandbox = async ({
         const selected = picocolors.yellow(templateId);
         throw new Error(dedent`
           Template downloaded from ${picocolors.blue(gitPath)} is empty.
-          Are you sure ${selected} is a published sandbox template?
+          Are you use it exists? Or did you want to set ${selected} to inDevelopment first?
         `);
       }
 

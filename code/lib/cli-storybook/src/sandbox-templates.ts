@@ -4,7 +4,9 @@ import { type StorybookConfigRaw } from 'storybook/internal/types';
 import { ProjectType } from '../../../core/src/cli/projectTypes.ts';
 import { SupportedBuilder } from '../../../core/src/types/modules/builders.ts';
 
+export type TemplateType = Pick<Template, 'inDevelopment' | 'skipTasks' | 'typeCheck'>;
 export type AllTemplatesKey = keyof typeof allTemplates;
+export type AllTemplatesType = Record<AllTemplatesKey, TemplateType>;
 
 export type SkippableTask =
   | 'smoke-test'
@@ -71,6 +73,11 @@ export type Template = {
    * will be 'no', at least initially
    */
   typeCheck?: boolean;
+  /**
+   * Set this only while developing a newly created framework, to avoid using it in CI. NOTE: Make
+   * sure to always add a TODO comment to remove this flag in a subsequent PR.
+   */
+  inDevelopment?: boolean;
   /**
    * Some sandboxes have partial or total incompatibilities when running with linked dependencies.
    * Set this flag to use --no-link by default (but still support --link for local testing).
@@ -743,6 +750,7 @@ export const baseTemplates = {
   //   name: 'Qwik CLI Latest (Vite | TypeScript)',
   //   script: 'npm create qwik playground {{beforeDir}}',
   //   // TODO: The community template does not provide standard stories, which is required for e2e tests. Reenable once it does.
+  //   inDevelopment: true,
   //   expected: {
   //     framework: 'storybook-framework-qwik',
   //     renderer: 'storybook-framework-qwik',

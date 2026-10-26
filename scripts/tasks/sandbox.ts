@@ -23,6 +23,13 @@ const pathExists = (path: string) => {
 };
 
 const sanitizeOptions = (details: TemplateDetails, options: PassedOptionValues) => {
+  if (options.link && !options.forceLink && details.template.inDevelopment) {
+    logger.log(
+      `The ${options.template} has inDevelopment property enabled, therefore the sandbox for that template cannot be linked. Enabling --no-link mode... Pass --force-link to use link mode anyway, but be aware the sandbox may partially or completely not work.`
+    );
+
+    options.link = false;
+  }
   if (options.link && !options.forceLink && details.template.preferNoLink) {
     logger.log(
       `The ${options.template} has preferNoLink property enabled. Defaulting to --no-link mode. Pass --force-link to use link mode anyway, but be aware the sandbox may partially or completely not work.`
@@ -37,6 +44,14 @@ export const sandbox: Task = {
   dependsOn: (details, options) => {
     // Must sanitize options here too to ensure we run the right prerequisite tasks.
     sanitizeOptions(details, options);
+
+    if ('inDevelopment' in details.template && details.template.inDevelopment) {
+      if (pathExists(details.sandboxDir)) {
+        return ['run-registry'];
+      }
+
+      return ['run-registry', 'generate'];
+    }
 
     if (options.link) {
       return ['compile'];

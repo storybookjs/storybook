@@ -77,8 +77,8 @@ await Promise.all(
     console.log(project);
     console.log();
     const tags = [
-      ...(normal.includes(key as any) ? ['ci:normal'] : []),
-      ...(daily.includes(key as any) ? ['ci:daily'] : []),
+      ...(normal.includes(key as any) && !value.inDevelopment ? ['ci:normal'] : []),
+      ...(daily.includes(key as any) && !value.inDevelopment ? ['ci:daily'] : []),
     ];
     ensureDirectoryExistence(full);
     console.log(full);

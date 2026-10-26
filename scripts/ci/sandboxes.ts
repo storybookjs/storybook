@@ -1,4 +1,4 @@
-import { createRequire } from 'node:module';
+import { readFileSync } from 'node:fs';
 
 import { join } from 'path';
 
@@ -22,8 +22,32 @@ import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types.ts';
 
 const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';
 
-/** The Chromatic job runs the CLI through npx, so it needs none of the repository's node_modules. */
-const CHROMATIC_VERSION: string = createRequire(import.meta.url)('chromatic/package.json').version;
+/**
+ * The Chromatic job runs the CLI through npx, so it needs none of the repository's node_modules.
+ * The version is read from the lockfile because this generator runs before anything is installed.
+ */
+const CHROMATIC_VERSION = getLockedVersion('chromatic');
+
+function getLockedVersion(name: string) {
+  const root = join(import.meta.dirname, '../..');
+  const range: string = JSON.parse(readFileSync(join(root, 'scripts/package.json'), 'utf8'))
+    .dependencies[name];
+  const descriptor = `${name}@npm:${range}`;
+  const entry = readFileSync(join(root, 'yarn.lock'), 'utf8')
+    .split('\n\n')
+    .find((block) =>
+      block
+        .split('\n')[0]
+        .replace(/^"|":$/g, '')
+        .split(', ')
+        .includes(descriptor)
+    );
+  const version = entry?.match(/^ {2}version: (.+)$/m)?.[1];
+  if (!version) {
+    throw new Error(`No yarn.lock entry for ${descriptor}`);
+  }
+  return version;
+}
 
 /**
  * Verifies the committed docgen baselines against the sandbox that was just built.

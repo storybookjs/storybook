@@ -1,34 +1,43 @@
 import type { SnippetGrammar, Violation } from './types.ts';
 
-interface ParsedSvelteSnippet {
+export interface ParsedSvelteSnippet {
   tag: string;
   names: Set<string>;
   bareAttributes: Set<string>;
+  values: Map<string, string>;
 }
 
 interface SvelteAttribute {
   name: string;
   bare: boolean;
+  value?: string;
 }
 
-function parseSvelteSnippet(snippet: string): ParsedSvelteSnippet | undefined {
+export function parseSvelteSnippet(snippet: string): ParsedSvelteSnippet | undefined {
   const root = parseSvelteRoot(snippet);
   if (root === undefined) {
     return undefined;
   }
 
+  const values = new Map<string, string>();
   const names = new Set<string>();
   const bareAttributes = new Set<string>();
   for (const attribute of parseSvelteAttributes(root.attrText)) {
     names.add(attribute.name);
+    if (attribute.value !== undefined) values.set(attribute.name, attribute.value);
     if (attribute.bare) {
       bareAttributes.add(attribute.name);
     }
   }
-  return { tag: root.tag, names, bareAttributes };
+  // A `{#snippet footer()}` child passes the `footer` prop.
+  for (const match of snippet.matchAll(/\{#snippet\s+([A-Za-z_$][\w$]*)\s*\(/g)) {
+    names.add(match[1]);
+  }
+  return { tag: root.tag, names, bareAttributes, values };
 }
 
 function parseSvelteRoot(snippet: string): { tag: string; attrText: string } | undefined {
+  snippet = snippet.replace(/^(?:\s*<script\b[^>]*>[\s\S]*?<\/script\s*>\s*)+/, '');
   const match = /<([A-Z][\w$.]*)\b/.exec(snippet);
   if (match === null) {
     return undefined;
@@ -91,7 +100,7 @@ function parseSvelteAttributes(attrText: string): SvelteAttribute[] {
       const spread = /^\{\s*\.\.\./.test(attrText.slice(cursor));
       const end = findBalancedEnd(attrText, cursor, '{', '}');
       if (shorthand !== null && !spread) {
-        attributes.push({ name: shorthand[1], bare: false });
+        attributes.push({ name: shorthand[1], bare: false, value: `{${shorthand[1]}}` });
       }
       cursor = end === -1 ? attrText.length : end + 1;
       continue;
@@ -109,8 +118,9 @@ function parseSvelteAttributes(attrText: string): SvelteAttribute[] {
     }
 
     cursor = skipWhitespace(attrText, cursor + 1);
+    const valueStart = cursor;
     cursor = skipAttributeValue(attrText, cursor);
-    attributes.push({ name, bare: false });
+    attributes.push({ name, bare: false, value: attrText.slice(valueStart, cursor) });
   }
   return attributes;
 }

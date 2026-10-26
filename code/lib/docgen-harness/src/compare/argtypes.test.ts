@@ -6,6 +6,28 @@ import { compareArgTypes } from './argtypes.ts';
 const argTypes = (entries: StrictArgTypes): StrictArgTypes => entries;
 
 describe('compareArgTypes', () => {
+  it('accepts callable classification only when the full baseline text survives in raw', () => {
+    const signature = 'MouseEventHandler<HTMLButtonElement>';
+    const baseline: StrictArgTypes = {
+      onclick: { name: 'onclick', type: { name: 'other', value: signature } },
+    };
+    expect(
+      compareArgTypes(baseline, {
+        onclick: { name: 'onclick', type: { name: 'function', raw: signature } },
+      })
+    ).toEqual([]);
+    for (const raw of [undefined, '', 'MouseEventHandler<HTMLAnchorElement>', ` ${signature}`]) {
+      expect(
+        compareArgTypes(baseline, { onclick: { name: 'onclick', type: { name: 'function', raw } } })
+      ).toEqual([expect.objectContaining({ arg: 'onclick', kind: 'type-fidelity' })]);
+    }
+    expect(
+      compareArgTypes(baseline, {
+        onclick: { name: 'onclick', type: { name: 'string', raw: signature } },
+      })
+    ).toEqual([expect.objectContaining({ kind: 'type-fidelity' })]);
+  });
+
   it('fails when a baseline arg is missing from the candidate', () => {
     const baseline = argTypes({
       size: { name: 'size', table: { category: 'props' }, type: { name: 'string' } },

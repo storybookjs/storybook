@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Theming imports](#theming-imports)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging)
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
@@ -18,7 +19,7 @@
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
-  - [TypeScript 5.9 or 6.x](#typescript-59-or-6x)
+  - [TypeScript 5.9 or newer](#typescript-59-or-newer)
   - [CSF Next: meta args no longer need `as const`](#csf-next-meta-args-no-longer-need-as-const)
   - [CSF Next: use `mocked()` for the mock API on args](#csf-next-use-mocked-for-the-mock-api-on-args)
   - [CSF Next: every key in meta args must be an arg](#csf-next-every-key-in-meta-args-must-be-an-arg)
@@ -35,6 +36,8 @@
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
+  - [Vite: `preview-stats.json` contains the full bundler graph](#vite-preview-statsjson-contains-the-full-bundler-graph)
+  - [Webpack: requires webpack 5.101 or higher](#webpack-requires-webpack-5101-or-higher)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
   - [Next.js: most Node.js built-in polyfills removed from `@storybook/nextjs`](#nextjs-most-nodejs-built-in-polyfills-removed-from-storybooknextjs)
   - [`storySort` in the preview replaced by `storySorts` in main](#storysort-in-the-preview-replaced-by-storysorts-in-main)
@@ -625,6 +628,23 @@
 
 ## From version 10.x to 11.0.0
 
+### Theming imports
+
+End users who only create a theme keep `import { create, themes } from 'storybook/theming'`. That module is the same as `storybook/theming/create`. `ThemeVars` and `ThemeVarsPartial` are exported there too.
+
+```ts
+import { create, themes, type ThemeVars, type ThemeVarsPartial } from 'storybook/theming';
+```
+
+Addon authors who build manager UI or docs blocks move Emotion and theme-data imports to `storybook/theming/emotion`. That is the supported entry for `styled`, `css`, `jsx`, `useTheme`, `ThemeProvider`, `color`, `typography`, `background`, `convert`, `ensure`, and the other theme types.
+
+```diff
+-import { styled, css, jsx, useTheme, ThemeProvider, color } from 'storybook/theming';
++import { styled, css, jsx, useTheme, ThemeProvider, color } from 'storybook/theming/emotion';
+```
+
+In the manager, `storybook/theming` still resolves to the Emotion implementation at runtime, so already-published manager addons keep running. Update the import anyway. TypeScript only knows `create`, `themes`, `ThemeVars`, and `ThemeVarsPartial` on `storybook/theming`, so importing `styled`, `css`, `jsx`, `useTheme`, or the other Emotion and theme-data helpers from that module is a type error. Preview and docs blocks have no runtime alias, so the same old import fails there at runtime.
+
 ### `storybook dev` now blocks remote iframe embedding
 
 `storybook dev` now sends a [`Content-Security-Policy: frame-ancestors`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/frame-ancestors) header with every response, for both the manager and the preview. Only Storybook itself and pages served from `localhost` or `127.0.0.1` can embed the dev server in an `<iframe>`. This prevents a malicious website from embedding your local Storybook and interacting with it.
@@ -978,7 +998,7 @@ The manager resolves `SELECT_STORY` payloads from `storyId` or `title`/`name`, a
 ### `docgenServer` is stable and enabled by default
 
 The `experimentalDocgenServer` feature is now `docgenServer`, and Storybook no longer reads the old name.
-Server-side component metadata extraction is enabled by default for every React and Vue 3 framework, including Webpack-based ones, for `@storybook/angular-vite`, and for `@storybook/web-components-vite`.
+Server-side component metadata extraction is enabled by default for every React and Vue 3 framework, including Webpack-based ones, for `@storybook/angular-vite`, for `@storybook/web-components-vite`, and for `@storybook/svelte-vite` and `@storybook/sveltekit`.
 React and Vue 3 extract component metadata with TypeScript, so for them the default is only on when the `typescript` package is installed; a JavaScript project without it keeps builder docgen.
 Other frameworks keep builder docgen.
 
@@ -995,9 +1015,23 @@ For Angular-Vite, `framework.options.compodoc: false` does not disable the docge
 ### Builder docgen is deprecated
 
 Client-side docgen that runs in the builder is deprecated and will be removed in Storybook 12.
-This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`.
+This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`, and the Svelte `docgen` framework option in `@storybook/svelte-vite` and `@storybook/sveltekit` (including the sveltedoc-shaped `__docgen`).
 Builder docgen only runs when `features.docgenServer` is `false`, and Storybook now prints a deprecation warning when it does.
 Remove `docgenServer: false` to use server-side docgen.
+
+#### Svelte
+
+Server-side docgen is enabled by default for `@storybook/svelte-vite` and `@storybook/sveltekit`. It brings its own TypeScript 6 to read components, so it does not need `typescript` in your project, and it works in projects on TypeScript 7. Setting `framework.options.docgen: false` still disables builder docgen without a warning. The deprecated APIs stay available until Storybook 12.
+
+The server output changes the Controls panel:
+
+- `Snippet` props are in the slots category, and callback props are in the events category. Both have no control.
+- Callback props have the type `function`, with their signature as `raw`.
+- Literal unions get an enum control with options. A prop that can also be `null` or `undefined` gets the control of its other type.
+- Props that a component inherits from a whole attribute interface, such as `HTMLButtonAttributes`, are not listed. Props it picks from one, such as `Pick<HTMLButtonAttributes, 'disabled'>`, are.
+- JSDoc tags, the `@component` description and `$bindable` metadata are included.
+
+The Code panel snippet starts with a `<script>` block that imports the components and values it uses, from the paths in the story file. It also copies the story file declarations that the markup reads. Args are printed as you wrote them, for example `onclick={fn()}`.
 
 ### Node.js 22.12 or higher
 
@@ -1005,13 +1039,24 @@ Storybook 11 targets Node.js 22.12 or higher. Before upgrading, update Node.js i
 
 Storybook accepts prerelease Node.js builds when their version meets this minimum. For example, Node.js 26.1.0-rc.0 is supported, but 22.12.0-rc.0 is older than 22.12.0 and is not supported.
 
-During the Storybook 11 prerelease cycle, some releases still accept Node.js 20.19. This does not mean Node.js 20 will remain supported in the final release. Use Node.js 22.12 or higher when testing your migration.
+### TypeScript 5.9 or newer
 
-### TypeScript 5.9 or 6.x
-
-Storybook 11 requires TypeScript 5.9 or 6.x. Upgrade your project's TypeScript dependency before upgrading Storybook, then run your project's type check.
+Storybook 11 requires TypeScript 5.9 or newer. Upgrade your project's TypeScript dependency before upgrading Storybook, then run your project's type check.
 
 There is no automatic source migration. Updating the compiler can expose errors in application code or dependencies that require project-specific fixes. JavaScript-only projects do not need to install TypeScript.
+
+TypeScript 7 does not include the compiler API that Storybook uses to generate Controls and the Docs args table. Keep TypeScript 7 for `tsc`, and point the `typescript` package at TypeScript 6. npm, Yarn, and pnpm all accept this alias:
+
+```json
+{
+  "devDependencies": {
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
+  }
+}
+```
+
+`npx tsc` stays on TypeScript 7. Replacing only the `typescript` entry removes `tsc` and leaves `tsc6`. This is the [side-by-side setup from the TypeScript team](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0). The same steps are on the [TypeScript page](https://storybook.js.org/docs/configure/integration/typescript#typescript-7).
 
 ### CSF Next: meta args no longer need `as const`
 
@@ -1273,6 +1318,27 @@ If you're using framework-specific Vite plugins, ensure they are compatible with
 
 For more information on upgrading Vite, see the [Vite Migration Guide](https://vite.dev/guide/migration).
 
+### Vite: `preview-stats.json` contains the full bundler graph
+
+The `preview-stats.json` file that `@storybook/builder-vite` writes for `storybook build --stats-json` now contains the full bundler graph. In previous versions the builder dropped some nodes before it wrote the file. It now also writes:
+
+- Virtual modules such as `/virtual:/@storybook/builder-vite/project-annotations.js` and their edges
+- Proxy modules that Vite and Rollup insert between your code and its dependencies, for example `\0./node_modules/react/index.js?commonjs-es-import`
+- Sub-modules with a query string, for example `./src/Button.vue?vue&type=style&index=0&lang.css` next to `./src/Button.vue`
+
+Chromatic TurboSnap reads this file. It needs `chromatic-cli` [v18.13.1](https://github.com/chromaui/chromatic-cli/releases/tag/v18.13.1) or later, which merges these nodes into the files they stand for. With an older version, a changed Vue or Svelte component can trace to zero stories. Upgrade `chromatic-cli` to v18.13.1 or later before you upgrade Storybook.
+
+### Webpack: requires webpack 5.101 or higher
+
+`@storybook/builder-webpack5` now uses `webpack-dev-middleware` 8, which requires webpack 5.101.0 or higher. This affects all webpack-based frameworks:
+
+- `@storybook/react-webpack5`
+- `@storybook/nextjs`
+- `@storybook/angular`
+- `@storybook/ember`
+- `@storybook/server-webpack5`
+
+If your project depends on webpack directly, upgrade it to 5.101.0 or higher. Otherwise your package manager can install a second copy of webpack for Storybook, and webpack plugins from your configuration may not work with Storybook's copy.
 
 ### Next.js: Require v15 and up
 
@@ -1490,7 +1556,7 @@ If you implement toolsets using Storybook's internal open-service APIs, declare 
 
 ### Internal `satisfies` helper removed
 
-The `satisfies` function is no longer exported from `storybook/internal/common`. It existed to mimic TypeScript's `satisfies` operator before Storybook required TypeScript 4.9, and Storybook 11 [requires TypeScript 5.9 or higher](#typescript-59-or-6x).
+The `satisfies` function is no longer exported from `storybook/internal/common`. It existed to mimic TypeScript's `satisfies` operator before Storybook required TypeScript 4.9, and Storybook 11 [requires TypeScript 5.9 or newer](#typescript-59-or-newer).
 
 Replace calls with the native operator:
 

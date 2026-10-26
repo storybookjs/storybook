@@ -1,1 +1,59 @@
-{}
+{
+  "format": {
+    "control": false,
+    "description": "Number formatter.",
+    "name": "format",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "function",
+      },
+      "type": {
+        "summary": "(n: number) => string",
+      },
+    },
+    "type": {
+      "name": "function",
+      "raw": "(n: number) => string",
+      "required": false,
+    },
+  },
+  "onchange": {
+    "control": false,
+    "description": "Change callback.",
+    "name": "onchange",
+    "table": {
+      "category": "events",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "(value: string) => void",
+      },
+    },
+    "type": {
+      "name": "function",
+      "raw": "(value: string) => void",
+      "required": false,
+    },
+  },
+  "onclick": {
+    "control": false,
+    "description": "Click callback.",
+    "name": "onclick",
+    "table": {
+      "category": "events",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "(event: MouseEvent) => void",
+      },
+    },
+    "type": {
+      "name": "function",
+      "raw": "(event: MouseEvent) => void",
+      "required": false,
+    },
+  },
+}

@@ -16,6 +16,7 @@ import { PNPMProxy } from './PNPMProxy.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
+    executeTask: vi.fn(),
     executeTaskWithSpinner: vi.fn(),
     getPreferredStdio: vi.fn(() => 'inherit'),
     select: vi.fn(),
@@ -85,6 +86,10 @@ describe('PNPM Proxy', () => {
     vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('type should be pnpm', () => {
     expect(pnpmProxy.type).toEqual('pnpm');
   });
@@ -118,6 +123,30 @@ describe('PNPM Proxy', () => {
   });
 
   describe('installDependencies', () => {
+    it('gives pnpm control of the terminal when a purge confirmation can be shown', async () => {
+      vi.stubGlobal('process', {
+        ...process,
+        stdin: { ...process.stdin, isTTY: true },
+      });
+      vi.mocked(prompt.executeTask).mockImplementationOnce(async (fn) => {
+        if (Array.isArray(fn)) {
+          await Promise.all(fn.map((factory) => factory()));
+        } else {
+          await fn();
+        }
+      });
+      mockedExecuteCommand.mockResolvedValueOnce({
+        stdout: '',
+      } as Awaited<ReturnType<typeof executeCommand>>);
+
+      await pnpmProxy.installDependencies();
+
+      expect(prompt.executeTask).toHaveBeenCalledOnce();
+      expect(mockedExecuteCommand).toHaveBeenCalledWith(
+        expect.objectContaining({ command: 'pnpm', args: ['install'], stdio: 'inherit' })
+      );
+    });
+
     it('should run `pnpm install`', async () => {
       // sort of un-mock part of the function so executeCommand (also mocked) is called
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {

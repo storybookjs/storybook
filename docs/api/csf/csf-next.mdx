@@ -289,7 +289,24 @@ You can use the `.extend` method to create a new story based on an existing one,
 
 <If renderer="svelte">
 
-The stories of a Svelte CSF file have no `.extend` method. Use it in `.stories.ts` files.
+In a Svelte CSF file, a story extends another story with the `extend` prop. Its value is the `name` of a story in the same file, so the story to extend must have a `name`:
+
+```svelte title="Button.stories.svelte"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+
+  import Button from './Button.svelte';
+
+  const { Story } = preview.meta({ component: Button });
+</script>
+
+<Story name="Primary" args={{ primary: true }}>Click me</Story>
+
+<!-- 👇 Renders "Click me", with the args { primary: true, size: 'small' } -->
+<Story extend="Primary" name="Primary Small" args={{ size: 'small' }} />
+```
+
+It works like `.extend`: the properties merge, and the story uses the content and the play function of the story it extends, unless it sets its own.
 
 </If>
 

@@ -467,12 +467,16 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
+  protected override get installUsesTerminal(): boolean {
+    return !!process.stdin.isTTY;
+  }
+
   protected runInstall(options?: { force?: boolean }) {
     this.allowStorybookBuildScripts();
     return executeCommand({
       command: 'pnpm',
       args: ['install', ...this.getInstallArgs('install'), ...(options?.force ? ['--force'] : [])],
-      stdio: prompt.getPreferredStdio(),
+      stdio: this.installUsesTerminal ? 'inherit' : prompt.getPreferredStdio(),
       cwd: this.cwd,
     });
   }

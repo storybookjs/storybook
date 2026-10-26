@@ -45,7 +45,8 @@ export const OnDark = meta.story({
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -67,28 +68,34 @@ export const OnDark = meta.story({
 />
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Button from './Button.svelte';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: Button,
-  globals: {
-    // 👇 Set background value for all component stories
-    backgrounds: { value: 'gray', grid: false },
-  },
-};
+  import Button from './Button.svelte';
 
-export const OnDark = {
-  globals: {
-    // 👇 Override background value for this story
-    backgrounds: { value: 'dark' },
-  },
-};
+  const { Story } = preview.meta({
+    component: Button,
+    globals: {
+      // 👇 Set background value for all component stories
+      backgrounds: { value: 'gray', grid: false },
+    },
+  });
+</script>
+
+<!-- 👇 Override background value for this story -->
+<Story
+  name="OnDark"
+  globals={{
+    backgrounds: { value: "dark" },
+  }}
+/>
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -110,29 +117,28 @@ export const OnDark = {
 />
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import Button from './Button.svelte';
+  import Button from './Button.svelte';
 
-const meta = {
-  component: Button,
-  globals: {
-    // 👇 Set background value for all component stories
-    backgrounds: { value: 'gray', grid: false },
-  },
-} satisfies Meta<typeof Button>;
+  const { Story } = preview.meta({
+    component: Button,
+    globals: {
+      // 👇 Set background value for all component stories
+      backgrounds: { value: 'gray', grid: false },
+    },
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const OnDark: Story = {
-  globals: {
-    // 👇 Override background value for this story
-    backgrounds: { value: 'dark' },
-  },
-};
+<!-- 👇 Override background value for this story-->
+<Story
+  name="OnDark"
+  globals={{
+    backgrounds: { value: "dark" },
+  }}
+/>
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"

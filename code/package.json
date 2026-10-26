@@ -97,7 +97,7 @@
     "@vitest/browser-playwright": "^5.0.0",
     "@vitest/coverage-istanbul": "^5.0.0",
     "@vitest/coverage-v8": "^5.0.0",
-    "chromatic": "^18.0.1",
+    "chromatic": "^18.13.0",
     "create-storybook": "workspace:*",
     "danger": "^13.0.4",
     "es-toolkit": "^1.43.0",

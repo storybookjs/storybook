@@ -10371,7 +10371,7 @@ __metadata:
     "@vitest/browser-playwright": "npm:^5.0.0"
     "@vitest/coverage-istanbul": "npm:^5.0.0"
     "@vitest/coverage-v8": "npm:^5.0.0"
-    chromatic: "npm:^18.0.1"
+    chromatic: "npm:^18.13.0"
     create-storybook: "workspace:*"
     danger: "npm:^13.0.4"
     es-toolkit: "npm:^1.43.0"
@@ -10950,7 +10950,7 @@ __metadata:
     "@types/window-size": "npm:^1.1.4"
     "@verdaccio/types": "npm:^10.8.0"
     "@vitest/coverage-v8": "npm:^5.0.0"
-    chromatic: "npm:^18.0.1"
+    chromatic: "npm:^18.13.0"
     citty: "npm:^0.2.1"
     codecov: "npm:^3.8.1"
     commander: "npm:^14.0.2"
@@ -17266,15 +17266,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chromatic@npm:^18.0.1":
-  version: 18.0.1
-  resolution: "chromatic@npm:18.0.1"
+"chromatic@npm:^18.13.0":
+  version: 18.13.0
+  resolution: "chromatic@npm:18.13.0"
   dependencies:
     semver: "npm:^7.3.5"
   peerDependencies:
     "@chromatic-com/cypress": ^0.*.* || ^1.0.0
     "@chromatic-com/playwright": ^0.*.* || ^1.0.0
     "@chromatic-com/vitest": ^0.*.* || ^1.0.0
+  dependenciesMeta:
+    "@sentry/cli":
+      built: true
+    esbuild:
+      built: true
   peerDependenciesMeta:
     "@chromatic-com/cypress":
       optional: true
@@ -17286,7 +17291,7 @@ __metadata:
     chroma: dist/bin.cjs
     chromatic: dist/bin.cjs
     chromatic-cli: dist/bin.cjs
-  checksum: 10c0/0a6adc1ec8b94eda3b8b1a71598f763bb1fa63591de8fe835171fef6e72171071570724bc3f536b571315c43192daab65ea7d13df12007c7a5c4671070ea0811
+  checksum: 10c0/141f481d6d0ac2cdaf32a92de44a197d4c21230a2e7a7f36f489f0a176407e68a638faf2a5dc94e26926dab933e7c760c947e7cc37bbf7a4ceed1cba9ea759cd
   languageName: node
   linkType: hard
 

@@ -127,7 +127,9 @@ const typeParameterSubstitutions = (
   }
   const args = clause.typeArguments ?? [];
   for (const [index, parameter] of parameters.entries()) {
-    const argument = args[index] ?? parameter.default;
+    // TypeScript 7.1's native nodes name the default `defaultType`.
+    const argument =
+      args[index] ?? parameter.default ?? (parameter as { defaultType?: ts.TypeNode }).defaultType;
     const symbol = ctx.checker.getSymbolAtLocation(parameter.name);
     if (!argument || !symbol) {
       continue;

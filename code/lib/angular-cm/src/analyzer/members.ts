@@ -15,7 +15,7 @@ import {
 import { defaultInitializer } from './default-initializer.ts';
 import { analyzeInputTransform, type InputTransformSource } from './input-transform.ts';
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
-import { memberName } from './node-text.ts';
+import { memberName, isOptionalMember } from './node-text.ts';
 import {
   buildDeclaredSignalEntry,
   buildSignalEntry,
@@ -278,7 +278,7 @@ const buildDecoratorInput = (
     value: {
       name: config.alias ?? memberName(ctx.ts, member.name),
       ...(type === undefined ? {} : { type }),
-      optional: config.required !== undefined ? !config.required : !!member.questionToken,
+      optional: config.required !== undefined ? !config.required : isOptionalMember(ctx.ts, member),
       ...(config.required === undefined ? {} : { required: config.required }),
       ...(member.initializer ? { initializer: defaultInitializer(ctx, member.initializer) } : {}),
       ...memberApiFields(ctx, member),
@@ -315,7 +315,7 @@ const buildPlainProperty = (
   return {
     name: memberName(ctx.ts, member.name),
     ...(type === undefined ? {} : { type }),
-    optional: !!member.questionToken,
+    optional: isOptionalMember(ctx.ts, member),
     ...(member.initializer ? { initializer: defaultInitializer(ctx, member.initializer) } : {}),
     ...memberApiFields(ctx, member),
     ...getJsDocDescription(ctx.ts, member),

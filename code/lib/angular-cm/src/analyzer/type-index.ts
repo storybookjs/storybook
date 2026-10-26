@@ -1,4 +1,5 @@
 import type * as tsModule from 'typescript';
+import type { DocgenTypeChecker, DocgenTypeScript } from '@storybook/component-meta-typescript';
 
 import type { EnumType, EnumTypeChild, TypeAlias } from '../types.ts';
 import type { AngularFileMeta } from '../types.ts';
@@ -10,6 +11,10 @@ export const stripImportQualifiers = (text: string): string =>
   text.replace(/import\("[^"]*"\)\./g, '');
 
 const collapseWhitespace = (text: string): string => text.replace(/\s+/g, ' ').trim();
+
+// A base class's members are rendered again for every class that extends it, and printing is a
+// round trip on the native API. A node keys its own program, so the cache cannot outlive it.
+const printedWithoutSubstitution = new WeakMap<tsModule.TypeNode, string>();
 
 /**
  * Renders type text and records the named types that text mentions.
@@ -24,8 +29,8 @@ export class TypeIndex {
   private readonly aliasCycleGuard = new Set<string>();
 
   constructor(
-    private readonly ts: typeof tsModule,
-    private readonly checker: tsModule.TypeChecker
+    private readonly ts: DocgenTypeScript,
+    private readonly checker: DocgenTypeChecker
   ) {}
 
   /**
@@ -137,6 +142,37 @@ export class TypeIndex {
       this.addFromTypeNode(replacement);
     }
 
+    if (!this.referencesAny(typeNode, substitutions)) {
+      let printed = printedWithoutSubstitution.get(typeNode);
+      if (printed === undefined) {
+        printed = this.printInstantiated(typeNode, substitutions);
+        printedWithoutSubstitution.set(typeNode, printed);
+      }
+      return printed;
+    }
+    return this.printInstantiated(typeNode, substitutions);
+  }
+
+  private referencesAny(
+    node: tsModule.Node,
+    substitutions: ReadonlyMap<tsModule.Symbol, tsModule.TypeNode>
+  ): boolean {
+    if (this.ts.isTypeReferenceNode(node) && this.ts.isIdentifier(node.typeName)) {
+      const symbol = this.checker.getSymbolAtLocation(node.typeName);
+      if (symbol && substitutions.has(symbol)) {
+        return true;
+      }
+    }
+    return !!this.ts.forEachChild(
+      node,
+      (child) => this.referencesAny(child, substitutions) || undefined
+    );
+  }
+
+  private printInstantiated(
+    typeNode: tsModule.TypeNode,
+    substitutions: ReadonlyMap<tsModule.Symbol, tsModule.TypeNode>
+  ): string {
     const resolving = new Set<tsModule.Symbol>();
     const transformed = this.ts.transform(typeNode, [
       (context) => {
@@ -293,7 +329,6 @@ export class TypeIndex {
       subtype: 'typealias',
       rawtype,
       file: declaration.getSourceFile().fileName,
-      kind: declaration.type.kind,
     });
   }
 

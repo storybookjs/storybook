@@ -1,4 +1,5 @@
 import type * as tsModule from 'typescript';
+import type { DocgenTypeScript } from '@storybook/component-meta-typescript';
 
 import type { JsDocTag } from '../types.ts';
 
@@ -31,25 +32,56 @@ const cleanCommentText = (raw: string): string => {
   return cleaned.join('\n');
 };
 
+// TypeScript 7.1 starts a JSDoc node at the trivia before it, comments included.
+const jsDocStart = (sourceText: string, pos: number): number => {
+  let at = pos;
+  while (at < sourceText.length && !sourceText.startsWith('/**', at)) {
+    if (sourceText.startsWith('//', at)) {
+      const lineEnd = sourceText.indexOf('\n', at);
+      at = lineEnd < 0 ? sourceText.length : lineEnd + 1;
+    } else if (sourceText.startsWith('/*', at)) {
+      const close = sourceText.indexOf('*/', at + 2);
+      at = close < 0 ? sourceText.length : close + 2;
+    } else {
+      at += 1;
+    }
+  }
+  return at;
+};
+
 const rawJsDocComment = (sourceText: string, jsDoc: tsModule.JSDoc): string => {
   const end = jsDoc.tags?.length ? jsDoc.tags[0].pos : jsDoc.end;
   return sourceText
-    .slice(jsDoc.pos, end)
+    .slice(jsDocStart(sourceText, jsDoc.pos), end)
     .replace(/^\/\*\*/, '')
     .replace(/\*\/$/, '');
 };
 
 const rawTagComment = (
-  ts: typeof tsModule,
+  ts: DocgenTypeScript,
   sourceText: string,
   tag: tsModule.JSDocTag
 ): string | undefined => {
   let start: number | undefined;
-  if (ts.isJSDocSeeTag(tag) && tag.name) {
-    start = tag.name.pos;
+  // TypeScript 7.1's native nodes name a `@see` tag's reference `nameExpression`.
+  const seeName =
+    ts.isJSDocSeeTag(tag) &&
+    (tag.name ?? (tag as { nameExpression?: tsModule.Node }).nameExpression);
+  if (seeName) {
+    start = seeName.pos;
   } else if (tag.comment !== undefined) {
-    start = typeof tag.comment === 'string' ? tag.getChildren().at(-1)?.end : tag.comment.pos;
-    start ??= tag.tagName.end;
+    // After the tag's own parts, never at its comment: TypeScript 7.1 parses every comment into
+    // nodes that begin after the line's `*` decoration, which cleanCommentText would strip again.
+    const commentStart = typeof tag.comment === 'string' ? tag.end : tag.comment.pos;
+    let end = tag.tagName.end;
+    const afterPart = (part: { end: number }) => {
+      if (part.end <= commentStart) {
+        end = Math.max(end, part.end);
+      }
+    };
+    // A native node array carries no position of its own; its elements do.
+    ts.forEachChild(tag, afterPart, (parts) => parts.forEach(afterPart));
+    start = end;
   }
   return start === undefined
     ? undefined
@@ -59,7 +91,7 @@ const rawTagComment = (
 // `description` and `rawdescription` both carry the same plain text; nothing downstream parses it
 // as HTML, unlike the Markdown-rendered comments Compodoc produced.
 export function getJsDocDescription(
-  ts: typeof tsModule,
+  ts: DocgenTypeScript,
   node: tsModule.Node
 ): { description?: string; rawdescription?: string } {
   const sourceText = node.getSourceFile().text;
@@ -86,7 +118,7 @@ export function getJsDocDescription(
   return { description: trimmed, rawdescription: trimmed };
 }
 
-function getJsDocTags(ts: typeof tsModule, node: tsModule.Node): JsDocTag[] | undefined {
+function getJsDocTags(ts: DocgenTypeScript, node: tsModule.Node): JsDocTag[] | undefined {
   const tags = ts.getJSDocTags(node);
   if (tags.length === 0) {
     return undefined;
@@ -102,13 +134,13 @@ function getJsDocTags(ts: typeof tsModule, node: tsModule.Node): JsDocTag[] | un
 }
 
 export function getJsDocTagsField(
-  ts: typeof tsModule,
+  ts: DocgenTypeScript,
   node: tsModule.Node
 ): { jsdoctags?: JsDocTag[] } {
   const tags = getJsDocTags(ts, node);
   return tags ? { jsdoctags: tags } : {};
 }
 
-export function hasJsDocTag(ts: typeof tsModule, node: tsModule.Node, tagName: string): boolean {
+export function hasJsDocTag(ts: DocgenTypeScript, node: tsModule.Node, tagName: string): boolean {
   return ts.getJSDocTags(node).some((tag) => tag.tagName.text === tagName);
 }

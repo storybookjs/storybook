@@ -364,6 +364,17 @@ export interface TypescriptOptions {
    * @default false
    */
   skipCompiler: boolean;
+
+  /**
+   * The TypeScript package that React and Angular (`@storybook/angular-vite`) docgen load, resolved
+   * as if the main config imported it: a package name, or a path to the package's folder, absolute
+   * or relative to the config directory. Use it when the `typescript` package must stay on
+   * TypeScript 6 and TypeScript 7.1 or newer is installed under another name, such as
+   * `@typescript/native`.
+   *
+   * @default 'typescript'
+   */
+  docgenSpecifier?: string;
 }
 
 export type Preset =

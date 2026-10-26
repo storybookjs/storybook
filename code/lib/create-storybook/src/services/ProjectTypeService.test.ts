@@ -67,6 +67,20 @@ describe('ProjectTypeService', () => {
       expect(result).toBe(ProjectType.NEXTJS);
     });
 
+    it('detects VUE3 when vue is the next tag and nothing is installed', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { vue: 'next' },
+      };
+      (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => null);
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+
+      await expect(service.autoDetectProjectType({ html: false } as CommandOptions)).resolves.toBe(
+        ProjectType.VUE3
+      );
+    });
+
     it('detects VUE3 when vue major is 3', async () => {
       (pm as any).primaryPackageJson.packageJson = {
         dependencies: { vue: '^3.2.0' },
@@ -318,6 +332,24 @@ describe('ProjectTypeService', () => {
 
       it('does not treat remix@2 as Remix 3', async () => {
         await expect(detect({ dependencies: { remix: '^2.0.0', react: '^18.2.0' } })).resolves.toBe(
+          ProjectType.REACT
+        );
+      });
+
+      it.each(['latest', 'next'])(
+        'detects Remix 3 when %s is installed as version 3',
+        async (tag) => {
+          (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => '3.2.0');
+
+          await expect(detect({ dependencies: { remix: tag } })).resolves.toBe(ProjectType.HTML);
+          expect(pm.getDeclaredVersionSpecifier).toHaveBeenCalledWith('remix');
+        }
+      );
+
+      it('does not treat a remix dist-tag as Remix 3 when version 2 is installed', async () => {
+        (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => '2.15.0');
+
+        await expect(detect({ dependencies: { remix: 'latest', react: '^18.2.0' } })).resolves.toBe(
           ProjectType.REACT
         );
       });

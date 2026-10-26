@@ -323,9 +323,10 @@ export class ProjectTypeService {
   ): Promise<boolean> {
     const version = packageJson.dependencies?.[name] || packageJson.devDependencies?.[name];
     if (version && typeof matcher === 'function') {
-      const resolvedVersion = version.startsWith('catalog:')
-        ? await this.jsPackageManager.getDeclaredVersionSpecifier(name)
-        : version;
+      // Tags (`latest`, `next`) and `catalog:` are not ranges. Matchers need the installed version.
+      const resolvedVersion = semver.validRange(version)
+        ? version
+        : await this.jsPackageManager.getDeclaredVersionSpecifier(name);
       return matcher(resolvedVersion ?? version);
     }
     return !!version;

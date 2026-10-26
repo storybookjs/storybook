@@ -1,6 +1,7 @@
 import { type JsPackageManager, getProjectRoot } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
-import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
+import type { SupportedRenderer } from 'storybook/internal/types';
+import { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';

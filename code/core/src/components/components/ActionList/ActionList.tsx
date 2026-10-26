@@ -2,7 +2,7 @@ import React, { type ComponentProps, forwardRef } from 'react';
 
 import { darken, transparentize } from 'polished';
 import type { TransitionStatus } from 'react-transition-state';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { Button } from '../Button/Button.tsx';
 import { ToggleButton } from '../ToggleButton/ToggleButton.tsx';

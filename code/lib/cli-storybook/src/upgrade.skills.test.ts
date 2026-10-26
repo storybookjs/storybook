@@ -177,28 +177,42 @@ describe('upgrade', () => {
     expect(installSkills).not.toHaveBeenCalled();
   });
 
-  it.each([
-    ['dry run', { dryRun: true }],
-    ['skip install', { skipInstall: true }],
-  ])('does not install dependencies or prompt for deduplication with %s', async (_, options) => {
-    const selectedProject = project('/repo/a/.storybook');
-    const installDependencies = vi.spyOn(selectedProject.packageManager, 'installDependencies');
-    vi.spyOn(selectedProject.packageManager, 'isStorybookInMonorepo').mockReturnValue(true);
-    useProjects(selectedProject);
+  describe('dependency installation', () => {
+    let installDependencies: ReturnType<typeof vi.spyOn>;
+    let isStorybookInMonorepo: ReturnType<typeof vi.spyOn>;
 
-    await upgrade({ ...baseOptions, ...options });
+    beforeEach(() => {
+      const selectedProject = project('/repo/a/.storybook');
+      installDependencies = vi.spyOn(selectedProject.packageManager, 'installDependencies');
+      isStorybookInMonorepo = vi
+        .spyOn(selectedProject.packageManager, 'isStorybookInMonorepo')
+        .mockReturnValue(false);
+      useProjects(selectedProject);
+    });
 
-    expect(installDependencies).not.toHaveBeenCalled();
-    expect(prompt.confirm).not.toHaveBeenCalled();
-  });
+    describe('without installation', () => {
+      beforeEach(() => {
+        isStorybookInMonorepo.mockReturnValue(true);
+      });
 
-  it('installs dependencies during an ordinary upgrade', async () => {
-    const selectedProject = project('/repo/a/.storybook');
-    const installDependencies = vi.spyOn(selectedProject.packageManager, 'installDependencies');
-    useProjects(selectedProject);
+      it.each([
+        ['dry run', { dryRun: true }],
+        ['skip install', { skipInstall: true }],
+      ])(
+        'does not install dependencies or prompt for deduplication with %s',
+        async (_, options) => {
+          await upgrade({ ...baseOptions, ...options });
 
-    await upgrade(baseOptions);
+          expect(installDependencies).not.toHaveBeenCalled();
+          expect(prompt.confirm).not.toHaveBeenCalled();
+        }
+      );
+    });
 
-    expect(installDependencies).toHaveBeenCalledWith({ force: true });
+    it('installs dependencies during an ordinary upgrade', async () => {
+      await upgrade(baseOptions);
+
+      expect(installDependencies).toHaveBeenCalledWith({ force: true });
+    });
   });
 });

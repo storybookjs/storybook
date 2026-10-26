@@ -20,8 +20,11 @@ export default defineGeneratorModule({
     framework: SupportedFramework.REACT_NATIVE_WEB_VITE,
     builderOverride: SupportedBuilder.VITE,
   },
-  configure: async (packageManager, { language }) => {
-    await rewriteExpoTsconfigFile(packageManager.primaryPackageJson.operationDir);
+  configure: async (_packageManager, { language }) => {
+    // The Expo app's tsconfig.json lives in the directory the init command was run from, which
+    // isn't necessarily `primaryPackageJson.operationDir` (e.g. when `storybook` is a dependency
+    // hoisted to a workspace root rather than the app itself).
+    await rewriteExpoTsconfigFile(process.cwd());
 
     // Add prop-types dependency if not using TypeScript
     const extraPackages = ['vite', 'react-native-web'];

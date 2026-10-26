@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { vol } from 'memfs';
+import { dedent } from 'ts-dedent';
 
 import { rewriteExpoTsconfigBase, rewriteExpoTsconfigFile } from './expoTsconfig.ts';
 
@@ -35,6 +36,20 @@ describe('rewriteExpoTsconfigBase', () => {
   it('does not rewrite other extends values', () => {
     const source = '{ "extends": "./tsconfig.base" }';
     expect(rewriteExpoTsconfigBase(source)).toBe(source);
+  });
+
+  it('leaves matching text outside the extends field untouched', () => {
+    const source = dedent`
+      {
+        "extends": "expo/tsconfig.base",
+        "compilerOptions": { "paths": { "expo/tsconfig.base": ["./expo/tsconfig.base"] } }
+        // "expo/tsconfig.base" mentioned in a comment too
+      }
+    `;
+    const rewritten = rewriteExpoTsconfigBase(source);
+    expect(rewritten).toContain('"extends": "expo/tsconfig.base.json"');
+    expect(rewritten).toContain('"paths": { "expo/tsconfig.base": ["./expo/tsconfig.base"] }');
+    expect(rewritten).toContain('// "expo/tsconfig.base" mentioned in a comment too');
   });
 });
 

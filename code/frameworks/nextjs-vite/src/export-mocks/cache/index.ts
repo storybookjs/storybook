@@ -13,6 +13,8 @@ const unstable_cache = fn()
 const unstable_noStore = fn().mockName('next/cache::unstable_noStore');
 const refresh = fn().mockName('next/cache::refresh');
 const io = fn().mockName('next/cache::io').mockResolvedValue(undefined);
+const navigation = fn().mockName('next/cache::navigation').mockResolvedValue(undefined);
+const prefetch = fn().mockName('next/cache::prefetch').mockResolvedValue(undefined);
 
 // mock utilities/overrides (as of Next v15.0.0)
 const cacheLife = fn().mockName('next/cache::cacheLife');
@@ -28,6 +30,8 @@ const cacheExports = {
   updateTag,
   refresh,
   io,
+  navigation,
+  prefetch,
   unstable_noStore,
   cacheLife,
   cacheTag,

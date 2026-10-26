@@ -21,8 +21,6 @@ export type TemplateKey =
   | keyof typeof internalTemplates
   | keyof typeof benchTemplates;
 
-export type Cadence = keyof typeof templatesByCadence;
-
 // Some properties e.g. experimentalTestSyntax are only available in framework specific types for StorybookConfig, therefore we loosen the type here otherwise it would always fail
 type LoosenedStorybookConfig = Omit<Partial<StorybookConfigRaw>, 'features'> & {
   features?:
@@ -1094,7 +1092,7 @@ export const normal: TemplateKey[] = [
   'tanstack-react-start/default-ts',
 ];
 
-export const merged: TemplateKey[] = [
+export const daily: TemplateKey[] = [
   ...normal,
   'react-webpack/18-ts',
   'nextjs/15-ts',
@@ -1107,10 +1105,6 @@ export const merged: TemplateKey[] = [
   // created. Fix: https://github.com/rstackjs/storybook-rsbuild/pull/603
   // Re-enable once storybook-builder-rsbuild releases a version that works with Storybook 11.
   // 'vue3-rsbuild/default-ts',
-];
-
-export const daily: TemplateKey[] = [
-  ...merged,
   'angular-vite/21-ts',
   'react-vite/default-js',
   'react-vite/prerelease-ts',
@@ -1134,8 +1128,6 @@ export const daily: TemplateKey[] = [
   // 'html-rsbuild/default-ts',
   // 'react-native-web-vite/rn-cli-ts',
 ];
-
-export const templatesByCadence = { normal, merged, daily };
 
 // Templates whose `mainConfig` is a function of the generated `ConfigFile`, so its features cannot be
 // read without running the sandbox generator. A new function-form template throws below instead of

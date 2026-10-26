@@ -95,16 +95,6 @@ export class ProjectTypeService {
         },
       },
       {
-        preset: ProjectType.REACT_SCRIPTS,
-        // For projects using a custom/forked `react-scripts` package.
-        files: ['/node_modules/.bin/react-scripts'],
-        // For standard CRA projects
-        dependencies: ['react-scripts'],
-        matcherFunction: ({ dependencies, files }) => {
-          return (dependencies?.every(Boolean) || files?.every(Boolean)) ?? false;
-        },
-      },
-      {
         preset: ProjectType.ANGULAR,
         dependencies: ['@angular/core'],
         matcherFunction: ({ dependencies }) => {
@@ -243,13 +233,13 @@ export class ProjectTypeService {
     }
   }
 
-  private detectFrameworkPreset(packageJson: PackageJsonWithMaybeDeps): ProjectType | null {
-    const result = [...this.getSupportedTemplates(), this.getUnsupportedTemplate()].find(
-      (framework) => {
-        return this.getProjectType(packageJson, framework) !== null;
+  private async detectFrameworkPreset(packageJson: PackageJsonWithMaybeDeps): Promise<ProjectType> {
+    for (const framework of [...this.getSupportedTemplates(), this.getUnsupportedTemplate()]) {
+      if ((await this.getProjectType(packageJson, framework)) !== null) {
+        return framework.preset;
       }
-    );
-    return result ? result.preset : ProjectType.UNDETECTED;
+    }
+    return ProjectType.UNDETECTED;
   }
 
   /** Template that matches unsupported frameworks */
@@ -263,10 +253,10 @@ export class ProjectTypeService {
     };
   }
 
-  private getProjectType(
+  private async getProjectType(
     packageJson: PackageJsonWithMaybeDeps,
     framework: TemplateConfiguration
-  ): ProjectType | null {
+  ): Promise<ProjectType | null> {
     const matcher: TemplateMatcher = {
       dependencies: [false],
       peerDependencies: [false],
@@ -283,8 +273,8 @@ export class ProjectTypeService {
     }
 
     if (dependencySearches.length > 0) {
-      matcher.dependencies = dependencySearches.map(([name, matchFn]) =>
-        this.hasDependency(packageJson, name, matchFn)
+      matcher.dependencies = await Promise.all(
+        dependencySearches.map(([name, matchFn]) => this.hasDependency(packageJson, name, matchFn))
       );
     }
 
@@ -309,14 +299,17 @@ export class ProjectTypeService {
     return matcherFunction(matcher) ? preset : null;
   }
 
-  private hasDependency(
+  private async hasDependency(
     packageJson: PackageJsonWithMaybeDeps,
     name: string,
     matcher?: (version: string) => boolean
-  ) {
+  ): Promise<boolean> {
     const version = packageJson.dependencies?.[name] || packageJson.devDependencies?.[name];
     if (version && typeof matcher === 'function') {
-      return matcher(version);
+      const resolvedVersion = version.startsWith('catalog:')
+        ? await this.jsPackageManager.getDeclaredVersionSpecifier(name)
+        : version;
+      return matcher(resolvedVersion ?? version);
     }
     return !!version;
   }

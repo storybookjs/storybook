@@ -1,0 +1,21 @@
+## Attributes
+
+```
+export type LitSlotsAndCssAttributes = {
+  /** Heading above the projected content. */
+  heading?: string = 'Details';
+}
+```
+
+## Slots
+
+- default: Default body content.
+- actions: Action controls.
+
+## CSS Custom Properties
+
+- --slot-panel-color: Panel text color.
+
+## CSS Parts
+
+- panel: Outer panel.

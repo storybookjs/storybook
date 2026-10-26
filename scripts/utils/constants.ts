@@ -2,6 +2,8 @@ import path from 'node:path';
 
 import { join } from 'path';
 
+export { BEFORE_SANDBOX_NPM_MIN_VERSION } from './npm-constants.ts';
+
 export const AFTER_DIR_NAME = 'after-storybook';
 export const BEFORE_DIR_NAME = 'before-storybook';
 

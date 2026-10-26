@@ -1,7 +1,7 @@
 // Integration tests for parseReExports — exercises the real oxc-parser binary.
 import { describe, expect, it } from 'vitest';
 
-import { parseLocalBindings, parseReExports } from './index.ts';
+import { parseDefaultImports, parseLocalBindings, parseReExports } from './index.ts';
 
 describe('parseReExports', () => {
   it('maps a named re-export to its source specifier and imported name', async () => {
@@ -109,5 +109,41 @@ describe('parseLocalBindings', () => {
 
     expect(names).toBeInstanceOf(Set);
     expect(names.size).toBe(0);
+  });
+});
+
+describe('parseDefaultImports', () => {
+  it('maps a default import to its module specifier', async () => {
+    const map = await parseDefaultImports(
+      'fixtures/Tab.vue',
+      `import _sfc_main from './Tab.vue?vue&type=script&setup=true&lang.ts';`
+    );
+
+    expect(map.get('_sfc_main')).toBe('./Tab.vue?vue&type=script&setup=true&lang.ts');
+  });
+
+  it('maps a default import mixed with named specifiers', async () => {
+    const map = await parseDefaultImports(
+      'fixtures/a.ts',
+      `import Button, { Icon } from './Button';`
+    );
+
+    expect(map.get('Button')).toBe('./Button');
+    expect(map.has('Icon')).toBe(false);
+  });
+
+  it('excludes named, namespace and side-effect imports', async () => {
+    const map = await parseDefaultImports(
+      'fixtures/a.ts',
+      `import { x } from './x';\nimport * as ns from './ns';\nimport './side-effect';`
+    );
+
+    expect(map.size).toBe(0);
+  });
+
+  it('excludes type-only default imports', async () => {
+    const map = await parseDefaultImports('fixtures/a.ts', `import type Foo from './Foo';`);
+
+    expect(map.size).toBe(0);
   });
 });

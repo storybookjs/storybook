@@ -1,7 +1,8 @@
-import { recast } from 'storybook/internal/babel';
-import { storyNameFromExport } from 'storybook/internal/csf';
-import type { ImportRef, StoryReferences } from 'storybook/internal/csf-tools';
+import { extractDeclaredSubcomponents } from 'storybook/internal/common';
+import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import {
+  type ImportRef,
+  type StoryReferences,
   createStoryArgsResolver,
   extractStoryJSDocInfo,
   loadCsf,
@@ -15,7 +16,7 @@ import {
   type TypescriptOptions,
   getComponents,
 } from './getComponentImports.ts';
-import { extractDeclaredSubcomponents, findExactComponentMatch } from './subcomponents.ts';
+import { findExactComponentMatch } from './subcomponents.ts';
 import { cachedReadTextFileSync } from './utils.ts';
 
 export type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
@@ -110,7 +111,7 @@ export async function resolveStoryFileComponents(options: {
   const { storyPath, title, typescriptOptions, docgenEngine } = options;
 
   const storyFile = cachedReadTextFileSync(storyPath);
-  const csf = loadCsf(storyFile, { makeTitle: () => title }).parse();
+  const csf = loadCsf(storyFile, { makeTitle: () => title, fileName: storyPath }).parse();
   const componentName = csf._meta?.component;
 
   const declaredSubcomponents = extractDeclaredSubcomponents(csf);
@@ -172,7 +173,10 @@ export function extractStorySnippets(
     .map(([storyExport, story]): ResolvedStory => {
       const name = story.name ?? storyNameFromExport(storyExport);
       try {
-        const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[storyExport]);
+        const { description, summary } = extractStoryJSDocInfo(
+          csf._storyStatements[storyExport],
+          csf.editor
+        );
         const snippet = getCodeSnippet(csf, storyExport, componentName, resolver);
         imports.push(...snippet.imports);
         const warning = unresolvedWarning(snippet.unresolved);
@@ -180,7 +184,7 @@ export function extractStorySnippets(
         return {
           id: story.id,
           name,
-          snippet: recast.print(snippet.node).code,
+          snippet: snippet.code,
           description,
           summary,
           ...(warning ? { warning } : {}),

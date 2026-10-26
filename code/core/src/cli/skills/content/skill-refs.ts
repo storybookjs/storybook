@@ -14,9 +14,9 @@ const MCP_SKILL_TOOL_NAMES: Partial<Record<SkillId, string>> = {
 
 /**
  * Renders a cross-reference to a skill in the transport's own vocabulary, mirroring `getToolName` for
- * toolset methods: the MCP tool name where one exists, the `skills get` command otherwise.
+ * toolset methods: the MCP tool name where one exists, the `storybook skills` command otherwise.
  */
 export function getSkillRef(transport: SkillTransport) {
   return (id: SkillId): string =>
-    (transport === 'mcp' && MCP_SKILL_TOOL_NAMES[id]) || `npx storybook skills get ${id}`;
+    (transport === 'mcp' && MCP_SKILL_TOOL_NAMES[id]) || `npx storybook skills ${id}`;
 }

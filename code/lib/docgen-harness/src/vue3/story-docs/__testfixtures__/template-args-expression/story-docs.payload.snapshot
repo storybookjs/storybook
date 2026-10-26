@@ -1,0 +1,57 @@
+{
+  "id": "template-args-expression",
+  "name": "TemplateArgsExpression",
+  "path": "__PATH__",
+  "stories": {
+    "forms-template-args-expression--collapsed": {
+      "description": undefined,
+      "id": "forms-template-args-expression--collapsed",
+      "name": "Collapsed",
+      "snippet": "<script lang="ts" setup>
+import TemplateArgsExpression from './TemplateArgsExpression.vue';
+
+const release = { tag: 'v1.2.3', name: 'Release 1.2.3' };
+
+const status = { state: 'available', version: '1.2.3' };
+</script>
+
+<template>
+  <div
+    :style="{
+      '--sidebar-width-collapsed': '52px',
+      width: true ? '52px' : '176px',
+      overflow: 'hidden'
+    }"
+  >
+    <TemplateArgsExpression isCollapsed :release="release" :status="status" :updateProgressInfo="null" />
+  </div>
+</template>",
+      "summary": undefined,
+    },
+    "forms-template-args-expression--primary": {
+      "description": undefined,
+      "id": "forms-template-args-expression--primary",
+      "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import TemplateArgsExpression from './TemplateArgsExpression.vue';
+
+const release = { tag: 'v1.2.3', name: 'Release 1.2.3' };
+
+const status = { state: 'available', version: '1.2.3' };
+</script>
+
+<template>
+  <div
+    :style="{
+      '--sidebar-width-collapsed': '52px',
+      width: false ? '52px' : '176px',
+      overflow: 'hidden'
+    }"
+  >
+    <TemplateArgsExpression :isCollapsed="false" :release="release" :status="status" :updateProgressInfo="null" />
+  </div>
+</template>",
+      "summary": undefined,
+    },
+  },
+}

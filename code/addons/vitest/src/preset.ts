@@ -18,7 +18,7 @@ import {
   STORYBOOK_ADDON_TEST_CHANNEL,
 } from './constants.ts';
 import { log } from './logger.ts';
-import { runTestRunner } from './node/boot-test-runner.ts';
+import { runTestRunner, sendStoryIndexToTestRunner } from './node/boot-test-runner.ts';
 import {
   ensureTestRunnerStore,
   resolvePreviewBuilderName,
@@ -66,13 +66,15 @@ type Event =
  * machinery boots on first request.
  */
 export const services = async (_value: void, options: Options): Promise<void> => {
-  const storyIndexGenerator =
-    await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
+  const getIndex = () =>
+    options.presets
+      .apply<StoryIndexGenerator>('storyIndexGenerator')
+      .then((generator) => generator.getIndex());
 
   registerToolset(
     createTestToolset({
       channel: options.channel as Channel,
-      storyIndex: { getIndex: () => storyIndexGenerator.getIndex() },
+      storyIndex: { getIndex },
       a11yEnabled: await options.presets.apply('isAddonA11yEnabled', false),
     })
   );
@@ -102,24 +104,21 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     typeof core.builder !== 'string' &&
     (core.builder?.options?.configLoader as BuilderOptions['configLoader']);
 
-  const storyIndexGenerator =
-    await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
-
   // The request listener answering test-run requests is wired by the `services` hook; the runner
   // machinery it sets up lazily is run eagerly here because the manager UI needs the store
-  // immediately. What follows are the dev-server extras: index invalidation refresh, watch mode,
-  // and addon telemetry.
+  // immediately. What follows are the dev-server extras: story index refresh, watch mode, and addon
+  // telemetry.
   const store = await ensureTestRunnerStore({ channel, options });
 
-  storyIndexGenerator.onInvalidated(async () => {
-    try {
-      const index = await storyIndexGenerator.getIndex();
-      store.setState((s) => ({ ...s, index }));
-    } catch (error) {
-      logger.debug('Failed to update story index after invalidation, Error:');
+  const storyIndexGenerator =
+    await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
+  const refreshTestRunnerStoryIndex = () =>
+    sendStoryIndexToTestRunner(storyIndexGenerator).catch((error) => {
+      logger.debug('Failed to send the story index to the test runner, Error:');
       logger.debug(error);
-    }
-  });
+    });
+  refreshTestRunnerStoryIndex();
+  storyIndexGenerator.onInvalidated(refreshTestRunnerStoryIndex);
 
   store.subscribe('TOGGLE_WATCHING', (event, eventInfo) => {
     store.setState((s) => ({

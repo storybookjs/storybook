@@ -13,20 +13,22 @@ describe('buildApiDescription', () => {
         label: {
           name: 'label',
           description: 'Text on the button.',
+          type: { name: 'string' },
           table: {
             category: 'inputs',
-            type: { summary: 'string', required: false },
+            type: { summary: 'string' },
             defaultValue: { summary: "'Click me'" },
           },
         },
         disabled: {
           name: 'disabled',
-          table: { category: 'inputs', type: { summary: 'boolean', required: true } },
+          type: { name: 'boolean', required: true },
+          table: { category: 'inputs', type: { summary: 'boolean' } },
         },
         clicked: {
           name: 'clicked',
           description: 'Fires on every click.',
-          table: { category: 'outputs', type: { summary: 'EventEmitter<Event>', required: false } },
+          table: { category: 'outputs', type: { summary: 'EventEmitter<Event>' } },
         },
       }),
       'ButtonComponent'
@@ -66,13 +68,13 @@ describe('buildApiDescription', () => {
           description: 'The currently selected colour',
           table: {
             category: 'inputs',
-            type: { summary: 'string', required: false },
+            type: { summary: 'string' },
             defaultValue: { summary: "'#345F92'" },
           },
         },
         colorChange: {
           name: 'colorChange',
-          table: { category: 'outputs', type: { summary: '(e: string) => void', required: false } },
+          table: { category: 'outputs', type: { summary: '(e: string) => void' } },
         },
       }),
       'ColorPickerComponent'
@@ -107,11 +109,13 @@ describe('buildApiDescription', () => {
       argTypes({
         color: {
           name: 'color',
-          table: { category: 'inputs', type: { summary: 'string', required: true } },
+          type: { name: 'string', required: true },
+          table: { category: 'inputs', type: { summary: 'string' } },
         },
         colorChange: {
           name: 'colorChange',
-          table: { category: 'inputs', type: { summary: 'boolean', required: true } },
+          type: { name: 'boolean', required: true },
+          table: { category: 'inputs', type: { summary: 'boolean' } },
         },
       }),
       'ColorPickerComponent'
@@ -125,7 +129,7 @@ describe('buildApiDescription', () => {
       argTypes({
         clicked: {
           name: 'clicked',
-          table: { category: 'outputs', type: { summary: 'EventEmitter<void>', required: false } },
+          table: { category: 'outputs', type: { summary: 'EventEmitter<void>' } },
         },
       }),
       'ButtonComponent'
@@ -140,11 +144,12 @@ describe('buildApiDescription', () => {
       argTypes({
         elementRef: {
           name: 'elementRef',
-          table: { category: 'properties', type: { summary: 'ElementRef', required: true } },
+          type: { name: 'other', value: 'ElementRef' },
+          table: { category: 'properties', type: { summary: 'ElementRef' } },
         },
         focus: {
           name: 'focus',
-          table: { category: 'methods', type: { summary: 'focus()', required: false } },
+          table: { category: 'methods', type: { summary: 'focus()' } },
         },
       }),
       'ButtonComponent'
@@ -162,7 +167,8 @@ describe('buildApiDescription', () => {
       argTypes({
         label: {
           name: 'label',
-          table: { category: 'inputs', type: { summary: 'string', required: true } },
+          type: { name: 'string', required: true },
+          table: { category: 'inputs', type: { summary: 'string' } },
         },
       }),
       'My Button.Component'
@@ -177,7 +183,8 @@ describe('buildApiDescription', () => {
         label: {
           name: 'label',
           description: 'Text on the button.\n\nSupports **markdown**.',
-          table: { category: 'inputs', type: { summary: 'string', required: true } },
+          type: { name: 'string', required: true },
+          table: { category: 'inputs', type: { summary: 'string' } },
         },
       }),
       'ButtonComponent'
@@ -206,7 +213,7 @@ describe('buildApiDescription', () => {
           name: 'size',
           table: {
             category: 'inputs',
-            type: { summary: 'number', required: false },
+            type: { summary: 'number' },
             defaultValue: { summary: '42' },
           },
         },
@@ -233,7 +240,7 @@ describe('buildApiDescription', () => {
           name: 'label',
           table: {
             category: 'inputs',
-            type: { summary: 'string', required: false },
+            type: { summary: 'string' },
             defaultValue: { summary: '' },
           },
         },
@@ -260,7 +267,7 @@ describe('buildApiDescription', () => {
           name: 'pattern',
           table: {
             category: 'inputs',
-            type: { summary: 'string', required: false },
+            type: { summary: 'string' },
             defaultValue: { summary: "'**/*.ts'" },
           },
         },
@@ -280,7 +287,7 @@ describe('buildApiDescription', () => {
           name: 'config',
           table: {
             category: 'inputs',
-            type: { summary: 'Config', required: false },
+            type: { summary: 'Config' },
             defaultValue: { summary: '{\n  depth: 1,\n}' },
           },
         },
@@ -313,7 +320,7 @@ describe('buildApiDescription', () => {
           table: {
             category: 'inputs',
             jsDocTags: { deprecated: 'since 2.0, remove in 4.0' },
-            type: { summary: 'boolean | string', required: false },
+            type: { summary: 'boolean | string' },
             defaultValue: { summary: 'false' },
           },
         },
@@ -343,10 +350,11 @@ describe('buildApiDescription', () => {
       argTypes({
         legacy: {
           name: 'legacy',
+          type: { name: 'boolean', required: true },
           table: {
             category: 'inputs',
             jsDocTags: { deprecated: '' },
-            type: { summary: 'boolean', required: true },
+            type: { summary: 'boolean' },
           },
         },
       }),
@@ -371,10 +379,11 @@ describe('buildApiDescription', () => {
         pattern: {
           name: 'pattern',
           description: 'Matches */ everything.',
+          type: { name: 'string', required: true },
           table: {
             category: 'inputs',
             jsDocTags: { deprecated: 'use */ instead' },
-            type: { summary: 'string', required: true },
+            type: { summary: 'string' },
           },
         },
       }),
@@ -387,7 +396,9 @@ describe('buildApiDescription', () => {
     expect(result?.match(/\*\//g)).toHaveLength(1);
   });
 
-  it('falls back to `any` when the analyzer reported no type', () => {
+  // No sbType at all is a shape the analyzer never emits, so this is about the defensive read:
+  // an unrecorded flag reports the input as optional rather than claiming it must be bound.
+  it('falls back to `any` and to optional when the analyzer reported no type', () => {
     const result = buildApiDescription(
       argTypes({
         label: { name: 'label', table: { category: 'inputs' } },
@@ -395,7 +406,7 @@ describe('buildApiDescription', () => {
       'ButtonComponent'
     );
 
-    expect(result).toContain('label: any;');
+    expect(result).toContain('label?: any;');
   });
 
   it('quotes apostrophes, backslashes, and newlines as valid JSON strings', () => {
@@ -403,15 +414,15 @@ describe('buildApiDescription', () => {
       argTypes({
         "it's": {
           name: "it's",
-          table: { category: 'inputs', type: { summary: 'string', required: false } },
+          table: { category: 'inputs', type: { summary: 'string' } },
         },
         'back\\slash': {
           name: 'back\\slash',
-          table: { category: 'inputs', type: { summary: 'string', required: false } },
+          table: { category: 'inputs', type: { summary: 'string' } },
         },
         'line\nbreak': {
           name: 'line\nbreak',
-          table: { category: 'inputs', type: { summary: 'string', required: false } },
+          table: { category: 'inputs', type: { summary: 'string' } },
         },
       }),
       'OddNamesComponent'
@@ -428,7 +439,7 @@ describe('buildApiDescription', () => {
       argTypes({
         [name]: {
           name,
-          table: { category: 'inputs', type: { summary: 'string', required: false } },
+          table: { category: 'inputs', type: { summary: 'string' } },
         },
         [`${name}Change`]: {
           name: `${name}Change`,
@@ -447,7 +458,7 @@ describe('buildApiDescription', () => {
       argTypes({
         [name]: {
           name,
-          table: { category: 'inputs', type: { summary: 'string', required: false } },
+          table: { category: 'inputs', type: { summary: 'string' } },
         },
         [`${name}Change`]: {
           name: `${name}Change`,
@@ -468,17 +479,18 @@ describe('buildApiDescription', () => {
       argTypes({
         'aria-label': {
           name: 'aria-label',
-          table: { category: 'inputs', type: { summary: 'string', required: false } },
+          table: { category: 'inputs', type: { summary: 'string' } },
         },
         'sr-title': {
           name: 'sr-title',
-          table: { category: 'inputs', type: { summary: 'string', required: true } },
+          type: { name: 'string', required: true },
+          table: { category: 'inputs', type: { summary: 'string' } },
         },
         'row-select': {
           name: 'row-select',
           table: {
             category: 'outputs',
-            type: { summary: 'EventEmitter<Event>', required: false },
+            type: { summary: 'EventEmitter<Event>' },
           },
         },
       }),

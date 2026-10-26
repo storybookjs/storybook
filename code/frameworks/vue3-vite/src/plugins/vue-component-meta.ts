@@ -1,7 +1,8 @@
-import { parseLocalBindings } from 'storybook/internal/oxc-parser';
+import { logger } from 'storybook/internal/node-logger';
+import { parseDefaultImports, parseLocalBindings } from 'storybook/internal/oxc-parser';
 
 import MagicString from 'magic-string';
-import type { ModuleNode, Plugin } from 'vite';
+import type { ModuleNode, Plugin, ViteDevServer } from 'vite';
 
 import type { experimental_vueDocgenEngine } from '@storybook/vue3/preset';
 
@@ -25,6 +26,35 @@ export async function vueComponentMeta(
 
   const checker = await createVueComponentMetaChecker(tsconfigPath);
 
+  /** Docgen last emitted per module id, so a hot update can tell a docs-relevant edit from a template/style one. */
+  const emittedMeta = new Map<string, string>();
+
+  /**
+   * Ids whose docgen an edit to `file` can change: the file itself plus every module that
+   * imports it, since props types are routinely declared in a separate module.
+   */
+  const collectDependentIds = (server: ViteDevServer, file: string): string[] => {
+    const ids: string[] = [];
+    const queue = [...(server.moduleGraph.getModulesByFile(file) ?? [])];
+    const seen = new Set<ModuleNode>();
+
+    while (queue.length > 0) {
+      const mod = queue.pop()!;
+
+      if (seen.has(mod)) {
+        continue;
+      }
+      seen.add(mod);
+
+      if (mod.id && emittedMeta.has(mod.id)) {
+        ids.push(mod.id);
+      }
+      queue.push(...mod.importers);
+    }
+
+    return ids;
+  };
+
   return {
     name: 'storybook:vue-component-meta-plugin',
     transform: {
@@ -37,6 +67,7 @@ export async function vueComponentMeta(
 
         try {
           const metaSources = await collectComponentMetaSources(checker, id);
+          emittedMeta.set(id, JSON.stringify(metaSources));
 
           // if there is no component meta, return undefined
           if (metaSources.length === 0) {
@@ -51,11 +82,18 @@ export async function vueComponentMeta(
           // here, so attaching to them would reference an undefined variable at runtime.
           const localBindings = await parseLocalBindings(id, src);
 
+          // Production SFCs can import `_sfc_main` from their virtual script module
+          // instead of declaring it locally.
+          const sfcMainImportSource = (await parseDefaultImports(id, src)).get('_sfc_main');
+          const sfcMainQuery = new URLSearchParams(sfcMainImportSource?.split('?')[1]);
+          const hasImportedSfcMain =
+            id.endsWith('.vue') && sfcMainQuery.has('vue') && sfcMainQuery.get('type') === 'script';
+
           metaSources.forEach((meta) => {
             const isDefaultExport = meta.exportName === 'default';
             const name = isDefaultExport ? '_sfc_main' : meta.exportName;
 
-            if (!localBindings.has(name)) {
+            if (!localBindings.has(name) && !(isDefaultExport && hasImportedSfcMain)) {
               return;
             }
 
@@ -80,11 +118,40 @@ export async function vueComponentMeta(
         }
       },
     },
-    // handle hot updates to update the component meta on file changes
+    // reload the preview on hot updates that change the docgen it was built with
     async handleHotUpdate({ file, read, server, modules, timestamp }) {
-      const content = await read();
-      checker.updateFile(file, content);
-      // Invalidate modules manually
+      // Files this plugin never documents keep their own HMR. Handing them to the checker also
+      // makes vue-component-meta warn ("languageId not found for ...") and poisons later lookups.
+      if (!filter(file)) {
+        return undefined;
+      }
+
+      checker.updateFile(file, await read());
+
+      const dependentIds = collectDependentIds(server, file);
+      // Without a cached baseline there is nothing to compare against, so assume the docs moved.
+      let docgenChanged = dependentIds.length === 0;
+
+      try {
+        for (const id of dependentIds) {
+          const nextMeta = JSON.stringify(await collectComponentMetaSources(checker, id));
+
+          if (nextMeta !== emittedMeta.get(id)) {
+            emittedMeta.set(id, nextMeta);
+            docgenChanged = true;
+          }
+        }
+      } catch (error) {
+        logger.debug(`Could not re-check Vue component meta for ${file}: ${String(error)}`);
+        docgenChanged = true;
+      }
+
+      // The reload exists only to get fresh docgen into the preview, so an edit that leaves every
+      // dependent module's docgen intact is left to Vue's HMR, keeping transient story state.
+      if (!docgenChanged) {
+        return undefined;
+      }
+
       const invalidatedModules = new Set<ModuleNode>();
 
       for (const mod of modules) {

@@ -2,7 +2,12 @@ import { useCallback } from 'react';
 
 import type { StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
 
-import { type QueryState, selectSnippetForStory, selectStoryDoc } from 'storybook/open-service';
+import {
+  type QueryState,
+  selectSnippetForStory,
+  selectStoryDoc,
+  selectWarningForStory,
+} from 'storybook/open-service';
 import { getService } from 'storybook/preview-api';
 
 import { useQuerySubscription } from './use-query-subscription.ts';
@@ -51,4 +56,9 @@ export function useServiceStoryDoc(storyId: string): QueryState<StoryDoc | undef
 /** Convenience hook returning one story's display snippet (with its CSF import block prepended). */
 export function useServiceStorySnippet(storyId: string): QueryState<string | undefined> {
   return useServiceStory(storyId, selectSnippetForStory);
+}
+
+/** Convenience hook returning why one story's snippet is an incomplete example, when it is one. */
+export function useServiceStoryWarning(storyId: string): QueryState<string | undefined> {
+  return useServiceStory(storyId, selectWarningForStory);
 }

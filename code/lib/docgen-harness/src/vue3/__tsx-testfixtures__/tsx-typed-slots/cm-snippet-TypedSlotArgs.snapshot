@@ -1,0 +1,6 @@
+<template>
+  <TypedSlots label="Card">
+    <p>fallback content</p>
+    <template #header><h2>fallback title</h2></template>
+  </TypedSlots>
+</template>

@@ -16,10 +16,13 @@ export async function readConfig({ fileName, cwd }: { fileName: string; cwd: str
   }
 
   const mainConfigPath = getInterpretedFile(resolve(configDir, fileName));
+  if (!mainConfigPath) {
+    throw new Error(`Unable to find "${fileName}" in "${configDir}".`);
+  }
   return csfReadConfig(mainConfigPath);
 }
 
 export function addPreviewAnnotations(mainConfig: ConfigFile, paths: string[]) {
-  const config = mainConfig.getFieldValue(['previewAnnotations']) as string[];
-  mainConfig.setFieldValue(['previewAnnotations'], [...(config || []), ...paths.map(slash)]);
+  const config = mainConfig.getValue(['previewAnnotations']) as string[];
+  mainConfig.set(['previewAnnotations'], [...(config || []), ...paths.map(slash)]);
 }

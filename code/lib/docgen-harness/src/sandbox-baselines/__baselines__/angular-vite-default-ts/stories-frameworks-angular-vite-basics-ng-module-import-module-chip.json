@@ -1,0 +1,49 @@
+{
+  "argTypes": {
+    "backgroundColor": {
+      "name": "backgroundColor",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "displayText": {
+      "name": "displayText",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "removeClicked": {
+      "action": "removeClicked",
+      "name": "removeClicked",
+      "table": {
+        "category": "outputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "EventEmitter"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-basics-ng-module-import-module-chip",
+  "jsDocTags": {},
+  "name": "ChipComponent",
+  "path": "./src/stories/frameworks/angular-vite/basics/ng-module/import-module-chip.stories.ts"
+}

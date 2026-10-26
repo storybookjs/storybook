@@ -169,9 +169,6 @@ export function pitch(this: any) {
     }
 
     if (
-      // TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
-      // TODO: investigate swc file reading in PnP mode?
-      !process.versions.pnp &&
       !EXCLUDED_PATHS.test(this.resourcePath) &&
       this.loaders.length - 1 === this.loaderIndex &&
       isAbsolute(this.resourcePath) &&

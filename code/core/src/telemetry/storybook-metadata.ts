@@ -24,7 +24,11 @@ import { detectAgent } from './detect-agent.ts';
 import { getApplicationFileCount } from './get-application-file-count.ts';
 import { getChromaticVersionSpecifier } from './get-chromatic-version.ts';
 import { getFrameworkInfo } from './get-framework-info.ts';
+import { getHasModuleFederation } from './get-has-module-federation.ts';
 import { getHasRouterPackage } from './get-has-router-package.ts';
+import { getHasNextCustomWebpack } from './get-has-next-custom-webpack.ts';
+import { getRendererPackages } from './get-renderer-packages.ts';
+import { getHasTurbopack } from './get-has-turbopack.ts';
 import { analyzeEcosystemPackages } from './get-known-packages.ts';
 import { getMonorepoType } from '../shared/utils/get-monorepo-type.ts';
 import { getPackageManagerInfo } from './get-package-manager-info.ts';
@@ -122,6 +126,7 @@ export const computeStorybookMetadata = async ({
     userSince: settings?.value.userSince,
     hasCustomBabel: false,
     hasCustomWebpack: false,
+    hasCustomVite: false,
     hasStaticDirs: false,
     hasStorybookEslint: false,
     refCount: 0,
@@ -145,6 +150,8 @@ export const computeStorybookMetadata = async ({
 
   metadata.knownPackages = await analyzeEcosystemPackages(packageJson);
   metadata.hasRouterPackage = getHasRouterPackage(packageJson);
+  metadata.hasTurbopack = getHasTurbopack(packageJson);
+  metadata.hasModuleFederation = getHasModuleFederation(packageJson);
 
   const monorepoType = getMonorepoType();
   if (monorepoType) {
@@ -163,7 +170,10 @@ export const computeStorybookMetadata = async ({
     };
   }
   metadata.hasCustomBabel = !!mainConfig.babel;
-  metadata.hasCustomWebpack = !!mainConfig.webpackFinal;
+  metadata.hasCustomWebpack =
+    !!mainConfig.webpackFinal ||
+    (!!allDependencies.next && getHasNextCustomWebpack(dirname(packageJsonPath)));
+  metadata.hasCustomVite = !!mainConfig.viteFinal;
   metadata.hasStaticDirs = !!mainConfig.staticDirs;
 
   if (typeof mainConfig.typescript === 'object') {
@@ -171,6 +181,18 @@ export const computeStorybookMetadata = async ({
   }
 
   const frameworkInfo = await getFrameworkInfo(mainConfig, configDir);
+
+  const rendererPackages = Object.fromEntries(
+    await Promise.all(
+      getRendererPackages(frameworkInfo.renderer).map(async (packageName) => {
+        const { version } = await getActualPackageVersion(packageName);
+        return [packageName, version || 'unknown'];
+      })
+    )
+  );
+  if (Object.keys(rendererPackages).length > 0) {
+    metadata.knownPackages = { ...metadata.knownPackages, rendererPackages };
+  }
 
   if (typeof mainConfig.refs === 'object') {
     metadata.refCount = Object.keys(mainConfig.refs).length;

@@ -11,7 +11,7 @@ import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import type { SourceContextProps, SourceItem } from './SourceContainer';
 import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
-import { useServiceStorySnippet } from './use-service-story-docs.ts';
+import { useServiceStorySnippet, useServiceStoryWarning } from './use-service-story-docs.ts';
 import { useTransformCode } from './useTransformCode';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
@@ -90,10 +90,29 @@ const useCode = ({
     // if this is an args story and there's a snippet
     (type === SourceType.AUTO && staticSnippet && isArgsStory);
 
-  const code = useSnippet ? staticSnippet : sourceParameters.originalSource || '';
-  const transformer = transformFromProps ?? sourceParameters.transform;
+  const sourceKind: 'service' | 'emitted' | 'original' = useSnippet
+    ? serviceSnippet
+      ? 'service'
+      : 'emitted'
+    : 'original';
 
-  const transformedCode = transformer ? useTransformCode(code, transformer, storyContext) : code;
+  const code =
+    sourceKind === 'service'
+      ? serviceSnippet
+      : sourceKind === 'emitted'
+        ? snippet
+        : sourceParameters.originalSource || '';
+
+  // The emitted snippet is already transformed by emitTransformCode,
+  // so only transformFromProps applies to it.
+  const hasTransformer = Boolean(transformFromProps ?? sourceParameters.transform);
+  const activeTransformer =
+    transformFromProps ??
+    (sourceKind === 'emitted' ? (rawCode: string) => rawCode : sourceParameters.transform);
+
+  const transformedCode = hasTransformer
+    ? useTransformCode(code, activeTransformer!, storyContext)
+    : code;
 
   if (sourceParameters.code !== undefined) {
     return sourceParameters.code;
@@ -109,7 +128,8 @@ export const useSourceProps = (
   props: SourceProps,
   docsContext: DocsContextProps,
   sourceContext: SourceContextProps,
-  serviceSnippet = ''
+  serviceSnippet = '',
+  serviceWarning?: string
 ): PureSourceProps => {
   const { of } = props;
 
@@ -168,11 +188,19 @@ export const useSourceProps = (
 
   format = source?.format ?? true;
 
+  let warning: string | undefined;
+  if (transformedCode === serviceSnippet) {
+    warning = serviceWarning;
+  } else if (transformedCode === source?.code) {
+    warning = source.warning;
+  }
+
   return {
     code: transformedCode,
     format,
     language,
     dark,
+    warning,
   };
 };
 
@@ -184,7 +212,14 @@ const SourceWithStoryDocsSnippet: FC<
   }
 > = ({ storyId, docsContext, sourceContext, ...props }) => {
   const serviceSnippet = useServiceStorySnippet(storyId).data ?? '';
-  const sourceProps = useSourceProps(props, docsContext, sourceContext, serviceSnippet);
+  const serviceWarning = useServiceStoryWarning(storyId).data;
+  const sourceProps = useSourceProps(
+    props,
+    docsContext,
+    sourceContext,
+    serviceSnippet,
+    serviceWarning
+  );
   return <PureSource {...sourceProps} />;
 };
 
@@ -209,7 +244,7 @@ const SourceWithStorySnippet = (props: SourceProps) => {
     }
   }, [docsContext, of]);
 
-  if (globalThis.FEATURES?.experimentalDocgenServer && story?.id) {
+  if (globalThis.FEATURES?.docgenServer && story?.id) {
     return (
       <SourceWithStoryDocsSnippet
         {...props}

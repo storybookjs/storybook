@@ -8,7 +8,6 @@
         "summary": false,
       },
       "type": {
-        "required": false,
         "summary": "boolean",
       },
     },
@@ -25,7 +24,6 @@
         "summary": "",
       },
       "type": {
-        "required": false,
         "summary": "string",
       },
     },

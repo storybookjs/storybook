@@ -63,8 +63,18 @@ export function toMcpToolName(method: ToolsetMethodId): string {
  * than hardcoding either spelling.
  */
 export function getToolName(context: Pick<ToolsetCtx, 'transport'>) {
-  return (method: ToolsetMethodId): string =>
-    context.transport === 'mcp'
-      ? toMcpToolName(method)
-      : `npx storybook tools ${toCliPath(method)}`;
+  return (method: ToolsetMethodId): string => {
+    switch (context.transport) {
+      case 'mcp':
+        return toMcpToolName(method);
+      case 'cli':
+        return `npx storybook tools ${toCliPath(method)}`;
+      case 'sdk':
+        return method;
+      default: {
+        const exhaustive: never = context.transport;
+        return exhaustive;
+      }
+    }
+  };
 }

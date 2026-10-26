@@ -1,15 +1,21 @@
 import React from 'react';
 
-import { useChannel } from 'storybook/preview-api';
-import { fn, userEvent, within } from 'storybook/test';
+import { addons, useChannel } from 'storybook/preview-api';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import preview from '../../../.storybook/preview.tsx';
 import { StoryContent } from './StoryContent.tsx';
-import { HIGHLIGHT, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants.ts';
+import {
+  HIGHLIGHT,
+  HIGHLIGHT_MENU_CLICK,
+  REMOVE_HIGHLIGHT,
+  SCROLL_INTO_VIEW,
+} from './constants.ts';
 
 const highlight = (
   selectors: string[],
   options?: {
+    id?: string;
     styles?: Record<string, string>;
     hoverStyles?: Record<string, string>;
     focusStyles?: Record<string, string>;
@@ -20,11 +26,11 @@ const highlight = (
       description?: string;
       right?: string;
       href?: string;
-      clickEvent?: string;
+      clickable?: boolean;
     }[];
   }
 ) => {
-  const emit = useChannel({ 'my-click-event': fn().mockName('my-click-event') });
+  const emit = useChannel({});
   const id = Math.random().toString(36).substring(2, 15);
   React.useEffect(() => {
     emit(HIGHLIGHT, {
@@ -153,13 +159,14 @@ export const Menu = meta.story({
       {
         selectors: ['div', 'input'],
         options: {
+          id: 'menu-highlight',
           menu: [
             [
               {
                 id: 'color-contrast',
                 title: 'Insufficient color contrast',
                 description: 'Elements must meet minimum color contrast ratio thresholds.',
-                clickEvent: 'my-click-event',
+                clickable: true,
               },
             ],
             [
@@ -174,7 +181,7 @@ export const Menu = meta.story({
                 description: 'Click here to view more details.',
                 iconLeft: 'info',
                 iconRight: 'shareAlt',
-                clickEvent: 'my-click-event',
+                clickable: true,
               },
             ],
           ],
@@ -182,28 +189,40 @@ export const Menu = meta.story({
       },
     ],
   },
-  play: async () => {
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    await userEvent.pointer({
-      coords: { pageX: 470, pageY: 240 },
-      keys: '[MouseLeft]',
-    });
+  play: async ({ canvasElement }) => {
+    const onMenuClick = fn();
+    addons.getChannel().on(HIGHLIGHT_MENU_CLICK, onMenuClick);
+    const clickAt = (element: Element) => {
+      const { left, top, width, height } = element.getBoundingClientRect();
+      return userEvent.pointer({
+        target: element,
+        coords: {
+          pageX: left + width / 2 + window.scrollX,
+          pageY: top + height / 2 + window.scrollY,
+        },
+        keys: '[MouseLeft]',
+      });
+    };
 
     await new Promise((resolve) => setTimeout(resolve, 200));
-    const elementItem = document.querySelector('#storybook-highlights-menu .element-list button')!;
-    await userEvent.pointer({
-      target: elementItem,
-      coords: { pageX: 470, pageY: 260 },
-      keys: '[MouseLeft]',
-    });
+    await clickAt(canvasElement.querySelector('#inner')!);
 
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    const menuItem = document.querySelector('#storybook-highlights-menu .menu-list button')!;
-    await userEvent.pointer({
-      target: menuItem,
-      coords: { pageX: 470, pageY: 310 },
-      keys: '[MouseLeft]',
+    const menu = await waitFor(() => {
+      const element = document.getElementById('storybook-highlights-menu')!;
+      expect(element.querySelector('.element-list button')).not.toBeNull();
+      return element;
     });
+    await clickAt(menu.querySelector('.element-list button')!);
+
+    const menuItem = await waitFor(() => within(menu).getByText('Insufficient color contrast'));
+    await clickAt(menuItem);
+
+    addons.getChannel().off(HIGHLIGHT_MENU_CLICK, onMenuClick);
+    await expect(onMenuClick).toHaveBeenCalledWith(
+      'menu-highlight',
+      'color-contrast',
+      expect.objectContaining({ selectors: ['div'] })
+    );
   },
 });
 

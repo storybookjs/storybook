@@ -8,7 +8,6 @@
         "summary": "steelblue",
       },
       "type": {
-        "required": false,
         "summary": "string",
       },
     },
@@ -28,7 +27,6 @@
         "deprecated": "Use `label` on the parent panel instead.",
       },
       "type": {
-        "required": false,
         "summary": "string",
       },
     },

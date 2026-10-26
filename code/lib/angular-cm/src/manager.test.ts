@@ -115,6 +115,38 @@ describe('AngularComponentMetaManager', () => {
     expect(inputsOf(result).map((input) => input.name)).toContain('note');
   });
 
+  it('attaches TypeScript JSDoc info for default-exported components', () => {
+    const namedDefault = manager.extractComponentMeta(
+      normalize(join(fixturesDir, 'default-export.component.ts')),
+      { exportName: 'default' }
+    );
+    const aliasedDefault = manager.extractComponentMeta(
+      normalize(join(fixturesDir, 'aliased-default.component.ts')),
+      { exportName: 'default' }
+    );
+
+    expect(namedDefault?.jsDocInfo).toMatchInlineSnapshot(`
+      {
+        "description": "Default export docs.",
+        "jsDocTags": {
+          "summary": [
+            "Named default summary.",
+          ],
+        },
+      }
+    `);
+    expect(aliasedDefault?.jsDocInfo).toMatchInlineSnapshot(`
+      {
+        "description": "Aliased default docs.",
+        "jsDocTags": {
+          "summary": [
+            "Aliased default summary.",
+          ],
+        },
+      }
+    `);
+  });
+
   it('resolves a component behind a star barrel to its defining file', () => {
     const barrelPath = normalize(join(fixturesDir, 'barrel-star.ts'));
     const result = manager.extractComponentMeta(barrelPath, { exportName: 'ToggleComponent' });
@@ -130,6 +162,31 @@ describe('AngularComponentMetaManager', () => {
 
     expect(result?.entry.name).toBe('ToggleComponent');
     expect(result?.entry.file).toBe(togglePath);
+  });
+
+  it.each(['button.component.d.ts', 'index.d.ts'])(
+    'reads a component compiled into a .d.ts, extracting from %s',
+    (entryFile) => {
+      const result = manager.extractComponentMeta(
+        normalize(join(fixturesDir, 'declarations', entryFile)),
+        { exportName: 'ButtonComponent' }
+      );
+
+      expect(result?.entry).toMatchObject({
+        name: 'ButtonComponent',
+        type: 'component',
+        file: normalize(join(fixturesDir, 'declarations', 'button.component.d.ts')),
+        selector: 'my-button, [my-button]',
+        standalone: false,
+      });
+      expect(inputsOf(result).map((input) => input.name)).toEqual(['disabled', 'label']);
+    }
+  );
+
+  it('still extracts nothing for a plain .d.ts class re-exported by a declaration barrel', () => {
+    const barrelPath = normalize(join(fixturesDir, 'declarations', 'index.d.ts'));
+
+    expect(manager.extractComponentMeta(barrelPath, { exportName: 'ButtonTheme' })).toBeUndefined();
   });
 
   it('falls back to localName when the export name matches no class', () => {

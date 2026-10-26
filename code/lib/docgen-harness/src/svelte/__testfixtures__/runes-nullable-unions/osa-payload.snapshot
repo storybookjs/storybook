@@ -1,0 +1,9 @@
+{
+  "description": undefined,
+  "id": "sveltefixtures-gradiobutton",
+  "jsDocTags": {},
+  "name": "GradioButton",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": undefined,
+}

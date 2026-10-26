@@ -1,20 +1,25 @@
 import { describe, expect, it } from 'vitest';
 
-import { types as t } from 'storybook/internal/babel';
-
 import { dedent } from 'ts-dedent';
 
-import { babelParseFile } from '../CsfFile.ts';
+import { parseExpression, isStringLiteral } from '../estree/ast.ts';
+import { SourceEditor } from '../estree/editor.ts';
+import { isSelfContained } from './resolve-arg-value.ts';
 import {
   type ReferenceContext,
   type ReferenceModule,
   resolveArgsRecord,
   resolveBindingMembers,
-  sourceOf,
+  resolveReferencedValue,
+  oneLineTextOf,
 } from './resolve-members.ts';
 
+const indexed = (editor: SourceEditor) => {
+  editor.parentOf(editor.program);
+  return editor;
+};
 const moduleOf = (code: string, filePath: string): ReferenceModule => ({
-  program: babelParseFile({ code, filename: filePath }).path,
+  editor: indexed(new SourceEditor(code, filePath)),
   filePath,
 });
 
@@ -39,7 +44,7 @@ const argsOf = (code: string, storyName: string, ctx = contextOf({ 'entry.ts': c
   const record = resolveArgsRecord(story?.properties.args, ctx);
   return {
     args: Object.fromEntries(
-      Object.entries(record.properties).map(([key, node]) => [key, sourceOf(node)])
+      Object.entries(record.properties).map(([key, node]) => [key, oneLineTextOf(node)])
     ),
     unresolved: [...(story?.unresolved ?? []), ...record.unresolved],
   };
@@ -284,6 +289,65 @@ describe('spreads at the story config level', () => {
       Assigned.args = { label: 'assigned' };
     `;
     expect(argsOf(code, 'Assigned')).toEqual({ args: { label: "'assigned'" }, unresolved: [] });
+  });
+
+  it('resolves a story alias to a local function', () => {
+    const code = dedent`
+      const ParagraphStory = ({ text }) => text;
+      export const Example = ParagraphStory;
+    `;
+    expect(argsOf(code, 'Example')).toEqual({ args: {}, unresolved: [] });
+  });
+
+  it('keeps the input accessor when a CSF factory story is aliased', () => {
+    const code = dedent`
+      const meta = preview.meta({ component: Button });
+      const Primary = meta.story({ args: { label: 'saved' } });
+      const Alias = Primary;
+      export const Sibling = meta.story({ args: { ...Alias.input.args, size: 'small' } });
+    `;
+    expect(argsOf(code, 'Sibling')).toEqual({
+      args: { label: "'saved'", size: "'small'" },
+      unresolved: [],
+    });
+  });
+
+  it('applies assignments through aliases in source order', () => {
+    const code = dedent`
+      const Base = () => null;
+      const Alias = Base;
+      Alias.args = { label: 'first' };
+      Base.args = { label: 'last' };
+      export const Story = Alias;
+    `;
+    expect(argsOf(code, 'Story')).toEqual({ args: { label: "'last'" }, unresolved: [] });
+  });
+
+  it('does not read an imported alias with local names when externalization is unavailable', () => {
+    const ctx = contextOf({
+      'shared.ts': dedent`
+        const defaults = { label: 'remote' };
+        export const Shared = { args: { ...defaults } };
+      `,
+      'entry.ts': dedent`
+        import { Shared } from './shared';
+        const defaults = { label: 'local' };
+        export const Alias = Shared;
+      `,
+    });
+    expect(argsOf('', 'Alias', ctx)).toEqual({ args: {}, unresolved: ['Shared'] });
+  });
+
+  it('reads a self-contained imported alias when its values can be externalized', () => {
+    const ctx = contextOf(
+      {
+        'shared.ts': `export const Shared = { args: { label: 'remote' } };`,
+        'entry.ts': `import { Shared } from './shared'; export const Alias = Shared;`,
+      },
+      'entry.ts',
+      (node) => (isSelfContained(node) ? node : undefined)
+    );
+    expect(argsOf('', 'Alias', ctx)).toEqual({ args: { label: "'remote'" }, unresolved: [] });
   });
 
   it('prefers an assignment over the args the declaration carries', () => {
@@ -540,6 +604,19 @@ describe('CSF factories', () => {
     });
   });
 
+  it('reports parent args written as a comma expression, which it cannot read', () => {
+    const code = dedent`
+      import preview from './preview';
+      const meta = preview.meta({ component: Button });
+      export const Base = meta.story({ args: (track(), { label: 'base', primary: true }) });
+      export const Extended = Base.extend({ args: { label: 'extended' } });
+    `;
+    expect(argsOf(code, 'Extended')).toEqual({
+      args: { label: "'extended'" },
+      unresolved: ["...(track(), { label: 'base', primary: true })"],
+    });
+  });
+
   it('reports a bare spread of a factory story, which copies its methods and not its config', () => {
     const code = dedent`
       import preview from './preview';
@@ -583,8 +660,158 @@ describe('externalize', () => {
         `,
       },
       'entry.ts',
-      (node) => (t.isStringLiteral(node) ? node : undefined)
+      (node) => (isStringLiteral(node) ? node : undefined)
     );
     expect(argsOf('', 'Reuse', ctx)).toEqual({ args: {}, unresolved: ['...shared'] });
+  });
+});
+
+describe('resolveReferencedValue', () => {
+  const valueOf = (ctx: ReferenceContext, expression: string) => {
+    const node = parseExpression(expression);
+    const resolved = resolveReferencedValue(ctx, node);
+    return resolved && { value: oneLineTextOf(resolved.node), filePath: resolved.ctx.filePath };
+  };
+
+  it('reads a member of a local object', () => {
+    const ctx = contextOf({
+      'entry.ts': dedent`
+        import { Button } from './button';
+        const config = { component: Button };
+      `,
+    });
+    expect(valueOf(ctx, 'config.component')).toEqual({ value: 'Button', filePath: 'entry.ts' });
+  });
+
+  it('reads a member of an export reached through a namespace import', () => {
+    const ctx = contextOf({
+      'internal.ts': dedent`
+        import { Button } from './button';
+        export const config = { component: Button };
+      `,
+      'entry.ts': dedent`
+        import * as internal from './internal';
+      `,
+    });
+    expect(valueOf(ctx, 'internal.config.component')).toEqual({
+      value: 'Button',
+      filePath: 'internal.ts',
+    });
+  });
+
+  it('absorbs a spread on the way to the member', () => {
+    const ctx = contextOf({
+      'internal.ts': dedent`
+        import { Button } from './button';
+        const base = { component: Button };
+        export const config = { ...base, args: {} };
+      `,
+      'entry.ts': dedent`
+        import * as internal from './internal';
+      `,
+    });
+    expect(valueOf(ctx, 'internal.config.component')).toEqual({
+      value: 'Button',
+      filePath: 'internal.ts',
+    });
+  });
+
+  it('reads nothing from a bare identifier, which names no member', () => {
+    const ctx = contextOf({ 'entry.ts': `const config = { component: 1 };` });
+    expect(valueOf(ctx, 'config')).toBeUndefined();
+  });
+
+  it('reads nothing when the module the namespace names cannot be reached', () => {
+    const ctx = contextOf({ 'entry.ts': `import * as internal from './nowhere';` });
+    expect(valueOf(ctx, 'internal.config.component')).toBeUndefined();
+  });
+
+  it('reads nothing for a member the object does not have', () => {
+    const ctx = contextOf({ 'entry.ts': `const config = { args: {} };` });
+    expect(valueOf(ctx, 'config.component')).toBeUndefined();
+  });
+
+  describe('spread scope', () => {
+    // A spread copies the value node as written in the module that owns it, and this pass reads it
+    // in the module the chain lands in. Callers that care which module a name resolves against pass
+    // an `externalize` that refuses a value carrying free names once it crosses a module boundary,
+    // rather than resolving it in the wrong scope.
+    it('refuses a spread-copied member carrying free names when the caller externalizes', () => {
+      // `internal` spreads `base` (owned by `shared`), and separately binds the identical local
+      // name `Button` to an unrelated class. Reading the copied `Button` against `internal`'s own
+      // imports would silently land on the wrong one.
+      const files = {
+        'real-button.ts': `export class Button {}`,
+        'other-button.ts': `export class Button {}`,
+        'shared.ts': dedent`
+          import { Button } from './real-button';
+          export const base = { component: Button };
+        `,
+        'internal.ts': dedent`
+          import { Button } from './other-button';
+          import { base } from './shared';
+          export const config = { ...base, args: {} };
+        `,
+        'entry.ts': `import * as internal from './internal';`,
+      };
+
+      const guarded = contextOf(files, 'entry.ts', (node) =>
+        isSelfContained(node) ? node : undefined
+      );
+
+      expect(valueOf(guarded, 'internal.config.component')).toBeUndefined();
+    });
+  });
+
+  describe('a member beside an unresolvable spread', () => {
+    it('resolves a member written after an unresolvable spread', () => {
+      const ctx = contextOf({
+        'entry.ts': dedent`
+          declare function makeBase(): object;
+          const config = { ...makeBase(), component: 1 };
+        `,
+      });
+      expect(valueOf(ctx, 'config.component')).toEqual({ value: '1', filePath: 'entry.ts' });
+    });
+
+    it('leaves a member unresolved when an unresolvable spread runs after it', () => {
+      const ctx = contextOf({
+        'entry.ts': dedent`
+          declare function makeBase(): object;
+          const config = { component: 1, ...makeBase() };
+        `,
+      });
+      expect(valueOf(ctx, 'config.component')).toBeUndefined();
+    });
+
+    it('resolves through an intermediate object whose relevant key follows an unresolvable spread', () => {
+      const ctx = contextOf({
+        'entry.ts': dedent`
+          declare function makeBase(): object;
+          const config = { ...makeBase(), nested: { component: 1 } };
+        `,
+      });
+      expect(valueOf(ctx, 'config.nested.component')).toEqual({
+        value: '1',
+        filePath: 'entry.ts',
+      });
+    });
+
+    it('does not descend through an intermediate object whose relevant key an unresolvable spread may shadow', () => {
+      const ctx = contextOf({
+        'entry.ts': dedent`
+          declare function makeBase(): object;
+          const config = { nested: { component: 1 }, ...makeBase() };
+        `,
+      });
+      expect(valueOf(ctx, 'config.nested.component')).toBeUndefined();
+    });
+  });
+
+  it('terminates instead of recursing forever on a self-referential module', () => {
+    const ctx = contextOf({
+      'entry.ts': `export const config = { nested: { ...config } };`,
+    });
+    expect(valueOf(ctx, 'config.nested.component')).toBeUndefined();
   });
 });

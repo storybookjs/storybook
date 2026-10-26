@@ -2,6 +2,7 @@ import type {
   CompatibleString,
   StorybookConfig as StorybookConfigBase,
 } from 'storybook/internal/types';
+import type { WebComponentsFrameworkOptions } from '@storybook/web-components';
 
 import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
 
@@ -10,7 +11,7 @@ type BuilderName = CompatibleString<'@storybook/builder-vite'>;
 
 export type FrameworkOptions = {
   builder?: BuilderOptions;
-};
+} & WebComponentsFrameworkOptions;
 
 type StorybookConfigFramework = {
   framework:

@@ -1,0 +1,87 @@
+{
+  "argTypes": {
+    "backgroundColor": {
+      "description": "",
+      "name": "backgroundColor",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "classes": {
+      "control": {
+        "disable": true
+      },
+      "description": "",
+      "name": "classes",
+      "table": {
+        "category": "exposed",
+        "type": {
+          "summary": "{ 'storybook-button': boolean; 'storybook-button--primary': boolean; 'storybook-button--large': boolean; }"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "{ 'storybook-button': boolean; 'storybook-button--primary': boolean; 'storybook-button--large': boolean; }"
+      }
+    },
+    "counter": {
+      "control": {
+        "disable": true
+      },
+      "description": "",
+      "name": "counter",
+      "table": {
+        "category": "exposed",
+        "type": {
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "number"
+      }
+    },
+    "label": {
+      "description": "",
+      "name": "label",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "onClick": {
+      "control": {
+        "disable": true
+      },
+      "description": "",
+      "name": "onClick",
+      "table": {
+        "category": "exposed",
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "() => void"
+      }
+    }
+  },
+  "id": "stories-renderers-vue3-vue3-vite-default-ts-reactiveargs",
+  "jsDocTags": {},
+  "name": "ReactiveArgs",
+  "path": "./src/stories/renderers/vue3_vue3-vite-default-ts/ReactiveArgs.stories.ts"
+}

@@ -53,6 +53,27 @@ describe('get-known-packages', () => {
       });
     });
 
+    it('should analyze bundler packages with actual versions', async () => {
+      const packageJson: PackageJson = {
+        devDependencies: {
+          webpack: '5.90.0',
+          vite: '^5.0.0',
+          '@rsbuild/core': '1.0.0',
+          '@parcel/core': '2.0.0',
+          eslint: '9.0.0',
+        },
+      };
+
+      const result = await analyzeEcosystemPackages(packageJson);
+
+      expect(result.bundlerPackages).toEqual({
+        webpack: '1.0.0',
+        vite: '1.0.0',
+        '@rsbuild/core': '1.0.0',
+        '@parcel/core': '1.0.0',
+      });
+    });
+
     it('should analyze ecosystem packages in a single packageJson with multiple groups', async () => {
       const packageJson: PackageJson = {
         dependencies: {
@@ -60,6 +81,8 @@ describe('get-known-packages', () => {
           tailwindcss: '3.0.0',
           'styled-components': '6.0.0',
           emotion: '11.0.0',
+          '@stylexjs/stylex': '0.15.4',
+          '@stylexjs/postcss-plugin': '0.15.4',
           // state management
           redux: '4.0.0',
           'react-redux': '8.0.0',
@@ -90,6 +113,8 @@ describe('get-known-packages', () => {
         emotion: '11.0.0',
         tailwindcss: '3.0.0',
         'styled-components': '6.0.0',
+        '@stylexjs/stylex': '0.15.4',
+        '@stylexjs/postcss-plugin': '0.15.4',
       });
 
       expect(result.stateManagementPackages).toEqual({

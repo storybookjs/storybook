@@ -1,7 +1,7 @@
-// eslint-disable-next-line depend/ban-dependencies
-import glob from 'fast-glob';
+import { globSync, statSync } from 'node:fs';
 import { join } from 'path/posix';
 
+import { isGlobalInput } from './global-inputs.ts';
 import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   type CachePlatform,
@@ -24,10 +24,12 @@ import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
 
-const packageDirs = glob.sync(['*/src', '*/*/src'], {
-  cwd: join(dirname, '../../code'),
-  onlyDirectories: true,
-});
+const codeDir = join(dirname, '../../code');
+const packageDirs = ['*/src', '*/*/src'].flatMap((pattern) =>
+  globSync(pattern, { cwd: codeDir, exclude: ['node_modules/**'] })
+    .filter((dir) => statSync(join(codeDir, dir)).isDirectory())
+    .sort((a, b) => (a.replaceAll('/', '\0') < b.replaceAll('/', '\0') ? -1 : 1))
+);
 
 /**
  * Every job that installs goes through here, so none is left on the orb's own cache: one job saving
@@ -42,7 +44,7 @@ const installWithCache = (platform: CachePlatform = 'linux') => [
     : []),
 ];
 
-export const build_linux = defineJob('Build (linux)', (workflowName) => ({
+export const build_linux = defineJob('Build (linux)', () => ({
   executor: {
     name: 'sb_node_22_classic',
     class: 'xlarge',
@@ -85,7 +87,6 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
       },
     },
     git.check(),
-    ...workflow.reportOnFailure(workflowName),
     artifact.persist(`code/bench/esbuild-metafiles`, 'bench'),
     workspace.awaitPack(),
     workspace.persist([
@@ -111,6 +112,7 @@ export const fmt = defineJob('Format check', () => ({
         command: 'yarn fmt:check',
       },
     },
+    ...workflow.cancelOnFailure(),
   ],
 }));
 
@@ -179,10 +181,11 @@ export const storybookChromatic = defineJob(
 
 export const internalStorybookE2e = defineJob(
   'Internal storybook E2E',
-  (workflowName) => ({
+  () => ({
     executor: {
       name: 'sb_playwright',
-      class: 'medium+',
+      // The tools-attach.spec.ts CLIs build every manifest next to the dev server; OOMs on medium+.
+      class: 'large',
     },
     steps: [
       ...workflow.restoreLinux(),
@@ -191,7 +194,7 @@ export const internalStorybookE2e = defineJob(
           name: 'Run internal Storybook',
           working_directory: 'code',
           background: true,
-          command: 'STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true yarn storybook:ui',
+          command: 'yarn storybook:ui',
         },
       },
       server.wait(['6006']),
@@ -207,7 +210,6 @@ export const internalStorybookE2e = defineJob(
         'playwright-results'
       ),
       testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
-      ...workflow.reportOnFailure(workflowName),
     ],
   }),
   [commonJobsNoOpJob]
@@ -215,7 +217,7 @@ export const internalStorybookE2e = defineJob(
 
 export const internalStorybookBuildE2e = defineJob(
   'Internal storybook build E2E',
-  (workflowName) => ({
+  () => ({
     executor: {
       name: 'sb_playwright',
       class: 'medium+',
@@ -226,7 +228,7 @@ export const internalStorybookBuildE2e = defineJob(
         run: {
           name: 'Build internal storybook',
           working_directory: 'code',
-          command: 'STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true yarn storybook:ui:build',
+          command: 'yarn storybook:ui:build',
         },
       },
       {
@@ -251,7 +253,6 @@ export const internalStorybookBuildE2e = defineJob(
         'playwright-results'
       ),
       testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
-      ...workflow.reportOnFailure(workflowName),
     ],
   }),
   [commonJobsNoOpJob]
@@ -259,7 +260,7 @@ export const internalStorybookBuildE2e = defineJob(
 
 export const check = defineJob(
   'TypeScript validation',
-  (workflowName) => ({
+  () => ({
     // xlarge because each of the 4 concurrent native-tsc processes in the
     // check task is itself multi-threaded (~4 threads), so throughput still
     // wants the full 8 vCPUs; roughly cost-neutral vs the previous serial run
@@ -284,7 +285,6 @@ export const check = defineJob(
           command: 'yarn check',
         },
       },
-      ...workflow.reportOnFailure(workflowName),
       ...workflow.cancelOnFailure(),
     ],
   }),
@@ -340,9 +340,70 @@ export const knip = defineJob(
   [commonJobsNoOpJob]
 );
 
+/**
+ * One job, not a second sandbox matrix. The generated sandbox workflow is a job
+ * per template, so Node 26 only runs the unit suite plus one Vite build and one
+ * Webpack build. It installs on its own: the shared node_modules cache is keyed
+ * on `.nvmrc`, which is still Node 22.
+ */
+export const node26Smoke = defineJob('Node 26 smoke', () => ({
+  executor: {
+    name: 'sb_node_26',
+    class: 'xlarge',
+  },
+  steps: [
+    git.checkout(),
+    {
+      run: {
+        name: 'Install npm 12',
+        command: ['node --version', 'sudo npm install -g npm@12', 'npm --version'].join('\n'),
+      },
+    },
+    {
+      run: {
+        // Node 25 stopped bundling corepack. Without it, sandboxes run the
+        // image's global yarn instead of the Yarn 4 their `packageManager`
+        // field pins, and `create-storybook` hangs. `--force` replaces the
+        // image's own yarn and pnpm binaries, as `corepack enable` would.
+        name: 'Install corepack',
+        command: [
+          'sudo npm install -g --force corepack@0',
+          'sudo corepack enable',
+          'which yarn',
+          'yarn --version',
+        ].join('\n'),
+      },
+    },
+    npm.install('.'),
+    {
+      run: {
+        name: 'Run unit tests',
+        // storybook-ui is the browser story project. The linux unit job never
+        // runs it; stories have their own Playwright job.
+        command: "yarn test --project '!storybook-ui'",
+      },
+    },
+    {
+      run: {
+        name: 'Build React Vite sandbox',
+        command: 'yarn task build --template react-vite/default-ts --start-from=auto --no-link',
+      },
+    },
+    {
+      run: {
+        name: 'Build React Webpack sandbox',
+        command: 'yarn task build --template react-webpack/18-ts --start-from=auto --no-link',
+      },
+    },
+  ],
+}));
+
+const UNIT_TEST_REPORTERS =
+  '--reporter=junit --reporter=default --outputFile=./test-results/junit.xml';
+
 export const testsUnit_linux = defineJob(
   'Tests (linux)',
-  (workflowName) => ({
+  () => ({
     executor: {
       name: 'sb_node_22_classic',
       class: 'large',
@@ -353,24 +414,168 @@ export const testsUnit_linux = defineJob(
         run: {
           name: 'Run tests',
           command: [
-            'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "agent-eval/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
-            'echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
+            'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec,test-d}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "agent-eval/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
+            `echo "$TEST_FILES" | circleci tests run --command="xargs yarn test ${UNIT_TEST_REPORTERS}" --verbose`,
           ].join('\n'),
         },
       },
       testResults.persist(`test-results`),
 
       git.check(),
-      ...workflow.reportOnFailure(workflowName),
       ...workflow.cancelOnFailure(),
     ],
   }),
   [commonJobsNoOpJob]
 );
 
+const CHANGED_FILES_PATH = '/tmp/changed-files.txt';
+
+const writeChangedFiles = (changedFiles: readonly string[]) => ({
+  run: {
+    name: 'Write changed files',
+    environment: { CHANGED_FILES: changedFiles.join('\n') },
+    command: `printf '%s\\n' "$CHANGED_FILES" > ${CHANGED_FILES_PATH}`,
+  },
+});
+
+/**
+ * Typecheck only the projects Nx considers affected by `changedFiles`. The restored workspace
+ * already holds every compiled package, so the `compile` dependencies are skipped.
+ */
+export const defineAffectedCheck = (changedFiles: readonly string[]) =>
+  defineJob(
+    'TypeScript validation (affected)',
+    () => ({
+      executor: {
+        name: 'sb_node_22_classic',
+        class: 'xlarge',
+      },
+      steps: [
+        ...workflow.restoreLinux(),
+        writeChangedFiles(changedFiles),
+        {
+          run: {
+            name: 'TypeCheck affected projects',
+            // With Nx Cloud on, CI logs show only a cloud link per task instead of the type errors.
+            environment: { NX_NO_CLOUD: 'true' },
+            command: `yarn nx affected -t check --exclude-task-dependencies --parallel=4 --stdin < ${CHANGED_FILES_PATH}`,
+          },
+        },
+        ...workflow.cancelOnFailure(),
+      ],
+    }),
+    [commonJobsNoOpJob]
+  );
+
+const LINT_CONFIG = /(^|\/)\.oxlintrc\.json$/;
+const FORMAT_CONFIG = /(^|\/)\.oxfmtrc\.json$/;
+
+/**
+ * Run `command` with the changed files under `dir` as arguments, relative to `dir`, because oxlint
+ * rejects paths outside its working directory. Nothing runs when no changed file is under `dir`.
+ */
+const runOnChangedFiles = (
+  name: string,
+  dir: string,
+  changedFiles: readonly string[],
+  command: string
+) => {
+  const files = dir
+    ? changedFiles
+        .filter((file) => file.startsWith(`${dir}/`))
+        .map((file) => file.slice(dir.length + 1))
+    : changedFiles;
+
+  return files.length === 0
+    ? []
+    : [
+        {
+          run: {
+            name,
+            ...(dir ? { working_directory: dir } : {}),
+            environment: { FILES: files.join('\n') },
+            command: `printf '%s\\n' "$FILES" | tr '\\n' '\\0' | xargs -0 ${command}`,
+          },
+        },
+      ];
+};
+
+/**
+ * Format-check and lint only the changed files. Both tools work per file, and the lint rules that
+ * read other files are warnings, which `--quiet` drops. A config or global input change checks
+ * everything.
+ */
+export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) => {
+  const checkAll = (config: RegExp) =>
+    changedFiles.some((file) => isGlobalInput(file) || config.test(file));
+
+  return defineJob(
+    'Lint and format (affected)',
+    () => ({
+      executor: {
+        name: 'sb_node_22_classic',
+        class: 'medium',
+      },
+      steps: [
+        ...workflow.restoreLinux(),
+        ...(checkAll(FORMAT_CONFIG)
+          ? [{ run: { name: 'Format check', command: 'yarn fmt:check' } }]
+          : runOnChangedFiles(
+              'Format check changed files',
+              '',
+              changedFiles,
+              'yarn oxfmt --check --no-error-on-unmatched-pattern'
+            )),
+        ...(checkAll(LINT_CONFIG)
+          ? [
+              { run: { name: 'Lint code JS', working_directory: 'code', command: 'yarn lint:js' } },
+              { run: { name: 'Lint scripts', working_directory: 'scripts', command: 'yarn lint' } },
+            ]
+          : ['code', 'scripts'].flatMap((dir) =>
+              runOnChangedFiles(
+                `Lint changed ${dir} files`,
+                dir,
+                changedFiles,
+                'yarn lint:js:cmd --quiet --no-error-on-unmatched-pattern'
+              )
+            )),
+        ...workflow.cancelOnFailure(),
+      ],
+    }),
+    [commonJobsNoOpJob]
+  );
+};
+
+/** Run the unit tests whose imports reach `changedFiles`. */
+export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
+  defineJob(
+    'Tests (linux, affected)',
+    () => ({
+      executor: {
+        name: 'sb_node_22_classic',
+        class: 'large',
+      },
+      steps: [
+        ...workflow.restoreLinux(),
+        writeChangedFiles(changedFiles),
+        {
+          run: {
+            name: 'Run affected tests',
+            command: `NODE_OPTIONS=--max_old_space_size=4096 yarn vitest related --run --project '!storybook-ui' ${UNIT_TEST_REPORTERS} $(cat ${CHANGED_FILES_PATH})`,
+          },
+        },
+        testResults.persist(`test-results`),
+
+        git.check(),
+        ...workflow.cancelOnFailure(),
+      ],
+    }),
+    [commonJobsNoOpJob]
+  );
+
 export const testsStories_linux = defineJob(
   'Tests stories (linux)',
-  (workflowName) => ({
+  () => ({
     executor: {
       name: 'sb_playwright',
       class: 'xlarge',
@@ -389,7 +594,6 @@ export const testsStories_linux = defineJob(
       testResults.persist(`test-results`),
 
       git.check(),
-      ...workflow.reportOnFailure(workflowName),
       ...workflow.cancelOnFailure(),
     ],
   }),
@@ -415,7 +619,7 @@ export const testUnit_windows = defineJob(
       {
         run: {
           command:
-            'yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml',
+            "yarn test --project '!agent-eval' --reporter=junit --reporter=default --outputFile=./test-results/junit.xml",
           name: 'Run unit tests',
         },
       },
@@ -443,6 +647,32 @@ export const defineCircleciCompletion = (requires: JobOrNoOpJob[]) =>
       ],
     }),
     requires
+  );
+
+/** Report the failed jobs of a nightly `next` run to Slack, whatever state the workflow ends in. */
+export const defineNightlyFailureReport = (completion: JobOrNoOpJob) =>
+  defineJob(
+    'Nightly failure report',
+    () => ({
+      executor: {
+        name: 'sb_barebones',
+        class: 'small',
+      },
+      steps: [
+        git.checkout(),
+        {
+          run: {
+            name: 'Report failed jobs to Slack',
+            environment: {
+              PIPELINE_NUMBER: '<< pipeline.number >>',
+            },
+            command: 'bash scripts/ci/report-nightly-failure.sh',
+          },
+        },
+      ],
+    }),
+    [completion],
+    { runsEvenIfRequirementsFail: true }
   );
 
 const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';
@@ -505,6 +735,7 @@ export const benchmarkPackages = defineJob(
     },
     steps: [
       ...workflow.restoreLinux(),
+      npm.installPinnedVersion(),
       verdaccio.start(),
       server.wait([...verdaccio.ports]),
       {

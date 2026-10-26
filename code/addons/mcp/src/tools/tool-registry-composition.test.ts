@@ -5,6 +5,7 @@
  * anything when those are unreachable. These tests exercise the same registry path in-process.
  */
 
+import * as v from 'valibot';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { collectTelemetry } from '../telemetry.ts';
@@ -122,13 +123,14 @@ describe('docs tools in a composition', () => {
     );
   });
 
-  it('asks which Storybook when a lookup names no source', async () => {
+  it('defaults a lookup that names no source to the local Storybook', async () => {
     const { server, tools } = makeServer(['local']);
     await registerAddonMcpTools(server, context);
+    const show = getAddonToolMetadata(context).find((tool) => tool.name === 'docs-show');
 
-    const result = await tools.get('docs-show')!({ id: 'button' });
+    const result = await tools.get('docs-show')!(v.parse(show!.schema as never, { id: 'button' }));
 
-    expect(result.content[0].text).toContain('storybookId is required');
-    expect(result.isError).toBe(true);
+    expect(result.isError).toBeFalsy();
+    expect(result.content[0].text).toContain('Button');
   });
 });

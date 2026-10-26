@@ -1,0 +1,38 @@
+{
+  "argTypes": {
+    "onClick": {
+      "action": "onClick",
+      "name": "onClick",
+      "table": {
+        "category": "outputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "EventEmitter"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "text": {
+      "name": "text",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": ""
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-others-issues-12009-unknown-component",
+  "jsDocTags": {},
+  "name": "ButtonComponent",
+  "path": "./src/stories/frameworks/angular-vite/others/issues/12009-unknown-component.stories.ts"
+}

@@ -8,11 +8,11 @@ const meta = {
     layout: 'fullscreen',
     docsStyles: true,
   },
-} as Meta<typeof Anchor>;
+} satisfies Meta<typeof Anchor>;
 
 export default meta;
 
-export const Default: StoryObj<typeof Anchor> = {
+export const Default: StoryObj<typeof meta> = {
   args: {
     children: 'This is an anchor for storyId: "default"',
     storyId: 'default',

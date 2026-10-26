@@ -215,4 +215,52 @@ describe('DocgenWorkerClient.extract', () => {
 
     await expect(promise).rejects.toThrow(/exited unexpectedly/);
   });
+
+  it('names the death in every extract that follows it', async () => {
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+
+    const first = client.extract({ id: 'x' } as any);
+    ackInit(fakeWorkers[0]);
+    await Promise.resolve();
+    fakeWorkers[0].emit('error', new Error('worker ran out of memory'));
+    await expect(first).rejects.toThrow('worker ran out of memory');
+
+    // Never served a request, so the next extract reuses the corpse rather than respawning into
+    // the same failure - and says what that failure was.
+    await expect(client.extract({ id: 'y' } as any)).rejects.toThrow(
+      'docgen worker is no longer running: worker ran out of memory'
+    );
+    expect(fakeWorkers).toHaveLength(1);
+  });
+
+  it('spawns a replacement once a dead worker had served requests', async () => {
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+
+    const first = client.extract({ id: 'x' } as any);
+    ackInit(fakeWorkers[0]);
+    await Promise.resolve();
+    const extractMsg = fakeWorkers[0].posted.find((m) => m.type === 'extract') as { id: number };
+    fakeWorkers[0].emit('message', {
+      type: 'extract',
+      id: extractMsg.id,
+      payload: { id: 'x', name: 'X', path: './x.stories.ts', jsDocTags: {} },
+    } satisfies DocgenWorkerResponse);
+    await expect(first).resolves.toMatchObject({ id: 'x' });
+
+    fakeWorkers[0].emit('error', new Error('worker ran out of memory'));
+
+    const second = client.extract({ id: 'y' } as any);
+    expect(fakeWorkers).toHaveLength(2);
+    ackInit(fakeWorkers[1]);
+    await Promise.resolve();
+    const retryMsg = fakeWorkers[1].posted.find((m) => m.type === 'extract') as { id: number };
+    fakeWorkers[1].emit('message', {
+      type: 'extract',
+      id: retryMsg.id,
+      payload: { id: 'y', name: 'Y', path: './y.stories.ts', jsDocTags: {} },
+    } satisfies DocgenWorkerResponse);
+    await expect(second).resolves.toMatchObject({ id: 'y' });
+  });
 });

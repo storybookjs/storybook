@@ -1,4 +1,4 @@
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 // TODO -- should we generate this file a second time outside of CLI?
@@ -15,15 +15,6 @@ export type YarnOptions = {
 };
 
 const logger = console;
-
-const pathExists = async (path: string) => {
-  try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
-  }
-};
 
 export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   logger.info(`🔢 Adding package resolutions:`);
@@ -46,10 +37,12 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 };
 
-export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
-  // TODO: Remove in SB11
-  const pnpApiExists = await pathExists(join(cwd, '.pnp.cjs'));
-
+export const installYarn2 = async ({
+  cwd,
+  dryRun,
+  debug,
+  key,
+}: YarnOptions & { key: AllTemplatesKey }) => {
   await mkdir(cwd, { recursive: true });
 
   // The published sandbox ships a lockfile and a `.yarnrc.yml` carrying the age gate.
@@ -59,7 +52,7 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   // Our own Storybook packages are published to Verdaccio seconds before this install,
   // so they can never satisfy the gate. Name them instead of switching it off, exactly
   // as sandbox generation does for the `after-storybook` install.
-  await preapproveLocallyPublishedPackages(cwd);
+  await preapproveLocallyPublishedPackages(cwd, allTemplates[key].minAgeGateExemptions);
 
   const command = [
     // No `yarn set version` here: the sandbox pins Yarn through the `packageManager`
@@ -68,9 +61,7 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
     `yarn config set checksumBehavior ignore`,
   ];
 
-  if (!pnpApiExists) {
-    command.push(`yarn config set nodeLinker node-modules`);
-  }
+  command.push(`yarn config set nodeLinker node-modules`);
 
   await exec(
     command.join(' && '),
@@ -106,7 +97,10 @@ export const addWorkaroundResolutions = async ({
   let additionalResolutions = {};
 
   // add additional resolutions for React 19
-  if (['nextjs/default-ts', 'nextjs/prerelease', 'react-native-web-vite/expo-ts'].includes(key)) {
+  if (
+    key !== undefined &&
+    ['nextjs/default-ts', 'nextjs/prerelease', 'react-native-web-vite/expo-ts'].includes(key)
+  ) {
     additionalResolutions = {
       react: '^19.0.0',
       'react-dom': '^19.0.0',
@@ -157,8 +151,6 @@ export const configureYarn2ForVerdaccio = async ({
     `yarn config set npmRegistryServer "http://localhost:6001/"`,
     // Some required magic to be able to fetch deps from local registry
     `yarn config set unsafeHttpWhitelist "localhost"`,
-    // Disable fallback mode to make sure everything is required correctly
-    `yarn config set pnpFallbackMode none`,
     // We need to be able to update lockfile when bootstrapping the examples
     `yarn config set enableImmutableInstalls false`,
   ];

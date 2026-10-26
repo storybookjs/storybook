@@ -4,7 +4,7 @@ import {
   frameworkToRenderer,
   getFrameworkName,
 } from 'storybook/internal/common';
-import { type Options, SupportedBuilder } from 'storybook/internal/types';
+import { type Options, type SecurityConfig, SupportedBuilder } from 'storybook/internal/types';
 
 export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
   const globals: Record<string, any> = {};
@@ -25,7 +25,12 @@ export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
   globals.STORYBOOK_BUILDER = builder;
   globals.STORYBOOK_FRAMEWORK = framework;
   globals.STORYBOOK_RENDERER = renderer;
-  globals.STORYBOOK_NETWORK_ADDRESS = options.networkAddress;
+  globals.STORYBOOK_NETWORK_ADDRESS = options.host ? options.networkAddress : undefined;
+
+  const security = await options.presets.apply<SecurityConfig | undefined>('security');
+  if (security?.insecureIframeMessaging) {
+    globals.INSECURE_IFRAME_MESSAGING = true;
+  }
 
   return globals;
 };

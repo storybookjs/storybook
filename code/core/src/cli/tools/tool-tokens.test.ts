@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseToolsTokens } from './tool-tokens.ts';
+import { parsePort, parseToolsTokens } from './tool-tokens.ts';
 
 describe('parseToolsTokens', () => {
   it('parses --key value pairs with JSON coercion', () => {
@@ -11,6 +11,7 @@ describe('parseToolsTokens', () => {
       help: false,
       json: false,
       output: undefined,
+      attach: undefined,
       args: { maxDistance: 2, name: 'button' },
     });
   });
@@ -43,10 +44,15 @@ describe('parseToolsTokens', () => {
     expect(result).toMatchObject({ ok: true, json: true, output: 'later.md', args: { a: 1 } });
   });
 
-  it('treats --json and --help as bare CLI flags, never tool arguments', () => {
-    const result = parseToolsTokens(['--json', '--help']);
+  it('treats --json, --help, --attach, and --no-attach as bare CLI flags, never tool arguments', () => {
+    const result = parseToolsTokens(['--json', '--help', '--attach']);
 
-    expect(result).toMatchObject({ ok: true, json: true, help: true, args: {} });
+    expect(result).toMatchObject({ ok: true, json: true, help: true, attach: true, args: {} });
+    expect(parseToolsTokens(['--no-attach'])).toMatchObject({
+      ok: true,
+      attach: false,
+      args: {},
+    });
   });
 
   it('consumes -o and --output with a path', () => {
@@ -72,5 +78,25 @@ describe('parseToolsTokens', () => {
   it('rejects values on the bare flags', () => {
     expect(parseToolsTokens(['--json=data'])).toMatchObject({ ok: false });
     expect(parseToolsTokens(['--help=me'])).toMatchObject({ ok: false });
+    expect(parseToolsTokens(['--attach=yes'])).toMatchObject({ ok: false });
+    expect(parseToolsTokens(['--no-attach=yes'])).toMatchObject({ ok: false });
+    expect(parseToolsTokens(['--attach', '--no-attach'])).toMatchObject({ ok: false });
+  });
+});
+
+describe('parsePort', () => {
+  it('returns undefined when no port is provided', () => {
+    expect(parsePort(undefined)).toEqual({ ok: true, port: undefined });
+  });
+
+  it('parses valid port values', () => {
+    expect(parsePort('6006')).toEqual({ ok: true, port: 6006 });
+  });
+
+  it('rejects non-numeric or out-of-range ports', () => {
+    expect(parsePort('abc')).toMatchObject({ ok: false });
+    expect(parsePort('0')).toMatchObject({ ok: false });
+    expect(parsePort('65536')).toMatchObject({ ok: false });
+    expect(parsePort('6006.5')).toMatchObject({ ok: false });
   });
 });

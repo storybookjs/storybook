@@ -1,10 +1,7 @@
 // @vitest-environment happy-dom
 /// <reference types="@testing-library/jest-dom" />
 import { cleanup, render, screen } from '@testing-library/svelte';
-import { afterEach, describe, expect, it } from 'vitest';
-
-// import '@testing-library/svelte/vitest';
-import { expectTypeOf } from 'expect-type';
+import { afterEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import type { Meta } from '../../index.ts';
 import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories.ts';
@@ -69,9 +66,7 @@ describe('projectAnnotations', () => {
     setProjectAnnotations([
       {
         parameters: { injected: true },
-        globalTypes: {
-          locale: { defaultValue: 'en' },
-        },
+        initialGlobals: { locale: 'en' },
       },
     ]);
     const WithEnglishText = composeStory(stories.CSF2StoryWithLocale, stories.default);

@@ -44,7 +44,8 @@ class DocgenWorker implements DocgenWorkerClient {
   private readonly ready: Promise<void>;
   private rejectReady: (error: unknown) => void = () => undefined;
   private nextId = 0;
-  private dead = false;
+  private death: Error | undefined;
+  private served = false;
 
   constructor(
     scriptPath: string,
@@ -55,7 +56,7 @@ class DocgenWorker implements DocgenWorkerClient {
     this.worker.on('message', (msg: DocgenWorkerResponse) => this.handleMessage(msg));
     this.worker.on('error', (error) => this.fail(error));
     this.worker.on('exit', (code) => {
-      if (!this.dead) {
+      if (!this.death) {
         this.fail(new Error(`docgen worker exited unexpectedly with code ${code}`));
       }
     });
@@ -84,9 +85,24 @@ class DocgenWorker implements DocgenWorkerClient {
     this.post({ type: 'init', descriptors, logLevel: logger.getLogLevel() });
   }
 
+  /**
+   * Whether a fresh worker would be worth spawning in this one's place.
+   *
+   * Only once it has served an extract: a worker that died without ever answering died of something
+   * a replacement would hit again, and respawning would rebuild a multi-second TypeScript program
+   * per request to fail the same way.
+   */
+  get replaceable(): boolean {
+    return this.death !== undefined && this.served;
+  }
+
   async extract(entry: IndexEntry): Promise<DocgenPayload | undefined> {
-    if (this.dead) {
-      throw new Error('docgen worker is no longer running');
+    if (this.death) {
+      // Carries the death forward: the crash itself is one event, but every later extract fails on
+      // it, so a bare "no longer running" is the only thing anyone downstream ever sees.
+      throw new Error(`docgen worker is no longer running: ${this.death.message}`, {
+        cause: this.death,
+      });
     }
     await this.ready;
     return new Promise<DocgenPayload | undefined>((resolve, reject) => {
@@ -130,6 +146,7 @@ class DocgenWorker implements DocgenWorkerClient {
       clearTimeout(pending.timer);
     }
     this.pending.delete(msg.id);
+    this.served = true;
     this.keepProcessAliveWhileBusy();
     if (msg.error) {
       pending.reject(errorLikeToError(msg.error));
@@ -139,11 +156,11 @@ class DocgenWorker implements DocgenWorkerClient {
   }
 
   private fail(error: Error): void {
-    if (this.dead) {
+    if (this.death) {
       return;
     }
-    logger.debug(`docgen worker failure: ${error.message}`);
-    this.dead = true;
+    logger.warn(`docgen worker died, so component docs are unavailable: ${error.message}`);
+    this.death = error;
     // Without this, an `extract` awaiting `ready` hangs when the worker dies before `init`.
     this.rejectReady(error);
     this.rejectAllPending(error);
@@ -188,6 +205,10 @@ export function createDocgenWorkerClient(
 
   return {
     async extract(entry) {
+      if (worker?.replaceable) {
+        logger.debug('docgen worker died after serving requests; spawning a replacement');
+        worker = undefined;
+      }
       worker ??= new DocgenWorker(scriptPath, descriptors);
       return worker.extract(entry);
     },

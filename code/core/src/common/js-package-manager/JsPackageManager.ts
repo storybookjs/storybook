@@ -15,10 +15,12 @@ import invariant from 'tiny-invariant';
 
 import { HandledError } from '../utils/HandledError.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
+import { getPkgPrNewPackageSpecifier } from '../utils/get-pkg-pr-new-package-specifier.ts';
 import { findFilesUp, getProjectRoot } from '../utils/paths.ts';
 import storybookPackagesVersions from '../versions.ts';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
 import type { InstallationMetadata } from './types.ts';
+import { getInstallErrorTail } from './util.ts';
 import { getVitePlusVersions } from './vite-plus-versions.ts';
 
 export enum PackageManagerName {
@@ -71,14 +73,20 @@ export function getPrettyPackageManagerName(packageManager: string | undefined):
  * @returns A tuple of 2 elements: [packageName, packageVersion]
  */
 export function getPackageDetails(pkg: string): [string, string?] {
-  const idx = pkg.lastIndexOf('@');
-  // If the only `@` is the first character, it is a scoped package
-  // If it isn't in the string, it will be -1
-  if (idx <= 0) {
+  const isScopedPackage = pkg.startsWith('@');
+  const scopeSeparatorIndex = isScopedPackage ? pkg.indexOf('/') : -1;
+  const versionSeparatorIndex = isScopedPackage
+    ? scopeSeparatorIndex === -1
+      ? -1
+      : pkg.indexOf('@', scopeSeparatorIndex + 1)
+    : pkg.indexOf('@');
+
+  if (versionSeparatorIndex <= 0) {
     return [pkg, undefined];
   }
-  const packageName = pkg.slice(0, idx);
-  const packageVersion = pkg.slice(idx + 1);
+
+  const packageName = pkg.slice(0, versionSeparatorIndex);
+  const packageVersion = pkg.slice(versionSeparatorIndex + 1);
   return [packageName, packageVersion];
 }
 
@@ -148,6 +156,9 @@ export abstract class JsPackageManager {
   /** Returns the command to run the binary of a local package */
   abstract getPackageCommand(args: string[]): string;
 
+  /** Returns the command to run the binary of a remote package, as `runPackageCommand` does with `useRemotePkg` */
+  abstract getRemoteRunCommand(args: string[]): string;
+
   /** Get the package.json file for a given module. */
   abstract getModulePackageJSON(packageName: string, cwd?: string): Promise<PackageJson | null>;
 
@@ -177,13 +188,28 @@ export abstract class JsPackageManager {
     return false;
   }
 
-  async installDependencies(options?: { force?: boolean }) {
-    await prompt.executeTaskWithSpinner(() => this.runInstall(options), {
-      id: 'install-dependencies',
-      intro: 'Installing dependencies...',
-      error: 'Installation of dependencies failed!',
-      success: 'Dependencies installed',
-    });
+  async installDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
+    try {
+      const executeTask = this.installUsesTerminal
+        ? prompt.executeTask
+        : prompt.executeTaskWithSpinner;
+      await executeTask(() => this.runInstall(options), {
+        id: 'install-dependencies',
+        intro: 'Installing dependencies...',
+        error: 'Installation of dependencies failed!',
+        success: 'Dependencies installed',
+      });
+    } catch (error) {
+      // Callers like init can continue without printing the thrown error, so surface captured output.
+      const tail = getInstallErrorTail(error);
+      if (tail) {
+        logger.error(tail);
+        if (error instanceof Error && !error.message.includes(tail)) {
+          error.message = `${error.message}\n\n${tail}`;
+        }
+      }
+      throw error;
+    }
 
     // Clear installed version cache after installation
     this.clearInstalledVersionCache();
@@ -195,10 +221,17 @@ export abstract class JsPackageManager {
     installContext: 'create' | 'upgrade';
   }): Promise<void> {}
 
-  async dedupeDependencies(options?: { force?: boolean }) {
+  async dedupeDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     await prompt.executeTask(
       (_signal) =>
-        this.runInternalCommand('dedupe', [...(options?.force ? ['--force'] : [])], this.cwd),
+        this.runInternalCommand(
+          'dedupe',
+          [
+            ...(options?.force ? ['--force'] : []),
+            ...(options?.legacyPeerDeps ? ['--legacy-peer-deps'] : []),
+          ],
+          this.cwd
+        ),
       {
         intro: 'Deduplicating dependencies...',
         error: 'An error occurred while deduplicating dependencies.',
@@ -311,6 +344,19 @@ export abstract class JsPackageManager {
   }
 
   /**
+   * Write `name@version` upgrade specifiers for dependencies that `declared` references through a
+   * catalog into the catalog file, and return the remaining specifiers for package.json. Only
+   * PNPMProxy supports catalogs, so the base implementation writes nothing and returns every
+   * specifier.
+   */
+  public writeCatalogUpgrades(
+    specifiers: string[],
+    _declared: Partial<Record<string, string>>
+  ): string[] {
+    return specifiers;
+  }
+
+  /**
    * Pin `packages` to `version`, mirroring how `anchorPackage` is declared. The base implementation
    * pins each directly (`pkg@version`). PNPMProxy overrides this to honor pnpm catalogs: when
    * `anchorPackage` is declared through a catalog, the packages are registered in that catalog and
@@ -399,6 +445,53 @@ export abstract class JsPackageManager {
   }
 
   /**
+   * Replace a dependency with another package in every package.json of the project, in the same
+   * dependency field. A package.json that already declares the replacement only loses the old
+   * dependency. The method does not run a package manager install.
+   *
+   * @example
+   *
+   * ```ts
+   * replaceDependency('@storybook/addon-svelte-csf', '@storybook/svelte-vite', '^11.0.0');
+   * ```
+   *
+   * @param version The version range for the replacement, unless the package.json declares
+   *   `storybook` with a semver range: then the replacement gets the same range as `storybook`.
+   * @returns The paths of the package.json files that changed.
+   */
+  replaceDependency(dependency: string, replacement: string, version: string): string[] {
+    const changed: string[] = [];
+    for (const packageJsonPath of this.packageJsonPaths) {
+      const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
+      const fields = (['dependencies', 'devDependencies', 'peerDependencies'] as const).filter(
+        (field) => packageJson[field]?.[dependency]
+      );
+      if (fields.length === 0) {
+        continue;
+      }
+      const declaresReplacement = [
+        packageJson.dependencies,
+        packageJson.devDependencies,
+        packageJson.peerDependencies,
+      ].some((deps) => deps?.[replacement]);
+      const storybookRange =
+        packageJson.dependencies?.storybook ?? packageJson.devDependencies?.storybook;
+      // A `catalog:` or `workspace:` specifier names an entry for `storybook`, not for the replacement.
+      const storybookVersion =
+        storybookRange && validRange(storybookRange) ? storybookRange : undefined;
+      for (const field of fields) {
+        delete packageJson[field]![dependency];
+        if (!declaresReplacement) {
+          packageJson[field]![replacement] = storybookVersion ?? version;
+        }
+      }
+      this.writePackageJson(packageJson, dirname(packageJsonPath));
+      changed.push(packageJsonPath);
+    }
+    return changed;
+  }
+
+  /**
    * Removing dependencies from the package.json file, which is found first starting from the
    * instance root. The method does not run a package manager install like `npm install`.
    *
@@ -453,7 +546,10 @@ export abstract class JsPackageManager {
    *
    * @param packages
    */
-  public getVersionedPackages(packages: string[]): Promise<string[]> {
+  public getVersionedPackages(
+    packages: string[],
+    options?: { storybookVersionSpecifier?: string }
+  ): Promise<string[]> {
     return Promise.all(
       packages.map(async (pkg) => {
         const [packageName, packageVersion] = getPackageDetails(pkg);
@@ -462,6 +558,17 @@ export abstract class JsPackageManager {
         // just return the requested version.
         if (!(packageName in storybookPackagesVersions)) {
           return pkg;
+        }
+
+        if (packageName in storybookPackagesVersions) {
+          const pkgPrNewSpecifier = getPkgPrNewPackageSpecifier(
+            packageName,
+            options?.storybookVersionSpecifier
+          );
+
+          if (pkgPrNewSpecifier) {
+            return `${packageName}@${pkgPrNewSpecifier}`;
+          }
         }
 
         const latestInRange = await this.latestVersion(packageName, packageVersion);
@@ -657,7 +764,15 @@ export abstract class JsPackageManager {
     const resolutions = this.getResolutions(packageJson, versions);
     this.writePackageJson({ ...packageJson, ...resolutions }, operationDir);
   }
-  protected abstract runInstall(options?: { force?: boolean }): ResultPromise;
+
+  protected abstract runInstall(options?: {
+    force?: boolean;
+    legacyPeerDeps?: boolean;
+  }): ResultPromise;
+
+  protected get installUsesTerminal(): boolean {
+    return false;
+  }
 
   protected abstract runAddDeps(
     dependencies: string[],
@@ -699,8 +814,7 @@ export abstract class JsPackageManager {
     options?: { depth: number }
   ): Promise<InstallationMetadata | undefined>;
 
-  // TODO: Remove pnp compatibility code in SB11
-  /** Returns the installed (within node_modules or pnp zip) version of a specified package */
+  /** Returns the installed version of a specified package */
   public async getInstalledVersion(packageName: string): Promise<string | null> {
     const cacheKey = packageName;
 

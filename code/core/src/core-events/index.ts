@@ -68,6 +68,8 @@ enum events {
   SELECT_STORY = 'selectStory',
   STORIES_COLLAPSE_ALL = 'storiesCollapseAll',
   STORIES_EXPAND_ALL = 'storiesExpandAll',
+  // Tell the sidebar to open the context menu of the focused entry
+  SIDEBAR_OPEN_CONTEXT_MENU = 'sidebarOpenContextMenu',
   DOCS_RENDERED = 'docsRendered',
   SHARED_STATE_CHANGED = 'sharedStateChanged',
   SHARED_STATE_SET = 'sharedStateSet',
@@ -80,18 +82,14 @@ enum events {
   TOGGLE_WHATS_NEW_NOTIFICATIONS = 'toggleWhatsNewNotifications',
   TELEMETRY_ERROR = 'telemetryError',
 
-  FILE_COMPONENT_SEARCH_REQUEST = 'fileComponentSearchRequest',
-  FILE_COMPONENT_SEARCH_RESPONSE = 'fileComponentSearchResponse',
   SAVE_STORY_REQUEST = 'saveStoryRequest',
   SAVE_STORY_RESPONSE = 'saveStoryResponse',
   ARGTYPES_INFO_REQUEST = 'argtypesInfoRequest',
   ARGTYPES_INFO_RESPONSE = 'argtypesInfoResponse',
-  CREATE_NEW_STORYFILE_REQUEST = 'createNewStoryfileRequest',
-  CREATE_NEW_STORYFILE_RESPONSE = 'createNewStoryfileResponse',
   // Story discovery and testing flow
   GHOST_STORIES_REQUEST = 'ghostStoriesRequest',
   GHOST_STORIES_RESPONSE = 'ghostStoriesResponse',
-  // AI analytics - ai setup command
+  // AI analytics - skills setup command
   AI_SETUP_ANALYTICS_RESPONSE = 'aiSetupAnalyticsResponse',
   AI_SETUP_ANALYTICS_REQUEST = 'aiSetupAnalyticsRequest',
   // Open a file in the code editor
@@ -115,13 +113,9 @@ export const {
   CHANNEL_WS_DISCONNECT,
   CHANNEL_CREATED,
   CONFIG_ERROR,
-  CREATE_NEW_STORYFILE_REQUEST,
-  CREATE_NEW_STORYFILE_RESPONSE,
   CURRENT_STORY_WAS_SET,
   DOCS_PREPARED,
   DOCS_RENDERED,
-  FILE_COMPONENT_SEARCH_REQUEST,
-  FILE_COMPONENT_SEARCH_RESPONSE,
   FORCE_RE_RENDER,
   FORCE_REMOUNT,
   GLOBALS_UPDATED,
@@ -145,6 +139,7 @@ export const {
   SHARED_STATE_SET,
   STORIES_COLLAPSE_ALL,
   STORIES_EXPAND_ALL,
+  SIDEBAR_OPEN_CONTEXT_MENU,
   STORY_ARGS_UPDATED,
   STORY_CHANGED,
   STORY_ERRORED,
@@ -182,8 +177,6 @@ export const {
   SIDEBAR_FILTER_CHANGED,
 } = events;
 
-export * from './data/create-new-story.ts';
-export * from './data/file-component-search.ts';
 export * from './data/argtypes-info.ts';
 export * from './data/request-response.ts';
 export * from './data/save-story.ts';

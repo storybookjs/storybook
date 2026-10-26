@@ -142,6 +142,23 @@ describe('MCP Composition Auth E2E Tests', () => {
 
 				Primary UI component for user interaction
 
+				## Props
+
+				\`\`\`
+				export type Props = {
+				  /** Is this the principal call to action on the page? */
+				  primary?: boolean = false;
+				  /** What background color to use */
+				  backgroundColor?: string;
+				  /** How large should the button be? */
+				  size?: 'small' | 'medium' | 'large' = 'medium';
+				  /** Button contents */
+				  label: string;
+				  /** Optional click handler */
+				  onClick?: () => void;
+				}
+				\`\`\`
+
 				## Stories
 
 				### Primary
@@ -182,33 +199,6 @@ describe('MCP Composition Auth E2E Tests', () => {
 				- Small (example-button--small)
 				- With A 11 Y Violation (example-button--with-a-11-y-violation)
 
-				## Props
-
-				\`\`\`
-				export type Props = {
-				  /**
-				    Is this the principal call to action on the page?
-				  */
-				  primary?: boolean = false;
-				  /**
-				    What background color to use
-				  */
-				  backgroundColor?: string;
-				  /**
-				    How large should the button be?
-				  */
-				  size?: 'small' | 'medium' | 'large' = 'medium';
-				  /**
-				    Button contents
-				  */
-				  label: string;
-				  /**
-				    Optional click handler
-				  */
-				  onClick?: () => void;
-				}
-				\`\`\`
-
 				## Docs
 
 				### Additional Information
@@ -246,7 +236,7 @@ describe('MCP Composition Auth E2E Tests', () => {
 			expect(response.headers.get('www-authenticate')).toContain('resource_metadata=');
 		});
 
-		it('should require storybookId in multi-source auth mode', async () => {
+		it('should default docs-show to the local source when storybookId is omitted', async () => {
 			const response = await mcpRequest(
 				'tools/call',
 				{
@@ -257,17 +247,10 @@ describe('MCP Composition Auth E2E Tests', () => {
 			);
 			const data = await parseMCPResponse(response);
 
-			expect(data.result).toMatchInlineSnapshot(`
-				{
-				  "content": [
-				    {
-				      "text": "Invalid arguments for tool docs-show: [{"kind":"schema","type":"object","expected":"\\"storybookId\\"","received":"undefined","message":"Invalid key: Expected \\"storybookId\\" but received undefined","path":[{"type":"object","origin":"key","input":{"id":"example-button"},"key":"storybookId"}]}]",
-				      "type": "text",
-				    },
-				  ],
-				  "isError": true,
-				}
-			`);
+			expect(data.result.isError).toBeFalsy();
+			const text = data.result.content[0].text;
+			expect(text).toContain('ID: example-button');
+			expect(text).toContain('🍌-emoji');
 		});
 	});
 });

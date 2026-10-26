@@ -25,7 +25,7 @@ import ArgsReferencesButton from './ArgsReferencesButton.vue';
 
 const options = {
   size: 'md',
-  tone: 'neutral'
+  tone: 'neutral',
 };
 </script>
 
@@ -39,6 +39,7 @@ const options = {
       "id": "forms-args-references--unreadable-spread-arg",
       "name": "Unreadable Spread Arg",
       "summary": undefined,
+      "warning": "No static snippet: `options: { ...buildOptions(), tone: 'neutral' }`, `...buildOptions()` could not be resolved statically.",
     },
   },
 }

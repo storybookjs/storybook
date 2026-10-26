@@ -103,11 +103,6 @@ export const checkPackageCompatibility = async (
 export const getIncompatibleStorybookPackages = async (
   context: Context
 ): Promise<AnalysedPackage[]> => {
-  if (context.currentStorybookVersion.includes('0.0.0')) {
-    // We can't know if a Storybook canary version is compatible with other packages, so we skip it
-    return [];
-  }
-
   const allDeps = context.packageManager.getAllDependencies();
   const storybookLikeDeps = Object.keys(allDeps).filter((dep) => dep.includes('storybook'));
   if (storybookLikeDeps.length === 0 && !context.skipErrors) {

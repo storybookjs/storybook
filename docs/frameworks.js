@@ -64,21 +64,6 @@ module.exports = {
           unsupported: ['ember', 'qwik'],
         },
         {
-          name: 'test-runner',
-          supported: [
-            'react',
-            'vue',
-            'angular',
-            'web-components',
-            'nextjs',
-            'html',
-            'svelte',
-            'preact',
-          ],
-          unsupported: ['ember'],
-          path: 'writing-tests/integrations/test-runner',
-        },
-        {
           name: 'test coverage',
           supported: [
             'react',

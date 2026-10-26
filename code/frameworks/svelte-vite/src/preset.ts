@@ -1,7 +1,12 @@
+import { deprecate } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
+import { assertSvelteCsfAddonNotInstalled } from '@storybook/svelte/internal/svelte-csf/addon-check';
+
+import { svelteCsf } from './plugins/svelte-csf.ts';
+import { resolveDocgenContext, SVELTE_BUILDER_DOCGEN_DEPRECATION } from './docgen/options.ts';
 import { svelteDocgen } from './plugins/svelte-docgen.ts';
-import type { FrameworkOptions, StorybookConfig } from './types.ts';
+import type { StorybookConfig } from './types.ts';
 import { handleSvelteKit } from './utils.ts';
 
 export const core: PresetProperty<'core'> = {
@@ -11,18 +16,18 @@ export const core: PresetProperty<'core'> = {
 
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, options) => {
   const { plugins = [] } = config;
-
-  // Get framework options to check if docgen is disabled
   const framework = await options.presets.apply('framework');
-  const frameworkOptions: FrameworkOptions =
-    typeof framework === 'string' ? {} : (framework.options ?? {});
 
-  // Check if docgen is disabled in framework options (default is true/enabled)
-  if (frameworkOptions.docgen !== false) {
+  assertSvelteCsfAddonNotInstalled({ presetsList: options.presetsList, framework });
+
+  const { docgen, docgenServerActive } = await resolveDocgenContext(options);
+  if (docgen && !docgenServerActive) {
+    deprecate(SVELTE_BUILDER_DOCGEN_DEPRECATION);
     plugins.push(await svelteDocgen());
   }
 
   await handleSvelteKit(plugins, options);
+  plugins.push(svelteCsf());
 
   return {
     ...config,

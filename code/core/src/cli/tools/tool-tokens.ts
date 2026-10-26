@@ -8,6 +8,8 @@ export type ToolsOutputFlags = {
   json?: boolean;
   output?: string;
   help?: boolean;
+  /** `true` from `--attach`, `false` from `--no-attach`. */
+  attach?: boolean;
 };
 
 export type ParsedToolsTokens =
@@ -18,6 +20,8 @@ export type ParsedToolsTokens =
       json: boolean;
       /** Write the output to this file instead of stdout. */
       output?: string;
+      /** `true` from `--attach`, `false` from `--no-attach`. */
+      attach?: boolean;
       args: Record<string, unknown>;
     }
   | { ok: false; error: string };
@@ -29,8 +33,7 @@ export type ParsedToolsTokens =
  *   `JSON.parse`, falling back to the raw string.
  * - A bare `--key` (no value) becomes `true`.
  * - `--input '<object>'` is an escape hatch providing the raw argument object; explicit `--key`
- *   flags override its entries. (The `storybook ai` CLI spells this `--json`; here `--json` is the
- *   output-format flag.)
+ *   flags override its entries.
  * - `--json` switches the output to the outcome's structured data as JSON.
  * - `-o <path>` / `--output <path>` writes the output to a file.
  * - `--help`/`-h` is consumed by the CLI itself and never forwarded to the tool.
@@ -46,6 +49,7 @@ export function parseToolsTokens(
   let help = defaults.help ?? false;
   let json = defaults.json ?? false;
   let output = defaults.output;
+  let attach = defaults.attach;
   const flagArgs: Record<string, unknown> = {};
 
   let i = 0;
@@ -60,6 +64,22 @@ export function parseToolsTokens(
 
     if (token === '--json') {
       json = true;
+      continue;
+    }
+
+    if (token === '--attach') {
+      if (attach === false) {
+        return { ok: false, error: 'Cannot combine `--attach` and `--no-attach`.' };
+      }
+      attach = true;
+      continue;
+    }
+
+    if (token === '--no-attach') {
+      if (attach === true) {
+        return { ok: false, error: 'Cannot combine `--attach` and `--no-attach`.' };
+      }
+      attach = false;
       continue;
     }
 
@@ -96,7 +116,7 @@ export function parseToolsTokens(
 
     // Only reachable via `--help=x` / `--json=x` (or a stray positional after them, which the
     // generic branch consumed as a value): these flags never take one.
-    if (key === 'help' || key === 'json') {
+    if (key === 'help' || key === 'json' || key === 'attach' || key === 'no-attach') {
       return { ok: false, error: `\`--${key}\` does not take a value.` };
     }
 
@@ -140,7 +160,16 @@ export function parseToolsTokens(
     inputArgs = parsed as Record<string, unknown>;
   }
 
-  return { ok: true, help, json, output, args: { ...inputArgs, ...flagArgs } };
+  return { ok: true, help, json, output, attach, args: { ...inputArgs, ...flagArgs } };
+}
+
+/**
+ * Whether an invocation is a `--json` data run — the case whose stdout must carry nothing but the
+ * printed JSON result. Help requests and invalid tokens produce prose, not data, and are excluded.
+ */
+export function isJsonToolsRun(tokens: string[], defaults: ToolsOutputFlags = {}): boolean {
+  const parsed = parseToolsTokens(tokens, defaults);
+  return parsed.ok && parsed.json && !parsed.help;
 }
 
 function coerceValue(raw: string): unknown {
@@ -149,6 +178,22 @@ function coerceValue(raw: string): unknown {
   } catch {
     return raw;
   }
+}
+
+export function parsePort(
+  rawPort: string | undefined
+): { ok: true; port: number | undefined } | { ok: false; error: string } {
+  if (rawPort === undefined) {
+    return { ok: true, port: undefined };
+  }
+  const port = Number(rawPort);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    return {
+      ok: false,
+      error: `\`--port\` must be a port number (1-65535), got \`${rawPort}\`.`,
+    };
+  }
+  return { ok: true, port };
 }
 
 /**
@@ -164,6 +209,20 @@ export const TOOLS_OPTION_SPECS: ReadonlyArray<{ flags: string; description: str
     description: 'Storybook config directory of the target Storybook',
   },
   {
+    flags: '-p, --port <number>',
+    description:
+      'Port of a running Storybook; targets that instance directly, no --cwd or --config-dir needed',
+  },
+  {
+    flags: '--attach',
+    description:
+      'Require attaching to a running Storybook; gate failures are errors instead of a local fallback',
+  },
+  {
+    flags: '--no-attach',
+    description: 'Load the project configuration without attaching',
+  },
+  {
     flags: '--input <object>',
     description: 'Raw JSON object with the tool arguments (escape hatch for complex values)',
   },
@@ -174,6 +233,6 @@ export const TOOLS_OPTION_SPECS: ReadonlyArray<{ flags: string; description: str
   { flags: '-o, --output <path>', description: 'Write the result to a file instead of stdout' },
   {
     flags: '-h, --help',
-    description: 'Show every tool of the target Storybook, or one tool with its arguments',
+    description: 'List the tools of the target Storybook, or show one tool with its arguments',
   },
 ];

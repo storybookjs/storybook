@@ -609,11 +609,14 @@ export const testUnit_windows = defineJob(
       shell: 'bash.exe',
     },
     steps: [
-      ...workflow.restoreWindows(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}`),
+      git.checkout({ forceHttps: true }),
+      node.installOnWindows(),
+      workspace.attach(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}`),
       {
         run: {
-          command: 'yarn install',
           name: 'Install dependencies',
+          // The unit tests load no native addon; building them only compiles agent-eval's node-gyp deps.
+          command: 'yarn install --mode=skip-build',
         },
       },
       {

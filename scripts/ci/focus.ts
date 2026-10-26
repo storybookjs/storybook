@@ -1,7 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-
-import { join } from 'pathe';
+import { join } from 'node:path';
 
 import {
   allTemplates,

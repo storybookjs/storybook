@@ -1,4 +1,4 @@
-import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../../utils/constants.ts';
+import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../../utils/npm-constants.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './constants.ts';
 import { type JobOrNoOpJob } from './types.ts';
 

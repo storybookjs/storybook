@@ -15,9 +15,8 @@ runs:
       with:
         node-version-file: '.nvmrc'
 
-    # Pin the major. `@latest` became npm 12, and an unpinned install would
-    # pick up npm 13 the day it is published. npm 12 requires
-    # ^22.22.2 || ^24.15.0 || >=26, which .nvmrc (22.22.3) satisfies.
+    # Pin to current major to keep CI stable when NPM makes a major release.
+    # npm 12 requires ^22.22.2 || ^24.15.0 || >=26, which .nvmrc (22.22.3) satisfies.
     - name: Install npm 12
       shell: bash
       # zizmor: ignore[adhoc-packages]  # replaces the runner's npm before the lockfile install

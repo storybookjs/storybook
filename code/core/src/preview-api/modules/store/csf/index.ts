@@ -6,7 +6,6 @@ export * from './hideArgTypes.ts';
 export * from './normalizeComponentAnnotations.ts';
 export * from './normalizeProjectAnnotations.ts';
 export * from './normalizeArrays.ts';
-export * from './getValuesFromGlobalTypes.ts';
 export * from './composeConfigs.ts';
 export * from './composeProjectAnnotationsWithCore.ts';
 export * from './stepRunners.ts';

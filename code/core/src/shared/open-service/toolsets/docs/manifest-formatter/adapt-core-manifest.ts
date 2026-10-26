@@ -4,7 +4,7 @@ import type { MdxDoc } from '../map.ts';
 import type { ComponentManifest, Doc, Story } from './manifest-types.ts';
 
 /**
- * Adapts the `experimentalDocgenServer` open-service payloads into the manifest formatter's
+ * Adapts the `docgenServer` open-service payloads into the manifest formatter's
  * {@link ComponentManifest}/{@link Doc} shapes.
  *
  * Only `argTypes` is dropped: the props section comes from `apiDescription` when the framework

@@ -4,7 +4,7 @@ import React from 'react';
 import { withReset } from 'storybook/internal/components';
 
 import { transparentize } from 'polished';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { getBlockBackgroundStyle } from './BlockBackgroundStyles';
 

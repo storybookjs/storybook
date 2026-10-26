@@ -18,7 +18,7 @@ export function getWorkingDir(configDir: string): string {
 /**
  * Gathers the project metadata CLI commands need from the target Storybook: config, framework,
  * package manager, installed version, and story paths. The canonical collector — `automigrate`,
- * `doctor`, `add`, and `ai setup` all consume it.
+ * `doctor`, `add`, and `skills setup` all consume it.
  */
 export const getStorybookData = async ({
   configDir: userDefinedConfigDir,

@@ -11,7 +11,7 @@ import { cache } from 'storybook/internal/common';
  * Both flags are scoped to a Storybook project via `configDir`. In monorepos
  * with hoisted `node_modules`, multiple Storybook projects share the same
  * `node_modules/.cache/storybook/...` directory — without scoping, running
- * `storybook ai setup` (or `storybook init` with AI accepted) in package A
+ * `storybook skills setup` (or `storybook init` with AI accepted) in package A
  * would falsely flip package B's checklist or copy-prompt UI.
  *
  * The CLI writes `{ timestamp, configDir }` (absolute, resolved). The dev
@@ -59,7 +59,7 @@ export async function hasAiInitOptIn(configDir: string): Promise<boolean> {
   return flag?.answer === true;
 }
 
-/** Written by `storybook ai setup` when the prompt CLI ran in this project. */
+/** Written by `storybook skills setup` when it ran in this project. */
 export async function hasAiSetupRun(configDir: string): Promise<boolean> {
   return !!(await readProjectScopedFlag('ai-setup-ran', configDir));
 }

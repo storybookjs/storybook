@@ -20,10 +20,16 @@ afterEach(() => {
 });
 
 function runInstall(options: {
+  integration?: 'mcp' | 'plugin';
   checkoutPackages?: string[];
   lockfilePackages?: Record<string, { resolved?: string }>;
 }) {
   projectDir = mkdtempSync(path.join(tmpdir(), 'start-storybook-mcp-'));
+  mkdirSync(path.join(projectDir, '__agent_eval__'));
+  writeFileSync(
+    path.join(projectDir, '__agent_eval__', 'agent.json'),
+    JSON.stringify({ integration: options.integration ?? 'mcp' })
+  );
   if (options.checkoutPackages) {
     mkdirSync(path.join(projectDir, 'local-packages'));
     writeFileSync(
@@ -107,5 +113,21 @@ describe('the checkout package check', () => {
 
     expect(result.stderr).not.toContain('Installed from the registry');
     expect(result.stderr).toContain('did not become ready');
+  });
+});
+
+describe('the readiness check', () => {
+  it('waits for the MCP endpoint in an MCP sandbox', () => {
+    const result = runInstall({ integration: 'mcp' });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('did not become ready at http://127.0.0.1:1/mcp');
+  });
+
+  it('waits for the story index in a sandbox without the MCP addon', () => {
+    const result = runInstall({ integration: 'plugin' });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('did not become ready at http://127.0.0.1:1/index.json');
   });
 });

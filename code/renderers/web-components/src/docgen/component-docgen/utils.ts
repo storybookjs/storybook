@@ -24,3 +24,16 @@ export function deprecationMessage(deprecated: string | boolean | undefined): st
   }
   return typeof deprecated === 'string' ? trimmedOrUndefined(deprecated) : 'deprecated';
 }
+
+export function firstValue<TSource, TValue>(
+  sources: TSource[],
+  read: (source: TSource) => TValue | undefined
+): TValue | undefined {
+  for (const source of sources) {
+    const value = read(source);
+    if (value !== undefined) {
+      return value;
+    }
+  }
+  return undefined;
+}

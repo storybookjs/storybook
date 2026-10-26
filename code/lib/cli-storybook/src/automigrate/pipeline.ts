@@ -8,7 +8,9 @@ import {
   formatConfig,
   loadConfig,
   loadCsf,
+  normalizeLineEndings,
   printCsf,
+  restoreLineEndings,
 } from 'storybook/internal/csf-tools';
 
 import { createFixFiles } from './fix-files.ts';
@@ -75,7 +77,7 @@ export interface TransformOutcome {
   errors: FileFailure[];
 }
 
-interface ProjectPaths {
+export interface ProjectPaths {
   configDir: string;
   /** Undefined when core cannot locate the main config. */
   mainConfigPath?: string;
@@ -116,9 +118,10 @@ const edit = async (hook: FixTransform, context: TransformContext, parsed: Parse
 
 /**
  * Classify every project file once, independent of which hooks are active, so a file keeps its kind
- * whichever fixes run. Stories claim their paths before the config directory glob does.
+ * whichever fixes run. Stories claim their paths before the config directory glob does. A fix's
+ * `check` can call this to find the files its hooks visit.
  */
-const collectFiles = async (project: ProjectPaths, kinds: Set<FileKind>) => {
+export const collectFiles = async (project: ProjectPaths, kinds: Set<FileKind>) => {
   if (kinds.size === 0) {
     return [];
   }
@@ -143,7 +146,9 @@ const collectFiles = async (project: ProjectPaths, kinds: Set<FileKind>) => {
   if (kinds.has('config')) {
     // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
-    const configFiles = await globby(`${project.configDir}/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}`, {
+    // A pattern with a Windows path in it matches nothing, because glob patterns read `\` as an escape.
+    const configFiles = await globby('**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}', {
+      cwd: project.configDir,
       absolute: true,
       ignore: ['**/node_modules/**', '**/dist/**'],
     });
@@ -217,9 +222,8 @@ export const runTransforms = async (
       continue;
     }
 
-    // Printers emit `\n`, so a CRLF file would otherwise always look changed.
-    const source = raw.replaceAll('\r\n', '\n');
-    const crlf = source !== raw && !/(?<!\r)\n/.test(raw);
+    // Hooks chain on `\n` text, whatever the file uses; its line endings come back on write.
+    const source = normalizeLineEndings(raw);
     let code = source;
     // Kept across consecutive edits; dropped when a handler rewrites the text or an edit fails, so
     // the next edit parses `code`, the output of the last hook that succeeded.
@@ -254,8 +258,9 @@ export const runTransforms = async (
 
     if (write && code !== source) {
       try {
-        const output = printed ? await formatExistingFile(context.id, code) : code;
-        await writeFile(context.id, crlf ? output.replace(/\r?\n/g, '\r\n') : output);
+        const restored = restoreLineEndings(code, raw);
+        const output = printed ? await formatExistingFile(context.id, restored) : restored;
+        await writeFile(context.id, output);
       } catch (error) {
         for (const [fixId, outcome] of outcomes) {
           if (outcome.changed.includes(context.id)) {

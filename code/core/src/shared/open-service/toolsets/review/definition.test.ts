@@ -80,6 +80,7 @@ describe('review.create', () => {
       reviewUrl,
       collectionCount: 1,
       storyCount: 1,
+      instructions: expect.stringContaining(`Open ${reviewUrl} in your in-app browser now.`),
     });
     expect(setReview).toHaveBeenCalledWith(input);
     expect(cliCtx.getService).toHaveBeenCalledWith('core/review', { internal: true });

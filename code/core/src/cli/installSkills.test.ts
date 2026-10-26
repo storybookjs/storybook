@@ -1,24 +1,31 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { homedir } from 'node:os';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 import { getProjectRoot, isCI } from 'storybook/internal/common';
-import { logger, prompt } from 'storybook/internal/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 import {
   ExecaCommandFailedError,
   PackageInstallFailedError,
 } from 'storybook/internal/server-errors';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
+import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import { vol } from 'memfs';
 
-import { _clearGlobalSettings } from './globalSettings.ts';
-import { decideSkillsInstall, installSkills } from './installSkills.ts';
+import { addStorybookAgentInstructions } from './agentInstructions.ts';
+import {
+  hasStorybookSkills,
+  installSkills,
+  refreshAgentInstructions,
+  supportsSkills,
+  supportsAiSetup,
+} from './installSkills.ts';
 
 vi.mock('node:fs/promises', { spy: true });
+vi.mock('./agentInstructions.ts', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
 vi.mock(import('storybook/internal/common'), async (importOriginal) => {
@@ -32,307 +39,313 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => {
 });
 
 const PROJECT_ROOT = '/test/project';
-const SETTINGS_PATH = join(homedir(), '.storybook', 'settings.json');
-const INSTALL_ARGS = (ref: string) => [
-  'skills@latest',
-  'add',
-  `storybookjs/skills#${ref}`,
-  '--yes',
-  '--agent',
-  'claude-code',
-  'universal',
-  '--copy',
-];
+const LOCK_PATH = join(PROJECT_ROOT, 'skills-lock.json');
 
-const terminalStreams = [process.stdin, process.stdout];
-const originalIsTTY = terminalStreams.map((stream) =>
-  Object.getOwnPropertyDescriptor(stream, 'isTTY')
-);
-const setIsTTY = (stream: NodeJS.ReadStream | NodeJS.WriteStream, value: boolean) =>
-  Object.defineProperty(stream, 'isTTY', { value, configurable: true });
+beforeEach(async () => {
+  const memfs = await vi.importActual<typeof import('memfs')>('memfs');
+  vi.mocked(readFile).mockImplementation(memfs.fs.promises.readFile as unknown as typeof readFile);
+  vol.reset();
+  vi.mocked(getProjectRoot).mockReturnValue(PROJECT_ROOT);
+  vi.mocked(isCI).mockReturnValue(false);
+  vi.mocked(addStorybookAgentInstructions).mockResolvedValue([
+    { file: 'AGENTS.md', change: 'added' },
+  ]);
+});
 
-const settingsFile = () => JSON.parse(vol.readFileSync(SETTINGS_PATH, 'utf8') as string);
-const seedSettings = (agentSkills?: Record<string, boolean>) =>
-  vol.fromNestedJSON({
-    [SETTINGS_PATH]: JSON.stringify({ version: 1, userSince: 1, agentSkills }),
+describe('supportsSkills', () => {
+  it.each([
+    [SupportedRenderer.REACT, SupportedFramework.REACT_VITE, true],
+    [SupportedRenderer.REACT, SupportedFramework.NEXTJS, true],
+    [SupportedRenderer.REACT, null, false],
+    [SupportedRenderer.VUE3, SupportedFramework.VUE3_VITE, true],
+    [SupportedRenderer.ANGULAR, SupportedFramework.ANGULAR_VITE, true],
+    [SupportedRenderer.VUE3, SupportedFramework.NUXT, false],
+    [SupportedRenderer.ANGULAR, SupportedFramework.ANGULAR, false],
+    [SupportedRenderer.SVELTE, SupportedFramework.SVELTE_VITE, true],
+    [SupportedRenderer.SVELTE, SupportedFramework.SVELTEKIT, true],
+    [SupportedRenderer.WEB_COMPONENTS, SupportedFramework.WEB_COMPONENTS_VITE, true],
+    [SupportedRenderer.HTML, SupportedFramework.HTML_VITE, false],
+    [undefined, undefined, false],
+  ])('%s (%s) is %s', (renderer, framework, expected) => {
+    expect(supportsSkills(renderer, framework)).toBe(expected);
+  });
+});
+
+describe('supportsAiSetup', () => {
+  it.each([
+    [SupportedRenderer.REACT, SupportedBuilder.VITE, SupportedFramework.REACT_VITE, true],
+    [SupportedRenderer.VUE3, SupportedBuilder.VITE, SupportedFramework.VUE3_VITE, true],
+    [SupportedRenderer.ANGULAR, SupportedBuilder.VITE, SupportedFramework.ANGULAR_VITE, true],
+    [SupportedRenderer.REACT, SupportedBuilder.WEBPACK5, SupportedFramework.NEXTJS, false],
+    [
+      SupportedRenderer.REACT,
+      SupportedBuilder.VITE,
+      SupportedFramework.REACT_NATIVE_WEB_VITE,
+      false,
+    ],
+    [SupportedRenderer.SVELTE, SupportedBuilder.VITE, SupportedFramework.SVELTE_VITE, false],
+  ])('%s on %s (%s) is %s', (renderer, builder, framework, expected) => {
+    expect(supportsAiSetup(renderer, builder, framework)).toBe(expected);
+  });
+});
+
+describe('hasStorybookSkills', () => {
+  const lock = (skills: Record<string, { source: string }>) =>
+    vol.fromNestedJSON({ [LOCK_PATH]: JSON.stringify({ version: 1, skills }) });
+
+  it('is true when the lock file has a skill from the Storybook skills repository', async () => {
+    lock({
+      'find-skills': { source: 'vercel-labs/skills' },
+      stories: { source: 'storybookjs/skills' },
+    });
+
+    expect(await hasStorybookSkills()).toBe(true);
   });
 
-describe('decideSkillsInstall', () => {
-  const base = { isCI: false, isInteractive: true, yes: false, agent: false };
+  it('is true when the skills were installed through a git URL', async () => {
+    lock({ stories: { source: 'git@github.com:StorybookJS/skills.git' } });
 
-  it.each([
-    [
-      '--skills wins over everything',
-      { ...base, skillsFlag: true, isCI: true, remembered: false },
-      { action: 'install', source: 'flag' },
-    ],
-    [
-      '--no-skills wins over a remembered true',
-      { ...base, skillsFlag: false, remembered: true, agent: true },
-      { action: 'skip', source: 'flag' },
-    ],
-    [
-      'CI skips even with -y and an agent',
-      { ...base, isCI: true, isInteractive: false, yes: true, agent: true, remembered: true },
-      { action: 'skip', source: 'ci' },
-    ],
-    [
-      'a remembered true installs',
-      { ...base, remembered: true },
-      { action: 'install', source: 'settings' },
-    ],
-    [
-      'a remembered false skips even for an agent',
-      { ...base, remembered: false, agent: true, yes: true },
-      { action: 'skip', source: 'settings' },
-    ],
-    [
-      'an agent installs',
-      { ...base, agent: true, yes: true },
-      { action: 'install', source: 'agent' },
-    ],
-    ['-y installs', { ...base, yes: true }, { action: 'install', source: 'yes' }],
-    ['interactive asks', { ...base }, { action: 'ask', source: 'prompt' }],
-    [
-      'non-interactive without -y takes the default',
-      { ...base, isInteractive: false },
-      { action: 'install', source: 'default' },
-    ],
-  ] as const)('%s', (_, input, expected) => {
-    expect(decideSkillsInstall(input)).toEqual(expected);
+    expect(await hasStorybookSkills()).toBe(true);
+  });
+
+  it('is false when the lock file only has skills from other repositories', async () => {
+    lock({
+      'find-skills': { source: 'vercel-labs/skills' },
+      stories: { source: 'storybookjs/skills-fork' },
+    });
+
+    expect(await hasStorybookSkills()).toBe(false);
+  });
+
+  it('is false after the skills were removed', async () => {
+    lock({});
+
+    expect(await hasStorybookSkills()).toBe(false);
+  });
+
+  it('is false without a lock file', async () => {
+    expect(await hasStorybookSkills()).toBe(false);
+  });
+
+  it('is false when the lock file is unreadable', async () => {
+    vol.fromNestedJSON({ [LOCK_PATH]: 'not json' });
+
+    expect(await hasStorybookSkills()).toBe(false);
   });
 });
 
 describe('installSkills', () => {
   let packageManager: JsPackageManager;
 
-  beforeEach(async () => {
-    const memfs = await vi.importActual<typeof import('memfs')>('memfs');
-    vi.mocked(mkdir).mockImplementation(memfs.fs.promises.mkdir as unknown as typeof mkdir);
-    vi.mocked(writeFile).mockImplementation(
-      memfs.fs.promises.writeFile as unknown as typeof writeFile
-    );
-    vi.mocked(readFile).mockImplementation(
-      memfs.fs.promises.readFile as unknown as typeof readFile
-    );
-    vol.reset();
-    _clearGlobalSettings();
-
+  beforeEach(() => {
     packageManager = {
       runPackageCommand: vi.fn().mockResolvedValue(undefined),
       getRemoteRunCommand: vi.fn((args: string[]) => `npx ${args.join(' ')}`),
     } as Partial<JsPackageManager> as JsPackageManager;
 
-    vi.mocked(getProjectRoot).mockReturnValue(PROJECT_ROOT);
-    vi.mocked(isCI).mockReturnValue(false);
     vi.mocked(isTelemetryModuleEnabled).mockReturnValue(true);
-    vi.mocked(prompt.confirm).mockResolvedValue(true);
     vi.mocked(logger.log).mockImplementation(() => {});
     vi.mocked(logger.warn).mockImplementation(() => {});
     vi.mocked(logger.debug).mockImplementation(() => {});
-    setIsTTY(process.stdin, true);
-    setIsTTY(process.stdout, true);
   });
 
-  afterEach(() => {
-    terminalStreams.forEach((stream, index) => {
-      const original = originalIsTTY[index];
-      if (original) {
-        Object.defineProperty(stream, 'isTTY', original);
-      } else {
-        delete (stream as { isTTY?: boolean }).isTTY;
-      }
+  it('installs from the tag of the running Storybook version', async () => {
+    const result = await installSkills({ packageManager, source: 'ai-feature' });
+
+    expect(packageManager.runPackageCommand).toHaveBeenCalledWith({
+      args: [
+        'skills@latest',
+        'add',
+        'storybookjs/skills#v10.6.0',
+        '--yes',
+        '--agent',
+        'claude-code',
+        'universal',
+        '--copy',
+      ],
+      useRemotePkg: true,
+      cwd: PROJECT_ROOT,
+      stdio: 'inherit',
+      env: {},
+      timeout: 120_000,
     });
-    vol.reset();
+    expect(result).toEqual({ result: 'installed', source: 'ai-feature' });
   });
 
-  describe('the command', () => {
-    it('installs from the tag of the running Storybook version', async () => {
-      const result = await installSkills({ packageManager, yes: true });
+  it('disables Vercel telemetry when Storybook telemetry is disabled', async () => {
+    vi.mocked(isTelemetryModuleEnabled).mockReturnValue(false);
 
-      expect(packageManager.runPackageCommand).toHaveBeenCalledWith({
-        args: INSTALL_ARGS('v10.6.0'),
-        useRemotePkg: true,
-        cwd: PROJECT_ROOT,
-        stdio: 'inherit',
-        env: {},
-        timeout: 120_000,
-      });
-      expect(result).toEqual({ result: 'installed', source: 'yes' });
-    });
+    await installSkills({ packageManager, source: 'ai-feature' });
 
-    it('disables Vercel telemetry when Storybook telemetry is disabled', async () => {
-      vi.mocked(isTelemetryModuleEnabled).mockReturnValue(false);
-
-      await installSkills({ packageManager, yes: true });
-
-      expect(vi.mocked(packageManager.runPackageCommand).mock.calls[0][0].env).toEqual({
-        DISABLE_TELEMETRY: '1',
-      });
-    });
-
-    it('prints the literal command and the skip line', async () => {
-      await installSkills({ packageManager, yes: true });
-
-      expect(logger.log).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'npx skills@latest add storybookjs/skills#v10.6.0 --yes --agent claude-code universal --copy'
-        )
-      );
-      expect(logger.log).toHaveBeenCalledWith(
-        'Skip this next time with --no-skills. Remove them with: npx skills@latest remove'
-      );
+    expect(vi.mocked(packageManager.runPackageCommand).mock.calls[0][0].env).toEqual({
+      DISABLE_TELEMETRY: '1',
     });
   });
 
-  describe('failure', () => {
-    it.each([
-      ['npx', ExecaCommandFailedError],
-      ['pnpm', PackageInstallFailedError],
-    ])(
-      'warns, keeps the settings untouched and reports the exit code (%s)',
-      async (command, Err) => {
-        vi.mocked(packageManager.runPackageCommand).mockRejectedValue(
-          new Err({ command, args: [], exitCode: 1, logs: '' })
-        );
+  it('prints the literal command and how to remove the skills', async () => {
+    await installSkills({ packageManager, source: 'ai-feature' });
 
-        const result = await installSkills({ packageManager, yes: true });
-
-        expect(result).toEqual({ result: 'failed', source: 'yes', exitCode: 1 });
-        expect(logger.warn).toHaveBeenCalledWith(
-          'Could not install the Storybook skills, continuing without them.'
-        );
-        expect(settingsFile().agentSkills).toBeUndefined();
-      }
+    expect(logger.log).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'npx skills@latest add storybookjs/skills#v10.6.0 --yes --agent claude-code universal --copy'
+      )
+    );
+    expect(logger.log).toHaveBeenCalledWith(
+      'Remove the Storybook skills with: npx skills@latest remove'
     );
   });
 
-  describe('the settings', () => {
-    it('refreshes silently when the project remembered true', async () => {
-      seedSettings({ [PROJECT_ROOT]: true });
+  it('adds the section that tells agents when to use the skills', async () => {
+    await installSkills({ packageManager, source: 'ai-feature' });
 
-      const result = await installSkills({ packageManager });
-
-      expect(prompt.confirm).not.toHaveBeenCalled();
-      expect(result).toEqual({ result: 'installed', source: 'settings' });
-    });
-
-    it('skips silently when the project remembered false', async () => {
-      seedSettings({ [PROJECT_ROOT]: false });
-
-      const result = await installSkills({ packageManager, yes: true, agent: true });
-
-      expect(prompt.confirm).not.toHaveBeenCalled();
-      expect(packageManager.runPackageCommand).not.toHaveBeenCalled();
-      expect(result).toEqual({ result: 'skipped', source: 'settings' });
-    });
-
-    it('asks when another project is remembered but this one is not, and keeps both answers', async () => {
-      seedSettings({ '/other/project': false });
-
-      await installSkills({ packageManager });
-
-      expect(prompt.confirm).toHaveBeenCalled();
-      expect(settingsFile().agentSkills).toEqual({
-        '/other/project': false,
-        [PROJECT_ROOT]: true,
-      });
-    });
-
-    it('treats an unreadable settings file as no answer', async () => {
-      vol.fromNestedJSON({ [SETTINGS_PATH]: 'not json' });
-
-      await installSkills({ packageManager });
-
-      expect(prompt.confirm).toHaveBeenCalled();
-    });
-
-    it.each([
-      ['Yes in the prompt', {}],
-      ['-y', { yes: true }],
-      ['an agent', { agent: true }],
-      ['--skills', { skillsFlag: true }],
-    ])('remembers true after %s', async (_, options) => {
-      await installSkills({ packageManager, ...options });
-
-      expect(settingsFile().agentSkills).toEqual({ [PROJECT_ROOT]: true });
-    });
-
-    it('lets --skills replace a remembered false', async () => {
-      seedSettings({ [PROJECT_ROOT]: false });
-
-      const result = await installSkills({ packageManager, skillsFlag: true });
-
-      expect(result).toEqual({ result: 'installed', source: 'flag' });
-      expect(settingsFile().agentSkills).toEqual({ [PROJECT_ROOT]: true });
-    });
-
-    it('remembers false after --no-skills', async () => {
-      const result = await installSkills({ packageManager, skillsFlag: false });
-
-      expect(packageManager.runPackageCommand).not.toHaveBeenCalled();
-      expect(result).toEqual({ result: 'skipped', source: 'flag' });
-      expect(settingsFile().agentSkills).toEqual({ [PROJECT_ROOT]: false });
-    });
-
-    it('writes nothing under CI', async () => {
-      vi.mocked(isCI).mockReturnValue(true);
-
-      const result = await installSkills({ packageManager, yes: true, agent: true });
-
-      expect(packageManager.runPackageCommand).not.toHaveBeenCalled();
-      expect(result).toEqual({ result: 'skipped', source: 'ci' });
-      expect(settingsFile().agentSkills).toBeUndefined();
-    });
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install');
+    expect(logger.log).toHaveBeenCalledWith(
+      expect.stringContaining('Added a Storybook section to AGENTS.md')
+    );
   });
 
-  describe('the prompt', () => {
-    it('installs on Yes', async () => {
-      const result = await installSkills({ packageManager });
+  it('only updates the section between the markers on a refresh', async () => {
+    vi.mocked(addStorybookAgentInstructions).mockResolvedValue([
+      { file: 'AGENTS.md', change: 'updated' },
+      { file: 'CLAUDE.md', change: 'updated' },
+      { file: '.claude/CLAUDE.md', change: 'updated' },
+    ]);
 
-      expect(prompt.confirm).toHaveBeenCalledWith(
-        {
-          message: 'Install the official Storybook skills for AI agents into this project?',
-          initialValue: true,
+    await installSkills({ packageManager, source: 'refresh' });
+
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'update');
+    expect(logger.log).toHaveBeenCalledWith(
+      'Updated the Storybook section in AGENTS.md, CLAUDE.md, and .claude/CLAUDE.md.'
+    );
+  });
+
+  it('warns about an update, not an addition, when a refresh cannot write the section', async () => {
+    vi.mocked(addStorybookAgentInstructions).mockRejectedValue(new Error('EACCES'));
+
+    await installSkills({ packageManager, source: 'refresh' });
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Could not update the Storybook section for agents in AGENTS.md.'
+    );
+  });
+
+  it('says nothing about the section when a refresh changes nothing', async () => {
+    vi.mocked(addStorybookAgentInstructions).mockResolvedValue([]);
+
+    await installSkills({ packageManager, source: 'refresh' });
+
+    expect(logger.log).not.toHaveBeenCalledWith(expect.stringContaining('Storybook section'));
+  });
+
+  it('replaces the stories skill of an 11.0 prerelease on a refresh', async () => {
+    vol.fromNestedJSON({
+      [LOCK_PATH]: JSON.stringify({
+        version: 1,
+        skills: {
+          stories: { source: 'storybookjs/skills' },
+          'storybook-init': { source: 'storybookjs/skills' },
         },
-        expect.anything()
-      );
-      expect(result).toEqual({ result: 'installed', source: 'prompt' });
+      }),
     });
 
-    it('declines on No, remembers false and spawns nothing', async () => {
-      vi.mocked(prompt.confirm).mockResolvedValue(false);
+    await installSkills({ packageManager, source: 'refresh' });
 
-      const result = await installSkills({ packageManager });
+    expect(vi.mocked(packageManager.runPackageCommand).mock.calls[1][0]).toMatchObject({
+      args: ['skills@latest', 'remove', 'stories', '--yes'],
+      cwd: PROJECT_ROOT,
+    });
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install');
+  });
 
-      expect(packageManager.runPackageCommand).not.toHaveBeenCalled();
-      expect(result).toEqual({ result: 'declined', source: 'prompt' });
-      expect(settingsFile().agentSkills).toEqual({ [PROJECT_ROOT]: false });
+  it('keeps the installed skills when removing the stories skill fails', async () => {
+    vol.fromNestedJSON({
+      [LOCK_PATH]: JSON.stringify({
+        version: 1,
+        skills: { stories: { source: 'storybookjs/skills' } },
+      }),
+    });
+    vi.mocked(packageManager.runPackageCommand)
+      .mockResolvedValueOnce(undefined as never)
+      .mockRejectedValueOnce(new Error('remove failed'));
+
+    const result = await installSkills({ packageManager, source: 'refresh' });
+
+    expect(result).toEqual({ result: 'installed', source: 'refresh' });
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Could not remove the replaced Storybook skills stories. Remove them with: npx skills@latest remove stories --yes'
+    );
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install');
+  });
+
+  it('does not remove a stories skill from another repository', async () => {
+    vol.fromNestedJSON({
+      [LOCK_PATH]: JSON.stringify({ version: 1, skills: { stories: { source: 'acme/skills' } } }),
     });
 
-    it('declines without remembering when the prompt is canceled', async () => {
-      vi.mocked(prompt.confirm).mockImplementation(async (_, promptOptions) => {
-        await promptOptions?.onCancel?.();
-        return true;
-      });
+    await installSkills({ packageManager, source: 'refresh' });
 
-      const result = await installSkills({ packageManager });
+    expect(packageManager.runPackageCommand).toHaveBeenCalledTimes(1);
+  });
 
-      expect(packageManager.runPackageCommand).not.toHaveBeenCalled();
-      expect(result).toEqual({ result: 'declined', source: 'prompt' });
-      expect(settingsFile().agentSkills).toBeUndefined();
-    });
+  it('still installs when AGENTS.md cannot be written', async () => {
+    vi.mocked(addStorybookAgentInstructions).mockRejectedValue(new Error('EACCES'));
 
-    it.each([
-      ['stdout', process.stdout],
-      ['stdin', process.stdin],
-    ])('takes the default without asking when %s is not a terminal', async (_, stream) => {
-      setIsTTY(stream, false);
+    const result = await installSkills({ packageManager, source: 'ai-feature' });
 
-      const result = await installSkills({ packageManager });
+    expect(result).toEqual({ result: 'installed', source: 'ai-feature' });
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Could not add the Storybook section for agents to AGENTS.md.'
+    );
+  });
 
-      expect(prompt.confirm).not.toHaveBeenCalled();
-      expect(result).toEqual({ result: 'installed', source: 'default' });
-    });
+  it('spawns nothing under CI', async () => {
+    vi.mocked(isCI).mockReturnValue(true);
+
+    const result = await installSkills({ packageManager, source: 'refresh' });
+
+    expect(packageManager.runPackageCommand).not.toHaveBeenCalled();
+    expect(result).toEqual({ result: 'skipped', source: 'ci' });
+  });
+
+  it.each([
+    ['npx', ExecaCommandFailedError],
+    ['pnpm', PackageInstallFailedError],
+  ])('warns and reports the exit code when the install fails (%s)', async (command, Err) => {
+    vi.mocked(packageManager.runPackageCommand).mockRejectedValue(
+      new Err({ command, args: [], exitCode: 1, logs: '' })
+    );
+
+    const result = await installSkills({ packageManager, source: 'automigration' });
+
+    expect(result).toEqual({ result: 'failed', source: 'automigration', exitCode: 1 });
+    expect(addStorybookAgentInstructions).not.toHaveBeenCalled();
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Could not install the Storybook skills, continuing without them. Install them later with: npx skills@latest add storybookjs/skills#v10.6.0'
+    );
+  });
+});
+
+describe('refreshAgentInstructions', () => {
+  beforeEach(() => {
+    vi.mocked(logger.log).mockImplementation(() => {});
+  });
+
+  it('updates the section without installing the skills', async () => {
+    vi.mocked(addStorybookAgentInstructions).mockResolvedValue([
+      { file: 'AGENTS.md', change: 'updated' },
+    ]);
+
+    await refreshAgentInstructions();
+
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'update');
+    expect(logger.log).toHaveBeenCalledWith('Updated the Storybook section in AGENTS.md.');
+  });
+
+  it('does nothing under CI', async () => {
+    vi.mocked(isCI).mockReturnValue(true);
+
+    await refreshAgentInstructions();
+
+    expect(addStorybookAgentInstructions).not.toHaveBeenCalled();
   });
 });

@@ -240,8 +240,8 @@ function classifySegmentTokens(tokens: string[]): {
 
 function collectShellBuckets(command: string, buckets: Set<Bucket>, unclassified: string[]): void {
   // A `node -e` / `python3 -` script that writes files is an act of editing.
-  // The write is invisible at segment level — heredoc bodies are stripped and
-  // inline scripts are opaque tokens — so it is detected on the raw command,
+  // The write is invisible in segment tokens — heredoc bodies are kept apart
+  // and inline scripts are opaque tokens — so it is detected on the raw command,
   // per segment, and overrides only the writing segment's classification: a
   // read-only interpreter call chained after it keeps its own bucket.
   const inlineWrites = inlineScriptWritesBySegment(command);

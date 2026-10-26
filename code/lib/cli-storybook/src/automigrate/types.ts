@@ -61,8 +61,11 @@ type Check<ResultType> = (options: CheckOptions) => Promise<ResultType | null>;
 
 type BaseFix<ResultType = any> = {
   id: string;
-  /** Keep the prompt message short and concise. */
-  prompt: () => string;
+  /**
+   * Keep the prompt message short and concise. `storybook automigrate` passes the check result, for
+   * example to list the files the fix changes; the multi-project selection does not.
+   */
+  prompt: (result?: ResultType) => string;
   /** Whether the automigration is selected by default when the user is prompted. */
   defaultSelected?: boolean;
   link?: string;

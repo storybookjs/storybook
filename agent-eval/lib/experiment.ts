@@ -21,6 +21,8 @@ const CORE_STORYBOOK_EVALS = [
   '811-fix-a11y-violations',
   '812-first-story-empty-project',
   '813-monorepo-leaf-create-component',
+  '814-write-stories-for-fetching-component',
+  '815-write-stories-for-fetching-component-without-msw',
 ] as const;
 
 // The 82x block: lifecycle-skill evals (storybook-init / storybook-upgrade).
@@ -65,7 +67,7 @@ type EvalName =
 const STORYBOOK_LATEST = process.env.EVAL_STORYBOOK_LATEST === '1';
 
 // By default only the first eval of the active line runs, to keep costs low.
-// EVAL_EXTRA_EVALS=1 runs the full line; EVAL_ONLY=<name>[,<name>] narrows
+// EVAL_ALL=1 runs the full line; EVAL_ONLY=<name>[,<name>] narrows
 // the set to specific evals for local debugging.
 function resolveActiveEvals(): { core: EvalName[]; lifecycle: EvalName[] } {
   const only = process.env.EVAL_ONLY;
@@ -80,6 +82,14 @@ function resolveActiveEvals(): { core: EvalName[]; lifecycle: EvalName[] } {
       if (match === undefined) {
         throw new Error(
           `Unknown EVAL_ONLY entry "${name.trim()}". Valid evals: ${knownEvals.join(', ')}`
+        );
+      }
+      if (
+        STORYBOOK_LATEST &&
+        !(PORTED_WORKFLOW_STORYBOOK_EVALS as readonly string[]).includes(match)
+      ) {
+        throw new Error(
+          `EVAL_ONLY entry "${match}" cannot run with EVAL_STORYBOOK_LATEST=1: only the 9xx line supports the stable release.`
         );
       }
       return match;
@@ -100,7 +110,7 @@ function resolveActiveEvals(): { core: EvalName[]; lifecycle: EvalName[] } {
     return partitioned;
   }
 
-  if (process.env.EVAL_EXTRA_EVALS === '1') {
+  if (process.env.EVAL_ALL === '1') {
     return STORYBOOK_LATEST
       ? { core: [...PORTED_WORKFLOW_STORYBOOK_EVALS], lifecycle: [] }
       : {
@@ -126,6 +136,18 @@ export const WORKFLOW_STORYBOOK_EVALS: EvalName[] = ACTIVE_EVALS.core;
 export const PLUGIN_STORYBOOK_EVALS: EvalName[] = STORYBOOK_LATEST
   ? []
   : [...ACTIVE_EVALS.core, ...ACTIVE_EVALS.lifecycle];
+
+// For an experiment outside the default set: its evals run only when the experiment is named on
+// the command line (`agent-eval codex-plugin-gpt-6-luna-low`), so a bare `agent-eval`, which is
+// what CI runs, skips it.
+export function onlyWhenNamed(
+  experimentUrl: string,
+  evals: EvalName[],
+  argv: string[] = process.argv
+): EvalName[] {
+  const name = path.basename(fileURLToPath(experimentUrl), '.ts');
+  return argv.some((arg) => path.basename(arg, '.ts') === name) ? evals : [];
+}
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const execFileAsync = promisify(execFile);

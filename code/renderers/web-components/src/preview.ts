@@ -5,9 +5,11 @@ import type {
   MetaInput,
   MetaTypes,
   StoryArgs,
+  TypedMetaArgKeys,
   WithRenderArgs,
   Preview,
   PreviewAddon,
+  PreviewAddonEntry,
   Story,
 } from 'storybook/internal/csf';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
@@ -44,12 +46,16 @@ import { type WebComponentsTypes } from './types.ts';
  * });
  * ```
  */
-export function __definePreview<Addons extends PreviewAddon<never>[]>(
+export function __definePreview<Addons extends PreviewAddonEntry[]>(
   input: { addons: Addons } & ProjectAnnotations<WebComponentsTypes & InferTypes<Addons>>
 ): WebComponentsPreview<WebComponentsTypes & InferTypes<Addons>> {
   const preview = definePreviewBase({
     ...input,
-    addons: [webComponentsAnnotations, webComponentsDocsAnnotations, ...(input.addons ?? [])],
+    addons: [
+      webComponentsAnnotations,
+      webComponentsDocsAnnotations,
+      ...(input.addons ?? []),
+    ] as PreviewAddon<InferTypes<Addons>>[],
   }) as WebComponentsPreview<WebComponentsTypes & InferTypes<Addons>>;
 
   return preview;
@@ -137,7 +143,7 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
     TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
-      render?: ArgsStoryFn<WebComponentsTypes & T, TArgs>;
+      render?: ArgsStoryFn<WebComponentsTypes & T, TArgs & T['args']>;
     } & MetaInput<WebComponentsTypes & T, TArgs, Decorators, TMetaArgKeys>
   ): WebComponentsMeta<
     MetaTypes<WebComponentsTypes & T, TArgs, Decorators, TMetaArgKeys>,
@@ -235,6 +241,12 @@ export interface WebComponentsMeta<
   story(
     ..._args: Partial<T['args']> extends StoryArgs<T['args'], TMetaArgKeys> ? [] : [never]
   ): WebComponentsStory<T, {}>;
+
+  /**
+   * Add types to the stories created from the returned meta, such as an arg that only one story
+   * has: `meta.type<{ args: { icon: string } }>().story({ args: { icon: 'star' } })`.
+   */
+  type<S>(): WebComponentsMeta<T & S, TypedMetaArgKeys<TMetaArgKeys, S>>;
 }
 
 /**

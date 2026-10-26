@@ -26,6 +26,14 @@ describe('main.ts under plain Node, as the CircleCI setup job runs it', () => {
     expect(Object.keys(config.workflows)).toEqual([`${workflow}-generated`]);
   });
 
+  it('caches the node_modules of every package', () => {
+    const result = generate('--workflow=normal', '--base-ref=HEAD');
+
+    expect(result.status, result.stderr).toBe(0);
+    const config = readFileSync(join(repoRoot, '.circleci/config.generated.yml'), 'utf8');
+    expect(config).toContain('project/code/core/node_modules');
+  });
+
   it.each([{ args: [] }, { args: ['--workflow=unknown'] }])('rejects $args', ({ args }) => {
     const result = generate(...args);
 

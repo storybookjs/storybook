@@ -4,6 +4,9 @@ import {
   type ESTree as E,
   type ESTreeNode as Node,
   SourceEditor,
+  parseExpression,
+  placeableTextOf,
+  printString,
   removeStatements,
   setImportSpecifiers,
 } from 'storybook/internal/csf-tools';
@@ -107,12 +110,18 @@ export const webComponentsRuntimeManifest: Fix<WebComponentsRuntimeManifestOptio
       filter: { kind: ['main'] },
       editConfig: (main): void => {
         if (typeof result.manifestPath === 'string') {
-          const expression = main.get(['framework']);
-          if (t.isStringLiteral(expression)) {
-            main.set(['framework'], {
-              name: expression.value,
-              options: { customElementsManifest: result.manifestPath },
-            });
+          const manifestPath = result.manifestPath;
+          const framework = main.get(['framework']);
+          if (
+            framework &&
+            framework.type !== 'ObjectExpression' &&
+            framework.type !== 'Identifier'
+          ) {
+            main.transform(['framework'], (name) =>
+              parseExpression(
+                `{ name: ${placeableTextOf(name)}, options: { customElementsManifest: ${printString(manifestPath, "'")} } }`
+              )
+            );
           } else {
             main.set(['framework', 'options', 'customElementsManifest'], result.manifestPath);
           }

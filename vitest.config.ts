@@ -21,6 +21,8 @@ const projects = [
   'code/builders/*/vitest.config.ts',
   'code/presets/*/vitest.config.ts',
   'code/renderers/*/vitest.config.ts',
+  'code/lib/angular-cm/vitest.config.native-typescript.ts',
+  'code/renderers/react/vitest.config.native-typescript.ts',
   'scripts/vitest.config.ts',
 ];
 

@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Property } from '../types.ts';
-import { analyzeFiles, analyzeInline, byName, names } from './__testutils__/inline-source.ts';
+import {
+  analyzeFiles,
+  analyzeInline,
+  byName,
+  names,
+  unionMembers,
+} from './__testutils__/inline-source.ts';
 
 const analyzeDeclaration = (source: string, extraFiles: Record<string, string> = {}) =>
   analyzeFiles('button.component.d.ts', { 'button.component.d.ts': source, ...extraFiles });
@@ -207,7 +213,7 @@ const IO_DECLARATION = `
 describe('inputs and outputs read from the compiled maps', () => {
   const binding = (property: Property) => ({
     name: property.name,
-    type: property.type,
+    type: unionMembers(property.type),
     required: property.required,
     optional: property.optional,
     hasLine: property.line !== undefined,

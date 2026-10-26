@@ -1,3 +1,7 @@
+## 10.6.4
+
+- Core: Skip TypeScript loader hook registration under Jest - [#36790](https://github.com/storybookjs/storybook/pull/36790), thanks @obvious-autobuild!
+
 ## 10.6.3
 
 - Addon Vitest: Support Vitest 5 - [#36671](https://github.com/storybookjs/storybook/pull/36671), thanks @PaulMest!

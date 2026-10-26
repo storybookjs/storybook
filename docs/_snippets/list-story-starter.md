@@ -151,7 +151,8 @@ export const Empty: Story = {};
 
 ```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import List from './List.svelte';
 
@@ -164,20 +165,25 @@ export const Empty: Story = {};
 <Story name="Empty" />
 ```
 
-```js filename="List.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import List from './List.svelte';
+```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: List,
-};
+  import List from './List.svelte';
 
-// Always an empty list, not super interesting
-export const Empty = {};
+  const { Story } = preview.meta({
+    component: List,
+  });
+</script>
+
+<!-- Always an empty list, not super interesting -->
+<Story name="Empty" />
 ```
 
 ```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import List from './List.svelte';
 
@@ -190,21 +196,19 @@ export const Empty = {};
 <Story name="Empty" />
 ```
 
-```ts filename="List.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import List from './List.svelte';
+  import List from './List.svelte';
 
-const meta = {
-  component: List,
-} satisfies Meta<typeof List>;
+  const { Story } = preview.meta({
+    component: List,
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-// Always an empty list, not super interesting
-export const Empty: Story = {};
+<!-- Always an empty list, not super interesting -->
+<Story name="Empty" />
 ```
 
 ```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF 3"

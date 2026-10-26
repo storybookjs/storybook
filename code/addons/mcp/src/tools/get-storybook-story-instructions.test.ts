@@ -1,12 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
-import { getAddonVitestConstants } from './run-story-tests.ts';
 import {
   addGetUIBuildingInstructionsTool,
   buildStorybookStoryInstructions,
 } from './get-storybook-story-instructions.ts';
-import { getReviewStatus } from '../utils/is-review-available.ts';
 import type { AddonContext } from '../types.ts';
 import {
   PREVIEW_STORIES_TOOL_NAME,
@@ -14,29 +12,14 @@ import {
   GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
 } from './tool-names.ts';
 
-vi.mock('./run-story-tests.ts', () => ({
-  getAddonVitestConstants: vi.fn(),
-}));
-
-vi.mock('../utils/is-review-available.ts', () => ({
-  getReviewStatus: vi.fn(),
-}));
-
+// Review/addon-vitest availability resolve through core's `resolveSkillInputs` (inside
+// `buildStorybookStoryInstructions`'s adapter), so tests below drive them through the
+// `options.presets` fixture or the `addonVitestAvailable` override instead of mocking an
+// addon-local probe.
 describe('getUIBuildingInstructionsTool', () => {
   let server: McpServer<any, AddonContext>;
 
   beforeEach(async () => {
-    vi.mocked(getAddonVitestConstants).mockResolvedValue({
-      TRIGGER_TEST_RUN_REQUEST: 'TRIGGER_TEST_RUN_REQUEST',
-      TRIGGER_TEST_RUN_RESPONSE: 'TRIGGER_TEST_RUN_RESPONSE',
-    });
-
-    vi.mocked(getReviewStatus).mockResolvedValue({
-      available: false,
-      availableForCli: false,
-      hasFeatureFlag: false,
-    });
-
     const adapter = new ValibotJsonSchemaAdapter();
     server = new McpServer(
       {
@@ -69,7 +52,7 @@ describe('getUIBuildingInstructionsTool', () => {
       }
     );
 
-    await addGetUIBuildingInstructionsTool(server);
+    await addGetUIBuildingInstructionsTool(server, undefined, { addonVitestAvailable: true });
   });
 
   async function getToolDescription(context: AddonContext) {
@@ -177,7 +160,6 @@ describe('getUIBuildingInstructionsTool', () => {
       presets: {
         apply: vi.fn(async (presetName: string) => {
           if (presetName === 'framework') return '@storybook/react-vite';
-          if (presetName === 'features') return { changeDetection: true };
           return undefined;
         }),
       },
@@ -230,19 +212,18 @@ describe('getUIBuildingInstructionsTool', () => {
       presets: {
         apply: vi.fn(async (presetName: string) => {
           if (presetName === 'framework') return '@storybook/react-vite';
-          if (presetName === 'features') return { changeDetection: true };
           return undefined;
         }),
       },
     };
 
     const instructions = await buildStorybookStoryInstructions(mockOptions as any, {
-      docsAvailable: true,
+      docsEnabled: true,
     });
 
     expect(instructions).toContain('## Using library components');
-    expect(instructions).toContain('**list-all-documentation**');
-    expect(instructions).toContain('**get-documentation**');
+    expect(instructions).toContain('**docs-list**');
+    expect(instructions).toContain('**docs-show**');
     expect(instructions).toContain('`storybookId`');
     expect(instructions).not.toContain('{{DOCS_WORKFLOW_GUIDANCE}}');
   });
@@ -252,14 +233,13 @@ describe('getUIBuildingInstructionsTool', () => {
       presets: {
         apply: vi.fn(async (presetName: string) => {
           if (presetName === 'framework') return '@storybook/react-vite';
-          if (presetName === 'features') return { changeDetection: true };
           return undefined;
         }),
       },
     };
 
     const instructions = await buildStorybookStoryInstructions(mockOptions as any, {
-      docsAvailable: true,
+      docsEnabled: true,
       toolsets: { dev: true, docs: false, test: true },
     });
 
@@ -271,18 +251,11 @@ describe('getUIBuildingInstructionsTool', () => {
   // instructions about how to present links. It previously told the agent to
   // list the review page AND the preview URLs together, contradicting the
   // "show one set of links — never both" server rule.
-  it('tells the agent to show only the review section when review is enabled', async () => {
-    vi.mocked(getReviewStatus).mockResolvedValue({
-      available: true,
-      availableForCli: true,
-      hasFeatureFlag: true,
-    });
-
+  it('tells the agent to show only the review section', async () => {
     const mockOptions = {
       presets: {
         apply: vi.fn(async (presetName: string) => {
           if (presetName === 'framework') return '@storybook/react-vite';
-          if (presetName === 'features') return { changeDetection: true };
           return undefined;
         }),
       },
@@ -315,144 +288,13 @@ describe('getUIBuildingInstructionsTool', () => {
 
     // The story-linking workflow must route discovery into the review, not
     // the preview list, and forbid hand-constructed story IDs — matching
-    // the server instructions that `storybook ai --help` also embeds.
+    // the server instructions.
     // While this line contradicted them, agents were observed publishing
     // reviews with IDs derived from file names and no discovery call.
     expect(instructions).toContain('Story IDs must come from that call');
     expect(instructions).toContain('never construct them from file names');
-    expect(instructions).toContain('Feed the discovered IDs into **display-review**');
-    expect(instructions).not.toContain('first, then use `preview-stories`');
-  });
-
-  // The per-request context override must win over the feature-flag gate:
-  // this is the CLI path, where review is on by default even though the
-  // explicit experimentalReview flag (and thus getReviewStatus().available)
-  // is off.
-  it('uses the review instructions when the request context enables review despite the flag being unset', async () => {
-    vi.mocked(getReviewStatus).mockResolvedValue({
-      available: false,
-      availableForCli: true,
-      hasFeatureFlag: false,
-    });
-
-    const mockOptions = {
-      presets: {
-        apply: vi.fn(async (presetName: string) => {
-          if (presetName === 'framework') return '@storybook/react-vite';
-          if (presetName === 'features') return { changeDetection: true };
-          return undefined;
-        }),
-      },
-    };
-
-    const response = await server.receive(
-      {
-        jsonrpc: '2.0' as const,
-        id: 1,
-        method: 'tools/call',
-        params: { name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME, arguments: {} },
-      },
-      {
-        sessionId: 'test-session',
-        custom: {
-          origin: 'http://localhost:6006',
-          options: mockOptions as any,
-          disableTelemetry: true,
-          reviewEnabled: true,
-        },
-      }
-    );
-
-    const instructions = response.result?.content[0].text as string;
-
-    expect(instructions).toContain('## 👀 Review your changes');
-    expect(instructions).toContain('Feed the discovered IDs into **display-review**');
-  });
-
-  it('tells the agent to include preview URLs when review is disabled', async () => {
-    vi.mocked(getReviewStatus).mockResolvedValue({
-      available: false,
-      availableForCli: false,
-      hasFeatureFlag: false,
-    });
-
-    const mockOptions = {
-      presets: {
-        apply: vi.fn(async (presetName: string) => {
-          if (presetName === 'framework') return '@storybook/react-vite';
-          // Review is opt-in via experimentalReview (on top of changeDetection),
-          // so a disabled review means the flag is off — keep the preset
-          // consistent with the mock above.
-          if (presetName === 'features') return { changeDetection: false };
-          return undefined;
-        }),
-      },
-    };
-
-    const response = await server.receive(
-      {
-        jsonrpc: '2.0' as const,
-        id: 1,
-        method: 'tools/call',
-        params: { name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME, arguments: {} },
-      },
-      {
-        sessionId: 'test-session',
-        custom: {
-          origin: 'http://localhost:6006',
-          options: mockOptions as any,
-          disableTelemetry: true,
-        },
-      }
-    );
-
-    const instructions = response.result?.content[0].text as string;
-
-    expect(instructions).toContain('include every returned preview URL');
-    expect(instructions).not.toContain('## 👀 Review your changes');
-    expect(instructions).not.toContain('present links in this order');
-  });
-
-  it('should not mention changed stories workflow when change detection is disabled', async () => {
-    const mockOptions = {
-      presets: {
-        apply: vi.fn(async (presetName: string) => {
-          if (presetName === 'framework') {
-            return '@storybook/react-vite';
-          }
-          if (presetName === 'features') {
-            return { changeDetection: false };
-          }
-          return undefined;
-        }),
-      },
-    };
-
-    const testContext: AddonContext = {
-      origin: 'http://localhost:6006',
-      options: mockOptions as any,
-      disableTelemetry: true,
-    };
-
-    const request = {
-      jsonrpc: '2.0' as const,
-      id: 1,
-      method: 'tools/call',
-      params: {
-        name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-        arguments: {},
-      },
-    };
-
-    const response = await server.receive(request, {
-      sessionId: 'test-session',
-      custom: testContext,
-    });
-
-    const instructions = response.result?.content[0].text as string;
-
-    expect(instructions).toContain(PREVIEW_STORIES_TOOL_NAME);
-    expect(instructions).not.toContain(GET_CHANGED_STORIES_TOOL_NAME);
+    expect(instructions).toContain('Feed the discovered IDs into **review-create**');
+    expect(instructions).not.toContain('first, then use `stories-preview`');
   });
 
   it('should handle Vue framework', async () => {
@@ -607,16 +449,16 @@ describe('getUIBuildingInstructionsTool', () => {
       },
     } as any;
 
-    const withDocs = await buildStorybookStoryInstructions(mockOptions, { docsAvailable: true });
+    const withDocs = await buildStorybookStoryInstructions(mockOptions, { docsEnabled: true });
     expect(withDocs).toContain('## Using library components');
-    expect(withDocs).toContain('list-all-documentation');
+    expect(withDocs).toContain('docs-list');
 
     // Without the docs manifest the tools are not registered, so the
     // instructions must not tell agents to call them.
     const withoutDocs = await buildStorybookStoryInstructions(mockOptions, {
-      docsAvailable: false,
+      docsEnabled: false,
     });
     expect(withoutDocs).not.toContain('## Using library components');
-    expect(withoutDocs).not.toContain('list-all-documentation');
+    expect(withoutDocs).not.toContain('docs-list');
   });
 });

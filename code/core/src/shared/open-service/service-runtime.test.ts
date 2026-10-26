@@ -2,11 +2,6 @@ import { isEqual } from 'es-toolkit/predicate';
 import * as v from 'valibot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { defineService } from './service-definition.ts';
-import { serviceRegistryApi } from './service-registry.ts';
-import { createServiceRuntime } from './service-runtime.ts';
-import { clearRegistry, registerService } from './server.ts';
-import type { QueryState } from './types.ts';
 import {
   type RebuiltValue,
   awaitedPreloadValueServiceDef,
@@ -15,7 +10,15 @@ import {
   fireAndForgetPreloadValueServiceDef,
   mutableRecordLookupServiceDef,
   rebuiltEqualValueOnLoadServiceDef,
+  voidOutputSchema,
 } from './fixtures.ts';
+import { applyJsonPatch } from './json-patch.ts';
+import type { JsonPatchOperation } from './service-channel.ts';
+import { defineService } from './service-definition.ts';
+import { serviceRegistryApi } from './service-registry.ts';
+import { createServiceRuntime } from './service-runtime.ts';
+import { clearRegistry, registerService } from './server.ts';
+import type { QueryState } from './types.ts';
 
 afterEach(() => {
   clearRegistry();
@@ -568,8 +571,6 @@ describe('service runtime', () => {
         expect(service.queries.preloadedValue.get({ entryId: 'entry-a' })).toBeNull();
         await new Promise((resolve) => setTimeout(resolve, 30));
 
-        // The old bare call fired the load fire-and-forget on every read; .get() never does, so the
-        // command that the load would have invoked is never called.
         expect(preloadValueSpy).not.toHaveBeenCalled();
         expect(service.queries.preloadedValue.get({ entryId: 'entry-a' })).toBeNull();
       } finally {
@@ -1237,6 +1238,86 @@ describe('service runtime', () => {
     });
   });
 
+  /**
+   * A load body writes to the state of the runtime it was started on. The static build stands up a
+   * throwaway runtime per snapshot alongside the live registry's runtime, so the same
+   * `(service, query, input)` can be loading on two runtimes at once.
+   */
+  describe('in-flight loads are scoped to their runtime', () => {
+    const gatedCounterServiceDef = (gate: Promise<void>, loadBodySpy: () => void) =>
+      defineService({
+        id: 'internal-fixture/cross-runtime-in-flight',
+        description: 'Fixture: a load body that parks on a gate before writing state.',
+        initialState: { count: 0 },
+        queries: {
+          value: {
+            input: v.undefined(),
+            output: v.number(),
+            handler: (_input, ctx) => ctx.self.state.count,
+            load: async (_input, ctx) => {
+              loadBodySpy();
+              await gate;
+              await ctx.self.commands.bump(undefined);
+            },
+          },
+        },
+        commands: {
+          bump: {
+            input: v.undefined(),
+            output: v.void(),
+            handler: (_input, ctx) =>
+              ctx.self.setState((state) => {
+                state.count += 1;
+              }),
+          },
+        },
+      });
+
+    it('runs the load body on each runtime rather than joining the other one`s', async () => {
+      let release: () => void = () => {};
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const loadBodySpy = vi.fn();
+      const def = gatedCounterServiceDef(gate, loadBodySpy);
+
+      const first = createServiceRuntime(def, { registryApi: serviceRegistryApi }, { count: 0 });
+      const second = createServiceRuntime(def, { registryApi: serviceRegistryApi }, { count: 0 });
+
+      // `second` asks while `first`'s load is still parked on the gate.
+      const firstLoaded = first.queries.value.loaded(undefined);
+      const secondLoaded = second.queries.value.loaded(undefined);
+      release();
+
+      expect(await firstLoaded).toBe(1);
+      expect(await secondLoaded).toBe(1);
+      expect(second.getStateSnapshot().count).toBe(1);
+      expect(loadBodySpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('still dedupes concurrent callers on the same runtime', async () => {
+      let release: () => void = () => {};
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const loadBodySpy = vi.fn();
+      const runtime = createServiceRuntime(
+        gatedCounterServiceDef(gate, loadBodySpy),
+        { registryApi: serviceRegistryApi },
+        { count: 0 }
+      );
+
+      const both = Promise.all([
+        runtime.queries.value.loaded(undefined),
+        runtime.queries.value.loaded(undefined),
+      ]);
+      release();
+
+      expect(await both).toEqual([1, 1]);
+      expect(loadBodySpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
   // The `subscriptions`/`reactive load` suites assert the emitted *data* sequence (via collectData).
   // This suite asserts the orthogonal axis: the per-subscription `QueryState` lifecycle that wraps
   // that data (status / loadStatus / error and the derived booleans).
@@ -1517,6 +1598,158 @@ describe('service runtime', () => {
       });
 
       unsubscribe();
+    });
+  });
+
+  describe('entry authoring', () => {
+    type SlotState = { slots: Record<string, string> };
+
+    const slotServiceDef = defineService({
+      id: 'internal-fixture/slot-writes',
+      description: 'Writes slots from a command and from a nested command.',
+      initialState: { slots: {} } as SlotState,
+      queries: {},
+      commands: {
+        writeSlot: {
+          description: 'Writes one slot.',
+          input: v.object({ key: v.string(), value: v.string() }),
+          output: voidOutputSchema,
+          handler: (input, ctx) => {
+            ctx.self.setState((state) => {
+              state.slots[input.key] = input.value;
+            });
+          },
+        },
+        outer: {
+          description: 'Writes one slot then delegates to writeSlot.',
+          input: v.void(),
+          output: voidOutputSchema,
+          handler: async (_input, ctx) => {
+            ctx.self.setState((state) => {
+              state.slots.outer = 'o';
+            });
+            await ctx.self.commands.writeSlot({ key: 'inner', value: 'i' });
+          },
+        },
+      },
+    });
+
+    it('authors one entry per setState, tagged with the command that ran it', async () => {
+      const runtime = createServiceRuntime(
+        slotServiceDef,
+        { registryApi: serviceRegistryApi },
+        { slots: {} }
+      );
+      const author = vi.fn();
+      runtime.attachEntryAuthor(author);
+
+      await runtime.commands.outer();
+
+      expect(author.mock.calls.map(([entry]) => entry)).toEqual([
+        {
+          command: 'outer',
+          ops: [{ op: 'add', path: '/slots/outer', value: 'o' }],
+          inverse: [{ op: 'remove', path: '/slots/outer' }],
+        },
+        {
+          command: 'writeSlot',
+          ops: [{ op: 'add', path: '/slots/inner', value: 'i' }],
+          inverse: [{ op: 'remove', path: '/slots/inner' }],
+        },
+      ]);
+      expect(runtime.getStateSnapshot()).toEqual({ slots: { outer: 'o', inner: 'i' } });
+    });
+
+    it('copies initial state so a reference shared between two keys becomes two objects', () => {
+      const shared = { props: 3 };
+      const runtime = createServiceRuntime(
+        defineService({
+          id: 'internal-fixture/aliased-initial-state',
+          description: 'Holds one object under two keys.',
+          initialState: { a: shared, b: shared },
+          queries: {},
+          commands: {
+            bumpA: {
+              description: 'Writes a.props.',
+              input: v.void(),
+              output: voidOutputSchema,
+              handler: (_input, ctx) => {
+                ctx.self.setState((state) => {
+                  state.a.props = 4;
+                });
+              },
+            },
+          },
+        }),
+        { registryApi: serviceRegistryApi }
+      );
+
+      return runtime.commands.bumpA().then(() => {
+        expect(runtime.getStateSnapshot()).toEqual({ a: { props: 4 }, b: { props: 3 } });
+        expect(shared).toEqual({ props: 3 });
+      });
+    });
+
+    it('does not author an entry for applyLocal', () => {
+      const runtime = createServiceRuntime(
+        slotServiceDef,
+        { registryApi: serviceRegistryApi },
+        { slots: {} }
+      );
+      const author = vi.fn();
+      runtime.attachEntryAuthor(author);
+
+      runtime.applyLocal((state) => {
+        state.slots.adopted = 'x';
+      });
+
+      expect(author).not.toHaveBeenCalled();
+      expect(runtime.getStateSnapshot()).toEqual({ slots: { adopted: 'x' } });
+    });
+
+    it("joins a setState called inside a recipe to that recipe's entry", async () => {
+      type NestState = { x: number; q: Record<string, string> };
+      const runtime = createServiceRuntime(
+        defineService({
+          id: 'internal-fixture/nested-set-state',
+          description: 'Calls setState inside a setState recipe.',
+          initialState: { x: 0, q: {} } as NestState,
+          queries: {},
+          commands: {
+            nest: {
+              description: 'Writes x, nests a write to x and q.y, then writes q.z.',
+              input: v.void(),
+              output: voidOutputSchema,
+              handler: (_input, ctx) => {
+                ctx.self.setState((state) => {
+                  state.x = 1;
+                  ctx.self.setState((inner) => {
+                    inner.x = 2;
+                    inner.q.y = 'i';
+                  });
+                  state.q.z = 'o';
+                });
+              },
+            },
+          },
+        }),
+        { registryApi: serviceRegistryApi }
+      );
+      const entries: { ops: JsonPatchOperation[]; inverse: JsonPatchOperation[] }[] = [];
+      runtime.attachEntryAuthor(({ ops, inverse }) => entries.push({ ops, inverse }));
+
+      await runtime.commands.nest();
+
+      expect(entries.map(({ ops }) => ops)).toEqual([
+        [
+          { op: 'replace', path: '/x', value: 2 },
+          { op: 'add', path: '/q/y', value: 'i' },
+          { op: 'add', path: '/q/z', value: 'o' },
+        ],
+      ]);
+      const restored = runtime.getStateSnapshot() as Record<string, unknown>;
+      expect(applyJsonPatch(restored, entries[0].inverse, () => undefined).ok).toBe(true);
+      expect(restored).toEqual({ x: 0, q: {} });
     });
   });
 });

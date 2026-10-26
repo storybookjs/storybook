@@ -1,0 +1,13 @@
+import { Component } from '@angular/core';
+import { ShapeButtonComponent } from './shape-button.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [ShapeButtonComponent],
+  template: `<sb-shape-button [label]="'Save'" (clicked)="clicked($event)" />`,
+})
+export class DemoComponent {
+  clicked(event: unknown) {}
+}
+
+warning: Incomplete snippet: `get render() { return () => ({ template: '<sb-shape-button from-getter></sb-shape-button>' }); }` could not be resolved statically.

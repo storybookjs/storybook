@@ -1,0 +1,9 @@
+{
+  "description": undefined,
+  "id": "sveltefixtures-card",
+  "jsDocTags": {},
+  "name": "Card",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": undefined,
+}

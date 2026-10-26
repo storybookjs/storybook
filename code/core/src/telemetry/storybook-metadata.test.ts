@@ -26,6 +26,7 @@ import {
   getActualPackageVersion,
   getActualPackageVersions,
 } from './package-json.ts';
+import { getHasNextCustomWebpack } from './get-has-next-custom-webpack.ts';
 import {
   computeStorybookMetadata,
   metaFrameworks,
@@ -37,6 +38,7 @@ vi.mock('./detect-agent.ts', () => ({
   detectAgent: vi.fn().mockReturnValue(undefined),
 }));
 vi.mock(import('./package-json.ts'), { spy: true });
+vi.mock(import('./get-has-next-custom-webpack.ts'), { spy: true });
 vi.mock(import('../shared/utils/get-monorepo-type.ts'), { spy: true });
 vi.mock(import('./get-framework-info.ts'), { spy: true });
 vi.mock(import('./get-package-manager-info.ts'), { spy: true });
@@ -503,7 +505,10 @@ describe('storybook-metadata', () => {
         mainConfig: {
           ...mainJsMock,
           addons: [
-            { name: '@storybook/addon-essentials', options: { controls: false } },
+            {
+              name: '@storybook/addon-essentials',
+              options: { controls: false },
+            },
             { name: 'addon-foo', options: { foo: 'bar' } },
           ],
         },
@@ -545,6 +550,243 @@ describe('storybook-metadata', () => {
         });
       }
     );
+
+    describe('hasTurbopack', () => {
+      it('should be true when a next script passes --turbopack', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: {
+            ...packageJsonMock,
+            dependencies: { next: 'x.x.x' },
+            scripts: { dev: 'next dev --turbopack' },
+          } as PackageJson,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.hasTurbopack).toBe(true);
+      });
+
+      it('should be false when a next script passes --webpack', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: {
+            ...packageJsonMock,
+            dependencies: { next: 'x.x.x' },
+            scripts: { build: 'next build --webpack' },
+          } as PackageJson,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.hasTurbopack).toBe(false);
+      });
+
+      it('should be undefined when a next script has no bundler flag', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: {
+            ...packageJsonMock,
+            dependencies: { next: 'x.x.x' },
+            scripts: { dev: 'next dev' },
+          } as PackageJson,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.hasTurbopack).toBeUndefined();
+      });
+
+      it('should be undefined when the project has no next script at all', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: {
+            ...packageJsonMock,
+            scripts: { build: 'vite build' },
+          } as PackageJson,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.hasTurbopack).toBeUndefined();
+      });
+    });
+
+    describe('hasModuleFederation', () => {
+      it('should be true when a @module-federation/* package is a dependency', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: {
+            ...packageJsonMock,
+            dependencies: { '@module-federation/enhanced': 'x.x.x' },
+          } as PackageJson,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.hasModuleFederation).toBe(true);
+      });
+
+      it('should be true when @originjs/vite-plugin-federation is a devDependency', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: {
+            ...packageJsonMock,
+            devDependencies: { '@originjs/vite-plugin-federation': 'x.x.x' },
+          } as PackageJson,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.hasModuleFederation).toBe(true);
+      });
+
+      it('should be false when no Module Federation package is present', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: {
+            ...packageJsonMock,
+            dependencies: { react: 'x.x.x' },
+          } as PackageJson,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.hasModuleFederation).toBe(false);
+      });
+    });
+
+    describe('rendererPackages', () => {
+      it('resolves the runtime packages mapped to the detected renderer', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: packageJsonMock,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.knownPackages?.rendererPackages).toEqual({
+          react: 'x.x.x',
+          'react-dom': 'x.x.x',
+        });
+      });
+
+      it('ignores declared dependencies of other frameworks', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: {
+            ...packageJsonMock,
+            dependencies: { vue: 'x.x.x', svelte: 'x.x.x' },
+          } as PackageJson,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.knownPackages?.rendererPackages).toEqual({
+          react: 'x.x.x',
+          'react-dom': 'x.x.x',
+        });
+      });
+
+      it('resolves angular runtime and build packages for the angular renderer', async () => {
+        vi.mocked(getStorybookInfo).mockImplementation(async () => ({
+          ...defaultInfo,
+          renderer: SupportedRenderer.ANGULAR,
+          rendererPackage: '@storybook/angular',
+        }));
+        vi.mocked(getActualPackageVersion).mockImplementation(async (name) => ({
+          name,
+          version: name === '@angular/core' ? '17.3.0' : 'x.x.x',
+        }));
+
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: packageJsonMock,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.knownPackages?.rendererPackages).toEqual({
+          '@angular/core': '17.3.0',
+          '@angular-devkit/build-angular': 'x.x.x',
+        });
+      });
+
+      it('reports no rendererPackages for renderers without runtime packages', async () => {
+        vi.mocked(getStorybookInfo).mockImplementation(async () => ({
+          ...defaultInfo,
+          renderer: SupportedRenderer.HTML,
+          rendererPackage: '@storybook/html',
+        }));
+
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: packageJsonMock,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.knownPackages?.rendererPackages).toBeUndefined();
+      });
+
+      it("reports 'unknown' for a runtime package that can't be resolved", async () => {
+        vi.mocked(getActualPackageVersion).mockImplementation(async (name) => ({
+          name,
+          version: null,
+        }));
+
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: packageJsonMock,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.knownPackages?.rendererPackages).toEqual({
+          react: 'unknown',
+          'react-dom': 'unknown',
+        });
+      });
+    });
+
+    describe('custom bundler config', () => {
+      it('should detect viteFinal as hasCustomVite', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: packageJsonMock,
+          packageJsonPath,
+          mainConfig: {
+            ...mainJsMock,
+            viteFinal: (config: any) => config,
+          } as any,
+        });
+        expect(res.hasCustomVite).toBe(true);
+      });
+
+      it('should not report hasCustomVite without viteFinal', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: packageJsonMock,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.hasCustomVite).toBe(false);
+      });
+
+      it('should report hasCustomWebpack for a next project customizing webpack in next.config', async () => {
+        vi.mocked(getHasNextCustomWebpack).mockReturnValue(true);
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: {
+            ...packageJsonMock,
+            dependencies: { next: 'x.x.x' },
+          } as PackageJson,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.hasCustomWebpack).toBe(true);
+      });
+
+      it('should not consult next.config for projects without next', async () => {
+        vi.mocked(getHasNextCustomWebpack).mockReturnValue(true);
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: packageJsonMock,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.hasCustomWebpack).toBe(false);
+        expect(getHasNextCustomWebpack).not.toHaveBeenCalled();
+      });
+    });
 
     it('should detect userSince info', async () => {
       vi.mocked(isCI).mockImplementation(() => false);
@@ -627,6 +869,10 @@ describe('storybook-metadata', () => {
           },
           "i18nPackages": {
             "i18next": "22.0.0",
+          },
+          "rendererPackages": {
+            "react": "x.x.x",
+            "react-dom": "x.x.x",
           },
           "routerPackages": {
             "react-router-dom": "^6.0.0",

@@ -31,10 +31,6 @@ const config: BuildEntries = {
         entryPoint: './src/entry-preview-rsc.tsx',
         dts: false,
       },
-      {
-        exportEntries: ['./experimental-playwright'],
-        entryPoint: './src/playwright.ts',
-      },
     ],
     node: [
       {

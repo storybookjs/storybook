@@ -241,6 +241,16 @@ describe('parseArgTypesSnapshot', () => {
     ).toThrow(/broken\.snapshot.*offset \d+/s);
   });
 
+  it('rejects a parsed string carrying the entry-boundary shape instead of accepting it', () => {
+    // Without the boundary-mimic rejection this parses into the single key 'a",\n  "b' whose
+    // canonical reserialization is byte-identical to the source, so the round-trip check alone
+    // would silently accept an entry-swallowing misparse.
+    const text = '{\n  "a",\n  "b": {},\n}';
+    expect(() => parseArgTypesSnapshot(text, 'broken.snapshot')).toThrow(
+      /broken\.snapshot.*entry-boundary/s
+    );
+  });
+
   it('fails loudly when prose mimics an entry boundary instead of fabricating keys', () => {
     // A multi-line description whose first line ends `"a",` satisfies the value-close rule
     // early; the leftover prose then reads as a plausible sibling key. The round-trip

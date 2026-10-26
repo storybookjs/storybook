@@ -1,0 +1,69 @@
+{
+  "count": {
+    "description": undefined,
+    "name": "count",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "data": {
+    "description": undefined,
+    "name": "data",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "any",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "empty-enum",
+    },
+  },
+  "formatter": {
+    "description": undefined,
+    "name": "formatter",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "(value: number) => string",
+      },
+    },
+    "type": {
+      "name": "function",
+      "required": true,
+    },
+  },
+  "label": {
+    "description": "The text shown on the badge.",
+    "name": "label",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "Badge",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

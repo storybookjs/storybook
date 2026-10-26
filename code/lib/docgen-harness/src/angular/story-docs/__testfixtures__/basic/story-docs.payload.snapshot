@@ -1,0 +1,40 @@
+{
+  "id": "basic",
+  "name": "BasicComponent",
+  "path": "__PATH__",
+  "stories": {
+    "storydocs-basic--primary": {
+      "description": "The default state.",
+      "id": "storydocs-basic--primary",
+      "name": "Primary",
+      "snippet": "import { Component } from '@angular/core';
+import { BasicComponent } from './basic.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [BasicComponent],
+  template: `<sb-basic [label]="'Base'" [count]="3" (pressed)="pressed($event)" />`,
+})
+export class DemoComponent {
+  pressed(event: unknown) {}
+}",
+      "summary": "Primary look",
+    },
+    "storydocs-basic--renamed": {
+      "description": "Named through the `name` annotation.",
+      "id": "storydocs-basic--renamed",
+      "name": "Custom name",
+      "snippet": "import { Component } from '@angular/core';
+import { BasicComponent } from './basic.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [BasicComponent],
+  template: `<sb-basic [label]="'Override'" (pressed)="pressed($event)" />`,
+})
+export class DemoComponent {
+  pressed(event: unknown) {}
+}",
+    },
+  },
+}

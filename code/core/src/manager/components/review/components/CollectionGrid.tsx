@@ -1,7 +1,7 @@
 import React, { type CSSProperties, type FC } from 'react';
 
 import { Badge, Button, Loader } from 'storybook/internal/components';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import {
   hasFixedViewportDimensions,
@@ -251,6 +251,7 @@ const StoryPreviewCell: FC<{
     <div data-preview-scale>
       <Preview
         ref={iframeRef}
+        data-is-storybook-thumbnail
         title={readableTitle}
         src={src}
         data-content-width={rememberedDimensions?.width}

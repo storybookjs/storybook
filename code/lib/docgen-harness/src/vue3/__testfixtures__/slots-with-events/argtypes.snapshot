@@ -1,0 +1,66 @@
+{
+  "default": {
+    "description": "The card body.",
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "",
+    },
+  },
+  "dismiss": {
+    "control": {
+      "disable": true,
+    },
+    "description": "Fired when the card is dismissed.",
+    "name": "dismiss",
+    "table": {
+      "category": "events",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "",
+    },
+  },
+  "leading": {
+    "description": "Rendered before the title.",
+    "name": "leading",
+    "table": {
+      "category": "slots",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "",
+    },
+  },
+  "title": {
+    "description": "Card title shown in the header.",
+    "name": "title",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+}

@@ -2,7 +2,7 @@ import type { FC } from 'react';
 import React from 'react';
 
 import type { State } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import NotificationItem from './NotificationItem.tsx';

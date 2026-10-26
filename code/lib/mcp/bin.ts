@@ -1,35 +1,26 @@
 /**
- * This is a way to start the @storybook/mcp server as a stdio MCP server, which is sometimes easier for testing.
- * You can run it like this:
- *   node bin.ts --manifestsDir ./path/to/manifests/dir/
+ * Development harness: the docs tools of this package over a stdio transport, which is easier to
+ * drive by hand than the HTTP handler. Run it from this directory:
+ *   node bin.ts --manifestsDir ./fixtures/default
  *
- * Or when configuring it as an MCP server:
- * {
- *   "storybook-mcp": {
- *     "type": "stdio",
- *     "command": "node",
- *     "args": ["bin.ts", "--manifestsDir", "./path/to/manifests/dir/"]
- *   }
- * }
+ * `@storybook/mcp` is a library and ships no executable, so this file is not published and there is
+ * no `node_modules` path to invoke. Consumers wanting a stdio server build one from the exported
+ * tool registrations — see the recipe in README.md.
  */
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { StdioTransport } from '@tmcp/transport-stdio';
 import pkgJson from './package.json' with { type: 'json' };
-import { addListAllDocumentationTool } from './src/tools/list-all-documentation.ts';
-import { addGetStoryDocumentationTool } from './src/tools/get-documentation-for-story.ts';
-import { addGetDocumentationTool } from './src/tools/get-documentation.ts';
+import {
+  addGetDocumentationTool,
+  addGetStoryDocumentationTool,
+  addListAllDocumentationTool,
+} from './src/tools/register.ts';
+import { DOCS_TOOLSET_INSTRUCTIONS as serverInstructions } from 'storybook/internal/toolsets-docs';
 import type { StorybookContext } from './src/types.ts';
 import { parseArgs } from 'node:util';
 import * as fs from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
 import { resolve, dirname, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const serverInstructions = readFileSync(
-  resolve(dirname(fileURLToPath(import.meta.url)), './src/instructions.md'),
-  'utf-8'
-);
 
 function resolveManifestFile(base: string, rel: string): string {
   const resolvedBase = resolve(base);

@@ -1,0 +1,16 @@
+import { Component } from '@angular/core';
+import { CrossFileInheritanceComponent } from './cross-file-inheritance.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [CrossFileInheritanceComponent],
+  template: `
+    <sb-cross-file-inheritance
+        [heading]="'Storage almost full'"
+        [dismissible]="true"
+        (dismissed)="dismissed($event)"
+    />`,
+})
+export class DemoComponent {
+  dismissed(event: unknown) {}
+}

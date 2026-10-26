@@ -29,20 +29,32 @@ export const RSS_POLL_INTERVAL_MS = 100;
  */
 export const COMPODOC_TIMEOUT_MS = 10 * 60 * 1000;
 
+/**
+ * How much of the project the cold pass documents - the two shapes Storybook actually runs.
+ *
+ *   whole-index - one batch over every component, what the manifest generator does.
+ *   first-story - the one component a request asked for, what the docgen server does; saves then
+ *                 re-extract that same component.
+ */
+export type ReactScenarioShape = 'whole-index' | 'first-story';
+
 export interface ReactScenarioConfig {
+  shape: ReactScenarioShape;
   components: number;
   variants: number;
   props: number;
   saves: number;
 }
 
-export interface VueScenarioConfig {
-  name: 'flat' | 'workspace' | 'base-type-touch';
+// Shared by the Vue and Svelte engines, so their rows run over the same projects.
+export interface WorkspaceScenarioConfig {
+  name: 'flat' | 'workspace' | 'base-type-touch' | 'large-program';
   packages: number;
   componentsPerPackage: number;
   chainDepth: number;
   fanOut: number;
   heavyLib: boolean;
+  libModules?: number;
   saves: number;
 }
 
@@ -54,16 +66,22 @@ export interface AngularScenarioConfig {
 export interface SuiteProfile {
   n: number;
   comparable: boolean;
-  react: ReactScenarioConfig;
-  vue: VueScenarioConfig[];
+  react: ReactScenarioConfig[];
+  workspace: WorkspaceScenarioConfig[];
+  // Svelte's scenarios beyond the shared workspace ones.
+  svelte: WorkspaceScenarioConfig[];
   angular: AngularScenarioConfig;
 }
 
 export const DEFAULT_PROFILE: SuiteProfile = {
   n: PINNED_N,
   comparable: true,
-  react: { components: 300, variants: 4, props: 10, saves: 20 },
-  vue: [
+  react: [
+    { shape: 'whole-index', components: 300, variants: 4, props: 10, saves: 20 },
+    // Same project size; only the cold pass and save target differ, so the rows are comparable.
+    { shape: 'first-story', components: 300, variants: 4, props: 10, saves: 10 },
+  ],
+  workspace: [
     {
       name: 'flat',
       packages: 1,
@@ -92,14 +110,29 @@ export const DEFAULT_PROFILE: SuiteProfile = {
       saves: 10,
     },
   ],
+  svelte: [
+    {
+      name: 'large-program',
+      packages: 1,
+      componentsPerPackage: 100,
+      chainDepth: 3,
+      fanOut: 4,
+      heavyLib: true,
+      libModules: 4000,
+      saves: 10,
+    },
+  ],
   angular: { components: 100, props: 8 },
 };
 
 export const QUICK_PROFILE: SuiteProfile = {
   n: QUICK_N,
   comparable: false,
-  react: { components: 20, variants: 2, props: 4, saves: 4 },
-  vue: [
+  react: [
+    { shape: 'whole-index', components: 20, variants: 2, props: 4, saves: 4 },
+    { shape: 'first-story', components: 20, variants: 2, props: 4, saves: 3 },
+  ],
+  workspace: [
     {
       name: 'flat',
       packages: 1,
@@ -125,7 +158,19 @@ export const QUICK_PROFILE: SuiteProfile = {
       chainDepth: 2,
       fanOut: 2,
       heavyLib: true,
-      saves: 2,
+      saves: 3,
+    },
+  ],
+  svelte: [
+    {
+      name: 'large-program',
+      packages: 1,
+      componentsPerPackage: 10,
+      chainDepth: 2,
+      fanOut: 2,
+      heavyLib: true,
+      libModules: 400,
+      saves: 3,
     },
   ],
   angular: { components: 10, props: 4 },

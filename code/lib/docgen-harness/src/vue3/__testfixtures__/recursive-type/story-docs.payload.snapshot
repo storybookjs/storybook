@@ -1,0 +1,25 @@
+{
+  "id": "recursive-type",
+  "name": "RecursiveTree",
+  "path": "__PATH__",
+  "stories": {
+    "forms-recursive-type--props-as-written": {
+      "description": undefined,
+      "id": "forms-recursive-type--props-as-written",
+      "name": "Props As Written",
+      "snippet": "<script lang="ts" setup>
+import RecursiveTree from './RecursiveTree.vue';
+
+const node = {
+  value: 'root',
+  children: [{ value: 'leaf', children: [] }],
+};
+</script>
+
+<template>
+  <RecursiveTree :node="node" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

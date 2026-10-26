@@ -1,0 +1,64 @@
+{
+  "argTypes": {
+    "default": {
+      "description": "",
+      "name": "default",
+      "table": {
+        "category": "slots",
+        "type": {
+          "summary": "{}"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "{}"
+      }
+    },
+    "footer": {
+      "description": "",
+      "name": "footer",
+      "table": {
+        "category": "slots",
+        "type": {
+          "summary": "{}"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "{}"
+      }
+    },
+    "header": {
+      "description": "",
+      "name": "header",
+      "table": {
+        "category": "slots",
+        "type": {
+          "summary": "{ title: string; }"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "{ title: string; }"
+      }
+    },
+    "label": {
+      "description": "",
+      "name": "label",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": true
+      }
+    }
+  },
+  "id": "stories-renderers-vue3-vue3-vite-default-ts-customrenderfunctionalcomponent",
+  "jsDocTags": {},
+  "name": "Reactivity",
+  "path": "./src/stories/renderers/vue3_vue3-vite-default-ts/CustomRenderFunctionalComponent.stories.ts"
+}

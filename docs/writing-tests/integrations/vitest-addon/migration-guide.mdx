@@ -29,9 +29,9 @@ For more, please refer to the comparison table in the [Vitest addon guide](./ind
 
 ## Is my project eligible to upgrade?
 
-The [Vitest addon](./index.mdx) is supported and recommended for React, Preact, Vue, Svelte, and Web Components projects, which use the [Vite builder](../../../builders/vite.mdx) (or the [Next.js framework with Vite](../../../get-started/frameworks/nextjs-vite.mdx)).
+The [Vitest addon](./index.mdx) is supported and recommended for React, Preact, Vue, Svelte, Web Components, and Angular projects that use the [Vite builder](../../../builders/vite.mdx), including the [Next.js framework with Vite](../../../get-started/frameworks/nextjs-vite.mdx) and the [Angular framework with Vite](../../../get-started/frameworks/angular-vite.mdx).
 
-If you are using a different renderer (such as Angular) or the Webpack builder, you should continue to use the [test runner](../test-runner.mdx) to test your stories.
+If you are using the Webpack builder, [migrate to Vite](#what-if-i-am-using-storybook-with-webpack-or-rspack) first.
 
 ## Migration steps
 
@@ -115,13 +115,18 @@ For other CI providers and for more detailed configuration info, check the [test
 
 The Vitest addon relies on Vite to transform and run your stories as tests. Which means it only works with Storybook frameworks that use Vite.
 
-If your Storybook project uses a non-Vite builder like Webpack or RsPack, you will need to keep using the `@storybook/test-runner` for your component testing.
+Official support for the test runner has ended, so if your Storybook project uses a non-Vite builder like Webpack or Rspack, switch to a Vite-based framework before migrating:
 
-Most Webpack-based Storybook projects which do not have complex configurations can [migrate to Vite](../../../builders/vite.mdx#migrating-from-webpack) relatively easily. If you are using Next.js, you can use the [`@storybook/nextjs-vite` framework](../../../get-started/frameworks/nextjs-vite.mdx) to use Vite with Storybook.
+- If you are using Next.js, migrate to the [`@storybook/nextjs-vite` framework](../../../get-started/frameworks/nextjs-vite.mdx#how-do-i-migrate-from-the-nextjs-webpack-5-addon).
+- If you are using Angular, migrate to the [`@storybook/angular-vite` framework](../../../get-started/frameworks/angular-vite.mdx#migration-from-storybookangular).
+- If you are using React with Webpack, migrate to the [`@storybook/react-vite` framework](../../../get-started/frameworks/react-vite.mdx#how-do-i-migrate-from-the-react-webpack-framework).
+- For other frameworks, follow the steps to [migrate from Webpack to Vite](../../../builders/vite.mdx#migrating-from-webpack).
+
+If you cannot switch to Vite, the [test runner migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#test-runner-support-ended) describe the alternatives, including a Playwright setup that runs your stories as tests.
 
 ### What if I am using Jest for my unit tests?
 
-You can still migrate to use Vitest, but if you believe you won't benefit from it, you can keep using the `@storybook/test-runner`.
+You can keep using Jest for your unit tests. The Vitest addon only runs your stories as tests, so it works alongside an existing Jest setup.
 
 ### What if I am doing image snapshot testing?
 

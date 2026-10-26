@@ -6,7 +6,7 @@ import { PopoverProvider, SyntaxHighlighter, codeCommon } from 'storybook/intern
 import { ChevronSmallDownIcon, ChevronSmallUpIcon } from '@storybook/icons';
 
 import { uniq } from 'es-toolkit/array';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import type { PropSummaryValue } from './types';
 

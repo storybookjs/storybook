@@ -11,7 +11,6 @@ export class ReverseIndexImpl {
   private readonly index: ReverseIndex = new Map();
   /** Forward mapping from story file -> Set of dep files it reaches. */
   private readonly forwardIndex = new Map<string, Set<string>>();
-
   /** Records (or updates with min) the depth for (dep, story). */
   record(dep: string, story: string, depth: number): void {
     let inner = this.index.get(dep);

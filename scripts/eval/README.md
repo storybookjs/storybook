@@ -31,7 +31,7 @@ Each trial follows this lifecycle:
 All commands run from the repo root.
 
 ```sh
-# Prompt variant is required. Example: pattern-copy-play (the CLI default)
+# Prompt variant is required. Example: pattern-copy-play
 node scripts/eval/eval.ts -p mealdrop --prompt pattern-copy-play
 
 # Specific agent
@@ -141,7 +141,7 @@ The script ensures each repo is on its default branch with no local changes, fet
 node scripts/eval/sync-storybook-version.ts --version 9.1.0
 
 # Upgrade to a canary published from a Storybook PR
-node scripts/eval/sync-storybook-version.ts --version 0.0.0-pr-34297-sha-abcdef12
+node scripts/eval/sync-storybook-version.ts --version https://pkg.pr.new/storybookjs/storybook/storybook@abcdef1234567890
 
 # Upgrade a subset of projects
 node scripts/eval/sync-storybook-version.ts --version latest --project mealdrop --project edgy
@@ -286,37 +286,38 @@ To benchmark a new app, register it in the harness and sync baselines. Follow th
 
 The eval mirrors the real user flow exactly:
 
-1. A real user copies the "Set up Storybook with AI" prompt from the Storybook UI — a one-line nudge (`AI_SETUP_PROMPT`) that just says _"Run `npx storybook ai setup` and follow its instructions precisely."_
+1. A real user copies the "Set up Storybook with AI" prompt from the Storybook UI — a one-line nudge (`getAiSetupPrompt`) that just says _"Run `npx storybook skills setup` and follow its instructions precisely."_
 2. The user pastes that into their AI agent.
-3. The **agent** runs `npx storybook ai setup` itself as a tool call.
+3. The **agent** runs `npx storybook skills setup` itself as a tool call.
 4. The agent reads the resulting project-aware markdown and follows it.
 
 The harness hands steps (1) and (2) to the trial agent as its task. Eval starts at step (3).
 
 ### How variant selection works
 
-Prompt variants live in [`code/core/src/cli/ai/setup-prompts/`](../../code/core/src/cli/ai/setup-prompts/). Each variant is a self-contained `.ts` file that exports an `instructions(projectInfo)` function. The registry in `prompts/index.ts` lists every variant.
+Prompt variants live in [`code/core/src/cli/skills/content/setup-prompts/`](../../code/core/src/cli/skills/content/setup-prompts/). Each variant is a self-contained `.ts` file that exports an `instructions(projectInfo)` function. The registry in `setup-prompts/index.ts` lists every variant.
 
-The eval selects a variant by injecting the `EVAL_SETUP_PROMPT` env var into the agent's spawn environment. When the agent later runs `npx storybook ai setup`, the CLI reads that env var and returns the matching variant. Real users never set this env var, so they always get the default (`pattern-copy-play`).
+The eval selects a variant by injecting the `EVAL_SETUP_PROMPT` env var into the agent's spawn environment. When the agent later runs `npx storybook skills setup`, the CLI reads that env var and returns the matching variant. Real users never set this env var, so they always get the default (`optimized-tests`).
 
 ```text
 eval.ts --prompt setup
   → run-trial.ts calls driver.execute({ env: { EVAL_SETUP_PROMPT: 'setup' } })
     → agent spawns with that env
-      → agent's `npx storybook ai setup` tool call inherits EVAL_SETUP_PROMPT
+      → agent's `npx storybook skills setup` tool call inherits EVAL_SETUP_PROMPT
         → CLI's getPrompts() picks the 'setup' variant
 ```
 
 ### Available prompts
 
-- `**pattern-copy-play**` _(default)_ — analyze the codebase, copy real usage patterns, configure preview with providers and MSW mocks, write ~10 story files with play functions, verify each with Vitest. This is the only prompt users ever see when they run `npx storybook ai setup`.
+- `**optimized-tests**` _(default)_ — the only prompt users ever see when they run `npx storybook skills setup`.
+- `**pattern-copy-play**` — analyze the codebase, copy real usage patterns, configure preview with providers and MSW mocks, write ~10 story files with play functions, verify each with Vitest. Available only to the eval harness for A/B comparison against the default.
 - `**setup**` — structured step-by-step: analyze, configure preview, write 9 stories (3 simple / 3 medium / 3 complex), verify each with Vitest. Available only to the eval harness for A/B comparison against the default.
 
 ### Adding a new prompt variant
 
-1. Create `code/core/src/cli/ai/setup-prompts/<name>.ts`. Make it fully self-contained — keep its own `getTypeImportSource`, code-example helpers, and any other private utilities so changing one variant can never accidentally change another. Duplication is deliberate here.
+1. Create `code/core/src/cli/skills/content/setup-prompts/<name>.ts`. Make it fully self-contained — keep its own `getTypeImportSource`, code-example helpers, and any other private utilities so changing one variant can never accidentally change another. Duplication is deliberate here.
 2. Export an `instructions(projectInfo: ProjectInfo): string` function.
-3. Register it in `code/core/src/cli/ai/setup-prompts/index.ts` by adding an entry to `CURRENTLY_USED_PROMPT` and moving the existing one to FORMERLY_USED_PROMPTS.
+3. Register it in `code/core/src/cli/skills/content/setup-prompts/index.ts` by adding an entry to `CURRENTLY_USED_PROMPT` and moving the existing one to FORMERLY_USED_PROMPTS.
 4. Use it from the eval: `node scripts/eval/eval.ts -p mealdrop --prompt <name>`.
 
 To promote a variant to be the default users see, change `DEFAULT_PROMPT_NAME` in the same registry file.

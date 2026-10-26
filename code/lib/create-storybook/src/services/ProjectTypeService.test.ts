@@ -29,7 +29,6 @@ describe('ProjectTypeService', () => {
     it('logs a helpful message when framework cannot be detected', async () => {
       const service = new ProjectTypeService(pm);
       const options = { html: false } as unknown as CommandOptions;
-      // @ts-expect-error accessing private for test
       vi.spyOn(service, 'detectProjectType').mockResolvedValue(ProjectType.UNDETECTED);
 
       await expect(service.autoDetectProjectType(options)).rejects.toThrowError(
@@ -79,6 +78,57 @@ describe('ProjectTypeService', () => {
       expect(result).toBe(ProjectType.VUE3);
     });
 
+    it('detects VUE3 when pnpm resolves a Vue catalog range to version 3', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { vue: 'catalog:' },
+      };
+      (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => '3.5.44');
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+
+      expect(result).toBe(ProjectType.VUE3);
+      expect(pm.getDeclaredVersionSpecifier).toHaveBeenCalledWith('vue');
+    });
+
+    it('resolves catalog ranges for any dependency with a version matcher', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { 'example-renderer': 'catalog:renderers' },
+      };
+      (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => '^3.1.0');
+      const service = new ProjectTypeService(pm);
+      vi.spyOn(service, 'getSupportedTemplates').mockReturnValue([
+        {
+          preset: ProjectType.REACT,
+          dependencies: { 'example-renderer': (version) => version === '^3.1.0' },
+          matcherFunction: ({ dependencies }) => dependencies?.some(Boolean) ?? false,
+        },
+      ]);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+
+      await expect(service.autoDetectProjectType({ html: false } as CommandOptions)).resolves.toBe(
+        ProjectType.REACT
+      );
+      expect(pm.getDeclaredVersionSpecifier).toHaveBeenCalledWith('example-renderer');
+    });
+
+    it('does not detect VUE3 when the Vue catalog resolves to version 2', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { vue: 'catalog:legacy' },
+      };
+      (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => '2.7.16');
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+
+      await expect(
+        service.autoDetectProjectType({ html: false } as CommandOptions)
+      ).rejects.toThrowError('Storybook failed to detect your project type');
+    });
+
     it('detects SVELTEKIT via @sveltejs/kit', async () => {
       (pm as any).primaryPackageJson.packageJson = {
         dependencies: { '@sveltejs/kit': '^2.0.0' },
@@ -112,15 +162,15 @@ describe('ProjectTypeService', () => {
       expect(result).toBe(ProjectType.SOLID);
     });
 
-    it('detects REACT_SCRIPTS via dependency', async () => {
+    it('falls back to REACT for a CRA project (react-scripts no longer detected)', async () => {
       (pm as any).primaryPackageJson.packageJson = {
-        dependencies: { 'react-scripts': '^5.0.0' },
+        dependencies: { react: '^18.0.0', 'react-dom': '^18.0.0', 'react-scripts': '^5.0.0' },
       };
       const service = new ProjectTypeService(pm);
       // @ts-expect-error private method spy
       vi.spyOn(service, 'isNxProject').mockReturnValue(false);
       const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
-      expect(result).toBe(ProjectType.REACT_SCRIPTS);
+      expect(result).toBe(ProjectType.REACT);
     });
 
     it('detects ANGULAR via @angular/core', async () => {

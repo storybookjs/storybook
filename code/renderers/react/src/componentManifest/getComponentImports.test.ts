@@ -4,7 +4,7 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
 
-import { getImports as buildImports, getComponentData } from './getComponentImports.ts';
+import { getComponentData } from './getComponentImports.ts';
 import { setupMemfsMocks } from './memfs-test-setup.ts';
 
 vi.mock('node:fs');
@@ -69,8 +69,8 @@ test('Get imports from multiple components', async () => {
         },
       ],
       "imports": [
-        "import { Button } from "@design-system/components/override";",
-        "import { ButtonGroup } from "./button-group";",
+        "import { Button } from '@design-system/components/override';",
+        "import { ButtonGroup } from './button-group';",
       ],
     }
   `
@@ -101,7 +101,7 @@ test('Namespace import with member usage', async () => {
         },
       ],
       "imports": [
-        "import * as Accordion from "./accordion";",
+        "import * as Accordion from './accordion';",
       ],
     }
   `
@@ -131,7 +131,7 @@ test('Named import used as namespace object', async () => {
         },
       ],
       "imports": [
-        "import { Accordion } from "./accordion";",
+        "import { Accordion } from './accordion';",
       ],
     }
   `
@@ -162,7 +162,7 @@ test('Default import', async () => {
         },
       ],
       "imports": [
-        "import { Button } from "@design-system/components/override";",
+        "import { Button } from '@design-system/components/override';",
       ],
     }
   `
@@ -202,8 +202,8 @@ test('Alias named import and meta.component inclusion', async () => {
         },
       ],
       "imports": [
-        "import { Button as Btn } from "@design-system/components/override";",
-        "import { Other } from "./other";",
+        "import { Button as Btn } from '@design-system/components/override';",
+        "import { Other } from './other';",
       ],
     }
   `
@@ -234,7 +234,7 @@ test('Strip unused specifiers from the same import statement', async () => {
         },
       ],
       "imports": [
-        "import { Button as Btn } from "@design-system/components/override";",
+        "import { Button as Btn } from '@design-system/components/override';",
       ],
     }
   `
@@ -264,7 +264,7 @@ test('Meta component with member and star import', async () => {
         },
       ],
       "imports": [
-        "import * as Accordion from "./accordion";",
+        "import * as Accordion from './accordion';",
       ],
     }
   `
@@ -304,8 +304,8 @@ test('Keeps multiple named specifiers and drops unused ones from same import', a
         },
       ],
       "imports": [
-        "import { Button } from "@design-system/components/override";",
-        "import { ButtonGroup } from "./button-group";",
+        "import { Button } from '@design-system/components/override';",
+        "import { ButtonGroup } from './button-group';",
       ],
     }
   `
@@ -336,7 +336,7 @@ test('Mixed default + named import: keep only default when only default used', a
         },
       ],
       "imports": [
-        "import { Button } from "@design-system/components/override";",
+        "import { Button } from '@design-system/components/override';",
       ],
     }
   `
@@ -367,7 +367,7 @@ test('Mixed default + named import: keep only named when only named (alias) used
         },
       ],
       "imports": [
-        "import { Button as Btn } from "@design-system/components/override";",
+        "import { Button as Btn } from '@design-system/components/override';",
       ],
     }
   `
@@ -399,7 +399,7 @@ test('Per-specifier type import is dropped when mixing with value specifiers', a
         },
       ],
       "imports": [
-        "import { Button } from "@design-system/components/override";",
+        "import { Button } from '@design-system/components/override';",
       ],
     }
   `
@@ -440,7 +440,7 @@ test('Namespace import used for multiple members kept once', async () => {
         },
       ],
       "imports": [
-        "import * as DS from "./ds";",
+        "import * as DS from './ds';",
       ],
     }
   `
@@ -470,7 +470,7 @@ test('Default import kept when referenced only via meta.component', async () => 
         },
       ],
       "imports": [
-        "import { Button } from "@design-system/components/override";",
+        "import { Button } from '@design-system/components/override';",
       ],
     }
   `
@@ -502,7 +502,7 @@ test('Side-effect-only import is ignored', async () => {
         },
       ],
       "imports": [
-        "import { Button } from "@design-system/components/override";",
+        "import { Button } from '@design-system/components/override';",
       ],
     }
   `
@@ -537,7 +537,7 @@ test('Converts default relative import to import override when provided', async 
         },
       ],
       "imports": [
-        "import { Button } from "@design-system/components/override";",
+        "import { Button } from '@design-system/components/override';",
       ],
     }
   `
@@ -566,7 +566,7 @@ test('Keeps relative import when packageName is missing', async () => {
         },
       ],
       "imports": [
-        "import { Button } from "./components/Button";",
+        "import { Button } from './components/Button';",
       ],
     }
   `
@@ -597,7 +597,7 @@ test('Non-relative import remains unchanged even if packageName provided', async
         },
       ],
       "imports": [
-        "import { Header } from "@ds/header";",
+        "import { Header } from '@ds/header';",
       ],
     }
   `
@@ -626,7 +626,7 @@ test('Rewrites tilde-prefixed source to packageName', async () => {
         },
       ],
       "imports": [
-        "import { Button } from "pkg";",
+        "import { Button } from 'pkg';",
       ],
     }
   `
@@ -655,7 +655,7 @@ test('Rewrites hash-prefixed source to packageName', async () => {
         },
       ],
       "imports": [
-        "import { Btn } from "my-package";",
+        "import { Btn } from 'my-package';",
       ],
     }
   `
@@ -684,7 +684,7 @@ test('Does not rewrite scoped package subpath (valid bare specifier)', async () 
         },
       ],
       "imports": [
-        "import { Button } from "pkg";",
+        "import { Button } from 'pkg';",
       ],
     }
   `
@@ -713,7 +713,7 @@ test('Does not rewrite unscoped package subpath (valid bare specifier)', async (
         },
       ],
       "imports": [
-        "import { Button } from "pkg";",
+        "import { Button } from 'pkg';",
       ],
     }
   `
@@ -789,8 +789,8 @@ test('Merges multiple imports from the same package (defaults and named)', async
         },
       ],
       "imports": [
-        "import Link, { Banner, Dialog, Heading, Stack } from "@primer/react";",
-        "import { CopilotIcon } from "@primer/octicons-react";",
+        "import Link, { Banner, Dialog, Heading, Stack } from '@primer/react';",
+        "import { CopilotIcon } from '@primer/octicons-react';",
       ],
     }
   `
@@ -839,9 +839,9 @@ test('Handle namespace with default and separates named for same package', async
         },
       ],
       "imports": [
-        "import * as PR from "@primer/react";",
-        "import { Banner } from "@primer/react";",
-        "import Link from ".";",
+        "import * as PR from '@primer/react';",
+        "import { Banner } from '@primer/react';",
+        "import Link from '.';",
       ],
     }
   `
@@ -909,142 +909,4 @@ test('Filters out locally defined components', async () => {
     }
     `
   );
-});
-
-test('importOverride: default override forces default import (keeps local name)', async () => {
-  const code = dedent`
-    import { Button } from './Button';
-
-    const meta = {};
-    export default meta;
-    export const S = <Button/>;
-  `;
-  const csf = loadCsf(code, { makeTitle: (t) => t ?? 'No title' }).parse();
-  const base = await getComponentData({
-    csf,
-    packageName: 'my-package',
-    storyFilePath: '/app/src/stories/Button.stories.tsx',
-    docgenEngine: 'react-docgen',
-  });
-  const patched = base.components.map((c) =>
-    c.componentName === 'Button' ? { ...c, importOverride: "import Button from '@pkg/button';" } : c
-  );
-  const out = buildImports({ components: patched, packageName: 'my-package' });
-  expect(out).toMatchInlineSnapshot(`
-    [
-      "import Button from \"@pkg/button\";",
-    ]
-  `);
-});
-
-test('importOverride: named override aliases imported to local name', async () => {
-  const code = dedent`
-    import Button from './Button';
-
-    const meta = {};
-    export default meta;
-    export const S = <Button/>;
-  `;
-  const csf = loadCsf(code, { makeTitle: (t) => t ?? 'No title' }).parse();
-  const base = await getComponentData({
-    csf,
-    packageName: 'pkg',
-    storyFilePath: '/app/src/stories/Button.stories.tsx',
-    docgenEngine: 'react-docgen',
-  });
-  const patched = base.components.map((c) =>
-    c.componentName === 'Button'
-      ? { ...c, importOverride: "import { DSButton } from '@pkg/button';" }
-      : c
-  );
-  const out = buildImports({ components: patched, packageName: 'pkg' });
-  expect(out).toMatchInlineSnapshot(`
-    [
-      "import { DSButton as Button } from \"@pkg/button\";",
-    ]
-  `);
-});
-
-test('importOverride: uses namespace override as-is', async () => {
-  const code = dedent`
-    import * as UI from './ui';
-
-    const meta = {};
-    export default meta;
-    export const S = <UI.Button/>;
-  `;
-  const csf = loadCsf(code, { makeTitle: (t) => t ?? 'No title' }).parse();
-  const discovered = await getComponentData({
-    csf,
-    packageName: 'pkg',
-    storyFilePath: '/app/src/stories/ui.stories.tsx',
-    docgenEngine: 'react-docgen',
-  });
-  const patched = discovered.components.map((c) =>
-    c.componentName === 'UI.Button' ? { ...c, importOverride: "import * as UI from '@pkg/ui';" } : c
-  );
-  const out = buildImports({ components: patched, packageName: 'pkg' });
-  expect(out).toMatchInlineSnapshot(`
-    [
-      "import * as UI from \"@pkg/ui\";",
-    ]
-  `);
-});
-
-test('importOverride: malformed string is ignored and behavior falls back', async () => {
-  const code = dedent`
-    import { Header } from './Header';
-
-    const meta = {};
-    export default meta;
-    export const S = <Header/>;
-  `;
-  const csf = loadCsf(code, { makeTitle: (t) => t ?? 'No title' }).parse();
-  const base = await getComponentData({
-    csf,
-    packageName: 'pkg',
-    storyFilePath: '/app/src/stories/Header.stories.tsx',
-    docgenEngine: 'react-docgen',
-  });
-  const patched = base.components.map((c) =>
-    c.componentName === 'Header' ? { ...c, importOverride: 'import oops not valid' } : c
-  );
-  const out = buildImports({ components: patched, packageName: 'pkg' });
-  expect(out).toMatchInlineSnapshot(`
-    [
-      "import { Header } from \"pkg\";",
-    ]
-  `);
-});
-
-test('importOverride: merges multiple components into a single declaration per source', async () => {
-  const code = dedent`
-    import Button from './Button';
-    import { Header } from './Header';
-
-    const meta = {};
-    export default meta;
-    export const A = <Button/>;
-    export const B = <Header/>;
-  `;
-  const csf = loadCsf(code, { makeTitle: (t) => t ?? 'No title' }).parse();
-  const base = await getComponentData({
-    csf,
-    packageName: 'pkg',
-    storyFilePath: '/app/src/stories/multi.stories.tsx',
-    docgenEngine: 'react-docgen',
-  });
-  const patched = base.components.map((c) =>
-    c.componentName === 'Button'
-      ? { ...c, importOverride: "import { DSButton } from '@ds/ui';" }
-      : c.componentName === 'Header'
-        ? { ...c, importOverride: "import { Header } from '@ds/ui';" }
-        : c
-  );
-  const out = buildImports({ components: patched, packageName: 'pkg' });
-  expect(out).toMatchInlineSnapshot(`
-    [
-      "import { DSButton as Button, Header } from \"@ds/ui\";",
-    ]
-  `);
 });

@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import React, { useRef } from 'react';
 
-import { useToolbar } from '@react-aria/toolbar';
+import { useToolbar } from 'react-aria/useToolbar';
 
 import { Bar, type BarProps } from '../Bar/Bar.tsx';
 

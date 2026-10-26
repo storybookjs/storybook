@@ -1,8 +1,18 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "allowJs": true,
     "module": "ESNext",
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    // The template stories import the preview of the sandbox they are linked into
+    "paths": { "#.storybook/preview": ["./src/__test__/svelte-csf-factories/preview.ts"] }
   },
-  "include": ["src/**/*", "src/**/*.svelte", "template/**/*", "template/**/*.svelte"]
+  "include": [
+    "src/**/*",
+    "src/**/*.svelte",
+    "static/**/*.svelte",
+    "template/**/*",
+    "template/**/*.svelte"
+  ],
+  "exclude": ["src/docgen/component-docgen/__testfixtures__/**"]
 }

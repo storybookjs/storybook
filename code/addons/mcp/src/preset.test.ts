@@ -1,9 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Options } from 'storybook/internal/types';
+import { getToolAvailability } from 'storybook/internal/core-server';
 import { experimental_devServer } from './preset.ts';
 import * as mcpHandlerModule from './mcp-handler.ts';
-import * as runStoryTests from './tools/run-story-tests.ts';
-import * as moduleGraph from './utils/module-graph.ts';
+import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
+
+// `getToolAvailability` now lives in core (`storybook/internal/core-server`) and composes its own
+// sub-probes internally, so tests that need to force one gate (e.g. module-graph support) mock the
+// composed result at this seam rather than an addon-local probe.
+vi.mock('storybook/internal/core-server', { spy: true });
 
 describe('experimental_devServer', () => {
   let mockApp: any;
@@ -11,6 +16,8 @@ describe('experimental_devServer', () => {
   let mcpHandler: any;
 
   beforeEach(() => {
+    // The `services` preset hook does this in a real Storybook before the dev server mounts /mcp.
+    registerCoreToolsetsForTest();
     vi.restoreAllMocks();
 
     mockApp = {
@@ -101,12 +108,7 @@ describe('experimental_devServer', () => {
       ...mockOptions,
       channel,
       presets: {
-        apply: vi.fn((key: string) => {
-          if (key === 'features') {
-            return Promise.resolve({ changeDetection: true });
-          }
-          return Promise.resolve(undefined);
-        }),
+        apply: vi.fn(() => Promise.resolve(undefined)),
       },
     } as unknown as Options;
 
@@ -335,10 +337,10 @@ describe('experimental_devServer', () => {
 
     const html = mockRes.end.mock.calls[0][0] as string;
     for (const tool of [
-      'get-stories-by-component',
-      'get-changed-stories',
-      'display-review',
-      'get-documentation-for-story',
+      'stories-find-by-component',
+      'stories-changed',
+      'review-create',
+      'docs-show-story',
     ]) {
       expect(html).toContain(`<code>${tool}</code>`);
     }
@@ -347,9 +349,20 @@ describe('experimental_devServer', () => {
   });
 
   it('marks dev tools disabled on the landing page when the dev toolset is turned off', async () => {
-    // Module graph IS supported, so `get-stories-by-component` would otherwise badge
+    // Module graph IS supported, so `stories-find-by-component` would otherwise badge
     // as enabled — proving the badge now also honors the `dev` toolset being disabled.
-    vi.spyOn(moduleGraph, 'isModuleGraphSupported').mockResolvedValue(true);
+    // Everything else here matches what `mockOptions`'s fixture (features: { componentsManifest:
+    // false }, no other presets) would resolve for real; only `moduleGraphSupported` is forced.
+    vi.mocked(getToolAvailability).mockResolvedValueOnce({
+      moduleGraphSupported: true,
+      docsEnabled: false,
+      docsEnabledForCli: false,
+      docsHasManifests: false,
+      docsFeatureEnabled: false,
+      testSupported: false,
+      a11yEnabled: false,
+      docgenServer: false,
+    });
 
     let getHandler: any;
     mockApp.get = vi.fn((_path, handler) => {
@@ -368,22 +381,67 @@ describe('experimental_devServer', () => {
 
     const html = mockRes.end.mock.calls[0][0] as string;
 
-    const badgeFor = (tool: string) =>
-      html.match(
-        new RegExp(`<code>${tool}</code>\\s*<span class="toolset-status (enabled|disabled)"`)
-      )?.[1];
-
-    for (const tool of ['get-stories-by-component', 'get-changed-stories', 'display-review']) {
-      expect(badgeFor(tool)).toBe('disabled');
-    }
+    expect(html).toMatch(
+      /<code>stories-find-by-component<\/code>\s*<span class="toolset-status disabled"/
+    );
     expect(html).toContain('The <code>dev</code> toolset is disabled via addon options.');
+    expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
+  });
+
+  it('names the missing manifest prerequisite instead of claiming the framework is unsupported', async () => {
+    // `mockOptions` has no manifests and `componentsManifest: false`, which is what an
+    // Angular-vite or Vue project that only forgot a feature flag looks like.
+    let getHandler: any;
+    mockApp.get = vi.fn((_path, handler) => {
+      getHandler = handler;
+    });
+
+    await (experimental_devServer as any)(mockApp, mockOptions);
+
+    const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
+    await getHandler({ headers: { accept: 'text/html' } } as any, mockRes);
+
+    const html = mockRes.end.mock.calls[0][0] as string;
+    expect(html).toContain('This toolset requires a components manifest,');
+    expect(html).toContain('<code>componentsManifest</code>');
+    expect(html).toContain('<code>@storybook/angular-vite</code>');
+    expect(html).not.toContain('React-based setups');
+    expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
+  });
+
+  it('blames the framework, not the config, when the feature is on and there is still no manifest', async () => {
+    const featureOnNoManifestOptions = {
+      ...mockOptions,
+      presets: {
+        apply: vi.fn(async (key: string) => {
+          if (key === 'features') {
+            return { componentsManifest: true };
+          }
+          return undefined;
+        }),
+      },
+    } as unknown as Options;
+
+    let getHandler: any;
+    mockApp.get = vi.fn((_path, handler) => {
+      getHandler = handler;
+    });
+
+    await (experimental_devServer as any)(mockApp, featureOnNoManifestOptions);
+
+    const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
+    await getHandler({ headers: { accept: 'text/html' } } as any, mockRes);
+
+    const html = mockRes.end.mock.calls[0][0] as string;
+    expect(html).toContain('which your framework does not generate');
+    expect(html).not.toContain('Enable the <code>componentsManifest</code> feature');
     expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
   });
 
   it('prompts to enable the manifest feature when manifests exist but the flag is off', async () => {
     // Manifests are present on disk, but `componentsManifest` is not enabled — the docs
     // toolset is unavailable for a different reason than "no manifests", so the page shows
-    // the "enable the feature" notice rather than the React-only one.
+    // the "enable the feature" notice rather than the missing-manifest one.
     const manifestsNoFlagOptions = {
       ...mockOptions,
       presets: {
@@ -411,12 +469,13 @@ describe('experimental_devServer', () => {
 
     const html = mockRes.end.mock.calls[0][0] as string;
     expect(html).toContain('This toolset requires enabling the component manifest feature.');
-    expect(html).not.toContain('only supported in React-based setups');
+    expect(html).not.toContain('This toolset requires a components manifest,');
     expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
   });
 
   it('should show Storybook version requirement for addon-vitest and a manual manifest link', async () => {
-    vi.spyOn(runStoryTests, 'getAddonVitestConstants').mockResolvedValue(undefined);
+    // No addon-vitest preset key is registered by this fixture's `apply` mock, so the real
+    // (now core-internal) `isAddonVitestEnabled` probe resolves falsy on its own — nothing to mock.
     const manifestEnabledOptions = {
       presets: {
         apply: vi.fn((key: string) => {
@@ -562,6 +621,212 @@ describe('experimental_devServer', () => {
     expect(result).toBe(mockApp);
   });
 
+  describe('origin validation', () => {
+    const initializeRequest = JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'initialize',
+      params: {
+        protocolVersion: '2024-11-05',
+        capabilities: {},
+        clientInfo: { name: 'test-client', version: '1.0.0' },
+      },
+    });
+
+    const createRequest = (headers: Record<string, string>) =>
+      ({
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+          host: 'localhost:6006',
+          ...headers,
+        },
+        socket: { encrypted: false },
+        url: '/mcp',
+        [Symbol.asyncIterator]: async function* () {
+          yield Buffer.from(initializeRequest);
+        },
+      }) as any;
+
+    const createResponse = () =>
+      ({
+        writeHead: vi.fn(),
+        write: vi.fn(),
+        end: vi.fn(),
+        setHeader: vi.fn(),
+        statusCode: 0,
+      }) as any;
+
+    const createOptionsWithCore = (core: Record<string, unknown>) =>
+      ({
+        ...mockOptions,
+        presets: {
+          apply: vi.fn((key: string) => {
+            if (key === 'core') {
+              return Promise.resolve(core);
+            }
+            if (key === 'features') {
+              return Promise.resolve({ componentsManifest: false });
+            }
+            return Promise.resolve(undefined);
+          }),
+        },
+      }) as unknown as Options;
+
+    it('rejects a POST whose Origin is not an allowed host', async () => {
+      const handler = vi.spyOn(mcpHandlerModule, 'mcpServerHandler').mockResolvedValue(undefined);
+      await (experimental_devServer as any)(mockApp, mockOptions);
+      const res = createResponse();
+
+      await mcpHandler(createRequest({ origin: 'http://malicious-site.com' }), res);
+
+      expect(res.writeHead).toHaveBeenCalledWith(403, { 'Content-Type': 'text/plain' });
+      expect(res.end).toHaveBeenCalledWith('Invalid origin');
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('rejects a non-HTML GET whose Origin is not an allowed host', async () => {
+      const handler = vi.spyOn(mcpHandlerModule, 'mcpServerHandler').mockResolvedValue(undefined);
+      const handlers: Record<string, any> = {};
+      mockApp.get = vi.fn((path: string, routeHandler: any) => {
+        handlers[path] = routeHandler;
+      });
+      await (experimental_devServer as any)(mockApp, mockOptions);
+      const res = createResponse();
+
+      await handlers['/mcp'](createRequest({ origin: 'http://malicious-site.com' }), res);
+
+      expect(res.writeHead).toHaveBeenCalledWith(403, { 'Content-Type': 'text/plain' });
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('rejects a POST whose Origin is not a URL', async () => {
+      const handler = vi.spyOn(mcpHandlerModule, 'mcpServerHandler').mockResolvedValue(undefined);
+      await (experimental_devServer as any)(mockApp, mockOptions);
+      const res = createResponse();
+
+      await mcpHandler(createRequest({ origin: 'null' }), res);
+
+      expect(res.writeHead).toHaveBeenCalledWith(403, { 'Content-Type': 'text/plain' });
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('rejects a POST whose Origin is an IP address that is not a known address', async () => {
+      const handler = vi.spyOn(mcpHandlerModule, 'mcpServerHandler').mockResolvedValue(undefined);
+      await (experimental_devServer as any)(mockApp, mockOptions);
+      const res = createResponse();
+
+      await mcpHandler(createRequest({ origin: 'http://203.0.113.5' }), res);
+
+      expect(res.writeHead).toHaveBeenCalledWith(403, { 'Content-Type': 'text/plain' });
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('accepts a POST without an Origin header', async () => {
+      const handler = vi.spyOn(mcpHandlerModule, 'mcpServerHandler').mockResolvedValue(undefined);
+      await (experimental_devServer as any)(mockApp, mockOptions);
+      const res = createResponse();
+
+      await mcpHandler(createRequest({}), res);
+
+      expect(res.writeHead).not.toHaveBeenCalled();
+      expect(handler).toHaveBeenCalledOnce();
+    });
+
+    it('accepts a POST from a localhost Origin', async () => {
+      const handler = vi.spyOn(mcpHandlerModule, 'mcpServerHandler').mockResolvedValue(undefined);
+      await (experimental_devServer as any)(mockApp, mockOptions);
+      const res = createResponse();
+
+      await mcpHandler(createRequest({ origin: 'http://localhost:6006' }), res);
+
+      expect(res.writeHead).not.toHaveBeenCalled();
+      expect(handler).toHaveBeenCalledOnce();
+    });
+
+    it('accepts a POST from an Origin listed in core.allowedHosts', async () => {
+      const handler = vi.spyOn(mcpHandlerModule, 'mcpServerHandler').mockResolvedValue(undefined);
+      await (experimental_devServer as any)(
+        mockApp,
+        createOptionsWithCore({ allowedHosts: ['my-app.example.com'] })
+      );
+      const res = createResponse();
+
+      await mcpHandler(createRequest({ origin: 'https://my-app.example.com' }), res);
+
+      expect(res.writeHead).not.toHaveBeenCalled();
+      expect(handler).toHaveBeenCalledOnce();
+    });
+
+    it('accepts any Origin when core.allowedHosts is true', async () => {
+      const handler = vi.spyOn(mcpHandlerModule, 'mcpServerHandler').mockResolvedValue(undefined);
+      await (experimental_devServer as any)(mockApp, createOptionsWithCore({ allowedHosts: true }));
+      const res = createResponse();
+
+      await mcpHandler(createRequest({ origin: 'http://malicious-site.com' }), res);
+
+      expect(res.writeHead).not.toHaveBeenCalled();
+      expect(handler).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('media type validation', () => {
+    const createRequest = (contentType: string | undefined) =>
+      ({
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          host: 'localhost:6006',
+          ...(contentType === undefined ? {} : { 'content-type': contentType }),
+        },
+        socket: { encrypted: false },
+        url: '/mcp',
+        [Symbol.asyncIterator]: async function* () {
+          yield Buffer.from('{}');
+        },
+      }) as any;
+
+    const createResponse = () =>
+      ({
+        writeHead: vi.fn(),
+        write: vi.fn(),
+        end: vi.fn(),
+        setHeader: vi.fn(),
+        statusCode: 0,
+      }) as any;
+
+    it.each([
+      undefined,
+      'text/plain',
+      'text/plain; x=application/json',
+      'application/x-www-form-urlencoded',
+    ])('rejects a POST whose Content-Type is %s', async (contentType) => {
+      const handler = vi.spyOn(mcpHandlerModule, 'mcpServerHandler').mockResolvedValue(undefined);
+      await (experimental_devServer as any)(mockApp, mockOptions);
+      const res = createResponse();
+
+      await mcpHandler(createRequest(contentType), res);
+
+      expect(res.writeHead).toHaveBeenCalledWith(415, { 'Content-Type': 'text/plain' });
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it.each(['application/json', 'application/json; charset=utf-8', 'Application/JSON'])(
+      'accepts a POST whose Content-Type is %s',
+      async (contentType) => {
+        const handler = vi.spyOn(mcpHandlerModule, 'mcpServerHandler').mockResolvedValue(undefined);
+        await (experimental_devServer as any)(mockApp, mockOptions);
+        const res = createResponse();
+
+        await mcpHandler(createRequest(contentType), res);
+
+        expect(res.writeHead).not.toHaveBeenCalled();
+        expect(handler).toHaveBeenCalledOnce();
+      }
+    );
+  });
+
   it('should handle partial toolsets configuration', async () => {
     const partialOptions = {
       presets: {
@@ -678,7 +943,6 @@ describe('experimental_devServer', () => {
 
     await (experimental_devServer as any)(mockApp, optionsWithRefs);
 
-    // The preset should have called presets.apply('refs')
     expect(apply).toHaveBeenCalledWith('refs', {});
   });
 
@@ -715,7 +979,6 @@ describe('experimental_devServer', () => {
       },
     } as unknown as Options;
 
-    // Should not throw
     const result = await (experimental_devServer as any)(mockApp, optionsWithThrowingRefs);
     expect(result).toBe(mockApp);
   });

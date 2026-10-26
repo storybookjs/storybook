@@ -16,8 +16,8 @@ function scenario(
     warmMembers: members?.[1],
     coldOpaqueTypes,
     metrics: {
-      coldExtractionMs: { status: 'measured', samples: [cold], median: cold },
-      warmExtractionMs: { status: 'measured', samples: [warm], median: warm },
+      coldExtractionMs: { status: 'measured', samples: [cold], value: cold },
+      warmExtractionMs: { status: 'measured', samples: [warm], value: warm },
       wholeProjectScanMs: NOT_APPLICABLE,
       peakTransientMb: NOT_APPLICABLE,
       retainedGrowthMb: NOT_APPLICABLE,

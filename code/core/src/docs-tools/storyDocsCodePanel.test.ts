@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('storyDocsCodePanel', () => {
   beforeEach(() => {
-    vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+    vi.stubGlobal('FEATURES', { docgenServer: true });
   });
 
   afterEach(() => {
@@ -29,8 +29,8 @@ describe('storyDocsCodePanel', () => {
   });
 
   describe('shouldWaitForServiceSnippet', () => {
-    it('is false when experimentalDocgenServer is disabled', () => {
-      vi.stubGlobal('FEATURES', { experimentalDocgenServer: false });
+    it('is false when docgenServer is disabled', () => {
+      vi.stubGlobal('FEATURES', { docgenServer: false });
       expect(shouldWaitForServiceSnippet(undefined, false)).toBe(false);
     });
 

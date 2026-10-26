@@ -1,0 +1,3 @@
+<template>
+  <ExposeEventCollision label="Name" />
+</template>

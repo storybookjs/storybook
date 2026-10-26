@@ -1,14 +1,27 @@
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
+import path from 'node:path';
 
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { vol } from 'memfs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ModuleGraphService } from '../../services/module-graph/definition.ts';
-import { findStoriesByComponent, resolveComponentMatches } from './find-by-component.ts';
+import { DEFAULT_MAX_DISTANCE, findStoriesByComponent } from './find-by-component.ts';
+import type { ModuleGraphAccess, ModuleGraphStoryHit } from './resolve-component-stories.ts';
 
 vi.mock('node:fs', { spy: true });
+
+// Path resolution, barrel expansion, canonicalisation and dedupe belong to
+// `resolveComponentStories` and are covered by resolve-component-stories.test.ts. What is asserted
+// here is only what this module adds on top: maxDistance clipping, story-index enrichment, and the
+// pass-through of the resolver's `pathNotFound` / unavailable outcomes.
+
+const WORKING_DIR = path.resolve('/repo');
+const BUTTON = path.join(WORKING_DIR, 'src/Button.tsx');
+const MISSING = path.join(WORKING_DIR, 'src/Missing.tsx');
+
+/** The forward-slashed form the resolver queries the module graph with. */
+const asGraphPath = (filePath: string) => path.normalize(filePath).replaceAll('\\', '/');
 
 const index: StoryIndex = {
   v: 5,
@@ -44,38 +57,43 @@ const index: StoryIndex = {
 };
 
 const storiesForFiles = vi.fn();
-const moduleGraph = {
-  queries: {
-    storiesForFiles: {
-      loaded: storiesForFiles,
+
+/** A ready module graph whose reverse index answers with `hits` for every queried file. */
+function readyGraph(hits: ModuleGraphStoryHit[]): ModuleGraphAccess {
+  storiesForFiles.mockImplementation(async ({ files }: { files: string[] }) =>
+    files.map((file) => (file === asGraphPath(BUTTON) ? hits : []))
+  );
+  return {
+    queries: {
+      status: { loaded: async () => ({ value: 'ready' }) },
+      storiesForFiles: { loaded: storiesForFiles },
     },
-  },
-} as unknown as ModuleGraphService;
+  };
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vol.reset();
+  vol.fromNestedJSON({ [BUTTON]: '' });
+  vi.mocked(existsSync).mockImplementation((filePath) => vol.existsSync(filePath));
+  vi.mocked(realpathSync.native).mockImplementation((filePath) =>
+    String(vol.realpathSync(filePath))
+  );
+});
 
 describe('findStoriesByComponent', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(existsSync).mockReturnValue(true);
-  });
-
-  it('enriches matches from the story index', async () => {
-    storiesForFiles.mockResolvedValue([
-      [
-        { storyFile: './src/Button.stories.tsx', depth: 1 },
-        { storyFile: './src/Button.stories.tsx', depth: 1 },
-      ],
-    ]);
-
+  it('enriches every match with its story-index metadata', async () => {
     const result = await findStoriesByComponent({
-      componentPaths: ['/repo/src/Button.tsx'],
+      componentPaths: [BUTTON],
       index,
-      moduleGraph,
+      moduleGraph: readyGraph([{ storyFile: './src/Button.stories.tsx', depth: 1 }]),
     });
 
     expect(result).toEqual({
+      available: true,
       results: [
         {
-          componentPath: '/repo/src/Button.tsx',
+          componentPath: asGraphPath(BUTTON),
           matches: [
             {
               storyId: 'button--primary',
@@ -97,153 +115,93 @@ describe('findStoriesByComponent', () => {
     });
   });
 
-  it('marks pathNotFound and skips enrichment', async () => {
-    vi.mocked(existsSync).mockReturnValue(false);
-
+  it('clips matches past maxDistance and reports the distances that were dropped', async () => {
     const result = await findStoriesByComponent({
-      componentPaths: ['/repo/src/Missing.tsx'],
+      componentPaths: [BUTTON],
+      maxDistance: 1,
       index,
-      moduleGraph,
+      moduleGraph: readyGraph([
+        { storyFile: './src/Button.stories.tsx', depth: 1 },
+        { storyFile: './src/Input.stories.tsx', depth: 3 },
+      ]),
     });
 
     expect(result).toEqual({
+      available: true,
       results: [
         {
-          componentPath: '/repo/src/Missing.tsx',
-          matches: [],
-          pathNotFound: true,
+          componentPath: asGraphPath(BUTTON),
+          matches: [
+            expect.objectContaining({ storyId: 'button--primary', distance: 1 }),
+            expect.objectContaining({ storyId: 'button--secondary', distance: 1 }),
+          ],
+          clipped: { count: 1, distances: [3] },
         },
       ],
+    });
+  });
+
+  it(`defaults the ceiling to ${DEFAULT_MAX_DISTANCE}`, async () => {
+    const result = await findStoriesByComponent({
+      componentPaths: [BUTTON],
+      index,
+      moduleGraph: readyGraph([
+        { storyFile: './src/Button.stories.tsx', depth: DEFAULT_MAX_DISTANCE },
+        { storyFile: './src/Input.stories.tsx', depth: DEFAULT_MAX_DISTANCE + 1 },
+      ]),
+    });
+
+    expect(result).toMatchObject({
+      available: true,
+      results: [
+        {
+          matches: [
+            expect.objectContaining({ storyId: 'button--primary' }),
+            expect.objectContaining({ storyId: 'button--secondary' }),
+          ],
+          clipped: { count: 1, distances: [DEFAULT_MAX_DISTANCE + 1] },
+        },
+      ],
+    });
+  });
+
+  it('omits `clipped` when nothing was dropped', async () => {
+    const result = await findStoriesByComponent({
+      componentPaths: [BUTTON],
+      index,
+      moduleGraph: readyGraph([{ storyFile: './src/Button.stories.tsx', depth: 1 }]),
+    });
+
+    expect(result).toEqual({
+      available: true,
+      results: [expect.not.objectContaining({ clipped: expect.anything() })],
+    });
+  });
+
+  it('passes `pathNotFound` through without querying the reverse index', async () => {
+    const result = await findStoriesByComponent({
+      componentPaths: [MISSING],
+      index,
+      moduleGraph: readyGraph([{ storyFile: './src/Button.stories.tsx', depth: 1 }]),
+    });
+
+    expect(result).toEqual({
+      available: true,
+      results: [{ componentPath: asGraphPath(MISSING), matches: [], pathNotFound: true }],
     });
     expect(storiesForFiles).not.toHaveBeenCalled();
   });
 
-  it('clips matches beyond maxDistance and records clipped distances', async () => {
-    storiesForFiles.mockResolvedValue([
-      [
-        { storyFile: './src/Button.stories.tsx', depth: 1 },
-        { storyFile: './src/Input.stories.tsx', depth: 3 },
-      ],
-    ]);
-
+  it('reports the graph as unavailable rather than as a component without stories', async () => {
     const result = await findStoriesByComponent({
-      componentPaths: ['/repo/src/Button.tsx'],
-      maxDistance: 1,
+      componentPaths: [BUTTON],
       index,
-      moduleGraph,
+      moduleGraph: undefined,
     });
 
-    expect(result.results[0]?.matches).toHaveLength(2);
-    expect(result.results[0]?.clipped).toEqual({
-      count: 1,
-      distances: [3],
+    expect(result).toEqual({
+      available: false,
+      reason: expect.stringMatching(/module graph is unavailable/i),
     });
-  });
-
-  it('defaults maxDistance to 3', async () => {
-    storiesForFiles.mockResolvedValue([
-      [
-        { storyFile: './src/Button.stories.tsx', depth: 3 },
-        { storyFile: './src/Input.stories.tsx', depth: 4 },
-      ],
-    ]);
-
-    const result = await findStoriesByComponent({
-      componentPaths: ['/repo/src/Button.tsx'],
-      index,
-      moduleGraph,
-    });
-
-    expect(result.results[0]?.matches.map((m) => m.storyId)).toEqual([
-      'button--primary',
-      'button--secondary',
-    ]);
-    expect(result.results[0]?.clipped).toEqual({ count: 1, distances: [4] });
-  });
-});
-
-describe('resolveComponentMatches', () => {
-  const existingPath = '/repo/src/Button.tsx';
-  const missingPath = `${existingPath}.missing`;
-  let graphResults: Array<Array<{ storyFile: string; depth: number }>>;
-  let graphError: Error | undefined;
-
-  beforeEach(async () => {
-    const memfs = await vi.importActual<typeof import('memfs')>('memfs');
-
-    vi.clearAllMocks();
-    vol.reset();
-    vol.fromNestedJSON({ [existingPath]: '' });
-    vi.mocked(existsSync).mockImplementation(memfs.fs.existsSync as typeof existsSync);
-    graphResults = [];
-    graphError = undefined;
-    storiesForFiles.mockImplementation(async () => {
-      if (graphError) {
-        throw graphError;
-      }
-      return graphResults;
-    });
-  });
-
-  afterAll(() => {
-    vol.reset();
-  });
-
-  it('maps existing component files to story ids', async () => {
-    graphResults = [[{ storyFile: './src/Button.stories.tsx', depth: 1 }]];
-
-    await expect(
-      resolveComponentMatches({ componentPaths: [existingPath], index, moduleGraph })
-    ).resolves.toEqual([
-      {
-        componentPath: existingPath,
-        matches: [
-          { storyId: 'button--primary', depth: 1 },
-          { storyId: 'button--secondary', depth: 1 },
-        ],
-      },
-    ]);
-  });
-
-  it('marks paths that do not exist', async () => {
-    graphResults = [[]];
-
-    await expect(
-      resolveComponentMatches({ componentPaths: [missingPath], index, moduleGraph })
-    ).resolves.toEqual([
-      {
-        componentPath: missingPath,
-        matches: [],
-        pathNotFound: true,
-      },
-    ]);
-  });
-
-  it('keeps each story id at its shortest depth', async () => {
-    graphResults = [
-      [
-        { storyFile: './src/Button.stories.tsx', depth: 3 },
-        { storyFile: './src/Button.stories.tsx', depth: 1 },
-      ],
-    ];
-
-    const [result] = await resolveComponentMatches({
-      componentPaths: [existingPath],
-      index,
-      moduleGraph,
-    });
-
-    expect(result.matches).toEqual([
-      { storyId: 'button--primary', depth: 1 },
-      { storyId: 'button--secondary', depth: 1 },
-    ]);
-  });
-
-  it('returns empty matches when the module graph errors', async () => {
-    graphError = new Error('graph failed');
-
-    await expect(
-      resolveComponentMatches({ componentPaths: [existingPath], index, moduleGraph })
-    ).resolves.toEqual([{ componentPath: existingPath, matches: [] }]);
   });
 });

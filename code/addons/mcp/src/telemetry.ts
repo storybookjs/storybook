@@ -18,6 +18,7 @@ export async function collectTelemetry({
       mcpSessionId: server.ctx.sessionId,
       clientInfo: server.ctx.sessionInfo?.clientInfo,
       clientCapabilities: server.ctx.sessionInfo?.clientCapabilities,
+      transport: 'mcp',
       ...payload,
     });
   } catch (error) {

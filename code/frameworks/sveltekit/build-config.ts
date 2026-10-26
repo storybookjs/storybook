@@ -22,11 +22,6 @@ const config: BuildEntries = {
         entryPoint: './src/mocks/app/navigation.ts',
         dts: false,
       },
-      {
-        exportEntries: ['./internal/mocks/app/stores'],
-        entryPoint: './src/mocks/app/stores.ts',
-        dts: false,
-      },
     ],
     node: [
       {

@@ -105,8 +105,8 @@ export class BUNProxy extends JsPackageManager {
     return `bun run ${command}`;
   }
 
-  getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string {
-    return `bunx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
+  getRemoteRunCommand(args: string[]): string {
+    return `bunx ${args.join(' ')}`;
   }
 
   getPackageCommand(args: string[]): string {
@@ -302,7 +302,7 @@ export class BUNProxy extends JsPackageManager {
         dedent`
           bun minimumReleaseAge would block storybook@${storybookVersion} from being installed because it was released within the configured minimumReleaseAge window, so Storybook updated minimumReleaseAgeExcludes for this project automatically.
 
-          Added patterns: storybook, @storybook/*, eslint-plugin-storybook, @chromatic-com/storybook
+          Added patterns: ${STORYBOOK_PACKAGE_PATTERNS.join(', ')}
 
           Read more:
           - https://bun.com/docs/pm/cli/install#minimum-release-age

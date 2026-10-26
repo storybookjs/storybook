@@ -50,7 +50,7 @@ Do not describe how YOU tested the PR code, but how a separate maintainer should
 
 ## Checklist for Maintainers
 
-- [ ] When this PR is ready for testing, make sure to add `ci:normal`, `ci:merged` or `ci:daily` GH label to it to run a specific set of sandboxes. The particular set of sandboxes can be found in `code/lib/cli-storybook/src/sandbox-templates.ts`
+- [ ] When this PR is ready for testing, add a `ci:focus`, `ci:normal`, or `ci:daily` GitHub label. `ci:focus` runs the typecheck, unit tests, and lint for the changed files, the end-to-end jobs whose paths changed, and one sandbox in full for each changed framework, renderer, builder, or library (default `react-vite/default-ts`), plus Chromatic on the other sandboxes that load it. `ci:normal` and `ci:daily` run the sandbox sets in `code/lib/cli-storybook/src/sandbox-templates.ts`. Add `ci:windows` to also run the Windows jobs, or on its own to iterate on Windows failures; it does not report `circleci-completion`, so a PR cannot merge on it alone.
 - [ ] Declare whether manual QA will be needed for this PR during the next release, through `qa:needed` or `qa:skip`
 - [ ] Make sure this PR contains **one** of the labels below:
    <details>
@@ -68,13 +68,17 @@ Do not describe how YOU tested the PR code, but how a separate maintainer should
 
    </details>
 
-### 🦋 Canary release
+<!-- CANARY_RELEASE_HEADING -->
+## 🦋 Canary Release - 🚫 Not run
+<!-- CANARY_RELEASE_HEADING -->
 
 <!-- CANARY_RELEASE_SECTION -->
 
-This PR does not have a canary release associated. You can request a canary release of this pull request by mentioning the `@storybookjs/core` team here.
+This PR does not have a canary release associated.
 
-_core team members can create a canary release [here](https://github.com/storybookjs/storybook/actions/workflows/publish.yml) or locally with `gh workflow run --repo storybookjs/storybook publish.yml --field pr=<PR_NUMBER>`_
+In-repo PRs: add the `ci:canary` label. Later pushes republish while the label remains.
+
+Fork PRs: the label does nothing (a later push must not auto-publish). A maintainer publishes from this repository with [Run workflow](https://github.com/storybookjs/storybook/actions/workflows/publish-canary.yml) and the `pr` input. `branch` and `sha` are optional; if more than one is set, they must be the same commit. The fork author does not need to do anything.
 
 <!-- CANARY_RELEASE_SECTION -->
 

@@ -3,18 +3,18 @@
  * using esbuild. Do _not_ import from other modules in core unless strictly necessary, as it will
  * cause the dist to get huge.
  */
-import { readdirSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
-import type { LoadHook } from 'node:module';
+import { readFileSync, readdirSync } from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { deprecate } from 'storybook/internal/node-logger';
 
-import { transform } from 'esbuild';
+import { transformSync } from 'esbuild';
 import { dedent } from 'ts-dedent';
 
 import { NODE_TARGET } from '../shared/constants/environments-support.ts';
+
+type LoadHookSync = (url: string, context: any, nextLoad: any) => any;
 
 export const supportedExtensions = [
   '.js',
@@ -136,7 +136,7 @@ export function addExtensionsToRelativeImports(source: string, filePath: string)
   return result;
 }
 
-export const load: LoadHook = async (url, context, nextLoad) => {
+export const load: LoadHookSync = (url, context, nextLoad) => {
   // Strip any query string (e.g. the cache-busting `?<timestamp>` importModule appends for
   // skipCache) before checking the extension, otherwise a cache-busted URL like
   // `file:///main.ts?123` no longer ends with `.ts` and silently skips the esbuild transform below.
@@ -151,9 +151,9 @@ export const load: LoadHook = async (url, context, nextLoad) => {
     urlWithoutQuery.endsWith('.mtsx') ||
     urlWithoutQuery.endsWith('.ctsx')
   ) {
-    const filePath = fileURLToPath(urlWithoutQuery);
-    const rawSource = await readFile(filePath, 'utf-8');
-    const transformedSource = await transform(rawSource, {
+    const filePath = fileURLToPath(url);
+    const rawSource = readFileSync(filePath, 'utf-8');
+    const transformedSource = transformSync(rawSource, {
       loader: 'ts',
       target: NODE_TARGET,
       format: 'esm',

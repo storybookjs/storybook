@@ -1,0 +1,18 @@
+import { Component } from '@angular/core';
+import { ShapeButtonComponent } from './shape-button.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [ShapeButtonComponent],
+  template: `
+    <div class="wrap">
+        <sb-shape-button
+            [label]="'Save'"
+            [count]="7"
+            (clicked)="clicked($event)">
+        </sb-shape-button>
+    </div>`,
+})
+export class DemoComponent {
+  clicked(event: unknown) {}
+}

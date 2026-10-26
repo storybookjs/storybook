@@ -102,16 +102,16 @@ describe('MCP Composition Auth E2E Tests', () => {
 			const response = await mcpRequest('tools/list', {}, 'dummy-token');
 			const data = await parseMCPResponse(response);
 
-			const getDocTool = data.result.tools.find((t: any) => t.name === 'get-documentation');
+			const getDocTool = data.result.tools.find((t: any) => t.name === 'docs-show');
 
 			expect(getDocTool).toBeDefined();
 			expect(getDocTool.inputSchema.properties).toHaveProperty('storybookId');
 		});
 
-		it('should return 401 with WWW-Authenticate for list-all-documentation with invalid token', async () => {
+		it('should return 401 with WWW-Authenticate for docs-list with invalid token', async () => {
 			const response = await mcpRequest(
 				'tools/call',
-				{ name: 'list-all-documentation', arguments: {} },
+				{ name: 'docs-list', arguments: {} },
 				'dummy-token',
 			);
 
@@ -125,7 +125,7 @@ describe('MCP Composition Auth E2E Tests', () => {
 			const response = await mcpRequest(
 				'tools/call',
 				{
-					name: 'get-documentation',
+					name: 'docs-show',
 					arguments: { id: 'example-button', storybookId: 'local' },
 				},
 				'dummy-token',
@@ -142,6 +142,23 @@ describe('MCP Composition Auth E2E Tests', () => {
 
 				Primary UI component for user interaction
 
+				## Props
+
+				\`\`\`
+				export type Props = {
+				  /** Is this the principal call to action on the page? */
+				  primary?: boolean = false;
+				  /** What background color to use */
+				  backgroundColor?: string;
+				  /** How large should the button be? */
+				  size?: 'small' | 'medium' | 'large' = 'medium';
+				  /** Button contents */
+				  label: string;
+				  /** Optional click handler */
+				  onClick?: () => void;
+				}
+				\`\`\`
+
 				## Stories
 
 				### Primary
@@ -149,7 +166,8 @@ describe('MCP Composition Auth E2E Tests', () => {
 				Story ID: example-button--primary
 
 				\`\`\`
-				import { Button } from "@my-org/my-component-library";
+				import { Button } from '@my-org/my-component-library';
+				import { fn } from 'storybook/test';
 
 				const Primary = () => <Button onClick={fn()} primary label="Button" />;
 				\`\`\`
@@ -159,7 +177,8 @@ describe('MCP Composition Auth E2E Tests', () => {
 				Story ID: example-button--secondary
 
 				\`\`\`
-				import { Button } from "@my-org/my-component-library";
+				import { Button } from '@my-org/my-component-library';
+				import { fn } from 'storybook/test';
 
 				const Secondary = () => <Button onClick={fn()} label="Button" />;
 				\`\`\`
@@ -169,7 +188,8 @@ describe('MCP Composition Auth E2E Tests', () => {
 				Story ID: example-button--large
 
 				\`\`\`
-				import { Button } from "@my-org/my-component-library";
+				import { Button } from '@my-org/my-component-library';
+				import { fn } from 'storybook/test';
 
 				const Large = () => <Button onClick={fn()} size="large" label="Button" />;
 				\`\`\`
@@ -178,33 +198,6 @@ describe('MCP Composition Auth E2E Tests', () => {
 
 				- Small (example-button--small)
 				- With A 11 Y Violation (example-button--with-a-11-y-violation)
-
-				## Props
-
-				\`\`\`
-				export type Props = {
-				  /**
-				    Is this the principal call to action on the page?
-				  */
-				  primary?: boolean = false;
-				  /**
-				    What background color to use
-				  */
-				  backgroundColor?: string;
-				  /**
-				    How large should the button be?
-				  */
-				  size?: 'small' | 'medium' | 'large' = 'medium';
-				  /**
-				    Button contents
-				  */
-				  label: string;
-				  /**
-				    Optional click handler
-				  */
-				  onClick?: () => void;
-				}
-				\`\`\`
 
 				## Docs
 
@@ -231,7 +224,7 @@ describe('MCP Composition Auth E2E Tests', () => {
 			const response = await mcpRequest(
 				'tools/call',
 				{
-					name: 'get-documentation',
+					name: 'docs-show',
 					arguments: { id: 'button', storybookId: 'test-private-sb' },
 				},
 				'dummy-token',
@@ -243,28 +236,21 @@ describe('MCP Composition Auth E2E Tests', () => {
 			expect(response.headers.get('www-authenticate')).toContain('resource_metadata=');
 		});
 
-		it('should require storybookId in multi-source auth mode', async () => {
+		it('should default docs-show to the local source when storybookId is omitted', async () => {
 			const response = await mcpRequest(
 				'tools/call',
 				{
-					name: 'get-documentation',
+					name: 'docs-show',
 					arguments: { id: 'example-button' },
 				},
 				'dummy-token',
 			);
 			const data = await parseMCPResponse(response);
 
-			expect(data.result).toMatchInlineSnapshot(`
-				{
-				  "content": [
-				    {
-				      "text": "Invalid arguments for tool get-documentation: [{"kind":"schema","type":"object","expected":"\\"storybookId\\"","received":"undefined","message":"Invalid key: Expected \\"storybookId\\" but received undefined","path":[{"type":"object","origin":"key","input":{"id":"example-button"},"key":"storybookId"}]}]",
-				      "type": "text",
-				    },
-				  ],
-				  "isError": true,
-				}
-			`);
+			expect(data.result.isError).toBeFalsy();
+			const text = data.result.content[0].text;
+			expect(text).toContain('ID: example-button');
+			expect(text).toContain('🍌-emoji');
 		});
 	});
 });

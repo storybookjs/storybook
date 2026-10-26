@@ -3,10 +3,10 @@ import {
   createRoute,
   RootRoute,
   createRootRouteWithContext,
-  interpolatePath,
   joinPaths,
 } from '@tanstack/react-router';
 
+import { interpolateStoryPath } from './path-utils.ts';
 import type { RouteTreeOverrides } from './types.ts';
 
 const MAX_PARENT_WALK = 50;
@@ -61,6 +61,13 @@ function initSourceTree(route: AnyRoute, counter: { i: number }): void {
   }
 }
 
+/**
+ * if it routeId ends with a trailing slash, strip the slash to get the enclosing layout's id (/_app).
+ */
+function layoutIdFor(id: string): string {
+  return id.length > 1 && id.endsWith('/') ? id.slice(0, -1) : id;
+}
+
 function cloneChild(
   oldRoute: AnyRoute,
   parent: AnyRoute,
@@ -88,7 +95,7 @@ function cloneChild(
   // identity from; its explicit id IS its identity, so preserve it. The falsy
   // check also treats `path: ''` as pathless.
   const cloned = createRoute({
-    ...(!merged.path && explicitId != null ? { id: explicitId } : {}),
+    ...(!merged.path && explicitId != null ? { id: layoutIdFor(explicitId) } : {}),
     ...merged,
     getParentRoute: () => parent as any,
   } as any);
@@ -241,7 +248,7 @@ export function resolveStoryLeaf(
     if (bound) {
       const boundCandidate = mountPathFor(bound);
       const boundInterpolated = params
-        ? interpolatePath({ path: boundCandidate, params }).interpolatedPath
+        ? interpolateStoryPath(boundCandidate, params)
         : boundCandidate;
       if (boundCandidate === path || boundInterpolated === path) {
         return bound;
@@ -257,9 +264,7 @@ export function resolveStoryLeaf(
       }
       const candidate = mountPathFor(route);
       const isLiteral = candidate === path;
-      const interpolated = params
-        ? interpolatePath({ path: candidate, params }).interpolatedPath
-        : candidate;
+      const interpolated = params ? interpolateStoryPath(candidate, params) : candidate;
       if (!isLiteral && interpolated !== path) {
         continue;
       }

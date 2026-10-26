@@ -1,27 +1,28 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import fs from 'node:fs/promises';
-import path from 'path';
 import os from 'os';
+import path from 'path';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  checkRelativeLinks,
+  checkBareUrls,
+  checkCalloutIconMismatch,
+  checkCalloutVariant,
+  checkCalloutVariantPositive,
   checkCodeSnippetPaths,
   checkDeprecatedIfRenderer,
-  checkCalloutVariant,
-  checkNoBodyH1,
-  checkHeadingHierarchy,
-  checkCalloutVariantPositive,
-  checkCalloutIconMismatch,
   checkFrontmatterQuotes,
+  checkHeadingHierarchy,
+  checkNoBodyH1,
   checkRedundantSidebarTitle,
-  checkBareUrls,
+  checkRelativeLinks,
+  checkSnippetCsf3Deprecation,
   checkSnippetCsfOrder,
   checkSnippetLegacyCsfTitle,
-  checkSnippetCsf3Deprecation,
   runAllChecks,
 } from '../check-docs';
 import { fixSnippets } from '../fix-snippets';
 
-const CSF3_DEPRECATION_COMMENT = '// ⚠️ CSF 3 is deprecated and will be removed in Storybook 12';
+const CSF3_DEPRECATION_COMMENT =
+  '// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4';
 
 async function writeFile(filePath: string, content: string) {
   await fs.mkdir(path.dirname(filePath), { recursive: true });
@@ -550,7 +551,8 @@ describe('check-docs', () => {
 
       await fixSnippets(docsDir);
 
-      const message = '⚠️ CSF 3 is deprecated and will be removed in Storybook 12';
+      const message =
+        '⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4';
       expect(await fs.readFile(file, 'utf8')).toBe(
         [
           fence('ts', 'CSF 4', 'code'),

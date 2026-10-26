@@ -1,5 +1,5 @@
-import { glob } from 'tinyglobby';
 import fs from 'node:fs/promises';
+import { glob } from 'tinyglobby';
 
 /**
  * Recursively collects all .mdx files in the given docs directory.
@@ -344,7 +344,8 @@ export function getLegacyCsfTitleSegments(lines: string[]): SnippetSegment[] {
   );
 }
 
-const CSF3_DEPRECATION_MESSAGE = '⚠️ CSF 3 is deprecated and will be removed in Storybook 12';
+const CSF3_DEPRECATION_MESSAGE =
+  '⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4';
 
 /**
  * Returns the deprecation comment a CSF 3 segment must start with, in the comment syntax of the

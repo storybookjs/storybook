@@ -363,7 +363,7 @@ export const workflow = {
     {
       run: {
         name: 'Install dependencies',
-        command: 'yarn install',
+        command: 'yarn install --mode=skip-build',
       },
     },
   ],

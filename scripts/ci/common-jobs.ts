@@ -565,12 +565,6 @@ export const testUnit_windows = defineJob(
       ...workflow.restoreWindows(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}`),
       {
         run: {
-          command: 'yarn install',
-          name: 'Install dependencies',
-        },
-      },
-      {
-        run: {
           command:
             "yarn test --project '!agent-eval' --reporter=junit --reporter=default --outputFile=./test-results/junit.xml",
           name: 'Run unit tests',

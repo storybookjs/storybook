@@ -1,3 +1,4 @@
+import type { TypeScriptSpecifierForDocgen } from 'storybook/internal/common';
 import type { StrictArgTypes } from 'storybook/internal/types';
 
 import { getSharedComponentMetaManager } from '../componentManifest/componentMetaManagerSingleton.ts';
@@ -14,11 +15,14 @@ import { extractArgTypesFromComponentMeta } from './buildDocgen.ts';
 export async function extractArgTypesFromComponentFile({
   componentFilePath,
   componentExportName = 'default',
+  typeScriptSpecifier,
 }: {
   componentFilePath: string;
   componentExportName?: string;
+  // The main config's `typescript.docgenSpecifier`, when it names the TypeScript to load.
+  typeScriptSpecifier?: TypeScriptSpecifierForDocgen;
 }): Promise<StrictArgTypes | null> {
-  const manager = await getSharedComponentMetaManager();
+  const manager = await getSharedComponentMetaManager(typeScriptSpecifier);
   if (!manager) {
     return null;
   }

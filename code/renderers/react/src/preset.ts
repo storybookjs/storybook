@@ -3,12 +3,14 @@ import { fileURLToPath } from 'node:url';
 
 import {
   getProjectRoot,
+  getTypeScriptSpecifierForDocgen,
   isModuleNotFoundError,
   isTypeScriptReadyForDocgen,
+  typeScriptDocgenApisFor,
 } from 'storybook/internal/common';
 import type { ArgTypes } from 'storybook/internal/csf';
 import { logger } from 'storybook/internal/node-logger';
-import type { Options, PresetProperty } from 'storybook/internal/types';
+import { type Options, type PresetProperty, SupportedRenderer } from 'storybook/internal/types';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
 import { REACT_BUILDER_DOCGEN_PACKAGES } from './builder-docgen.ts';
@@ -25,6 +27,7 @@ type TypescriptOptionsWithDocgen = {
 
 interface InternalGetArgTypesDataOptions extends GetArgTypesDataOptions {
   presets?: Options['presets'];
+  configDir?: string;
 }
 
 export { manifests as experimental_manifests } from './componentManifest/generator.ts';
@@ -40,6 +43,7 @@ export const isDocgenProviderEnabled = async (_existing: unknown, options: Optio
   const { reactDocgen } =
     (await options.presets?.apply<TypescriptOptionsWithDocgen>('typescript', {})) ?? {};
   return isTypeScriptReadyForDocgen((specifier) => import.meta.resolve(specifier), options, {
+    apis: typeScriptDocgenApisFor(SupportedRenderer.REACT),
     builderDocgenFallback:
       reactDocgen === false
         ? undefined
@@ -132,7 +136,7 @@ export async function internal_getArgTypesData(
   _input: unknown,
   options: InternalGetArgTypesDataOptions
 ): Promise<ArgTypes | null> {
-  const { componentFilePath, componentExportName, presets } = (options ??
+  const { componentFilePath, componentExportName, presets, configDir } = (options ??
     {}) as InternalGetArgTypesDataOptions;
 
   if (!componentFilePath) {
@@ -152,6 +156,10 @@ export async function internal_getArgTypesData(
     return extractArgTypesFromComponentFile({
       componentFilePath: absoluteComponentFilePath,
       componentExportName,
+      typeScriptSpecifier:
+        configDir && presets
+          ? await getTypeScriptSpecifierForDocgen({ configDir, presets })
+          : undefined,
     });
   }
 

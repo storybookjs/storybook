@@ -28,10 +28,10 @@ type LoosenedStorybookConfig = Omit<Partial<StorybookConfigRaw>, 'features'> & {
 
 export type Template = {
   /**
-   * Readable name for the template, which will be used for feedback and the status page Follows the
-   * naming scheme when it makes sense: <framework> <"v"version|"Latest"|"Prerelease">
-   * (<"Webpack"|"Vite"> | <"JavaScript"|"TypeScript">) React Latest - Webpack (TS) Next.js v12 (JS)
-   * Angular CLI Prerelease
+   * Readable name for the template, used for feedback and the status page. Base templates follow
+   * `<framework> <"v"version|"Latest"|"Prerelease"> (<"Webpack"|"Vite"|"RsBuild"> | TypeScript)`,
+   * e.g. `Next.js v15 (Webpack | TypeScript)`. CI job ids are derived from it, so renaming a
+   * template renames its jobs.
    */
   name: string;
   /**

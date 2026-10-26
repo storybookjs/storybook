@@ -518,7 +518,7 @@ describe('getStoryHrefs', () => {
     });
 
     expect(managerHref).toContain('toolbar=false');
-    expect(previewHref).not.toContain('toolbar=false');
+    expect(previewHref).not.toContain('toolbar=');
   });
 
   it('correctly preserves args and globals encoding', () => {

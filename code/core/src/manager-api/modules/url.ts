@@ -98,7 +98,7 @@ const initialUrlSupport = ({
   state: { location, path, viewMode, storyId: storyIdFromUrl },
   singleStory,
 }: ModuleArgs) => {
-  const { full, panel, nav, shortcuts, addonPanel, tabs, toolbar } = queryFromLocation(location);
+  const { full, panel, nav, shortcuts, addonPanel, toolbar } = queryFromLocation(location);
 
   let navSize;
   let bottomPanelHeight;
@@ -134,7 +134,6 @@ const initialUrlSupport = ({
     bottomPanelHeight,
     rightPanelWidth,
     panelPosition: ['right', 'bottom'].includes(panel) ? panel : undefined,
-    showTabs: parseBoolean(tabs),
     showToolbar: parseBoolean(toolbar),
   };
   const ui: Partial<API_UI> = {
@@ -180,7 +179,8 @@ export interface SubAPI {
    *   current story, inheritArgs defaults to true.
    * @param {boolean} [options.inheritGlobals] - Inherit globals from the current URL. Defaults to
    *   true.
-   * @param {QueryParams} [options.queryParams] - Query params to add to the URL.
+   * @param {QueryParams} [options.queryParams] - Query params to add to the URL. Layout params
+   *   apply to `managerHref` only.
    * @param {string} [options.refId] - ID of the ref to get the URL for (for composed Storybooks)
    * @param {string} [options.viewMode] - The view mode to use, defaults to 'story'.
    * @param {boolean} [options.embed] - Append `embed=true` so the preview broadcasts

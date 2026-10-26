@@ -12,9 +12,13 @@ const unstable_cache = fn()
   .mockImplementation((cb: Callback) => cb);
 const unstable_noStore = fn().mockName('next/cache::unstable_noStore');
 const refresh = fn().mockName('next/cache::refresh');
-const io = fn().mockName('next/cache::io').mockResolvedValue(undefined);
-const navigation = fn().mockName('next/cache::navigation').mockResolvedValue(undefined);
-const prefetch = fn().mockName('next/cache::prefetch').mockResolvedValue(undefined);
+
+// mock utilities/overrides (as of Next v16.3.0)
+const io = fn(async () => {}).mockName('next/cache::io');
+
+// mock utilities/overrides (as of Next v16.4.0)
+const navigation = fn(async () => {}).mockName('next/cache::navigation');
+const prefetch = fn(async () => {}).mockName('next/cache::prefetch');
 
 // mock utilities/overrides (as of Next v15.0.0)
 const cacheLife = fn().mockName('next/cache::cacheLife');

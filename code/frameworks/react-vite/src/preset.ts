@@ -41,13 +41,16 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
   }
 
   if (reactDocgenOption === 'react-docgen-typescript' && typescriptPresent) {
-    plugins.push(
-      (await import('@joshwooding/vite-plugin-react-docgen-typescript')).default({
-        ...reactDocgenTypescriptOptions,
-        // We *need* this set so that RDT returns default values in the same format as react-docgen
-        savePropValueAsString: true,
-      })
-    );
+    const docgenTypescriptPlugin = (
+      await import('@joshwooding/vite-plugin-react-docgen-typescript')
+    ).default({
+      ...reactDocgenTypescriptOptions,
+      // We *need* this set so that RDT returns default values in the same format as react-docgen
+      savePropValueAsString: true,
+    });
+
+    // Run before Vite's React transform so TypeScript props are still available to docgen.
+    plugins.push({ ...docgenTypescriptPlugin, enforce: 'pre' });
   }
 
   // Add react-docgen so long as the option is not false
@@ -57,7 +60,7 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
     plugins.unshift(
       // If react-docgen is specified, use it for everything, otherwise only use it for non-typescript files
       await reactDocgen({
-        include: reactDocgenOption === 'react-docgen' ? /\.(mjs|tsx?|jsx?)$/ : /\.(mjs|jsx?)$/,
+        include: reactDocgenOption === 'react-docgen' ? /\\.(mjs|tsx?|jsx?)$/ : /\\.(mjs|jsx?)$/,
       })
     );
   }

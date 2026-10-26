@@ -36,12 +36,27 @@ Add these labels to the PR:
 - `BREAKING CHANGE` - breaks compatibility
 - `other` - doesn't fit above
 
-**CI (required, pick one):**
+**CI (required once the PR is out of draft, pick one):**
+
+Don't add a `ci:*` label to a draft PR. Add it when you mark the PR ready (see **Command** below).
 
 - `ci:normal` - standard sandbox set; default for most code changes
 - `ci:merged` - merged sandbox set
-- `ci:daily` - daily sandbox set; use this when changes affect prerelease sandboxes or sandboxes pinned to a framework or React version other than latest
+- `ci:daily` - daily sandbox set; needed when changes affect prerelease sandboxes or sandboxes pinned to a framework or React version other than latest. Never open a PR with it; see **Running the daily sandbox set** below
 - `ci:docs` - documentation-only changes (use with `documentation` category)
+
+Only one `ci:*` label takes effect. The trigger workflow picks `ci:normal`, then `ci:docs`, then `ci:merged`, then `ci:daily`, so `ci:daily` next to another `ci:*` label never runs.
+
+**Running the daily sandbox set:**
+
+Every push to a PR labelled `ci:daily` reruns the full daily set, which costs several times a `ci:normal` run. Don't use it while iterating; save it for the end, where it matters.
+
+Mark the PR ready with `ci:normal` and work on it until it is done. Then swap its `ci:*` label to `ci:daily` for the final check. Remove the current label (for example `ci:normal` or `ci:merged`) first, in its own command, so the trigger only sees `ci:daily`:
+
+```bash
+gh pr edit <NUMBER> --remove-label "<current ci:* label>"
+gh pr edit <NUMBER> --add-label "ci:daily"
+```
 
 **Canary (optional):**
 
@@ -96,5 +111,12 @@ Replace `<branch>` with Chromatic's normalized slug (special chars → dashes, e
 Always create PRs in draft mode:
 
 ```bash
-gh pr create --draft --title "<Area>: <Description>" --body "<FILLED_TEMPLATE>" --label "<category>,<ci>,<qa>"
+gh pr create --draft --title "<Area>: <Description>" --body "<FILLED_TEMPLATE>" --label "<category>,<qa>"
+```
+
+When the PR is ready for CI, mark it ready, then add its `ci:*` label:
+
+```bash
+gh pr ready <NUMBER>
+gh pr edit <NUMBER> --add-label "ci:normal"
 ```

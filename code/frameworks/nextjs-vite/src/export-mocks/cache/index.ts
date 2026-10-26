@@ -47,6 +47,8 @@ export {
   unstable_noStore,
   refresh,
   io,
+  navigation,
+  prefetch,
   updateTag,
   cacheLife,
   cacheTag,

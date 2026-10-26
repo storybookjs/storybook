@@ -1,6 +1,6 @@
 import type { TSESLint } from '@typescript-eslint/utils';
-import type { Linter } from 'eslint';
-import { defineConfig } from 'eslint/config';
+import type { Linter } from 'eslint-v9';
+import { defineConfig } from 'eslint-v9/config';
 import { expectTypeOf, test } from 'vitest';
 
 import storybook from '../index.ts';

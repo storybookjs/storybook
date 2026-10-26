@@ -860,7 +860,7 @@ describe('experimental_devServer', () => {
     expect(wellKnownHandler).toBeDefined();
 
     const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
-    wellKnownHandler({}, mockRes);
+    await wellKnownHandler({}, mockRes);
 
     expect(mockRes.writeHead).toHaveBeenCalledWith(404);
     expect(mockRes.end).toHaveBeenCalledWith('Not found');

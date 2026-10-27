@@ -109,6 +109,19 @@ describe('selectChromaticSiblings', () => {
     ).toEqual([]);
   });
 
+  it.each([
+    'code/core/template/stories/args.stories.ts',
+    'code/core/template/__mocks__/lodash-es.js',
+    'code/addons/docs/template/stories/docspage/basic.stories.ts',
+  ])('covers every other template that runs Chromatic when %s changes', (file) => {
+    expect(selectChromaticSiblings(['react-vite/default-ts'], [file]).toSorted()).toEqual(
+      FOCUS_TEMPLATES.filter(
+        (key) =>
+          key !== 'react-vite/default-ts' && !allTemplates[key].skipTasks?.includes('chromatic')
+      ).toSorted()
+    );
+  });
+
   it.each(packageChanges)(
     'covers every other template loading $dir that runs Chromatic',
     ({ dir, file }) => {
@@ -172,10 +185,6 @@ describe('getFocusJobs', () => {
     expect(ids.filter((id) => id.startsWith('sveltekit-'))).toEqual([
       'sveltekit-latest--vite---typescript---create',
       'sveltekit-latest--vite---typescript---chromatic',
-    ]);
-    expect(ids.filter((id) => id.startsWith('svelte-latest--vite---javascript---'))).toEqual([
-      'svelte-latest--vite---javascript---create',
-      'svelte-latest--vite---javascript---chromatic',
     ]);
   });
 

@@ -243,6 +243,7 @@ export default defineMain({
 
 Stories, decorators, `moduleMetadata`, and `applicationConfig` work the same way with both strategies.
 Under `TestBed`, a play function can read the story's providers with `TestBed.inject()`, and the `TestBed` singleton is reset before every story render.
+As in Angular's own component tests, an exception thrown from an event handler or during change detection is rethrown and fails the play function, where `bootstrapApplication` only reports it through `ErrorHandler`.
 Docs pages always bootstrap an application per story.
 
 ### Custom Vite configuration

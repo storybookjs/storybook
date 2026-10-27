@@ -74,9 +74,10 @@ export async function mountWithTestBed({
 
   await testBed.compileComponents();
 
-  const fixture = testBed.createComponent(application);
-  // Keeps change detection running after the initial render for play functions and storyProps$.
-  fixture.autoDetectChanges();
+  // Runs the first change detection synchronously and keeps it running afterwards for play
+  // functions and storyProps$. Like bootstrapApplication, the mount does not wait for the
+  // application to become stable: a story may legitimately hold a pending task forever.
+  testBed.createComponent(application).autoDetectChanges();
 
   // TestBed never bootstraps, so provideRouter()'s bootstrap listener never navigates.
   try {
@@ -85,8 +86,6 @@ export async function mountWithTestBed({
   } catch {
     // @angular/router is an optional peer dependency.
   }
-
-  await fixture.whenStable();
 
   return testBed.inject(ApplicationRef);
 }

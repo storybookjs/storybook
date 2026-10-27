@@ -1,3 +1,4 @@
+import { readForEdit } from '../helpers/edit-parsed-file.ts';
 import type { Fix } from '../types.ts';
 
 export const docgenServer: Fix = {
@@ -9,10 +10,10 @@ export const docgenServer: Fix = {
     {
       filter: { kind: ['main'], code: 'experimentalDocgenServer' },
       editConfig: (main) => {
-        if (!main.get(['features', 'experimentalDocgenServer'])) {
+        if (!readForEdit(main, ['features', 'experimentalDocgenServer'])) {
           return;
         }
-        if (main.get(['features', 'docgenServer'])) {
+        if (readForEdit(main, ['features', 'docgenServer'])) {
           main.remove(['features', 'experimentalDocgenServer']);
         } else {
           main.rename(['features', 'experimentalDocgenServer'], 'docgenServer');

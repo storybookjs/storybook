@@ -10,4 +10,4 @@ export class DemoComponent {
   clicked(event: unknown) {}
 }
 
-warning: Incomplete snippet: `render: (args: { count?: number; }) => { if (args.count) { return { template: '<sb-shape-button first></sb-shape-button>' }; } return { template: '<sb-shape-button second></sb-shape-button>' }; }` could not be resolved statically.
+warning: Incomplete snippet: `render: (args: { count?: number }) => { if (args.count) { return { template: '<sb-shape-button first></sb-shape-button>' }; } return { template: '<sb-shape-button second></sb-shape-button>' }; }` could not be resolved statically.

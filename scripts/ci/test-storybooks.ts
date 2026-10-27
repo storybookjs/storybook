@@ -9,7 +9,7 @@ export function definePortableStoryTest(directory: string) {
   const working_directory = `test-storybooks/portable-stories-kitchen-sink/${directory}`;
 
   const { scripts } = JSON.parse(
-    readFileSync(join(import.meta.dirname, '..', '..', working_directory, 'package.json'), 'utf8')
+    readFileSync(new URL(`../../${working_directory}/package.json`, import.meta.url), 'utf8')
   );
 
   return defineJob(

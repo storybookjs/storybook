@@ -85,7 +85,6 @@ const meta = {
     chromatic: { viewports: [380] },
   },
   decorators: [
-    // The sidebar gives every tree one shared scroll area; a tree does not scroll itself.
     // The sidebar gives every tree one shared scroll area; a tree does not scroll itself. A story
     // that needs the rows to overflow sets `parameters.scrollAreaHeight` to bound it.
     (storyFn, { parameters }) => (
@@ -142,13 +141,20 @@ export const RowHeightsAndSectionGaps: Story = {
     );
   },
   play: async ({ canvasElement }) => {
-    // Expand the first branch so a later top-level section follows deeper rows and gets the gap.
+    // The first branch is open because it holds the selected story. Collapsing it moves every row
+    // below it, which must land on the new geometry.
     const firstRow = canvasElement.querySelector<HTMLElement>('[data-item-id]')!;
     await waitFor(() => {
       expect(getComputedStyle(firstRow).pointerEvents).not.toBe('none');
     });
     await userEvent.click(firstRow);
+    await waitFor(() => {
+      expect(firstRow).toHaveAttribute('aria-expanded', 'false');
+    });
 
+    // Only the rows near the viewport are rendered, so each check below looks at the rendered
+    // ones. React-aria stops virtualizing when NODE_ENV is 'test', so the Vitest run renders every
+    // row and only builds with virtualization on (Chromatic) exercise the partial rendering.
     await waitFor(() => {
       const rows = Array.from(canvasElement.querySelectorAll<HTMLElement>('[data-item-id]'))
         .map((el) => ({ el, top: el.getBoundingClientRect().top }))
@@ -164,13 +170,24 @@ export const RowHeightsAndSectionGaps: Story = {
         expect(rows[i].top - rows[i - 1].top).toBeCloseTo(TREE_ROW_HEIGHT + gap, 0);
       }
       expect(sawSectionGap).toBe(true);
+    });
 
-      // The tree's reported height must reach exactly to its last row, or the next block in the
-      // sidebar's shared scroll area would overlap the tree.
+    // The tree's reported height must reach exactly to its last row, or the next block in the
+    // sidebar's shared scroll area would overlap the tree. The last row renders only once the
+    // scroll area reaches the end of the tree.
+    const scroller = canvasElement.querySelector<HTMLElement>(
+      '[data-testid="sidebar-scroll-area"]'
+    )!;
+    scroller.scrollTop = scroller.scrollHeight;
+    await waitFor(() => {
       const treeBottom = canvasElement
         .querySelector('[role="treegrid"]')!
         .getBoundingClientRect().bottom;
-      const lastRowBottom = Math.max(...rows.map((r) => r.el.getBoundingClientRect().bottom));
+      const lastRowBottom = Math.max(
+        ...Array.from(canvasElement.querySelectorAll<HTMLElement>('[data-item-id]')).map(
+          (el) => el.getBoundingClientRect().bottom
+        )
+      );
       expect(Math.round(treeBottom - lastRowBottom)).toBe(0);
     });
   },
@@ -308,28 +325,16 @@ export const DocsOnlySingleStoryComponents = {
     return (
       <Tree
         refId={DEFAULT_REF_ID}
-        // @ts-expect-error (non strict)
         data={{
-          ...{
-            single: {
-              type: 'component',
-              name: 'Single',
-              id: 'single',
-              parent: null,
-              depth: 0,
-              children: ['single--docs'],
-            },
-            'single--docs': {
-              type: 'docs',
-              id: 'single--docs',
-              title: 'Single',
-              name: 'Single',
-              tags: [],
-              prepared: true,
-              depth: 1,
-              parent: 'single',
-              importPath: './single.stories.js',
-            },
+          'single--docs': {
+            type: 'docs',
+            id: 'single--docs',
+            title: 'Single',
+            name: 'Single',
+            tags: [],
+            prepared: true,
+            depth: 0,
+            importPath: './single.stories.js',
           },
           ...Object.keys(index).reduce((acc, key) => {
             if (key === 'tooltip-tooltipselect--default') {
@@ -357,6 +362,48 @@ export const DocsOnlySingleStoryComponents = {
         onSelectStoryId={setSelectedId}
       />
     );
+  },
+};
+
+/** A component whose stories are all hidden (`!dev`) shows as a single docs page. */
+export const ComponentWithOnlyDocsLeft: Story = {
+  render: () => (
+    <Tree
+      refId={DEFAULT_REF_ID}
+      data={{
+        'docs-only': {
+          type: 'component',
+          name: 'Docs Only',
+          id: 'docs-only',
+          depth: 0,
+          children: ['docs-only--docs'],
+          tags: [],
+        },
+        'docs-only--docs': {
+          type: 'docs',
+          id: 'docs-only--docs',
+          title: 'Docs Only',
+          name: 'Docs',
+          tags: ['autodocs'],
+          prepared: true,
+          depth: 1,
+          parent: 'docs-only',
+          importPath: './docs-only.stories.js',
+        },
+      }}
+      selectedStoryId={null}
+      onSelectStoryId={fn().mockName('onSelectStoryId')}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-item-id="docs-only--docs"]')).not.toBeNull()
+    );
+    const docsItem = canvasElement.querySelector('[data-item-id="docs-only--docs"]');
+
+    await expect(docsItem).toHaveAttribute('data-nodetype', 'document');
+    await expect(docsItem).toHaveTextContent('Docs Only');
+    await expect(canvasElement.querySelector('[data-item-id="docs-only"]')).toBeNull();
   },
 };
 

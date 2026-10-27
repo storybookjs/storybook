@@ -28,7 +28,7 @@ export const Default: Story = {
     await expect(cacheLife).toHaveBeenCalledWith('default');
     await expect(cacheTag).toHaveBeenCalledWith('my-tag');
 
-    await expect(io()).resolves.toBeUndefined();
+    expect(io()).toMatchObject({ status: 'fulfilled', value: undefined });
     await expect(navigation()).resolves.toBeUndefined();
     await expect(prefetch()).resolves.toBeUndefined();
   },

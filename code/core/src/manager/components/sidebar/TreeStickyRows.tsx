@@ -2,13 +2,15 @@ import React, { type RefObject } from 'react';
 
 import { transparentize } from 'polished';
 import type { API, IndexHash } from 'storybook/manager-api';
-import { styled } from 'storybook/theming/emotion';
+import { styled, useTheme } from 'storybook/theming/emotion';
 
-import { getAncestorIds } from '../../utils/tree.ts';
 import { EllipsisIcon } from '@storybook/icons';
 
+import { getAncestorIds } from '../../utils/tree.ts';
+import { getStatus } from '../../utils/status.tsx';
 import { CollapseIcon } from './CollapseIcon.tsx';
 import { hasContextMenu, hasProviderMenuEntriesFor } from './ContextMenu.tsx';
+import { useRowStatus } from './StatusStore.tsx';
 import {
   SECTION_GAP,
   TREE_CONTENT_INSET,
@@ -89,12 +91,14 @@ const StickyRow = styled.button<{ $level: number; $isRoot: boolean }>(
     // The same icon swap as the scrolling rows: type icon at rest, collapse chevron on hover.
     ...iconSwap(['&:hover']),
 
-    // Show the context menu button on hover, matching the scrolling rows' pattern.
+    // Show the context menu button on hover; hide status icons when the menu button appears,
+    // matching the scrolling rows' toggle pattern.
     '&:hover [data-sticky-menu]': { display: 'flex' },
+    '&:hover [data-sticky-menu] ~ [data-sticky-status]': { display: 'none' },
   })
 );
 
-const StickyMenuButton = styled.button(({ theme }) => ({
+const StickyMenuButton = styled.div(({ theme }) => ({
   display: 'none',
   alignItems: 'center',
   justifyContent: 'center',
@@ -102,7 +106,6 @@ const StickyMenuButton = styled.button(({ theme }) => ({
   width: 20,
   height: 20,
   borderRadius: 4,
-  border: 0,
   padding: 0,
   color: 'inherit',
   background: 'transparent',
@@ -111,6 +114,18 @@ const StickyMenuButton = styled.button(({ theme }) => ({
   '&:hover': { background: theme.background.hoverable },
   svg: { width: 14, height: 14 },
 }));
+
+const StickyStatusContainer = styled.span({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minWidth: 24,
+  height: 24,
+  gap: 4,
+  padding: 5,
+  flexShrink: 0,
+  zIndex: 1,
+});
 
 // position: relative lifts the content above the row's ::before hover highlight, which a
 // positioned pseudo-element would otherwise paint over.
@@ -179,6 +194,118 @@ export function getStickyRowIds(rows: FlatRows, data: IndexHash, scrollTop: numb
     sticky.push(byDepth[depth]);
   }
   return sticky;
+}
+
+interface StickyRowItemProps {
+  id: string;
+  slot: number;
+  data: IndexHash;
+  api: API;
+  labelContext: SidebarLabelContext;
+  rowsRef: RefObject<FlatRows>;
+  accentId: string | null;
+  selectionLine: SelectionLine | null;
+  onCollapse: (id: string) => void;
+  openContextMenu?: (itemId: string) => void;
+  hasTestProviders: boolean;
+  scrollIntoSlot: (id: string, slot: number) => void;
+  focusRealRow: (id: string, attempt?: number) => void;
+}
+
+function StickyRowItem({
+  id,
+  slot,
+  data,
+  api,
+  labelContext,
+  rowsRef,
+  accentId,
+  selectionLine,
+  onCollapse,
+  openContextMenu,
+  hasTestProviders,
+  scrollIntoSlot,
+  focusRealRow,
+}: StickyRowItemProps) {
+  const theme = useTheme();
+  const rowStatus = useRowStatus(id);
+
+  const entry = data[id];
+  const rowIndex = rowsRef.current?.indexById.get(id);
+  if (!entry || rowIndex === undefined) {
+    return null;
+  }
+  const level = rowsRef.current!.depths[rowIndex];
+
+  const { icon: changeStatusIcon } = getStatus(theme, rowStatus.change);
+  const { icon: testStatusIcon } = getStatus(theme, rowStatus.test);
+  const hasStatus = Boolean(changeStatusIcon || testStatusIcon);
+
+  return (
+    <StickyRow
+      $level={level}
+      $isRoot={entry.type === 'root'}
+      data-sticky-item-id={id}
+      data-accent={id === accentId || undefined}
+      type="button"
+      tabIndex={-1}
+      onClick={() => {
+        scrollIntoSlot(id, slot);
+        focusRealRow(id);
+      }}
+    >
+      <IndentLines
+        level={level}
+        selectionLevel={selectionLine?.rowIds.has(id) ? selectionLine.level : 0}
+      />
+      <StickyRowIcon
+        data-testid="sticky-collapse"
+        onClick={(event) => {
+          event.stopPropagation();
+          onCollapse(id);
+          scrollIntoSlot(id, slot);
+          focusRealRow(id);
+        }}
+      >
+        {entry.type === 'root' ? (
+          <CollapseIcon isExpanded />
+        ) : (
+          <>
+            <span className="hover-only">
+              <CollapseIcon isExpanded />
+            </span>
+            <span className="static-only">
+              <TypeIconWithSymbol item={entry} />
+            </span>
+          </>
+        )}
+      </StickyRowIcon>
+      <StickyLabel>{entry.renderLabel?.(entry, api, labelContext) || entry.name}</StickyLabel>
+      {openContextMenu &&
+        hasContextMenu(entry, hasProviderMenuEntriesFor(api, entry, hasTestProviders)) && (
+          <StickyMenuButton
+            data-sticky-menu
+            data-testid="sticky-context-menu"
+            aria-label="Open context menu"
+            onClick={(e) => {
+              e.stopPropagation();
+              scrollIntoSlot(id, slot);
+              // Wait one frame for the virtualizer to render the real row at its new
+              // position before opening the menu on it.
+              requestAnimationFrame(() => openContextMenu(id));
+            }}
+          >
+            <EllipsisIcon />
+          </StickyMenuButton>
+        )}
+      {hasStatus && (
+        <StickyStatusContainer data-sticky-status>
+          {changeStatusIcon}
+          {testStatusIcon}
+        </StickyStatusContainer>
+      )}
+    </StickyRow>
+  );
 }
 
 interface StickyRowsProps {
@@ -264,77 +391,24 @@ export function TreeStickyRows({
   return (
     <StickyAnchor aria-hidden="true">
       <StickyStack data-testid="sticky-overlay">
-        {ids.map((id, slot) => {
-          const entry = data[id];
-          const rowIndex = rowsRef.current?.indexById.get(id);
-          if (!entry || rowIndex === undefined) {
-            return null;
-          }
-          const level = rowsRef.current!.depths[rowIndex];
-          return (
-            <StickyRow
-              key={id}
-              $level={level}
-              $isRoot={entry.type === 'root'}
-              data-sticky-item-id={id}
-              data-accent={id === accentId || undefined}
-              type="button"
-              tabIndex={-1}
-              onClick={() => {
-                scrollIntoSlot(id, slot);
-                focusRealRow(id);
-              }}
-            >
-              <IndentLines
-                level={level}
-                selectionLevel={selectionLine?.rowIds.has(id) ? selectionLine.level : 0}
-              />
-              <StickyRowIcon
-                data-testid="sticky-collapse"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onCollapse(id);
-                  scrollIntoSlot(id, slot);
-                  focusRealRow(id);
-                }}
-              >
-                {entry.type === 'root' ? (
-                  <CollapseIcon isExpanded />
-                ) : (
-                  <>
-                    <span className="hover-only">
-                      <CollapseIcon isExpanded />
-                    </span>
-                    <span className="static-only">
-                      <TypeIconWithSymbol item={entry} />
-                    </span>
-                  </>
-                )}
-              </StickyRowIcon>
-              <StickyLabel>
-                {entry.renderLabel?.(entry, api, labelContext) || entry.name}
-              </StickyLabel>
-              {openContextMenu &&
-                hasContextMenu(entry, hasProviderMenuEntriesFor(api, entry, hasTestProviders)) && (
-                  <StickyMenuButton
-                    data-sticky-menu
-                    data-testid="sticky-context-menu"
-                    type="button"
-                    aria-label="Open context menu"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      scrollIntoSlot(id, slot);
-                      // Wait one frame for the virtualizer to render the real row at its new
-                      // position before opening the menu on it.
-                      requestAnimationFrame(() => openContextMenu(id));
-                    }}
-                  >
-                    <EllipsisIcon />
-                  </StickyMenuButton>
-                )}
-            </StickyRow>
-          );
-        })}
+        {ids.map((id, slot) => (
+          <StickyRowItem
+            key={id}
+            id={id}
+            slot={slot}
+            data={data}
+            api={api}
+            labelContext={labelContext}
+            rowsRef={rowsRef}
+            accentId={accentId}
+            selectionLine={selectionLine}
+            onCollapse={onCollapse}
+            openContextMenu={openContextMenu}
+            hasTestProviders={hasTestProviders}
+            scrollIntoSlot={scrollIntoSlot}
+            focusRealRow={focusRealRow}
+          />
+        ))}
       </StickyStack>
     </StickyAnchor>
   );

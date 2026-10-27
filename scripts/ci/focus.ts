@@ -109,16 +109,22 @@ export function selectFocusSandboxes(changedFiles: readonly string[]): TemplateK
   return [DEFAULT_FOCUS_SANDBOX];
 }
 
-/** Select the other templates that run Chromatic and load a changed package. */
+/** Every sandbox that runs Chromatic links the core and addon template stories. */
+const isSharedTemplateFile = (file: string) => /^code\/(core|addons\/[^/]+)\/template\//.test(file);
+
+/** Select the other templates that run Chromatic and load a changed package or shared story. */
 export function selectChromaticSiblings(
   focused: readonly TemplateKey[],
   changedFiles: readonly string[]
 ): TemplateKey[] {
+  const sharedTemplateChanged = changedFiles.some(isSharedTemplateFile);
+
   return FOCUS_TEMPLATES.filter(
     (sibling) =>
       !focused.includes(sibling) &&
       !allTemplates[sibling].skipTasks?.includes('chromatic') &&
-      isChanged(Object.values(templateDirs(sibling)).flat(), changedFiles)
+      (sharedTemplateChanged ||
+        isChanged(Object.values(templateDirs(sibling)).flat(), changedFiles))
   );
 }
 

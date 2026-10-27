@@ -1,4 +1,6 @@
 import { globSync, statSync } from 'node:fs';
+import { sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { join } from 'path/posix';
 
 import { isGlobalInput } from './global-inputs.ts';
@@ -10,6 +12,7 @@ import {
   PACKED_NODE_MODULES_ARCHIVE,
   artifact,
   cache,
+  compileStep,
   git,
   node,
   npm,
@@ -22,12 +25,11 @@ import {
 import { isTrustedAuthor } from './utils/runtime.ts';
 import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
 
-const dirname = import.meta.dirname;
-
-const codeDir = join(dirname, '../../code');
+const codeDir = new URL('../../code/', import.meta.url);
 const packageDirs = ['*/src', '*/*/src'].flatMap((pattern) =>
-  globSync(pattern, { cwd: codeDir, exclude: ['node_modules/**'] })
-    .filter((dir) => statSync(join(codeDir, dir)).isDirectory())
+  globSync(pattern, { cwd: fileURLToPath(codeDir), exclude: ['node_modules/**'] })
+    .map((dir) => dir.split(sep).join('/'))
+    .filter((dir) => statSync(new URL(dir, codeDir)).isDirectory())
     .sort((a, b) => (a.replaceAll('/', '\0') < b.replaceAll('/', '\0') ? -1 : 1))
 );
 
@@ -72,13 +74,7 @@ export const build_linux = defineJob('Build (linux)', () => ({
       ],
       packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`)
     ),
-    {
-      run: {
-        name: 'Compile',
-        working_directory: `code`,
-        command: 'yarn task --task compile --start-from=auto --no-link --debug',
-      },
-    },
+    compileStep(),
     {
       run: {
         name: 'Publish to Verdaccio',
@@ -126,13 +122,7 @@ export const build_windows = defineJob('Build (windows)', () => ({
     git.checkout({ forceHttps: true }),
     node.installOnWindows(),
     ...installWithCache('windows'),
-    {
-      run: {
-        name: 'Compile',
-        working_directory: `code`,
-        command: 'yarn task --task compile --start-from=auto --no-link --debug',
-      },
-    },
+    compileStep(),
     git.check(),
     verdaccio.start(),
     workspace.persist(
@@ -375,12 +365,15 @@ export const node26Smoke = defineJob('Node 26 smoke', () => ({
       },
     },
     npm.install('.'),
+    compileStep(),
     {
       run: {
         name: 'Run unit tests',
         // storybook-ui is the browser story project. The linux unit job never
-        // runs it; stories have their own Playwright job.
-        command: "yarn test --project '!storybook-ui'",
+        // runs it; stories have their own Playwright job. The scripts tests run
+        // `main.ts` under plain Node with `--experimental-transform-types`, a
+        // flag Node 26 dropped, so they keep running on the default-Node jobs.
+        command: "yarn test --project '!storybook-ui' --project '!scripts'",
       },
     },
     {

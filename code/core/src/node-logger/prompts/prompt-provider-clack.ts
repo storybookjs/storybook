@@ -100,6 +100,47 @@ const stdinEndAbort = (): {
     dispose: () => process.stdin.off('end', onStdinEnd),
   };
 };
+// Clack erases rows before each task log redraw, counting only the lines it wrote itself. A
+// direct stdout write in between (logBox, a prompt) shifts the cursor, so the erase eats it.
+// We cannot know how many rows were added, so once any outside write happens the task log
+// stops erasing and falls back to plain clack.log lines.
+let hasExternalStdoutWrite = false;
+let inTrackedTaskLogWrite = false;
+let originalStdoutWrite: typeof process.stdout.write | null = null;
+
+const installStdoutHook = () => {
+  if (originalStdoutWrite) {
+    return;
+  }
+  const original = process.stdout.write.bind(process.stdout);
+  originalStdoutWrite = original;
+  process.stdout.write = ((chunk: any, ...rest: any[]) => {
+    if (!inTrackedTaskLogWrite && !hasExternalStdoutWrite && chunk) {
+      const length = typeof chunk === 'string' ? chunk.length : (chunk?.length ?? 0);
+      if (length > 0) {
+        hasExternalStdoutWrite = true;
+      }
+    }
+    return (original as any)(chunk, ...rest);
+  }) as typeof process.stdout.write;
+};
+
+const uninstallStdoutHook = () => {
+  if (originalStdoutWrite) {
+    process.stdout.write = originalStdoutWrite;
+    originalStdoutWrite = null;
+  }
+};
+
+const runTracked = <T>(fn: () => T): T => {
+  const previous = inTrackedTaskLogWrite;
+  inTrackedTaskLogWrite = true;
+  try {
+    return fn();
+  } finally {
+    inTrackedTaskLogWrite = previous;
+  }
+};
 
 export class ClackPromptProvider extends PromptProvider {
   private async handleAbort(
@@ -223,47 +264,112 @@ export class ClackPromptProvider extends PromptProvider {
     const taskId = `${options.id}-task`;
     logTracker.addLog('info', `${taskId}-start: ${options.title}`);
 
-    if (!isCurrentTaskActive) {
-      setCurrentTaskLog(task);
+    // Nested taskLog() calls reuse the parent's task; only the root owns the hook and the stack entry.
+    const createdCurrentLog = !isCurrentTaskActive;
+
+    if (createdCurrentLog) {
+      hasExternalStdoutWrite = false;
+      inTrackedTaskLogWrite = false;
+      installStdoutHook();
     }
 
-    return {
+    const wrapped: TaskLogInstance = {
       message: (message) => {
         logTracker.addLog('info', `${taskId}: ${message}`);
-        task.message(formatTaskLogMessage(message));
+        if (hasExternalStdoutWrite) {
+          // The cursor moved; erasing would clobber the outside output.
+          clack.log.message(message);
+        } else {
+          runTracked(() => task.message(formatTaskLogMessage(message)));
+        }
       },
       error: (message) => {
         logTracker.addLog('error', `${taskId}-error: ${message}`);
-        task.error(message, { showLog: true });
-        clearCurrentTaskLog();
+        const contaminated = hasExternalStdoutWrite;
+        if (createdCurrentLog) {
+          uninstallStdoutHook();
+          hasExternalStdoutWrite = false;
+        }
+        if (contaminated) {
+          clack.log.error(message);
+        } else {
+          task.error(message, { showLog: true });
+        }
+        if (createdCurrentLog) {
+          clearCurrentTaskLog();
+        }
       },
       success: (message, options) => {
         logTracker.addLog('info', `${taskId}-success: ${message}`);
-        if (!isCurrentTaskActive) {
-          task.success(message, options);
+        const contaminated = hasExternalStdoutWrite;
+        if (createdCurrentLog) {
+          uninstallStdoutHook();
+          hasExternalStdoutWrite = false;
+          if (contaminated) {
+            clack.log.success(message);
+          } else {
+            task.success(message, options);
+          }
+          clearCurrentTaskLog();
         }
-        clearCurrentTaskLog();
       },
       group(title) {
         logTracker.addLog('info', `${taskId}-group: ${title}`);
-        const group = task.group(title);
-
-        setCurrentTaskLog(group);
-
-        return {
-          message: (message) => {
-            group.message(message);
+        // Already contaminated: skip the clack subtask, plain log lines never erase.
+        if (hasExternalStdoutWrite) {
+          const stub = {
+            message: (message: string) => {
+              clack.log.message(message);
+            },
+            success: (message: string) => {
+              clack.log.success(message);
+              clearCurrentTaskLog();
+            },
+            error: (message: string) => {
+              clack.log.error(message);
+              clearCurrentTaskLog();
+            },
+          };
+          setCurrentTaskLog(stub);
+          return stub;
+        }
+        const group = runTracked(() => task.group(title));
+        const wrappedGroup = {
+          message: (message: string) => {
+            if (hasExternalStdoutWrite) {
+              clack.log.message(message);
+            } else {
+              runTracked(() => group.message(message));
+            }
           },
-          success: (message) => {
-            group.success(message);
+          success: (message: string) => {
+            if (hasExternalStdoutWrite) {
+              clack.log.success(message);
+            } else {
+              group.success(message);
+            }
             clearCurrentTaskLog();
           },
-          error: (message) => {
-            group.error(message);
+          error: (message: string) => {
+            if (hasExternalStdoutWrite) {
+              clack.log.error(message);
+            } else {
+              group.error(message);
+            }
             clearCurrentTaskLog();
           },
         };
+        // Register the wrapper, not the raw group, so logger.ts gets the same fallback.
+        setCurrentTaskLog(wrappedGroup);
+        return wrappedGroup;
       },
     };
+
+    // Register the wrapper, not the raw task, so logger.ts gets the same fallback.
+    if (createdCurrentLog) {
+      setCurrentTaskLog(wrapped);
+    }
+
+    return wrapped;
   }
 }

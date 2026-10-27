@@ -27,7 +27,7 @@ export default {
       b: 'component',
     },
   },
-  // Compose the set of  args into `object`, so the pre component only needs a single prop
+  // Compose the set of args into `object`, so the pre component only needs a single prop
   //   (selecting only the args specified on parameters.argNames if set)
   decorators: [
     (storyFn: PartialStoryFn, context: StoryContext) => {

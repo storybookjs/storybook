@@ -12,7 +12,7 @@ import {
 import {
   formatFileContent,
   getStorybookInfo,
-  JsPackageManager,
+  type JsPackageManager,
   JsPackageManagerFactory,
   PackageManagerName,
 } from 'storybook/internal/common';
@@ -203,6 +203,9 @@ describe('CommonJS config guard (storybook add flow)', () => {
     vi.clearAllMocks();
     discoveredConfig = undefined;
 
+    // Canonical memfs pattern (testing guideline): reset the virtual disk before seeding.
+    vol.reset();
+
     // Reads and writes stay in memfs; nothing in these flows may touch the real checkout.
     const memfs = await vi.importActual<typeof import('memfs')>('memfs');
     vi.mocked(readFile).mockImplementation(
@@ -241,7 +244,6 @@ describe('CommonJS config guard (storybook add flow)', () => {
   });
 
   afterEach(() => {
-    vol.reset();
     // Spy mocks persist file-wide and clearAllMocks only clears call history, so reset the
     // implementations this describe installed to keep later describes on clean mocks.
     vi.mocked(readFile).mockReset();

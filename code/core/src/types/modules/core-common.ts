@@ -228,6 +228,11 @@ export interface LoadOptions {
   configDir?: string;
   cacheKey?: string;
   extendServer?: (server: HttpServer) => void;
+  /**
+   * URL path prefix Storybook is served from, normalized to start and end with `/`.
+   * @default '/'
+   */
+  basePath?: string;
 }
 
 export interface CLIBaseOptions {

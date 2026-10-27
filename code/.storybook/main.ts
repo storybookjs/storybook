@@ -16,7 +16,7 @@ const componentsPath = join(currentDirPath, '../core/src/components/index.ts');
 const managerApiPath = join(currentDirPath, '../core/src/manager-api/index.mock.ts');
 const previewApiPath = join(currentDirPath, '../core/src/preview-api/index.ts');
 const themingCreatePath = join(currentDirPath, '../core/src/theming/create.ts');
-const themingPath = join(currentDirPath, '../core/src/theming/index.ts');
+const themingEmotionPath = join(currentDirPath, '../core/src/theming/emotion.ts');
 const imageContextPath = join(currentDirPath, '../frameworks/nextjs/src/image-context.ts');
 
 const config = defineMain({
@@ -172,14 +172,16 @@ const config = defineMain({
       resolve: {
         alias:
           configType === 'DEVELOPMENT'
-            ? {
-                'storybook/internal/components': componentsPath,
-                'storybook/manager-api': managerApiPath,
-                'storybook/preview-api': previewApiPath,
-                'storybook/theming/create': themingCreatePath,
-                'storybook/theming': themingPath,
-                'sb-original/image-context': imageContextPath,
-              }
+            ? [
+                { find: 'storybook/internal/components', replacement: componentsPath },
+                { find: 'storybook/manager-api', replacement: managerApiPath },
+                { find: 'storybook/preview-api', replacement: previewApiPath },
+                { find: 'storybook/theming/create', replacement: themingCreatePath },
+                { find: 'storybook/theming/emotion', replacement: themingEmotionPath },
+                // addon-designs still imports styled/css/jsx from storybook/theming.
+                { find: /^storybook\/theming$/, replacement: themingEmotionPath },
+                { find: 'sb-original/image-context', replacement: imageContextPath },
+              ]
             : {
                 // The components dist bundle inlines react-aria; resolving to source keeps the
                 // preview on a single react-aria copy so FocusScopes can nest across modules.

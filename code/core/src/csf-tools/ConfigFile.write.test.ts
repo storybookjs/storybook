@@ -32,15 +32,19 @@ describe('writeConfig', () => {
     expect(output.getValue(['addons'])).toEqual(['old']);
   });
 
-  it('does not overwrite an expression that could not be read statically', async () => {
+  it('writes a config after a read that could not evaluate its value', async () => {
     const dynamicSource = 'export default { tags: getTags() };';
     vol.fromJSON({ [fileName]: dynamicSource });
     const config = loadConfig(dynamicSource, fileName).parse();
-    const tags = config.getValue(['tags']);
-    config.set(['tags'], Array.isArray(tags) ? [...tags, 'autodocs'] : ['autodocs']);
 
-    await expect(writeConfig(config)).rejects.toThrow('unsupported value');
-    expect(fs.readFileSync(fileName, 'utf8')).toBe(dynamicSource);
+    expect(config.getValue(['tags'])).toBeUndefined();
+    expect(config.inspect(['tags']).kind).toBe('value');
+    config.set(['features', 'enabled'], true);
+    await writeConfig(config);
+
+    expect(fs.readFileSync(fileName, 'utf8')).toBe(
+      'export default { tags: getTags(), features: { enabled: true } };'
+    );
   });
 
   it('leaves the file unchanged after a failed mutation', async () => {

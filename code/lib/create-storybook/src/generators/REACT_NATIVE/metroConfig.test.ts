@@ -69,7 +69,6 @@ describe('metroConfig codemod', () => {
     expect(await getFormattedDiff(before, after, filePath)).toMatchInlineSnapshot(`
       "+ const { withStorybook } = require('@storybook/react-native/withStorybook');
       + 
-      + 
         const defaultConfig = {};
         
       - module.exports = defaultConfig;
@@ -96,7 +95,6 @@ describe('metroConfig codemod', () => {
       "- module.exports = withExpo(defaultConfig);
       - 
       + const { withStorybook } = require('@storybook/react-native/withStorybook');
-      + 
       + module.exports = withStorybook(withExpo(defaultConfig));
       + "
     `);
@@ -129,6 +127,18 @@ export default async function makeMetroConfig() {
     }
   });
 
+  it('keeps a next-line directive above the statement it is about', () => {
+    const before = `// @ts-expect-error\nmodule.exports = unknownConfig;\n`;
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.js'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      expect(transformed.code).toBe(
+        `const { withStorybook } = require('@storybook/react-native/withStorybook');\n// @ts-expect-error\nmodule.exports = withStorybook(unknownConfig);\n`
+      );
+    }
+  });
+
   it('uses ESM import for a .js config that uses export default', () => {
     const before = 'export default {};\n';
     const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.js'));
@@ -157,6 +167,16 @@ export default {};
       );
       expect(transformed.code).toContain('export default wrapMetro({});');
       expect(transformed.code).not.toContain('export default withStorybook({});');
+    }
+  });
+
+  it('wraps a parenthesized comma expression as one argument', () => {
+    const before = 'module.exports = (setup(), config);\n';
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.js'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      expect(transformed.code).toContain('module.exports = withStorybook((setup(), config));');
     }
   });
 
@@ -216,7 +236,6 @@ module.exports = {};
       expect(await getFormattedDiff(before, transformed.code, filePath)).toMatchInlineSnapshot(`
         "+ const { withStorybook } = require('@storybook/react-native/withStorybook');
         + 
-        + 
           const hint = \`
           import { something } from 'somewhere'
           export default {}
@@ -246,11 +265,12 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
       expect(await getFormattedDiff(before, transformed.code, filePath)).toMatchInlineSnapshot(`
         "  import type { MetroConfig } from 'metro-config';
           
+        + import { withStorybook } from '@storybook/react-native/withStorybook';
+        + 
+          
           
         - export default async function makeMetroConfig<T = string>(): Promise<MetroConfig> {
         - 
-        + import { withStorybook } from '@storybook/react-native/withStorybook';
-        + 
         + export default withStorybook(async function makeMetroConfig<T = string>(): Promise<MetroConfig> {
         + 
             return {} as MetroConfig;
@@ -432,36 +452,46 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
   it('containsStorybookImport detects import/require across top-level statement forms', () => {
     expect(
       containsStorybookImport(
-        "import { withStorybook } from '@storybook/react-native/withStorybook';"
+        "import { withStorybook } from '@storybook/react-native/withStorybook';",
+        'metro.config.js'
       )
     ).toBe(true);
-    expect(containsStorybookImport("const sb = require('storybook/internal/common');")).toBe(true);
     expect(
-      containsStorybookImport("withSomething(require('@storybook/react-native/withStorybook'));")
-    ).toBe(true);
-    expect(
-      containsStorybookImport(
-        "module.exports = require('@storybook/react-native/withStorybook').withStorybook({});"
-      )
+      containsStorybookImport("const sb = require('storybook/internal/common');", 'metro.config.js')
     ).toBe(true);
     expect(
       containsStorybookImport(
-        "export const withSb = require('@storybook/react-native/withStorybook');"
+        "withSomething(require('@storybook/react-native/withStorybook'));",
+        'metro.config.js'
       )
     ).toBe(true);
-    expect(containsStorybookImport('const x = require("react-native");')).toBe(false);
+    expect(
+      containsStorybookImport(
+        "module.exports = require('@storybook/react-native/withStorybook').withStorybook({});",
+        'metro.config.js'
+      )
+    ).toBe(true);
+    expect(
+      containsStorybookImport(
+        "export const withSb = require('@storybook/react-native/withStorybook');",
+        'metro.config.js'
+      )
+    ).toBe(true);
+    expect(containsStorybookImport('const x = require("react-native");', 'metro.config.js')).toBe(
+      false
+    );
   });
 
   it('fallback heuristic does not false-positive on storybook-like identifiers', () => {
     // This source is intentionally unparseable so the catch-branch runs.
     const unparseable = 'const storybookEnabled = true; <<<INVALID>>>';
     // 'storybookEnabled' must not fool the fallback into thinking Storybook is imported.
-    expect(containsStorybookImport(unparseable)).toBe(false);
+    expect(containsStorybookImport(unparseable, 'metro.config.js')).toBe(false);
 
     // But a real package specifier in the same unparseable source must still be detected.
     const unparseableWithImport =
       "const storybookEnabled = true; const x = require('@storybook/react-native'); <<<INVALID>>>";
-    expect(containsStorybookImport(unparseableWithImport)).toBe(true);
+    expect(containsStorybookImport(unparseableWithImport, 'metro.config.js')).toBe(true);
   });
 
   it('prepends fallback comment only once', () => {

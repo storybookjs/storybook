@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { ToggleButton } from './ToggleButton.tsx';
 

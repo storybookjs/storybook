@@ -5,6 +5,9 @@ import { DEFAULT_SLOT_NAME, parseArgKey, type ArgKeyCategory } from './arg-keys.
 type Binder = (element: HTMLElement, name: string, value: unknown) => string | undefined;
 
 const BINDERS: Record<Exclude<ArgKeyCategory, 'cssProperties'>, Binder> = {
+  attributes: (element, name, value) => {
+    bindPrimitiveAttribute(element, name, value);
+  },
   events: (element, name, value) => {
     if (typeof value === 'function') {
       element.addEventListener(name, value as EventListener);
@@ -16,12 +19,16 @@ const BINDERS: Record<Exclude<ArgKeyCategory, 'cssProperties'>, Binder> = {
   cssStates: (element, name, value) => styleRule(`${element.localName}:state(${name})`, value),
 };
 
-// Element properties win over attributes so booleans that default to `true` and empty strings reach the element; runtime checks run before suffixes so a declared attribute such as `has-slot` wins, as in the mapper.
+// `undefined` and `null` args are skipped so the element keeps its defaults; element properties win over attributes so booleans that default to `true` and empty strings reach the element; runtime checks run before suffixes so a declared attribute such as `has-slot` wins, as in the mapper; `-attr` keys reach an attribute shadowed by a same-named property.
 export function bindArgs(element: HTMLElement, args: Args): string[] {
   const observedAttributes = observedAttributesOf(element);
   const styleRules: string[] = [];
 
   for (const [key, value] of Object.entries(args)) {
+    if (value === undefined || value === null) {
+      continue;
+    }
+
     const parsedKey = parseArgKey(key);
 
     if (parsedKey?.category === 'cssProperties') {
@@ -34,8 +41,7 @@ export function bindArgs(element: HTMLElement, args: Args): string[] {
       continue;
     }
 
-    if (observedAttributes.has(key) && isPrimitive(value)) {
-      bindAttribute(element, key, value);
+    if (observedAttributes.has(key) && bindPrimitiveAttribute(element, key, value)) {
       continue;
     }
 
@@ -71,6 +77,15 @@ function isUnset(value: unknown): boolean {
 
 function assignProperty(element: HTMLElement, key: string, value: unknown): void {
   (element as HTMLElement & Record<string, unknown>)[key] = value;
+}
+
+/** Returns false for objects and functions so callers can fall back to a property. */
+function bindPrimitiveAttribute(element: HTMLElement, name: string, value: unknown): boolean {
+  if (!isPrimitive(value)) {
+    return false;
+  }
+  bindAttribute(element, name, value);
+  return true;
 }
 
 function bindAttribute(element: HTMLElement, name: string, value: unknown): void {

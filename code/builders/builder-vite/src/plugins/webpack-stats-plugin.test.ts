@@ -16,6 +16,11 @@ const files = new Set([
   '/project/package.json',
   '/project/tsconfig.json',
   '/project/src/Button.html',
+  '/project/src/Button.scss',
+  '/project/src/Button.ts',
+  '/project/src/Button.tsx',
+  '/project/src/Card.test.ts',
+  '/project/src/fonts/Inter.woff2',
   '/project/src/Card.html',
   '/project/src/unused.html',
   '/project/src/styles/_tokens.scss',
@@ -313,6 +318,101 @@ describe('pluginWebpackStats', () => {
 
       expect(getImporters(graph, './src/styles/_tokens.scss', plugins)).toEqual([
         './src/Button.scss?inline',
+      ]);
+    });
+
+    it('treats the style block of a single-file component as a stylesheet', () => {
+      const graph = {
+        '/project/src/Button.scss?inline': [],
+        '/project/src/Foo.vue?vue&type=style&index=0&lang.scss': [],
+      };
+      const plugin: Plugin = {
+        name: 'watch-partial-and-source',
+        transform(code) {
+          this.addWatchFile('/project/src/styles/_tokens.scss');
+          this.addWatchFile('/project/src/Button.tsx');
+          return code;
+        },
+      };
+      const names = getStats(graph, [plugin]).modules.map(
+        (module: { name: string }) => module.name
+      );
+
+      expect(getImporters(graph, './src/styles/_tokens.scss', [plugin])).toEqual([
+        './src/Button.scss?inline',
+        './src/Foo.vue?vue&type=style&index=0&lang.scss',
+      ]);
+      expect(names).not.toContain('./src/Button.tsx');
+    });
+
+    // Tailwind registers every source file it scans for class names, and Vite registers the files
+    // that `url()` references.
+    it('ignores the files a stylesheet watches that are not stylesheets', () => {
+      const plugin: Plugin = {
+        name: 'watch-content-sources',
+        transform(code) {
+          for (const file of [
+            '/project/src/Button.tsx',
+            '/project/src/Card.test.ts',
+            '/project/src/fonts/Inter.woff2',
+          ]) {
+            this.addWatchFile(file);
+          }
+          return code;
+        },
+      };
+
+      const names = getStats({ '/project/src/tailwind.css': [] }, [plugin]).modules.map(
+        (module: { name: string }) => module.name
+      );
+
+      expect(names).toEqual(['./src/tailwind.css']);
+    });
+
+    it('keeps every file watched by a module that is not a stylesheet', () => {
+      const plugin: Plugin = {
+        name: 'watch-in-virtual-module',
+        load(id) {
+          if (id === '\0virtual:template') {
+            this.addWatchFile('/project/src/Button.html');
+            this.addWatchFile('/project/src/styles/_tokens.scss');
+            return 'export default ""';
+          }
+        },
+      };
+
+      const names = getStats({ '\0virtual:template': [] }, [plugin]).modules.map(
+        (module: { name: string }) => module.name
+      );
+
+      expect(names).toEqual([
+        '/virtual:template',
+        './src/Button.html',
+        './src/styles/_tokens.scss',
+      ]);
+    });
+
+    // With Vite 7, `vite:css` also watches the stylesheet that it transforms.
+    it('adds a watch file that is already a module as a dependency of the watching module', () => {
+      const graph = {
+        '/project/src/Button.ts': ['/project/src/Button.scss?inline'],
+        '/project/src/Button.scss?inline': [],
+      };
+      const plugins = [
+        watchInTransform('/project/src/Button.scss?inline', '/project/src/Button.scss'),
+      ];
+
+      expect(getImporters(graph, './src/Button.scss', plugins)).toEqual([
+        './src/Button.scss?inline',
+      ]);
+      expect(getImporters(graph, './src/Button.scss?inline', plugins)).toEqual(['./src/Button.ts']);
+    });
+
+    it('does not list a module that watches itself as its own importer', () => {
+      const plugins = [watchInLoad('/project/src/Button.ts', '/project/src/Button.ts')];
+
+      expect(getStats({ '/project/src/Button.ts': [] }, plugins).modules).toEqual([
+        { id: './src/Button.ts', name: './src/Button.ts', reasons: [] },
       ]);
     });
 

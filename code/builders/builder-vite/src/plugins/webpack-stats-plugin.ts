@@ -43,6 +43,18 @@ function splitQuery(id: string): [path: string, query: string] {
   return queryIndex === -1 ? [id, ''] : [id.slice(0, queryIndex), id.slice(queryIndex)];
 }
 
+const STYLESHEET_EXTENSIONS = 'css|scss|sass|less|styl|stylus|pcss|postcss|sss';
+const STYLESHEET_PATH = new RegExp(`\\.(${STYLESHEET_EXTENSIONS})$`);
+// The style block of a single-file component, for example `Foo.vue?vue&type=style&lang.scss`.
+const STYLESHEET_QUERY = new RegExp(`[?&]lang\\.(${STYLESHEET_EXTENSIONS})\\b`);
+
+function isStylesheet(id: string) {
+  const [path, query] = splitQuery(
+    id.startsWith(ROLLUP_VIRTUAL_PREFIX) ? id.slice(ROLLUP_VIRTUAL_PREFIX.length) : id
+  );
+  return STYLESHEET_PATH.test(path) || STYLESHEET_QUERY.test(query);
+}
+
 // Rollup's `\0` marks an id that is not a file, yet the commonjs plugin embeds a file path in its
 // proxy ids. A `\0` id is treated as a path only when the graph contains that path as a module.
 function createNormalizer(workingDir: string, ids: Iterable<string>) {
@@ -164,9 +176,13 @@ export function pluginWebpackStats({
       for (const depId of mod.importedIds.concat(mod.dynamicallyImportedIds)) {
         record(depId, mod.id);
       }
-      // A watch file is a dependency of the module that declared it.
+      // A watch file is a dependency of the module that declared it. A stylesheet keeps only the
+      // stylesheets it watches, such as Sass partials. Its other watch files are content sources,
+      // such as the files Tailwind scans for class names: the stories that use those files already
+      // trace to them through their imports.
+      const keepsOnlyStylesheets = isStylesheet(mod.id);
       for (const file of watchFilesById.get(mod.id) ?? []) {
-        if (isFile(file)) {
+        if (isFile(file) && (!keepsOnlyStylesheets || isStylesheet(file))) {
           record(file, mod.id);
         }
       }

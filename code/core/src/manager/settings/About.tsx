@@ -5,7 +5,7 @@ import { Button, Link, StorybookLogo } from 'storybook/internal/components';
 
 import { DocumentIcon, GithubIcon } from '@storybook/icons';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { UpgradeBlock } from '../components/upgrade/UpgradeBlock.tsx';
 

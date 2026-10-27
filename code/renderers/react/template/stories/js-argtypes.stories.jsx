@@ -5,7 +5,7 @@ import { PureArgsTable as ArgsTable } from '@storybook/addon-docs/blocks';
 import PropTypes from 'prop-types';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import { getService, inferControls } from 'storybook/preview-api';
-import { ThemeProvider, convert, themes } from 'storybook/theming';
+import { ThemeProvider, convert, themes } from 'storybook/theming/emotion';
 
 import { component as JsReactMemoComponent } from './docgen-components/9586-js-react-memo/input.jsx';
 import { component as JsDefaultValuesComponent } from './docgen-components/9626-js-default-values/input.jsx';

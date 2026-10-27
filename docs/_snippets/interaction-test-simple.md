@@ -87,7 +87,8 @@ export const Opens = {
 
 ```svelte filename="Dialog.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Dialog from './Dialog.svelte';
 
@@ -107,33 +108,32 @@ export const Opens = {
 />
 ```
 
-```ts filename="Dialog.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-import type { Meta, StoryObj } from '@storybook/your-framework';
-import { expect } from 'storybook/test';
+```svelte filename="Dialog.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import Dialog from './Dialog.svelte';
+  import Dialog from './Dialog.svelte';
 
-const meta = {
-  component: Dialog,
-} satisfies Meta<typeof Dialog>;
-export default meta;
+  const { Story } = preview.meta({
+    component: Dialog,
+  });
+</script>
 
-type Story = StoryObj<typeof meta>;
-
-export const Opens: Story = {
-  play: async ({ canvas, userEvent }) => {
+<Story
+  name="Opens"
+  play={async ({ canvas, userEvent }) => {
     // Click on a button and assert that a dialog appears
     const button = canvas.getByRole('button', { name: 'Open Modal' });
     await userEvent.click(button);
     await expect(canvas.getByRole('dialog')).toBeInTheDocument();
-  },
-};
+  }}
+/>
 ```
 
 ```svelte filename="Dialog.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Dialog from './Dialog.svelte';
 
@@ -153,23 +153,26 @@ export const Opens: Story = {
 />
 ```
 
-```js filename="Dialog.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import { expect } from 'storybook/test';
+```svelte filename="Dialog.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-import Dialog from './Dialog.svelte';
+  import Dialog from './Dialog.svelte';
 
-export default {
-  component: Dialog,
-};
+  const { Story } = preview.meta({
+    component: Dialog,
+  });
+</script>
 
-export const Opens = {
-  play: async ({ canvas, userEvent }) => {
+<Story
+  name="Opens"
+  play={async ({ canvas, userEvent }) => {
     // Click on a button and assert that a dialog appears
     const button = canvas.getByRole('button', { name: 'Open Modal' });
     await userEvent.click(button);
     await expect(canvas.getByRole('dialog')).toBeInTheDocument();
-  },
-};
+  }}
+/>
 ```
 
 ```ts filename="Dialog.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"

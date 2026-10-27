@@ -1,6 +1,6 @@
 import type { PreprocessorGroup } from 'svelte/compiler';
-import type { Plugin, ResolvedConfig } from 'vite';
-import { describe, expect, it, vi } from 'vitest';
+import { normalizePath, type Plugin, type ResolvedConfig } from 'vite';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE,
@@ -23,14 +23,15 @@ vi.mock('@storybook/svelte/internal/svelte-csf/transform', async (importOriginal
 
 // Vite's normalizePath rewrites backslashes only when the process runs on Windows, so pin it to
 // Vite's id contract (forward slashes on every OS) to keep this suite deterministic on any OS
-vi.mock('vite', async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  normalizePath: (id: string) => id.replaceAll('\\', '/'),
-}));
+vi.mock('vite', { spy: true });
 
 type Handler<T> = { filter: { id: RegExp }; handler: T };
 
 describe(svelteCsf.name, () => {
+  beforeEach(() => {
+    vi.mocked(normalizePath).mockImplementation((id) => id.replaceAll('\\', '/'));
+  });
+
   it('resolves the runtime stories import to its file, and leaves other imports alone', () => {
     const { filter, handler } = svelteCsf().resolveId as Handler<() => string>;
 

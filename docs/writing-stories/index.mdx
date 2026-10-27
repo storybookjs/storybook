@@ -256,7 +256,7 @@ Your story will now be shown in the sidebar with the given text.
 
 <Callout variant="info">
 
-The `name` value is read statically as part of the build process, so it must be a plain string literal. A variable, a template literal, a cast such as `name: 'I am the primary' as const`, or an assignment made after the export such as `Primary.name = 'I am the primary'` cannot be read statically, and the sidebar keeps the name derived from the export.
+The `name` value must be statically analyzable during the build process, so it must be a plain string literal for it to be correctly recognized and displayed in the sidebar. Other types of values, such as variables, type casts on the `name` value (including `name: 'I am the primary' as const`), assignment after the export (e.g., `Primary.name = 'I am the primary'`), and template literals, will not be recognized, leading to the sidebar displaying the name derived from the export instead.
 
 </Callout>
 

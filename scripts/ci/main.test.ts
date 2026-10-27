@@ -50,6 +50,7 @@ describe('main.ts under plain Node, as the CircleCI setup job runs it', () => {
     const installIndex = steps.findIndex((step) => step.name === 'node/install-packages');
     const compileIndex = steps.findIndex((step) => step.name === 'Compile');
     const unitTestsIndex = steps.findIndex((step) => step.name === 'Run unit tests');
+    expect(installIndex).toBeGreaterThanOrEqual(0);
     expect(compileIndex).toBeGreaterThan(installIndex);
     expect(compileIndex).toBeLessThan(unitTestsIndex);
     expect(steps[compileIndex].command).toBe(

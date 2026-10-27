@@ -18,7 +18,11 @@ const cacheLife = fn().mockName('next/cache::cacheLife');
 const cacheTag = fn().mockName('next/cache::cacheTag');
 
 // mock utilities/overrides (as of Next v16.3.0)
-const io = fn(async () => {}).mockName('next/cache::io');
+const resolvedIOPromise = Object.assign(Promise.resolve(undefined), {
+  status: 'fulfilled' as const,
+  value: undefined,
+});
+const io = fn(() => resolvedIOPromise).mockName('next/cache::io');
 
 // mock utilities/overrides (as of Next v16.4.0)
 const navigation = fn(async () => {}).mockName('next/cache::navigation');

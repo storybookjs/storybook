@@ -114,6 +114,21 @@ describe('ClackPromptProvider', () => {
     expect(task.message).toHaveBeenCalledWith(`${short}\n${'x'.repeat(51)} .storybook/preview`);
   });
 
+  it('surfaces a nested task log error but not its success', () => {
+    const root = provider.taskLog({ id: 'root', title: 'Root' });
+    const nested = provider.taskLog({ id: 'nested', title: 'Nested' });
+
+    nested.success('inner done');
+    expect(task.success).not.toHaveBeenCalled();
+
+    nested.error('inner failed');
+    expect(task.error).toHaveBeenCalledWith('inner failed', { showLog: true });
+
+    root.success('done');
+    expect(task.success).toHaveBeenCalledTimes(1);
+    expect(task.success).toHaveBeenCalledWith('done', undefined);
+  });
+
   it('awaits an async onCancel handler before rejecting the aborted prompt', async () => {
     const stepOrder: string[] = [];
     const release = Promise.withResolvers<void>();

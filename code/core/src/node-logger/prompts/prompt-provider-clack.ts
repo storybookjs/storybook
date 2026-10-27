@@ -100,6 +100,7 @@ const stdinEndAbort = (): {
     dispose: () => process.stdin.off('end', onStdinEnd),
   };
 };
+
 // Clack erases rows before each task log redraw, counting only the lines it wrote itself. A
 // direct stdout write in between (logBox, a prompt) shifts the cursor, so the erase eats it.
 // We cannot know how many rows were added, so once any outside write happens the task log
@@ -273,6 +274,28 @@ export class ClackPromptProvider extends PromptProvider {
       installStdoutHook();
     }
 
+    const finish = (
+      status: 'success' | 'error',
+      message: string,
+      options?: { showLog?: boolean }
+    ): void => {
+      const contaminated = hasExternalStdoutWrite;
+      if (createdCurrentLog) {
+        uninstallStdoutHook();
+        hasExternalStdoutWrite = false;
+      }
+      if (contaminated) {
+        clack.log[status](message);
+      } else if (status === 'error') {
+        task.error(message, { showLog: true });
+      } else {
+        task.success(message, options);
+      }
+      if (createdCurrentLog) {
+        clearCurrentTaskLog();
+      }
+    };
+
     const wrapped: TaskLogInstance = {
       message: (message) => {
         logTracker.addLog('info', `${taskId}: ${message}`);
@@ -285,32 +308,13 @@ export class ClackPromptProvider extends PromptProvider {
       },
       error: (message) => {
         logTracker.addLog('error', `${taskId}-error: ${message}`);
-        const contaminated = hasExternalStdoutWrite;
-        if (createdCurrentLog) {
-          uninstallStdoutHook();
-          hasExternalStdoutWrite = false;
-        }
-        if (contaminated) {
-          clack.log.error(message);
-        } else {
-          task.error(message, { showLog: true });
-        }
-        if (createdCurrentLog) {
-          clearCurrentTaskLog();
-        }
+        finish('error', message);
       },
       success: (message, options) => {
         logTracker.addLog('info', `${taskId}-success: ${message}`);
-        const contaminated = hasExternalStdoutWrite;
+        // A nested success must not close the parent's task; only a nested error is worth surfacing.
         if (createdCurrentLog) {
-          uninstallStdoutHook();
-          hasExternalStdoutWrite = false;
-          if (contaminated) {
-            clack.log.success(message);
-          } else {
-            task.success(message, options);
-          }
-          clearCurrentTaskLog();
+          finish('success', message, options);
         }
       },
       group(title) {

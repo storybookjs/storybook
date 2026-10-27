@@ -8,9 +8,7 @@ export class ApiService {
 @Component({
   standalone: true,
   // Needs to be a different name to the CLI template button
-  template: `
-    <button type="button">{{ label }}</button>
-  `,
+  template: ` <button type="button">{{ label }}</button> `,
   selector: 'app-provider-button',
   providers: [ApiService],
 })

@@ -12,9 +12,7 @@ export class ApiModule {}
 
 @Component({
   standalone: false,
-  template: `
-    <span>{{ testForProvider }}</span>
-  `,
+  template: ` <span>{{ testForProvider }}</span> `,
   selector: 'not-standalone-component',
 })
 export default class NotStandaloneComponent {

@@ -52,6 +52,7 @@ Type:
   interactions?: boolean;
   measure?: boolean;
   outline?: boolean;
+  previewTestBedRenderer?: boolean;
   sidebarOnboardingChecklist?: boolean;
   menuOnboardingChecklist?: boolean;
   toolbars?: boolean;
@@ -343,6 +344,21 @@ Type: `boolean`
 Default: `true`
 
 Enable the [Outline](../../essentials/measure-and-outline.mdx#outline) feature.
+
+<If renderer="angular">
+
+## `previewTestBedRenderer`
+
+Type: `boolean`
+
+Default: `false`
+
+Render canvas stories through Angular's [`TestBed`](https://angular.dev/api/core/testing/TestBed) instead of bootstrapping a standalone application per story.
+Play functions can then reach the story's injector through `TestBed.inject()`.
+Docs pages keep bootstrapping an application per story, because one page renders several stories that cannot share the single `TestBed` environment.
+Only `@storybook/angular-vite` reads this feature.
+
+</If>
 
 ## `sidebarOnboardingChecklist`
 

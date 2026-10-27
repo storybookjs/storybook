@@ -35,6 +35,8 @@ export class RendererFactory {
 
   private buildRenderer(renderType: RenderType, useTestBedRenderer: boolean) {
     if (renderType === 'docs') {
+      // A docs page renders several stories with potentially different application configs,
+      // which cannot share the single TestBed environment injector.
       return new DocsRenderer();
     }
     return useTestBedRenderer ? new TestBedRenderer() : new CanvasRenderer();

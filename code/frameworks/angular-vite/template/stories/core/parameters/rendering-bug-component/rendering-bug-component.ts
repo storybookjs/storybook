@@ -2,9 +2,7 @@ import { Component, Input } from '@angular/core';
 
 @Component({
   standalone: true,
-  template: `
-    <button (click)="buttonClick()">{{ label }}</button>
-  `,
+  template: ` <button (click)="buttonClick()">{{ label }}</button> `,
   selector: 'rendering-bug-component',
 })
 export default class RenderingBugComponent {

@@ -24,12 +24,12 @@ type StoryRenderInfo = {
 };
 
 export interface MountApplicationOptions {
-  /** The standalone wrapper component that hosts the story. */
+  // The standalone wrapper component that hosts the story.
   application: Type<unknown>;
   providers: Array<Provider | EnvironmentProviders>;
   applicationConfig?: ApplicationConfig;
   targetDOMNode: HTMLElement;
-  /** CSS selector of the root element created by initAngularRootElement. */
+  // Selector of the root element created by initAngularRootElement.
   componentSelector: string;
 }
 
@@ -164,10 +164,7 @@ export abstract class AbstractRenderer {
     applicationRefs.set(targetDOMNode, applicationRef);
   }
 
-  /**
-   * Creates the running Angular application for the prepared story wrapper component. The default
-   * strategy bootstraps a standalone application; the TestBed strategy overrides this seam.
-   */
+  // TestBedRenderer overrides this seam.
   protected async mountApplication({
     application,
     providers,

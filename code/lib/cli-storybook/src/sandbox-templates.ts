@@ -305,7 +305,15 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDevDependencies: ['prop-types', '@types/prop-types', '@storybook/addon-mcp'],
+      // create-vite >= 9.3.3 scaffolds TypeScript 7, which core/docgen cannot parse yet. Overwrite
+      // the scaffold's own devDependencies range with a pinned 6.x until docgen supports TS 7
+      // (#36987, #37004); pinning via devDependencies avoids a conflicting duplicate entry.
+      extraDevDependencies: [
+        'prop-types',
+        '@types/prop-types',
+        '@storybook/addon-mcp',
+        'typescript@^6',
+      ],
       editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
       mainConfig: {
         features: {

@@ -34,6 +34,29 @@ describe('main.ts under plain Node, as the CircleCI setup job runs it', () => {
     expect(config).toContain('project/code/core/node_modules');
   });
 
+  it('compiles packages before running unit tests on node-26-smoke', () => {
+    const result = generate('--workflow=daily', '--base-ref=HEAD');
+
+    expect(result.status, result.stderr).toBe(0);
+    const config = JSON.parse(
+      readFileSync(join(repoRoot, '.circleci/config.generated.yml'), 'utf8')
+    );
+    const steps: { name: string; command?: string }[] = config.jobs['node-26-smoke'].steps.map(
+      (step: Record<string, { name?: string; command?: string }>) => ({
+        name: step.run?.name ?? Object.keys(step)[0],
+        command: step.run?.command,
+      })
+    );
+    const installIndex = steps.findIndex((step) => step.name === 'node/install-packages');
+    const compileIndex = steps.findIndex((step) => step.name === 'Compile');
+    const unitTestsIndex = steps.findIndex((step) => step.name === 'Run unit tests');
+    expect(compileIndex).toBeGreaterThan(installIndex);
+    expect(compileIndex).toBeLessThan(unitTestsIndex);
+    expect(steps[compileIndex].command).toBe(
+      'yarn task --task compile --start-from=auto --no-link'
+    );
+  });
+
   it.each([{ args: [] }, { args: ['--workflow=unknown'] }])('rejects $args', ({ args }) => {
     const result = generate(...args);
 

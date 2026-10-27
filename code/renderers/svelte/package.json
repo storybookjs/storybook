@@ -35,8 +35,8 @@
     "./internal/createReactiveProps": "./static/createReactiveProps.svelte.js",
     "./internal/DecoratorHandler.svelte": "./static/DecoratorHandler.svelte",
     "./internal/docgen-engine": {
-      "types": "./dist/docgen/component-docgen/svelte2tsx/generate-docgen.d.ts",
       "code": "./src/docgen/component-docgen/svelte2tsx/generate-docgen.ts",
+      "types": "./dist/docgen/component-docgen/svelte2tsx/generate-docgen.d.ts",
       "default": "./dist/docgen/component-docgen/svelte2tsx/generate-docgen.js"
     },
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",

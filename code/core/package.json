@@ -255,8 +255,8 @@
       "default": "./dist/theming/create.js"
     },
     "./theming/emotion": {
-      "types": "./dist/theming/emotion.d.ts",
       "code": "./src/theming/emotion.ts",
+      "types": "./dist/theming/emotion.d.ts",
       "default": "./dist/theming/emotion.js"
     },
     "./viewport": {

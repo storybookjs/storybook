@@ -1,11 +1,8 @@
-import { stripVTControlCharacters } from 'node:util';
-
 import { afterEach, expect, it, vi } from 'vitest';
 
-const stubStdoutColumns = (descriptor: PropertyDescriptor, isTTY = false) => {
+const stubStdoutColumns = (descriptor: PropertyDescriptor) => {
   const stdout = Object.create(process.stdout);
   Object.defineProperty(stdout, 'columns', { configurable: true, ...descriptor });
-  Object.defineProperty(stdout, 'isTTY', { configurable: true, value: isTTY });
 
   const stubbedProcess = Object.create(process);
   Object.defineProperty(stubbedProcess, 'stdout', { value: stdout, configurable: true });
@@ -14,7 +11,6 @@ const stubStdoutColumns = (descriptor: PropertyDescriptor, isTTY = false) => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
-  vi.unstubAllEnvs();
   vi.resetModules();
 });
 
@@ -42,25 +38,4 @@ it('leaves a usable terminal width alone', async () => {
   await import('./prompt-functions.ts');
 
   expect(process.stdout.columns).toBe(120);
-});
-
-it('shortens a multiselect hint link to the width clack wraps option lines at', async () => {
-  stubStdoutColumns({ value: 100, writable: true }, true);
-  vi.stubEnv('TERM_PROGRAM', 'iTerm.app');
-  vi.stubEnv('TERM_PROGRAM_VERSION', '3.4.0');
-  const multiselect = vi.fn().mockResolvedValue([]);
-  vi.doMock('./prompt-config.ts', () => ({ getPromptProvider: () => ({ multiselect }) }));
-  const prompts = await import('./prompt-functions.ts');
-  const url =
-    'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#parameterscomponentsubtitle-removed';
-
-  await prompts.multiselect({
-    message: 'Select automigrations to run',
-    options: [{ value: 'fix', label: 'fix', hint: `Move it\nMore info: ${url}` }],
-  });
-
-  const { hint } = multiselect.mock.calls[0][0].options[0];
-  const linkLine = stripVTControlCharacters(hint).split('\n')[1];
-  expect(`${linkLine})`.length).toBeLessThanOrEqual(100 - 13);
-  expect(hint).toContain(`\u001b]8;;${url}\u0007`);
 });

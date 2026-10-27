@@ -3,7 +3,7 @@ import { stripVTControlCharacters } from 'node:util';
 import * as clack from '@clack/prompts';
 
 import { logTracker } from '../logger/log-tracker.ts';
-import { protectUrls } from '../wrap-utils.ts';
+import { getTerminalWidth, protectUrls } from '../wrap-utils.ts';
 import type {
   ConfirmPromptOptions,
   MultiSelectPromptOptions,
@@ -174,10 +174,18 @@ export class ClackPromptProvider extends PromptProvider {
     options: MultiSelectPromptOptions<T>,
     promptOptions?: PromptOptions
   ): Promise<T[]> {
+    // Clack wraps option lines 13 columns short of the terminal, as it counts the color codes of its
+    // guide bar, and the hint ends in a parenthesis. Shortening links to that width keeps a link on
+    // its "More info:" line.
+    const maxLineWidth = Math.max(getTerminalWidth() - 14, 40);
     const { signal, isStdinEnded, dispose } = stdinEndAbort();
     try {
       const result = await clack.multiselect<T>({
         ...options,
+        options: options.options.map((option) => ({
+          ...option,
+          hint: option.hint ? protectUrls(option.hint, { maxLineWidth }) : undefined,
+        })),
         required: options.required,
         showInstructions: false,
         signal,

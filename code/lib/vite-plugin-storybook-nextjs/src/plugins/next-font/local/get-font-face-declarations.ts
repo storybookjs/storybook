@@ -42,7 +42,7 @@ export const getPlaceholderFontUrl = (refId: string) =>
 /**
  * Regular expression to match the placeholder URL
  */
-getPlaceholderFontUrl.regexp = /__%%import\\.meta\\.ROLLUP_FILE_URL_(.*?)%%__/g;
+getPlaceholderFontUrl.regexp = /__%%import\.meta\.ROLLUP_FILE_URL_(.*?)%%__/g;
 
 export async function getFontFaceDeclarations(options: LoaderOptions) {
   const localFontSrc = options.props.metaSrc;

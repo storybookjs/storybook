@@ -1,4 +1,6 @@
 import { globSync, statSync } from 'node:fs';
+import { sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { join } from 'path/posix';
 
 import { isGlobalInput } from './global-inputs.ts';
@@ -10,6 +12,7 @@ import {
   PACKED_NODE_MODULES_ARCHIVE,
   artifact,
   cache,
+  compileStep,
   git,
   node,
   npm,
@@ -22,12 +25,11 @@ import {
 import { isTrustedAuthor } from './utils/runtime.ts';
 import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
 
-const dirname = import.meta.dirname;
-
-const codeDir = join(dirname, '../../code');
+const codeDir = new URL('../../code/', import.meta.url);
 const packageDirs = ['*/src', '*/*/src'].flatMap((pattern) =>
-  globSync(pattern, { cwd: codeDir, exclude: ['node_modules/**'] })
-    .filter((dir) => statSync(join(codeDir, dir)).isDirectory())
+  globSync(pattern, { cwd: fileURLToPath(codeDir), exclude: ['node_modules/**'] })
+    .map((dir) => dir.split(sep).join('/'))
+    .filter((dir) => statSync(new URL(dir, codeDir)).isDirectory())
     .sort((a, b) => (a.replaceAll('/', '\0') < b.replaceAll('/', '\0') ? -1 : 1))
 );
 
@@ -72,13 +74,7 @@ export const build_linux = defineJob('Build (linux)', () => ({
       ],
       packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`)
     ),
-    {
-      run: {
-        name: 'Compile',
-        working_directory: `code`,
-        command: 'yarn task --task compile --start-from=auto --no-link --debug',
-      },
-    },
+    compileStep(),
     {
       run: {
         name: 'Publish to Verdaccio',
@@ -126,13 +122,7 @@ export const build_windows = defineJob('Build (windows)', () => ({
     git.checkout({ forceHttps: true }),
     node.installOnWindows(),
     ...installWithCache('windows'),
-    {
-      run: {
-        name: 'Compile',
-        working_directory: `code`,
-        command: 'yarn task --task compile --start-from=auto --no-link --debug',
-      },
-    },
+    compileStep(),
     git.check(),
     verdaccio.start(),
     workspace.persist(
@@ -341,6 +331,26 @@ export const knip = defineJob(
 );
 
 /**
+ * Builds a sandbox from scratch in the smoke job. Unlike the daily create jobs,
+ * the smoke job has no workspace restore and no saved task state, so
+ * `--start-from=auto` silently runs full sandbox creation (create → install →
+ * init), and init under `--yes` auto-installs Playwright Chromium via the
+ * vitest addon. Match the create jobs' guard (scripts/ci/sandboxes.ts): skip
+ * that installation, and pass `--debug` so `exec.ts` relays child output
+ * instead of piping it away. Piped output lets any slow init phase trip
+ * CircleCI's 10-min no-output deadline invisibly.
+ */
+const smokeSandboxBuildStep = (template: string, label: string) => ({
+  run: {
+    name: `Build ${label} sandbox`,
+    command: `yarn task build --template ${template} --start-from=auto --no-link --debug`,
+    environment: {
+      STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: '1',
+    },
+  },
+});
+
+/**
  * One job, not a second sandbox matrix. The generated sandbox workflow is a job
  * per template, so Node 26 only runs the unit suite plus one Vite build and one
  * Webpack build. It installs on its own: the shared node_modules cache is keyed
@@ -375,26 +385,19 @@ export const node26Smoke = defineJob('Node 26 smoke', () => ({
       },
     },
     npm.install('.'),
+    compileStep(),
     {
       run: {
         name: 'Run unit tests',
         // storybook-ui is the browser story project. The linux unit job never
-        // runs it; stories have their own Playwright job.
-        command: "yarn test --project '!storybook-ui'",
+        // runs it; stories have their own Playwright job. The scripts tests run
+        // `main.ts` under plain Node with `--experimental-transform-types`, a
+        // flag Node 26 dropped, so they keep running on the default-Node jobs.
+        command: "yarn test --project '!storybook-ui' --project '!scripts'",
       },
     },
-    {
-      run: {
-        name: 'Build React Vite sandbox',
-        command: 'yarn task build --template react-vite/default-ts --start-from=auto --no-link',
-      },
-    },
-    {
-      run: {
-        name: 'Build React Webpack sandbox',
-        command: 'yarn task build --template react-webpack/18-ts --start-from=auto --no-link',
-      },
-    },
+    smokeSandboxBuildStep('react-vite/default-ts', 'React Vite'),
+    smokeSandboxBuildStep('react-webpack/18-ts', 'React Webpack'),
   ],
 }));
 
@@ -609,11 +612,14 @@ export const testUnit_windows = defineJob(
       shell: 'bash.exe',
     },
     steps: [
-      ...workflow.restoreWindows(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}`),
+      git.checkout({ forceHttps: true }),
+      node.installOnWindows(),
+      workspace.attach(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}`),
       {
         run: {
-          command: 'yarn install',
           name: 'Install dependencies',
+          // The unit tests load no native addon; building them only compiles agent-eval's node-gyp deps.
+          command: 'yarn install --mode=skip-build',
         },
       },
       {

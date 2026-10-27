@@ -22,8 +22,9 @@ test.describe('Svelte', () => {
     const showCodeButton = (await root.locator('button', { hasText: 'Show Code' }).all())[0];
     await showCodeButton.click();
     const sourceCode = root.locator('pre.prismjs');
-    const expectedSource = '<Button />';
-    await expect(sourceCode).toHaveText(expectedSource);
+    await expect(sourceCode).toHaveText(
+      "<script>\n  import Button from './Button.svelte';\n</script>\n\n<Button />"
+    );
   });
 
   test.describe('SvelteKit', () => {

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { TooltipNote, WithTooltip } from 'storybook/internal/components';
 
-import { type Color, styled, typography } from 'storybook/theming';
+import { type Color, styled, typography } from 'storybook/theming/emotion';
 
 export type PlayStatus = 'rendering' | 'playing' | 'completed' | 'errored' | 'aborted';
 

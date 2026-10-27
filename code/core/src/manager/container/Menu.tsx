@@ -14,7 +14,7 @@ import {
 } from '@storybook/icons';
 
 import type { API } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import type { NormalLink } from '../../components/components/tooltip/TooltipLinkList.tsx';
 import { Shortcut } from '../components/Shortcut.tsx';

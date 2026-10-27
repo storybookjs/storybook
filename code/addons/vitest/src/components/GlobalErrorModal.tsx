@@ -5,7 +5,7 @@ import { Button, Modal } from 'storybook/internal/components';
 import { SyncIcon } from '@storybook/icons';
 
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { DOCUMENTATION_FATAL_ERROR_LINK } from '../constants.ts';
 import type { ErrorLike, StoreState } from '../types.ts';

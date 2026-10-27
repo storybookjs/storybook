@@ -1,0 +1,5 @@
+<script>
+  import Avatar from './Avatar.svelte';
+</script>
+
+<Avatar name="Static" size={16} />

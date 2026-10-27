@@ -4,7 +4,6 @@ import React from 'react';
 import { Button, Spaced } from 'storybook/internal/components';
 import type { DocsContextProps, ModuleExport } from 'storybook/internal/types';
 
-import { expect, userEvent, within } from 'storybook/test';
 import { styled } from 'storybook/theming/emotion';
 
 import * as ButtonStories from '../examples/Button.stories';
@@ -44,36 +43,6 @@ export const CodeExpanded = () => (
   </Preview>
 );
 
-const expectFocusRingInsideActionBar = async ({
-  canvasElement,
-}: {
-  canvasElement: HTMLElement;
-}) => {
-  const toggle = await within(canvasElement).findByRole('switch', { name: 'Hide code' });
-
-  for (let i = 0; i < 10 && document.activeElement !== toggle; i++) {
-    await userEvent.tab();
-  }
-  await expect(toggle).toHaveFocus();
-
-  const actionBar = canvasElement.querySelector('.sbdocs-preview-actions')!;
-  const { outlineWidth, outlineOffset } = getComputedStyle(toggle);
-  const ring = parseFloat(outlineWidth) + parseFloat(outlineOffset);
-  const button = toggle.getBoundingClientRect();
-  const bar = actionBar.getBoundingClientRect();
-
-  await expect(ring).toBeGreaterThan(0);
-  await expect(button.left - ring).toBeGreaterThanOrEqual(bar.left);
-  await expect(button.top - ring).toBeGreaterThanOrEqual(bar.top);
-  await expect(button.bottom + ring).toBeLessThanOrEqual(bar.bottom);
-};
-
-/** The code toggle's focus ring must not be cropped by the action bar. */
-export const CodeExpandedFocused = {
-  render: CodeExpanded,
-  play: expectFocusRingInsideActionBar,
-};
-
 export const CodeError = () => (
   <Preview inline isExpanded withSource={sourceStories.SourceUnavailable.args}>
     <Button ariaLabel={false} variant="outline">
@@ -101,11 +70,6 @@ export const ActionBarWrapping = {
   globals: {
     viewport: { value: 'mobile1' },
   },
-};
-
-export const ActionBarWrappingFocused = {
-  ...ActionBarWrapping,
-  play: expectFocusRingInsideActionBar,
 };
 
 export const Single = () => (

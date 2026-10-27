@@ -23,7 +23,6 @@ export interface MenuItem {
   id: string;
   title?: ReactNode;
   ariaLabel?: string;
-  center?: ReactNode;
   right?: ReactNode;
   icon?: ReactNode;
   input?: ReactNode;

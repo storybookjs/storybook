@@ -108,9 +108,7 @@ export const SidebarMenuList: FC<{
                 {(link.icon || link.input) && (
                   <ActionList.Icon>{link.icon || link.input}</ActionList.Icon>
                 )}
-                {(link.title || link.center) && (
-                  <ActionList.Text>{link.title || link.center}</ActionList.Text>
-                )}
+                {link.title && <ActionList.Text>{link.title}</ActionList.Text>}
                 {link.right}
               </>
             );

@@ -818,9 +818,10 @@ export const baseTemplates = {
       // The React renderer's template-stories (e.g. js-argtypes.stories.jsx) import
       // `prop-types`. Every other React-renderer sandbox declares it explicitly via
       // extraDevDependencies; this template was missing it.
-      // typescript is a required peer dep of @storybook/react-native-web-vite (non-optional since
-      // PR #36987), but create-expo-app doesn't install it, so we must add it explicitly.
-      extraDevDependencies: ['prop-types', 'typescript'],
+      // Note: create-expo-app already installs TypeScript, so we don't add it here.
+      // Adding it would override expo's pinned TypeScript version with npm latest (v7),
+      // which breaks Storybook's TypeScript compiler API integration.
+      extraDevDependencies: ['prop-types'],
       mainConfig: {
         features: {
           experimentalTestSyntax: true,

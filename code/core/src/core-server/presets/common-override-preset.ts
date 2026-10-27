@@ -1,6 +1,7 @@
-import type { PresetProperty, TestBuildFlags } from 'storybook/internal/types';
+import type { CoreConfig, Options, PresetProperty, TestBuildFlags } from 'storybook/internal/types';
 
 import { removeMDXEntries } from '../utils/remove-mdx-entries.ts';
+import { getWsToken } from './wsToken.ts';
 
 export const features: PresetProperty<'features'> = async (input, options) =>
   options?.build?.test?.disableDocgen ? { ...input, docgenServer: false } : input;
@@ -55,4 +56,26 @@ export const build: PresetProperty<'build'> = async (value, options) => {
         }
       : createTestBuildFeatures(false),
   };
+};
+
+/**
+ * `core` in `common-preset.ts` runs before the user's main config, and `applyPresets` shallow
+ * merges a plain `core` object from `main.ts` over the accumulated value (see
+ * `code/core/src/common/presets.ts`). A user-defined `core.channelOptions` therefore replaces the
+ * object that the dev server websocket token was added to, and that token is lost.
+ *
+ * This preset is applied after the user config, so it is where the token is normalized: the
+ * resolved telejson options are kept as they are, the token is added in development, where the
+ * websocket channel exists, and it is left out everywhere else so it cannot end up in a static
+ * build.
+ */
+export const core = async (existing: CoreConfig, options: Options): Promise<CoreConfig> => {
+  const channelOptions = { ...existing?.channelOptions };
+  delete channelOptions.wsToken;
+
+  if (options.configType === 'DEVELOPMENT') {
+    channelOptions.wsToken = getWsToken();
+  }
+
+  return { ...existing, channelOptions };
 };

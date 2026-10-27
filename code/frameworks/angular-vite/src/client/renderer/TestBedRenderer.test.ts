@@ -12,6 +12,11 @@ import {
   ɵresetJitOptions,
 } from '@angular/core';
 
+import type { DecoratorFunction, StoryContextForRender } from 'storybook/internal/types';
+
+import { decorateStory } from '../decorateStory.ts';
+import { componentWrapperDecorator } from '../decorators.ts';
+import type { AngularRenderer } from '../types.ts';
 import { RendererFactory } from './RendererFactory.ts';
 import type { TestBedRenderer } from './TestBedRenderer.ts';
 import { resetTestBed } from './utils/TestBedMounting.ts';
@@ -36,14 +41,21 @@ describe('TestBedRenderer', () => {
   let rendererFactory: RendererFactory;
   let rootTargetDOMNode: HTMLElement;
 
+  // Runs the story through the preview's decorator chain, which generates the component template
+  // before the renderer sees the story.
   const renderStory = async (
     story: Parameters<TestBedRenderer['render']>[0]['storyFnAngular'],
     component?: unknown,
-    forced = false
+    forced = false,
+    decorators: DecoratorFunction<AngularRenderer>[] = []
   ) => {
     const renderer = await rendererFactory.getRendererInstance(rootTargetDOMNode, true);
+    const storyFnAngular = decorateStory(
+      () => story,
+      decorators
+    )({ component } as StoryContextForRender<AngularRenderer>);
     await renderer.render({
-      storyFnAngular: story,
+      storyFnAngular,
       forced,
       component,
       targetDOMNode: rootTargetDOMNode,
@@ -75,6 +87,18 @@ describe('TestBedRenderer', () => {
     await renderStory({ props: {} }, FooComponent);
 
     expect(storyRoot().innerHTML).toBe(`<foo ng-version="${VERSION.full}">🦊</foo>`);
+  });
+
+  it('keeps the wrapper component when a decorator wraps the generated template', async () => {
+    @Component({ selector: 'foo', template: '🦊' })
+    class FooComponent {}
+
+    await renderStory({ props: {} }, FooComponent, false, [
+      componentWrapperDecorator((story) => `<div class="wrap">${story}</div>`),
+    ]);
+
+    expect(storyRoot().getAttribute('ng-version')).toBe(VERSION.full);
+    expect(storyRoot().querySelector('.wrap > foo')?.textContent).toBe('🦊');
   });
 
   it('hosts a component without a selector on an ng-component element', async () => {
@@ -194,6 +218,23 @@ describe('TestBedRenderer', () => {
 
     expect(storyRoot().textContent).toBe('Mock ServiceMock Service');
     expect(created).toBe(1);
+  });
+
+  it('renders a user template through the wrapper when the component is not a component', async () => {
+    @Injectable()
+    class DocService {}
+
+    await renderStory(
+      {
+        props: {},
+        template: '<provider-button></provider-button>',
+        moduleMetadata: { imports: [ProviderButtonComponent] },
+      },
+      DocService
+    );
+
+    expect(storyRoot().getAttribute('ng-version')).toBe(VERSION.full);
+    expect(storyRoot().textContent).toBe('original Api Service');
   });
 
   it('keeps the wrapper component for a story with styles', async () => {

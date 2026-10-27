@@ -23,8 +23,9 @@ import { platformBrowserTesting } from '@angular/platform-browser/testing';
 import { skip } from 'rxjs/operators';
 
 import { buildTemplate } from '../../../template-grammar.ts';
-import type { ICollection } from '../../types.ts';
+import type { ICollection, StoryFnAngularReturnType } from '../../types.ts';
 import type { StoryMountOptions } from '../AbstractRenderer.ts';
+import { computesTemplateFromComponent } from '../ComputesTemplateFromComponent.ts';
 import { getApplication } from '../StorybookModule.ts';
 import { STORY_PROPS } from '../StorybookProvider.ts';
 import { getComponentDecoratorMetadata, getComponentInputsOutputs } from './NgComponentAnalyzer.ts';
@@ -78,7 +79,7 @@ export async function mountWithTestBed(options: StoryMountOptions): Promise<Appl
   }
 
   const rootComponent =
-    component !== undefined && storyFnAngular.template == null && !storyFnAngular.styles?.length
+    component !== undefined && rendersComponentOnly(storyFnAngular, component)
       ? component
       : getApplication({
           storyFnAngular,
@@ -134,6 +135,19 @@ export async function mountWithTestBed(options: StoryMountOptions): Promise<Appl
   }
 
   return testBed.inject(ApplicationRef);
+}
+
+// decorateStory generates the component template before any decorator runs, so a plain component
+// story reaches the renderer with exactly the template the wrapper would build. A story whose
+// template differs (a user template, componentWrapperDecorator) or that has styles needs the wrapper.
+function rendersComponentOnly(
+  { template, userDefinedTemplate, props, styles }: StoryFnAngularReturnType,
+  component: Type<unknown>
+) {
+  if (styles?.length || userDefinedTemplate) {
+    return false;
+  }
+  return template == null || template === computesTemplateFromComponent(component, props, '');
 }
 
 // The story component is the fixture root. Its inputs and outputs are bound the way the wrapper's

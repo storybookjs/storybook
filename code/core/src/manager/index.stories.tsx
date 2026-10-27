@@ -240,8 +240,15 @@ export const LandmarkNavigationFromPreview = meta.story({
 
     await step('F6 moves to the landmark after the preview', async () => {
       pressInPreview(false);
-      const panel = canvasElement.querySelector(`#${focusableUIElements.addonPanel}`);
+      const panel = canvasElement.querySelector(`#${focusableUIElements.addonPanel}`)!;
       await waitFor(() => expect(panel).toHaveFocus());
+    });
+
+    await step('Only the landmark focus landed in is highlighted', async () => {
+      const panel = canvasElement.querySelector(`#${focusableUIElements.addonPanel}`)!;
+      const preview = canvasElement.querySelector(`#${focusableUIElements.previewRegion}`)!;
+      await waitFor(() => expect(panel.getAnimations({ subtree: true })).toHaveLength(1));
+      expect(preview.getAnimations({ subtree: true })).toHaveLength(0);
     });
 
     await step('Shift+F6 moves to the landmark before the preview', async () => {

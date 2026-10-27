@@ -1,6 +1,7 @@
-import { ApplicationRef, destroyPlatform, getPlatform } from '@angular/core';
+import { ApplicationInitStatus, ApplicationRef, destroyPlatform, getPlatform } from '@angular/core';
 import { TestComponentRenderer, getTestBed } from '@angular/core/testing';
-import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
+import { BrowserModule } from '@angular/platform-browser';
+import { platformBrowserTesting } from '@angular/platform-browser/testing';
 
 import type { MountApplicationOptions } from '../AbstractRenderer.ts';
 
@@ -59,7 +60,9 @@ export async function mountWithTestBed({
     if (getPlatform()) {
       destroyPlatform();
     }
-    testBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
+    // BrowserModule rather than BrowserTestingModule: the latter swaps PlatformLocation for a fake
+    // navigation, and a story's router has to see the preview's real URL, like bootstrapApplication.
+    testBed.initTestEnvironment(BrowserModule, platformBrowserTesting());
   }
 
   testBed.configureTestingModule({
@@ -73,16 +76,21 @@ export async function mountWithTestBed({
   });
 
   await testBed.compileComponents();
+  // bootstrapApplication awaits the app initializers before creating the root component.
+  await testBed.inject(ApplicationInitStatus).donePromise;
 
   // Runs the first change detection synchronously and keeps it running afterwards for play
   // functions and storyProps$. Like bootstrapApplication, the mount does not wait for the
   // application to become stable: a story may legitimately hold a pending task forever.
   testBed.createComponent(application).autoDetectChanges();
 
-  // TestBed never bootstraps, so provideRouter()'s bootstrap listener never navigates.
+  // TestBed never bootstraps, so provideRouter()'s bootstrap listener never navigates. Router is
+  // providedIn root, so only a story that provided routes gets one.
   try {
-    const { Router } = await import('@angular/router');
-    testBed.inject(Router, null, { optional: true })?.initialNavigation();
+    const { ROUTES, Router } = await import('@angular/router');
+    if (testBed.inject(ROUTES, null, { optional: true })) {
+      testBed.inject(Router).initialNavigation();
+    }
   } catch {
     // @angular/router is an optional peer dependency.
   }

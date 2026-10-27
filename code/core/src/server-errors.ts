@@ -1345,3 +1345,26 @@ export class NuxtModuleAddFailedError extends StorybookError {
     });
   }
 }
+
+export class ReactNativeOnDevicePeerMismatchError extends StorybookError {
+  constructor(
+    public data: {
+      cliVersion: string;
+      mismatches: { packageName: string; version: string; storybookPeer: string }[];
+    }
+  ) {
+    super({
+      name: 'ReactNativeOnDevicePeerMismatchError',
+      category: Category.CLI_INIT,
+      code: 18,
+      message: dedent`
+        These React Native Storybook packages do not support Storybook ${data.cliVersion}:
+        ${data.mismatches
+          .map(
+            ({ packageName, version, storybookPeer }) =>
+              `- ${packageName}@${version} peers storybook@${storybookPeer}`
+          )
+          .join('\n')}`,
+    });
+  }
+}

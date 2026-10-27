@@ -68,7 +68,7 @@ export const ArgTypeInference = {
 };
 
 export const HiddenFromPlay = {
-  play: async (context: PlayFunctionContext<any>) => {
+  play: async (context: StoryContext<any>) => {
     await expect('argTypes' in context).toBe(false);
     await expect(() => context.argTypes).toThrow(/no longer part of the story context/);
   },

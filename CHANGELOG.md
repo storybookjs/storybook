@@ -1,3 +1,7 @@
+## 10.6.5
+
+- Typescript: Exclude all dunderscore prefixed folders from production compilation - [#36740](https://github.com/storybookjs/storybook/pull/36740), thanks @mrginglymus!
+
 ## 10.6.4
 
 - Core: Skip TypeScript loader hook registration under Jest - [#36790](https://github.com/storybookjs/storybook/pull/36790), thanks @obvious-autobuild!

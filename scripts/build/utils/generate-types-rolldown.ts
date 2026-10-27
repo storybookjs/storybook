@@ -21,8 +21,7 @@ const DTS_EXCLUDES = [
   '**/*.spec.*',
   '**/*.stories.*',
   '**/*.mockdata.*',
-  '**/__tests__/**',
-  '**/__mocks__/**',
+  '**/__*/**',
   '**/node_modules/**',
 ];
 

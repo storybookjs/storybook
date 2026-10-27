@@ -789,6 +789,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
               accentId={keyboardFocusedItemId}
               selectionLine={selectionLine}
               onCollapse={collapseStickyRow}
+              openContextMenu={openContextMenu}
+              hasTestProviders={hasTestProviders}
             />
             <Virtualizer layout={treeLayout} layoutOptions={treeLayoutOptions}>
               <StyledAriaTree

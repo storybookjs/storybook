@@ -5,7 +5,10 @@ import type { API, IndexHash } from 'storybook/manager-api';
 import { styled } from 'storybook/theming/emotion';
 
 import { getAncestorIds } from '../../utils/tree.ts';
+import { EllipsisIcon } from '@storybook/icons';
+
 import { CollapseIcon } from './CollapseIcon.tsx';
+import { hasContextMenu, hasProviderMenuEntriesFor } from './ContextMenu.tsx';
 import {
   SECTION_GAP,
   TREE_CONTENT_INSET,
@@ -85,8 +88,29 @@ const StickyRow = styled.button<{ $level: number; $isRoot: boolean }>(
 
     // The same icon swap as the scrolling rows: type icon at rest, collapse chevron on hover.
     ...iconSwap(['&:hover']),
+
+    // Show the context menu button on hover, matching the scrolling rows' pattern.
+    '&:hover [data-sticky-menu]': { display: 'flex' },
   })
 );
+
+const StickyMenuButton = styled.button(({ theme }) => ({
+  display: 'none',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+  width: 20,
+  height: 20,
+  borderRadius: 4,
+  border: 0,
+  padding: 0,
+  color: 'inherit',
+  background: 'transparent',
+  cursor: 'pointer',
+  position: 'relative',
+  '&:hover': { background: theme.background.hoverable },
+  svg: { width: 14, height: 14 },
+}));
 
 // position: relative lifts the content above the row's ::before hover highlight, which a
 // positioned pseudo-element would otherwise paint over.
@@ -177,6 +201,10 @@ interface StickyRowsProps {
   selectionLine: SelectionLine | null;
   /** Collapse a branch after the user presses its chevron. */
   onCollapse: (id: string) => void;
+  /** Open the context menu on the real (non-sticky) row with this id. */
+  openContextMenu?: (itemId: string) => void;
+  /** Whether any test provider addon is registered, for gating the ⋯ button. */
+  hasTestProviders: boolean;
 }
 
 /**
@@ -198,6 +226,8 @@ export function TreeStickyRows({
   accentId,
   selectionLine,
   onCollapse,
+  openContextMenu,
+  hasTestProviders,
 }: StickyRowsProps) {
   if (ids.length === 0) {
     return null;
@@ -284,6 +314,24 @@ export function TreeStickyRows({
               <StickyLabel>
                 {entry.renderLabel?.(entry, api, labelContext) || entry.name}
               </StickyLabel>
+              {openContextMenu &&
+                hasContextMenu(entry, hasProviderMenuEntriesFor(api, entry, hasTestProviders)) && (
+                  <StickyMenuButton
+                    data-sticky-menu
+                    data-testid="sticky-context-menu"
+                    type="button"
+                    aria-label="Open context menu"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      scrollIntoSlot(id, slot);
+                      // Wait one frame for the virtualizer to render the real row at its new
+                      // position before opening the menu on it.
+                      requestAnimationFrame(() => openContextMenu(id));
+                    }}
+                  >
+                    <EllipsisIcon />
+                  </StickyMenuButton>
+                )}
             </StickyRow>
           );
         })}

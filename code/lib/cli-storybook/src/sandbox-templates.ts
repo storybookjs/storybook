@@ -818,7 +818,9 @@ export const baseTemplates = {
       // The React renderer's template-stories (e.g. js-argtypes.stories.jsx) import
       // `prop-types`. Every other React-renderer sandbox declares it explicitly via
       // extraDevDependencies; this template was missing it.
-      extraDevDependencies: ['prop-types'],
+      // typescript is a required peer dep of @storybook/react-native-web-vite (non-optional since
+      // PR #36987), but create-expo-app doesn't install it, so we must add it explicitly.
+      extraDevDependencies: ['prop-types', 'typescript'],
       mainConfig: {
         features: {
           experimentalTestSyntax: true,
@@ -846,7 +848,9 @@ export const baseTemplates = {
       // The React renderer's template-stories (e.g. js-argtypes.stories.jsx) import
       // `prop-types`. Every other React-renderer sandbox declares it explicitly via
       // extraDevDependencies; this template was missing it.
-      extraDevDependencies: ['prop-types'],
+      // typescript is a required peer dep of @storybook/react-native-web-vite (non-optional since
+      // PR #36987), but the RN CLI template doesn't install it, so we add it explicitly.
+      extraDevDependencies: ['prop-types', 'typescript'],
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
     initOptions: {

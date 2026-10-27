@@ -378,6 +378,16 @@ export const node26Smoke = defineJob('Node 26 smoke', () => ({
     npm.install('.'),
     {
       run: {
+        // Vitest loads each package's vitest.config.ts at startup, and those
+        // configs import compiled workspace output (e.g.
+        // `@storybook/addon-vitest/vitest-plugin`), so `dist` must exist
+        // before the unit suite runs.
+        name: 'Compile',
+        command: 'yarn task --task compile --start-from=auto --no-link',
+      },
+    },
+    {
+      run: {
         name: 'Run unit tests',
         // storybook-ui is the browser story project. The linux unit job never
         // runs it; stories have their own Playwright job.

@@ -331,6 +331,26 @@ export const knip = defineJob(
 );
 
 /**
+ * Builds a sandbox from scratch in the smoke job. Unlike the daily create jobs,
+ * the smoke job has no workspace restore and no saved task state, so
+ * `--start-from=auto` silently runs full sandbox creation (create → install →
+ * init), and init under `--yes` auto-installs Playwright Chromium via the
+ * vitest addon. Match the create jobs' guard (scripts/ci/sandboxes.ts): skip
+ * that installation, and pass `--debug` so `exec.ts` relays child output
+ * instead of piping it away. Piped output lets any slow init phase trip
+ * CircleCI's 10-min no-output deadline invisibly.
+ */
+const smokeSandboxBuildStep = (template: string, label: string) => ({
+  run: {
+    name: `Build ${label} sandbox`,
+    command: `yarn task build --template ${template} --start-from=auto --no-link --debug`,
+    environment: {
+      STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: '1',
+    },
+  },
+});
+
+/**
  * One job, not a second sandbox matrix. The generated sandbox workflow is a job
  * per template, so Node 26 only runs the unit suite plus one Vite build and one
  * Webpack build. It installs on its own: the shared node_modules cache is keyed
@@ -376,32 +396,8 @@ export const node26Smoke = defineJob('Node 26 smoke', () => ({
         command: "yarn test --project '!storybook-ui' --project '!scripts'",
       },
     },
-    {
-      run: {
-        // No workspace restore means `--start-from=auto` silently runs full sandbox
-        // creation (create → install → init), and init under `--yes` auto-installs
-        // Playwright Chromium via the vitest addon. Match the daily create jobs:
-        // skip that installation, and pass `--debug` so `exec.ts` relays child
-        // output instead of piping it away. Piped output lets any slow init phase
-        // trip CircleCI's 10-min no-output deadline invisibly.
-        name: 'Build React Vite sandbox',
-        command:
-          'yarn task build --template react-vite/default-ts --start-from=auto --no-link --debug',
-        environment: {
-          STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: '1',
-        },
-      },
-    },
-    {
-      run: {
-        name: 'Build React Webpack sandbox',
-        command:
-          'yarn task build --template react-webpack/18-ts --start-from=auto --no-link --debug',
-        environment: {
-          STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: '1',
-        },
-      },
-    },
+    smokeSandboxBuildStep('react-vite/default-ts', 'React Vite'),
+    smokeSandboxBuildStep('react-webpack/18-ts', 'React Webpack'),
   ],
 }));
 

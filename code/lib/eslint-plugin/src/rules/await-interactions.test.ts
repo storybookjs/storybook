@@ -108,8 +108,254 @@ ruleTester.run('await-interactions', rule, {
         }
       }
     `,
+    dedent`
+      import { expect } from 'vitest'
+
+      Basic.play = async () => {
+        expect(foo).toEqual(bar)
+      }
+    `,
+    dedent`
+      import { userEvent } from '@storybook/test'
+
+      Basic.play = async ({ userEvent }) => {
+        userEvent.click(button)
+      }
+    `,
+    dedent`
+      import { expect } from '@storybook/test'
+
+      Basic.play = async ({ expect }) => {
+        expect(foo).toEqual(bar)
+      }
+    `,
   ],
   invalid: [
+    {
+      code: dedent`
+        import Button from './Button'
+        import { userEvent } from '@storybook/test'
+        Basic.play = async () => {
+          userEvent.click(Button)
+        }
+      `,
+      output: dedent`
+        import Button from './Button'
+        import { userEvent } from '@storybook/test'
+        Basic.play = async () => {
+          await userEvent.click(Button)
+        }
+      `,
+      errors: [
+        {
+          messageId: 'interactionShouldBeAwaited',
+          data: { method: 'userEvent' },
+          suggestions: [
+            {
+              messageId: 'fixSuggestion',
+              output: dedent`
+                import Button from './Button'
+                import { userEvent } from '@storybook/test'
+                Basic.play = async () => {
+                  await userEvent.click(Button)
+                }
+              `,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      code: dedent`
+        import { expect } from '@storybook/test'
+        import Button from './Button'
+        WithModalOpen.play = async ({ args }) => {
+          const label = Button.name
+          expect(args.onClick).toHaveBeenCalledWith(label)
+        }
+      `,
+      output: dedent`
+        import { expect } from '@storybook/test'
+        import Button from './Button'
+        WithModalOpen.play = async ({ args }) => {
+          const label = Button.name
+          await expect(args.onClick).toHaveBeenCalledWith(label)
+        }
+      `,
+      errors: [
+        {
+          messageId: 'interactionShouldBeAwaited',
+          data: { method: 'toHaveBeenCalledWith' },
+          suggestions: [
+            {
+              messageId: 'fixSuggestion',
+              output: dedent`
+                import { expect } from '@storybook/test'
+                import Button from './Button'
+                WithModalOpen.play = async ({ args }) => {
+                  const label = Button.name
+                  await expect(args.onClick).toHaveBeenCalledWith(label)
+                }
+              `,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      code: dedent`
+        import Button from './Button'
+        import { expect } from '@storybook/test'
+        WithModalOpen.play = async ({ args }) => {
+          const label = Button.name
+          expect(args.onClick).toHaveBeenCalledWith(label)
+        }
+      `,
+      output: dedent`
+        import Button from './Button'
+        import { expect } from '@storybook/test'
+        WithModalOpen.play = async ({ args }) => {
+          const label = Button.name
+          await expect(args.onClick).toHaveBeenCalledWith(label)
+        }
+      `,
+      errors: [
+        {
+          messageId: 'interactionShouldBeAwaited',
+          data: { method: 'toHaveBeenCalledWith' },
+          suggestions: [
+            {
+              messageId: 'fixSuggestion',
+              output: dedent`
+                import Button from './Button'
+                import { expect } from '@storybook/test'
+                WithModalOpen.play = async ({ args }) => {
+                  const label = Button.name
+                  await expect(args.onClick).toHaveBeenCalledWith(label)
+                }
+              `,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      code: dedent`
+        import { expect } from './assertions'
+        import { userEvent } from '@storybook/test'
+        import Button from './Button'
+        Basic.play = async () => {
+          userEvent.click(Button)
+          expect(args.onClick).toHaveBeenCalledWith(Button.name)
+        }
+      `,
+      output: dedent`
+        import { expect } from './assertions'
+        import { userEvent } from '@storybook/test'
+        import Button from './Button'
+        Basic.play = async () => {
+          await userEvent.click(Button)
+          expect(args.onClick).toHaveBeenCalledWith(Button.name)
+        }
+      `,
+      errors: [
+        {
+          messageId: 'interactionShouldBeAwaited',
+          data: { method: 'userEvent' },
+          suggestions: [
+            {
+              messageId: 'fixSuggestion',
+              output: dedent`
+                import { expect } from './assertions'
+                import { userEvent } from '@storybook/test'
+                import Button from './Button'
+                Basic.play = async () => {
+                  await userEvent.click(Button)
+                  expect(args.onClick).toHaveBeenCalledWith(Button.name)
+                }
+              `,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      code: dedent`
+        import { userEvent } from '@storybook/test'
+        import Button from './Button'
+        Basic.play = async () => {
+          function ignored(userEvent) {
+            userEvent.click(Button)
+          }
+          userEvent.click(Button)
+        }
+      `,
+      output: dedent`
+        import { userEvent } from '@storybook/test'
+        import Button from './Button'
+        Basic.play = async () => {
+          function ignored(userEvent) {
+            userEvent.click(Button)
+          }
+          await userEvent.click(Button)
+        }
+      `,
+      errors: [
+        {
+          messageId: 'interactionShouldBeAwaited',
+          data: { method: 'userEvent' },
+          suggestions: [
+            {
+              messageId: 'fixSuggestion',
+              output: dedent`
+                import { userEvent } from '@storybook/test'
+                import Button from './Button'
+                Basic.play = async () => {
+                  function ignored(userEvent) {
+                    userEvent.click(Button)
+                  }
+                  await userEvent.click(Button)
+                }
+              `,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      code: dedent`
+        import { userEvent } from '@storybook/test'
+        import Button from './Button'
+        Basic.play = async () => {
+          userEvent.click(Button)
+        }
+      `,
+      output: dedent`
+        import { userEvent } from '@storybook/test'
+        import Button from './Button'
+        Basic.play = async () => {
+          await userEvent.click(Button)
+        }
+      `,
+      errors: [
+        {
+          messageId: 'interactionShouldBeAwaited',
+          data: { method: 'userEvent' },
+          suggestions: [
+            {
+              messageId: 'fixSuggestion',
+              output: dedent`
+                import { userEvent } from '@storybook/test'
+                import Button from './Button'
+                Basic.play = async () => {
+                  await userEvent.click(Button)
+                }
+              `,
+            },
+          ],
+        },
+      ],
+    },
     {
       code: dedent`
         import { expect } from '@storybook/jest'

@@ -18,13 +18,17 @@ const details = (overrides: Partial<ClickEventDetails> = {}): ClickEventDetails 
 });
 
 const target = (overrides: Partial<HighlightMenuTarget> = {}): HighlightMenuTarget => ({
+  key: '1',
   id: 'h1',
   label: 'div#target',
   details: details(),
   ...overrides,
 });
 
-const state = (overrides: Partial<HighlightMenuState> = {}): HighlightMenuState => ({
+type OpenState = Extract<HighlightMenuState, { open: true }>;
+
+const state = (overrides: Partial<OpenState> = {}): OpenState => ({
+  open: true,
   targets: [target()],
   selected: null,
   coords: { x: 10, y: 20 },
@@ -36,44 +40,35 @@ describe('parseHighlightMenuState', () => {
     expect(parseHighlightMenuState(state())).toEqual(state());
   });
 
-  it('accepts a hidden state', () => {
-    expect(parseHighlightMenuState({ targets: [], selected: null, coords: null })).toEqual({
-      targets: [],
-      selected: null,
-      coords: null,
-    });
+  it('accepts a selected target by key', () => {
+    const value = state({ targets: [target(), target({ key: '2' })], selected: '2' });
+    expect(parseHighlightMenuState(value)).toEqual(value);
+  });
+
+  it('accepts a closed state', () => {
+    expect(parseHighlightMenuState({ open: false })).toEqual({ open: false });
   });
 
   it.each([
     null,
     undefined,
     {},
-    { targets: 'nope', selected: null, coords: null },
-    { targets: [], selected: 0, coords: null },
-    { targets: [], selected: null, coords: { x: 0, y: 0 } },
-    { targets: [null], selected: null, coords: { x: 0, y: 0 } },
-    { targets: [{ ...target(), id: '' }], selected: null, coords: { x: 0, y: 0 } },
-    { targets: [{ ...target(), label: 1 }], selected: null, coords: { x: 0, y: 0 } },
-    {
-      targets: [{ ...target(), details: { ...details(), selectors: 'nope' } }],
-      selected: null,
-      coords: { x: 0, y: 0 },
-    },
-    {
-      targets: [{ ...target(), details: { ...details(), top: Number.NaN } }],
-      selected: null,
-      coords: { x: 0, y: 0 },
-    },
-    {
-      targets: [{ ...target(), details: { ...details(), element: null } }],
-      selected: null,
-      coords: { x: 0, y: 0 },
-    },
-    { targets: [target()], selected: 1, coords: { x: 0, y: 0 } },
-    { targets: [target()], selected: -1, coords: { x: 0, y: 0 } },
-    { targets: [target()], selected: 0.5, coords: { x: 0, y: 0 } },
-    { targets: [target()], selected: null, coords: { x: Number.POSITIVE_INFINITY, y: 0 } },
-    { targets: [target()], selected: null, coords: 'nope' },
+    { targets: [target()], selected: null, coords: { x: 0, y: 0 } },
+    state({ targets: 'nope' as never }),
+    state({ targets: [] }),
+    state({ targets: [null as never] }),
+    state({ targets: [target({ key: '' })] }),
+    state({ targets: [target(), target()] }),
+    state({ targets: [target({ id: '' })] }),
+    state({ targets: [target({ label: 1 as never })] }),
+    state({ targets: [target({ details: { ...details(), selectors: 'nope' as never } })] }),
+    state({ targets: [target({ details: { ...details(), top: Number.NaN } })] }),
+    state({ targets: [target({ details: { ...details(), element: null as never } })] }),
+    state({ selected: '2' }),
+    state({ selected: 0 as never }),
+    state({ coords: null as never }),
+    state({ coords: { x: Number.POSITIVE_INFINITY, y: 0 } }),
+    state({ coords: 'nope' as never }),
   ])('rejects malformed state %#', (value) => {
     expect(parseHighlightMenuState(value)).toBeUndefined();
   });
@@ -81,19 +76,17 @@ describe('parseHighlightMenuState', () => {
 
 describe('parseHighlightMenuInteraction', () => {
   it('accepts valid actions', () => {
-    expect(parseHighlightMenuInteraction({ action: 'select', index: 1 }, 2)).toEqual({
+    expect(parseHighlightMenuInteraction({ action: 'select', key: '1' })).toEqual({
       action: 'select',
-      index: 1,
+      key: '1',
     });
-    expect(parseHighlightMenuInteraction({ action: 'focus', index: 0 }, 2)).toEqual({
+    expect(parseHighlightMenuInteraction({ action: 'focus', key: '2' })).toEqual({
       action: 'focus',
-      index: 0,
+      key: '2',
     });
-    expect(parseHighlightMenuInteraction({ action: 'deselect' }, 2)).toEqual({
-      action: 'deselect',
-    });
-    expect(parseHighlightMenuInteraction({ action: 'blur' }, 2)).toEqual({ action: 'blur' });
-    expect(parseHighlightMenuInteraction({ action: 'close' }, 2)).toEqual({ action: 'close' });
+    expect(parseHighlightMenuInteraction({ action: 'deselect' })).toEqual({ action: 'deselect' });
+    expect(parseHighlightMenuInteraction({ action: 'blur' })).toEqual({ action: 'blur' });
+    expect(parseHighlightMenuInteraction({ action: 'close' })).toEqual({ action: 'close' });
   });
 
   it.each([
@@ -101,15 +94,12 @@ describe('parseHighlightMenuInteraction', () => {
     undefined,
     {},
     { action: 'select' },
-    { action: 'select', index: -1 },
-    { action: 'select', index: 2 },
-    { action: 'select', index: 0.5 },
-    { action: 'select', index: '0' },
-    { action: 'select', index: '__proto__' },
-    { action: 'focus', index: Number.NaN },
-    { action: 'unknown', index: 0 },
+    { action: 'select', key: '' },
+    { action: 'select', key: 1 },
+    { action: 'focus', key: null },
+    { action: 'unknown', key: '1' },
   ])('rejects malformed interaction %#', (value) => {
-    expect(parseHighlightMenuInteraction(value, 2)).toBeUndefined();
+    expect(parseHighlightMenuInteraction(value)).toBeUndefined();
   });
 });
 

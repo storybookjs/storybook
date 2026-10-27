@@ -25,6 +25,11 @@ import { parseHighlightMenuState } from './validation.ts';
 
 const MENU_OFFSET = 15;
 
+type OpenMenuState = Extract<HighlightMenuState, { open: true }>;
+
+/** An open menu and the preview frame it belongs to. */
+type OpenMenu = { refId?: string; state: OpenMenuState };
+
 const iconByName: Record<IconName, React.ReactNode> = {
   chevronLeft: <ChevronLeftIcon />,
   chevronRight: <ChevronRightIcon />,
@@ -68,19 +73,17 @@ export const buildMenuLinks = ({
   onInteraction,
   onMenuClick,
 }: {
-  state: HighlightMenuState;
+  state: OpenMenuState;
   refId?: string;
   registry: HighlightRegistry;
   onInteraction: (interaction: HighlightMenuInteraction) => void;
   onMenuClick: (target: HighlightMenuTarget, itemId: string) => void;
 }): NormalLink[][] => {
   const { targets, selected } = state;
-  const selectedTarget = selected !== null ? targets[selected] : undefined;
-  const elementList = selectedTarget
-    ? [{ target: selectedTarget, index: selected as number }]
-    : targets.map((target, index) => ({ target, index }));
+  const selectedTarget = targets.find(({ key }) => key === selected);
+  const elementList = selectedTarget ? [selectedTarget] : targets;
 
-  const elementLinks = elementList.map<NormalLink>(({ target, index }) => {
+  const elementLinks = elementList.map<NormalLink>((target) => {
     const menuGroups = filterMenuGroups(
       registry.find(target.id, refId)?.menu,
       target.details.selectors
@@ -89,16 +92,18 @@ export const buildMenuLinks = ({
     const isSelected = !!selectedTarget;
 
     return {
-      id: `target-${index}-${target.id}`,
+      id: `target-${target.key}`,
       title: <code>{target.label}</code>,
       icon: isSelected ? iconByName.chevronLeft : undefined,
       right: selectable ? iconByName.chevronRight : undefined,
       onClick: selectable
-        ? () => onInteraction({ action: 'select', index })
+        ? () => onInteraction({ action: 'select', key: target.key })
         : isSelected
           ? () => onInteraction({ action: 'deselect' })
           : undefined,
-      onMouseEnter: selectable ? () => onInteraction({ action: 'focus', index }) : undefined,
+      onMouseEnter: selectable
+        ? () => onInteraction({ action: 'focus', key: target.key })
+        : undefined,
       onMouseLeave: selectable ? () => onInteraction({ action: 'blur' }) : undefined,
       as: selectable || isSelected ? undefined : 'div',
     };
@@ -139,8 +144,7 @@ export const buildMenuLinks = ({
 export const useHighlightMenu = (api: API) => {
   const channel = api.getChannel();
   const registry = useMemo(() => new HighlightRegistry(), []);
-  const [state, setState] = useState<HighlightMenuState | undefined>();
-  const [refId, setRefId] = useState<string | undefined>();
+  const [menu, setMenu] = useState<OpenMenu | undefined>();
   const [registryVersion, setRegistryVersion] = useState(0);
 
   useEffect(
@@ -170,15 +174,24 @@ export const useHighlightMenu = (api: API) => {
       payload?: { newPhase?: string }
     ) {
       if (payload?.newPhase === 'loading') {
-        registry.clearFrame(this.refId);
-        setState(undefined);
-        setRefId(this.refId);
+        const { refId } = this;
+        registry.clearFrame(refId);
+        // Only the frame the menu belongs to can close it. Hidden frames stay mounted and keep
+        // sending events, which must not close a menu that is open over another frame.
+        setMenu((current) => (current?.refId === refId ? undefined : current));
       }
     };
     const onMenuState = function (this: { refId?: string }, payload: unknown) {
       const parsed = parseHighlightMenuState(payload);
-      setRefId(this.refId);
-      setState(parsed?.targets.length && parsed.coords ? parsed : undefined);
+      if (!parsed) {
+        return;
+      }
+      const { refId } = this;
+      if (parsed.open) {
+        setMenu({ refId, state: parsed });
+      } else {
+        setMenu((current) => (current?.refId === refId ? undefined : current));
+      }
     };
 
     channel.on(HIGHLIGHT, onAddHighlight);
@@ -200,10 +213,10 @@ export const useHighlightMenu = (api: API) => {
     (interaction: HighlightMenuInteraction) => {
       api.emit(HIGHLIGHT_MENU_INTERACTION, {
         ...interaction,
-        options: { target: refId ?? 'storybook_internal' },
+        options: { target: menu?.refId ?? 'storybook_internal' },
       });
     },
-    [api, refId]
+    [api, menu?.refId]
   );
 
   const emitMenuClick = useCallback(
@@ -222,15 +235,15 @@ export const useHighlightMenu = (api: API) => {
     [emitInteraction]
   );
 
-  const iframe = state ? getPreviewIframe(api, refId) : undefined;
-  const anchor = state?.coords && iframe ? previewToManagerCoords(state.coords, iframe) : undefined;
-  const open = !!state && !!iframe && !!anchor;
+  const iframe = menu ? getPreviewIframe(api, menu.refId) : undefined;
+  const anchor = menu && iframe ? previewToManagerCoords(menu.state.coords, iframe) : undefined;
+  const open = !!anchor;
   // `registryVersion` is read so registry updates re-render the menu content.
   void registryVersion;
-  const links = state
+  const links = menu
     ? buildMenuLinks({
-        state,
-        refId,
+        state: menu.state,
+        refId: menu.refId,
         registry,
         onInteraction: emitInteraction,
         onMenuClick: emitMenuClick,

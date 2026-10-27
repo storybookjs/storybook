@@ -98,6 +98,11 @@ export type Box = {
 
 /** A single clickable target in the highlight menu, as sent from the preview to the manager. */
 export type HighlightMenuTarget = {
+  /**
+   * Identifies the target's element in the preview. Interactions refer to targets by this key, so
+   * they keep pointing at the same element when the target list changes in the meantime.
+   */
+  key: string;
   /** The id of the highlight the target belongs to, used to attribute `HIGHLIGHT_MENU_CLICK`s */
   id: Highlight['id'];
   /**
@@ -111,15 +116,20 @@ export type HighlightMenuTarget = {
 
 /**
  * Payload of the internal `HIGHLIGHT_MENU` event (preview → manager). `coords` are relative to the
- * preview iframe's viewport; an empty `targets` array hides the menu.
+ * preview iframe's viewport.
  */
-export type HighlightMenuState = {
-  targets: HighlightMenuTarget[];
-  selected: number | null;
-  coords: { x: number; y: number } | null;
-};
+export type HighlightMenuState =
+  | { open: false }
+  | {
+      open: true;
+      /** The targets under the click, never empty */
+      targets: HighlightMenuTarget[];
+      /** The key of the selected target, if any */
+      selected: string | null;
+      coords: { x: number; y: number };
+    };
 
 /** Payload of the internal `HIGHLIGHT_MENU_INTERACTION` event (manager → preview). */
 export type HighlightMenuInteraction =
-  | { action: 'select' | 'focus'; index: number }
+  | { action: 'select' | 'focus'; key: string }
   | { action: 'deselect' | 'blur' | 'close' };

@@ -14,7 +14,7 @@ import {
   RESET_HIGHLIGHT,
   SCROLL_INTO_VIEW,
 } from './constants.ts';
-import type { Box, Highlight, HighlightOptions } from './types.ts';
+import type { Box, Highlight, HighlightMenuState, HighlightOptions } from './types.ts';
 import {
   createElement,
   getEventDetails,
@@ -56,6 +56,21 @@ export const useHighlights = (channel: Channel) => {
       .map(({ id, top, left, width, height }) => `${id}:${top}:${left}:${width}:${height}`)
       .join('|');
   let openBoxesKey: string | undefined;
+
+  // Menu targets are identified by a key per element, so interactions from the manager keep
+  // pointing at the same element even if the target list changes before they arrive.
+  const targetKeys = new WeakMap<HTMLElement, string>();
+  let lastTargetKey = 0;
+  const getTargetKey = (element: HTMLElement) => {
+    let key = targetKeys.get(element);
+    if (!key) {
+      key = String(++lastTargetKey);
+      targetKeys.set(element, key);
+    }
+    return key;
+  };
+  const findTarget = (key: string) =>
+    targets.get().find(({ element }) => targetKeys.get(element) === key);
 
   let root = document.getElementById(rootId);
 
@@ -330,24 +345,26 @@ export const useHighlights = (channel: Channel) => {
   const emitMenuState = () => {
     const targetList = targets.get();
     const click = clickCoords.get();
-    const coords =
-      targetList.length && click
-        ? { x: click.x - window.scrollX, y: click.y - window.scrollY }
-        : null;
-    const selectedBox = selected.get();
-    const selectedIndex = selectedBox
-      ? targetList.findIndex((b) => b.element === selectedBox.element)
-      : undefined;
+    if (!targetList.length || !click) {
+      channel.emit(HIGHLIGHT_MENU, { open: false } satisfies HighlightMenuState);
+      return;
+    }
 
+    const selectedElement = selected.get()?.element;
     channel.emit(HIGHLIGHT_MENU, {
+      open: true,
       targets: targetList.map((box) => ({
+        key: getTargetKey(box.element),
         id: box.id,
         label: getTargetLabel(box.element),
         details: getEventDetails(box),
       })),
-      selected: selectedIndex !== undefined && selectedIndex >= 0 ? selectedIndex : null,
-      coords,
-    });
+      selected:
+        selectedElement && targetList.some(({ element }) => element === selectedElement)
+          ? getTargetKey(selectedElement)
+          : null,
+      coords: { x: click.x - window.scrollX, y: click.y - window.scrollY },
+    } satisfies HighlightMenuState);
   };
 
   // The menu is anchored at the click position. It closes instead of chasing the element when the
@@ -372,21 +389,29 @@ export const useHighlights = (channel: Channel) => {
   selected.subscribe(emitMenuState);
 
   const handleMenuInteraction = (interaction: unknown) => {
-    const parsed = parseHighlightMenuInteraction(interaction, targets.get().length);
+    const parsed = parseHighlightMenuInteraction(interaction);
     if (!parsed) {
       return;
     }
 
     switch (parsed.action) {
-      case 'select':
-        selected.set(targets.get()[parsed.index]);
+      case 'select': {
+        const target = findTarget(parsed.key);
+        if (target) {
+          selected.set(target);
+        }
         break;
+      }
       case 'deselect':
         selected.set(undefined);
         break;
-      case 'focus':
-        focused.set(targets.get()[parsed.index]);
+      case 'focus': {
+        const target = findTarget(parsed.key);
+        if (target) {
+          focused.set(target);
+        }
         break;
+      }
       case 'blur':
         focused.set(undefined);
         break;

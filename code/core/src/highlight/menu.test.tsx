@@ -32,13 +32,17 @@ const makeDetails = (overrides: Partial<ClickEventDetails> = {}): ClickEventDeta
 });
 
 const makeTarget = (overrides: Partial<HighlightMenuTarget> = {}): HighlightMenuTarget => ({
+  key: '1',
   id: 'h1',
   label: 'div#target',
   details: makeDetails(),
   ...overrides,
 });
 
-const makeState = (overrides: Partial<HighlightMenuState> = {}): HighlightMenuState => ({
+type OpenMenuState = Extract<HighlightMenuState, { open: true }>;
+
+const makeState = (overrides: Partial<OpenMenuState> = {}): OpenMenuState => ({
+  open: true,
   targets: [makeTarget()],
   selected: null,
   coords: { x: 400, y: 300 },
@@ -101,7 +105,7 @@ describe('buildMenuLinks', () => {
     );
   });
 
-  const build = (state: HighlightMenuState, onInteraction = vi.fn(), onMenuClick = vi.fn()) => ({
+  const build = (state: OpenMenuState, onInteraction = vi.fn(), onMenuClick = vi.fn()) => ({
     links: buildMenuLinks({
       state,
       registry,
@@ -135,7 +139,9 @@ describe('buildMenuLinks', () => {
 
   it('renders selectable targets and forwards hover and select interactions', () => {
     const { links, onInteraction } = build(
-      makeState({ targets: [makeTarget(), makeTarget({ id: 'h2', label: 'span#other' })] })
+      makeState({
+        targets: [makeTarget(), makeTarget({ key: '2', id: 'h2', label: 'span#other' })],
+      })
     );
 
     const first = links[0]![0] as NormalLink;
@@ -146,10 +152,10 @@ describe('buildMenuLinks', () => {
     expect(links).toHaveLength(1);
 
     clickLink(second);
-    expect(onInteraction).toHaveBeenCalledWith({ action: 'select', index: 1 });
+    expect(onInteraction).toHaveBeenCalledWith({ action: 'select', key: '2' });
 
     first.onMouseEnter?.(new MouseEvent('mouseenter') as any);
-    expect(onInteraction).toHaveBeenCalledWith({ action: 'focus', index: 0 });
+    expect(onInteraction).toHaveBeenCalledWith({ action: 'focus', key: '1' });
 
     first.onMouseLeave?.(new MouseEvent('mouseleave') as any);
     expect(onInteraction).toHaveBeenCalledWith({ action: 'blur' });
@@ -158,8 +164,8 @@ describe('buildMenuLinks', () => {
   it('renders a selected target with a back button and its menu', () => {
     const { links, onInteraction } = build(
       makeState({
-        targets: [makeTarget(), makeTarget({ id: 'h2', label: 'span#other' })],
-        selected: 1,
+        targets: [makeTarget(), makeTarget({ key: '2', id: 'h2', label: 'span#other' })],
+        selected: '2',
       })
     );
 
@@ -266,17 +272,33 @@ describe('useHighlightMenu', () => {
     expect(result.current.anchor).toEqual({ x: 150, y: 70 });
   });
 
-  it('hides the menu for malformed or hidden states', () => {
+  it('ignores malformed states and hides the menu for a closed state', () => {
     const { result } = renderMenu();
 
     send(makeState());
     expect(result.current.open).toBe(true);
 
-    send({ targets: [null], selected: null, coords: { x: 0, y: 0 } });
+    send({ open: true, targets: [null], selected: null, coords: { x: 0, y: 0 } });
+    send({ targets: [], selected: null, coords: null });
+    expect(result.current.open).toBe(true);
+
+    send({ open: false });
     expect(result.current.open).toBe(false);
+  });
+
+  it('only lets the frame that owns the menu close it', () => {
+    mockIframe('storybook-ref-abc');
+    const { result } = renderMenu({ abc: { id: 'abc' } });
 
     send(makeState());
-    send({ targets: [], selected: null, coords: null });
+    expect(result.current.open).toBe(true);
+
+    // A hidden ref resetting must not close the host preview's menu
+    send({ open: false }, 'abc');
+    receive(STORY_RENDER_PHASE_CHANGED, [{ newPhase: 'loading' }], 'abc');
+    expect(result.current.open).toBe(true);
+
+    send({ open: false });
     expect(result.current.open).toBe(false);
   });
 
@@ -301,7 +323,9 @@ describe('useHighlightMenu', () => {
     const emitSpy = vi.spyOn(channel, 'emit');
 
     send(
-      makeState({ targets: [makeTarget(), makeTarget({ id: 'h2', label: 'span#other' })] }),
+      makeState({
+        targets: [makeTarget(), makeTarget({ key: '2', id: 'h2', label: 'span#other' })],
+      }),
       'abc'
     );
     expect(result.current.anchor).toEqual({ x: 900, y: 400 });
@@ -310,7 +334,7 @@ describe('useHighlightMenu', () => {
     clickLink(second);
     expect(emitSpy).toHaveBeenCalledWith(HIGHLIGHT_MENU_INTERACTION, {
       action: 'select',
-      index: 1,
+      key: '2',
       options: { target: 'storybook-ref-abc' },
     });
   });

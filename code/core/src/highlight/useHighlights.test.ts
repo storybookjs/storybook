@@ -51,6 +51,14 @@ describe('useHighlights', () => {
     target.getBoundingClientRect = () => ({ ...full, ...rect }) as DOMRect;
   };
 
+  /** The last emitted menu state, which must be open. */
+  const openMenu = () => {
+    if (!lastMenuState?.open) {
+      throw new Error('Expected an open menu state');
+    }
+    return lastMenuState;
+  };
+
   const moveTarget = (rect: Partial<DOMRect>) => {
     stubTargetRect(rect);
     resizeObserverCallback?.();
@@ -125,59 +133,55 @@ describe('useHighlights', () => {
     expect(document.querySelector('[data-highlight-dimensions="w50h50"]')).not.toBeNull();
     expect(document.getElementById('storybook-highlights-menu')).toBeNull();
     // No menu is shown until a targetable element is clicked
-    expect(lastMenuState).toEqual({ targets: [], selected: null, coords: null });
+    expect(lastMenuState).toEqual({ open: false });
   });
 
   it('emits menu state to the manager when a targetable element is clicked', () => {
     clickAt(30, 30);
 
     expect(lastMenuState).toBeDefined();
-    expect(lastMenuState!.targets).toHaveLength(1);
-    expect(lastMenuState!.targets[0]!.label).toBe('div#target');
+    expect(openMenu().targets).toHaveLength(1);
+    expect(openMenu().targets[0]!.label).toBe('div#target');
     // The payload must not include renderable DOM content; menu definitions live in the
     // manager-side registry, and the element is identified by its non-content label alone
-    expect(Object.keys(lastMenuState!.targets[0]!).sort()).toEqual(['details', 'id', 'label']);
-    expect(lastMenuState!.selected).toBeNull();
-    expect(lastMenuState!.coords).toEqual({ x: 30, y: 30 });
+    expect(Object.keys(openMenu().targets[0]!).sort()).toEqual(['details', 'id', 'key', 'label']);
+    expect(openMenu().selected).toBeNull();
+    expect(openMenu().coords).toEqual({ x: 30, y: 30 });
   });
 
   it('does not emit menu state when clicking outside targetable elements', () => {
     clickAt(30, 30);
-    expect(lastMenuState!.targets).toHaveLength(1);
+    expect(openMenu().targets).toHaveLength(1);
 
     clickAt(500, 500);
-    expect(lastMenuState!.targets).toHaveLength(0);
-    expect(lastMenuState!.coords).toBeNull();
+    expect(lastMenuState).toEqual({ open: false });
   });
 
   it('closes the menu when the preview scrolls', () => {
     clickAt(30, 30);
-    expect(lastMenuState!.coords).toEqual({ x: 30, y: 30 });
+    expect(openMenu().coords).toEqual({ x: 30, y: 30 });
 
     stubTargetRect({ top: -80, bottom: -30 });
     setScroll(0, 100);
-    expect(lastMenuState!.targets).toHaveLength(0);
-    expect(lastMenuState!.coords).toBeNull();
+    expect(lastMenuState).toEqual({ open: false });
   });
 
   it('closes the menu when the preview resizes', () => {
     clickAt(30, 30);
-    expect(lastMenuState!.coords).toEqual({ x: 30, y: 30 });
+    expect(openMenu().coords).toEqual({ x: 30, y: 30 });
 
     stubTargetRect({ top: 120, bottom: 170 });
     window.dispatchEvent(new Event('resize'));
     flushFrames();
-    expect(lastMenuState!.targets).toHaveLength(0);
-    expect(lastMenuState!.coords).toBeNull();
+    expect(lastMenuState).toEqual({ open: false });
   });
 
   it('closes the menu when the layout changes', () => {
     clickAt(30, 30);
-    expect(lastMenuState!.coords).toEqual({ x: 30, y: 30 });
+    expect(openMenu().coords).toEqual({ x: 30, y: 30 });
 
     moveTarget({ top: 200, bottom: 250 });
-    expect(lastMenuState!.targets).toHaveLength(0);
-    expect(lastMenuState!.coords).toBeNull();
+    expect(lastMenuState).toEqual({ open: false });
   });
 
   it('positions the menu at the newly clicked target right away', () => {
@@ -205,14 +209,14 @@ describe('useHighlights', () => {
     flushFrames();
 
     clickAt(30, 30);
-    expect(lastMenuState!.targets[0]!.id).toBe('h1');
-    expect(lastMenuState!.coords).toEqual({ x: 30, y: 30 });
+    expect(openMenu().targets[0]!.id).toBe('h1');
+    expect(openMenu().coords).toEqual({ x: 30, y: 30 });
 
     // Clicking another target must re-anchor the menu before the new state is published
     clickAt(210, 210);
-    expect(lastMenuState!.targets).toHaveLength(1);
-    expect(lastMenuState!.targets[0]!.id).toBe('h2');
-    expect(lastMenuState!.coords).toEqual({ x: 210, y: 210 });
+    expect(openMenu().targets).toHaveLength(1);
+    expect(openMenu().targets[0]!.id).toBe('h2');
+    expect(openMenu().coords).toEqual({ x: 210, y: 210 });
   });
 
   it('handles select and deselect interactions from the manager', () => {
@@ -240,14 +244,15 @@ describe('useHighlights', () => {
     flushFrames();
 
     clickAt(30, 30);
-    expect(lastMenuState!.targets).toHaveLength(2);
-    expect(lastMenuState!.selected).toBeNull();
+    expect(openMenu().targets).toHaveLength(2);
+    expect(openMenu().selected).toBeNull();
 
-    channel.emit(HIGHLIGHT_MENU_INTERACTION, { action: 'select', index: 1 });
-    expect(lastMenuState!.selected).toBe(1);
+    const secondKey = openMenu().targets[1]!.key;
+    channel.emit(HIGHLIGHT_MENU_INTERACTION, { action: 'select', key: secondKey });
+    expect(openMenu().selected).toBe(secondKey);
 
     channel.emit(HIGHLIGHT_MENU_INTERACTION, { action: 'deselect' });
-    expect(lastMenuState!.selected).toBeNull();
+    expect(openMenu().selected).toBeNull();
   });
 
   it('ignores malformed menu interactions without corrupting selection', () => {
@@ -274,42 +279,77 @@ describe('useHighlights', () => {
     flushFrames();
 
     clickAt(30, 30);
-    channel.emit(HIGHLIGHT_MENU_INTERACTION, { action: 'select', index: 1 });
-    expect(lastMenuState!.selected).toBe(1);
+    const secondKey = openMenu().targets[1]!.key;
+    channel.emit(HIGHLIGHT_MENU_INTERACTION, { action: 'select', key: secondKey });
+    expect(openMenu().selected).toBe(secondKey);
 
     for (const interaction of [
       null,
       {},
       { action: 'select' },
-      { action: 'select', index: -1 },
-      { action: 'select', index: 2 },
-      { action: 'select', index: 'length' },
-      { action: 'select', index: '__proto__' },
-      { action: 'focus', index: Number.NaN },
-      { action: 'unknown', index: 0 },
+      { action: 'select', key: '' },
+      { action: 'select', key: 1 },
+      { action: 'select', key: 'unknown' },
+      { action: 'select', key: '__proto__' },
+      { action: 'focus', key: null },
+      { action: 'unknown', key: secondKey },
     ]) {
       channel.emit(HIGHLIGHT_MENU_INTERACTION, interaction);
-      expect(lastMenuState!.selected).toBe(1);
+      expect(openMenu().selected).toBe(secondKey);
     }
+  });
+
+  it('ignores interactions for a target that is no longer in the menu', () => {
+    const second = document.createElement('span');
+    second.id = 'other';
+    second.style.position = 'absolute';
+    // Overlaps the first target, and also covers an area the first target does not
+    second.getBoundingClientRect = () =>
+      ({
+        top: 15,
+        left: 15,
+        width: 60,
+        height: 60,
+        bottom: 75,
+        right: 75,
+        x: 15,
+        y: 15,
+      }) as DOMRect;
+    document.getElementById('storybook-root')!.appendChild(second);
+    channel.emit(HIGHLIGHT, {
+      id: 'h2',
+      selectors: ['#other'],
+      menu: [[{ id: 'item-2', title: 'Other' }]],
+    });
+    flushFrames();
+
+    clickAt(30, 30);
+    const keyOf = (label: string) => openMenu().targets.find((t) => t.label === label)!.key;
+    const targetKey = keyOf('div#target');
+    const otherKey = keyOf('span#other');
+
+    // The target list changes before the manager's interaction arrives
+    clickAt(72, 72);
+    expect(openMenu().targets.map(({ key }) => key)).toEqual([otherKey]);
+
+    channel.emit(HIGHLIGHT_MENU_INTERACTION, { action: 'select', key: targetKey });
+    expect(openMenu().selected).toBeNull();
   });
 
   it('closes the menu on a close interaction', () => {
     clickAt(30, 30);
-    expect(lastMenuState!.targets).toHaveLength(1);
+    expect(openMenu().targets).toHaveLength(1);
 
     channel.emit(HIGHLIGHT_MENU_INTERACTION, { action: 'close' });
-    expect(lastMenuState!.targets).toHaveLength(0);
-    expect(lastMenuState!.selected).toBeNull();
-    expect(lastMenuState!.coords).toBeNull();
+    expect(lastMenuState).toEqual({ open: false });
   });
 
   it('clears the menu when the highlight is removed or reset', () => {
     clickAt(30, 30);
-    expect(lastMenuState!.targets).toHaveLength(1);
+    expect(openMenu().targets).toHaveLength(1);
 
     channel.emit(REMOVE_HIGHLIGHT, 'h1');
-    expect(lastMenuState!.targets).toHaveLength(0);
-    expect(lastMenuState!.coords).toBeNull();
+    expect(lastMenuState).toEqual({ open: false });
 
     channel.emit(HIGHLIGHT, {
       id: 'h1',
@@ -318,9 +358,9 @@ describe('useHighlights', () => {
     });
     flushFrames();
     clickAt(30, 30);
-    expect(lastMenuState!.targets).toHaveLength(1);
+    expect(openMenu().targets).toHaveLength(1);
 
     channel.emit(RESET_HIGHLIGHT);
-    expect(lastMenuState!.targets).toHaveLength(0);
+    expect(lastMenuState).toEqual({ open: false });
   });
 });

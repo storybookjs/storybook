@@ -49,18 +49,23 @@ const parseDetails = (value: unknown): ClickEventDetails | undefined => {
   };
 };
 
+const isNonEmptyString = (value: unknown): value is string => typeof value === 'string' && !!value;
+
 const parseTarget = (value: unknown): HighlightMenuTarget | undefined => {
   if (!isObject(value)) {
     return undefined;
   }
 
-  const { id, label, details } = value;
+  const { key, id, label, details } = value;
   const parsedDetails = parseDetails(details);
-  if (typeof id !== 'string' || !id || typeof label !== 'string' || !parsedDetails) {
+  if (!isNonEmptyString(key) || !isNonEmptyString(id) || typeof label !== 'string') {
+    return undefined;
+  }
+  if (!parsedDetails) {
     return undefined;
   }
 
-  return { id, label, details: parsedDetails };
+  return { key, id, label, details: parsedDetails };
 };
 
 /**
@@ -73,30 +78,25 @@ export const parseHighlightMenuState = (value: unknown): HighlightMenuState | un
     return undefined;
   }
 
-  const { targets, selected, coords } = value;
-  if (!Array.isArray(targets)) {
+  if (value.open === false) {
+    return { open: false };
+  }
+
+  const { open, targets, selected, coords } = value;
+  if (open !== true || !Array.isArray(targets) || !targets.length) {
     return undefined;
   }
 
-  if (targets.length === 0) {
-    if (selected === null && coords === null) {
-      return { targets: [], selected: null, coords: null };
+  const parsedTargets: HighlightMenuTarget[] = [];
+  for (const target of targets) {
+    const parsedTarget = parseTarget(target);
+    if (!parsedTarget || parsedTargets.some(({ key }) => key === parsedTarget.key)) {
+      return undefined;
     }
-    return undefined;
+    parsedTargets.push(parsedTarget);
   }
 
-  const parsedTargets = targets.map(parseTarget);
-  if (parsedTargets.some((target) => !target)) {
-    return undefined;
-  }
-
-  if (
-    selected !== null &&
-    (typeof selected !== 'number' ||
-      !Number.isInteger(selected) ||
-      selected < 0 ||
-      selected >= parsedTargets.length)
-  ) {
+  if (selected !== null && !parsedTargets.some(({ key }) => key === selected)) {
     return undefined;
   }
 
@@ -105,39 +105,34 @@ export const parseHighlightMenuState = (value: unknown): HighlightMenuState | un
   }
 
   return {
-    targets: parsedTargets as HighlightMenuTarget[],
-    selected: selected as number | null,
-    coords: { x: coords.x as number, y: coords.y as number },
+    open: true,
+    targets: parsedTargets,
+    selected: selected as string | null,
+    coords: { x: coords.x, y: coords.y },
   };
 };
 
 /**
- * Validate the runtime payload of a `HIGHLIGHT_MENU_INTERACTION` event against the current target
- * list. Out-of-bounds indices and unknown actions are ignored so they cannot corrupt selection or
- * focus state in the preview.
+ * Validate the runtime payload of a `HIGHLIGHT_MENU_INTERACTION` event. Unknown actions and
+ * malformed keys are ignored so they cannot corrupt selection or focus state in the preview.
  */
 export const parseHighlightMenuInteraction = (
-  value: unknown,
-  targetCount: number
+  value: unknown
 ): HighlightMenuInteraction | undefined => {
   if (!isObject(value)) {
     return undefined;
   }
 
-  const { action, index } = value;
+  const { action, key } = value;
   if (action === 'deselect' || action === 'blur' || action === 'close') {
     return { action };
   }
 
-  if (action !== 'select' && action !== 'focus') {
-    return undefined;
+  if ((action === 'select' || action === 'focus') && isNonEmptyString(key)) {
+    return { action, key };
   }
 
-  if (typeof index !== 'number' || !Number.isInteger(index) || index < 0 || index >= targetCount) {
-    return undefined;
-  }
-
-  return { action, index: index as number };
+  return undefined;
 };
 
 /**

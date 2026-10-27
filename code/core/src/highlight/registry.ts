@@ -84,16 +84,13 @@ export class HighlightRegistry {
   }
 
   reset(context: HighlightEventContext) {
-    if (context.refId) {
-      // A ref-sourced reset only clears that ref's entries.
-      this.registry.delete(context.refId);
-    } else if (context.source) {
-      // A host-preview reset only clears the host preview's own entries, never a ref's or the
-      // manager's.
-      this.registry.delete(HOST_REGISTRY_KEY);
-    } else {
+    const key = this.getRegistryKey(context);
+    if (key === MANAGER_REGISTRY_KEY) {
       // Every preview listens for a manager-local reset and resets itself, so it clears all frames.
       this.registry.clear();
+    } else {
+      // A preview's reset only clears its own entries.
+      this.registry.delete(key);
     }
     this.emit();
   }

@@ -174,9 +174,9 @@ interface ClickEventDetails {
 
 <Callout variant="warning">
 
-The highlight `id` and menu item `id` are not a security boundary. Any addon, and any page that can post messages to the preview, can emit a `HIGHLIGHT` payload that reuses your addon's highlight `id` with any menu item `id`, and a click on it will trigger your listener. Consider whether calling your listener can be used to trigger harmful side effects.
+The highlight `id` and menu item `id` are not a security boundary. Any addon can emit a `HIGHLIGHT` payload that reuses your addon's highlight `id` with any menu item `id`, and a click on it will trigger your listener. A listener in the preview can also receive a `HIGHLIGHT_MENU_CLICK` event that another page posted to the preview directly. Consider whether calling your listener can be used to trigger harmful side effects.
 
-The interactive menu is rendered by the Storybook manager UI. A page that embeds the preview, or a standalone `iframe.html`, can still show highlights but cannot display or interact with the menu, so menu item clicks only happen in the manager.
+The menu is rendered by the Storybook manager UI, on top of the preview. A preview without the manager around it shows highlights, but no menu. This includes a standalone `iframe.html`, a page that embeds the preview, and a story that a docs page renders in its own iframe.
 
 </Callout>
 

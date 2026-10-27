@@ -14,9 +14,13 @@ import {
 import { HighlightMenu } from './menu.tsx';
 import type { HighlightMenuState } from './types.ts';
 
-const FIXED_STATE: HighlightMenuState = {
+type OpenMenuState = Extract<HighlightMenuState, { open: true }>;
+
+const FIXED_STATE: OpenMenuState = {
+  open: true,
   targets: [
     {
+      key: '1',
       id: 'menu-highlight',
       label: 'div#first',
       details: {
@@ -29,6 +33,7 @@ const FIXED_STATE: HighlightMenuState = {
       },
     },
     {
+      key: '2',
       id: 'menu-highlight',
       label: 'span#second',
       details: {
@@ -78,7 +83,7 @@ const HIGHLIGHT_DEFINITION = {
 let activeChannel: Channel | undefined;
 
 const createMockApi = (channel: Channel) => {
-  let state = FIXED_STATE;
+  let state: HighlightMenuState = FIXED_STATE;
 
   return {
     getChannel: () => channel,
@@ -86,11 +91,11 @@ const createMockApi = (channel: Channel) => {
     emit: (type: string, data: any, ...args: any[]) => {
       if (type === HIGHLIGHT_MENU_INTERACTION) {
         if (data.action === 'select') {
-          state = { ...state, selected: data.index };
+          state = { ...FIXED_STATE, selected: data.key };
         } else if (data.action === 'deselect') {
-          state = { ...state, selected: null };
+          state = { ...FIXED_STATE, selected: null };
         } else if (data.action === 'close') {
-          state = { ...state, targets: [], selected: null, coords: null };
+          state = { open: false };
         }
         channel.emit(HIGHLIGHT_MENU, state);
       }

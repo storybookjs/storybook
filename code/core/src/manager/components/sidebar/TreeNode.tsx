@@ -225,6 +225,10 @@ export interface TreeNodeProps {
   shortcutKeys: ReturnType<API['getShortcutKeys']>;
   /** Reports this row's focus up to the tree while it holds it. */
   onRowFocus?: ReportRowFocus;
+  /** For root nodes: whether all descendant branches are currently expanded. */
+  isFullyExpanded?: boolean;
+  /** For root nodes: expand or collapse all descendants. */
+  onExpandCollapseAll?: () => void;
   children?: React.ReactNode;
 }
 
@@ -283,6 +287,8 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   hasTestProviders = false,
   shortcutKeys,
   onRowFocus,
+  isFullyExpanded,
+  onExpandCollapseAll,
   children,
 }) {
   const theme = useTheme();
@@ -495,6 +501,8 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
                       openedBy={openedBy}
                       hasProviderMenuEntries={hasProviderMenuEntries}
                       shortcutKeys={shortcutKeys}
+                      isFullyExpanded={isFullyExpanded}
+                      onExpandCollapseAll={onExpandCollapseAll}
                     />
                   }
                 </MenuTriggerContainer>

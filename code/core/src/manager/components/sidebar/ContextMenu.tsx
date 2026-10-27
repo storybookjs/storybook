@@ -9,7 +9,7 @@ import {
   Addon_TypesEnum,
 } from 'storybook/internal/types';
 
-import { CopyIcon, EditorIcon, EllipsisIcon } from '@storybook/icons';
+import { CollapseIcon, CopyIcon, EditorIcon, EllipsisIcon, ExpandAltIcon } from '@storybook/icons';
 
 import type { API } from 'storybook/manager-api';
 import { useStorybookApi } from 'storybook/manager-api';
@@ -54,14 +54,17 @@ export function hasContextMenu(context: API_HashEntry, hasProviderMenuEntries = 
     ('importPath' in context && Boolean(context.importPath)) ||
     context.type === 'story' ||
     context.type === 'docs' ||
+    // Root rows always get expand/collapse; test providers can also contribute entries.
+    context.type === 'root' ||
     // Test providers contribute entries (e.g. "run tests for this group") to branch rows.
     (hasProviderMenuEntries && (context.type === 'group' || context.type === 'component'))
   );
 }
 
 /**
- * Whether a registered test provider contributes menu entries for this one entry. It gates the
- * menu on a group or component row, so that the ⋯ button never opens an empty popover.
+ * Whether a registered test provider contributes menu entries for this entry. Used to gate the
+ * ⋯ button on group and component rows (root rows always get the button for expand/collapse).
+ * Providers receive the full `API_HashEntry` context, including root entries.
  *
  * @param hasTestProviders Whether any test provider addon is registered at all.
  */
@@ -71,7 +74,7 @@ export function hasProviderMenuEntriesFor(
   hasTestProviders: boolean
 ): boolean {
   // Test providers never see a "Story" row: its id names no story they could run.
-  if (!hasTestProviders || context.type === 'root' || isStoryRow(context)) {
+  if (!hasTestProviders || isStoryRow(context)) {
     return false;
   }
   return (
@@ -91,6 +94,10 @@ export const ContextMenu: FC<{
   hasProviderMenuEntries?: boolean;
   /** The current shortcuts, read once by the tree. */
   shortcutKeys: ReturnType<API['getShortcutKeys']>;
+  /** For root nodes: whether all descendant branches are currently expanded. */
+  isFullyExpanded?: boolean;
+  /** For root nodes: toggle expanding or collapsing all descendants. */
+  onExpandCollapseAll?: () => void;
 }> = memo(
   ({
     context,
@@ -101,6 +108,8 @@ export const ContextMenu: FC<{
     openedBy,
     hasProviderMenuEntries = false,
     shortcutKeys,
+    isFullyExpanded,
+    onExpandCollapseAll,
   }) => {
     const exportName = context && 'exportName' in context ? (context.exportName ?? '') : '';
     const { children: copyText, buttonProps: copyButtonProps } = useCopyButton<string>({
@@ -156,6 +165,19 @@ export const ContextMenu: FC<{
         });
       }
 
+      if (context.type === 'root' && onExpandCollapseAll !== undefined) {
+        defaultLinks.push({
+          id: isFullyExpanded ? 'collapse-all' : 'expand-all',
+          title: isFullyExpanded ? 'Collapse all' : 'Expand all',
+          icon: isFullyExpanded ? <CollapseIcon /> : <ExpandAltIcon />,
+          onClick: (e: SyntheticEvent) => {
+            e.preventDefault();
+            onExpandCollapseAll();
+            setIsOpen(false);
+          },
+        });
+      }
+
       // Move focus to the first item when opening from the keyboard, so the user can operate the
       // menu without a Tab press. A pointer open keeps focus on the dialog container, because a
       // focused item makes screen readers announce it twice. React honors autoFocus on the
@@ -174,6 +196,8 @@ export const ContextMenu: FC<{
       openedBy,
       setIsOpen,
       shortcutKeys,
+      isFullyExpanded,
+      onExpandCollapseAll,
     ]);
 
     const handleOpen = useCallback(

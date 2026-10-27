@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-storybook-nextjs",
-  "version": "10.6.4",
+  "version": "10.6.5",
   "description": "Vite plugin that enables Next.js features in Vite and Storybook",
   "keywords": [
     "vite-plugin",

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular-vite",
-  "version": "10.6.4",
+  "version": "10.6.5",
   "description": "Storybook for Angular: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",

@@ -12,6 +12,7 @@ import {
   PACKED_NODE_MODULES_ARCHIVE,
   artifact,
   cache,
+  compileStep,
   git,
   node,
   npm,
@@ -73,13 +74,7 @@ export const build_linux = defineJob('Build (linux)', () => ({
       ],
       packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`)
     ),
-    {
-      run: {
-        name: 'Compile',
-        working_directory: `code`,
-        command: 'yarn task --task compile --start-from=auto --no-link --debug',
-      },
-    },
+    compileStep(),
     {
       run: {
         name: 'Publish to Verdaccio',
@@ -127,13 +122,7 @@ export const build_windows = defineJob('Build (windows)', () => ({
     git.checkout({ forceHttps: true }),
     node.installOnWindows(),
     ...installWithCache('windows'),
-    {
-      run: {
-        name: 'Compile',
-        working_directory: `code`,
-        command: 'yarn task --task compile --start-from=auto --no-link --debug',
-      },
-    },
+    compileStep(),
     git.check(),
     verdaccio.start(),
     workspace.persist(
@@ -376,16 +365,7 @@ export const node26Smoke = defineJob('Node 26 smoke', () => ({
       },
     },
     npm.install('.'),
-    {
-      run: {
-        // Vitest loads each package's vitest.config.ts at startup, and those
-        // configs import compiled workspace output (e.g.
-        // `@storybook/addon-vitest/vitest-plugin`), so `dist` must exist
-        // before the unit suite runs.
-        name: 'Compile',
-        command: 'yarn task --task compile --start-from=auto --no-link',
-      },
-    },
+    compileStep(),
     {
       run: {
         name: 'Run unit tests',

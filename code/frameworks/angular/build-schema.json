@@ -32,7 +32,7 @@
     "loglevel": {
       "type": "string",
       "description": "Controls level of logging during build. Can be one of: [trace, debug, info (default), warn, error, silent].",
-      "pattern": "(trace|debug|info|warn|error|silent)"
+      "pattern": "^(trace|debug|info|warn|error|silent)$"
     },
     "logfile": {
       "type": "string",

@@ -354,6 +354,7 @@ Type: `boolean`
 Default: `false`
 
 Render canvas stories through Angular's [`TestBed`](https://angular.dev/api/core/testing/TestBed) instead of bootstrapping a standalone application per story.
+A story that renders its `component` without a `template` becomes the fixture root, so a provider in `moduleMetadata.providers` overrides one the component declares for itself.
 Play functions can then reach the story's injector through `TestBed.inject()`.
 Docs pages keep bootstrapping an application per story, because one page renders several stories that cannot share the single `TestBed` environment.
 Only `@storybook/angular-vite` reads this feature.

@@ -43,7 +43,25 @@ test.describe('Angular Vite', () => {
     await expect(sbPage.previewRoot()).toContainText('Provider Test Without Args');
 
     await sbPage.navigateToStory(providerTitle, 'provider-test-without-args');
-    await expect(sbPage.previewRoot()).toContainText('original Api Service');
+    await expect(sbPage.previewRoot()).toContainText(/Mock Service|original Api Service/);
+  });
+
+  test('lets moduleMetadata.providers override a component provider only under the TestBed renderer', async ({
+    page,
+  }) => {
+    const sbPage = new SbPage(page, expect);
+
+    await sbPage.navigateToStory(providerTitle, 'provider-test-without-args');
+    const previewFrame = page.frame({ name: 'storybook-preview-iframe' });
+    const testBedRenderer = await previewFrame?.evaluate(
+      () =>
+        (globalThis as { FEATURES?: { previewTestBedRenderer?: boolean } }).FEATURES
+          ?.previewTestBedRenderer === true
+    );
+
+    await expect(sbPage.previewRoot()).toContainText(
+      testBedRenderer ? 'Mock Service' : 'original Api Service'
+    );
   });
 
   test('scopes a module declared by a story file opened after another story', async ({ page }) => {

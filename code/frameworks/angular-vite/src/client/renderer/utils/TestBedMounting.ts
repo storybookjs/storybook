@@ -1,38 +1,33 @@
+import type { ComponentRef, Provider, ProviderToken, Type } from '@angular/core';
 import {
   ApplicationInitStatus,
   ApplicationRef,
+  ChangeDetectorRef,
+  EnvironmentInjector,
+  Injector,
+  NgZone,
+  createComponent,
   destroyPlatform,
   getPlatform,
+  inject,
+  inputBinding,
+  outputBinding,
+  reflectComponentType,
+  signal,
   ɵflushModuleScopingQueueAsMuchAsPossible as flushModuleScopingQueue,
 } from '@angular/core';
-import { TestComponentRenderer, getTestBed } from '@angular/core/testing';
+import type { TestBed } from '@angular/core/testing';
+import { ComponentFixture, getTestBed } from '@angular/core/testing';
 import { BrowserModule } from '@angular/platform-browser';
 import { platformBrowserTesting } from '@angular/platform-browser/testing';
+import { skip } from 'rxjs/operators';
 
-import type { MountApplicationOptions } from '../AbstractRenderer.ts';
-
-// TestBed would otherwise append a detached <div> to document.body. Reusing the element created by
-// initAngularRootElement keeps the story selector, the story UID attribute, `:host` styles and host
-// listeners on the real host element.
-class StorybookTestComponentRenderer extends TestComponentRenderer {
-  constructor(
-    private targetDOMNode: HTMLElement,
-    private componentSelector: string
-  ) {
-    super();
-  }
-
-  override insertRootElement(rootElId: string) {
-    const hostElement = this.targetDOMNode.querySelector(this.componentSelector);
-    if (hostElement) {
-      hostElement.id = rootElId;
-    }
-  }
-
-  // initAngularRootElement clears the target node before every full render and
-  // resetTestingModule() destroys the previous fixture.
-  override removeAllRootElements() {}
-}
+import { buildTemplate } from '../../../template-grammar.ts';
+import type { ICollection } from '../../types.ts';
+import type { StoryMountOptions } from '../AbstractRenderer.ts';
+import { getApplication } from '../StorybookModule.ts';
+import { STORY_PROPS } from '../StorybookProvider.ts';
+import { getComponentDecoratorMetadata, getComponentInputsOutputs } from './NgComponentAnalyzer.ts';
 
 // Must run before the next story's wrapper component and declarations module are created:
 // resetTestingModule() also clears Angular's JIT module scoping queue, and the freshly decorated
@@ -55,13 +50,16 @@ export function resetTestBed() {
   }
 }
 
-export async function mountWithTestBed({
-  application,
-  providers,
-  targetDOMNode,
-  componentSelector,
-}: MountApplicationOptions): Promise<ApplicationRef> {
+export async function mountWithTestBed(options: StoryMountOptions): Promise<ApplicationRef> {
   const testBed = getTestBed();
+  const {
+    storyFnAngular,
+    component,
+    analyzedMetadata,
+    providers,
+    targetDOMNode,
+    componentSelector,
+  } = options;
 
   if (!testBed.platform) {
     // A docs page rendered earlier bootstrapped a browser platform. TestBed cannot adopt it, and
@@ -74,24 +72,55 @@ export async function mountWithTestBed({
     testBed.initTestEnvironment(BrowserModule, platformBrowserTesting());
   }
 
-  testBed.configureTestingModule({
-    providers: [
-      ...providers,
-      {
-        provide: TestComponentRenderer,
-        useValue: new StorybookTestComponentRenderer(targetDOMNode, componentSelector),
-      },
-    ],
-  });
+  const storyRoot = targetDOMNode.querySelector(componentSelector);
+  if (!storyRoot) {
+    throw new Error(`Storybook could not find the story root element "${componentSelector}"`);
+  }
+
+  const rootComponent =
+    component !== undefined && storyFnAngular.template == null && !storyFnAngular.styles?.length
+      ? component
+      : getApplication({
+          storyFnAngular,
+          component,
+          targetSelector: componentSelector,
+          analyzedMetadata,
+        });
+
+  if (rootComponent === component) {
+    testBed.configureTestingModule({
+      imports: analyzedMetadata.imports,
+      declarations: analyzedMetadata.declarations,
+      schemas: storyFnAngular.moduleMetadata?.schemas,
+      providers,
+    });
+  } else {
+    testBed.configureTestingModule({ imports: [rootComponent], providers });
+  }
+  if (component) {
+    deferShadowedProvidersToStory(testBed, component, analyzedMetadata.providers);
+  }
 
   await testBed.compileComponents();
   // bootstrapApplication awaits the app initializers before creating the root component.
   await testBed.inject(ApplicationInitStatus).donePromise;
 
-  // Runs the first change detection synchronously and keeps it running afterwards for play
-  // functions and storyProps$. Like bootstrapApplication, the mount does not wait for the
-  // application to become stable: a story may legitimately hold a pending task forever.
-  testBed.createComponent(application).autoDetectChanges();
+  const environmentInjector = testBed.inject(EnvironmentInjector);
+  if (rootComponent === component) {
+    mountStoryComponent(testBed, component, storyFnAngular.props ?? {}, {
+      hostElement: createHostElement(component, storyRoot),
+      environmentInjector,
+      // The same injector the wrapper component gives a story: right above the component.
+      elementInjector: Injector.create({
+        providers: analyzedMetadata.providers,
+        parent: environmentInjector,
+      }),
+    });
+  } else {
+    createFixture(testBed, () =>
+      createComponent(rootComponent, { environmentInjector, hostElement: storyRoot })
+    );
+  }
 
   // TestBed never bootstraps, so provideRouter()'s bootstrap listener never navigates. Router is
   // providedIn root, so only a story that provided routes gets one.
@@ -105,4 +134,111 @@ export async function mountWithTestBed({
   }
 
   return testBed.inject(ApplicationRef);
+}
+
+// The story component is the fixture root. Its inputs and outputs are bound the way the wrapper's
+// generated template bound them, and every other prop is assigned to the instance.
+function mountStoryComponent(
+  testBed: TestBed,
+  component: Type<unknown>,
+  initialProps: ICollection,
+  options: Parameters<typeof createComponent>[1]
+) {
+  const props = signal(initialProps);
+  const { inputs, outputs } = getComponentInputsOutputs(component);
+  const bound = (names: { templateName: string }[]) =>
+    names.filter(({ templateName }) => templateName in initialProps).map((io) => io.templateName);
+  const bindings = [
+    ...bound(inputs).map((name) => inputBinding(name, () => props()[name])),
+    ...bound(outputs).map((name) => outputBinding(name, (event) => props()[name](event))),
+  ];
+  const ioNames = new Set([...inputs, ...outputs].map(({ templateName }) => templateName));
+  const assignOtherProps = (instance: unknown, next: ICollection) => {
+    for (const [key, value] of Object.entries(next)) {
+      if (!ioNames.has(key)) {
+        Object.assign(instance as object, { [key]: value });
+      }
+    }
+  };
+
+  const fixture = createFixture(testBed, () => {
+    const componentRef = createComponent(component, { ...options, bindings });
+    assignOtherProps(componentRef.instance, initialProps);
+    return componentRef;
+  });
+
+  const subscription = testBed
+    .inject(STORY_PROPS)
+    .pipe(skip(1))
+    .subscribe((next = {}) => {
+      props.set(next);
+      assignOtherProps(fixture.componentInstance, next);
+      fixture.componentRef.injector.get(ChangeDetectorRef).markForCheck();
+      fixture.detectChanges();
+    });
+  fixture.componentRef.onDestroy(() => subscription.unsubscribe());
+}
+
+function createFixture<T>(testBed: TestBed, create: () => ComponentRef<T>) {
+  const fixture = testBed
+    .inject(NgZone)
+    .run(() => testBed.runInInjectionContext(() => new ComponentFixture(create())));
+  testBed.inject(ApplicationRef).onDestroy(() => fixture.destroy());
+  // Runs the first change detection synchronously and keeps it running afterwards for play
+  // functions and story props. Like bootstrapApplication, the mount does not wait for the
+  // application to become stable: a story may legitimately hold a pending task forever.
+  fixture.autoDetectChanges();
+  return fixture;
+}
+
+function createHostElement(component: Type<unknown>, storyRoot: Element) {
+  const selector = reflectComponentType(component)?.selector ?? 'ng-component';
+  const template = storyRoot.ownerDocument.createElement('template');
+  template.innerHTML = buildTemplate(selector, { inputs: [], outputs: [] });
+  const hostElement = template.content.firstElementChild;
+  if (!hostElement) {
+    throw new Error(`Storybook could not create a host element for the selector "${selector}"`);
+  }
+  storyRoot.appendChild(hostElement);
+  return hostElement;
+}
+
+const providerTokens = (providers: Provider[] = []): unknown[] =>
+  providers
+    .flat(Infinity)
+    .map((provider) => (typeof provider === 'function' ? provider : provider?.provide))
+    .filter((token) => token !== undefined);
+
+// moduleMetadata.providers live in the injector right above the story component. A token the
+// component also provides for itself would shadow the story's provider, so that registration is
+// sent one level up instead. https://github.com/storybookjs/storybook/issues/22352
+function deferShadowedProvidersToStory(
+  testBed: TestBed,
+  component: Type<unknown>,
+  storyProviders: Provider[]
+) {
+  const storyTokens = new Set(providerTokens(storyProviders));
+  if (storyTokens.size === 0) {
+    return;
+  }
+
+  const metadata = getComponentDecoratorMetadata(component);
+  const toStory = (own: Provider[] | undefined) =>
+    [...new Set(providerTokens(own))]
+      .filter((token) => storyTokens.has(token))
+      .map((token) => ({
+        provide: token,
+        useFactory: () => inject(token as ProviderToken<unknown>, { skipSelf: true }),
+      }));
+  const providers = toStory(metadata?.providers);
+  const viewProviders = toStory(metadata?.viewProviders);
+
+  if (providers.length > 0 || viewProviders.length > 0) {
+    testBed.overrideComponent(component, {
+      add: {
+        ...(providers.length > 0 ? { providers } : {}),
+        ...(viewProviders.length > 0 ? { viewProviders } : {}),
+      },
+    });
+  }
 }

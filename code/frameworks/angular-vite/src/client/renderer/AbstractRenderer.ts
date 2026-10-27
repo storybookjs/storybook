@@ -1,11 +1,4 @@
-import type {
-  ApplicationConfig,
-  ApplicationRef,
-  EnvironmentProviders,
-  NgModule,
-  Provider,
-  Type,
-} from '@angular/core';
+import type { ApplicationRef, EnvironmentProviders, NgModule, Provider, Type } from '@angular/core';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import type { Subject } from 'rxjs';
@@ -23,11 +16,13 @@ type StoryRenderInfo = {
   moduleMetadataSnapshot: string;
 };
 
-export interface MountApplicationOptions {
-  // The standalone wrapper component that hosts the story.
-  application: Type<unknown>;
+export interface StoryMountOptions {
+  storyFnAngular: StoryFnAngularReturnType;
+  component: Type<unknown> | undefined;
+  analyzedMetadata: PropertyExtractor;
+  // Application-level providers: the story props, providers lifted out of restricted imports and
+  // the story's applicationConfig providers.
   providers: Array<Provider | EnvironmentProviders>;
-  applicationConfig?: ApplicationConfig;
   targetDOMNode: HTMLElement;
   // Selector of the root element created by initAngularRootElement.
   componentSelector: string;
@@ -136,13 +131,6 @@ export abstract class AbstractRenderer {
       element.toggleAttribute(storyUid, true);
     }
 
-    const application = getApplication({
-      storyFnAngular,
-      component,
-      targetSelector: componentSelector,
-      analyzedMetadata,
-    });
-
     const providers = [
       storyPropsProvider(newStoryProps$),
       ...analyzedMetadata.applicationProviders,
@@ -153,10 +141,11 @@ export abstract class AbstractRenderer {
       providers.unshift(provideZonelessChangeDetection());
     }
 
-    const applicationRef = await this.mountApplication({
-      application,
+    const applicationRef = await this.mountStory({
+      storyFnAngular,
+      component,
+      analyzedMetadata,
       providers,
-      applicationConfig: storyFnAngular.applicationConfig,
       targetDOMNode,
       componentSelector,
     });
@@ -165,14 +154,23 @@ export abstract class AbstractRenderer {
   }
 
   // TestBedRenderer overrides this seam.
-  protected async mountApplication({
-    application,
+  protected async mountStory({
+    storyFnAngular,
+    component,
+    analyzedMetadata,
     providers,
-    applicationConfig,
-  }: MountApplicationOptions): Promise<ApplicationRef> {
+    componentSelector,
+  }: StoryMountOptions): Promise<ApplicationRef> {
+    const application = getApplication({
+      storyFnAngular,
+      component,
+      targetSelector: componentSelector,
+      analyzedMetadata,
+    });
+
     return queueBootstrapping(() => {
       return bootstrapApplication(application, {
-        ...applicationConfig,
+        ...storyFnAngular.applicationConfig,
         providers,
       });
     });

@@ -1,12 +1,12 @@
 import type { ApplicationRef } from '@angular/core';
 
-import type { MountApplicationOptions } from './AbstractRenderer.ts';
+import type { StoryMountOptions } from './AbstractRenderer.ts';
 import { CanvasRenderer } from './CanvasRenderer.ts';
 import { queueBootstrapping } from './utils/BootstrapQueue.ts';
 import { mountWithTestBed, resetTestBed } from './utils/TestBedMounting.ts';
 
-// Only the mounting differs from CanvasRenderer: story preparation, the wrapper component and the
-// rerender fast path are shared.
+// Only the mounting differs from CanvasRenderer: story preparation and the rerender fast path are
+// shared. A `component` story is mounted as the fixture root; a `template` story keeps the wrapper.
 export class TestBedRenderer extends CanvasRenderer {
   private lastRender: Promise<unknown> = Promise.resolve();
 
@@ -23,9 +23,7 @@ export class TestBedRenderer extends CanvasRenderer {
     resetTestBed();
   }
 
-  protected override async mountApplication(
-    options: MountApplicationOptions
-  ): Promise<ApplicationRef> {
+  protected override async mountStory(options: StoryMountOptions): Promise<ApplicationRef> {
     // The queue also resets Angular's compiled-component ids after the mount, so a hot update
     // can redefine a component without an NG0912 collision.
     return queueBootstrapping(() => mountWithTestBed(options));

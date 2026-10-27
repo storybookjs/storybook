@@ -242,7 +242,9 @@ export default defineMain({
 ```
 
 Stories, decorators, `moduleMetadata`, and `applicationConfig` work the same way with both strategies.
-Under `TestBed`, a play function can read the story's providers with `TestBed.inject()`, and the `TestBed` singleton is reset before every story render.
+Under `TestBed`, a story that renders its `component` without a `template` mounts that component as the fixture root, the way `TestBed.createComponent()` does in a unit test: args that match inputs and outputs are bound to them, and every other arg is assigned to the component instance.
+A provider in `moduleMetadata.providers` then also overrides a provider the component declares in its own `providers`, which `bootstrapApplication` cannot do.
+A play function can read the story's providers with `TestBed.inject()`, and the `TestBed` singleton is reset before every story render.
 As in Angular's own component tests, an exception thrown from an event handler or during change detection is rethrown and fails the play function, where `bootstrapApplication` only reports it through `ErrorHandler`.
 Docs pages always bootstrap an application per story.
 

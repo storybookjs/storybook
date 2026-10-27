@@ -151,7 +151,9 @@ describe('parseForIndexer', () => {
         import { defineMeta } from '@storybook/svelte';
       `);
 
-      await expect(parseForIndexer(file)).resolves.toBeDefined();
+      await expect(parseForIndexer(file)).rejects.toThrow(
+        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004'
+      );
     });
 
     it('fails without a named defineMeta import', async ({ expect }) => {
@@ -173,6 +175,331 @@ describe('parseForIndexer', () => {
       await expect(parseForIndexer(file)).rejects.toThrow(
         'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002'
       );
+    });
+  });
+  describe('CSF factories', () => {
+    const writeFactoryStoriesFile = (moduleScript: string) =>
+      writeStoriesFile(`<script module lang="ts">
+          ${moduleScript}
+        </script>
+
+        <Story name="Primary" tags={['autodocs']} />
+
+        <Story exportName="Secondary" play={async () => {}} />
+        `);
+
+    it.for([
+      [
+        'preview.meta() from #.storybook/preview',
+        `import preview from '#.storybook/preview';
+        const { Story } = preview.meta({ title: 'Example', tags: ['meta-tag'] });`,
+      ],
+      [
+        'preview.meta() from a relative path',
+        `import preview from '../.storybook/preview';
+        const { Story } = preview.meta({ title: 'Example', tags: ['meta-tag'] });`,
+      ],
+      [
+        'a renamed preview import',
+        `import config from '../.storybook/preview.ts';
+        const { Story } = config.meta({ title: 'Example', tags: ['meta-tag'] });`,
+      ],
+      [
+        'a meta variable',
+        `import preview from '#.storybook/preview';
+        const meta = preview.meta({ title: 'Example', tags: ['meta-tag'] });
+        const { Story } = meta;`,
+      ],
+      [
+        'preview.type<>().meta()',
+        `import preview from '#.storybook/preview';
+        const { Story } = preview
+          .type<{ args: { theme: string } }>()
+          .meta({ title: 'Example', tags: ['meta-tag'] });`,
+      ],
+      [
+        'preview.meta().type<>()',
+        `import preview from '#.storybook/preview';
+        const { Story } = preview
+          .meta({ title: 'Example', tags: ['meta-tag'] })
+          .type<{ args: { theme: string } }>();`,
+      ],
+    ])('indexes %s', async ([, moduleScript], { expect }) => {
+      const file = await writeFactoryStoriesFile(moduleScript);
+
+      expect(await parseForIndexer(file)).toMatchInlineSnapshot(`
+        {
+          "meta": {
+            "tags": [
+              "meta-tag",
+            ],
+            "title": "Example",
+          },
+          "stories": [
+            {
+              "exportName": "Primary",
+              "name": "Primary",
+              "tags": [
+                "autodocs",
+              ],
+            },
+            {
+              "exportName": "Secondary",
+              "name": undefined,
+              "tags": [
+                "play-fn",
+              ],
+            },
+          ],
+        }
+      `);
+    });
+
+    it('indexes the stories of the Story components from meta.type<>()', async ({ expect }) => {
+      const file = await writeStoriesFile(`<script module lang="ts">
+          import preview from '#.storybook/preview';
+          const meta = preview.meta({ title: 'Example', tags: ['meta-tag'] });
+          const { Story } = meta;
+          const { Story: IconStory } = meta.type<{ args: { icon: string } }>();
+        </script>
+
+        <Story name="Primary" tags={['autodocs']} />
+
+        <IconStory name="Icon" args={{ icon: 'star' }} tags={['icon-tag']} />
+      `);
+
+      expect(await parseForIndexer(file)).toMatchInlineSnapshot(`
+        {
+          "meta": {
+            "tags": [
+              "meta-tag",
+            ],
+            "title": "Example",
+          },
+          "stories": [
+            {
+              "exportName": "Primary",
+              "name": "Primary",
+              "tags": [
+                "autodocs",
+              ],
+            },
+            {
+              "exportName": "Icon",
+              "name": "Icon",
+              "tags": [
+                "icon-tag",
+              ],
+            },
+          ],
+        }
+      `);
+    });
+
+    it('indexes the Story components declared together with Story', async ({ expect }) => {
+      const file = await writeStoriesFile(`<script module lang="ts">
+          import preview from '#.storybook/preview';
+          const meta = preview.meta({ title: 'Example' });
+          const { Story } = meta,
+            { Story: IconStory } = meta.type<{ args: { icon: string } }>();
+        </script>
+
+        <Story name="Primary" />
+
+        <IconStory name="Icon" args={{ icon: 'star' }} />
+      `);
+
+      const { stories } = await parseForIndexer(file);
+
+      expect(stories.map((story) => story.exportName)).toEqual(['Primary', 'Icon']);
+    });
+
+    it('fails when a file calls defineMeta() and preview.meta()', async ({ expect }) => {
+      const file = await writeFactoryStoriesFile(`
+        import { defineMeta } from '@storybook/svelte';
+        import preview from '#.storybook/preview';
+        const { Story } = defineMeta({});
+        const { Story: FactoryStory } = preview.meta({});
+      `);
+
+      await expect(parseForIndexer(file)).rejects.toThrow(
+        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0010'
+      );
+    });
+
+    it('fails when a file calls preview.meta() twice', async ({ expect }) => {
+      const file = await writeFactoryStoriesFile(`
+        import preview from '#.storybook/preview';
+        const { Story: OtherStory } = preview.meta({});
+        const { Story } = preview.meta({});
+      `);
+
+      await expect(parseForIndexer(file)).rejects.toThrow(
+        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0012'
+      );
+    });
+
+    it('fails when the result of preview.meta() is not stored', async ({ expect }) => {
+      const file = await writeFactoryStoriesFile(`
+        import preview from '#.storybook/preview';
+        preview.meta({ title: 'Example' });
+      `);
+
+      await expect(parseForIndexer(file)).rejects.toThrow(
+        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004'
+      );
+    });
+
+    it('fails when the meta is exported', async ({ expect }) => {
+      const file = await writeFactoryStoriesFile(`
+        import preview from '#.storybook/preview';
+        export const meta = preview.meta({ title: 'Example' });
+        const { Story } = meta;
+      `);
+
+      await expect(parseForIndexer(file)).rejects.toThrow(
+        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004'
+      );
+    });
+
+    it('fails when preview is not imported from a preview file', async ({ expect }) => {
+      const file = await writeFactoryStoriesFile(`
+        import preview from '../storybook-config';
+        const { Story } = preview.meta({});
+      `);
+
+      await expect(parseForIndexer(file)).rejects.toThrow(
+        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0011'
+      );
+    });
+  });
+
+  describe('extend', () => {
+    const writeExtendStoriesFile = (stories: string, meta = 'preview.meta({ title: "Example" })') =>
+      writeStoriesFile(`<script module lang="ts">
+          import { defineMeta } from '@storybook/svelte';
+          import preview from '#.storybook/preview';
+          const { Story } = ${meta};
+        </script>
+
+        ${stories}
+        `);
+
+    it('adds the tags of the stories that a story extends, in any order', async ({ expect }) => {
+      const file = await writeExtendStoriesFile(`
+        <Story extend="Primary" name="Primary Small" tags={['small']} />
+        <Story name="Primary" tags={['primary']} play={async () => {}} />
+        <Story extend="Primary Small" name="Primary Small Starred" tags={['!primary']} />
+        <Story name="Secondary" />
+      `);
+
+      const { stories } = await parseForIndexer(file);
+
+      expect(stories).toMatchInlineSnapshot(`
+        [
+          {
+            "exportName": "PrimarySmall",
+            "name": "Primary Small",
+            "tags": [
+              "primary",
+              "play-fn",
+              "small",
+            ],
+          },
+          {
+            "exportName": "Primary",
+            "name": "Primary",
+            "tags": [
+              "primary",
+              "play-fn",
+            ],
+          },
+          {
+            "exportName": "PrimarySmallStarred",
+            "name": "Primary Small Starred",
+            "tags": [
+              "primary",
+              "play-fn",
+              "small",
+              "!primary",
+            ],
+          },
+          {
+            "exportName": "Secondary",
+            "name": "Secondary",
+            "tags": [],
+          },
+        ]
+      `);
+    });
+
+    it('indexes a story that sets only asChild and inherits the children', async ({ expect }) => {
+      const file = await writeExtendStoriesFile(`
+        <Story name="Primary">Click me</Story>
+        <Story extend="Primary" name="Primary Static" asChild />
+      `);
+
+      const { stories } = await parseForIndexer(file);
+
+      expect(stories.map((story) => story.exportName)).toEqual(['Primary', 'PrimaryStatic']);
+    });
+
+    it.for([
+      [
+        'the stories file calls defineMeta()',
+        '<Story name="Primary" /><Story extend="Primary" name="Small" />',
+        'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0010',
+        'defineMeta({})',
+      ],
+      [
+        'no story has the name',
+        '<Story name="Primary" /><Story extend="Secondary" name="Small" />',
+        'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0011',
+      ],
+      [
+        'the value is the exportName of a named story',
+        '<Story name="Primary Large" /><Story extend="PrimaryLarge" name="Small" />',
+        'Did you mean extend="Primary Large"?',
+      ],
+      [
+        'the story has only an exportName',
+        '<Story exportName="Primary" /><Story extend="Primary" name="Small" />',
+        'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0012',
+      ],
+      [
+        'more than one story has the name',
+        '<Story name="Primary" /><Story name="Primary" exportName="Other" /><Story extend="Primary" name="Small" />',
+        'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0013',
+      ],
+      [
+        'a story extends itself',
+        '<Story extend="Primary" name="Primary" />',
+        "Stories extend each other in a cycle: 'Primary' extends 'Primary'",
+      ],
+      [
+        'stories extend each other',
+        '<Story extend="B" name="A" /><Story extend="C" name="B" /><Story extend="A" name="C" />',
+        "Stories extend each other in a cycle: 'A' extends 'B' extends 'C' extends 'A'",
+      ],
+      [
+        'the value is not a string literal',
+        '<Story name="Primary" /><Story extend={name} name="Small" />',
+        'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001',
+      ],
+      [
+        'the value has more than one part',
+        '<Story name="Primary" /><Story name="PrimaryLarge" /><Story extend="Primary{\'Large\'}" name="Small" />',
+        'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001',
+      ],
+      [
+        'the value is empty',
+        '<Story name="" exportName="Empty" /><Story extend="" name="Small" />',
+        'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0011',
+      ],
+    ])('fails when %s', async ([, stories, error, meta], { expect }) => {
+      const file = await writeExtendStoriesFile(stories, meta);
+
+      await expect(parseForIndexer(file)).rejects.toThrow(error);
     });
   });
 });

@@ -302,7 +302,7 @@ export class BUNProxy extends JsPackageManager {
         dedent`
           bun minimumReleaseAge would block storybook@${storybookVersion} from being installed because it was released within the configured minimumReleaseAge window, so Storybook updated minimumReleaseAgeExcludes for this project automatically.
 
-          Added patterns: storybook, @storybook/*, eslint-plugin-storybook, @chromatic-com/storybook
+          Added patterns: ${STORYBOOK_PACKAGE_PATTERNS.join(', ')}
 
           Read more:
           - https://bun.com/docs/pm/cli/install#minimum-release-age

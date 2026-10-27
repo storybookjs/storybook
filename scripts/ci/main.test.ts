@@ -35,7 +35,6 @@ describe('main.ts under plain Node, as the CircleCI setup job runs it', () => {
     expect(config).toContain('project/code/core/node_modules');
   });
 
-
   it.each([{ args: [] }, { args: ['--workflow=unknown'] }])('rejects $args', ({ args }) => {
     const result = generate(...args);
 

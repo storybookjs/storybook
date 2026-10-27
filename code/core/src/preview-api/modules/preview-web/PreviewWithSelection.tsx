@@ -255,18 +255,19 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       return;
     }
 
-    // F6 and Shift+F6 navigate the manager's landmarks, which the manager can only do for a
-    // keydown it is told about. So they are forwarded even from text inputs, where they cannot
-    // clash with typing, and the browser's own F6 behaviour (moving focus to its toolbar) is
-    // suppressed. Not when the preview is the top-level document, where there is no manager.
+    // F6 and Shift+F6 navigate the manager's landmarks, and they are forwarded even from
+    // text inputs. If the preview is not embedded in a manager, we let the browser handle F6.
     const isLandmarkNavigation = event.key === 'F6' && isEmbedded();
     if (isLandmarkNavigation) {
       event.preventDefault();
-    } else if (focusInInput(event)) {
+    }
+
+    // For all other keys, we only forward them to the manager when focus is not in an input.
+    if (!isLandmarkNavigation && focusInInput(event)) {
       return;
     }
 
-    // We have to pick off the keys of the event that we need on the other side
+    // We forward to the manager for interception by the shortcut handler.
     const { altKey, ctrlKey, metaKey, shiftKey, key, code, keyCode } = event;
     this.channel.emit(PREVIEW_KEYDOWN, {
       event: { altKey, ctrlKey, metaKey, shiftKey, key, code, keyCode },

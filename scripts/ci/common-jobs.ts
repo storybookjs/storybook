@@ -390,8 +390,10 @@ export const node26Smoke = defineJob('Node 26 smoke', () => ({
       run: {
         name: 'Run unit tests',
         // storybook-ui is the browser story project. The linux unit job never
-        // runs it; stories have their own Playwright job.
-        command: "yarn test --project '!storybook-ui'",
+        // runs it; stories have their own Playwright job. The scripts tests run
+        // `main.ts` under plain Node with `--experimental-transform-types`, a
+        // flag Node 26 dropped, so they keep running on the default-Node jobs.
+        command: "yarn test --project '!storybook-ui' --project '!scripts'",
       },
     },
     {

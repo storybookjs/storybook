@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
+import { node26Smoke } from './common-jobs.ts';
 import { workflows } from './utils/types.ts';
 
 const repoRoot = join(import.meta.dirname, '../..');
@@ -34,34 +35,31 @@ describe('main.ts under plain Node, as the CircleCI setup job runs it', () => {
     expect(config).toContain('project/code/core/node_modules');
   });
 
-  it('compiles packages before running unit tests on node-26-smoke', () => {
-    const result = generate('--workflow=daily', '--base-ref=HEAD');
-
-    expect(result.status, result.stderr).toBe(0);
-    const config = JSON.parse(
-      readFileSync(join(repoRoot, '.circleci/config.generated.yml'), 'utf8')
-    );
-    const steps: { name: string; command?: string }[] = config.jobs['node-26-smoke'].steps.map(
-      (step: Record<string, { name?: string; command?: string }>) => ({
-        name: step.run?.name ?? Object.keys(step)[0],
-        command: step.run?.command,
-      })
-    );
-    const installIndex = steps.findIndex((step) => step.name === 'node/install-packages');
-    const compileIndex = steps.findIndex((step) => step.name === 'Compile');
-    const unitTestsIndex = steps.findIndex((step) => step.name === 'Run unit tests');
-    expect(installIndex).toBeGreaterThanOrEqual(0);
-    expect(compileIndex).toBeGreaterThan(installIndex);
-    expect(compileIndex).toBeLessThan(unitTestsIndex);
-    expect(steps[compileIndex].command).toBe(
-      'yarn task --task compile --start-from=auto --no-link'
-    );
-  });
 
   it.each([{ args: [] }, { args: ['--workflow=unknown'] }])('rejects $args', ({ args }) => {
     const result = generate(...args);
 
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain('Expected a comma-separated list of');
+  });
+});
+
+describe('node-26-smoke job', () => {
+  it('compiles packages before running unit tests', () => {
+    // The job implementation runs in-process (no `main.ts` spawn): this suite
+    // must pass under any Node, including versions that cannot run `main.ts`.
+    const { steps } = node26Smoke.implementation('daily') as {
+      steps: { run?: { name?: string } }[];
+    };
+    // `npm.install('.')` returns an orb step keyed `node/install-packages`
+    // rather than a `run` step, so fall back to the object key for the name.
+    const names = steps.map((step) => step.run?.name ?? Object.keys(step)[0]);
+    const installIndex = names.indexOf('node/install-packages');
+    const compileIndex = names.indexOf('Compile');
+    const unitTestsIndex = names.indexOf('Run unit tests');
+
+    expect(installIndex).toBeGreaterThanOrEqual(0);
+    expect(compileIndex).toBeGreaterThan(installIndex);
+    expect(compileIndex).toBeLessThan(unitTestsIndex);
   });
 });

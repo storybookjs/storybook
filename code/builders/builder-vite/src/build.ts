@@ -28,9 +28,12 @@ export async function build(options: Options) {
       // Storybook copies the public dir itself through the `staticDirs` preset so that its own
       // output files and user `staticDirs` take precedence over public assets.
       copyPublicDir: false,
+      // Storybook's preview runtime includes chunks larger than Vite's default 500 kB limit.
+      // 1500 kB leaves headroom over the ~1.2 MB iframe chunk reported for Storybook 10.6.
+      chunkSizeWarningLimit: 1500,
       // TODO: Remove bundlerOptionsKey and use 'rolldownOptions' directly once support for Vite < 8 is dropped
       [bundlerOptionsKey]: {
-        external: [/\.\/sb-common-assets\/.*\.woff2/],
+        external: [/\\.\\/sb-common-assets\\/.*\\.woff2/],
       },
       ...(options.test
         ? {

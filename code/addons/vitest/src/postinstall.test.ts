@@ -33,13 +33,16 @@ vi.mock('node:fs/promises', { spy: true });
 vi.mock('empathic/find', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 // The storybook package's export map resolves `storybook/internal/cli` to the built dist bundle,
-// whose inlined copies of `empathic/find` cannot be intercepted by the spy above. Loading the
-// service from source keeps the CommonJS-guard search inside the mocked module graph.
-vi.mock(
-  'storybook/internal/cli',
-  async () =>
-    await vi.importActual<Record<string, unknown>>('../../../core/src/cli/AddonVitestService.ts')
-);
+// whose inlined copies of `empathic/find` cannot be intercepted by the spy above, so the service
+// is loaded from source. The real barrel is spread underneath it because the merge path also
+// pulls pure helpers (e.g. `findExportDefault`) from the same specifier.
+vi.mock('storybook/internal/cli', async (importOriginal) => {
+  const [serviceSource, actual] = await Promise.all([
+    vi.importActual<Record<string, unknown>>('../../../core/src/cli/AddonVitestService.ts'),
+    importOriginal<Record<string, unknown>>(),
+  ]);
+  return { ...actual, ...serviceSource };
+});
 
 /**
  * Returns the callee names of the plugins array that holds the (possibly aliased) storybookTest

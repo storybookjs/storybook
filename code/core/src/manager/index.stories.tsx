@@ -16,7 +16,7 @@ import { getChannel, setChannel } from 'storybook/internal/channels';
 import type { API, AddonStore } from 'storybook/manager-api';
 import { addons } from 'storybook/manager-api';
 import { expect, screen, waitFor, within } from 'storybook/test';
-import { color } from 'storybook/theming';
+import { color } from 'storybook/theming/emotion';
 
 import preview from '../../../.storybook/preview.tsx';
 import { focusableUIElements } from '../manager-api/modules/layout.ts';

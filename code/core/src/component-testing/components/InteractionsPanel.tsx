@@ -3,7 +3,7 @@ import * as React from 'react';
 import { transparentize } from 'polished';
 import { announce } from '@react-aria/live-announcer';
 import type { API } from 'storybook/manager-api';
-import { srOnlyStyles, styled } from 'storybook/theming';
+import { srOnlyStyles, styled } from 'storybook/theming/emotion';
 
 import { type Call, type CallStates, type ControlStates } from '../../instrumenter/types.ts';
 import { INTERNAL_RENDER_CALL_ID } from '../constants.ts';

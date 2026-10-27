@@ -62,7 +62,8 @@ export const SaveFlow = meta.story({
 
 ```svelte filename="NoteUI.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
   import { expect } from 'storybook/test';
 
   // 👇 Automocked module resolves to '../app/__mocks__/actions'
@@ -91,40 +92,41 @@ export const SaveFlow = meta.story({
   }} />
 ```
 
-```js filename="NoteUI.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import { expect } from 'storybook/test';
+```svelte filename="NoteUI.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
+  import { expect } from 'storybook/test';
 
-// 👇 Automocked module resolves to '../app/__mocks__/actions'
-import { saveNote } from '../app/actions';
-import { createNotes } from '../app/mocks/notes';
+  // 👇 Automocked module resolves to '../app/__mocks__/actions'
+  import { saveNote } from '../app/actions';
+  import { createNotes } from '../app/mocks/notes';
 
-import NoteUI from './note-ui.svelte';
+  import NoteUI from './note-ui.svelte';
 
-export default {
-  title: 'Mocked/NoteUI',
-  component: NoteUI,
-};
+  const { Story } = preview.meta({
+    title: 'Mocked/NoteUI',
+    component: NoteUI,
+  });
+</script>
 
-const notes = createNotes();
+<script>
+  const notes = createNotes();
+</script>
 
-export const SaveFlow = {
-  name: 'Save Flow ▶',
-  args: {
-    isEditing: true,
-    note: notes[0],
-  },
-  play: async ({ canvas, userEvent }) => {
+<Story name="Save Flow ▶"
+  args={{ isEditing: true, note: notes[0] }}
+  play={async ({ canvas, userEvent }) => {
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });
     await userEvent.click(saveButton);
     // 👇 This is the mock function, so you can assert its behavior
     await expect(saveNote).toHaveBeenCalled();
-  },
-};
+  }} />
 ```
 
 ```svelte filename="NoteUI.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
   import { expect } from 'storybook/test';
 
   // 👇 Automocked module resolves to '../app/__mocks__/actions'
@@ -153,40 +155,35 @@ export const SaveFlow = {
   }} />
 ```
 
-```ts filename="NoteUI.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
-import { expect } from 'storybook/test';
+```svelte filename="NoteUI.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+  import { expect } from 'storybook/test';
 
-// 👇 Automocked module resolves to '../app/__mocks__/actions'
-import { saveNote } from '../app/actions';
-import { createNotes } from '../app/mocks/notes';
+  // 👇 Automocked module resolves to '../app/__mocks__/actions'
+  import { saveNote } from '../app/actions';
+  import { createNotes } from '../app/mocks/notes';
 
-import NoteUI from './note-ui.svelte';
+  import NoteUI from './note-ui.svelte';
 
-const meta = {
-  title: 'Mocked/NoteUI',
-  component: NoteUI,
-} satisfies Meta<typeof NoteUI>;
-export default meta;
+  const { Story } = preview.meta({
+    title: 'Mocked/NoteUI',
+    component: NoteUI,
+  });
+</script>
 
-type Story = StoryObj<typeof meta>;
+<script>
+  const notes = createNotes();
+</script>
 
-const notes = createNotes();
-
-export const SaveFlow: Story = {
-  name: 'Save Flow ▶',
-  args: {
-    isEditing: true,
-    note: notes[0],
-  },
-  play: async ({ canvas, userEvent }) => {
+<Story name="Save Flow ▶"
+  args={{ isEditing: true, note: notes[0] }}
+  play={async ({ canvas, userEvent }) => {
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });
     await userEvent.click(saveButton);
     // 👇 This is the mock function, so you can assert its behavior
     await expect(saveNote).toHaveBeenCalled();
-  },
-};
+  }} />
 ```
 
 ```ts filename="NoteUI.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"

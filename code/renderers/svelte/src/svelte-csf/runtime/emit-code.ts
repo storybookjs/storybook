@@ -21,6 +21,7 @@ const channel: ReturnType<(typeof addons)['getChannel']> | undefined = addons.ge
  * So that it can be shown in source code viewer
  */
 export const emitCode = (params: Params) => {
+  if (globalThis.FEATURES?.docgenServer) return;
   const { storyContext } = params;
 
   if (skipSourceRender(storyContext)) {

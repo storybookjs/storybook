@@ -1,12 +1,16 @@
-import type { CsfFile, ReferenceContext, ResolvedMembers } from 'storybook/internal/csf-tools';
 import {
+  type CsfFile,
+  type ESTree,
+  type ESTreeNode,
+  type ReferenceContext,
+  type ResolvedMembers,
+  isStringLiteral,
   loadCsf,
+  oneLineTextOf,
   resolveBindingMembers,
   resolveObjectMembers,
-  sourceOf,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import { recast, types as t } from 'storybook/internal/babel';
 
 import { readFileSync } from 'node:fs';
 
@@ -19,27 +23,24 @@ export type WebComponentsComponentResolution =
 export function parseStoryFile(storyFilePath: string, title: string): CsfFile | undefined {
   try {
     const source = readFileSync(storyFilePath, 'utf8');
-    return loadCsf(source, { makeTitle: () => title }).parse();
+    return loadCsf(source, { makeTitle: () => title, fileName: storyFilePath }).parse();
   } catch {
     return undefined;
   }
 }
 
-const expressionFor = (node: t.Node): string => recast.print(node).code;
-
-function tagFromNode(node: t.Node): WebComponentsComponentResolution {
-  const expression = expressionFor(node);
+function tagFromNode(csf: CsfFile, node: ESTreeNode): WebComponentsComponentResolution {
   const unwrapped = unwrapExpression(node);
-  if (t.isStringLiteral(unwrapped) && unwrapped.value !== '') {
+  if (isStringLiteral(unwrapped) && unwrapped.value !== '') {
     return { tag: unwrapped.value };
   }
-  if (t.isTemplateLiteral(unwrapped) && unwrapped.expressions.length === 0) {
+  if (unwrapped.type === 'TemplateLiteral' && unwrapped.expressions.length === 0) {
     const tag = unwrapped.quasis[0]?.value.cooked;
     if (tag) {
       return { tag };
     }
   }
-  return { reason: 'component-not-a-tag', expression };
+  return { reason: 'component-not-a-tag', expression: csf.editor.source(node) };
 }
 
 /**
@@ -56,68 +57,71 @@ export function resolveStoryComponent(csf: CsfFile): WebComponentsComponentResol
   if (!csf._metaNode) {
     return { reason: 'no-meta-component' };
   }
-  const ctx: ReferenceContext = { program: csf._file.path, filePath: csf._options.fileName ?? '' };
+  const ctx: ReferenceContext = { editor: csf.editor, filePath: csf._options.fileName ?? '' };
   const members = resolveObjectMembers(csf._metaNode, ctx);
-  return componentIn(members, csf._metaNode, ctx, new Set()) ?? { reason: 'no-meta-component' };
+  return (
+    componentIn(csf, members, csf._metaNode, ctx, new Set()) ?? { reason: 'no-meta-component' }
+  );
 }
 
 /** The last write of `component`, or `undefined` when nothing knowably writes it. */
 function componentIn(
+  csf: CsfFile,
   members: ResolvedMembers,
-  object: t.ObjectExpression,
+  object: ESTree.ObjectExpression,
   ctx: ReferenceContext,
-  visited: Set<t.ObjectExpression>
+  visited: Set<ESTree.ObjectExpression>
 ): WebComponentsComponentResolution | undefined {
   const component = members.properties.component;
   if (component && !members.shadowed.includes('component')) {
-    return tagFromNode(component);
+    return tagFromNode(csf, component);
   }
 
   // The helper drops a spread it cannot read whole, yet a literal written after the unreadable part
   // still wins at runtime, so each unreadable spread is read again from the last one back.
   const unreadable = object.properties
-    .filter((property): property is t.SpreadElement => t.isSpreadElement(property))
-    .filter((spread) => members.unresolved.includes(sourceOf(spread)))
+    .filter((property): property is ESTree.SpreadElement => property.type === 'SpreadElement')
+    .filter((spread) => members.unresolved.includes(oneLineTextOf(spread)))
     .reverse();
   for (const spread of unreadable) {
-    const found = spreadComponent(spread, ctx, visited);
+    const found = spreadComponent(csf, spread, ctx, visited);
     if (found || component) {
-      return found ?? { reason: 'unresolvable-meta-spread', spread: sourceOf(spread) };
+      return found ?? { reason: 'unresolvable-meta-spread', spread: oneLineTextOf(spread) };
     }
   }
-  return component && tagFromNode(component);
+  return component && tagFromNode(csf, component);
 }
 
 function spreadComponent(
-  spread: t.SpreadElement,
+  csf: CsfFile,
+  spread: ESTree.SpreadElement,
   ctx: ReferenceContext,
-  visited: Set<t.ObjectExpression>
+  visited: Set<ESTree.ObjectExpression>
 ): WebComponentsComponentResolution | undefined {
-  const argument = unwrapExpression(spread.argument);
-  const local = localObject(argument, ctx);
+  const local = localObject(unwrapExpression(spread.argument), ctx);
   if (!local || visited.has(local.object)) {
-    return { reason: 'unresolvable-meta-spread', spread: sourceOf(spread) };
+    return { reason: 'unresolvable-meta-spread', spread: oneLineTextOf(spread) };
   }
-  return componentIn(local.members, local.object, ctx, new Set(visited).add(local.object));
+  return componentIn(csf, local.members, local.object, ctx, new Set(visited).add(local.object));
 }
 
 /** The object literal a spread argument writes out or names, with the members it resolves to. */
 function localObject(
-  argument: t.Node,
+  argument: ESTreeNode,
   ctx: ReferenceContext
-): { object: t.ObjectExpression; members: ResolvedMembers } | undefined {
-  if (t.isObjectExpression(argument)) {
+): { object: ESTree.ObjectExpression; members: ResolvedMembers } | undefined {
+  if (argument.type === 'ObjectExpression') {
     return { object: argument, members: resolveObjectMembers(argument, ctx) };
   }
-  if (!t.isIdentifier(argument)) {
+  if (argument.type !== 'Identifier') {
     return undefined;
   }
-  const declarator = ctx.program.scope.getBinding(argument.name)?.path.node;
+  const declarator = ctx.editor.scopes.program.bindings.get(argument.name)?.node;
   const init =
-    t.isVariableDeclarator(declarator) && declarator.init
+    declarator?.type === 'VariableDeclarator' && declarator.init
       ? unwrapExpression(declarator.init)
       : undefined;
   // The binding read keeps the constancy check and any `meta.component = …` assignment.
   const members = resolveBindingMembers(ctx, argument.name);
-  return t.isObjectExpression(init) && members ? { object: init, members } : undefined;
+  return init?.type === 'ObjectExpression' && members ? { object: init, members } : undefined;
 }

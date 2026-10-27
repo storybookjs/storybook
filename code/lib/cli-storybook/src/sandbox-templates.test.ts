@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  allTemplates,
   baseTemplates,
   docgenServerTemplates,
   enablesDocgenServer,
@@ -11,6 +12,7 @@ describe('docgenServerTemplates', () => {
   it('includes supported default-on templates that record component manifests', () => {
     expect(docgenServerTemplates()).toEqual([
       'vue3-vite/default-ts',
+      'svelte-vite/default-ts',
       'angular-vite/default-ts',
       'lit-vite/default-ts',
     ]);
@@ -66,7 +68,12 @@ describe('React prerelease sandboxes', () => {
 
     expect(vite.modifications).toMatchObject({
       extraDependencies: ['react@canary', 'react-dom@canary'],
-      extraDevDependencies: ['prop-types', '@types/react@latest', '@types/react-dom@latest'],
+      extraDevDependencies: [
+        'prop-types',
+        '@types/react@latest',
+        '@types/react-dom@latest',
+        'typescript@^6',
+      ],
       resolutions: {
         '@types/react': 'npm:@types/react@latest',
         '@types/react-dom': 'npm:@types/react-dom@latest',
@@ -87,5 +94,19 @@ describe('React prerelease sandboxes', () => {
       },
     });
     expect(webpack.minAgeGateExemptions).toEqual(['react', 'react-dom', 'scheduler']);
+  });
+});
+
+describe('React bench sandboxes', () => {
+  it('pin typescript to ^6 (their modifications replace the base template)', () => {
+    for (const key of [
+      'bench/react-vite-default-ts',
+      'bench/react-vite-default-ts-nodocs',
+      'bench/react-vite-default-ts-test-build',
+    ] as const) {
+      expect(allTemplates[key].modifications).toMatchObject({
+        extraDevDependencies: ['typescript@^6'],
+      });
+    }
   });
 });

@@ -5,14 +5,14 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
   selector: 'storybook-chips-group',
   template: `
     <storybook-chip
-  *ngFor="let chip of chips"
-  class="chip"
-  [displayText]="chip.text"
-  (removeClicked)="removeChipClick.emit(chip.id)"
-></storybook-chip>
-<div *ngIf="chips.length > 1" class="remove-all" (click)="removeAllChipsClick.emit()">
-  Remove All
-</div>
+      *ngFor="let chip of chips"
+      class="chip"
+      [displayText]="chip.text"
+      (removeClicked)="removeChipClick.emit(chip.id)"
+    ></storybook-chip>
+    <div *ngIf="chips.length > 1" class="remove-all" (click)="removeAllChipsClick.emit()">
+      Remove All
+    </div>
   `,
   styles: [
     `

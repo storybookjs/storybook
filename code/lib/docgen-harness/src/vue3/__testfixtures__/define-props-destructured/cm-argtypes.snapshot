@@ -1,0 +1,39 @@
+{
+  "label": {
+    "description": "Visible label.",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "size": {
+    "description": "The visual size of the control.",
+    "name": "size",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": ""medium"",
+      },
+      "type": {
+        "summary": ""medium" | "small" | "large"",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": false,
+      "value": [
+        "medium",
+        "small",
+        "large",
+      ],
+    },
+  },
+}

@@ -1,0 +1,13 @@
+import { Component } from '@angular/core';
+import { ShapeButtonComponent } from './shape-button.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [ShapeButtonComponent],
+  template: `<sb-shape-button [count]="5" (clicked)="clicked($event)" />`,
+})
+export class DemoComponent {
+  clicked(event: unknown) {}
+}
+
+warning: Incomplete snippet: `IMPORTED_TEMPLATE` could not be resolved statically.

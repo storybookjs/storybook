@@ -13,21 +13,14 @@ export type ComponentId = string;
 export type ComponentTitle = string;
 export type StoryName = string;
 
-/** @deprecated */
-export type StoryKind = ComponentTitle;
-
 export type Tag = string;
 
 export interface StoryIdentifier {
   componentId: ComponentId;
   title: ComponentTitle;
-  /** @deprecated */
-  kind: ComponentTitle;
 
   id: StoryId;
   name: StoryName;
-  /** @deprecated */
-  story: StoryName;
 
   tags: Tag[];
 }
@@ -141,10 +134,10 @@ export interface InputType {
   /** @see https://storybook.js.org/docs/api/arg-types#type */
   type?: SBType | SBScalarType['name'];
   /**
-   * @deprecated Use `table.defaultValue.summary` instead.
-   * @see https://storybook.js.org/docs/api/arg-types#defaultvalue
+   * Removed. Set the story value with `args`, or the docs-table text with `table.defaultValue`.
+   * The index signature would otherwise still accept this field.
    */
-  defaultValue?: any;
+  defaultValue?: never;
   [key: string]: any;
 }
 
@@ -173,7 +166,8 @@ export interface GlobalTypes {
 }
 
 /**
- * AddonTypes allows addons to extend the type system with additional args, parameters, and globals.
+ * AddonTypes allows addons to extend the type system with additional tags, args, parameters, and
+ * globals.
  *
  * Addons can use `definePreviewAddon<AddonTypes>()` to declare additional types that will be merged
  * into the story context. For example, an addon that provides a `theme` arg could declare:
@@ -186,9 +180,16 @@ export interface GlobalTypes {
  *
  * When users include this addon in their preview config, the `theme` arg becomes available and
  * type-checked across all stories.
+ *
+ * Addons can also narrow `tags` to enable autocompletion. Include `(string & {})` to keep accepting
+ * any other tag:
+ *
+ * ```ts
+ * const tagsAddon = definePreviewAddon<{ tags: Array<'a' | 'b' | (string & {})> }>({});
+ * ```
  */
 export interface AddonTypes {
-  tags?: Tag[] | undefined;
+  tags?: unknown;
   args?: unknown;
   parameters?: Record<string, any>;
   globals?: Record<string, any>;
@@ -216,9 +217,6 @@ export interface Renderer extends AddonTypes {
 
   csf4: boolean;
 }
-
-/** @deprecated - Use `Renderer` */
-export type AnyFramework = Renderer;
 
 export interface StoryContextForEnhancers<
   TRenderer extends Renderer = Renderer,
@@ -251,7 +249,7 @@ export interface StoryContextUpdate<TArgs = Args> {
 export type ViewMode = 'story' | 'docs';
 
 export type LoaderFunction<TRenderer extends Renderer = Renderer, TArgs = Args> = (
-  context: StoryContextForLoaders<TRenderer, TArgs>
+  context: StoryContext<TRenderer, TArgs>
 ) => Promise<Record<string, any> | void> | Record<string, any> | void;
 
 type Awaitable<T> = T | PromiseLike<T>;
@@ -270,12 +268,20 @@ export type AfterEach<TRenderer extends Renderer = Renderer, TArgs = Args> = (
 export interface Canvas extends BoundFunctions<typeof queries> {}
 
 export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Args>
-  extends StoryContextForEnhancers<TRenderer, TArgs>, Required<StoryContextUpdate<TArgs>> {
+  extends
+    Omit<StoryContextForEnhancers<TRenderer, TArgs>, 'argTypes'>,
+    Required<StoryContextUpdate<TArgs>> {
   loaded: Record<string, any>;
   abortSignal: AbortSignal;
   canvasElement: TRenderer['canvasElement'];
   hooks: unknown;
-  originalStoryFn: ArgsStoryFn<TRenderer>;
+  // Declared as a method rather than `originalStoryFn: ArgsStoryFn<TRenderer>`: as a property, the
+  // context parameter would make StoryContext invariant in TRenderer, so a generic
+  // PlayFunction<Renderer> could no longer be assigned to a framework-specific story.
+  originalStoryFn(
+    args: Args,
+    context: StoryContextForRender<TRenderer>
+  ): (TRenderer & { T: Args })['storyResult'];
   viewMode: ViewMode;
   step: StepFunction<TRenderer, TArgs>;
   context: this;
@@ -285,17 +291,18 @@ export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Arg
   reporting: ReportingAPI;
 }
 
-/** @deprecated Use {@link StoryContext} instead. */
-export interface StoryContextForLoaders<
+/**
+ * The story context as decorators and render functions receive it.
+ *
+ * Unlike the context passed to loaders, `beforeEach`, `play` and `afterEach`, it carries the
+ * story's `argTypes`, because renderers read them while rendering.
+ */
+export interface StoryContextForRender<
   TRenderer extends Renderer = Renderer,
   TArgs = Args,
-> extends StoryContext<TRenderer, TArgs> {}
-
-/** @deprecated Use {@link StoryContext} instead. */
-export interface PlayFunctionContext<
-  TRenderer extends Renderer = Renderer,
-  TArgs = Args,
-> extends StoryContext<TRenderer, TArgs> {}
+> extends StoryContext<TRenderer, TArgs> {
+  argTypes: StrictArgTypes<TArgs>;
+}
 
 export type StepLabel = string;
 
@@ -305,7 +312,7 @@ export type StepFunction<TRenderer extends Renderer = Renderer, TArgs = Args> = 
 ) => Promise<void> | void;
 
 export type PlayFunction<TRenderer extends Renderer = Renderer, TArgs = Args> = (
-  context: PlayFunctionContext<TRenderer, TArgs>
+  context: StoryContext<TRenderer, TArgs>
 ) => Promise<void> | void;
 
 export type TestFunction<TRenderer extends Renderer = Renderer, TArgs = TRenderer['args']> = (
@@ -319,13 +326,13 @@ export type PartialStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> 
 
 // This is a passArgsFirst: false user story function
 export type LegacyStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> = (
-  context: StoryContext<TRenderer, TArgs>
+  context: StoryContextForRender<TRenderer, TArgs>
 ) => TRenderer['storyResult'];
 
 // This is a passArgsFirst: true user story function
 export type ArgsStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> = (
   args: TArgs,
-  context: StoryContext<TRenderer, TArgs>
+  context: StoryContextForRender<TRenderer, TArgs>
 ) => (TRenderer & { T: TArgs })['storyResult'];
 
 // This is either type of user story function
@@ -335,7 +342,7 @@ export type StoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> =
 
 export type DecoratorFunction<TRenderer extends Renderer = Renderer, TArgs = Args> = (
   fn: PartialStoryFn<TRenderer, TArgs>,
-  c: StoryContext<TRenderer, TArgs>
+  c: StoryContextForRender<TRenderer, TArgs>
 ) => TRenderer['storyResult'];
 
 export type DecoratorApplicator<TRenderer extends Renderer = Renderer, TArgs = Args> = (
@@ -377,8 +384,8 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
   args?: Partial<TArgs>;
 
   /**
-   * ArgTypes encode basic metadata for args, such as `name`, `description`, `defaultValue` for an
-   * arg. These get automatically filled in by Storybook Docs.
+   * ArgTypes encode basic metadata for args, such as `name` and `description`. These get
+   * automatically filled in by Storybook Docs.
    *
    * @see [ArgTypes](https://storybook.js.org/docs/api/arg-types)
    */
@@ -566,9 +573,6 @@ export type StoryAnnotations<
     Globals &
       (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown)
   >;
-
-  /** @deprecated */
-  story?: Omit<StoryAnnotations<TRenderer, TArgs>, 'story'>;
 } & ({} extends TRequiredArgs ? { args?: TRequiredArgs } : { args: TRequiredArgs });
 
 export type LegacyAnnotatedStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> = StoryFn<

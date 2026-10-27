@@ -1,0 +1,52 @@
+{
+  "argTypes": {
+    "chips": {
+      "name": "chips",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "{ id: number; text: string; }[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "removeAllChipsClick": {
+      "action": "removeAllChipsClick",
+      "name": "removeAllChipsClick",
+      "table": {
+        "category": "outputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "EventEmitter"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "removeChipClick": {
+      "action": "removeChipClick",
+      "name": "removeChipClick",
+      "table": {
+        "category": "outputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "EventEmitter"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-basics-ng-module-import-module-for-root",
+  "jsDocTags": {},
+  "name": "ChipsGroupComponent",
+  "path": "./src/stories/frameworks/angular-vite/basics/ng-module/import-module-for-root.stories.ts"
+}

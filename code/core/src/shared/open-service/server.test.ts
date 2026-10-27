@@ -97,7 +97,7 @@ describe('server static builds', () => {
         description: 'Copies state from another registered service during static load.',
         initialState: { value: null as string | null },
         queries: {
-          getValue: {
+          value: {
             description: 'Returns the value copied during static load.',
             input: v.object({ build: v.literal('once') }),
             output: v.nullable(v.string()),
@@ -118,7 +118,7 @@ describe('server static builds', () => {
               const source = ctx.getService<MutableRecordLookupService>(
                 'internal-fixture/mutable-record-lookup'
               );
-              const record = source.queries.getRecordFields({
+              const record = source.queries.recordFields.get({
                 entryId: 'entry-a',
               });
 
@@ -148,7 +148,7 @@ describe('server static builds', () => {
         description: 'Publishes static input ids once its own load task starts running.',
         initialState: { built: false },
         queries: {
-          getReadyEntryIds: {
+          readyEntryIds: {
             description: 'Returns the entry ids published by the source static build task.',
             input: v.undefined(),
             output: v.array(v.string()),
@@ -184,7 +184,7 @@ describe('server static builds', () => {
           'Waits for another service query to publish its static inputs before running load.',
         initialState: { value: null as string | null },
         queries: {
-          getValue: {
+          value: {
             description: 'Stores one value for each id discovered through another service query.',
             input: v.object({ entryId: v.string() }),
             output: v.nullable(v.string()),
@@ -214,14 +214,12 @@ describe('server static builds', () => {
       registerService(parallelSourceServiceDef);
       registerService(parallelLookupServiceDef, {
         queries: {
-          getValue: {
+          value: {
             staticInputs: async (ctx) => {
               const source = ctx.getService('internal-fixture/parallel-static-input-source');
 
               for (let attempt = 0; attempt < 5; attempt += 1) {
-                const entryIds = (await source.queries.getReadyEntryIds.loaded(
-                  undefined
-                )) as string[];
+                const entryIds = (await source.queries.readyEntryIds.loaded(undefined)) as string[];
 
                 if (entryIds.length > 0) {
                   return entryIds.map((entryId) => ({ entryId }));
@@ -254,7 +252,7 @@ describe('server static builds', () => {
         description: 'Exercises logical static path normalization.',
         initialState: { value: null as string | null },
         queries: {
-          getValue: {
+          value: {
             description: 'Stores one custom value per static input.',
             input: v.object({
               path: v.string(),
@@ -307,7 +305,7 @@ describe('server static builds', () => {
         description: 'Uses the same relative staticPath as another service.',
         initialState: { value: 'a' },
         queries: {
-          getValue: {
+          value: {
             description: 'Returns one scoped value.',
             input: v.undefined(),
             output: v.string(),
@@ -325,7 +323,7 @@ describe('server static builds', () => {
         description: 'Uses the same relative staticPath as another service.',
         initialState: { value: 'b' },
         queries: {
-          getValue: {
+          value: {
             description: 'Returns one scoped value.',
             input: v.undefined(),
             output: v.string(),
@@ -353,7 +351,7 @@ describe('server static builds', () => {
         description: 'Attempts to escape the static snapshot root.',
         initialState: { value: null as string | null },
         queries: {
-          getValue: {
+          value: {
             description: 'Uses an invalid static path.',
             input: v.object({ build: v.literal('once') }),
             output: v.nullable(v.string()),
@@ -387,7 +385,7 @@ describe('server static builds', () => {
         fromStorybook: true,
         code: 10,
         message:
-          'Invalid static path "../escape.json" for query "internal-fixture/invalid-static-path.getValue": use a relative path with forward slashes and no ".." segments.',
+          'Invalid static path "../escape.json" for query "internal-fixture/invalid-static-path.value": use a relative path with forward slashes and no ".." segments.',
       });
     });
   });
@@ -400,7 +398,7 @@ describe('server static builds', () => {
         description: 'Writes custom static paths to disk.',
         initialState: { value: null as string | null },
         queries: {
-          getValue: {
+          value: {
             description: 'Stores one custom value per static input.',
             input: v.object({
               path: v.string(),

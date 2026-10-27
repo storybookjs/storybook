@@ -43,6 +43,23 @@ describe('BUN Proxy', () => {
     expect(bunProxy.type).toEqual('bun');
   });
 
+  describe('getRegistryURL', () => {
+    it('uses npm 12-compatible workspace flags', async () => {
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValueOnce({
+        stdout: 'https://registry.npmjs.org/',
+      } as Awaited<ReturnType<typeof executeCommand>>);
+
+      await expect(bunProxy.getRegistryURL()).resolves.toBe('https://registry.npmjs.org/');
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'npm',
+          args: ['config', 'get', 'registry', '--workspaces=false', '--include-workspace-root'],
+        })
+      );
+    });
+  });
+
   describe('installDependencies', () => {
     it('should run `bun install`', async () => {
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
@@ -161,7 +178,7 @@ describe('BUN Proxy', () => {
         [
           '[install]',
           'minimumReleaseAge = 3600',
-          'minimumReleaseAgeExcludes = ["storybook", "@storybook/*", "eslint-plugin-storybook", "@chromatic-com/storybook"]',
+          'minimumReleaseAgeExcludes = ["storybook", "@storybook/*", "eslint-plugin-storybook", "@chromatic-com/storybook", "chromatic"]',
           '',
         ].join('\n')
       );
@@ -208,6 +225,7 @@ describe('BUN Proxy', () => {
             '  "@storybook/*",',
             '  "eslint-plugin-storybook",',
             '  "@chromatic-com/storybook",',
+            '  "chromatic",',
             ']',
             '[test]',
             'coverageThreshold = 0.9',

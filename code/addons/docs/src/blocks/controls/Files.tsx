@@ -3,7 +3,7 @@ import type { ChangeEvent, FC } from 'react';
 
 import { Form } from 'storybook/internal/components';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { getControlId } from './helpers';
 import type { ControlProps } from './types';
@@ -45,6 +45,7 @@ export const FilesControl: FC<FilesControlProps> = ({
   accept = 'image/*',
   value,
   argType,
+  required,
 }) => {
   const inputElement = useRef<HTMLInputElement>(null);
   const readonly = argType?.control?.readOnly;
@@ -81,6 +82,7 @@ export const FilesControl: FC<FilesControlProps> = ({
         disabled={readonly}
         onChange={handleFileChange}
         accept={accept}
+        aria-required={required || undefined}
         size="flex"
       />
     </>

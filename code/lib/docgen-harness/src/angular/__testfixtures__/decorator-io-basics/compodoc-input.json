@@ -1,0 +1,130 @@
+{
+  "pipes": [],
+  "interfaces": [],
+  "injectables": [],
+  "guards": [],
+  "interceptors": [],
+  "classes": [],
+  "directives": [],
+  "components": [
+    {
+      "name": "DecoratorIoBasicsComponent",
+      "id": "component-DecoratorIoBasicsComponent-20990023b658accf7db8729b8b3071ca57a6e0c259b912282d6be4f7e7c36c5bbf212a4dd640b7ba597cfae9e888d2c8b27c341fc25debeab3e124589d7c98b1",
+      "file": "decorator-io-basics.component.ts",
+      "encapsulation": [],
+      "entryComponents": [],
+      "inputs": [],
+      "outputs": [],
+      "providers": [],
+      "selector": "sb-decorator-io-basics",
+      "styleUrls": [],
+      "styles": [],
+      "template": "<span (click)=\"clicked.emit(label)\">{{ label }} {{ count }}</span>",
+      "templateUrl": [],
+      "templateVariables": [],
+      "viewProviders": [],
+      "hostDirectives": [],
+      "inputsClass": [
+        {
+          "coverageIgnore": false,
+          "name": "count",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 11,
+          "type": "number",
+          "decorators": []
+        },
+        {
+          "coverageIgnore": false,
+          "name": "data",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 15,
+          "type": "any",
+          "decorators": []
+        },
+        {
+          "coverageIgnore": false,
+          "name": "formatter",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 17,
+          "type": "function",
+          "decorators": []
+        },
+        {
+          "coverageIgnore": false,
+          "name": "label",
+          "defaultValue": "'Badge'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\nThe text shown on the badge.",
+          "description": "<p>The text shown on the badge.</p>\n",
+          "line": 9,
+          "type": "string",
+          "decorators": []
+        }
+      ],
+      "outputsClass": [
+        {
+          "name": "clicked",
+          "coverageIgnore": false,
+          "defaultValue": "new EventEmitter<string>()",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "line": 19,
+          "type": "EventEmitter"
+        }
+      ],
+      "propertiesClass": [],
+      "methodsClass": [],
+      "coverageIgnore": false,
+      "deprecated": false,
+      "deprecationMessage": "",
+      "hostBindings": [],
+      "hostListeners": [],
+      "standalone": false,
+      "imports": [],
+      "description": "",
+      "rawdescription": "\n",
+      "type": "component",
+      "sourceCode": "import { Component, EventEmitter, Input, Output } from '@angular/core';\n\n@Component({\n  selector: 'sb-decorator-io-basics',\n  template: '<span (click)=\"clicked.emit(label)\">{{ label }} {{ count }}</span>',\n})\nexport class DecoratorIoBasicsComponent {\n  /** The text shown on the badge. */\n  @Input() label = 'Badge';\n\n  @Input() count?: number;\n\n  // `any` stands in for an untyped input: a truly annotation-free member cannot\n  // exist under the harness's strict/noImplicitAny check.\n  @Input() data: any;\n\n  @Input() formatter!: (value: number) => string;\n\n  @Output() clicked = new EventEmitter<string>();\n}\n",
+      "assetsDirs": [],
+      "styleUrlsData": "",
+      "stylesData": "",
+      "extends": [],
+      "relationships": {
+        "incoming": [],
+        "outgoing": []
+      }
+    }
+  ],
+  "modules": [],
+  "miscellaneous": [],
+  "routes": {
+    "name": "<root>",
+    "kind": "module",
+    "children": []
+  },
+  "coverage": {
+    "count": 16,
+    "status": "low",
+    "files": [
+      {
+        "filePath": "decorator-io-basics.component.ts",
+        "type": "component",
+        "linktype": "component",
+        "name": "DecoratorIoBasicsComponent",
+        "coveragePercent": 16,
+        "coverageCount": "1/6",
+        "status": "low"
+      }
+    ]
+  }
+}

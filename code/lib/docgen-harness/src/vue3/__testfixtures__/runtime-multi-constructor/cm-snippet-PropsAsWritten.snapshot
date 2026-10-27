@@ -1,0 +1,3 @@
+<template>
+  <RuntimeMultiConstructor :width="200" />
+</template>

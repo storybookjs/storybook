@@ -14,7 +14,7 @@ import {
 } from '@storybook/icons';
 
 import type { API } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import type { NormalLink } from '../../components/components/tooltip/TooltipLinkList.tsx';
 import { Shortcut } from '../components/Shortcut.tsx';
@@ -131,8 +131,8 @@ export const useMenu = ({
   const up = useMemo(
     () => ({
       id: 'up',
-      title: 'Previous component',
-      onClick: () => api.jumpToComponent(-1),
+      title: 'Previous component or page',
+      onClick: () => api.jumpToSubtree(-1),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.prevComponent} /> : null,
       icon: <></>,
     }),
@@ -142,8 +142,8 @@ export const useMenu = ({
   const down = useMemo(
     () => ({
       id: 'down',
-      title: 'Next component',
-      onClick: () => api.jumpToComponent(1),
+      title: 'Next component or page',
+      onClick: () => api.jumpToSubtree(1),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.nextComponent} /> : null,
       icon: <></>,
     }),
@@ -209,7 +209,7 @@ export const useMenu = ({
         id: actionName,
         title: label,
         onClick: () => action(),
-        right: enableShortcuts ? <Shortcut keys={keys[actionName]} /> : null,
+        right: enableShortcuts && keys[actionName] ? <Shortcut keys={keys[actionName]} /> : null,
       }));
   }, [api, enableShortcuts, shortcutKeys]);
 
@@ -218,7 +218,10 @@ export const useMenu = ({
       [
         [
           about,
-          ...(global.CONFIG_TYPE === 'DEVELOPMENT' ? [guide] : []),
+          ...(global.CONFIG_TYPE === 'DEVELOPMENT' &&
+          global.FEATURES?.menuOnboardingChecklist !== false
+            ? [guide]
+            : []),
           ...(enableShortcuts ? [shortcuts] : []),
         ],
         [sidebarToggle, toolbarToogle, addonsToggle, up, down, prev, next, collapse],

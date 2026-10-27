@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
@@ -10,6 +10,9 @@ import {
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
+import { globSync } from 'glob';
+import { normalize } from 'pathe';
 import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
@@ -126,12 +129,21 @@ export class NPMProxy extends JsPackageManager {
     return `npx ${args.join(' ')}`;
   }
 
-  public runPackageCommand(
-    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
-  ): ResultPromise {
+  public getRemoteRunCommand(args: string[]): string {
+    return `npx ${args.join(' ')}`;
+  }
+
+  public runPackageCommand({
+    useRemotePkg = false,
+    ...options
+  }: Omit<ExecuteCommandOptions, 'command'> & {
+    args: string[];
+    useRemotePkg?: boolean;
+  }): ResultPromise {
     return executeCommand({
       command: 'npx',
       ...options,
+      ...(useRemotePkg && { env: { npm_config_yes: 'true', ...options.env } }),
     });
   }
 
@@ -184,7 +196,10 @@ export class NPMProxy extends JsPackageManager {
     }
   }
 
-  protected getResolutions(packageJson: PackageJson, versions: Record<string, string>) {
+  protected getResolutions(
+    packageJson: PackageJson,
+    versions: Record<string, string>
+  ): Record<string, any> {
     return {
       overrides: {
         ...packageJson.overrides,
@@ -193,16 +208,45 @@ export class NPMProxy extends JsPackageManager {
     };
   }
 
-  protected runInstall(options?: { force?: boolean }) {
+  protected runInstall(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
+    const packageJsonPath = this.packageJsonPaths[0];
+    const workspacePackageJsonPath = this.packageJsonPaths.find((ancestorPath) => {
+      const workspaces = JsPackageManager.getPackageJson(ancestorPath).workspaces;
+      const patterns = Array.isArray(workspaces) ? workspaces : workspaces?.packages;
+      return (
+        packageJsonPath &&
+        patterns?.length &&
+        globSync(
+          patterns
+            .filter((pattern: string) => !pattern.startsWith('!'))
+            .map((pattern: string) => `${pattern}/package.json`),
+          {
+            cwd: dirname(ancestorPath),
+            absolute: true,
+            ignore: patterns
+              .filter((pattern: string) => pattern.startsWith('!'))
+              .map((pattern: string) => `${pattern.slice(1)}/package.json`),
+          }
+        )
+          .map(normalize)
+          .includes(normalize(packageJsonPath))
+      );
+    });
+
     return executeCommand({
       command: 'npm',
-      args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
-      cwd: this.cwd,
+      args: [
+        'install',
+        ...this.getInstallArgs(),
+        ...(options?.force ? ['--force'] : []),
+        ...(options?.legacyPeerDeps ? ['--legacy-peer-deps'] : []),
+      ],
+      cwd: workspacePackageJsonPath ? dirname(workspacePackageJsonPath) : this.cwd,
       stdio: prompt.getPreferredStdio(),
     });
   }
 
-  async installDependencies(options?: { force?: boolean }) {
+  async installDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     try {
       await super.installDependencies(options);
     } catch (error) {
@@ -347,28 +391,28 @@ export class NPMProxy extends JsPackageManager {
 
     const recurse = ([name, packageInfo]: [string, NpmDependency]): void => {
       // transform pattern into regex where `*` is replaced with `.*`
-      if (!name || !pattern.some((p) => new RegExp(`^${p.replace(/\*/g, '.*')}$`).test(name))) {
-        return;
-      }
+      if (name && pattern.some((p) => new RegExp(`^${p.replace(/\*/g, '.*')}$`).test(name))) {
+        const value = {
+          version: packageInfo.version,
+          location: '',
+        };
 
-      const value = {
-        version: packageInfo.version,
-        location: '',
-      };
+        if (!existingVersions[name]?.includes(value.version)) {
+          if (acc[name]) {
+            acc[name].push(value);
+          } else {
+            acc[name] = [value];
+          }
+          existingVersions[name] = sort([...(existingVersions[name] || []), value.version]);
 
-      if (!existingVersions[name]?.includes(value.version)) {
-        if (acc[name]) {
-          acc[name].push(value);
-        } else {
-          acc[name] = [value];
-        }
-        existingVersions[name] = sort([...(existingVersions[name] || []), value.version]);
-
-        if (existingVersions[name].length > 1) {
-          duplicatedDependencies[name] = existingVersions[name];
+          if (existingVersions[name].length > 1) {
+            duplicatedDependencies[name] = existingVersions[name];
+          }
         }
       }
 
+      // keep walking non-matching nodes: intermediary entries such as workspace
+      // members hide matching dependencies beneath them
       if (packageInfo.dependencies) {
         Object.entries(packageInfo.dependencies).forEach(recurse);
       }

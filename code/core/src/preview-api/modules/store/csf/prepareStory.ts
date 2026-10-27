@@ -14,7 +14,7 @@ import type {
   Renderer,
   StoryContext,
   StoryContextForEnhancers,
-  StoryContextForLoaders,
+  StoryContextForRender,
   StrictArgTypes,
 } from 'storybook/internal/types';
 
@@ -101,7 +101,7 @@ export function prepareStory<TRenderer extends Renderer>(
     }
   };
 
-  const undecoratedStoryFn = (context: StoryContext<TRenderer>) =>
+  const undecoratedStoryFn = (context: StoryContextForRender<TRenderer>) =>
     context.originalStoryFn(context.args, context);
 
   // Currently it is only possible to set these globally
@@ -122,7 +122,7 @@ export function prepareStory<TRenderer extends Renderer>(
     projectAnnotations.render;
 
   const decoratedStoryFn = applyHooks<TRenderer>(applyDecorators)(undecoratedStoryFn, decorators);
-  const unboundStoryFn = (context: StoryContext<TRenderer>) => decoratedStoryFn(context);
+  const unboundStoryFn = (context: StoryContextForRender<TRenderer>) => decoratedStoryFn(context);
 
   const playFunction = storyAnnotations?.play ?? componentAnnotations?.play;
 
@@ -153,7 +153,6 @@ export function prepareStory<TRenderer extends Renderer>(
     moduleExport,
     id,
     name,
-    story: name,
     originalStoryFn: render!,
     undecoratedStoryFn,
     unboundStoryFn,
@@ -251,11 +250,9 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
   } = {
     componentId: componentAnnotations.id,
     title: componentAnnotations.title,
-    kind: componentAnnotations.title, // Back compat
     id: storyAnnotations?.id || componentAnnotations.id,
     // if there's no story name, we create a fake one since enhancers expect a name
     name: storyAnnotations?.name || '__meta',
-    story: storyAnnotations?.name || '__meta', // Back compat
     component: componentAnnotations.component,
     subcomponents: componentAnnotations.subcomponents,
     tags,
@@ -265,11 +262,20 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     storyGlobals,
   };
 
-  contextForEnhancers.argTypes = argTypesEnhancers.reduce(
-    (accumulatedArgTypes, enhancer) =>
-      enhancer({ ...contextForEnhancers, argTypes: accumulatedArgTypes }),
-    contextForEnhancers.argTypes
-  );
+  contextForEnhancers.argTypes = argTypesEnhancers
+    .filter((enhancer) => {
+      // Server docgen merges component prop metadata at UI read time (`mergeServiceArgTypes`).
+      // Second-pass enhancers run there instead so `customArgTypes` stays annotation-only.
+      if (global.FEATURES?.docgenServer && enhancer.secondPass) {
+        return false;
+      }
+      return true;
+    })
+    .reduce(
+      (accumulatedArgTypes, enhancer) =>
+        enhancer({ ...contextForEnhancers, argTypes: accumulatedArgTypes }),
+      contextForEnhancers.argTypes
+    );
 
   const initialArgsBeforeEnhancers = { ...passedArgs };
 
@@ -284,7 +290,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     initialArgsBeforeEnhancers
   );
 
-  const { name, story, ...withoutStoryIdentifiers } = contextForEnhancers;
+  const { name, ...withoutStoryIdentifiers } = contextForEnhancers;
 
   return withoutStoryIdentifiers;
 }
@@ -294,14 +300,14 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
 // eg. reactive proxies set by frameworks like SolidJS or Vue
 export function prepareContext<
   TRenderer extends Renderer,
-  TContext extends Pick<StoryContextForLoaders<TRenderer>, 'args' | 'argTypes' | 'globals'>,
+  TContext extends Pick<StoryContextForRender<TRenderer>, 'args' | 'argTypes' | 'globals'>,
 >(
   context: TContext
-): TContext & Pick<StoryContextForLoaders<TRenderer>, 'allArgs' | 'argsByTarget' | 'unmappedArgs'> {
+): TContext & Pick<StoryContextForRender<TRenderer>, 'allArgs' | 'argsByTarget' | 'unmappedArgs'> {
   const { args: unmappedArgs } = context;
 
   let targetedContext: TContext &
-    Pick<StoryContextForLoaders<TRenderer>, 'allArgs' | 'argsByTarget'> = {
+    Pick<StoryContextForRender<TRenderer>, 'allArgs' | 'argsByTarget'> = {
     ...context,
     allArgs: undefined,
     argsByTarget: undefined,

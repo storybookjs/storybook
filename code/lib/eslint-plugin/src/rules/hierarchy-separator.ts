@@ -2,7 +2,7 @@
  * @file Deprecated hierarchy separator
  * @author Yann Braga
  */
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/types';
 
 import { getMetaObjectExpression } from '../utils/index.ts';
 import { isLiteral, isSpreadElement } from '../utils/ast.ts';

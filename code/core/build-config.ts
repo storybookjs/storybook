@@ -4,20 +4,29 @@ import { x as exec } from 'tinyexec';
 
 import type { BuildEntries } from '../../scripts/build/utils/entry-utils.ts';
 
+import { retargetEmotionTypeQueries } from './scripts/retarget-emotion-type-queries.ts';
+
 const config: BuildEntries = {
+  transformEmittedDeclarations({ emitDir, packageName }) {
+    retargetEmotionTypeQueries(emitDir, `${packageName}/theming/emotion`);
+  },
   prebuild: async (cwd) => {
-    await exec('jiti', [path.join(import.meta.dirname, 'scripts', 'generate-source-files.ts')], {
-      nodeOptions: {
-        cwd,
-        env: {
-          ...process.env,
-          NODE_ENV: 'production',
-          FORCE_COLOR: '1',
+    await exec(
+      process.execPath,
+      [path.join(import.meta.dirname, 'scripts', 'generate-source-files.ts')],
+      {
+        nodeOptions: {
+          cwd,
+          env: {
+            ...process.env,
+            NODE_ENV: 'production',
+            FORCE_COLOR: '1',
+          },
+          stdio: 'inherit',
         },
-        stdio: 'inherit',
-      },
-      throwOnError: true,
-    });
+        throwOnError: true,
+      }
+    );
   },
   entries: {
     node: [
@@ -46,6 +55,14 @@ const config: BuildEntries = {
         dts: false,
       },
       {
+        // Long-lived worker that runs docgen extraction off the main thread. Exposed as an internal
+        // export so docgen-worker-client.ts resolves it via the package map (import.meta.resolve)
+        // rather than a hard-coded dist path, keeping strict package managers (pnpm) happy.
+        exportEntries: ['./internal/docgen-worker'],
+        entryPoint: './src/shared/open-service/services/docgen/worker/docgen-worker.ts',
+        dts: false,
+      },
+      {
         entryPoint: './src/core-server/presets/common-override-preset.ts',
         exportEntries: ['./internal/core-server/presets/common-override-preset'],
         dts: false,
@@ -57,10 +74,6 @@ const config: BuildEntries = {
       {
         exportEntries: ['./internal/csf-tools'],
         entryPoint: './src/csf-tools/index.ts',
-      },
-      {
-        exportEntries: ['./internal/babel'],
-        entryPoint: './src/babel/index.ts',
       },
       {
         exportEntries: ['./internal/bin/dispatcher'],
@@ -81,12 +94,24 @@ const config: BuildEntries = {
         entryPoint: './src/common/index.ts',
       },
       {
+        exportEntries: ['./internal/component-meta'],
+        entryPoint: './src/component-meta/index.ts',
+      },
+      {
         entryPoint: './src/cli/index.ts',
         exportEntries: ['./internal/cli'],
       },
       {
         exportEntries: ['./internal/mocking-utils'],
         entryPoint: './src/mocking-utils/index.ts',
+      },
+      {
+        exportEntries: ['./internal/tools'],
+        entryPoint: './src/cli/tools/sdk/index.ts',
+      },
+      {
+        exportEntries: ['./internal/tools/child-host'],
+        entryPoint: './src/cli/tools/sdk/child-host.ts',
       },
     ],
     browser: [
@@ -135,6 +160,10 @@ const config: BuildEntries = {
         entryPoint: './src/csf/index.ts',
       },
       {
+        exportEntries: ['./internal/csf/csf-utils'],
+        entryPoint: './src/csf/csf-utils.ts',
+      },
+      {
         exportEntries: ['./internal/manager-errors'],
         entryPoint: './src/manager-errors.ts',
       },
@@ -155,12 +184,12 @@ const config: BuildEntries = {
         dts: false,
       },
       {
-        exportEntries: ['./theming'],
-        entryPoint: './src/theming/index.ts',
+        exportEntries: ['./theming', './theming/create'],
+        entryPoint: './src/theming/create.ts',
       },
       {
-        exportEntries: ['./theming/create'],
-        entryPoint: './src/theming/create.ts',
+        exportEntries: ['./theming/emotion'],
+        entryPoint: './src/theming/emotion.ts',
       },
       {
         exportEntries: ['./internal/components'],
@@ -194,17 +223,34 @@ const config: BuildEntries = {
         exportEntries: ['./open-service'],
         entryPoint: './src/shared/open-service/index.ts',
       },
+      {
+        // Dependency-light docs toolset surface bundled into `@storybook/mcp`'s dist (core is a
+        // dev dependency there), replacing that package's own manifest-formatter copies. Portable:
+        // its d.ts is one flat self-contained file so that consumer can inline it through standard
+        // resolution; guarded by `portable-dist.test.ts` next to the entry source.
+        exportEntries: ['./internal/toolsets-docs'],
+        entryPoint: './src/shared/open-service/toolsets/docs/public.ts',
+        portable: { external: ['valibot'] },
+      },
+      {
+        // Pure skill-content builders shared by the skills CLI and addon-mcp so both consumers render
+        // the same instruction documents. Not portable: consumers resolve core normally.
+        exportEntries: ['./internal/skills'],
+        entryPoint: './src/cli/skills/content/index.ts',
+      },
     ],
     runtime: [
       {
         exportEntries: ['./internal/preview/runtime'],
         entryPoint: './src/preview/runtime.ts',
         dts: false,
+        chunkedRuntime: true,
       },
       {
         exportEntries: ['./internal/manager/globals-runtime'],
         entryPoint: './src/manager/globals-runtime.ts',
         dts: false,
+        chunkedRuntime: true,
       },
       /**
        * It is required to be a runtime entry point, because it is used to inject the mocker runtime

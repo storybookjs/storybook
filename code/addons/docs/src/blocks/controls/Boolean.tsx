@@ -4,8 +4,12 @@ import React, { useCallback } from 'react';
 import { Button } from 'storybook/internal/components';
 
 import { opacify, transparentize } from 'polished';
-import type { CSSObject, StorybookTheme } from 'storybook/theming';
-import { srOnlyStyles, styled } from 'storybook/theming';
+import {
+  type CSSObject,
+  type StorybookTheme,
+  srOnlyStyles,
+  styled,
+} from 'storybook/theming/emotion';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import type { BooleanConfig, BooleanValue, ControlProps } from './types';
@@ -129,6 +133,7 @@ export const BooleanControl: FC<BooleanProps> = ({
   onBlur,
   onFocus,
   argType,
+  required,
 }) => {
   const onSetFalse = useCallback(() => onChange(false), [onChange]);
   const readonly = !!argType?.table?.readonly;
@@ -152,6 +157,7 @@ export const BooleanControl: FC<BooleanProps> = ({
 
   return (
     <Label aria-disabled={readonly} htmlFor={controlId} aria-label={name}>
+      {/* oxlint-disable jsx-a11y/role-has-required-aria-props -- the native `checked` attribute provides the switch state */}
       <input
         id={controlId}
         type="checkbox"
@@ -159,8 +165,10 @@ export const BooleanControl: FC<BooleanProps> = ({
         checked={parsedValue}
         role="switch"
         disabled={readonly}
+        aria-required={required || undefined}
         {...{ name, onBlur, onFocus }}
       />
+      {/* oxlint-enable jsx-a11y/role-has-required-aria-props */}
       <span aria-hidden="true">False</span>
       <span aria-hidden="true">True</span>
     </Label>

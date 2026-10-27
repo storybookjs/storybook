@@ -285,9 +285,12 @@ describe('IncrementalPatcher', () => {
     // story must NOT be re-walked — graph and index are still accurate
     const storyCalls = parseSpy.mock.calls.filter((c) => c[0].filePath === story);
     expect(storyCalls.length).toBe(0);
-    // reverse-index entries are preserved unchanged
-    expect(reverseIndex.lookup(dep).get(story)).toBe(1);
-    expect(reverseIndex.lookup(story).get(story)).toBe(0);
+    expect(reverseIndex.asMap()).toEqual(
+      new Map([
+        [story, new Map([[story, 0]])],
+        [dep, new Map([[story, 1]])],
+      ])
+    );
   });
 
   it('treats `add` for a non-story file as a no-op', async () => {
@@ -304,10 +307,19 @@ describe('IncrementalPatcher', () => {
     expect(parseSpy).not.toHaveBeenCalled();
   });
 
+  it('reports an unlink of a file the graph never saw as leaving the index unchanged', async () => {
+    const { patcher, reverseIndex } = buildPatcher({
+      world: { edges: new Map(), resolutions: new Map() },
+    });
+
+    await patcher.patch({ kind: 'unlink', path: '/repo/notes.md' });
+
+    expect(reverseIndex.asMap().size).toBe(0);
+  });
+
   it('unlink prunes reverseIndex for a story path even when not in current storyFiles', async () => {
-    // Regression: if refreshStoryFiles already removed the story from the story set before
-    // the unlink event fires, `isStoryFile(path)` returns false. The old code guarded
-    // `removeStory` behind that check, leaving stale (dep→story) entries forever.
+    // refreshStoryFiles removes the story from the story set before the unlink event fires, so
+    // `isStoryFile(path)` is already false when the unlink is handled.
     const story = '/repo/src/A.stories.tsx';
     const dep = '/repo/src/dep.ts';
 

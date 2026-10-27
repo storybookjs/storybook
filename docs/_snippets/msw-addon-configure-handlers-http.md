@@ -38,29 +38,25 @@ const TestData = {
 };
 
 export const MockedSuccess: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 };
 
 export const MockedError: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 };
 ```
@@ -102,36 +98,33 @@ const TestData = {
 };
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 });
 ```
 
 ```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import { http, HttpResponse, delay } from 'msw';
 
@@ -169,94 +162,92 @@ export const MockedError = meta.story({
 
 <Story
   name="MockedSuccess"
-  parameters={{
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach={({ msw }) => {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   }}
 />
 
 <Story
   name="MockedError"
-  parameters={{
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach={({ msw }) => {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   }}
 />
 ```
 
-```js filename="YourPage.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import { http, HttpResponse, delay } from 'msw';
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-import DocumentScreen from './YourPage.svelte';
+  import { http, HttpResponse, delay } from 'msw';
 
-export default {
-  component: DocumentScreen,
-};
+  import DocumentScreen  from './YourPage.svelte';
 
-// 👇 The mocked data that will be used in the story
-const TestData = {
-  user: {
-    userID: 1,
-    name: 'Someone',
-  },
-  document: {
-    id: 1,
-    userID: 1,
-    title: 'Something',
-    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-    status: 'approved',
-  },
-  subdocuments: [
-    {
+  const { Story } = preview.meta({
+    component: DocumentScreen,
+  });
+
+  // 👇 The mocked data that will be used in the story
+  const TestData = {
+    user: {
+      userID: 1,
+      name: 'Someone',
+    },
+    document: {
       id: 1,
       userID: 1,
       title: 'Something',
-      content:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
       status: 'approved',
     },
-  ],
-};
+    subdocuments: [
+      {
+        id: 1,
+        userID: 1,
+        title: 'Something',
+        content:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+        status: "approved",
+      },
+    ],
+  };
+</script>
 
-export const MockedSuccess = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
-  },
-};
+<Story
+  name="MockedSuccess"
+  beforeEach={({ msw }) => {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
+  }}
+/>
 
-export const MockedError = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
-  },
-};
+<Story
+  name="MockedError"
+  beforeEach={({ msw }) => {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
+  }}
+/>
 ```
 
 ```js filename="YourPage.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
@@ -294,36 +285,33 @@ const TestData = {
 };
 
 export const MockedSuccess = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 };
 
 export const MockedError = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 };
 ```
 
 ```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import { http, HttpResponse, delay } from 'msw';
 
@@ -361,100 +349,92 @@ export const MockedError = {
 
 <Story
   name="MockedSuccess"
-  parameters={{
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach={({ msw }) => {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   }}
 />
 
 <Story
   name="MockedError"
-  parameters={{
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach={({ msw }) => {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   }}
 />
 ```
 
-```ts filename="YourPage.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import { http, HttpResponse, delay } from 'msw';
+  import { http, HttpResponse, delay } from 'msw';
 
-import DocumentScreen from './YourPage.svelte';
+  import DocumentScreen  from './YourPage.svelte';
 
-const meta = {
-  component: DocumentScreen,
-} satisfies Meta<typeof DocumentScreen>;
+  const { Story } = preview.meta({
+    component: DocumentScreen,
+  });
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-// 👇 The mocked data that will be used in the story
-const TestData = {
-  user: {
-    userID: 1,
-    name: 'Someone',
-  },
-  document: {
-    id: 1,
-    userID: 1,
-    title: 'Something',
-    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-    status: 'approved',
-  },
-  subdocuments: [
-    {
+  // 👇 The mocked data that will be used in the story
+  const TestData = {
+    user: {
+      userID: 1,
+      name: 'Someone',
+    },
+    document: {
       id: 1,
       userID: 1,
       title: 'Something',
-      content:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
       status: 'approved',
     },
-  ],
-};
+    subdocuments: [
+      {
+        id: 1,
+        userID: 1,
+        title: 'Something',
+        content:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+        status: "approved",
+      },
+    ],
+  };
+</script>
 
-export const MockedSuccess: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
-  },
-};
+<Story
+  name="MockedSuccess"
+  beforeEach={({ msw }) => {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
+  }}
+/>
 
-export const MockedError: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
-  },
-};
+<Story
+  name="MockedError"
+  beforeEach={({ msw }) => {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
+  }}
+/>
 ```
 
 ```ts filename="YourPage.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
@@ -498,29 +478,25 @@ const TestData = {
 };
 
 export const MockedSuccess: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 };
 
 export const MockedError: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 };
 ```
@@ -558,29 +534,25 @@ const TestData = {
 };
 
 export const MockedSuccess = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 };
 
 export const MockedError = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 };
 ```
@@ -623,29 +595,25 @@ const TestData = {
 };
 
 export const MockedSuccess: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 };
 
 export const MockedError: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 };
 ```
@@ -685,29 +653,25 @@ const TestData = {
 };
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 });
 ```
@@ -747,29 +711,25 @@ const TestData = {
 };
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 });
 ```
@@ -811,29 +771,25 @@ const TestData = {
 };
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 });
 ```
@@ -877,29 +833,25 @@ const meta = preview.meta({
 });
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 });
 ```
@@ -941,29 +893,25 @@ const meta = preview.meta({
 });
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 });
 ```
@@ -1005,29 +953,25 @@ const TestData = {
 };
 
 export const MockedSuccess = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint/', () => {
-          return HttpResponse.json(TestData);
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
   },
 });
 
 export const MockedError = meta.story({
-  parameters: {
-    msw: {
-      handlers: [
-        http.get('https://your-restful-endpoint', async () => {
-          await delay(800);
-          return new HttpResponse(null, {
-            status: 403,
-          });
-        }),
-      ],
-    },
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
   },
 });
 ```

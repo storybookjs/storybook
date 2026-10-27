@@ -1,88 +1,35 @@
 import fs from 'node:fs/promises';
 import { join } from 'node:path';
+import { parseArgs } from 'node:util';
 
-import { program } from 'commander';
-import yml from 'yaml';
-
-import {
-  benchmarkPackages,
-  build_linux,
-  build_windows,
-  check,
-  commonJobsNoOpJob,
-  defineCircleciCompletion,
-  knip,
-  lint,
-  fmt,
-  internalStorybookBuildE2e,
-  internalStorybookE2e,
-  storybookChromatic,
-  testUnit_windows,
-  testsStories_linux,
-  testsUnit_linux,
-} from './common-jobs.ts';
-import { getInitEmpty, initEmptyNoOpJob } from './init-empty.ts';
-import { getSandboxes, sandboxesNoOpJob } from './sandboxes.ts';
-import { getTestStorybooks, testStorybooksNoOpJob } from './test-storybooks.ts';
+import { defineCircleciCompletion, defineNightlyFailureReport } from './common-jobs.ts';
 import { executors } from './utils/executors.ts';
-import { ensureRequiredJobs } from './utils/helpers.ts';
+import { cancelWorkflowStep, ensureRequiredJobs } from './utils/helpers.ts';
 import { orbs } from './utils/orbs.ts';
 import { parameters } from './utils/parameters.ts';
 import { setTrustedAuthor } from './utils/runtime.ts';
-import type {
-  JobImplementationObj,
-  JobOrNoOpJob,
-  NoOpJobImplementationObj,
-} from './utils/types.ts';
-import { type Workflow, isWorkflowOrAbove } from './utils/types.ts';
+import type { JobImplementationObj, NoOpJobImplementationObj } from './utils/types.ts';
+import { type Workflow, workflows } from './utils/types.ts';
+import { getJobs } from './workflow-jobs.ts';
 
 const dirname = import.meta.dirname;
 
+/** Workflows that a PR can merge on, so they end in the `circleci-completion` status check. */
+const isMergeGating = (workflow: Workflow) => workflow !== 'windows';
+
 /**
- * Generate the CircleCI config for a given workflow.
+ * Generate the CircleCI config for the union of the given workflows.
  *
- * @param workflow - The workflow to generate the config for.
+ * @param selected - The workflows to generate the config for, in `workflows` order. Jobs report
+ *   failures as the first, most thorough one.
+ * @param baseRef - The git ref `focus` diffs against.
+ * @param nightly - Whether this is the scheduled `daily` run on `next`, which reports its failures
+ *   instead of cancelling on the first one.
  * @returns The generated config for CircleCI in JS format.
  */
-function generateConfig(workflow: Workflow) {
-  const jobs: JobOrNoOpJob[] = [];
-  if (isWorkflowOrAbove(workflow, 'docs')) {
-    jobs.push(fmt);
-  } else {
-    const sandboxes = getSandboxes(workflow);
-    const testStorybooks = getTestStorybooks(workflow);
-    const initEmpty = getInitEmpty(workflow);
-
-    if (isWorkflowOrAbove(workflow, 'daily')) {
-      jobs.push(build_windows, testUnit_windows);
-    }
-
-    jobs.push(
-      build_linux,
-      testsUnit_linux,
-      testsStories_linux,
-
-      commonJobsNoOpJob,
-      lint,
-      fmt,
-      check,
-      knip,
-
-      storybookChromatic,
-      internalStorybookE2e,
-      internalStorybookBuildE2e,
-      benchmarkPackages,
-
-      sandboxesNoOpJob,
-      ...sandboxes,
-
-      testStorybooksNoOpJob,
-      ...testStorybooks,
-
-      initEmptyNoOpJob,
-      ...initEmpty
-    );
-  }
+function generateConfig(selected: Workflow[], baseRef: string, nightly: boolean) {
+  const [workflow] = selected;
+  const jobs = selected.flatMap((workflow) => getJobs(workflow, baseRef));
 
   /**
    * If you want to filter down to a particular job, e.g.for debugging purposes.. you can do that
@@ -111,7 +58,14 @@ function generateConfig(workflow: Workflow) {
   // Append a completion job that depends on every other job in the workflow.
   // It acts as a single status check for GitHub branch protection: it only runs
   // (and reports success) once every required job has finished successfully.
-  ensuredJobs.push(defineCircleciCompletion([...ensuredJobs]));
+  if (selected.some(isMergeGating)) {
+    const completion = defineCircleciCompletion([...ensuredJobs]);
+    ensuredJobs.push(completion);
+
+    if (nightly) {
+      ensuredJobs.push(defineNightlyFailureReport(completion));
+    }
+  }
 
   const sortedJobs = ensuredJobs.sort((a, b) => {
     if (a.requires.length && b.requires.length) {
@@ -134,19 +88,33 @@ function generateConfig(workflow: Workflow) {
 
     jobs: sortedJobs.reduce(
       (acc, job) => {
-        acc[job.id] =
+        const implementation =
           typeof job.implementation === 'function'
             ? job.implementation(workflow)
             : job.implementation;
+        // The nightly run keeps going so its failure report lists every failed job.
+        acc[job.id] =
+          nightly && 'steps' in implementation
+            ? {
+                ...implementation,
+                steps: implementation.steps.filter((step) => step !== cancelWorkflowStep),
+              }
+            : implementation;
         return acc;
       },
       {} as Record<string, JobImplementationObj | NoOpJobImplementationObj>
     ),
     workflows: {
-      [`${workflow}-generated${isDebugging ? '-debug' : ''}`]: {
+      [`${selected.join('-')}-generated${isDebugging ? '-debug' : ''}`]: {
         jobs: sortedJobs.map((t) =>
           t.requires && t.requires.length > 0
-            ? { [t.id]: { requires: t.requires.map((r) => r.id) } }
+            ? {
+                [t.id]: {
+                  requires: t.requires.map((r) =>
+                    t.runsEvenIfRequirementsFail ? { [r.id]: 'terminal' } : r.id
+                  ),
+                },
+              }
             : t.id
         ),
       },
@@ -157,23 +125,27 @@ function generateConfig(workflow: Workflow) {
 console.log('Generating CircleCI config...');
 console.log('--------------------------------');
 
-program
-  .description('Generate CircleCI config')
-  .requiredOption('-w, --workflow <string>', 'Workflow to generate config for')
-  .option(
-    '--gh-trusted-author <string>',
-    'Whether the pipeline can persist to shared caches',
-    'false'
-  )
-  .parse(process.argv);
+const { values: opts } = parseArgs({
+  options: {
+    workflow: { type: 'string', short: 'w' },
+    'base-ref': { type: 'string', default: 'origin/next' },
+    'gh-trusted-author': { type: 'string', default: 'false' },
+    branch: { type: 'string', default: '' },
+  },
+});
+setTrustedAuthor(opts['gh-trusted-author'] === 'true');
 
-const opts = program.opts();
-setTrustedAuthor(opts.ghTrustedAuthor === 'true');
+const requested = (opts.workflow ?? '').split(',').filter(Boolean);
+const unknown = requested.filter((w) => !(workflows as readonly string[]).includes(w));
+if (unknown.length > 0 || requested.length === 0) {
+  throw new Error(
+    `Unknown workflow "${opts.workflow ?? ''}". Expected a comma-separated list of: ${workflows.join(', ')}`
+  );
+}
+const selected = workflows.filter((w) => requested.includes(w));
+const nightly = selected.includes('daily') && opts.branch === 'next';
 
 await fs.writeFile(
   join(dirname, '../../.circleci/config.generated.yml'),
-  yml.stringify(generateConfig(opts.workflow), null, {
-    lineWidth: 1200,
-    indent: 4,
-  })
+  `${JSON.stringify(generateConfig(selected, opts['base-ref'], nightly), null, 2)}\n`
 );

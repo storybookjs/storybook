@@ -18,7 +18,7 @@ const staticFetchServiceDef = defineService({
   description: 'Fixture for browser static snapshot loading.',
   initialState: { entries: {} } as { entries: Record<string, string> },
   queries: {
-    getEntry: {
+    entry: {
       description: 'Reads one entry; load normally calls a command.',
       input: v.object({ id: v.string() }),
       output: v.optional(v.string()),
@@ -45,7 +45,7 @@ const staticFetchServiceDef = defineService({
 
 const staticLoaderContext = {
   serviceId: staticFetchServiceDef.id,
-  queryName: 'getEntry',
+  queryName: 'entry',
   input: { id: 'alpha' },
 } satisfies StaticLoaderContext;
 
@@ -63,7 +63,7 @@ describe('createBrowserStaticLoader', () => {
     expect(createBrowserStaticLoader()).toBeUndefined();
   });
 
-  it('fetches snapshots from /services/<logicalPath> in production', async () => {
+  it('fetches snapshots from ./services/<logicalPath> in production', async () => {
     globalThis.CONFIG_TYPE = 'PRODUCTION';
     const fetchMock = vi.fn(async () => ({
       ok: true,
@@ -74,8 +74,27 @@ describe('createBrowserStaticLoader', () => {
     const loader = createBrowserStaticLoader();
     const snapshot = await loader!('internal-fixture/static-fetch/alpha.json', staticLoaderContext);
 
-    expect(fetchMock).toHaveBeenCalledWith('/services/internal-fixture/static-fetch/alpha.json');
+    expect(fetchMock).toHaveBeenCalledWith('./services/internal-fixture/static-fetch/alpha.json');
     expect(snapshot).toEqual({ entries: { alpha: 'from-file' } });
+  });
+
+  // A Storybook deployed below the origin root - a GitHub Pages project site, a docs site mounted
+  // under a path - must still reach its own snapshots, and the manager and the preview iframe must
+  // agree on where those are. An origin-absolute request would leave the deployment entirely.
+  it('resolves under the deployment directory from both the manager and the preview iframe', async () => {
+    globalThis.CONFIG_TYPE = 'PRODUCTION';
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({}) }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await createBrowserStaticLoader()!('core/story-docs/button.json', staticLoaderContext);
+    const [requested] = fetchMock.mock.calls[0] as unknown as [string];
+
+    const managerDocument = 'https://acme.github.io/design-system/';
+    const previewDocument = 'https://acme.github.io/design-system/iframe.html?id=button--primary';
+    const expected = 'https://acme.github.io/design-system/services/core/story-docs/button.json';
+
+    expect(new URL(requested, managerDocument).href).toBe(expected);
+    expect(new URL(requested, previewDocument).href).toBe(expected);
   });
 
   it('rejects when the response is not ok', async () => {
@@ -94,10 +113,10 @@ describe('createBrowserStaticLoader', () => {
     expect(error).toMatchObject({
       data: {
         serviceId: staticFetchServiceDef.id,
-        queryName: 'getEntry',
+        queryName: 'entry',
         input: { id: 'alpha' },
         logicalPath: 'missing.json',
-        url: '/services/missing.json',
+        url: './services/missing.json',
         cause: { status: 404, statusText: 'Not Found' },
         status: 404,
         statusText: 'Not Found',
@@ -120,10 +139,10 @@ describe('createBrowserStaticLoader', () => {
     await expect(loader!('network.json', staticLoaderContext)).rejects.toMatchObject({
       data: {
         serviceId: staticFetchServiceDef.id,
-        queryName: 'getEntry',
+        queryName: 'entry',
         input: { id: 'alpha' },
         logicalPath: 'network.json',
-        url: '/services/network.json',
+        url: './services/network.json',
         cause,
       },
     });
@@ -147,10 +166,10 @@ describe('createBrowserStaticLoader', () => {
     await expect(loader!('broken.json', staticLoaderContext)).rejects.toMatchObject({
       data: {
         serviceId: staticFetchServiceDef.id,
-        queryName: 'getEntry',
+        queryName: 'entry',
         input: { id: 'alpha' },
         logicalPath: 'broken.json',
-        url: '/services/broken.json',
+        url: './services/broken.json',
         cause,
       },
     });
@@ -176,10 +195,10 @@ describe('createBrowserStaticLoader', () => {
     expect(error).toMatchObject({
       data: {
         serviceId: staticFetchServiceDef.id,
-        queryName: 'getEntry',
+        queryName: 'entry',
         input: { id: 'alpha' },
         logicalPath: 'invalid.json',
-        url: '/services/invalid.json',
+        url: './services/invalid.json',
         received,
       },
     });
@@ -204,19 +223,19 @@ describe('static loader in service runtime', () => {
       structuredClone(staticFetchServiceDef.initialState)
     );
 
-    await runtime.queries.getEntry.loaded({ id: 'alpha' });
-    await runtime.queries.getEntry.loaded({ id: 'beta' });
+    await runtime.queries.entry.loaded({ id: 'alpha' });
+    await runtime.queries.entry.loaded({ id: 'beta' });
 
-    expect(runtime.queries.getEntry({ id: 'alpha' })).toBe('static-alpha');
-    expect(runtime.queries.getEntry({ id: 'beta' })).toBe('static-beta');
+    expect(runtime.queries.entry.get({ id: 'alpha' })).toBe('static-alpha');
+    expect(runtime.queries.entry.get({ id: 'beta' })).toBe('static-beta');
     expect(staticLoader).toHaveBeenCalledWith('internal-fixture/static-fetch/alpha.json', {
       serviceId: staticFetchServiceDef.id,
-      queryName: 'getEntry',
+      queryName: 'entry',
       input: { id: 'alpha' },
     });
     expect(staticLoader).toHaveBeenCalledWith('internal-fixture/static-fetch/beta.json', {
       serviceId: staticFetchServiceDef.id,
-      queryName: 'getEntry',
+      queryName: 'entry',
       input: { id: 'beta' },
     });
   });
@@ -258,9 +277,7 @@ describe('static loader in service runtime', () => {
 
     const service = registerPreviewService(staticLoadSyncServiceDef);
 
-    await expect(service.queries.getEntry.loaded({ id: 'alpha' })).resolves.toBe(
-      'static-load:alpha'
-    );
+    await expect(service.queries.entry.loaded({ id: 'alpha' })).resolves.toBe('static-load:alpha');
   });
 
   it('runs the authored load when no static loader is configured', async () => {
@@ -270,8 +287,8 @@ describe('static loader in service runtime', () => {
       structuredClone(staticFetchServiceDef.initialState)
     );
 
-    await runtime.queries.getEntry.loaded({ id: 'alpha' });
+    await runtime.queries.entry.loaded({ id: 'alpha' });
 
-    expect(runtime.queries.getEntry({ id: 'alpha' })).toBe('live');
+    expect(runtime.queries.entry.get({ id: 'alpha' })).toBe('live');
   });
 });

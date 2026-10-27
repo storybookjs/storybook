@@ -3,7 +3,7 @@
  *   installed or contain a typo in their name.
  * @author Andre "andrelas1" Santos
  */
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/types';
 import { readFileSync } from 'fs';
 import { relative, resolve, sep } from 'path';
 import { dedent } from 'ts-dedent';

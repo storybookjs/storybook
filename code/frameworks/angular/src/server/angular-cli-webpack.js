@@ -1,5 +1,7 @@
 import { createRequire } from 'node:module';
 
+import { getTsconfigPathsBaseDir } from 'storybook/internal/common';
+
 import StorybookNormalizeAngularEntryPlugin from './plugins/storybook-normalize-angular-entry-plugin';
 import { filterOutStylingRules } from './utils/filter-out-styling-rules';
 
@@ -195,6 +197,9 @@ export const getWebpackConfig = async (baseConfig, { builderOptions, builderCont
     plugins: [
       new TsconfigPathsPlugin({
         configFile: builderOptions.tsConfig,
+        ...(builderOptions.tsConfig
+          ? { baseUrl: getTsconfigPathsBaseDir(builderOptions.tsConfig) }
+          : {}),
         mainFields: ['browser', 'module', 'main'],
       }),
     ],

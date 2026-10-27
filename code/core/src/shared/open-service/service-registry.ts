@@ -2,12 +2,13 @@
  * Unified service registry for the open-service multi-master architecture.
  *
  * One implementation backs every runtime — the dev server (Node), the manager (top window), and each
- * preview iframe. Registration builds a local `ServiceRuntime` and, when a channel is present, wires it
- * into the cross-peer sync protocol through the shared transport. The only thing that differs per
+ * preview iframe. Registration builds a local `ServiceRuntime` and wires it into the cross-peer sync
+ * protocol through the installed channel and the shared transport. The only thing that differs per
  * runtime is the `relay` role: the dev server and the manager are hubs (`relay: true`) that bridge
  * their other channel transports, while a preview is a leaf (`relay: false`) — a single transport has
- * nothing to forward. The handshake + patch-broadcast protocol lives in `service-transport.ts` and the
- * last-write-wins reconciliation in `service-sync.ts`; both transports drive them identically.
+ * nothing to forward. The request/reply + entry protocol lives in `service-transport.ts` and the
+ * snapshot install and ordered-log reconciliation in `service-sync.ts`; both transports drive them
+ * identically.
  *
  * The registry is anchored on a symbol-keyed `globalThis` slot so every module in one realm shares a
  * single registration map even if this file is reached through different import paths. Server (Node),
@@ -15,19 +16,22 @@
  * all three — they never share a map at runtime.
  */
 
+import { getChannel } from '../../channels/channel-slot.ts';
 import {
+  OpenServiceInternalServiceError,
   OpenServiceMissingChannelError,
   OpenServiceMissingServiceError,
+  OpenServiceOperationNameCollisionError,
 } from '../../server-errors.ts';
-import { getChannel } from '../../channels/channel-slot.ts';
-import { generateClientId } from './service-channel.ts';
+import { type ServiceChannel, generateRuntimeId } from './service-channel.ts';
 import { createServiceRuntime } from './service-runtime.ts';
+import { createReconciler, type LogWindow } from './service-sync.ts';
+import { connectServiceToChannel, connectUnknownServiceReporter } from './service-transport.ts';
 import type { StaticLoader } from './static-fetch.ts';
-import { createSnapshotReconciler } from './service-sync.ts';
-import { connectServiceToChannel } from './service-transport.ts';
 import type {
   AnyServiceDefinition,
   Commands,
+  GetServiceOptions,
   Queries,
   RuntimeService,
   ServiceDefinition,
@@ -51,21 +55,94 @@ type RegistryEntry = {
 
 const REGISTRY_SYMBOL = Symbol.for('storybook.open-service.registry');
 
+type RegistryInventory = {
+  entries: Map<string, RegistryEntry>;
+  delegatedMode: boolean;
+  /**
+   * Every id this realm has ever registered. The unknown-service reporter must not report an id
+   * that is merely mid-HMR (unregistered and about to re-register): a false report converts a
+   * transient into config-drift restart guidance, while staying silent only degrades to the
+   * retryable timeout error.
+   */
+  everRegisteredIds: Set<string>;
+  /** The realm's unknown-service reporter, keyed to the channel it listens on. */
+  unknownServiceReporter?: { channel: ServiceChannel; disconnect: () => void };
+};
+
 /**
- * Returns the realm-global registry backing service registration.
+ * Returns the realm-global inventory backing service registration and delegated mode.
  *
  * Lazily created so importing the module does not eagerly mutate global state. Anchoring it on a
- * `globalThis` symbol keeps runtime lookups, static builds, and tests pointed at one service inventory
- * even when the module is reached through different import paths.
+ * `globalThis` symbol keeps the service map and the delegated-mode flag shared even when this file is
+ * reached through different import paths.
  */
-function getRegistry(): Map<string, RegistryEntry> {
+function getInventory(): RegistryInventory {
   const registryGlobal = globalThis as {
-    [key: symbol]: Map<string, RegistryEntry> | undefined;
+    [key: symbol]: RegistryInventory | undefined;
   };
 
-  registryGlobal[REGISTRY_SYMBOL] ??= new Map<string, RegistryEntry>();
+  registryGlobal[REGISTRY_SYMBOL] ??= {
+    entries: new Map<string, RegistryEntry>(),
+    delegatedMode: false,
+    everRegisteredIds: new Set<string>(),
+  };
 
   return registryGlobal[REGISTRY_SYMBOL];
+}
+
+function getRegistry(): Map<string, RegistryEntry> {
+  return getInventory().entries;
+}
+
+/**
+ * Marks this runtime as delegated, so every registered service dispatches its commands over the
+ * channel instead of running local handlers.
+ *
+ * Set it once at the runtime entry boundary, before any `registerService` call — it is read at
+ * registration time, like the installed channel. Service definitions are unaffected: their handlers
+ * stay registered and inspectable, they simply never run here because the Storybook this runtime
+ * attached to is the implementer.
+ */
+export function setDelegatedMode(enabled: boolean): void {
+  getInventory().delegatedMode = enabled;
+}
+
+/** Whether this runtime delegates command dispatch to the Storybook it is attached to. */
+export function isDelegatedMode(): boolean {
+  return getInventory().delegatedMode;
+}
+
+// One reporter per realm answers invokes for service ids nothing here registers (the whole-service
+// config-drift shape, which no per-service transport can see). Keyed to the channel so swapping
+// channels (tests, teardown/re-install) re-attaches it instead of leaking listeners.
+function ensureUnknownServiceReporter(channel: ServiceChannel): void {
+  const inventory = getInventory();
+  if (inventory.unknownServiceReporter?.channel === channel) {
+    return;
+  }
+
+  inventory.unknownServiceReporter?.disconnect();
+  inventory.unknownServiceReporter = {
+    channel,
+    disconnect: connectUnknownServiceReporter({
+      channel,
+      isServiceRegistered: (serviceId) => inventory.everRegisteredIds.has(serviceId),
+      isDelegated: () => inventory.delegatedMode,
+    }),
+  };
+}
+
+function assertUniqueOperationNames(definition: AnyServiceDefinition): void {
+  const duplicateName = Object.keys(definition.queries).find((name) =>
+    Object.hasOwn(definition.commands, name)
+  );
+
+  if (duplicateName) {
+    throw new OpenServiceOperationNameCollisionError({
+      serviceId: definition.id,
+      operationName: duplicateName,
+    });
+  }
 }
 
 /**
@@ -182,9 +259,10 @@ export const serviceRegistryApi: ServiceRegistryApi = {
 /** Channel-sync options that depend on the entrypoint rather than the service definition. */
 export interface ServiceRegisterOptions {
   /**
-   * Whether this runtime acts as a relay hub. Hubs (the dev server, the manager) re-broadcast every
-   * peer snapshot they adopt so peers on their *other* channel transports converge; leaves (a preview
-   * iframe) keep the default `false` — with a single transport there is nothing to forward.
+   * Whether this runtime acts as a relay hub. Hubs (the dev server, the manager) forward accepted
+   * entries, first-time beyond-window entries, and installed replies to their *other* channel
+   * transports; leaves (a preview iframe) keep the default `false`, since a single transport has
+   * nothing to forward.
    */
   relay?: boolean;
   /**
@@ -193,16 +271,19 @@ export interface ServiceRegisterOptions {
    * omits this so static builds still run real loads to generate files.
    */
   staticLoader?: StaticLoader;
+  /** Bounds for the retained entry Log. Defaults keep an entry while younger than 15 s or among the newest 256. */
+  window?: Partial<LogWindow>;
 }
 
 /**
  * Registers one service definition in the realm-global registry and returns its runtime surface.
  *
  * Registration resolves any registration-time overrides, builds the runtime that query and command
- * callers use, wraps commands to broadcast their post-mutation state, and joins the cross-peer sync
- * protocol as a hub or leaf (`relay`). Each runtime must install the addons channel at its entry
- * boundary before calling this (builders, manager boot, server `services` preset, or Node import
- * bootstrap). Registration is idempotent by id: a repeated registration returns the existing runtime.
+ * callers use, installs the entry author that emits a `services:entry` for each `setState` write, and
+ * joins the cross-peer sync protocol as a hub or leaf (`relay`). Each runtime must install the addons
+ * channel at its entry boundary before calling this (builders, manager boot, server `services`
+ * preset, or Node import bootstrap). Registration is idempotent by id: a repeated registration
+ * returns the existing runtime.
  */
 export function registerService<
   TState,
@@ -211,39 +292,32 @@ export function registerService<
 >(
   definition: ServiceDefinition<TState, TQueries, TCommands>,
   registration?: ServiceRegistrationOptions<TState, TQueries, TCommands>,
-  { relay = false, staticLoader }: ServiceRegisterOptions = {}
+  { relay = false, staticLoader, window }: ServiceRegisterOptions = {}
 ): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
+  assertUniqueOperationNames(definition as AnyServiceDefinition);
+
   const registry = getRegistry();
 
-  // Registration is idempotent by id. Re-registering an already-registered service returns the
-  // existing runtime instead of throwing. This deliberately swallows duplicate-id collisions, which is
-  // the right trade-off: core services register from a `beforeAll` annotation that CSF4 composes twice
-  // (once in `definePreview`, once in `StoryStore`), and `beforeAll` also re-runs on HMR. A second
-  // registration is a no-op rather than a crash.
+  // Idempotent by id: core services register from a `beforeAll` that CSF4 composes twice (in
+  // `definePreview` and in `StoryStore`) and that HMR re-runs.
   const existingEntry = registry.get(definition.id);
   if (existingEntry) {
     return existingEntry.instance as unknown as ServiceInstance<TState, TQueries, TCommands> &
       ServiceRegistryApi;
   }
 
-  const ownClientId = generateClientId();
+  const ownRuntimeId = generateRuntimeId();
   const resolvedDefinition = applyRegistration(definition, registration);
 
-  // The runtime mutates its state object in place, so give it a copy rather than the definition's
-  // shared `initialState` (which would otherwise leak state across registrations).
-  const runtime = createServiceRuntime(
-    resolvedDefinition,
-    { registryApi: serviceRegistryApi, staticLoader },
-    structuredClone(resolvedDefinition.initialState)
-  );
+  const runtime = createServiceRuntime(resolvedDefinition, {
+    registryApi: serviceRegistryApi,
+    staticLoader,
+  });
 
-  // Owns the per-service last-write-wins stamp and the adopt/advance logic. Adopting a peer snapshot
-  // goes through `commandSelf.setState` — not the wrapped commands below — which is how the broadcast
-  // loop is prevented.
-  const reconciler = createSnapshotReconciler({
-    setState: (mutate) =>
-      runtime.commandSelf.setState((state) => mutate(state as Record<string, unknown>)),
-    initialStamp: { version: 0, clientId: ownClientId },
+  const reconciler = createReconciler({
+    serviceId: definition.id,
+    setState: (mutate) => runtime.applyLocal((state) => mutate(state as Record<string, unknown>)),
+    window,
   });
 
   const getSnapshot = (): Record<string, unknown> =>
@@ -256,27 +330,32 @@ export function registerService<
     throw new OpenServiceMissingChannelError({ serviceId: definition.id });
   }
 
+  getInventory().everRegisteredIds.add(definition.id);
+  ensureUnknownServiceReporter(channel);
+
   // A command may only have a handler in some runtimes (e.g. supplied at server registration). Where
-  // a local handler exists, callers run it locally and broadcast; where it does not, the resulting
-  // command routes calls to a peer that implements it and awaits the reply.
+  // a local handler exists, callers run it locally and its writes broadcast; where it does not, the resulting
+  // command routes calls to a peer that implements it and awaits the reply. A delegated runtime
+  // routes every command to its peer regardless.
   const implementedCommandNames = new Set<string>(
     Object.entries(resolvedDefinition.commands)
       .filter(([, command]) => typeof command.handler === 'function')
       .map(([name]) => name)
   );
 
-  // Wire the runtime to the channel end to end against the one channel captured above: broadcast-wrap
-  // commands, run the remote-command protocol, and attach the sync-start + patch listeners.
+  // Wire the runtime to the channel end to end against the one channel captured above: install the
+  // entry author, run the remote-command protocol, and attach the sync-request + entry listeners.
   const { commands, disconnect } = connectServiceToChannel({
     serviceId: definition.id,
-    ownClientId,
+    ownRuntimeId,
     reconciler,
     getSnapshot,
     channel,
-    relay,
+    relay: isDelegatedMode() ? false : relay,
     commands: runtime.commands as Record<string, (input: unknown) => Promise<unknown>>,
     implementedCommandNames,
     commandNames: Object.keys(resolvedDefinition.commands),
+    delegated: isDelegatedMode(),
     runtime,
   });
 
@@ -329,12 +408,23 @@ export async function describeService(serviceId: ServiceId): Promise<ServiceDesc
  *
  * Query and command contexts delegate cross-service calls through this lookup so one service can reuse
  * another's runtime contract. Synchronous because callers need it inside sync query handlers.
+ *
+ * Services with `internal: true` require `{ internal: true }` — otherwise this throws
+ * {@link OpenServiceInternalServiceError}. Do not depend on internal OSA from public adapters;
+ * prefer public toolsets (`defineToolset`) instead.
  */
-export function getService<TInstance = RuntimeService>(serviceId: ServiceId): TInstance {
+export function getService<TInstance = RuntimeService>(
+  serviceId: ServiceId,
+  options?: GetServiceOptions
+): TInstance {
   const entry = getRegistry().get(serviceId);
 
   if (!entry) {
     throw new OpenServiceMissingServiceError({ serviceId });
+  }
+
+  if (entry.definition.internal && !options?.internal) {
+    throw new OpenServiceInternalServiceError({ serviceId });
   }
 
   return entry.instance as unknown as TInstance;
@@ -355,17 +445,22 @@ export function unregisterService(serviceId: ServiceId): void {
 }
 
 /**
- * Clears the registry, tearing down each service's channel listeners first.
+ * Clears the registry, tearing down each service's channel listeners first, and resets delegated
+ * mode.
  *
  * Tests call this after each case so registrations — and the channel listeners a registration attaches
  * — from one scenario do not leak into the next.
  */
 export function clearRegistry(): void {
-  const registry = getRegistry();
+  const inventory = getInventory();
 
-  for (const entry of registry.values()) {
+  for (const entry of inventory.entries.values()) {
     entry.disconnect();
   }
 
-  registry.clear();
+  inventory.entries.clear();
+  inventory.delegatedMode = false;
+  inventory.everRegisteredIds.clear();
+  inventory.unknownServiceReporter?.disconnect();
+  inventory.unknownServiceReporter = undefined;
 }

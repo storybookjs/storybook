@@ -1,9 +1,18 @@
+import {
+  hasStorybookSkills,
+  installSkills,
+  refreshAgentInstructions,
+} from 'storybook/internal/cli';
 import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
+  type JsPackageManager,
   JsPackageManagerFactory,
   isCI,
   isCorePackage,
+  isNpmPeerResolutionError,
+  resolveStorybookVersionSpecifier,
+  getProcessAncestry,
 } from 'storybook/internal/common';
 import {
   CLI_COLORS,
@@ -75,9 +84,23 @@ const deprecatedPackages = [
       '@storybook/addon-centered',
     ],
   },
+  {
+    minVersion: '11.0.0',
+    url: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-storybooknextjs-is-deprecated',
+    deprecations: ['@storybook/nextjs'],
+  },
 ];
 
 const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
+
+const getStorybookVersionSpecifierFromCli = (): string | undefined => {
+  try {
+    return resolveStorybookVersionSpecifier(getProcessAncestry());
+  } catch {
+    // Ignore ancestry lookup failures and fall back to the dispatcher env var or embedded versions.
+    return resolveStorybookVersionSpecifier([]);
+  }
+};
 
 const warnPackages = (pkgs: Package[]) => pkgs.map((pkg) => `- ${formatPackage(pkg)}`).join('\n');
 
@@ -127,6 +150,7 @@ export type UpgradeOptions = {
   packageManager?: PackageManagerName;
   dryRun: boolean;
   yes: boolean;
+  features?: string;
   force: boolean;
   disableTelemetry: boolean;
   configDir?: string[];
@@ -156,9 +180,10 @@ function getUpgradeResults(
       }
     );
 
-    const hasFailures = automigrationResults.some(
-      (fix) => fix.status === FixStatus.FAILED || fix.status === FixStatus.CHECK_FAILED
-    );
+    const hasFailures =
+      automigrationResults.some(
+        (fix) => fix.status === FixStatus.FAILED || fix.status === FixStatus.CHECK_FAILED
+      ) || resultData.fileFailures.length > 0;
     const hasSuccessfulFixes = automigrationResults.some(
       (fix) => fix.status === FixStatus.SUCCEEDED || fix.status === FixStatus.MANUAL_SUCCEEDED
     );
@@ -233,7 +258,7 @@ function logUpgradeResults(
 
     const failedProjectsList = failedProjects.map((dir) => `  • ${shortenPath(dir)}`).join('\n');
     logger.log(
-      `${CLI_COLORS.error('Failed to upgrade:')}\nSome automigrations failed, please check the logs in the log file for more details.\n${failedProjectsList}`
+      `${CLI_COLORS.error('Failed to upgrade:')}\nSome automigrations failed or skipped files. Review the upgrade output for details.\n${failedProjectsList}`
     );
 
     if (projectsWithNoFixes.length > 0) {
@@ -327,6 +352,14 @@ async function sendMultiUpgradeTelemetry(options: MultiUpgradeTelemetryOptions) 
 }
 
 export async function upgrade(options: UpgradeOptions): Promise<void> {
+  if (options.features && options.skipAutomigrations) {
+    logger.error(
+      'The --features flag enables feature flags through automigrations, so it cannot be combined with --skip-automigrations.'
+    );
+    throw new HandledError('--features cannot be combined with --skip-automigrations');
+  }
+
+  const storybookVersionSpecifier = getStorybookVersionSpecifierFromCli();
   const projectsResult = await getProjects(options);
 
   if (projectsResult === undefined || projectsResult.selectedProjects.length === 0) {
@@ -431,6 +464,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
             isCLIPrerelease: project.isCLIPrerelease,
             isCLIExactLatest: project.isCLIExactLatest,
             isCLIExactPrerelease: project.isCLIExactPrerelease,
+            storybookVersionSpecifier:
+              storybookVersionSpecifier ?? project.storybookVersionSpecifier,
           });
         }
         task.success(`Updated package versions in package.json files`);
@@ -438,6 +473,10 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         task.error(`Failed to upgrade dependencies: ${String(err)}`);
       }
     }
+
+    // Read before the automigrations, so skills that the skills automigration installs are not
+    // installed a second time below.
+    const hadSkills = await hasStorybookSkills();
 
     // Run automigrations for all projects (unless explicitly skipped)
     let automigrationResults: Record<string, AutomigrationResult> = {};
@@ -457,12 +496,9 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         ? JsPackageManagerFactory.getPackageManager({ force: options.packageManager })
         : storybookProjects[0].packageManager;
 
-    if (rootPackageManager.type === 'npm') {
-      // see https://github.com/npm/cli/issues/8059 for more details
-      await rootPackageManager.installDependencies({ force: true });
-    } else {
-      await rootPackageManager.installDependencies();
-    }
+    await withNpmForceFallback(rootPackageManager, (installOptions) =>
+      rootPackageManager.installDependencies(installOptions)
+    );
 
     if (
       rootPackageManager.type !== PackageManagerName.YARN1 &&
@@ -480,12 +516,9 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         }));
 
       if (dedupe) {
-        if (rootPackageManager.type === 'npm') {
-          // see https://github.com/npm/cli/issues/8059 for more details
-          await rootPackageManager.dedupeDependencies({ force: true });
-        } else {
-          await rootPackageManager.dedupeDependencies();
-        }
+        await withNpmForceFallback(rootPackageManager, (dedupeOptions) =>
+          rootPackageManager.dedupeDependencies(dedupeOptions)
+        );
       } else {
         logger.log(
           `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`
@@ -493,22 +526,42 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
-    // Configure addons that automigrations added but deferred (e.g. addon-vitest / addon-a11y from
-    // the angular-to-angular-vite migration). Their postinstall hooks can only be resolved now that
+    // Configure addons that automigrations added but deferred (e.g. addon-vitest from the
+    // angular-to-angular-vite migration). Their postinstall hooks can only be resolved now that
     // dependencies have been installed above, mirroring CLI init's install-then-configure ordering.
     if (!options.dryRun && !options.skipInstall) {
       for (const project of storybookProjects) {
         const addonsToPostinstall = automigrationResults[project.configDir]?.addonsToPostinstall;
         if (addonsToPostinstall?.length) {
-          await configureDeferredAddons(addonsToPostinstall, {
-            packageManager: project.packageManager.type,
-            configDir: project.configDir,
-            yes: options.yes,
-            logger,
-            prompt,
-          });
+          logger.step(`Configuring addons: ${addonsToPostinstall.join(', ')}..`);
+          try {
+            await configureDeferredAddons(addonsToPostinstall, {
+              packageManager: project.packageManager.type,
+              configDir: project.configDir,
+              yes: options.yes,
+              logger,
+              prompt,
+            });
+          } catch (error) {
+            logger.warn(
+              `Configuring ${addonsToPostinstall.join(', ')} failed: ${String(
+                error
+              )}. Run "npx storybook add <addon>" manually for each addon to finish the setup.`
+            );
+            logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
+          }
         }
       }
+    }
+
+    const skills =
+      !options.dryRun && hadSkills
+        ? await installSkills({ packageManager: rootPackageManager, source: 'refresh' })
+        : undefined;
+    // The skills of a plugin, or installed by hand, come with an AGENTS.md section that promises
+    // the same updates.
+    if (!options.dryRun && !hadSkills) {
+      await refreshAgentInstructions();
     }
 
     // Run doctor for each project
@@ -568,6 +621,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         doctorResults: doctorResults[project.configDir]?.diagnostics || {},
         doctorFailureCount,
         doctorErrorCount,
+        skills,
       });
     }
 
@@ -577,9 +631,41 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       projectResults: automigrationResults,
       doctorResults,
     });
+
+    if (getUpgradeResults(automigrationResults, doctorResults).failedProjects.length > 0) {
+      throw new HandledError(
+        'Some automigrations failed or skipped files. Review the upgrade output.'
+      );
+    }
   } finally {
     // Clean up signal handlers
     process.removeListener('SIGINT', handleInterruption);
     process.removeListener('SIGTERM', handleInterruption);
   }
 }
+
+export const withNpmForceFallback = async (
+  packageManager: JsPackageManager,
+  operation: (options?: { force?: boolean; legacyPeerDeps?: boolean }) => Promise<void>
+) => {
+  try {
+    await operation();
+  } catch (error) {
+    if (
+      error instanceof HandledError ||
+      packageManager.type !== PackageManagerName.NPM ||
+      !isNpmPeerResolutionError(error)
+    ) {
+      throw error;
+    }
+    try {
+      // --legacy-peer-deps resolves the conflict without forced resolution, so try it first:
+      // npm/cli#8059 shows --force can spin on large trees, making it only a last resort.
+      logger.warn('Peer dependency conflict detected; retrying with --legacy-peer-deps');
+      await operation({ legacyPeerDeps: true });
+    } catch {
+      logger.warn('Retry with --legacy-peer-deps failed; retrying with --force');
+      await operation({ force: true });
+    }
+  }
+};

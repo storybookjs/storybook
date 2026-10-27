@@ -3,7 +3,7 @@ import React from 'react';
 import { Link } from 'storybook/internal/components';
 
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { CallStates } from '../../instrumenter/types.ts';
 import { DOCUMENTATION_DISCREPANCY_LINK } from '../constants.ts';

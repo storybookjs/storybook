@@ -1,6 +1,6 @@
 import { SourceType } from 'storybook/internal/docs-tools';
 import { useRef, emitTransformCode, useEffect } from 'storybook/preview-api';
-import type { ArgsStoryFn, PartialStoryFn } from 'storybook/internal/types';
+import type { ArgsStoryFn, PartialStoryFn, StoryContextForRender } from 'storybook/internal/types';
 
 import { computesTemplateSourceFromComponent } from '../../renderer';
 import type { AngularRenderer, StoryContext } from '../types';
@@ -25,7 +25,7 @@ export const skipSourceRender = (context: StoryContext) => {
  */
 export const sourceDecorator = (
   storyFn: PartialStoryFn<AngularRenderer>,
-  context: StoryContext
+  context: StoryContextForRender<AngularRenderer>
 ) => {
   const story = storyFn();
   const source = useRef<undefined | string>(undefined);
@@ -37,7 +37,7 @@ export const sourceDecorator = (
 
     const { props, userDefinedTemplate } = story;
     const { component, argTypes, parameters } = context;
-    const template: string = parameters.docs?.source?.excludeDecorators
+    const template: string | undefined = parameters.docs?.source?.excludeDecorators
       ? (context.originalStoryFn as ArgsStoryFn<AngularRenderer>)(context.args, context).template
       : story.template;
 

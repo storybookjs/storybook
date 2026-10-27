@@ -1,0 +1,51 @@
+{
+  "default": {
+    "description": undefined,
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "",
+    },
+  },
+  "level": {
+    "description": "Priority, a locally declared numeric enum.",
+    "name": "level",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "Level",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "Level",
+    },
+  },
+  "severity": {
+    "description": "Alert severity, an imported string enum.",
+    "name": "severity",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "Severity",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "Severity",
+    },
+  },
+}

@@ -16,19 +16,17 @@ export interface PreviewProps {
   storyId: StoryId;
   entry: LeafEntry;
   options: {
-    showTabs: boolean;
     showToolbar: boolean;
   };
   id?: string;
+  path: State['path'];
   queryParams: State['customQueryParams'];
   customCanvas?: CustomCanvasRenderer;
   description: string;
   baseUrl: string;
   withLoader: boolean;
-  tabs: Addon_BaseType[];
   tools: Addon_BaseType[];
   toolsExtra: Addon_BaseType[];
-  tabId: string | undefined;
   wrappers: Addon_WrapperType[];
 }
 

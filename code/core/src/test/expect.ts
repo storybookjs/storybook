@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
+// TODO SB11: Upgrade @testing-library/jest-dom to v7+ across the monorepo.
 import * as matchers from '@testing-library/jest-dom/matchers';
 import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers';
 
@@ -41,8 +42,8 @@ export interface Expect extends AsymmetricMatchersContaining {
   extend(expects: MatchersObject): void;
   assertions(expected: number): Promise<void>;
   hasAssertions(): Promise<void>;
-  anything(): any;
-  any(constructor: unknown): any;
+  anything: ExpectStatic['anything'];
+  any: ExpectStatic['any'];
   getState(): MatcherState;
   setState(state: Partial<MatcherState>): void;
   not: AsymmetricMatchersContaining;

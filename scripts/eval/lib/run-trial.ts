@@ -24,7 +24,7 @@ export interface TrialConfig {
   project: Project;
   /** Agent, model, and effort level. */
   variant: AgentVariant;
-  /** Prompt variant name — registered in `code/core/src/cli/ai/setup-prompts/` (e.g. "pattern-copy-play"). */
+  /** Prompt variant name — registered in `code/core/src/cli/skills/content/setup-prompts/` (e.g. "pattern-copy-play"). */
   prompt: string;
   /** Log agent messages to stdout. */
   verbose?: boolean;
@@ -67,14 +67,14 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
   );
 
   // 4. Load the nudge prompt the agent will receive. The agent itself runs
-  //    `node <repo>/code/core/dist/bin/dispatcher.js ai setup` as a tool call.
+  //    `node <repo>/code/core/dist/bin/dispatcher.js skills setup` as a tool call.
   //    This mirrors the real user flow but pins execution to the local
   //    Storybook checkout so the trial exercises in-tree changes rather than
   //    whatever version the benchmark project has installed.
   const prompt = loadPrompt(promptName);
   await writeFile(join(workspace.resultsDir, 'prompt.md'), prompt);
 
-  // 5. Capture the full markdown the agent will receive from `ai setup` so
+  // 5. Capture the full markdown the agent will receive from `skills setup` so
   //    the trial record contains a reproducible, project-aware snapshot of
   //    the instructions (not just the one-line nudge). Runs the same CLI the
   //    agent will run, in the same workspace, with the same env. Persisted as
@@ -84,7 +84,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
   await writeFile(join(workspace.resultsDir, 'setup-prompt.md'), promptContent);
 
   // 6. Execute the agent. EVAL_SETUP_PROMPT is forwarded into the agent's
-  //    environment so its `ai setup` tool call resolves to the selected
+  //    environment so its `skills setup` tool call resolves to the selected
   //    prompt variant (unset for real users → always the default).
   log.log(`  Running ${agentName} (${model}, effort=${variant.effort})...`);
   const driver = drivers[agentName];
@@ -191,7 +191,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
 }
 
 /**
- * Run the local Storybook dispatcher's `ai setup` command inside the prepared
+ * Run the local Storybook dispatcher's `skills setup` command inside the prepared
  * trial workspace and return its stdout — the exact project-aware markdown the
  * agent will receive from the same CLI invocation. Resolves to
  * `code/core/dist/bin/dispatcher.js` from this checkout so it tests in-tree
@@ -210,7 +210,7 @@ export async function captureAiSetupMarkdown(
 ): Promise<string> {
   try {
     const dispatcher = resolveDispatcherPath();
-    const result = await x('node', [dispatcher, 'ai', 'setup'], {
+    const result = await x('node', [dispatcher, 'skills', 'setup'], {
       throwOnError: false,
       timeout: 60_000,
       nodeOptions: {
@@ -225,7 +225,7 @@ export async function captureAiSetupMarkdown(
 
     if (result.exitCode !== 0) {
       log.logError(
-        `Failed to capture ai setup markdown (exit ${result.exitCode}). Falling back to nudge-only record.`
+        `Failed to capture skills setup markdown (exit ${result.exitCode}). Falling back to nudge-only record.`
       );
       log.logError(result.stderr.trim() || result.stdout.trim());
       return '';
@@ -234,7 +234,7 @@ export async function captureAiSetupMarkdown(
     return result.stdout.trim();
   } catch (error) {
     log.logError(
-      `Failed to capture ai setup markdown (${error instanceof Error ? error.message : String(error)}). Falling back to nudge-only record.`
+      `Failed to capture skills setup markdown (${error instanceof Error ? error.message : String(error)}). Falling back to nudge-only record.`
     );
     return '';
   }

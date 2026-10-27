@@ -1,4 +1,4 @@
-import type { PartialStoryFn, PlayFunctionContext, StoryContext } from 'storybook/internal/types';
+import type { PartialStoryFn, StoryContext, StoryContextForRender } from 'storybook/internal/types';
 
 import { global as globalThis } from '@storybook/global';
 
@@ -8,7 +8,7 @@ export default {
   component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   // Compose all the argTypes into `object`, so the pre component only needs a single prop
   decorators: [
-    (storyFn: PartialStoryFn, context: StoryContext) =>
+    (storyFn: PartialStoryFn, context: StoryContextForRender) =>
       storyFn({ args: { object: { ...context.argTypes } } }),
   ],
   argTypes: {
@@ -23,7 +23,7 @@ export const Inheritance = {
     storyArg: { type: 'number' },
     composedArg: { options: ['a', 'b'] },
   },
-  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
+  play: async ({ canvasElement }: StoryContext<any>) => {
     // NOTE: these stories don't test project-level argTypes inheritance as it is too problematic
     // to have an argType floating around that will apply too *all* other stories in our sandboxes.
     await expect(JSON.parse(within(canvasElement).getByTestId('pre').innerText)).toMatchObject({
@@ -43,13 +43,33 @@ export const ArgTypeInference = {
     d: { a: 'b' },
     e: ['a', 'b'],
   },
-  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
-    await expect(JSON.parse(within(canvasElement).getByTestId('pre').innerText)).toMatchObject({
+  play: async ({ canvasElement }: StoryContext<any>) => {
+    const argTypes = JSON.parse(within(canvasElement).getByTestId('pre').innerText);
+    // `prepareStory` skips `inferArgTypes` when `docgenServer` is on; the manager
+    // runs that second pass in `mergeServiceArgTypes`, so the preview canvas never sees types
+    // inferred from args.
+    if (globalThis.FEATURES?.docgenServer) {
+      await expect(argTypes.a).toBeUndefined();
+      await expect(argTypes).toMatchObject({
+        componentArg: { type: { name: 'string' } },
+        storyArg: { type: { name: 'string' } },
+        composedArg: { type: { name: 'string' } },
+      });
+      return;
+    }
+    await expect(argTypes).toMatchObject({
       a: { type: { name: 'number' } },
       b: { type: { name: 'string' } },
       c: { type: { name: 'boolean' } },
       d: { type: { name: 'object', value: { a: { name: 'string' } } } },
       e: { type: { name: 'array', value: { name: 'string' } } },
     });
+  },
+};
+
+export const HiddenFromPlay = {
+  play: async (context: StoryContext<any>) => {
+    await expect('argTypes' in context).toBe(false);
+    await expect(() => context.argTypes).toThrow(/no longer part of the story context/);
   },
 };

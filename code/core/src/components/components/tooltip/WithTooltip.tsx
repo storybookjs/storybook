@@ -9,7 +9,7 @@ import { global } from '@storybook/global';
 import memoize from 'memoizerific';
 import type { PopperOptions, Config as ReactPopperTooltipConfig } from 'react-popper-tooltip';
 import { usePopperTooltip } from 'react-popper-tooltip';
-import { type Color, lighten, styled } from 'storybook/theming';
+import { type Color, lighten, styled } from 'storybook/theming/emotion';
 
 const { document } = global;
 
@@ -103,10 +103,10 @@ export interface WrapperProps {
 }
 
 const Wrapper = styled.div<WrapperProps>(
-  ({ hidden }) => ({
+  ({ theme, hidden }) => ({
     display: hidden ? 'none' : 'inline-block',
     zIndex: 2147483647,
-    colorScheme: 'light dark',
+    colorScheme: theme.base,
   }),
   ({ theme, color, hasChrome }) =>
     hasChrome
@@ -120,6 +120,7 @@ const Wrapper = styled.div<WrapperProps>(
             drop-shadow(0 1px 3px rgba(0,0,0,0.1))
           `,
           borderRadius: theme.appBorderRadius + 2,
+          fontFamily: theme.typography.fonts.base,
           fontSize: theme.typography.size.s1,
         }
       : {}

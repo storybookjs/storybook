@@ -9,7 +9,7 @@ const templateName = process.env.STORYBOOK_TEMPLATE_NAME;
 
 test.describe('Next.js', () => {
   // TODO: improve these E2E tests given that we have more version of Next.js to test
-  // and this only tests nextjs/default-js
+  // and this only tests nextjs/default-ts
   test.skip(
     !templateName?.includes('nextjs/default-ts'),
     'Only run this test for the Frameworks that support next/navigation'
@@ -76,6 +76,28 @@ test.describe('Next.js', () => {
     testRoutingBehaviour('Push HTML', 'push');
     testRoutingBehaviour('Refresh', 'refresh');
     testRoutingBehaviour('Replace', 'replace');
+  });
+
+  test.describe('next/link', () => {
+    let root: Locator;
+    let sbPage: SbPage;
+
+    test.beforeEach(async ({ page }) => {
+      sbPage = new SbPage(page, expect);
+
+      await sbPage.navigateToStory('stories/frameworks/nextjs/Link', 'triggers-link-action');
+      root = sbPage.previewRoot();
+    });
+
+    test('should log a link action when clicked', async ({ page }) => {
+      await root.locator('a', { hasText: 'Trigger link action' }).click();
+
+      await sbPage.viewAddonPanel('Actions');
+      const logItem = page.locator('#storybook-panel-root [role="tabpanel"]', {
+        hasText: 'next/link::Link',
+      });
+      await expect(logItem).toBeVisible();
+    });
   });
 
   test.describe('next/router', () => {

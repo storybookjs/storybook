@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "2.1.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "vanilla-basic.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Plain custom element with attribute-backed properties.",
+          "name": "VanillaBasic",
+          "members": [
+            {
+              "kind": "field",
+              "name": "label",
+              "description": "Text label."
+            },
+            {
+              "kind": "field",
+              "name": "count",
+              "description": "Item count."
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "readonly": true,
+              "description": "Disabled state."
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label"
+            },
+            {
+              "name": "count"
+            },
+            {
+              "name": "disabled"
+            },
+            {
+              "type": {
+                "text": "string"
+              },
+              "description": "Old name for label. @deprecated Use label instead.",
+              "name": "legacy-label"
+            }
+          ],
+          "cssStates": [
+            {
+              "name": "disabled",
+              "description": "Set while the element is disabled."
+            }
+          ],
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "vanilla-basic",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "VanillaBasic",
+          "declaration": {
+            "name": "VanillaBasic",
+            "module": "vanilla-basic.js"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "vanilla-basic",
+          "declaration": {
+            "name": "VanillaBasic",
+            "module": "vanilla-basic.js"
+          }
+        }
+      ]
+    }
+  ]
+}

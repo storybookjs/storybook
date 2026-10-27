@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react';
 
 import { Button, Form } from 'storybook/internal/components';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import type { ControlProps, TextConfig, TextValue } from './types';
@@ -30,6 +30,7 @@ export const TextControl: FC<TextProps> = ({
   onBlur,
   maxLength,
   argType,
+  required,
 }) => {
   const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     onChange(event.target.value);
@@ -71,6 +72,7 @@ export const TextControl: FC<TextProps> = ({
         size="flex"
         placeholder="Edit string..."
         autoFocus={forceVisible}
+        aria-required={required || undefined}
         valid={isValid ? undefined : 'error'}
         {...{ name, value: isValid ? value : '', onFocus, onBlur }}
       />

@@ -7,6 +7,8 @@ export interface ControlProps<T> {
   value?: T;
   defaultValue?: T;
   argType?: ArgType;
+  /** Whether the underlying arg is required; surfaced as `aria-required` on the control's input. */
+  required?: boolean;
   onChange: (value?: T) => T | void;
   onFocus?: (evt: any) => void;
   onBlur?: (evt: any) => void;

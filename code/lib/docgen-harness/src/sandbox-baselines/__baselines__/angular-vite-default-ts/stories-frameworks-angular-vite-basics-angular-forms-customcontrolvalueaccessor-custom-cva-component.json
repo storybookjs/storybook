@@ -1,0 +1,131 @@
+{
+  "argTypes": {
+    "disabled": {
+      "name": "disabled",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean"
+      }
+    },
+    "internalValue": {
+      "name": "internalValue",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "any"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "onChange": {
+      "name": "onChange",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "(value: any) => void"
+        }
+      },
+      "type": {
+        "name": "function"
+      }
+    },
+    "onTouch": {
+      "name": "onTouch",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "function"
+      }
+    },
+    "registerOnChange": {
+      "name": "registerOnChange",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "(fn: any) => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "registerOnTouched": {
+      "name": "registerOnTouched",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "(fn: any) => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "setDisabledState": {
+      "name": "setDisabledState",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "(isDisabled: boolean) => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "value": {
+      "name": "value",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "any"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "writeValue": {
+      "name": "writeValue",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "(value: any) => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-basics-angular-forms-customcontrolvalueaccessor-custom-cva-component",
+  "jsDocTags": {},
+  "name": "CustomCvaComponent",
+  "path": "./src/stories/frameworks/angular-vite/basics/angular-forms/customControlValueAccessor/custom-cva-component.stories.ts"
+}

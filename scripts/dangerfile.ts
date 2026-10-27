@@ -1,0 +1,209 @@
+/**
+ * IMPORTANT: This file has unique constraints due to how Danger.js executes it.
+ *
+ * Restrictions:
+ *
+ * - NO external dependencies: Scripts dependencies are not installed in CI
+ * - NO Node.js built-ins: Even `fs` and other core modules don't work in Danger's runtime
+ * - Local dependencies must not import any package dependency themselves
+ *
+ * Can be done:
+ * - TypeScript usage; Danger transpiles to JS internally
+ * - Importing local scripts and helpers provided they don't have dependencies on external packages
+ *
+ * Why: We want Danger to run as fast as possible in CI without installing dependencies or running
+ * build processes.
+ */
+import { danger, fail, warn } from 'danger';
+
+import pkg from '../code/package.json';
+
+function intersection<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>): T[] {
+  return a.filter((v) => b.includes(v));
+}
+
+const Versions = {
+  PATCH: 'PATCH',
+  MINOR: 'MINOR',
+  MAJOR: 'MAJOR',
+};
+
+const qaLabels = ['qa:needed', 'qa:skip', 'qa:success'];
+
+const { labels } = danger.github.issue;
+
+const prLogConfig = pkg['pr-log'];
+
+const isPrerelease = pkg.version.includes('-');
+const isFirstOfMajor = /^\d+\.0\.0(-|$)/.test(pkg.version);
+const branchVersion = !isPrerelease
+  ? Versions.PATCH
+  : isFirstOfMajor
+    ? Versions.MAJOR
+    : Versions.MINOR;
+const targetBranch = danger.github.pr.base.ref;
+const isReleasePr = ['latest-release', 'next-release'].includes(targetBranch);
+const author = danger.github.pr.user;
+const authorAssociation = danger.github.pr.author_association;
+
+const checkRequiredLabels = (labels: string[]) => {
+  const forbiddenLabels = [
+    'ci: do not merge',
+    'in progress',
+    ...(branchVersion !== Versions.MAJOR ? ['BREAKING CHANGE'] : []),
+    ...(branchVersion === Versions.PATCH ? ['feature request'] : []),
+  ];
+
+  const requiredLabels = [
+    ...(prLogConfig?.skipLabels ?? []),
+    ...(prLogConfig?.validLabels ?? []).map(([label]) => label),
+  ];
+
+  const blockingLabels = intersection(forbiddenLabels, labels);
+  if (blockingLabels.length > 0) {
+    fail(
+      `PR is marked with ${blockingLabels.map((label) => `"${label}"`).join(', ')} label${
+        blockingLabels.length > 1 ? 's' : ''
+      }.`
+    );
+  }
+
+  if (isReleasePr) {
+    // Release PRs only need `ci:daily`.
+    if (!labels.includes('ci:daily')) {
+      fail(
+        'Release PRs targeting latest-release or next-release must include the "ci:daily" label.'
+      );
+    }
+    return;
+  } else {
+    // All other PRs to `next` need a qualifying change type and a QA label.
+    const foundRequiredLabels = intersection(requiredLabels, labels);
+    if (foundRequiredLabels.length === 0) {
+      fail(`PR is not labeled with one of: ${JSON.stringify(requiredLabels)}`);
+    } else if (foundRequiredLabels.length > 1) {
+      fail(`Please choose only one of these labels: ${JSON.stringify(foundRequiredLabels)}`);
+    }
+
+    const foundQALabels = intersection(qaLabels, labels);
+    if (foundQALabels.length === 0) {
+      fail(`PR is not labeled with one of: ${JSON.stringify(qaLabels)}`);
+    } else if (foundQALabels.length > 1) {
+      fail(`Please choose only one of these labels: ${JSON.stringify(foundQALabels)}`);
+    }
+  }
+};
+
+const checkPrTitle = (title: string) => {
+  const match = title.match(/^[A-Z].+:\s[A-Z].+$/);
+  if (!match) {
+    fail(
+      `PR title must be in the format of "Area: Summary", With both Area and Summary starting with a capital letter
+Good examples:
+- "Docs: Describe Canvas Doc Block"
+- "Svelte: Support Svelte v4"
+Bad examples:
+- "add new api docs"
+- "fix: Svelte 4 support"
+- "Vue: improve docs"`
+    );
+  }
+};
+
+const checkManualTestingSection = (body: string) => {
+  // Check if author is a core team member or maintainer
+  const author = danger.github.pr.user;
+  const authorAssociation = danger.github.pr.author_association;
+
+  // Bypass check for OWNER, MEMBER roles (but never for agent bots)
+  if (
+    (['OWNER', 'MEMBER'].includes(authorAssociation) && author.type !== 'Bot') ||
+    (author.login === 'github-actions[bot]' && author.type === 'Bot')
+  ) {
+    return;
+  }
+
+  // Check if manual testing section exists
+  const manualTestingMatch = body.match(/####\s*Manual testing/i);
+  if (!manualTestingMatch || manualTestingMatch.index === undefined) {
+    fail(
+      'PR description is missing the mandatory "#### Manual testing" section. Please add it so that reviewers know how to manually test your changes.'
+    );
+    return;
+  }
+
+  // Extract content after the manual testing section
+  const manualTestingSectionStart = manualTestingMatch.index + manualTestingMatch[0].length;
+  const restOfBody = body.substring(manualTestingSectionStart);
+
+  // Find the next section
+  const nextSectionMatch = restOfBody.match(/\n#+[^#]/);
+  const manualTestingContent = nextSectionMatch
+    ? restOfBody.substring(0, nextSectionMatch.index)
+    : restOfBody;
+
+  // Remove the initial message and check if there's any meaningful content left
+  const contentWithoutInitialMessage = manualTestingContent
+    .replace(/>\s*\[!CAUTION\][^]*?This section is mandatory[^]*?Thanks!/i, '')
+    .trim();
+
+  // Check if there's any substantial content (ignoring whitespace and template comments)
+  const contentWithoutComments = contentWithoutInitialMessage
+    .replace(/<!--[^]*?-->/g, '') // Remove HTML comments
+    .replace(/\s+/g, ''); // Remove all whitespace
+
+  if (!contentWithoutComments) {
+    fail(
+      'The "#### Manual testing" section must be filled in. Please describe how to test the changes you\'ve made, step by step, so that reviewers can confirm your PR works as intended.'
+    );
+  }
+};
+
+/**
+ * Checks that all tasks in the release PR body have been checked. Checkboxes include:
+ * - Adding the freeze label
+ * - Renaming freeform commits that are missing a changelog category
+ * - Cherry-picking PRs with conflicts
+ * - Any other task you choose to add during the release process!
+ */
+const checkReleaseChecklist = (body: string) => {
+  if (!isReleasePr) {
+    return;
+  }
+
+  // Match unchecked task list items (`- [ ]` or `* [ ]`) anywhere in the body.
+  if (/^\s*[-*]\s+\[ \]/m.test(body)) {
+    fail(
+      'This release PR still has unchecked tasks in its description. The release manager must complete all checklist items before merging.'
+    );
+  }
+};
+
+const checkTargetBranch = () => {
+  // Only check for non-team members (not OWNER, MEMBER) and skip GitHub Actions bot
+  if (
+    ['OWNER', 'MEMBER'].includes(authorAssociation) ||
+    (author.login === 'github-actions[bot]' && author.type === 'Bot')
+  ) {
+    return;
+  }
+
+  if (targetBranch === 'main' || targetBranch.includes('release')) {
+    fail(
+      `This PR targets \`${targetBranch}\`, but it should target \`next\`. Please update the base branch of your PR.`
+    );
+  } else if (targetBranch !== 'next') {
+    warn(
+      `This PR targets \`${targetBranch}\`. The default branch for contributions is \`next\`. Please make sure you are targeting the correct branch.`
+    );
+  }
+};
+
+checkTargetBranch();
+checkReleaseChecklist(danger.github.pr.body);
+
+if (prLogConfig) {
+  checkRequiredLabels(labels.map((l) => l.name));
+  checkPrTitle(danger.github.pr.title);
+  checkManualTestingSection(danger.github.pr.body);
+}

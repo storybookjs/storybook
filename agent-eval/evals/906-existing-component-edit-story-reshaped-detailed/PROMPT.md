@@ -1,0 +1,1 @@
+Update `stories/PlanCard.stories.tsx` to align with the current `PlanCard` props: `name`, `price`, `features`, `ctaLabel`, `popular?`, `onSelect?`. Cover default, popular (highlighted), and many-features variants. Keep CSF args/controls meaningful. Prefer fixing stories; only change the component if necessary for correctness.

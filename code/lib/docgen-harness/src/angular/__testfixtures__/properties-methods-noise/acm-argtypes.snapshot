@@ -1,0 +1,201 @@
+{
+  "clampPage": {
+    "description": undefined,
+    "name": "clampPage",
+    "table": {
+      "category": "methods",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "() => void",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "currentPage": {
+    "description": undefined,
+    "name": "currentPage",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": 1,
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "density": {
+    "description": undefined,
+    "name": "density",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "compact",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "densityChange": {
+    "action": "densityChange",
+    "description": undefined,
+    "name": "densityChange",
+    "table": {
+      "category": "outputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "EventEmitter",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "helperLabel": {
+    "description": undefined,
+    "name": "helperLabel",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "Next page",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "host": {
+    "description": undefined,
+    "name": "host",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "ElementRef",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "empty-enum",
+    },
+  },
+  "isActive": {
+    "description": undefined,
+    "name": "isActive",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": false,
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
+  "loading": {
+    "description": undefined,
+    "name": "loading",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "WritableSignal<boolean>",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "empty-enum",
+    },
+  },
+  "nextPage": {
+    "description": undefined,
+    "name": "nextPage",
+    "table": {
+      "category": "methods",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "() => void",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "pageLabel": {
+    "description": undefined,
+    "name": "pageLabel",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "panel": {
+    "description": undefined,
+    "name": "panel",
+    "table": {
+      "category": "view child",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "ElementRef<HTMLDivElement>",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "title": {
+    "description": undefined,
+    "name": "title",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

@@ -1,0 +1,82 @@
+{
+  "count": {
+    "control": {
+      "type": "number",
+    },
+    "description": "Numeric count.",
+    "name": "count",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "0",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": false,
+    },
+  },
+  "label": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Visible label text.",
+    "name": "label",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "primary": {
+    "control": {
+      "type": "boolean",
+    },
+    "description": "Primary visual state.",
+    "name": "primary",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+  "title": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Optional title text.",
+    "name": "title",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+}

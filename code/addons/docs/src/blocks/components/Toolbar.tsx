@@ -5,7 +5,7 @@ import { Button, Toolbar as SharedToolbar } from 'storybook/internal/components'
 
 import { ShareAltIcon, SyncIcon, ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { getStoryHref } from '../getStoryHref';
 
@@ -31,6 +31,8 @@ interface LoadingProps {
 }
 
 export type ToolbarProps = BarProps & ZoomProps & EjectProps & LoadingProps & ReloadProps;
+
+export const TRAILING_INSET = 10;
 
 const AbsoluteBar = styled(SharedToolbar)({
   position: 'absolute',
@@ -65,7 +67,18 @@ export const Toolbar: FC<ToolbarProps> = ({
   onReloadStory,
   ...rest
 }) => (
-  <AbsoluteBar innerStyle={{ gap: 4, paddingInline: 7, justifyContent: 'space-between' }} {...rest}>
+  <AbsoluteBar
+    // The toolbar is absolutely positioned inside the preview container's 1px border, so it lands
+    // on the shared edge one pixel short of the inset the other two icons use.
+    innerStyle={{
+      gap: 4,
+      paddingInline: 7,
+      paddingInlineEnd: TRAILING_INSET - 1,
+      justifyContent: 'space-between',
+    }}
+    lang="en"
+    {...rest}
+  >
     <Wrapper key="left">
       {isLoading ? (
         [1, 2, 3].map((key) => <IconPlaceholder key={key} />)

@@ -1,8 +1,8 @@
 /**
  * Shared definition for the static-load open-service sync demo.
  *
- * `getEntry` participates in static builds via `staticPath` + `staticInputs`; its `load` calls the
- * server-only `computeEntry` command. `getUnbacked` has a `load` but no `staticPath`, so static
+ * `entry` participates in static builds via `staticPath` + `staticInputs`; its `load` calls the
+ * server-only `computeEntry` command. `unbacked` has a `load` but no `staticPath`, so static
  * builds exercise the no-ack remote-command path.
  */
 
@@ -25,7 +25,7 @@ export const staticLoadSyncServiceDef = defineService({
     'Internal demo service for validating static JSON loading and unhandled remote commands.',
   initialState,
   queries: {
-    getEntry: {
+    entry: {
       description: 'Returns one preloaded entry by id.',
       input: entryInputSchema,
       output: v.optional(v.string()),
@@ -36,7 +36,7 @@ export const staticLoadSyncServiceDef = defineService({
       staticPath: (input) => `${input.id}.json`,
       staticInputs: async () => [{ id: 'alpha' }, { id: 'beta' }],
     },
-    getUnbacked: {
+    unbacked: {
       description:
         'Returns the unbacked entry populated by a server-only command (no static snapshot).',
       input: v.void(),

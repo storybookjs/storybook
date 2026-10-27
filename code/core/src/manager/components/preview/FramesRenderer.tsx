@@ -5,8 +5,7 @@ import { Button } from 'storybook/internal/components';
 
 import type { Combo } from 'storybook/manager-api';
 import { Consumer } from 'storybook/manager-api';
-import { Global, styled } from 'storybook/theming';
-import type { CSSObject } from 'storybook/theming';
+import { type CSSObject, Global, styled } from 'storybook/theming/emotion';
 
 import { Viewport } from './Viewport.tsx';
 import type { FramesRendererProps } from './utils/types.tsx';
@@ -38,7 +37,7 @@ const SkipToSidebarLink = styled(Button)(({ theme }) => ({
 
 const whenSidebarIsVisible = ({ api, state }: Combo) => ({
   isFullscreen: api.getIsFullscreen(),
-  isNavShown: api.getIsNavShown(),
+  isNavShown: api.getNavAvailability() === 'shown',
   selectedStoryId: state.storyId,
 });
 

@@ -6,7 +6,7 @@ import { deprecate } from 'storybook/internal/client-logger';
 import { ChevronRightIcon } from '@storybook/icons';
 
 import { darken } from 'polished';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 // Cmd/Ctrl/Shift/Alt + Click should trigger default browser behavior. Same applies to non-left clicks
 const LEFT_BUTTON = 0;
@@ -85,6 +85,14 @@ const A = styled.a<LinkStylesProps>(
       'svg path:not([fill])': {
         fill: darken(0.1, theme.color.secondary),
       },
+    },
+
+    '&:focus-visible': {
+      outline: `2px solid ${theme.color.secondary}`,
+      outlineOffset: 2,
+      borderRadius: theme.input.borderRadius,
+      // Should ensure focus outline gets drawn above next sibling
+      zIndex: '1',
     },
 
     svg: {
@@ -176,13 +184,6 @@ const A = styled.a<LinkStylesProps>(
           padding: 0,
           fontSize: 'inherit',
           lineHeight: 'inherit',
-
-          '&:focus-visible': {
-            outline: `2px solid ${theme.color.secondary}`,
-            outlineOffset: 2,
-            // Should ensure focus outline gets drawn above next sibling
-            zIndex: '1',
-          },
         }
       : {}
 );

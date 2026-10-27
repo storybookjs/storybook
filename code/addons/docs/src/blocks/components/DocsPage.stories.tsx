@@ -1,7 +1,8 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import React from 'react';
 
-import { Global, css } from 'storybook/theming';
+import { expect, within } from 'storybook/test';
+import { Global, css } from 'storybook/theming/emotion';
 
 import { ArgsTable, Source } from '.';
 import { Markdown as MarkdownComponent } from '../blocks/Markdown';
@@ -89,6 +90,20 @@ export const Markdown = () => (
     <Source {...source.JSX.args} />
   </DocsPageWrapper>
 );
+
+export const ForwardsLang = {
+  name: 'Forwards lang',
+  render: () => (
+    <DocsPageWrapper lang="de">
+      <Title>Sprache</Title>
+      <MarkdownComponent {...markdown.Text.args} />
+    </DocsPageWrapper>
+  ),
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const content = within(canvasElement).getByText('Sprache').closest('.sbdocs-content');
+    await expect(content).toHaveAttribute('lang', 'de');
+  },
+};
 
 export const Html = {
   name: 'HTML',

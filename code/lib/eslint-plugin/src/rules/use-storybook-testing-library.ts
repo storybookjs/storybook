@@ -2,7 +2,7 @@
  * @file Do not use testing library directly on stories
  * @author Yann Braga
  */
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/types';
 
 import { isImportDefaultSpecifier } from '../utils/ast.ts';
 import { CategoryId } from '../utils/constants.ts';

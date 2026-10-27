@@ -18,6 +18,14 @@ import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from '../generators/types.ts';
 
+// `remix` >=3 is Remix 3. `@remix-run/dev` is Remix 2 and stays on the React path.
+function isRemix3VersionRange(versionRange: string | null | undefined): boolean {
+  if (!versionRange || !semver.validRange(versionRange)) {
+    return false;
+  }
+  return (semver.minVersion(versionRange)?.major ?? 0) >= 3;
+}
+
 type TemplateMatcher = {
   files?: boolean[];
   dependencies?: boolean[];
@@ -49,9 +57,10 @@ export class ProjectTypeService {
       },
       {
         preset: ProjectType.TANSTACK_REACT,
-        dependencies: ['@tanstack/start', '@tanstack/react-start', '@tanstack/react-router'],
-        matcherFunction: ({ dependencies }) => {
-          return dependencies?.some(Boolean) ?? false;
+        dependencies: ['@tanstack/react-start', '@tanstack/react-router'],
+        peerDependencies: ['@tanstack/react-start', '@tanstack/react-router'],
+        matcherFunction: ({ dependencies, peerDependencies }) => {
+          return (dependencies?.some(Boolean) || peerDependencies?.some(Boolean)) ?? false;
         },
       },
       {
@@ -91,16 +100,6 @@ export class ProjectTypeService {
         peerDependencies: ['react-native', 'react-native-scripts', 'expo'],
         matcherFunction: ({ dependencies, peerDependencies }) => {
           return (dependencies?.some(Boolean) || peerDependencies?.some(Boolean)) ?? false;
-        },
-      },
-      {
-        preset: ProjectType.REACT_SCRIPTS,
-        // For projects using a custom/forked `react-scripts` package.
-        files: ['/node_modules/.bin/react-scripts'],
-        // For standard CRA projects
-        dependencies: ['react-scripts'],
-        matcherFunction: ({ dependencies, files }) => {
-          return (dependencies?.every(Boolean) || files?.every(Boolean)) ?? false;
         },
       },
       {
@@ -144,6 +143,15 @@ export class ProjectTypeService {
         dependencies: ['solid-js'],
         matcherFunction: ({ dependencies }) => {
           return dependencies?.every(Boolean) ?? true;
+        },
+      },
+      {
+        preset: ProjectType.HTML,
+        dependencies: {
+          remix: (versionRange) => isRemix3VersionRange(versionRange),
+        },
+        matcherFunction: ({ dependencies }) => {
+          return dependencies?.every(Boolean) ?? false;
         },
       },
       // DO NOT MOVE ANY TEMPLATES BELOW THIS LINE
@@ -242,13 +250,13 @@ export class ProjectTypeService {
     }
   }
 
-  private detectFrameworkPreset(packageJson: PackageJsonWithMaybeDeps): ProjectType | null {
-    const result = [...this.getSupportedTemplates(), this.getUnsupportedTemplate()].find(
-      (framework) => {
-        return this.getProjectType(packageJson, framework) !== null;
+  private async detectFrameworkPreset(packageJson: PackageJsonWithMaybeDeps): Promise<ProjectType> {
+    for (const framework of [...this.getSupportedTemplates(), this.getUnsupportedTemplate()]) {
+      if ((await this.getProjectType(packageJson, framework)) !== null) {
+        return framework.preset;
       }
-    );
-    return result ? result.preset : ProjectType.UNDETECTED;
+    }
+    return ProjectType.UNDETECTED;
   }
 
   /** Template that matches unsupported frameworks */
@@ -262,10 +270,10 @@ export class ProjectTypeService {
     };
   }
 
-  private getProjectType(
+  private async getProjectType(
     packageJson: PackageJsonWithMaybeDeps,
     framework: TemplateConfiguration
-  ): ProjectType | null {
+  ): Promise<ProjectType | null> {
     const matcher: TemplateMatcher = {
       dependencies: [false],
       peerDependencies: [false],
@@ -282,8 +290,8 @@ export class ProjectTypeService {
     }
 
     if (dependencySearches.length > 0) {
-      matcher.dependencies = dependencySearches.map(([name, matchFn]) =>
-        this.hasDependency(packageJson, name, matchFn)
+      matcher.dependencies = await Promise.all(
+        dependencySearches.map(([name, matchFn]) => this.hasDependency(packageJson, name, matchFn))
       );
     }
 
@@ -308,14 +316,18 @@ export class ProjectTypeService {
     return matcherFunction(matcher) ? preset : null;
   }
 
-  private hasDependency(
+  private async hasDependency(
     packageJson: PackageJsonWithMaybeDeps,
     name: string,
     matcher?: (version: string) => boolean
-  ) {
+  ): Promise<boolean> {
     const version = packageJson.dependencies?.[name] || packageJson.devDependencies?.[name];
     if (version && typeof matcher === 'function') {
-      return matcher(version);
+      // Tags (`latest`, `next`) and `catalog:` are not ranges. Matchers need the installed version.
+      const resolvedVersion = semver.validRange(version)
+        ? version
+        : await this.jsPackageManager.getDeclaredVersionSpecifier(name);
+      return matcher(resolvedVersion ?? version);
     }
     return !!version;
   }

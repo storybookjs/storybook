@@ -1,0 +1,38 @@
+{
+  "modelValue": {
+    "description": "The text value controlled via the default v-model.",
+    "name": "modelValue",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "update:modelValue": {
+    "control": {
+      "disable": true,
+    },
+    "description": "Emitted when the text value changes.",
+    "name": "update:modelValue",
+    "table": {
+      "category": "events",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "string",
+    },
+  },
+}

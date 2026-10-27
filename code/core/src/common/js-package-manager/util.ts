@@ -1,4 +1,7 @@
-import { gt, prerelease, valid } from 'semver';
+import { compare, gt, prerelease, valid } from 'semver';
+
+import type { JsPackageManager } from './JsPackageManager.ts';
+import { PackageManagerName } from './JsPackageManager.ts';
 
 export type StorybookInstallContext = 'create' | 'upgrade';
 
@@ -7,6 +10,7 @@ export const STORYBOOK_PACKAGE_PATTERNS = [
   '@storybook/*',
   'eslint-plugin-storybook',
   '@chromatic-com/storybook',
+  'chromatic',
 ] as const;
 
 const escapePatternForRegex = (pattern: string) => pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -56,6 +60,73 @@ export const parsePositiveIntegerConfigValue = (value: string | null | undefined
   return parsedValue;
 };
 
+const YARN_AGE_GATE_UNITS_IN_MINUTES = {
+  ms: 1 / 60_000,
+  s: 1 / 60,
+  m: 1,
+  h: 60,
+  d: 60 * 24,
+  w: 60 * 24 * 7,
+} as const;
+
+export const parseYarnMinimalAgeGateMinutes = (value: string | null | undefined): number | null => {
+  const normalizedValue = value?.trim() ?? '';
+
+  if (
+    !normalizedValue ||
+    normalizedValue === 'undefined' ||
+    normalizedValue === 'null' ||
+    normalizedValue === 'false'
+  ) {
+    return null;
+  }
+
+  if (normalizedValue.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(normalizedValue) as { secs?: unknown; nanos?: unknown };
+      if (typeof parsed.secs === 'number') {
+        const nanos = typeof parsed.nanos === 'number' ? parsed.nanos : 0;
+        const minutes = parsed.secs / 60 + nanos / 60_000_000_000;
+        return minutes > 0 ? minutes : null;
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }
+
+  const duration = normalizedValue.match(/^(\d+(?:\.\d+)?)(ms|s|m|h|d|w)$/);
+  if (duration) {
+    const amount = Number(duration[1]);
+    const unit = duration[2] as keyof typeof YARN_AGE_GATE_UNITS_IN_MINUTES;
+    const minutes = amount * YARN_AGE_GATE_UNITS_IN_MINUTES[unit];
+    return minutes > 0 ? minutes : null;
+  }
+
+  if (!/^\d+$/.test(normalizedValue)) {
+    return null;
+  }
+
+  const parsedValue = Number(normalizedValue);
+  return parsedValue > 0 ? parsedValue : null;
+};
+
+export const readPackageVersions = (value: unknown): string[] | null => {
+  if (Array.isArray(value)) {
+    const versions = value.filter(
+      (entry): entry is string => typeof entry === 'string' && !!valid(entry)
+    );
+    return versions.length > 0 ? versions : null;
+  }
+
+  if (value && typeof value === 'object') {
+    const versions = Object.keys(value).filter((version) => !!valid(version));
+    return versions.length > 0 ? versions.sort(compare) : null;
+  }
+
+  return null;
+};
+
 export const parseReleaseTime = (value: unknown): Date | null => {
   if (typeof value !== 'string' || value.length === 0) {
     return null;
@@ -66,6 +137,12 @@ export const parseReleaseTime = (value: unknown): Date | null => {
 };
 
 export const parsePackageTimeMap = (value: unknown): Record<string, string> | null => {
+  // pnpm < 11 forwards `view` to npm. With npm 12, the time map is wrapped in an array.
+  // https://github.com/npm/cli/releases/tag/v12.0.0
+  if (Array.isArray(value) && value.length === 1) {
+    value = value[0];
+  }
+
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null;
   }
@@ -109,6 +186,49 @@ export const getLatestStableVersionAdheringToMinimumAgeGate = (
 
   return latestStableVersion;
 };
+
+/**
+ * Args for `runPackageCommand({ useRemotePkg: true })` when bootstrapping a Storybook CLI package
+ * that isn't installed locally.
+ *
+ * npm and Yarn Classic both execute the remote package through `npx`, which prompts "Ok to
+ * proceed?" before downloading and hangs in non-interactive/CI environments. `--yes` auto-confirms
+ * that install. pnpm (`dlx`), Yarn Berry (`dlx`) and Bun (`bunx`) download without prompting, so
+ * they must not receive the npx-only `--yes` flag.
+ */
+export function getRemotePackageRunnerArgs(
+  packageManagerType: PackageManagerName,
+  pkg: string,
+  version: string,
+  args: string[]
+): string[] {
+  const pkgWithVersion = `${pkg}@${version}`;
+  const usesNpx =
+    packageManagerType === PackageManagerName.NPM ||
+    packageManagerType === PackageManagerName.YARN1;
+  if (!usesNpx) {
+    return [pkgWithVersion, ...args];
+  }
+
+  // npm 12 defaults allow-remote to none. pkg.pr.new specifiers are remote URLs.
+  if (/^https?:\/\//.test(version)) {
+    return ['--yes', '--allow-remote=all', pkgWithVersion, ...args];
+  }
+
+  return ['--yes', pkgWithVersion, ...args];
+}
+
+export function getVitestStorybookRunCommand(packageManager: JsPackageManager, file?: string) {
+  const args = ['vitest', '--project', 'storybook', 'run'];
+  if (file) {
+    args.push(file);
+  }
+  return packageManager.getPackageCommand(args);
+}
+
+export function getMswInitCommand(packageManager: JsPackageManager) {
+  return packageManager.getPackageCommand(['msw', 'init', './public', '--save']);
+}
 
 export const getStorybookRerunCommand = (
   installContext: StorybookInstallContext,
@@ -160,3 +280,40 @@ export const getErrorLogs = (error: unknown): string => {
 
   return String(error);
 };
+
+/** Number of trailing output lines surfaced when a package install fails. */
+export const INSTALL_ERROR_TAIL_LINES = 15;
+
+/**
+ * The tail of a failed package install's captured output (see `getErrorLogs`). Output longer than
+ * `lines` lines is truncated to the last `lines` — package managers print their own error summary
+ * (e.g. an npm ERESOLVE explanation) at the end. Returns '' only when there is no captured output
+ * at all; short outputs are returned in full so they are still logged and folded into the error.
+ */
+export const getInstallErrorTail = (error: unknown, lines: number = INSTALL_ERROR_TAIL_LINES) => {
+  const output = getErrorLogs(error).trimEnd();
+  if (!output) {
+    return '';
+  }
+
+  const allLines = output.split('\n');
+  return allLines.slice(-lines).join('\n').trim();
+};
+
+/** The package manager error code (e.g. npm `ERESOLVE`, pnpm `ERR_PNPM_…`) in captured output. */
+export function extractPackageManagerErrorCode(logs: string): string | undefined {
+  const npmMatch = logs.match(/npm\s+(?:ERR!|error)\s+code\s+([A-Z0-9_]+)/i);
+  if (npmMatch) {
+    return npmMatch[1];
+  }
+
+  const pnpmMatch = logs.match(/(ERR_PNPM_[A-Z0-9_]+)/);
+  if (pnpmMatch) {
+    return pnpmMatch[1];
+  }
+
+  return undefined;
+}
+
+export const isNpmPeerResolutionError = (error: unknown): boolean =>
+  extractPackageManagerErrorCode(getErrorLogs(error)) === 'ERESOLVE';

@@ -8,8 +8,10 @@ import { type Report, composeStory, getCsfFactoryAnnotations } from 'storybook/p
 import {
   STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY,
   STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY,
+  STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY,
   STORYBOOK_TEST_PROVIDE_KEY,
 } from '../constants.ts';
+import { composeInitialGlobals } from './compose-initial-globals.ts';
 import { setViewport } from './viewports.ts';
 
 /**
@@ -23,8 +25,11 @@ export const convertToFilePath = (url: string): string => {
   const path = url.replace(/^file:\/\//, '');
   // Handle Windows paths
   const normalizedPath = path.replace(/^\/+([a-zA-Z]:)/, '$1');
-  // Convert %20 to spaces
-  return normalizedPath.replace(/%20/g, ' ');
+  try {
+    return decodeURIComponent(normalizedPath);
+  } catch {
+    return normalizedPath;
+  }
 };
 
 export const testStory = ({
@@ -77,27 +82,24 @@ export const testStory = ({
       // Standalone Vitest runs might not provide Storybook render analysis config.
     }
 
+    // Globals the consumer pinned on this project via `storybookTest({ initialGlobals })`, e.g.
+    // `{ theme: 'dark' }` to run the suite under a specific theme. Spread first so Storybook's own
+    // run-control globals below always win.
+    let userInitialGlobals: Record<string, unknown> = {};
+    try {
+      userInitialGlobals = inject(STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY) ?? {};
+    } catch {
+      // Standalone Vitest runs might not provide project initial globals.
+    }
+
     const shouldRunA11yTests = !!runConfig.a11y;
-    const initialGlobals = {
-      [STORYBOOK_TEST_PROVIDE_KEY]: runConfig,
-      ...(ghostStoriesEnabled
-        ? {
-            ghostStories: {
-              enabled: true,
-            },
-          }
-        : {}),
-      ...(renderAnalysisEnabled
-        ? {
-            renderAnalysis: {
-              enabled: true,
-            },
-          }
-        : {}),
-      a11y: {
-        manual: !shouldRunA11yTests,
-      },
-    };
+    const initialGlobals = composeInitialGlobals({
+      userInitialGlobals,
+      runConfig,
+      ghostStoriesEnabled,
+      renderAnalysisEnabled,
+      shouldRunA11yTests,
+    });
 
     const composedStory = composeStory(
       storyAnnotations,

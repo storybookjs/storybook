@@ -7,7 +7,7 @@ import { Component, model } from '@angular/core';
  * A component exercising Angular's `model()` two-way binding signal.
  *
  * compodoc emits a `model()` member as an identical entry in BOTH `inputsClass` and
- * `outputsClass` (see `.omc/plans/probe-fixtures/compodoc-model-probe-documentation.json`).
+ * `outputsClass`; the committed `compodoc-input.json` next to this file is that capture.
  */
 @Component({ selector: 'cp', template: '' })
 export class ColorPickerComponent {

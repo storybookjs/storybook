@@ -5,9 +5,11 @@ import { Component } from '@angular/core';
   standalone: false,
   selector: 'component-with-whitespace',
   preserveWhitespaces: true,
-  template: ` <div>
-  <p>Some content</p>
-</div>`,
+  template: `
+    <div>
+      <p>Some content</p>
+    </div>
+  `,
 })
 class ComponentWithWhitespace {}
 

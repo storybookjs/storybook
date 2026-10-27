@@ -1,0 +1,22 @@
+{
+  "name": "@storybook/mcp-eval-template-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#test-utils": "./__agent_eval__/test-utils.ts"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "postinstall": "playwright install chromium && node ./scripts/start-storybook-mcp.mjs",
+    "storybook": "npm run storybook --workspace @acme/ui --"
+  },
+  "devDependencies": {
+    "@vercel/agent-eval": "1.2.0",
+    "playwright": "1.56.1",
+    "typescript": "5.9.3",
+    "vitest": "4.0.6"
+  }
+}

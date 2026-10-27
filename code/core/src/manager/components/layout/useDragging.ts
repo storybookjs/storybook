@@ -132,29 +132,28 @@ export function useDragging({
   useEffect(() => {
     const panelResizer = panelResizerRef.current;
     const sidebarResizer = sidebarResizerRef.current;
-    const previewIframe = document.querySelector('#storybook-preview-iframe') as HTMLIFrameElement;
     let draggedElement: typeof panelResizer | typeof sidebarResizer | null = null;
 
     const onDragStart = (e: MouseEvent) => {
       e.preventDefault();
-
-      setState((state) => ({
-        ...state,
-        isDragging: true,
-      }));
 
       if (e.currentTarget === panelResizer) {
         draggedElement = panelResizer;
       } else if (e.currentTarget === sidebarResizer) {
         draggedElement = sidebarResizer;
       }
+
+      setState((state) => ({
+        ...state,
+        isDragging: true,
+        dragCursor:
+          draggedElement === panelResizer && state.panelPosition === 'bottom'
+            ? 'row-resize'
+            : 'col-resize',
+      }));
+
       window.addEventListener('mousemove', onDrag);
       window.addEventListener('mouseup', onDragEnd);
-
-      if (previewIframe) {
-        // prevent iframe from capturing mouse events
-        previewIframe.style.pointerEvents = 'none';
-      }
     };
 
     const onDragEnd = () => {
@@ -201,8 +200,6 @@ export function useDragging({
       });
       window.removeEventListener('mousemove', onDrag);
       window.removeEventListener('mouseup', onDragEnd);
-      // make iframe capture pointer events again
-      previewIframe?.removeAttribute('style');
       draggedElement = null;
     };
 
@@ -337,8 +334,6 @@ export function useDragging({
       sidebarResizer?.removeEventListener('mousedown', onDragStart);
       panelResizer?.removeEventListener('keydown', onPanelKeyDown);
       sidebarResizer?.removeEventListener('keydown', onSidebarKeyDown);
-      // make iframe capture pointer events again
-      previewIframe?.removeAttribute('style');
     };
   }, [
     // we need to rerun this effect when the panel is shown/hidden or when changing between mobile/desktop to re-attach the event listeners

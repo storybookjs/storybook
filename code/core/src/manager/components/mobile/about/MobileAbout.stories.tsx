@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
-import { within } from 'storybook/test';
+import { expect, waitFor, within } from 'storybook/test';
 
 import { LayoutProvider, useLayout } from '../../layout/LayoutProvider.tsx';
 import { MobileAbout } from './MobileAbout.tsx';
@@ -20,12 +20,9 @@ const OpenAboutHelper = ({ children }: { children: any }) => {
 const meta = {
   component: MobileAbout,
   title: 'Mobile/About',
-  globals: { sb_theme: 'light' },
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
   parameters: {
     layout: 'fullscreen',
-    viewport: {
-      defaultViewport: 'mobile1',
-    },
     chromatic: { viewports: [320] },
   },
   decorators: [
@@ -55,7 +52,15 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const Default: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() => expect(canvas.getByRole('link', { name: 'GitHub' })).toBeVisible());
+    await expect(canvas.getByRole('link', { name: 'Documentation' })).toBeVisible();
+    await expect(canvas.getByRole('link', { name: 'Chromatic' })).toBeVisible();
+    await expect(canvas.getByRole('link', { name: 'Storybook Community' })).toBeVisible();
+  },
+};
 export const Dark: Story = {
   globals: { sb_theme: 'dark' },
 };

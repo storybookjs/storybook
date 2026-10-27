@@ -4,14 +4,16 @@ import { Component, Input, input, output } from '@angular/core';
   standalone: false,
   // Needs to be a different name to the CLI template button
   selector: 'storybook-signal-button',
-  template: ` <button
-  type="button"
-  (click)="onClick.emit($event)"
-  [ngClass]="classes"
-  [ngStyle]="{ 'background-color': backgroundColor }"
->
-  {{ label() }}
-</button>`,
+  template: `
+    <button
+      type="button"
+      (click)="onClick.emit($event)"
+      [ngClass]="classes"
+      [ngStyle]="{ 'background-color': backgroundColor }"
+    >
+      {{ label() }}
+    </button>
+  `,
   styleUrls: ['./button.css'],
 })
 export default class SignalButtonComponent {

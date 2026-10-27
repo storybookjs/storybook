@@ -2,7 +2,8 @@
  * @file Interactions should be awaited
  * @author Yann Braga
  */
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/types';
+import type { TSESLint } from '@typescript-eslint/utils';
 
 import {
   isArrowFunctionExpression,
@@ -134,7 +135,8 @@ export default createStorybookRule({
     const isUserEventFromStorybookImported = (node: TSESTree.ImportDeclaration) => {
       return (
         (node.source.value === '@storybook/testing-library' ||
-          node.source.value === '@storybook/test') &&
+          node.source.value === '@storybook/test' ||
+          node.source.value === 'storybook/test') &&
         node.specifiers.find(
           (spec) =>
             isImportSpecifier(spec) &&
@@ -147,7 +149,9 @@ export default createStorybookRule({
 
     const isExpectFromStorybookImported = (node: TSESTree.ImportDeclaration) => {
       return (
-        (node.source.value === '@storybook/jest' || node.source.value === '@storybook/test') &&
+        (node.source.value === '@storybook/jest' ||
+          node.source.value === '@storybook/test' ||
+          node.source.value === 'storybook/test') &&
         node.specifiers.find(
           (spec) =>
             isImportSpecifier(spec) && 'name' in spec.imported && spec.imported.name === 'expect'

@@ -121,7 +121,7 @@ export function installDependencyGraphMocks(reverseIndex: ReverseIndexImpl): {
   return { patchSpy, buildSpy };
 }
 
-/** Registers module-graph for unit tests without a live engine (no-op settlement command). */
+// Registers module-graph for unit tests without a live engine.
 export function registerTestModuleGraphService(workingDir = process.cwd()) {
   return registerService(
     {
@@ -135,6 +135,14 @@ export function registerTestModuleGraphService(workingDir = process.cwd()) {
       commands: {
         _waitForSettledEngine: {
           handler: async () => undefined,
+        },
+        _waitForChangeDetectionReadiness: {
+          handler: async (_input, ctx) => {
+            ctx.self.setState((state) => {
+              state.changeDetectionReadiness = { status: 'ready' };
+            });
+            return { status: 'ready' as const };
+          },
         },
       },
     }

@@ -1,7 +1,7 @@
 import { dirname, isAbsolute, resolve } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
-import { JsPackageManagerFactory, getStorybookInfo } from 'storybook/internal/common';
+import { JsPackageManagerFactory, getStorybookInfo, warnOnYarn1 } from 'storybook/internal/common';
 import { getStoriesPathsFromConfig } from 'storybook/internal/core-server';
 import { isCsfFactoryPreview, readConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
@@ -18,14 +18,21 @@ export function getWorkingDir(configDir: string): string {
 /**
  * Gathers the project metadata CLI commands need from the target Storybook: config, framework,
  * package manager, installed version, and story paths. The canonical collector — `automigrate`,
- * `doctor`, `add`, and `ai setup` all consume it.
+ * `doctor`, `add`, and `skills setup` all consume it.
  */
 export const getStorybookData = async ({
   configDir: userDefinedConfigDir,
   packageManagerName,
+  skipCache,
 }: {
   configDir?: string;
   packageManagerName?: PackageManagerName;
+  /**
+   * Skip the module cache when reading the main config. Pass `true` when a prior step in the same
+   * process (e.g. an automigration) may have rewritten the main config on disk, otherwise this
+   * would read back the module system's cached evaluation from before that rewrite.
+   */
+  skipCache?: boolean;
 }) => {
   logger.debug('Getting Storybook info...');
   const {
@@ -41,7 +48,8 @@ export const getStorybookData = async ({
     addons,
   } = await getStorybookInfo(
     userDefinedConfigDir,
-    userDefinedConfigDir ? dirname(userDefinedConfigDir) : undefined
+    userDefinedConfigDir ? dirname(userDefinedConfigDir) : undefined,
+    { skipCache }
   );
 
   const configDir = userDefinedConfigDir || configDirFromScript || '.storybook';
@@ -61,6 +69,8 @@ export const getStorybookData = async ({
     configDir,
     storiesPaths,
   });
+
+  warnOnYarn1(packageManager.type);
 
   logger.debug('Getting Storybook version...');
   const versionInstalled = (await packageManager.getModulePackageJSON('storybook'))?.version;

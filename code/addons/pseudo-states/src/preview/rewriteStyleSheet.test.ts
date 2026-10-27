@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { rewriteStyleSheet } from './rewriteStyleSheet.ts';
 import { splitSelectors } from './splitSelectors.ts';
@@ -29,7 +29,12 @@ abstract class Rule {
   selectorText?: string;
 
   static parse(cssText: string): Rule {
-    return cssText.trim().startsWith('@') ? new GroupingRule(cssText) : new StyleRule(cssText);
+    if (cssText.trim().startsWith('@')) {
+      return new GroupingRule(cssText);
+    }
+
+    const innerCssText = cssText.substring(cssText.indexOf('{') + 1, cssText.lastIndexOf('}'));
+    return innerCssText.includes('{') ? new NestedStyleRule(cssText) : new StyleRule(cssText);
   }
 
   getSelectors(): string[] {
@@ -70,6 +75,13 @@ class GroupingRule extends Rule {
 
   insertRule(cssText: string, index: number) {
     this.cssRules.splice(index, 0, Rule.parse(cssText));
+  }
+}
+
+class NestedStyleRule extends GroupingRule {
+  constructor(cssText: string) {
+    super(cssText);
+    this.selectorText = cssText.substring(0, cssText.indexOf(' {'));
   }
 }
 
@@ -171,6 +183,19 @@ describe('rewriteStyleSheet', () => {
     expect(sheet.cssRules[0].getSelectors()).toContain('div.pseudo-hover::-webkit-scrollbar-thumb');
   });
 
+  it('only skips direct replacements that belong to an excluded pseudo-element', () => {
+    const sheet = new Sheet(
+      '::-webkit-scrollbar-thumb:hover .button:focus { border-color: transparent; }'
+    );
+    rewriteStyleSheet(sheet as any);
+    const selectors = sheet.cssRules[0].getSelectors();
+    expect(selectors).toContain('::-webkit-scrollbar-thumb:hover .button.pseudo-focus');
+    expect(selectors).not.toContain('::-webkit-scrollbar-thumb.pseudo-hover .button.pseudo-focus');
+    expect(selectors).toContain(
+      '.pseudo-hover-all.pseudo-focus-all ::-webkit-scrollbar-thumb .button'
+    );
+  });
+
   it('does not add invalid selector where .pseudo-<class> would be appended to ::part()', () => {
     const sheet = new Sheet('::part(foo bar):hover { border-color: transparent; }');
     rewriteStyleSheet(sheet as any);
@@ -215,6 +240,18 @@ describe('rewriteStyleSheet', () => {
     const selectors = sheet.cssRules[0].getSelectors();
     selectors.splice(selectors.indexOf('a.pseudo-hover'), 1);
     expect(selectors).not.toContain('a.pseudo-hover');
+  });
+
+  it('does not mutate a rewritten rule again on subsequent rewrites', () => {
+    const sheet = new Sheet('a:hover { color: red }');
+    const deleteRule = vi.spyOn(sheet, 'deleteRule');
+    const insertRule = vi.spyOn(sheet, 'insertRule');
+
+    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any);
+
+    expect(deleteRule).toHaveBeenCalledOnce();
+    expect(insertRule).toHaveBeenCalledOnce();
   });
 
   it('supports combined pseudo selectors', () => {
@@ -414,6 +451,14 @@ describe('rewriteStyleSheet', () => {
     );
   });
 
+  it('supports combinators nested inside pseudo-classes with parameters', () => {
+    const sheet = new Sheet(':has(span > :hover) { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].cssText).toEqual(
+      ':has(span > :hover), :has(span > .pseudo-hover), .pseudo-hover-all :has(span > *) { color: red }'
+    );
+  });
+
   it('skips escaped pseudo-selectors "\\:hover"', () => {
     const sheet = new Sheet('a\\:hover { color: red }');
     rewriteStyleSheet(sheet as any);
@@ -436,6 +481,76 @@ describe('rewriteStyleSheet', () => {
     expect(sheet.cssRules[0].cssText).toEqual(
       '.foo\\:hover\\:red:hover, .foo\\:hover\\:red.pseudo-hover, .pseudo-hover-all .foo\\:hover\\:red { color: red }'
     );
+  });
+
+  it('skips pseudo-selectors preceded by any odd number of backslashes', () => {
+    const sheet = new Sheet(String.raw`.btn\\\:hover { color: red }`);
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].cssText).toEqual(String.raw`.btn\\\:hover { color: red }`);
+  });
+
+  it('rewrites pseudo-selectors preceded by any even number of backslashes', () => {
+    const sheet = new Sheet(String.raw`.btn\\\\:hover { color: red }`);
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].getSelectors()).toContain(String.raw`.btn\\\\.pseudo-hover`);
+  });
+
+  it('keeps rewritten selector lists within browser limits', () => {
+    const selectors = Array.from({ length: 1500 }, (_, index) => `.item-${index}:hover`);
+    const sheet = new Sheet(`${selectors.join(', ')} { color: red }`);
+
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet);
+
+    const rewrittenSelectors = sheet.cssRules.flatMap((rule) => rule.getSelectors());
+    expect(sheet.cssRules).toHaveLength(2);
+    expect(sheet.cssRules.every((rule) => rule.getSelectors().length <= 4000)).toBe(true);
+    expect(rewrittenSelectors).toHaveLength(4500);
+    expect(rewrittenSelectors).toContain('.item-1499:hover');
+    expect(rewrittenSelectors).toContain('.item-1499.pseudo-hover');
+    expect(rewrittenSelectors).toContain('.pseudo-hover-all .item-1499');
+  });
+
+  it('preserves the original rule when a replacement cannot be inserted', () => {
+    const selectors = Array.from({ length: 1500 }, (_, index) => `.item-${index}:hover`);
+    const sheet = new Sheet(`${selectors.join(', ')} { color: red }`);
+    const originalInsertRule = sheet.insertRule.bind(sheet);
+    vi.spyOn(sheet, 'insertRule')
+      .mockImplementationOnce(originalInsertRule)
+      .mockImplementationOnce(() => {
+        throw new DOMException('The replacement is too large', 'HierarchyRequestError');
+      });
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    expect(rewriteStyleSheet(sheet as unknown as CSSStyleSheet)).toBe(false);
+    expect(sheet.cssRules).toHaveLength(1);
+    expect(sheet.cssRules[0].getSelectors()).toEqual(selectors);
+
+    consoleError.mockRestore();
+  });
+
+  it('preserves a rule when no replacement selectors are generated', () => {
+    const sheet = new Sheet('.pseudo-hover:hover { color: red }');
+
+    expect(rewriteStyleSheet(sheet as unknown as CSSStyleSheet)).toBe(false);
+    expect(sheet.cssRules).toHaveLength(1);
+    expect(sheet.cssRules[0].cssText).toBe('.pseudo-hover:hover { color: red }');
+  });
+
+  it('keeps existing .pseudo- selectors when rewriting a mixed list', () => {
+    const sheet = new Sheet('.pseudo-hover:hover, .foo:hover { color: red }');
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet);
+    const selectors = sheet.cssRules[0].getSelectors();
+    expect(selectors).toContain('.pseudo-hover:hover');
+    expect(selectors).toContain('.foo:hover');
+    expect(selectors).toContain('.foo.pseudo-hover');
+  });
+
+  it('does not interpret $& in rewritten selector text', () => {
+    const sheet = new Sheet('[data-label="$&"]:hover { color: red }');
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet);
+    const selectors = sheet.cssRules[0].getSelectors();
+    expect(selectors).toContain('[data-label="$&"]:hover');
+    expect(selectors).toContain('[data-label="$&"].pseudo-hover');
   });
 
   it('override correct rules with media query present', () => {
@@ -566,5 +681,29 @@ describe('rewriteStyleSheet', () => {
         'a.pseudo-hover'
       );
     }
+  });
+
+  it('counts both a rewritten style rule and its nested rules toward the limit', () => {
+    const sheet = new Sheet(Array(501).fill('a:hover { b:hover { color: red } }').join('\n'));
+
+    rewriteStyleSheet(sheet as any);
+    rewriteStyleSheet(sheet as any);
+
+    expect(sheet.cssRules[499].getSelectors()).toContain('a.pseudo-hover');
+    expect(sheet.cssRules[500].getSelectors()).not.toContain('a.pseudo-hover');
+  });
+
+  it('does not rewrite nested rules after the outer rule reaches the limit', () => {
+    const sheet = new Sheet(
+      [...Array(999).fill('a:hover { color: red }'), 'b:hover { c:hover { color: red } }'].join(
+        '\n'
+      )
+    );
+
+    rewriteStyleSheet(sheet as any);
+
+    const finalRule = sheet.cssRules[999] as NestedStyleRule;
+    expect(finalRule.getSelectors()).toContain('b.pseudo-hover');
+    expect(finalRule.cssRules[0].getSelectors()).not.toContain('c.pseudo-hover');
   });
 });

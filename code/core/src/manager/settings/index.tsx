@@ -3,14 +3,14 @@ import React, { useMemo } from 'react';
 
 import { Button, ScrollArea, TabsView } from 'storybook/internal/components';
 import { Location, Route } from 'storybook/internal/router';
-import { Addon_TypesEnum } from 'storybook/internal/types';
 import type { Addon_PageType } from 'storybook/internal/types';
+import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 import { CloseIcon } from '@storybook/icons';
 
 import { types, useStorybookApi, useStorybookState } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { menuTool } from '../components/preview/tools/menu.tsx';
 import { matchesKeyCode, matchesModifiers } from '../keybinding.ts';
@@ -81,7 +81,10 @@ const Pages: FC<{
       },
     ];
 
-    if (global.CONFIG_TYPE === 'DEVELOPMENT') {
+    if (
+      global.CONFIG_TYPE === 'DEVELOPMENT' &&
+      global.FEATURES?.menuOnboardingChecklist !== false
+    ) {
       tabsToInclude.push({
         id: 'guide',
         title: 'Guide',

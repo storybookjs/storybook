@@ -6,6 +6,7 @@ import type { ArgTypes } from 'storybook/internal/csf';
 import type { Options, PresetProperty } from 'storybook/internal/types';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
+import { aliasReactInWebpack, prependReactDedupePlugin } from './preview-react-alias.ts';
 import { extractArgTypesFromDocgen } from './componentManifest/reactDocgen/extractReactDocgenInfo.ts';
 import { extractArgTypesFromDocgenTypescript } from './componentManifest/reactDocgen/extractReactTypescriptDocgenInfo.ts';
 import type {
@@ -22,17 +23,30 @@ interface InternalGetArgTypesDataOptions extends GetArgTypesDataOptions {
   presets?: Options['presets'];
 }
 
-export const addons: PresetProperty<'addons'> = [
-  import.meta.resolve('@storybook/react-dom-shim/preset'),
-];
-
 export { manifests as experimental_manifests } from './componentManifest/generator.ts';
 
 export { enrichCsf as experimental_enrichCsf } from './enrichCsf.ts';
 
 export { experimental_docgenProvider } from './docgen/preset.ts';
 
+// Turns `features.docgenServer` on by default; read through `presets.apply('isDocgenProviderEnabled')`
+// so the default never has to call the provider, which itself reads `features`. Server docgen runs on
+// the optional `typescript` peer, so a project without it keeps builder docgen.
+export const isDocgenProviderEnabled = () => {
+  try {
+    import.meta.resolve('typescript');
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
+
+export const features: PresetProperty<'features'> = async (existing) => ({
+  ...existing,
+  componentsManifest: true,
+});
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],
@@ -62,31 +76,51 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
     );
 };
 
-// TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
-
 /**
- * Try to resolve react and react-dom from the root node_modules of the project addon-docs uses this
- * to alias react and react-dom to the project's version when possible If the user doesn't have an
- * explicit dependency on react this will return the existing values Which will be the versions
- * shipped with addon-docs
- *
- * We do the exact same thing in the common preset, but that will fail in Yarn PnP because
- *
- * Storybook/internal/core-server doesn't have a peer dependency on react This will make
- *
- * @storybook/react projects work in Yarn PnP
+ * Resolve react and react-dom starting from this package. `@storybook/react` declares them as peer
+ * dependencies, so every package manager links the project's React here, including pnpm's global
+ * virtual store where the `storybook` package itself cannot see React. The preview alias below and
+ * addon-docs both read this value.
  */
 export const resolvedReact = async (existing: any) => {
   try {
     return {
       ...existing,
-      react: resolvePackageDir('react'),
-      reactDom: resolvePackageDir('react-dom'),
+      react: resolvePackageDir('react', import.meta.url),
+      reactDom: resolvePackageDir('react-dom', import.meta.url),
     };
   } catch {
     return existing;
   }
 };
+
+const readReactAliasTarget = async (options: Options) => {
+  const resolved = (await options.presets.apply('resolvedReact', {})) as {
+    react?: string;
+    reactDom?: string;
+  };
+  if (!resolved?.react || !resolved.reactDom) {
+    return null;
+  }
+  return { react: resolved.react, reactDom: resolved.reactDom };
+};
+
+export const viteFinal = async (config: { plugins?: unknown[] } = {}, options: Options) => {
+  const target = await readReactAliasTarget(options);
+  return target ? prependReactDedupePlugin(config, target) : config;
+};
+
+export async function webpack(
+  config: {
+    resolve?: {
+      alias?: Record<string, string> | Array<{ name: string; alias: string }>;
+    };
+  } = {},
+  options: Options
+) {
+  const target = await readReactAliasTarget(options);
+  return target ? aliasReactInWebpack(config, target) : config;
+}
 
 export async function internal_getArgTypesData(
   _input: unknown,
@@ -140,4 +174,17 @@ export async function internal_getArgTypesData(
   return argTypesData;
 }
 
-export const optimizeViteDeps: string[] = ['react-dom/test-utils'];
+export const optimizeViteDeps: string[] = [
+  // The vitest project-annotations setup file imports this renderer's entry previews through a
+  // virtual module, and those chunks import React by the bare specifier. In the observed failure
+  // (react 19.3.1, vite 7.3.7, vitest 5.0.5, chromium browser mode) the dependency scan had not
+  // registered plain `react`, so the browser loaded react's CJS index.js raw and module linking
+  // failed with "The requested module 'react/index.js' does not provide an export named 'default'".
+  // Projects only hit this when their stories use the automatic JSX runtime and never import
+  // `react` by name; a story importing `react` (for `useState`, say) registers it in the scan
+  // and masks the failure.
+  'react',
+  'react-dom/client',
+  'react-dom/test-utils',
+  'react/jsx-runtime',
+];

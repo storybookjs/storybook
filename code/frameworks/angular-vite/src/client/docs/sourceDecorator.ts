@@ -1,6 +1,6 @@
 import { SourceType } from 'storybook/internal/docs-tools';
 import { useRef, emitTransformCode, useEffect } from 'storybook/preview-api';
-import type { ArgsStoryFn, PartialStoryFn } from 'storybook/internal/types';
+import type { ArgsStoryFn, PartialStoryFn, StoryContextForRender } from 'storybook/internal/types';
 
 import { computesTemplateSourceFromComponent } from '../../renderer';
 import type { AngularRenderer, StoryContext } from '../types';
@@ -25,7 +25,7 @@ export const skipSourceRender = (context: StoryContext) => {
  */
 export const sourceDecorator = (
   storyFn: PartialStoryFn<AngularRenderer>,
-  context: StoryContext
+  context: StoryContextForRender<AngularRenderer>
 ) => {
   const story = storyFn();
   const source = useRef<undefined | string>(undefined);
@@ -36,13 +36,13 @@ export const sourceDecorator = (
     }
 
     const { props, userDefinedTemplate } = story;
-    const { component, argTypes, parameters } = context;
-    const template: string = parameters.docs?.source?.excludeDecorators
+    const { component, parameters } = context;
+    const template: string | undefined = parameters.docs?.source?.excludeDecorators
       ? (context.originalStoryFn as ArgsStoryFn<AngularRenderer>)(context.args, context).template
       : story.template;
 
     if (component && !userDefinedTemplate) {
-      const sourceFromComponent = computesTemplateSourceFromComponent(component, props, argTypes);
+      const sourceFromComponent = computesTemplateSourceFromComponent(component, props);
 
       // We might have a story with a Directive or Service defined as the component
       // In these cases there might exist a template, even if we aren't able to create source from component

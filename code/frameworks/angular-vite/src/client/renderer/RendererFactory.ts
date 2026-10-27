@@ -5,21 +5,15 @@ import { TestBedRenderer } from './TestBedRenderer.ts';
 
 type RenderType = 'canvas' | 'docs';
 export class RendererFactory {
-  private lastRenderType: RenderType;
+  private lastRenderType: RenderType | undefined;
 
   private rendererMap = new Map<string, AbstractRenderer>();
 
   public async getRendererInstance(
     targetDOMNode: HTMLElement,
     useTestBedRenderer = false
-  ): Promise<AbstractRenderer | null> {
+  ): Promise<AbstractRenderer> {
     const targetId = targetDOMNode.id;
-    // do nothing if the target node is null
-    // fix a problem when the docs asks 2 times the same component at the same time
-    // the 1st targetDOMNode of the 1st requested rendering becomes null 🤷‍♂️
-    if (targetDOMNode === null) {
-      return null;
-    }
 
     const renderType = getRenderType(targetDOMNode);
     // keep only instances of the same type
@@ -29,19 +23,18 @@ export class RendererFactory {
       this.rendererMap.clear();
     }
 
-    if (!this.rendererMap.has(targetId)) {
-      this.rendererMap.set(targetId, this.buildRenderer(renderType, useTestBedRenderer));
+    let renderer = this.rendererMap.get(targetId);
+    if (!renderer) {
+      renderer = this.buildRenderer(renderType, useTestBedRenderer);
+      this.rendererMap.set(targetId, renderer);
     }
 
     this.lastRenderType = renderType;
-    return this.rendererMap.get(targetId);
+    return renderer;
   }
 
   private buildRenderer(renderType: RenderType, useTestBedRenderer: boolean) {
     if (renderType === 'docs') {
-      // The TestBed strategy is canvas-only: a docs page renders multiple stories with
-      // potentially different application configs, which cannot share the single TestBed
-      // environment injector.
       return new DocsRenderer();
     }
     return useTestBedRenderer ? new TestBedRenderer() : new CanvasRenderer();
@@ -71,16 +64,16 @@ export function clearRootHTMLElement(renderType: RenderType) {
   switch (renderType) {
     case 'canvas': {
       const docsRoot = global.document.getElementById('storybook-docs');
-      if (docsRoot !== null) {
+      if (docsRoot) {
         docsRoot.innerHTML = '';
       }
       break;
     }
 
     case 'docs': {
-      const storyRoot = global.document.getElementById('storybook-root');
-      if (storyRoot !== null) {
-        storyRoot.innerHTML = '';
+      const canvasRoot = global.document.getElementById('storybook-root');
+      if (canvasRoot) {
+        canvasRoot.innerHTML = '';
       }
       break;
     }

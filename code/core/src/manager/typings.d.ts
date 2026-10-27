@@ -1,6 +1,5 @@
 declare var DOCS_OPTIONS: any;
 declare var CONFIG_TYPE: 'DEVELOPMENT' | 'PRODUCTION';
-declare var PREVIEW_URL: any;
 /**
  * The network address of the Storybook instance. Used by Storybook to generate a QR code so users
  * can access the story on mobile devices.
@@ -17,8 +16,11 @@ declare var VERSIONCHECK: any;
 declare var LOGLEVEL: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent' | undefined;
 
 declare var __REACT__: any;
+declare var __REACT_ARIA_FOCUS_SCOPE__: any;
 declare var __REACT_DOM__: any;
 declare var __REACT_DOM_CLIENT__: any;
+declare var __REACT_JSX_RUNTIME__: typeof import('react/jsx-runtime');
+declare var __REACT_JSX_DEV_RUNTIME__: typeof import('react/jsx-dev-runtime');
 declare var __STORYBOOK_COMPONENTS__: any;
 declare var __STORYBOOK_CHANNELS__: any;
 declare var __STORYBOOK_CORE_EVENTS__: any;

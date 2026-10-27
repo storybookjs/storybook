@@ -1,5 +1,4 @@
-import type { CSSObject } from 'storybook/theming';
-import { styled } from 'storybook/theming';
+import { type CSSObject, styled } from 'storybook/theming/emotion';
 
 import { headerCommon, withReset } from '../lib/common.tsx';
 

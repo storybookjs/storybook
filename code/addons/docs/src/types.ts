@@ -9,7 +9,7 @@ import type {
   Renderer,
 } from 'storybook/internal/types';
 
-import type { ThemeVars } from 'storybook/theming';
+import type { ThemeVars } from 'storybook/theming/emotion';
 
 import type { DocsContainerProps } from './blocks/blocks';
 import type { TocParameters } from './blocks/components';
@@ -188,7 +188,7 @@ export interface DocsParameters {
     canvas?: Partial<CanvasBlockParameters>;
 
     /**
-     * Enable the Code panel.
+     * Show the Code panel by default. Set to `false` to hide it.
      *
      * @see https://storybook.js.org/docs/writing-docs/code-panel
      */
@@ -252,6 +252,17 @@ export interface DocsParameters {
      * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-subtitle
      */
     subtitle?: string;
+
+    /**
+     * The BCP-47 language tag applied to Storybook-rendered docs prose (descriptions, titles,
+     * ArgTypes description cells, free MDX prose).
+     *
+     * Storybook's own chrome stays English regardless. Inherited project → meta (page-level) or
+     * project → meta → story (per-story prose).
+     *
+     * @default 'en'
+     */
+    lang?: string;
 
     /**
      * Override the default theme

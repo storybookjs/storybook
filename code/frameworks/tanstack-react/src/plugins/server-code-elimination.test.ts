@@ -97,6 +97,36 @@ describe('serverCodeEliminationPlugin', () => {
       expect(result!.code).not.toContain('const handler');
     });
 
+    it.each([
+      'export function handler() { return 1; }',
+      'export default function handler() { return 1; }',
+      'export class handler {}',
+    ])('keeps an exported handler declaration intact: %s', async (declaration) => {
+      const code = [
+        `import { createServerFn } from '@tanstack/react-start';`,
+        declaration,
+        `export const f = createServerFn().handler(handler);`,
+      ].join('\n');
+      const result = await transform(code);
+      expect(result!.code).toContain(declaration);
+      expect(result!.code).toContain('__sb_fn()');
+    });
+
+    it('keeps declarations that live code writes or reads through tricky scopes', async () => {
+      const code = [
+        `import { createServerFn } from '@tanstack/react-start';`,
+        `import { config } from './config';`,
+        `let token;`,
+        `export function setSession(s) { token = s.token; }`,
+        `export function useThing(c = config) { const config = 1; return c + config; }`,
+        `export const getData = createServerFn().handler(async () => token + config);`,
+      ].join('\n');
+      const result = await transform(code);
+      expect(result!.code).toContain('let token;');
+      expect(result!.code).toContain(`import { config } from './config';`);
+      expect(result!.code).toContain('__sb_fn()');
+    });
+
     it('handles chained .middleware().handler()', async () => {
       const code = [
         `import { createServerFn } from '@tanstack/react-start';`,
@@ -283,6 +313,62 @@ describe('serverCodeEliminationPlugin', () => {
       const result = await transform(code);
       expect(result).not.toBeNull();
       expect(result!.code).not.toContain('secret');
+    });
+
+    it('keeps imports only referenced in JSX after stripping the server option', async () => {
+      const code = [
+        `import { createFileRoute } from '@tanstack/react-router';`,
+        `import { ImportedPanel } from '../components/ImportedPanel';`,
+        `export const Route = createFileRoute('/demo')({`,
+        `  component: RouteComponent,`,
+        `  server: { handlers: { default: async () => new Response('ok') } },`,
+        `});`,
+        `function RouteComponent() {`,
+        `  return <ImportedPanel />;`,
+        `}`,
+      ].join('\n');
+      const result = await transform(code, '/project/src/routes/demo.tsx');
+      expect(result).not.toBeNull();
+      expect(result!.code).not.toMatch(/\bserver:\s*\{/);
+      expect(result!.code).toMatch(/import\s*\{\s*ImportedPanel\s*\}\s*from/);
+    });
+
+    it('keeps same-file components referenced only from JSX', async () => {
+      const code = [
+        `import { createFileRoute } from '@tanstack/react-router';`,
+        `import { createMiddleware } from '@tanstack/react-start';`,
+        `const noopMiddleware = createMiddleware().server(async ({ next }) => next());`,
+        `export const Route = createFileRoute('/fails')({`,
+        `  component: Component,`,
+        `  server: { middleware: [noopMiddleware] },`,
+        `});`,
+        `function Component() {`,
+        `  return <NestedComponent />;`,
+        `}`,
+        `function NestedComponent() {`,
+        `  return <div>Nested Component</div>;`,
+        `}`,
+      ].join('\n');
+      const result = await transform(code, '/project/src/routes/fails.tsx');
+      expect(result).not.toBeNull();
+      expect(result!.code).toContain('function NestedComponent');
+    });
+
+    it('keeps imports referenced via a JSX member expression (Namespace.Child)', async () => {
+      const code = [
+        `import { createFileRoute } from '@tanstack/react-router';`,
+        `import { UI } from '../components/ui';`,
+        `export const Route = createFileRoute('/demo')({`,
+        `  component: RouteComponent,`,
+        `  server: { handler: async () => ({}) },`,
+        `});`,
+        `function RouteComponent() {`,
+        `  return <UI.Panel />;`,
+        `}`,
+      ].join('\n');
+      const result = await transform(code, '/project/src/routes/demo.tsx');
+      expect(result).not.toBeNull();
+      expect(result!.code).toMatch(/import\s*\{\s*UI\s*\}\s*from/);
     });
 
     it('keeps still-referenced imports from a partially-used declaration', async () => {

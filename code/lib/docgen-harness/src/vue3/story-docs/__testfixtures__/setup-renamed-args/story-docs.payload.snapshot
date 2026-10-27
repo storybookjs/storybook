@@ -1,0 +1,23 @@
+{
+  "id": "setup-renamed-args",
+  "name": "SetupRenamedArgs",
+  "path": "__PATH__",
+  "stories": {
+    "forms-setup-renamed-args--primary": {
+      "description": undefined,
+      "id": "forms-setup-renamed-args--primary",
+      "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import SetupRenamedArgs from './SetupRenamedArgs.vue';
+
+const heading = 'Renamed';
+const title = heading;
+</script>
+
+<template>
+  <SetupRenamedArgs label="Renamed" :title="title" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

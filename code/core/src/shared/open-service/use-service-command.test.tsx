@@ -25,7 +25,7 @@ describe('useServiceCommand', () => {
 
     await result.current({ entryId: 'a', fieldKey: 'k', fieldValue: 'v' });
 
-    expect(service.queries.getRecordFields({ entryId: 'a' })).toEqual({ k: 'v' });
+    expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });
   });
 
   it('returns the same function reference across re-renders', () => {

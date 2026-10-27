@@ -1,7 +1,7 @@
-import { types as t } from 'storybook/internal/babel';
 import {
   type ConfigFile,
   isCsfFactoryPreview,
+  parseExpression,
   readConfig,
   writeConfig,
 } from 'storybook/internal/csf-tools';
@@ -38,10 +38,15 @@ export async function syncPreviewAddonsWithMainConfig(
   if (!isCsfFactory) {
     return previewConfig;
   }
-  const existingAddons = previewConfig.getFieldNode(['addons']);
-
-  if (!existingAddons) {
-    previewConfig.setFieldNode(['addons'], t.arrayExpression([]));
+  const existingAddons = previewConfig.inspectList(['addons']);
+  if (existingAddons.kind === 'refused') {
+    logger.warn(`Not synchronizing the preview addons: ${existingAddons.diagnostic.message}`);
+    return previewConfig;
+  }
+  // An empty `addons` written after a spread would replace the addons it provides, which `append`
+  // carries forward instead.
+  if (existingAddons.kind === 'missing' && previewConfig.inspect(['addons']).kind === 'missing') {
+    previewConfig.set(['addons'], []);
   }
 
   const addons = getAddonNames(mainConfig);
@@ -57,8 +62,8 @@ export async function syncPreviewAddonsWithMainConfig(
   for (const addon of addons) {
     const annotations = await getAddonAnnotations(addon, configDir);
     if (annotations) {
-      const hasAlreadyImportedAddonAnnotations = previewConfig._ast.program.body.find(
-        (node) => t.isImportDeclaration(node) && node.source.value === annotations.importPath
+      const hasAlreadyImportedAddonAnnotations = previewConfig.program.body.find(
+        (node) => node.type === 'ImportDeclaration' && node.source.value === annotations.importPath
       );
 
       if (hasAlreadyImportedAddonAnnotations) {
@@ -66,10 +71,10 @@ export async function syncPreviewAddonsWithMainConfig(
       }
 
       if (
-        !existingAddons ||
-        (t.isArrayExpression(existingAddons) &&
-          !existingAddons.elements.some(
-            (element) => t.isIdentifier(element) && element.name === annotations.importName
+        existingAddons.kind === 'missing' ||
+        (existingAddons.node.type === 'ArrayExpression' &&
+          !existingAddons.node.elements.some(
+            (element) => element?.type === 'Identifier' && element.name === annotations.importName
           ))
       ) {
         syncedAddons.push(addon);
@@ -77,14 +82,11 @@ export async function syncPreviewAddonsWithMainConfig(
         if (annotations.isCoreAddon) {
           // import addonName from 'addon'; + addonName()
           previewConfig.setImport(annotations.importName, annotations.importPath);
-          previewConfig.appendNodeToArray(
-            ['addons'],
-            t.callExpression(t.identifier(annotations.importName), [])
-          );
+          previewConfig.append(['addons'], parseExpression(`${annotations.importName}()`));
         } else {
           // import * as addonName from 'addon/preview'; + addonName
           previewConfig.setImport({ namespace: annotations.importName }, annotations.importPath);
-          previewConfig.appendNodeToArray(['addons'], t.identifier(annotations.importName));
+          previewConfig.append(['addons'], parseExpression(annotations.importName));
         }
       }
     }

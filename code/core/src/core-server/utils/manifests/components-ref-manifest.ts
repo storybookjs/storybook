@@ -14,15 +14,15 @@ import type { ComponentManifest, ComponentsManifest } from '../../../types/modul
 
 import { join } from 'pathe';
 
+import type { DocsManifestEntry, JsonRef } from './mdx-manifest.ts';
+
 /** Version for ref-based `manifests/components.json` (nested `docgen.$ref` index rows). */
 export const COMPONENTS_REF_MANIFEST_VERSION = 1;
-
-export type JsonRef = { $ref: string };
 
 /**
  * One component row in the ref-based `manifests/components.json` index.
  *
- * Summary fields are inlined for cheap listing; full docgen and story-docs live behind nested
+ * Summary fields are inlined for cheap listing; full docgen, story-docs, and MDX live behind nested
  * `$ref`s.
  */
 export type ComponentManifestIndexEntry = {
@@ -32,6 +32,7 @@ export type ComponentManifestIndexEntry = {
   summary?: string;
   docgen?: JsonRef;
   stories?: JsonRef;
+  docs?: Record<string, DocsManifestEntry>;
 };
 
 export type ComponentsRefManifest = {
@@ -127,23 +128,25 @@ export async function loadStoryDocsPayloadsFromDisk(
 export function toComponentManifestIndexEntries(
   componentIds: string[],
   docgenPayloads: Record<string, DocgenPayload>,
-  storyDocsPayloads: Record<string, StoryDocsPayload> = {}
+  storyDocsPayloads: Record<string, StoryDocsPayload> = {},
+  docsByComponentId: Record<string, Record<string, DocsManifestEntry>> = {}
 ): Record<string, ComponentManifestIndexEntry> {
   const entries: Record<string, ComponentManifestIndexEntry> = {};
 
   for (const id of componentIds) {
     const payload = docgenPayloads[id];
     const storyDocs = storyDocsPayloads[id];
-    entries[id] = payload
-      ? {
-          id: payload.id ?? id,
-          name: payload.name ?? id,
-          ...(payload.description !== undefined ? { description: payload.description } : {}),
-          ...(payload.summary !== undefined ? { summary: payload.summary } : {}),
-          docgen: { $ref: docgenManifestRef(id) },
-          ...(storyDocs ? { stories: { $ref: storyDocsManifestRef(id) } } : {}),
-        }
-      : { id, name: id };
+    entries[id] = {
+      id: payload?.id ?? id,
+      name: payload?.name ?? id,
+      ...(payload?.description !== undefined ? { description: payload.description } : {}),
+      ...(payload?.summary !== undefined ? { summary: payload.summary } : {}),
+      ...(payload ? { docgen: { $ref: docgenManifestRef(id) } } : {}),
+      // Stories are indexed whether or not a component was extracted, so the ref does not hang off
+      // the docgen payload: dropping it hid every story of a componentless component.
+      ...(storyDocs ? { stories: { $ref: storyDocsManifestRef(id) } } : {}),
+      ...(docsByComponentId[id] ? { docs: docsByComponentId[id] } : {}),
+    };
   }
 
   return entries;

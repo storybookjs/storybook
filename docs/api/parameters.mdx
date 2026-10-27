@@ -52,63 +52,27 @@ Specifies how the canvas should [lay out the story](../configure/story-layout.md
 - **padded**: (default) Add padding to the story
 - **fullscreen**: Show the story as-is, without padding
 
-### `options`
+### `htmlLang`
 
-Type:
+Type: `string`
 
-```ts
-{
-  storySort?: StorySortConfig | StorySortFn;
-}
-```
+Default: `'en'`
 
-<Callout variant="warning">
+A [BCP-47 language tag](https://en.wikipedia.org/wiki/IETF_language_tag) (e.g. `'ja'`, `'de'`, `'fr-CH'`) describing the language of the **rendered story UI**. In story view it sets the `lang` attribute on the preview's `<html>` element; in docs view it sets `lang` on each embedded story canvas. Inherited project → meta → story.
 
-The `options` parameter can _only_ be applied at the [project level](#project-parameters).
+Use this to language the components you render — for example, a German story added for copy-length validation inside an otherwise English design system.
 
-</Callout>
+Storybook's own interface (the manager UI and docs chrome such as toolbars and ArgTypes headers) always reports as English and is unaffected by this parameter.
 
-#### `options.storySort`
+### `docs.lang`
 
-Type: `StorySortConfig | StorySortFn`
+Type: `string`
 
-```ts
-type StorySortConfig = {
-  includeNames?: boolean;
-  locales?: string;
-  method?: 'alphabetical' | 'alphabetical-by-kind' | 'custom';
-  order?: string[];
-};
+Default: `'en'`
 
-type Story = {
-  id: string;
-  importPath: string;
-  name: string;
-  title: string;
-};
+A BCP-47 language tag describing the language of the **docs prose** that Storybook renders — component and story descriptions, ArgTypes description cells, and free-form MDX prose. Resolved project → meta for page-level content and project → meta → story for per-story content.
 
-type StorySortFn = (a: Story, b: Story) => number;
-```
-
-Specifies the order in which stories are displayed in the Storybook UI.
-
-When specifying a configuration object, the following options are available:
-
-- **includeNames**: Whether to include the story name in the sorting algorithm. Defaults to `false`.
-- **locales**: The locale to use when sorting stories. Defaults to your system locale.
-- **method**: The sorting method to use. Defaults to `alphabetical`.
-  - **alphabetical**: Sort stories alphabetically by name.
-  - **alphabetical-by-kind**: Sort stories alphabetically by kind, then by name.
-  - **custom**: Use a custom sorting function.
-- **order**: Stories in the specified order will be displayed first, in the order specified. All other stories will be displayed after, in alphabetical order. The order array can accept a nested array to sort 2nd-level story kinds, e.g. `['Intro', 'Pages', ['Home', 'Login', 'Admin'], 'Components']`.
-
-When specifying a custom sorting function, the function behaves like a typical JavaScript sorting function. It accepts two stories to compare and returns a number. For example:
-
-```js
-(a, b) => (a.id === b.id ? 0 : a.id.localeCompare(b.id, undefined, { numeric: true }));
-```
-
-See [the guide](../writing-stories/naming-components-and-hierarchy.mdx#sorting-stories) for usage examples.
+This is independent of [`htmlLang`](#htmllang): the language you _document_ in can differ from the language your stories _render_ in. Storybook chrome (toolbars, ArgTypes column headers, anchor links) stays English regardless.
 
 ### `test`
 

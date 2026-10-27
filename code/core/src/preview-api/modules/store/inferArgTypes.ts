@@ -83,10 +83,17 @@ export const inferArgTypes: ((context: InferArgTypesContext) => StrictArgTypes) 
 } = (context) => {
   const { id, argTypes: userArgTypes = {}, initialArgs = {} } = context;
   const cache = new Map<any, SBType>();
-  const argTypes = mapValues(initialArgs, (arg, key) => ({
-    name: key,
-    type: inferType(arg, `${id}.${key}`, new Set(), cache),
-  }));
+  const argTypes = Object.fromEntries(
+    Object.entries(initialArgs)
+      .filter(([key]) => !userArgTypes[key]?.type)
+      .map(([key, arg]) => [
+        key,
+        {
+          name: key,
+          type: inferType(arg, `${id}.${key}`, new Set(), cache),
+        },
+      ])
+  );
   const userArgTypesNames = mapValues(userArgTypes, (argType, key) => ({
     name: key,
   }));

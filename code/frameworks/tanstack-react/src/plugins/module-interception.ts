@@ -22,7 +22,12 @@ export function moduleInterceptionPlugin({
     enforce: 'pre',
     resolveId: {
       order: 'pre',
-      handler(id: string, importer: string | undefined) {
+      async handler(id: string, importer: string | undefined) {
+        const resolveMock = async (mockPath: string) => {
+          const resolved = await this.resolve(mockPath, importer, { skipSelf: true });
+          return resolved ?? mockPath;
+        };
+
         // Redirect @tanstack/react-router to our mock, except when
         // the importer IS the mock (to avoid a circular alias).
         if (
@@ -30,21 +35,21 @@ export function moduleInterceptionPlugin({
           importer &&
           !importer.includes('export-mocks')
         ) {
-          return routerMockPath;
+          return resolveMock(routerMockPath);
         }
 
         if (START_SERVER_MODULES.includes(id) || id === '@tanstack/react-start') {
-          return startMockPath;
+          return resolveMock(startMockPath);
         }
 
         if (id === '@tanstack/start-storage-context') {
-          return startStorageContextMockPath;
+          return resolveMock(startStorageContextMockPath);
         }
 
         // Intercept virtual/server/worker entries
         for (const pattern of INTERCEPTED_PATTERNS) {
           if (id.includes(pattern)) {
-            return startMockPath;
+            return resolveMock(startMockPath);
           }
         }
 

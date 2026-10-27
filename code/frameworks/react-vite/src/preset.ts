@@ -41,13 +41,18 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
   }
 
   if (reactDocgenOption === 'react-docgen-typescript' && typescriptPresent) {
-    plugins.push(
-      (await import('@joshwooding/vite-plugin-react-docgen-typescript')).default({
-        ...reactDocgenTypescriptOptions,
-        // We *need* this set so that RDT returns default values in the same format as react-docgen
-        savePropValueAsString: true,
-      })
-    );
+    const docgenTypescriptPlugin = (
+      await import('@joshwooding/vite-plugin-react-docgen-typescript')
+    ).default({
+      ...reactDocgenTypescriptOptions,
+      // We *need* this set so that RDT returns default values in the same format as react-docgen
+      savePropValueAsString: true,
+    });
+
+    // Vite's core vite:esbuild/vite:oxc transform strips TypeScript before docgen can inspect it.
+    // The upstream fix is in v0.8.0; prefer a dependency bump once yarn.lock can be regenerated:
+    // https://github.com/joshwooding/vite-plugin-react-docgen-typescript/releases/tag/v0.8.0
+    plugins.unshift({ ...docgenTypescriptPlugin, enforce: 'pre' });
   }
 
   // Add react-docgen so long as the option is not false

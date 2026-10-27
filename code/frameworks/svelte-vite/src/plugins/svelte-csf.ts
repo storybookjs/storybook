@@ -5,7 +5,7 @@ import {
   svelteCsfRuntimeStoriesPath,
   transformSvelteCsf,
 } from '@storybook/svelte/internal/svelte-csf/transform';
-import type { Plugin } from 'vite';
+import { type Plugin, normalizePath } from 'vite';
 
 export function svelteCsf(): Plugin {
   let sveltePlugin: { api?: { options?: SvelteOptions } } | undefined;
@@ -26,7 +26,7 @@ export function svelteCsf(): Plugin {
       order: 'pre',
       filter: { id: exactRegex(SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE) },
       handler() {
-        return svelteCsfRuntimeStoriesPath;
+        return normalizePath(svelteCsfRuntimeStoriesPath);
       },
     },
     transform: {

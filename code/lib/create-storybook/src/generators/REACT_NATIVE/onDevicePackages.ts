@@ -1,9 +1,7 @@
 import type { JsPackageManager } from 'storybook/internal/common';
-import { HandledError } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { ReactNativeOnDevicePeerMismatchError } from 'storybook/internal/server-errors';
 
 import { prerelease, satisfies, validRange } from 'semver';
-import { dedent } from 'ts-dedent';
 
 export const REACT_NATIVE_ON_DEVICE_PACKAGES = [
   '@storybook/addon-ondevice-controls',
@@ -50,19 +48,12 @@ export async function assertReactNativeOnDevicePeers(
         if (!storybookPeer || onDevicePeerAllowsCli(cliVersion, storybookPeer)) {
           return null;
         }
-        return `${packageName}@${version} peers storybook@${storybookPeer}`;
+        return { packageName, version, storybookPeer };
       })
     )
-  ).filter((line): line is string => line !== null);
+  ).filter((mismatch) => mismatch !== null);
 
-  if (mismatches.length === 0) {
-    return;
+  if (mismatches.length > 0) {
+    throw new ReactNativeOnDevicePeerMismatchError({ cliVersion, mismatches });
   }
-
-  const message = dedent`
-    These React Native Storybook packages do not support Storybook ${cliVersion}:
-    ${mismatches.map((line) => `- ${line}`).join('\n')}
-  `;
-  logger.error(message);
-  throw new HandledError(message);
 }

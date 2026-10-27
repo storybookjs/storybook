@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { ReactNativeOnDevicePeerMismatchError } from 'storybook/internal/server-errors';
 
 import {
   assertReactNativeOnDevicePeers,
@@ -9,8 +9,6 @@ import {
   onDevicePeerAllowsCli,
   reactNativeOnDeviceDistTag,
 } from './onDevicePackages.ts';
-
-vi.mock('storybook/internal/node-logger', { spy: true });
 
 describe('reactNativeOnDeviceDistTag', () => {
   it.each([
@@ -66,7 +64,6 @@ describe('assertReactNativeOnDevicePeers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     packageManager.latestVersion.mockResolvedValue('11.0.0-next.0');
-    vi.mocked(logger.error).mockImplementation(() => {});
   });
 
   const assertPeers = () =>
@@ -77,13 +74,12 @@ describe('assertReactNativeOnDevicePeers', () => {
       packageManager.getPublishedPeerDependencies.mockResolvedValue({ storybook: '^10.5.4' });
     });
 
-    it('names the package and storybook peer', async () => {
-      await expect(assertPeers()).rejects.toThrow(
-        /@storybook\/react-native@11\.0\.0-next\.0 peers storybook@\^10\.5\.4/
-      );
+    it('throws a categorized error naming the package and storybook peer', async () => {
+      const error = await assertPeers().catch((err) => err);
 
-      expect(logger.error).toHaveBeenCalledWith(
-        expect.stringContaining('@storybook/react-native@11.0.0-next.0 peers storybook@^10.5.4')
+      expect(error).toBeInstanceOf(ReactNativeOnDevicePeerMismatchError);
+      expect(error.message).toContain(
+        '@storybook/react-native@11.0.0-next.0 peers storybook@^10.5.4'
       );
       expect(packageManager.latestVersion).toHaveBeenCalledWith('@storybook/react-native@next');
       expect(packageManager.getPublishedPeerDependencies).toHaveBeenCalledWith(

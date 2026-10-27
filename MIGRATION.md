@@ -1793,6 +1793,26 @@ export const Default = {
 
 Keys the element only observes as attributes are set with `setAttribute`, so the element receives the string form and converts it as it would from HTML.
 
+The default render now returns a `DocumentFragment` with the element as its last child, so scoped part and state rules can come first.
+A decorator that calls element methods on the story result must read the element from the fragment:
+
+```ts
+// Before
+(storyFn) => {
+  const element = storyFn();
+  element.setAttribute('theme', 'dark');
+  return element;
+},
+
+// After
+(storyFn) => {
+  const result = storyFn();
+  const element = result instanceof DocumentFragment ? result.lastElementChild : result;
+  element?.setAttribute('theme', 'dark');
+  return result;
+},
+```
+
 ### Web Components: `@wc-toolkit/storybook-helpers` is built in
 
 Server-side docgen for web components is a port of [`@wc-toolkit/storybook-helpers`](https://github.com/wc-toolkit/storybook-helpers).
@@ -1815,33 +1835,16 @@ const meta: Meta<MyElement> = {
 // After
 const meta: Meta<MyElement> = {
   component: 'my-element',
+  args: { variant: 'primary' },
 };
 ```
 
-Default values and argTypes come from the manifest, so keep only the `argTypes` you override.
+ArgTypes come from the manifest, so keep only the `argTypes` you override.
+Manifest defaults only fill the Default column of the Controls table; they no longer become initial `args`.
+The element still applies its own defaults, but Controls and a `play` function only see the `args` you set, so set explicitly any starting value you rely on.
 Stories that passed slot content as the second argument of `template` pass it as the `default-slot` arg instead.
 Events logged by `logEvent` or the `events` list are logged by passing `fn()` as the `<name>-event` arg.
 Rows hidden with `setStorybookHelpersConfig({ excludeCategories })` are hidden per key with `table: { disable: true }`.
-
-The default render now returns a `DocumentFragment` with the element as its last child, so scoped part and state rules can come first.
-A decorator that calls element methods on the story result must read the element from the fragment:
-
-```ts
-// Before
-(storyFn) => {
-  const element = storyFn();
-  element.setAttribute('theme', 'dark');
-  return element;
-},
-
-// After
-(storyFn) => {
-  const result = storyFn();
-  const element = result instanceof DocumentFragment ? result.lastElementChild : result;
-  element?.setAttribute('theme', 'dark');
-  return result;
-},
-```
 
 ### Web Components: the runtime Custom Elements Manifest API is deprecated
 

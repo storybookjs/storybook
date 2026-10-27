@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { join } from 'path';
 
 import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
@@ -19,6 +21,33 @@ import type { JobOrNoOpJob, Workflow } from './utils/types.ts';
 import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types.ts';
 
 const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';
+
+/**
+ * The Chromatic job runs the CLI through npx, so it needs none of the repository's node_modules.
+ * The version is read from the lockfile because this generator runs before anything is installed.
+ */
+const CHROMATIC_VERSION = getLockedVersion('chromatic');
+
+function getLockedVersion(name: string) {
+  const root = join(import.meta.dirname, '../..');
+  const range: string = JSON.parse(readFileSync(join(root, 'scripts/package.json'), 'utf8'))
+    .dependencies[name];
+  const descriptor = `${name}@npm:${range}`;
+  const entry = readFileSync(join(root, 'yarn.lock'), 'utf8')
+    .split('\n\n')
+    .find((block) =>
+      block
+        .split('\n')[0]
+        .replace(/^"|":$/g, '')
+        .split(', ')
+        .includes(descriptor)
+    );
+  const version = entry?.match(/^ {2}version: (.+)$/m)?.[1];
+  if (!version) {
+    throw new Error(`No yarn.lock entry for ${descriptor}`);
+  }
+  return version;
+}
 
 /**
  * Verifies the committed docgen baselines against the sandbox that was just built.
@@ -72,6 +101,12 @@ const XLARGE_DEV_TEMPLATES = new Set<string>([
   'react-webpack/18-ts',
   'vue3-vite/default-ts',
 ]);
+
+/**
+ * Sandbox creation peaks at 4.3 GB on every template but these, so it fits medium+ (6 GB). The
+ * Angular CLI webpack build peaks at 5.6 GB.
+ */
+const LARGE_CREATE_TEMPLATES = new Set<string>(['angular-cli/default-ts']);
 
 function defineSandboxJob_dev({
   directory,
@@ -162,7 +197,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     () => ({
       executor: {
         name: 'sb_node_22_browsers',
-        class: 'large',
+        class: LARGE_CREATE_TEMPLATES.has(key) ? 'large' : 'medium+',
       },
       steps: [
         ...getSandboxSetupSteps(key),
@@ -261,13 +296,12 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     () => ({
       executor: {
         name: 'sb_node_22_classic',
-        class: 'medium',
+        class: 'small',
       },
       steps: [
         ...getSandboxSetupSteps(key),
         'checkout', // we need the full git history for chromatic
         workspace.attach(),
-        workspace.unpack(),
         workspace.unpackSandbox(id),
         {
           // we copy to the working directory to get git history, which chromatic needs for baselines
@@ -279,10 +313,14 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         {
           run: {
             name: 'Running Chromatic',
-            command: `yarn task chromatic --template ${key} --no-link -s chromatic`,
-            environment: {
-              STORYBOOK_SANDBOX_ROOT: `./sandbox`,
-            },
+            working_directory: join(LINUX_ROOT_DIR, WORKING_DIR, 'sandbox', path),
+            command: [
+              `npx --yes chromatic@${CHROMATIC_VERSION}`,
+              '--debug',
+              '--exit-zero-on-changes',
+              '--storybook-build-dir=storybook-static',
+              `--projectToken="$CHROMATIC_TOKEN_${key.toUpperCase().replace(/\/|-|\./g, '_')}"`,
+            ].join(' '),
           },
         },
       ],
@@ -492,8 +530,6 @@ const getListOfSandboxes = (workflow: Workflow) => {
   switch (workflow) {
     case 'normal':
       return sandboxTemplates.normal;
-    case 'merged':
-      return sandboxTemplates.merged;
     case 'daily':
       return sandboxTemplates.daily;
     default:

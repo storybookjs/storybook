@@ -11,18 +11,22 @@ const config: BuildEntries = {
     retargetEmotionTypeQueries(emitDir, `${packageName}/theming/emotion`);
   },
   prebuild: async (cwd) => {
-    await exec('jiti', [path.join(import.meta.dirname, 'scripts', 'generate-source-files.ts')], {
-      nodeOptions: {
-        cwd,
-        env: {
-          ...process.env,
-          NODE_ENV: 'production',
-          FORCE_COLOR: '1',
+    await exec(
+      process.execPath,
+      [path.join(import.meta.dirname, 'scripts', 'generate-source-files.ts')],
+      {
+        nodeOptions: {
+          cwd,
+          env: {
+            ...process.env,
+            NODE_ENV: 'production',
+            FORCE_COLOR: '1',
+          },
+          stdio: 'inherit',
         },
-        stdio: 'inherit',
-      },
-      throwOnError: true,
-    });
+        throwOnError: true,
+      }
+    );
   },
   entries: {
     node: [

@@ -1,5 +1,6 @@
-// eslint-disable-next-line depend/ban-dependencies
-import glob from 'fast-glob';
+import { globSync, statSync } from 'node:fs';
+import { sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { join } from 'path/posix';
 
 import { isGlobalInput } from './global-inputs.ts';
@@ -23,12 +24,13 @@ import {
 import { isTrustedAuthor } from './utils/runtime.ts';
 import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
 
-const dirname = import.meta.dirname;
-
-const packageDirs = glob.sync(['*/src', '*/*/src'], {
-  cwd: join(dirname, '../../code'),
-  onlyDirectories: true,
-});
+const codeDir = new URL('../../code/', import.meta.url);
+const packageDirs = ['*/src', '*/*/src'].flatMap((pattern) =>
+  globSync(pattern, { cwd: fileURLToPath(codeDir), exclude: ['node_modules/**'] })
+    .map((dir) => dir.split(sep).join('/'))
+    .filter((dir) => statSync(new URL(dir, codeDir)).isDirectory())
+    .sort((a, b) => (a.replaceAll('/', '\0') < b.replaceAll('/', '\0') ? -1 : 1))
+);
 
 /**
  * Every job that installs goes through here, so none is left on the orb's own cache: one job saving
@@ -43,7 +45,7 @@ const installWithCache = (platform: CachePlatform = 'linux') => [
     : []),
 ];
 
-export const build_linux = defineJob('Build (linux)', (workflowName) => ({
+export const build_linux = defineJob('Build (linux)', () => ({
   executor: {
     name: 'sb_node_22_classic',
     class: 'xlarge',
@@ -86,7 +88,6 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
       },
     },
     git.check(),
-    ...workflow.reportOnFailure(workflowName),
     artifact.persist(`code/bench/esbuild-metafiles`, 'bench'),
     workspace.awaitPack(),
     workspace.persist([
@@ -181,7 +182,7 @@ export const storybookChromatic = defineJob(
 
 export const internalStorybookE2e = defineJob(
   'Internal storybook E2E',
-  (workflowName) => ({
+  () => ({
     executor: {
       name: 'sb_playwright',
       // The tools-attach.spec.ts CLIs build every manifest next to the dev server; OOMs on medium+.
@@ -210,7 +211,6 @@ export const internalStorybookE2e = defineJob(
         'playwright-results'
       ),
       testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
-      ...workflow.reportOnFailure(workflowName),
     ],
   }),
   [commonJobsNoOpJob]
@@ -218,7 +218,7 @@ export const internalStorybookE2e = defineJob(
 
 export const internalStorybookBuildE2e = defineJob(
   'Internal storybook build E2E',
-  (workflowName) => ({
+  () => ({
     executor: {
       name: 'sb_playwright',
       class: 'medium+',
@@ -254,7 +254,6 @@ export const internalStorybookBuildE2e = defineJob(
         'playwright-results'
       ),
       testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
-      ...workflow.reportOnFailure(workflowName),
     ],
   }),
   [commonJobsNoOpJob]
@@ -262,7 +261,7 @@ export const internalStorybookBuildE2e = defineJob(
 
 export const check = defineJob(
   'TypeScript validation',
-  (workflowName) => ({
+  () => ({
     // xlarge because each of the 4 concurrent native-tsc processes in the
     // check task is itself multi-threaded (~4 threads), so throughput still
     // wants the full 8 vCPUs; roughly cost-neutral vs the previous serial run
@@ -287,7 +286,6 @@ export const check = defineJob(
           command: 'yarn check',
         },
       },
-      ...workflow.reportOnFailure(workflowName),
       ...workflow.cancelOnFailure(),
     ],
   }),
@@ -343,12 +341,70 @@ export const knip = defineJob(
   [commonJobsNoOpJob]
 );
 
+/**
+ * One job, not a second sandbox matrix. The generated sandbox workflow is a job
+ * per template, so Node 26 only runs the unit suite plus one Vite build and one
+ * Webpack build. It installs on its own: the shared node_modules cache is keyed
+ * on `.nvmrc`, which is still Node 22.
+ */
+export const node26Smoke = defineJob('Node 26 smoke', () => ({
+  executor: {
+    name: 'sb_node_26',
+    class: 'xlarge',
+  },
+  steps: [
+    git.checkout(),
+    {
+      run: {
+        name: 'Install npm 12',
+        command: ['node --version', 'sudo npm install -g npm@12', 'npm --version'].join('\n'),
+      },
+    },
+    {
+      run: {
+        // Node 25 stopped bundling corepack. Without it, sandboxes run the
+        // image's global yarn instead of the Yarn 4 their `packageManager`
+        // field pins, and `create-storybook` hangs. `--force` replaces the
+        // image's own yarn and pnpm binaries, as `corepack enable` would.
+        name: 'Install corepack',
+        command: [
+          'sudo npm install -g --force corepack@0',
+          'sudo corepack enable',
+          'which yarn',
+          'yarn --version',
+        ].join('\n'),
+      },
+    },
+    npm.install('.'),
+    {
+      run: {
+        name: 'Run unit tests',
+        // storybook-ui is the browser story project. The linux unit job never
+        // runs it; stories have their own Playwright job.
+        command: "yarn test --project '!storybook-ui'",
+      },
+    },
+    {
+      run: {
+        name: 'Build React Vite sandbox',
+        command: 'yarn task build --template react-vite/default-ts --start-from=auto --no-link',
+      },
+    },
+    {
+      run: {
+        name: 'Build React Webpack sandbox',
+        command: 'yarn task build --template react-webpack/18-ts --start-from=auto --no-link',
+      },
+    },
+  ],
+}));
+
 const UNIT_TEST_REPORTERS =
   '--reporter=junit --reporter=default --outputFile=./test-results/junit.xml';
 
 export const testsUnit_linux = defineJob(
   'Tests (linux)',
-  (workflowName) => ({
+  () => ({
     executor: {
       name: 'sb_node_22_classic',
       class: 'large',
@@ -367,7 +423,6 @@ export const testsUnit_linux = defineJob(
       testResults.persist(`test-results`),
 
       git.check(),
-      ...workflow.reportOnFailure(workflowName),
       ...workflow.cancelOnFailure(),
     ],
   }),
@@ -391,7 +446,7 @@ const writeChangedFiles = (changedFiles: readonly string[]) => ({
 export const defineAffectedCheck = (changedFiles: readonly string[]) =>
   defineJob(
     'TypeScript validation (affected)',
-    (workflowName) => ({
+    () => ({
       executor: {
         name: 'sb_node_22_classic',
         class: 'xlarge',
@@ -407,7 +462,6 @@ export const defineAffectedCheck = (changedFiles: readonly string[]) =>
             command: `yarn nx affected -t check --exclude-task-dependencies --parallel=4 --stdin < ${CHANGED_FILES_PATH}`,
           },
         },
-        ...workflow.reportOnFailure(workflowName),
         ...workflow.cancelOnFailure(),
       ],
     }),
@@ -458,7 +512,7 @@ export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) => 
 
   return defineJob(
     'Lint and format (affected)',
-    (workflowName) => ({
+    () => ({
       executor: {
         name: 'sb_node_22_classic',
         class: 'medium',
@@ -486,7 +540,6 @@ export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) => 
                 'yarn lint:js:cmd --quiet --no-error-on-unmatched-pattern'
               )
             )),
-        ...workflow.reportOnFailure(workflowName),
         ...workflow.cancelOnFailure(),
       ],
     }),
@@ -498,7 +551,7 @@ export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) => 
 export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
   defineJob(
     'Tests (linux, affected)',
-    (workflowName) => ({
+    () => ({
       executor: {
         name: 'sb_node_22_classic',
         class: 'large',
@@ -515,7 +568,6 @@ export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
         testResults.persist(`test-results`),
 
         git.check(),
-        ...workflow.reportOnFailure(workflowName),
         ...workflow.cancelOnFailure(),
       ],
     }),
@@ -524,7 +576,7 @@ export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
 
 export const testsStories_linux = defineJob(
   'Tests stories (linux)',
-  (workflowName) => ({
+  () => ({
     executor: {
       name: 'sb_playwright',
       class: 'xlarge',
@@ -543,7 +595,6 @@ export const testsStories_linux = defineJob(
       testResults.persist(`test-results`),
 
       git.check(),
-      ...workflow.reportOnFailure(workflowName),
       ...workflow.cancelOnFailure(),
     ],
   }),
@@ -597,6 +648,32 @@ export const defineCircleciCompletion = (requires: JobOrNoOpJob[]) =>
       ],
     }),
     requires
+  );
+
+/** Report the failed jobs of a nightly `next` run to Slack, whatever state the workflow ends in. */
+export const defineNightlyFailureReport = (completion: JobOrNoOpJob) =>
+  defineJob(
+    'Nightly failure report',
+    () => ({
+      executor: {
+        name: 'sb_barebones',
+        class: 'small',
+      },
+      steps: [
+        git.checkout(),
+        {
+          run: {
+            name: 'Report failed jobs to Slack',
+            environment: {
+              PIPELINE_NUMBER: '<< pipeline.number >>',
+            },
+            command: 'bash scripts/ci/report-nightly-failure.sh',
+          },
+        },
+      ],
+    }),
+    [completion],
+    { runsEvenIfRequirementsFail: true }
   );
 
 const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';

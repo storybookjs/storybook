@@ -17,7 +17,6 @@
     "**/*.svelte",
     "storybook-static",
     "built-storybooks",
-    "ember-output",
     "**/__testfixtures__",
     "**/__mockdata__",
     "**/__corpus__/inputs",

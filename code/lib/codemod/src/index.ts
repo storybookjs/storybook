@@ -11,7 +11,7 @@ import { glob as tinyglobby } from 'tinyglobby';
 
 import { jscodeshiftToPrettierParser } from './lib/utils.ts';
 
-const TRANSFORM_DIR = join(resolvePackageDir('@storybook/codemod'), 'dist', 'transforms');
+const TRANSFORM_DIR = join(resolvePackageDir('@storybook/codemod', import.meta.url), 'dist', 'transforms');
 
 export function listCodemods() {
   return readdirSync(TRANSFORM_DIR)
@@ -78,7 +78,7 @@ export async function runCodemod(
     const result = spawnSync(
       'node',
       [
-        join(resolvePackageDir('jscodeshift'), 'bin', 'jscodeshift'),
+        join(resolvePackageDir('jscodeshift', import.meta.url), 'bin', 'jscodeshift'),
         // this makes sure codeshift doesn't transform our own source code with babel
         // which is faster, and also makes sure the user won't see babel messages such as:
         // [BABEL] Note: The code generator has deoptimised the styling of repo/node_modules/prettier/index.js as it exceeds the max of 500KB.

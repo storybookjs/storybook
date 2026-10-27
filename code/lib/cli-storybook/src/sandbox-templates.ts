@@ -305,7 +305,17 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDevDependencies: ['prop-types', '@types/prop-types', '@storybook/addon-mcp'],
+      // create-vite >= 9.3.3 scaffolds TypeScript 7.0, which Storybook's TS docgen cannot use
+      // (TS 7.0 has no compiler API; #37004 supports 7.1+). Keep this pin until docgen supports
+      // the TypeScript version that create-vite scaffolds (#36987, #37004). Overwrite the
+      // scaffold's own devDependencies range; pinning via devDependencies avoids a conflicting
+      // duplicate entry.
+      extraDevDependencies: [
+        'prop-types',
+        '@types/prop-types',
+        '@storybook/addon-mcp',
+        'typescript@^6',
+      ],
       editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
       mainConfig: {
         features: {
@@ -333,7 +343,13 @@ export const baseTemplates = {
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['react@canary', 'react-dom@canary'],
-      extraDevDependencies: ['prop-types', '@types/react@latest', '@types/react-dom@latest'],
+      extraDevDependencies: [
+        'prop-types',
+        '@types/react@latest',
+        '@types/react-dom@latest',
+        // See `react-vite/default-ts` for why TypeScript is pinned to 6.
+        'typescript@^6',
+      ],
       resolutions: {
         '@types/react': 'npm:@types/react@latest',
         '@types/react-dom': 'npm:@types/react-dom@latest',
@@ -902,6 +918,9 @@ const benchTemplates = {
     modifications: {
       skipTemplateStories: true,
       skipMocking: true,
+      // This modifications block replaces the base template's, so the pin must be repeated here.
+      // See `react-vite/default-ts` for why TypeScript is pinned to 6.
+      extraDevDependencies: ['typescript@^6'],
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'chromatic', 'vitest-integration'],
     typeCheck: false,
@@ -924,6 +943,9 @@ const benchTemplates = {
       skipTemplateStories: true,
       disableDocs: true,
       skipMocking: true,
+      // This modifications block replaces the base template's, so the pin must be repeated here.
+      // See `react-vite/default-ts` for why TypeScript is pinned to 6.
+      extraDevDependencies: ['typescript@^6'],
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'chromatic', 'vitest-integration'],
     typeCheck: false,
@@ -936,6 +958,9 @@ const benchTemplates = {
       skipTemplateStories: true,
       testBuild: true,
       skipMocking: true,
+      // This modifications block replaces the base template's, so the pin must be repeated here.
+      // See `react-vite/default-ts` for why TypeScript is pinned to 6.
+      extraDevDependencies: ['typescript@^6'],
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'vitest-integration'],
     typeCheck: false,

@@ -312,23 +312,36 @@ export function createDocgenCache(): DocgenCache {
 const LARGE_DECLARATION_FILE_THRESHOLD = 30;
 
 function declarationFile(prop: ts.Symbol): string | undefined {
-  const declaration =
-    prop.valueDeclaration ?? (prop as any)?.links?.syntheticOrigin?.valueDeclaration;
-  return declaration?.getSourceFile().fileName;
+  return declaration(prop)?.getSourceFile().fileName;
 }
 
-// The props a mapped type such as `Pick<HTMLButtonAttributes, 'type'>` selects count apart from the
-// props the declaration file brings by inheritance, so a few picked props stay.
-function declarationSource(prop: ts.Symbol): object | string | undefined {
-  return (prop as any)?.links?.mappedType ?? declarationFile(prop);
+// A prop that went through `Omit` points back to the prop it copies. Through `Omit<Omit<...>>`, as in
+// bits-ui's props, that prop is a copy too.
+function declaration(prop: ts.Symbol | undefined): ts.Declaration | undefined {
+  return (
+    prop &&
+    (prop.valueDeclaration ??
+      declaration((prop as any).links?.syntheticOrigin) ??
+      unionDeclaration(prop))
+  );
+}
+
+// A prop of a union of `Omit`s, as `WithoutChild<CalendarRootProps>` gives for bits-ui's single and
+// multiple calendar, has one declaration per member and no value declaration. It counts as a library
+// prop only when every member declares it in the same library file.
+function unionDeclaration(prop: ts.Symbol): ts.Declaration | undefined {
+  if (!(prop as any).links?.containingType?.isUnion()) {
+    return undefined;
+  }
+  const [first, ...rest] = prop.declarations ?? [];
+  const file = first?.getSourceFile().fileName;
+  return first && rest.every((other) => other.getSourceFile().fileName === file)
+    ? first
+    : undefined;
 }
 
 function isLibraryFile(file: string | undefined): boolean {
   return !!file && (file.endsWith('.d.ts') || file.includes('/node_modules/'));
-}
-
-function isLibraryProp(prop: ts.Symbol): boolean {
-  return isLibraryFile(declarationFile(prop));
 }
 
 // Walks the props type down to the library types it extends, such as `HTMLInputAttributes` in
@@ -380,18 +393,45 @@ function libraryTypesWithOmittedProps(
   return [];
 }
 
-function largeDeclarationSources(props: ts.Symbol[]): Set<object | string> {
-  const counts = new Map<object | string, number>();
+// The props a mapped type such as `Pick<HTMLButtonAttributes, 'type'>` selects count apart from the
+// props the declaration file brings by inheritance, so a few picked props stay. Within a mapped type
+// each file counts apart, so `Omit<CheckboxRootProps, 'child'>` keeps bits-ui's own props.
+function bulkLibraryProps(props: ts.Symbol[]): Set<ts.Symbol> {
+  const groups = new Map<string, Map<object | string, ts.Symbol[]>>();
   for (const prop of props) {
-    const source = declarationSource(prop);
-    if (source && isLibraryProp(prop)) {
-      counts.set(source, (counts.get(source) ?? 0) + 1);
+    const file = declarationFile(prop);
+    if (file && isLibraryFile(file)) {
+      const mappedType = (prop as any).links?.mappedType ?? file;
+      const byMappedType = groups.get(file) ?? new Map<object | string, ts.Symbol[]>();
+      groups.set(file, byMappedType);
+      const group = byMappedType.get(mappedType) ?? [];
+      byMappedType.set(mappedType, group);
+      group.push(prop);
     }
   }
   return new Set(
-    [...counts]
-      .filter(([, count]) => count > LARGE_DECLARATION_FILE_THRESHOLD)
-      .map(([source]) => source)
+    [...groups.values()]
+      .flatMap((byMappedType) => [...byMappedType.values()])
+      .filter((group) => group.length > LARGE_DECLARATION_FILE_THRESHOLD)
+      .flat()
+  );
+}
+
+// svelte2tsx returns `bindings: __sveltets_$$bindings('ref', 'value')` for the `$bindable()` props.
+// The builder program has no svelte2tsx shims to type it, so the names are read from the call.
+function bindableNames(renderFunction: ts.FunctionDeclaration): Set<string> {
+  const returned = renderFunction.body?.statements.find(ts.isReturnStatement)?.expression;
+  const bindings =
+    returned && ts.isObjectLiteralExpression(returned)
+      ? returned.properties.find(
+          (property): property is ts.PropertyAssignment =>
+            ts.isPropertyAssignment(property) && property.name.getText() === 'bindings'
+        )?.initializer
+      : undefined;
+  return new Set(
+    bindings && ts.isCallExpression(bindings)
+      ? bindings.arguments.filter(ts.isStringLiteral).map((argument) => argument.text)
+      : []
   );
 }
 
@@ -634,7 +674,9 @@ export function extractDocgen(
         const decl = signature.getDeclaration();
         propsType = checker.getTypeOfSymbolAtLocation(retObjProp, decl);
         const props = propsType.getProperties();
-        const bulkSources = largeDeclarationSources(props);
+        const bulkProps = bulkLibraryProps(props);
+        // `value = $bindable()` makes the `value` of `HTMLInputAttributes` part of the component's API.
+        const bindable = bindableNames(renderFunction);
         props.forEach((prop) => {
           const name = prop.getName();
           let description =
@@ -653,11 +695,11 @@ export function extractDocgen(
 
           // Ignore props from svelte/elements.d.ts (HTMLAttributes, AriaAttributes and DOMAttributes).
           // Some libraries use these for {...$$restProps}
-          const source = declarationSource(prop);
           if (
-            options.server
-              ? source !== undefined && bulkSources.has(source) && isLibraryProp(prop)
-              : declarationFile(prop)?.includes('node_modules/svelte/elements.d.ts')
+            !bindable.has(name) &&
+            (options.server
+              ? bulkProps.has(prop)
+              : declarationFile(prop)?.includes('node_modules/svelte/elements.d.ts'))
           ) {
             omitted.add(name);
             return;

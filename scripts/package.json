@@ -16,7 +16,6 @@
     "eval:sync-baselines": "node ./eval/sync-baselines.ts",
     "eval:sync-storybook-version": "node ./eval/sync-storybook-version.ts",
     "generate-sandboxes": "jiti ./sandbox/generate.ts",
-    "get-report-message": "jiti ./get-report-message.ts",
     "get-sandbox-dir": "jiti ./get-sandbox-dir.ts",
     "lint": "yarn lint:js",
     "lint:js": "yarn lint:js:cmd .  --quiet",

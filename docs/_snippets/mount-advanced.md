@@ -125,21 +125,23 @@ export const Basic = meta.story({
 });
 ```
 
-```ts filename="Page.stories.ts" renderer="svelte" language="ts"
-// Replace your-framework with the framework you are using, e.g., svelte-vite, sveltekit, etc.
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
-// 👇 Automocked module resolves to '../lib/__mocks__/db'
-import db from '../lib/db';
-import Page from './Page.svelte';
+  // 👇 Automocked module resolves to '../lib/__mocks__/db'
+  import db from '../lib/db';
+  import Page from './Page.svelte';
 
-const meta = { component: Page } satisfies Meta<typeof Page>;
-export default meta;
+  const { Story } = defineMeta({
+    component: Page,
+  });
+</script>
 
-type Story = StoryObj<typeof meta>;
-
-export const Basic: Story = {
-  play: async ({ mount, args, userEvent }) => {
+<Story
+  name="Basic"
+  play={async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
     });
@@ -152,23 +154,30 @@ export const Basic: Story = {
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
-  },
-  argTypes: {
+  }}
+  argTypes={{
     // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
-  },
-};
+  }}
+/>
 ```
 
-```js filename="Page.stories.js" renderer="svelte" language="js"
-// 👇 Automocked module resolves to '../lib/__mocks__/db'
-import db from '../lib/db';
-import Page from './Page.svelte';
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-export default { component: Page };
+  // 👇 Automocked module resolves to '../lib/__mocks__/db'
+  import db from '../lib/db';
+  import Page from './Page.svelte';
 
-export const Basic = {
-  play: async ({ mount, args, userEvent }) => {
+  const { Story } = preview.meta({
+    component: Page,
+  });
+</script>
+
+<Story
+  name="Basic"
+  play={async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
     });
@@ -181,12 +190,85 @@ export const Basic = {
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
-  },
-  argTypes: {
+  }}
+  argTypes={{
     // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
-  },
-};
+  }}
+/>
+```
+
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  // 👇 Automocked module resolves to '../lib/__mocks__/db'
+  import db from '../lib/db';
+  import Page from './Page.svelte';
+
+  const { Story } = defineMeta({
+    component: Page,
+  });
+</script>
+
+<Story
+  name="Basic"
+  play={async ({ mount, args, userEvent }) => {
+    const note = await db.note.create({
+      data: { title: 'Mount inside of play' },
+    });
+
+    const canvas = await mount(
+      Page,
+      // 👇 Pass data that is created inside of the play function to the component
+      //   For example, a just-generated UUID
+      { props: { ...args, params: { id: String(note.id) } } },
+    );
+
+    await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
+  }}
+  argTypes={{
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
+    params: { control: { disable: true } },
+  }}
+/>
+```
+
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
+
+  // 👇 Automocked module resolves to '../lib/__mocks__/db'
+  import db from '../lib/db';
+  import Page from './Page.svelte';
+
+  const { Story } = preview.meta({
+    component: Page,
+  });
+</script>
+
+<Story
+  name="Basic"
+  play={async ({ mount, args, userEvent }) => {
+    const note = await db.note.create({
+      data: { title: 'Mount inside of play' },
+    });
+
+    const canvas = await mount(
+      Page,
+      // 👇 Pass data that is created inside of the play function to the component
+      //   For example, a just-generated UUID
+      { props: { ...args, params: { id: String(note.id) } } },
+    );
+
+    await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
+  }}
+  argTypes={{
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
+    params: { control: { disable: true } },
+  }}
+/>
 ```
 
 ```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"

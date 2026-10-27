@@ -36,6 +36,7 @@
       }
     },
     "at-max-state": {
+      "control": false,
       "description": "Set while the count has reached `max`",
       "name": "at-max",
       "table": {

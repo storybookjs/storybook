@@ -57,7 +57,8 @@ export const Basic = meta.story({
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import MockDate from 'mockdate';
 
@@ -83,29 +84,32 @@ export const Basic = meta.story({
 />
 ```
 
-```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import MockDate from 'mockdate';
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-import Page from './Page.svelte';
+  import MockDate from 'mockdate';
 
-export default {
-  component: Page,
-  // 👇 Set the value of Date for every story in the file
-  async beforeEach() {
-    MockDate.set('2024-02-14');
+  import Page from './Page.svelte';
 
-    // 👇 Reset the Date after each story
-    return () => {
-      MockDate.reset();
-    };
-  },
-};
+  const { Story } = preview.meta({
+    component: Page,
+    // 👇 Set the value of Date for every story in the file
+    async beforeEach() {
+      MockDate.set('2024-02-14');
 
-export const Basic = {
-  async play({ canvas }) {
-    // ... This will run with the mocked Date
-  },
-};
+      // 👇 Reset the Date after each story
+      return () => {
+        MockDate.reset();
+      };
+    },
+  });
+</script>
+
+<Story name="Default" play={async ({ canvas }) => {
+  // ... This will run with the mocked Date
+  }}
+/>
 ```
 
 ```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF 3"
@@ -135,7 +139,8 @@ export const Basic = {
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import MockDate from 'mockdate';
 
@@ -161,35 +166,32 @@ export const Basic = {
 />
 ```
 
-```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import MockDate from 'mockdate';
+  import MockDate from 'mockdate';
 
-import Page from './Page.svelte';
+  import Page from './Page.svelte';
 
-const meta = {
-  component: Page,
-  // 👇 Set the value of Date for every story in the file
-  async beforeEach() {
-    MockDate.set('2024-02-14');
+  const { Story } = preview.meta({
+    component: Page,
+    // 👇 Set the value of Date for every story in the file
+    async beforeEach() {
+      MockDate.set('2024-02-14');
 
-    // 👇 Reset the Date after each story
-    return () => {
-      MockDate.reset();
-    };
-  },
-} satisfies Meta<typeof Page>;
-export default meta;
+      // 👇 Reset the Date after each story
+      return () => {
+        MockDate.reset();
+      };
+    },
+  });
+</script>
 
-type Story = StoryObj<typeof meta>;
-
-export const Basic: Story = {
-  async play({ canvas }) {
-    // ... This will run with the mocked Date
-  },
-};
+<Story name="Default" play={async ({ canvas }) => {
+  // ... This will run with the mocked Date
+  }}
+/>
 ```
 
 ```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"

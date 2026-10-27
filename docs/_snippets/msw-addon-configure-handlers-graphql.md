@@ -398,7 +398,8 @@ export const MockedError: Story = {
 
 ```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import { graphql, HttpResponse, delay } from 'msw';
 
@@ -469,46 +470,52 @@ export const MockedError: Story = {
       }),
     );
   }}
+/>
 ```
 
-```js filename="YourPage.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import { graphql, HttpResponse, delay } from 'msw';
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-import MockApolloWrapperClient from './MockApolloWrapperClient.svelte';
-import DocumentScreen from './YourPage.svelte';
+  import { graphql, HttpResponse, delay } from 'msw';
 
-export default {
-  component: DocumentScreen,
-  decorators: [() => MockApolloWrapperClient],
-};
+  import MockApolloWrapperClient from './MockApolloWrapperClient.svelte';
+  import DocumentScreen from './YourPage.svelte';
 
-//👇The mocked data that will be used in the story
-const TestData = {
-  user: {
-    userID: 1,
-    name: 'Someone',
-  },
-  document: {
-    id: 1,
-    userID: 1,
-    title: 'Something',
-    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-    status: 'approved',
-  },
-  subdocuments: [
-    {
+  const { Story } = preview.meta({
+    component: DocumentScreen,
+    decorators: [() => MockApolloWrapperClient],
+  });
+
+  //👇The mocked data that will be used in the story
+  const TestData = {
+    user: {
+      userID: 1,
+      name: 'Someone',
+    },
+    document: {
       id: 1,
       userID: 1,
       title: 'Something',
-      content:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
       status: 'approved',
     },
-  ],
-};
+    subdocuments: [
+      {
+        id: 1,
+        userID: 1,
+        title: 'Something',
+        content:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+        status: 'approved',
+      },
+    ],
+  };
+</script>
 
-export const MockedSuccess = {
-  beforeEach({ msw }) {
+<Story
+  name="MockedSuccess"
+  beforeEach={({ msw }) => {
     msw.use(
       graphql.query('AllInfoQuery', () => {
         return HttpResponse.json({
@@ -520,11 +527,12 @@ export const MockedSuccess = {
         });
       }),
     );
-  },
-};
+  }}
+/>
 
-export const MockedError = {
-  beforeEach({ msw }) {
+<Story
+  name="MockedError"
+  beforeEach={({ msw }) => {
     msw.use(
       graphql.query('AllInfoQuery', async () => {
         await delay(800);
@@ -537,8 +545,8 @@ export const MockedError = {
         });
       }),
     );
-  },
-};
+  }}
+/>
 ```
 
 ```svelte filename="MockApolloWrapperClient.svelte" renderer="svelte" language="js" tabTitle="apollo-wrapper-component"
@@ -567,7 +575,8 @@ export const MockedError = {
 
 ```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import { graphql, HttpResponse, delay } from 'msw';
 
@@ -641,50 +650,49 @@ export const MockedError = {
 />
 ```
 
-```ts filename="YourPage.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import { graphql, HttpResponse, delay } from 'msw';
+  import { graphql, HttpResponse, delay } from 'msw';
 
-import MockApolloWrapperClient from './MockApolloWrapperClient.svelte';
-import DocumentScreen from './YourPage.svelte';
+  import MockApolloWrapperClient from './MockApolloWrapperClient.svelte';
+  import DocumentScreen from './YourPage.svelte';
 
-const meta = {
-  component: DocumentScreen,
-  decorators: [() => MockApolloWrapperClient],
-} satisfies Meta<typeof DocumentScreen>;
+  const { Story } = preview.meta({
+    component: DocumentScreen,
+    decorators: [() => MockApolloWrapperClient],
+  });
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-//👇The mocked data that will be used in the story
-const TestData = {
-  user: {
-    userID: 1,
-    name: 'Someone',
-  },
-  document: {
-    id: 1,
-    userID: 1,
-    title: 'Something',
-    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-    status: 'approved',
-  },
-  subdocuments: [
-    {
+  //👇The mocked data that will be used in the story
+  const TestData = {
+    user: {
+      userID: 1,
+      name: 'Someone',
+    },
+    document: {
       id: 1,
       userID: 1,
       title: 'Something',
-      content:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
       status: 'approved',
     },
-  ],
-};
+    subdocuments: [
+      {
+        id: 1,
+        userID: 1,
+        title: 'Something',
+        content:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+        status: 'approved',
+      },
+    ],
+  };
+</script>
 
-export const MockedSuccess: Story = {
-  beforeEach({ msw }) {
+<Story
+  name="MockedSuccess"
+  beforeEach={({ msw }) => {
     msw.use(
       graphql.query('AllInfoQuery', () => {
         return HttpResponse.json({
@@ -696,11 +704,12 @@ export const MockedSuccess: Story = {
         });
       }),
     );
-  },
-};
+  }}
+/>
 
-export const MockedError: Story = {
-  beforeEach({ msw }) {
+<Story
+  name="MockedError"
+  beforeEach={({ msw }) => {
     msw.use(
       graphql.query('AllInfoQuery', async () => {
         await delay(800);
@@ -713,8 +722,8 @@ export const MockedError: Story = {
         });
       }),
     );
-  },
-};
+  }}
+/>
 ```
 
 ```svelte filename="MockApolloWrapperClient.svelte" renderer="svelte" language="ts" tabTitle="apollo-wrapper-component"

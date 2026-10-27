@@ -26,7 +26,7 @@ When asked to benchmark Storybook startup:
    - Stop timing on first story mount plus one `requestAnimationFrame()`
 2. Check whether the repo already has a benchmark script. Reuse it if possible.
 3. If not, create a Node script that:
-   - starts Storybook with `--no-open`
+   - starts Storybook without opening a browser
    - waits for the server to respond
    - launches a browser it controls
    - waits for a preview-side render signal
@@ -41,7 +41,7 @@ Use these defaults unless the user asks otherwise:
 - Browser path: normal manager page, let Storybook load the preview iframe itself
 - Render signal: first preview story mount + one `requestAnimationFrame()`
 - Browser launch: external harness launches the browser, not Storybook
-- Auto-open: disable Storybook browser auto-open with `storybook dev --no-open`
+- Auto-open: keep Storybook from opening a browser. Storybook 11 opens one only with `--open`; Storybook 10 and older need `--no-open`
 
 Do not measure only CLI output. Server listening is not the same as first story rendered.
 
@@ -70,7 +70,7 @@ Preferred payload:
 The benchmark script should:
 
 1. Fail fast if the target Storybook port is already in use
-2. Spawn Storybook with `--no-open`
+2. Spawn Storybook without opening a browser
 3. Start timing immediately before spawn
 4. Wait for HTTP readiness on the Storybook URL
 5. Launch a controlled browser to `/`

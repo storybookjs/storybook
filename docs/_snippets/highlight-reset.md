@@ -115,7 +115,8 @@ export const ResetHighlight: Story = {
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import { useChannel } from 'storybook/preview-api';
   import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
@@ -143,18 +144,23 @@ export const ResetHighlight: Story = {
 />
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-import MyComponent from './MyComponent.svelte';
+  import { useChannel } from 'storybook/preview-api';
+  import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
 
-export default {
-  component: MyComponent,
-};
+  import MyComponent from './MyComponent.svelte';
 
-export const ResetHighlight = {
-  decorators: [
+  const { Story } = preview.meta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="ResetHighlight"
+  decorators={[
     (storyFn) => {
       const emit = useChannel({});
       emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
@@ -164,13 +170,14 @@ export const ResetHighlight = {
       });
       return storyFn();
     },
-  ],
-};
+  ]}
+/>
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import { useChannel } from 'storybook/preview-api';
   import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
@@ -198,24 +205,23 @@ export const ResetHighlight = {
 />
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+  import { useChannel } from 'storybook/preview-api';
+  import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
 
-import MyComponent from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
-const meta = {
-  component: MyComponent,
-} satisfies Meta<typeof MyComponent>;
+  const { Story } = preview.meta({
+    component: MyComponent,
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const ResetHighlight: Story = {
-  decorators: [
+<Story
+  name="ResetHighlight"
+  decorators={[
     (storyFn) => {
       const emit = useChannel({});
       emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
@@ -225,8 +231,8 @@ export const ResetHighlight: Story = {
       });
       return storyFn();
     },
-  ],
-};
+  ]}
+/>
 ```
 
 ```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"

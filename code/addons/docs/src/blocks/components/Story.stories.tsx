@@ -6,7 +6,7 @@ import {
   STORY_ARGS_UPDATED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
-import type { PlayFunctionContext } from 'storybook/internal/csf';
+import type { StoryContext } from 'storybook/internal/csf';
 import type { ModuleExport, WebRenderer } from 'storybook/internal/types';
 
 import type { Meta, ReactRenderer, StoryObj } from '@storybook/react-vite';
@@ -97,7 +97,7 @@ export const ForceInitialArgs = {
     chromatic: { disableSnapshot: true },
   },
   // test that it ignores updated args by emitting an arg update and assert that it isn't reflected in the DOM
-  play: async ({ args, canvasElement, loaded }: PlayFunctionContext<WebRenderer>) => {
+  play: async ({ args, canvasElement, loaded }: StoryContext<WebRenderer>) => {
     const docsContext = loaded.docsContext as DocsContextProps;
     const resolved = docsContext.resolveOf(args.storyExport, ['story']);
 

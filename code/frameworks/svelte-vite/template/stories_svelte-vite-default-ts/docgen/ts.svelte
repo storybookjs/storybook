@@ -56,8 +56,6 @@
     func?: (event: MouseEvent) => number;
     /** Children */
     children: Snippet;
-    /** Actual arg types inferred from the component */
-    argTypes: Record<string, any>;
   };
 
   const {
@@ -82,7 +80,6 @@
     intersection = undefined,
     func = () => 10,
     children,
-    argTypes,
   }: Props = $props();
 </script>
 
@@ -120,6 +117,3 @@
 {#if children}
   {@render children()}
 {/if}
-
-<h2>Arg Types</h2>
-<pre>{JSON.stringify(argTypes, null, 2)}</pre>

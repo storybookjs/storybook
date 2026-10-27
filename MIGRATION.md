@@ -15,7 +15,7 @@
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
   - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
-    - [Story snippets are static](#story-snippets-are-static)
+    - [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or 6.x](#typescript-59-or-6x)
@@ -963,19 +963,17 @@ RDT options such as `propFilter` and a Vue docgen `tsconfig` have no server equi
 Set `features.docgenServer: false` to keep builder extraction.
 For Angular-Vite, `framework.options.compodoc: false` does not disable the docgen server; use the feature flag to opt out.
 
-#### Story snippets are static
+#### Temporary regressions on source snippet generation
 
 With server-side docgen, React, Angular, Vue 3 and Web Components build story source snippets on the server from the story file.
-This covers the Source block in docs and the Code panel. The renderers no longer register their runtime source decorator.
+Whilst this change enables support for agent skills, we have had to completely rewrite source snippet generation server-side. Our new snippet generation comes with significant improvements for several frameworks, but also with temporary regressions.
 
-The Source block does not change when you edit Controls; it shows the snippet for the args written in the story file.
+In Storybook 11.0, server-side source snippets do not update dynamically when you change a story's args. This is a known limitation and it will be fixed in Storybook 11.1 at the latest.
 
-When a story's render cannot be read statically, such as a helper function, a render that returns a string, or JSX built with `h()`, the snippet is built from the story's args where possible, with a warning naming what was dropped.
+Besides, some stories may be missing source snippets in the code panel. Stories are affected depending on whether their args, template functions, etc., could be interpreted server-side. You will see a warning when Storybook failed to render source snippets. We will address the various limitations causing snippet generation to fail over time.
 
-When nothing can be built, the Source block shows the story's own CSF source with that warning.
-Set `features.docgenServer: false` to restore runtime snippets and runtime docgen; Storybook prints a deprecation warning when you do.
+Set `features.docgenServer: false` to restore runtime snippets and runtime docgen, if your Storybook is affected by these limitations.
 
-We plan to bring back dynamic story snippets in the near future.
 
 ### Builder docgen is deprecated
 

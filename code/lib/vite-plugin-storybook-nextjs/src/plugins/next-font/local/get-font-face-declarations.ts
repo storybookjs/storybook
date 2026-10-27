@@ -20,7 +20,7 @@ export type LoaderOptions = {
   props: {
     src?: string | Array<{ path: string; weight?: string; style?: string }>;
     metaSrc?: LocalFontSrc;
-    display?: string;
+    display?: 'auto' | 'block' | 'swap' | 'fallback' | 'optional';
   };
   /**
    * Font Family name
@@ -42,7 +42,7 @@ export const getPlaceholderFontUrl = (refId: string) =>
 /**
  * Regular expression to match the placeholder URL
  */
-getPlaceholderFontUrl.regexp = /__%%import\.meta\.ROLLUP_FILE_URL_(.*?)%%__/g;
+getPlaceholderFontUrl.regexp = /__%%import\\.meta\\.ROLLUP_FILE_URL_(.*?)%%__/g;
 
 export async function getFontFaceDeclarations(options: LoaderOptions) {
   const localFontSrc = options.props.metaSrc;
@@ -64,18 +64,18 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
 
   const fontDeclarations = [{ prop: 'font-display', value: display }, ...declarations]
     .map(({ prop, value }: { prop: string; value: string }) => `${prop}: ${value};`)
-    .join('\n');
+    .join('\\n');
 
   const getFontFaceCSS = () => {
     if (localFontSrc) {
       if ('fontReferenceId' in localFontSrc) {
         return dedent`@font-face {
-					font-family: ${id};
-					src: url(${localFontSrc.fontReferenceId ? getPlaceholderFontUrl(localFontSrc.fontReferenceId) : `/@fs/${localFontSrc.fontPath}`});
+\\t\\t\\t\\t\\tfont-family: ${id};
+\\t\\t\\t\\t\\tsrc: url(${localFontSrc.fontReferenceId ? getPlaceholderFontUrl(localFontSrc.fontReferenceId) : `/@fs/${localFontSrc.fontPath}`});
           ${weight ? `font-weight: ${weight};` : ''}
           ${style ? `font-style: ${style};` : ''}
-					${fontDeclarations}
-				}`;
+\\t\\t\\t\\t\\t${fontDeclarations}
+\\t\\t\\t\\t}`;
       }
       return (
         localFontSrc as Array<{
@@ -86,12 +86,12 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
       )
         .map((font) => {
           return dedent`@font-face {
-						font-family: ${id};
-						src: url(${font.path.fontReferenceId ? getPlaceholderFontUrl(font.path.fontReferenceId) : `/@fs/${font.path.fontPath}`});
-						${font.weight ? `font-weight: ${font.weight};` : ''}
-						${font.style ? `font-style: ${font.style};` : ''}
-						${fontDeclarations}
-					}`;
+\\t\\t\\t\\t\\t\\tfont-family: ${id};
+\\t\\t\\t\\t\\t\\tsrc: url(${font.path.fontReferenceId ? getPlaceholderFontUrl(font.path.fontReferenceId) : `/@fs/${font.path.fontPath}`});
+\\t\\t\\t\\t\\t\\t${font.weight ? `font-weight: ${font.weight};` : ''}
+\\t\\t\\t\\t\\t\\t${font.style ? `font-style: ${font.style};` : ''}
+\\t\\t\\t\\t\\t\\t${fontDeclarations}
+\\t\\t\\t\\t\\t}`;
         })
         .join('');
     }

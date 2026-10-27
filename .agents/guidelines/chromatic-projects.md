@@ -22,17 +22,12 @@ Pass the project ID as `projectId` to the Chromatic tools. Sandbox projects are 
 | `angular-vite/default-ts`                | `Project:6a021028c2f37c1d2f640723` |
 | `angular-vite/21-ts`                     | `Project:6a39460ac63cf417c1a079ff` |
 | `vue3-vite/default-ts`                   | `Project:630513346a8e284ae244d415` |
-| `vue3-vite/default-js`                   | `Project:630513046a8e284ae244cab4` |
 | `vue3-vite/prerelease-ts`                | `Project:6acf97c724e2b86a56912992` |
 | `svelte-vite/default-ts`                 | `Project:630873996e4e3557791c069c` |
-| `svelte-vite/default-js`                 | `Project:6308736456ad2046275c0ae7` |
 | `svelte-kit/skeleton-ts`                 | `Project:634ff6954afef8aae1c1b29b` |
 | `lit-vite/default-ts`                    | `Project:638db5bf49adfdfe8cf545e0` |
-| `lit-vite/default-js`                    | `Project:638db567ed97c3fb3e21cc22` |
 | `preact-vite/default-ts`                 | `Project:63b588a512565bfaace15e7c` |
-| `preact-vite/default-js`                 | `Project:63b5884a12565bfaace14c83` |
 | `html-vite/default-ts`                   | `Project:63dd39a158cf6fc05199b4bb` |
-| `html-vite/default-js`                   | `Project:63dd397461b9918f7bdd988e` |
 | `internal/react18-webpack-babel`         | `Project:659810cb7e778e400627527a` |
 | `bench/react-vite-default-ts-test-build` | `Project:6544b941802d9ff884a3f74d` |
 | `bench/react-webpack-18-ts-test-build`   | `Project:6544b98f47ff41fd955b43cb` |

@@ -506,6 +506,21 @@ export class OpenServiceDuplicateToolNameError extends StorybookError {
   }
 }
 
+export class InvalidBasePathError extends StorybookError {
+  constructor(public data: { basePath: string }) {
+    super({
+      name: 'InvalidBasePathError',
+      category: Category.CORE_COMMON,
+      code: 20,
+      message: dedent`
+        Invalid Storybook base path: ${JSON.stringify(data.basePath)}.
+
+        The base path is the URL path prefix Storybook is served from, such as "/__storybook".
+        It cannot be a full URL, and cannot contain a query string or a fragment.`,
+    });
+  }
+}
+
 export class WebpackMissingStatsError extends StorybookError {
   constructor() {
     super({
@@ -1327,6 +1342,29 @@ export class NuxtModuleAddFailedError extends StorybookError {
         Failed to add @nuxtjs/storybook to the Nuxt project via nuxi.
 
         ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class ReactNativeOnDevicePeerMismatchError extends StorybookError {
+  constructor(
+    public data: {
+      cliVersion: string;
+      mismatches: { packageName: string; version: string; storybookPeer: string }[];
+    }
+  ) {
+    super({
+      name: 'ReactNativeOnDevicePeerMismatchError',
+      category: Category.CLI_INIT,
+      code: 18,
+      message: dedent`
+        These React Native Storybook packages do not support Storybook ${data.cliVersion}:
+        ${data.mismatches
+          .map(
+            ({ packageName, version, storybookPeer }) =>
+              `- ${packageName}@${version} peers storybook@${storybookPeer}`
+          )
+          .join('\n')}`,
     });
   }
 }

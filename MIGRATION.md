@@ -38,6 +38,7 @@
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
   - [Vite: `preview-stats.json` contains the full bundler graph](#vite-preview-statsjson-contains-the-full-bundler-graph)
+  - [Webpack: requires webpack 5.101 or higher](#webpack-requires-webpack-5101-or-higher)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
   - [Next.js: most Node.js built-in polyfills removed from `@storybook/nextjs`](#nextjs-most-nodejs-built-in-polyfills-removed-from-storybooknextjs)
   - [`storySort` in the preview replaced by `storySorts` in main](#storysort-in-the-preview-replaced-by-storysorts-in-main)
@@ -66,6 +67,7 @@
   - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
   - [Web Components: server-side docgen suffixes event, slot and part argType keys](#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys)
   - [Web Components: the default render binds args by key](#web-components-the-default-render-binds-args-by-key)
+  - [Web Components: `@wc-toolkit/storybook-helpers` is built in](#web-components-wc-toolkitstorybook-helpers-is-built-in)
   - [Web Components: the runtime Custom Elements Manifest API is deprecated](#web-components-the-runtime-custom-elements-manifest-api-is-deprecated)
   - [SvelteKit: Require v3 and up](#sveltekit-require-v3-and-up)
   - [Svelte CSF is built into the Svelte frameworks](#svelte-csf-is-built-into-the-svelte-frameworks)
@@ -1148,8 +1150,6 @@ Storybook 11 targets Node.js 22.12 or higher. Before upgrading, update Node.js i
 
 Storybook accepts prerelease Node.js builds when their version meets this minimum. For example, Node.js 26.1.0-rc.0 is supported, but 22.12.0-rc.0 is older than 22.12.0 and is not supported.
 
-During the Storybook 11 prerelease cycle, some releases still accept Node.js 20.19. This does not mean Node.js 20 will remain supported in the final release. Use Node.js 22.12 or higher when testing your migration.
-
 ### TypeScript 5.9 or newer
 
 Storybook 11 requires TypeScript 5.9 or newer. Upgrade your project's TypeScript dependency before upgrading Storybook, then run your project's type check.
@@ -1438,6 +1438,18 @@ The `preview-stats.json` file that `@storybook/builder-vite` writes for `storybo
 - Sub-modules with a query string, for example `./src/Button.vue?vue&type=style&index=0&lang.css` next to `./src/Button.vue`
 
 Chromatic TurboSnap reads this file. It needs `chromatic-cli` [v18.13.1](https://github.com/chromaui/chromatic-cli/releases/tag/v18.13.1) or later, which merges these nodes into the files they stand for. With an older version, a changed Vue or Svelte component can trace to zero stories. Upgrade `chromatic-cli` to v18.13.1 or later before you upgrade Storybook.
+
+### Webpack: requires webpack 5.101 or higher
+
+`@storybook/builder-webpack5` now uses `webpack-dev-middleware` 8, which requires webpack 5.101.0 or higher. This affects all webpack-based frameworks:
+
+- `@storybook/react-webpack5`
+- `@storybook/nextjs`
+- `@storybook/angular`
+- `@storybook/ember`
+- `@storybook/server-webpack5`
+
+If your project depends on webpack directly, upgrade it to 5.101.0 or higher. Otherwise your package manager can install a second copy of webpack for Storybook, and webpack plugins from your configuration may not work with Storybook's copy.
 
 ### Next.js: Require v15 and up
 
@@ -1921,6 +1933,39 @@ A decorator that calls element methods on the story result must read the element
   return result;
 },
 ```
+
+### Web Components: `@wc-toolkit/storybook-helpers` is built in
+
+Server-side docgen for web components is a port of [`@wc-toolkit/storybook-helpers`](https://github.com/wc-toolkit/storybook-helpers).
+The argTypes built from the manifest, the suffixed keys and the default render's bindings are what `getStorybookHelpers` returned as `argTypes` and `template`.
+If you use the library, remove it and let Storybook do the work:
+
+```ts
+// Before
+import { getStorybookHelpers } from '@wc-toolkit/storybook-helpers';
+
+const { args, argTypes, template } = getStorybookHelpers<MyElement>('my-element');
+
+const meta: Meta<MyElement> = {
+  component: 'my-element',
+  args,
+  argTypes,
+  render: (args) => template(args),
+};
+
+// After
+const meta: Meta<MyElement> = {
+  component: 'my-element',
+  args: { variant: 'primary' },
+};
+```
+
+ArgTypes come from the manifest, so keep only the `argTypes` you override.
+Manifest defaults only fill the Default column of the Controls table; they no longer become initial `args`.
+The element still applies its own defaults, but Controls and a `play` function only see the `args` you set, so set explicitly any starting value you rely on.
+Stories that passed slot content as the second argument of `template` pass it as the `default-slot` arg instead.
+Events logged by `logEvent` or the `events` list are logged by passing `fn()` as the `<name>-event` arg.
+Rows hidden with `setStorybookHelpersConfig({ excludeCategories })` are hidden per key with `table: { disable: true }`.
 
 ### Web Components: the runtime Custom Elements Manifest API is deprecated
 

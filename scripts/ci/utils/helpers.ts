@@ -1,4 +1,4 @@
-import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../../utils/constants.ts';
+import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../../utils/npm-constants.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './constants.ts';
 import { type JobOrNoOpJob } from './types.ts';
 
@@ -10,6 +10,14 @@ export const cancelWorkflowStep = {
       'curl -X POST --header "Content-Type: application/json" "https://circleci.com/api/v2/workflow/${CIRCLE_WORKFLOW_ID}/cancel?circle-token=${WORKFLOW_CANCELER}"',
   },
 };
+
+export const compileStep = () => ({
+  run: {
+    name: 'Compile',
+    working_directory: 'code',
+    command: 'yarn task --task compile --start-from=auto --no-link --debug',
+  },
+});
 
 /**
  * The `Persisting to workspace` step is bytes-bound: CircleCI gzips the

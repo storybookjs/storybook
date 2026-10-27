@@ -9,3 +9,4 @@ export {
   collectComponentMetaSources,
 } from './component-docgen/component-meta/component-meta.ts';
 export { buildStoryDocsPayload } from './story-docs/build-story-docs.ts';
+export { buildDocgenPayload, type BuildDocgenContext } from './component-docgen/build-docgen.ts';

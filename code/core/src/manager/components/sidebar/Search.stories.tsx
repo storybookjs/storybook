@@ -75,6 +75,29 @@ export const LastViewed: StoryFn = () => (
   </Search>
 );
 
+export const InputIsCombobox: StoryFn = LastViewed.bind({});
+InputIsCombobox.play = async ({ canvasElement }) => {
+  const input = within(canvasElement).getByRole('combobox', { name: 'Search for components' });
+  const wrapper = canvasElement.querySelector('.search-field');
+  expect(wrapper).not.toHaveAttribute('role');
+  expect(wrapper).not.toHaveAttribute('aria-owns');
+  expect(input).toHaveAttribute('aria-expanded', 'false');
+
+  await userEvent.click(input);
+  const listbox = await within(canvasElement).findByRole('listbox');
+  expect(input).toHaveAttribute('aria-expanded', 'true');
+  expect(input).toHaveAttribute('aria-controls', listbox.id);
+
+  await userEvent.keyboard('{ArrowDown}');
+  await waitFor(() => expect(input).toHaveAttribute('aria-activedescendant'));
+  const activeId = input.getAttribute('aria-activedescendant');
+  expect(
+    within(listbox)
+      .getAllByRole('option')
+      .map((option) => option.id)
+  ).toContain(activeId);
+};
+
 const escapeAbove = fn().mockName('escapeAbove');
 
 /**
@@ -98,7 +121,7 @@ export const EscapeWithQueryStaysInSearch: StoryFn = () => (
 );
 EscapeWithQueryStaysInSearch.play = async ({ canvasElement }) => {
   escapeAbove.mockClear();
-  const input = within(canvasElement).getByRole('searchbox');
+  const input = within(canvasElement).getByRole('combobox');
   await userEvent.click(input);
   await userEvent.keyboard('{Escape}');
   await waitFor(() => expect(input).toHaveValue(''));

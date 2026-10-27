@@ -51,7 +51,7 @@ test.describe('navigating', () => {
       page,
     }) => {
       await page.goto(`${storybookUrl}`);
-      await page.getByRole('searchbox').fill('Monospace');
+      await page.getByRole('combobox', { name: 'Search for components' }).fill('Monospace');
 
       const searchItem = page.getByRole('option', {
         name: 'Typography / Monospace brand',
@@ -74,7 +74,7 @@ test.describe('navigating', () => {
       const sbPage = new SbPage(page, expect);
       await sbPage.waitUntilLoaded();
 
-      await page.getByRole('searchbox').fill('Monospace');
+      await page.getByRole('combobox', { name: 'Search for components' }).fill('Monospace');
 
       await page
         .getByRole('option', {
@@ -104,7 +104,7 @@ test.describe('navigating', () => {
       const sbPage = new SbPage(page, expect);
       await sbPage.waitUntilLoaded();
 
-      await page.getByRole('searchbox').fill('Primary');
+      await page.getByRole('combobox', { name: 'Search for components' }).fill('Primary');
       await page
         .getByRole('option', {
           name: 'Docs / Primary Example / Button',

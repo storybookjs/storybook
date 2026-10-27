@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  allTemplates,
   baseTemplates,
   docgenServerTemplates,
   enablesDocgenServer,
@@ -93,5 +94,19 @@ describe('React prerelease sandboxes', () => {
       },
     });
     expect(webpack.minAgeGateExemptions).toEqual(['react', 'react-dom', 'scheduler']);
+  });
+});
+
+describe('React bench sandboxes', () => {
+  it('pin typescript to ^6 (their modifications replace the base template)', () => {
+    for (const key of [
+      'bench/react-vite-default-ts',
+      'bench/react-vite-default-ts-nodocs',
+      'bench/react-vite-default-ts-test-build',
+    ] as const) {
+      expect(allTemplates[key].modifications).toMatchObject({
+        extraDevDependencies: ['typescript@^6'],
+      });
+    }
   });
 });

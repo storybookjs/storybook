@@ -917,6 +917,9 @@ const benchTemplates = {
     modifications: {
       skipTemplateStories: true,
       skipMocking: true,
+      // This modifications block replaces the base template's, so the pin must be repeated here.
+      // See `react-vite/default-ts` for why TypeScript is pinned to 6.
+      extraDevDependencies: ['typescript@^6'],
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'chromatic', 'vitest-integration'],
     typeCheck: false,
@@ -939,6 +942,9 @@ const benchTemplates = {
       skipTemplateStories: true,
       disableDocs: true,
       skipMocking: true,
+      // This modifications block replaces the base template's, so the pin must be repeated here.
+      // See `react-vite/default-ts` for why TypeScript is pinned to 6.
+      extraDevDependencies: ['typescript@^6'],
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'chromatic', 'vitest-integration'],
     typeCheck: false,
@@ -951,6 +957,9 @@ const benchTemplates = {
       skipTemplateStories: true,
       testBuild: true,
       skipMocking: true,
+      // This modifications block replaces the base template's, so the pin must be repeated here.
+      // See `react-vite/default-ts` for why TypeScript is pinned to 6.
+      extraDevDependencies: ['typescript@^6'],
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'vitest-integration'],
     typeCheck: false,

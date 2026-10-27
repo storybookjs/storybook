@@ -16,6 +16,7 @@ import { PNPMProxy } from './PNPMProxy.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
+    executeTask: vi.fn(),
     executeTaskWithSpinner: vi.fn(),
     getPreferredStdio: vi.fn(() => 'inherit'),
     select: vi.fn(),
@@ -50,6 +51,7 @@ const expectedMinimumReleaseAgeExcludePackages = [
   '@storybook/*',
   'eslint-plugin-storybook',
   '@chromatic-com/storybook',
+  'chromatic',
 ];
 
 describe('PNPM Proxy', () => {
@@ -82,6 +84,10 @@ describe('PNPM Proxy', () => {
     useMemfsProject(pnpmProxy);
     JsPackageManager.clearLatestVersionCache();
     vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('type should be pnpm', () => {
@@ -117,6 +123,30 @@ describe('PNPM Proxy', () => {
   });
 
   describe('installDependencies', () => {
+    it('gives pnpm control of the terminal when a purge confirmation can be shown', async () => {
+      vi.stubGlobal('process', {
+        ...process,
+        stdin: { ...process.stdin, isTTY: true },
+      });
+      vi.mocked(prompt.executeTask).mockImplementationOnce(async (fn) => {
+        if (Array.isArray(fn)) {
+          await Promise.all(fn.map((factory) => factory()));
+        } else {
+          await fn();
+        }
+      });
+      mockedExecuteCommand.mockResolvedValueOnce({
+        stdout: '',
+      } as Awaited<ReturnType<typeof executeCommand>>);
+
+      await pnpmProxy.installDependencies();
+
+      expect(prompt.executeTask).toHaveBeenCalledOnce();
+      expect(mockedExecuteCommand).toHaveBeenCalledWith(
+        expect.objectContaining({ command: 'pnpm', args: ['install'], stdio: 'inherit' })
+      );
+    });
+
     it('should run `pnpm install`', async () => {
       // sort of un-mock part of the function so executeCommand (also mocked) is called
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
@@ -548,6 +578,47 @@ describe('PNPM Proxy', () => {
         expect.any(String)
       );
       expect(executeCommandSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getPublishedPeerDependencies', () => {
+    const readPeers = () =>
+      pnpmProxy.getPublishedPeerDependencies('@storybook/react-native', '11.0.0-next.0');
+
+    describe('when the version has peer dependencies', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({ stdout: '{"storybook":"^10.5.4"}' } as any);
+      });
+
+      it('reads them through the package manager', async () => {
+        await expect(readPeers()).resolves.toEqual({ storybook: '^10.5.4' });
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({
+            command: 'pnpm',
+            args: ['info', '@storybook/react-native@11.0.0-next.0', 'peerDependencies', '--json'],
+          })
+        );
+      });
+    });
+
+    describe('when the version has no peer dependencies', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+      });
+
+      it('returns an empty object', async () => {
+        await expect(readPeers()).resolves.toEqual({});
+      });
+    });
+
+    describe('when the lookup fails', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockRejectedValue(new Error('401 Unauthorized'));
+      });
+
+      it('returns null', async () => {
+        await expect(readPeers()).resolves.toBeNull();
+      });
     });
   });
 
@@ -1015,6 +1086,7 @@ describe('PNPM Proxy', () => {
             '@storybook/*',
             'eslint-plugin-storybook',
             '@chromatic-com/storybook',
+            'chromatic',
           ]),
         } as any);
 

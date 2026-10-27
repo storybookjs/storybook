@@ -50,7 +50,11 @@ export const storySortToMain: Fix<StorySortToMainOptions> = {
         if (previewProblem) {
           fail(previewProblem);
         }
-        if (main.get(['storySorts'])) {
+        const existing = main.inspect(['storySorts']);
+        if (existing.kind === 'unreadable') {
+          fail(existing.diagnostic.message);
+        }
+        if (existing.kind === 'value') {
           fail('The main config already defines storySorts');
         }
         if (storySort === null || typeof storySort !== 'object') {

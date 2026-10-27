@@ -32,7 +32,8 @@ const meta = preview.meta({
 
 ```svelte filename="Checkbox.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Checkbox from './Checkbox.svelte';
 
@@ -47,17 +48,21 @@ const meta = preview.meta({
 </script>
 ```
 
-```js filename="Checkbox.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Checkbox from './Checkbox.svelte';
+```svelte filename="Checkbox.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'Design System/Atoms/Checkbox',
-  component: Checkbox,
-};
+  import Checkbox from './Checkbox.svelte';
+
+  const { Story } = preview.meta({
+    /* 👇 The title prop is optional.
+     * See https://storybook.js.org/docs/configure/#configure-story-loading
+     * to learn how to generate automatic titles
+     */
+    title: 'Design System/Atoms/Checkbox',
+    component: Checkbox,
+  });
+</script>
 ```
 
 ```js filename="Checkbox.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
@@ -75,7 +80,8 @@ export default {
 
 ```svelte filename="Checkbox.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Checkbox from './Checkbox.svelte';
 
@@ -90,22 +96,21 @@ export default {
 </script>
 ```
 
-```ts filename="Checkbox.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta } from '@storybook/your-framework';
+```svelte filename="Checkbox.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import Checkbox from './Checkbox.svelte';
+  import Checkbox from './Checkbox.svelte';
 
-const meta = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'Design System/Atoms/Checkbox',
-  component: Checkbox,
-} satisfies Meta<typeof Checkbox>;
-
-export default meta;
+  const { Story } = preview.meta({
+    /* 👇 The title prop is optional.
+     * See https://storybook.js.org/docs/configure/#configure-story-loading
+     * to learn how to generate automatic titles
+     */
+    title: 'Design System/Atoms/Checkbox',
+    component: Checkbox,
+  });
+</script>
 ```
 
 ```ts filename="Checkbox.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

@@ -344,6 +344,31 @@ describe('NPM Proxy', () => {
       });
     });
 
+    it('finds installations nested beneath non-matching nodes (e.g. npm workspace members)', async () => {
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify({
+          dependencies: {
+            // a workspace root lists each workspace package as an entry of its
+            // own; gate packages live beneath them, not at the top level
+            '@acme/components': {
+              version: '1.0.0',
+              dependencies: {
+                '@storybook/sveltekit': { version: '10.0.0' },
+              },
+            },
+          },
+        }),
+      } as any);
+
+      const installations = await npmProxy.findInstallations(['@storybook/*']);
+
+      expect(installations).toMatchObject({
+        dependencies: {
+          '@storybook/sveltekit': [{ version: '10.0.0' }],
+        },
+      });
+    });
+
     it('retries with --depth=0 when the deep listing exits non-zero (e.g. peer dependency issues)', async () => {
       mockedExecuteCommand.mockReset();
       mockedExecuteCommand
@@ -384,6 +409,47 @@ describe('NPM Proxy', () => {
       const installations = await npmProxy.findInstallations(['@storybook/*']);
 
       expect(installations).toBeUndefined();
+    });
+  });
+
+  describe('getPublishedPeerDependencies', () => {
+    const readPeers = () =>
+      npmProxy.getPublishedPeerDependencies('@storybook/react-native', '11.0.0-next.0');
+
+    describe('when the version has peer dependencies', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({ stdout: '{"storybook":"^10.5.4"}' } as any);
+      });
+
+      it('reads them through the package manager', async () => {
+        await expect(readPeers()).resolves.toEqual({ storybook: '^10.5.4' });
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({
+            command: 'npm',
+            args: ['info', '@storybook/react-native@11.0.0-next.0', 'peerDependencies', '--json'],
+          })
+        );
+      });
+    });
+
+    describe('when the version has no peer dependencies', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+      });
+
+      it('returns an empty object', async () => {
+        await expect(readPeers()).resolves.toEqual({});
+      });
+    });
+
+    describe('when the lookup fails', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockRejectedValue(new Error('401 Unauthorized'));
+      });
+
+      it('returns null', async () => {
+        await expect(readPeers()).resolves.toBeNull();
+      });
     });
   });
 

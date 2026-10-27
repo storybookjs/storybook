@@ -32,6 +32,10 @@ function getEnvFromTerminal(key: string): string {
  */
 function supportsHyperlinks(): boolean {
   try {
+    if (!process.stdout.isTTY) {
+      return false;
+    }
+
     // Check terminal program
     const termProgram = getEnvFromTerminal('TERM_PROGRAM');
     const termProgramVersion = getEnvFromTerminal('TERM_PROGRAM_VERSION');

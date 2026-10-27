@@ -467,12 +467,16 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
+  protected override get installUsesTerminal(): boolean {
+    return !!process.stdin.isTTY;
+  }
+
   protected runInstall(options?: { force?: boolean }) {
     this.allowStorybookBuildScripts();
     return executeCommand({
       command: 'pnpm',
       args: ['install', ...this.getInstallArgs('install'), ...(options?.force ? ['--force'] : [])],
-      stdio: prompt.getPreferredStdio(),
+      stdio: this.installUsesTerminal ? 'inherit' : prompt.getPreferredStdio(),
       cwd: this.cwd,
     });
   }
@@ -544,7 +548,7 @@ export class PNPMProxy extends JsPackageManager {
         dedent`
           pnpm minimumReleaseAge would block storybook@${storybookVersion} from being installed because it was released within the configured minimumReleaseAge window, so Storybook updated minimumReleaseAgeExclude for this project automatically.
 
-          Added patterns: storybook, @storybook/*, eslint-plugin-storybook, @chromatic-com/storybook
+          Added patterns: ${STORYBOOK_PACKAGE_PATTERNS.join(', ')}
 
           Read more:
           - https://pnpm.io/settings#minimumreleaseage
@@ -646,6 +650,20 @@ export class PNPMProxy extends JsPackageManager {
         packageName,
       });
     }
+  }
+
+  protected async runGetPeerDependencies(
+    packageSpec: string
+  ): Promise<Record<string, string> | undefined> {
+    const result = await executeCommand({
+      command: 'pnpm',
+      args: ['info', packageSpec, 'peerDependencies', '--json'],
+      cwd: this.cwd,
+      stdio: 'pipe',
+    });
+    // pnpm prints nothing when the version has no peer dependencies.
+    const output = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+    return output ? JSON.parse(output) : undefined;
   }
 
   protected mapDependencies(input: PnpmListOutput, pattern: string[]): InstallationMetadata {

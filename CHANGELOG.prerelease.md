@@ -1,3 +1,26 @@
+## 11.0.0-alpha.8
+
+- Addon-Docs: Prevent source transform from being applied twice on docs pages - [#36061](https://github.com/storybookjs/storybook/pull/36061), thanks @webdevsamran!
+- Angular: Read Component Metadata From Ivy Declarations - [#36780](https://github.com/storybookjs/storybook/pull/36780), thanks @dvmhmdsd!
+- Builder Vite: Report silent vite config discovery misses with a named warning - [#36788](https://github.com/storybookjs/storybook/pull/36788), thanks @obvious-autobuild!
+- CSF: Run csf-tools on OXC instead of Babel - [#36613](https://github.com/storybookjs/storybook/pull/36613), thanks @EastonShin!
+- Core: Exempt chromatic from release-age gates alongside the Chromatic addon - [#36910](https://github.com/storybookjs/storybook/pull/36910), thanks @valentinpalkovic!
+- Core: Skip TypeScript loader hook registration under Jest - [#36790](https://github.com/storybookjs/storybook/pull/36790), thanks @obvious-autobuild!
+- Manager: Improve UI stability on onboarding checklist - [#36341](https://github.com/storybookjs/storybook/pull/36341), thanks @Sidnioulz!
+- Manager: Type index titles by their contents - [#36659](https://github.com/storybookjs/storybook/pull/36659), thanks @valentinpalkovic!
+- PNPM: Preapprove esbuild postinstall when possible - [#36758](https://github.com/storybookjs/storybook/pull/36758), thanks @Sidnioulz!
+- React renderer: Prebundle react so Vitest browser mode can link React's default export - [#36824](https://github.com/storybookjs/storybook/pull/36824), thanks @obvious-autobuild!
+- React: Alias preview React from the renderer preset - [#36841](https://github.com/storybookjs/storybook/pull/36841), thanks @ndelangen!
+- Svelte: Accept preview.meta() in Svelte CSF files - [#36691](https://github.com/storybookjs/storybook/pull/36691), thanks @JReinhold!
+- Svelte: Add CSF factories with definePreview - [#36669](https://github.com/storybookjs/storybook/pull/36669), thanks @JReinhold!
+- Svelte: Migrate Svelte CSF files to CSF factories and run the Svelte sandboxes with them - [#36702](https://github.com/storybookjs/storybook/pull/36702), thanks @JReinhold!
+- Svelte: Remove deprecated parameters.component path - [#36813](https://github.com/storybookjs/storybook/pull/36813), thanks @ndelangen!
+- TanstackReact: Fix accross typo in path-utils comment - [#36634](https://github.com/storybookjs/storybook/pull/36634), thanks @obvious-autobuild!
+- WC: Keep properties named like an unrelated attribute - [#36862](https://github.com/storybookjs/storybook/pull/36862), thanks @huang-julien!
+- WC: Normalize multiline type text in WC arg type parsing - [#36805](https://github.com/storybookjs/storybook/pull/36805), thanks @huang-julien!
+- WC: Read WC meta.component through a spread of a local meta object - [#36812](https://github.com/storybookjs/storybook/pull/36812), thanks @huang-julien!
+- WC: Skip undefined and null args in the web components default render - [#36806](https://github.com/storybookjs/storybook/pull/36806), thanks @huang-julien!
+
 ## 11.0.0-alpha.7
 
 - Addon Themes: Declare the package as an ES module - [#36721](https://github.com/storybookjs/storybook/pull/36721), thanks @ump45nose!

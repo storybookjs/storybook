@@ -128,6 +128,15 @@ function createKernel() {
   const output = new PassThrough();
   output.resume();
 
+  // The REPL routes synchronous throws (and some async ones) to its own error
+  // handler and never invokes the eval callback. It just prints "Uncaught …"
+  // to the output stream. Settle the in-flight `js` call with the error
+  // instead, so it does not hang until its timeout.
+  const onReplError = (error) => {
+    server.clearBufferedCommand?.();
+    settleActiveEval?.({ error });
+  };
+
   const server = repl.start({
     input,
     output,
@@ -136,6 +145,11 @@ function createKernel() {
     useGlobal: false,
     useColors: false,
     ignoreUndefined: true,
+    // Node 26+ no longer uses a domain and calls this option instead.
+    handleError: (error) => {
+      onReplError(error);
+      return 'ignore';
+    },
   });
 
   const installHelpers = (context) => {
@@ -168,17 +182,11 @@ function createKernel() {
   installHelpers(server.context);
   server.on('reset', (context) => installHelpers(context));
 
-  // The REPL routes synchronous throws (and some async ones) to its internal
-  // domain and never invokes the eval callback — it just prints "Uncaught …"
-  // to the output stream. Replace that handler so the in-flight `js` call can
-  // settle with the error instead of hanging until its timeout.
+  // Node 22 and 24 route those errors through an internal domain instead.
   const domain = server._domain;
   if (domain) {
     domain.removeAllListeners('error');
-    domain.on('error', (error) => {
-      server.clearBufferedCommand?.();
-      settleActiveEval?.({ error });
-    });
+    domain.on('error', onReplError);
   }
 
   return server;

@@ -33,7 +33,7 @@ export async function build(options: Options) {
       chunkSizeWarningLimit: 1500,
       // TODO: Remove bundlerOptionsKey and use 'rolldownOptions' directly once support for Vite < 8 is dropped
       [bundlerOptionsKey]: {
-        external: [/\\.\\/sb-common-assets\\/.*\\.woff2/],
+        external: [/\.\/sb-common-assets\/.*\.woff2/],
       },
       ...(options.test
         ? {

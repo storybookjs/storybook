@@ -64,18 +64,18 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
 
   const fontDeclarations = [{ prop: 'font-display', value: display }, ...declarations]
     .map(({ prop, value }: { prop: string; value: string }) => `${prop}: ${value};`)
-    .join('\\n');
+    .join('\n');
 
   const getFontFaceCSS = () => {
     if (localFontSrc) {
       if ('fontReferenceId' in localFontSrc) {
         return dedent`@font-face {
-\\t\\t\\t\\t\\tfont-family: ${id};
-\\t\\t\\t\\t\\tsrc: url(${localFontSrc.fontReferenceId ? getPlaceholderFontUrl(localFontSrc.fontReferenceId) : `/@fs/${localFontSrc.fontPath}`});
+					font-family: ${id};
+					src: url(${localFontSrc.fontReferenceId ? getPlaceholderFontUrl(localFontSrc.fontReferenceId) : `/@fs/${localFontSrc.fontPath}`});
           ${weight ? `font-weight: ${weight};` : ''}
           ${style ? `font-style: ${style};` : ''}
-\\t\\t\\t\\t\\t${fontDeclarations}
-\\t\\t\\t\\t}`;
+					${fontDeclarations}
+				}`;
       }
       return (
         localFontSrc as Array<{
@@ -86,12 +86,12 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
       )
         .map((font) => {
           return dedent`@font-face {
-\\t\\t\\t\\t\\t\\tfont-family: ${id};
-\\t\\t\\t\\t\\t\\tsrc: url(${font.path.fontReferenceId ? getPlaceholderFontUrl(font.path.fontReferenceId) : `/@fs/${font.path.fontPath}`});
-\\t\\t\\t\\t\\t\\t${font.weight ? `font-weight: ${font.weight};` : ''}
-\\t\\t\\t\\t\\t\\t${font.style ? `font-style: ${font.style};` : ''}
-\\t\\t\\t\\t\\t\\t${fontDeclarations}
-\\t\\t\\t\\t\\t}`;
+						font-family: ${id};
+						src: url(${font.path.fontReferenceId ? getPlaceholderFontUrl(font.path.fontReferenceId) : `/@fs/${font.path.fontPath}`});
+						${font.weight ? `font-weight: ${font.weight};` : ''}
+						${font.style ? `font-style: ${font.style};` : ''}
+						${fontDeclarations}
+					}`;
         })
         .join('');
     }

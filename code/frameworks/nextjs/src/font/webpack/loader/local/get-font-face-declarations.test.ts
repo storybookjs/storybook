@@ -4,7 +4,6 @@ vi.mock('storybook/internal/common', { spy: true });
 vi.mock('next/dist/compiled/loader-utils3/index.js', { spy: true });
 
 import { getProjectRoot } from 'storybook/internal/common';
-// @ts-expect-error no types
 import loaderUtils from 'next/dist/compiled/loader-utils3/index.js';
 import { getFontFaceDeclarations } from './get-font-face-declarations.ts';
 

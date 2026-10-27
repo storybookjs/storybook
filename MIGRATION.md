@@ -1514,7 +1514,7 @@ The `--renderer` flag of `storybook automigrate` is also removed. Only the remov
 ### Web Components: server-side docgen suffixes event, slot and part argType keys
 
 With server-side docgen, which is on by default (see [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)), `@storybook/web-components-vite` builds argTypes from the Custom Elements Manifest on the Storybook server.
-Story source snippets are built on the server too; see [Story snippets are static](#story-snippets-are-static).
+Story source snippets are built on the server too; see [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation).
 Events, slots and CSS shadow parts are keyed with their category as a suffix, the same keys `@wc-toolkit/storybook-helpers` uses:
 
 | Manifest item     | Runtime docgen key | Server docgen key |

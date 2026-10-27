@@ -1,10 +1,27 @@
+import { statSync } from 'node:fs';
+
 import type { ModuleInfo } from 'rollup';
 import type { Plugin, ResolvedConfig } from 'vite';
 import { describe, expect, it, vi } from 'vitest';
 
 import { pluginWebpackStats } from './webpack-stats-plugin.ts';
 
+vi.mock('node:fs', { spy: true });
+
 const workingDir = '/project';
+const options = { workingDir, recordWatchFiles: true };
+
+// The paths in these tests do not exist on disk. These ones are files, any other path is not.
+const files = new Set([
+  '/project/package.json',
+  '/project/tsconfig.json',
+  '/project/src/Button.html',
+  '/project/src/Card.html',
+  '/project/src/unused.html',
+  '/project/src/styles/_tokens.scss',
+]);
+vi.mocked(statSync).mockImplementation(((path: string) =>
+  files.has(path) ? { isFile: () => true } : undefined) as typeof statSync);
 
 type ParsedModule = Pick<ModuleInfo, 'id' | 'importedIds' | 'dynamicallyImportedIds'>;
 type RawGraph = Record<string, string[] | Omit<ParsedModule, 'id'>>;
@@ -22,7 +39,7 @@ function createContext() {
 
 // Runs the hooks of `plugins` the way a build does, then parses each module of `graph`.
 function getStats(graph: RawGraph, plugins: Plugin[] = []) {
-  const plugin = pluginWebpackStats({ workingDir });
+  const plugin = pluginWebpackStats(options);
   const moduleParsed = plugin.moduleParsed as unknown as (mod: ParsedModule) => void;
   const config: BuildConfig = { command: 'build', plugins: [...plugins, plugin] };
   callHook(plugin.configResolved, undefined, config);
@@ -303,7 +320,7 @@ describe('pluginWebpackStats', () => {
       const plugin = watchInLoad('/project/src/Button.ts', '/project/src/Button.html');
       const config: BuildConfig = {
         command: 'build',
-        plugins: [plugin, pluginWebpackStats({ workingDir })],
+        plugins: [plugin, pluginWebpackStats(options)],
       };
       callHook(config.plugins[1].configResolved, undefined, config);
       const context = createContext();
@@ -336,29 +353,129 @@ describe('pluginWebpackStats', () => {
       expect(plugin.load).toMatchObject({ filter, order: 'pre' });
     });
 
-    it('wraps a hook once when the config is resolved again', () => {
-      const plugin = watchInLoad('\0virtual:template', '/project/src/Button.html');
-      const statsPlugin = pluginWebpackStats({ workingDir });
-      const config: BuildConfig = { command: 'build', plugins: [plugin, statsPlugin] };
-
-      const load = plugin.load;
-      callHook(statsPlugin.configResolved, undefined, config);
-      const wrapped = plugin.load;
-      callHook(statsPlugin.configResolved, undefined, config);
-
-      expect(wrapped).not.toBe(load);
-      expect(plugin.load).toBe(wrapped);
-    });
-
     it('does not wrap hooks for the dev server', () => {
       const plugin = watchInLoad('\0virtual:template', '/project/src/Button.html');
       const load = plugin.load;
-      const statsPlugin = pluginWebpackStats({ workingDir });
+      const statsPlugin = pluginWebpackStats(options);
       const config: BuildConfig = { command: 'serve', plugins: [plugin, statsPlugin] };
 
       callHook(statsPlugin.configResolved, undefined, config);
 
       expect(plugin.load).toBe(load);
+    });
+
+    it('does not wrap hooks when the stats are not requested', () => {
+      const plugin = watchInLoad('\0virtual:template', '/project/src/Button.html');
+      const load = plugin.load;
+      const statsPlugin = pluginWebpackStats({ workingDir });
+      const config: BuildConfig = { command: 'build', plugins: [plugin, statsPlugin] };
+
+      callHook(statsPlugin.configResolved, undefined, config);
+
+      expect(plugin.load).toBe(load);
+    });
+
+    it('leaves the hook of a frozen plugin unwrapped instead of failing the build', () => {
+      const plugin = Object.freeze(
+        watchInLoad('\0virtual:template', '/project/src/Button.html')
+      ) as Plugin;
+      const graph = { '/project/src/Button.ts': ['\0virtual:template'], '\0virtual:template': [] };
+
+      const names = getStats(graph, [plugin]).modules.map(
+        (module: { name: string }) => module.name
+      );
+
+      expect(names).toEqual(['./src/Button.ts', '/virtual:template']);
+    });
+
+    it('ignores watch ids that are not paths to existing files', () => {
+      const plugin: Plugin = {
+        name: 'watch-non-files',
+        load(id) {
+          if (id === '/project/src/Button.ts') {
+            this.addWatchFile('src/Button.html');
+            this.addWatchFile('/project/src/**/*.html');
+            this.addWatchFile('/project/src/styles');
+            this.addWatchFile('/project/src/missing.html');
+            this.addWatchFile('/project/src/Button.html');
+          }
+          return null;
+        },
+      };
+
+      const names = getStats({ '/project/src/Button.ts': [] }, [plugin]).modules.map(
+        (module: { name: string }) => module.name
+      );
+
+      expect(names).toEqual(['./src/Button.ts', './src/Button.html']);
+    });
+
+    it('records each watch file against its own module when loads interleave', async () => {
+      let resumeButton = () => {};
+      const plugin: Plugin = {
+        name: 'async-load',
+        async load(id) {
+          if (id === '/project/src/Button.ts') {
+            await new Promise<void>((resolve) => {
+              resumeButton = resolve;
+            });
+          }
+          this.addWatchFile(id.replace(/\.ts$/, '.html'));
+          return null;
+        },
+      };
+      const statsPlugin = pluginWebpackStats(options);
+      const moduleParsed = statsPlugin.moduleParsed as unknown as (mod: ParsedModule) => void;
+      const config: BuildConfig = { command: 'build', plugins: [plugin, statsPlugin] };
+      callHook(statsPlugin.configResolved, undefined, config);
+
+      // Button.ts waits, Card.ts loads and finishes, then Button.ts resumes.
+      const buttonLoad = callHook(plugin.load, createContext(), '/project/src/Button.ts');
+      await callHook(plugin.load, createContext(), '/project/src/Card.ts');
+      resumeButton();
+      await buttonLoad;
+      for (const id of ['/project/src/Button.ts', '/project/src/Card.ts']) {
+        moduleParsed({ id, importedIds: [], dynamicallyImportedIds: [] });
+      }
+
+      const { modules } = statsPlugin.storybookGetStats().toJson();
+      const importersOf = (name: string) =>
+        modules
+          .find((module: { name: string }) => module.name === name)
+          ?.reasons?.map((reason: { moduleName: string }) => reason.moduleName);
+
+      expect(importersOf('./src/Button.html')).toEqual(['./src/Button.ts']);
+      expect(importersOf('./src/Card.html')).toEqual(['./src/Card.ts']);
+    });
+
+    it('writes a file watched several times, by one or more modules, as one node', () => {
+      const plugin: Plugin = {
+        name: 'watch-twice',
+        transform(code) {
+          this.addWatchFile('/project/src/styles/_tokens.scss');
+          this.addWatchFile('/project/src/styles/_tokens.scss');
+          return code;
+        },
+      };
+      const graph = {
+        '/project/src/Button.scss?inline': [],
+        '/project/src/Card.scss?inline': [],
+      };
+
+      const tokens = getStats(graph, [plugin]).modules.filter(
+        (module: { name: string }) => module.name === './src/styles/_tokens.scss'
+      );
+
+      expect(tokens).toEqual([
+        {
+          id: './src/styles/_tokens.scss',
+          name: './src/styles/_tokens.scss',
+          reasons: [
+            { moduleName: './src/Button.scss?inline' },
+            { moduleName: './src/Card.scss?inline' },
+          ],
+        },
+      ]);
     });
 
     it('ignores files watched outside of load and transform', () => {
@@ -382,7 +499,7 @@ describe('pluginWebpackStats', () => {
 
     it('ignores files watched by a module that is never parsed', () => {
       const plugin = watchInLoad('/project/src/unused.ts', '/project/src/unused.html');
-      const statsPlugin = pluginWebpackStats({ workingDir });
+      const statsPlugin = pluginWebpackStats(options);
       const moduleParsed = statsPlugin.moduleParsed as unknown as (mod: ParsedModule) => void;
       const config: BuildConfig = { command: 'build', plugins: [plugin, statsPlugin] };
       callHook(statsPlugin.configResolved, undefined, config);

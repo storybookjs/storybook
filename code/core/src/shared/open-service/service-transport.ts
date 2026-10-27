@@ -198,6 +198,8 @@ export function connectRuntimeToChannel(
       withinReplyWindow = false;
       settleOutstandingRequest();
     }, SYNC_REQUEST_SILENCE_MS);
+    // Waiting for replies must not keep a one-shot command such as `storybook index` alive.
+    (silenceTimer as { unref?: () => void }).unref?.();
   };
 
   // The outstanding request is over; a repair queued while it was open goes out now, with the

@@ -235,7 +235,8 @@ export const Tertiary: Story = {
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -257,52 +258,34 @@ export const Tertiary: Story = {
 </Story>
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Button from './Button.svelte';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: Button,
-};
+  import Button from './Button.svelte';
 
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Primary = {
-  render: () => ({
-    Component: Button,
-    props: {
-      backgroundColor: '#ff0',
-      label: 'Button',
-    },
-  }),
-};
+	const { Story } = preview.meta({
+		component: Button,
+	});
+</script>
 
-export const Secondary = {
-  render: () => ({
-    Component: Button,
-    props: {
-      backgroundColor: '#ff0',
-      label: '😄👍😍💯',
-    },
-  }),
-};
+<Story name="Primary">
+  <Button backgroundColor="#ff0" label="Button" />
+</Story>
 
-export const Tertiary = {
-  render: () => ({
-    Component: Button,
-    props: {
-      backgroundColor: '#ff0',
-      label: '📚📕📈🤓',
-    },
-  }),
-};
+<Story name="Secondary">
+  <Button backgroundColor="#ff0" label="😄👍😍💯" />
+</Story>
+
+<Story name="Tertiary">
+  <Button backgroundColor="#ff0" label="📚📕📈🤓" />
+</Story>
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -324,53 +307,28 @@ export const Tertiary = {
 </Story>
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import Button from './Button.svelte';
+  import Button from './Button.svelte';
 
-const meta = {
-  component: Button,
-} satisfies Meta<typeof Button>;
+	const { Story } = preview.meta({
+		component: Button,
+	});
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
+<Story name="Primary">
+  <Button backgroundColor="#ff0" label="Button" />
+</Story>
 
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/svelte/api/csf
- * to learn how to use render functions.
- */
-export const Primary: Story = {
-  render: () => ({
-    Component: Button,
-    props: {
-      backgroundColor: '#ff0',
-      label: 'Button',
-    },
-  }),
-};
+<Story name="Secondary">
+  <Button backgroundColor="#ff0" label="😄👍😍💯" />
+</Story>
 
-export const Secondary: Story = {
-  render: () => ({
-    Component: Button,
-    props: {
-      backgroundColor: '#ff0',
-      label: '😄👍😍💯',
-    },
-  }),
-};
-
-export const Tertiary: Story = {
-  render: () => ({
-    Component: Button,
-    props: {
-      backgroundColor: '#ff0',
-      label: '📚📕📈🤓',
-    },
-  }),
-};
+<Story name="Tertiary">
+  <Button backgroundColor="#ff0" label="📚📕📈🤓" />
+</Story>
 ```
 
 ```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"

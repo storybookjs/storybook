@@ -49,7 +49,8 @@ export const Simple = meta.story({
 
 ```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import DocumentScreen from './YourPage.svelte';
 
@@ -73,25 +74,30 @@ export const Simple = meta.story({
 />
 ```
 
-```js filename="YourPage.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import DocumentScreen from './YourPage.svelte';
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-// 👇 Imports the required stories
-import * as PageLayout from './PageLayout.stories';
-import * as DocumentHeader from './DocumentHeader.stories';
-import * as DocumentList from './DocumentList.stories';
+  import DocumentScreen from './YourPage.svelte';
 
-export default {
-  component: DocumentScreen,
-};
+  // 👇 Imports the required stories
+  import * as PageLayout from './PageLayout.stories.svelte';
+  import * as DocumentHeader from './DocumentHeader.stories.svelte';
+  import * as DocumentList from './DocumentList.stories.svelte';
 
-export const Simple = {
-  args: {
+  const { Story } = preview.meta({
+    component: DocumentScreen,
+  });
+</script>
+
+<Story
+  name="Simple"
+  args={{
     user: PageLayout.Simple.args.user,
     document: DocumentHeader.Simple.args.document,
     subdocuments: DocumentList.Simple.args.documents,
-  },
-};
+  }}
+/>
 ```
 
 ```js filename="YourPage.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
@@ -117,7 +123,8 @@ export const Simple = {
 
 ```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import DocumentScreen from './YourPage.svelte';
 
@@ -141,31 +148,30 @@ export const Simple = {
 />
 ```
 
-```ts filename="YourPage.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import DocumentScreen from './YourPage.svelte';
+  import DocumentScreen from './YourPage.svelte';
 
-// 👇 Imports the required stories
-import * as PageLayout from './PageLayout.stories';
-import * as DocumentHeader from './DocumentHeader.stories';
-import * as DocumentList from './DocumentList.stories';
+  // 👇 Imports the required stories
+  import * as PageLayout from './PageLayout.stories.svelte';
+  import * as DocumentHeader from './DocumentHeader.stories.svelte';
+  import * as DocumentList from './DocumentList.stories.svelte';
 
-const meta = {
-  component: DocumentScreen,
-} satisfies Meta<typeof DocumentScreen>;
+  const { Story } = preview.meta({
+    component: DocumentScreen,
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Simple: Story = {
-  args: {
+<Story
+  name="Simple"
+  args={{
     user: PageLayout.Simple.args.user,
     document: DocumentHeader.Simple.args.document,
     subdocuments: DocumentList.Simple.args.documents,
-  },
-};
+  }}
+/>
 ```
 
 ```ts filename="YourPage.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"

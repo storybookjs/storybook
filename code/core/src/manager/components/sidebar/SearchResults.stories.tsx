@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { StoriesHash } from 'storybook/manager-api';
+import type { IndexHash } from 'storybook/manager-api';
 import { expect } from 'storybook/test';
 
 import { searchItem } from '../../utils/tree.ts';
@@ -25,7 +25,7 @@ export default {
   ],
 };
 
-const combinedDataset = (refs: Record<string, StoriesHash>): CombinedDataset => {
+const combinedDataset = (refs: Record<string, IndexHash>): CombinedDataset => {
   const hash = Object.entries(refs).reduce(
     (acc, [refId, index]) =>
       Object.assign(acc, {

@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import preview from '../../../../../.storybook/preview.tsx';
 import { OverlayTriggerDecorator, Trigger } from '../shared/overlayHelpers.tsx';

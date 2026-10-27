@@ -2,7 +2,7 @@ import React, { type HTMLAttributes, forwardRef } from 'react';
 
 import { CloseIcon } from '@storybook/icons';
 
-import { lighten, styled } from 'storybook/theming';
+import { lighten, styled } from 'storybook/theming/emotion';
 
 import { Button } from '../Button/Button.tsx';
 
@@ -32,13 +32,17 @@ const Wrapper = styled.div<{
   hasCloseButton: boolean;
   padding: NonNullable<PopoverProps['padding']>;
 }>(
-  ({ hasCloseButton, padding }) => ({
+  ({ theme, hasCloseButton, padding }) => ({
     display: 'inline-block',
     position: 'relative',
     minHeight: hasCloseButton ? 36 : undefined,
     zIndex: 2147483647,
-    colorScheme: 'light dark',
+    colorScheme: theme.base,
     padding,
+    // Inherit the max-height that the overlay container sets to fit the viewport, and scroll.
+    maxHeight: 'inherit',
+    overflow: 'auto',
+    boxSizing: 'border-box',
   }),
   ({ theme, hasChrome }) =>
     hasChrome

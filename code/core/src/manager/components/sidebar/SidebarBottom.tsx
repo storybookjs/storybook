@@ -13,7 +13,7 @@ import {
   internal_fullTestProviderStore,
 } from '#manager-stores';
 import { type API, type State, useStorybookApi, useStorybookState } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import type { TestProviderStateByProviderId } from '../../../shared/test-provider-store/index.ts';
 import { NotificationList } from '../notifications/NotificationList.tsx';

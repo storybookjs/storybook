@@ -5,7 +5,6 @@ import { findOutdatedPackage } from './utils.ts';
 
 const minimalVersionsMap = {
   '@angular/core': '21.0.0',
-  '@sveltejs/kit': '3.0.0',
   next: '15.0.0',
   preact: '10.8.0',
   react: '18.0.0',
@@ -17,6 +16,7 @@ const minimalVersionsMap = {
 
 const conditionalVersionsMap = {
   vitest: { gatedBy: '@storybook/addon-vitest', minimumVersion: '4.0.0' },
+  '@sveltejs/kit': { gatedBy: '@storybook/sveltekit', minimumVersion: '3.0.0' },
 } as const;
 
 export const blocker = createBlocker({

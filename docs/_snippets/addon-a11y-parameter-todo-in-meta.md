@@ -61,7 +61,8 @@ export default {
 
 ```svelte filename="DataTable.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import DataTable from './DataTable.svelte';
 
@@ -76,26 +77,27 @@ export default {
 </script>
 ```
 
-```ts filename="DataTable.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-import type { Meta } from '@storybook/your-framework';
+```svelte filename="DataTable.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import DataTable from './DataTable.svelte';
+  import DataTable from './DataTable.svelte';
 
-const meta = {
-  component: DataTable,
-  parameters: {
-    // 👇 This component's accessibility tests will not fail
-    //    Instead, they display warnings in the Storybook UI
-    a11y: { test: 'todo' },
-  },
-} satisfies Meta<typeof DataTable>;
-export default meta;
+  const { Story } = preview.meta({
+    component: DataTable,
+    parameters: {
+      // 👇 This component's accessibility tests will not fail
+      //    Instead, they display warnings in the Storybook UI
+      a11y: { test: 'todo' },
+    },
+  });
+</script>
 ```
 
 ```svelte filename="DataTable.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import DataTable from './DataTable.svelte';
 
@@ -110,17 +112,21 @@ export default meta;
 </script>
 ```
 
-```js filename="DataTable.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import DataTable from './DataTable.svelte';
+```svelte filename="DataTable.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: DataTable,
-  parameters: {
-    // 👇 This component's accessibility tests will not fail
-    //    Instead, they display warnings in the Storybook UI
-    a11y: { test: 'todo' },
-  },
-};
+  import DataTable from './DataTable.svelte';
+
+  const { Story } = preview.meta({
+    component: DataTable,
+    parameters: {
+      // 👇 This component's accessibility tests will not fail
+      //    Instead, they display warnings in the Storybook UI
+      a11y: { test: 'todo' },
+    },
+  });
+</script>
 ```
 
 ```ts filename="DataTable.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"

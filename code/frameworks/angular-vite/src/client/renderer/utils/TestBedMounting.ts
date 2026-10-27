@@ -1,4 +1,10 @@
-import { ApplicationInitStatus, ApplicationRef, destroyPlatform, getPlatform } from '@angular/core';
+import {
+  ApplicationInitStatus,
+  ApplicationRef,
+  destroyPlatform,
+  getPlatform,
+  ɵflushModuleScopingQueueAsMuchAsPossible as flushModuleScopingQueue,
+} from '@angular/core';
 import { TestComponentRenderer, getTestBed } from '@angular/core/testing';
 import { BrowserModule } from '@angular/platform-browser';
 import { platformBrowserTesting } from '@angular/platform-browser/testing';
@@ -40,6 +46,9 @@ export function resetTestBed() {
   }
 
   try {
+    // A story file evaluated for this render may have queued its own NgModules for scoping;
+    // resetTestingModule() would drop them, and their components would never see CommonModule.
+    flushModuleScopingQueue();
     testBed.resetTestingModule();
   } catch {
     // The previous fixture may already have been torn down through ApplicationRef.destroy().

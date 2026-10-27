@@ -93,7 +93,7 @@ export async function add(
     yes,
     skipInstall,
   }: CLIOptions,
-  logger = nodeLogger
+  logger: typeof nodeLogger = nodeLogger
 ) {
   const [addonName, inputVersion] = getVersionSpecifier(addon);
 

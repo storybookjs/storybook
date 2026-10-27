@@ -4,7 +4,7 @@ import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 import { Feature, SupportedBuilder } from 'storybook/internal/types';
 
-import { Option, program } from 'commander';
+import { Command, Option } from 'commander';
 
 import { version } from '../../package.json';
 import type { CommandOptions } from '../generators/types.ts';
@@ -19,7 +19,7 @@ addToGlobalContext('cliVersion', version);
  * If zod fails to validate the options, we check why, and if it's because of a legacy flag, we run
  * the legacy version of the app.
  */
-const createStorybookProgram = program
+export const createStorybookProgram = new Command()
   .name('Initialize Storybook into your project.')
   .option(
     '--disable-telemetry',
@@ -35,7 +35,9 @@ const createStorybookProgram = program
   .option('--debug', 'Get more logs in debug mode')
   .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
   .option('-f --force', 'Force add Storybook')
-  .option('-s --skip-install', 'Skip installing deps')
+  .addOption(new Option('-s, --skip-install', 'Skip installing deps').hideHelp())
+  .option('--install', 'Install dependencies', true)
+  .option('--no-install', 'Skip installing dependencies')
   .addOption(
     new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
       Object.values(PackageManagerName)
@@ -133,7 +135,10 @@ createStorybookProgram
       );
     }
 
-    await initiate(options as CommandOptions).catch(() => process.exit(1));
+    const { install, ...commandOptions } = options;
+    await initiate({
+      ...commandOptions,
+      skipInstall: options.skipInstall || !install,
+    } as CommandOptions).catch(() => process.exit(1));
   })
-  .version(String(version))
-  .parse(process.argv);
+  .version(String(version));

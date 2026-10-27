@@ -496,33 +496,35 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         ? JsPackageManagerFactory.getPackageManager({ force: options.packageManager })
         : storybookProjects[0].packageManager;
 
-    await withNpmForceFallback(rootPackageManager, (installOptions) =>
-      rootPackageManager.installDependencies(installOptions)
-    );
-
-    if (
-      rootPackageManager.type !== PackageManagerName.YARN1 &&
-      rootPackageManager.isStorybookInMonorepo()
-    ) {
-      logger.warn(
-        `Since you are in a monorepo, we advise you to deduplicate your dependencies. We can do this for you but it might take some time.`
+    if (!options.dryRun && !options.skipInstall) {
+      await withNpmForceFallback(rootPackageManager, (installOptions) =>
+        rootPackageManager.installDependencies(installOptions)
       );
 
-      const dedupe =
-        options.yes ||
-        (await prompt.confirm({
-          message: `Execute ${rootPackageManager.getRunCommand('dedupe')}?`,
-          initialValue: true,
-        }));
+      if (
+        rootPackageManager.type !== PackageManagerName.YARN1 &&
+        rootPackageManager.isStorybookInMonorepo()
+      ) {
+        logger.warn(
+          `Since you are in a monorepo, we advise you to deduplicate your dependencies. We can do this for you but it might take some time.`
+        );
 
-      if (dedupe) {
-        await withNpmForceFallback(rootPackageManager, (dedupeOptions) =>
-          rootPackageManager.dedupeDependencies(dedupeOptions)
-        );
-      } else {
-        logger.log(
-          `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`
-        );
+        const dedupe =
+          options.yes ||
+          (await prompt.confirm({
+            message: `Execute ${rootPackageManager.getRunCommand('dedupe')}?`,
+            initialValue: true,
+          }));
+
+        if (dedupe) {
+          await withNpmForceFallback(rootPackageManager, (dedupeOptions) =>
+            rootPackageManager.dedupeDependencies(dedupeOptions)
+          );
+        } else {
+          logger.log(
+            `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`
+          );
+        }
       }
     }
 

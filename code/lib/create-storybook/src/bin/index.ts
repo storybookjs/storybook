@@ -14,4 +14,5 @@ if (!isNodeVersionSupported(process.versions.node)) {
   process.exit(1);
 }
 
-await import('./run.ts');
+const { createStorybookProgram } = await import('./run.ts');
+await createStorybookProgram.parseAsync(process.argv);

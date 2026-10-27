@@ -2,6 +2,7 @@
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
   - [Theming imports](#theming-imports)
+  - [CLI installation flags and upgrade dry runs](#cli-installation-flags-and-upgrade-dry-runs)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging)
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
@@ -627,6 +628,12 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 10.x to 11.0.0
+
+### CLI installation flags and upgrade dry runs
+
+The `storybook init`, `add`, `remove`, `upgrade`, and `automigrate` commands install dependencies by default. Use `--no-install` to skip installation, or `--install` to request it explicitly. The older `--skip-install` option still works with `init`, `add`, `remove`, and `automigrate`, but is no longer shown in help output. Replace it with `--no-install` in scripts.
+
+`storybook upgrade --dry-run` now skips dependency installation and monorepo deduplication. It does not rewrite the lockfile. An ordinary `storybook upgrade` still installs dependencies and can offer to deduplicate a monorepo.
 
 ### Theming imports
 

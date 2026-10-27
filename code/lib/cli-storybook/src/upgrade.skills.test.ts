@@ -65,7 +65,7 @@ const baseOptions: UpgradeOptions = {
 const useProjects = (...projects: CollectProjectsSuccessResult[]) =>
   vi.mocked(getProjects).mockResolvedValue({ allProjects: projects, selectedProjects: projects });
 
-describe('upgrade: refreshing the skills', () => {
+describe('upgrade', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useProjects(project('/repo/a/.storybook'), project('/repo/b/.storybook'));
@@ -175,5 +175,44 @@ describe('upgrade: refreshing the skills', () => {
     await upgrade({ ...baseOptions, dryRun: true });
 
     expect(installSkills).not.toHaveBeenCalled();
+  });
+
+  describe('dependency installation', () => {
+    let installDependencies: ReturnType<typeof vi.spyOn>;
+    let isStorybookInMonorepo: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      const selectedProject = project('/repo/a/.storybook');
+      installDependencies = vi.spyOn(selectedProject.packageManager, 'installDependencies');
+      isStorybookInMonorepo = vi
+        .spyOn(selectedProject.packageManager, 'isStorybookInMonorepo')
+        .mockReturnValue(false);
+      useProjects(selectedProject);
+    });
+
+    describe('without installation', () => {
+      beforeEach(() => {
+        isStorybookInMonorepo.mockReturnValue(true);
+      });
+
+      it.each([
+        ['dry run', { dryRun: true }],
+        ['skip install', { skipInstall: true }],
+      ])(
+        'does not install dependencies or prompt for deduplication with %s',
+        async (_, options) => {
+          await upgrade({ ...baseOptions, ...options });
+
+          expect(installDependencies).not.toHaveBeenCalled();
+          expect(prompt.confirm).not.toHaveBeenCalled();
+        }
+      );
+    });
+
+    it('installs dependencies during an ordinary upgrade', async () => {
+      await upgrade(baseOptions);
+
+      expect(installDependencies).toHaveBeenCalledWith({ force: true });
+    });
   });
 });

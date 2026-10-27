@@ -214,7 +214,6 @@ export const taskLog = (options: TaskLogOptions): TaskLogInstance => {
         task.error(message);
       },
       group: function (title: string) {
-        this.message(`\n${title}\n`);
         const group = task.group(title);
         return {
           message: (message: string) => {

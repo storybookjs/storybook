@@ -9,6 +9,7 @@ vi.mock('@clack/prompts', () => ({
   isCancel: (value: unknown) => value === Symbol.for('cancelled'),
   spinner: vi.fn(),
   taskLog: vi.fn(),
+  log: { message: vi.fn(), success: vi.fn(), error: vi.fn() },
 }));
 
 vi.mock('../logger/log-tracker.ts', () => ({
@@ -19,8 +20,10 @@ vi.mock('../logger/log-tracker.ts', () => ({
 
 import * as clack from '@clack/prompts';
 
+import { logTracker } from '../logger/log-tracker.ts';
+
 import type { PromptOptions } from './prompt-provider-base.ts';
-import { ClackPromptProvider } from './prompt-provider-clack.ts';
+import { ClackPromptProvider, getCurrentTaskLog } from './prompt-provider-clack.ts';
 
 const CANCELLED = Symbol.for('cancelled');
 
@@ -62,7 +65,12 @@ const mockAllPrompts = (implementation: (options?: PromptCallOptions) => Promise
 
 describe('ClackPromptProvider', () => {
   const provider = new ClackPromptProvider();
-  const task = { message: vi.fn(), success: vi.fn(), error: vi.fn() };
+  const task = { message: vi.fn(), success: vi.fn(), error: vi.fn(), group: vi.fn() };
+  let taskGroup: {
+    message: ReturnType<typeof vi.fn>;
+    success: ReturnType<typeof vi.fn>;
+    error: ReturnType<typeof vi.fn>;
+  };
   const promptMethods = ['text', 'confirm', 'select', 'multiselect'] as const;
 
   const runPrompt = (method: (typeof promptMethods)[number], promptOptions?: PromptOptions) => {
@@ -86,6 +94,9 @@ describe('ClackPromptProvider', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    globalThis.STORYBOOK_CURRENT_TASK_LOG = null;
+    taskGroup = { message: vi.fn(), success: vi.fn(), error: vi.fn() };
+    task.group.mockReturnValue(taskGroup);
     vi.mocked(clack.taskLog).mockReturnValue(task as never);
     // Shared default: every prompt answers unless a test overrides it for its own scenario.
     mockAllPrompts(settleLikeClack('a'));
@@ -102,21 +113,24 @@ describe('ClackPromptProvider', () => {
     const short = cyan('✔ addon-mcp');
 
     const log = provider.taskLog({ id: 'task', title: 'Task' });
-    expect(clack.taskLog).toHaveBeenCalledWith({
-      limit: 10,
-      retainLog: true,
-      id: 'task',
-      title: 'Task',
-    });
+    expect(clack.taskLog).toHaveBeenCalledWith(
+      expect.objectContaining({ limit: 10, retainLog: true, id: 'task', title: 'Task' })
+    );
     log.message(`${short}\n${nearlyFull}`);
     log.success('done');
 
     expect(task.message).toHaveBeenCalledWith(`${short}\n${'x'.repeat(51)} .storybook/preview`);
   });
 
-  it('surfaces a nested task log error but not its success', () => {
+  it('a nested task log reuses the root task and only its error closes it', () => {
     const root = provider.taskLog({ id: 'root', title: 'Root' });
     const nested = provider.taskLog({ id: 'nested', title: 'Nested' });
+
+    expect(getCurrentTaskLog()).toBe(root);
+    nested.message('inner line');
+    expect(task.message).toHaveBeenCalledTimes(1);
+    expect(logTracker.addLog).toHaveBeenCalledWith('info', 'nested-task: inner line');
+    expect(logTracker.addLog).not.toHaveBeenCalledWith('info', 'root-task: inner line');
 
     nested.success('inner done');
     expect(task.success).not.toHaveBeenCalled();
@@ -125,8 +139,108 @@ describe('ClackPromptProvider', () => {
     expect(task.error).toHaveBeenCalledWith('inner failed', { showLog: true });
 
     root.success('done');
-    expect(task.success).toHaveBeenCalledTimes(1);
-    expect(task.success).toHaveBeenCalledWith('done', undefined);
+    expect(task.success).not.toHaveBeenCalled();
+    expect(clack.taskLog).toHaveBeenCalledTimes(1);
+  });
+
+  describe('outside stdout writes', () => {
+    const originalWrite = process.stdout.write;
+    afterEach(() => {
+      process.stdout.write = originalWrite;
+    });
+
+    it.each([
+      {
+        name: 'no outside write: lines go to the clack task',
+        outsideWrite: false,
+        expected: { taskMessages: 2, plainMessages: 0, closedVia: 'task' },
+      },
+      {
+        name: 'an outside write: later lines and the close go to plain log lines',
+        outsideWrite: true,
+        expected: { taskMessages: 1, plainMessages: 1, closedVia: 'log' },
+      },
+    ])('$name', ({ outsideWrite, expected }) => {
+      const log = provider.taskLog({ id: 'task', title: 'Task' });
+      log.message('one');
+      if (outsideWrite) {
+        process.stdout.write(' ');
+      }
+      log.message('two');
+      log.success('done');
+
+      expect(task.message).toHaveBeenCalledTimes(expected.taskMessages);
+      expect(clack.log.message).toHaveBeenCalledTimes(expected.plainMessages);
+      expect(task.success).toHaveBeenCalledTimes(expected.closedVia === 'task' ? 1 : 0);
+      expect(clack.log.success).toHaveBeenCalledTimes(expected.closedVia === 'log' ? 1 : 0);
+      expect(process.stdout.write).toBe(originalWrite);
+    });
+
+    it('does not restore a write patched by someone else after the task log', () => {
+      const log = provider.taskLog({ id: 'task', title: 'Task' });
+      const other = vi.fn() as unknown as typeof process.stdout.write;
+      process.stdout.write = other;
+      log.success('done');
+      expect(process.stdout.write).toBe(other);
+    });
+
+    it.each(['before', 'after'] as const)(
+      'routes group output to plain lines when an outside write happens %s group creation',
+      (outsideWriteTiming) => {
+        const log = provider.taskLog({ id: 'task', title: 'Task' });
+        if (outsideWriteTiming === 'before') {
+          process.stdout.write(' ');
+        }
+        const group = log.group('Group');
+        if (outsideWriteTiming === 'after') {
+          process.stdout.write(' ');
+        }
+        getCurrentTaskLog()?.message('inside');
+        group.error('group failed');
+        expect(getCurrentTaskLog()).toBe(log);
+        log.error('failed');
+
+        expect(task.group).toHaveBeenCalledWith('Group');
+        expect(taskGroup.message).not.toHaveBeenCalled();
+        expect(taskGroup.error).not.toHaveBeenCalled();
+        expect(clack.log.message).toHaveBeenCalledWith('inside');
+        expect(clack.log.error).toHaveBeenCalledWith('group failed');
+        expect(clack.log.error).toHaveBeenCalledWith('failed');
+        expect(task.error).not.toHaveBeenCalled();
+        expect(getCurrentTaskLog()).toBeNull();
+        expect(process.stdout.write).toBe(originalWrite);
+      }
+    );
+
+    it('restores stdout and clears the session when closing throws', () => {
+      const failure = new Error('close failed');
+      task.success.mockImplementationOnce(() => {
+        throw failure;
+      });
+      const log = provider.taskLog({ id: 'task', title: 'Task' });
+
+      expect(() => log.success('done')).toThrow(failure);
+      expect(process.stdout.write).toBe(originalWrite);
+      expect(getCurrentTaskLog()).toBeNull();
+    });
+
+    it('a group closing does not count as an outside write', () => {
+      taskGroup.success.mockImplementation(() => {
+        const output = vi.mocked(clack.taskLog).mock.calls[0][0]?.output;
+        output?.write('group done');
+      });
+      const log = provider.taskLog({ id: 'task', title: 'Task' });
+      const group = log.group('Group');
+      expect(getCurrentTaskLog()).toBe(group);
+      group.message('inside');
+      group.success('group done');
+      expect(getCurrentTaskLog()).toBe(log);
+      log.message('after');
+      expect(taskGroup.message).toHaveBeenCalledWith('inside');
+      expect(task.message).toHaveBeenCalledWith('after');
+      expect(clack.log.message).not.toHaveBeenCalled();
+      log.success('done');
+    });
   });
 
   it('awaits an async onCancel handler before rejecting the aborted prompt', async () => {

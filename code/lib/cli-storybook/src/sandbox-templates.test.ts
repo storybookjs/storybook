@@ -67,7 +67,12 @@ describe('React prerelease sandboxes', () => {
 
     expect(vite.modifications).toMatchObject({
       extraDependencies: ['react@canary', 'react-dom@canary'],
-      extraDevDependencies: ['prop-types', '@types/react@latest', '@types/react-dom@latest'],
+      extraDevDependencies: [
+        'prop-types',
+        '@types/react@latest',
+        '@types/react-dom@latest',
+        'typescript@^6',
+      ],
       resolutions: {
         '@types/react': 'npm:@types/react@latest',
         '@types/react-dom': 'npm:@types/react-dom@latest',

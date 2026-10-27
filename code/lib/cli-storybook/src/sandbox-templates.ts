@@ -305,9 +305,11 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      // create-vite >= 9.3.3 scaffolds TypeScript 7, which core/docgen cannot parse yet. Overwrite
-      // the scaffold's own devDependencies range with a pinned 6.x until docgen supports TS 7
-      // (#36987, #37004); pinning via devDependencies avoids a conflicting duplicate entry.
+      // create-vite >= 9.3.3 scaffolds TypeScript 7.0, which Storybook's TS docgen cannot use
+      // (TS 7.0 has no compiler API; #37004 supports 7.1+). Keep this pin until docgen supports
+      // the TypeScript version that create-vite scaffolds (#36987, #37004). Overwrite the
+      // scaffold's own devDependencies range; pinning via devDependencies avoids a conflicting
+      // duplicate entry.
       extraDevDependencies: [
         'prop-types',
         '@types/prop-types',
@@ -341,7 +343,13 @@ export const baseTemplates = {
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['react@canary', 'react-dom@canary'],
-      extraDevDependencies: ['prop-types', '@types/react@latest', '@types/react-dom@latest'],
+      extraDevDependencies: [
+        'prop-types',
+        '@types/react@latest',
+        '@types/react-dom@latest',
+        // See `react-vite/default-ts` for why TypeScript is pinned to 6.
+        'typescript@^6',
+      ],
       resolutions: {
         '@types/react': 'npm:@types/react@latest',
         '@types/react-dom': 'npm:@types/react-dom@latest',

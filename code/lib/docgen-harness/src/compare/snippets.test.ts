@@ -419,6 +419,30 @@ describe('compareSnippet (svelte)', () => {
   const svelte = (baseline: string, candidate: string) =>
     compareSnippet({ framework: 'svelte', baseline, candidate });
 
+  it('counts a snippet child as passing the prop of the same name', () => {
+    expect(
+      svelte(
+        '<Modal open footer={snippet} />',
+        '<Modal open>\n{#snippet footer()}<small>Footer</small>{/snippet}\n</Modal>'
+      )
+    ).toEqual([]);
+  });
+
+  it.each([
+    '',
+    "<script>\n  import Panel from './Panel.svelte';\n</script>\n\n",
+    '<script lang="ts">\n  const items: Array<Item> = [];\n</script>\n\n',
+  ])('compares markup after the leading script block %s', (script) => {
+    const baseline = '<Panel label="Save" count={3} />';
+    expect(svelte(baseline, `${script}<Panel count={3} label="Save" />`)).toEqual([]);
+    expect(svelte(`${script}${baseline}`, '<Panel label="Save" />')).toEqual([
+      expect.objectContaining({ arg: 'count', kind: 'lost-representation' }),
+    ]);
+    expect(svelte(baseline, `${script}<Panel label="Save" />`)).toEqual([
+      expect.objectContaining({ arg: 'count', kind: 'lost-representation' }),
+    ]);
+  });
+
   it.each([
     {
       baseline: '<Panel label="Save" count={3} />',

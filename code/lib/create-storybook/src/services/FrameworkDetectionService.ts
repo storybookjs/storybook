@@ -33,7 +33,20 @@ export class FrameworkDetectionService {
     throw new Error(`Could not find framework for renderer: ${renderer} and builder: ${builder}`);
   }
 
-  async detectBuilder() {
+  private hasFramework(renderer: SupportedRenderer, builder: SupportedBuilder) {
+    try {
+      this.detectFramework(renderer, builder);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Pass `renderer` when the framework is derived from the renderer and builder, so only builders
+   * with a matching framework are detected or offered.
+   */
+  async detectBuilder(renderer?: SupportedRenderer) {
     const viteConfig = find.any(viteConfigFiles, { last: getProjectRoot() });
     const webpackConfig = find.any(webpackConfigFiles, { last: getProjectRoot() });
     const rsbuildConfig = find.any(rsbuildConfigFiles, { last: getProjectRoot() });
@@ -58,9 +71,22 @@ export class FrameworkDetectionService {
       detectedBuilders.push(SupportedBuilder.RSBUILD);
     }
 
+    // Only consider builders that have a framework for the renderer
+    const supportedBuilders = Object.values(SupportedBuilder).filter(
+      (builder) => !renderer || this.hasFramework(renderer, builder)
+    );
+    const usableBuilders = detectedBuilders.filter((builder) =>
+      supportedBuilders.includes(builder)
+    );
+
     // If exactly one builder is detected, return it
-    if (detectedBuilders.length === 1) {
-      return detectedBuilders[0];
+    if (usableBuilders.length === 1) {
+      return usableBuilders[0];
+    }
+
+    // If the renderer only works with one builder, there is nothing to choose
+    if (supportedBuilders.length === 1) {
+      return supportedBuilders[0];
     }
 
     // If multiple builders are detected or none are detected, prompt the user
@@ -68,13 +94,13 @@ export class FrameworkDetectionService {
       { label: 'Vite', value: SupportedBuilder.VITE },
       { label: 'Webpack 5', value: SupportedBuilder.WEBPACK5 },
       { label: 'Rsbuild', value: SupportedBuilder.RSBUILD },
-    ];
+    ].filter((option) => supportedBuilders.includes(option.value));
 
     return prompt.select(
       {
         message: dedent`
       ${
-        detectedBuilders.length > 1
+        usableBuilders.length > 1
           ? 'Multiple builders were detected in your project. Please select one:'
           : 'We were not able to detect the right builder for your project. Please select one:'
       }

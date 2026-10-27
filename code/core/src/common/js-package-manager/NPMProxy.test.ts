@@ -1,5 +1,5 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -340,6 +340,31 @@ describe('NPM Proxy', () => {
       expect(installations).toMatchObject({
         dependencies: {
           '@storybook/react': [{ version: '1.2.3' }],
+        },
+      });
+    });
+
+    it('finds installations nested beneath non-matching nodes (e.g. npm workspace members)', async () => {
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: JSON.stringify({
+          dependencies: {
+            // a workspace root lists each workspace package as an entry of its
+            // own; gate packages live beneath them, not at the top level
+            '@acme/components': {
+              version: '1.0.0',
+              dependencies: {
+                '@storybook/sveltekit': { version: '10.0.0' },
+              },
+            },
+          },
+        }),
+      } as any);
+
+      const installations = await npmProxy.findInstallations(['@storybook/*']);
+
+      expect(installations).toMatchObject({
+        dependencies: {
+          '@storybook/sveltekit': [{ version: '10.0.0' }],
         },
       });
     });

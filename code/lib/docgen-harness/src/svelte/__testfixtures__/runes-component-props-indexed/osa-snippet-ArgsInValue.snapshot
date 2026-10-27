@@ -1,0 +1,9 @@
+<script>
+  import Modal from './Modal.svelte';
+</script>
+
+<Modal
+  id="modal-args-in-value"
+  open
+  error="code args.open done"
+ />

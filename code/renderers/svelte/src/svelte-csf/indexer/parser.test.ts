@@ -152,7 +152,7 @@ describe('parseForIndexer', () => {
       `);
 
       await expect(parseForIndexer(file)).rejects.toThrow(
-        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004'
+        'sb_svelte_csf_parser_extract_svelte_0004'
       );
     });
 
@@ -162,7 +162,7 @@ describe('parseForIndexer', () => {
       `);
 
       await expect(parseForIndexer(file)).rejects.toThrow(
-        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003'
+        'sb_svelte_csf_parser_extract_svelte_0003'
       );
     });
 
@@ -173,7 +173,7 @@ describe('parseForIndexer', () => {
       `);
 
       await expect(parseForIndexer(file)).rejects.toThrow(
-        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002'
+        'sb_svelte_csf_parser_extract_svelte_0002'
       );
     });
   });
@@ -323,7 +323,7 @@ describe('parseForIndexer', () => {
       `);
 
       await expect(parseForIndexer(file)).rejects.toThrow(
-        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0010'
+        'sb_svelte_csf_parser_extract_svelte_0010'
       );
     });
 
@@ -335,7 +335,7 @@ describe('parseForIndexer', () => {
       `);
 
       await expect(parseForIndexer(file)).rejects.toThrow(
-        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0012'
+        'sb_svelte_csf_parser_extract_svelte_0012'
       );
     });
 
@@ -346,7 +346,7 @@ describe('parseForIndexer', () => {
       `);
 
       await expect(parseForIndexer(file)).rejects.toThrow(
-        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004'
+        'sb_svelte_csf_parser_extract_svelte_0004'
       );
     });
 
@@ -358,7 +358,7 @@ describe('parseForIndexer', () => {
       `);
 
       await expect(parseForIndexer(file)).rejects.toThrow(
-        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004'
+        'sb_svelte_csf_parser_extract_svelte_0004'
       );
     });
 
@@ -369,7 +369,7 @@ describe('parseForIndexer', () => {
       `);
 
       await expect(parseForIndexer(file)).rejects.toThrow(
-        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0011'
+        'sb_svelte_csf_parser_extract_svelte_0011'
       );
     });
   });
@@ -448,13 +448,13 @@ describe('parseForIndexer', () => {
       [
         'the stories file calls defineMeta()',
         '<Story name="Primary" /><Story extend="Primary" name="Small" />',
-        'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0010',
+        'sb_svelte_csf_parser_analyse_story_0010',
         'defineMeta({})',
       ],
       [
         'no story has the name',
         '<Story name="Primary" /><Story extend="Secondary" name="Small" />',
-        'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0011',
+        'sb_svelte_csf_parser_analyse_story_0011',
       ],
       [
         'the value is the exportName of a named story',
@@ -464,12 +464,12 @@ describe('parseForIndexer', () => {
       [
         'the story has only an exportName',
         '<Story exportName="Primary" /><Story extend="Primary" name="Small" />',
-        'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0012',
+        'sb_svelte_csf_parser_analyse_story_0012',
       ],
       [
         'more than one story has the name',
         '<Story name="Primary" /><Story name="Primary" exportName="Other" /><Story extend="Primary" name="Small" />',
-        'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0013',
+        'sb_svelte_csf_parser_analyse_story_0013',
       ],
       [
         'a story extends itself',
@@ -484,17 +484,17 @@ describe('parseForIndexer', () => {
       [
         'the value is not a string literal',
         '<Story name="Primary" /><Story extend={name} name="Small" />',
-        'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001',
+        'sb_svelte_csf_parser_analyse_story_0001',
       ],
       [
         'the value has more than one part',
         '<Story name="Primary" /><Story name="PrimaryLarge" /><Story extend="Primary{\'Large\'}" name="Small" />',
-        'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001',
+        'sb_svelte_csf_parser_analyse_story_0001',
       ],
       [
         'the value is empty',
         '<Story name="" exportName="Empty" /><Story extend="" name="Small" />',
-        'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0011',
+        'sb_svelte_csf_parser_analyse_story_0011',
       ],
     ])('fails when %s', async ([, stories, error, meta], { expect }) => {
       const file = await writeExtendStoriesFile(stories, meta);

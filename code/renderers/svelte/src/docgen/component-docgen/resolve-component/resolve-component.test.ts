@@ -43,6 +43,50 @@ it.each(['define-meta', 'preview-meta'])(
   }
 );
 
+it.each(['member-expression', 'member-expression-trap', 'member-expression-exported'])(
+  'resolves the component of a Svelte CSF file with a member expression of a named import (%s)',
+  async (file) => {
+    expect(await resolveStoryComponent(entryFor(`svelte-csf/${file}.stories.svelte`))).toEqual({
+      componentPath: join(fixtures, 'svelte-csf/Select.svelte'),
+      // The property value binds the component's default export, not the property name.
+      exportName: 'default',
+      name: 'Select',
+    });
+  }
+);
+
+it('resolves a member expression through a spread that overrides the property', async () => {
+  expect(
+    await resolveStoryComponent(entryFor('svelte-csf/member-expression-spread.stories.svelte'))
+  ).toEqual({
+    componentPath: join(fixtures, 'svelte-csf/Other.svelte'),
+    exportName: 'default',
+    name: 'Select',
+  });
+});
+
+it('declines a member expression an unreadable spread may replace', async () => {
+  await expect(
+    resolveStoryComponent(entryFor('svelte-csf/member-expression-opaque-spread.stories.svelte'))
+  ).resolves.toBeUndefined();
+});
+
+it('declines a member expression whose binding an unrelated export shadows', async () => {
+  await expect(
+    resolveStoryComponent(entryFor('svelte-csf/member-expression-masquerade.stories.svelte'))
+  ).resolves.toBeUndefined();
+});
+
+it('resolves the component of a Svelte CSF file with a member expression of a namespace import', async () => {
+  expect(
+    await resolveStoryComponent(entryFor('svelte-csf/namespace-import.stories.svelte'))
+  ).toEqual({
+    componentPath: join(fixtures, 'svelte-csf/Button.svelte'),
+    exportName: 'Button',
+    name: 'Button',
+  });
+});
+
 it('reports an unresolved component import', async () => {
   await expect(resolveStoryComponent(entryFor('unresolved/missing.stories.ts'))).rejects.toThrow(
     'Could not resolve `./Missing.svelte` export `default`'

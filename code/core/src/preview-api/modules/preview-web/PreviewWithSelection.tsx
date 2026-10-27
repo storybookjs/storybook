@@ -111,22 +111,6 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     super.setupListeners();
 
     globalWindow.onkeydown = this.onKeydown.bind(this);
-    // Temporary diagnostics for landmark navigation from the preview: runs before any listener
-    // in the story can stop the key, so an "entered" line without a forwarded line means the story
-    // itself consumed F6 (React Aria does so while it has a landmark of its own to move to).
-    globalWindow.addEventListener(
-      'keydown',
-      (event) => {
-        if (event.key === 'F6') {
-          logger.info('[landmark navigation] F6 entered the preview document', {
-            target: (event.target as Element | null)?.tagName,
-            activeElement: document.activeElement?.tagName,
-            storyLandmarks: document.querySelectorAll('[data-sb-landmark]').length,
-          });
-        }
-      },
-      { capture: true }
-    );
     // A story that navigates its own landmarks with React Aria stops F6 from reaching onKeydown
     // for as long as it has a landmark to go to. React Aria asks before wrapping around at the end
     // of those; declining leaves the key unhandled, so it reaches onKeydown and moves on to the
@@ -268,10 +252,6 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
   onKeydown(event: KeyboardEvent) {
     if (this.storyRenders.find((r) => r.disableKeyListeners)) {
-      if (event.key === 'F6') {
-        // Temporary diagnostics for landmark navigation from the preview.
-        logger.info('[landmark navigation] F6 ignored: a render disabled key listeners');
-      }
       return;
     }
 
@@ -284,15 +264,6 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       event.preventDefault();
     } else if (focusInInput(event)) {
       return;
-    }
-    if (event.key === 'F6') {
-      // Temporary diagnostics for landmark navigation from the preview.
-      logger.info('[landmark navigation] F6 in the preview', {
-        shiftKey: event.shiftKey,
-        embedded: isLandmarkNavigation,
-        defaultPrevented: event.defaultPrevented,
-        target: (event.target as Element | null)?.tagName,
-      });
     }
 
     // We have to pick off the keys of the event that we need on the other side

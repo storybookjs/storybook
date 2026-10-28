@@ -781,7 +781,12 @@ export const baseTemplates = {
         preact: 'npm:preact@^10',
       },
     },
-    skipTasks: ['e2e-tests', 'bench'],
+    // No Chromatic project exists for this sandbox, so its `chromatic` job fails on a missing
+    // token. The default Preact sandbox renders the same template stories and covers them
+    // visually; to run Chromatic here too, create a project, add its token to CircleCI as
+    // `CHROMATIC_TOKEN_PREACT_VITE_10_TS`, list it in `.agents/guidelines/chromatic-projects.md`,
+    // and drop `chromatic` from this list.
+    skipTasks: ['e2e-tests', 'bench', 'chromatic'],
   },
   /** This is currently broken, we generate components and stories that do not work */
   // 'qwik-vite/default-ts': {

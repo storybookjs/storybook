@@ -5,7 +5,8 @@ import vitest from '@storybook/addon-vitest/node';
 import a11y from '@storybook/addon-a11y/node';
 import mcp from '@storybook/addon-mcp/node';
 import pseudoStates from 'storybook-addon-pseudo-states/node';
-import { defineMain, reactVite } from '@storybook/react-vite/node';
+import { reactVite } from '@storybook/react-vite/node';
+import { defineMain } from 'storybook';
 
 import { internalServices } from './services-addon.ts';
 import { internalVite } from './vite-addon.ts';

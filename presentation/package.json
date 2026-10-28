@@ -1,0 +1,16 @@
+{
+  "name": "storybook-small-core-presentation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "slidev build",
+    "dev": "slidev --open",
+    "export": "slidev export"
+  },
+  "dependencies": {
+    "@slidev/cli": "52.19.1",
+    "markdown-it": "^14.1.0",
+    "slidev-theme-storybook": "link:/Users/julienhuang/projects/slidev-storybook",
+    "vue": "^3.5.0"
+  }
+}

@@ -1,5 +1,6 @@
 import {
   defineFramework,
+  defineMain as coreDefineMain,
   defineRenderer,
   type RendererPlugin,
   type StorybookConfig as InstanceConfig,
@@ -33,6 +34,7 @@ export const angularRenderer = defineRenderer<void, AngularRenderer>(() => ({
 
 /** Compose Angular rendering with an isolated Webpack builder and the Angular CLI config. */
 export const angular = defineFramework<
+  '@storybook/angular',
   AngularFrameworkOptions | void,
   RendererPlugin<AngularRenderer>
 >((input) => {
@@ -62,7 +64,5 @@ export const angular = defineFramework<
 
 export default angular;
 
-/** Define the main configuration. */
-export function defineMain<const T extends StorybookConfig>(config: T): T {
-  return config;
-}
+/** @deprecated Import defineMain from 'storybook'. */
+export const defineMain: typeof coreDefineMain = coreDefineMain;

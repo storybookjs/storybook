@@ -44,3 +44,9 @@ export type StorybookConfig = Omit<
 > &
   StorybookConfigVite &
   StorybookConfigFramework;
+
+declare module '@storybook/core' {
+  interface StorybookFrameworks {
+    '@storybook/svelte-vite': { options: FrameworkOptions; config: StorybookConfig };
+  }
+}

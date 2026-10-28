@@ -1,5 +1,6 @@
 import {
   defineFramework,
+  defineMain as coreDefineMain,
   type RendererPlugin,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
@@ -15,6 +16,7 @@ export type StorybookConfig = Omit<ServerWebpackConfig, 'addons'> & Pick<Instanc
 
 /** Compose the server renderer with an isolated Webpack builder. */
 export const serverWebpack5 = defineFramework<
+  '@storybook/server-webpack5',
   FrameworkOptions | void,
   RendererPlugin,
   readonly [ReturnType<typeof serverWebpack>]
@@ -41,7 +43,5 @@ export const serverWebpack5 = defineFramework<
 
 export default serverWebpack5;
 
-/** Define the main configuration. */
-export function defineMain<const T extends StorybookConfig>(config: T): T {
-  return config;
-}
+/** @deprecated Import defineMain from 'storybook'. */
+export const defineMain: typeof coreDefineMain = coreDefineMain;

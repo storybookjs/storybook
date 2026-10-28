@@ -27,6 +27,8 @@ Tools, agents and tests talk to a running instance instead of loading the projec
 - It is the root export: `import { createStorybook } from '@storybook/core'`.
 - `createStorybook({ configDir, workingDir, mode: 'dev' | 'build' | 'headless', attach? })`.
 - `defineAddon` with `setup(storybook)`.
+- `main.ts` imports `defineMain` and `defineAddon` from `storybook`, which re-exports that subset of core's root; projects never list `@storybook/core`.
+- One `defineMain`, typed by the framework: frameworks register their fields in core's `StorybookFrameworks`; the framework `/node` `defineMain` exports are deprecated aliases.
 - `storybook.hook(name, fn, kind?)` and `callHook`.
 - Every hook declares how results combine (`declareHooks`), or the registration passes `'reduce' | 'collect' | 'notify'`.
 - `getStorybook`, `tryGetStorybook`, `runWithStorybook`, `bindToInstance` reach the current instance through async context.

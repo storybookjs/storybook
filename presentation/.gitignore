@@ -1,0 +1,5 @@
+node_modules
+dist
+.slidev
+*.local
+.yarn/install-state.gz

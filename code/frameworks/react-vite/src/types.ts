@@ -17,6 +17,12 @@ export type FrameworkOptions = {
   strictMode?: boolean;
 };
 
+/** Configure the Vite builder, React rendering, and preview docgen. */
+export interface ReactViteOptions extends FrameworkOptions {
+  /** Choose preview docgen when server docgen is disabled. */
+  docgen?: NonNullable<StorybookConfig['typescript']>['reactDocgen'];
+}
+
 type StorybookConfigFramework = {
   framework:
     | FrameworkPlugin
@@ -68,3 +74,9 @@ export type StorybookConfig = Omit<
   StorybookConfigFramework & {
     typescript?: Partial<TypescriptOptions>;
   };
+
+declare module '@storybook/core' {
+  interface StorybookFrameworks {
+    '@storybook/react-vite': { options: ReactViteOptions; config: StorybookConfig };
+  }
+}

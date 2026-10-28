@@ -1,5 +1,6 @@
 import {
   defineFramework,
+  defineMain as coreDefineMain,
   type RendererPlugin,
   type Storybook,
   type StorybookConfig as InstanceConfig,
@@ -18,24 +19,26 @@ export type { FrameworkOptions };
 export type StorybookConfig = Omit<SvelteViteConfig, 'addons'> & Pick<InstanceConfig, 'addons'>;
 
 /** Compose the Svelte renderer with an isolated Vite builder. */
-export const svelteVite = defineFramework<FrameworkOptions | void, RendererPlugin<SvelteTypes>>(
-  (input) => {
-    const options = input || {};
-    return {
-      meta: { name: '@storybook/svelte-vite' },
-      builder: vite(options.builder),
-      renderer: svelte(),
-      setup(storybook): void {
-        svelteViteHooks(storybook, options, '@storybook/svelte-vite');
-        storybook.hook('core:framework:extend', () => ({
-          name: '@storybook/svelte-vite',
-          options,
-        }));
-        storybook.hook('core:framework-options:extend', () => ({ ...options }));
-      },
-    };
-  }
-);
+export const svelteVite = defineFramework<
+  '@storybook/svelte-vite',
+  FrameworkOptions | void,
+  RendererPlugin<SvelteTypes>
+>((input) => {
+  const options = input || {};
+  return {
+    meta: { name: '@storybook/svelte-vite' },
+    builder: vite(options.builder),
+    renderer: svelte(),
+    setup(storybook): void {
+      svelteViteHooks(storybook, options, '@storybook/svelte-vite');
+      storybook.hook('core:framework:extend', () => ({
+        name: '@storybook/svelte-vite',
+        options,
+      }));
+      storybook.hook('core:framework-options:extend', () => ({ ...options }));
+    },
+  };
+});
 
 export default svelteVite;
 
@@ -55,7 +58,5 @@ export function svelteViteHooks(
   });
 }
 
-/** Define the main configuration. */
-export function defineMain<const T extends StorybookConfig>(config: T): T {
-  return config;
-}
+/** @deprecated Import defineMain from 'storybook'. */
+export const defineMain: typeof coreDefineMain = coreDefineMain;

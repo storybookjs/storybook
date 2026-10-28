@@ -45,3 +45,9 @@ export type StorybookConfig = Omit<
 export interface AngularOptions {
   enableIvy?: boolean;
 }
+
+declare module '@storybook/core' {
+  interface StorybookFrameworks {
+    '@storybook/angular': { options: FrameworkOptions; config: StorybookConfig };
+  }
+}

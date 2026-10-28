@@ -80,6 +80,7 @@
   - [CSF `.story` annotations removed](#csf-story-annotations-removed)
   - [`options.presetsList` is deprecated](#optionspresetslist-is-deprecated)
   - [Official packages no longer export presets](#official-packages-no-longer-export-presets)
+  - [`defineMain` and `defineAddon` from `storybook`](#definemain-and-defineaddon-from-storybook)
   - [`legacy:core:extend` hook renamed to `core:config:extend`](#legacycoreextend-hook-renamed-to-coreconfigextend)
   - [`@storybook/core-webpack` is deprecated](#storybookcore-webpack-is-deprecated)
   - [`storybook/internal/manager/globals-runtime` moved to `@storybook/manager`](#storybookinternalmanagerglobals-runtime-moved-to-storybookmanager)
@@ -2164,6 +2165,45 @@ Renderers keep `./preset` as a deprecated alias of `./node`, so third-party fram
 - Code that imported a preset module directly must import from `<package>/node` instead. For example, `DOCGEN_WORKER_SPECIFIER` now comes from `@storybook/vue3/node`.
 - `storybook-addon-pseudo-states/preset` is mapped the same way, to `storybook-addon-pseudo-states/node` when the installed version ships one.
 - Third-party presets load as before.
+
+### `defineMain` and `defineAddon` from `storybook`
+
+The `storybook` package now has a root entry for `main.ts`.
+It exports `defineMain`, `defineAddon` and the `StorybookConfig`, `StorybookFrameworks`, `Storybook`, `StorybookPlugin`, `MainConfig`, `MainTypes`, `StorybookHooks` and `HookHandler` types.
+Your project does not need to depend on `@storybook/core`.
+
+```ts
+// .storybook/main.ts
+import { defineMain } from 'storybook';
+
+export default defineMain({
+  stories: ['../src/**/*.stories.@(ts|tsx)'],
+  framework: '@storybook/react-vite',
+  addons: ['@storybook/addon-docs'],
+  viteFinal: (config) => config,
+});
+```
+
+There is one `defineMain`, typed by the framework you pass.
+The framework string, the `{ name, options }` object and the native `reactVite({...})` plugin all select it.
+A framework adds its builder fields (`viteFinal`, `webpackFinal`) and its typed `framework.options`; other unknown keys error.
+Without a framework, `defineMain` accepts only the fields every framework shares.
+A framework whose types are not loaded, such as a third-party one, accepts any key.
+`defineMain` from `<framework>/node`, such as `@storybook/react-vite/node`, is a deprecated alias of this one; import it from `storybook` instead.
+
+Framework authors register their name by augmenting `StorybookFrameworks`:
+
+```ts
+declare module '@storybook/core' {
+  interface StorybookFrameworks {
+    'my-framework': { options: MyFrameworkOptions; config: MyStorybookConfig };
+  }
+}
+```
+
+`defineFramework` now takes the framework name as its first type argument, and it must match `meta.name`.
+
+Plugin and tool authors import `defineFramework`, `defineBuilder`, `defineRenderer`, `declareHooks` and `createStorybook` from `@storybook/core`.
 
 ### `legacy:core:extend` hook renamed to `core:config:extend`
 

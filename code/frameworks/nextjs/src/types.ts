@@ -86,3 +86,9 @@ export interface NextJsParameters {
 export interface NextJsTypes {
   parameters: NextJsParameters;
 }
+
+declare module '@storybook/core' {
+  interface StorybookFrameworks {
+    '@storybook/nextjs': { options: FrameworkOptions; config: StorybookConfig };
+  }
+}

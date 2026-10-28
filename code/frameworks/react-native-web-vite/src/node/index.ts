@@ -1,26 +1,29 @@
 import {
   defineFramework,
+  defineMain as coreDefineMain,
   type RendererPlugin,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
 
 import { vite } from '@storybook/builder-vite/node';
-import { reactViteHooks, type ReactViteOptions } from '@storybook/react-vite/node';
+import { reactViteHooks } from '@storybook/react-vite/node';
 import { react, type ReactTypes } from '@storybook/react/node';
 
-import type { FrameworkOptions, StorybookConfig as ReactNativeWebViteConfig } from '../types.ts';
+import type {
+  ReactNativeWebViteOptions,
+  StorybookConfig as ReactNativeWebViteConfig,
+} from '../types.ts';
 import { withReactNativeWeb } from '../vite-final.ts';
+
+export type { ReactNativeWebViteOptions };
 
 /** Configure React Native Web Vite with native addons or preset entries. */
 export type StorybookConfig = Omit<ReactNativeWebViteConfig, 'addons'> &
   Pick<InstanceConfig, 'addons'>;
 
-/** Configure the Vite builder, React Native Web transpilation, and React preview docgen. */
-export interface ReactNativeWebViteOptions
-  extends FrameworkOptions, Pick<ReactViteOptions, 'docgen'> {}
-
 /** Compose the React renderer and React Native Web plugins with an isolated Vite builder. */
 export const reactNativeWebVite = defineFramework<
+  '@storybook/react-native-web-vite',
   ReactNativeWebViteOptions | void,
   RendererPlugin<ReactTypes>
 >((input) => {
@@ -43,7 +46,5 @@ export const reactNativeWebVite = defineFramework<
 
 export default reactNativeWebVite;
 
-/** Define the main configuration. */
-export function defineMain<const T extends StorybookConfig>(config: T): T {
-  return config;
-}
+/** @deprecated Import defineMain from 'storybook'. */
+export const defineMain: typeof coreDefineMain = coreDefineMain;

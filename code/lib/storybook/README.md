@@ -43,6 +43,9 @@ The code lives in several packages:
 Direction: `core <- ui <- manager <- storybook`.
 Many `storybook/*` subpaths are shims that re-export the lower packages.
 
+The root entry `storybook` (`src/index.ts`) is what `main.ts` imports: `defineMain`, `defineAddon`, and the `StorybookConfig`, `StorybookFrameworks`, `Storybook`, `StorybookPlugin`, `MainConfig`, `MainTypes`, `StorybookHooks` and `HookHandler` types, re-exported from `@storybook/core`.
+Plugin and tool authors import the rest of the instance API (`defineFramework`, `defineBuilder`, `defineRenderer`, `declareHooks`, `createStorybook`) from `@storybook/core`.
+
 ## What this package owns
 
 - The CLI (`src/storybook/bin`, `src/storybook/cli`).

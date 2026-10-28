@@ -47,6 +47,11 @@
     }
   },
   "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
     "./actions": {
       "types": "./dist/features/actions/index.d.ts",
       "code": "./src/features/actions/index.ts",

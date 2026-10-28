@@ -43,3 +43,9 @@ export type StorybookConfig = Omit<
 > &
   StorybookConfigWebpack &
   StorybookConfigFramework;
+
+declare module '@storybook/core' {
+  interface StorybookFrameworks {
+    '@storybook/server-webpack5': { options: FrameworkOptions; config: StorybookConfig };
+  }
+}

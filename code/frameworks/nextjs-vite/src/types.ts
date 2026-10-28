@@ -2,7 +2,10 @@ import type { FrameworkPlugin } from 'storybook/internal/instance';
 import type { CompatibleString } from 'storybook/internal/types';
 
 import type { BuilderOptions } from '@storybook/builder-vite';
-import type { StorybookConfig as StorybookConfigReactVite } from '@storybook/react-vite';
+import type {
+  ReactViteOptions,
+  StorybookConfig as StorybookConfigReactVite,
+} from '@storybook/react-vite';
 
 import type { NextRouter } from 'next/router';
 
@@ -18,6 +21,9 @@ export type FrameworkOptions = {
   };
   builder?: BuilderOptions;
 };
+
+/** Configure the Vite builder, Next.js integration, and React preview docgen. */
+export interface NextjsViteOptions extends FrameworkOptions, Pick<ReactViteOptions, 'docgen'> {}
 
 type StorybookConfigFramework = {
   framework:
@@ -67,4 +73,10 @@ export interface NextJsParameters {
 
 export interface NextJsTypes {
   parameters: NextJsParameters;
+}
+
+declare module '@storybook/core' {
+  interface StorybookFrameworks {
+    '@storybook/nextjs-vite': { options: NextjsViteOptions; config: StorybookConfig };
+  }
 }

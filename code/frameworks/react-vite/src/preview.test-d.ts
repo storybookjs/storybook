@@ -86,7 +86,12 @@ it('combines framework defaults and native addons while ignoring legacy entries'
     setup() {},
   }));
   const base = reactVite();
-  const framework = defineFramework<void, typeof base.renderer, [ReturnType<typeof addon>]>(() => ({
+  const framework = defineFramework<
+    'custom-framework',
+    void,
+    typeof base.renderer,
+    [ReturnType<typeof addon>]
+  >(() => ({
     ...base,
     meta: { name: 'custom-framework' },
     addons: [addon()],

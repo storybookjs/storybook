@@ -1,5 +1,6 @@
 import {
   defineFramework,
+  defineMain as coreDefineMain,
   defineRenderer,
   type RendererPlugin,
   type StorybookConfig as InstanceConfig,
@@ -51,6 +52,7 @@ export const angularViteRenderer = defineRenderer<void, AngularRenderer>(() => (
 
 /** Compose Angular rendering with an isolated Vite builder and the Analog Angular plugin. */
 export const angularVite = defineFramework<
+  '@storybook/angular-vite',
   AngularViteOptions | void,
   RendererPlugin<AngularRenderer>
 >((input) => {
@@ -93,7 +95,5 @@ export const angularVite = defineFramework<
 
 export default angularVite;
 
-/** Define the main configuration. */
-export function defineMain<const T extends StorybookConfig>(config: T): T {
-  return config;
-}
+/** @deprecated Import defineMain from 'storybook'. */
+export const defineMain: typeof coreDefineMain = coreDefineMain;

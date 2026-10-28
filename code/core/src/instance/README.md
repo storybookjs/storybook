@@ -21,6 +21,7 @@ await storybook.close();
 - `@storybook/core` is the public instance API: `createStorybook`, the `define*` factories, `declareHooks`, the instance accessors, `getFeatures`, and their types.
 - `@storybook/core/internal/instance` re-exports it plus the internals: `legacyPreset`, the `Legacy*` types, `getInstanceContext`, and `internal_*`.
 - `storybook/internal/instance` re-exports `@storybook/core/internal/instance` and injects the built-in features into `createStorybook`.
+- `storybook` re-exports `defineMain`, `defineAddon`, and their types for `main.ts`; its `defineMain` types the config from the framework's `StorybookFrameworks` entry and rejects other keys, unless the framework is not registered.
 
 ## Lifecycle
 

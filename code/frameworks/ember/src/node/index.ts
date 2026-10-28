@@ -1,5 +1,6 @@
 import {
   defineFramework,
+  defineMain as coreDefineMain,
   type RendererPlugin,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
@@ -8,24 +9,20 @@ import { getPreviewModuleIds } from '@storybook/core/internal/preview-page';
 import { webpack } from '@storybook/builder-webpack5/node';
 
 import { pickEmberOptions, withEmberBabel, withEmberRule } from '../compiler.ts';
-import type {
-  EmberTemplateOptions,
-  FrameworkOptions,
-  StorybookConfig as EmberConfig,
-} from '../types.ts';
+import type { EmberFrameworkOptions, StorybookConfig as EmberConfig } from '../types.ts';
 import { emberRenderer } from './renderer.ts';
+
+export type { EmberFrameworkOptions };
 
 /** Configure Ember with native addons or preset entries. */
 export type StorybookConfig = Omit<EmberConfig, 'addons'> & Pick<InstanceConfig, 'addons'>;
 
-/** Configure the Webpack builder and Ember template compilation. */
-export interface EmberFrameworkOptions extends FrameworkOptions {
-  /** Take precedence over the `emberOptions` key of `main.ts`. */
-  emberOptions?: EmberTemplateOptions;
-}
-
 /** Compose the Ember renderer with an isolated Webpack builder. */
-export const ember = defineFramework<EmberFrameworkOptions | void, RendererPlugin>((input) => {
+export const ember = defineFramework<
+  '@storybook/ember',
+  EmberFrameworkOptions | void,
+  RendererPlugin
+>((input) => {
   const options = input || {};
   return {
     meta: { name: '@storybook/ember' },
@@ -55,7 +52,5 @@ export const ember = defineFramework<EmberFrameworkOptions | void, RendererPlugi
 
 export default ember;
 
-/** Define the main configuration. */
-export function defineMain<const T extends StorybookConfig>(config: T): T {
-  return config;
-}
+/** @deprecated Import defineMain from 'storybook'. */
+export const defineMain: typeof coreDefineMain = coreDefineMain;

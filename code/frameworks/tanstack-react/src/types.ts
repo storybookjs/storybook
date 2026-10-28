@@ -4,7 +4,10 @@ import type { CompatibleString } from 'storybook/internal/types';
 import type { AnyRoute } from '@tanstack/react-router';
 import type { RoutesByPath } from '@tanstack/router-core';
 import type { BuilderOptions } from '@storybook/builder-vite';
-import type { StorybookConfig as StorybookConfigReactVite } from '@storybook/react-vite';
+import type {
+  ReactViteOptions,
+  StorybookConfig as StorybookConfigReactVite,
+} from '@storybook/react-vite';
 import type { RegisteredFullPath, RouterParameters } from './routing/types.ts';
 
 type FrameworkName = CompatibleString<'@storybook/tanstack-react'>;
@@ -16,6 +19,9 @@ export type FrameworkOptions = {
   /** Render stories inside `React.StrictMode`. */
   strictMode?: boolean;
 };
+
+/** Configure the Vite builder, TanStack integration, and React preview docgen. */
+export interface TanStackReactOptions extends FrameworkOptions, Pick<ReactViteOptions, 'docgen'> {}
 
 type StorybookConfigFramework = {
   framework:
@@ -65,4 +71,10 @@ export interface TanStackTypes<
   Path extends DefaultStoryPath<TRoute> = DefaultStoryPath<TRoute>,
 > {
   parameters: TanStackParameters<TRoute, Path>;
+}
+
+declare module '@storybook/core' {
+  interface StorybookFrameworks {
+    '@storybook/tanstack-react': { options: TanStackReactOptions; config: StorybookConfig };
+  }
 }

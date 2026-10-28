@@ -67,3 +67,9 @@ export type StorybookConfig = Omit<
 > &
   StorybookConfigVite &
   StorybookConfigFramework;
+
+declare module '@storybook/core' {
+  interface StorybookFrameworks {
+    '@storybook/vue3-vite': { options: FrameworkOptions; config: StorybookConfig };
+  }
+}

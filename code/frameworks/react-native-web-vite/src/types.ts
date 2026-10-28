@@ -3,6 +3,7 @@ import type { CompatibleString } from 'storybook/internal/types';
 
 import type {
   FrameworkOptions as FrameworkOptionsBase,
+  ReactViteOptions,
   StorybookConfig as StorybookConfigBase,
 } from '@storybook/react-vite';
 
@@ -26,6 +27,10 @@ export type FrameworkOptions = FrameworkOptionsBase & {
   pluginBabelOptions?: Record<string, unknown>;
 };
 
+/** Configure the Vite builder, React Native Web transpilation, and React preview docgen. */
+export interface ReactNativeWebViteOptions
+  extends FrameworkOptions, Pick<ReactViteOptions, 'docgen'> {}
+
 type FrameworkName = CompatibleString<'@storybook/react-native-web-vite'>;
 
 /** The interface for Storybook configuration in `main.ts` files. */
@@ -38,3 +43,12 @@ export type StorybookConfig = Omit<StorybookConfigBase, 'framework'> & {
         options: FrameworkOptions;
       };
 };
+
+declare module '@storybook/core' {
+  interface StorybookFrameworks {
+    '@storybook/react-native-web-vite': {
+      options: ReactNativeWebViteOptions;
+      config: StorybookConfig;
+    };
+  }
+}

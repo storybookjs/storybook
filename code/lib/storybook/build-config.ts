@@ -32,6 +32,11 @@ const config: BuildEntries = {
   entries: {
     node: [
       {
+        // The `main.ts` subset of `@storybook/core`'s root; plugin authors import core directly.
+        exportEntries: ['.'],
+        entryPoint: './src/index.ts',
+      },
+      {
         exportEntries: ['./internal/instance'],
         entryPoint: './src/storybook/instance.ts',
         outputPath: 'core/instance/index',

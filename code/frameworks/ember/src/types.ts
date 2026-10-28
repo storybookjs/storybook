@@ -21,6 +21,12 @@ export type FrameworkOptions = {
   builder?: BuilderOptions;
 };
 
+/** Configure the Webpack builder and Ember template compilation. */
+export interface EmberFrameworkOptions extends FrameworkOptions {
+  /** Take precedence over the `emberOptions` key of `main.ts`. */
+  emberOptions?: EmberTemplateOptions;
+}
+
 type StorybookConfigFramework = {
   /** Configure template compilation. */
   emberOptions?: EmberTemplateOptions;
@@ -52,4 +58,10 @@ export type StorybookConfig = Omit<
 
 declare global {
   var __EMBER_GENERATED_DOC_JSON__: any;
+}
+
+declare module '@storybook/core' {
+  interface StorybookFrameworks {
+    '@storybook/ember': { options: EmberFrameworkOptions; config: StorybookConfig };
+  }
 }

@@ -1,5 +1,6 @@
 import {
   defineFramework,
+  defineMain as coreDefineMain,
   type RendererPlugin,
   type Storybook,
   type StorybookConfig as InstanceConfig,
@@ -19,21 +20,23 @@ export type StorybookConfig = Omit<VueViteConfig, 'addons'> & Pick<InstanceConfi
 export type VueViteOptions = FrameworkOptions;
 
 /** Compose the Vue renderer with an isolated Vite builder. */
-export const vue3Vite = defineFramework<VueViteOptions | void, RendererPlugin<VueTypes>>(
-  (input) => {
-    const options = input || {};
-    return {
-      meta: { name: '@storybook/vue3-vite' },
-      builder: vite(options.builder),
-      renderer: vue(),
-      setup(storybook): void {
-        vue3ViteHooks(storybook, options);
-        storybook.hook('core:framework:extend', () => ({ name: '@storybook/vue3-vite', options }));
-        storybook.hook('core:framework-options:extend', () => ({ ...options }));
-      },
-    };
-  }
-);
+export const vue3Vite = defineFramework<
+  '@storybook/vue3-vite',
+  VueViteOptions | void,
+  RendererPlugin<VueTypes>
+>((input) => {
+  const options = input || {};
+  return {
+    meta: { name: '@storybook/vue3-vite' },
+    builder: vite(options.builder),
+    renderer: vue(),
+    setup(storybook): void {
+      vue3ViteHooks(storybook, options);
+      storybook.hook('core:framework:extend', () => ({ name: '@storybook/vue3-vite', options }));
+      storybook.hook('core:framework-options:extend', () => ({ ...options }));
+    },
+  };
+});
 
 export default vue3Vite;
 
@@ -53,7 +56,5 @@ export function vue3ViteHooks(storybook: Storybook, options: VueViteOptions): vo
   );
 }
 
-/** Define the main configuration. */
-export function defineMain<const T extends StorybookConfig>(config: T): T {
-  return config;
-}
+/** @deprecated Import defineMain from 'storybook'. */
+export const defineMain: typeof coreDefineMain = coreDefineMain;

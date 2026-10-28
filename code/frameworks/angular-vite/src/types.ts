@@ -59,3 +59,9 @@ export type StorybookConfig = Omit<
 > &
   StorybookConfigVite &
   StorybookConfigFramework;
+
+declare module '@storybook/core' {
+  interface StorybookFrameworks {
+    '@storybook/angular-vite': { options: FrameworkOptions; config: StorybookConfig };
+  }
+}

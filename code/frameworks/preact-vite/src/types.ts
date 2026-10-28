@@ -38,3 +38,9 @@ export type StorybookConfig = Omit<
 > &
   StorybookConfigVite &
   StorybookConfigFramework;
+
+declare module '@storybook/core' {
+  interface StorybookFrameworks {
+    '@storybook/preact-vite': { options: FrameworkOptions; config: StorybookConfig };
+  }
+}

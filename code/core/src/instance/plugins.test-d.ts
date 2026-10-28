@@ -22,7 +22,7 @@ test('resolves builder, renderer, and framework kinds while preserving renderer 
     meta: { name: 'renderer' },
     setup() {},
   }))();
-  const framework = defineFramework<void, typeof renderer>(() => ({
+  const framework = defineFramework<'framework', void, typeof renderer>(() => ({
     meta: { name: 'framework' },
     builder: resolvedBuilder,
     renderer,
@@ -32,6 +32,7 @@ test('resolves builder, renderer, and framework kinds while preserving renderer 
   expectTypeOf(resolvedBuilder.meta.kind).toEqualTypeOf<'builder'>();
   expectTypeOf(renderer.meta.kind).toEqualTypeOf<'renderer'>();
   expectTypeOf(framework.meta.kind).toEqualTypeOf<'framework'>();
+  expectTypeOf(framework.meta.name).toEqualTypeOf<'framework'>();
   expectTypeOf(framework.renderer.types).toEqualTypeOf<{ story: string } | undefined>();
 });
 

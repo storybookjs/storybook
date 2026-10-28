@@ -1,5 +1,6 @@
 import {
   defineFramework,
+  defineMain as coreDefineMain,
   type RendererPlugin,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
@@ -15,35 +16,35 @@ import { withReactWebpackConfig } from '../webpack-config.ts';
 export type StorybookConfig = Omit<ReactWebpack5Config, 'addons'> & Pick<InstanceConfig, 'addons'>;
 
 /** Compose the React renderer with an isolated Webpack builder. */
-export const reactWebpack5 = defineFramework<FrameworkOptions | void, RendererPlugin<ReactTypes>>(
-  (input) => {
-    const options = input || {};
-    return {
-      meta: { name: '@storybook/react-webpack5' },
-      builder: webpack(options.builder),
-      renderer: react(),
-      addons: [presetReactWebpack()],
-      setup(storybook): void {
-        storybook.hook('core:config:extend', (value) => ({
-          ...value,
-          renderer: import.meta.resolve('@storybook/react/node'),
-        }));
-        storybook.hook('core:framework:extend', () => ({
-          name: '@storybook/react-webpack5',
-          options,
-        }));
-        storybook.hook('core:framework-options:extend', () => ({ ...options }));
-        storybook.hook('builder:webpack-config:extend', (config) =>
-          withReactWebpackConfig(config, storybook.options.features)
-        );
-      },
-    };
-  }
-);
+export const reactWebpack5 = defineFramework<
+  '@storybook/react-webpack5',
+  FrameworkOptions | void,
+  RendererPlugin<ReactTypes>
+>((input) => {
+  const options = input || {};
+  return {
+    meta: { name: '@storybook/react-webpack5' },
+    builder: webpack(options.builder),
+    renderer: react(),
+    addons: [presetReactWebpack()],
+    setup(storybook): void {
+      storybook.hook('core:config:extend', (value) => ({
+        ...value,
+        renderer: import.meta.resolve('@storybook/react/node'),
+      }));
+      storybook.hook('core:framework:extend', () => ({
+        name: '@storybook/react-webpack5',
+        options,
+      }));
+      storybook.hook('core:framework-options:extend', () => ({ ...options }));
+      storybook.hook('builder:webpack-config:extend', (config) =>
+        withReactWebpackConfig(config, storybook.options.features)
+      );
+    },
+  };
+});
 
 export default reactWebpack5;
 
-/** Define the main configuration. */
-export function defineMain<const T extends StorybookConfig>(config: T): T {
-  return config;
-}
+/** @deprecated Import defineMain from 'storybook'. */
+export const defineMain: typeof coreDefineMain = coreDefineMain;

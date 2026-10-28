@@ -141,3 +141,9 @@ export interface SvelteKitTypes {
     sveltekit_experimental?: SvelteKitParameters;
   };
 }
+
+declare module '@storybook/core' {
+  interface StorybookFrameworks {
+    '@storybook/sveltekit': { options: FrameworkOptions; config: StorybookConfig };
+  }
+}

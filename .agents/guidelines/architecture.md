@@ -104,6 +104,7 @@ Each package README owns that package's contents, import rules, and entries.
 
 Public exports include:
 
+- `storybook` (`defineMain`, `defineAddon` and their types, for `main.ts`)
 - `storybook/actions`
 - `storybook/preview-api`
 - `storybook/manager-api`

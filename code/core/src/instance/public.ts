@@ -1,5 +1,11 @@
 export { createStorybook } from './create-storybook.ts';
-export { defineAddon, defineBuilder, defineFramework, defineRenderer } from './plugins.ts';
+export {
+  defineAddon,
+  defineBuilder,
+  defineFramework,
+  defineMain,
+  defineRenderer,
+} from './plugins.ts';
 export type {
   BuilderBuildHost,
   BuilderDevHost,
@@ -12,6 +18,7 @@ export type {
   PluginMetaInput,
   RendererPlugin,
   StorybookConfig,
+  StorybookFrameworks,
   StorybookPlugin,
 } from './plugins.ts';
 export { declareHooks } from './hooks.ts';

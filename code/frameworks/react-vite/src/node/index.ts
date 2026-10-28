@@ -1,5 +1,6 @@
 import {
   defineFramework,
+  defineMain as coreDefineMain,
   type RendererPlugin,
   type Storybook,
   type StorybookConfig as InstanceConfig,
@@ -9,33 +10,31 @@ import { vite } from '@storybook/builder-vite/node';
 import { react, type ReactTypes } from '@storybook/react/node';
 
 import { withReactDocgen } from '../docgen-plugins.ts';
-import type { FrameworkOptions, StorybookConfig as ReactViteConfig } from '../types.ts';
+import type { ReactViteOptions, StorybookConfig as ReactViteConfig } from '../types.ts';
+
+export type { ReactViteOptions };
 
 /** Configure React Vite with native addons or preset entries. */
 export type StorybookConfig = Omit<ReactViteConfig, 'addons'> & Pick<InstanceConfig, 'addons'>;
 
-/** Configure the Vite builder, React rendering, and preview docgen. */
-export interface ReactViteOptions extends FrameworkOptions {
-  /** Choose preview docgen when server docgen is disabled. */
-  docgen?: NonNullable<StorybookConfig['typescript']>['reactDocgen'];
-}
-
 /** Compose the React renderer with an isolated Vite builder. */
-export const reactVite = defineFramework<ReactViteOptions | void, RendererPlugin<ReactTypes>>(
-  (input) => {
-    const options = input || {};
-    return {
-      meta: { name: '@storybook/react-vite' },
-      builder: vite(options.builder),
-      renderer: react(),
-      setup(storybook): void {
-        reactViteHooks(storybook, options);
-        storybook.hook('core:framework:extend', () => ({ name: '@storybook/react-vite', options }));
-        storybook.hook('core:framework-options:extend', () => ({ ...options }));
-      },
-    };
-  }
-);
+export const reactVite = defineFramework<
+  '@storybook/react-vite',
+  ReactViteOptions | void,
+  RendererPlugin<ReactTypes>
+>((input) => {
+  const options = input || {};
+  return {
+    meta: { name: '@storybook/react-vite' },
+    builder: vite(options.builder),
+    renderer: react(),
+    setup(storybook): void {
+      reactViteHooks(storybook, options);
+      storybook.hook('core:framework:extend', () => ({ name: '@storybook/react-vite', options }));
+      storybook.hook('core:framework-options:extend', () => ({ ...options }));
+    },
+  };
+});
 
 export default reactVite;
 
@@ -59,7 +58,5 @@ export function reactViteHooks(storybook: Storybook, options: ReactViteOptions):
   );
 }
 
-/** Define the main configuration. */
-export function defineMain<const T extends StorybookConfig>(config: T): T {
-  return config;
-}
+/** @deprecated Import defineMain from 'storybook'. */
+export const defineMain: typeof coreDefineMain = coreDefineMain;

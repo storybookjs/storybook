@@ -1,24 +1,25 @@
 import {
   defineFramework,
+  defineMain as coreDefineMain,
   type RendererPlugin,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
 
 import { vite } from '@storybook/builder-vite/node';
-import { reactViteHooks, type ReactViteOptions } from '@storybook/react-vite/node';
+import { reactViteHooks } from '@storybook/react-vite/node';
 import { react, type ReactTypes } from '@storybook/react/node';
 
-import type { FrameworkOptions, StorybookConfig as TanStackReactConfig } from '../types.ts';
+import type { StorybookConfig as TanStackReactConfig, TanStackReactOptions } from '../types.ts';
 import { getPreviewAnnotations, OPTIMIZE_VITE_DEPS, withTanStack } from '../vite-final.ts';
+
+export type { TanStackReactOptions };
 
 /** Configure TanStack React with native addons or preset entries. */
 export type StorybookConfig = Omit<TanStackReactConfig, 'addons'> & Pick<InstanceConfig, 'addons'>;
 
-/** Configure the Vite builder, TanStack integration, and React preview docgen. */
-export interface TanStackReactOptions extends FrameworkOptions, Pick<ReactViteOptions, 'docgen'> {}
-
 /** Compose the React renderer and the TanStack integration with an isolated Vite builder. */
 export const tanstackReact = defineFramework<
+  '@storybook/tanstack-react',
   TanStackReactOptions | void,
   RendererPlugin<ReactTypes>
 >((input) => {
@@ -51,7 +52,5 @@ export const tanstackReact = defineFramework<
 
 export default tanstackReact;
 
-/** Define the main configuration. */
-export function defineMain<const T extends StorybookConfig>(config: T): T {
-  return config;
-}
+/** @deprecated Import defineMain from 'storybook'. */
+export const defineMain: typeof coreDefineMain = coreDefineMain;

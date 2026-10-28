@@ -87,9 +87,10 @@ export interface RendererPlugin<TTypes = unknown> extends StorybookPlugin<TTypes
 export interface FrameworkPlugin<
   TRenderer extends StorybookPlugin<unknown> = RendererPlugin | StorybookPlugin,
   TAddons extends readonly StorybookPlugin<unknown>[] = readonly StorybookPlugin<unknown>[],
+  TName extends string = string,
 > extends StorybookPlugin {
-  /** Identify the framework package. */
-  meta: PluginMeta & { kind: 'framework' };
+  /** Identify the framework package; the literal selects its `StorybookFrameworks` entry. */
+  meta: PluginMeta & { kind: 'framework'; name: TName };
   /** Own the preview compiler. */
   builder: BuilderPlugin;
   /** Supply the renderer's annotations and story types. */
@@ -102,6 +103,21 @@ export interface FrameworkPlugin<
 export interface LegacyPreset extends StorybookPlugin {
   legacy: Preset;
 }
+
+/**
+ * Map a framework package name to the main configuration it accepts. Frameworks augment it.
+ *
+ * @example
+ *
+ * ```ts
+ * declare module '@storybook/core' {
+ *   interface StorybookFrameworks {
+ *     '@storybook/react-vite': { options: ReactViteOptions; config: StorybookConfig };
+ *   }
+ * }
+ * ```
+ */
+export interface StorybookFrameworks {}
 
 /** Accept existing package entries alongside instance plugins. */
 export type StorybookConfig = Omit<LegacyConfig, 'framework' | 'addons'> & {
@@ -123,6 +139,38 @@ export type MainTypes<TMain extends MainConfig> = FrameworkTypes<
   BuiltInTypes &
   AddonTypes<NonNullable<TMain['addons']>>;
 
+type FrameworkName<TFramework> = TFramework extends string
+  ? TFramework
+  : TFramework extends { meta: { name: infer TName } }
+    ? TName
+    : TFramework extends { name: infer TName }
+      ? TName
+      : never;
+
+/** Unregistered frameworks accept any key so configs without loaded framework types compile. */
+type FrameworkMainConfig<TFramework> = [FrameworkName<TFramework>] extends [never]
+  ? StorybookConfig
+  : FrameworkName<TFramework> extends keyof StorybookFrameworks
+    ? RegisteredMainConfig<
+        FrameworkName<TFramework>,
+        StorybookFrameworks[FrameworkName<TFramework>]
+      >
+    : StorybookConfig & { [key: string]: unknown };
+
+type RegisteredMainConfig<TName extends string, TEntry> = TEntry extends {
+  options: infer TOptions;
+  config: infer TConfig;
+}
+  ? Omit<StorybookConfig, 'framework' | keyof TConfig> &
+      Omit<TConfig, 'framework' | 'addons'> &
+      Pick<StorybookConfig, 'addons'> & {
+        framework:
+          | TName
+          | { name: TName; options?: TOptions }
+          | FrameworkPlugin<StorybookPlugin<unknown>, readonly StorybookPlugin<unknown>[], TName>;
+      }
+  : never;
+
 type AddonTypes<TAddons extends readonly unknown[]> = [PluginTypes<TAddons[number]>] extends [never]
   ? {}
   : UnionToIntersection<PluginTypes<TAddons[number]>>;
@@ -133,6 +181,21 @@ type PluginTypes<TPlugin> =
       ? never
       : TTypes
     : never;
+
+/**
+ * Define the main configuration, typed by the framework's `StorybookFrameworks` entry. Unknown keys
+ * error unless the framework is not registered.
+ */
+export function defineMain<
+  const TFramework extends StorybookConfig['framework'] = undefined,
+  const T extends FrameworkMainConfig<TFramework> = FrameworkMainConfig<TFramework>,
+>(
+  config: T & { framework?: TFramework } & NoInfer<
+      Record<Exclude<keyof T, keyof FrameworkMainConfig<TFramework>>, never>
+    >
+): T {
+  return config;
+}
 
 /** Create an addon factory with typed configuration options. */
 export function defineAddon<TOptions = void, TTypes = {}>(
@@ -158,17 +221,18 @@ export function defineBuilder<TOptions = void>(
   });
 }
 
-/** Create a framework factory with typed configuration options. */
+/** Create a framework factory named after its package, with typed configuration options. */
 export function defineFramework<
+  const TName extends string,
   TOptions = void,
   TRenderer extends StorybookPlugin<unknown> = RendererPlugin | StorybookPlugin,
   TAddons extends readonly StorybookPlugin<unknown>[] = readonly StorybookPlugin<unknown>[],
 >(
-  factory: (options: TOptions) => Omit<FrameworkPlugin<TRenderer, TAddons>, 'meta'> & {
-    meta: PluginMetaInput & { kind?: never };
+  factory: (options: TOptions) => Omit<FrameworkPlugin<TRenderer, TAddons, TName>, 'meta'> & {
+    meta: PluginMetaInput & { name: TName; kind?: never };
   }
-): (options: TOptions) => FrameworkPlugin<TRenderer, TAddons> {
-  return brand('framework', (options: TOptions): FrameworkPlugin<TRenderer, TAddons> => {
+): (options: TOptions) => FrameworkPlugin<TRenderer, TAddons, TName> {
+  return brand('framework', (options: TOptions): FrameworkPlugin<TRenderer, TAddons, TName> => {
     const plugin = factory(options);
     return { ...plugin, meta: { ...plugin.meta, kind: 'framework' } };
   });

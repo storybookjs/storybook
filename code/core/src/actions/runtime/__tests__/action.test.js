@@ -105,7 +105,7 @@ describe('Implicit actions during rendering', () => {
   it('throws ImplicitActionsDuringRendering while a render is playing', () => {
     createChannel();
     vi.stubGlobal('__STORYBOOK_PREVIEW__', { storyRenders: [{ phase: 'playing' }] });
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, 'warn');
 
     let thrown;
     try {
@@ -122,7 +122,7 @@ describe('Implicit actions during rendering', () => {
   it('throws ImplicitActionsDuringRendering while a render is rendering', () => {
     createChannel();
     vi.stubGlobal('__STORYBOOK_PREVIEW__', { storyRenders: [{ phase: 'rendering' }] });
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, 'warn');
 
     expect(() => action('test-action', { implicit: true })('one')).toThrowError(
       ImplicitActionsDuringRendering

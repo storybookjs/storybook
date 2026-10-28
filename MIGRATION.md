@@ -4971,7 +4971,7 @@ export const ButtonClick = {
 };
 ```
 
-Storybook no longer fills in those spies. An implicit action (an action arg without an explicit spy) that gets called while the story is rendering or playing throws `ImplicitActionsDuringRendering`. Spies have to be added explicitly:
+Storybook no longer fills in those spies. An implicit action—one of the handlers Storybook infers from `actions.argTypesRegex`—that gets called while the story is rendering or playing throws `ImplicitActionsDuringRendering`. Handlers created explicitly with `action()` (including through `argTypes.action`) or `fn()` are not affected. Spies have to be added explicitly:
 
 ```ts
 import { fn } from '@storybook/test';
@@ -4991,7 +4991,7 @@ export const ButtonClick = {
 };
 ```
 
-The `features.disallowImplicitActionsInRenderV8` key in `main.js` / `main.ts` was the opt-out that downgraded that throw to a warning. It no longer exists and has no replacement: delete the key from your main configuration file. Without an explicit spy, any action called while the story is rendering or playing throws `ImplicitActionsDuringRendering`.
+The `features.disallowImplicitActionsInRenderV8` key in `main.js` / `main.ts` was the opt-out that downgraded that throw to a warning. It no longer exists and has no replacement: delete the key from your main configuration file. Handlers inferred from `actions.argTypesRegex` now always throw `ImplicitActionsDuringRendering` when they are called while the story is rendering or playing.
 
 For more context, see this RFC:
 https://github.com/storybookjs/storybook/discussions/23649

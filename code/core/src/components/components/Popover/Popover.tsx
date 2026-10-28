@@ -91,7 +91,7 @@ const Scroller = styled(ScrollArea, {
   shouldForwardProp: (prop) => prop !== 'padding',
 })<{ padding: NonNullable<PopoverProps['padding']> }>(({ padding }) => ({
   maxHeight: 'inherit',
-  '[data-radix-scroll-area-viewport]': {
+  '& > [data-radix-scroll-area-viewport]': {
     maxHeight: 'inherit',
     boxSizing: 'border-box',
     padding,

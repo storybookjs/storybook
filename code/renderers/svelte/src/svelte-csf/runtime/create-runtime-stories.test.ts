@@ -10,8 +10,10 @@ import { createRuntimeStories } from './create-runtime-stories.ts';
 
 vi.mock('storybook/internal/client-logger', { spy: true });
 
+const fixtureError = new Error('failed to mount stories component');
+
 const failedStoriesComponent = (() => {
-  throw new Error('failed to mount stories component');
+  throw fixtureError;
 }) as unknown as Component;
 
 describe(createRuntimeStories.name, () => {
@@ -26,7 +28,9 @@ describe(createRuntimeStories.name, () => {
     expect(() => createRuntimeStories(failedStoriesComponent, {})).not.toThrow();
 
     expect(logger.error).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(logger.error).mock.calls[0][0]).toContain('Error in mounting stories');
-    expect(vi.mocked(logger.error).mock.calls[0][1]).toBeInstanceOf(Error);
+    const [message, error] = vi.mocked(logger.error).mock.calls[0];
+    expect(message).toContain('Error in mounting stories');
+    expect(error).toBe(fixtureError);
+    expect(error?.message).toContain('failed to mount stories component');
   });
 });

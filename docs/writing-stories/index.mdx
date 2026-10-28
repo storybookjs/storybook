@@ -142,21 +142,7 @@ If you need to customize the rendering of your story, you can provide a snippet 
 
 For example, if you want to render a `Button` inside an `Alert`:
 
-```svelte title="Button.stories.svelte"
-<Story
-  name="Primary in alert"
-  args={{
-    label: 'Button',
-    primary: true,
-  }}>
-  {#snippet template(args)}
-    <Alert>
-      Alert text
-      <Button {...args} />
-    </Alert>
-  {/snippet}
-</Story>
-```
+<CodeSnippets path="render-custom-in-story.md" />
 
 <Callout variant="info">
 
@@ -166,29 +152,7 @@ Note how the template snippet or `render` function spreads `args` onto the Butto
 
 You can re-use the same render function across stories by applying it at the meta level. For Svelte CSF, this can be done by defining the template snippet outside of the story and assigning it to the `render` property of the `defineMeta` function. For CSF, you can define a `render` function in the meta (or default export).
 
-```svelte title="Button.stories.svelte"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-    render: template,
-  });
-</script>
-
-{#snippet template(args)}
-  <Alert>
-    Alert text
-    <Button {...args} />
-  </Alert>
-{/snippet}
-
-<Story name="Default in alert" args={{ label: 'Button' }} />
-
-<Story name="Primary in alert" args={{ label: 'Button', primary: true }} />
-```
+<CodeSnippets path="render-custom-in-meta.md" />
 
 Whatever you define at the meta level can be overridden at the story level, so you can still customize the rendering of individual stories if needed.
 

@@ -1,0 +1,509 @@
+---
+title: Component Story Format (CSF)
+isTab: true
+tab:
+  order: 2
+  title: API
+---
+
+The CSF 4 API is composed of functions to help you write stories and the annotations used to configure them. Note how three of the functions operate as factories, each producing the next function in the chain (`definePreview` → `preview.meta` → `meta.story`), providing full type safety at each step.
+
+<Callout variant="info" icon="ℹ️">
+
+This API reference only documents the latest version of the Component Story Format, **CSF 4**. Earlier versions are documented in the [Storybook 10 docs](../../../release-10-6/docs/api/csf/index.mdx).
+
+</Callout>
+
+## `defineMain`
+
+Type: `(config: StorybookConfig) => TK`
+
+The [main Storybook config](../../api/main-config/main-config.mdx) is specified by the `defineMain` function. This function is type-safe and will automatically infer types for your project.
+
+<CodeSnippets path="csf-4-define-main.md" />
+
+<If renderer="svelte">
+
+Notice that to index Svelte CSF files, you must add `svelte` to the file extensions in `stories`, such as `'../src/**/*.stories.@(js|ts|svelte)'`.
+
+</If>
+
+## `definePreview`
+
+Type: `(annotations: Annotations) => Preview`
+
+The `definePreview` function specifies your project's story configuration. This function is also type-safe and will infer types throughout your project.
+
+It accepts an object containing the [annotations](#annotations) to apply to all stories in the project.
+
+`addons` is a particularly important annotation to specify. Any addon you include here will have their types available throughout your project, enabling autocompletion and type checking.
+
+The function returns a preview object, which contains the [`meta` function](#previewmeta) used to define story metadata.
+
+<CodeSnippets path="csf-4-define-preview.md" />
+
+<Callout variant="info">
+
+The preview configuration will be automatically updated to reference the necessary addons when installing an addon via `npx storybook add <addon-name>` or running `storybook dev`.
+
+<details>
+<summary>Which addons should be specified in `preview`?</summary>
+
+The ability for an addon to provide annotation types (`parameters`, `globals`, etc.) is new and not all addons support it yet.
+
+If an addon provides annotations (i.e. it distributes a `./preview` export), it can be imported in two ways:
+
+1. For official Storybook addons, you import the default export:
+   `import addonName from '@storybook/addon-name'`
+
+2. For community addons, you should import the entire module and access the addon from there:
+   `import * as addonName from 'community-addon-name'`
+
+</details>
+
+</Callout>
+
+## `preview.meta`
+
+Type: `(annotations: Annotations) => Meta`
+
+The `meta` function on the [`preview`](#definepreview) object is used to define the metadata for your stories. It accepts an object containing the [`component`](#component), [`title`](#title), and other [annotations](#annotations).
+
+The `component` field is required and used for automatic prop table generation and display of other component metadata.
+
+The `title` field is optional and should be unique (i.e., not re-used across files). If you don't specify one, it can be inferred from the story's path on disk. For more information, see the section on [configuring story loading](../../configure/index.mdx#configure-story-loading).
+
+<If notRenderer="svelte">
+
+The function returns a meta object, which contains the [`story` function](#metastory) used to define stories.
+
+<CodeSnippets path="csf-4-preview-meta.md" />
+
+</If>
+
+<If renderer="svelte">
+
+In a Svelte CSF file, `preview.meta` returns the meta, which has the `Story` component:
+
+<CodeSnippets path="csf-4-preview-meta.md" />
+
+A Svelte CSF file compiles to CSF 4 stories, so a project can use `.stories.svelte` and `.stories.ts` files together.
+
+</If>
+
+### `preview.type.meta`
+
+By default, [`preview.meta`](#previewmeta) will infer the type of your component's props automatically. However, if you need to extend or modify the inferred types, you can use the `preview.type` function to specify custom types. The props of the component are still inferred, so the type only has to hold the args that you add.
+
+<CodeSnippets path="csf-4-preview-type-meta.md" />
+
+Every key in the `args` of `preview.meta` must be an arg of your stories: a prop of the component, an arg of its typed `render` function, an arg used by one of its decorators, or an arg declared with `preview.type`. The values are checked against those types, so literal values like `variant: 'primary'` need no `as const`.
+
+For more information on typing your stories, refer to the [writing stories in TypeScript guide](../typescript.mdx).
+
+## `meta.story`
+
+<If notRenderer="svelte">
+
+Type: (annotations: Annotations) => Story
+
+Finally, the `story` function on the [`meta`](#previewmeta) object defines the stories. This function accepts an object containing the [`args`](#args), [`parameters`](#parameters), and other story [annotations](#annotations).
+
+</If>
+
+<If renderer="svelte">
+
+With Svelte CSF, you use the `Story` component returned by [`preview.meta`](#previewmeta) to define a story. The name of the story, shown in the sidebar, is defined by the [`name`](#name) attribute of the Story component. Annotations, such as `args`, `decorators`, and `parameters`, are defined as attributes on the Story component.
+
+</If>
+
+<CodeSnippets path="csf-4-meta-story.md" />
+
+<If notRenderer="svelte">
+
+### `meta.type.story`
+
+Stories take their types from the [meta](#previewmeta). When a single story needs something the other stories of the file don't have, such as an extra arg read by its [`render` function](#render) , you can use the `meta.type` function to add it for that story only.
+
+</If>
+
+<If renderer="svelte">
+
+In a Svelte CSF file, to apply additional types to a specific story, you can call [`preview.meta`](#previewmeta) for the standard case and then [`preview.type.meta`](#previewtypemeta) for the story that needs the extra args. Each returns a meta object with its own `Story` component. Rename the destructured `Story` component from the typed meta to avoid conflicts, and use it for the stories that need the extra args.
+
+</If>
+
+<CodeSnippets path="csf-4-meta-type-story.md" />
+
+`meta.type` accepts the same type argument as [`preview.type`](#previewtypemeta), and the two can be combined.
+
+An arg you add must be set in that story, unless you declare it as optional (`meta.type<{ args: { icon?: string } }>()`). Args that the meta already sets stay optional, except the ones you redeclare in `meta.type`: the story must set those again, because the meta's value was not checked against the new type.
+
+### `<Story>.extend`
+
+<If notRenderer="svelte">
+
+You can use the `.extend` method to create a new story based on an existing one, with the option to override or add new properties.
+
+</If>
+
+<If renderer="svelte">
+
+In a Svelte CSF file, you can create a story based on an existing story with the `extend` attribute. Its value is the name of a story in the same file, so the story to extend must have a [`name`](#name) attribute. You can then override or add new properties as needed.
+
+</If>
+
+<CodeSnippets path="csf-4-story-extend.md" />
+
+<details>
+<summary>Property merging details</summary>
+
+Properties are merged intelligently:
+
+- [`args`](#args) are shallow merged
+- [`parameters`](#parameters) are deep merged, except for arrays, which are replaced
+- [`decorators`](#decorators) and [`tags`](#tags) are concatenated
+
+```ts title="Button.stories.js|ts"
+// ...from above
+const meta = preview.meta({
+  //...
+});
+
+export const Example = meta.story({
+  args: {
+    primary: true,
+    exampleArray: ['a', 'b'],
+    exampleObject: { a: 'a', b: 'b' },
+  },
+  parameters: {
+    exampleArray: ['a', 'b'],
+    exampleObject: { a: 'a', b: 'b' },
+  },
+  tags: ['a'],
+});
+
+/*
+ * 👇 Final values applied:
+ *    {
+ *      args: {
+ *        primary: true,
+ *        disabled: true,
+ *        exampleArray: ['c'],
+ *        exampleObject: { a: 'c' }
+ *      },
+ *      parameters: {
+ *        exampleArray: ['c'],
+ *        exampleObject: { a: 'c', b: 'b' }
+ *      },
+ *      tags: ['a', 'b']
+ *    }
+ */
+export const ExtendedExample = Example.extend({
+  args: {
+    disabled: true,
+    exampleArray: ['c'],
+    exampleObject: { a: 'c' },
+  },
+  parameters: {
+    disabled: true,
+    exampleArray: ['c'],
+    exampleObject: { a: 'c' },
+  },
+  tags: ['b'],
+});
+```
+
+</details>
+
+### `<Story>.test`
+
+(⚠️ **Experimental**)
+
+<If renderer="svelte">
+
+Svelte CSF stories have no `.test` method. You can still use it in `.stories.ts` files.
+
+</If>
+
+A more ergonomic way to define [tests for your stories](../../writing-tests/index.mdx). While this API is still experimental, it is [documented in the RFC to gather feedback](https://github.com/storybookjs/storybook/discussions/30119) and must be enabled via the [`experimentalTestSyntax` feature flag](../../api/main-config/main-config-features.mdx#experimentaltestsyntax).
+
+## Annotations
+
+Annotations are metadata to configure and control the behavior of stories. Unless otherwise specified, they can be defined at multiple levels:
+
+1. [Preview](#definepreview): Applies to all stories in your project.
+2. [Meta](#previewmeta): Applies to all stories within a single file.
+3. [Story](#metastory): Applies to an individual story.
+
+Annotation definitions _cascade_, meaning that story-level annotations override meta-level annotations, and meta-level annotations override preview-level annotations. Some annotations have specific cascading behavior that may differ from this general rule:
+
+- [`args`](#args) are shallow merged
+- [`parameters`](#parameters) are deep merged, except for arrays, which are replaced
+- [`decorators`](#decorators) and [`tags`](#tags) are concatenated
+
+### `addons`
+
+Type: `Array<() => TK>`
+
+Allowed within: [Preview](#definepreview)
+
+_Only supported in CSF 4_
+
+Addons included here will have their types made available to your project.
+
+### `afterEach`
+
+Type:
+
+```ts
+| (context: StoryContext) => void
+| Array<(context: StoryContext) => void>
+```
+
+Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+
+Runs after the [play function](#play), for final assertions. Can be async. One function or an array of them.
+
+Do not use this for cleanup operations. Instead, perform any necessary cleanup in the return function of [`beforeAll`](#beforeall) or [`beforeEach`](#beforeeach). This ensures that cleanup happens before the next story renders.
+
+<CodeSnippets path="after-each-in-meta.md" />
+
+### `args`
+
+Type: `{ [argName: string]: any }`
+
+Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+
+Values passed to the component as props or attributes.
+
+See the [Args guide](../args.mdx) for more details.
+
+<CodeSnippets path="button-story-with-args.md" />
+
+### `argTypes`
+
+Type: `{ [argName: string]: InputType }`
+
+Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+
+Metadata for each arg, such as its control, description, and options. Storybook infers most of it from the component.
+
+See the [ArgTypes reference](../../api/arg-types.mdx) for more details.
+
+<CodeSnippets path="arg-types-in-meta.md" />
+
+### `beforeAll`
+
+Type: `() => (void | (() => void))`
+
+Allowed within: [Preview](#definepreview)
+
+Runs once before any story loads. Can be async. Can return a cleanup function, which can also by async and runs TK (when?).
+
+<CodeSnippets path="before-all-in-preview.md" />
+
+### `beforeEach`
+
+Type:
+
+```ts
+| (context: StoryContext) => (void | (() => void))
+| Array<(context: StoryContext) => (void | (() => void))>
+```
+
+Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+
+Runs before the story renders. Can be async. One function or an array of them. Can return a cleanup function, which can also be async and runs TK (when?).
+
+<CodeSnippets path="before-each-in-meta-mock-date.md" />
+
+### `component`
+
+Type: Depends on the renderer being used (e.g., `React.ComponentType<any>` for React).
+
+Allowed within: [Meta](#previewmeta)
+
+The component that the stories document. Storybook uses it to infer [`argTypes`](#argtypes) and to render stories by default.
+
+<CodeSnippets path="button-story-with-args.md" />
+
+### `decorators`
+
+Type: Depends on the renderer (e.g., `Array<(Story: () => JSX.Element, context: StoryContext) => JSX.Element>` for React)
+
+Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+
+Functions that wrap the story in extra markup or context. One function or an array of them. Story decorators wrap the story first, then meta decorators, then preview decorators.
+
+See the [Decorators guide](../decorators.mdx) for more details.
+
+<CodeSnippets path="your-component-with-decorator.md" />
+
+### `excludeStories`
+
+Type: `string[] | RegExp`
+
+Allowed within: [Meta](#previewmeta)
+
+Exports will be checked against this array or regular expression, and any matching exports will not be treated as stories.
+
+See [Non-story exports](./index.mdx#non-story-exports) for more details.
+
+<CodeSnippets path="my-component-story-with-nonstory.md" />
+
+### `globals`
+
+Type: `{ [globalName: string]: { value: string, [key: string]: any } }`
+
+Allowed within: [Meta](#previewmeta), [Story](#metastory)
+
+Sets global values for these stories and locks them in the toolbar.
+
+See the [Toolbars & globals guide](../../essentials/toolbars-and-globals.mdx#setting-globals-on-a-story) for more details.
+
+<CodeSnippets path="addon-backgrounds-define-globals.md" />
+
+### `globalTypes`
+
+Type: `{ [globalName: string]: ToolbarType }`
+
+Allowed within: [Preview](#definepreview)
+
+Defines globals and their toolbar menus.
+
+See the [Toolbars & globals guide](../../essentials/toolbars-and-globals.mdx) for more details.
+
+<CodeSnippets path="storybook-preview-configure-globaltypes.md" />
+
+### `id`
+
+Type: `string`
+
+Allowed within: [Meta](#previewmeta)
+
+The ID used in story URLs. Must be statically analyzable. Generally not used. Set it to keep URLs the same after you rename a [title](#title).
+
+### `includeStories`
+
+Type: `string[] | RegExp`
+
+Allowed within: [Meta](#previewmeta)
+
+Exports will be checked against this array or regular expression, and **only** matching exports will be treated as stories.
+
+See [Non-story exports](./index.mdx#non-story-exports) for more details.
+
+<CodeSnippets path="my-component-story-with-nonstory.md" />
+
+### `initialGlobals`
+
+Type: `{ [globalName: string]: { [key: string]: string } }`
+
+Allowed within: [Preview](#definepreview)
+
+Starting values for globals, such as theme or locale.
+
+See the [Toolbars & globals guide](../../essentials/toolbars-and-globals.mdx) for more details.
+
+<CodeSnippets path="storybook-preview-configure-globaltypes.md" />
+
+### `loaders`
+
+Type: `(context: StoryContext) => { [key: string]: any } | void`
+
+Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+
+Functions that load data before the story renders. Can be async. The results are merged into `context.loaded`.
+
+See the [Loaders guide](../loaders.mdx) for more details.
+
+<CodeSnippets path="loader-story.md" />
+
+### `mount`
+
+Type: Depends on the renderer (e.g., `(context: StoryContext) => (ui?: JSX.Element) => Promise<Canvas>` for React)
+
+Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+
+Replaces the function that the [play function](#play) gets as `mount`. The `Canvas` it resolves to has Testing Library queries for the story's root element. Most projects do not need it.
+
+### `name`
+
+Type: `string`
+
+Allowed within: [Story](#metastory)
+
+The story's name in the sidebar. If you do not set it, Storybook makes it from the export name.
+
+<CodeSnippets path="my-component-story-with-storyname.md" />
+
+### `parameters`
+
+Type: `{ [name: string]: any }`
+
+Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+
+Static metadata, usually for addons and features. Storybook deep-merges it from preview to meta to story.
+
+See the [Parameters guide](../parameters.mdx) for more details.
+
+<CodeSnippets path="parameters-in-meta.md" />
+
+### `play`
+
+Type: `(context: StoryContext & { canvas: TK; userEvent: TK; context: StoryContext }) => void`
+
+Allowed within: [Meta](#previewmeta), [Story](#metastory)
+
+Runs after the story renders, to interact with it and make assertions.
+
+See the [Play function guide](../play-function.mdx) for more details.
+
+<CodeSnippets path="play-function-with-canvas.md" />
+
+### `render`
+
+Type: Depends on the renderer (e.g., `(args: { [argName: string]: any }, context: StoryContext) => JSX.Element` for React)
+
+Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+
+Sets how the story renders from its args. If you do not set it, Storybook renders the [`component`](#component) with the args.
+
+<CodeSnippets path="component-story-with-custom-render-function.md" />
+
+### `subcomponents`
+
+Type: Depends on the renderer (e.g., `{ [name: string]: React.ComponentType<any> }` for React)
+
+Allowed within: [Meta](#previewmeta)
+
+Related components to show in the [Controls table](../../api/doc-blocks/doc-block-controls.mdx), each in its own tab.
+
+See the [Stories for multiple components guide](../stories-for-multiple-components.mdx) for more details.
+
+<CodeSnippets path="list-story-with-subcomponents.md" />
+
+### `tags`
+
+Type: `string[]`
+
+Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+
+Apply built-in and custom tags to stories, for example to indicate their status or categorize them. A `!` prefix removes a tag that a higher level added.
+
+See the [Tags guide](../tags.mdx) for more details.
+
+<CodeSnippets path="tags-in-meta-and-story.md" />
+
+### `title`
+
+Type: `string`
+
+Allowed within: [Meta](#previewmeta)
+
+Controls where the component appears in the sidebar. Separate levels with `/`. Must be statically analyzable.
+
+If you do not set it, Storybook infers it from the file path of the story file.
+
+<CodeSnippets path="storybook-csf-3-auto-title-redundant.md" />

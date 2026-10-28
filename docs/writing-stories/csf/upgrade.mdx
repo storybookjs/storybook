@@ -1,0 +1,332 @@
+---
+title: Component Story Format (CSF)
+isTab: true
+tab:
+  order: 3
+  title: Upgrade to CSF 4
+---
+
+CSF 4 is the next evolution of Storybook's Component Story Format (CSF). This [API](./api.mdx) uses a pattern called factory functions to provide full type safety to your Storybook stories, making it easier to configure addons correctly and unlocking the full potential of Storybook's features.
+
+You can upgrade your stories to CSF 4 either automatically (from CSF 3) or manually (from CSF 1, 2, or 3). CSF 4 is designed to be usable incrementally; you do not have to upgrade all of your story files at once. However, you cannot mix story formats within the same file.
+
+Before proceeding, be sure you're using the latest version of Storybook. You can upgrade your Storybook automatically with this command:
+
+<CodeSnippets path="storybook-upgrade.md" />
+
+## Automatically
+
+You can automatically upgrade all of your project's stories from CSF 3 to CSF 4 with this command:
+
+<CodeSnippets path="csf-factories-automigrate.md" />
+
+### Monorepos
+
+If your project has multiple Storybook configurations, run the command with the `-c` flag pointing to each config directory:
+
+<CodeSnippets path="csf-factories-automigrate-with-config-directory.md" />
+
+It will run through each of the manual upgrade steps below on all of your story files.
+
+<If renderer="svelte">
+
+In Svelte CSF files (`.stories.svelte`), the command changes `defineMeta` to `preview.meta` and imports the preview. The `Story` components stay the same. When a file reuses a story of another stories file, such as `HeaderStories.LoggedIn.args`, the command changes it to `HeaderStories.LoggedIn.input.args`.
+
+</If>
+
+<details>
+<summary>Upgrading from CSF 2 to 3</summary>
+
+You must be using CSF 3 to automatically upgrade to CSF 4. If you are using CSF 2, you can upgrade to CSF 3 first using this command:
+
+<CodeSnippets path="migrate-csf-2-to-3.md" />
+
+</details>
+
+## Manual
+
+You can also upgrade your project's story files to CSF 4 manually. Before using CSF 4 in a story file, you must upgrade your `.storybook/main.*` and `.storybook/preview.*` files.
+
+**1. Update your main Storybook config file**
+
+Update your `.storybook/main.*` file to use the new [`defineMain`](./api.mdx#definemain) function.
+
+```diff title=".storybook/main.ts"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
++ import { defineMain } from '@storybook/your-framework/node';
+- import { StorybookConfig } from '@storybook/your-framework';
+
++ export default defineMain({
+- export const config: StorybookConfig = {
+    // ...config itself is unchanged
++ });
+- };
+- export default config;
+```
+
+**2. Update your preview config file**
+
+Update your `.storybook/preview.*` file to use the new [`definePreview`](./api.mdx#definepreview) function.
+
+<details>
+<summary>Which addons should be specified in `preview`?</summary>
+
+The ability for an addon to provide annotation types (`parameters`, `globals`, etc.) is new and not all addons support it yet.
+
+If an addon provides annotations (i.e. it distributes a `./preview` export), it can be imported in two ways:
+
+1. For official Storybook addons, you import the default export:
+   `import addonName from '@storybook/addon-name'`
+
+2. For community addons, you should import the entire module and access the addon from there:
+   `import * as addonName from 'community-addon-name'`
+
+</details>
+
+```diff title=".storybook/preview.jsx|tsx"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
++ import { definePreview } from '@storybook/your-framework';
+- import type { Preview } from '@storybook/your-framework';
+// 👇 Import the addons you are using
++ import addonA11y from '@storybook/addon-a11y';
+
++ export default definePreview({
+- export const preview: Preview = {
+    // ...current config
+    // 👇 Add your addons here
++   addons: [addonA11y()],
++ });
+- };
+- export default preview;
+```
+
+**3. Update your story files**
+
+Story files have been updated for improved usability. With the new format:
+
+- Import the preview construct from the Storybook preview file
+- The meta object is now created via the [`preview.meta`](./api.mdx#previewmeta) function and does not have to be exported as a default export
+- Stories are now created from the meta object, via the [`meta.story`](./api.mdx#metastory) function
+
+<Callout variant="info">
+
+The examples below show the changes needed to upgrade a story file from CSF 3 to CSF 4. You can also upgrade from CSF 1 or 2 using similar steps.
+
+</Callout>
+
+```diff title="Button.stories.js|ts"
++ import preview from '../.storybook/preview';
+- import type { Meta, StoryObj } from '@storybook/your-framework';
+
+import { Button } from './Button';
+
++ const meta = preview.meta({
+- const meta = {
+    // ...meta object is unchanged
++ });
+- } satisfies Meta<typeof Button>;
+- export default meta;
+
+- type Story = StoryObj<typeof meta>;
+
++ export const Primary = meta.story({
+- export const Primary: Story = {
+    // ...story object is unchanged
++ });
+- };
+```
+
+Note that importing or manually applying the component props type to the meta or stories is no longer necessary. Thanks to the factory function pattern, the types are now inferred automatically.
+
+<If renderer="svelte">
+
+In a Svelte CSF file, import the preview and call `preview.meta` instead of `defineMeta`:
+
+```diff title="Button.stories.svelte"
+<script module lang="ts">
++ import preview from '../.storybook/preview';
+- import { defineMeta } from '@storybook/your-framework';
+
+  import Button from './Button.svelte';
+
++ const { Story } = preview.meta({
+- const { Story } = defineMeta({
+    // ...meta object is unchanged
+  });
+</script>
+
+<!-- ...stories are unchanged -->
+```
+
+With `preview.meta`, a story must set every required arg that the meta doesn't set. This includes the arg that a story template uses, such as `children`.
+
+</If>
+
+<details>
+<summary>Handling complex types</summary>
+
+If you were previously using complex types for your meta or stories, such as intersection types to add custom args, you can now use the [`preview.type.meta`](./api.mdx#previewtypemeta) pattern to explicitly specify types.
+
+```diff title="Button.stories.js|ts"
++ import preview from '../.storybook/preview';
+- import type { Meta, StoryObj } from '@storybook/your-framework';
+
+import { Button } from './Button';
+
+type CustomProps = React.ComponentProps<typeof Button> & { customProp: string };
+
++ const meta = preview.type<{ args: CustomProps }>().meta({
+- const meta = {
+    // ...meta object is unchanged
++ });
+- } satisfies Meta<CustomProps>;
+- export default meta;
+
+- type Story = StoryObj<typeof meta>;
+
++ export const Primary = meta.story({
+- export const Primary: Story = {
+    // ...story object is unchanged
++ });
+- };
+```
+
+A type that also holds the props of the component, like the one above, keeps working in React, Vue, and Svelte.
+
+In Angular and Web Components, leave the component class out of the type and only pass your custom args, such as `preview.type<{ args: { customProp: string } }>()`. The args of the component are already inferred, all of them optional. A type that you pass to `preview.type` is used as it is, so a component class would make every one of its members a required arg.
+
+Types passed to `preview.type` apply to every story of the file. If only one story needs the custom args, keep the meta as it is and type that story with the [`meta.type.story`](./api.mdx#metatypestory) pattern instead. Unlike with `StoryObj`, a required arg of that type must then be set in the story.
+
+```diff title="Button.stories.js|ts"
++ const meta = preview.meta({
+- const meta = {
+    component: Button,
++ });
+- } satisfies Meta<typeof Button>;
+- export default meta;
+
++ export const WithCustomProp = meta.type<{ args: { customProp: string } }>().story({
+- export const WithCustomProp: StoryObj<CustomProps> = {
+    args: { customProp: 'Hello, world!' },
++ });
+- };
+```
+
+</details>
+
+<details>
+<summary>Mock functions in args</summary>
+
+Args in `play`, `beforeEach`, and other functions are typed as your component declares them, so an arg set to `fn()` is not typed as a mock. Wrap it in `mocked()` from `storybook/test` to use the mock API. The automigrations do this for you: `csf-factories` when converting CSF 3 stories, and `csf-next-mocked-args` for stories already written in CSF 4.
+
+```diff title="EventForm.stories.js|ts"
+- import { fn } from 'storybook/test';
++ import { fn, mocked } from 'storybook/test';
+
+  beforeEach: async ({ args }) => {
+-   args.getUsers.mockResolvedValue(users);
++   mocked(args.getUsers).mockResolvedValue(users);
+  },
+```
+
+</details>
+
+**3.1 Reusing story properties**
+
+<Callout variant="info" icon="💡">
+
+If you are reusing story properties to create a new story based on another for the same component, the [`<Story>.extend`](./api.mdx#storyextend) method is the recommended way to do so.
+
+</Callout>
+
+Previously, story properties such as `Story.args` or `Story.parameters` were accessed directly when reusing them in another story. While accessing them like this is still supported, it is deprecated in CSF 4.
+
+All of the story properties are now contained within a new property called `composed` and should be accessed from that property instead. For instance, `Story.composed.args` or `Story.composed.parameters`.
+
+```diff title="Button.stories.js|ts"
+// ...rest of file
+
++ export const Primary = meta.story({
+- export const Primary: Story = {
+    args: { primary: true },
++ });
+- };
+
++ export const PrimaryDisabled = meta.story({
+- export const PrimaryDisabled: Story = {
+    args: {
++     ...Primary.composed.args,
+-     ...Primary.args,
+      disabled: true,
+    }
++ });
+- };
+```
+
+<Callout variant="info">
+
+The property name "composed" was chosen because the values within are composed from the story, its component meta, and the preview configuration.
+
+If you want to access the direct input to the story, you can use `Story.input` instead of `Story.composed`.
+
+</Callout>
+
+**4. Update your Vitest setup file**
+
+If you're using [Storybook's Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx), you can remove your Vitest setup file (`.storybook/vitest.setup.ts`).
+
+If you are using [portable stories in Vitest](../../api/portable-stories/portable-stories-vitest.mdx), you may use a Vitest setup file to configure your stories. This file must be updated to use the new CSF 4 format.
+
+<Callout variant="warning">
+
+Note that this only applies if you use CSF 4 for **all** your tested stories. If you use a mix of CSF 1, 2, or 3 and CSF 4, you must maintain two separate setup files.
+
+</Callout>
+
+```diff title="vitest.setup.js|ts"
+import { beforeAll } from 'vitest';
+// 👇 No longer necessary
+- // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { setProjectAnnotations } from '@storybook/your-framework';
+- import * as addonAnnotations from 'my-addon/preview';
++ import preview from './.storybook/preview';
+- import * as previewAnnotations from './.storybook/preview';
+
+// No longer necessary
+- const annotations = setProjectAnnotations([previewAnnotations, addonAnnotations]);
+
+// Run Storybook's beforeAll hook
++ beforeAll(preview.composed.beforeAll);
+- beforeAll(annotations.beforeAll);
+```
+
+**5. Reusing stories in test files**
+
+[Storybook's Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx) allows you to test your components directly inside Storybook. All the stories are automatically turned into Vitest tests, making integration seamless in your testing suite.
+
+If you cannot use Storybook Test, you can still reuse the stories in your test files using [portable stories](../../api/portable-stories/portable-stories-vitest.mdx). In prior story formats, you had to compose the stories before rendering them in your test files. With CSF 4, you can now reuse the stories directly.
+
+```diff title="Button.test.js|ts"
+import { test, expect } from 'vitest';
+import { screen } from '@testing-library/react';
+- import { composeStories } from '@storybook/your-framework';
+
+// Import all stories from the stories file
+import * as stories from './Button.stories';
+
++ const { Primary } = stories;
+- const { Primary } = composeStories(stories);
+
+test('renders primary button with default args', async () => {
+  // The run function will mount the component and run all of Storybook's lifecycle hooks
+  await Primary.run();
+  const buttonElement = screen.getByText('Text coming from args in stories file!');
+  expect(buttonElement).not.toBeNull();
+});
+```
+
+The `Story` object also provides a `Component` property, enabling you to render the component with any method you choose, such as [Testing Library](https://testing-library.com/). You can also access its composed properties ([`args`](../../writing-stories/args.mdx), [`parameters`](../../writing-stories/parameters.mdx), etc.) via the `composed` property.
+
+Here's an example of how you can reuse a story in a test file by rendering its component:
+
+<CodeSnippets path="portable-stories-csf-factory-render.md" />

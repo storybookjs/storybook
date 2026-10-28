@@ -98,6 +98,7 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
       logBox: vi.fn(),
       intro: vi.fn(),
       outro: vi.fn(),
+      shouldLog: vi.fn(() => false),
       step: vi.fn(),
     },
   };

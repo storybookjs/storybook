@@ -132,7 +132,7 @@ function moduleEditor(filePath: string) {
   try {
     const source = readFileSync(filePath, 'utf8');
     if (!filePath.endsWith('.svelte')) return new SourceEditor(source, filePath);
-    const module = getIndexableAST(source, filePath).module?.content as
+    const module = getIndexableAST(source).module?.content as
       | { start: number; end: number }
       | undefined;
     return module && new SourceEditor(source.slice(module.start, module.end), `${filePath}.ts`);

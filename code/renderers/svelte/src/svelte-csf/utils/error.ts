@@ -3,6 +3,8 @@ import url from 'node:url';
 import rendererPkg from '@storybook/svelte/package.json' with { type: 'json' };
 import { SVELTE_CSF_FRAMEWORK_IMPORT_SOURCES } from '../constants.ts';
 
+import { unwrapExpression } from 'storybook/internal/csf-tools';
+
 import type { SvelteAST } from '../parser/ast.ts';
 
 const [SVELTE_VITE_IMPORT_SOURCE, SVELTEKIT_IMPORT_SOURCE] = SVELTE_CSF_FRAMEWORK_IMPORT_SOURCES;
@@ -163,18 +165,19 @@ export abstract class StorybookSvelteCSFError extends Error {
 
       // value is SvelteAST.ExpressionTag
       if (!Array.isArray(attribute.value)) {
-        return 'value' in attribute.value.expression ? attribute.value.expression.value : undefined;
+        const expression = unwrapExpression(attribute.value.expression);
+
+        return 'value' in expression ? expression.value : undefined;
       }
 
       if (attribute.value[0].type === 'Text') {
         return attribute.value[0].data;
       }
 
-      if (
-        attribute.value[0].expression.type === 'Literal' &&
-        typeof attribute.value[0].expression.value === 'string'
-      ) {
-        return attribute.value[0].expression.value;
+      const expression = unwrapExpression(attribute.value[0].expression);
+
+      if (expression.type === 'Literal' && typeof expression.value === 'string') {
+        return expression.value;
       }
     }
   }

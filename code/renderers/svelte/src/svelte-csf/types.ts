@@ -47,50 +47,33 @@ export type StoryProps<
   TCmp extends Cmp,
   TChildren extends Snippet = Snippet,
 > = Partial<StoryAnnotations<TArgs, TCmp>> & {
-  /**
-   * Name of the story. Can be omitted if `exportName` is provided.
-   */
+  /** Name of the story. Can be omitted if `exportName` is provided. */
   name?: string;
   /**
-   * exportName of the story.
-   * If not provided, it will be generated from the 'name', by converting it to a valid, PascalCased JS variable name.
-   * eg. 'My story!' -> 'MyStory'
+   * Export name of the story. Defaults to `name` in PascalCase, for example `'My story!'` becomes `MyStory`.
    *
-   * Use this prop to explicitly set the export name of the story. This is useful if you have multiple stories with the names
-   * that result in duplicate export names like "My story" and "My story!".
-   * It's also useful for explicitly defining the export that can be imported in MDX docs.
+   * Set it when two names give the same export name, such as "My story" and "My story!", or to import the story in MDX.
    */
   exportName?: string;
 } & (
     | {
         /**
-         * exportName of the story.
-         * If not provided, it will be generated from the 'name', by converting it to a valid, PascalCased JS variable name.
-         * eg. 'My story!' -> 'MyStory'
+         * Export name of the story. Defaults to `name` in PascalCase, for example `'My story!'` becomes `MyStory`.
          *
-         * Use this prop to explicitly set the export name of the story. This is useful if you have multiple stories with the names
-         * that result in duplicate export names like "My story" and "My story!".
-         * It's also useful for explicitly defining the export that can be imported in MDX docs.
+         * Set it when two names give the same export name, such as "My story" and "My story!", or to import the story in MDX.
          */
         exportName: string;
       }
     | {
-        /**
-         * Name of the story. Can be omitted if `exportName` is provided.
-         */
+        /** Name of the story. Can be omitted if `exportName` is provided. */
         name: string;
       }
   ) &
   (
     | {
-        /**
-         * Children to pass to the story's component
-         * Or if `asChild` is true, the content to render in the story as **static** markup.
-         */
+        /** Children to pass to the story's component, or with `asChild`, the static markup to render. */
         children?: TChildren;
-        /**
-         * Make the children the actual story content. This is useful when you want to create a **static story**.
-         */
+        /** Render the children as the story content, for a static story. */
         asChild?: boolean;
         template?: never;
       }
@@ -98,9 +81,9 @@ export type StoryProps<
         children?: never;
         asChild?: never;
         /**
-         * The content to render in the story with a snippet taking `args` and `storyContext` as parameters
+         * Snippet that renders the story, called with `args` and `storyContext`.
          *
-         * NOTE: Can be omitted if a default template is set with [`render`](https://storybook.js.org/docs/writing-stories?renderer=svelte#custom-rendering)
+         * Can be omitted when `defineMeta` sets a default template with `render`.
          */
         template?: Snippet<[TArgs, StoryContext<TArgs>]>;
       }

@@ -35,8 +35,8 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
 
   if (typeof reactDocgenOption === 'string') {
     deprecate(
-      `Builder docgen (\`typescript.reactDocgen: '${reactDocgenOption}'\`) is deprecated and will be removed in Storybook 12. ` +
-        `It runs because \`features.docgenServer\` is off. Server-side docgen needs the \`typescript\` package: install it and remove any \`docgenServer: false\` from your \`.storybook/main.ts\`.`
+      `Builder docgen (` + "`typescript.reactDocgen: '${reactDocgenOption}'`" + `) is deprecated and will be removed in Storybook 12. ` +
+        `It runs because ` + "`features.docgenServer`" + ` is off. Server-side docgen needs the ` + "`typescript`" + ` package: install it and remove any ` + "`docgenServer: false`" + ` from your ` + "`.storybook/main.ts`" + `.`
     );
   }
 

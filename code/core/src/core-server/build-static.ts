@@ -49,6 +49,8 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   options.outputDir = resolve(options.outputDir);
   options.configDir = resolve(options.configDir);
+  // Static builds are not mounted by a host server, so they have no base path.
+  options.basePath = '/';
 
   logger.step(`Cleaning outputDir: ${picocolors.cyan(relative(process.cwd(), options.outputDir))}`);
   if (options.outputDir === '/') {

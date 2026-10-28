@@ -734,6 +734,110 @@ describe('CSF factories', () => {
     `);
   });
 
+  it('declares each story after the story it extends, and keeps the file order', async ({
+    expect,
+  }) => {
+    const output = await transform(dedent`
+      <script module>
+        import preview from '#.storybook/preview';
+        import Button from './Button.svelte';
+
+        const { Story } = preview.meta({ component: Button });
+      </script>
+
+      <Story extend="Primary" name="Primary Small" args={{ size: 'small' }} />
+
+      <Story name="Primary" args={{ primary: true }}>Click me</Story>
+
+      <Story extend="Primary Small" name="Primary Small Starred" tags={['starred']}>
+        {#snippet template(args)}
+          <Button {...args}>★</Button>
+        {/snippet}
+      </Story>
+
+      <Story extend="Primary" name="Primary Static" asChild />
+    `);
+
+    expect([...output.matchAll(/rawCode: (".*")/g)].map(([, rawCode]) => JSON.parse(rawCode)))
+      .toMatchInlineSnapshot(`
+        [
+          "<Button {...args}>
+          Click me
+        </Button>",
+          "<Button {...args}>
+          Click me
+        </Button>",
+          "<Button {...args}>★</Button>",
+          "Click me",
+        ]
+      `);
+    expect(output.slice(output.indexOf('const $__stories'))).toMatchInlineSnapshot(`
+      "const $__stories = createRuntimeStories(Button_stories, $__meta.input);
+
+      export const __namedExportsOrder = [
+      	"PrimarySmall",
+      	"Primary",
+      	"PrimarySmallStarred",
+      	"PrimaryStatic"
+      ];
+
+      const $__Primary = $__meta.story({
+      	...$__stories["Primary"],
+      	tags: ["svelte-csf-v5"]
+      });
+
+      const $__PrimarySmall = $__Primary.extend({
+      	...$__stories["PrimarySmall"],
+      	tags: ["svelte-csf-v5"]
+      });
+
+      const $__PrimarySmallStarred = $__PrimarySmall.extend({
+      	...$__stories["PrimarySmallStarred"],
+      	tags: ['starred', "svelte-csf-v5"]
+      });
+
+      const $__PrimaryStatic = $__Primary.extend({
+      	...$__stories["PrimaryStatic"],
+      	tags: ["svelte-csf-v5"]
+      });
+
+      export {
+      	$__PrimarySmall as PrimarySmall,
+      	$__Primary as Primary,
+      	$__PrimarySmallStarred as PrimarySmallStarred,
+      	$__PrimaryStatic as PrimaryStatic
+      };"
+    `);
+  });
+
+  it('renders the content of the parent for a story whose children are only whitespace or a comment', async ({
+    expect,
+  }) => {
+    const output = await transform(dedent`
+      <script module>
+        import preview from '#.storybook/preview';
+        import Button from './Button.svelte';
+
+        const { Story } = preview.meta({ component: Button });
+      </script>
+
+      <Story name="Primary">Click me</Story>
+
+      <Story extend="Primary" name="Spaces">
+      </Story>
+
+      <Story extend="Primary" name="Comment"><!-- A note --></Story>
+    `);
+
+    expect(
+      [...output.matchAll(/rawCode: (".*")/g)].map(([, rawCode]) => JSON.parse(rawCode))
+    ).toEqual([
+      '<Button {...args}>\n  Click me\n</Button>',
+      '<Button {...args}>\n  Click me\n</Button>',
+      '<Button {...args}>\n  Click me\n</Button>',
+    ]);
+  });
+
   it('uses the meta variable of the file', async ({ expect }) => {
     const output = await transform(dedent`
       <script module>

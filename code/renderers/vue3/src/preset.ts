@@ -1,20 +1,13 @@
 import { fileURLToPath } from 'node:url';
 
+import { isTypeScriptReadyForDocgen } from 'storybook/internal/common';
 import type { ImportParser } from 'storybook/internal/core-server';
-import type { PresetProperty } from 'storybook/internal/types';
+import type { Options, PresetProperty } from 'storybook/internal/types';
 
 export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
-// Turns `features.docgenServer` on by default; read through `presets.apply('isDocgenProviderEnabled')`
-// so the default never has to call the provider, which itself reads `features`. Server docgen runs on
-// the optional `typescript` peer, so a project without it keeps builder docgen.
-export const isDocgenProviderEnabled = () => {
-  try {
-    import.meta.resolve('typescript');
-    return true;
-  } catch {
-    return false;
-  }
-};
+// Default for `features.docgenServer`; a project without a usable `typescript` keeps builder docgen.
+export const isDocgenProviderEnabled = (_existing: unknown, options: Options) =>
+  isTypeScriptReadyForDocgen((specifier) => import.meta.resolve(specifier), options);
 export { experimental_storyDocsProvider } from './docgen/story-docs-provider.ts';
 // Consumed by external framework packages like storybook-vue3-rsbuild.
 export { DOCGEN_WORKER_SPECIFIER } from './docgen/worker-specifier.ts';

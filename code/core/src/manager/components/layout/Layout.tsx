@@ -4,7 +4,7 @@ import React, { useEffect, useLayoutEffect, useState } from 'react';
 import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
 
 import { useStorybookApi, useStorybookState, type API } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { isPagesViewMode } from '../../../manager-api/modules/layout.ts';
 

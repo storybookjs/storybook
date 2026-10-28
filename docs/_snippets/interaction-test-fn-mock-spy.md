@@ -111,7 +111,8 @@ export const FilledForm = {
 
 ```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import LoginForm from './LoginForm.svelte';
 
@@ -137,39 +138,38 @@ export const FilledForm = {
 />
 ```
 
-```ts filename="LoginForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-import type { Meta, StoryObj } from '@storybook/your-framework';
-import { fn, expect } from 'storybook/test';
+```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-import LoginForm from './LoginForm.svelte';
+  import LoginForm from './LoginForm.svelte';
 
-const meta = {
-  component: LoginForm,
-  args: {
-    // 👇 Use `fn` to spy on the onSubmit arg
-    onSubmit: fn(),
-  },
-} satisfies Meta<typeof LoginForm>;
-export default meta;
+  const { Story } = preview.meta({
+    component: LoginForm,
+    args: {
+      // 👇 Use `fn` to spy on the onSubmit arg
+      onSubmit: fn(),
+    },
+  });
+</script>
 
-type Story = StoryObj<typeof meta>;
-
-export const FilledForm: Story = {
-  play: async ({ args, canvas, userEvent }) => {
+<Story
+  name="FilledForm"
+  play={async ({ args, canvas, userEvent }) => {
     await userEvent.type(canvas.getByLabelText('Email'), 'email@provider.com');
     await userEvent.type(canvas.getByLabelText('Password'), 'a-random-password');
     await userEvent.click(canvas.getByRole('button', { name: 'Log in' }));
 
     // 👇 Now we can assert that the onSubmit arg was called
     await expect(args.onSubmit).toHaveBeenCalled();
-  },
-};
+  }}
+/>
 ```
 
 ```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import LoginForm from './LoginForm.svelte';
 
@@ -195,29 +195,32 @@ export const FilledForm: Story = {
 />
 ```
 
-```js filename="LoginForm.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import { fn, expect } from 'storybook/test';
+```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-import LoginForm from './LoginForm.svelte';
+  import LoginForm from './LoginForm.svelte';
 
-export default {
-  component: LoginForm,
-  args: {
-    // 👇 Use `fn` to spy on the onSubmit arg
-    onSubmit: fn(),
-  },
-};
+  const { Story } = preview.meta({
+    component: LoginForm,
+    args: {
+      // 👇 Use `fn` to spy on the onSubmit arg
+      onSubmit: fn(),
+    },
+  });
+</script>
 
-export const FilledForm = {
-  play: async ({ args, canvas, userEvent }) => {
+<Story
+  name="FilledForm"
+  play={async ({ args, canvas, userEvent }) => {
     await userEvent.type(canvas.getByLabelText('Email'), 'email@provider.com');
     await userEvent.type(canvas.getByLabelText('Password'), 'a-random-password');
     await userEvent.click(canvas.getByRole('button', { name: 'Log in' }));
 
     // 👇 Now we can assert that the onSubmit arg was called
     await expect(args.onSubmit).toHaveBeenCalled();
-  },
-};
+  }}
+/>
 ```
 
 ```ts filename="LoginForm.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"

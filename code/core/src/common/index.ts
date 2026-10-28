@@ -4,6 +4,7 @@ import versions from './versions.ts';
 
 export { jsTsSourceExtensions } from '../shared/constants/extensions.ts';
 export * from './presets.ts';
+export * from './utils/base-path.ts';
 export * from './utils/cache.ts';
 export * from './utils/cli.ts';
 export * from './utils/check-addon-order.ts';
@@ -50,6 +51,7 @@ export * from './utils/get-story-id.ts';
 export * from './utils/component-id.ts';
 export * from './utils/select-component-entry.ts';
 export * from './utils/lazy-docgen-middleware.ts';
+export * from './utils/typescript-for-docgen.ts';
 export * from './utils/posix.ts';
 export * from './utils/sync-main-preview-addons.ts';
 export * from './utils/setup-addon-in-config.ts';

@@ -14,7 +14,7 @@ import { StatusFailIcon, StatusPassIcon, StatusWarnIcon, SyncIcon } from '@story
 
 import memoizerific from 'memoizerific';
 import { transparentize } from 'polished';
-import type { Theme } from 'storybook/theming';
+import type { Theme } from 'storybook/theming/emotion';
 
 import { UseSymbol } from '../components/sidebar/IconSymbols.tsx';
 

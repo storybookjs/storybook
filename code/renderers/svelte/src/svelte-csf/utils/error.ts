@@ -95,7 +95,9 @@ export abstract class StorybookSvelteCSFError extends Error {
     let page: string | undefined;
 
     if (this.documentation === true) {
-      page = `https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#${this.fullErrorCode}`;
+      // GitHub slugifies headings to lowercase anchors, so the fragment has to be lowercase
+      // to land on the ERRORS.md section.
+      page = `https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#${this.fullErrorCode.toLowerCase()}`;
     } else if (typeof this.documentation === 'string') {
       page = this.documentation;
     } else if (Array.isArray(this.documentation)) {
@@ -146,14 +148,14 @@ export abstract class StorybookSvelteCSFError extends Error {
       return '<UnnamedComponent>';
     }
 
-    const { attributes } = this.component;
+    const attributes = ['name', 'exportName'].flatMap((name) =>
+      this.component!.attributes.filter(
+        (attribute): attribute is SvelteAST.Attribute =>
+          attribute.type === 'Attribute' && attribute.name === name
+      )
+    );
 
     for (const attribute of attributes) {
-      if (attribute.type !== 'Attribute') {
-        // NOTE: Nothing to do with this case - invalid tbh
-        continue;
-      }
-
       if (attribute.value === true) {
         // NOTE: Nothing to do with this case - invalid tbh
         continue;

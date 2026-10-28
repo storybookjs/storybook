@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-native-web-vite",
-  "version": "11.0.0-alpha.7",
+  "version": "11.0.0-alpha.8",
   "description": "Storybook for React Native Web and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -67,13 +67,8 @@
     "react-native": ">=0.74.5",
     "react-native-web": "^0.19.12 || ^0.20.0 || ^0.21.0",
     "storybook": "workspace:^",
-    "typescript": ">= 5.9.x",
+    "typescript": "^5.9.0 || ^6.0.0 || ^7.0.0",
     "vite": "^6.3.0 || ^7.0.0 || ^8.0.0"
-  },
-  "peerDependenciesMeta": {
-    "typescript": {
-      "optional": true
-    }
   },
   "publishConfig": {
     "access": "public"

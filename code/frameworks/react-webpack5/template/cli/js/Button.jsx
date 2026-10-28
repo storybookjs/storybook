@@ -5,7 +5,7 @@ import './button.css';
 /**
  * Primary UI component for user interaction
  *
- * @param {{ primary?: boolean, backgroundColor?: string, size?: 'small' | 'medium' | 'large', label: string, onClick?: () => void }} props
+ * @param {{ primary?: boolean, backgroundColor?: string | null, size?: 'small' | 'medium' | 'large', label: string, onClick?: () => void }} props
  */
 export const Button = ({
   primary = false,

@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { ImplicitActionsDuringRendering } from 'storybook/internal/preview-errors';
 import { addons } from 'storybook/preview-api';
 
 import { action, configureActions } from '../..';
@@ -92,5 +93,49 @@ describe('Depth config', () => {
         },
       },
     });
+  });
+});
+
+describe('Implicit actions during rendering', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('throws ImplicitActionsDuringRendering while a render is playing', () => {
+    createChannel();
+    vi.stubGlobal('__STORYBOOK_PREVIEW__', { storyRenders: [{ phase: 'playing' }] });
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    let thrown;
+    try {
+      action('test-action', { implicit: true })('one');
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toBeInstanceOf(ImplicitActionsDuringRendering);
+    expect(thrown.data).toEqual({ phase: 'playing', name: 'test-action' });
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('throws ImplicitActionsDuringRendering while a render is rendering', () => {
+    createChannel();
+    vi.stubGlobal('__STORYBOOK_PREVIEW__', { storyRenders: [{ phase: 'rendering' }] });
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    expect(() => action('test-action', { implicit: true })('one')).toThrowError(
+      ImplicitActionsDuringRendering
+    );
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('emits on the channel when no render is in progress', () => {
+    const channel = createChannel();
+    vi.stubGlobal('__STORYBOOK_PREVIEW__', { storyRenders: [] });
+
+    action('test-action', { implicit: true })('one');
+
+    expect(getChannelData(channel)).toEqual('one');
   });
 });

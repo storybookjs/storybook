@@ -1,9 +1,11 @@
 import fs from 'node:fs/promises';
 
-import { findDefineMetaImport } from '../utils/import-source.ts';
+import { parse } from 'svelte/compiler';
+import { findMeta, findMetaImports, hasMetaImport } from '../utils/import-source.ts';
+import { unwrapExpression } from 'storybook/internal/csf-tools';
 import type { IndexInput } from 'storybook/internal/types';
 
-import { getSvelteAST, type ESTreeAST, type SvelteAST } from '../parser/ast.ts';
+import type { ESTreeAST, SvelteAST } from '../parser/ast.ts';
 import { extractStoryAttributesNodes } from '../parser/extract/svelte/story/attributes.ts';
 import { getStoryIdentifiers } from '../parser/analyse/story/attributes/identifiers.ts';
 import { getArrayOfStringsValueFromAttribute } from '../parser/analyse/story/attributes.ts';
@@ -15,6 +17,7 @@ import {
   DefaultOrNamespaceImportUsedError,
   GetDefineMetaFirstArgumentError,
   MissingDefineMetaImportError,
+  MissingDefineMetaVariableDeclarationError,
   MissingModuleTagError,
   NoStoryComponentDestructuredError,
 } from '../utils/error/parser/extract/svelte.ts';
@@ -25,26 +28,31 @@ import {
   StoryAsChildWithoutChildrenError,
 } from '../utils/error/parser/analyse/story.ts';
 import { extractStoryTemplateSnippetBlock } from '../parser/extract/svelte/story/template.ts';
+import { type ExtendableStory, getStoryParents } from '../parser/analyse/story/extend.ts';
+import { getStoryChain } from '../utils/story-chain.ts';
 
 interface Results {
-  meta: Pick<IndexInput, 'title' | 'tags'>;
+  meta: Pick<IndexInput, 'title' | 'tags' | 'metaId'>;
   stories: Array<Pick<IndexInput, 'exportName' | 'name' | 'tags'>>;
 }
+
+type IndexedStory = ExtendableStory & { tags: string[] };
 
 // Script blocks and comments are matched first, as they can contain "<style"
 const styleBlocks =
   /<script(?:\s(?:"[^"]*"|'[^']*'|[^>"'])*)?>[\s\S]*?<\/script\s*>|<!--[\s\S]*?-->|(<style(?:\s(?:"[^"]*"|'[^']*'|[^>"'])*)?>)([\s\S]*?)(<\/style\s*>)/g;
 
-// Preprocessors don't run here, so a style block in SCSS and similar fails to compile. Then the
+// Preprocessors don't run here, so a style block in SCSS and similar fails to parse. Then the
 // style content is blanked. Newlines stay, so error positions stay correct.
-function getIndexableAST(code: string, filename: string) {
+// Svelte validates the file only when the story loads, because `parse` doesn't validate.
+export function getIndexableAST(code: string): SvelteAST.Root {
   try {
-    return getSvelteAST({ code, filename });
+    return parse(code, { modern: true });
   } catch {
     const blanked = code.replace(styleBlocks, (match, open?: string, content = '', close = '') =>
       open === undefined ? match : open + content.replace(/[^\r\n]/g, ' ') + close
     );
-    return getSvelteAST({ code: blanked, filename });
+    return parse(blanked, { modern: true });
   }
 }
 
@@ -54,13 +62,17 @@ export async function parseForIndexer(filename: string): Promise<Results> {
     import('zimmerframe'),
   ]);
 
-  const svelteAST = getIndexableAST(code, filename);
-  const results: Results & {
-    defineMetaImport?: ESTreeAST.ImportSpecifier;
-    defineMetaStory?: ESTreeAST.Identifier;
+  const svelteAST = getIndexableAST(code);
+  const results: Omit<Results, 'stories'> & {
+    hasMetaImport?: boolean;
+    isFactory: boolean;
+    storyNames: string[];
+    stories: IndexedStory[];
   } = {
     meta: {},
     stories: [],
+    isFactory: false,
+    storyNames: [],
   };
 
   let hasDefaultOrNamespaceImport = false;
@@ -93,64 +105,52 @@ export async function parseForIndexer(filename: string): Promise<Results> {
     Program(node, context) {
       const { body } = node;
       const { state, visit } = context;
-      const imports = findDefineMetaImport(body);
+      const imports = findMetaImports(body);
+      const meta = findMeta(body, imports, filename);
 
-      state.defineMetaImport = imports.defineMetaImport;
+      state.hasMetaImport = hasMetaImport(imports);
       hasDefaultOrNamespaceImport = imports.hasDefaultOrNamespaceImport;
 
-      for (const statement of body) {
-        if (statement.type === 'VariableDeclaration') {
-          visit(statement, state);
+      if (!meta) {
+        if (state.hasMetaImport) {
+          throw new MissingDefineMetaVariableDeclarationError(filename);
         }
+        return;
       }
+
+      const [declarator] = meta.declaration.declarations;
+
+      if (!meta.isFactory && declarator.id.type !== 'ObjectPattern') {
+        throw new NoDestructuredDefineMetaCallError({
+          defineMetaVariableDeclarator: declarator,
+          filename,
+        });
+      }
+
+      if (meta.storyNames.length === 0) {
+        throw new NoStoryComponentDestructuredError({
+          filename,
+          metaFunctionName: meta.functionName,
+        });
+      }
+
+      state.storyNames = meta.storyNames;
+      state.isFactory = meta.isFactory;
+
+      const [firstArgument] = meta.call.arguments;
+      const metaObject = firstArgument && unwrapExpression(firstArgument);
+
+      if (metaObject?.type !== 'ObjectExpression') {
+        throw new GetDefineMetaFirstArgumentError({
+          filename,
+          defineMetaVariableDeclaration: meta.declaration,
+        });
+      }
+
+      visit(metaObject, state);
     },
 
-    VariableDeclaration(node, context) {
-      const { declarations } = node;
-      const { state, visit } = context;
-      const { id, init } = declarations[0];
-
-      if (init?.type === 'CallExpression') {
-        const { arguments: arguments_, callee } = init;
-
-        if (callee.type === 'Identifier' && callee.name === state.defineMetaImport?.local.name) {
-          if (id?.type !== 'ObjectPattern') {
-            throw new NoDestructuredDefineMetaCallError({
-              defineMetaVariableDeclarator: declarations[0],
-              filename,
-            });
-          }
-
-          const { properties } = id;
-          const destructuredStoryIdentifier = properties.find(
-            (property) =>
-              property.type === 'Property' &&
-              property.key.type === 'Identifier' &&
-              property.key.name === 'Story'
-          ) as ESTreeAST.Property | undefined;
-
-          if (!destructuredStoryIdentifier) {
-            throw new NoStoryComponentDestructuredError({
-              filename,
-              defineMetaImport: state.defineMetaImport,
-            });
-          }
-
-          state.defineMetaStory = destructuredStoryIdentifier.value as ESTreeAST.Identifier;
-
-          if (arguments_[0].type !== 'ObjectExpression') {
-            throw new GetDefineMetaFirstArgumentError({
-              filename,
-              defineMetaVariableDeclaration: node,
-            });
-          }
-
-          visit(arguments_[0], state);
-        }
-      }
-    },
-
-    // NOTE: We assume this one is value of first argument passed to `defineMeta({ ... })` call
+    // NOTE: We assume this one is value of first argument passed to `defineMeta({ ... })` or `preview.meta({ ... })` call
     ObjectExpression(node, context) {
       const { properties } = node;
       const { state, visit } = context;
@@ -167,6 +167,10 @@ export async function parseForIndexer(filename: string): Promise<Results> {
       const { key } = node as ESTreeAST.Property;
       const { state } = context;
       const { name } = key as ESTreeAST.Identifier;
+
+      if (name === 'id') {
+        state.meta.metaId = getPropertyStringValue({ node, filename });
+      }
 
       if (name === 'title') {
         state.meta.title = getPropertyStringValue({ node, filename });
@@ -192,6 +196,8 @@ export async function parseForIndexer(filename: string): Promise<Results> {
       for (const node of nodes) {
         if (node.type === 'Component') {
           visit(node, state);
+        } else if (node.type === 'RegularElement') {
+          visit(node.fragment, state);
         }
       }
     },
@@ -200,10 +206,19 @@ export async function parseForIndexer(filename: string): Promise<Results> {
       const { name } = node;
       const { state } = context;
 
-      if (state.defineMetaStory?.name === name) {
+      if (state.storyNames.includes(name)) {
         const storyAttributes = extractStoryAttributesNodes({
           component: node,
-          attributes: ['exportName', 'name', 'tags', 'template', 'asChild', 'children', 'play'],
+          attributes: [
+            'exportName',
+            'name',
+            'tags',
+            'template',
+            'asChild',
+            'children',
+            'play',
+            'extend',
+          ],
         });
         const templateSnippet = extractStoryTemplateSnippetBlock(node);
 
@@ -221,7 +236,8 @@ export async function parseForIndexer(filename: string): Promise<Results> {
           throw new StoryTemplateAndAsChildError({ component: node, filename });
         }
 
-        if (hasAsChild && !hasChildren) {
+        // A story that extends another story can inherit the children
+        if (hasAsChild && !hasChildren && !storyAttributes.extend) {
           throw new StoryAsChildWithoutChildrenError({ component: node, filename });
         }
 
@@ -241,6 +257,7 @@ export async function parseForIndexer(filename: string): Promise<Results> {
         }
 
         state.stories.push({
+          component: node,
           exportName,
           name: storyName,
           tags,
@@ -249,7 +266,7 @@ export async function parseForIndexer(filename: string): Promise<Results> {
     },
   });
 
-  if (!results.defineMetaImport) {
+  if (!results.hasMetaImport) {
     if (hasDefaultOrNamespaceImport) {
       throw new DefaultOrNamespaceImportUsedError(filename);
     }
@@ -257,10 +274,19 @@ export async function parseForIndexer(filename: string): Promise<Results> {
     throw new MissingDefineMetaImportError(filename);
   }
 
-  const { meta, stories } = results;
+  const { meta, stories, isFactory } = results;
+  const parents = getStoryParents({ stories, isFactory, filename });
+  const byExportName = new Map(stories.map((story) => [story.exportName, story]));
 
   return {
     meta,
-    stories,
+    // A story has the tags of the stories it extends, before its own
+    stories: stories.map(({ exportName, name }) => ({
+      exportName,
+      name,
+      tags: getStoryChain(parents, exportName)
+        .reverse()
+        .flatMap((storyExportName) => byExportName.get(storyExportName)!.tags),
+    })),
   };
 }

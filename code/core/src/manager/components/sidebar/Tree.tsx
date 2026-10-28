@@ -34,7 +34,7 @@ import {
 } from 'storybook/internal/types';
 
 import { shortcutToHumanString, useStorybookApi, type IndexHash } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { getGroupDualStatus, shouldShowChangeStatus } from '../../utils/status.tsx';
 import { useLayout } from '../layout/LayoutProvider.tsx';

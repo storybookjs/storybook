@@ -8,19 +8,34 @@
 
   type Props = {
     Stories: Component;
-    exportName: string;
+    contentExportName: string;
+    playExportName: string | undefined;
+    asChildExportName: string | undefined;
+    asChild: boolean;
     args: Record<string, any>;
     storyContext: StoryContext<Record<string, any>>;
     metaRenderSnippet?: Snippet;
   };
 
-  let { Stories, exportName, args, storyContext, metaRenderSnippet }: Props = $props();
+  let {
+    Stories,
+    contentExportName,
+    playExportName,
+    asChildExportName,
+    asChild,
+    args,
+    storyContext,
+    metaRenderSnippet,
+  }: Props = $props();
 
   const context = useStoryRenderer<Cmp>();
 
   $effect(() => {
     context.set({
-      currentStoryExportName: exportName,
+      contentExportName,
+      playExportName,
+      asChildExportName,
+      asChild,
       args,
       storyContext,
       metaRenderSnippet,

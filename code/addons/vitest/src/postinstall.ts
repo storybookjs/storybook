@@ -2,7 +2,6 @@ import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
 import os from 'node:os';
 
-import { babelParse, generate, traverse } from 'storybook/internal/babel';
 import { AddonVitestService } from 'storybook/internal/cli';
 import {
   JsPackageManagerFactory,
@@ -11,6 +10,13 @@ import {
   getStorybookInfo,
   versions,
 } from 'storybook/internal/common';
+import {
+  type ESTree as E,
+  SourceEditor,
+  parseModule,
+  restoreLineEndings,
+  walk,
+} from 'storybook/internal/csf-tools';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 import type { StorybookError } from 'storybook/internal/server-errors';
 import {
@@ -26,7 +32,7 @@ import { dedent } from 'ts-dedent';
 
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add.ts';
 import {
-  injectAngularVitestIntoAst,
+  injectAngularVitestIntoEditor,
   injectAngularVitestIntoConfig,
   isAngularVitestAlreadyWired,
 } from './angular-vitest-postinstall.ts';
@@ -39,7 +45,7 @@ const STORYBOOK_TEST_PLUGIN_SOURCE = `${ADDON_NAME}/vitest-plugin`;
 
 /**
  * The Vitest config templates resolve the Storybook config dir against the
- * generated config file's own directory (`path.join(dirname, CONFIG_DIR)`).
+ * generated config file's own directory (`path.join(import.meta.dirname, CONFIG_DIR)`).
  * So CONFIG_DIR must be the path FROM that file's directory TO the config dir,
  * not the cwd-relative `--config-dir` value. Otherwise, in a monorepo where the
  * config file is created inside the project (e.g. `apps/x/vitest.config.ts`) but
@@ -196,7 +202,7 @@ export default async function postInstall(options: PostinstallOptions) {
       return;
     }
 
-    const injected = injectAngularVitestIntoConfig(content);
+    const injected = injectAngularVitestIntoConfig(content, filePath);
     if (injected === null) {
       logger.error(dedent`
         We configured @storybook/addon-vitest, but could not automatically add the
@@ -231,9 +237,8 @@ export default async function postInstall(options: PostinstallOptions) {
         CONFIG_DIR: getTemplateConfigDir(rootConfig, options.configDir),
       });
 
-      const source = babelParse(configTemplate);
-      target = babelParse(configFile);
-      updated = updateConfigFile(source, target);
+      target = new SourceEditor(configFile, rootConfig);
+      updated = updateConfigFile(configTemplate, target);
     }
 
     if (alreadyConfigured) {
@@ -248,11 +253,11 @@ export default async function postInstall(options: PostinstallOptions) {
       logger.log(`  ${rootConfig}`);
 
       // Inject the Angular bridge into the already-merged target so it co-locates with the freshly
-      // added storybookTest call, before the single generate/format/write below. Arrow-function
+      // added storybookTest call, before the single format/write below. Arrow-function
       // configs are rejected by updateConfigFile (updated is falsy), so they never reach here and
       // defer to the manual-setup error in the else branch.
       if (isAngularVite && !isAngularVitestAlreadyWired(configFile)) {
-        if (injectAngularVitestIntoAst(target)) {
+        if (injectAngularVitestIntoEditor(target)) {
           logger.step('Added the @storybook/angular-vite standalone-vitest bridge.');
         } else {
           logger.error(dedent`
@@ -268,14 +273,17 @@ export default async function postInstall(options: PostinstallOptions) {
         }
       }
 
-      const formattedContent = await formatFileContent(rootConfig, generate(target).code);
+      const formattedContent = await formatFileContent(rootConfig, target.toString());
       // Only add triple slash reference to vite.config files, not vitest.config files
       // vitest.config files already have the vitest/config types available
       const shouldAddReference = !configFileHasTypeReference && !vitestConfigFile;
       await writeFile(
         rootConfig,
         shouldAddReference
-          ? '/// <reference types="vitest/config" />\n' + formattedContent
+          ? restoreLineEndings(
+              '/// <reference types="vitest/config" />\n' + formattedContent,
+              formattedContent
+            )
           : formattedContent
       );
     } else {
@@ -304,7 +312,7 @@ export default async function postInstall(options: PostinstallOptions) {
     // array. The template always has a locatable array, so the injector never returns null here.
     let configContent = configTemplate;
     if (isAngularVite) {
-      const injected = injectAngularVitestIntoConfig(configTemplate);
+      const injected = injectAngularVitestIntoConfig(configTemplate, newConfigFile);
       if (injected !== null) {
         configContent = injected;
         logger.step('Added the @storybook/angular-vite standalone-vitest bridge.');
@@ -345,47 +353,33 @@ function isStorybookTestPluginSource(value: string) {
   return value === STORYBOOK_TEST_PLUGIN_SOURCE;
 }
 
-export function isConfigAlreadySetup(_configPath: string, configContent: string) {
-  let ast: ReturnType<typeof babelParse>;
+export function isConfigAlreadySetup(configPath: string, configContent: string) {
+  let program: E.Program;
   try {
-    ast = babelParse(configContent);
-  } catch (e) {
+    ({ program } = parseModule(configContent, configPath));
+  } catch {
     return false;
   }
 
-  const pluginIdentifiers = new Set<string>();
-
-  traverse(ast, {
-    ImportDeclaration(path) {
-      const source = path.node.source.value;
-      if (typeof source === 'string' && isStorybookTestPluginSource(source)) {
-        path.node.specifiers.forEach((specifier) => {
-          if ('local' in specifier && specifier.local?.name) {
-            pluginIdentifiers.add(specifier.local.name);
-          }
-        });
-      }
-    },
-  });
+  const pluginIdentifiers = new Set<string>(['storybookTest']);
+  for (const node of program.body) {
+    if (node.type === 'ImportDeclaration' && isStorybookTestPluginSource(node.source.value)) {
+      node.specifiers.forEach((specifier) => pluginIdentifiers.add(specifier.local.name));
+    }
+  }
 
   let pluginReferenced = false;
-
-  traverse(ast, {
-    CallExpression(path) {
-      if (pluginReferenced) {
-        path.stop();
-        return;
-      }
-      const callee = path.node.callee;
-      if (
-        callee.type === 'Identifier' &&
-        (pluginIdentifiers.has(callee.name) || callee.name === 'storybookTest')
-      ) {
-        pluginReferenced = true;
-        path.stop();
-      }
-    },
+  walk(program, (node) => {
+    if (pluginReferenced) {
+      return false;
+    }
+    if (
+      node.type === 'CallExpression' &&
+      node.callee.type === 'Identifier' &&
+      pluginIdentifiers.has(node.callee.name)
+    ) {
+      pluginReferenced = true;
+    }
   });
-
   return pluginReferenced;
 }

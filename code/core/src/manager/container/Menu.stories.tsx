@@ -60,6 +60,7 @@ export const WithShortcuts = {
         {
           id: '1',
           title: 'Link 1',
+          center: 'This is an addition description',
           right: <Shortcut keys={['⌘']} />,
           href: 'http://google.com',
           onClick: onLinkClick,
@@ -67,6 +68,7 @@ export const WithShortcuts = {
         {
           id: '2',
           title: 'Link 2',
+          center: 'This is an addition description',
           right: <Shortcut keys={['⌘', 'K']} />,
           href: 'http://google.com',
           onClick: onLinkClick,
@@ -83,6 +85,7 @@ export const WithShortcutsActive = {
         {
           id: '1',
           title: 'Link 1',
+          center: 'This is an addition description',
           active: true,
           right: <Shortcut keys={['⌘']} />,
           href: 'http://google.com',
@@ -91,6 +94,7 @@ export const WithShortcutsActive = {
         {
           id: '2',
           title: 'Link 2',
+          center: 'This is an addition description',
           right: <Shortcut keys={['⌘', 'K']} />,
           href: 'http://google.com',
           onClick: onLinkClick,

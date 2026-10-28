@@ -105,13 +105,18 @@ export const SidebarMenuList: FC<{
           <ActionList key={links.map((link) => link.id).join('_')}>
             {links.map((link) => {
               if ('content' in link) {
-                return <React.Fragment key={link.id}>{link.content}</React.Fragment>;
+                return <li key={link.id}>{link.content}</li>;
               }
 
               const linkContent = (
                 <>
                   {hasIcons && <ActionList.Icon>{link.icon || link.input}</ActionList.Icon>}
-                  {link.title && <ActionList.Text>{link.title}</ActionList.Text>}
+                  {(link.title || link.center) && (
+                    <ActionList.Text>
+                      {link.title}
+                      {link.center && <small>{link.center}</small>}
+                    </ActionList.Text>
+                  )}
                   {link.right}
                 </>
               );

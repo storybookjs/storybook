@@ -22,6 +22,7 @@ import { useChecklist } from '../components/sidebar/useChecklist.ts';
 export interface MenuItem {
   id: string;
   title?: ReactNode;
+  center?: ReactNode;
   ariaLabel?: string;
   right?: ReactNode;
   icon?: ReactNode;

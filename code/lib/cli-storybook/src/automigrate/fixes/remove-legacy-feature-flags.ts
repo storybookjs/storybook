@@ -7,10 +7,6 @@ export const removeLegacyFeatureFlags: Fix = {
   prompt: () =>
     'Remove features.argTypeTargetsV7 and features.disallowImplicitActionsInRenderV8. Both flags are always on in Storybook 11.',
 
-  // Storybook 10 still reads the flags, so removing them there turns their behavior back off.
-  // Only trigger when the parsed main config still carries one of the removed keys. The
-  // parsed config carries the keys at runtime even though the 11.0 `StorybookFeatures`
-  // type no longer declares them — hence the `in` checks.
   check: async ({ storybookVersion, mainConfig }) => {
     if (!isAtOrPastVersion(storybookVersion, '11.0.0')) {
       return null;

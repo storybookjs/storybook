@@ -44,22 +44,21 @@ const PLUGIN_NAME = 'storybook-mock-plugin';
 
 const RELATIVE_REQUEST = /^\.\.?(?:[/\\]|$)/;
 
-/**
- * Paths that a relative or absolute request can join to and still resolve to `path`: the path and
- * each prefix that ends before a `/`, the platform separator or a `.`, because resolution adds
- * extensions, `index` files and package entry points.
- */
+// Resolution can add extensions, index files or package entry points to these prefixes.
 function getRequestPaths(path: string): string[] {
   const paths = [path];
   for (let index = 1; index < path.length; index++) {
-    if (path[index] === '.' || path[index] === '/' || path[index] === sep) {
+    if (
+      (path[index] === '.' && path[index - 1] !== '/' && path[index - 1] !== sep) ||
+      path[index] === '/' ||
+      path[index] === sep
+    ) {
       paths.push(path.slice(0, index));
     }
   }
   return paths;
 }
 
-/** The `name` of every package.json from `dir` up to the file system root. */
 function getPackageNames(dir: string): string[] {
   const names: string[] = [];
   for (let current = dir; ; current = dirname(current)) {
@@ -77,7 +76,6 @@ function getPackageNames(dir: string): string[] {
   }
 }
 
-/** The package a bare request points into: `@scope/name` or `name`. */
 function getPackageName(request: string): string {
   const [first, second] = request.split('/');
   return first.startsWith('@') && second ? `${first}/${second}` : first;
@@ -112,6 +110,7 @@ export class WebpackMockPlugin {
   public apply(compiler: Compiler): void {
     // This function will be called to update the mock map before each compilation.
     const updateMocks = () => {
+      this.realDirectories.clear();
       const mTimePreviewConfig = this.getPreviewConfigMtime(compiler);
       if (
         this.lastPreviewMtime !== undefined &&
@@ -129,12 +128,12 @@ export class WebpackMockPlugin {
       );
       this.candidateSpecifiers = new Set(resolved.map((m) => m.path));
       this.mockRequestPaths = new Set(
+        // Convert to platform separators to match resolve(context, request) in canResolveToMock.
         resolved.flatMap((mock) => getRequestPaths(resolve(mock.absolutePath)))
       );
       this.mockPackageNames = new Set(
         resolved.flatMap((mock) => getPackageNames(dirname(mock.absolutePath)))
       );
-      this.realDirectories.clear();
       this.lastPreviewMtime = mTimePreviewConfig;
 
       if (resolved.length > 0) {
@@ -148,30 +147,13 @@ export class WebpackMockPlugin {
     // Apply the replacement plugin. Its callback will now use the dynamically updated mockMap.
     new compiler.webpack.NormalModuleReplacementPlugin(/.*/, (resource) => {
       try {
-        if (this.mockMap.size === 0) {
-          return;
-        }
         // The plugin also calls back after resolution, when a new request has no effect.
-        if (resource.createData?.resource) {
+        if (resource.createData.resource) {
           return;
         }
-        if (!this.canResolveToMock(resource.request, resource.context)) {
-          return;
-        }
-        const path = resource.request;
-        const importer = resource.context;
-
-        const isExternal = getIsExternal(path, importer);
-        // Early filter only for external specifiers. Relative/local specifiers need resolution
-        if (isExternal && !this.candidateSpecifiers.has(path)) {
-          return;
-        }
-        const absolutePath = isExternal
-          ? resolveExternalModule(path, importer)
-          : resolveWithExtensions(path, importer);
-
-        if (this.mockMap.has(absolutePath)) {
-          resource.request = this.mockMap.get(absolutePath)!.replacementResource;
+        const mock = this.findMock(resource.request, resource.context);
+        if (mock) {
+          resource.request = mock.replacementResource;
         }
       } catch (e) {
         logger.debug(`Could not resolve mock for "${resource.request}".`);
@@ -192,12 +174,25 @@ export class WebpackMockPlugin {
     });
   }
 
-  /**
-   * A cheap check that runs before `require.resolve`, which throws several times for most
-   * requests. Returns false only for requests that cannot resolve to a mocked module: a relative
-   * or absolute request resolves at or below the path it joins to, and a bare request reaches a
-   * file through the package it names.
-   */
+  private findMock(request: string, context: string): ResolvedMock | undefined {
+    if (this.mockMap.size === 0 || !this.canResolveToMock(request, context)) {
+      return;
+    }
+    const isExternal = getIsExternal(request, context);
+    // Early filter only for external specifiers. Relative/local specifiers need resolution
+    if (isExternal && !this.candidateSpecifiers.has(request)) {
+      return;
+    }
+    const absolutePath = isExternal
+      ? resolveExternalModule(request, context)
+      : resolveWithExtensions(request, context);
+    return this.mockMap.get(absolutePath);
+  }
+
+  // Heuristic run before require.resolve. It skips these cases, which full resolution would mock:
+  // an imported file or directory that is itself a symlink; a directory whose package.json
+  // main points outside it; a bare request through a link or npm: alias whose name differs
+  // from the package's name; or a request resolved only through NODE_PATH.
   private canResolveToMock(request: string, context: string): boolean {
     if (RELATIVE_REQUEST.test(request) || isAbsolute(request)) {
       // `require.resolve` joins the request to the context and then follows symlinks, unless Node
@@ -214,7 +209,6 @@ export class WebpackMockPlugin {
     );
   }
 
-  /** The real path of a directory, cached because many requests share a directory. */
   private getRealDirectory(directory: string): string {
     let realDirectory = this.realDirectories.get(directory);
     if (realDirectory === undefined) {

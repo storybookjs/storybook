@@ -149,10 +149,7 @@ export async function parseForIndexer(filename: string): Promise<Results> {
       const metaObject = firstArgument && unwrapExpression(firstArgument);
 
       if (metaObject?.type !== 'ObjectExpression') {
-        throw new GetDefineMetaFirstArgumentError({
-          filename,
-          defineMetaVariableDeclaration: meta.declaration,
-        });
+        throw new GetDefineMetaFirstArgumentError(filename);
       }
 
       visit(metaObject, state);

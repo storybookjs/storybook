@@ -45,21 +45,13 @@ const cases: [string, () => Error][] = [
     () =>
       new svelte.NoStoryComponentDestructuredError({ filename, metaFunctionName: 'preview.meta' }),
   ],
-  [
-    'GetDefineMetaFirstArgumentError',
-    () =>
-      new svelte.GetDefineMetaFirstArgumentError({
-        filename,
-        defineMetaVariableDeclaration: undefined as never,
-      }),
-  ],
+  ['GetDefineMetaFirstArgumentError', () => new svelte.GetDefineMetaFirstArgumentError(filename)],
   [
     'InvalidStoryTemplateAttributeError',
     () =>
       new svelte.InvalidStoryTemplateAttributeError({
         filename,
         component,
-        templateAttribute: attribute(component, 'template'),
       }),
   ],
   [
@@ -83,7 +75,7 @@ const cases: [string, () => Error][] = [
   ],
   [
     'NoCompiledStoryPropsObjectExpression',
-    () => new compiled.NoCompiledStoryPropsObjectExpression({ filename, node: undefined as never }),
+    () => new compiled.NoCompiledStoryPropsObjectExpression(filename),
   ],
 
   [
@@ -164,10 +156,10 @@ const cases: [string, () => Error][] = [
         element: { type: 'Identifier', name: 'tag' },
       }),
   ],
-  ['NoStoryIdentifierError', () => new story.NoStoryIdentifierError({ filename, component })],
+  ['NoStoryIdentifierError', () => new story.NoStoryIdentifierError(filename)],
   [
     'InvalidStoryExportNameError',
-    () => new story.InvalidStoryExportNameError({ filename, component, value: 'default' }),
+    () => new story.InvalidStoryExportNameError({ filename, value: 'default' }),
   ],
   [
     'DuplicateStoryIdentifiersError',
@@ -217,7 +209,6 @@ const cases: [string, () => Error][] = [
     () =>
       new story.StoryExtendCycleError({
         filename,
-        component,
         names: ['Primary', 'Secondary', 'Primary'],
       }),
   ],

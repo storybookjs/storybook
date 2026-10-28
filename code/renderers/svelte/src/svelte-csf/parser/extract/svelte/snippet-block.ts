@@ -37,8 +37,7 @@ export function findStoryAttributeTemplateSnippetBlock(options: {
 
   if (template.value === true || Array.isArray(template.value)) {
     throw new InvalidStoryTemplateAttributeError({
-      component: component,
-      templateAttribute: template,
+      component,
       filename,
     });
   }

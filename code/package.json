@@ -33,7 +33,7 @@
     "publish-sandboxes": "yarn --cwd ../scripts publish",
     "storybook:ui": "NODE_OPTIONS=\"--max_old_space_size=4096 --trace-deprecation\" core/dist/bin/dispatcher.js dev --port 6006 --config-dir ./.storybook",
     "storybook:ui:build": "NODE_OPTIONS=\"--max_old_space_size=5120\" core/dist/bin/dispatcher.js build --config-dir ./.storybook --webpack-stats-json",
-    "storybook:ui:chromatic": "chromatic --storybook-build-dir storybook-static --exit-zero-on-changes --exit-once-uploaded",
+    "storybook:ui:chromatic": "chromatic --storybook-build-dir storybook-static",
     "task": "yarn --cwd ../scripts task"
   },
   "browserslist": [

@@ -106,6 +106,148 @@ describe('parseForIndexer', () => {
     await expect(parseForIndexer(file)).rejects.toMatchObject({ start: { line: 10 } });
   });
 
+  describe('TypeScript expressions', () => {
+    const writeTypedStoriesFile = (wrapStaticValue: (value: string) => string) =>
+      writeStoriesFile(`<script module lang="ts">
+  import { defineMeta } from '@storybook/svelte';
+  const { Story } = defineMeta({
+    title: ${wrapStaticValue("'Example'")},
+    tags: ${wrapStaticValue(`[${wrapStaticValue("'meta-tag'")}]`)},
+  });
+</script>
+
+<Story name={${wrapStaticValue("'Primary'")}} tags={${wrapStaticValue(`[${wrapStaticValue("'story-tag'")}]`)}} />
+
+<Story exportName={${wrapStaticValue("'Secondary'")}} />
+`);
+
+    it('indexes the values without TypeScript', async ({ expect }) => {
+      const file = await writeTypedStoriesFile((value) => value);
+
+      expect(await parseForIndexer(file)).toMatchInlineSnapshot(`
+        {
+          "meta": {
+            "tags": [
+              "meta-tag",
+            ],
+            "title": "Example",
+          },
+          "stories": [
+            {
+              "exportName": "Primary",
+              "name": "Primary",
+              "tags": [
+                "story-tag",
+              ],
+            },
+            {
+              "exportName": "Secondary",
+              "name": undefined,
+              "tags": [],
+            },
+          ],
+        }
+      `);
+    });
+
+    it.for([
+      ['as const', (value: string) => `${value} as const`],
+      ['satisfies', (value: string) => `${value} satisfies unknown`],
+      ['a non-null assertion', (value: string) => `${value}!`],
+      ['a type assertion', (value: string) => `<any>${value}`],
+      ['nested TypeScript expressions', (value: string) => `(<any>${value}!) satisfies unknown`],
+    ] as const)(
+      'indexes values with %s like values without TypeScript',
+      async ([, wrap], { expect }) => {
+        const file = await writeTypedStoriesFile(wrap);
+        const fileWithoutTypeScript = await writeTypedStoriesFile((value) => value);
+
+        expect(await parseForIndexer(file)).toEqual(await parseForIndexer(fileWithoutTypeScript));
+      }
+    );
+
+    it.for([
+      ['an expression', `name={'Primary' as const}`],
+      ['a quoted expression', `name="{'Primary' as const}"`],
+    ])(
+      'names the story in errors when its name has TypeScript in %s',
+      async ([, nameAttribute], { expect }) => {
+        const file = await writeStoriesFile(`<script module lang="ts">
+  import { defineMeta } from '@storybook/svelte';
+  const { Story } = defineMeta({ title: 'Example' });
+</script>
+
+<Story ${nameAttribute} asChild />
+`);
+
+        await expect(parseForIndexer(file)).rejects.toThrow(`'<Story name="Primary" />'`);
+      }
+    );
+
+    it.for([
+      [
+        'the defineMeta() call',
+        `import { defineMeta } from '@storybook/svelte';
+  const { Story } = defineMeta({ title: 'Example' }) as any;`,
+      ],
+      [
+        'the defineMeta() argument',
+        `import { defineMeta } from '@storybook/svelte';
+  const { Story } = defineMeta({ title: 'Example' } satisfies object);`,
+      ],
+      [
+        'a meta reference',
+        `import preview from '#.storybook/preview';
+  const meta = preview.meta({ title: 'Example' });
+  const { Story } = meta as typeof meta;`,
+      ],
+      [
+        'the preview',
+        `import preview from '#.storybook/preview';
+  const { Story } = (preview as any).meta({ title: 'Example' });`,
+      ],
+      [
+        'a preview.meta() call before .type<>()',
+        `import preview from '#.storybook/preview';
+  const { Story } = (preview.meta({ title: 'Example' }) as any).type<{ args: object }>();`,
+      ],
+    ])('indexes a meta with TypeScript around %s', async ([, moduleScript], { expect }) => {
+      const file = await writeStoriesFile(`<script module lang="ts">
+  ${moduleScript}
+</script>
+
+<Story name="Primary" />
+`);
+
+      expect(await parseForIndexer(file)).toEqual({
+        meta: { title: 'Example' },
+        stories: [{ exportName: 'Primary', name: 'Primary', tags: [] }],
+      });
+    });
+  });
+
+  it('indexes a file that Svelte would reject when it compiles the file', async ({ expect }) => {
+    // The error shows when the story loads, because the Svelte Vite plugin compiles the file
+    const file = await writeStoriesFile(`<script module lang="ts">
+  import { defineMeta } from '@storybook/svelte';
+  const { Story } = defineMeta({ title: 'Example' });
+</script>
+
+<script lang="ts">
+  enum Size {
+    Small,
+    Large,
+  }
+</script>
+
+<Story name="Default" />
+`);
+
+    const { stories } = await parseForIndexer(file);
+
+    expect(stories.map((story) => story.exportName)).toEqual(['Default']);
+  });
+
   describe('imports', () => {
     const writeModuleScript = (moduleScript: string) =>
       writeStoriesFile(`<script module lang="ts">

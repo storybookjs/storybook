@@ -1,6 +1,11 @@
-import { type ESTree, SourceEditor, generateUid } from 'storybook/internal/csf-tools';
+import {
+  type ESTree,
+  SourceEditor,
+  generateUid,
+  unwrapExpression,
+} from 'storybook/internal/csf-tools';
 
-import { getSvelteAST } from '../../svelte-csf/parser/ast.ts';
+import { parseSvelteSource } from '../../svelte-csf/indexer/parser.ts';
 import { getStoryContentRawCode } from '../../svelte-csf/parser/analyse/story/content.ts';
 import {
   getExtendableStories,
@@ -41,8 +46,8 @@ export interface StoryFile {
 
 // Read a `.stories.svelte` file as plain CSF: the module script with the meta as default export,
 // and one story export with the `args` of each `<Story>`.
-export async function readSvelteCsfFile(source: string, filename: string): Promise<StoryFile> {
-  const ast = getSvelteAST({ code: source, filename });
+export async function readSvelteCsfFile(file: string, filename: string): Promise<StoryFile> {
+  const { source, ast } = parseSvelteSource(file);
   const typescript = isTypeScript(ast.module) || isTypeScript(ast.instance);
   const nodes = await extractSvelteASTNodes({ ast, filename });
   const module = span(ast.module!.content);
@@ -71,12 +76,11 @@ export async function readSvelteCsfFile(source: string, filename: string): Promi
     storyNodes.map(({ component, exportName }) => {
       const value = extractStoryAttributesNodes({ component, attributes: ['args'] }).args?.value;
       const chunk = Array.isArray(value) ? value[0] : value;
-      return [
-        exportName,
+      const args =
         chunk && chunk !== true && chunk.type === 'ExpressionTag'
-          ? source.slice(span(chunk.expression).start, span(chunk.expression).end)
-          : '{}',
-      ];
+          ? span(unwrapExpression(chunk.expression))
+          : undefined;
+      return [exportName, args ? source.slice(args.start, args.end) : '{}'];
     })
   );
   for (const story of storyNodes) {
@@ -178,7 +182,7 @@ function unexported(program: ESTree.Program): Edit[] {
   });
 }
 
-function isTypeScript(script: ReturnType<typeof getSvelteAST>['module']): boolean {
+function isTypeScript(script: SvelteAST.Root['module']): boolean {
   return (
     script?.attributes.some(
       (attribute) =>

@@ -2,13 +2,15 @@ import { mkdir, writeFile } from 'node:fs/promises';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { vol } from 'memfs';
+
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
 import { clearRegistry, getService, writeOpenServiceStaticFiles } from '../../server.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
 import { registerStoryDocsService, subscribeStoryDocsToModuleGraphChanges } from './server.ts';
 import type { StoryDocsPayload, StoryDocsProvider } from './types.ts';
 
-// Spy-only mock so the static-build test writes nothing to disk.
+// Spy-only mock: the static-build tests redirect the writes to `memfs`.
 vi.mock('node:fs/promises', { spy: true });
 
 afterEach(() => {
@@ -46,37 +48,6 @@ function makeGetIndex(entries: IndexEntry[]) {
 }
 
 describe('story-docs open service', () => {
-  it('reports story snippet ratios of a static build against the story index', async () => {
-    vi.mocked(mkdir).mockResolvedValue(undefined);
-    vi.mocked(writeFile).mockResolvedValue();
-    registerStoryDocsService({
-      getIndex: makeGetIndex([
-        makeStoryEntry('button--partial', 'Button'),
-        makeStoryEntry('card--default', 'Card'),
-      ]),
-      // Card stands for a component whose provider failed and fell back to no story docs.
-      storyDocsProvider: async ({ entry }) =>
-        entry.title === 'Button'
-          ? makeStoryDocsPayload({
-              stories: {
-                'button--partial': {
-                  id: 'button--partial',
-                  name: 'Partial',
-                  snippet: '<Button />',
-                  warning: 'args.onClick',
-                },
-              },
-            })
-          : undefined,
-    });
-
-    const staticFiles = await writeOpenServiceStaticFiles('/app/dist');
-
-    await expect(staticFiles.summarizeTelemetry()).resolves.toEqual({
-      'core/story-docs': { errorRatio: 0.5, noSnippetRatio: 0, warningRatio: 0.5 },
-    });
-  });
-
   it('stores and returns story-docs payloads from the provider', async () => {
     const entry = makeStoryEntry('button--primary', 'Button');
     const payload = makeStoryDocsPayload({
@@ -277,6 +248,49 @@ describe('story-docs open service', () => {
 
       // Nothing was extracted, so the story-file update has no component to refresh.
       await expect(vi.waitFor(() => expect(provider).toHaveBeenCalled())).rejects.toThrow();
+    });
+  });
+
+  describe('static build', () => {
+    beforeEach(async () => {
+      const memfs = await vi.importActual<typeof import('memfs')>('memfs');
+
+      vol.reset();
+      vi.mocked(mkdir).mockImplementation(
+        memfs.fs.promises.mkdir as unknown as typeof import('node:fs/promises').mkdir
+      );
+      vi.mocked(writeFile).mockImplementation(
+        memfs.fs.promises.writeFile as unknown as typeof import('node:fs/promises').writeFile
+      );
+    });
+
+    it('reports story snippet ratios of a static build against the story index', async () => {
+      registerStoryDocsService({
+        getIndex: makeGetIndex([
+          makeStoryEntry('button--partial', 'Button'),
+          makeStoryEntry('card--default', 'Card'),
+        ]),
+        // Card stands for a component whose provider failed and fell back to no story docs.
+        storyDocsProvider: async ({ entry }) =>
+          entry.title === 'Button'
+            ? makeStoryDocsPayload({
+                stories: {
+                  'button--partial': {
+                    id: 'button--partial',
+                    name: 'Partial',
+                    snippet: '<Button />',
+                    warning: 'args.onClick',
+                  },
+                },
+              })
+            : undefined,
+      });
+
+      const staticFiles = await writeOpenServiceStaticFiles('/app/dist');
+
+      await expect(staticFiles.summarizeTelemetry()).resolves.toEqual({
+        'core/story-docs': { errorRatio: 0.5, noSnippetRatio: 0, warningRatio: 0.5 },
+      });
     });
   });
 });

@@ -52,7 +52,12 @@ export const parseKind = (kind: string, { rootSeparator, groupSeparator }: Separ
   };
 };
 
-/** Combine a set of project / meta / story tags, removing duplicates and handling negations. */
+/**
+ * Combine a set of project / meta / story tags, removing duplicates and cancelling contradictions.
+ * A negation (`!foo`) is kept in the result so that a partial combination, such as a story
+ * extending another, still carries it to the next level. For the final tags of a prepared story or
+ * an index entry, use `combineFinalTags`, which drops the negations.
+ */
 export const combineTags = (...tags: string[]): string[] => {
   const result = tags.reduce((acc, tag) => {
     // A later tag wins over an earlier contradiction: `foo` cancels a previous

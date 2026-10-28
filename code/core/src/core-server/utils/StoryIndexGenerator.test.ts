@@ -1121,6 +1121,33 @@ describe('StoryIndexGenerator', () => {
         );
       });
 
+      it('does not leave negated tags in the story and docs entries', async () => {
+        const docsSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/docs2/*.mdx',
+          options
+        );
+
+        const generator = new StoryIndexGenerator(
+          [storiesSpecifier, docsSpecifier],
+          autodocsOptions
+        );
+        // What `tags: ['!test', 'autodocs']` in the preview parses into
+        generator.getProjectTags = () => [Tag.DEV, Tag.MANIFEST, '!test', Tag.AUTODOCS];
+        await generator.initialize();
+
+        const { entries } = await generator.getIndex();
+        const entriesByType = Object.values(entries).reduce(
+          (acc, entry) => ({ ...acc, [entry.type]: (acc[entry.type] ?? 0) + 1 }),
+          {} as Record<string, number>
+        );
+        // Stories, an autodocs entry and attached and unattached MDX docs are all covered
+        expect(entriesByType).toEqual({ story: 1, docs: 7 });
+
+        const allTags = Object.values(entries).flatMap((entry) => entry.tags ?? []);
+        expect(allTags).not.toContain(Tag.TEST);
+        expect(allTags.filter((tag) => tag.startsWith('!'))).toEqual([]);
+      });
+
       it('throws an error if you attach a named MetaOf entry which clashes with a tagged autodocs entry', async () => {
         const csfSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
           './src/B.stories.ts',

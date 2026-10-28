@@ -205,10 +205,33 @@ describe('extend', () => {
     expect(extended.input.tags).toEqual(['!autodocs', '!dev']);
   });
 
-  test('concatenates the base tags and the extension tags as written', () => {
+  test('lets extension tags cancel base tags and keeps the negation', () => {
     const base = meta.story({ tags: ['a', 'b'] });
     const extended = base.extend({ tags: ['!a', 'c'] });
     expect(extended.input.tags).toEqual(['b', '!a', 'c']);
+  });
+
+  test('a negated tag removes a tag the story got from its meta', () => {
+    // The path from #36469: the meta enables autodocs, an extended story opts out of it.
+    const autodocsMeta = preview.meta({ tags: ['autodocs'], render: () => 'hello' });
+    const base = autodocsMeta.story({});
+    expect(base.composed.tags).toContain('autodocs');
+
+    const extended = base.extend({ tags: ['!autodocs'] });
+    expect(extended.composed.tags).not.toContain('autodocs');
+
+    const extendedAgain = extended.extend({ name: 'Extended again' });
+    expect(extendedAgain.composed.tags).not.toContain('autodocs');
+    expect(extendedAgain.composed.tags.filter((tag) => tag.startsWith('!'))).toEqual([]);
+  });
+
+  test('a negated tag removes a tag the story got from the project', () => {
+    const autodocsPreview = definePreview({ tags: ['autodocs'], renderToCanvas: () => {} });
+    const base = autodocsPreview.meta({ render: () => 'hello' }).story({});
+    expect(base.composed.tags).toContain('autodocs');
+
+    const extended = base.extend({ tags: ['!autodocs'] });
+    expect(extended.composed.tags).not.toContain('autodocs');
   });
 });
 

@@ -489,7 +489,9 @@ describe('server static builds', () => {
       }));
       registerService(mutableRecordLookupServiceDef);
 
-      await expect(writeOpenServiceStaticFiles('/app/dist')).resolves.toEqual({
+      const staticFiles = await writeOpenServiceStaticFiles('/app/dist');
+
+      await expect(staticFiles.summarizeTelemetry()).resolves.toEqual({
         'internal-fixture/awaited-preload-value': { snapshotCount: 2 },
       });
     });
@@ -497,7 +499,19 @@ describe('server static builds', () => {
     it('returns undefined when no telemetry hook reports', async () => {
       registerServiceWithTelemetry(awaitedPreloadValueServiceDef, {}, async () => undefined);
 
-      await expect(writeOpenServiceStaticFiles('/app/dist')).resolves.toBeUndefined();
+      const staticFiles = await writeOpenServiceStaticFiles('/app/dist');
+
+      await expect(staticFiles.summarizeTelemetry()).resolves.toBeUndefined();
+    });
+
+    it('writes the files without running a telemetry hook that would throw', async () => {
+      registerServiceWithTelemetry(awaitedPreloadValueServiceDef, {}, async () => {
+        throw new Error('telemetry hook failed');
+      });
+
+      const staticFiles = await writeOpenServiceStaticFiles('/app/dist');
+
+      await expect(staticFiles.summarizeTelemetry()).rejects.toThrow('telemetry hook failed');
     });
   });
 });

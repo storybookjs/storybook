@@ -31,6 +31,15 @@ import type {
   StaticStore,
 } from './types.ts';
 
+/** What writing the open-service static files leaves behind for the `build` telemetry event. */
+export type OpenServiceStaticFiles = {
+  /**
+   * Summarizes every service registered with {@link registerServiceWithTelemetry}, keyed by service
+   * id, or `undefined` when none reports. Deferred so a failing hook cannot fail the build.
+   */
+  summarizeTelemetry: () => Promise<Record<string, ServiceTelemetry> | undefined>;
+};
+
 type RuntimeServiceDefinition = ServiceDefinition<unknown, Queries<unknown>, Commands<unknown>>;
 type RuntimeQueryDefinition = AnyQueryDefinition<unknown>;
 
@@ -87,16 +96,14 @@ export async function buildStaticFiles(): Promise<StaticStore> {
 }
 
 /**
- * Writes the registered services' static snapshots to `<outputDir>/services` and returns the
- * `build` telemetry summary of every service registered with {@link registerServiceWithTelemetry},
- * keyed by service id, or `undefined` when none reports.
+ * Writes the registered services' static snapshots to `<outputDir>/services`.
  *
  * The snapshot keys are normalized slash-separated logical paths; splitting them here lets `join`
  * produce the correct native separators for the current operating system.
  */
 export async function writeOpenServiceStaticFiles(
   outputDir: string
-): Promise<Record<string, ServiceTelemetry> | undefined> {
+): Promise<OpenServiceStaticFiles> {
   const snapshots = await buildStaticSnapshots();
 
   await Promise.all(
@@ -108,7 +115,7 @@ export async function writeOpenServiceStaticFiles(
     })
   );
 
-  return summarizeSnapshotsForTelemetry(snapshots);
+  return { summarizeTelemetry: () => summarizeSnapshotsForTelemetry(snapshots) };
 }
 
 async function buildStaticSnapshots(): Promise<BuildTaskResult[]> {

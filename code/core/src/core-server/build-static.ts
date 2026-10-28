@@ -157,14 +157,14 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   if (hasRegisteredServices) {
     logger.info('Building open services..');
   }
-  const servicesTelemetry = hasRegisteredServices
+  const openServiceStaticFiles = hasRegisteredServices
     ? writeOpenServiceStaticFiles(options.outputDir)
     : undefined;
 
-  if (servicesTelemetry || shouldWriteManifests) {
+  if (openServiceStaticFiles || shouldWriteManifests) {
     effects.push(
       (async () => {
-        await servicesTelemetry;
+        await openServiceStaticFiles;
 
         if (shouldWriteManifests) {
           // Ref-based components.json reads docgen snapshots from outputDir/services/ — manifests
@@ -229,7 +229,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
           storyIndex: summarizeIndex(storyIndex),
         });
       }
-      payload.services = await servicesTelemetry;
+      payload.services = await (await openServiceStaticFiles)?.summarizeTelemetry();
 
       await telemetry('build', payload, { configDir: options.configDir });
     } catch (e) {

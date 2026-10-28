@@ -11,6 +11,7 @@ import {
   buildStaticFiles,
   clearRegistry,
   registerService,
+  registerServiceWithTelemetry,
   writeOpenServiceStaticFiles,
 } from './server.ts';
 import {
@@ -478,6 +479,25 @@ describe('server static builds', () => {
           'utf8'
         )
       ).resolves.toBe(JSON.stringify({ value: 'windows' }, null, 2));
+    });
+  });
+
+  describe('writeOpenServiceStaticFiles telemetry', () => {
+    it('passes the static snapshots of a service to its telemetry hook', async () => {
+      registerServiceWithTelemetry(awaitedPreloadValueServiceDef, {}, async (snapshots) => ({
+        snapshotCount: snapshots.length,
+      }));
+      registerService(mutableRecordLookupServiceDef);
+
+      await expect(writeOpenServiceStaticFiles('/app/dist')).resolves.toEqual({
+        'internal-fixture/awaited-preload-value': { snapshotCount: 2 },
+      });
+    });
+
+    it('returns undefined when no telemetry hook reports', async () => {
+      registerServiceWithTelemetry(awaitedPreloadValueServiceDef, {}, async () => undefined);
+
+      await expect(writeOpenServiceStaticFiles('/app/dist')).resolves.toBeUndefined();
     });
   });
 });

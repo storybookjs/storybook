@@ -1,13 +1,19 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
-import { clearRegistry, getService } from '../../server.ts';
+import { clearRegistry, getService, writeOpenServiceStaticFiles } from '../../server.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
 import { registerStoryDocsService, subscribeStoryDocsToModuleGraphChanges } from './server.ts';
 import type { StoryDocsPayload, StoryDocsProvider } from './types.ts';
 
+// Spy-only mock so the static-build test writes nothing to disk.
+vi.mock('node:fs/promises', { spy: true });
+
 afterEach(() => {
   clearRegistry();
+  vi.restoreAllMocks();
 });
 
 function makeStoryEntry(id: string, title = 'Comp'): IndexEntry {
@@ -40,6 +46,35 @@ function makeGetIndex(entries: IndexEntry[]) {
 }
 
 describe('story-docs open service', () => {
+  it('reports story snippet ratios of a static build against the story index', async () => {
+    vi.mocked(mkdir).mockResolvedValue(undefined);
+    vi.mocked(writeFile).mockResolvedValue();
+    registerStoryDocsService({
+      getIndex: makeGetIndex([
+        makeStoryEntry('button--partial', 'Button'),
+        makeStoryEntry('card--default', 'Card'),
+      ]),
+      // Card stands for a component whose provider failed and fell back to no story docs.
+      storyDocsProvider: async ({ entry }) =>
+        entry.title === 'Button'
+          ? makeStoryDocsPayload({
+              stories: {
+                'button--partial': {
+                  id: 'button--partial',
+                  name: 'Partial',
+                  snippet: '<Button />',
+                  warning: 'args.onClick',
+                },
+              },
+            })
+          : undefined,
+    });
+
+    await expect(writeOpenServiceStaticFiles('/app/dist')).resolves.toEqual({
+      'core/story-docs': { errorRatio: 0.5, warningRatio: 0.5 },
+    });
+  });
+
   it('stores and returns story-docs payloads from the provider', async () => {
     const entry = makeStoryEntry('button--primary', 'Button');
     const payload = makeStoryDocsPayload({

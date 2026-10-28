@@ -8,6 +8,7 @@ import type { ServerCoreServices, TypedGetService } from './core-service-types.t
 import {
   clearRegistry,
   describeService,
+  getRegisteredServiceTelemetry,
   getRegisteredServices,
   getService as getServiceCore,
   listServices,
@@ -25,6 +26,8 @@ import type {
   ServiceInstance,
   ServiceRegistrationOptions,
   ServiceRegistryApi,
+  ServiceTelemetry,
+  ServiceTelemetryHook,
   StaticStore,
 } from './types.ts';
 
@@ -54,6 +57,22 @@ export function registerService<
 }
 
 /**
+ * Internal {@link registerService} that also reports the service to the `build` telemetry event.
+ * Kept off the public registration options so only core services can add telemetry fields.
+ */
+export function registerServiceWithTelemetry<
+  TState,
+  TQueries extends Queries<TState>,
+  TCommands extends Commands<TState>,
+>(
+  definition: ServiceDefinition<TState, TQueries, TCommands>,
+  registration: ServiceRegistrationOptions<TState, TQueries, TCommands>,
+  telemetry: ServiceTelemetryHook<TState> | undefined
+): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
+  return registerServiceCore(definition, registration, { relay: true, telemetry });
+}
+
+/**
  * Builds serialized static-state snapshots for `load`-enabled queries across every service
  * currently in the registry.
  *
@@ -64,7 +83,35 @@ export function registerService<
  * matching dev-server behavior.
  */
 export async function buildStaticFiles(): Promise<StaticStore> {
-  const store: StaticStore = {};
+  return toStaticStore(await buildStaticSnapshots());
+}
+
+/**
+ * Writes the registered services' static snapshots to `<outputDir>/services` and returns the
+ * `build` telemetry summary of every service registered with {@link registerServiceWithTelemetry},
+ * keyed by service id, or `undefined` when none reports.
+ *
+ * The snapshot keys are normalized slash-separated logical paths; splitting them here lets `join`
+ * produce the correct native separators for the current operating system.
+ */
+export async function writeOpenServiceStaticFiles(
+  outputDir: string
+): Promise<Record<string, ServiceTelemetry> | undefined> {
+  const snapshots = await buildStaticSnapshots();
+
+  await Promise.all(
+    Object.entries(toStaticStore(snapshots)).map(async ([relativePath, state]) => {
+      const outputPath = join(outputDir, 'services', ...relativePath.split('/'));
+
+      await mkdir(dirname(outputPath), { recursive: true });
+      await writeFile(outputPath, JSON.stringify(state, null, 2));
+    })
+  );
+
+  return summarizeSnapshotsForTelemetry(snapshots);
+}
+
+async function buildStaticSnapshots(): Promise<BuildTaskResult[]> {
   const buildTasks: Promise<BuildTaskResult[]>[] = [];
 
   for (const service of getRegisteredServices() as RuntimeServiceDefinition[]) {
@@ -99,7 +146,7 @@ export async function buildStaticFiles(): Promise<StaticStore> {
 
               await buildRuntime.runLoadOnce(queryName, validatedInput);
 
-              return { path, state: buildRuntime.getStateSnapshot() };
+              return { serviceId: service.id, path, state: buildRuntime.getStateSnapshot() };
             })
           );
         })()
@@ -107,30 +154,34 @@ export async function buildStaticFiles(): Promise<StaticStore> {
     }
   }
 
-  const builtStates = (await Promise.all(buildTasks)).flat();
+  return (await Promise.all(buildTasks)).flat();
+}
 
-  for (const { path, state } of builtStates) {
+function toStaticStore(snapshots: BuildTaskResult[]): StaticStore {
+  const store: StaticStore = {};
+
+  for (const { path, state } of snapshots) {
     store[path] = path in store ? toMerged(store[path] as object, state as object) : state;
   }
 
   return store;
 }
 
-/**
- * Writes the registered services' static snapshots to `<outputDir>/services`.
- *
- * The snapshot keys are normalized slash-separated logical paths; splitting them here lets `join`
- * produce the correct native separators for the current operating system.
- */
-export async function writeOpenServiceStaticFiles(outputDir: string): Promise<void> {
-  const staticStore = await buildStaticFiles();
-
-  await Promise.all(
-    Object.entries(staticStore).map(async ([relativePath, state]) => {
-      const outputPath = join(outputDir, 'services', ...relativePath.split('/'));
-
-      await mkdir(dirname(outputPath), { recursive: true });
-      await writeFile(outputPath, JSON.stringify(state, null, 2));
+async function summarizeSnapshotsForTelemetry(
+  snapshots: BuildTaskResult[]
+): Promise<Record<string, ServiceTelemetry> | undefined> {
+  const summaries = await Promise.all(
+    Array.from(getRegisteredServiceTelemetry(), async ([serviceId, telemetry]) => {
+      const states = snapshots
+        .filter((snapshot) => snapshot.serviceId === serviceId)
+        .map((snapshot) => snapshot.state);
+      return [serviceId, await telemetry(states)] as const;
     })
   );
+
+  const reported = summaries.filter(
+    (entry): entry is readonly [string, ServiceTelemetry] => entry[1] !== undefined
+  );
+
+  return reported.length > 0 ? Object.fromEntries(reported) : undefined;
 }

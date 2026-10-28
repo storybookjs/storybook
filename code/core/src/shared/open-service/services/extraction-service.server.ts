@@ -8,7 +8,7 @@ import {
 } from '../../../common/utils/select-component-entry.ts';
 import { OpenServiceDocgenMissingComponentError } from '../../../server-errors.ts';
 import type { IndexEntry, StoryIndex } from '../../../types/modules/indexer.ts';
-import { getService, registerService } from '../server.ts';
+import { getService, registerServiceWithTelemetry } from '../server.ts';
 import type {
   CommandCtx,
   Commands,
@@ -16,6 +16,7 @@ import type {
   ServiceDefinition,
   ServiceInstance,
   ServiceRegistrationOptions,
+  ServiceTelemetryHook,
 } from '../types.ts';
 import type { ModuleGraphService } from './module-graph/definition.ts';
 import { toStoryIndexPath } from './module-graph/types.ts';
@@ -63,6 +64,8 @@ export type RegisterExtractionServiceOptions<TPayload, TQueries, TCommands> = {
   extractCommand: keyof TCommands & string;
   /** Command that extracts every component in the story index. Keyed against the service's commands. */
   extractAllCommand: keyof TCommands & string;
+  /** Summarizes the static snapshots for the `build` telemetry event. */
+  telemetry?: ServiceTelemetryHook<{ components: Record<string, TPayload> }>;
 };
 
 /**
@@ -145,8 +148,15 @@ export function registerExtractionService<
   definition: ServiceDefinition<TState, TQueries, TCommands>,
   options: RegisterExtractionServiceOptions<TState['components'][string], TQueries, TCommands>
 ) {
-  const { getIndex, provider, buildErrorPayload, queryName, extractCommand, extractAllCommand } =
-    options;
+  const {
+    getIndex,
+    provider,
+    buildErrorPayload,
+    queryName,
+    extractCommand,
+    extractAllCommand,
+    telemetry,
+  } = options;
 
   // The registration object below is built with computed keys and cast to `ServiceRegistrationOptions`,
   // which defeats TS's per-key checking. Assert the names exist on the definition so a typo fails here
@@ -193,7 +203,7 @@ export function registerExtractionService<
     }
   };
 
-  return registerService(definition, {
+  const registration = {
     queries: {
       [queryName]: {
         staticInputs: async () => {
@@ -237,5 +247,11 @@ export function registerExtractionService<
         },
       },
     },
-  } as unknown as ServiceRegistrationOptions<TState, TQueries, TCommands>);
+  } as unknown as ServiceRegistrationOptions<TState, TQueries, TCommands>;
+
+  return registerServiceWithTelemetry(
+    definition,
+    registration,
+    telemetry as ServiceTelemetryHook<TState> | undefined
+  );
 }

@@ -3,6 +3,17 @@ import type { StandardSchemaV1 } from '@standard-schema/spec';
 /** File map used by static snapshot building. Each key represents one serialized state snapshot. */
 export type StaticStore = Record<string, unknown>;
 
+/** Anonymous counts or ratios a service reports to telemetry. */
+export type ServiceTelemetry = Record<string, number>;
+
+/**
+ * Summarizes the static snapshots of a service, one per static input, for the `build` telemetry
+ * event; `undefined` sends nothing.
+ */
+export type ServiceTelemetryHook<TState> = (
+  snapshots: TState[]
+) => Promise<ServiceTelemetry | undefined>;
+
 /** Generic Standard Schema constraint used across open-service definitions. */
 export type AnySchema = StandardSchemaV1<unknown, unknown>;
 
@@ -554,6 +565,7 @@ export type ServerServiceRegistration<
 
 /** One completed static build task before it is merged into the final store map. */
 export type BuildTaskResult = {
+  serviceId: ServiceId;
   path: string;
   state: unknown;
 };

@@ -41,6 +41,7 @@ import type {
   ServiceRegistrationOptions,
   ServiceRegistryApi,
   ServiceSummary,
+  ServiceTelemetryHook,
 } from './types.ts';
 
 type RegistryEntry = {
@@ -51,6 +52,10 @@ type RegistryEntry = {
   summary: ServiceSummary;
   /** Tears down this service's channel listeners. */
   disconnect: () => void;
+  /**
+   * @internal
+   */
+  telemetry?: ServiceTelemetryHook<unknown>;
 };
 
 const REGISTRY_SYMBOL = Symbol.for('storybook.open-service.registry');
@@ -257,7 +262,7 @@ export const serviceRegistryApi: ServiceRegistryApi = {
 };
 
 /** Channel-sync options that depend on the entrypoint rather than the service definition. */
-export interface ServiceRegisterOptions {
+export interface ServiceRegisterOptions<TState = unknown> {
   /**
    * Whether this runtime acts as a relay hub. Hubs (the dev server, the manager) forward accepted
    * entries, first-time beyond-window entries, and installed replies to their *other* channel
@@ -273,6 +278,8 @@ export interface ServiceRegisterOptions {
   staticLoader?: StaticLoader;
   /** Bounds for the retained entry Log. Defaults keep an entry while younger than 15 s or among the newest 256. */
   window?: Partial<LogWindow>;
+  /** Summarizes the service's static snapshots for the `build` telemetry event. */
+  telemetry?: ServiceTelemetryHook<TState>;
 }
 
 /**
@@ -292,7 +299,7 @@ export function registerService<
 >(
   definition: ServiceDefinition<TState, TQueries, TCommands>,
   registration?: ServiceRegistrationOptions<TState, TQueries, TCommands>,
-  { relay = false, staticLoader, window }: ServiceRegisterOptions = {}
+  { relay = false, staticLoader, window, telemetry }: ServiceRegisterOptions<TState> = {}
 ): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
   assertUniqueOperationNames(definition as AnyServiceDefinition);
 
@@ -371,6 +378,7 @@ export function registerService<
     descriptor,
     summary: summarizeDescriptor(descriptor),
     disconnect,
+    telemetry: telemetry as ServiceTelemetryHook<unknown> | undefined,
   });
 
   return instance;
@@ -383,6 +391,15 @@ export function registerService<
  */
 export function getRegisteredServices(): AnyServiceDefinition[] {
   return Array.from(getRegistry().values(), ({ definition }) => definition);
+}
+
+/** Returns the telemetry hook of every registered service that has one, keyed by service id. */
+export function getRegisteredServiceTelemetry(): Map<ServiceId, ServiceTelemetryHook<unknown>> {
+  return new Map(
+    Array.from(getRegistry().values()).flatMap(({ definition, telemetry }) =>
+      telemetry ? [[definition.id, telemetry] as const] : []
+    )
+  );
 }
 
 /** Returns one summary entry per registered service — the lowest-cost discovery endpoint. */

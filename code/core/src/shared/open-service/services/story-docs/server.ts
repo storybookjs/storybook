@@ -8,6 +8,7 @@ import {
 } from '../extraction-service.server.ts';
 import { storyDocsServiceDef } from './definition.ts';
 import { prependImportToSnippet } from './snippet.ts';
+import { summarizeStoryDocsForTelemetry } from './telemetry.ts';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProvider } from './types.ts';
 
 export type RegisterStoryDocsServiceOptions = {
@@ -90,6 +91,8 @@ export function registerStoryDocsService(options: RegisterStoryDocsServiceOption
     queryName: 'storyDocs',
     extractCommand: 'extractStoryDocs',
     extractAllCommand: 'extractAllStoryDocs',
+    telemetry: async (snapshots) =>
+      summarizeStoryDocsForTelemetry(await options.getIndex(), snapshots),
   });
 }
 

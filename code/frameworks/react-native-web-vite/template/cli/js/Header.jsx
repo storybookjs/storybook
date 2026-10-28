@@ -5,9 +5,9 @@ import { Button } from './Button';
 /**
  * @param {object} props
  * @param {{ name: string }} [props.user]
- * @param {() => void} [props.onLogin]
- * @param {() => void} [props.onLogout]
- * @param {() => void} [props.onCreateAccount]
+ * @param {() => void} props.onLogin
+ * @param {() => void} props.onLogout
+ * @param {() => void} props.onCreateAccount
  */
 export const Header = ({ user, onLogin, onLogout, onCreateAccount }) => (
   <View>

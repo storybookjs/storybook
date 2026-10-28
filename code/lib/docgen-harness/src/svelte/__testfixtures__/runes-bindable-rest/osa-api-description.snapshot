@@ -1,0 +1,10 @@
+## Props
+
+```
+export type BindableRestProps = {
+  /** Current value. */
+  value?: string = ""; // bind:value={...}
+  /** Checked state. */
+  checked?: boolean = false; // bind:checked={...}
+} & HTMLInputAttributes
+```

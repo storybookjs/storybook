@@ -28,6 +28,23 @@ describe('js package manager util', () => {
       name: '@storybook/addon-essentials',
       value: { version: '7.0.0', location: '' },
     });
+    expect(parsePackageData('└─ react@npm:18.3.1')).toEqual({
+      name: 'react',
+      value: { version: '18.3.1', location: '' },
+    });
+  });
+
+  it('parses the version of a package that Yarn Berry patches', () => {
+    expect(
+      parsePackageData(
+        '└─ typescript@patch:typescript@npm%3A7.0.2#optional!builtin<compat/typescript>::version=7.0.2&hash=3bafbf'
+      )
+    ).toEqual({ name: 'typescript', value: { version: '7.0.2', location: '' } });
+    expect(
+      parsePackageData(
+        '@types/node@patch:@types/node@npm%3A22.0.0#./patches/node.patch::version=22.0.0&hash=abc123'
+      )
+    ).toEqual({ name: '@types/node', value: { version: '22.0.0', location: '' } });
   });
 
   it('parses positive integer config values', () => {

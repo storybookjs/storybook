@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  getTypeScriptForDocgenError,
+  isDocgenServerDisabledInMainConfig,
+} from 'storybook/internal/common';
+import { TypeScriptMissingForDocgenError } from 'storybook/internal/server-errors';
 import { logger, once } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
@@ -11,6 +16,7 @@ import type { FrameworkOptions } from './types.ts';
 vi.mock('storybook/internal/node-logger', async () =>
   vi.importActual<typeof import('storybook/internal/node-logger')>('storybook/internal/node-logger')
 );
+vi.mock('storybook/internal/common', { spy: true });
 vi.mock('./plugins/svelte-docgen.ts', () => ({ svelteDocgen: vi.fn() }));
 vi.mock('./plugins/svelte-csf.ts', () => ({ svelteCsf: () => ({ name: 'svelte-csf' }) }));
 vi.mock('./utils.ts', () => ({ handleSvelteKit: vi.fn() }));
@@ -22,6 +28,7 @@ beforeEach(() => {
   once.clear();
   vi.spyOn(logger, 'warn').mockImplementation(() => {});
   vi.mocked(svelteDocgen).mockResolvedValue({ name: 'svelte-docgen' });
+  vi.mocked(isDocgenServerDisabledInMainConfig).mockResolvedValue(true);
 });
 
 const runPreset = (docgenServer: boolean, docgen?: FrameworkOptions['docgen']) =>
@@ -50,6 +57,29 @@ describe('docgen configuration', () => {
     if (legacy) {
       expect(logger.warn).toHaveBeenCalledWith(SVELTE_BUILDER_DOCGEN_DEPRECATION);
     }
+  });
+
+  describe('when the main config does not set docgenServer', () => {
+    beforeEach(() => {
+      vi.mocked(isDocgenServerDisabledInMainConfig).mockResolvedValue(false);
+    });
+
+    it('runs builder docgen without the deprecation', async () => {
+      const config = await runPreset(false);
+      expect(config.plugins).toEqual([{ name: 'svelte-docgen' }, { name: 'svelte-csf' }]);
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when typescript is unusable', () => {
+    it('skips builder docgen but still prints the deprecation for docgenServer: false', async () => {
+      vi.mocked(getTypeScriptForDocgenError).mockReturnValueOnce(
+        new TypeScriptMissingForDocgenError()
+      );
+      const config = await runPreset(false);
+      expect(config.plugins).toEqual([{ name: 'svelte-csf' }]);
+      expect(logger.warn).toHaveBeenCalledExactlyOnceWith(SVELTE_BUILDER_DOCGEN_DEPRECATION);
+    });
   });
 
   it('prints the builder deprecation once across repeated preset calls', async () => {

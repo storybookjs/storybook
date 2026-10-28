@@ -1,0 +1,11 @@
+## Props
+
+```
+export type CheckboxProps = {
+  id?: string;
+  /** Checked state. */
+  checked?: boolean = false; // bind:checked={...}
+  /** Called when the checked state changes. */
+  onCheckedChange?: (checked: boolean) => void;
+} & Omit<CheckboxRootProps, 'ref'>
+```

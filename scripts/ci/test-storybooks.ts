@@ -1,5 +1,4 @@
 import { readFileSync } from 'fs';
-import { join } from 'pathe';
 
 import { build_linux } from './common-jobs.ts';
 import { artifact, workflow } from './utils/helpers.ts';
@@ -54,7 +53,7 @@ export function definePortableStoryTest(directory: string) {
                   command: 'yarn playwright-e2e',
                 },
               },
-              artifact.persist(join(working_directory, 'test-results'), 'playwright'),
+              artifact.persist(`${working_directory}/test-results`, 'playwright'),
             ]
           : []),
         {

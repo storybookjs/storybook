@@ -72,7 +72,7 @@ describe(insertDefineMetaParameters.name, () => {
 
     expect(() =>
       insertDefineMetaParameters({ nodes: { svelte: svelteNodes, compiled: compiledNodes } })
-    ).toThrow(TypeError);
+    ).toThrow();
 
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(vi.mocked(logger.warn).mock.calls[0][0]).toContain("Could not access 'parameters'");

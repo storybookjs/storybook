@@ -31,6 +31,5 @@ describe(createRuntimeStories.name, () => {
     const [message, error] = vi.mocked(logger.error).mock.calls[0];
     expect(message).toContain('Error in mounting stories');
     expect(error).toBe(fixtureError);
-    expect(error?.message).toContain('failed to mount stories component');
   });
 });

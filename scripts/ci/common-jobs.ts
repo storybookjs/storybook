@@ -22,7 +22,7 @@ import {
   workflow,
   workspace,
 } from './utils/helpers.ts';
-import { isTrustedAuthor } from './utils/runtime.ts';
+import { isNightly, isTrustedAuthor } from './utils/runtime.ts';
 import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
 
 const codeDir = new URL('../../code/', import.meta.url);
@@ -141,6 +141,17 @@ export const build_windows = defineJob('Build (windows)', () => ({
 
 export const commonJobsNoOpJob = defineNoOpJob('Common Jobs', [build_linux]);
 
+/**
+ * A PR run waits for Chromatic's verdict on the internal Storybook, so this job, and the
+ * `chromatic-completion` status check behind it, fail while visual changes await review: accept or
+ * deny them in Chromatic, then rerun the workflow from failed. The nightly `next` run only
+ * publishes, because its baseline drift is accepted by hand rather than fixed like a failed job.
+ */
+const chromaticCommand = () =>
+  isNightly()
+    ? 'yarn storybook:ui:chromatic --exit-zero-on-changes --exit-once-uploaded'
+    : 'yarn storybook:ui:chromatic';
+
 export const storybookChromatic = defineJob(
   'Local storybook & chromatic',
   () => ({
@@ -160,7 +171,7 @@ export const storybookChromatic = defineJob(
       {
         run: {
           name: 'Run Chromatic',
-          command: 'yarn storybook:ui:chromatic',
+          command: chromaticCommand(),
           working_directory: 'code',
         },
       },
@@ -655,8 +666,35 @@ export const defineCircleciCompletion = (requires: JobOrNoOpJob[]) =>
     requires
   );
 
+/**
+ * The `chromatic-completion` status check: a decision on the internal Storybook's UI Tests has been
+ * reached. It passes outright when the workflow has no internal Storybook Chromatic job, and
+ * otherwise only once that job has passed, so unreviewed visual changes leave it unreported.
+ */
+export const defineChromaticCompletion = (chromaticJob?: JobOrNoOpJob) =>
+  defineJob(
+    'Chromatic completion',
+    () => ({
+      executor: {
+        name: 'sb_barebones',
+        class: 'small',
+      },
+      steps: [
+        {
+          run: {
+            name: chromaticJob ? 'UI Tests decided' : 'UI Tests not needed',
+            command: chromaticJob
+              ? 'echo "The internal Storybook Chromatic job passed: no visual changes await review."'
+              : 'echo "This run does not build the internal Storybook, so there are no UI Tests to wait for."',
+          },
+        },
+      ],
+    }),
+    chromaticJob ? [chromaticJob] : []
+  );
+
 /** Report the failed jobs of a nightly `next` run to Slack, whatever state the workflow ends in. */
-export const defineNightlyFailureReport = (completion: JobOrNoOpJob) =>
+export const defineNightlyFailureReport = (completions: JobOrNoOpJob[]) =>
   defineJob(
     'Nightly failure report',
     () => ({
@@ -677,7 +715,7 @@ export const defineNightlyFailureReport = (completion: JobOrNoOpJob) =>
         },
       ],
     }),
-    [completion],
+    completions,
     { runsEvenIfRequirementsFail: true }
   );
 

@@ -2,19 +2,24 @@ import fs from 'node:fs/promises';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 
-import { defineCircleciCompletion, defineNightlyFailureReport } from './common-jobs.ts';
+import {
+  defineChromaticCompletion,
+  defineCircleciCompletion,
+  defineNightlyFailureReport,
+  storybookChromatic,
+} from './common-jobs.ts';
 import { executors } from './utils/executors.ts';
 import { cancelWorkflowStep, ensureRequiredJobs } from './utils/helpers.ts';
 import { orbs } from './utils/orbs.ts';
 import { parameters } from './utils/parameters.ts';
-import { setTrustedAuthor } from './utils/runtime.ts';
+import { setNightly, setTrustedAuthor } from './utils/runtime.ts';
 import type { JobImplementationObj, NoOpJobImplementationObj } from './utils/types.ts';
 import { type Workflow, workflows } from './utils/types.ts';
 import { getJobs } from './workflow-jobs.ts';
 
 const dirname = import.meta.dirname;
 
-/** Workflows that a PR can merge on, so they end in the `circleci-completion` status check. */
+/** Workflows a PR can merge on, so they end in the `circleci-completion` and `chromatic-completion` status checks. */
 const isMergeGating = (workflow: Workflow) => workflow !== 'windows';
 
 /**
@@ -55,15 +60,18 @@ function generateConfig(selected: Workflow[], baseRef: string, nightly: boolean)
 
   const ensuredJobs = ensureRequiredJobs(filteredJobs);
 
-  // Append a completion job that depends on every other job in the workflow.
-  // It acts as a single status check for GitHub branch protection: it only runs
-  // (and reports success) once every required job has finished successfully.
+  // Append the completion jobs, the status checks GitHub branch protection can require.
+  // `circleci-completion` only runs (and reports success) once every other job has finished
+  // successfully, except the internal Storybook Chromatic job: `chromatic-completion` reports
+  // that one's verdict on its own, so a visual change awaiting review blocks one check, not both.
   if (selected.some(isMergeGating)) {
-    const completion = defineCircleciCompletion([...ensuredJobs]);
-    ensuredJobs.push(completion);
+    const chromaticJob = ensuredJobs.find((job) => job.id === storybookChromatic.id);
+    const chromaticCompletion = defineChromaticCompletion(chromaticJob);
+    const completion = defineCircleciCompletion(ensuredJobs.filter((job) => job !== chromaticJob));
+    ensuredJobs.push(chromaticCompletion, completion);
 
     if (nightly) {
-      ensuredJobs.push(defineNightlyFailureReport(completion));
+      ensuredJobs.push(defineNightlyFailureReport([completion, chromaticCompletion]));
     }
   }
 
@@ -144,6 +152,7 @@ if (unknown.length > 0 || requested.length === 0) {
 }
 const selected = workflows.filter((w) => requested.includes(w));
 const nightly = selected.includes('daily') && opts.branch === 'next';
+setNightly(nightly);
 
 await fs.writeFile(
   join(dirname, '../../.circleci/config.generated.yml'),

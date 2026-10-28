@@ -38,11 +38,6 @@ export function patternNames(pattern: ESTreeAST.Node | null | undefined): string
   }
 }
 
-// Svelte's parser drops a leading byte order mark, so code sliced at its positions must drop it too.
-export function withoutByteOrderMark(source: string): string {
-  return source.replace(/^\uFEFF/, '');
-}
-
 export type Span = { start: number; end: number };
 export type Edit = Span & { value: string };
 

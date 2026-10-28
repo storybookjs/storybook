@@ -5,7 +5,7 @@ import {
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 
-import { getIndexableAST } from '../../svelte-csf/indexer/parser.ts';
+import { parseSvelteSource } from '../../svelte-csf/indexer/parser.ts';
 import { getStoryContentRawCode } from '../../svelte-csf/parser/analyse/story/content.ts';
 import {
   getExtendableStories,
@@ -22,7 +22,7 @@ import {
 import { extractStoryAttributesNodes } from '../../svelte-csf/parser/extract/svelte/story/attributes.ts';
 import { extractStoryTemplateSnippetBlock } from '../../svelte-csf/parser/extract/svelte/story/template.ts';
 import type { ESTreeAST, SvelteAST } from '../../svelte-csf/parser/ast.ts';
-import { type Edit, applyEdits, scriptFile, span, withoutByteOrderMark } from './markup.ts';
+import { type Edit, applyEdits, scriptFile, span } from './markup.ts';
 import type { TemplateParameter } from './print-template.ts';
 
 export interface StoryMarkup {
@@ -47,8 +47,7 @@ export interface StoryFile {
 // Read a `.stories.svelte` file as plain CSF: the module script with the meta as default export,
 // and one story export with the `args` of each `<Story>`.
 export async function readSvelteCsfFile(file: string, filename: string): Promise<StoryFile> {
-  const source = withoutByteOrderMark(file);
-  const ast = getIndexableAST(source);
+  const { source, ast } = parseSvelteSource(file);
   const typescript = isTypeScript(ast.module) || isTypeScript(ast.instance);
   const nodes = await extractSvelteASTNodes({ ast, filename });
   const module = span(ast.module!.content);

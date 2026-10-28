@@ -71,7 +71,7 @@ export class ImplicitActionsDuringRendering extends StorybookError {
       category: Category.PREVIEW_API,
       code: 2,
       documentation:
-        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#using-implicit-actions-during-rendering-is-deprecated',
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#disallowimplicitactionsinrenderv8-feature-flag-removed',
       message: dedent`
         We detected that you use an implicit action arg while ${data.phase} of your story.  
         Please provide an explicit spy to your args like this:

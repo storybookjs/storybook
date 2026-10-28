@@ -25,8 +25,7 @@ const indexWithParserError = async (cause: unknown) => {
 
 describe('createIndexer', () => {
   beforeEach(() => {
-    // The shared vitest setup replaces `logger` with a mock that has no `shouldLog`.
-    logger.shouldLog = vi.fn(() => false);
+    vi.mocked(logger.shouldLog).mockReturnValue(false);
   });
 
   describe('when the parser throws an unrecognized error', () => {

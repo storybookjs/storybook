@@ -51,7 +51,7 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
 
     // Vite's core vite:esbuild/vite:oxc transform strips TypeScript before docgen can inspect it.
     // The upstream fix is in v0.8.0; prefer a dependency bump once yarn.lock can be regenerated:
-    // https://github.com/joshwooding/vite-plugin-react-docgen-typescript/releases/tag/v0.8.0
+    // https://github.com/joshwooding/vite-plugin-react-docgen-typescript/releases/tag/%40joshwooding%2Fvite-plugin-react-docgen-typescript%400.8.0
     plugins.unshift({ ...docgenTypescriptPlugin, enforce: 'pre' });
   }
 

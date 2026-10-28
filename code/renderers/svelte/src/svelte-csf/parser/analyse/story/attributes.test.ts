@@ -36,7 +36,11 @@ describe(getStringValueFromAttribute.name, () => {
       .toThrowErrorMatchingInlineSnapshot(`
         [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001 (AttributeNotStringError): In the stories file: <path not specified>
 
-        A '<Story name="undefined" />' has a prop 'name' whose value must be a static literal string.]
+        A '<Story name="undefined" />' has a prop 'name' whose value must be a static literal string.
+        Dynamic values, such as variables, function calls or template strings, are not supported. For example: <Story name="Primary" />
+
+        More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#defining-stories
+        ]
       `);
   });
   it.each([
@@ -104,7 +108,11 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
       [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0002 (AttributeNotArrayError): In the stories file: <path not specified>
 
       A '<Story name="Default" />' has a prop'tags' whose value was expected to be a static array.
-      Instead the value type is '0'.]
+      Instead the value type is '0'.
+      For example: <Story tags={['autodocs', '!dev']} />
+
+      More info: https://storybook.js.org/docs/writing-stories/tags?renderer=svelte&ref=error
+      ]
     `
     );
   });
@@ -141,7 +149,11 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
       [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0003 (AttributeNotArrayOfStringsError): In the stories file: <path not specified>
 
       A '<Story name="Default" />' has attribute 'tags' whose value was expected to be an array expression.
-      All elements in the array must be static literal strings only, but one of the elements is of type 'undefined'.]
+      All elements in the array must be static literal strings only, but one of the elements is of type 'Literal'.
+      For example: <Story tags={['autodocs', '!dev']} />
+
+      More info: https://storybook.js.org/docs/writing-stories/tags?renderer=svelte&ref=error
+      ]
     `
     );
   });

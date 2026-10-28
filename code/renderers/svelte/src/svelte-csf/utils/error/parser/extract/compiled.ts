@@ -4,6 +4,9 @@ import { StorybookSvelteCSFError, filepathURL } from '../../../error.ts';
 
 const category = StorybookSvelteCSFError.CATEGORY.parserExtractCompiled;
 
+const REPORT_BUG =
+  'This is a bug in Storybook. Please report it at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml, and include the stories file.';
+
 export class MissingImportedDefineMetaError extends StorybookSvelteCSFError {
   constructor(filename?: string) {
     super({
@@ -12,6 +15,8 @@ export class MissingImportedDefineMetaError extends StorybookSvelteCSFError {
       code: 1,
       message: dedent`
         Could not find the import statement of 'defineMeta' from ${StorybookSvelteCSFError.importSourcesText}, or of the preview from .storybook/preview, in the compiled output of: ${filepathURL(filename)}
+
+        ${REPORT_BUG}
       `,
     });
   }
@@ -25,6 +30,8 @@ export class MissingDefineMetaVariableDeclarationError extends StorybookSvelteCS
       code: 2,
       message: dedent`
         Could not find variable declaration from 'defineMeta' or 'preview.meta' call in the compiled output of the stories file: ${filepathURL(filename)}
+
+        ${REPORT_BUG}
       `,
     });
   }
@@ -38,6 +45,8 @@ export class NoExportDefaultError extends StorybookSvelteCSFError {
       code: 3,
       message: dedent`
         Could not find 'export default' in the compiled output of the stories file: ${filepathURL(filename)}
+
+        ${REPORT_BUG}
       `,
     });
   }
@@ -51,6 +60,8 @@ export class NoStoryIdentifierFoundError extends StorybookSvelteCSFError {
       code: 4,
       message: dedent`
         Could not find a 'Story' identifier in the compiled output of the stories file: ${filepathURL(filename)}
+
+        ${REPORT_BUG}
       `,
     });
   }
@@ -64,6 +75,8 @@ export class NoStoriesFunctionDeclarationError extends StorybookSvelteCSFError {
       code: 5,
       message: dedent`
         Could not find the stories component '*.stories.svelte' function declaration compiled output of the stories file: ${filepathURL(filename)}
+
+        ${REPORT_BUG}
       `,
     });
   }
@@ -77,6 +90,8 @@ export class NoCompiledStoryPropsObjectExpression extends StorybookSvelteCSFErro
       code: 6,
       message: dedent`
         Failed to extract compiled Story component props as object expression in the compiled output of stories file: ${filepathURL(filename)}
+
+        ${REPORT_BUG}
       `,
     });
   }

@@ -31,7 +31,11 @@ describe(removeExportDefault.name, () => {
         ast: parseAst(code.toString()),
       })
     ).rejects.toThrowErrorMatchingInlineSnapshot(
-      `[SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0003 (NoExportDefaultError): Could not find 'export default' in the compiled output of the stories file: <path not specified>]`
+      `
+      [SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0003 (NoExportDefaultError): Could not find 'export default' in the compiled output of the stories file: <path not specified>
+
+      This is a bug in Storybook. Please report it at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml, and include the stories file.]
+    `
     );
   });
 });

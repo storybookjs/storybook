@@ -15,6 +15,18 @@ const CATEGORY = {
   parserAnalyseStory: 'SVELTE_CSF_PARSER_ANALYSE_STORY',
 } as const;
 
+const WRITING_STORIES = 'https://storybook.js.org/docs/writing-stories';
+
+export const DOCS = {
+  meta: `${WRITING_STORIES}?renderer=svelte#meta`,
+  definingStories: `${WRITING_STORIES}?renderer=svelte#defining-stories`,
+  customRendering: `${WRITING_STORIES}?renderer=svelte#custom-rendering`,
+  renameStories: `${WRITING_STORIES}?renderer=svelte#rename-stories`,
+  tags: `${WRITING_STORIES}/tags?renderer=svelte`,
+  previewMeta: `${WRITING_STORIES}/csf/api?renderer=svelte#previewmeta`,
+  storyExtend: `${WRITING_STORIES}/csf/api?renderer=svelte#storyextend`,
+};
+
 export abstract class StorybookSvelteCSFError extends StorybookError {
   // Users import `defineMeta` from their framework. The messages name both frameworks.
   public static importSource = SVELTE_VITE_IMPORT_SOURCE;

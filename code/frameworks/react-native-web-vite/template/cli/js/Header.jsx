@@ -4,10 +4,10 @@ import { Button } from './Button';
 
 /**
  * @param {object} props
- * @param {{ name: string }} [props.user]
- * @param {() => void} props.onLogin
- * @param {() => void} props.onLogout
- * @param {() => void} props.onCreateAccount
+ * @param {{ name: string }} [props.user] The signed-in user, if any
+ * @param {() => void} props.onLogin Called when the user presses Log in
+ * @param {() => void} props.onLogout Called when the user presses Log out
+ * @param {() => void} props.onCreateAccount Called when the user presses Sign up
  */
 export const Header = ({ user, onLogin, onLogout, onCreateAccount }) => (
   <View>

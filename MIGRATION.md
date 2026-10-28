@@ -18,6 +18,7 @@
   - [Deprecated CSF and manager type aliases removed](#deprecated-csf-and-manager-type-aliases-removed)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
+    - [Svelte](#svelte)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or newer](#typescript-59-or-newer)
   - [CSF Next: meta args no longer need `as const`](#csf-next-meta-args-no-longer-need-as-const)
@@ -43,8 +44,11 @@
   - [`storySort` in the preview replaced by `storySorts` in main](#storysort-in-the-preview-replaced-by-storysorts-in-main)
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
   - [Next.js: `@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
-  - [Create React App support removed](#create-react-app-support-removed)
   - [`storybook/internal/babel` removed; `csf-tools` uses ESTree](#storybookinternalbabel-removed-csf-tools-uses-estree)
+    - [Behavior that changes for every project](#behavior-that-changes-for-every-project)
+    - [Community packages that need a release](#community-packages-that-need-a-release)
+    - [Changes for tooling that imports Storybook's internal entry points](#changes-for-tooling-that-imports-storybooks-internal-entry-points)
+  - [Create React App support removed](#create-react-app-support-removed)
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
   - [`storybook add` and `storybook remove` leave an `addons` they cannot edit safely](#storybook-add-and-storybook-remove-leave-an-addons-they-cannot-edit-safely)
   - [Internal CSF tools use the unified mutation API](#internal-csf-tools-use-the-unified-mutation-api)
@@ -276,7 +280,7 @@
       - [Require Vue 3 and up](#require-vue-3-and-up)
     - [Angular](#angular)
       - [Require Angular 15 and up](#require-angular-15-and-up)
-    - [Svelte](#svelte)
+    - [Svelte](#svelte-1)
       - [Require Svelte 4 and up](#require-svelte-4-and-up)
     - [Preact](#preact)
       - [Require Preact 10 and up](#require-preact-10-and-up)
@@ -1019,7 +1023,7 @@ For Angular-Vite, `framework.options.compodoc: false` does not disable the docge
 Client-side docgen that runs in the builder is deprecated and will be removed in Storybook 12.
 This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`, and the Svelte `docgen` framework option in `@storybook/svelte-vite` and `@storybook/sveltekit` (including the sveltedoc-shaped `__docgen`).
 Builder docgen only runs when `features.docgenServer` is `false`. Storybook prints a deprecation warning when your `.storybook/main.ts` sets `docgenServer: false`. When server-side docgen is off because TypeScript is missing or unusable, Storybook prints the TypeScript warning instead. For no docgen and no warnings, also turn builder docgen off: `typescript.reactDocgen: false` for React, and the `docgen: false` framework option for Vue 3 and Svelte.
-Install the `typescript` package and remove `docgenServer: false` to use server-side docgen; without `typescript` the project stays on builder docgen.
+Install the `typescript` package and remove `docgenServer: false` to use server-side docgen.
 
 #### Svelte
 
@@ -1221,12 +1225,12 @@ More generally, the manager index (`useStorybookState().index` and `filteredInde
 
 Each title is now typed by everything the story index puts under it:
 
-| Under the title | Entry in the manager index |
-| --- | --- |
-| Other titles | `group` (or `root`) |
-| At least one story | `component` |
+| Under the title                      | Entry in the manager index                                                                            |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| Other titles                         | `group` (or `root`)                                                                                   |
+| At least one story                   | `component`                                                                                           |
 | Exactly one docs page and no stories | the `docs` entry itself, with the title's `name`, `depth` and `parent` (`undefined` at the top level) |
-| Several docs pages and no stories | `group` |
+| Several docs pages and no stories    | `group`                                                                                               |
 
 The type comes from the full index, so `index` and `filteredIndex` always agree on it.
 Filters only remove entries: a component whose stories are all filtered out stays a `component` with its docs child in `filteredIndex`.
@@ -1530,15 +1534,15 @@ Add or remove the addon in `addons` by hand in that case.
 
 If your custom migration tooling imports `ConfigFile` from `storybook/internal/csf-tools`, update its legacy field and call-expression helpers to the unified `CsfObject` mutation API:
 
-| Storybook 10 API                     | Storybook 11 replacement |
-| ------------------------------------ | ------------------------ |
-| `getFieldValue`, `getSafeFieldValue` | `getValue`               |
-| `setFieldNode`, `setFieldValue`      | `set`                    |
-| `removeField`                        | `remove`, which also removes a parent it leaves empty: `export const core = { builder: 'webpack4' }` loses the export instead of becoming `export const core = {}` |
+| Storybook 10 API                          | Storybook 11 replacement                                                                                                                                                                                                                                                                   |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `getFieldValue`, `getSafeFieldValue`      | `getValue`                                                                                                                                                                                                                                                                                 |
+| `setFieldNode`, `setFieldValue`           | `set`                                                                                                                                                                                                                                                                                      |
+| `removeField`                             | `remove`, which also removes a parent it leaves empty: `export const core = { builder: 'webpack4' }` loses the export instead of becoming `export const core = {}`                                                                                                                         |
 | `appendValueToArray`, `appendNodeToArray` | `append`, which takes a plain value or an expression. Like these, it refuses a field that holds a call, such as `addons: getAddons()`; it adds an argument only to a call that is an item, such as `['loaders', 0]` for `loaders: [mswLoader()]`. Both are deprecated and still available. |
-| `removeEntryFromArray`               | `remove([...path, index])`, with the entry's `index` in the list `inspectList(path)` returns, which resolves a constant only the config refers to, as `remove` does. It is deprecated and still available. |
-| `findNamedImportMethodCalls`         | `callArguments`          |
-| `FindNamedImportMethodCallsOptions`  | `CallArgumentsOptions`   |
+| `removeEntryFromArray`                    | `remove([...path, index])`, with the entry's `index` in the list `inspectList(path)` returns, which resolves a constant only the config refers to, as `remove` does. It is deprecated and still available.                                                                                 |
+| `findNamedImportMethodCalls`              | `callArguments`                                                                                                                                                                                                                                                                            |
+| `FindNamedImportMethodCallsOptions`       | `CallArgumentsOptions`                                                                                                                                                                                                                                                                     |
 
 `getValue` reads static values without executing source code, following any local constant. When it cannot resolve a value, it returns `undefined`; reads add no diagnostics, so they never stop a later write. Use `inspect` to tell a missing field from one that cannot be read statically. Mutation methods return a result that reports whether the edit succeeded and changed the file. `callArguments` returns `CsfObject` editors instead of Babel call expressions, so apply the same `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, `group`, `append`, and `prepend` methods you use for story and config objects. A path addresses an element of an array or an argument of a call by its index in the source, such as `['addons', 0]` or `['framework', 0]`.
 
@@ -2245,7 +2249,7 @@ If the value is not a static object, move the fields yourself. This includes a v
 
 `storybook init` for React JavaScript projects now writes `Button.jsx` and `Header.jsx` templates whose props are typed with JSDoc, and no longer adds the `prop-types` package. React 19 no longer checks `propTypes` on function components, and `React.PropTypes` moved to the separate `prop-types` package in React 15.5.
 
-Server-side docgen, the default in Storybook 11, reads the JSDoc types, so a new project's Docs args table shows the same types and descriptions as the TypeScript template. The deprecated builder docgen (`react-docgen`, active only when `features.docgenServer` is `false`) does not: without `propTypes` it reports no prop types or descriptions for these templates and folds the JSDoc `@param` lines into the component description. Install the `typescript` package and remove `docgenServer: false` to use server-side docgen; without `typescript` the project stays on builder docgen.
+Server-side docgen, the default in Storybook 11, reads the JSDoc types, so a new project's Docs args table shows the same types and descriptions as the TypeScript template. The deprecated builder docgen (`react-docgen`, active only when `features.docgenServer` is `false`) does not: without `propTypes` it reports no prop types or descriptions for these templates and folds the JSDoc `@param` lines into the component description. Install the `typescript` package and remove `docgenServer: false` to use server-side docgen.
 
 ## From version 10.6.1 to 10.6.2
 

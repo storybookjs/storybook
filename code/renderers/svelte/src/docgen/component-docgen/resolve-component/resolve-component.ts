@@ -25,8 +25,7 @@ import {
 } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
-import { getIndexableAST } from '../../../svelte-csf/indexer/parser.ts';
-import { getSvelteAST } from '../../../svelte-csf/parser/ast.ts';
+import { parseSvelteSource } from '../../../svelte-csf/indexer/parser.ts';
 import { getDefineMetaComponentValue } from '../../../svelte-csf/parser/analyse/define-meta/component-identifier.ts';
 import { getDefineMetaFirstArgumentObjectExpression } from '../../../svelte-csf/parser/extract/svelte/define-meta.ts';
 import { extractSvelteASTNodes } from '../../../svelte-csf/parser/extract/svelte/nodes.ts';
@@ -130,11 +129,10 @@ function followExport(
 // `undefined` when it cannot be read or parsed.
 function moduleEditor(filePath: string) {
   try {
-    const source = readFileSync(filePath, 'utf8');
-    if (!filePath.endsWith('.svelte')) return new SourceEditor(source, filePath);
-    const module = getIndexableAST(source).module?.content as
-      | { start: number; end: number }
-      | undefined;
+    const file = readFileSync(filePath, 'utf8');
+    if (!filePath.endsWith('.svelte')) return new SourceEditor(file, filePath);
+    const { source, ast } = parseSvelteSource(file);
+    const module = ast.module?.content as { start: number; end: number } | undefined;
     return module && new SourceEditor(source.slice(module.start, module.end), `${filePath}.ts`);
   } catch {
     return undefined;
@@ -160,10 +158,10 @@ export async function resolveStoryComponent(
   const importPath = getStoryImportPathFromEntry(entry);
   if (!importPath) return undefined;
   const storyPath = resolve(importPath);
-  const source = await readFile(storyPath, 'utf8');
+  const file = await readFile(storyPath, 'utf8');
 
   if (storyPath.endsWith('.svelte')) {
-    const ast = getSvelteAST({ code: source, filename: storyPath });
+    const { source, ast } = parseSvelteSource(file);
     const nodes = await extractSvelteASTNodes({ ast, filename: storyPath });
     const component = getDefineMetaComponentValue({ nodes, filename: storyPath });
     if (!component) return undefined;
@@ -239,7 +237,7 @@ export async function resolveStoryComponent(
   }
 
   const resolved = resolveMetaComponent(
-    loadCsf(source, { makeTitle: () => entry.title }).parse(),
+    loadCsf(file, { makeTitle: () => entry.title }).parse(),
     storyPath
   );
   if ('reason' in resolved) {
@@ -260,10 +258,10 @@ export async function resolveStorySubcomponents(
   const importPath = getStoryImportPathFromEntry(entry);
   if (!importPath) return {};
   const storyPath = resolve(importPath);
-  const source = await readFile(storyPath, 'utf8');
+  const file = await readFile(storyPath, 'utf8');
   const { meta, program } = storyPath.endsWith('.svelte')
-    ? await readSvelteMeta(source, storyPath)
-    : readCsfMeta(source, entry);
+    ? await readSvelteMeta(file, storyPath)
+    : readCsfMeta(file, entry);
   const subcomponents = propertyValue(meta, 'subcomponents');
   if (subcomponents?.type !== 'ObjectExpression') return {};
   const bindings = collectImportBindings(program);
@@ -287,8 +285,8 @@ function readCsfMeta(source: string, entry: IndexEntry) {
   return { meta: metaObject(csf), program: csf.program };
 }
 
-async function readSvelteMeta(source: string, storyPath: string) {
-  const ast = getSvelteAST({ code: source, filename: storyPath });
+async function readSvelteMeta(file: string, storyPath: string) {
+  const { source, ast } = parseSvelteSource(file);
   const nodes = await extractSvelteASTNodes({ ast, filename: storyPath });
   const { start, end } = getDefineMetaFirstArgumentObjectExpression({
     nodes,

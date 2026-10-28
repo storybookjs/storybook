@@ -142,3 +142,26 @@ it.each(['plain.stories.ts', 'svelte-csf.stories.svelte'])(
     });
   }
 );
+
+// The Svelte Vite plugin preprocesses these files before it compiles them, so they work in a project.
+it.each([
+  ['a style block in a preprocessor language', 'scss-style'],
+  ['TypeScript that Svelte compiles only after preprocessing', 'enum'],
+  ['TypeScript around the meta and its component', 'typescript'],
+  ['type arguments on a generic component', 'generic-component'],
+  ['a byte order mark', 'bom'],
+])('resolves the components of a Svelte CSF file with %s', async (_, file) => {
+  const entry = entryFor(`svelte-csf/${file}.stories.svelte`);
+  expect(await resolveStoryComponent(entry)).toEqual({
+    componentPath: join(fixtures, 'svelte-csf/Button.svelte'),
+    exportName: 'default',
+    name: 'Button',
+  });
+  expect(await resolveStorySubcomponents(entry)).toEqual({
+    Other: {
+      componentPath: join(fixtures, 'svelte-csf/Other.svelte'),
+      exportName: 'default',
+      name: 'Other',
+    },
+  });
+});

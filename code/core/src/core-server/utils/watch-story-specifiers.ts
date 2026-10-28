@@ -1,9 +1,10 @@
 import { type Dirent, lstatSync, readdirSync } from 'node:fs';
-import { basename, join, relative, resolve, sep } from 'node:path';
+import { basename, join, relative, resolve } from 'node:path';
 
 import { commonGlobOptions, getSpecifierImportPath } from 'storybook/internal/common';
 import type { NormalizedStoriesSpecifier, Path } from 'storybook/internal/types';
 
+import * as pathe from 'pathe';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 import Watchpack from 'watchpack';
@@ -88,8 +89,8 @@ export function watchStorySpecifiers(
           // We only receive events for files (incl. directories) that are *within* a specifier,
           // so will match one (or more) specifiers
           .filter((specifier) => {
-            const directory = resolve(options.workingDir, specifier.directory);
-            return relative(directory, absolutePath).split(sep)[0] !== '..';
+            const directory = pathe.resolve(options.workingDir, specifier.directory);
+            return pathe.relative(directory, absolutePath).split('/')[0] !== '..';
           })
           .map(async (specifier) => {
             // If `./path/to/dir` was added, check all files matching `./path/to/dir/**/*.stories.*`

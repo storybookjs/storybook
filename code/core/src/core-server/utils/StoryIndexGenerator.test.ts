@@ -378,13 +378,13 @@ describe('StoryIndexGenerator', () => {
       });
     });
     describe('working dir inside the specifier directory', () => {
-      it('extracts stories from the working dir and its siblings', async () => {
-        const nestedOptions = { ...options, workingDir: join(options.workingDir, 'src', 'nested') };
-        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
-          './src/@(nested|second-nested)/*.stories.ts',
-          nestedOptions
-        );
+      const nestedOptions = { ...options, workingDir: join(options.workingDir, 'src', 'nested') };
+      const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+        './src/@(nested|second-nested)/*.stories.ts',
+        nestedOptions
+      );
 
+      it('extracts stories from the working dir and its siblings', async () => {
         const generator = new StoryIndexGenerator([specifier], nestedOptions);
         await generator.initialize();
 
@@ -395,6 +395,46 @@ describe('StoryIndexGenerator', () => {
           { importPath: './Button.stories.ts', title: 'nested/Button' },
           { importPath: '../second-nested/G.stories.ts', title: 'second-nested/G' },
         ]);
+      });
+
+      it('re-extracts a changed story file from the working dir', async () => {
+        const generator = new StoryIndexGenerator([specifier], nestedOptions);
+        await generator.initialize();
+        await generator.getIndex();
+
+        generator.invalidate('./Button.stories.ts', false);
+
+        loadCsfMock.mockClear();
+        await generator.getIndex();
+        expect(loadCsfMock).toHaveBeenCalledTimes(1);
+      });
+
+      it('drops a removed story file in the working dir from the index', async () => {
+        const generator = new StoryIndexGenerator([specifier], nestedOptions);
+        await generator.initialize();
+        await generator.getIndex();
+
+        generator.invalidate('./Button.stories.ts', true);
+
+        expect(Object.keys((await generator.getIndex()).entries)).toEqual([
+          'second-nested-g--story-one',
+        ]);
+      });
+
+      it('auto-titles docs in the working dir from the specifier directory', async () => {
+        const docsOptions = { ...options, workingDir: join(options.workingDir, 'src', 'docs2') };
+        const docsSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/**/NoTitle.mdx',
+          docsOptions
+        );
+
+        const generator = new StoryIndexGenerator([docsSpecifier], docsOptions);
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(
+          Object.values(storyIndex.entries).map(({ importPath, title }) => ({ importPath, title }))
+        ).toEqual([{ importPath: './NoTitle.mdx', title: 'docs2/NoTitle' }]);
       });
     });
     describe('recursive specifier', () => {

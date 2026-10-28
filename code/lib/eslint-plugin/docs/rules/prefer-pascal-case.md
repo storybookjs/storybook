@@ -3,7 +3,6 @@
 <!-- RULE-CATEGORIES:START -->
 
 **Included in these configurations**: <ul><li>recommended</li><li>flat/recommended</li></ul>
-
 <!-- RULE-CATEGORIES:END -->
 
 ## Rule Details

@@ -19,12 +19,7 @@ export {
 export default Channel;
 
 export { PostMessageTransport } from './postmessage/index.ts';
-export {
-  WebsocketTransport,
-  HEARTBEAT_INTERVAL,
-  HEARTBEAT_MAX_LATENCY,
-  SERVER_CHANNEL_PATH,
-} from './websocket/index.ts';
+export { WebsocketTransport, HEARTBEAT_INTERVAL, SERVER_CHANNEL_PATH } from './websocket/index.ts';
 export type { ChannelWebSocket } from './websocket/index.ts';
 
 type Options = Config & {
@@ -46,8 +41,8 @@ export function createBrowserChannel({ page, extraTransports = [] }: Options): C
   if (globalThis.CONFIG_TYPE === 'DEVELOPMENT') {
     const protocol = window.location.protocol === 'http:' ? 'ws' : 'wss';
     const { hostname, port } = window.location;
-    const { wsToken } = globalThis.CHANNEL_OPTIONS || {};
-    const channelUrl = `${protocol}://${hostname}:${port}${SERVER_CHANNEL_PATH}?token=${wsToken}`;
+    const { wsToken, wsPath = SERVER_CHANNEL_PATH } = globalThis.CHANNEL_OPTIONS || {};
+    const channelUrl = `${protocol}://${hostname}:${port}${wsPath}?token=${wsToken}&page=${page}`;
 
     transports.push(new WebsocketTransport({ url: channelUrl, onError: () => {}, page }));
   }

@@ -11,6 +11,14 @@ const DIR_CWD = process.cwd();
 // so anchor it to a file inside the project instead.
 const require = createRequire(join(DIR_CWD, 'package.json'));
 
+const NO_HOOK_EXIT_CODE = 3;
+const RESOLVE_IN_CHILD = `
+try {
+  process.stdout.write(require.resolve(process.argv[1], { paths: [process.cwd()] }));
+} catch (error) {
+  process.exit(error.code === 'ERR_PACKAGE_PATH_NOT_EXPORTED' ? ${NO_HOOK_EXIT_CODE} : 1);
+}`;
+
 export const postinstallAddon = async (addonName: string, options: PostinstallOptions) => {
   const hookPath = `${addonName}/postinstall`;
   const logger = options.logger;
@@ -20,15 +28,18 @@ export const postinstallAddon = async (addonName: string, options: PostinstallOp
     // which points at the wrong copy (or none at all) when the CLI runs from a different tree
     // than the project, e.g. via npx or in a monorepo.
     modulePath = require.resolve(hookPath, { paths: [DIR_CWD] });
-  } catch (e) {
+  } catch {
     // When the addon was installed while this process was already running (the upgrade command
-    // installs dependencies mid-run), Node's module resolution has cached the earlier negative
-    // lookup and keeps failing. A fresh child process resolves from a clean cache.
-    const result = spawnSync(
-      process.execPath,
-      ['-p', `require.resolve(${JSON.stringify(hookPath)}, { paths: [process.cwd()] })`],
-      { cwd: DIR_CWD, encoding: 'utf8', timeout: 30_000 }
-    );
+    // installs dependencies mid-run), Node's module resolution has cached the earlier lookup and
+    // keeps failing. A fresh child process resolves from a clean cache.
+    const result = spawnSync(process.execPath, ['-e', RESOLVE_IN_CHILD, hookPath], {
+      cwd: DIR_CWD,
+      encoding: 'utf8',
+      timeout: 30_000,
+    });
+    if (result.status === NO_HOOK_EXIT_CODE) {
+      return;
+    }
     if (result.status === 0 && result.stdout.trim()) {
       modulePath = result.stdout.trim();
     }
@@ -37,7 +48,7 @@ export const postinstallAddon = async (addonName: string, options: PostinstallOp
   if (!modulePath) {
     try {
       modulePath = import.meta.resolve(hookPath);
-    } catch (e) {
+    } catch {
       logger.warn(
         `Could not resolve the postinstall hook of ${addonName}, skipping its configuration. Run \`npx storybook add ${addonName}\` to set it up manually.`
       );

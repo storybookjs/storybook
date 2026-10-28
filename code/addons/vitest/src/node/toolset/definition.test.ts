@@ -1,5 +1,5 @@
 import type { StoryIndex } from 'storybook/internal/types';
-import type { ToolsetCtx } from 'storybook/open-service';
+import { invokeToolsetMethod, type ToolsetCtx } from 'storybook/open-service';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
@@ -13,14 +13,12 @@ vi.mock('./run.ts', { spy: true });
 const index = { v: 5, entries: {} } as StoryIndex;
 const getIndex = vi.fn();
 const storyIndex = { getIndex };
-const telemetry = vi.fn();
 const channel = {} as never;
 
 const ctx = {
   transport: 'cli',
   origin: 'http://localhost:6006',
   getService: vi.fn() as ToolsetCtx['getService'],
-  telemetry,
 } satisfies ToolsetCtx;
 
 const mcpCtx = { ...ctx, transport: 'mcp' } satisfies ToolsetCtx;
@@ -50,6 +48,16 @@ function componentTest(
   };
 }
 
+function a11yCheck(storyId: string, value: 'status-value:success' | 'status-value:error') {
+  return {
+    storyId,
+    typeId: 'storybook/a11y',
+    value,
+    title: 'Accessibility tests',
+    description: '',
+  };
+}
+
 function completed(result: Partial<TestRunResult> = {}): TestRunOutput {
   return { status: 'completed', result: { ...baseResult, ...result } };
 }
@@ -75,7 +83,7 @@ function runTests(
   input: v.InferInput<typeof toolset.methods.run.input> = {},
   runCtx: ToolsetCtx = ctx
 ) {
-  return toolset.methods.run.handler(v.parse(toolset.methods.run.input, input), runCtx);
+  return invokeToolsetMethod(toolset, 'run', v.parse(toolset.methods.run.input, input), runCtx);
 }
 
 /** Runs and renders the way the MCP adapter does: one handler call, markdown from the outcome. */
@@ -110,6 +118,7 @@ describe('test API', () => {
             'Expected button text to be "Secondary"'
           ),
         ],
+        a11yStatuses: [a11yCheck('button--primary', 'status-value:error')],
         a11yReports: {
           'button--primary': [
             {
@@ -130,9 +139,10 @@ describe('test API', () => {
     const mcpOutcome = await runForMcp();
 
     expect(outcome.markdown).toBe(mcpOutcome.markdown);
-    expect(outcome.markdown).toContain('## Passing Stories');
-    expect(outcome.markdown).toContain('- button--primary');
+    expect(outcome.markdown).not.toContain('## Passing Stories');
     expect(outcome.markdown).toContain('## Failing Stories');
+    expect(outcome.markdown).toContain('### button--primary');
+    expect(outcome.markdown).toContain('The accessibility check failed');
     expect(outcome.markdown).toContain('### button--secondary');
     expect(outcome.markdown).toContain('Expected button text to be "Secondary"');
     expect(outcome.markdown).toContain('## Accessibility Violations');
@@ -252,13 +262,121 @@ describe('test API', () => {
 
       expect((await runForMcp()).markdown).toBe(`## Passing Stories
 
-- button--primary`);
+- button--primary
+
+## Result
+
+Passed: 1 component test passed.
+Accessibility: not checked.`);
+    });
+
+    it('says why accessibility was not checked when addon-a11y is not enabled', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          storyIds: ['button--primary'],
+          totalTestCount: 1,
+          componentTestCount: { success: 1, error: 0 },
+          componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
+        })
+      );
+      toolset = createTestToolset({ channel, storyIndex, a11yEnabled: false });
+
+      expect((await runForMcp()).markdown).toBe(`## Passing Stories
+
+- button--primary
+
+## Result
+
+Passed: 1 component test passed.
+Accessibility: not checked (addon-a11y is not enabled).`);
+    });
+
+    it('says the accessibility check found nothing rather than staying silent', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          componentTestCount: { success: 2, error: 0 },
+          a11yCount: { success: 2, warning: 0, error: 0 },
+          componentTestStatuses: [
+            componentTest('button--primary', 'status-value:success'),
+            componentTest('button--secondary', 'status-value:success'),
+          ],
+        })
+      );
+
+      expect((await runForMcp()).markdown).toBe(`## Passing Stories
+
+- button--primary
+- button--secondary
+
+## Result
+
+Passed: 2 component tests passed.
+Accessibility: 2 stories checked, no violations.`);
+    });
+
+    it('lists a story whose accessibility check fails the run as failing, not passing', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          componentTestCount: { success: 2, error: 0 },
+          a11yCount: { success: 1, warning: 0, error: 1 },
+          componentTestStatuses: [
+            componentTest('button--primary', 'status-value:success'),
+            componentTest('button--secondary', 'status-value:success'),
+          ],
+          a11yStatuses: [
+            a11yCheck('button--primary', 'status-value:error'),
+            a11yCheck('button--secondary', 'status-value:success'),
+          ],
+          a11yReports: {
+            'button--primary': [
+              {
+                violations: [
+                  {
+                    id: 'color-contrast',
+                    description: 'Color contrast ratio is insufficient',
+                    nodes: [{ html: '<button>Click me</button>', impact: 'serious' }],
+                  },
+                ],
+              },
+            ],
+          },
+        })
+      );
+
+      const outcome = await runForMcp();
+
+      expect(outcome.ok).toBe(false);
+      expect(outcome.markdown).toBe(`## Passing Stories
+
+- button--secondary
+
+## Failing Stories
+
+### button--primary
+
+The accessibility check failed; see Accessibility Violations below.
+
+## Accessibility Violations
+
+### button--primary - color-contrast
+
+Color contrast ratio is insufficient
+
+#### Affected Elements
+- **Impact**: serious
+  **Element**: <button>Click me</button>
+
+## Result
+
+Failed: 1 accessibility check failed.
+Accessibility: 2 stories checked; 1 without violations; 1 failing the run.`);
     });
 
     it('lists failing stories with their descriptions', async () => {
       vi.mocked(runStoryTests).mockResolvedValue(
         completed({
           componentTestCount: { success: 1, error: 1 },
+          a11yCount: { success: 1, warning: 0, error: 0 },
           componentTestStatuses: [
             componentTest('button--primary', 'status-value:success'),
             componentTest(
@@ -270,7 +388,10 @@ describe('test API', () => {
         })
       );
 
-      expect((await runForMcp()).markdown).toBe(`## Passing Stories
+      const outcome = await runForMcp();
+
+      expect(outcome.ok).toBe(false);
+      expect(outcome.markdown).toBe(`## Passing Stories
 
 - button--primary
 
@@ -278,14 +399,19 @@ describe('test API', () => {
 
 ### button--secondary
 
-Expected button text to be "Secondary"`);
+Expected button text to be "Secondary"
+
+## Result
+
+Failed: 1 component test failed.
+Accessibility: 1 story checked, no violations. Stories with a failing component test get no accessibility result.`);
     });
 
     it('reports accessibility violations with inspect links built from the origin', async () => {
       vi.mocked(runStoryTests).mockResolvedValue(
         completed({
           componentTestCount: { success: 1, error: 0 },
-          a11yCount: { success: 0, warning: 1, error: 1 },
+          a11yCount: { success: 0, warning: 1, error: 0 },
           componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
           a11yReports: {
             'button--primary': [
@@ -324,12 +450,18 @@ Color contrast ratio is insufficient
 - **Impact**: critical
   **Message**: 2.5:1 (required: 4.5:1)
   **Element**: <button style="color: #fff; background: #ccc;">Click me</button>
-  **Inspect**: http://localhost:6006/inspect/button--primary?inspectPath=button.0`);
+  **Inspect**: http://localhost:6006/inspect/button--primary?inspectPath=button.0
+
+## Result
+
+Passed: 1 component test passed.
+Accessibility: 1 story checked; 1 with violations reported as warnings, which do not fail the run.`);
     });
 
     it('omits accessibility violations when the run disabled a11y', async () => {
       vi.mocked(runStoryTests).mockResolvedValue(
         completed({
+          componentTestCount: { success: 1, error: 0 },
           componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
           a11yReports: {
             'button--primary': [
@@ -349,7 +481,12 @@ Color contrast ratio is insufficient
 
       expect((await runForMcp({ a11y: false })).markdown).toBe(`## Passing Stories
 
-- button--primary`);
+- button--primary
+
+## Result
+
+Passed: 1 component test passed.
+Accessibility: skipped (a11y: false).`);
     });
 
     it('reports unhandled errors without claiming any story passed', async () => {
@@ -367,7 +504,10 @@ Color contrast ratio is insufficient
         })
       );
 
-      expect((await runForMcp()).markdown).toBe(`## Unhandled Errors
+      const outcome = await runForMcp();
+
+      expect(outcome.ok).toBe(false);
+      expect(outcome.markdown).toBe(`## Unhandled Errors
 
 ### ReferenceError
 
@@ -376,7 +516,39 @@ Color contrast ratio is insufficient
 **Test name**: Button > Primary
 **Stack trace**:
 ReferenceError: foo is not defined
-    at Button.tsx:10:5`);
+    at Button.tsx:10:5
+
+## Result
+
+Failed: 1 unhandled error.
+Accessibility: not checked.`);
+    });
+
+    it('passes a run whose accessibility violations are only warnings, and says so', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          componentTestCount: { success: 1, error: 0 },
+          a11yCount: { success: 0, warning: 1, error: 0 },
+          componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
+        })
+      );
+
+      const outcome = await runForMcp();
+
+      expect(outcome.ok).toBe(true);
+      expect(outcome.markdown).toContain(`## Result
+
+Passed: 1 component test passed.
+Accessibility: 1 story checked; 1 with violations reported as warnings, which do not fail the run.`);
+    });
+
+    it('does not call a run without component tests a pass', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(completed());
+
+      expect((await runForMcp()).markdown).toBe(`## Result
+
+No component tests ran.
+Accessibility: not checked.`);
     });
 
     it('returns the per-selector lookup failures when nothing matched', async () => {
@@ -397,6 +569,14 @@ ReferenceError: foo is not defined
 
 No story found for story ID "missing--story"
 No story found for story ID "gone--story"`);
+    });
+
+    it('says an empty story list selected nothing', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue({ status: 'no-stories', notFoundMessages: [] });
+
+      expect((await runForMcp({ stories: [] })).markdown).toBe(
+        'No stories were given, so no tests ran. Pass story IDs in `stories`, or omit it to run every story test.'
+      );
     });
 
     it('flags a failed run as a failure while still rendering the error line', async () => {
@@ -445,17 +625,21 @@ No story found for story ID "gone--story"`);
         })
       );
 
-      await runTests({ stories: [{ storyId: 'button--primary' }] });
+      const outcome = await runTests({ stories: [{ storyId: 'button--primary' }] });
 
-      expect(telemetry).toHaveBeenCalledWith('tool:runStoryTests', {
+      expect(outcome.telemetry).toEqual({
         toolset: 'test',
-        runA11y: true,
-        inputStoryCount: 1,
-        matchedStoryCount: 1,
-        passingStoryCount: 1,
-        failingStoryCount: 0,
-        a11yViolationCount: 1,
-        unhandledErrorCount: 0,
+        tool: 'run',
+        event: 'tool:test_run',
+        payload: {
+          runA11y: true,
+          inputStoryCount: 1,
+          matchedStoryCount: 1,
+          passingStoryCount: 1,
+          failingStoryCount: 0,
+          a11yViolationCount: 1,
+          unhandledErrorCount: 0,
+        },
       });
     });
 
@@ -465,50 +649,30 @@ No story found for story ID "gone--story"`);
         notFoundMessages: ['No story found for story ID "missing--story"'],
       });
 
-      await runTests({ stories: [{ storyId: 'missing--story' }], a11y: false });
+      const outcome = await runTests({ stories: [{ storyId: 'missing--story' }], a11y: false });
 
-      expect(telemetry).toHaveBeenCalledWith('tool:runStoryTests', {
+      expect(outcome.telemetry).toEqual({
         toolset: 'test',
-        runA11y: false,
-        inputStoryCount: 1,
-        matchedStoryCount: 0,
-        passingStoryCount: 0,
-        failingStoryCount: 0,
-        a11yViolationCount: 0,
-        unhandledErrorCount: 0,
+        tool: 'run',
+        event: 'tool:test_run',
+        payload: {
+          runA11y: false,
+          inputStoryCount: 1,
+          matchedStoryCount: 0,
+          passingStoryCount: 0,
+          failingStoryCount: 0,
+          a11yViolationCount: 0,
+          unhandledErrorCount: 0,
+        },
       });
     });
 
     it('stays silent for a run that never reached a verdict', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({ status: 'cancelled' });
 
-      await runTests();
+      const outcome = await runTests();
 
-      expect(telemetry).not.toHaveBeenCalled();
-    });
-
-    it.each([
-      ['completed', completedRun],
-      [
-        'no-stories',
-        {
-          status: 'no-stories' as const,
-          notFoundMessages: ['No story found for story ID "missing--story"'],
-        },
-      ],
-    ])('does not fail a %s result when telemetry rejects', async (_status, result) => {
-      vi.mocked(runStoryTests).mockResolvedValue(result);
-      const rejectingCtx: ToolsetCtx = {
-        ...ctx,
-        telemetry: async () => {
-          throw new Error('telemetry unavailable');
-        },
-      };
-
-      const outcome = await runTests({}, rejectingCtx);
-
-      expect(outcome.ok).toBe(true);
-      expect(outcome.data.status).toBe(result.status);
+      expect(outcome.telemetry).toBeUndefined();
     });
   });
 });

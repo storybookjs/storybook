@@ -1,11 +1,22 @@
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as sbcc from 'storybook/internal/common';
-import type { JsPackageManager } from 'storybook/internal/common';
+import {
+  HandledError,
+  type JsPackageManager,
+  PackageManagerName,
+  versions,
+} from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
+import { getStorybookData as sourceGetStorybookData } from '../../../core/src/cli/getStorybookData.ts';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
 import type { UpgradeOptions } from './upgrade.ts';
-import { getStorybookVersion } from './upgrade.ts';
+import { checkVersionConsistency, getStorybookVersion, withNpmForceFallback } from './upgrade.ts';
 import { collectProjects, generateUpgradeSpecs, isSuccessResult } from './util.ts';
 
 const findInstallationsMock =
@@ -14,7 +25,29 @@ const getInstalledVersionMock = vi.fn<(arg: string) => Promise<string | undefine
 const { getStorybookDataMock } = vi.hoisted(() => ({
   getStorybookDataMock: vi.fn(),
 }));
+const spawnSyncMock = vi.hoisted(() => vi.fn());
+// Mutable holder so tests can control the mocked manager's detected type (defaults to undefined).
+const managerTypeHolder = vi.hoisted(() => ({ type: undefined as string | undefined }));
+const getPackageManagerMock = vi.hoisted(() => vi.fn());
+vi.mock('cross-spawn', () => ({ sync: spawnSyncMock }));
 
+// Mirrors every logger.warn call (deduped emissions included) so tests can assert on emissions
+// from the real source chain, which loads copies of node-logger that process-level spies cannot
+// reach. Delegates to the actual logger so once() dedupe and output behavior stay intact.
+const { loggerWarnSpy } = vi.hoisted(() => ({ loggerWarnSpy: vi.fn() }));
+vi.mock(import('storybook/internal/node-logger'), async (importOriginal) => {
+  const actual = await importOriginal();
+  const originalWarn = actual.logger.warn.bind(actual.logger);
+  actual.logger.warn = (...args) => {
+    loggerWarnSpy(...args);
+    return originalWarn(...args);
+  };
+  return actual;
+});
+
+// Project collection evaluates a real main.js through core's source, so it needs the real
+// importModule instead of the stub from vitest-setup.ts.
+vi.unmock('../../../core/src/shared/utils/module.ts');
 vi.mock('storybook/internal/telemetry');
 vi.mock('./autoblock/index.ts', () => ({
   autoblock: vi.fn(async () => null),
@@ -22,43 +55,63 @@ vi.mock('./autoblock/index.ts', () => ({
 vi.mock('./automigrate/helpers/mainConfigFile.ts', () => ({
   getStorybookData: getStorybookDataMock,
 }));
-vi.mock('storybook/internal/common', async (importOriginal) => {
-  const originalModule = (await importOriginal()) as typeof sbcc;
+vi.mock(import('storybook/internal/common'), async (importOriginal) => {
+  const originalModule = await importOriginal();
   return {
     ...originalModule,
-    JsPackageManagerFactory: {
-      getPackageManager: () => ({
-        findInstallations: findInstallationsMock,
-        getInstalledVersion: getInstalledVersionMock,
-        latestVersion: async () => '8.0.0',
-        getAllDependencies: () => ({ storybook: '8.0.0' }),
-        getModulePackageJSON: vi.fn(),
-      }),
-    },
+    JsPackageManagerFactory: Object.assign(originalModule.JsPackageManagerFactory, {
+      getPackageManager: getPackageManagerMock,
+    }),
     versions: Object.keys(originalModule.versions).reduce(
       (acc, key) => {
         acc[key] = '9.0.0';
         return acc;
       },
       {} as Record<string, string>
-    ),
+    ) as typeof originalModule.versions,
   };
+});
+
+beforeEach(() => {
+  getPackageManagerMock.mockImplementation(({ force }: { force?: PackageManagerName } = {}) => ({
+    type: force ?? managerTypeHolder.type,
+    findInstallations: findInstallationsMock,
+    getInstalledVersion: getInstalledVersionMock,
+    latestVersion: async () => '8.0.0',
+    getAllDependencies: () => ({ storybook: '8.0.0' }),
+    getModulePackageJSON: async () => ({ version: '9.0.0' }),
+  }));
 });
 
 describe.each([
   ['│ │ │ ├── @babel/code-frame@7.10.3 deduped', null],
-  [
-    '├─┬ @storybook/preset-create-react-app@3.1.2',
-    { package: '@storybook/preset-create-react-app', version: '3.1.2' },
-  ],
+  ['├─┬ @storybook/preset-scss@3.1.2', { package: '@storybook/preset-scss', version: '3.1.2' }],
   ['│ ├─┬ @storybook/node-logger@5.3.19', { package: '@storybook/node-logger', version: '5.3.19' }],
   [
-    'npm ERR! peer dep missing: @storybook/react@>=5.2, required by @storybook/preset-create-react-app@3.1.2',
+    'npm ERR! peer dep missing: @storybook/react@>=5.2, required by @storybook/preset-scss@3.1.2',
     null,
   ],
 ])('getStorybookVersion', (input, output) => {
   it(`${input}`, () => {
     expect(getStorybookVersion(input)).toEqual(output);
+  });
+});
+
+describe('checkVersionConsistency', () => {
+  it('warns about the deprecated @storybook/nextjs package without throwing', () => {
+    // `checkVersionConsistency` stringifies the spawnSync output array and splits on newlines,
+    // so the fake `npm ls` stdout must be a single multi-line string.
+    spawnSyncMock.mockReturnValueOnce({
+      output: [null, 'my-project@1.0.0 /path/to/project\n├── @storybook/nextjs@11.0.0\n', null],
+    });
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+
+    expect(() => checkVersionConsistency()).not.toThrow();
+
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('@storybook/nextjs'));
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('MIGRATION.md#nextjs-storybooknextjs-is-deprecated')
+    );
   });
 });
 
@@ -205,22 +258,35 @@ describe('toUpgradedDependencies', () => {
       ]);
     });
 
-    it('should keep caret ranges for prerelease CLI upgrades that are not canaries', async () => {
+    it('should keep an older alpha exact and add carets for the latest alpha', async () => {
       const deps = {
         '@storybook/react': '^8.0.0',
+        '@storybook/addon-mcp': '^8.0.0',
       };
+      const reactVersion = versions['@storybook/react'];
+      const mcpVersion = versions['@storybook/addon-mcp'];
+      versions['@storybook/react'] = '11.0.0-alpha.5';
+      versions['@storybook/addon-mcp'] = '11.0.0-alpha.5';
 
-      const result = await generateUpgradeSpecs(deps, {
-        packageManager: mockPackageManager,
-        isCanary: false,
-        isCLIOutdated: false,
-        isCLIPrerelease: true,
-        isCLIExactPrerelease: false,
-        isCLIExactLatest: false,
-        storybookVersionSpecifier: '10.6.0-alpha.7',
-      });
+      try {
+        const config = {
+          packageManager: mockPackageManager,
+          isCanary: false,
+          isCLIOutdated: false,
+          isCLIPrerelease: true,
+          isCLIExactLatest: false,
+        };
 
-      expect(result).toEqual(['@storybook/react@^9.0.0']);
+        expect(
+          await generateUpgradeSpecs(deps, { ...config, isCLIExactPrerelease: false })
+        ).toEqual(['@storybook/react@11.0.0-alpha.5', '@storybook/addon-mcp@11.0.0-alpha.5']);
+        expect(await generateUpgradeSpecs(deps, { ...config, isCLIExactPrerelease: true })).toEqual(
+          ['@storybook/react@^11.0.0-alpha.5', '@storybook/addon-mcp@^11.0.0-alpha.5']
+        );
+      } finally {
+        versions['@storybook/react'] = reactVersion;
+        versions['@storybook/addon-mcp'] = mcpVersion;
+      }
     });
 
     it('should treat pkg.pr.new Storybook specifiers as canaries during project collection', async () => {
@@ -239,7 +305,6 @@ describe('toUpgradedDependencies', () => {
         storiesPaths: [],
         versionSpecifier: 'https://pkg.pr.new/storybookjs/storybook/storybook@abc123',
         versionInstalled: '10.0.0',
-        hasCsfFactoryPreview: false,
       });
 
       const results = await collectProjects({ force: true } as any, ['.storybook'], () => {});
@@ -255,11 +320,32 @@ describe('toUpgradedDependencies', () => {
   });
 
   describe('satellite packages', () => {
+    it('preserves local workspace satellite dependencies during a prerelease upgrade', async () => {
+      const result = await generateUpgradeSpecs(
+        {
+          '@storybook/addon-designs': 'workspace:*',
+          '@storybook/react-vite': '^10.0.0',
+        },
+        {
+          packageManager: mockPackageManager,
+          isCanary: false,
+          isCLIOutdated: false,
+          isCLIPrerelease: true,
+          isCLIExactPrerelease: true,
+          isCLIExactLatest: false,
+        }
+      );
+
+      expect(result).toEqual(['@storybook/react-vite@^9.0.0']);
+      expect(mockPackageManager.latestVersion).not.toHaveBeenCalledWith(
+        '@storybook/addon-designs@next'
+      );
+    });
+
     it('should include satellite dependencies for latest stable version', async () => {
       const deps = {
         '@storybook/react': '8.0.0',
         '@storybook/addon-designs': '8.0.0',
-        '@storybook/test-runner': '^8.0.0',
         '@chromatic-com/storybook': '~3.0.0',
       };
 
@@ -275,15 +361,14 @@ describe('toUpgradedDependencies', () => {
       expect(result).toEqual([
         '@storybook/react@9.0.0',
         '@storybook/addon-designs@8.0.0',
-        '@storybook/test-runner@^9.0.0',
         '@chromatic-com/storybook@~3.0.0',
       ]);
       expect(mockPackageManager.latestVersion).toHaveBeenCalledWith('@storybook/addon-designs');
     });
 
-    it('should include satellite dependencies with @next for prerelease version', async () => {
+    it('should add carets to core and satellite dependencies for the latest prerelease', async () => {
       const deps = {
-        '@storybook/react': '^8.0.0',
+        '@storybook/react': '8.0.0',
         '@storybook/addon-designs': '8.0.0',
       };
 
@@ -297,10 +382,30 @@ describe('toUpgradedDependencies', () => {
       });
 
       expect(result).toContainEqual('@storybook/react@^9.0.0');
-      expect(result).toContainEqual('@storybook/addon-designs@9.0.0-beta.1');
+      expect(result).toContainEqual('@storybook/addon-designs@^9.0.0-beta.1');
       expect(mockPackageManager.latestVersion).toHaveBeenCalledWith(
         '@storybook/addon-designs@next'
       );
+    });
+
+    it('keeps the latest version of a satellite whose next tag is older', async () => {
+      vi.mocked(mockPackageManager.latestVersion).mockImplementation(async (packageName: string) =>
+        packageName === '@storybook/addon-designs@next' ? '5.0.0-next.30' : '5.1.4'
+      );
+
+      const result = await generateUpgradeSpecs(
+        { '@storybook/addon-designs': '^5.1.2' },
+        {
+          packageManager: mockPackageManager,
+          isCanary: false,
+          isCLIOutdated: false,
+          isCLIExactLatest: false,
+          isCLIExactPrerelease: true,
+          isCLIPrerelease: true,
+        }
+      );
+
+      expect(result).toEqual(['@storybook/addon-designs@^5.1.4']);
     });
 
     it('should handle errors when fetching satellite dependencies', async () => {
@@ -364,7 +469,6 @@ describe('collectProjects', () => {
       packageManager,
       storiesPaths: [],
       versionInstalled: '8.0.0',
-      hasCsfFactoryPreview: false,
     } as unknown as Awaited<ReturnType<typeof getStorybookData>>);
 
     const results = await collectProjects(
@@ -381,5 +485,169 @@ describe('collectProjects', () => {
       expect(result.isCLIExactLatest).toBe(false);
       expect(result.latestCLIVersionOnNPM).toBeNull();
     }
+  });
+});
+
+describe('Project collection', () => {
+  const projectDirs: string[] = [];
+
+  const createProjectFixture = async (): Promise<string> => {
+    const projectDir = await mkdtemp(join(tmpdir(), 'sb-upgrade-yarn1-'));
+    await mkdir(join(projectDir, '.storybook'), { recursive: true });
+    await writeFile(
+      join(projectDir, 'package.json'),
+      JSON.stringify({ name: 'yarn1-project', version: '1.0.0' })
+    );
+    await writeFile(join(projectDir, '.storybook', 'main.js'), 'export default { stories: [] };\n');
+    return projectDir;
+  };
+
+  // Route project collection through the real core getStorybookData (source) so the Yarn 1
+  // warning fires exactly where it would in a real run (the file-level mock normally bypasses
+  // it). The source import stays inside the Vitest module graph, so the file-level common mock
+  // and logger spies apply; the built dist CLI runs externalized, making its logger invisible.
+  const useRealProjectDataCollection = () => {
+    getStorybookDataMock.mockImplementation(sourceGetStorybookData as any);
+  };
+
+  // Warnings are observed through the file-level node-logger mock above: it mirrors every
+  // logger.warn call (deduped emissions included) into loggerWarnSpy while delegating to the
+  // real logger, so once() dedupe stays intact and the assertion sees final emissions only.
+  const bestEffortWarningCount = () =>
+    loggerWarnSpy.mock.calls.filter(([message]) => String(message).includes('best-effort')).length;
+
+  afterEach(async () => {
+    managerTypeHolder.type = undefined;
+    vi.restoreAllMocks();
+    loggerWarnSpy.mockClear();
+    await Promise.all(
+      projectDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true }))
+    );
+  });
+
+  it('warns exactly once across multiple Yarn 1 projects and completes collection (AC3)', async () => {
+    const [dirA, dirB] = await Promise.all([createProjectFixture(), createProjectFixture()]);
+    projectDirs.push(dirA, dirB);
+    managerTypeHolder.type = PackageManagerName.YARN1;
+    useRealProjectDataCollection();
+
+    const results = await collectProjects(
+      { force: true } as any,
+      [join(dirA, '.storybook'), join(dirB, '.storybook')],
+      () => {}
+    );
+
+    expect(bestEffortWarningCount()).toBe(1);
+    expect(results).toHaveLength(2);
+    expect(results.every((r) => isSuccessResult(r))).toBe(true);
+  });
+
+  it.each([
+    PackageManagerName.NPM,
+    PackageManagerName.YARN2,
+    PackageManagerName.PNPM,
+    PackageManagerName.BUN,
+  ])('does not emit the warning for %s projects (AC4)', async (packageManagerType) => {
+    const dir = await createProjectFixture();
+    projectDirs.push(dir);
+    managerTypeHolder.type = packageManagerType;
+    useRealProjectDataCollection();
+
+    const results = await collectProjects(
+      { force: true } as any,
+      [join(dir, '.storybook')],
+      () => {}
+    );
+
+    expect(bestEffortWarningCount()).toBe(0);
+    expect(results).toHaveLength(1);
+    expect(results.every((r) => isSuccessResult(r))).toBe(true);
+  });
+
+  it('uses the requested package manager for project collection', async () => {
+    const dir = await createProjectFixture();
+    projectDirs.push(dir);
+    managerTypeHolder.type = PackageManagerName.NPM;
+    useRealProjectDataCollection();
+
+    const results = await collectProjects(
+      { force: true, packageManager: PackageManagerName.PNPM } as UpgradeOptions,
+      [join(dir, '.storybook')],
+      () => {}
+    );
+
+    expect(results).toHaveLength(1);
+    expect(isSuccessResult(results[0]) && results[0].packageManager.type).toBe(
+      PackageManagerName.PNPM
+    );
+  });
+});
+
+describe('withNpmForceFallback', () => {
+  it('installs without --force for npm when the first install succeeds', async () => {
+    const installDependencies = vi.fn().mockResolvedValue(undefined);
+    const manager = { type: PackageManagerName.NPM } as unknown as JsPackageManager;
+
+    await withNpmForceFallback(manager, installDependencies);
+
+    expect(installDependencies).toHaveBeenCalledTimes(1);
+    expect(installDependencies.mock.calls[0]).toEqual([]);
+  });
+
+  it('retries npm with --legacy-peer-deps on a peer dependency conflict without --force', async () => {
+    const installDependencies = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('npm error code ERESOLVE'))
+      .mockResolvedValue(undefined);
+    const manager = { type: PackageManagerName.NPM } as unknown as JsPackageManager;
+
+    await withNpmForceFallback(manager, installDependencies);
+
+    expect(installDependencies.mock.calls).toEqual([[], [{ legacyPeerDeps: true }]]);
+  });
+
+  it('retries npm with --force only after the --legacy-peer-deps retry fails', async () => {
+    const installDependencies = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('npm error code ERESOLVE'))
+      .mockRejectedValueOnce(new Error('npm error code ERESOLVE'))
+      .mockResolvedValue(undefined);
+    const manager = { type: PackageManagerName.NPM } as unknown as JsPackageManager;
+
+    await withNpmForceFallback(manager, installDependencies);
+
+    expect(installDependencies.mock.calls).toEqual([
+      [],
+      [{ legacyPeerDeps: true }],
+      [{ force: true }],
+    ]);
+  });
+
+  it('rethrows npm failures other than peer dependency conflicts without a second install', async () => {
+    const installDependencies = vi.fn().mockRejectedValue(new Error('npm error code EACCES'));
+    const manager = { type: PackageManagerName.NPM } as unknown as JsPackageManager;
+
+    await expect(withNpmForceFallback(manager, installDependencies)).rejects.toThrow('EACCES');
+    expect(installDependencies).toHaveBeenCalledTimes(1);
+  });
+
+  it('rethrows HandledError without a second install', async () => {
+    const installDependencies = vi
+      .fn()
+      .mockRejectedValue(new HandledError(new Error('npm error code ERESOLVE')));
+    const manager = { type: PackageManagerName.NPM } as unknown as JsPackageManager;
+
+    await expect(withNpmForceFallback(manager, installDependencies)).rejects.toThrow(HandledError);
+    expect(installDependencies).toHaveBeenCalledTimes(1);
+  });
+
+  it('rethrows non-npm install failures without a second install', async () => {
+    const installDependencies = vi.fn().mockRejectedValue(new Error('yarn install failed'));
+    const manager = { type: PackageManagerName.YARN1 } as unknown as JsPackageManager;
+
+    await expect(withNpmForceFallback(manager, installDependencies)).rejects.toThrow(
+      'yarn install failed'
+    );
+    expect(installDependencies).toHaveBeenCalledTimes(1);
   });
 });

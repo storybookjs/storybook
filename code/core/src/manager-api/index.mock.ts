@@ -5,8 +5,8 @@ export { Tag } from '../shared/constants/tags.ts';
 
 export const openInEditor = fn();
 
-export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store/index.ts';
-export { useUniversalStore as experimental_useUniversalStore } from '../shared/universal-store/use-universal-store-manager.ts';
+export { UniversalStore as internal_UniversalStore } from '../shared/universal-store/index.ts';
+export { useUniversalStore as internal_useUniversalStore } from '../shared/universal-store/use-universal-store-manager.ts';
 export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock.ts';
 
 export {

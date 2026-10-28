@@ -6,7 +6,8 @@
  *     @Component / @Directive  -> components / directives, members split into
  *                                 inputsClass, outputsClass, propertiesClass, methodsClass
  *     @Pipe / @Injectable      -> pipes / injectables, members split into properties, methods
- *     no Angular decorator     -> classes
+ *     .d.ts with compiled ɵcmp -> components, as above, IO read from the compiled maps
+ *     no Angular decorator     -> classes, except in a .d.ts, where it is dropped
  *     @NgModule or @ignore     -> dropped
  *
  * plus a `miscellaneous` index of the enums and type aliases the file declares, which is what lets a
@@ -83,6 +84,33 @@ describe('which classes a file yields', () => {
     expect(meta.pipes[0].ngname).toBe('sbFormat');
   });
 
+  it('files a .d.ts class Angular compiled as a component, and drops any other .d.ts class', () => {
+    const meta = analyzeFiles('button.component.d.ts', {
+      'button.component.d.ts': `
+        import * as i0 from '@angular/core';
+
+        export declare class ButtonComponent {
+          label: string;
+          static ɵcmp: i0.ɵɵComponentDeclaration<
+            ButtonComponent, 'my-button', never, {}, {}, never, never, false
+          >;
+        }
+
+        export declare class ButtonTheme {
+          accent: string;
+        }
+      `,
+    });
+
+    expect(names(meta.components)).toEqual(['ButtonComponent']);
+    expect(meta.classes).toEqual([]);
+    expect(meta.components[0]).toMatchObject({
+      type: 'component',
+      selector: 'my-button',
+      standalone: false,
+    });
+  });
+
   it('drops an @NgModule, which declares no bindable surface of its own', () => {
     const meta = analyze(`
       import { NgModule } from '@angular/core';
@@ -133,6 +161,17 @@ describe('the selector', () => {
     expect(component.selector).toBe('button[sb-harness-action], a[sb-harness-action]');
   });
 
+  it('reads a quoted decorator property name', () => {
+    const component = componentIn(`
+      import { Component } from '@angular/core';
+
+      @Component({ 'selector': 'sb-quoted', template: '' })
+      export class QuotedComponent {}
+    `);
+
+    expect(component.selector).toBe('sb-quoted');
+  });
+
   it('is absent on a class with no Angular decorator', () => {
     const meta = analyze(`
       export class BaseAlertComponent {}
@@ -143,7 +182,7 @@ describe('the selector', () => {
 });
 
 describe('standalone', () => {
-  it('records the literal value and stays absent when the decorator leaves it unspecified', () => {
+  it('records the literal value and defaults to true when the decorator omits the property', () => {
     const meta = analyze(`
       import { Component, Directive } from '@angular/core';
 
@@ -160,11 +199,7 @@ describe('standalone', () => {
       export class LegacyDirective {}
     `);
 
-    expect(meta.components.map((component) => component.standalone)).toEqual([
-      false,
-      true,
-      undefined,
-    ]);
+    expect(meta.components.map((component) => component.standalone)).toEqual([false, true, true]);
     expect(meta.directives[0].standalone).toBe(false);
   });
 
@@ -192,6 +227,82 @@ describe('standalone', () => {
     `);
 
     expect(component.standalone).toBeUndefined();
+  });
+
+  it('reads quoted keys and stays unspecified for forms it cannot evaluate', () => {
+    const shorthand = componentIn(`
+      import { Component } from '@angular/core';
+
+      const standalone = false;
+
+      @Component({ selector: 'sb-shorthand', standalone, template: '' })
+      export class ShorthandComponent {}
+    `);
+    const spread = componentIn(`
+      import { Component } from '@angular/core';
+
+      const options = { standalone: false };
+
+      @Component({ selector: 'sb-spread', ...options, template: '' })
+      export class SpreadComponent {}
+    `);
+    const quoted = componentIn(`
+      import { Component } from '@angular/core';
+
+      @Component({ selector: 'sb-quoted', 'standalone': false, template: '' })
+      export class QuotedComponent {}
+    `);
+    const computed = componentIn(`
+      import { Component } from '@angular/core';
+
+      @Component({ selector: 'sb-computed', ['standalone']: false, template: '' })
+      export class ComputedComponent {}
+    `);
+
+    expect(shorthand.standalone).toBeUndefined();
+    expect(spread.standalone).toBeUndefined();
+    expect(quoted.standalone).toBe(false);
+    expect(computed.standalone).toBeUndefined();
+  });
+
+  it('follows object property order when an unknown member might set standalone', () => {
+    const unknownAfterExplicit = componentIn(`
+      import { Component } from '@angular/core';
+
+      declare const options: object;
+
+      @Component({ selector: 'sb-unknown', standalone: true, ...options, template: '' })
+      export class UnknownComponent {}
+    `);
+    const explicitAfterUnknown = componentIn(`
+      import { Component } from '@angular/core';
+
+      declare const options: object;
+
+      @Component({ selector: 'sb-explicit', ...options, standalone: false, template: '' })
+      export class ExplicitComponent {}
+    `);
+    const computedAfterExplicit = componentIn(`
+      import { Component } from '@angular/core';
+
+      declare const key: string;
+
+      @Component({ selector: 'sb-computed-after', standalone: true, [key]: false, template: '' })
+      export class ComputedAfterComponent {}
+    `);
+    const explicitAfterComputed = componentIn(`
+      import { Component } from '@angular/core';
+
+      declare const key: string;
+
+      @Component({ selector: 'sb-explicit-after', [key]: true, standalone: false, template: '' })
+      export class ExplicitAfterComponent {}
+    `);
+
+    expect(unknownAfterExplicit.standalone).toBeUndefined();
+    expect(explicitAfterUnknown.standalone).toBe(false);
+    expect(computedAfterExplicit.standalone).toBeUndefined();
+    expect(explicitAfterComputed.standalone).toBe(false);
   });
 });
 

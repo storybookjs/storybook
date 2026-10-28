@@ -45,12 +45,12 @@ export const Header = ({ user, onLogin, onLogout, onCreateAccount }: HeaderProps
                 onClick: onLogin,
                 label: 'Log in',
               })}
-            ${Button({
-              primary: true,
-              size: 'small',
-              onClick: onCreateAccount,
-              label: 'Sign up',
-            })}`
+              ${Button({
+                primary: true,
+                size: 'small',
+                onClick: onCreateAccount,
+                label: 'Sign up',
+              })}`
         }
       </div>
     </div>

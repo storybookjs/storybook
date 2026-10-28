@@ -47,7 +47,6 @@ export const dev = async (cliOptions: CLIOptions) => {
     ...cliOptions,
     configDir: cliOptions.configDir || './.storybook',
     configType: 'DEVELOPMENT',
-    ignorePreview: !!cliOptions.previewUrl && !cliOptions.forceBuildPreview,
     cache: cache as any,
     packageJson: packageJson,
   } as Options;

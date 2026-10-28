@@ -36,13 +36,16 @@ const createStorybookProgram = program
   .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
   .option('-f --force', 'Force add Storybook')
   .option('-s --skip-install', 'Skip installing deps')
+  .option(
+    '--install-typescript',
+    'Add TypeScript, which docgen needs, when the project has none, without asking'
+  )
+  .option('--no-install-typescript', 'Do not add TypeScript when the project has none')
   .addOption(
     new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
       Object.values(PackageManagerName)
     )
   )
-  // TODO: Remove in SB11
-  .option('--use-pnp', 'Enable pnp mode for Yarn 2+')
   .addOption(
     new Option('--parser <type>', 'jscodeshift parser').choices([
       'babel',

@@ -1,0 +1,7 @@
+<csf-shapes label="Meta"></csf-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', () => {});
+  }
+</script>

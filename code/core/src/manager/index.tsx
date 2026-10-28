@@ -11,7 +11,7 @@ import { global } from '@storybook/global';
 import { HelmetProvider } from 'react-helmet-async';
 import { Provider as ManagerProvider, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
-import { ThemeProvider, ensure as ensureTheme } from 'storybook/theming';
+import { ThemeProvider, ensure as ensureTheme } from 'storybook/theming/emotion';
 
 import { App } from './App.tsx';
 import type { Layout } from './components/layout/Layout.tsx';
@@ -76,7 +76,6 @@ export const Main: FC<{ provider: Provider }> = ({ provider }) => {
                       ...state.layout,
                       viewMode: state.viewMode,
                     }}
-                    hasTab={!!api.getQueryParam('tab')}
                     setManagerLayoutState={setManagerLayoutState}
                   />
                 </LayoutProvider>

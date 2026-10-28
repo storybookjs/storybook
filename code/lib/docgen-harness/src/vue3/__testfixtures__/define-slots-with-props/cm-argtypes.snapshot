@@ -14,9 +14,6 @@
     },
   },
   "disabled": {
-    "defaultValue": {
-      "summary": "false",
-    },
     "description": "Whether the button is disabled.",
     "name": "disabled",
     "table": {
@@ -48,9 +45,6 @@
     },
   },
   "label": {
-    "defaultValue": {
-      "summary": ""Button"",
-    },
     "description": "Visible label of the button.",
     "name": "label",
     "table": {

@@ -55,6 +55,10 @@ export const computesTemplateFromComponent = (
   const ngComponentMetadata = getComponentDecoratorMetadata(component);
   const ngComponentInputsOutputs = getComponentInputsOutputs(component);
 
+  if (!ngComponentMetadata) {
+    throw new Error(`${component.name} is not an Angular component`);
+  }
+
   if (!ngComponentMetadata.selector) {
     // Allow to add renderer component when NgComponent selector is undefined
     return `<ng-container *ngComponentOutlet="storyComponent"></ng-container>`;
@@ -162,7 +166,7 @@ export const computesTemplateSourceFromComponent = (
           .map((propertyName) =>
             createAngularInputProperty({
               propertyName,
-              value: initialProps[propertyName],
+              value: initialProps?.[propertyName],
               argType: argTypes?.[propertyName],
             })
           )

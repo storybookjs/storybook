@@ -5,10 +5,10 @@ import { deprecate } from 'storybook/internal/client-logger';
 
 import { CrossIcon } from '@storybook/icons';
 
-import { Heading } from 'react-aria-components/patched-dist/Heading';
-import { Text } from 'react-aria-components/patched-dist/Text';
+import { Heading } from 'react-aria-components/Heading';
+import { Text } from 'react-aria-components/Text';
 import type { TransitionStatus } from 'react-transition-state';
-import { keyframes, styled } from 'storybook/theming';
+import { keyframes, styled } from 'storybook/theming/emotion';
 
 import { Button } from '../Button/Button.tsx';
 // Import the ModalContext from the main Modal component

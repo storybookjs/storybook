@@ -1,0 +1,136 @@
+{
+  "customElementsManifest": {
+    "declaration": {
+      "attributes": [
+        {
+          "default": "'Go'",
+          "description": "Visible label.",
+          "fieldName": "label",
+          "name": "label",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "default": "'small'",
+          "description": "Button size.",
+          "fieldName": "size",
+          "name": "size",
+          "type": {
+            "text": "'small' | 'large'",
+          },
+        },
+        {
+          "default": "false",
+          "description": "Disables the button (boolean attribute).",
+          "fieldName": "disabled",
+          "name": "disabled",
+          "type": {
+            "text": "boolean",
+          },
+        },
+        {
+          "default": "3",
+          "description": "Upper bound for the counter; attribute name differs from the field.",
+          "fieldName": "maxCount",
+          "name": "max-count",
+          "type": {
+            "text": "number",
+          },
+        },
+      ],
+      "customElement": true,
+      "description": "A FAST button with attribute and observable fields.",
+      "events": [
+        {
+          "description": "Emitted after every click with the new count.",
+          "name": "fast-count-change",
+          "type": {
+            "text": "CustomEvent<number>",
+          },
+        },
+      ],
+      "kind": "class",
+      "members": [
+        {
+          "default": "'Go'",
+          "description": "Visible label.",
+          "kind": "field",
+          "name": "label",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "default": "'small'",
+          "description": "Button size.",
+          "kind": "field",
+          "name": "size",
+          "type": {
+            "text": "'small' | 'large'",
+          },
+        },
+        {
+          "default": "false",
+          "description": "Disables the button (boolean attribute).",
+          "kind": "field",
+          "name": "disabled",
+          "type": {
+            "text": "boolean",
+          },
+        },
+        {
+          "default": "3",
+          "description": "Upper bound for the counter; attribute name differs from the field.",
+          "kind": "field",
+          "name": "maxCount",
+          "type": {
+            "text": "number",
+          },
+        },
+        {
+          "default": "[]",
+          "description": "Property only, never reflected.",
+          "kind": "field",
+          "name": "items",
+          "type": {
+            "text": "string[]",
+          },
+        },
+        {
+          "default": "0",
+          "description": "Current click count.",
+          "kind": "field",
+          "name": "count",
+          "type": {
+            "text": "number",
+          },
+        },
+        {
+          "description": "Increments the counter and fires `fast-count-change`.",
+          "kind": "method",
+          "name": "increment",
+          "return": {
+            "type": {
+              "text": "void",
+            },
+          },
+        },
+      ],
+      "name": "FastAttributes",
+      "superclass": {
+        "name": "FASTElement",
+        "package": "@microsoft/fast-element",
+      },
+      "tagName": "fast-attributes",
+    },
+    "manifestPath": "custom-elements.json",
+  },
+  "description": "A FAST button with attribute and observable fields.",
+  "id": "fast-attributes",
+  "jsDocTags": {},
+  "name": "fast-attributes",
+  "path": "./input.stories.ts",
+  "renderer": "web-components",
+  "summary": undefined,
+}

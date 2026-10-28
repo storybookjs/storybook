@@ -315,6 +315,38 @@ export const ServiceDocgenLoadsAfterStoryFinishedInDev: Story = {
 };
 
 /**
+ * Regression test: opening the dev gate must keep the table mounted. The panel used to swap its
+ * annotation-only table for a new docgen-backed one, so every control lost its local state (an open
+ * color picker, a focused input) the moment docgen arrived.
+ */
+export const ServiceDocgenKeepsControlsMountedWhenGateOpens: Story = {
+  args: { docgenService },
+  beforeEach: () => {
+    serviceGetDocgen.mockClear();
+    serviceGetDocgen.get.mockClear();
+    serviceGetDocgen.subscribe.mockClear();
+    const original = global.CONFIG_TYPE;
+    global.CONFIG_TYPE = 'DEVELOPMENT';
+    return () => {
+      global.CONFIG_TYPE = original;
+    };
+  },
+  decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider value={serviceRenderManagerContext}>
+        {storyFn()}
+      </ManagerContext.Provider>
+    ),
+  ],
+  play: async ({ canvas }) => {
+    const rowBeforeDocgen = await canvas.findByText('variant', { selector: 'span' });
+    serviceRenderChannel.emit(STORY_FINISHED, { storyId: serviceStoryData.id });
+    await expect(await canvas.findByRole('radio', { name: 'primary' })).toBeInTheDocument();
+    await expect(canvas.getByText('variant', { selector: 'span' })).toBe(rowBeforeDocgen);
+  },
+};
+
+/**
  * With STORYBOOK_DOCGEN_STORY_PREPARED="true" the dev gate opens earlier, at STORY_PREPARED instead of
  * STORY_FINISHED, so the panel subscribes to docgen as soon as the story module is delivered.
  */

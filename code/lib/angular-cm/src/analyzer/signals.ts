@@ -3,7 +3,7 @@ import type * as ts from 'typescript';
 import type { Property } from '../types.ts';
 import type { AnalyzerContext } from './context.ts';
 import { defaultInitializer } from './default-initializer.ts';
-import { isAngularCoreOrUnresolved, stringOption } from './decorators.ts';
+import { isAngularCoreOrUnresolved, isDeclaredInAngularCore, stringOption } from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField } from './jsdoc.ts';
 import { memberName } from './node-text.ts';
 
@@ -98,6 +98,50 @@ export const buildSignalEntry = (
     // the same name appearing in both arrays on the same declaration line.
     line: ts.getLineAndCharacterOfPosition(member.getSourceFile(), member.getStart()).line + 1,
     ...(valueArgument ? { initializer: defaultInitializer(ctx, valueArgument) } : {}),
+    ...getJsDocDescription(ts, member),
+    ...getJsDocTagsField(ts, member),
+  };
+};
+
+const DECLARED_SIGNAL_KINDS = new Map<string, SignalCall['kind']>([
+  ['InputSignal', 'input'],
+  ['InputSignalWithTransform', 'input'],
+  ['ModelSignal', 'model'],
+  ['OutputEmitterRef', 'output'],
+]);
+
+// A declaration file keeps a signal member only as its type, such as `size: InputSignal<'sm'>`.
+export const declaredSignalKind = (
+  ctx: AnalyzerContext,
+  member: ts.PropertyDeclaration
+): SignalCall['kind'] | undefined => {
+  const { ts } = ctx;
+  if (
+    !member.getSourceFile().isDeclarationFile ||
+    ts.getModifiers(member)?.some((modifier) => modifier.kind === ts.SyntaxKind.StaticKeyword)
+  ) {
+    return undefined;
+  }
+  const type = ctx.checker.getTypeAtLocation(member);
+  const symbol = type.aliasSymbol ?? type.getSymbol();
+  return symbol && isDeclaredInAngularCore(symbol)
+    ? DECLARED_SIGNAL_KINDS.get(symbol.name)
+    : undefined;
+};
+
+// Required-ness and an alias are not in the type; the compiled `ɵcmp` maps supply them.
+export const buildDeclaredSignalEntry = (
+  ctx: AnalyzerContext,
+  member: ts.PropertyDeclaration
+): Property => {
+  const { ts } = ctx;
+  const type = signalValueTypeFromChecker(ctx, member);
+  return {
+    name: memberName(ts, member.name),
+    ...(type === undefined ? {} : { type }),
+    optional: false,
+    required: false,
+    line: ts.getLineAndCharacterOfPosition(member.getSourceFile(), member.getStart()).line + 1,
     ...getJsDocDescription(ts, member),
     ...getJsDocTagsField(ts, member),
   };

@@ -9,7 +9,9 @@ import type { AngularRenderer, ICollection, NgModuleMetadata } from './types.ts'
 // We use `any` here as the default type rather than `Args` because we need something that is
 // castable to any component-specific args type when the user is being careful.
 export const moduleMetadata =
-  <TArgs = any>(metadata: Partial<NgModuleMetadata>): DecoratorFunction<AngularRenderer, TArgs> =>
+  <TArgs = any>(
+    metadata: Partial<NgModuleMetadata> | null | undefined
+  ): DecoratorFunction<AngularRenderer, TArgs> =>
   (storyFn) => {
     const story = storyFn();
     const storyMetadata = story.moduleMetadata || {};
@@ -68,7 +70,7 @@ export const componentWrapperDecorator =
 
     const template = isComponent(element)
       ? computesTemplateFromComponent(element, currentProps ?? {}, story.template)
-      : element(story.template);
+      : element(story.template ?? '');
 
     return {
       ...story,

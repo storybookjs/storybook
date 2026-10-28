@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
 
 import { prompt } from 'storybook/internal/node-logger';
 import {
@@ -8,8 +7,6 @@ import {
   MinimumReleaseAgeHandledError,
 } from 'storybook/internal/server-errors';
 
-import { PosixFS, VirtualFS, ZipOpenFS } from '@yarnpkg/fslib';
-import { getLibzipSync } from '@yarnpkg/libzip';
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
@@ -31,8 +28,9 @@ import {
   hasStorybookMinimumAgeExclusions,
   parsePackageData,
   parsePackageTimeMap,
-  parsePositiveIntegerConfigValue,
   parseReleaseTime,
+  parseYarnMinimalAgeGateMinutes,
+  readPackageVersions,
   STORYBOOK_PACKAGE_PATTERNS,
 } from './util.ts';
 
@@ -122,6 +120,10 @@ export class Yarn2Proxy extends JsPackageManager {
     return `yarn exec ${args.join(' ')}`;
   }
 
+  getRemoteRunCommand(args: string[]): string {
+    return `yarn dlx ${args.join(' ')}`;
+  }
+
   public runPackageCommand({
     args,
     useRemotePkg = false,
@@ -178,55 +180,7 @@ export class Yarn2Proxy extends JsPackageManager {
     }
   }
 
-  // TODO: Remove pnp compatibility code in SB11
   async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const pnpapiPath = find.any(['.pnp.js', '.pnp.cjs'], {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
-
-    if (pnpapiPath) {
-      try {
-        /*
-          This is a rather fragile way to access Yarn's PnP API, essentially manually loading it.
-          The proper way to do this would be to just do await import('pnpapi'),
-          as documented at https://yarnpkg.com/advanced/pnpapi#requirepnpapi
-
-          However the 'pnpapi' module is only injected when the Node process is started via Yarn,
-          which is not always the case for us, because we spawn child processes directly with Node,
-          eg. when running automigrations.
-        */
-        const { default: pnpApi } = await import(pathToFileURL(pnpapiPath).href);
-
-        const resolvedPath = pnpApi.resolveToUnqualified(
-          packageName,
-          this.primaryPackageJson.operationDir,
-          {
-            considerBuiltins: false,
-          }
-        );
-
-        const pkgLocator = pnpApi.findPackageLocator(resolvedPath);
-        const pkg = pnpApi.getPackageInformation(pkgLocator);
-
-        const zipOpenFs = new ZipOpenFS({
-          libzip: getLibzipSync(),
-        });
-
-        const virtualFs = new VirtualFS({ baseFs: zipOpenFs });
-        const crossFs = new PosixFS(virtualFs);
-
-        const virtualPath = join(pkg.packageLocation, 'package.json');
-
-        return crossFs.readJsonSync(virtualPath);
-      } catch (error: any) {
-        if (error.code !== 'ERR_MODULE_NOT_FOUND') {
-          console.error('Error while fetching package version in Yarn PnP mode:', error);
-        }
-        return null;
-      }
-    }
-
     const wantedPath = join('node_modules', packageName, 'package.json');
     const packageJsonPath = find.up(wantedPath, {
       cwd: this.primaryPackageJson.operationDir,
@@ -300,7 +254,12 @@ export class Yarn2Proxy extends JsPackageManager {
       return;
     }
 
-    if (hasStorybookMinimumAgeExclusions(await this.getPreapprovedPackages())) {
+    const preapprovedPackages = await this.getPreapprovedPackages();
+    if (!preapprovedPackages) {
+      logger.debug('Skipping the age gate precheck: npmPreapprovedPackages could not be read.');
+      return;
+    }
+    if (hasStorybookMinimumAgeExclusions(preapprovedPackages)) {
       return;
     }
 
@@ -335,7 +294,7 @@ export class Yarn2Proxy extends JsPackageManager {
         dedent`
           yarn npmMinimalAgeGate would block storybook@${storybookVersion} from being installed because it was released within the configured npmMinimalAgeGate window, so Storybook updated npmPreapprovedPackages for this project automatically.
 
-          Added patterns: storybook, @storybook/*, eslint-plugin-storybook, @chromatic-com/storybook
+          Added patterns: ${STORYBOOK_PACKAGE_PATTERNS.join(', ')}
 
           Read more:
           - https://yarnpkg.com/configuration/yarnrc#npmMinimalAgeGate
@@ -419,18 +378,21 @@ export class Yarn2Proxy extends JsPackageManager {
     packageName: string,
     fetchAllVersions: T
   ): Promise<T extends true ? string[] : string> {
-    const field = fetchAllVersions ? 'versions' : 'version';
-    const args = ['--fields', field, '--json'];
     try {
-      const process = executeCommand({
-        command: 'yarn',
-        args: ['npm', 'info', packageName, ...args],
-      });
-      const result = await process;
-      const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
+      const info = await this.queryNpmPackageInfo(packageName);
 
-      const parsedOutput = JSON.parse(commandResult);
-      return parsedOutput[field];
+      if (!fetchAllVersions) {
+        if (typeof info.version !== 'string' || info.version.length === 0) {
+          throw new Error(`Missing version for ${packageName}`);
+        }
+        return info.version as T extends true ? string[] : string;
+      }
+
+      const versions = readPackageVersions(info.versions);
+      if (!versions) {
+        throw new Error(`Missing versions for ${packageName}`);
+      }
+      return versions as T extends true ? string[] : string;
     } catch (error) {
       throw new FindPackageVersionsError({
         error,
@@ -438,6 +400,20 @@ export class Yarn2Proxy extends JsPackageManager {
         packageName,
       });
     }
+  }
+
+  protected async runGetPeerDependencies(
+    packageSpec: string
+  ): Promise<Record<string, string> | undefined> {
+    const result = await this.runInternalCommand(
+      'npm',
+      ['info', packageSpec, '--fields', 'peerDependencies', '--json'],
+      undefined,
+      'pipe'
+    );
+    const output = typeof result.stdout === 'string' ? result.stdout : '';
+    // `peerDependencies` is missing when the version has none.
+    return JSON.parse(output).peerDependencies;
   }
 
   protected mapDependencies(input: string, pattern: string[]): InstallationMetadata {
@@ -501,7 +477,7 @@ export class Yarn2Proxy extends JsPackageManager {
         'pipe'
       );
 
-      return parsePositiveIntegerConfigValue(
+      return parseYarnMinimalAgeGateMinutes(
         typeof result.stdout === 'string' ? result.stdout : undefined
       );
     } catch {
@@ -510,19 +486,29 @@ export class Yarn2Proxy extends JsPackageManager {
   }
 
   private async getPackageTimeMap(packageName: string): Promise<Record<string, string> | null> {
+    try {
+      const info = await this.queryNpmPackageInfo(packageName);
+      // Yarn 6 returns a single version manifest without `time`, so the precheck is skipped there.
+      return parsePackageTimeMap(info.time);
+    } catch (error) {
+      logger.debug(`Failed to read publish times for ${packageName}: ${String(error)}`);
+      return null;
+    }
+  }
+
+  private async queryNpmPackageInfo(packageName: string): Promise<Record<string, unknown>> {
     const result = await this.runInternalCommand(
       'npm',
-      ['info', packageName, '--fields', 'time', '--json'],
+      ['info', packageName, '--json'],
       undefined,
       'pipe'
     );
-    const normalizedValue = typeof result.stdout === 'string' ? result.stdout.trim() : '';
-
-    if (!normalizedValue) {
-      return null;
+    const stdout = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+    const parsed: unknown = JSON.parse(stdout);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error(`Unexpected npm info output for ${packageName}`);
     }
-
-    return parsePackageTimeMap(JSON.parse(normalizedValue)?.time);
+    return parsed as Record<string, unknown>;
   }
 
   private createMinimalAgeGateRerunMessage({
@@ -550,6 +536,10 @@ export class Yarn2Proxy extends JsPackageManager {
 
   private async updatePreapprovedPackages(): Promise<void> {
     const currentPreapprovedPackages = await this.getPreapprovedPackages();
+    if (!currentPreapprovedPackages) {
+      logger.debug('Not updating npmPreapprovedPackages: the current list could not be read.');
+      return;
+    }
     const nextPreapprovedPackages = Array.from(
       new Set([...currentPreapprovedPackages, ...STORYBOOK_PACKAGE_PATTERNS])
     );
@@ -571,11 +561,13 @@ export class Yarn2Proxy extends JsPackageManager {
     );
   }
 
-  private async getPreapprovedPackages(): Promise<string[]> {
+  // `null` means the list could not be read (Yarn 6 prints "unimplemented"). It must not become `[]`,
+  // because `updatePreapprovedPackages` would then overwrite the user's list in `.yarnrc.yml`.
+  private async getPreapprovedPackages(): Promise<string[] | null> {
     try {
       const result = await this.runInternalCommand(
         'config',
-        ['get', 'npmPreapprovedPackages'],
+        ['get', 'npmPreapprovedPackages', '--json'],
         undefined,
         'pipe'
       );
@@ -587,20 +579,28 @@ export class Yarn2Proxy extends JsPackageManager {
 
       return this.parsePreapprovedPackages(normalizedValue);
     } catch {
-      return [];
+      return null;
     }
   }
 
-  private parsePreapprovedPackages(value: string): string[] {
+  private parsePreapprovedPackages(value: string): string[] | null {
+    if (value.includes('unimplemented')) {
+      return null;
+    }
+
     try {
       const parsedValue = JSON.parse(value);
+      if (parsedValue == null) {
+        return [];
+      }
       return Array.isArray(parsedValue)
         ? parsedValue.filter(
             (entry): entry is string => typeof entry === 'string' && entry.length > 0
           )
-        : [];
+        : null;
     } catch {
-      return Array.from(value.matchAll(/['"]([^'"\n]+)['"]/g), (match) => match[1]);
+      const quoted = Array.from(value.matchAll(/['"]([^'"\n]+)['"]/g), (match) => match[1]);
+      return quoted.length > 0 ? quoted : null;
     }
   }
 }

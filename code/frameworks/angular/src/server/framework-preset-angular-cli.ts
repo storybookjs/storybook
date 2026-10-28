@@ -134,6 +134,11 @@ export async function getBuilderOptions(options: PresetOptions, builderContext: 
   // `options.angularBuilderOptions` implicitly adds all options a target can have
   // To figure out what user-land actually has explicitly defined in their target options, we
   // manually need to read them
+  if (!builderContext.target) {
+    throw new Error(
+      'The Storybook builder must run as an Angular target to read the options it declares.'
+    );
+  }
   const explicitAngularBuilderOptions = await builderContext.getTargetOptions(
     builderContext.target
   );
@@ -143,7 +148,10 @@ export async function getBuilderOptions(options: PresetOptions, builderContext: 
    * preserve nested properties like stylePreprocessorOptions.includePaths when they exist in
    * browserTarget but not in storybook options
    */
-  const builderOptions = deepMerge(browserTargetOptions, explicitAngularBuilderOptions || {});
+  const builderOptions: Record<string, unknown> = deepMerge(
+    browserTargetOptions,
+    explicitAngularBuilderOptions || {}
+  );
 
   // Handle tsConfig separately to maintain existing logic
   builderOptions.tsConfig =

@@ -1,0 +1,9 @@
+{
+  "description": undefined,
+  "id": "sveltefixtures-complextypes",
+  "jsDocTags": {},
+  "name": "ComplexTypes",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": undefined,
+}

@@ -7,9 +7,9 @@ import { Bar, Button, ToggleButton, Zoom } from 'storybook/internal/components';
 
 import { CopyIcon, MarkupIcon } from '@storybook/icons';
 
-import { useId } from '@react-aria/utils';
+import { useId } from 'react-aria/useId';
 import { darken } from 'polished';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import type { SourceProps } from '.';
 import { Source } from '.';
@@ -81,9 +81,14 @@ const ChildrenContainer = styled.div<PreviewProps & { layout: Layout }>(
       : {}
 );
 
+// Room for Button's default focus ring: 2px outline + 2px outlineOffset (Button.tsx).
+const FOCUS_RING_INSET = 4;
+
 const ActionBar = styled(Bar)({
   marginTop: -40,
   marginBottom: 40,
+  marginInline: -FOCUS_RING_INSET,
+  width: 'auto',
 });
 
 const TrailingSnippetWarning = styled(SnippetWarning)({
@@ -236,7 +241,10 @@ export const Preview: FC<PreviewProps> = ({
         )}
       </PreviewContainer>
       {(withSource || additionalActionItems.length > 0) && (
-        <ActionBar className="sbdocs sbdocs-preview-actions" innerStyle={{ paddingInline: 0 }}>
+        <ActionBar
+          className="sbdocs sbdocs-preview-actions"
+          innerStyle={{ paddingInline: FOCUS_RING_INSET }}
+        >
           {hasSourceError && (
             <Button
               lang="en"

@@ -6,6 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { runCodemod } from './index.ts';
 
+// runCodemod reads the built transforms from the real package directory, so it needs the real
+// resolvePackageDir instead of the stub from vitest-setup.ts.
+vi.unmock('../../../core/src/shared/utils/module.ts');
+
 const logger = {
   step: vi.fn(),
   log: vi.fn(),

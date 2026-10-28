@@ -32,6 +32,7 @@ export const buildIndex = async (options: BuildIndexOptions) => {
     docs: docsOptions,
     build: {},
     features,
+    storySorts: await presets.apply('storySorts', []),
   });
 
   await generator.initialize();

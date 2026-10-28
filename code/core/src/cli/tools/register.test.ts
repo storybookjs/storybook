@@ -57,10 +57,7 @@ function parse(program: Command, argv: string[]) {
 function toolsCommandPayloads(): unknown[] {
   return vi
     .mocked(telemetry)
-    .mock.calls.filter(
-      ([eventType, payload]) =>
-        eventType === 'tools-command' && payload !== undefined && !('event' in payload)
-    )
+    .mock.calls.filter(([eventType]) => eventType === 'tools-command')
     .map(([, payload]) => payload);
 }
 
@@ -119,7 +116,8 @@ describe('tools-command telemetry', () => {
 
     expect(toolsCommandPayloads()).toEqual([
       {
-        command: 'docs list',
+        toolset: 'docs',
+        tool: 'list',
         success: true,
         outcome: 'success',
         client: 'cli',
@@ -131,6 +129,66 @@ describe('tools-command telemetry', () => {
       },
     ]);
     expect(sendTelemetryError).not.toHaveBeenCalled();
+  });
+
+  it('merges the handler report into the one tools-command record', async () => {
+    const { program } = buildProgram();
+    vi.mocked(runToolsCommand).mockResolvedValue(
+      successResult({
+        attachMode: 'local',
+        report: {
+          toolset: 'stories',
+          tool: 'changed',
+          event: 'tool:stories_changed',
+          payload: {
+            storyCount: 4,
+            newStoryCount: 1,
+            modifiedStoryCount: 3,
+            affectedStoryCount: 0,
+          },
+        },
+      })
+    );
+    await parse(program, ['tools', 'stories', 'changed']);
+
+    expect(toolsCommandPayloads()).toEqual([
+      {
+        toolset: 'stories',
+        tool: 'changed',
+        event: 'tool:stories_changed',
+        success: true,
+        outcome: 'success',
+        duration: expect.any(Number),
+        client: 'cli',
+        requestedMode: 'auto',
+        resolvedMode: 'local',
+        attachMode: 'local',
+        host: 'in-process',
+        storyCount: 4,
+        newStoryCount: 1,
+        modifiedStoryCount: 3,
+        affectedStoryCount: 0,
+      },
+    ]);
+  });
+
+  it('names the tool by its registered spelling, not by what the agent typed', async () => {
+    const { program } = buildProgram();
+    vi.mocked(runToolsCommand).mockResolvedValue(
+      successResult({
+        report: {
+          toolset: 'stories',
+          tool: 'find-by-component',
+          event: 'tool:stories_findByComponent',
+          payload: { componentCount: 1 },
+        },
+      })
+    );
+    await parse(program, ['tools', 'stories', 'findByComponent']);
+
+    expect(toolsCommandPayloads()).toEqual([
+      expect.objectContaining({ toolset: 'stories', tool: 'find-by-component', componentCount: 1 }),
+    ]);
   });
 
   it('reports an attach-gate outcome from --attach', async () => {
@@ -149,7 +207,8 @@ describe('tools-command telemetry', () => {
 
     expect(toolsCommandPayloads()).toEqual([
       expect.objectContaining({
-        command: 'docs list',
+        toolset: 'docs',
+        tool: 'list',
         success: false,
         outcome: 'attach-gate',
         client: 'cli',
@@ -161,6 +220,27 @@ describe('tools-command telemetry', () => {
     expect(toolsCommandPayloads()[0]).not.toHaveProperty('resolvedMode');
     expect(toolsCommandPayloads()[0]).not.toHaveProperty('host');
     expect(sendTelemetryError).not.toHaveBeenCalled();
+  });
+
+  it('names no toolset or tool when the attach gate fired before any was parsed', async () => {
+    const { program } = buildProgram();
+    vi.mocked(runToolsCommand).mockResolvedValue(
+      successResult({
+        exitCode: 1,
+        output: 'No running Storybook',
+        outcome: { kind: 'attach-gate', reason: 'no-instance' },
+        requestedMode: 'attached',
+        attachMode: 'attached',
+        host: undefined,
+      })
+    );
+    await parse(program, ['tools', '--attach']);
+
+    expect(toolsCommandPayloads()).toEqual([
+      expect.objectContaining({ success: false, outcome: 'attach-gate' }),
+    ]);
+    expect(toolsCommandPayloads()[0]).not.toHaveProperty('toolset');
+    expect(toolsCommandPayloads()[0]).not.toHaveProperty('tool');
   });
 
   it('keeps requestedMode auto and attachGate on a successful local fallback', async () => {
@@ -178,7 +258,8 @@ describe('tools-command telemetry', () => {
 
     expect(toolsCommandPayloads()).toEqual([
       expect.objectContaining({
-        command: 'docs list',
+        toolset: 'docs',
+        tool: 'list',
         success: true,
         outcome: 'success',
         client: 'cli',
@@ -204,7 +285,8 @@ describe('tools-command telemetry', () => {
 
     expect(toolsCommandPayloads()).toEqual([
       expect.objectContaining({
-        command: 'nope list',
+        toolset: 'nope',
+        tool: 'list',
         success: false,
         outcome: 'intercept',
         interceptReason: 'unknown-toolset',
@@ -232,7 +314,8 @@ describe('tools-command telemetry', () => {
 
     expect(toolsCommandPayloads()).toEqual([
       expect.objectContaining({
-        command: 'docs list',
+        toolset: 'docs',
+        tool: 'list',
         success: false,
         outcome: 'error',
         client: 'cli',
@@ -272,7 +355,7 @@ describe('tools-command telemetry', () => {
     await parse(program, ['tools', './projects/secret-app', 'list']);
 
     expect(toolsCommandPayloads()).toEqual([
-      expect.objectContaining({ command: '(invalid) list' }),
+      expect.objectContaining({ toolset: '(invalid)', tool: 'list' }),
     ]);
   });
 
@@ -283,7 +366,8 @@ describe('tools-command telemetry', () => {
     expect(runToolsCommand).not.toHaveBeenCalled();
     expect(toolsCommandPayloads()).toEqual([
       expect.objectContaining({
-        command: 'docs list',
+        toolset: 'docs',
+        tool: 'list',
         success: false,
         outcome: 'intercept',
         interceptReason: 'invalid-arguments',
@@ -299,8 +383,7 @@ describe('tools-command telemetry', () => {
     await parse(program, ['tools', '--port', '6006', 'docs', 'list']);
 
     expect(runToolsCommand).toHaveBeenCalledWith(
-      expect.objectContaining({ toolset: 'docs', tool: 'list', port: '6006' }),
-      expect.anything()
+      expect.objectContaining({ toolset: 'docs', tool: 'list', port: '6006' })
     );
   });
 

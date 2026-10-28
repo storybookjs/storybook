@@ -1,5 +1,3 @@
-import type { ResolvedCoverageOptions } from 'vitest/node';
-
 import type { ReportNode, Visitor } from 'istanbul-lib-report';
 import { ReportBase } from 'istanbul-lib-report';
 
@@ -7,32 +5,29 @@ import type { StoreState } from '../types.ts';
 import type { TestManager } from './test-manager.ts';
 
 export type StorybookCoverageReporterOptions = {
-  testManager: TestManager;
-  coverageOptions: ResolvedCoverageOptions | undefined;
+  getTestManager: () => TestManager;
 };
 
 class StorybookCoverageReporter extends ReportBase implements Partial<Visitor> {
-  #testManager: StorybookCoverageReporterOptions['testManager'];
-
-  #coverageOptions: StorybookCoverageReporterOptions['coverageOptions'];
+  #getTestManager: StorybookCoverageReporterOptions['getTestManager'];
 
   constructor(opts: StorybookCoverageReporterOptions) {
     super();
-    this.#testManager = opts.testManager;
-    this.#coverageOptions = opts.coverageOptions;
+    this.#getTestManager = opts.getTestManager;
   }
 
   onSummary(node: ReportNode) {
     if (!node.isRoot()) {
       return;
     }
+    const testManager = this.#getTestManager();
     const rawCoverageSummary = node.getCoverageSummary(false);
 
     const percentage = Math.round(rawCoverageSummary.data.statements.pct);
 
     // Fallback to Vitest's default watermarks https://vitest.dev/config/#coverage-watermarks
     const [lowWatermark = 50, highWatermark = 80] =
-      this.#coverageOptions?.watermarks?.statements ?? [];
+      testManager.vitestManager.vitest?.config.coverage.watermarks?.statements ?? [];
 
     const coverageSummary: StoreState['currentRun']['coverageSummary'] = {
       percentage,
@@ -43,14 +38,11 @@ class StorybookCoverageReporter extends ReportBase implements Partial<Visitor> {
             ? 'warning'
             : 'positive',
     };
-    this.#testManager.onCoverageCollected(coverageSummary);
+    testManager.onCoverageCollected(coverageSummary);
   }
 }
 
-/**
- * This is exported weirdly because the coverage tool loading this uses `Cont = require(name)`. So
- * it doesn't support a default export, it has to be the "root" export as CJS
- *
- * @see https://nodejs.org/docs/latest-v20.x/api/modules.html#loading-ecmascript-modules-using-require
- */
+export default StorybookCoverageReporter;
+
+// Vitest 4 load custom coverage reporters with require(name).
 export { StorybookCoverageReporter as 'module.exports' };

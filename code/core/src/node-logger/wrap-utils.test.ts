@@ -1,9 +1,12 @@
+import { stripVTControlCharacters } from 'node:util';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaSync } from 'execa';
 
 import {
+  createHyperlink,
   getTerminalWidth,
   protectUrls,
   wrapTextForClack,
@@ -25,19 +28,14 @@ vi.mock('execa', () => ({
   execaSync: vi.fn(),
 }));
 
-// Helper function to strip ANSI codes for length calculation
-function stripAnsi(str: string): string {
-  return str.replace(/\u001b\[[0-9;]*m/g, '');
-}
-
-// Helper function to get visible length
 function getVisibleLength(str: string): number {
-  return stripAnsi(str).length;
+  return stripVTControlCharacters(str).length;
 }
 
-const stubStdoutColumns = (descriptor: PropertyDescriptor) => {
+const stubStdoutColumns = (descriptor: PropertyDescriptor, isTTY = true) => {
   const stdout = Object.create(process.stdout);
   Object.defineProperty(stdout, 'columns', { configurable: true, ...descriptor });
+  Object.defineProperty(stdout, 'isTTY', { configurable: true, value: isTTY });
 
   const stubbedProcess = Object.create(process);
   Object.defineProperty(stubbedProcess, 'stdout', { value: stdout, configurable: true });
@@ -155,8 +153,8 @@ describe('wrap-utils', () => {
       expect(result).toMatch(/\u001b\[0m/); // Reset code
 
       // Text content should be preserved
-      expect(stripAnsi(result)).toContain('This is red text');
-      expect(stripAnsi(result)).toContain('normal text');
+      expect(stripVTControlCharacters(result)).toContain('This is red text');
+      expect(stripVTControlCharacters(result)).toContain('normal text');
 
       // Should wrap into multiple lines
       expect(result.split('\n').length).toBeGreaterThan(1);
@@ -238,7 +236,7 @@ describe('wrap-utils', () => {
 
       // Should still work without label
       expect(typeof result).toBe('string');
-      expect(stripAnsi(result)).toContain('Hint without label');
+      expect(stripVTControlCharacters(result)).toContain('Hint without label');
 
       // If wrapped, should still have proper structure
       if (result.includes('\n')) {
@@ -257,7 +255,7 @@ describe('wrap-utils', () => {
       // Should still produce reasonable output
       expect(typeof result).toBe('string');
       expect(result.length).toBeGreaterThan(0);
-      expect(stripAnsi(result)).toContain('Test hint text');
+      expect(stripVTControlCharacters(result)).toContain('Test hint text');
     });
 
     it('should handle empty hint text', () => {
@@ -284,13 +282,13 @@ describe('wrap-utils', () => {
       const lines = result.split('\n');
 
       // Find the line with the checkmark
-      const checkmarkLine = lines.find((line) => stripAnsi(line).includes('✔'));
+      const checkmarkLine = lines.find((line) => stripVTControlCharacters(line).includes('✔'));
       expect(checkmarkLine).toBeDefined();
 
       // The checkmark should be followed by "Success" on the same line if width allows
       if (checkmarkLine && getVisibleLength(checkmarkLine) <= 32) {
         // 40 - 8 = 32
-        expect(stripAnsi(checkmarkLine)).toMatch(/✔\s+Success/);
+        expect(stripVTControlCharacters(checkmarkLine)).toMatch(/✔\s+Success/);
       }
     });
 
@@ -305,9 +303,9 @@ describe('wrap-utils', () => {
       expect(result).toMatch(/\u001b\[0m/); // Reset (multiple instances)
 
       // Should preserve content
-      expect(stripAnsi(result)).toContain('✔');
-      expect(stripAnsi(result)).toContain('Bold text');
-      expect(stripAnsi(result)).toContain('normal text');
+      expect(stripVTControlCharacters(result)).toContain('✔');
+      expect(stripVTControlCharacters(result)).toContain('Bold text');
+      expect(stripVTControlCharacters(result)).toContain('normal text');
 
       // Line length constraints should be respected
       const lines = result.split('\n');
@@ -327,8 +325,8 @@ describe('wrap-utils', () => {
       expect(result).toMatch(/\u001b\[0m/); // Reset
 
       // Content should be intact
-      expect(stripAnsi(result)).toContain('Multiple codes');
-      expect(stripAnsi(result)).toContain('normal text continues');
+      expect(stripVTControlCharacters(result)).toContain('Multiple codes');
+      expect(stripVTControlCharacters(result)).toContain('normal text continues');
     });
 
     it('should properly handle reset codes and color state', () => {
@@ -345,7 +343,7 @@ describe('wrap-utils', () => {
       expect(resetMatches!.length).toBeGreaterThanOrEqual(2);
 
       // Content order should be preserved
-      const cleanResult = stripAnsi(result);
+      const cleanResult = stripVTControlCharacters(result);
       expect(cleanResult.indexOf('Red')).toBeLessThan(cleanResult.indexOf('normal'));
       expect(cleanResult.indexOf('normal')).toBeLessThan(cleanResult.indexOf('Green'));
     });
@@ -385,6 +383,33 @@ describe('wrap-utils', () => {
 
       expect(result).toMatchInlineSnapshot(
         `"Visit ]8;;https://example.comhttps://example.com]8;; for more info"`
+      );
+    });
+
+    it('should keep URLs plain when stdout is piped', () => {
+      stubStdoutColumns({ value: undefined }, false);
+      vi.stubEnv('TERM_PROGRAM', 'iTerm.app');
+
+      const url = 'https://example.com/path/to/guide';
+
+      expect(protectUrls(`Visit ${url}`)).toBe(`Visit ${url}`);
+      expect(createHyperlink('Guide', url)).toBe(`Guide: ${url}`);
+    });
+
+    it('should keep hyperlink targets on a supported TTY', () => {
+      vi.stubEnv('TERM_PROGRAM', 'iTerm.app');
+      vi.stubEnv('TERM_PROGRAM_VERSION', '3.4.0');
+
+      expect(createHyperlink('Guide', 'https://example.com/guide')).toBe(
+        '\u001b]8;;https://example.com/guide\u0007Guide\u001b]8;;\u0007'
+      );
+    });
+
+    it('should use the titled URL fallback in Apple Terminal', () => {
+      vi.stubEnv('TERM_PROGRAM', 'Apple_Terminal');
+
+      expect(createHyperlink('Guide', 'https://example.com/guide')).toBe(
+        'Guide: https://example.com/guide'
       );
     });
 

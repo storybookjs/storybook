@@ -104,18 +104,23 @@ type ToStoriesHashOptions = {
 };
 
 /**
- * Root, group and component ids are derived from the parts of a title with `sanitize`, which strips
- * punctuation. A part made only of punctuation, such as a folder named `_`, would sanitize to
- * nothing: an empty id for a root, and for a nested group an id equal to its parent's. Fall back to
- * the part's code points so it still gets a stable, non-empty and URL-safe id.
- *
- * The `--` prefix keeps that fallback in its own namespace. `sanitize` collapses runs of
- * punctuation to a single `-` and trims the ends, so it can never emit `--`, which means the
- * fallback for `_` cannot collide with a title part literally named `5f`. It cannot collide with a
- * story id either, since those are `<kind>--<name>` with both halves sanitized.
+ * A title part made only of punctuation, such as a folder named `_`, sanitizes to nothing. Fall
+ * back to its code points under a `--` prefix, which `sanitize` never emits, so the id stays
+ * non-empty, URL-safe and apart from ordinary sanitized parts.
  */
 const sanitizeTitlePart = (part: string) =>
   sanitize(part) || `--${Array.from(part, (char) => char.codePointAt(0)!.toString(16)).join('-')}`;
+
+/** The ids of the root, groups and component along a title, so `A/B/C` gives `a`, `a-b`, `a-b-c`. */
+export const titleToPathIds = (title: string) =>
+  title
+    .trim()
+    .split(TITLE_PATH_SEPARATOR)
+    .reduce((ids, part) => {
+      const segment = sanitizeTitlePart(part);
+      ids.push(ids.length ? `${ids[ids.length - 1]}-${segment}` : segment);
+      return ids;
+    }, [] as string[]);
 
 export const transformStoryIndexToStoriesHash = (
   input: API_PreparedStoryIndex | StoryIndexV3,
@@ -195,27 +200,12 @@ export const transformStoryIndexToStoriesHash = (
     const root = (!setShowRoots || showRoots) && groups.length > 1 ? [groups.shift()] : [];
     const names = [...root, ...groups];
 
+    if (names.some((name) => name!.trim() === '')) {
+      throw new Error(dedent`Invalid title ${title} ending in slash.`);
+    }
+
     // Now create a "path" or sub id for each name
-    const paths = names.reduce((list, name, idx) => {
-      const parent = idx > 0 && list[idx - 1];
-      const id = parent ? `${parent}-${sanitizeTitlePart(name!)}` : sanitizeTitlePart(name!);
-
-      if (name!.trim() === '') {
-        throw new Error(dedent`Invalid title ${title} ending in slash.`);
-      }
-
-      if (parent === id) {
-        throw new Error(
-          dedent`
-          Invalid part '${name}', leading to id === parentId ('${id}'), inside title '${title}'
-
-          Did you create a path that uses the separator char accidentally, such as 'Vue <docs/>' where '/' is a separator char? See https://github.com/storybookjs/storybook/issues/6128
-          `
-        );
-      }
-      list.push(id);
-      return list;
-    }, [] as string[]);
+    const paths = titleToPathIds(title);
 
     paths.forEach((id, idx) => {
       const node = titleNodes.get(id) ?? {

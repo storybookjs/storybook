@@ -478,6 +478,56 @@ describe('stories API', () => {
       expect(index!['p-5f-b']).toMatchObject({ type: 'component', children: ['y--1'] });
       expect(index!.p).toMatchObject({ type: 'root', children: ['p---5f', 'p-5f'] });
     });
+    it.each([
+      ['_', '--5f'],
+      ['...', '--2e-2e-2e'],
+      ['-', '--2d'],
+    ])('gives a group named %j the fallback id %j', (part, fallback) => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store, provider } = moduleArgs;
+      provider.getConfig.mockReturnValue({ sidebar: { showRoots: true } });
+      api.setIndex({
+        v: 5,
+        entries: {
+          'a-b--1': {
+            type: 'story',
+            subtype: 'story',
+            id: 'a-b--1',
+            title: `a/${part}/b`,
+            name: '1',
+            tags: [],
+            importPath: './a/b.ts',
+          },
+        },
+      });
+      const { index } = store.getState();
+      expect(index![`a-${fallback}`]).toMatchObject({ type: 'group', name: part, parent: 'a' });
+      expect(index![`a-${fallback}-b`]).toMatchObject({ type: 'component', name: 'b' });
+    });
+    it('gives a punctuation-only first part a fallback id when roots are hidden', () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store, provider } = moduleArgs;
+      provider.getConfig.mockReturnValue({ sidebar: { showRoots: false } });
+      api.setIndex({
+        v: 5,
+        entries: {
+          'b--1': {
+            type: 'story',
+            subtype: 'story',
+            id: 'b--1',
+            title: '_/b',
+            name: '1',
+            tags: [],
+            importPath: './_/b.ts',
+          },
+        },
+      });
+      const { index } = store.getState();
+      expect(index!['--5f']).toMatchObject({ type: 'group', name: '_', children: ['--5f-b'] });
+      expect(index!['--5f-b']).toMatchObject({ type: 'component', parent: '--5f' });
+    });
     it('intersects story/docs tags to compute tags for root and group entries', () => {
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
@@ -1340,6 +1390,28 @@ describe('stories API', () => {
       // When selecting the component, it should select the first visible child (a--2)
       api.selectStory('a');
       expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
+    });
+    it('selects a component by a title with a punctuation-only part', () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate } = moduleArgs;
+
+      api.setIndex({
+        v: 5,
+        entries: {
+          'a-b--1': {
+            type: 'story',
+            subtype: 'story',
+            id: 'a-b--1',
+            title: 'a/_/b',
+            name: '1',
+            tags: [],
+            importPath: './a/_/b.ts',
+          },
+        },
+      });
+      api.selectStory('a/_/b');
+      expect(navigate).toHaveBeenCalledWith('/story/a-b--1', undefined);
     });
     describe('deprecated api', () => {
       it('allows navigating to a combination of title + name', () => {

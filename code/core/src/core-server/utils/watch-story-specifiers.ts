@@ -1,5 +1,5 @@
 import { type Dirent, lstatSync, readdirSync } from 'node:fs';
-import { basename, join, relative, resolve } from 'node:path';
+import { basename, join, relative, resolve, sep } from 'node:path';
 
 import { commonGlobOptions, getSpecifierImportPath } from 'storybook/internal/common';
 import type { NormalizedStoriesSpecifier, Path } from 'storybook/internal/types';
@@ -89,7 +89,7 @@ export function watchStorySpecifiers(
           // so will match one (or more) specifiers
           .filter((specifier) => {
             const directory = resolve(options.workingDir, specifier.directory);
-            return !relative(directory, absolutePath).startsWith('..');
+            return relative(directory, absolutePath).split(sep)[0] !== '..';
           })
           .map(async (specifier) => {
             // If `./path/to/dir` was added, check all files matching `./path/to/dir/**/*.stories.*`

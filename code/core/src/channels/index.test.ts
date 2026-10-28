@@ -1,8 +1,26 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { STORY_PREPARED, UPDATE_STORY_ARGS } from '../core-events/index.ts';
 
 import type { ChannelEvent, ChannelTransport, Listener } from './index.ts';
-import { Channel, WebsocketTransport, isTransportedChannelValue } from './index.ts';
+import { UniversalStore } from '../shared/universal-store/index.ts';
+import {
+  Channel,
+  createBrowserChannel,
+  WebsocketTransport,
+  isTransportedChannelValue,
+} from './index.ts';
+
+vi.mock('./websocket/index.ts', async (importOriginal) => {
+  const original = await importOriginal<typeof import('./websocket/index.ts')>();
+  return {
+    ...original,
+    WebsocketTransport: vi.fn(function (
+      ...args: ConstructorParameters<typeof original.WebsocketTransport>
+    ): InstanceType<typeof original.WebsocketTransport> {
+      return new original.WebsocketTransport(...args);
+    }),
+  };
+});
 
 const MockedWebsocket = vi.hoisted(() => {
   const ref = { current: undefined as unknown as InstanceType<typeof MyMockedWebsocket> };
@@ -410,5 +428,39 @@ describe('WebsocketTransport', () => {
     MockedWebsocket.ref.current.onerror(new Error('testError'));
 
     expect(onError.mock.calls[0][0]).toMatchInlineSnapshot(`[Error: testError]`);
+  });
+});
+
+describe('createBrowserChannel', () => {
+  beforeEach(() => {
+    vi.stubGlobal('CONFIG_TYPE', 'DEVELOPMENT');
+    vi.stubGlobal('location', { protocol: 'http:', hostname: 'localhost', port: '6006' });
+    vi.stubGlobal('window', { location: globalThis.location });
+    vi.stubGlobal('WebSocket', MockedWebsocket.MyMockedWebsocket);
+    vi.spyOn(UniversalStore, '__prepare').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it.each([
+    {
+      name: 'uses the configured channel path',
+      input: { wsToken: 't', wsPath: '/_nuxt/storybook-server-channel' },
+      expected: 'ws://localhost:6006/_nuxt/storybook-server-channel?token=t&page=manager',
+    },
+    {
+      name: 'falls back to the default channel path',
+      input: { wsToken: 't' },
+      expected: 'ws://localhost:6006/storybook-server-channel?token=t&page=manager',
+    },
+  ])('$name', ({ input, expected }) => {
+    vi.stubGlobal('CHANNEL_OPTIONS', input);
+
+    createBrowserChannel({ page: 'manager' });
+
+    expect(vi.mocked(WebsocketTransport).mock.calls[0][0].url).toBe(expected);
   });
 });

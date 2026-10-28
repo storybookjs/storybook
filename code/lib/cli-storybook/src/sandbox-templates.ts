@@ -1,5 +1,5 @@
 import type { ConfigFile } from 'storybook/internal/csf-tools';
-import { type StorybookConfigRaw } from 'storybook/internal/types';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { ProjectType } from '../../../core/src/cli/projectTypes.ts';
 import { SupportedBuilder } from '../../../core/src/types/modules/builders.ts';
@@ -21,8 +21,6 @@ export type TemplateKey =
   | keyof typeof internalTemplates
   | keyof typeof benchTemplates;
 
-export type Cadence = keyof typeof templatesByCadence;
-
 // Some properties e.g. experimentalTestSyntax are only available in framework specific types for StorybookConfig, therefore we loosen the type here otherwise it would always fail
 type LoosenedStorybookConfig = Omit<Partial<StorybookConfigRaw>, 'features'> & {
   features?:
@@ -32,10 +30,10 @@ type LoosenedStorybookConfig = Omit<Partial<StorybookConfigRaw>, 'features'> & {
 
 export type Template = {
   /**
-   * Readable name for the template, which will be used for feedback and the status page Follows the
-   * naming scheme when it makes sense: <framework> <"v"version|"Latest"|"Prerelease">
-   * (<"Webpack"|"Vite"> | <"JavaScript"|"TypeScript">) React Latest - Webpack (TS) Next.js v12 (JS)
-   * Angular CLI Prerelease
+   * Readable name for the template, used for feedback and the status page. Base templates follow
+   * `<framework> <"v"version|"Latest"|"Prerelease"> (<"Webpack"|"Vite"|"RsBuild"> |
+   * <"JavaScript"|"TypeScript">)`, e.g. `Next.js v15 (Webpack | TypeScript)`. CI job ids are derived
+   * from it, so renaming a template renames its jobs.
    */
   name: string;
   /**
@@ -307,7 +305,17 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDevDependencies: ['prop-types', '@types/prop-types', '@storybook/addon-mcp'],
+      // create-vite >= 9.3.3 scaffolds TypeScript 7.0, which Storybook's TS docgen cannot use
+      // (TS 7.0 has no compiler API; #37004 supports 7.1+). Keep this pin until docgen supports
+      // the TypeScript version that create-vite scaffolds (#36987, #37004). Overwrite the
+      // scaffold's own devDependencies range; pinning via devDependencies avoids a conflicting
+      // duplicate entry.
+      extraDevDependencies: [
+        'prop-types',
+        '@types/prop-types',
+        '@storybook/addon-mcp',
+        'typescript@^6',
+      ],
       editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
       mainConfig: {
         features: {
@@ -335,7 +343,13 @@ export const baseTemplates = {
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['react@canary', 'react-dom@canary'],
-      extraDevDependencies: ['prop-types', '@types/react@latest', '@types/react-dom@latest'],
+      extraDevDependencies: [
+        'prop-types',
+        '@types/react@latest',
+        '@types/react-dom@latest',
+        // See `react-vite/default-ts` for why TypeScript is pinned to 6.
+        'typescript@^6',
+      ],
       resolutions: {
         '@types/react': 'npm:@types/react@latest',
         '@types/react-dom': 'npm:@types/react-dom@latest',
@@ -476,21 +490,6 @@ export const baseTemplates = {
     },
     skipTasks: ['bench'],
   },
-  'vue3-vite/default-js': {
-    name: 'Vue v3 (Vite | JavaScript)',
-    script: 'npm create vite --yes {{beforeDir}} -- --template vue',
-    // vue-component-meta@^3.3.9 pins @vue/language-core; both are inside the age gate.
-    minAgeGateExemptions: ['vue-component-meta', '@vue/language-core'],
-    expected: {
-      framework: '@storybook/vue3-vite',
-      renderer: '@storybook/vue3',
-      builder: '@storybook/builder-vite',
-    },
-    modifications: {
-      useCsfFactory: true,
-    },
-    skipTasks: ['e2e-tests', 'bench'],
-  },
   'vue3-vite/default-ts': {
     name: 'Vue v3 (Vite | TypeScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template vue-ts',
@@ -557,20 +556,6 @@ export const baseTemplates = {
   //   },
   //   skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   // },
-  'html-vite/default-js': {
-    name: 'HTML Latest (Vite | JavaScript)',
-    script:
-      'npm create vite --yes {{beforeDir}} -- --template vanilla && cd {{beforeDir}} && echo "export default {}" > vite.config.js',
-    expected: {
-      framework: '@storybook/html-vite',
-      renderer: '@storybook/html',
-      builder: '@storybook/builder-vite',
-    },
-    skipTasks: ['e2e-tests', 'bench'],
-    initOptions: {
-      type: ProjectType.HTML,
-    },
-  },
   'html-vite/default-ts': {
     name: 'HTML Latest (Vite | TypeScript)',
     script:
@@ -601,16 +586,6 @@ export const baseTemplates = {
       type: ProjectType.HTML,
     },
   },
-  'svelte-vite/default-js': {
-    name: 'Svelte Latest (Vite | JavaScript)',
-    script: 'npm create vite --yes {{beforeDir}} -- --template svelte',
-    expected: {
-      framework: '@storybook/svelte-vite',
-      renderer: '@storybook/svelte',
-      builder: '@storybook/builder-vite',
-    },
-    skipTasks: ['e2e-tests', 'bench'],
-  },
   'svelte-vite/default-ts': {
     name: 'Svelte Latest (Vite | TypeScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template svelte-ts',
@@ -618,6 +593,10 @@ export const baseTemplates = {
       framework: '@storybook/svelte-vite',
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
+      mainConfig: { features: { componentsManifest: true } },
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'bench'],
@@ -630,6 +609,9 @@ export const baseTemplates = {
       framework: '@storybook/sveltekit',
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
@@ -720,33 +702,6 @@ export const baseTemplates = {
     skipTasks: ['bench'],
     initOptions: { builder: SupportedBuilder.VITE },
   },
-  'lit-vite/default-js': {
-    name: 'Lit Latest (Vite | JavaScript)',
-    script:
-      'npm create vite --yes {{beforeDir}} -- --template lit && cd {{beforeDir}} && echo "export default {}" > vite.config.js',
-    // TODO: remove after oct 21 2026
-    minAgeGateExemptions: ['@wc-toolkit/*'],
-    expected: {
-      framework: '@storybook/web-components-vite',
-      renderer: '@storybook/web-components',
-      builder: '@storybook/builder-vite',
-    },
-    modifications: {
-      useCsfFactory: true,
-      mainConfig: {
-        framework: {
-          name: '@storybook/web-components-vite',
-          options: {
-            customElementsManifest: [
-              '../src/stories/renderers/web-components/custom-elements.json',
-            ],
-          },
-        },
-      },
-    },
-    // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
-    skipTasks: ['smoke-test', 'e2e-tests', 'bench'],
-  },
   'lit-vite/default-ts': {
     name: 'Lit Latest (Vite | TypeScript)',
     script:
@@ -793,24 +748,6 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
-  'preact-vite/default-js': {
-    name: 'Preact Latest (Vite | JavaScript)',
-    script: 'npm create vite --yes {{beforeDir}} -- --template preact',
-    preferNoLink: true,
-    expected: {
-      framework: '@storybook/preact-vite',
-      renderer: '@storybook/preact',
-      builder: '@storybook/builder-vite',
-    },
-    modifications: {
-      // create-vite still scaffolds Preact 10.
-      extraDependencies: ['preact-render-to-string', 'preact@^11'],
-      resolutions: {
-        preact: 'npm:preact@^11',
-      },
-    },
-    skipTasks: ['e2e-tests', 'bench'],
-  },
   'preact-vite/default-ts': {
     name: 'Preact Latest (Vite | TypeScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template preact-ts',
@@ -829,6 +766,23 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
+  'preact-vite/10-ts': {
+    name: 'Preact v10 (Vite | TypeScript)',
+    script: 'npm create vite --yes {{beforeDir}} -- --template preact-ts',
+    preferNoLink: true,
+    expected: {
+      framework: '@storybook/preact-vite',
+      renderer: '@storybook/preact',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      extraDependencies: ['preact-render-to-string', 'preact@^10'],
+      resolutions: {
+        preact: 'npm:preact@^10',
+      },
+    },
+    skipTasks: ['e2e-tests', 'bench'],
+  },
   /** This is currently broken, we generate components and stories that do not work */
   // 'qwik-vite/default-ts': {
   //   name: 'Qwik CLI Latest (Vite | TypeScript)',
@@ -843,27 +797,6 @@ export const baseTemplates = {
   //   // TODO: The community template does not provide standard stories, which is required for e2e tests.
   //   skipTasks: ['e2e-tests-dev', 'e2e-tests', 'bench', 'vitest-integration', 'chromatic'],
   // },
-  'ember/3-js': {
-    name: 'Ember v3 (Webpack | JavaScript)',
-    script: 'npx --package ember-cli@3.28.1 ember new {{beforeDir}} --skip-install',
-    inDevelopment: true,
-    expected: {
-      framework: '@storybook/ember',
-      renderer: '@storybook/ember',
-      builder: '@storybook/builder-webpack5',
-    },
-  },
-  'ember/default-js': {
-    name: 'Ember v4 (Webpack | JavaScript)',
-    script:
-      'npx --package ember-cli@4.12.1 ember new {{beforeDir}} --yarn && cd {{beforeDir}} && yarn add --dev @storybook/ember-cli-storybook && yarn build',
-    inDevelopment: true,
-    expected: {
-      framework: '@storybook/ember',
-      renderer: '@storybook/ember',
-      builder: '@storybook/builder-webpack5',
-    },
-  },
   'react-native-web-vite/expo-ts': {
     // NOTE: create-expo-app installs React 18.2.0. But yarn portal
     // expects 18.3.1 (dunno why). Therefore to run this in dev you
@@ -875,19 +808,6 @@ export const baseTemplates = {
     // yarn portals.
     name: 'React Native Expo Latest (Vite | TypeScript)',
     script: 'npx create-expo-app -y --no-install {{beforeDir}}',
-    // create-expo-app pins the current SDK, whose packages are released
-    // together and are routinely younger than the gate window.
-    // `babel-preset-expo` is part of that set despite not matching `expo-*`.
-    // `multitars` is pulled in transitively by the Expo CLI toolchain.
-    minAgeGateExemptions: [
-      'expo',
-      'expo-*',
-      '@expo/*',
-      'babel-preset-expo',
-      'multitars',
-      'react-native',
-      '@react-native/*',
-    ],
     expected: {
       framework: '@storybook/react-native-web-vite',
       renderer: '@storybook/react',
@@ -997,6 +917,9 @@ const benchTemplates = {
     modifications: {
       skipTemplateStories: true,
       skipMocking: true,
+      // This modifications block replaces the base template's, so the pin must be repeated here.
+      // See `react-vite/default-ts` for why TypeScript is pinned to 6.
+      extraDevDependencies: ['typescript@^6'],
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'chromatic', 'vitest-integration'],
     typeCheck: false,
@@ -1019,6 +942,9 @@ const benchTemplates = {
       skipTemplateStories: true,
       disableDocs: true,
       skipMocking: true,
+      // This modifications block replaces the base template's, so the pin must be repeated here.
+      // See `react-vite/default-ts` for why TypeScript is pinned to 6.
+      extraDevDependencies: ['typescript@^6'],
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'chromatic', 'vitest-integration'],
     typeCheck: false,
@@ -1031,6 +957,9 @@ const benchTemplates = {
       skipTemplateStories: true,
       testBuild: true,
       skipMocking: true,
+      // This modifications block replaces the base template's, so the pin must be repeated here.
+      // See `react-vite/default-ts` for why TypeScript is pinned to 6.
+      extraDevDependencies: ['typescript@^6'],
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'vitest-integration'],
     typeCheck: false,
@@ -1070,7 +999,6 @@ export const normal: TemplateKey[] = [
   'bench/react-vite-default-ts-nodocs',
   'bench/react-vite-default-ts-test-build',
   'bench/react-webpack-18-ts-test-build',
-  // 'ember/default-js',
   // Disabled in CI: the published storybook-builder-rsbuild imports `babelParser` from
   // `storybook/internal/mocking-utils`, which Storybook 11 removed, so the sandbox cannot be
   // created. Fix: https://github.com/rstackjs/storybook-rsbuild/pull/603
@@ -1080,7 +1008,7 @@ export const normal: TemplateKey[] = [
   'tanstack-react-start/default-ts',
 ];
 
-export const merged: TemplateKey[] = [
+export const daily: TemplateKey[] = [
   ...normal,
   'react-webpack/18-ts',
   'nextjs/15-ts',
@@ -1093,22 +1021,14 @@ export const merged: TemplateKey[] = [
   // created. Fix: https://github.com/rstackjs/storybook-rsbuild/pull/603
   // Re-enable once storybook-builder-rsbuild releases a version that works with Storybook 11.
   // 'vue3-rsbuild/default-ts',
-];
-
-export const daily: TemplateKey[] = [
-  ...merged,
   'angular-vite/21-ts',
   'react-vite/default-js',
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',
-  'vue3-vite/default-js',
   'vue3-vite/prerelease-ts',
-  'lit-vite/default-js',
-  'svelte-vite/default-js',
   'nextjs/prerelease',
   // 'qwik-vite/default-ts',
-  'preact-vite/default-js',
-  'html-vite/default-js',
+  'preact-vite/10-ts',
   'internal/react18-webpack-babel',
   'react-native-web-vite/expo-ts',
   // Disabled in CI: the published storybook-builder-rsbuild imports `babelParser` from
@@ -1119,8 +1039,6 @@ export const daily: TemplateKey[] = [
   // 'html-rsbuild/default-ts',
   // 'react-native-web-vite/rn-cli-ts',
 ];
-
-export const templatesByCadence = { normal, merged, daily };
 
 // Templates whose `mainConfig` is a function of the generated `ConfigFile`, so its features cannot be
 // read without running the sandbox generator. A new function-form template throws below instead of
@@ -1139,6 +1057,7 @@ export const enablesDocgenServer = (key: string, template: Template): boolean =>
     template.expected.renderer === '@storybook/react' ||
     template.expected.renderer === '@storybook/vue3' ||
     template.expected.renderer === '@storybook/web-components' ||
+    template.expected.renderer === '@storybook/svelte' ||
     template.expected.framework === '@storybook/angular-vite';
   return supported && features?.componentsManifest === true && features.docgenServer !== false;
 };

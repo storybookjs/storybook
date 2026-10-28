@@ -8,6 +8,10 @@ import {
   setImportSpecifiers,
 } from 'storybook/internal/csf-tools';
 
+import path from 'path';
+
+import { DOCUMENTED_PREVIEW_IMPORT } from '../../../../../core/src/shared/constants/config-folder.ts';
+
 const projectAnnotationNames = [
   'decorators',
   'parameters',
@@ -119,3 +123,26 @@ export function getConfigProperties(
 }
 
 // Leading file comments, such as license headers or `@ts-check`, stay above the import.
+
+// Story properties that a story file reads directly, not from `Story.input`
+export const reuseDisallowList = ['play', 'run', 'extends', 'story'];
+
+export type PreviewImportOptions =
+  | { useSubPathImports: true; previewConfigPath?: string }
+  | { useSubPathImports: false; previewConfigPath: string };
+
+export function getPreviewImportPath(
+  storiesFilePath: string,
+  { useSubPathImports, previewConfigPath }: PreviewImportOptions
+) {
+  if (useSubPathImports) {
+    return DOCUMENTED_PREVIEW_IMPORT;
+  }
+
+  const relativePath = path.relative(path.dirname(storiesFilePath), previewConfigPath);
+  const { dir, name } = path.parse(relativePath);
+  const previewPath = (dir ? `${dir}/${name}` : name).replace(/\\/g, '/');
+
+  // account for stories in the same path as preview file
+  return previewPath.startsWith('.') ? previewPath : `./${previewPath}`;
+}

@@ -1,12 +1,4 @@
-import {
-  TYPE_KEYS,
-  type E,
-  type Node,
-  childEntries,
-  children,
-  isIdentifier,
-  isNode,
-} from './ast.ts';
+import { TYPE_KEYS, type E, type Node, childEntries, children, isNode } from './ast.ts';
 
 export type BindingKind =
   | 'var'
@@ -29,6 +21,13 @@ export interface Binding {
   scope: Scope;
   /** False when the binding is declared twice or written after its declaration. */
   constant: boolean;
+  /**
+   * The identifiers that read or write the binding, in code or in a type such as `typeof Button`,
+   * and statements too, as in Babel's `referencePaths`: the `ExportNamedDeclaration` or
+   * `ExportDefaultDeclaration` of an exported declaration, and any TS declaration of the same name
+   * in scope, such as an overload signature, a `type`, an `enum` or a `namespace`. An exported TS
+   * declaration counts through its export statement.
+   */
   references: Node[];
 }
 
@@ -64,7 +63,44 @@ export interface ScopeInfo {
   names: Set<string>;
   /** Names the file reads without declaring them: globals and anything another scope provides. */
   unbound: Set<string>;
+  /**
+   * Top-level names of TypeScript declarations, which bind no `Binding`: type aliases, interfaces,
+   * enums, namespaces, and functions without a body (`declare function` and overloads). A name can
+   * be a binding as well, such as a `type X` next to a `const X`. `declare const` and `declare class`
+   * are bindings, not listed here.
+   */
+  tsDeclarationNames: ReadonlySet<string>;
 }
+
+// The name a TS declaration's id declares: `namespace A.B {}` declares `A`, and
+// `declare module 'x' {}` none.
+const declaredName = (id: Node | null | undefined): string | undefined => {
+  while (id?.type === 'TSQualifiedName') {
+    id = id.left;
+  }
+  return id?.type === 'Identifier' ? id.name : undefined;
+};
+
+const TS_DECLARATIONS = new Set([
+  'TSTypeAliasDeclaration',
+  'TSInterfaceDeclaration',
+  'TSEnumDeclaration',
+  'TSModuleDeclaration',
+  'TSDeclareFunction',
+]);
+
+/**
+ * Whether a reference is a TS declaration of the binding's name, such as `type Base = typeof Base`
+ * next to `const Base`, which declares a type and cannot read or write the value.
+ */
+export const isTSDeclaration = (node: Node) => TS_DECLARATIONS.has(node.type);
+
+// Declarations whose `export` counts as a reference to their own name, besides TS declarations.
+const EXPORTED_DECLARATIONS = new Set([
+  'FunctionDeclaration',
+  'ClassDeclaration',
+  'TSImportEqualsDeclaration',
+]);
 
 const FUNCTION_TYPES = new Set([
   'FunctionDeclaration',
@@ -269,7 +305,15 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
     declaration?: Node
   ) => {
     names.add(identifier.name);
-    const existing = scope.bindings.get(identifier.name);
+    // A body declaration that redeclares a parameter or the function's own name reuses its binding,
+    // like Babel.
+    const owner =
+      scope.node.type === 'BlockStatement' &&
+      scope.parent?.isFunctionScope &&
+      (scope.parent.node as E.Function).body === scope.node
+        ? scope.parent
+        : undefined;
+    const existing = scope.bindings.get(identifier.name) ?? owner?.bindings.get(identifier.name);
     if (existing) {
       existing.constant = false;
       identifierBindings.set(identifier, existing);
@@ -502,13 +546,11 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
   };
 
   // Enums, namespaces and ambient functions bind no name in the analysis, but a generated name
-  // must not collide with theirs. `namespace A.B {}` declares `A`.
+  // must not collide with theirs.
   const reserveName = (id: Node | null | undefined) => {
-    while (id?.type === 'TSQualifiedName') {
-      id = id.left;
-    }
-    if (id?.type === 'Identifier') {
-      names.add(id.name);
+    const name = declaredName(id);
+    if (name !== undefined) {
+      names.add(name);
     }
   };
 
@@ -750,34 +792,34 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
       unbound.add(name);
     }
   }
-  // Overload signatures count as references to the function they overload.
-  for (const statement of program.body) {
-    if (statement.type === 'TSDeclareFunction' && statement.id) {
-      declaredProgramScope.bindings.get(statement.id.name)?.references.push(statement);
-    }
-  }
-
-  // Like Babel, an `export` of a declaration counts as a reference to the bindings it declares.
-  for (const statement of program.body) {
-    if (
-      (statement.type !== 'ExportNamedDeclaration' &&
-        statement.type !== 'ExportDefaultDeclaration') ||
-      !statement.declaration
-    ) {
-      continue;
-    }
-    const declaration = statement.declaration as Node;
-    const ids: E.BindingIdentifier[] = [];
-    if (declaration.type === 'VariableDeclaration') {
-      for (const declarator of declaration.declarations) {
-        patternParts(declarator.id, ids, []);
+  // Like Babel, an `export` of a declaration counts as a reference to the bindings it declares,
+  // and a TS declaration (an overload, `type X`, `enum X`) as one to the binding of its name.
+  for (const [block, scope] of nodeScopes) {
+    for (const statement of declarationStatements(block)) {
+      const exported =
+        (statement.type === 'ExportNamedDeclaration' ||
+          statement.type === 'ExportDefaultDeclaration') &&
+        !!statement.declaration;
+      const declaration = exported ? (statement.declaration as Node) : statement;
+      const declared: string[] = [];
+      if (declaration.type === 'VariableDeclaration' && exported) {
+        const ids: E.BindingIdentifier[] = [];
+        for (const declarator of declaration.declarations) {
+          patternParts(declarator.id, ids, []);
+        }
+        declared.push(...ids.map((id) => id.name));
+      } else if (
+        TS_DECLARATIONS.has(declaration.type) ||
+        (exported && EXPORTED_DECLARATIONS.has(declaration.type))
+      ) {
+        const name = declaredName((declaration as { id?: Node | null }).id);
+        if (name !== undefined) {
+          declared.push(name);
+        }
       }
-    } else if ((declaration as { id?: Node | null }).id?.type === 'Identifier') {
-      // Functions, classes and TS declarations: an exported `type X` also references a value `X`.
-      ids.push((declaration as { id: E.BindingIdentifier }).id);
-    }
-    for (const id of ids) {
-      declaredProgramScope.bindings.get(id.name)?.references.push(statement);
+      for (const name of declared) {
+        scope.lookup(name)?.references.push(statement);
+      }
     }
   }
   for (const { scope, identifier } of violations) {
@@ -788,10 +830,30 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
     }
   }
 
+  const tsDeclarationNames = new Set<string>();
+  for (const statement of program.body) {
+    const declaration =
+      statement.type === 'ExportNamedDeclaration' || statement.type === 'ExportDefaultDeclaration'
+        ? (statement.declaration as Node | null)
+        : statement;
+    if (
+      !declaration ||
+      !TS_DECLARATIONS.has(declaration.type) ||
+      (declaration.type === 'TSModuleDeclaration' && declaration.kind === 'global')
+    ) {
+      continue;
+    }
+    const name = declaredName((declaration as { id?: Node | null }).id);
+    if (name !== undefined) {
+      tsDeclarationNames.add(name);
+    }
+  }
+
   return {
     program: declaredProgramScope,
     names,
     unbound,
+    tsDeclarationNames,
     bindingOf: (identifier) => identifierBindings.get(identifier),
     scopeOf: (node) => {
       // Linear over scopes; only write paths ask.
@@ -820,31 +882,6 @@ export const generateUid = (info: ScopeInfo, name: string) => {
   return uid;
 };
 
-// Declarations that are no bindings of the scope analysis, yet valid to export by name.
-const UNBOUND_DECLARATIONS = new Set([
-  'TSTypeAliasDeclaration',
-  'TSInterfaceDeclaration',
-  'TSEnumDeclaration',
-  'TSModuleDeclaration',
-  'TSDeclareFunction',
-]);
-
 /** Whether the name an `export { local }` refers to is declared in the module. */
-export const isDeclared = (
-  module: { scopes: ScopeInfo; program: E.Program },
-  local: E.IdentifierReference
-) =>
-  !!module.scopes.bindingOf(local) ||
-  module.program.body.some((statement) => {
-    const declaration =
-      statement.type === 'ExportNamedDeclaration' ? statement.declaration : statement;
-    if (!declaration || !UNBOUND_DECLARATIONS.has(declaration.type)) {
-      return false;
-    }
-    // `namespace A.B {}` declares `A`.
-    let id = (declaration as { id?: Node | null }).id;
-    while (id?.type === 'TSQualifiedName') {
-      id = id.left;
-    }
-    return isIdentifier(id, local.name);
-  });
+export const isDeclared = (module: { scopes: ScopeInfo }, local: E.IdentifierReference) =>
+  !!module.scopes.bindingOf(local) || module.scopes.tsDeclarationNames.has(local.name);

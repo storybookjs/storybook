@@ -106,6 +106,148 @@ describe('parseForIndexer', () => {
     await expect(parseForIndexer(file)).rejects.toMatchObject({ start: { line: 10 } });
   });
 
+  describe('TypeScript expressions', () => {
+    const writeTypedStoriesFile = (wrapStaticValue: (value: string) => string) =>
+      writeStoriesFile(`<script module lang="ts">
+  import { defineMeta } from '@storybook/svelte';
+  const { Story } = defineMeta({
+    title: ${wrapStaticValue("'Example'")},
+    tags: ${wrapStaticValue(`[${wrapStaticValue("'meta-tag'")}]`)},
+  });
+</script>
+
+<Story name={${wrapStaticValue("'Primary'")}} tags={${wrapStaticValue(`[${wrapStaticValue("'story-tag'")}]`)}} />
+
+<Story exportName={${wrapStaticValue("'Secondary'")}} />
+`);
+
+    it('indexes the values without TypeScript', async ({ expect }) => {
+      const file = await writeTypedStoriesFile((value) => value);
+
+      expect(await parseForIndexer(file)).toMatchInlineSnapshot(`
+        {
+          "meta": {
+            "tags": [
+              "meta-tag",
+            ],
+            "title": "Example",
+          },
+          "stories": [
+            {
+              "exportName": "Primary",
+              "name": "Primary",
+              "tags": [
+                "story-tag",
+              ],
+            },
+            {
+              "exportName": "Secondary",
+              "name": undefined,
+              "tags": [],
+            },
+          ],
+        }
+      `);
+    });
+
+    it.for([
+      ['as const', (value: string) => `${value} as const`],
+      ['satisfies', (value: string) => `${value} satisfies unknown`],
+      ['a non-null assertion', (value: string) => `${value}!`],
+      ['a type assertion', (value: string) => `<any>${value}`],
+      ['nested TypeScript expressions', (value: string) => `(<any>${value}!) satisfies unknown`],
+    ] as const)(
+      'indexes values with %s like values without TypeScript',
+      async ([, wrap], { expect }) => {
+        const file = await writeTypedStoriesFile(wrap);
+        const fileWithoutTypeScript = await writeTypedStoriesFile((value) => value);
+
+        expect(await parseForIndexer(file)).toEqual(await parseForIndexer(fileWithoutTypeScript));
+      }
+    );
+
+    it.for([
+      ['an expression', `name={'Primary' as const}`],
+      ['a quoted expression', `name="{'Primary' as const}"`],
+    ])(
+      'names the story in errors when its name has TypeScript in %s',
+      async ([, nameAttribute], { expect }) => {
+        const file = await writeStoriesFile(`<script module lang="ts">
+  import { defineMeta } from '@storybook/svelte';
+  const { Story } = defineMeta({ title: 'Example' });
+</script>
+
+<Story ${nameAttribute} asChild />
+`);
+
+        await expect(parseForIndexer(file)).rejects.toThrow(`'<Story name="Primary" />'`);
+      }
+    );
+
+    it.for([
+      [
+        'the defineMeta() call',
+        `import { defineMeta } from '@storybook/svelte';
+  const { Story } = defineMeta({ title: 'Example' }) as any;`,
+      ],
+      [
+        'the defineMeta() argument',
+        `import { defineMeta } from '@storybook/svelte';
+  const { Story } = defineMeta({ title: 'Example' } satisfies object);`,
+      ],
+      [
+        'a meta reference',
+        `import preview from '#.storybook/preview';
+  const meta = preview.meta({ title: 'Example' });
+  const { Story } = meta as typeof meta;`,
+      ],
+      [
+        'the preview',
+        `import preview from '#.storybook/preview';
+  const { Story } = (preview as any).meta({ title: 'Example' });`,
+      ],
+      [
+        'a preview.meta() call before .type<>()',
+        `import preview from '#.storybook/preview';
+  const { Story } = (preview.meta({ title: 'Example' }) as any).type<{ args: object }>();`,
+      ],
+    ])('indexes a meta with TypeScript around %s', async ([, moduleScript], { expect }) => {
+      const file = await writeStoriesFile(`<script module lang="ts">
+  ${moduleScript}
+</script>
+
+<Story name="Primary" />
+`);
+
+      expect(await parseForIndexer(file)).toEqual({
+        meta: { title: 'Example' },
+        stories: [{ exportName: 'Primary', name: 'Primary', tags: [] }],
+      });
+    });
+  });
+
+  it('indexes a file that Svelte would reject when it compiles the file', async ({ expect }) => {
+    // The error shows when the story loads, because the Svelte Vite plugin compiles the file
+    const file = await writeStoriesFile(`<script module lang="ts">
+  import { defineMeta } from '@storybook/svelte';
+  const { Story } = defineMeta({ title: 'Example' });
+</script>
+
+<script lang="ts">
+  enum Size {
+    Small,
+    Large,
+  }
+</script>
+
+<Story name="Default" />
+`);
+
+    const { stories } = await parseForIndexer(file);
+
+    expect(stories.map((story) => story.exportName)).toEqual(['Default']);
+  });
+
   describe('imports', () => {
     const writeModuleScript = (moduleScript: string) =>
       writeStoriesFile(`<script module lang="ts">
@@ -152,7 +294,7 @@ describe('parseForIndexer', () => {
       `);
 
       await expect(parseForIndexer(file)).rejects.toThrow(
-        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004'
+        'sb_svelte_csf_parser_extract_svelte_0004'
       );
     });
 
@@ -162,7 +304,7 @@ describe('parseForIndexer', () => {
       `);
 
       await expect(parseForIndexer(file)).rejects.toThrow(
-        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003'
+        'sb_svelte_csf_parser_extract_svelte_0003'
       );
     });
 
@@ -173,7 +315,7 @@ describe('parseForIndexer', () => {
       `);
 
       await expect(parseForIndexer(file)).rejects.toThrow(
-        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002'
+        'sb_svelte_csf_parser_extract_svelte_0002'
       );
     });
   });
@@ -323,7 +465,7 @@ describe('parseForIndexer', () => {
       `);
 
       await expect(parseForIndexer(file)).rejects.toThrow(
-        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0010'
+        'sb_svelte_csf_parser_extract_svelte_0010'
       );
     });
 
@@ -335,7 +477,7 @@ describe('parseForIndexer', () => {
       `);
 
       await expect(parseForIndexer(file)).rejects.toThrow(
-        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0012'
+        'sb_svelte_csf_parser_extract_svelte_0012'
       );
     });
 
@@ -346,7 +488,7 @@ describe('parseForIndexer', () => {
       `);
 
       await expect(parseForIndexer(file)).rejects.toThrow(
-        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004'
+        'sb_svelte_csf_parser_extract_svelte_0004'
       );
     });
 
@@ -358,7 +500,7 @@ describe('parseForIndexer', () => {
       `);
 
       await expect(parseForIndexer(file)).rejects.toThrow(
-        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004'
+        'sb_svelte_csf_parser_extract_svelte_0004'
       );
     });
 
@@ -369,8 +511,137 @@ describe('parseForIndexer', () => {
       `);
 
       await expect(parseForIndexer(file)).rejects.toThrow(
-        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0011'
+        'sb_svelte_csf_parser_extract_svelte_0011'
       );
+    });
+  });
+
+  describe('extend', () => {
+    const writeExtendStoriesFile = (stories: string, meta = 'preview.meta({ title: "Example" })') =>
+      writeStoriesFile(`<script module lang="ts">
+          import { defineMeta } from '@storybook/svelte';
+          import preview from '#.storybook/preview';
+          const { Story } = ${meta};
+        </script>
+
+        ${stories}
+        `);
+
+    it('adds the tags of the stories that a story extends, in any order', async ({ expect }) => {
+      const file = await writeExtendStoriesFile(`
+        <Story extend="Primary" name="Primary Small" tags={['small']} />
+        <Story name="Primary" tags={['primary']} play={async () => {}} />
+        <Story extend="Primary Small" name="Primary Small Starred" tags={['!primary']} />
+        <Story name="Secondary" />
+      `);
+
+      const { stories } = await parseForIndexer(file);
+
+      expect(stories).toMatchInlineSnapshot(`
+        [
+          {
+            "exportName": "PrimarySmall",
+            "name": "Primary Small",
+            "tags": [
+              "primary",
+              "play-fn",
+              "small",
+            ],
+          },
+          {
+            "exportName": "Primary",
+            "name": "Primary",
+            "tags": [
+              "primary",
+              "play-fn",
+            ],
+          },
+          {
+            "exportName": "PrimarySmallStarred",
+            "name": "Primary Small Starred",
+            "tags": [
+              "primary",
+              "play-fn",
+              "small",
+              "!primary",
+            ],
+          },
+          {
+            "exportName": "Secondary",
+            "name": "Secondary",
+            "tags": [],
+          },
+        ]
+      `);
+    });
+
+    it('indexes a story that sets only asChild and inherits the children', async ({ expect }) => {
+      const file = await writeExtendStoriesFile(`
+        <Story name="Primary">Click me</Story>
+        <Story extend="Primary" name="Primary Static" asChild />
+      `);
+
+      const { stories } = await parseForIndexer(file);
+
+      expect(stories.map((story) => story.exportName)).toEqual(['Primary', 'PrimaryStatic']);
+    });
+
+    it.for([
+      [
+        'the stories file calls defineMeta()',
+        '<Story name="Primary" /><Story extend="Primary" name="Small" />',
+        'sb_svelte_csf_parser_analyse_story_0010',
+        'defineMeta({})',
+      ],
+      [
+        'no story has the name',
+        '<Story name="Primary" /><Story extend="Secondary" name="Small" />',
+        'sb_svelte_csf_parser_analyse_story_0011',
+      ],
+      [
+        'the value is the exportName of a named story',
+        '<Story name="Primary Large" /><Story extend="PrimaryLarge" name="Small" />',
+        'Did you mean extend="Primary Large"?',
+      ],
+      [
+        'the story has only an exportName',
+        '<Story exportName="Primary" /><Story extend="Primary" name="Small" />',
+        'sb_svelte_csf_parser_analyse_story_0012',
+      ],
+      [
+        'more than one story has the name',
+        '<Story name="Primary" /><Story name="Primary" exportName="Other" /><Story extend="Primary" name="Small" />',
+        'sb_svelte_csf_parser_analyse_story_0013',
+      ],
+      [
+        'a story extends itself',
+        '<Story extend="Primary" name="Primary" />',
+        "Stories extend each other in a cycle: 'Primary' extends 'Primary'",
+      ],
+      [
+        'stories extend each other',
+        '<Story extend="B" name="A" /><Story extend="C" name="B" /><Story extend="A" name="C" />',
+        "Stories extend each other in a cycle: 'A' extends 'B' extends 'C' extends 'A'",
+      ],
+      [
+        'the value is not a string literal',
+        '<Story name="Primary" /><Story extend={name} name="Small" />',
+        'sb_svelte_csf_parser_analyse_story_0001',
+      ],
+      [
+        'the value has more than one part',
+        '<Story name="Primary" /><Story name="PrimaryLarge" /><Story extend="Primary{\'Large\'}" name="Small" />',
+        'sb_svelte_csf_parser_analyse_story_0001',
+      ],
+      [
+        'the value is empty',
+        '<Story name="" exportName="Empty" /><Story extend="" name="Small" />',
+        'sb_svelte_csf_parser_analyse_story_0011',
+      ],
+    ])('fails when %s', async ([, stories, error, meta], { expect }) => {
+      const file = await writeExtendStoriesFile(stories, meta);
+
+      await expect(parseForIndexer(file)).rejects.toThrow(error);
     });
   });
 });

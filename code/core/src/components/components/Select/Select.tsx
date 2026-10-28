@@ -11,7 +11,7 @@ import { ariaHideOutside } from '@react-aria/overlays';
 import { useObjectRef } from 'react-aria/useObjectRef';
 import { useOverlayTriggerState } from 'react-stately/useOverlayTriggerState';
 import { darken, transparentize } from 'polished';
-import { styled, useTheme } from 'storybook/theming';
+import { styled, useTheme } from 'storybook/theming/emotion';
 
 import { Button, type ButtonProps } from '../Button/Button.tsx';
 import { Form } from '../Form/Form.tsx';

@@ -228,7 +228,7 @@ https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0001`
 
 The `component` property in `defineMeta` was not referencing an imported Svelte component.
-It expected an identifier to a Svelte component but got something else.
+It expected a plain identifier, or a member expression over an identifier like `Input.Select`, but got something else.
 
 Ensure you're using the correct syntax, following the example below:
 
@@ -237,12 +237,15 @@ Ensure you're using the correct syntax, following the example below:
   import { defineMeta } from '@storybook/svelte-vite';
 
   import Button from './Button.svelte';
+  import { Input } from './Input.ts';
 
   const { Story } = defineMeta({
-    component: Button,
+    component: Input.Select,
   });
 </script>
 ```
+
+Computed access like `Input['Select']`, deeper chains like `Input.Group.Item`, and expressions on `this` are not supported.
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0002`
 
@@ -436,3 +439,69 @@ When analysing one of the `<Story />` definitions, the `asChild` prop was set to
 The `asChild` prop requires children to be present, as they define the content that replaces the default story rendering.
 
 Either remove the `asChild` prop or provide children for the story.
+
+### `SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0010`
+
+A `<Story />` has the `extend` prop, but the stories file calls `defineMeta()`. Only the stories of `preview.meta()` can extend another story, because they compile to CSF Next stories, which have `.extend()`.
+
+Call `preview.meta()` in place of `defineMeta()`:
+
+```diff
+<script module>
+- import { defineMeta } from '@storybook/svelte-vite';
++ import preview from '#.storybook/preview';
+  import Button from './Button.svelte';
+
+- const { Story } = defineMeta({ component: Button });
++ const { Story } = preview.meta({ component: Button });
+</script>
+
+<Story name="Primary" args={{ primary: true }} />
+
+<Story extend="Primary" name="Primary Small" args={{ size: 'small' }} />
+```
+
+### `SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0011`
+
+A `<Story />` extends a story that the stories file doesn't have. The value of the `extend` prop is the `name` of another story in the same file, not its `exportName`. A story can't extend a story in another file.
+
+```diff
+<Story name="Primary Large" args={{ primary: true, size: 'large' }} />
+
+- <Story extend="PrimaryLarge" name="Primary Large Disabled" args={{ disabled: true }} />
++ <Story extend="Primary Large" name="Primary Large Disabled" args={{ disabled: true }} />
+```
+
+### `SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0012`
+
+A `<Story />` extends a story that has an `exportName` but no `name`. The `extend` prop takes the `name` of a story, so give that story a `name`:
+
+```diff
+- <Story exportName="Primary" args={{ primary: true }} />
++ <Story name="Primary" args={{ primary: true }} />
+
+<Story extend="Primary" name="Primary Small" args={{ size: 'small' }} />
+```
+
+### `SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0013`
+
+A `<Story />` extends a story by its `name`, but more than one story in the file has that name. Give the story to extend a unique name:
+
+```diff
+<Story name="Primary" exportName="Primary" args={{ primary: true }} />
+- <Story name="Primary" exportName="PrimaryDark" args={{ primary: true, theme: 'dark' }} />
++ <Story name="Primary Dark" args={{ primary: true, theme: 'dark' }} />
+
+<Story extend="Primary" name="Primary Small" args={{ size: 'small' }} />
+```
+
+### `SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0014`
+
+Stories extend each other in a cycle, for example a story extends itself, or two stories extend each other. Remove the `extend` prop from one of the stories in the cycle:
+
+```diff
+- <Story extend="Secondary" name="Primary" args={{ primary: true }} />
++ <Story name="Primary" args={{ primary: true }} />
+
+<Story extend="Primary" name="Secondary" args={{ primary: false }} />
+```

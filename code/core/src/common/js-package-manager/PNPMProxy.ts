@@ -467,12 +467,16 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
+  protected override get installUsesTerminal(): boolean {
+    return !!process.stdin.isTTY;
+  }
+
   protected runInstall(options?: { force?: boolean }) {
     this.allowStorybookBuildScripts();
     return executeCommand({
       command: 'pnpm',
       args: ['install', ...this.getInstallArgs('install'), ...(options?.force ? ['--force'] : [])],
-      stdio: prompt.getPreferredStdio(),
+      stdio: this.installUsesTerminal ? 'inherit' : prompt.getPreferredStdio(),
       cwd: this.cwd,
     });
   }
@@ -646,6 +650,20 @@ export class PNPMProxy extends JsPackageManager {
         packageName,
       });
     }
+  }
+
+  protected async runGetPeerDependencies(
+    packageSpec: string
+  ): Promise<Record<string, string> | undefined> {
+    const result = await executeCommand({
+      command: 'pnpm',
+      args: ['info', packageSpec, 'peerDependencies', '--json'],
+      cwd: this.cwd,
+      stdio: 'pipe',
+    });
+    // pnpm prints nothing when the version has no peer dependencies.
+    const output = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+    return output ? JSON.parse(output) : undefined;
   }
 
   protected mapDependencies(input: PnpmListOutput, pattern: string[]): InstallationMetadata {

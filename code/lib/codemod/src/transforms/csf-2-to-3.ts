@@ -136,6 +136,10 @@ function removeUnusedTemplates(editor: SourceEditor, templates: string[]) {
 }
 
 export default async function transform(info: TransformFile) {
+  // Svelte CSF files are never CSF 2, but the glob of the csf-factories automigration includes them
+  if (info.path.endsWith('.svelte')) {
+    return info.source;
+  }
   const makeTitle = (userTitle?: string) => {
     return userTitle || 'FIXME';
   };

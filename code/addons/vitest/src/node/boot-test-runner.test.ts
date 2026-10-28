@@ -67,7 +67,8 @@ vi.mock('../logger', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../../../../core/src/shared/utils/module', () => ({
+vi.mock('../../../../core/src/shared/utils/module', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../../../core/src/shared/utils/module')>()),
   importMetaResolve: vi
     .fn()
     .mockImplementation(() => 'file://' + join(__dirname, '..', '..', 'dist', 'node', 'vitest.js')),
@@ -152,6 +153,7 @@ describe('bootTestRunner', () => {
           STORYBOOK_PREVIEW_ANNOTATIONS: JSON.stringify(['/project/.storybook/preview.ts']),
         },
         extendEnv: true,
+        buffer: { ipc: false },
       },
     });
     message({ type: 'ready' });

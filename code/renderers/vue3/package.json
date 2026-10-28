@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3",
-  "version": "11.0.0-alpha.7",
+  "version": "11.0.0-alpha.8",
   "description": "Storybook Vue 3 renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -74,11 +74,6 @@
     "storybook": "workspace:^",
     "typescript": "^5.9.0 || ^6.0.0 || ^7.0.0",
     "vue": "^3.0.0"
-  },
-  "peerDependenciesMeta": {
-    "typescript": {
-      "optional": true
-    }
   },
   "publishConfig": {
     "access": "public"

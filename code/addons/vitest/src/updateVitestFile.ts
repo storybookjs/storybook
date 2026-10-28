@@ -207,8 +207,9 @@ const wrapTestConfigAsProject = (
   const projectMembers = testObject.properties.filter(
     (member) => !hoisted.includes(member as E.ObjectProperty)
   );
-  const projectTest = printMembers(memberTexts(target, testObject, projectMembers), source.indent);
-  const project = printMembers(['extends: true', `test: ${projectTest}`], source.indent);
+  const layout = { indent: source.indent, trailingComma: true };
+  const projectTest = printMembers(memberTexts(target, testObject, projectMembers), layout);
+  const project = printMembers(['extends: true', `test: ${projectTest}`], layout);
 
   prependToList(source, arrayList(source, templateProjects.value), [project]);
   if (hoisted.length > 0) {
@@ -239,35 +240,6 @@ const wrapTestConfigAsProject = (
   );
 };
 
-const mergeTemplateIntoConfigObject = (
-  merge: Merge,
-  targetConfig: E.ObjectExpression,
-  templateConfig: () => E.ObjectExpression
-) => {
-  const existingTest = findNamedProp(targetConfig.properties, 'test');
-  const testObject = existingTest
-    ? resolveExpression(existingTest.value, merge.target.program)
-    : null;
-  if (existingTest && testObject?.type === 'ObjectExpression') {
-    const existingProjects = testObject.properties.find(isProjectsArrayProp);
-    if (existingProjects) {
-      appendToExistingProjects(
-        merge,
-        existingProjects.value,
-        testObject,
-        templateConfig(),
-        targetConfig
-      );
-      return;
-    }
-    if (findNamedProp(templateConfig().properties, 'test')?.value.type === 'ObjectExpression') {
-      wrapTestConfigAsProject(merge, existingTest, testObject, templateConfig, targetConfig);
-      return;
-    }
-  }
-  mergeProperties(merge, templateConfig(), targetConfig);
-};
-
 const findWritableConfigObject = (
   program: E.Program,
   exportDefault: E.ExportDefaultDeclaration
@@ -286,6 +258,117 @@ const findWritableConfigObject = (
   return (
     candidates.find((object) => findNamedProp(object.properties, 'test')) ?? candidates[0] ?? null
   );
+};
+
+/**
+ * Normalizes a non-array `projects` property value into an array expression that keeps the
+ * original list applying:
+ * - a string or template-literal glob becomes a single entry;
+ * - a value statically proven to be an array (e.g. an identifier referencing an array
+ *   initializer) spreads plain, since it cannot be nullish at runtime;
+ * - anything else (call results, conditionals, unresolved references) spreads with a
+ *   `?? [{ extends: true }]` fallback. In Vitest 5 an absent list means "no workspace — the
+ *   root config runs as the default project", and `{ extends: true }` reproduces exactly
+ *   that; an empty-array fallback would instead declare an empty workspace and silently
+ *   stop the user's own tests.
+ *
+ * The edit is committed and the config objects re-resolved, since nodes of the earlier parse
+ * index code the edit replaced.
+ */
+const normalizeProjectsValue = (
+  merge: Merge,
+  projectsProp: E.ObjectProperty
+): {
+  targetConfig: E.ObjectExpression;
+  testObject: E.ObjectExpression;
+  projects: E.ArrayExpression;
+} => {
+  const { target } = merge;
+  const value = projectsProp.value;
+  const valueText = target.source(value);
+  const replacement =
+    value.type === 'Literal' || value.type === 'TemplateLiteral'
+      ? `[${valueText}]`
+      : resolveExpression(value, target.program)?.type === 'ArrayExpression'
+        ? `[...${valueText}]`
+        : `[...((${valueText}) ?? [{ extends: true }])]`;
+  // A shorthand property's key and value share one source span, so overwriting the value
+  // span alone would drop the key and emit unparseable output — restate the full property,
+  // the way mergeProperties guards the same case.
+  target.edits.overwrite(
+    value.start,
+    value.end,
+    projectsProp.shorthand ? `projects: ${replacement}` : replacement
+  );
+  target.commit();
+
+  const exportDefault = findExportDefault(target.program);
+  const freshConfig = exportDefault
+    ? findWritableConfigObject(target.program, exportDefault)
+    : null;
+  const freshTest = freshConfig && findNamedProp(freshConfig.properties, 'test');
+  const freshTestObject = freshTest ? resolveExpression(freshTest.value, target.program) : null;
+  const freshProjects =
+    freshTestObject?.type === 'ObjectExpression'
+      ? findNamedProp(freshTestObject.properties, 'projects')
+      : undefined;
+  if (
+    !freshConfig ||
+    !freshTest ||
+    freshTestObject?.type !== 'ObjectExpression' ||
+    !freshProjects ||
+    !isProjectsArrayProp(freshProjects)
+  ) {
+    throw new Error(
+      'Could not re-resolve the config object after normalizing a non-array projects value'
+    );
+  }
+  return { targetConfig: freshConfig, testObject: freshTestObject, projects: freshProjects.value };
+};
+
+const mergeTemplateIntoConfigObject = (
+  merge: Merge,
+  targetConfig: E.ObjectExpression,
+  templateConfig: () => E.ObjectExpression
+) => {
+  const existingTest = findNamedProp(targetConfig.properties, 'test');
+  const testObject = existingTest
+    ? resolveExpression(existingTest.value, merge.target.program)
+    : null;
+  if (existingTest && testObject?.type === 'ObjectExpression') {
+    const existingProjects = findNamedProp(testObject.properties, 'projects');
+    if (existingProjects && isProjectsArrayProp(existingProjects)) {
+      appendToExistingProjects(
+        merge,
+        existingProjects.value,
+        testObject,
+        templateConfig(),
+        targetConfig
+      );
+      return;
+    }
+    if (existingProjects) {
+      // `projects` bound to a non-array value (identifier, string glob, call, conditional...)
+      // is normalized into an array at the same level first, so the original list keeps
+      // applying when the storybook project is appended. Nesting it inside a project entry
+      // instead would drop the list, because a `projects` key inside a project entry is not a
+      // project list.
+      const normalized = normalizeProjectsValue(merge, existingProjects);
+      appendToExistingProjects(
+        merge,
+        normalized.projects,
+        normalized.testObject,
+        templateConfig(),
+        normalized.targetConfig
+      );
+      return;
+    }
+    if (findNamedProp(templateConfig().properties, 'test')?.value.type === 'ObjectExpression') {
+      wrapTestConfigAsProject(merge, existingTest, testObject, templateConfig, targetConfig);
+      return;
+    }
+  }
+  mergeProperties(merge, templateConfig(), targetConfig);
 };
 
 // The export an import binding reads. `node:path` and `path` are one module, and the default

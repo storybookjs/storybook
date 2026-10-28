@@ -6,12 +6,14 @@
   import preview from './preview.ts';
   import Button from '../Button.svelte';
   import Layout from '../Layout.svelte';
+  import List from '../List.svelte';
 
   // svelte-check fails on each `@ts-expect-error` without an error. This isn't a stories file,
   // because it has more than one meta.
   const { Story } = preview.meta({ component: Button, args: { disabled: false } });
   const { Story: LayoutStory } = preview.meta({ component: Layout });
   const { Story: RenderStory } = preview.meta({ render: textTemplate });
+  const { Story: ListStory } = preview.meta({ component: List<{ id: number; name: string }> });
 </script>
 
 {#snippet textTemplate(args: { text: string })}
@@ -77,6 +79,26 @@
 {/* @ts-expect-error children is missing */ null}
 <LayoutStory name="No children" args={{ title: 'Title' }} />
 
+<ListStory
+  name="Generic args"
+  args={{
+    items: [{ id: 1, name: 'Ada' }],
+    getLabel: (item) => {
+      expectTypeOf(item).toEqualTypeOf<{ id: number; name: string }>();
+      return item.name;
+    },
+  }}
+/>
+
+<ListStory
+  name="Generic args wrong item"
+  args={{
+    // @ts-expect-error name must be a string
+    items: [{ id: 1, name: 1 }],
+    getLabel: (item) => item.name,
+  }}
+/>
+
 <RenderStory name="Render args" args={{ text: 'Text' }} />
 
 {/* @ts-expect-error text is missing */ null}
@@ -99,3 +121,35 @@
 
 {/* @ts-expect-error name is missing */ null}
 <Story args={{ label: 'Label' }} />
+
+<Story extend="Required args" name="Extend without args" />
+
+<Story extend="Required args" name="Extend with children" asChild>
+  <p>Static content</p>
+</Story>
+
+<Story extend="Required args" name="Extend with template">
+  {#snippet template(args, context)}
+    {expectTypeOf(args.label).toEqualTypeOf<string>()}
+    {expectTypeOf(context.args.disabled).toEqualTypeOf<boolean>()}
+    <Button {...args} />
+  {/snippet}
+</Story>
+
+<Story extend="Required args" name="Extend with static template">
+  {#snippet template()}
+    <p>Static content</p>
+  {/snippet}
+</Story>
+
+<Story
+  extend="Required args"
+  name="Extend wrong arg type"
+  args={{
+    // @ts-expect-error label must be a string
+    label: 1,
+  }}
+/>
+
+{/* @ts-expect-error extend must be a string */ null}
+<Story extend={1} name="Extend not a string" />

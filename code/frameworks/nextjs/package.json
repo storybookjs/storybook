@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs",
-  "version": "11.0.0-alpha.7",
+  "version": "11.0.0-alpha.8",
   "description": "Storybook for Next.js: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -146,6 +146,7 @@
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0",
     "storybook": "workspace:^",
+    "typescript": "^5.9.0 || ^6.0.0 || ^7.0.0",
     "webpack": "^5.0.0"
   },
   "peerDependenciesMeta": {
@@ -153,9 +154,6 @@
       "optional": true
     },
     "@types/react-dom": {
-      "optional": true
-    },
-    "typescript": {
       "optional": true
     },
     "webpack": {

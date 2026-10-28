@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "11.0.0-alpha.7",
+  "version": "11.0.0-alpha.8",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -89,9 +89,6 @@
       "optional": true
     },
     "@types/react-dom": {
-      "optional": true
-    },
-    "typescript": {
       "optional": true
     }
   },

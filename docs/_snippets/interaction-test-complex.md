@@ -175,7 +175,8 @@ export const Submits = {
 
 ```svelte filename="EventForm.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
   import { fn, expect } from 'storybook/test';
 
   import { users } from '../mocks/users';
@@ -218,32 +219,31 @@ export const Submits = {
 />
 ```
 
-```ts filename="EventForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-import type { Meta, StoryObj } from '@storybook/your-framework';
-import { fn, expect } from 'storybook/test';
+```svelte filename="EventForm.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+  import { fn, expect } from 'storybook/test';
 
-import { users } from '../mocks/users';
-import EventForm from './EventForm.svelte';
+  import { users } from '../mocks/users';
+  import EventForm from './EventForm.svelte';
 
-const meta = {
-  component: EventForm,
-} satisfies Meta<typeof EventForm>;
-export default meta;
+  const { Story } = preview.meta({
+    component: EventForm,
+  });
+</script>
 
-type Story = StoryObj<typeof meta>;
-
-export const Submits: Story = {
-  // Mock functions so we can manipulate and spy on them
-  args: {
+<Story
+  name="Submits"
+  args={{
+    // Mock functions so we can manipulate and spy on them
     getUsers: fn(),
     onSubmit: fn(),
-  },
-  beforeEach: async ({ args }) => {
+  }}
+  beforeEach={async ({ args }) => {
     // Manipulate `getUsers` mock to return mocked value
     args.getUsers.mockResolvedValue(users);
-  },
-  play: async ({ args, canvas, userEvent }) => {
+  }}
+  play={async ({ args, canvas, userEvent }) => {
     const usersList = canvas.getAllByRole('listitem');
     await expect(usersList).toHaveLength(4);
     await expect(canvas.getAllByText('VIP')).toHaveLength(2);
@@ -260,13 +260,14 @@ export const Submits: Story = {
       userCount: 4,
       data: expect.anything(),
     });
-  },
-};
+  }}
+/>
 ```
 
 ```svelte filename="EventForm.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
   import { fn, expect } from 'storybook/test';
 
   import { users } from '../mocks/users';
@@ -309,27 +310,31 @@ export const Submits: Story = {
 />
 ```
 
-```js filename="EventForm.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import { fn, expect } from 'storybook/test';
+```svelte filename="EventForm.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
+  import { fn, expect } from 'storybook/test';
 
-import { users } from '../mocks/users';
-import EventForm from './EventForm.svelte';
+  import { users } from '../mocks/users';
+  import EventForm from './EventForm.svelte';
 
-export default {
-  component: EventForm,
-};
+  const { Story } = preview.meta({
+    component: EventForm,
+  });
+</script>
 
-export const Submits = {
-  // Mock functions so we can manipulate and spy on them
-  args: {
+<Story
+  name="Submits"
+  args={{
+    // Mock functions so we can manipulate and spy on them
     getUsers: fn(),
     onSubmit: fn(),
-  },
-  beforeEach: async ({ args }) => {
+  }}
+  beforeEach={async ({ args }) => {
     // Manipulate `getUsers` mock to return mocked value
     args.getUsers.mockResolvedValue(users);
-  },
-  play: async ({ args, canvas, userEvent }) => {
+  }}
+  play={async ({ args, canvas, userEvent }) => {
     const usersList = canvas.getAllByRole('listitem');
     await expect(usersList).toHaveLength(4);
     await expect(canvas.getAllByText('VIP')).toHaveLength(2);
@@ -346,8 +351,8 @@ export const Submits = {
       userCount: 4,
       data: expect.anything(),
     });
-  },
-};
+  }}
+/>
 ```
 
 ```ts filename="EventForm.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"

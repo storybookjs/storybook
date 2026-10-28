@@ -22,7 +22,7 @@ import {
 import { extractStoryAttributesNodes } from '../../svelte-csf/parser/extract/svelte/story/attributes.ts';
 import { extractStoryTemplateSnippetBlock } from '../../svelte-csf/parser/extract/svelte/story/template.ts';
 import type { ESTreeAST, SvelteAST } from '../../svelte-csf/parser/ast.ts';
-import { type Edit, applyEdits, scriptFile, span } from './markup.ts';
+import { type Edit, applyEdits, scriptFile, span, withoutByteOrderMark } from './markup.ts';
 import type { TemplateParameter } from './print-template.ts';
 
 export interface StoryMarkup {
@@ -46,7 +46,8 @@ export interface StoryFile {
 
 // Read a `.stories.svelte` file as plain CSF: the module script with the meta as default export,
 // and one story export with the `args` of each `<Story>`.
-export async function readSvelteCsfFile(source: string, filename: string): Promise<StoryFile> {
+export async function readSvelteCsfFile(file: string, filename: string): Promise<StoryFile> {
+  const source = withoutByteOrderMark(file);
   const ast = getIndexableAST(source);
   const typescript = isTypeScript(ast.module) || isTypeScript(ast.instance);
   const nodes = await extractSvelteASTNodes({ ast, filename });

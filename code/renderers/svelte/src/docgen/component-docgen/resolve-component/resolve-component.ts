@@ -29,6 +29,7 @@ import { getIndexableAST } from '../../../svelte-csf/indexer/parser.ts';
 import { getDefineMetaComponentValue } from '../../../svelte-csf/parser/analyse/define-meta/component-identifier.ts';
 import { getDefineMetaFirstArgumentObjectExpression } from '../../../svelte-csf/parser/extract/svelte/define-meta.ts';
 import { extractSvelteASTNodes } from '../../../svelte-csf/parser/extract/svelte/nodes.ts';
+import { withoutByteOrderMark } from '../../story-docs/markup.ts';
 
 export interface ResolvedSvelteComponent {
   componentPath: string;
@@ -129,7 +130,7 @@ function followExport(
 // `undefined` when it cannot be read or parsed.
 function moduleEditor(filePath: string) {
   try {
-    const source = readFileSync(filePath, 'utf8');
+    const source = withoutByteOrderMark(readFileSync(filePath, 'utf8'));
     if (!filePath.endsWith('.svelte')) return new SourceEditor(source, filePath);
     const module = getIndexableAST(source).module?.content as
       | { start: number; end: number }
@@ -159,7 +160,7 @@ export async function resolveStoryComponent(
   const importPath = getStoryImportPathFromEntry(entry);
   if (!importPath) return undefined;
   const storyPath = resolve(importPath);
-  const source = await readFile(storyPath, 'utf8');
+  const source = withoutByteOrderMark(await readFile(storyPath, 'utf8'));
 
   if (storyPath.endsWith('.svelte')) {
     const ast = getIndexableAST(source);
@@ -259,7 +260,7 @@ export async function resolveStorySubcomponents(
   const importPath = getStoryImportPathFromEntry(entry);
   if (!importPath) return {};
   const storyPath = resolve(importPath);
-  const source = await readFile(storyPath, 'utf8');
+  const source = withoutByteOrderMark(await readFile(storyPath, 'utf8'));
   const { meta, program } = storyPath.endsWith('.svelte')
     ? await readSvelteMeta(source, storyPath)
     : readCsfMeta(source, entry);

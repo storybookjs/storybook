@@ -1,9 +1,11 @@
 import fs from 'node:fs/promises';
 
+import { parse } from 'svelte/compiler';
 import { findMeta, findMetaImports, hasMetaImport } from '../utils/import-source.ts';
+import { unwrapExpression } from 'storybook/internal/csf-tools';
 import type { IndexInput } from 'storybook/internal/types';
 
-import { getSvelteAST, type ESTreeAST, type SvelteAST } from '../parser/ast.ts';
+import type { ESTreeAST, SvelteAST } from '../parser/ast.ts';
 import { extractStoryAttributesNodes } from '../parser/extract/svelte/story/attributes.ts';
 import { getStoryIdentifiers } from '../parser/analyse/story/attributes/identifiers.ts';
 import { getArrayOfStringsValueFromAttribute } from '../parser/analyse/story/attributes.ts';
@@ -40,16 +42,17 @@ type IndexedStory = ExtendableStory & { tags: string[] };
 const styleBlocks =
   /<script(?:\s(?:"[^"]*"|'[^']*'|[^>"'])*)?>[\s\S]*?<\/script\s*>|<!--[\s\S]*?-->|(<style(?:\s(?:"[^"]*"|'[^']*'|[^>"'])*)?>)([\s\S]*?)(<\/style\s*>)/g;
 
-// Preprocessors don't run here, so a style block in SCSS and similar fails to compile. Then the
+// Preprocessors don't run here, so a style block in SCSS and similar fails to parse. Then the
 // style content is blanked. Newlines stay, so error positions stay correct.
-export function getIndexableAST(code: string, filename: string) {
+// Svelte validates the file only when the story loads, because `parse` doesn't validate.
+export function getIndexableAST(code: string): SvelteAST.Root {
   try {
-    return getSvelteAST({ code, filename });
+    return parse(code, { modern: true });
   } catch {
     const blanked = code.replace(styleBlocks, (match, open?: string, content = '', close = '') =>
       open === undefined ? match : open + content.replace(/[^\r\n]/g, ' ') + close
     );
-    return getSvelteAST({ code: blanked, filename });
+    return parse(blanked, { modern: true });
   }
 }
 
@@ -59,7 +62,7 @@ export async function parseForIndexer(filename: string): Promise<Results> {
     import('zimmerframe'),
   ]);
 
-  const svelteAST = getIndexableAST(code, filename);
+  const svelteAST = getIndexableAST(code);
   const results: Omit<Results, 'stories'> & {
     hasMetaImport?: boolean;
     isFactory: boolean;
@@ -134,14 +137,17 @@ export async function parseForIndexer(filename: string): Promise<Results> {
       state.storyNames = meta.storyNames;
       state.isFactory = meta.isFactory;
 
-      if (meta.call.arguments[0]?.type !== 'ObjectExpression') {
+      const [firstArgument] = meta.call.arguments;
+      const metaObject = firstArgument && unwrapExpression(firstArgument);
+
+      if (metaObject?.type !== 'ObjectExpression') {
         throw new GetDefineMetaFirstArgumentError({
           filename,
           defineMetaVariableDeclaration: meta.declaration,
         });
       }
 
-      visit(meta.call.arguments[0], state);
+      visit(metaObject, state);
     },
 
     // NOTE: We assume this one is value of first argument passed to `defineMeta({ ... })` or `preview.meta({ ... })` call

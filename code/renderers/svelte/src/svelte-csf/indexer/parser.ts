@@ -42,10 +42,18 @@ type IndexedStory = ExtendableStory & { tags: string[] };
 const styleBlocks =
   /<script(?:\s(?:"[^"]*"|'[^']*'|[^>"'])*)?>[\s\S]*?<\/script\s*>|<!--[\s\S]*?-->|(<style(?:\s(?:"[^"]*"|'[^']*'|[^>"'])*)?>)([\s\S]*?)(<\/style\s*>)/g;
 
+// Parse a `.svelte` file as read from disk. The AST positions point into `source`, so code that
+// slices the file must slice `source`, not the file. Svelte's parser drops a leading byte order
+// mark, so `source` drops it too.
+export function parseSvelteSource(file: string): { source: string; ast: SvelteAST.Root } {
+  const source = file.replace(/^\uFEFF/, '');
+  return { source, ast: getIndexableAST(source) };
+}
+
 // Preprocessors don't run here, so a style block in SCSS and similar fails to parse. Then the
 // style content is blanked. Newlines stay, so error positions stay correct.
 // Svelte validates the file only when the story loads, because `parse` doesn't validate.
-export function getIndexableAST(code: string): SvelteAST.Root {
+function getIndexableAST(code: string): SvelteAST.Root {
   try {
     return parse(code, { modern: true });
   } catch {
@@ -57,12 +65,12 @@ export function getIndexableAST(code: string): SvelteAST.Root {
 }
 
 export async function parseForIndexer(filename: string): Promise<Results> {
-  const [code, { walk }] = await Promise.all([
+  const [file, { walk }] = await Promise.all([
     fs.readFile(filename, { encoding: 'utf8' }),
     import('zimmerframe'),
   ]);
 
-  const svelteAST = getIndexableAST(code);
+  const { ast: svelteAST } = parseSvelteSource(file);
   const results: Omit<Results, 'stories'> & {
     hasMetaImport?: boolean;
     isFactory: boolean;

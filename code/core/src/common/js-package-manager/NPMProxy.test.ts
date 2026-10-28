@@ -3,14 +3,14 @@ import { join } from 'pathe';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { prompt } from 'storybook/internal/node-logger';
-import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
+import { prompt } from '@storybook/core/internal/node-logger';
+import { MinimumReleaseAgeHandledError } from '@storybook/core/internal/server-errors';
 
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { NPMProxy } from './NPMProxy.ts';
 
-vi.mock('storybook/internal/node-logger', () => ({
+vi.mock('@storybook/core/internal/node-logger', () => ({
   prompt: {
     executeTaskWithSpinner: vi.fn(),
     getPreferredStdio: vi.fn(() => 'inherit'),

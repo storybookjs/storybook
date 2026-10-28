@@ -7,12 +7,12 @@ import { readFileSync, readdirSync } from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { deprecate } from 'storybook/internal/node-logger';
+import { deprecate } from '@storybook/core/internal/node-logger';
 
 import { transformSync } from 'esbuild';
 import { dedent } from 'ts-dedent';
 
-import { NODE_TARGET } from '../shared/constants/environments-support.ts';
+import { NODE_TARGET } from '../constants/environments-support.ts';
 
 type LoadHookSync = (url: string, context: any, nextLoad: any) => any;
 

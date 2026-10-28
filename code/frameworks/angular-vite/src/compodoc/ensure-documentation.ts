@@ -4,8 +4,8 @@
  * Compodoc scans the whole project in one pass, so the unit of work is the whole run: the first
  * caller generates and the rest of the run reuses what it produced.
  */
-import { withFileLock } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { withFileLock } from '@storybook/core/internal/common';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { randomUUID } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';

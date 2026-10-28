@@ -2,6 +2,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
+/** @deprecated Unused by Storybook's builders; the Webpack builder compiles with its own `webpack`. */
 export const checkWebpackVersion = (
   webpack: { version?: string },
   specifier: string,

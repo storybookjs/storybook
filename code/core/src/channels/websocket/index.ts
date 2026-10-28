@@ -1,5 +1,5 @@
 /// <reference path="../../typings.d.ts" />
-import * as EVENTS from 'storybook/internal/core-events';
+import * as EVENTS from '@storybook/core/internal/core-events';
 
 import { isJSON, parse, stringify } from 'telejson';
 import invariant from 'tiny-invariant';

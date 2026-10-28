@@ -1,6 +1,6 @@
 import type { Configuration as WebpackConfig } from 'webpack';
 
-import { resolvePackageDir } from '../../../../core/src/shared/utils/module.ts';
+import { resolvePackageDir } from '@storybook/core/internal/common';
 import { configureNextExportMocks } from '../export-mocks/webpack.ts';
 
 export const configureAliases = (baseConfig: WebpackConfig): void => {

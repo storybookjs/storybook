@@ -1,4 +1,4 @@
-import type { ToolAvailability } from 'storybook/internal/core-server';
+import type { ToolAvailability } from 'storybook/internal/server';
 import { registerToolset } from 'storybook/open-service';
 import { describe, expect, it } from 'vitest';
 
@@ -57,6 +57,7 @@ const TOOL_NAMES = [
   'stories-changed',
   'stories-find-by-component',
   'stories-preview',
+  'stories-screenshot',
   'test-run',
 ];
 

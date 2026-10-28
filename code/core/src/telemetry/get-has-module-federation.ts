@@ -1,4 +1,4 @@
-import { matchesPackagePattern } from '../shared/utils/ecosystem-identifier.ts';
+import { matchesPackagePattern } from '../utils/ecosystem-identifier.ts';
 import type { PackageJson } from '../types/index.ts';
 
 const MODULE_FEDERATION_PACKAGES = ['@module-federation/*', '@originjs/vite-plugin-federation'];

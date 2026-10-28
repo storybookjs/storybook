@@ -1,13 +1,13 @@
 import { globalSettings } from 'storybook/internal/cli';
 import {
-  HandledError,
   JsPackageManagerFactory,
+  isHandledError,
   PackageManagerName,
   optionalEnvToBoolean,
   removeAddon as remove,
   versions,
 } from 'storybook/internal/common';
-import { withTelemetry } from 'storybook/internal/core-server';
+import { withTelemetry } from 'storybook/internal/server';
 import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
@@ -32,7 +32,7 @@ addToGlobalContext('cliVersion', versions.storybook);
 const handleCommandFailure =
   (logFilePath: string | boolean | undefined) =>
   async (error: unknown): Promise<never> => {
-    if (!(error instanceof HandledError)) {
+    if (!isHandledError(error)) {
       logger.error(String(error));
     }
 

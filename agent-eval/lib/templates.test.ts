@@ -51,7 +51,11 @@ describe('Codex AGENTS.md instructions', () => {
   // sources. Inside `beforeAll`, a moved file fails only these tests.
   beforeAll(async () => {
     ({ buildServerInstructions } = await import(
-      join(AGENT_EVAL_ROOT, '..', 'code/core/src/cli/skills/content/build-server-instructions.ts')
+      join(
+        AGENT_EVAL_ROOT,
+        '..',
+        'code/lib/storybook/src/storybook/cli/skills/content/build-server-instructions.ts'
+      )
     ));
   });
 
@@ -76,9 +80,12 @@ describe('readStorybookWorkspace', () => {
   it('lists the published packages with the monorepo packages npm installs along with them', async () => {
     const workspace = await readStorybookWorkspace();
 
-    expect(workspace.get('storybook')).toMatchObject({ dir: 'code/core', project: 'core' });
+    expect(workspace.get('storybook')).toMatchObject({
+      dir: 'code/lib/storybook',
+      project: 'storybook',
+    });
     expect(workspace.get('@storybook/react-vite')?.dependencies).toEqual(
-      expect.arrayContaining(['@storybook/builder-vite', '@storybook/react', 'storybook'])
+      expect.arrayContaining(['@storybook/builder-vite', '@storybook/core', '@storybook/react'])
     );
     expect(workspace.get('@storybook/addon-mcp')?.dependencies).toContain('storybook');
     expect(workspace.get('@storybook/addon-mcp')?.dependencies).not.toContain(
@@ -259,7 +266,7 @@ describe('writeStorybookAgentInstructions', () => {
 
   beforeAll(async () => {
     ({ STORYBOOK_AGENT_INSTRUCTIONS } = await import(
-      join(AGENT_EVAL_ROOT, '..', 'code/core/src/cli/agentInstructions.ts')
+      join(AGENT_EVAL_ROOT, '..', 'code/lib/storybook/src/storybook/cli/agentInstructions.ts')
     ));
   });
 

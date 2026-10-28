@@ -18,6 +18,7 @@ export {
 
 export default Channel;
 
+export { parseChannelMessage, stringifyChannelMessage } from './serialization.ts';
 export { PostMessageTransport } from './postmessage/index.ts';
 export { WebsocketTransport, HEARTBEAT_INTERVAL, SERVER_CHANNEL_PATH } from './websocket/index.ts';
 export type { ChannelWebSocket } from './websocket/index.ts';

@@ -3,7 +3,7 @@ import {
   type PropDefaultValue,
   createSummaryValue,
   isTooLongForDefaultValueSummary,
-} from 'storybook/internal/docs-tools';
+} from '@storybook/core/internal/docs-tools';
 
 import { isFunction, isPlainObject, isString } from 'es-toolkit/predicate';
 import type reactElementToJSXStringType from 'react-element-to-jsx-string';

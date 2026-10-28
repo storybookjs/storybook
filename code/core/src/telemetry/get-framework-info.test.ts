@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { StorybookConfig } from 'storybook/internal/types';
+import type { StorybookConfig } from '@storybook/core/internal/types';
 
 import { getFrameworkInfo } from './get-framework-info.ts';
 
-vi.mock('storybook/internal/common', () => ({
+vi.mock('@storybook/core/internal/common', () => ({
   getStorybookInfo: vi.fn(),
 }));
 
@@ -16,7 +16,7 @@ describe('getFrameworkInfo', () => {
   };
 
   beforeEach(async () => {
-    const { getStorybookInfo } = await import('storybook/internal/common');
+    const { getStorybookInfo } = await import('@storybook/core/internal/common');
     vi.mocked(getStorybookInfo).mockResolvedValue(defaultInfo as any);
   });
 
@@ -31,13 +31,13 @@ describe('getFrameworkInfo', () => {
 
   it('passes configDir to getStorybookInfo', async () => {
     const configDir = '/my/project/.storybook';
-    const { getStorybookInfo } = await import('storybook/internal/common');
+    const { getStorybookInfo } = await import('@storybook/core/internal/common');
     await getFrameworkInfo({} as StorybookConfig, configDir);
     expect(getStorybookInfo).toHaveBeenCalledWith(configDir);
   });
 
   it('decodes pnpm virtual-store paths so no version-bearing fragment leaks', async () => {
-    const { getStorybookInfo } = await import('storybook/internal/common');
+    const { getStorybookInfo } = await import('@storybook/core/internal/common');
     vi.mocked(getStorybookInfo).mockResolvedValue({
       frameworkPackage: '/repo/node_modules/.pnpm/@storybook+react-vite@9.0.0',
       rendererPackage: '/repo/node_modules/.pnpm/@storybook+react@9.0.0_typescript@5.0.0',

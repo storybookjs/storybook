@@ -13,14 +13,14 @@
  * Plus our own file watching layer (fs.watch + debounce) since we're a standalone Node.js process,
  * not running inside an IDE.
  */
-import { logger, once } from 'storybook/internal/node-logger';
+import { logger, once } from '@storybook/core/internal/node-logger';
 
 import { type FSWatcher, existsSync, watch } from 'fs';
 import * as path from 'path';
 import { dedent } from 'ts-dedent';
 import * as v8 from 'v8';
 
-import { slash } from '../shared/utils/paths.ts';
+import { slash } from '../utils/paths.ts';
 import type {
   ComponentMetaFileSystem,
   ComponentMetaProjectBase,

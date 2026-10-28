@@ -1,38 +1,17 @@
-<p align="center">
-  <a href="https://storybook.js.org/?ref=readme">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/263385/199832481-bbbf5961-6a26-481d-8224-51258cce9b33.png">
-      <img src="https://user-images.githubusercontent.com/321738/63501763-88dbf600-c4cc-11e9-96cd-94adadc2fd72.png" alt="Storybook" width="400" />
-    </picture>
-    
-  </a>
-  
-</p>
+# @storybook/core
 
-<p align="center">Build bulletproof UI components faster</p>
+The shared runtime, types and Node utilities behind `storybook`.
+Internal: users import them through `storybook/*`.
 
-<br/>
+- Contents: instance, hooks and the legacy preset bridge, story index, services, open services and toolsets, preview page, csf, csf-tools, channels, preview, preview-api, test, telemetry, types, Node utilities.
+- Imported by: `@storybook/ui`, `@storybook/manager`, `@storybook/open-service`, `storybook`, and the Node side of frameworks, renderers, builders, presets and addons.
+  - Addon postinstall scripts stay on `storybook/*`.
+- Direction: `core <- ui <- manager <- storybook`; `@storybook/open-service` sits on core alone. Core imports no other Storybook package, relatively or through `storybook/*`.
+- Product-specific behaviour (built-in features, server, CLI) is injected by `storybook`, never imported.
+- The root entry `@storybook/core` is the public instance API: `createStorybook`, `defineAddon`, `defineBuilder`, `defineFramework`, `defineRenderer`, `declareHooks`, the instance accessors, `getFeatures`, and their types.
+  - `@storybook/core/internal/instance` adds the legacy bridge and internal helpers on top of it.
+- Other entries are `@storybook/core/internal/<area>` (for example `@storybook/core/internal/types`), plus `@storybook/core/open-service`, `@storybook/core/preview-api`, and `@storybook/core/test`.
+  - Most mirror a `storybook/internal/*` subpath; `storybook/manager-api` and `storybook/theming` come from `@storybook/manager` and `@storybook/ui`.
+  - `@storybook/core/internal/deep/*` reaches any source module, for tests in the upper packages.
 
-<p align="center">
-Storybook is a frontend workshop for building UI components and pages in isolation. Thousands of teams use it for UI development, testing, and documentation. Find out more at <a href="https://storybook.js.org/?ref=readme">storybook.js.org</a>!
-</p>
-
-<center>
-  <img src="https://raw.githubusercontent.com/storybookjs/storybook/refs/heads/release-6-5/media/storybook-intro.gif" width="100%" />
-</center>
-
----
-
-# Storybook
-
-The `storybook` package contains Storybook's core. It includes:
-
-- Storybook's CLI and development server
-- Storybook's main UI (aka "the manager")
-- Core functionality including component controls, toolbar controls, action logging, viewport control, and interaction debugger
-- User-facing utility libraries such as `storybook/test`, `theming`, and `viewport`
-- Libraries used by Storybook's ecosystem of frameworks, addons, and builders
-
-It also contains a variety of other libraries and utilities under the `storybook/internal` namespace, such as utilities for CSF, MDX & Docs.
-
-Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=readme).
+See the [instance README](./src/instance/README.md) for the full source layout and import rules.

@@ -19,7 +19,7 @@ import {
   emptyManifests,
   registerToolset,
   reviewToolset,
-} from 'storybook/internal/core-server';
+} from 'storybook/internal/services';
 
 const EMPTY_INDEX: StoryIndex = { v: 5, entries: {} };
 

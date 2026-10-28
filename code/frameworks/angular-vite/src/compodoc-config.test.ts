@@ -5,10 +5,12 @@ import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_COMPODOC_ARGS, resolveCompodocConfig } from './compodoc-config.ts';
 
-const hostOptions = (framework: unknown, extra: Record<string, unknown> = {}) => ({
-  presets: {
-    apply: async (key: string, fallback?: unknown) => (key === 'framework' ? framework : fallback),
-  },
+// `framework` is the main config entry: a package name or `{ name, options }`.
+const hostOptions = (
+  framework: string | { options: object },
+  extra: Record<string, unknown> = {}
+) => ({
+  frameworkOptions: typeof framework === 'string' ? undefined : framework.options,
   ...extra,
 });
 

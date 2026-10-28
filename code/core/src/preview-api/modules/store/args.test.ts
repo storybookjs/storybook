@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { once } from 'storybook/internal/client-logger';
-import type { SBType } from 'storybook/internal/types';
+import { once } from '@storybook/core/internal/client-logger';
+import type { SBType } from '@storybook/core/internal/types';
 
 import {
   UNTARGETED,
@@ -21,7 +21,7 @@ const boolObjectType: SBType = { name: 'object', value: { bool: booleanType } };
 const reactNodeType: SBType = { name: 'other', value: 'ReactNode' };
 const otherUnionType: SBType = { name: 'other', value: 'small | default' };
 
-vi.mock('storybook/internal/client-logger');
+vi.mock('@storybook/core/internal/client-logger');
 
 enum ArgsMapTestEnumWithoutInitializer {
   EnumValue,

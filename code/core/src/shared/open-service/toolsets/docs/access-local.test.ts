@@ -4,7 +4,7 @@
  * consumers share this helper, so this is the single place the choice is pinned.
  */
 
-import type { StoryIndex } from 'storybook/internal/types';
+import type { StoryIndex } from '@storybook/core/internal/types';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

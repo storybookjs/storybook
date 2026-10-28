@@ -1,4 +1,4 @@
-import { getAutomockCode } from 'storybook/internal/mocking-utils';
+import { getAutomockCode } from '@storybook/core/internal/mocking-utils';
 
 import type { LoaderContext } from 'webpack';
 

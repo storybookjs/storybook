@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
+import { STORY_INDEX_INVALIDATED } from '@storybook/core/internal/core-events';
 
 import { createTestChannel, installTestChannel } from '../../../../channels/test-channel.ts';
 import { entryEmits } from '../../fixtures.ts';

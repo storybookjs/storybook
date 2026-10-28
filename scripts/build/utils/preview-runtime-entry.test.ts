@@ -19,6 +19,22 @@ export { setup };
 `);
 });
 
+it('drops a standalone setup import from another chunk', () => {
+  const tied = tiePreviewRuntimeSetup(`import { n as setup } from "./_chunks/runtime-DZ76sktb.js";
+import { t as init_runtime } from "./_chunks/runtime-lYx-eSfe.js";
+init_runtime();
+export { setup };
+`);
+
+  expect(tied).toBe(`import { t as init_runtime } from "./_chunks/runtime-lYx-eSfe.js";
+init_runtime();
+function setup() {
+  init_runtime();
+}
+export { setup };
+`);
+});
+
 it('rejects an unexpected preview runtime entry', () => {
   expect(() => tiePreviewRuntimeSetup('export const setup = () => {};\n')).toThrow(
     'Unexpected preview runtime entry'

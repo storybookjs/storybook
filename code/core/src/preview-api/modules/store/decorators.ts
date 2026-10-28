@@ -5,7 +5,7 @@ import type {
   Renderer,
   StoryContextForRender,
   StoryContextUpdate,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 export function decorateStory<TRenderer extends Renderer>(
   storyFn: LegacyStoryFn<TRenderer>,

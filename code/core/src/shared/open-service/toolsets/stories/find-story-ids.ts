@@ -1,8 +1,8 @@
 import path from 'node:path';
 
-import { normalizeStoryPath } from 'storybook/internal/common';
-import { sanitize, storyNameFromExport } from 'storybook/internal/csf/csf-utils';
-import type { IndexEntry, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
+import { normalizeStoryPath } from '@storybook/core/internal/common';
+import { sanitize, storyNameFromExport } from '@storybook/core/internal/csf/csf-utils';
+import type { IndexEntry, StoryIndex, StoryIndexEntry } from '@storybook/core/internal/types';
 
 import leven from 'leven';
 

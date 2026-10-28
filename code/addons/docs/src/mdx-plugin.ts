@@ -1,12 +1,14 @@
+import './node/hooks.ts';
+
 import { fileURLToPath } from 'node:url';
 
-import type { Options } from 'storybook/internal/types';
+import type { Storybook } from '@storybook/core';
 
 import { createFilter } from '@rollup/pluginutils';
 import type { Plugin } from 'vite';
 
-import type { CompileOptions } from './compiler';
-import { compile } from './compiler';
+import type { CompileOptions } from './compiler/index.ts';
+import { compile } from './compiler/index.ts';
 
 /**
  * Storybook uses a single loader when dealing with MDX:
@@ -15,11 +17,10 @@ import { compile } from './compiler';
  *
  * @see https://github.com/storybookjs/storybook/blob/next/addons/docs/docs/recipes.md#csf-stories-with-arbitrary-mdx
  */
-export async function mdxPlugin(options: Options): Promise<Plugin> {
+export async function mdxPlugin(storybook: Pick<Storybook, 'callHook'>): Promise<Plugin> {
   const include = /\.mdx$/;
   const filter = createFilter(include);
-  const { presets } = options;
-  const presetOptions = await presets.apply<Record<string, any>>('options', {});
+  const presetOptions = await storybook.callHook('legacy:options:extend', {});
   const mdxPluginOptions = presetOptions?.mdxPluginOptions as CompileOptions;
 
   const rehypeSlug = (await import('rehype-slug')).default;
@@ -35,7 +36,7 @@ export async function mdxPlugin(options: Options): Promise<Plugin> {
           return undefined;
         }
 
-        const mdxLoaderOptions: CompileOptions = await presets.apply('mdxLoaderOptions', {
+        const mdxLoaderOptions = await storybook.callHook('legacy:mdxLoaderOptions:extend', {
           ...mdxPluginOptions,
           mdxCompileOptions: {
             providerImportSource: fileURLToPath(

@@ -35,19 +35,14 @@ export class Channel implements ChannelLike {
   constructor(input: ChannelArgs = {}) {
     this.isAsync = input.async || false;
 
-    if (isMulti(input)) {
-      this.transports = input.transports || [];
+    const transports = isMulti(input) ? input.transports : input.transport ? [input.transport] : [];
+    transports.forEach((transport) => this.addTransport(transport));
+  }
 
-      this.transports.forEach((t) => {
-        t.setHandler((event) => this.handleEvent(event));
-      });
-    } else {
-      this.transports = input.transport ? [input.transport] : [];
-    }
-
-    this.transports.forEach((t) => {
-      t.setHandler((event) => this.handleEvent(event));
-    });
+  /** Attach a transport to send and receive events on this channel. */
+  addTransport(transport: ChannelTransport): void {
+    transport.setHandler((event) => this.receive(event));
+    this.transports.push(transport);
   }
 
   get hasTransport() {

@@ -3,12 +3,12 @@ import { join } from 'node:path';
 
 import { expect, test, vi } from 'vitest';
 
-import { Tag } from 'storybook/internal/core-server';
-import type { IndexEntry } from 'storybook/internal/types';
+import { Tag } from '@storybook/core/internal/story-index';
+import type { IndexEntry } from '@storybook/core/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { manifests } from './generator.ts';
+import { buildManifests } from './generator.ts';
 import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript.ts';
 import { invalidateCache } from './utils.ts';
 
@@ -29,7 +29,7 @@ test(
     const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
 
     try {
-      const result = await manifests(undefined, createManifestOptions());
+      const result = await buildManifests({}, createManifestOptions());
       const button = result?.components?.components?.['example-button'] as
         | ManifestComponentWithReactDocgenTypescript
         | undefined;
@@ -69,18 +69,9 @@ function createManifestOptions() {
   return {
     watch: false,
     manifestEntries,
-    presets: {
-      apply: async (extension: string, config?: unknown) => {
-        if (extension === 'typescript') {
-          return { reactDocgen: 'react-docgen-typescript' };
-        }
-        if (extension === 'features') {
-          return {};
-        }
-        return config;
-      },
-    },
-  } as Parameters<typeof manifests>[1];
+    typescriptOptions: { reactDocgen: 'react-docgen-typescript' },
+    features: {},
+  } satisfies Parameters<typeof buildManifests>[1];
 }
 
 function createTempProject() {

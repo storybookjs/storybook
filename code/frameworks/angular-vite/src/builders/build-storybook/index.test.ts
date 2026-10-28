@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import type { BuilderContext } from '@angular-devkit/architect';
 import type { JsonObject } from '@angular-devkit/core';
@@ -9,7 +9,7 @@ import { logging } from '@angular-devkit/core';
 import { commandBuilder, type StorybookBuilderOptions } from './index.ts';
 import type { StandaloneOptions } from '../utils/standalone-options.ts';
 
-vi.mock('storybook/internal/node-logger', () => ({
+vi.mock('@storybook/core/internal/node-logger', () => ({
   logger: {
     setLogLevel: vi.fn(),
     intro: vi.fn(),
@@ -24,17 +24,17 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-vi.mock('storybook/internal/telemetry', () => ({
+vi.mock('@storybook/core/internal/telemetry', () => ({
   addToGlobalContext: vi.fn(),
 }));
 
-vi.mock('storybook/internal/common', async (importOriginal) => ({
+vi.mock('@storybook/core/internal/common', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   getEnvConfig: vi.fn(),
   versions: { storybook: '0.0.0' },
 }));
 
-vi.mock('storybook/internal/core-server', () => ({
+vi.mock('storybook/internal/server', () => ({
   buildStaticStandalone: vi.fn(),
   withTelemetry: vi.fn((_event: unknown, _options: unknown, callback: () => Promise<unknown>) =>
     callback()
@@ -64,7 +64,7 @@ const mockedTargetFromTargetString = vi.mocked(
   (await import('@angular-devkit/architect')).targetFromTargetString
 );
 const mockedBuildStaticStandalone = vi.mocked(
-  (await import('storybook/internal/core-server')).buildStaticStandalone
+  (await import('storybook/internal/server')).buildStaticStandalone
 );
 
 function createMockContext(

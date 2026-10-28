@@ -1,7 +1,7 @@
 import * as path from 'node:path';
 
-import { extractDeclaredSubcomponents } from 'storybook/internal/common';
-import { loadCsf } from 'storybook/internal/csf-tools';
+import { extractDeclaredSubcomponents } from '@storybook/core/internal/common';
+import { loadCsf } from '@storybook/core/internal/csf-tools';
 
 import { vol } from 'memfs';
 import ts from 'typescript';

@@ -1,12 +1,12 @@
-import { loadCsf } from 'storybook/internal/csf-tools';
+import { loadCsf } from '@storybook/core/internal/csf-tools';
 
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import type { ResolvedMetaComponent } from 'storybook/internal/common';
-import { createMetaComponentResolver } from 'storybook/internal/common';
+import type { ResolvedMetaComponent } from '@storybook/core/internal/common';
+import { createMetaComponentResolver } from '@storybook/core/internal/common';
 import { resolveStoryComponent } from './resolve-component.ts';
 
 const resolveMetaComponent = createMetaComponentResolver();

@@ -2,7 +2,7 @@ import type { EventEmitter } from 'node:events';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 const workerThreads = vi.hoisted(() => ({
   parentPort: undefined as unknown as EventEmitter & { postMessage: ReturnType<typeof vi.fn> },
@@ -15,7 +15,7 @@ vi.mock('node:worker_threads', async () => {
 });
 
 // Override the global setup stub: these tests assert on the real logger's level state.
-vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('@storybook/core/internal/node-logger', { spy: true });
 
 afterEach(() => {
   logger.setLogLevel('info');

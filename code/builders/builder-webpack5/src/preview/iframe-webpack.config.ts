@@ -1,123 +1,59 @@
-import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import {
-  getBuilderOptions,
-  isPreservingSymlinks,
-  normalizeStories,
-  stringifyProcessEnvs,
-} from 'storybook/internal/common';
-import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
-import { WebpackMissingPreviewTemplateError } from 'storybook/internal/server-errors';
-import type { Options, SecurityConfig } from 'storybook/internal/types';
-
-import { type BuilderOptions } from '@storybook/core-webpack';
+import { isPreservingSymlinks } from '@storybook/core/internal/common';
+import type { PreviewSources } from '@storybook/core/internal/preview-page';
+import { EXPORT_ORDER_FILE_PATTERN } from '@storybook/core/internal/preview-page';
+import type { StorybookConfigRaw } from '@storybook/core/internal/types';
 
 // @ts-expect-error (I removed this on purpose, because it's incorrect)
 import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
 import type { TransformOptions as EsbuildOptions } from 'esbuild';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
+import { resolve } from 'pathe';
 import TerserWebpackPlugin from 'terser-webpack-plugin';
 import webpackModule from 'webpack';
 import type { Configuration } from 'webpack';
 import VirtualModulePlugin from 'webpack-virtual-modules';
 
-import type { TypescriptOptions } from '../types.ts';
+import type { BuilderOptions, TypescriptOptions } from '../types.ts';
 import {
   developmentPreviewChunkFilename,
   productionPreviewChunkFilename,
 } from './preview-filename.ts';
-import { getVirtualModules } from './virtual-module-mapping.ts';
+import { getVirtualModuleMapping } from './virtual-module-mapping.ts';
+
+export interface IframeConfigInput {
+  isProd: boolean;
+  outputDir: string;
+  /** Entries loaded before the preview entry. */
+  entries: string[];
+  builderOptions: BuilderOptions;
+  typescriptOptions: Partial<TypescriptOptions>;
+  build: StorybookConfigRaw['build'];
+  quiet?: boolean;
+  modulesCount?: number;
+}
 
 const { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin } = webpackModule;
 
-export default async (
-  options: Options & { typescriptOptions: TypescriptOptions }
-): Promise<Configuration> => {
-  const {
-    outputDir = join('.', 'public'),
-    quiet,
-    packageJson,
-    configType,
-    presets,
-    typescriptOptions,
-    features,
-  } = options;
+export const MOCKER_RUNTIME_ASSET = 'mocker-runtime-injected.js';
 
-  const isProd = configType === 'PRODUCTION';
-  const workingDir = process.cwd();
-
-  const [
-    coreOptions,
-    frameworkOptions,
-    envs,
-    logLevel,
-    headHtmlSnippet,
-    bodyHtmlSnippet,
-    template,
-    docsOptions,
-    entries,
-    nonNormalizedStories,
-    modulesCount,
-    build,
-    tagsOptions,
-    security,
-  ] = await Promise.all([
-    presets.apply('core'),
-    presets.apply('frameworkOptions'),
-    presets.apply<Record<string, string>>('env'),
-    presets.apply('logLevel', undefined),
-    presets.apply('previewHead'),
-    presets.apply('previewBody'),
-    presets.apply<string>('previewMainTemplate'),
-    presets.apply('docs'),
-    presets.apply<string[]>('entries', []),
-    presets.apply('stories', []),
-    options.cache?.get('modulesCount', 1000),
-    options.presets.apply('build'),
-    presets.apply('tags', {}),
-    presets.apply<SecurityConfig | undefined>('security'),
-  ]);
-
-  const stories = normalizeStories(nonNormalizedStories, {
-    configDir: options.configDir,
-    workingDir,
-  });
-
-  const builderOptions = await getBuilderOptions<BuilderOptions>(options);
-
+export function createIframeWebpackConfig(
+  preview: PreviewSources,
+  input: IframeConfigInput
+): Configuration {
+  const { isProd, builderOptions, typescriptOptions, build } = input;
   const shouldCheckTs = typescriptOptions.check && !typescriptOptions.skipCompiler;
-  const tsCheckOptions = typescriptOptions.checkOptions || {};
-
-  const cacheConfig = builderOptions.fsCache ? { cache: { type: 'filesystem' as const } } : {};
-  const lazyCompilationConfig =
-    builderOptions.lazyCompilation && !isProd
-      ? {
-          lazyCompilation: { entries: false },
-        }
-      : {};
-
-  if (!template) {
-    throw new WebpackMissingPreviewTemplateError();
-  }
-
-  const externals: Record<string, string> = globalsNameReferenceMap;
-  if (build?.test?.disableBlocks) {
-    externals['@storybook/addon-docs/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
-  }
-
-  const { virtualModules: virtualModuleMapping, entries: dynamicEntries } =
-    await getVirtualModules(options);
 
   return {
     name: 'preview',
     mode: isProd ? 'production' : 'development',
     bail: isProd,
-    devtool: options.build?.test?.disableSourcemaps ? false : 'cheap-module-source-map',
-    entry: [...(entries ?? []), ...dynamicEntries],
+    devtool: build?.test?.disableSourcemaps ? false : 'cheap-module-source-map',
+    entry: [...input.entries, preview.virtualModuleIds.entry],
     output: {
-      path: resolve(process.cwd(), outputDir),
+      path: resolve(process.cwd(), input.outputDir),
       filename: isProd ? '[name].[contenthash:8].iframe.bundle.js' : '[name].iframe.bundle.js',
       chunkFilename: isProd ? productionPreviewChunkFilename : developmentPreviewChunkFilename,
       publicPath: '',
@@ -129,7 +65,7 @@ export default async (
     watchOptions: {
       ignored: /node_modules/,
     },
-    externals,
+    externals: preview.externals,
     ignoreWarnings: [
       {
         message: /export '\S+' was not found in 'global'/,
@@ -139,36 +75,34 @@ export default async (
       },
     ],
     plugins: [
-      Object.keys(virtualModuleMapping).length > 0
-        ? new VirtualModulePlugin(virtualModuleMapping)
-        : (null as any),
+      new VirtualModulePlugin(
+        getVirtualModuleMapping(preview, {
+          lazyCompilation: !!builderOptions.lazyCompilation,
+          isProd,
+        })
+      ),
       new HtmlWebpackPlugin({
         filename: `iframe.html`,
         // FIXME: `none` isn't a known option
         chunksSortMode: 'none' as any,
         alwaysWriteToDisk: true,
         inject: false,
-        template,
-        templateParameters: {
-          version: packageJson?.version,
-          globals: {
-            CONFIG_TYPE: configType,
-            LOGLEVEL: logLevel,
-            FRAMEWORK_OPTIONS: frameworkOptions,
-            CHANNEL_OPTIONS: coreOptions.channelOptions,
-            FEATURES: features,
-            STORIES: stories.map((specifier) => ({
-              ...specifier,
-              importPathMatcher: specifier.importPathMatcher.source,
-            })),
-            DOCS_OPTIONS: docsOptions,
-            TAGS_OPTIONS: tagsOptions,
-            ...(build?.test?.disableBlocks ? { __STORYBOOK_BLOCKS_EMPTY_MODULE__: {} } : {}),
-            ...(security?.insecureIframeMessaging ? { INSECURE_IFRAME_MESSAGING: true } : {}),
-          },
-          headHtmlSnippet,
-          bodyHtmlSnippet,
-        },
+        templateContent: ({ htmlWebpackPlugin }) =>
+          preview.html({
+            head: [
+              ...(htmlWebpackPlugin.files.favicon
+                ? [`<link rel="shortcut icon" href="${htmlWebpackPlugin.files.favicon}" />`]
+                : []),
+              ...htmlWebpackPlugin.files.css.map(
+                (file: string) => `<link href="${file}" rel="stylesheet" />`
+              ),
+            ].join('\n'),
+            scripts: `<script type="module">
+      import './sb-preview/runtime.js';
+${htmlWebpackPlugin.files.js.map((file: string) => `      import './${file}';`).join('\n')}
+    </script>`,
+            mockerRuntimeUrl: MOCKER_RUNTIME_ASSET,
+          }),
         minify: {
           collapseWhitespace: true,
           removeComments: true,
@@ -178,24 +112,18 @@ export default async (
           useShortDoctype: true,
         },
       }),
-      new DefinePlugin({
-        'process.env': `(${JSON.stringify(envs)})`,
-        ...stringifyProcessEnvs(envs),
-        NODE_ENV: JSON.stringify(
-          features?.developmentModeForBuild && isProd ? 'development' : process.env.NODE_ENV
-        ),
-      }),
+      new DefinePlugin(preview.define({ env: 'process.env' })),
       isProd ? null : new HotModuleReplacementPlugin(),
       new CaseSensitivePathsPlugin(),
-      quiet ? null : new ProgressPlugin({ modulesCount }),
-      shouldCheckTs ? new ForkTsCheckerWebpackPlugin(tsCheckOptions) : null,
+      input.quiet ? null : new ProgressPlugin({ modulesCount: input.modulesCount }),
+      shouldCheckTs ? new ForkTsCheckerWebpackPlugin(typescriptOptions.checkOptions || {}) : null,
     ].filter(Boolean),
     module: {
       // Disable warning for dynamic requires
       unknownContextCritical: false,
       rules: [
         {
-          test: /\.stories\.([tj])sx?$|(stories|story)\.mdx$/,
+          test: EXPORT_ORDER_FILE_PATTERN,
           exclude: /node_modules/,
           enforce: 'post',
           use: [
@@ -224,10 +152,9 @@ export default async (
     },
     resolve: {
       extensions: ['.mjs', '.js', '.jsx', '.ts', '.tsx', '.json', '.cjs'],
-      modules: ['node_modules'].concat(envs.NODE_PATH || []),
-      mainFields: ['browser', 'module', 'main'].filter(Boolean),
+      modules: ['node_modules'].concat(preview.env.NODE_PATH || []),
+      mainFields: ['browser', 'module', 'main'],
       // Set webpack to resolve symlinks based on whether the user has asked node to.
-      // This feels like it should be default out-of-the-box in webpack :shrug:
       symlinks: !isPreservingSymlinks(),
     },
     optimization: {
@@ -236,19 +163,19 @@ export default async (
       },
       runtimeChunk: true,
       sideEffects: true,
-      usedExports: options.build?.test?.disableTreeShaking ? false : isProd,
+      usedExports: build?.test?.disableTreeShaking ? false : isProd,
       moduleIds: 'named',
       ...(isProd
         ? {
             minimize: true,
-            minimizer: options.build?.test?.esbuildMinify
+            minimizer: build?.test?.esbuildMinify
               ? [
                   new TerserWebpackPlugin<EsbuildOptions>({
                     parallel: true,
                     minify: TerserWebpackPlugin.esbuildMinify,
                     terserOptions: {
-                      sourcemap: !options.build?.test?.disableSourcemaps,
-                      treeShaking: !options.build?.test?.disableTreeShaking,
+                      sourcemap: !build?.test?.disableSourcemaps,
+                      treeShaking: !build?.test?.disableTreeShaking,
                     },
                   }),
                 ]
@@ -256,7 +183,7 @@ export default async (
                   new TerserWebpackPlugin({
                     parallel: true,
                     terserOptions: {
-                      sourceMap: !options.build?.test?.disableSourcemaps,
+                      sourceMap: !build?.test?.disableSourcemaps,
                       mangle: false,
                       keep_fnames: true,
                     },
@@ -268,7 +195,8 @@ export default async (
     performance: {
       hints: isProd ? 'warning' : false,
     },
-    ...cacheConfig,
-    experiments: { ...lazyCompilationConfig },
+    ...(builderOptions.fsCache ? { cache: { type: 'filesystem' as const } } : {}),
+    experiments:
+      builderOptions.lazyCompilation && !isProd ? { lazyCompilation: { entries: false } } : {},
   };
-};
+}

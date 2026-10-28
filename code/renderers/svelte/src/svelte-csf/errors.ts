@@ -1,4 +1,4 @@
-import { StorybookError } from 'storybook/internal/server-errors';
+import { StorybookError } from '@storybook/core/internal/server-errors';
 
 import { dedent } from 'ts-dedent';
 

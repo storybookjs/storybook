@@ -1,10 +1,10 @@
-import { isInNodeModules } from 'storybook/internal/common';
+import { isInNodeModules } from '@storybook/core/internal/common';
 import {
   type ComponentMetaProjectBase,
   type FileChange,
   filterSourceFilePaths,
-} from 'storybook/internal/component-meta';
-import { logger } from 'storybook/internal/node-logger';
+} from '@storybook/core/internal/component-meta';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import type * as ts from 'typescript';
 import { dirname, join, normalize } from 'pathe';

@@ -32,9 +32,13 @@ export const disallowList = [
   Object.keys(rendererPackages),
   Object.keys(frameworkPackages),
   'storybook',
+  // lockstep packages of `storybook`: two copies fork channels and theme contexts
+  '@storybook/core',
+  '@storybook/ui',
+  '@storybook/manager',
+  '@storybook/open-service',
   '@storybook/instrumenter',
   '@storybook/core-server',
-  '@storybook/manager',
   '@storybook/preview',
 ];
 

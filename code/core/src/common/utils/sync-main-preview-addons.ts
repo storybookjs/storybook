@@ -4,9 +4,9 @@ import {
   parseExpression,
   readConfig,
   writeConfig,
-} from 'storybook/internal/csf-tools';
-import { logger } from 'storybook/internal/node-logger';
-import type { StorybookConfig } from 'storybook/internal/types';
+} from '@storybook/core/internal/csf-tools';
+import { logger } from '@storybook/core/internal/node-logger';
+import type { StorybookConfig } from '@storybook/core/internal/types';
 
 import picocolors from 'picocolors';
 

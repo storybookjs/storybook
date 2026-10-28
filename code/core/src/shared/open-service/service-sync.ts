@@ -5,7 +5,7 @@
  * transport that moves entries and snapshots is `service-transport.ts`.
  */
 
-import { logger } from 'storybook/internal/client-logger';
+import { logger } from '@storybook/core/internal/client-logger';
 
 import { applyJsonPatch } from './json-patch.ts';
 import { clonePlain, hasOwn, isPlainObject } from './plain-object.ts';

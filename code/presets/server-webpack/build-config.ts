@@ -8,6 +8,10 @@ const config: BuildEntries = {
         entryPoint: './src/index.ts',
       },
       {
+        exportEntries: ['./node'],
+        entryPoint: './src/node.ts',
+      },
+      {
         exportEntries: ['./loader'],
         entryPoint: './src/loader.ts',
         dts: false,

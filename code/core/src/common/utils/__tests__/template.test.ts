@@ -20,9 +20,9 @@ const BODY_HTML_CONTENTS = '<div>custom body contents</div>';
 
 const BASE_CORE_PKG_DIR = join(import.meta.url, '..', '..', '..', '..', '..');
 
-vi.mock('../../../shared/utils/module', () => {
+vi.mock('../package-dir.ts', () => {
   return {
-    resolvePackageDir: () => BASE_CORE_PKG_DIR,
+    getCorePackageDir: () => BASE_CORE_PKG_DIR,
   };
 });
 

@@ -1,4 +1,4 @@
-import type { StoryIndex } from 'storybook/internal/types';
+import type { StoryIndex } from '@storybook/core/internal/types';
 
 import type { FindByComponentOutput } from './definition.ts';
 import {

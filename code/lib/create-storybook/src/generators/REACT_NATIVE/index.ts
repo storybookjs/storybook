@@ -1,13 +1,13 @@
 import { join } from 'node:path';
 
 import { ProjectType, copyTemplateFiles } from 'storybook/internal/cli';
-import { executeCommand } from 'storybook/internal/common';
+import {
+  RN_STORYBOOK_DIR,
+  applyPreviewImportsMap,
+  executeCommand,
+} from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import { SupportedBuilder, SupportedLanguage, SupportedRenderer } from 'storybook/internal/types';
-import {
-  applyPreviewImportsMap,
-  RN_STORYBOOK_DIR,
-} from '../../../../../core/src/shared/constants/config-folder.ts';
 
 import { dedent } from 'ts-dedent';
 

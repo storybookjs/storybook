@@ -1,13 +1,13 @@
 import process from 'node:process';
 
-import { Channel } from 'storybook/internal/channels';
+import { Channel } from '@storybook/core/internal/channels';
 import {
   internal_UniversalStore,
   experimental_getStatusStore,
   experimental_getTestProviderStore,
-} from 'storybook/internal/core-server';
+} from '@storybook/core/internal/services';
 
-import type { PreviewAnnotation, StoryIndex } from 'storybook/internal/types';
+import type { PreviewAnnotation, StoryIndex } from '@storybook/core/internal/types';
 
 import type { BuilderOptions } from '@storybook/builder-vite';
 

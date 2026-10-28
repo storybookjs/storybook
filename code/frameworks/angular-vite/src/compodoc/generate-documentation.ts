@@ -4,8 +4,8 @@
  * Compodoc's programmatic API is not re-entrant, and its own write is not atomic, so the CLI runs
  * against a scratch directory and the finished file is renamed into place.
  */
-import { executeNodeCommand } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { executeNodeCommand } from '@storybook/core/internal/common';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import {
   existsSync,

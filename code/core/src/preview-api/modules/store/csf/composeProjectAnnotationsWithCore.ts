@@ -1,14 +1,14 @@
-import {
-  getCoreAnnotations,
-  hasCoreAnnotations,
-  markAsComposedWithCoreAnnotations,
-} from 'storybook/internal/csf';
 import type {
   ModuleExports,
   NormalizedProjectAnnotations,
   Renderer,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
+import {
+  getCoreAnnotations,
+  hasCoreAnnotations,
+  markAsComposedWithCoreAnnotations,
+} from '../../../../csf/core-annotations.ts';
 import { composeConfigs } from './composeConfigs.ts';
 
 /**

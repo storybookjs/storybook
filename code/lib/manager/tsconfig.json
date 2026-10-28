@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "moduleResolution": "bundler",
+    "module": "esnext",
+    "stripInternal": true
+  },
+  "include": ["src/**/*", "scripts/**/*", "*.d.ts", "../../core/src/typings.d.ts"],
+  "exclude": ["dist", "node_modules"]
+}

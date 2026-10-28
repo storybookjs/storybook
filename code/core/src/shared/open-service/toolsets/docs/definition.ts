@@ -1,6 +1,10 @@
 import * as v from 'valibot';
 
-import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
+import {
+  defineToolset,
+  type ToolsetBaseCtx,
+  type ToolsetOutcome,
+} from '../../toolset-definition.ts';
 import { getToolName, type ToolsetMethodId } from '../../toolset-names.ts';
 import { listEntryNames, type DocsAccess, type ResolvedDocsEntry } from './access.ts';
 import {
@@ -186,11 +190,11 @@ export function isDocsShowStoryError(output: DocsShowStoryOutput): boolean {
   return kind !== 'found' && kind !== 'notice';
 }
 
-function describeList(ctx: ToolsetCtx): string {
+function describeList(ctx: ToolsetBaseCtx): string {
   return `List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with ${getToolName(ctx)(DOCS_METHOD_REFS.show)}, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their storybookId input. Pass withStoryIds: true when you need story IDs for other tools.`;
 }
 
-function describeShow(ctx: ToolsetCtx): string {
+function describeShow(ctx: ToolsetBaseCtx): string {
   return `Get documentation for a UI component or docs entry.
 
 Returns the first ${MAX_STORIES_TO_SHOW} stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations, and to answer any question about a component's props, API, or usage — reading or grepping the component source is not a substitute. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the ${getToolName(ctx)(DOCS_METHOD_REFS.showStory)} tool to fetch the story documentation for the specific story variant you need — its story ID can be passed directly as storyId.
@@ -199,7 +203,7 @@ Example: id="button" returns Primary, Secondary, Large stories with code like <B
 }
 
 // A ready-to-run `show` call, so a correction never has to be pieced together from prose.
-function formatShowCall({ id, storybookId }: DocsListedEntry, ctx: ToolsetCtx) {
+function formatShowCall({ id, storybookId }: DocsListedEntry, ctx: ToolsetBaseCtx) {
   const tool = getToolName(ctx)(DOCS_METHOD_REFS.show);
   return ctx.transport === 'cli'
     ? `${tool} --id ${id}${storybookId ? ` --storybookId ${storybookId}` : ''}`
@@ -209,7 +213,7 @@ function formatShowCall({ id, storybookId }: DocsListedEntry, ctx: ToolsetCtx) {
 /** Not-found message for an unknown component or docs id. */
 function formatEntryNotFound(
   { id, storybookId, suggestions = [], unreadableSources = [] }: DocsShowOutput,
-  ctx: ToolsetCtx
+  ctx: ToolsetBaseCtx
 ): string {
   const suffix = storybookId ? ` in source "${storybookId}"` : '';
   const notFound = `Component or Docs Entry not found: "${id}"${suffix}.`;
@@ -242,7 +246,7 @@ function formatEntryNotFound(
 
 function formatResolvedElsewhere(
   { id, storybookId, resolvedStorybookId }: DocsShowOutput,
-  ctx: ToolsetCtx
+  ctx: ToolsetBaseCtx
 ): string {
   const scope =
     ctx.transport === 'cli'
@@ -252,7 +256,7 @@ function formatResolvedElsewhere(
 }
 
 /** Pure renderer for `show`; the handler attaches it to both outcome branches. */
-function renderShow(data: DocsShowOutput, ctx: ToolsetCtx): string {
+function renderShow(data: DocsShowOutput, ctx: ToolsetBaseCtx): string {
   const resolution = resolveShow(data);
   switch (resolution.kind) {
     case 'source-error':
@@ -288,7 +292,7 @@ function formatAvailableStories(stories: ComponentEntry['component']['stories'])
 function renderShowStory(
   resolution: ShowStoryResolution,
   data: DocsShowStoryOutput,
-  ctx: ToolsetCtx
+  ctx: ToolsetBaseCtx
 ): string {
   switch (resolution.kind) {
     case 'input-invalid':
@@ -370,7 +374,7 @@ async function resolveFromSource(
 function selectSource(
   sources: DocsSource[] | undefined,
   storybookId: string | undefined,
-  ctx: ToolsetCtx
+  ctx: ToolsetBaseCtx
 ): { access?: DocsAccess; sourceError?: string } {
   if (!sources?.length) {
     return {};
@@ -446,7 +450,7 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
     : v.strictObject(showStoryFields);
 
   /** The access for a lookup, plus the id it was scoped to. */
-  const access = (storybookId: string | undefined, ctx: ToolsetCtx) =>
+  const access = (storybookId: string | undefined, ctx: ToolsetBaseCtx) =>
     multiSource ? selectSource(sources, storybookId, ctx) : { access: docsAccess };
 
   const sourceAccesses: SourceAccess[] = multiSource

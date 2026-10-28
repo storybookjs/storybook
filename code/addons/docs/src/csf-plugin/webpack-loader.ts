@@ -1,8 +1,8 @@
 import { readFile } from 'node:fs/promises';
 
-import type { EnrichCsfOptions } from 'storybook/internal/csf-tools';
-import { enrichCsf, formatCsf, loadCsf } from 'storybook/internal/csf-tools';
-import { logger } from 'storybook/internal/node-logger';
+import type { EnrichCsfOptions } from '@storybook/core/internal/csf-tools';
+import { enrichCsf, formatCsf, loadCsf } from '@storybook/core/internal/csf-tools';
+import { logger } from '@storybook/core/internal/node-logger';
 
 interface LoaderContext {
   async: () => (err: Error | null, result?: string, map?: any) => void;

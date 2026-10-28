@@ -1,7 +1,7 @@
 import { existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
-import type { StoryIndex } from 'storybook/internal/types';
+import type { StoryIndex } from '@storybook/core/internal/types';
 
 import { vol } from 'memfs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

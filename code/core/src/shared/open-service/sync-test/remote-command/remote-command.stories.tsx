@@ -2,7 +2,7 @@ import React, { useSyncExternalStore } from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, waitFor } from 'storybook/test';
+import { expect, waitFor } from '@storybook/core/test';
 
 import { OPEN_SERVICE_DEMO_PARAM_KEY } from '../addon/constants.ts';
 import { createDemoStore } from '../demo-store.ts';

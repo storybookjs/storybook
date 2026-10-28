@@ -3,12 +3,12 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { fetch } from './fetch.ts';
 import { sendTelemetry } from './telemetry.ts';
 
-vi.mock('./fetch');
-vi.mock('./event-cache', () => {
+vi.mock('./fetch.ts');
+vi.mock('./event-cache.ts', () => {
   return { set: vi.fn() };
 });
 
-vi.mock('./session-id', () => {
+vi.mock('./session-id.ts', () => {
   return {
     getSessionId: async () => {
       return 'session-id';

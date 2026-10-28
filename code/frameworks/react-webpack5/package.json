@@ -36,19 +36,17 @@
       "code": "./src/node/index.ts",
       "default": "./dist/node/index.js"
     },
-    "./package.json": "./package.json",
-    "./preset": "./dist/preset.js"
+    "./package.json": "./package.json"
   },
   "files": [
     "dist/**/*",
     "template/cli/**/*",
     "README.md",
-    "*.js",
-    "*.d.ts",
     "!src/**/*"
   ],
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
+    "@storybook/core": "workspace:*",
     "@storybook/preset-react-webpack": "workspace:*",
     "@storybook/react": "workspace:*"
   },
@@ -62,6 +60,9 @@
     "typescript": "^5.9.0 || ^6.0.0 || ^7.0.0"
   },
   "peerDependenciesMeta": {
+    "storybook": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     }

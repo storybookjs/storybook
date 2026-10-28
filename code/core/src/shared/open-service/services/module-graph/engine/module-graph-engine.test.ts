@@ -2,8 +2,8 @@ import { stat } from 'node:fs/promises';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { logger } from 'storybook/internal/node-logger';
-import type { StoryIndex } from 'storybook/internal/types';
+import { logger } from '@storybook/core/internal/node-logger';
+import type { StoryIndex } from '@storybook/core/internal/types';
 
 import {
   buildReverseIndex,
@@ -16,7 +16,7 @@ import { ModuleGraphFailureError } from '../errors.ts';
 import { ModuleGraphEngine } from './module-graph-engine.ts';
 
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('@storybook/core/internal/node-logger', { spy: true });
 vi.mock('./dependency-graph/resolver-factory.ts', { spy: true });
 vi.mock('./dependency-graph/dependency-graph-builder.ts', { spy: true });
 vi.mock('./dependency-graph/incremental-patcher.ts', { spy: true });

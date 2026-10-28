@@ -1,4 +1,4 @@
-import type { ConfigFile } from 'storybook/internal/csf-tools';
+import type { ConfigFile } from '@storybook/core/internal/csf-tools';
 
 import { type Node, isStringLiteral } from '../../csf-tools/estree/ast.ts';
 import { printString } from '../../csf-tools/estree/editor.ts';

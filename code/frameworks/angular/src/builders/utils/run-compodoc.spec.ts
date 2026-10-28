@@ -7,14 +7,14 @@ import { runCompodoc } from './run-compodoc.ts';
 
 const mockRunScript = vi.fn().mockResolvedValue({ stdout: '' });
 
-vi.mock('storybook/internal/common', () => ({
+vi.mock('@storybook/core/internal/common', () => ({
   JsPackageManagerFactory: {
     getPackageManager: () => ({
       runPackageCommand: mockRunScript,
     }),
   },
 }));
-vi.mock('storybook/internal/node-logger', () => ({
+vi.mock('@storybook/core/internal/node-logger', () => ({
   prompt: {
     executeTaskWithSpinner: async (fn: any) => {
       await fn();

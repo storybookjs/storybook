@@ -37,11 +37,13 @@ vi.mock('./utils', async (importOriginal) => {
       evalBranch: 'test-branch',
       evalCommit: 'abc123',
     }),
-    resolveDispatcherPath: vi.fn().mockReturnValue('/repo/code/core/dist/bin/dispatcher.js'),
+    resolveDispatcherPath: vi
+      .fn()
+      .mockReturnValue('/repo/code/lib/storybook/dist/bin/dispatcher.js'),
     loadPrompt: vi
       .fn()
       .mockReturnValue(
-        'Run `node /repo/code/core/dist/bin/dispatcher.js skills setup` and follow its instructions precisely.'
+        'Run `node /repo/code/lib/storybook/dist/bin/dispatcher.js skills setup` and follow its instructions precisely.'
       ),
   };
 });
@@ -182,7 +184,7 @@ describe('runTrial pipeline', () => {
 
     expect(vi.mocked(x)).toHaveBeenCalledWith(
       'node',
-      ['/repo/code/core/dist/bin/dispatcher.js', 'skills', 'setup'],
+      ['/repo/code/lib/storybook/dist/bin/dispatcher.js', 'skills', 'setup'],
       expect.objectContaining({
         nodeOptions: expect.objectContaining({
           cwd: TMP,

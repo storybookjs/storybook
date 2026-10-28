@@ -1,14 +1,17 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
+import {
+  getComponentIdFromEntry,
+  getStoryImportPathFromEntry,
+} from '@storybook/core/internal/common';
 import {
   extractComponentDescription,
   extractDescription,
   loadCsf,
   storyShapeError,
-} from 'storybook/internal/csf-tools';
-import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
+} from '@storybook/core/internal/csf-tools';
+import type { DocgenPayload, DocgenProviderInput } from '@storybook/core/internal/types';
 
 import type ts from 'typescript';
 

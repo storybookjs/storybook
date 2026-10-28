@@ -2,7 +2,6 @@ declare module '@egoist/vue-to-react';
 declare module 'acorn-jsx';
 declare module 'vue/dist/vue';
 
-declare var FEATURES: import('storybook/internal/types').StorybookConfigRaw['features'];
 declare var __DOCS_CONTEXT__: import('react').Context<
   import('storybook/internal/types').DocsContextProps<import('storybook/internal/types').Renderer>
 >;

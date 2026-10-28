@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { type Plugin, type UserConfig, normalizePath } from 'vite';
 
@@ -62,7 +62,7 @@ export interface AngularVitestOptions {
  * Pure options bridge for standalone `vitest` runs (no parent `storybook dev`).
  * Add to your `vitest.config.ts` `plugins` array alongside `storybookTest`. The
  * env var is set SYNCHRONOUSLY in this factory body — before storybookTest's
- * inline `presets.apply('viteFinal')` reads it — so timing does not depend on
+ * inline `builder:vite:extend` call reads it — so timing does not depend on
  * Vite plugin-hook ordering. Returns a near-noop plugin only so it lives in the
  * `plugins` array (which is how the addon-vitest postinstall injects it).
  *

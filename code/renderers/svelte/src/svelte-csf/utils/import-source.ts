@@ -1,4 +1,4 @@
-import { isValidPreviewPath } from 'storybook/internal/csf-tools';
+import { isValidPreviewPath } from '@storybook/core/internal/csf-tools';
 
 import type * as ESTreeAST from 'estree';
 

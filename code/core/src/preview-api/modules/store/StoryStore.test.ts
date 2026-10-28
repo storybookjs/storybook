@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { ProjectAnnotations, Renderer, StoryIndex } from 'storybook/internal/types';
+import type { ProjectAnnotations, Renderer, StoryIndex } from '@storybook/core/internal/types';
 
 import { definePreview } from '../../../csf/csf-factories.ts';
-import { getCoreAnnotations } from '../../../csf/core-annotations.ts';
+import { getCoreAnnotations } from '../../../csf/index.ts';
+import '../../../csf/__testfixtures__/register-test-core-annotations.ts';
 import { StoryStore } from './StoryStore.ts';
 import { composeConfigs } from './csf/composeConfigs.ts';
 import { normalizeProjectAnnotations } from './csf/normalizeProjectAnnotations.ts';
@@ -12,16 +13,16 @@ import { processCSFFile } from './csf/processCSFFile.ts';
 import type { HooksContext } from './hooks.ts';
 
 // Spy on prepareStory/processCSFFile
-vi.mock('./csf/prepareStory', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./csf/prepareStory')>();
+vi.mock('./csf/prepareStory.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./csf/prepareStory.ts')>();
   return {
     ...actual,
     prepareStory: vi.fn(actual.prepareStory),
   };
 });
-vi.mock('./csf/processCSFFile', async (importOriginal) => ({
+vi.mock('./csf/processCSFFile.ts', async (importOriginal) => ({
   processCSFFile: vi.fn(
-    (await importOriginal<typeof import('./csf/processCSFFile')>()).processCSFFile
+    (await importOriginal<typeof import('./csf/processCSFFile.ts')>()).processCSFFile
   ),
 }));
 
@@ -31,7 +32,7 @@ vi.mock('@storybook/global', async (importOriginal) => ({
   },
 }));
 
-vi.mock('storybook/internal/client-logger');
+vi.mock('@storybook/core/internal/client-logger');
 
 const componentOneExports = {
   default: { title: 'Component One', argTypes: { foo: { description: 'from meta' } } },
@@ -364,16 +365,6 @@ describe('StoryStore', () => {
             "componentId": "component-one",
             "globals": {
               "a": "b",
-              "backgrounds": {
-                "grid": false,
-                "value": undefined,
-              },
-              "measureEnabled": false,
-              "outline": false,
-              "viewport": {
-                "isRotated": false,
-                "value": undefined,
-              },
             },
             "id": "component-one--a",
             "initialArgs": {
@@ -383,16 +374,7 @@ describe('StoryStore', () => {
             "name": "A",
             "parameters": {
               "__isArgsStory": false,
-              "backgrounds": {
-                "disable": false,
-                "grid": {
-                  "cellAmount": 5,
-                  "cellSize": 20,
-                  "opacity": 0.5,
-                },
-              },
               "fileName": "./src/ComponentOne-new.stories.js",
-              "throwPlayFunctionExceptions": false,
             },
             "playFunction": undefined,
             "renderToCanvas": undefined,
@@ -562,16 +544,6 @@ describe('StoryStore', () => {
             "componentId": "component-one",
             "globals": {
               "a": "b",
-              "backgrounds": {
-                "grid": false,
-                "value": undefined,
-              },
-              "measureEnabled": false,
-              "outline": false,
-              "viewport": {
-                "isRotated": false,
-                "value": undefined,
-              },
             },
             "id": "component-one--a",
             "initialArgs": {
@@ -581,16 +553,7 @@ describe('StoryStore', () => {
             "name": "A",
             "parameters": {
               "__isArgsStory": false,
-              "backgrounds": {
-                "disable": false,
-                "grid": {
-                  "cellAmount": 5,
-                  "cellSize": 20,
-                  "opacity": 0.5,
-                },
-              },
               "fileName": "./src/ComponentOne.stories.js",
-              "throwPlayFunctionExceptions": false,
             },
             "playFunction": undefined,
             "renderToCanvas": undefined,
@@ -629,16 +592,6 @@ describe('StoryStore', () => {
             "componentId": "component-one",
             "globals": {
               "a": "b",
-              "backgrounds": {
-                "grid": false,
-                "value": undefined,
-              },
-              "measureEnabled": false,
-              "outline": false,
-              "viewport": {
-                "isRotated": false,
-                "value": undefined,
-              },
             },
             "id": "component-one--b",
             "initialArgs": {
@@ -648,16 +601,7 @@ describe('StoryStore', () => {
             "name": "B",
             "parameters": {
               "__isArgsStory": false,
-              "backgrounds": {
-                "disable": false,
-                "grid": {
-                  "cellAmount": 5,
-                  "cellSize": 20,
-                  "opacity": 0.5,
-                },
-              },
               "fileName": "./src/ComponentOne.stories.js",
-              "throwPlayFunctionExceptions": false,
             },
             "playFunction": undefined,
             "renderToCanvas": undefined,
@@ -695,16 +639,6 @@ describe('StoryStore', () => {
             "componentId": "component-two",
             "globals": {
               "a": "b",
-              "backgrounds": {
-                "grid": false,
-                "value": undefined,
-              },
-              "measureEnabled": false,
-              "outline": false,
-              "viewport": {
-                "isRotated": false,
-                "value": undefined,
-              },
             },
             "id": "component-two--c",
             "initialArgs": {
@@ -714,16 +648,7 @@ describe('StoryStore', () => {
             "name": "C",
             "parameters": {
               "__isArgsStory": false,
-              "backgrounds": {
-                "disable": false,
-                "grid": {
-                  "cellAmount": 5,
-                  "cellSize": 20,
-                  "opacity": 0.5,
-                },
-              },
               "fileName": "./src/ComponentTwo.stories.js",
-              "throwPlayFunctionExceptions": false,
             },
             "playFunction": undefined,
             "renderToCanvas": undefined,

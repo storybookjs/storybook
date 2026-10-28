@@ -13,9 +13,9 @@
  * docgen-relevant TS option (`reactDocgenTypescriptOptions`, including `propFilter`) applies solely
  * to the `react-docgen-typescript` engine used by the legacy manifest path — not here.
  */
-import { createLazyDocgenMiddleware } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
-import type { DocgenMiddleware } from 'storybook/internal/types';
+import { createLazyDocgenMiddleware } from '@storybook/core/internal/common';
+import { logger } from '@storybook/core/internal/node-logger';
+import type { DocgenMiddleware } from '@storybook/core/internal/types';
 
 import { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
 import { buildDocgenPayload } from './buildDocgen.ts';

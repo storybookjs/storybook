@@ -1,4 +1,4 @@
-import { Channel } from 'storybook/internal/channels';
+import { Channel } from '@storybook/core/internal/channels';
 
 import { dedent } from 'ts-dedent';
 

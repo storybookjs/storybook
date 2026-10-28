@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { loadCsf } from 'storybook/internal/csf-tools';
+import { loadCsf } from '@storybook/core/internal/csf-tools';
 
 import { resolveMetaComponent } from './resolve-component.ts';
 

@@ -1,4 +1,4 @@
-import { isPreservingSymlinks } from 'storybook/internal/common';
+import { isPreservingSymlinks } from '@storybook/core/internal/common';
 
 import { type Plugin } from 'vite';
 

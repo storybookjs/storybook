@@ -3,7 +3,7 @@ import { cpus } from 'node:os';
 import pLimit from 'p-limit';
 import { normalize } from 'pathe';
 
-import { logger as defaultLogger } from 'storybook/internal/node-logger';
+import { logger as defaultLogger } from '@storybook/core/internal/node-logger';
 
 import type { ParserRegistry } from '../parser-registry/parser-registry.ts';
 import { ParseResolveCache } from './parse-resolve-cache.ts';

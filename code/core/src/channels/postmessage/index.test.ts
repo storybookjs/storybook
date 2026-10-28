@@ -7,12 +7,12 @@ import { InvalidChannelPageError } from '../../preview-errors.ts';
 import type { ChannelHandler, Config } from '../types.ts';
 import { KEY, PostMessageTransport } from './index.ts';
 
-vi.mock('storybook/internal/client-logger', () => ({
+vi.mock('@storybook/core/internal/client-logger', () => ({
   logger: { warn: vi.fn(), error: vi.fn() },
   pretty: { debug: vi.fn(), error: vi.fn() },
 }));
 
-const { logger } = await import('storybook/internal/client-logger');
+const { logger } = await import('@storybook/core/internal/client-logger');
 
 const OWN_ORIGIN = globalThis.location.origin;
 const EVIL_ORIGIN = 'https://evil.example.com';

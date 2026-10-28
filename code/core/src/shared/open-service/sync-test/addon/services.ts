@@ -1,4 +1,4 @@
-import type { ServiceInstanceOf } from 'storybook/open-service';
+import type { ServiceInstanceOf } from '@storybook/core/open-service';
 
 import type { concurrentWritesSyncServiceDef } from '../concurrent-writes/definition.ts';
 import type { localCommandSyncServiceDef } from '../local-command/definition.ts';

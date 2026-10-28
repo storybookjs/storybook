@@ -1,7 +1,7 @@
 export const ADDON_ID = 'storybook/onboarding';
 export const ADDON_ONBOARDING_CHANNEL = `${ADDON_ID}/channel`;
 
-// ! please keep this in sync with core/src/controls/constants.ts
+// ! please keep this in sync with lib/storybook/src/features/controls/constants.ts
 export const ADDON_CONTROLS_ID = 'addon-controls' as const;
 export const STORYBOOK_ADDON_ONBOARDING_STEPS = [
   '1:Intro',

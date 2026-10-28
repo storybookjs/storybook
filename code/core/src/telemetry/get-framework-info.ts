@@ -1,5 +1,6 @@
-import { getStorybookInfo } from 'storybook/internal/common';
-import type { StorybookConfig } from 'storybook/internal/types';
+import { getStorybookInfo } from '@storybook/core/internal/common';
+import type { StorybookConfig } from '../instance/plugins.ts';
+import { getInstanceContext } from '../shared/instance-context.ts';
 
 import { cleanPaths } from './sanitize.ts';
 
@@ -13,11 +14,20 @@ const cleanAndSanitizePath = (path: string) => {
   return pnpmDir ? pnpmDir[1].replace('+', '/') : cleaned;
 };
 
-export async function getFrameworkInfo(mainConfig: StorybookConfig, configDir: string) {
+export async function getFrameworkInfo(
+  mainConfig: Pick<StorybookConfig, 'framework'>,
+  configDir: string
+) {
   const { frameworkPackage, rendererPackage, builderPackage } = await getStorybookInfo(configDir);
 
+  const framework = mainConfig.framework;
   const frameworkOptions =
-    typeof mainConfig.framework === 'object' ? mainConfig.framework.options : {};
+    framework && typeof framework === 'object'
+      ? 'meta' in framework
+        ? ((await getInstanceContext()?.storybook?.callHook('core:framework-options:extend', {})) ??
+          {})
+        : framework.options
+      : {};
 
   return {
     framework: {

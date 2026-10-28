@@ -1,4 +1,4 @@
-import type { ViewMode } from 'storybook/internal/types';
+import type { ViewMode } from '@storybook/core/internal/types';
 
 import { global } from '@storybook/global';
 

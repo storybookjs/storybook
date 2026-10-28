@@ -1,0 +1,192 @@
+import { expect } from '@storybook/core/test';
+
+import preview from '../../../../../../.storybook/preview.tsx';
+import { Card } from './Card.tsx';
+
+const meta = preview.meta({
+  component: Card,
+});
+
+const Contents = ({ children }: { children: React.ReactNode }) => (
+  <div style={{ padding: 16 }}>{children}</div>
+);
+
+export const Default = meta.story(() => (
+  <Card>
+    <Contents>Default</Contents>
+  </Card>
+));
+
+export const Rainbow = meta.story({
+  render: () => (
+    <Card outlineAnimation="rainbow">
+      <Contents>Rainbow</Contents>
+    </Card>
+  ),
+  play: async ({ canvasElement }) => {
+    const animations = canvasElement.getAnimations({ subtree: true });
+    await expect(animations).not.toHaveLength(0);
+    for (const animation of animations) {
+      await expect(animation.effect?.getComputedTiming().endTime).toBeLessThanOrEqual(5000);
+    }
+  },
+});
+
+/** Shows the outline's resting gradient without animating it. */
+export const RainbowPaused = meta.story({
+  render: () => (
+    <Card outlineAnimation="rainbow" outlineAnimationPaused>
+      <Contents>Rainbow, paused</Contents>
+    </Card>
+  ),
+  play: async ({ canvasElement }) => {
+    const animations = canvasElement.getAnimations({ subtree: true });
+    await expect(animations).not.toHaveLength(0);
+    for (const animation of animations) {
+      await expect(animation.playState).toBe('paused');
+    }
+  },
+});
+
+/** Reduced-motion variant. Chromatic emulates the preference; locally, enable it in your OS. */
+export const RainbowReducedMotion = meta.story({
+  render: () => (
+    <Card outlineAnimation="rainbow">
+      <Contents>Rainbow with reduced motion</Contents>
+    </Card>
+  ),
+  parameters: { chromatic: { prefersReducedMotion: 'reduce' } },
+});
+
+export const Spinning = meta.story(() => (
+  <Card outlineAnimation="spin">
+    <Contents>Spinning</Contents>
+  </Card>
+));
+
+/** Reduced-motion variant. Chromatic emulates the preference; locally, enable it in your OS. */
+export const SpinningReducedMotion = meta.story({
+  render: () => (
+    <Card outlineAnimation="spin">
+      <Contents>Spinning with reduced motion</Contents>
+    </Card>
+  ),
+  parameters: { chromatic: { prefersReducedMotion: 'reduce' } },
+});
+
+export const SpinningAgentic = meta.story(() => (
+  <Card outlineAnimation="spin" outlineColor="agentic">
+    <Contents>Spinning agentic</Contents>
+  </Card>
+));
+
+// Filled agentic card with a spinning outline (as used by ReviewWidget). The
+// `agentic` content background is translucent in dark mode, so this guards
+// against the spinning gradient bleeding through the content instead of the ring.
+export const SpinningAgenticFilled = meta.story(() => (
+  <Card outlineAnimation="spin" color="agentic">
+    <Contents>Spinning agentic filled</Contents>
+  </Card>
+));
+
+export const Agentic = meta.story(() => (
+  <Card color="agentic">
+    <Contents>Agentic</Contents>
+  </Card>
+));
+
+export const Positive = meta.story(() => (
+  <Card color="positive">
+    <Contents>Positive</Contents>
+  </Card>
+));
+
+export const Warning = meta.story(() => (
+  <Card color="warning">
+    <Contents>Warning</Contents>
+  </Card>
+));
+
+export const Negative = meta.story(() => (
+  <Card color="negative">
+    <Contents>Negative</Contents>
+  </Card>
+));
+
+export const PositiveOutline = meta.story(() => (
+  <Card outlineColor="positive">
+    <Contents>Positive</Contents>
+  </Card>
+));
+
+export const WarningOutline = meta.story(() => (
+  <Card outlineColor="warning">
+    <Contents>Warning</Contents>
+  </Card>
+));
+
+export const NegativeOutline = meta.story(() => (
+  <Card outlineColor="negative">
+    <Contents>Negative</Contents>
+  </Card>
+));
+
+export const Primary = meta.story(() => (
+  <Card outlineColor="primary">
+    <Contents>Primary</Contents>
+  </Card>
+));
+
+export const Secondary = meta.story(() => (
+  <Card outlineColor="secondary">
+    <Contents>Secondary</Contents>
+  </Card>
+));
+
+export const Ancillary = meta.story(() => (
+  <Card outlineColor="ancillary">
+    <Contents>Ancillary</Contents>
+  </Card>
+));
+
+export const Orange = meta.story(() => (
+  <Card outlineColor="orange">
+    <Contents>Orange</Contents>
+  </Card>
+));
+
+export const Gold = meta.story(() => (
+  <Card outlineColor="gold">
+    <Contents>Gold</Contents>
+  </Card>
+));
+
+export const Green = meta.story(() => (
+  <Card outlineColor="green">
+    <Contents>Green</Contents>
+  </Card>
+));
+
+export const Seafoam = meta.story(() => (
+  <Card outlineColor="seafoam">
+    <Contents>Seafoam</Contents>
+  </Card>
+));
+
+export const Purple = meta.story(() => (
+  <Card outlineColor="purple">
+    <Contents>Purple</Contents>
+  </Card>
+));
+
+export const Ultraviolet = meta.story(() => (
+  <Card outlineColor="ultraviolet">
+    <Contents>Ultraviolet</Contents>
+  </Card>
+));
+
+export const Mediumdark = meta.story(() => (
+  <Card outlineColor="mediumdark">
+    <Contents>Mediumdark</Contents>
+  </Card>
+));

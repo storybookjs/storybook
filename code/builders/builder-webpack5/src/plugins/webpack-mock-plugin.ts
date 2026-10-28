@@ -7,8 +7,8 @@ import {
   getIsExternal,
   resolveExternalModule,
   resolveWithExtensions,
-} from 'storybook/internal/mocking-utils';
-import { logger } from 'storybook/internal/node-logger';
+} from '@storybook/core/internal/mocking-utils';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import type { Compiler } from 'webpack';
 

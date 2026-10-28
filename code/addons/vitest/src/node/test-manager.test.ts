@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TestResult } from 'vitest/node';
 
-import { Tag, experimental_MockUniversalStore } from 'storybook/internal/core-server';
+import { Tag } from 'storybook/internal/story-index';
+import { experimental_MockUniversalStore } from 'storybook/internal/services';
 import type {
   Options,
   StatusStoreByTypeId,

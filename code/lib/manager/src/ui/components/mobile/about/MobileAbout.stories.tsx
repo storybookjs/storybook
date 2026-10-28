@@ -1,0 +1,74 @@
+import React, { useEffect } from 'react';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { ManagerContext } from '@storybook/manager/manager-api';
+import { expect, waitFor, within } from '@storybook/core/test';
+
+import { LayoutProvider, useLayout } from '../../layout/LayoutProvider.tsx';
+import { MobileAbout } from './MobileAbout.tsx';
+
+/** A helper component to open the about page via the MobileLayoutContext */
+const OpenAboutHelper = ({ children }: { children: any }) => {
+  const { setMobileAboutOpen } = useLayout();
+  useEffect(() => {
+    setMobileAboutOpen(true);
+  }, [setMobileAboutOpen]);
+  return children;
+};
+
+const meta = {
+  component: MobileAbout,
+  title: 'Mobile/About',
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
+  parameters: {
+    layout: 'fullscreen',
+    chromatic: { viewports: [320] },
+  },
+  decorators: [
+    (storyFn) => {
+      return (
+        <ManagerContext.Provider
+          value={
+            {
+              api: {
+                getCurrentVersion: () => ({
+                  version: '7.2.0',
+                }),
+              },
+            } as any
+          }
+        >
+          <LayoutProvider>
+            <OpenAboutHelper>{storyFn()}</OpenAboutHelper>
+          </LayoutProvider>
+        </ManagerContext.Provider>
+      );
+    },
+  ],
+} satisfies Meta<typeof MobileAbout>;
+
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() => expect(canvas.getByRole('link', { name: 'GitHub' })).toBeVisible());
+    await expect(canvas.getByRole('link', { name: 'Documentation' })).toBeVisible();
+    await expect(canvas.getByRole('link', { name: 'Chromatic' })).toBeVisible();
+    await expect(canvas.getByRole('link', { name: 'Storybook Community' })).toBeVisible();
+  },
+};
+export const Dark: Story = {
+  globals: { sb_theme: 'dark' },
+};
+
+export const Closed: Story = {
+  play: async ({ canvasElement }) => {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const closeButton = within(canvasElement).getByText('Back');
+    closeButton.click();
+  },
+};

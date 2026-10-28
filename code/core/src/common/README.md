@@ -1,6 +1,7 @@
 # Storybook Core-Common
 
-Common utilities used across `@storybook/core-server` (manager UI configuration) and `@storybook/builder-webpack{4,5}` (preview configuration).
+Common Node utilities, exported as `@storybook/core/internal/common` and `storybook/internal/common`.
+They are used across the `storybook` server and CLI, the manager builder in `@storybook/manager`, and the preview builders (`@storybook/builder-vite`, `@storybook/builder-webpack5`).
 
 This is a lot of code extracted for convenience, not because it made sense.
 

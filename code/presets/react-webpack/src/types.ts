@@ -1,11 +1,11 @@
 import type {
-  StorybookConfig as StorybookConfigBase,
-  TypescriptOptions as TypescriptOptionsBase,
+  WebpackStorybookConfig as StorybookConfigBase,
   WebpackConfiguration as WebpackConfigurationBase,
-} from '@storybook/core-webpack';
+} from '@storybook/builder-webpack5';
+import type { TypescriptOptions as TypescriptOptionsBase } from '@storybook/core/internal/types';
 import type { PluginOptions as ReactDocgenTypescriptOptions } from '@storybook/react-docgen-typescript-plugin';
 
-export type { BuilderResult } from '@storybook/core-webpack';
+export type { BuilderResult } from '@storybook/core/internal/types';
 
 export interface ReactOptions {
   strictMode?: boolean;

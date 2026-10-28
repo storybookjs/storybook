@@ -1,4 +1,4 @@
-import { type ESTree as E, parseModule } from 'storybook/internal/csf-tools';
+import { type ESTree as E, parseModule } from '@storybook/core/internal/csf-tools';
 
 import type { Plugin } from 'vite';
 

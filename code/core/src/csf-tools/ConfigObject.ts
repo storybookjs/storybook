@@ -35,7 +35,21 @@ import {
 import { generateUid } from './estree/scope.ts';
 import { placeableValueSource } from './estree/values.ts';
 
-const isConfigFactory = (editor: SourceEditor, callee: Node): boolean => {
+export const isConfigFactory = (
+  editor: SourceEditor,
+  callee: Node,
+  names: readonly string[] = ['defineMain', 'definePreview', 'defineConfig']
+): boolean => {
+  if (
+    callee.type === 'CallExpression' &&
+    callee.arguments.length === 0 &&
+    callee.callee.type === 'MemberExpression' &&
+    callee.callee.object.type === 'Identifier' &&
+    !callee.callee.computed &&
+    isIdentifier(callee.callee.property, 'for')
+  ) {
+    return isConfigFactory(editor, callee.callee.object, ['definePreview']);
+  }
   if (callee.type !== 'Identifier') {
     return false;
   }
@@ -46,10 +60,7 @@ const isConfigFactory = (editor: SourceEditor, callee: Node): boolean => {
       : !binding
         ? callee
         : undefined;
-  return (
-    name?.type === 'Identifier' &&
-    ['defineMain', 'definePreview', 'defineConfig'].includes(name.name)
-  );
+  return name?.type === 'Identifier' && names.includes(name.name);
 };
 
 const isModuleExports = (node: Node) =>

@@ -65,7 +65,7 @@ describe('docs toolset stays runtime-agnostic', () => {
 
     const offenders = [...reached.entries()].filter(
       ([target]) =>
-        target.includes('storybook/internal/core-server') || target.includes('core-server/')
+        target.includes('storybook/internal/server') || target.includes('storybook/server/')
     );
 
     expect(

@@ -1,0 +1,10 @@
+{
+  "name": "fixture-annotation-framework",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    "./node": "./node.ts",
+    "./package.json": "./package.json",
+    "./preset": "./preset.js"
+  }
+}

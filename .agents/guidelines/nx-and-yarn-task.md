@@ -29,7 +29,7 @@ Key points:
 - `--no-link` is opt-in, not the default
 - NX handles task dependencies via `nx.json`
 - NX target commands use Nx project names (from `project.json` / Nx graph), not `package.json` names
-- Example: `yarn nx compile core` (project `core` is published as package `storybook`)
+- Example: `yarn nx compile core` compiles `@storybook/core`; `yarn nx compile storybook` compiles the `storybook` package
 - NX Cloud remote-cache auth failures (e.g. HTTP 401 "insufficient access") degrade to the local cache, so they are expected on local runs where `NX_CLOUD_ACCESS_TOKEN` is unset. CI always sets that token, so a 401 there means an invalid or expired token and should be investigated rather than ignored. A read-only token enables cache reads but cannot store artifacts, so the "wasn't able to store" warning is still expected with one
 
 ## Environment Variables

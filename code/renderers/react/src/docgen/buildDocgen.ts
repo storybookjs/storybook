@@ -3,9 +3,9 @@ import type {
   DocgenProviderInput,
   DocgenSubcomponent,
   StrictArgTypes,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
-import { getStoryImportPathFromEntry } from 'storybook/internal/common';
+import { getStoryImportPathFromEntry } from '@storybook/core/internal/common';
 import path from 'pathe';
 
 import { buildComponentDocgenFromResolved } from '../componentManifest/buildReactComponentDocgen.ts';

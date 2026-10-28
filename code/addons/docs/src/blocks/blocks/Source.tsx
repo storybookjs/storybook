@@ -5,6 +5,8 @@ import { SourceType } from 'storybook/internal/docs-tools';
 import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 import type { Args, ModuleExport, StoryId } from 'storybook/internal/types';
 
+import { getFeatures } from 'storybook/preview-api';
+
 import type { SourceCodeProps } from '../components/Source';
 import { Source as PureSource, SourceError } from '../components/Source';
 import type { DocsContextProps } from './DocsContext';
@@ -244,7 +246,7 @@ const SourceWithStorySnippet = (props: SourceProps) => {
     }
   }, [docsContext, of]);
 
-  if (globalThis.FEATURES?.docgenServer && story?.id) {
+  if (getFeatures().docgenServer && story?.id) {
     return (
       <SourceWithStoryDocsSnippet
         {...props}

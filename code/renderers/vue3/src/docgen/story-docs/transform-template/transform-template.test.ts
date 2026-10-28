@@ -4,9 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { vol } from 'memfs';
 
-import { type ESTreeNode as Node, parseExpression } from 'storybook/internal/csf-tools';
-import type { IndexEntry } from 'storybook/internal/types';
-import type { DocgenPayload } from 'storybook/open-service';
+import { type ESTreeNode as Node, parseExpression } from '@storybook/core/internal/csf-tools';
+import type { IndexEntry } from '@storybook/core/internal/types';
+import type { DocgenPayload } from '@storybook/core/open-service';
 
 import { buildStoryDocsPayload } from '../build-story-docs.ts';
 import type { ClassifiedArg } from '../classify-args/classify-args.ts';

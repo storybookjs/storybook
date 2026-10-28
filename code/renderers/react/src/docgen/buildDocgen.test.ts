@@ -2,7 +2,7 @@ import * as path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import type { IndexEntry } from 'storybook/internal/types';
+import type { IndexEntry } from '@storybook/core/internal/types';
 import { dedent } from 'ts-dedent';
 import ts from 'typescript';
 

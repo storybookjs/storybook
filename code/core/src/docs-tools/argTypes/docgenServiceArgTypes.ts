@@ -5,7 +5,7 @@ import type {
   Parameters,
   StrictArgTypes,
   StoryId,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 import { inferArgTypes } from '../../preview-api/modules/store/inferArgTypes.ts';
 import { inferControls } from '../../preview-api/modules/store/inferControls.ts';

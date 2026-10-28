@@ -8,7 +8,7 @@ import {
   returnedExpression,
   unwrapExpression,
   walk,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 
 import {
   classifyArg,

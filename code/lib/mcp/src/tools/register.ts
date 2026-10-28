@@ -16,8 +16,8 @@ import {
   createProviderDocsAccess,
   emptyManifests,
   selectReportedManifests,
-  ManifestGetError,
-  RequiresOwnMcpError,
+  isManifestGetError,
+  isRequiresOwnMcpError,
   resolveToolsetDescription,
   toMcpToolName,
   type DocsListOutput,
@@ -43,6 +43,7 @@ const ctx: ToolsetCtx = {
   getService: () => {
     throw new Error('Open services are not available in a hosted Storybook.');
   },
+  signal: new AbortController().signal,
 };
 
 /**
@@ -254,7 +255,7 @@ async function call<TMethod extends 'list' | 'show' | 'showStory'>(
     // Everything except the two designed answers (a source that needs its own MCP, an unreadable
     // manifest) is a bug whose only other evidence would be some agent's transcript. `console`
     // rather than a logger, because this package stays dependency-light and runtime-agnostic.
-    if (!(error instanceof RequiresOwnMcpError) && !(error instanceof ManifestGetError)) {
+    if (!isRequiresOwnMcpError(error) && !isManifestGetError(error)) {
       console.error(error);
     }
     return { data: undefined, result: errorToMCPContent(error) };

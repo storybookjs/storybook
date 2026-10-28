@@ -6,7 +6,9 @@ export function tiePreviewRuntimeSetup(source: string): string {
     throw new Error('Unexpected preview runtime entry');
   }
 
+  // The entry re-exports the product runtime, so `setup` may arrive alone from another chunk.
   const withoutSetupImport = source
+    .replace(new RegExp(String.raw`import \{ ${setupImport} as setup \} from "[^"]+";\r?\n`), '')
     .replace(new RegExp(String.raw`\b${setupImport} as setup,\s*`), '')
     .replace(new RegExp(String.raw`,\s*${setupImport} as setup\b`), '');
   if (withoutSetupImport.includes(' as setup')) {

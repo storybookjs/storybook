@@ -18,13 +18,8 @@ const config: BuildEntries = {
         dts: false,
       },
     ],
-    node: [
-      {
-        exportEntries: ['./preset'],
-        entryPoint: './src/preset.ts',
-        dts: false,
-      },
-    ],
+    // `./preset` is a deprecated alias that third-party framework presets still resolve.
+    node: [{ exportEntries: ['./node', './preset'], entryPoint: './src/node.ts' }],
   },
 };
 

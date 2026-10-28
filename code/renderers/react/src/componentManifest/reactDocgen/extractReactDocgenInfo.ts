@@ -1,4 +1,4 @@
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { extractArgTypes } from '../../extractArgTypes.ts';
 import { type getReactDocgen, parseWithReactDocgen } from '../reactDocgen.ts';

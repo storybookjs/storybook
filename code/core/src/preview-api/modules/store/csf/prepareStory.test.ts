@@ -10,11 +10,11 @@ import type {
   SBScalarType,
   StoryContext,
   StoryContextForRender,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
-import type { UserEventObject } from 'storybook/test';
+import type { UserEventObject } from '@storybook/core/test';
 
-import { Tag } from '../../../../shared/constants/tags.ts';
+import { Tag } from '../../../../constants/tags.ts';
 import { HooksContext, addons } from '../../addons/index.ts';
 import { UNTARGETED } from '../args.ts';
 import { composeConfigs } from './composeConfigs.ts';

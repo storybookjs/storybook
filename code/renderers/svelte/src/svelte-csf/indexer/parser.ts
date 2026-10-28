@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 
 import { findMeta, findMetaImports, hasMetaImport } from '../utils/import-source.ts';
-import type { IndexInput } from 'storybook/internal/types';
+import type { IndexInput } from '@storybook/core/internal/types';
 
 import { getSvelteAST, type ESTreeAST, type SvelteAST } from '../parser/ast.ts';
 import { extractStoryAttributesNodes } from '../parser/extract/svelte/story/attributes.ts';

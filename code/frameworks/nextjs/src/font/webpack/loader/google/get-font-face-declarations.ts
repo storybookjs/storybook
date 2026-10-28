@@ -1,7 +1,7 @@
 import {
   GoogleFontsDownloadError,
   GoogleFontsLoadingError,
-} from 'storybook/internal/server-errors';
+} from '@storybook/core/internal/server-errors';
 
 import { fetchCSSFromGoogleFonts } from 'next/dist/compiled/@next/font/dist/google/fetch-css-from-google-fonts.js';
 import { getFontAxes } from 'next/dist/compiled/@next/font/dist/google/get-font-axes.js';

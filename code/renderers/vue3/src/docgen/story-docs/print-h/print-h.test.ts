@@ -12,7 +12,7 @@ import {
   resolveObjectMembers,
   resolveRenderFunction,
   returnedExpression,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 
 import {
   classifyArgs,

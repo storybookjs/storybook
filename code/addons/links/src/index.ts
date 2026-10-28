@@ -1,6 +1,6 @@
 import { definePreviewAddon } from 'storybook/internal/csf';
 
-import * as addonAnnotations from './preview.ts';
+import addonAnnotations from './preview.ts';
 
 export { linkTo, hrefTo, hrefToSync, withLinks, navigate } from './utils.ts';
 

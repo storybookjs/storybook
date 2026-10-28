@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
+import type { Storybook } from '@storybook/core';
 
 import type { BuilderContext, BuilderOutput } from '@angular-devkit/architect';
 import type { JsonObject } from '@angular-devkit/core';
@@ -10,7 +11,7 @@ import { firstValueFrom, type Observable } from 'rxjs';
 import { commandBuilder, type StorybookBuilderOptions } from './index.ts';
 import type { StandaloneOptions } from '../utils/standalone-options.ts';
 
-vi.mock('storybook/internal/node-logger', () => ({
+vi.mock('@storybook/core/internal/node-logger', () => ({
   logger: {
     setLogLevel: vi.fn(),
     intro: vi.fn(),
@@ -25,18 +26,19 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-vi.mock('storybook/internal/telemetry', () => ({
+vi.mock('@storybook/core/internal/telemetry', () => ({
   addToGlobalContext: vi.fn(),
 }));
 
-vi.mock('storybook/internal/common', async (importOriginal) => ({
+vi.mock('@storybook/core/internal/common', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   getEnvConfig: vi.fn(),
   versions: { storybook: '0.0.0' },
 }));
 
-vi.mock('storybook/internal/core-server', () => ({
+vi.mock('storybook/internal/server', () => ({
   buildDevStandalone: vi.fn(),
+  exitOnDevServerSignal: vi.fn(),
   withTelemetry: vi.fn((_event: unknown, _options: unknown, callback: () => Promise<unknown>) =>
     callback()
   ),
@@ -65,7 +67,10 @@ const mockedTargetFromTargetString = vi.mocked(
   (await import('@angular-devkit/architect')).targetFromTargetString
 );
 const mockedBuildDevStandalone = vi.mocked(
-  (await import('storybook/internal/core-server')).buildDevStandalone
+  (await import('storybook/internal/server')).buildDevStandalone
+);
+const mockedExitOnDevServerSignal = vi.mocked(
+  (await import('storybook/internal/server')).exitOnDevServerSignal
 );
 
 function createMockContext(
@@ -106,6 +111,8 @@ async function getStandaloneOptions(
     port: 6006,
     address: 'localhost',
     networkAddress: 'http://localhost:6006',
+    storybook: {} as Storybook,
+    close: vi.fn().mockResolvedValue(undefined),
   });
 
   await firstValueFrom(commandBuilder(options, context) as Observable<BuilderOutput>);
@@ -232,5 +239,104 @@ describe('start-storybook builder', () => {
     );
 
     expect(standaloneOptions.statsJson).toBe(true);
+  });
+});
+
+describe('start-storybook builder lifecycle', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.spyOn(process, 'exit').mockImplementation((() => {}) as never);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it.each([
+    {
+      name: 'keeps a dev server running until teardown, then closes it once',
+      exitCode: undefined,
+      expected: {
+        outputs: [{ success: true, info: { port: 6006 } }],
+        completed: false,
+        closeCallsWhileRunning: 0,
+        closeCallsAfterTeardown: 1,
+        signalListenersRegistered: 1,
+        signalListenersRemoved: 1,
+        processExitCalls: [],
+      },
+    },
+    {
+      name: 'completes a passing smoke test and exits 0',
+      exitCode: 0,
+      expected: {
+        outputs: [{ success: true, info: { port: 6006 } }],
+        completed: true,
+        closeCallsWhileRunning: 1,
+        closeCallsAfterTeardown: 1,
+        signalListenersRegistered: 0,
+        signalListenersRemoved: 0,
+        processExitCalls: [[0]],
+      },
+    },
+    {
+      name: 'completes a failing smoke test and exits 1',
+      exitCode: 1,
+      expected: {
+        outputs: [{ success: false, info: { port: 6006 } }],
+        completed: true,
+        closeCallsWhileRunning: 1,
+        closeCallsAfterTeardown: 1,
+        signalListenersRegistered: 0,
+        signalListenersRemoved: 0,
+        processExitCalls: [[1]],
+      },
+    },
+  ])('$name', async ({ exitCode, expected }) => {
+    const close = vi.fn().mockResolvedValue(undefined);
+    const removeSignalListeners = vi.fn();
+    mockedExitOnDevServerSignal.mockReturnValue(removeSignalListeners);
+    mockedBuildDevStandalone.mockResolvedValue({
+      port: 6006,
+      address: 'localhost',
+      networkAddress: 'http://localhost:6006',
+      storybook: {} as Storybook,
+      close,
+      exitCode,
+    });
+
+    const outputs: BuilderOutput[] = [];
+    let completed = false;
+    const builder = commandBuilder(
+      createOptions({ smokeTest: exitCode !== undefined }),
+      createMockContext()
+    ) as Observable<BuilderOutput>;
+    let subscription: { unsubscribe(): void } | undefined;
+    await new Promise<void>((resolve) => {
+      subscription = builder.subscribe({
+        next: (output) => {
+          outputs.push(output);
+          resolve();
+        },
+        complete: () => {
+          completed = true;
+        },
+      });
+    });
+    const closeCallsWhileRunning = close.mock.calls.length;
+    subscription?.unsubscribe();
+    await vi.advanceTimersByTimeAsync(3000);
+
+    expect({
+      outputs,
+      completed,
+      closeCallsWhileRunning,
+      closeCallsAfterTeardown: close.mock.calls.length,
+      signalListenersRegistered: mockedExitOnDevServerSignal.mock.calls.length,
+      signalListenersRemoved: removeSignalListeners.mock.calls.length,
+      processExitCalls: vi.mocked(process.exit).mock.calls,
+    }).toEqual(expected);
   });
 });

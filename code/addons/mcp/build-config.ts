@@ -4,14 +4,13 @@ const config: BuildEntries = {
   entries: {
     node: [
       {
-        exportEntries: ['./preset'],
-        entryPoint: './src/preset.ts',
-        dts: false,
+        exportEntries: ['./node'],
+        entryPoint: './src/node.ts',
       },
     ],
     browser: [
       {
-        // Not exported: the preset references dist/preview.js by path
+        // Not exported: the node plugin references dist/preview.js by path
         entryPoint: './src/preview.ts',
         dts: false,
       },

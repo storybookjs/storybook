@@ -1,6 +1,6 @@
 // `ImportEdge` lives in the oxc-parser sub-package because it is the oxc-parser's
 // output type, not a registry-specific concept.
-import type { ImportEdge } from 'storybook/internal/oxc-parser';
+import type { ImportEdge } from '@storybook/core/internal/oxc-parser';
 
 export type { ImportEdge };
 

@@ -66,6 +66,7 @@ Internal tests and implementation code may import from the individual modules di
 - [toolset-definition.ts](./toolset-definition.ts): `defineToolset()` typing for public toolsets and their handler context
 - [toolset-registry.ts](./toolset-registry.ts): `registerToolset` / `getToolset` / `getRegisteredToolsets` — the realm-global toolset inventory adapters read
 - [toolset-names.ts](./toolset-names.ts): derived MCP/CLI method names and `getToolName` for transport-aware cross-references
+- [toolset-rpc.ts](./toolset-rpc.ts): message names, schemas, and error helpers for the toolset RPC an attached client uses to run a dev server's toolsets
 - `services/`: core OSA service definitions and per-runtime registration helpers
 - `toolsets/`: core-owned public toolsets (docs, stories, review), mirroring the services tree; addons may own additional toolsets
 - [service-validation.ts](./service-validation.ts): sync + async schema validation helpers and error wrapping
@@ -74,7 +75,7 @@ Internal tests and implementation code may import from the individual modules di
 - [patch-recorder.ts](./patch-recorder.ts): recording proxy over deepsignal state that captures the paths a `setState` recipe touched
 - [plain-object.ts](./plain-object.ts): the by-value copy every object takes on its way into state, plus the reserved-key and plain-object guards the sync modules share
 - [query-runtime.ts](./query-runtime.ts): the query surface (`.get()` / `.loaded()` / `.subscribe()`), the in-flight load registry, the `.loaded()` drain logic, and subscriptions
-- [service-registry.ts](./service-registry.ts): the single `registerService`, the realm-global registry, the runtime-wide delegated-mode flag, and the shared registry API passed into runtimes — used identically by server, manager, and preview
+- [service-registry.ts](./service-registry.ts): the single `registerService`, the instance-context or fallback registry and its delegated role, and the shared registry API passed into runtimes — used identically by server, manager, and preview
 - [service-channel.ts](./service-channel.ts): `ServiceChannel` interface, event name constants, RFC 6902 entry schemas, and payload types
 - [service-error-serialization.ts](./service-error-serialization.ts): transport-safe (de)serialization of thrown errors and their `cause` chains, used by remote command replies
 - [channel-slot.ts](../../channels/channel-slot.ts): `getChannel` / `setChannel` — the shared channel install surface
@@ -105,7 +106,7 @@ Use `defineService()` to preserve the concrete query and command map types.
 
 Services and toolsets are sibling constructs behind this one entry: **services** own internal state
 and synchronization; **toolsets** are the public agent surface for CLI and MCP adapters. A toolset
-(`defineToolset`) has an `id`, a description, and methods carrying five fields:
+(`defineToolset`) has an `id`, a description, and methods carrying these fields:
 
 - `title` — required short display label used by client UIs and the tools CLI command list
 - `description` — `string`, or a function of `ctx` when the prose differs per transport
@@ -117,6 +118,8 @@ and synchronization; **toolsets** are the public agent surface for CLI and MCP a
   narrowed to it. Some clients (Claude Code) hand the model only `structuredContent` when a tool
   publishes it and drop the text, so the declared shape must carry everything the Markdown says,
   including what the agent should do next (an `instructions` field)
+- `requiresDevServer` — optional `true` for a method that only works against a running dev server,
+  because it needs a live origin or state only the dev server owns
 - `handler(input, ctx)` — the one execution: produces the data, renders the text, and owns side
   effects and the usage report
 
@@ -139,8 +142,10 @@ An error whose message speaks to the agent and names its own recovery declares `
 (a `StorybookError` constructor prop); adapters surface such errors verbatim by reading that
 property — never by keeping a class list, which misclassifies across bundle copies.
 
-`ctx` is `{ transport: 'cli' | 'mcp' | 'sdk', origin?, getService }`. `origin` is the complete
+`ctx` is `{ transport: 'cli' | 'mcp' | 'sdk', origin?, getService, signal }`. `origin` is the complete
 Storybook UI base URL, including a deployment subpath; the MCP adapter derives it from the request.
+`signal` is an `AbortSignal` that aborts when the caller cancels or disconnects; handlers may
+ignore it. Descriptions see the same context without `signal` (`ToolsetBaseCtx`).
 Descriptions that name a sibling tool must render it through `getToolName(ctx)` rather than hardcoding
 a spelling, so the same sentence reads as the derived MCP tool name, the CLI command, or the SDK
 dotted reference for the active transport. MCP names are derived from the toolset id and method key
@@ -150,13 +155,13 @@ Facts that are fixed at boot (whether review or a11y is enabled) are factory opt
 toolset, not `ctx` fields.
 
 Toolsets register imperatively via `registerToolset`, called from the same place the paired service
-registers (for core and addons, the `services` preset hook — the mechanism itself is
-preset-independent so manager- or preview-realm toolsets can use it later). A toolset must be
+registers (for core and addons, a `core:services:register` handler — the mechanism itself is
+hook-independent so manager- or preview-realm toolsets can use it later). A toolset must be
 registered wherever a consumer resolves it, including consumers that only read its descriptions and
 schemas: `getToolset(id)` throws on an unregistered id rather than silently dropping a tool.
 Adapters resolve one toolset with `getToolset(id)` or take the whole set via
 `getRegisteredToolsets()`; `@storybook/addon-mcp`, `@storybook/mcp`, and the `storybook tools` CLI
-consume them today.
+consume them.
 
 Telemetry classification belongs in Storybook-owned telemetry calls, not on the generic toolset
 definition. A handler returns at most one usage report on its outcome, `telemetry: { payload }`.
@@ -170,29 +175,20 @@ Storybook's telemetry taxonomy.
 
 Core owns `docs`, `stories`, and `review`. Addon-vitest owns the complete `test` toolset—its schemas,
 channel protocol, formatting, telemetry, and tests—and registers it beside its responder from the
-same `services` hook. Core exports only the generic story-selector primitives the addon needs.
+same `core:services:register` handler. Core exports only the generic story-selector primitives the addon needs.
+
+`stories.screenshot` renders stories in a headless browser and returns a PNG per story.
+It renders through the `StoryRenderAccess` supplied by the `core:story-render:extend` hook; without a
+handler it throws `StoryRenderUnavailableError`.
+The product registers that handler and the preview host it renders on; see the
+[server README](../../../../lib/storybook/src/storybook/server/README.md).
 
 The docs toolset is runtime-agnostic behind `DocsAccess` (`list` and `resolve`). Service, manifest,
 and provider accesses feed the same definition; composition combines accesses rather than owning a
 second engine. `storybook/internal/toolsets-docs` is a portable entry consumed by both MCP packages,
 so its bundled declaration must remain flat and import only its declared allowlist.
 
-The `storybook tools` CLI is a slim shell over `storybook/internal/tools`. Default mode is `auto`:
-attach to a matching running instance as a delegated leaf, and fall back to a local host when
-`createTools` cannot attach. `--attach` requires attachment (gate failures are errors).
-`--no-attach` forces local. Toolset handlers run in the SDK process, and attached service commands
-execute on the instance.
-
-Local bootstrap still hosts the module graph so addon-owned toolsets can query it without appearing
-in a core allowlist; an unsupported builder settles the graph as unavailable without failing
-unrelated tools. When this process is already in the project, local mode loads in-process. When
-`--cwd` points elsewhere, it starts a child host in that directory instead of changing
-`process.cwd()`. Attached mode never `chdir`s the host; a cwd or version mismatch spawns a
-project-local child host instead.
-
-Methods marked `requiresDevServer` intercept only in **local** mode (start-your-Storybook
-guidance). In attached mode they run caller-side. `stories.preview` reads the recorded origin from
-the instance record. See [cli/tools/README.md](../../cli/tools/README.md).
+The `storybook tools` CLI and the `createTools` SDK in `@storybook/open-service` run these toolsets attached to a dev server or in a local host; see [cli/tools/architecture.md](../../../../lib/storybook/src/storybook/cli/tools/architecture.md).
 
 ### Query
 
@@ -387,7 +383,7 @@ definition, so there is no separate id list to keep in sync. A unit test in
 `core-service-types.test.ts` compares the lists against the registrar-file convention (every listed
 service has a matching `services/<name>/<runtime>.{ts,tsx}` file, and vice versa) and fails with
 actionable guidance when they drift apart. The test guards the convention, not the actual call site,
-so still confirm the registrar is invoked (e.g. from `common-preset.ts` on the server). Handler-context
+so still confirm the registrar is invoked (e.g. from `common-defaults.ts` on the server). Handler-context
 `ctx.getService(...)` is unchanged and still requires an explicit generic when full typing is needed.
 
 ### Validation
@@ -424,9 +420,14 @@ Handling of extra object fields depends on the schema implementation you choose.
 
 ## Server Registration Flow
 
-Server-side registration happens through the `services` preset hook. Storybook calls `await presets.apply('services')` during dev startup, static builds, and in the `storybook tools` CLI, and each service author's preset implementation is responsible for calling `registerService(...)` directly.
+Server-side registration happens in `core:services:register` handlers.
 
-That split is intentional:
+- Core's handler is registered by the instance's common plugin (`core/src/instance/common-plugin.ts`); addons register their own from `<pkg>/node`.
+- Each handler calls `registerService(...)` and `registerToolset(...)` directly.
+- Hosts call the hook through `applyServicesPresetOnce` (`core/src/services/apply-services-preset-once.ts`), which runs it once per instance.
+- Dev startup, static builds, and the `storybook tools` local host all register this way.
+
+The entrypoints split intentionally:
 
 - [index.ts](./index.ts) stays environment-agnostic so preview, manager, and server code can share
   one definition surface
@@ -437,14 +438,21 @@ That split is intentional:
 `registerService(definition)` is idempotent by id: registering an id that already exists returns the
 existing runtime instead of throwing. This keeps core services safe to register from a `beforeAll`
 annotation, which CSF4 composes twice (once in `definePreview`, once in `StoryStore`) and which also
-re-runs on HMR. The default `services` preset hook in
-[common-preset.ts](../../core-server/presets/common-preset.ts) still throws if the preset is applied
-more than once in the same process, which catches misconfigured preset wiring early.
+re-runs on HMR. Core's own `services` handler in
+[core/src/services/preset.ts](../../services/preset.ts) still throws
+`OpenServiceServicesAppliedTwiceError` if it runs twice for the same instance, which catches
+misconfigured wiring early.
 
-Registration must not start subscriptions that execute commands, because the attached tools CLI registers the same services. Its first [state sync](#state-sync-multi-master) advances every query from the initial state to the dev server's current one, so such a subscription would treat old changes as new and send their commands to the dev server. Export the subscription next to `register…Service` and start it from the `experimental_devServer` preset hook, which only the dev server applies; in [common-preset.ts](../../core-server/presets/common-preset.ts), `services` queues it beside the registration and `experimental_devServer` starts the queue. `experimental_devServer` applies `services` through `applyServicesPresetOnce` and awaits it, so the dev server needs no separate `services` call and the queue is always complete.
+Registration must not start subscriptions that execute commands, because the attached tools CLI registers the same services.
 
-The internal Storybook config registers an example debug service through a dedicated preset file
-([`code/.storybook/services-preset.ts`](../../../../.storybook/services-preset.ts)), gated on
+- Its first [state sync](#state-sync-multi-master) advances every query from the initial state to the dev server's current one.
+- Such a subscription would treat old changes as new and send their commands to the dev server.
+- Export the subscription next to `register…Service`, and queue it from the registration in [core/src/services/preset.ts](../../services/preset.ts).
+- The queue starts from `server:app:extend`, which only the dev server calls; the preview host skips it.
+- That handler runs `core:services:register` through `applyServicesPresetOnce` and awaits it first, so the dev server needs no separate call and the queue is always complete.
+
+The internal Storybook config registers an example debug service through a dedicated addon
+([`code/.storybook/services-addon.ts`](../../../../.storybook/services-addon.ts)), gated on
 `STORYBOOK_OPEN_SERVICE_DEBUG=true`. The flag stays unset by default so normal `yarn storybook:ui`
 and `yarn storybook:ui:build` runs do not register the debug service.
 
@@ -526,9 +534,9 @@ wholesale rather than merging by key, so a **top-level** array state would silen
 between peers. They are therefore rejected too. Wrap collections in a field instead:
 
 ```ts
-// ❌ not allowed
+// Not allowed
 initialState: [] as Item[],
-// ✅ wrap it
+// Wrap it
 initialState: { items: [] as Item[] },
 ```
 
@@ -782,9 +790,14 @@ Snapshots and static JSON apply through `applyStatePatch` (in [service-sync.ts](
 
 ### Channel setup
 
-There is no open-service-specific channel install step. `getChannel()` from `storybook/internal/channels` reads the live channel: the manager sets it through `addons.setChannel`, both builders inject it into the preview iframe, and the dev server installs it in the `services` preset before any service registers. `registerService` wires the runtime to that channel at registration; there is no separate connect step. Server registration uses `relay: true`, manager registration `relay: true`, and preview registration `relay: false`.
+There is no open-service-specific channel install step.
 
-`registerService` throws `OpenServiceMissingChannelError` when no channel is installed. Unit tests install a mock channel with `setChannel(mock)`, or call `clearChannel()` to assert that registration fails without one.
+- `registerService` wires the runtime to `getChannel()` at registration; there is no separate connect step.
+- In Node, `getChannel()` returns the current instance's channel; nothing on the server calls `setChannel`.
+- The manager and the preview iframe install theirs as described in the [channels README](../../channels/README.md#channel-access-internal).
+- Server and manager registration use `relay: true`; preview registration uses `relay: false`.
+- `registerService` throws `OpenServiceMissingChannelError` when no channel is installed.
+- Unit tests install a mock channel with `setChannel(mock)`, or call `clearChannel()` to assert that registration fails without one.
 
 ### Where the protocol is tested
 
@@ -934,10 +947,12 @@ command that the server will answer), so absence-of-ack stays their only signal.
 A runtime that attaches to an already-running Storybook (rather than starting its own) must not
 dispatch commands locally: the Storybook it attached to owns the story index, the module graph, and
 the providers, so it is the implementer for every command. Loads, toolset methods, and query handlers
-still run in this process. `setDelegatedMode(true)` in [service-registry.ts](./service-registry.ts)
-puts command dispatch in that role; `isDelegatedMode()` reads it and the default is `false`. The flag
-lives on the same realm-global inventory as the service map, so every import path in one realm sees
-the same value.
+still run in this process. A client creates that role with
+`createStorybook({ configDir, mode: 'headless', attach: { transport } })`.
+The instance has `attached: true`; [service-registry.ts](./service-registry.ts) initializes its
+inventory's `delegatedMode` from the current instance's `attached` property. Two instances in one
+process can have different roles. Instances without `attach`, and the fallback global inventory,
+keep local dispatch.
 
 What changes is **dispatch**, not registration:
 
@@ -951,8 +966,8 @@ What changes is **dispatch**, not registration:
   there is no `delegated` field on per-service `ServiceRegistrationOptions` — service authors write
   one definition that works in both roles.
 
-The flag is runtime-wide and read at registration time, like the installed channel, so set it once at
-the entry boundary before the first `registerService` call. `clearRegistry()` resets it.
+The role belongs to the instance and is read at registration time against its own channel.
+`clearRegistry()` removes registrations without changing the instance's role.
 
 Genuine configuration drift — the attached Storybook does not register the service or the command
 this runtime's configuration does — is reported positively rather than inferred: command events are
@@ -970,8 +985,41 @@ of "not implemented in any connected runtime": the attached Storybook did not ac
 command in time (it may be busy or unreachable), and — delivery being at-least-once — the command
 may still have executed there, which a retry should take into account.
 
-The `storybook tools` SDK is the attached caller: it sets this flag, then loads the instance
-config. See [cli/tools/architecture.md](../../cli/tools/architecture.md).
+The `storybook tools` SDK creates an attached instance only for a dev server without the
+[toolset RPC](#toolset-rpc). See [cli/tools/architecture.md](../../../../lib/storybook/src/storybook/cli/tools/architecture.md).
+
+### Toolset RPC
+
+A dev server can run toolset methods for an attached client, so the client loads no
+configuration. The messages live in [toolset-rpc.ts](./toolset-rpc.ts) and follow the command
+protocol's shape: a fresh `callId`, an immediate ack, then a result or a serialized error.
+
+| Event                      | Direction       | Payload                                           |
+| -------------------------- | --------------- | ------------------------------------------------- |
+| `toolsets:describe`        | client → host   | `{ callId, clientInfo, toolset? }`                |
+| `toolsets:describe-result` | host → client   | `{ callId, catalog }`                             |
+| `toolsets:describe-error`  | host → client   | `{ callId, error }`                               |
+| `toolsets:call-invoke`     | client → host   | `{ callId, methodId, input, clientInfo, origin? }` |
+| `toolsets:call-ack`        | host → client   | `{ callId }`                                      |
+| `toolsets:call-result`     | host → client   | `{ callId, outcome }`                             |
+| `toolsets:call-error`      | host → client   | `{ callId, error }`                               |
+| `toolsets:call-cancel`     | client → host   | `{ callId }`                                      |
+| `toolsets:telemetry`       | client → host   | `{ callId, payload }`                             |
+| `toolsets:telemetry-ack`   | host → client   | `{ callId }`                                      |
+
+- `clientInfo.transport` (`cli`, `sdk`, `mcp`) becomes the handler's `ctx.transport`; the host sets
+  `ctx.origin` to its own base URL unless the invoke overrides it.
+- The host validates the input against the method's schema, so a bad reference or input is a
+  `call-error`, not a crash. `error` uses [service-error-serialization.ts](./service-error-serialization.ts).
+- `outcome` is the `InvokedToolsetOutcome` as JSON, including the named telemetry report. A call
+  sends no telemetry. The client composes the one `tools-command` record and sends it with
+  `toolsets:telemetry`; the host acks and sends it under its own configuration (opt-out
+  included), so the client never loads the project to resolve it. A lost ack never fails a call.
+- `call-cancel` aborts the call's `ctx.signal` on the host; handlers may ignore it.
+  A local or SDK caller's abort reaches `ctx.signal` the same way.
+- The host advertises the protocol with `toolsetRpc: TOOLSET_RPC_PROTOCOL_VERSION` in its instance
+  record. A client speaks it only on an exact match and otherwise attaches as a delegated runtime.
+- The server transport accepts the client → host events only from token clients without a page.
 
 ## React Hooks
 
@@ -1089,10 +1137,11 @@ const ready = await exampleService.queries.value.loaded({ entryId: 'a' });
 - **Keep `load` bodies minimal — a load triggers commands, it never computes.** Push input resolution, side effects, and state mutation into the command itself so it stays callable, testable, reusable, and delegable to another runtime.
 - Query handlers are strict readers: sync, no commands, no `setState`.
 - Use commands for all state mutation.
-- Manager addons import from `storybook/manager-api`; preview code imports from `storybook/preview-api`. Server presets use [server.ts](./server.ts). Import modules in this directory directly only from tests or implementation code.
+- Manager addons import from `storybook/manager-api`; preview code imports from `storybook/preview-api`. Node code uses [server.ts](./server.ts), or `@storybook/core/internal/services` from other packages (`experimental_registerService`, `registerToolset`). Import modules in this directory directly only from tests or implementation code.
 - Use `.loaded()` when a caller wants to fire the load and await the full state; use `.get()` when a synchronous "current best" read (no load) is fine.
-- No channel install is needed in manager/preview — `getChannel()` returns the channel `addons.setChannel` installed.
-- Call `clearRegistry()` in `afterEach` in tests that register services. Use `setChannel(mock)` before `registerService` when a test needs sync. Node bootstraps a noop channel at import; browser preview gets the real channel from builders before `preview.ts` loads.
+- No channel install is needed in any runtime — `getChannel()` returns the instance's channel in Node and the channel `addons.setChannel` installed in the browser.
+- Call `clearRegistry()` in `afterEach` in tests that register services. Use `setChannel(mock)` before `registerService` when a test needs sync. Outside an instance, Node bootstraps a noop channel at import; browser preview gets the real channel from builders before `preview.ts` loads.
+- Manager registrars live in `lib/manager/src/shared/open-service/services/<name>/manager.tsx`.
 
 ## Testing Guidance
 
@@ -1122,8 +1171,8 @@ React hook tests must include `// @vitest-environment happy-dom` as the first li
 - If you need to change validation wording, start in [errors.ts](./errors.ts).
 - If you need to change schema handling, start in [service-validation.ts](./service-validation.ts).
 - If you need to change service authoring ergonomics, start in [service-definition.ts](./service-definition.ts) and [types.ts](./types.ts).
-- If you need to change channel transport, relay behavior, remote command execution, or delegated dispatch, start in [service-transport.ts](./service-transport.ts) — the delegated-mode flag itself lives in [service-registry.ts](./service-registry.ts).
-- If you need to change how the tools CLI or SDK attaches, start in [cli/tools/README.md](../../cli/tools/README.md) and [cli/tools/architecture.md](../../cli/tools/architecture.md).
+- If you need to change channel transport, relay behavior, remote command execution, or delegated dispatch, start in [service-transport.ts](./service-transport.ts) — the inventory's delegated role comes from its owning instance in [service-registry.ts](./service-registry.ts).
+- If you need to change how the tools CLI or SDK attaches, start in [cli/tools/README.md](../../../../lib/storybook/src/storybook/cli/tools/README.md) and [cli/tools/architecture.md](../../../../lib/storybook/src/storybook/cli/tools/architecture.md).
 - If you need to change how thrown errors cross the channel for remote commands, start in [service-error-serialization.ts](./service-error-serialization.ts).
 - If you need to change vector domination, snapshot install, the ordered log, or the structural merge, start in [service-sync.ts](./service-sync.ts).
 - If you need to change how `setState` records touched paths, start in [patch-recorder.ts](./patch-recorder.ts).

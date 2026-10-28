@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Tag } from 'storybook/internal/core-server';
+import { Tag } from 'storybook/internal/story-index';
 import type { DocsIndexEntry, IndexEntry } from 'storybook/internal/types';
 
 import { vol } from 'memfs';
@@ -236,13 +236,8 @@ describe('experimental_manifests', () => {
       },
       {
         manifestEntries,
-        presets: {
-          apply: vi.fn().mockResolvedValue({
-            docgenServer: true,
-            componentsManifest: true,
-          }),
-        },
-      } as any
+        features: { docgenServer: true, componentsManifest: true },
+      }
     )) as ManifestResult;
 
     // Shallow refs are structural only; summaries are layered into the static index by core from
@@ -281,13 +276,8 @@ describe('experimental_manifests', () => {
 
     const result = (await manifests(undefined, {
       manifestEntries,
-      presets: {
-        apply: vi.fn().mockResolvedValue({
-          docgenServer: true,
-          componentsManifest: true,
-        }),
-      },
-    } as any)) as ManifestResult;
+      features: { docgenServer: true, componentsManifest: true },
+    })) as ManifestResult;
 
     // No `error` despite the missing file: ref mode is purely structural.
     expect(result.docs?.docs['missing--docs']).toEqual({

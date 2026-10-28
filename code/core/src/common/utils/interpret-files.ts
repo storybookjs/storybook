@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { extname } from 'node:path';
 
-import { storybookConfigExtensions } from '../../shared/constants/extensions.ts';
+import { storybookConfigExtensions } from '../../constants/extensions.ts';
 import { createModuleResolver } from './module-resolver.ts';
 
 const typescriptFallbackExtensions: Record<string, string[]> = {

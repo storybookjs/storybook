@@ -11,7 +11,7 @@
 import { parentPort } from 'node:worker_threads';
 import { pathToFileURL } from 'node:url';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
 import { errorToErrorLike } from '../../module-graph/types.ts';

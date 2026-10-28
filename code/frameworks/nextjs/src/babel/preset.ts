@@ -1,6 +1,8 @@
 import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 
+import { getFeatures } from '@storybook/core';
+
 import type { PluginItem } from '@babel/core';
 
 import ampAttributesPlugin from './plugins/amp-attributes.ts';
@@ -100,10 +102,7 @@ export default (api: any, options: NextBabelPresetOptions = {}): BabelPreset => 
     ...options['preset-env'],
   };
 
-  const shouldRemoveBugfixes =
-    globalThis?.FEATURES &&
-    'babelRemoveBugfixes' in globalThis.FEATURES &&
-    globalThis.FEATURES.babelRemoveBugfixes;
+  const shouldRemoveBugfixes = getFeatures().babelRemoveBugfixes;
   if (!shouldRemoveBugfixes) {
     presetEnvConfig.bugfixes = true;
   }

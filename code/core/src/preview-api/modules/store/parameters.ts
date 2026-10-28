@@ -1,5 +1,5 @@
 // Utilities for handling parameters
-import type { Parameters } from 'storybook/internal/types';
+import type { Parameters } from '@storybook/core/internal/types';
 
 import { isPlainObject } from 'es-toolkit/predicate';
 

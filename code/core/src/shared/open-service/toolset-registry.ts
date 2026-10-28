@@ -1,3 +1,5 @@
+import { bindToInstance, getInstanceContext } from '../instance-context.ts';
+
 import {
   OpenServiceDuplicateToolNameError,
   OpenServiceDuplicateToolsetError,
@@ -18,6 +20,14 @@ const TOOLSET_REGISTRY_SYMBOL = Symbol.for('storybook.open-service.toolset-regis
  * paths. Toolsets are plain definitions (no channel wiring), so one map is the whole registry.
  */
 function getToolsetRegistry(): Map<string, AnyToolsetDefinition> {
+  const context = getInstanceContext();
+  if (context) {
+    if (!context.state.has(TOOLSET_REGISTRY_SYMBOL)) {
+      context.state.set(TOOLSET_REGISTRY_SYMBOL, new Map());
+    }
+    return context.state.get(TOOLSET_REGISTRY_SYMBOL) as Map<string, AnyToolsetDefinition>;
+  }
+
   const registryGlobal = globalThis as {
     [key: symbol]: Map<string, AnyToolsetDefinition> | undefined;
   };
@@ -94,7 +104,23 @@ export function registerToolset(toolset: AnyToolsetDefinition): void {
 
   assertNoDerivedNameCollisions(toolset);
 
-  registry.set(toolset.id, toolset);
+  registry.set(
+    toolset.id,
+    getInstanceContext()
+      ? {
+          ...toolset,
+          methods: Object.fromEntries(
+            Object.entries(toolset.methods).map(([name, method]) => [
+              name,
+              {
+                ...method,
+                handler: bindToInstance(method.handler),
+              },
+            ])
+          ),
+        }
+      : toolset
+  );
 }
 
 /**

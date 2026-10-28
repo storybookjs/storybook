@@ -1,0 +1,55 @@
+import { registerService } from '@storybook/manager/manager-api';
+
+import type { ServiceRegistryApi } from '@storybook/core/open-service';
+import {
+  type ReviewService,
+  reviewServiceDef,
+} from '@storybook/core/internal/deep/shared/open-service/services/review/definition';
+import {
+  applyAcceptPending,
+  applyDismiss,
+  applyMarkStale,
+  applyPublishedReview,
+} from '@storybook/core/internal/deep/shared/open-service/services/review/state-transitions';
+
+/**
+ * Story-only local handlers for exercising review-service projection without a dev-server peer.
+ * Runs the same shared state transitions as the server registration (so the double cannot drift),
+ * minus story-id validation and `createdAt` stamping — stories control both. Production manager
+ * registration intentionally supplies no command handlers.
+ */
+export const reviewServiceForStories: ReviewService & ServiceRegistryApi = registerService(
+  reviewServiceDef,
+  {
+    commands: {
+      setReview: {
+        handler: async (input, ctx) => {
+          ctx.self.setState((state) => {
+            applyPublishedReview(state, input);
+          });
+        },
+      },
+      acceptPending: {
+        handler: async (_input, ctx) => {
+          ctx.self.setState((state) => {
+            applyAcceptPending(state);
+          });
+        },
+      },
+      markStale: {
+        handler: async (change, ctx) => {
+          ctx.self.setState((state) => {
+            applyMarkStale(state, change);
+          });
+        },
+      },
+      dismissReview: {
+        handler: async (_input, ctx) => {
+          ctx.self.setState((state) => {
+            applyDismiss(state);
+          });
+        },
+      },
+    },
+  }
+);

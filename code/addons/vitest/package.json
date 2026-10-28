@@ -55,9 +55,13 @@
     "./internal/setup-file.browser.4": "./dist/vitest-plugin/setup-file.browser.4.js",
     "./internal/test-utils": "./dist/vitest-plugin/test-utils.js",
     "./manager": "./dist/manager.js",
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "code": "./src/node.ts",
+      "default": "./dist/node.js"
+    },
     "./package.json": "./package.json",
     "./postinstall": "./dist/postinstall.js",
-    "./preset": "./dist/preset.js",
     "./vitest": "./dist/node/vitest.js",
     "./vitest-plugin": {
       "types": "./dist/vitest-plugin/index.d.ts",
@@ -77,12 +81,13 @@
     "!src/**/*"
   ],
   "dependencies": {
+    "@storybook/builder-vite": "workspace:*",
+    "@storybook/core": "workspace:*",
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^2.0.2"
   },
   "devDependencies": {
     "@storybook/addon-a11y": "workspace:*",
-    "@storybook/builder-vite": "workspace:*",
     "@types/istanbul-lib-report": "^3.0.3",
     "@types/micromatch": "^4.0.0",
     "@types/node": "^22.19.1",

@@ -10,12 +10,12 @@
  * snapshot install and ordered-log reconciliation in `service-sync.ts`; both transports drive them
  * identically.
  *
- * The registry is anchored on a symbol-keyed `globalThis` slot so every module in one realm shares a
- * single registration map even if this file is reached through different import paths. Server (Node),
- * manager (top window), and preview (iframe) are already isolated realms, so one symbol is correct for
- * all three — they never share a map at runtime.
+ * The registry is per Storybook instance when called inside an instance context, and anchored on a
+ * symbol-keyed `globalThis` slot otherwise (browser realms and legacy callers), so every module in one
+ * realm shares a single registration map even if this file is reached through different import paths.
  */
 
+import { bindToInstance, getInstanceContext } from '../instance-context.ts';
 import { getChannel } from '../../channels/channel-slot.ts';
 import {
   OpenServiceInternalServiceError,
@@ -70,13 +70,26 @@ type RegistryInventory = {
 };
 
 /**
- * Returns the realm-global inventory backing service registration and delegated mode.
+ * Returns the instance-scoped or realm-global inventory backing service registration and delegated mode.
  *
- * Lazily created so importing the module does not eagerly mutate global state. Anchoring it on a
- * `globalThis` symbol keeps the service map and the delegated-mode flag shared even when this file is
- * reached through different import paths.
+ * Lazily created so importing the module does not eagerly mutate global state. Within an instance
+ * context, an instance created with `attach` starts its inventory delegated. Otherwise, anchoring it on
+ * a `globalThis` symbol keeps the service map shared even when this file is reached through different
+ * import paths; the fallback inventory is never delegated.
  */
 function getInventory(): RegistryInventory {
+  const context = getInstanceContext();
+  if (context) {
+    if (!context.state.has(REGISTRY_SYMBOL)) {
+      context.state.set(REGISTRY_SYMBOL, {
+        entries: new Map(),
+        delegatedMode: context.storybook?.attached ?? false,
+        everRegisteredIds: new Set(),
+      });
+    }
+    return context.state.get(REGISTRY_SYMBOL) as RegistryInventory;
+  }
+
   const registryGlobal = globalThis as {
     [key: symbol]: RegistryInventory | undefined;
   };
@@ -92,24 +105,6 @@ function getInventory(): RegistryInventory {
 
 function getRegistry(): Map<string, RegistryEntry> {
   return getInventory().entries;
-}
-
-/**
- * Marks this runtime as delegated, so every registered service dispatches its commands over the
- * channel instead of running local handlers.
- *
- * Set it once at the runtime entry boundary, before any `registerService` call — it is read at
- * registration time, like the installed channel. Service definitions are unaffected: their handlers
- * stay registered and inspectable, they simply never run here because the Storybook this runtime
- * attached to is the implementer.
- */
-export function setDelegatedMode(enabled: boolean): void {
-  getInventory().delegatedMode = enabled;
-}
-
-/** Whether this runtime delegates command dispatch to the Storybook it is attached to. */
-export function isDelegatedMode(): boolean {
-  return getInventory().delegatedMode;
 }
 
 // One reporter per realm answers invokes for service ids nothing here registers (the whole-service
@@ -306,13 +301,41 @@ export function registerService<
       ServiceRegistryApi;
   }
 
+  const registryApi: ServiceRegistryApi = getInstanceContext()
+    ? {
+        listServices: bindToInstance(listServices),
+        describeService: bindToInstance(describeService),
+        getService: bindToInstance(getService) as typeof getService,
+      }
+    : serviceRegistryApi;
   const ownRuntimeId = generateRuntimeId();
-  const resolvedDefinition = applyRegistration(definition, registration);
+  const resolved = applyRegistration(definition, registration);
+  const resolvedDefinition = getInstanceContext()
+    ? ({
+        ...resolved,
+        queries: Object.fromEntries(
+          Object.entries(resolved.queries).map(([name, query]) => [
+            name,
+            {
+              ...query,
+              ...(query.handler ? { handler: bindToInstance(query.handler) } : {}),
+              ...(query.load ? { load: bindToInstance(query.load) } : {}),
+            },
+          ])
+        ),
+        commands: Object.fromEntries(
+          Object.entries(resolved.commands).map(([name, command]) => [
+            name,
+            {
+              ...command,
+              ...(command.handler ? { handler: bindToInstance(command.handler) } : {}),
+            },
+          ])
+        ),
+      } as ServiceDefinition<TState, TQueries, TCommands>)
+    : resolved;
 
-  const runtime = createServiceRuntime(resolvedDefinition, {
-    registryApi: serviceRegistryApi,
-    staticLoader,
-  });
+  const runtime = createServiceRuntime(resolvedDefinition, { registryApi, staticLoader });
 
   const reconciler = createReconciler({
     serviceId: definition.id,
@@ -351,18 +374,18 @@ export function registerService<
     reconciler,
     getSnapshot,
     channel,
-    relay: isDelegatedMode() ? false : relay,
+    relay: getInventory().delegatedMode ? false : relay,
     commands: runtime.commands as Record<string, (input: unknown) => Promise<unknown>>,
     implementedCommandNames,
     commandNames: Object.keys(resolvedDefinition.commands),
-    delegated: isDelegatedMode(),
+    delegated: getInventory().delegatedMode,
     runtime,
   });
 
   const instance = {
     queries: runtime.queries,
     commands: commands as ServiceInstance<TState, TQueries, TCommands>['commands'],
-    ...serviceRegistryApi,
+    ...registryApi,
   } as ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi;
 
   registry.set(definition.id, {
@@ -445,8 +468,7 @@ export function unregisterService(serviceId: ServiceId): void {
 }
 
 /**
- * Clears the registry, tearing down each service's channel listeners first, and resets delegated
- * mode.
+ * Clear the registry and tear down each service's channel listeners.
  *
  * Tests call this after each case so registrations — and the channel listeners a registration attaches
  * — from one scenario do not leak into the next.
@@ -459,7 +481,6 @@ export function clearRegistry(): void {
   }
 
   inventory.entries.clear();
-  inventory.delegatedMode = false;
   inventory.everRegisteredIds.clear();
   inventory.unknownServiceReporter?.disconnect();
   inventory.unknownServiceReporter = undefined;

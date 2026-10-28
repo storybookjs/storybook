@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import type { FC, PropsWithChildren } from 'react';
 
-import { Tag } from 'storybook/internal/core-server';
+import { Tag } from 'storybook/internal/story-index';
 import type { PreparedStory } from 'storybook/internal/types';
 
 import type { DocsContextProps } from './DocsContext';

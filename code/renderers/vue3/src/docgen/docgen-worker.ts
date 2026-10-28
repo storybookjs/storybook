@@ -6,11 +6,11 @@
  * the synchronous `vue-component-meta` (Volar) type checking stays off the main event loop and
  * cannot starve the dev server.
  *
- * The renderer preset contributes the descriptor that points here.
+ * The renderer's node plugin contributes the descriptor that points here.
  */
-import { createLazyDocgenMiddleware } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
-import type { DocgenMiddleware } from 'storybook/internal/types';
+import { createLazyDocgenMiddleware } from '@storybook/core/internal/common';
+import { logger } from '@storybook/core/internal/node-logger';
+import type { DocgenMiddleware } from '@storybook/core/internal/types';
 
 import { buildDocgenPayload } from './component-docgen/build-docgen.ts';
 import { VueComponentMetaManager } from './component-docgen/component-meta/vue-project-manager.ts';

@@ -5,7 +5,7 @@ import {
   isStringLiteral,
   unwrapExpression,
   walk,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 
 /**
  * How one arg value reaches the generated SFC.

@@ -1,4 +1,4 @@
-import type { StorybookConfig } from 'storybook/internal/types';
+import type { StorybookConfig } from '../../instance/plugins.ts';
 
 import { normalizePath } from './normalize-path.ts';
 
@@ -13,7 +13,7 @@ export const normalizeAddonName = (addon: AddonEntry): string | undefined => {
   if (typeof addon === 'string') {
     name = addon;
   } else if (typeof addon === 'object') {
-    name = addon.name;
+    name = 'meta' in addon ? addon.meta.name : addon.name;
   }
 
   if (name.startsWith('.')) {
@@ -36,7 +36,7 @@ export const normalizeAddonName = (addon: AddonEntry): string | undefined => {
     .replace(/\/preset$/, '');
 };
 
-export const getAddonNames = (mainConfig: StorybookConfig): string[] => {
+export const getAddonNames = (mainConfig: Pick<StorybookConfig, 'addons'>): string[] => {
   const addons = mainConfig.addons || [];
   const addonList = addons.map(normalizeAddonName);
 

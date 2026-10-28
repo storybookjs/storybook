@@ -37,8 +37,12 @@
       "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
-    "./package.json": "./package.json",
-    "./preset": "./dist/preset.js"
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "code": "./src/node.ts",
+      "default": "./dist/node.js"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist/**/*",
@@ -47,12 +51,14 @@
     "*.d.ts",
     "!src/**/*"
   ],
+  "dependencies": {
+    "@storybook/core": "workspace:*"
+  },
   "devDependencies": {
     "@neoconfetti/react": "^1.0.0",
     "@storybook/icons": "^2.0.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-joyride": "^2.8.2",
     "typescript": "^6.0.3"
   },
   "peerDependencies": {

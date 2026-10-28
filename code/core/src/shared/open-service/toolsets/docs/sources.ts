@@ -95,3 +95,13 @@ export class ManifestGetError extends Error {
     this.cause = cause;
   }
 }
+
+/** Whether `error` is a {@link RequiresOwnMcpError}; matched by name to survive module copies. */
+export function isRequiresOwnMcpError(error: unknown): error is RequiresOwnMcpError {
+  return error instanceof Error && error.name === 'RequiresOwnMcpError';
+}
+
+/** Whether `error` is a {@link ManifestGetError}; matched by name to survive duplicate copies. */
+export function isManifestGetError(error: unknown): error is ManifestGetError {
+  return error instanceof Error && error.name === 'ManifestGetError';
+}

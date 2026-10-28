@@ -10,8 +10,8 @@ import {
   ComponentManifestMap,
   DocsManifestMap,
   type Source,
-} from 'storybook/internal/toolsets-docs';
-import { logger } from 'storybook/internal/node-logger';
+} from '@storybook/core/internal/toolsets-docs';
+import { logger } from '@storybook/core/internal/node-logger';
 import * as v from 'valibot';
 
 export interface ComposedRef {

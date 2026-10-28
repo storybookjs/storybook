@@ -1,9 +1,9 @@
 import { join } from 'node:path';
 
-import { getProjectRoot } from 'storybook/internal/common';
-import type { Options } from 'storybook/internal/types';
-
-import { getVirtualModules } from '@storybook/builder-webpack5';
+import { getProjectRoot } from '@storybook/core/internal/common';
+import { getInstanceContext } from '@storybook/core/internal/instance';
+import { getPreviewModuleIds } from '@storybook/core/internal/preview-page';
+import type { Options } from '@storybook/core/internal/types';
 
 import type { NextConfig } from 'next';
 import nextJSLoadConfigModule from 'next/dist/build/load-jsconfig.js';
@@ -13,12 +13,15 @@ import { getNodeModulesExcludeRegex } from '../utils.ts';
 
 export const configureSWCLoader = async (
   baseConfig: WebpackConfig,
-  options: Options,
+  options: Pick<Options, 'configType'>,
   nextConfig: NextConfig
 ) => {
   const isDevelopment = options.configType !== 'PRODUCTION';
 
-  const { virtualModules } = await getVirtualModules(options);
+  const previewModuleIds = getPreviewModuleIds(
+    'webpack',
+    getInstanceContext()?.workingDir ?? process.cwd()
+  );
   const projectRoot = getProjectRoot();
   const loadJsConfig = (nextJSLoadConfigModule as any).default ?? nextJSLoadConfigModule;
 
@@ -37,7 +40,7 @@ export const configureSWCLoader = async (
   baseConfig.module?.rules?.push({
     test: /\.((c|m)?(j|t)sx?)$/,
     include: [projectRoot],
-    exclude: [getNodeModulesExcludeRegex(transpilePackages), ...Object.keys(virtualModules)],
+    exclude: [getNodeModulesExcludeRegex(transpilePackages), ...Object.values(previewModuleIds)],
     use: {
       // we use our own patch because we need to remove tracing from the original code
       // which is not possible otherwise

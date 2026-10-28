@@ -1,8 +1,8 @@
-import 'storybook/test';
+import '@storybook/core/test';
 
-import type { LiveRegionMatcherOptions } from '../../../core/src/shared/utils/toHaveLiveRegion';
+import type { LiveRegionMatcherOptions } from '../../../core/src/utils/toHaveLiveRegion';
 
-declare module 'storybook/test' {
+declare module '@storybook/core/test' {
   interface Assertion<T> {
     toHaveLiveRegion(options: LiveRegionMatcherOptions): Promise<void>;
   }

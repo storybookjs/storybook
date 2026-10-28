@@ -9,21 +9,25 @@
  * suite exercises the default mode only.
  */
 
-import type { StoryIndex } from 'storybook/internal/types';
+import type { StoryIndex } from '@storybook/core/internal/types';
 import { describe, expect, it } from 'vitest';
 
-import { Tag } from '../../../constants/tags.ts';
+import { Tag } from '../../../../constants/tags.ts';
 import type { ToolsetCtx } from '../../toolset-definition.ts';
 import {
   buildComponentsRefManifest,
   toComponentManifestIndexEntries,
-} from '../../../../core-server/utils/manifests/components-ref-manifest.ts';
+} from '../../../../story-index/manifests/components-ref-manifest.ts';
 import { createManifestDocsAccess } from './access-manifest.ts';
 import { createProviderDocsAccess } from './access-provider.ts';
 import { createServiceDocsAccess } from './access-service.ts';
 import { createDocsToolset } from './definition.ts';
 
-const ctx: ToolsetCtx = { transport: 'mcp', getService: () => ({}) as never };
+const ctx: ToolsetCtx = {
+  transport: 'mcp',
+  getService: () => ({}) as never,
+  signal: new AbortController().signal,
+};
 
 const storyIndex = {
   v: 5,

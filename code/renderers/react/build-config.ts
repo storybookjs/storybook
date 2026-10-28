@@ -33,15 +33,10 @@ const config: BuildEntries = {
       },
     ],
     node: [
+      // `./preset` is a deprecated alias that third-party framework presets still resolve.
+      { exportEntries: ['./node', './preset'], entryPoint: './src/node.ts' },
       {
-        exportEntries: ['./preset'],
-        entryPoint: './src/preset.ts',
-        dts: false,
-      },
-      {
-        // Worker-target docgen module imported by core's docgen worker. Exposed as an internal
-        // export so the preset resolves it via import.meta.resolve (package map) instead of a
-        // hard-coded dist path.
+        // Core's docgen worker imports this; an internal export lets the renderer resolve it by name.
         exportEntries: ['./internal/docgen-worker'],
         entryPoint: './src/docgen/docgen-worker.ts',
         dts: false,

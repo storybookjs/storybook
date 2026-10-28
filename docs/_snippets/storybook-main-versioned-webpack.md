@@ -1,9 +1,6 @@
 ```js filename=".storybook/main.js" renderer="common" language="js"
-export function webpackFinal(config, { presets }) {
-  const version = await presets.apply('webpackVersion');
-  const instance = (await presets.apply('webpackInstance'))?.default;
-
-  logger.info(`=> Running in webpack ${version}: ${instance}`);
+export async function webpackFinal(config, { webpackInstance }) {
+  logger.info(`=> Running in webpack ${webpackInstance.version}`);
   return config;
 }
 ```

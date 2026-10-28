@@ -1,14 +1,16 @@
-import { getPrettier } from 'storybook/internal/common';
-import { type CsfFile } from 'storybook/internal/csf-tools';
-import type { PresetPropertyFn } from 'storybook/internal/types';
+import { getPrettier } from '@storybook/core/internal/common';
+import { type CsfFile } from '@storybook/core/internal/csf-tools';
+import type { CsfEnricher, StorybookConfigRaw } from '@storybook/core/internal/types';
 
 import { join } from 'pathe';
 
 import { getCodeSnippet } from './componentManifest/generateCodeSnippet.ts';
 
-export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (input, options) => {
-  const features = await options.presets.apply('features');
-  if (!features.experimentalCodeExamples || features.docgenServer) {
+/** Create the code-example enricher, unless the features disable it. */
+export function createCsfEnricher(
+  features: StorybookConfigRaw['features']
+): CsfEnricher | undefined {
+  if (!features?.experimentalCodeExamples || features.docgenServer) {
     return;
   }
   return async (csf: CsfFile, csfSource: CsfFile) => {
@@ -64,4 +66,4 @@ export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (inpu
     });
     await Promise.all(promises);
   };
-};
+}

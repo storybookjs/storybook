@@ -2,20 +2,20 @@ import { Architect, createBuilder } from '@angular-devkit/architect';
 import { TestingArchitectHost } from '@angular-devkit/architect/testing';
 import { schema } from '@angular-devkit/core';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildStaticStandalone } from 'storybook/internal/core-server';
-import { JsPackageManagerFactory } from 'storybook/internal/common';
+import { buildStaticStandalone } from 'storybook/internal/server';
+import { JsPackageManagerFactory } from '@storybook/core/internal/common';
 
 import handler from './index.ts';
 import buildSchema from '../../../build-schema.json';
 
-vi.mock('storybook/internal/core-server', () => ({
+vi.mock('storybook/internal/server', () => ({
   buildDevStandalone: vi.fn(),
   buildStaticStandalone: vi.fn(),
   withTelemetry: (name: string, options: any, fn: any) => fn(),
 }));
 
-vi.mock('storybook/internal/node-logger', async (importOriginal) => {
-  const original = await importOriginal<typeof import('storybook/internal/node-logger')>();
+vi.mock('@storybook/core/internal/node-logger', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@storybook/core/internal/node-logger')>();
   return {
     ...original,
     prompt: {
@@ -24,7 +24,7 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
   };
 });
 
-vi.mock('storybook/internal/common', async (importOriginal) => ({
+vi.mock('@storybook/core/internal/common', async (importOriginal) => ({
   ...(await importOriginal()),
   JsPackageManagerFactory: {
     getPackageManager: vi.fn(),

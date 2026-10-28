@@ -1,4 +1,4 @@
-import type { DocgenError } from 'storybook/internal/types';
+import type { DocgenError } from '@storybook/core/internal/types';
 
 import { mkdirSync, statSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

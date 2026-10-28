@@ -1,5 +1,3 @@
-import type { AddonTypes, StoryContext } from 'storybook/internal/csf';
-import { combineTags } from 'storybook/internal/csf';
 import type {
   Args,
   ComponentAnnotations,
@@ -10,7 +8,7 @@ import type {
   Renderer,
   StoryAnnotations,
   TestFunction,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 import type { OmitIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
@@ -22,13 +20,21 @@ import {
   normalizeProjectAnnotations,
 } from '../preview-api/index.ts';
 import { mountDestructured } from '../preview-api/modules/preview-web/render/mount-utils.ts';
-import { Tag } from '../shared/constants/tags.ts';
-import { getCoreAnnotations, markAsComposedWithCoreAnnotations } from './core-annotations.ts';
+import {
+  type CoreTypes,
+  getCoreAnnotations,
+  markAsComposedWithCoreAnnotations,
+} from './core-annotations.ts';
+import { combineTags } from './csf-utils.ts';
+import type { AddonTypes, StoryContext } from './story.ts';
+import { Tag } from '../constants/tags.ts';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';
   input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddonEntry[] };
   composed: NormalizedProjectAnnotations<TRenderer>;
+  /** Compose host annotations before this preview's addons and refresh the cached result. */
+  composeWith(annotations: PreviewAddonEntry[]): NormalizedProjectAnnotations<TRenderer>;
 
   meta<TArgs = Args, TMetaArgKeys extends PropertyKey = never>(
     input: Omit<
@@ -46,34 +52,48 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
  */
 export type PreviewAddonEntry = PreviewAddon<never> | Record<string, unknown>;
 
-export type InferTypes<T extends PreviewAddonEntry[]> = Extract<
-  T[number],
-  PreviewAddon<never>
->[] extends PreviewAddon<infer C>[]
-  ? C & { csf4: true }
-  : never;
+export type InferTypes<T extends PreviewAddonEntry[]> = [
+  Extract<T[number], PreviewAddon<never>>,
+] extends [never]
+  ? { csf4: true }
+  : Extract<T[number], PreviewAddon<never>>[] extends PreviewAddon<infer C>[]
+    ? C & { csf4: true }
+    : never;
 
 export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddonEntry[]>(
   input: ProjectAnnotations<TRenderer> & { addons?: Addons }
 ): Preview<TRenderer & InferTypes<Addons>> {
   type TPreviewRenderer = TRenderer & InferTypes<Addons>;
-  let composed: NormalizedProjectAnnotations<TPreviewRenderer>;
+  let annotations: PreviewAddonEntry[] = [];
+  let composed: NormalizedProjectAnnotations<TPreviewRenderer> | undefined;
   const preview = {
     _tag: 'Preview',
     input: input,
-    get composed() {
+    get composed(): NormalizedProjectAnnotations<TPreviewRenderer> {
       if (composed) {
         return composed;
       }
       const { addons, ...rest } = input;
-      // The composed result already includes the core annotations. Mark it so that downstream
-      // consumers (StoryStore / portable setProjectAnnotations) don't prepend them a second time.
+      const seen = new Set<unknown>();
+      const uniqueAnnotations = [...getCoreAnnotations(), ...annotations, ...(addons ?? [])].filter(
+        (entry) => {
+          const identity = 'default' in entry ? (entry.default ?? entry) : entry;
+          if (seen.has(identity)) {
+            return false;
+          }
+          seen.add(identity);
+          return true;
+        }
+      );
       composed = markAsComposedWithCoreAnnotations(
-        normalizeProjectAnnotations<TPreviewRenderer>(
-          composeConfigs([...getCoreAnnotations(), ...(addons ?? []), rest])
-        )
+        normalizeProjectAnnotations<TPreviewRenderer>(composeConfigs([...uniqueAnnotations, rest]))
       );
       return composed;
+    },
+    composeWith(entries: PreviewAddonEntry[]): NormalizedProjectAnnotations<TPreviewRenderer> {
+      annotations = entries;
+      composed = undefined;
+      return this.composed;
     },
     type() {
       return this;
@@ -85,7 +105,19 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
       );
     },
   } as Preview<TPreviewRenderer>;
-  globalThis.globalProjectAnnotations = preview.composed;
+  Object.defineProperty(globalThis, 'globalProjectAnnotations', {
+    configurable: true,
+    enumerable: true,
+    get: () => preview.composed,
+    set(value: NormalizedProjectAnnotations<TPreviewRenderer>) {
+      Object.defineProperty(globalThis, 'globalProjectAnnotations', {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        value,
+      });
+    },
+  });
   return preview;
 }
 
@@ -93,7 +125,7 @@ export interface PreviewAddon<
   in TExtraContext extends AddonTypes = AddonTypes,
 > extends ProjectAnnotations<Renderer> {}
 
-export function definePreviewAddon<TExtraContext extends AddonTypes = AddonTypes>(
+export function definePreviewAddon<TExtraContext extends AddonTypes = {}>(
   preview: ProjectAnnotations<Renderer>
 ): PreviewAddon<TExtraContext> {
   return preview;
@@ -177,6 +209,20 @@ export type TypedMetaArgKeys<TKeys extends PropertyKey, T> = Exclude<
 export type WithRenderArgs<TComponentArgs, TRenderArgs> = TComponentArgs &
   (string extends keyof TRenderArgs ? unknown : Omit<TRenderArgs, keyof TComponentArgs>);
 
+/** Reject undeclared parameters in stories whose preview reads the main configuration. */
+export type StoryInput<TRenderer extends Renderer, TInput> = TInput &
+  (TRenderer extends { strictParameters: true }
+    ? TInput extends { parameters: infer TParameters }
+      ? {
+          parameters: TParameters &
+            Record<
+              Exclude<keyof TParameters, keyof (CoreTypes['parameters'] & TRenderer['parameters'])>,
+              never
+            >;
+        }
+      : unknown
+    : unknown);
+
 export interface Meta<TRenderer extends Renderer, TMetaArgKeys extends PropertyKey = never> {
   readonly _tag: 'Meta';
   input: Omit<ComponentAnnotations<TRenderer, TRenderer['args']>, 'args'> & {
@@ -198,7 +244,7 @@ export interface Meta<TRenderer extends Renderer, TMetaArgKeys extends PropertyK
       StoryArgs<TRenderer['args'], TMetaArgKeys>
     >,
   >(
-    input?: TInput
+    input?: StoryInput<TRenderer, TInput>
   ): Story<TRenderer, TInput>;
 
   type<T>(): Meta<TRenderer & T, TypedMetaArgKeys<TMetaArgKeys, T>>;

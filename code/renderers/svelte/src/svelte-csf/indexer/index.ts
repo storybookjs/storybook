@@ -1,4 +1,4 @@
-import type { IndexInput, Indexer } from 'storybook/internal/types';
+import type { IndexInput, Indexer } from '@storybook/core/internal/types';
 
 import { parseForIndexer } from './parser.ts';
 import { IndexerParseError } from '../utils/error/parser/extract/svelte.ts';

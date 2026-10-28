@@ -14,7 +14,7 @@ import {
  * `storybookAngularVitest()` must live in the SAME nested `plugins` array as the addon's
  * `storybookTest()` call (`test.projects[].plugins` in the config templates, or a workspace entry's
  * `plugins`) — never as a top-level sibling — so that the env var it sets synchronously is in place
- * before `storybookTest`'s inline `presets.apply('viteFinal')` reads it. The generic
+ * before `storybookTest`'s inline `builder:vite:extend` call reads it. The generic
  * `updateConfigFile` merge only matches top-level keys, so this module performs a targeted source
  * edit instead.
  *

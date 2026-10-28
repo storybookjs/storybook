@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { once } from 'storybook/internal/node-logger';
+import { once } from '@storybook/core/internal/node-logger';
 
-import { Tag } from '../../shared/constants/tags.ts';
+import { Tag } from '../../constants/tags.ts';
 import type { DocsIndexEntry, IndexEntry } from '../../types/modules/indexer.ts';
 
 import {
@@ -10,7 +10,7 @@ import {
   selectComponentEntriesByComponentId,
 } from './select-component-entry.ts';
 
-vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('@storybook/core/internal/node-logger', { spy: true });
 
 beforeEach(() => {
   vi.clearAllMocks();

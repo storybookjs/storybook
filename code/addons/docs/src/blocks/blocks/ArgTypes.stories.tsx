@@ -1,5 +1,7 @@
 /** Custom docs page: {@link ./ArgTypes.mdx} (attached via `<Meta of={...} />`). */
 import type { StoryContext } from 'storybook/internal/csf';
+import type { StorybookFeatures } from 'storybook/internal/types';
+import { getFeatures } from 'storybook/preview-api';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
@@ -68,10 +70,11 @@ export const OfComponentWithoutAStory: Story = {
   },
   beforeEach: async () => {
     // The block only consults the docgen service behind this feature, which is off by default here.
-    const previousFeatures = globalThis.FEATURES;
-    globalThis.FEATURES = { ...previousFeatures, docgenServer: true };
+    const previousFeatures = getFeatures();
+    const realm = globalThis as { FEATURES?: StorybookFeatures };
+    realm.FEATURES = { ...previousFeatures, docgenServer: true };
     return () => {
-      globalThis.FEATURES = previousFeatures;
+      realm.FEATURES = previousFeatures;
     };
   },
 };

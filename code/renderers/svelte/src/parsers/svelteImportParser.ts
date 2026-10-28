@@ -2,7 +2,7 @@ import {
   ChangeDetectionFailureError,
   type ImportEdge,
   type ImportParser,
-} from 'storybook/internal/core-server';
+} from '@storybook/core/internal/services';
 
 type SvelteCompiler = typeof import('svelte/compiler');
 

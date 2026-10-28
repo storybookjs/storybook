@@ -1,17 +1,16 @@
 // This plugin is a direct port of https://github.com/IanVS/vite-plugin-turbosnap
 import { relative } from 'node:path';
 
-import type { BuilderStats } from 'storybook/internal/types';
+import type { PreviewSources } from '@storybook/core/internal/preview-page';
+import type { BuilderStats } from '@storybook/core/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 import type { Plugin } from 'vite';
 
-import {
-  SB_VIRTUAL_FILES,
-  getOriginalVirtualModuleId,
-  getResolvedVirtualModuleId,
-} from '../virtual-file-names.ts';
+function getOriginalVirtualModuleId(resolvedVirtualModuleId: string): string {
+  return resolvedVirtualModuleId.slice(1);
+}
 
 /*
  * Reason, Module are copied from chromatic types
@@ -29,6 +28,7 @@ interface Module {
 
 type WebpackStatsPluginOptions = {
   workingDir: string;
+  virtualModuleIds: PreviewSources['virtualModuleIds'];
 };
 
 /**
@@ -40,13 +40,13 @@ function stripQueryParams(filePath: string): string {
 }
 
 /** We only care about user code and the node_modules it depends on. Not vite files, or (most) virtual files. */
-function isUserCode(moduleName: string) {
+function isUserCode(moduleName: string, virtualFiles: string[]) {
   if (!moduleName) {
     return false;
   }
 
   // keep Storybook's virtual files because they import the story files, so they are essential to the module graph
-  if (Object.values(SB_VIRTUAL_FILES).includes(getOriginalVirtualModuleId(moduleName))) {
+  if (virtualFiles.includes(getOriginalVirtualModuleId(moduleName))) {
     return true;
   }
 
@@ -59,7 +59,13 @@ function isUserCode(moduleName: string) {
 
 export type WebpackStatsPlugin = Plugin & { storybookGetStats: () => BuilderStats };
 
-export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): WebpackStatsPlugin {
+export function pluginWebpackStats({
+  workingDir,
+  virtualModuleIds: ids,
+}: WebpackStatsPluginOptions): WebpackStatsPlugin {
+  // The project annotations module stays out of the stats, as it always has.
+  const virtualFiles: string[] = [ids.entry, ids.importFn, ids.addonSetup];
+
   /** Convert an absolute path name to a path relative to the vite root, with a starting `./` */
   function normalize(filename: string) {
     // Do not try to resolve virtual files
@@ -74,7 +80,7 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
     // ! to ensure that the stats file doesn't change between the versions
     // ! Turbosnap is also only compatible with the old virtual file names
     // ! the old virtual file names did not start with the obligatory \0 character
-    if (Object.values(SB_VIRTUAL_FILES).includes(getOriginalVirtualModuleId(filename))) {
+    if (virtualFiles.includes(getOriginalVirtualModuleId(filename))) {
       // We have to append a forward slash because otherwise we break turbosnap.
       // As soon as the chromatic-cli supports `virtual:` id's without a starting forward slash,
       // we can remove adding the forward slash here
@@ -111,12 +117,12 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
     // We want this to run after the vite build plugins (https://vitejs.dev/guide/api-plugin.html#plugin-ordering)
     enforce: 'post',
     moduleParsed: function (mod) {
-      if (!isUserCode(mod.id)) {
+      if (!isUserCode(mod.id, virtualFiles)) {
         return;
       }
       mod.importedIds
         .concat(mod.dynamicallyImportedIds)
-        .filter((name) => isUserCode(name))
+        .filter((name) => isUserCode(name, virtualFiles))
         .forEach((depIdUnsafe) => {
           const depId = normalize(depIdUnsafe);
           if (!statsMap.has(depId)) {

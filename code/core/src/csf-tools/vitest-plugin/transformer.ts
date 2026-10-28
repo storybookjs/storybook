@@ -1,8 +1,8 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-import { getStoryTitle } from 'storybook/internal/common';
-import { combineTags } from 'storybook/internal/csf/csf-utils';
-import { logger } from 'storybook/internal/node-logger';
-import type { StoriesEntry, Tag } from 'storybook/internal/types';
+import { getStoryTitle } from '@storybook/core/internal/common';
+import { combineTags } from '@storybook/core/internal/csf/csf-utils';
+import { logger } from '@storybook/core/internal/node-logger';
+import type { StoriesEntry, Tag } from '@storybook/core/internal/types';
 
 import { decode, encode } from '@jridgewell/sourcemap-codec';
 import { dedent } from 'ts-dedent';

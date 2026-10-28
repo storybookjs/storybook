@@ -1,4 +1,4 @@
-import { type CsfEnricher } from 'storybook/internal/types';
+import { type CsfEnricher } from '@storybook/core/internal/types';
 
 import type { CsfFile } from './CsfFile.ts';
 import { type E, type Node, staticKey } from './estree/ast.ts';

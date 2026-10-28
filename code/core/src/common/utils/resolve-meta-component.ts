@@ -1,4 +1,4 @@
-import type { CsfFile } from 'storybook/internal/csf-tools';
+import type { CsfFile } from '@storybook/core/internal/csf-tools';
 
 import { type E, type Node, unwrapExpression } from '../../csf-tools/estree/ast.ts';
 import { parseReferenceModule } from '../../csf-tools/story-shape/reference-context.ts';
@@ -8,7 +8,7 @@ import {
   resolveReferencedValue,
   oneLineTextOf,
 } from '../../csf-tools/story-shape/resolve-members.ts';
-import { jsTsSourceExtensions } from '../../shared/constants/extensions.ts';
+import { jsTsSourceExtensions } from '../../constants/extensions.ts';
 import { createModuleResolver } from './module-resolver.ts';
 
 /** The component a story file documents, as far as static analysis can determine. */

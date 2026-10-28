@@ -1,4 +1,4 @@
-import { storyNameFromExport, toId } from 'storybook/internal/csf';
+import { storyNameFromExport, toId } from '../../../../csf/index.ts';
 import type {
   ArgTypes,
   ArgsStoryFn,
@@ -7,7 +7,7 @@ import type {
   Renderer,
   StoryAnnotationsOrFn,
   StoryId,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 import { normalizeArrays } from './normalizeArrays.ts';
 import { normalizeInputTypes } from './normalizeInputTypes.ts';

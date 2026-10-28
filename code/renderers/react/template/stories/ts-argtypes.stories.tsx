@@ -7,7 +7,7 @@ import type { StoryObj } from '@storybook/react';
 
 import { PureArgsTable as ArgsTable } from '@storybook/addon-docs/blocks';
 
-import { getService, inferControls } from 'storybook/preview-api';
+import { getFeatures, getService, inferControls } from 'storybook/preview-api';
 import { ThemeProvider, convert, themes } from 'storybook/theming';
 
 import { component as TsImportedTypesComponent } from './docgen-components/8143-ts-imported-types/input';
@@ -59,7 +59,7 @@ export default {
   },
   loaders: [
     async ({ componentId, name }: StoryContext) => {
-      if (!globalThis.FEATURES?.docgenServer) {
+      if (!getFeatures().docgenServer) {
         return {};
       }
       const docgen = await getService('core/docgen', { internal: true }).queries.docgen.loaded({

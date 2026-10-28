@@ -1,6 +1,89 @@
 import { describe, expect, it } from 'vitest';
 
-import { escapeGlobPath, getMockRedirectIncludeEntries } from './storybook-optimize-deps-plugin.ts';
+import type { Storybook } from '@storybook/core';
+import type { PreviewSources } from '@storybook/core/internal/preview-page';
+
+import type { UserConfig } from 'vite';
+
+import {
+  escapeGlobPath,
+  getMockRedirectIncludeEntries,
+  storybookOptimizeDepsPlugin,
+} from './storybook-optimize-deps-plugin.ts';
+
+describe('optimizer entries', () => {
+  async function getOptimizeConfig(inputConfig: UserConfig = {}) {
+    const storybook = {
+      configDir: '/project/.storybook',
+      options: {},
+      callHook: async () => ['framework-dep'],
+      getStoryIndexGenerator: async () => ({
+        getIndex: async () => ({
+          v: 5,
+          entries: { a: { importPath: './src/(group)/A.stories.ts' } },
+        }),
+      }),
+    } as unknown as Storybook;
+    const preview = {
+      previewAnnotations: ['/project/renderer.js', '/project/.storybook/preview.ts'],
+      previewConfigPath: undefined,
+      previewRuntimePath: '/storybook/dist/core/preview/runtime.js',
+    } as unknown as PreviewSources;
+    const hook = storybookOptimizeDepsPlugin(storybook, preview).config!;
+    const handler = typeof hook === 'function' ? hook : hook.handler;
+    const config = await handler.call({} as never, inputConfig, { command: 'serve', mode: 'test' });
+    return config && { build: config.build, optimizeDeps: config.optimizeDeps };
+  }
+
+  it('scans stories and preview annotations and includes the preview runtime', async () => {
+    expect(await getOptimizeConfig()).toMatchInlineSnapshot(`
+      {
+        "build": {
+          "outDir": "storybook-static",
+        },
+        "optimizeDeps": {
+          "entries": [
+            "./src/\\(group\\)/A.stories.ts",
+            "/project/renderer.js",
+            "/project/.storybook/preview.ts",
+          ],
+          "include": [
+            "/storybook/dist/core/preview/runtime.js",
+            "framework-dep",
+          ],
+        },
+      }
+    `);
+  });
+
+  it('preserves a configured build output directory and user entries', async () => {
+    expect(
+      await getOptimizeConfig({
+        build: { outDir: 'custom-output' },
+        optimizeDeps: { entries: 'user-entry.ts', include: ['user-dep'] },
+      })
+    ).toMatchInlineSnapshot(`
+      {
+        "build": {
+          "outDir": "custom-output",
+        },
+        "optimizeDeps": {
+          "entries": [
+            "user-entry.ts",
+            "./src/\\(group\\)/A.stories.ts",
+            "/project/renderer.js",
+            "/project/.storybook/preview.ts",
+          ],
+          "include": [
+            "/storybook/dist/core/preview/runtime.js",
+            "framework-dep",
+            "user-dep",
+          ],
+        },
+      }
+    `);
+  });
+});
 
 describe('escapeGlobPath', () => {
   it('should not modify a plain path without special characters', () => {

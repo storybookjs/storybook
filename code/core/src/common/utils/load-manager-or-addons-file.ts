@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 

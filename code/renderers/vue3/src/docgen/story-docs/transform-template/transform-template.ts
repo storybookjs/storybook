@@ -18,7 +18,7 @@ import {
   propertyValue,
   unwrapExpression,
   walk,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 
 import type { ClassifiedArg } from '../classify-args/classify-args.ts';
 import { isFunctionExpression, printValue } from '../../shared/classify-value.ts';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { StoryId, StoryIndexEntry } from 'storybook/internal/types';
+import type { StoryId, StoryIndexEntry } from '@storybook/core/internal/types';
 
 import { storySort } from './storySort.ts';
 

@@ -6,3 +6,5 @@ export const decorators = [withPseudoState];
 export const initialGlobals = {
   [PARAM_KEY]: false,
 };
+
+export default { decorators, initialGlobals };

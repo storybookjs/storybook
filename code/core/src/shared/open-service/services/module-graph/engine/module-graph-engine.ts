@@ -1,10 +1,13 @@
+import '../../../../../services/hooks.ts';
+import { getInstanceContext } from '../../../../instance-context.ts';
+
 import { stat, writeFile } from 'node:fs/promises';
 
 import { join, normalize } from 'pathe';
 
-import { getProjectRoot } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
-import type { Presets } from 'storybook/internal/types';
+import { getProjectRoot } from '@storybook/core/internal/common';
+import { logger } from '@storybook/core/internal/node-logger';
+import type { Presets } from '@storybook/core/internal/types';
 
 import type { StoryIndex } from '../../../../../types/modules/indexer.ts';
 import { ModuleGraphFailureError } from '../errors.ts';
@@ -80,11 +83,28 @@ export class ModuleGraphEngine {
    */
   private patchQueue: Promise<void> = Promise.resolve();
 
+  private readonly subscriptions = new Set<() => void>();
+
+  private closed = false;
+
   constructor(private readonly options: ModuleGraphEngineOptions) {
     this.workingDir = options.workingDir ?? process.cwd();
   }
 
+  async close(): Promise<void> {
+    this.closed = true;
+    this.subscriptions.forEach((unsubscribe) => unsubscribe());
+    this.subscriptions.clear();
+    await this.startSettled;
+    this.subscriptions.forEach((unsubscribe) => unsubscribe());
+    this.subscriptions.clear();
+    await Promise.allSettled([this.refreshSettled, this.patchQueue]);
+  }
+
   start(adapter: ChangeDetectionAdapter): void {
+    if (this.closed) {
+      return;
+    }
     this.adapter = adapter;
 
     this.startSettled = this.startInternal().catch((error) => {
@@ -191,16 +211,22 @@ export class ModuleGraphEngine {
       return;
     }
 
-    adapter.onStartupFailure?.((event) => {
+    const unsubscribeFailure = adapter.onStartupFailure?.((event) => {
       this.options.onUnavailable?.(event.reason, event.error);
     });
+    if (unsubscribeFailure) {
+      this.subscriptions.add(unsubscribeFailure);
+    }
 
     const resolveConfig = await adapter.getResolveConfig();
     const projectRoot = normalize(resolveConfig.projectRoot ?? this.workingDir);
 
-    const pluginParsers = this.options.presets
-      ? await this.options.presets.apply<ImportParser[]>('experimental_importParsers', [])
-      : [];
+    const storybook = getInstanceContext()?.storybook;
+    const pluginParsers = storybook
+      ? await storybook.callHook('core:import-parsers:collect', [])
+      : this.options.presets
+        ? await this.options.presets.apply<ImportParser[]>('experimental_importParsers', [])
+        : [];
     const registry = new ParserRegistry({
       defaultParsers: builtinImportParsers,
       pluginParsers,
@@ -239,6 +265,7 @@ export class ModuleGraphEngine {
       eventBuffer.push({ event, receivedAt: Date.now() });
     });
 
+    this.subscriptions.add(unsubscribeBuffer);
     const { reverseIndex, graph } = await this.dependencyGraphBuilder.build(this.storyFiles);
     this.reverseIndex = reverseIndex;
     void this.dumpDebugSnapshot(reverseIndex, graph, projectRoot, workspaceRoots, cache);
@@ -256,19 +283,21 @@ export class ModuleGraphEngine {
 
     // Drain buffered events into patchQueue, then switch to live handler
     unsubscribeBuffer();
+    this.subscriptions.delete(unsubscribeBuffer);
     for (const { event, receivedAt } of eventBuffer) {
       this.patchQueue = this.patchQueue
         .then(() => this.handleFileChange(event, receivedAt))
         .catch(() => undefined);
     }
 
-    adapter.onFileChange((event) => {
+    const unsubscribe = adapter.onFileChange((event) => {
       const receivedAt = Date.now();
       this.patchQueue = this.patchQueue
         .then(() => this.handleFileChange(event, receivedAt))
         .catch(() => undefined);
     });
 
+    this.subscriptions.add(unsubscribe);
     this.mirrorSnapshot();
   }
 

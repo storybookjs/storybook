@@ -296,7 +296,7 @@ function readCommanderInput(options: string[]): string | undefined {
   return input;
 }
 
-// A copy of parseToolsTokens (code/core/src/cli/tools/tool-tokens.ts) that
+// A copy of parseToolsTokens (code/lib/storybook/src/storybook/cli/tools/tool-tokens.ts) that
 // returns only the tool arguments, or `undefined` where the CLI prints help or
 // rejects the invocation. shell-parse.test.ts runs both on the same tokens.
 function parseToolArguments(

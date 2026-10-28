@@ -41,10 +41,7 @@
       "code": "./src/node/index.ts",
       "default": "./dist/node/index.js"
     },
-    "./package.json": "./package.json",
-    "./preset": "./dist/preset.js",
-    "./server/framework-preset-angular-cli": "./dist/server/framework-preset-angular-cli.js",
-    "./server/framework-preset-angular-ivy": "./dist/server/framework-preset-angular-ivy.js"
+    "./package.json": "./package.json"
   },
   "files": [
     "builders.json",
@@ -53,13 +50,11 @@
     "dist/**/*",
     "template/cli/**/*",
     "README.md",
-    "*.js",
-    "*.mjs",
-    "*.d.ts",
     "!src/**/*"
   ],
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
+    "@storybook/core": "workspace:*",
     "@storybook/global": "^5.0.0",
     "telejson": "8.0.0",
     "ts-dedent": "^2.2.0",

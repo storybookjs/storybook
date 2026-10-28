@@ -1,4 +1,4 @@
-import { registerService } from 'storybook/preview-api';
+import { registerService } from '@storybook/core/preview-api';
 
 import { remoteCommandSyncServiceDef } from './definition.ts';
 

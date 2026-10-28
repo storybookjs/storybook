@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Options, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
+import type {
+  Options,
+  StoryDocsPayload,
+  StoryDocsProviderInput,
+} from '@storybook/core/internal/types';
 
 import { experimental_storyDocsProvider } from './story-docs-provider.ts';
 

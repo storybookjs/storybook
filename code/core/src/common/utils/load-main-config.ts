@@ -1,13 +1,13 @@
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { join, parse, relative, resolve } from 'node:path';
 
-import { logger } from 'storybook/internal/node-logger';
-import { MainFileEvaluationError } from 'storybook/internal/server-errors';
-import type { StorybookConfig } from 'storybook/internal/types';
+import { logger } from '@storybook/core/internal/node-logger';
+import { MainFileEvaluationError } from '@storybook/core/internal/server-errors';
+import type { StorybookConfig } from '@storybook/core/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { importModule } from '../../shared/utils/module.ts';
+import { importModule } from '../../utils/module.ts';
 import { getInterpretedFile } from './interpret-files.ts';
 import { validateConfigurationFiles } from './validate-configuration-files.ts';
 

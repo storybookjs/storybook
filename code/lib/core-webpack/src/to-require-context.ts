@@ -1,6 +1,7 @@
 import { globToRegexp } from 'storybook/internal/common';
 import type { NormalizedStoriesSpecifier } from 'storybook/internal/types';
 
+/** @deprecated Unused by Storybook's builders; use `toImportFn`. */
 export const toRequireContext = (specifier: NormalizedStoriesSpecifier) => {
   const { directory, files } = specifier;
 
@@ -15,6 +16,7 @@ export const toRequireContext = (specifier: NormalizedStoriesSpecifier) => {
   };
 };
 
+/** @deprecated Unused by Storybook's builders; use `toImportFn`. */
 export const toRequireContextString = (specifier: NormalizedStoriesSpecifier) => {
   const { path: p, recursive: r, match: m } = toRequireContext(specifier);
 

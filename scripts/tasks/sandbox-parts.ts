@@ -508,12 +508,15 @@ async function linkPackageStories(
     linkInDir,
     disableDocs,
     skipMocking,
+    linkName = packageDir,
   }: {
     mainConfig: ConfigFile;
     cwd: string;
     linkInDir?: string;
     disableDocs: boolean;
     skipMocking?: boolean;
+    /** Sandbox-facing folder name under `template-stories`, when it differs from `packageDir`. */
+    linkName?: string;
   },
   variant?: string
 ) {
@@ -526,13 +529,13 @@ async function linkPackageStories(
   // The files must be linked in the cwd, in order to ensure that any dependencies they
   // reference are resolved in the cwd. In particular 'react' resolved by MDX files.
   const target = linkInDir
-    ? resolve(linkInDir, variant ? getStoriesFolderWithVariant(variant, packageDir) : packageDir)
-    : resolve(cwd, 'template-stories', packageDir);
+    ? resolve(linkInDir, variant ? getStoriesFolderWithVariant(variant, linkName) : linkName)
+    : resolve(cwd, 'template-stories', linkName);
 
   await ensureSymlinkOrCopy(source, target);
 
   if (!linkInDir) {
-    addStoriesEntry(mainConfig, packageDir, disableDocs, skipMocking);
+    addStoriesEntry(mainConfig, linkName, disableDocs, skipMocking);
   }
 
   // Add `previewAnnotation` entries of the form
@@ -554,7 +557,7 @@ async function linkPackageStories(
           storiesDir = (await pathExists(join(cwd, 'src/stories'))) ? 'src/stories' : 'stories';
         }
         addPreviewAnnotations(mainConfig, [
-          `./${join(storiesDir, variant ? `${packageDir}_${variant}` : packageDir, previewFile)}`,
+          `./${join(storiesDir, variant ? `${linkName}_${variant}` : linkName, previewFile)}`,
         ]);
       }
     })
@@ -705,9 +708,13 @@ export async function addExtraDependencies({
 }
 
 export const addGlobalMocks: Task['run'] = async ({ sandboxDir }) => {
-  await cp(join(CODE_DIRECTORY, 'core', 'template', '__mocks__'), join(sandboxDir, '__mocks__'), {
-    recursive: true,
-  });
+  await cp(
+    join(CODE_DIRECTORY, 'lib', 'storybook', 'template', '__mocks__'),
+    join(sandboxDir, '__mocks__'),
+    {
+      recursive: true,
+    }
+  );
 };
 
 export const addStories: Task['run'] = async (
@@ -820,6 +827,7 @@ export const addStories: Task['run'] = async (
       cwd,
       disableDocs,
       skipMocking,
+      linkName: 'core',
     });
 
     await linkPackageStories(await workspacePath('addon test package', '@storybook/addon-vitest'), {

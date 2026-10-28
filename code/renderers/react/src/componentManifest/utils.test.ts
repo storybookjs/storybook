@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-vi.mock('storybook/internal/common', { spy: true });
-vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('@storybook/core/internal/common', { spy: true });
+vi.mock('@storybook/core/internal/node-logger', { spy: true });
 // Spy-only mock: keep the real `node:fs` shape, then redirect the sync reads used by
 // `cachedReadTextFileSync` to `memfs` so the mtime-aware cache is exercised in-memory.
 vi.mock('node:fs', { spy: true });
 
-import * as common from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import * as common from '@storybook/core/internal/common';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { readFileSync, statSync } from 'node:fs';
 

@@ -20,3 +20,29 @@ export const globalsNameReferenceMap = {
 export const globalPackages = Object.keys(globalsNameReferenceMap) as Array<
   keyof typeof globalsNameReferenceMap
 >;
+
+/** The owning package's specifier of each globalized `storybook/*` key that only re-exports it. */
+export const globalsPackageSpecifiers = {
+  'storybook/test': '@storybook/core/test',
+  'storybook/preview-api': '@storybook/core/preview-api',
+  'storybook/internal/channels': '@storybook/core/internal/channels',
+  'storybook/internal/client-logger': '@storybook/core/internal/client-logger',
+  'storybook/internal/core-events': '@storybook/core/internal/core-events',
+  'storybook/internal/preview-errors': '@storybook/core/internal/preview-errors',
+  'storybook/internal/types': '@storybook/core/internal/types',
+  'storybook/internal/preview-api': '@storybook/core/internal/preview-api',
+} as const satisfies Partial<Record<keyof typeof globalsNameReferenceMap, string>>;
+
+/**
+ * Every specifier a builder swaps for a global: each key above and its owning package's specifier,
+ * so product code importing `@storybook/core/preview-api` gets the runtime's instance too.
+ */
+export const builderGlobalsNameReferenceMap: Record<string, string> = {
+  ...globalsNameReferenceMap,
+  ...Object.fromEntries(
+    Object.entries(globalsPackageSpecifiers).map(([key, packageSpecifier]) => [
+      packageSpecifier,
+      globalsNameReferenceMap[key as keyof typeof globalsPackageSpecifiers],
+    ])
+  ),
+};

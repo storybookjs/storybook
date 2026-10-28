@@ -1,4 +1,4 @@
-import type { ComponentImportRef } from 'storybook/internal/csf-tools';
+import type { ComponentImportRef } from '@storybook/core/internal/csf-tools';
 
 import type ts from 'typescript';
 

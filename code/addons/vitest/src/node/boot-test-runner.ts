@@ -1,20 +1,23 @@
 import { type ChildProcess } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-import type { Channel } from 'storybook/internal/channels';
-import { executeNodeCommand, loadPreviewOrConfigFile } from 'storybook/internal/common';
+import type { Channel } from '@storybook/core/internal/channels';
 import {
-  type StoryIndexGenerator,
+  executeNodeCommand,
+  importMetaResolve,
+  loadPreviewOrConfigFile,
+} from '@storybook/core/internal/common';
+import { type StoryIndexGenerator } from '@storybook/core/internal/story-index';
+import {
   internal_universalStatusStore,
   internal_universalTestProviderStore,
-} from 'storybook/internal/core-server';
-import type { EventInfo, Options, PreviewAnnotation, StoryIndex } from 'storybook/internal/types';
+} from '@storybook/core/internal/services';
+import type { EventInfo, PreviewAnnotation, StoryIndex } from '@storybook/core/internal/types';
 
 import type { BuilderOptions } from '@storybook/builder-vite';
 
 import { normalize } from 'pathe';
 
-import { importMetaResolve } from '../../../../core/src/shared/utils/module.ts';
 import {
   STATUS_STORE_CHANNEL_EVENT_NAME,
   STORE_CHANNEL_EVENT_NAME,
@@ -24,6 +27,7 @@ import {
 import { log } from '../logger.ts';
 import { errorToErrorLike } from '../utils.ts';
 import type { Store } from '../types.ts';
+import type { TestRunnerHost } from './host.ts';
 
 const MAX_START_TIME = 30000;
 
@@ -76,12 +80,12 @@ const forwardUniversalStoreEvent =
 const bootTestRunner = async ({
   channel,
   store,
-  options,
+  storybook,
   configLoader,
 }: {
   channel: Channel;
   store: Store;
-  options: Options;
+  storybook: TestRunnerHost;
   configLoader?: BuilderOptions['configLoader'];
 }) => {
   const universalStoreBridges: UniversalStoreBridge[] = [
@@ -111,7 +115,7 @@ const bootTestRunner = async ({
       // The file watcher lived in the dead child. A child that never got ready is not restarted, so
       // a broken Vitest setup does not boot in a loop.
       if (childWasReady && store.getState().watching) {
-        runTestRunner({ channel, store, options, configLoader }).then(
+        runTestRunner({ channel, store, storybook, configLoader }).then(
           () => store.setState((s) => ({ ...s, fatalError: undefined })),
           () => {}
         );
@@ -134,9 +138,8 @@ const bootTestRunner = async ({
   const crashAlreadyReported = new Error('The test runner process crashed');
 
   const startChildProcess = async () => {
-    const storyIndexGenerator =
-      await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
-    const previewAnnotations = await getPreviewAnnotations(options);
+    const storyIndexGenerator = await storybook.getStoryIndexGenerator();
+    const previewAnnotations = await getPreviewAnnotations(storybook);
     if (bootGeneration !== generation) {
       throw crashAlreadyReported;
     }
@@ -150,7 +153,7 @@ const bootTestRunner = async ({
             TEST: 'true',
             VITEST_CHILD_PROCESS: 'true',
             NODE_ENV: process.env.NODE_ENV ?? 'test',
-            STORYBOOK_CONFIG_DIR: normalize(options.configDir),
+            STORYBOOK_CONFIG_DIR: normalize(storybook.configDir),
             STORYBOOK_CONFIG_LOADER: configLoader,
             STORYBOOK_PREVIEW_ANNOTATIONS: JSON.stringify(previewAnnotations),
           },
@@ -254,14 +257,14 @@ export const runTestRunner = async ({
   store,
   initEvent,
   initArgs,
-  options,
+  storybook,
   configLoader,
 }: {
   channel: Channel;
   store: Store;
   initEvent?: string;
   initArgs?: any[];
-  options: Options;
+  storybook: TestRunnerHost;
   configLoader?: BuilderOptions['configLoader'];
 }) => {
   if (!ready && initEvent) {
@@ -270,7 +273,7 @@ export const runTestRunner = async ({
   if (!child && booting?.generation !== generation) {
     const boot = {
       generation,
-      promise: bootTestRunner({ channel, store, options, configLoader }),
+      promise: bootTestRunner({ channel, store, storybook, configLoader }),
     };
     booting = boot;
     boot.promise
@@ -327,13 +330,9 @@ export const sendStoryIndexToTestRunner = async (storyIndexGenerator: StoryIndex
   }
 };
 
-const getPreviewAnnotations = async (options: Options): Promise<PreviewAnnotation[]> => {
-  const previewAnnotations = await options.presets.apply<PreviewAnnotation[]>(
-    'previewAnnotations',
-    [],
-    options
-  );
-  const previewPath = loadPreviewOrConfigFile({ configDir: options.configDir });
+const getPreviewAnnotations = async (storybook: TestRunnerHost): Promise<PreviewAnnotation[]> => {
+  const previewAnnotations = await storybook.callHook('preview:annotations:collect', []);
+  const previewPath = loadPreviewOrConfigFile({ configDir: storybook.configDir });
   return (previewAnnotations ?? []).concat(previewPath ?? []);
 };
 

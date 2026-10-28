@@ -1,6 +1,6 @@
 import { extname } from 'node:path';
 
-import { supportedExtensions } from 'storybook/internal/common';
+import { supportedExtensions } from '@storybook/core/internal/common';
 
 import resolve from 'resolve';
 

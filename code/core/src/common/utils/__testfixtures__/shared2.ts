@@ -1,4 +1,4 @@
 /** Fixture: a config object owned by a module of its own, spread into another module's config. */
-import { ButtonComponent } from './lib/button';
+import { ButtonComponent } from './lib/button.ts';
 
 export const base = { component: ButtonComponent };

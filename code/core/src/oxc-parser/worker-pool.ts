@@ -3,7 +3,7 @@ import { cpus } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { Worker } from 'node:worker_threads';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { OxcParseError } from './errors.ts';
 import type { ImportEdge } from './types.ts';
@@ -46,8 +46,7 @@ export interface OxcParsePool {
   dispose(): Promise<void>;
 }
 
-// OxcWorkerPool ships bundled into `dist/core-server/index.js`; the worker is emitted as
-// a sibling sub-package at `dist/oxc-parser/worker.js`, one level up from core-server/.
+// The bundled parser entry and worker share an output directory.
 const WORKER_RELATIVE_PATH = '../oxc-parser/worker.js';
 
 const DEFAULT_TASK_TIMEOUT_MS = 30_000;

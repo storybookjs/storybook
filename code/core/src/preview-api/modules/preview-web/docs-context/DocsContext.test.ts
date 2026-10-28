@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { Channel } from 'storybook/internal/channels';
-import type { CSFFile, Renderer } from 'storybook/internal/types';
+import { Channel } from '@storybook/core/internal/channels';
+import type { CSFFile, Renderer } from '@storybook/core/internal/types';
 
 import type { StoryStore } from '../../store/index.ts';
 import { DocsContext } from './DocsContext.ts';

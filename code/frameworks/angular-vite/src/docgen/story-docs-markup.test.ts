@@ -1,4 +1,4 @@
-import { createStoryArgsResolver, loadCsf } from 'storybook/internal/csf-tools';
+import { createStoryArgsResolver, loadCsf } from '@storybook/core/internal/csf-tools';
 
 import { describe, expect, it } from 'vitest';
 

@@ -7,7 +7,7 @@
 
 import * as v from 'valibot';
 
-import { defineService } from 'storybook/open-service';
+import { defineService } from '@storybook/core/open-service';
 
 type LocalCommandState = {
   value: string;

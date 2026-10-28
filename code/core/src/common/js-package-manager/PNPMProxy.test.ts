@@ -3,8 +3,8 @@ import { resolve } from 'pathe';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { logger, prompt } from 'storybook/internal/node-logger';
-import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
+import { logger, prompt } from '@storybook/core/internal/node-logger';
+import { MinimumReleaseAgeHandledError } from '@storybook/core/internal/server-errors';
 
 import * as find from 'empathic/find';
 import { fs as memfs, vol } from 'memfs';
@@ -14,7 +14,7 @@ import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { PNPMProxy } from './PNPMProxy.ts';
 
-vi.mock('storybook/internal/node-logger', () => ({
+vi.mock('@storybook/core/internal/node-logger', () => ({
   prompt: {
     executeTaskWithSpinner: vi.fn(),
     getPreferredStdio: vi.fn(() => 'inherit'),

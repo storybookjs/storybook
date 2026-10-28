@@ -2,8 +2,8 @@ import type {
   ChangeDetectionAdapter,
   FileChangeEvent,
   ModuleResolveConfig,
-} from 'storybook/internal/core-server';
-import { logger } from 'storybook/internal/node-logger';
+} from '@storybook/core/internal/services';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { normalize } from 'pathe';
 import type { ViteDevServer } from 'vite';

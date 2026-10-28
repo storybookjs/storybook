@@ -41,12 +41,12 @@ vi.mock('node:worker_threads', async () => {
 
 vi.mock('node:fs', () => ({ existsSync: vi.fn(() => true) }));
 
-vi.mock('../../../../utils/module.ts', () => ({
+vi.mock('../../../../../utils/module.ts', () => ({
   // Drive letter included so `fileURLToPath()` accepts this URL on Windows too.
   importMetaResolve: vi.fn(() => 'file:///C:/fake/storybook/docgen-worker.js'),
 }));
 
-vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('@storybook/core/internal/node-logger', { spy: true });
 
 const loadModule = async () => import('./docgen-worker-client.ts');
 
@@ -89,7 +89,7 @@ describe('createDocgenWorkerClient', () => {
   });
 
   it('forwards the current log level in the init request', async () => {
-    const { logger } = await import('storybook/internal/node-logger');
+    const { logger } = await import('@storybook/core/internal/node-logger');
     vi.mocked(logger.getLogLevel).mockReturnValueOnce('debug');
 
     const { createDocgenWorkerClient } = await loadModule();

@@ -30,18 +30,27 @@
       "default": "./dist/index.js"
     },
     "./entry-preview": "./dist/entry-preview.js",
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "code": "./src/node.ts",
+      "default": "./dist/node.js"
+    },
     "./package.json": "./package.json",
-    "./preset": "./dist/preset.js"
+    "./preset": {
+      "types": "./dist/node.d.ts",
+      "code": "./src/node.ts",
+      "default": "./dist/node.js"
+    }
   },
   "files": [
     "dist/**/*",
     "template/cli/**/*",
     "README.md",
-    "*.js",
     "*.d.ts",
     "!src/**/*"
   ],
   "dependencies": {
+    "@storybook/core": "workspace:*",
     "@storybook/global": "^5.0.0",
     "ts-dedent": "^2.2.0",
     "yaml": "^2.8.1"
@@ -51,6 +60,11 @@
   },
   "peerDependencies": {
     "storybook": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "storybook": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

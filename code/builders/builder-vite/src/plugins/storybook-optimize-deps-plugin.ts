@@ -1,12 +1,9 @@
-import { loadPreviewOrConfigFile } from 'storybook/internal/common';
-import type { StoryIndexGenerator } from 'storybook/internal/core-server';
-import { extractMockCalls, findMockRedirect } from 'storybook/internal/mocking-utils';
-import type { Options, PreviewAnnotation, StoryIndex } from 'storybook/internal/types';
+import type { Storybook } from '@storybook/core';
+import type { PreviewSources } from '@storybook/core/internal/preview-page';
 
 import { resolve } from 'pathe';
 import { type Plugin } from 'vite';
 
-import { processPreviewAnnotation } from '../utils/process-preview-annotation.ts';
 import { getUniqueImportPaths } from '../utils/unique-import-paths.ts';
 
 /**
@@ -34,7 +31,7 @@ export function getMockRedirectIncludeEntries(
 }
 
 /** A Vite plugin that configures dependency optimization for Storybook's dev server. */
-export function storybookOptimizeDepsPlugin(options: Options): Plugin {
+export function storybookOptimizeDepsPlugin(storybook: Storybook, preview: PreviewSources): Plugin {
   return {
     name: 'storybook:optimize-deps-plugin',
     async config(config, { command }) {
@@ -43,55 +40,48 @@ export function storybookOptimizeDepsPlugin(options: Options): Plugin {
         return;
       }
 
-      const projectRoot = resolve(options.configDir, '..');
+      const { configDir } = storybook;
+      const { previewConfigPath, previewAnnotations } = preview;
 
-      const [extraOptimizeDeps, storyIndexGenerator, previewAnnotations] = await Promise.all([
-        options.presets.apply<string[]>('optimizeViteDeps', []),
-        options.presets.apply<StoryIndexGenerator>('storyIndexGenerator'),
-        options.presets.apply<PreviewAnnotation[]>('previewAnnotations', [], options),
+      // The mocking utils load while the index builds instead of when the builder is imported.
+      const [extraOptimizeDeps, index, mocking] = await Promise.all([
+        storybook.callHook('builder:vite-deps:collect', []),
+        storybook.getStoryIndexGenerator().then((generator) => generator.getIndex()),
+        previewConfigPath ? import('@storybook/core/internal/mocking-utils') : undefined,
       ]);
 
-      const index: StoryIndex = await storyIndexGenerator.getIndex();
-
-      // Include the user's preview file and all addon/framework/renderer preview annotations
-      // as optimizer entries so Vite can discover all transitive CJS dependencies automatically.
-      const previewOrConfigFile = loadPreviewOrConfigFile({ configDir: options.configDir });
-
-      const mockRedirectIncludeEntries = previewOrConfigFile
-        ? getMockRedirectIncludeEntries(
-            extractMockCalls(
-              {
-                previewConfigPath: previewOrConfigFile,
-                coreOptions: { disableTelemetry: true },
-                configDir: options.configDir,
-              },
-              projectRoot,
-              findMockRedirect
+      const mockRedirectIncludeEntries =
+        previewConfigPath && mocking
+          ? getMockRedirectIncludeEntries(
+              mocking.extractMockCalls(
+                { previewConfigPath, coreOptions: { disableTelemetry: true }, configDir },
+                resolve(configDir, '..'),
+                mocking.findMockRedirect
+              )
             )
-          )
-        : [];
-
-      const previewAnnotationEntries = [...previewAnnotations, previewOrConfigFile]
-        .filter((path): path is PreviewAnnotation => path !== undefined)
-        .map((path) => processPreviewAnnotation(path, projectRoot));
+          : [];
 
       return {
+        // Vite's scanner ignores every directory named outDir, including addon dist entries.
+        build: {
+          outDir: config.build?.outDir ?? storybook.options.outputDir ?? 'storybook-static',
+        },
         optimizeDeps: {
-          // Story files + preview annotation files as entry points for the dep optimizer.
-          // Vite will crawl these to discover all transitive CJS dependencies that need
-          // pre-bundling, removing the need for a hard-coded include list.
-          // Paths are escaped so that special glob characters (e.g. parentheses in Next.js route
-          // group directories) are treated as literal characters, not glob syntax.
+          // Story files and preview annotations let Vite discover the CJS dependencies to pre-bundle.
+          // Paths are escaped so glob characters (e.g. Next.js route groups) stay literal.
           entries: [
             ...(typeof config.optimizeDeps?.entries === 'string'
               ? [config.optimizeDeps.entries]
               : (config.optimizeDeps?.entries ?? [])),
             ...mockRedirectIncludeEntries,
             ...getUniqueImportPaths(index).map(escapeGlobPath),
-            ...previewAnnotationEntries.map(escapeGlobPath),
+            ...previewAnnotations.map(escapeGlobPath),
           ],
-          // Extra deps explicitly included by Storybook presets (e.g. framework-specific packages).
-          include: [...extraOptimizeDeps, ...(config.optimizeDeps?.include ?? [])],
+          include: [
+            preview.previewRuntimePath,
+            ...extraOptimizeDeps,
+            ...(config.optimizeDeps?.include ?? []),
+          ],
         },
       };
     },

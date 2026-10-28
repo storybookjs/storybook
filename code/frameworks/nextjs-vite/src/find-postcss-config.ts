@@ -1,8 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 
-import { getProjectRoot } from 'storybook/internal/common';
-import { IncompatiblePostCssConfigError } from 'storybook/internal/server-errors';
+import { getProjectRoot } from '@storybook/core/internal/common';
+import { IncompatiblePostCssConfigError } from '@storybook/core/internal/server-errors';
 
 import config from 'lilconfig';
 import postCssLoadConfig from 'postcss-load-config';

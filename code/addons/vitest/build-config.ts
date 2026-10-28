@@ -36,13 +36,12 @@ const config: BuildEntries = {
     ],
     node: [
       {
-        exportEntries: ['./constants'],
-        entryPoint: './src/constants.ts',
+        exportEntries: ['./node'],
+        entryPoint: './src/node.ts',
       },
       {
-        exportEntries: ['./preset'],
-        entryPoint: './src/preset.ts',
-        dts: false,
+        exportEntries: ['./constants'],
+        entryPoint: './src/constants.ts',
       },
       {
         exportEntries: ['./internal/global-setup'],

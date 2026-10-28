@@ -10,12 +10,12 @@
 import { readFile, stat } from 'node:fs/promises';
 import { join, parse } from 'node:path';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import { getProjectRoot } from '@storybook/core/internal/common';
 import {
   extractComponentJsDocInfo,
   resolveExportedSymbol,
   type ComponentJsDocInfo,
-} from 'storybook/internal/component-meta';
+} from '@storybook/core/internal/component-meta';
 
 import type ts from 'typescript';
 import {

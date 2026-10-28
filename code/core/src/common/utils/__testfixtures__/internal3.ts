@@ -4,6 +4,6 @@
  * module's imports finds no such import at all, and reports a path to a file that never mentions
  * the class.
  */
-import { base } from './shared2';
+import { base } from './shared2.ts';
 
 export const config = { ...base, args: {} };

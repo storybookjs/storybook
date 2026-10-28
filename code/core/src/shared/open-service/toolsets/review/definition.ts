@@ -5,7 +5,11 @@ import {
   describeUnknownStoryIds,
   OpenServiceUnknownStoryIdsError,
 } from '../../../../server-errors.ts';
-import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
+import {
+  defineToolset,
+  type ToolsetBaseCtx,
+  type ToolsetOutcome,
+} from '../../toolset-definition.ts';
 import { getToolName } from '../../toolset-names.ts';
 import type { ReviewService } from '../../services/review/definition.ts';
 
@@ -79,7 +83,7 @@ const reviewCreateOutputSchema = v.object({
 
 export type ReviewCreateOutput = v.InferOutput<typeof reviewCreateOutputSchema>;
 
-function describeCreate(ctx: ToolsetCtx): string {
+function describeCreate(ctx: ToolsetBaseCtx): string {
   const ref = getToolName(ctx);
   return `Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.
 
@@ -106,7 +110,7 @@ Trace the visual cascade up the import graph to page-level surfaces, one collect
  * The service reports which ids missed the index; the actionable part — which tools resolve real
  * ids on this surface — is consumer-specific, so it is composed here rather than in the service.
  */
-function formatUnknownStoryIdsError(unknownIds: string[], ctx: ToolsetCtx): string {
+function formatUnknownStoryIdsError(unknownIds: string[], ctx: ToolsetBaseCtx): string {
   const ref = getToolName(ctx);
   const list = unknownIds.map((id) => `- \`${id}\``).join('\n');
   return `${describeUnknownStoryIds(unknownIds)}\n${list}\n\nThis usually means the IDs were inferred from file paths or naming conventions rather than returned by a tool. Resolve real IDs by calling \`${ref('stories.findByComponent')}\` (for components you've edited or want covered) or \`${ref('docs.list')}\` (to browse the index), then retry \`${ref('review.create')}\` with the verified IDs. Do not invent IDs to satisfy this check.`;

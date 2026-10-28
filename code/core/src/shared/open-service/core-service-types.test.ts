@@ -37,12 +37,16 @@ async function readServiceId(serviceDirectory: string): Promise<string> {
 
 /** Ids of the services whose directory contains the given runtime registrar file (e.g. `server.ts`). */
 async function registeredServiceIds(registrarFile: string): Promise<string[]> {
-  const entries = await readdir(SERVICES_DIR, { withFileTypes: true });
+  const registrarsDir =
+    registrarFile === 'manager.tsx'
+      ? join(SERVICES_DIR, '../../../../../lib/manager/src/shared/open-service/services')
+      : SERVICES_DIR;
+  const entries = await readdir(registrarsDir, { withFileTypes: true });
   const ids = await Promise.all(
     entries
       .filter((entry) => entry.isDirectory())
       .map(async (entry) => {
-        const hasRegistrar = await access(join(SERVICES_DIR, entry.name, registrarFile)).then(
+        const hasRegistrar = await access(join(registrarsDir, entry.name, registrarFile)).then(
           () => true,
           () => false
         );

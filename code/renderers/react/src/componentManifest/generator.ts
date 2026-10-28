@@ -1,9 +1,8 @@
 import {
   getStoryImportPathFromEntry,
   selectComponentEntriesByComponentId,
-} from 'storybook/internal/common';
-import type { IndexEntry } from 'storybook/internal/types';
-import { type PresetPropertyFn, type StorybookConfigRaw } from 'storybook/internal/types';
+} from '@storybook/core/internal/common';
+import type { IndexEntry, Manifests, StorybookConfigRaw } from '@storybook/core/internal/types';
 
 import path from 'pathe';
 
@@ -17,16 +16,21 @@ import { invalidateParser } from './reactDocgenTypescript.ts';
 import { resolveStoryFileComponents } from './resolveComponents.ts';
 import { invalidateCache } from './utils.ts';
 
-export const manifests: PresetPropertyFn<
-  'experimental_manifests',
-  StorybookConfigRaw,
-  { manifestEntries: IndexEntry[]; watch: boolean }
-> = async (existingManifests = {}, options) => {
-  const { manifestEntries, presets, watch } = options;
-  const typescriptOptions =
-    (await presets?.apply<Partial<TypescriptOptions>>('typescript', {})) ?? {};
-  const features = await presets?.apply('features', {});
-
+/** Build the components manifest from resolved TypeScript options and features. */
+export async function buildManifests(
+  existingManifests: Manifests,
+  {
+    manifestEntries,
+    watch,
+    typescriptOptions,
+    features,
+  }: {
+    manifestEntries: IndexEntry[];
+    watch: boolean;
+    typescriptOptions: Partial<TypescriptOptions>;
+    features: StorybookConfigRaw['features'];
+  }
+): Promise<Manifests> {
   if (features?.docgenServer) {
     /**
      * Docgen payloads live in the open service when this flag is on; core reads them via JSON refs
@@ -145,4 +149,4 @@ export const manifests: PresetPropertyFn<
       },
     },
   };
-};
+}

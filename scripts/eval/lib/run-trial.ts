@@ -24,7 +24,7 @@ export interface TrialConfig {
   project: Project;
   /** Agent, model, and effort level. */
   variant: AgentVariant;
-  /** Prompt variant name — registered in `code/core/src/cli/skills/content/setup-prompts/` (e.g. "pattern-copy-play"). */
+  /** Prompt variant name — registered in `code/lib/storybook/src/storybook/cli/skills/content/setup-prompts/` (e.g. "pattern-copy-play"). */
   prompt: string;
   /** Log agent messages to stdout. */
   verbose?: boolean;
@@ -67,7 +67,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
   );
 
   // 4. Load the nudge prompt the agent will receive. The agent itself runs
-  //    `node <repo>/code/core/dist/bin/dispatcher.js skills setup` as a tool call.
+  //    `node <repo>/code/lib/storybook/dist/bin/dispatcher.js skills setup` as a tool call.
   //    This mirrors the real user flow but pins execution to the local
   //    Storybook checkout so the trial exercises in-tree changes rather than
   //    whatever version the benchmark project has installed.
@@ -194,7 +194,7 @@ export async function runTrial(config: TrialConfig, logger?: Logger): Promise<Ru
  * Run the local Storybook dispatcher's `skills setup` command inside the prepared
  * trial workspace and return its stdout — the exact project-aware markdown the
  * agent will receive from the same CLI invocation. Resolves to
- * `code/core/dist/bin/dispatcher.js` from this checkout so it tests in-tree
+ * `code/lib/storybook/dist/bin/dispatcher.js` from this checkout so it tests in-tree
  * changes (not the project's installed Storybook). `EVAL_SETUP_PROMPT` selects
  * the variant; `STORYBOOK_DISABLE_TELEMETRY` keeps the harness's capture
  * invocation out of telemetry.

@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'pathe';
 import { type Output, x } from 'tinyexec';
-import { parseVitestResults } from '../../../code/core/src/core-server/utils/ghost-stories/parse-vitest-report.ts';
+import { parseVitestResults } from '../../../code/core/src/story-index/ghost-stories/parse-vitest-report.ts';
 import type { FileChange } from './grade.ts';
 import { detectPackageManager, resolveInstallRoot } from './package-manager.ts';
 import type { Logger } from './utils.ts';

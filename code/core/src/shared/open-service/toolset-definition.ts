@@ -5,6 +5,8 @@ import type { GetServiceOptions } from './types.ts';
 
 type AnySchema = StandardSchemaV1<unknown, unknown>;
 
+const NEVER_ABORTED: AbortSignal = new AbortController().signal;
+
 export type ToolsetTransport = 'cli' | 'mcp' | 'sdk';
 
 /**
@@ -15,7 +17,8 @@ export type ToolsetGetService = {
   <TInstance = unknown>(serviceId: string, options?: GetServiceOptions): TInstance;
 };
 
-export type ToolsetCtx = {
+/** What descriptions and renderers see: the call context without its per-call signal. */
+export type ToolsetBaseCtx = {
   transport: ToolsetTransport;
   /**
    * Storybook UI base URL, including any deployment subpath. Absent when running from a CLI
@@ -23,6 +26,11 @@ export type ToolsetCtx = {
    */
   origin?: string;
   getService: ToolsetGetService;
+};
+
+export type ToolsetCtx = ToolsetBaseCtx & {
+  /** Aborts when the caller cancels or disconnects. Handlers may ignore it. */
+  signal: AbortSignal;
 };
 
 /**
@@ -41,7 +49,7 @@ export type ToolsetTelemetryReport = { payload: Record<string, unknown> };
  * the CLI, dotted `toolsetId.methodName` in the SDK). Use `getToolName(ctx)` to render a reference
  * rather than hardcoding a spelling.
  */
-export type ToolsetMethodDescription = string | ((context: ToolsetCtx) => string);
+export type ToolsetMethodDescription = string | ((context: ToolsetBaseCtx) => string);
 
 /**
  * The result of one method run: the tag, the structured data, the rendered Markdown, and the usage
@@ -68,14 +76,22 @@ export type ToolsetOutcome<
       readonly ok: true;
       readonly data: TSuccess;
       readonly markdown: string | string[];
+      readonly images?: readonly ToolsetImage[];
       readonly telemetry?: TReport;
     }
   | {
       readonly ok: false;
       readonly data: TFailure;
       readonly markdown: string | string[];
+      readonly images?: readonly ToolsetImage[];
       readonly telemetry?: TReport;
     };
+
+/**
+ * An image file a method produced. Adapters that can carry images (MCP) attach its bytes; the
+ * others rely on `markdown` naming the path.
+ */
+export type ToolsetImage = { readonly path: string; readonly mimeType: 'image/png' };
 
 // `any` permits heterogeneous outcome maps. Each individual method remains typed by `defineToolset`.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -212,7 +228,7 @@ export function defineToolset<
 /** Resolves a method description for one transport. */
 export function resolveToolsetDescription(
   description: ToolsetMethodDescription,
-  context: ToolsetCtx
+  context: ToolsetBaseCtx
 ): string {
   return typeof description === 'function' ? description(context) : description;
 }
@@ -241,9 +257,12 @@ export async function invokeToolsetMethod(
   toolset: AnyToolsetDefinition,
   methodName: string,
   input: unknown,
-  context: ToolsetCtx
+  context: ToolsetBaseCtx & { signal?: AbortSignal }
 ): Promise<InvokedToolsetOutcome> {
-  const { telemetry, ...outcome } = await toolset.methods[methodName].handler(input, context);
+  const { telemetry, ...outcome } = await toolset.methods[methodName].handler(input, {
+    ...context,
+    signal: context.signal ?? NEVER_ABORTED,
+  });
   if (!telemetry) {
     return outcome;
   }

@@ -1,19 +1,22 @@
+import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Channel } from 'storybook/internal/channels';
-import { internal_UniversalStore } from 'storybook/internal/core-server';
-import type { Options } from 'storybook/internal/types';
+import { Channel } from '@storybook/core/internal/channels';
+import { runWithStorybook } from '@storybook/core';
+import { internal_UniversalStore } from '@storybook/core/internal/services';
+import { createStorybook } from 'storybook/internal/instance';
 
 import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from '../constants.ts';
 import { runTestRunner } from './boot-test-runner.ts';
+import type { TestRunnerHost } from './host.ts';
 
 const testProviderStore = vi.hoisted(() => ({
   setState: vi.fn(),
   onClearAll: vi.fn(),
 }));
 
-vi.mock('storybook/internal/core-server', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('storybook/internal/core-server')>();
+vi.mock('@storybook/core/internal/services', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@storybook/core/internal/services')>();
   return {
     ...actual,
     internal_UniversalStore: {
@@ -25,8 +28,8 @@ vi.mock('storybook/internal/core-server', async (importOriginal) => {
   };
 });
 
-vi.mock('storybook/internal/common', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('storybook/internal/common')>();
+vi.mock('@storybook/core/internal/common', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@storybook/core/internal/common')>();
   return {
     ...actual,
     createFileSystemCache: vi.fn(() => ({
@@ -44,20 +47,16 @@ vi.mock('../logger.ts', () => ({
   log: vi.fn(),
 }));
 
-function makeOptions({ builder = '@storybook/builder-vite' }: { builder?: string } = {}): Options {
+function makeStorybook({
+  builder = '@storybook/builder-vite',
+}: { builder?: string } = {}): TestRunnerHost {
   return {
     configDir: '.storybook',
-    presets: {
-      apply: vi.fn(async (key: string, fallback?: unknown) => {
-        switch (key) {
-          case 'core':
-            return { builder };
-          default:
-            return fallback;
-        }
-      }),
-    },
-  } as unknown as Options;
+    callHook: vi.fn(async (name: string, value?: unknown) =>
+      name === 'core:config:extend' ? { builder } : value
+    ),
+    getStoryIndexGenerator: vi.fn(),
+  } as unknown as TestRunnerHost;
 }
 
 /** The responder memoizes its store at module level, so each test needs a fresh module. */
@@ -87,7 +86,7 @@ describe('wireTestRunResponder', () => {
     const responses = vi.fn();
     channel.on(TRIGGER_TEST_RUN_RESPONSE, responses);
 
-    await wireTestRunResponder({ channel, options: makeOptions() });
+    await wireTestRunResponder({ channel, storybook: makeStorybook() });
     emitRequest(channel, 'req-1');
 
     // The lazy setup finishes before TRIGGER_RUN boots the child.
@@ -113,16 +112,16 @@ describe('wireTestRunResponder', () => {
   it('creates the runner machinery lazily, once, shared with the eager dev-server path', async () => {
     const { wireTestRunResponder, ensureTestRunnerStore } = await loadResponder();
     const channel = new Channel({});
-    const options = makeOptions();
+    const host = makeStorybook();
 
-    await wireTestRunResponder({ channel, options });
+    await wireTestRunResponder({ channel, storybook: host });
     expect(internal_UniversalStore.create).not.toHaveBeenCalled();
 
     emitRequest(channel, 'req-1');
     await vi.waitFor(() => expect(internal_UniversalStore.create).toHaveBeenCalledOnce());
 
     // The dev server's eager path reuses the memoized store...
-    const store = await ensureTestRunnerStore({ channel, options });
+    const store = await ensureTestRunnerStore({ channel, storybook: host });
     store.send({ type: 'TEST_RUN_COMPLETED', payload: {} as never });
     await vi.waitFor(() =>
       expect(channel.last(TRIGGER_TEST_RUN_RESPONSE)).toEqual([
@@ -148,7 +147,7 @@ describe('wireTestRunResponder', () => {
     const responses = vi.fn();
     channel.on(TRIGGER_TEST_RUN_RESPONSE, responses);
 
-    await wireTestRunResponder({ channel, options: makeOptions() });
+    await wireTestRunResponder({ channel, storybook: makeStorybook() });
     emitRequest(channel, 'req-1');
     await vi.waitFor(() => expect(runTestRunner).toHaveBeenCalledOnce());
 
@@ -177,26 +176,57 @@ describe('wireTestRunResponder', () => {
 
   it('wires nothing without a channel', async () => {
     const { wireTestRunResponder } = await loadResponder();
-    const options = makeOptions();
+    const host = makeStorybook();
 
-    await wireTestRunResponder({ channel: undefined, options });
+    await wireTestRunResponder({ channel: undefined, storybook: host });
 
-    expect(options.presets.apply).not.toHaveBeenCalled();
+    expect(host.callHook).not.toHaveBeenCalled();
   });
 
   it('wires nothing on an attached tools host, so the instance remains the only leader', async () => {
-    vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', 'true');
     const { wireTestRunResponder } = await loadResponder();
     const channel = new Channel({});
     const responses = vi.fn();
     channel.on(TRIGGER_TEST_RUN_RESPONSE, responses);
 
-    await wireTestRunResponder({ channel, options: makeOptions() });
-    emitRequest(channel, 'req-1');
+    const storybook = await createStorybook({
+      configDir: fileURLToPath(new URL('./__fixtures__/first', import.meta.url)),
+      mode: 'headless',
+      main: { stories: [] },
+      attach: { transport: { send() {}, setHandler() {} } },
+    });
+    try {
+      await runWithStorybook(storybook, () =>
+        wireTestRunResponder({ channel, storybook: makeStorybook() })
+      );
+      emitRequest(channel, 'req-1');
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(responses).not.toHaveBeenCalled();
-    expect(internal_UniversalStore.create).not.toHaveBeenCalled();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(responses).not.toHaveBeenCalled();
+      expect(internal_UniversalStore.create).not.toHaveBeenCalled();
+    } finally {
+      await storybook.close();
+    }
+  });
+
+  it('creates a follower store in an attached instance context', async () => {
+    const { ensureTestRunnerStore } = await loadResponder();
+    const storybook = await createStorybook({
+      configDir: fileURLToPath(new URL('./__fixtures__/first', import.meta.url)),
+      mode: 'headless',
+      main: { stories: [] },
+      attach: { transport: { send() {}, setHandler() {} } },
+    });
+    try {
+      await runWithStorybook(storybook, () =>
+        ensureTestRunnerStore({ channel: storybook.channel, storybook: makeStorybook() })
+      );
+      expect(internal_UniversalStore.create).toHaveBeenCalledWith(
+        expect.objectContaining({ leader: false })
+      );
+    } finally {
+      await storybook.close();
+    }
   });
 
   it('wires nothing inside the vitest child process', async () => {
@@ -206,7 +236,7 @@ describe('wireTestRunResponder', () => {
     const responses = vi.fn();
     channel.on(TRIGGER_TEST_RUN_RESPONSE, responses);
 
-    await wireTestRunResponder({ channel, options: makeOptions() });
+    await wireTestRunResponder({ channel, storybook: makeStorybook() });
     emitRequest(channel, 'req-1');
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -222,7 +252,7 @@ describe('wireTestRunResponder', () => {
 
     await wireTestRunResponder({
       channel,
-      options: makeOptions({ builder: '@storybook/builder-webpack5' }),
+      storybook: makeStorybook({ builder: '@storybook/builder-webpack5' }),
     });
     emitRequest(channel, 'req-1');
 
@@ -244,14 +274,14 @@ describe('wireTestRunResponder', () => {
     const channel = new Channel({});
     const responses = vi.fn();
     channel.on(TRIGGER_TEST_RUN_RESPONSE, responses);
-    const options = makeOptions();
-    const { createFileSystemCache } = await import('storybook/internal/common');
+    const host = makeStorybook();
+    const { createFileSystemCache } = await import('@storybook/core/internal/common');
     vi.mocked(createFileSystemCache).mockReturnValueOnce({
       get: vi.fn().mockRejectedValue(new Error('cache read failed')),
       set: vi.fn(),
     } as unknown as ReturnType<typeof createFileSystemCache>);
 
-    await wireTestRunResponder({ channel, options });
+    await wireTestRunResponder({ channel, storybook: host });
     emitRequest(channel, 'req-1');
 
     // Without a response the requester would wait out its full timeout.

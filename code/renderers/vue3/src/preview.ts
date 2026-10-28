@@ -21,8 +21,8 @@ import type {
 
 import type { Simplify } from 'type-fest';
 
-import * as vueAnnotations from './entry-preview.ts';
-import * as vueDocsAnnotations from './entry-preview-docs.ts';
+import vueAnnotations from './entry-preview.ts';
+import vueDocsAnnotations from './entry-preview-docs.ts';
 import { type Args, type ComponentPropsAndSlots } from './public-types.ts';
 import { type VueTypes } from './types.ts';
 

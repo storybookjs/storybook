@@ -1,4 +1,4 @@
-import { logger } from 'storybook/internal/client-logger';
+import { logger } from '@storybook/core/internal/client-logger';
 
 /**
  * When multiple iframes match the event origin (e.g. composed refs from the same origin),

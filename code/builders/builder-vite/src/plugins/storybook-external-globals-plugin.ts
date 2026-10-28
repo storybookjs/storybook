@@ -2,10 +2,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
-import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
-import type { Options } from 'storybook/internal/types';
-
-import { previewRuntimePath } from '../utils/preview-runtime-path.ts';
+import type { PreviewSources } from '@storybook/core/internal/preview-page';
 
 import * as pkg from 'empathic/package';
 import { init, parse } from 'es-module-lexer';
@@ -45,15 +42,8 @@ const replacementMap = new Map([
  * needs.
  */
 
-export async function storybookExternalGlobalsPlugin(options: Options): Promise<Plugin> {
-  const build = await options.presets.apply('build');
-
-  const externals: typeof globalsNameReferenceMap & Record<string, string> =
-    globalsNameReferenceMap;
-
-  if (build?.test?.disableBlocks) {
-    externals['@storybook/addon-docs/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
-  }
+export async function storybookExternalGlobalsPlugin(preview: PreviewSources): Promise<Plugin> {
+  const { externals, previewRuntimePath } = preview;
 
   await init;
   const { mergeAlias } = await import('vite');
@@ -116,7 +106,9 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
 
         const rewritten = src.toString();
         return {
-          code: didRewrite ? ensurePreviewRuntimePrecedesGlobals(rewritten, id) : rewritten,
+          code: didRewrite
+            ? ensurePreviewRuntimePrecedesGlobals(rewritten, id, previewRuntimePath)
+            : rewritten,
           map: null,
         };
       },
@@ -124,10 +116,14 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
   } satisfies Plugin;
 }
 
-const bundledPreviewRuntimePattern = /[/\\]dist[/\\]preview[/\\]/;
+const bundledPreviewRuntimePattern = /[/\\]dist[/\\]core[/\\]preview[/\\]/;
 
 // Call setup() so init still runs when side-effect imports of this package are dropped.
-export function ensurePreviewRuntimePrecedesGlobals(code: string, id: string) {
+export function ensurePreviewRuntimePrecedesGlobals(
+  code: string,
+  id: string,
+  previewRuntimePath: string
+): string {
   if (bundledPreviewRuntimePattern.test(id.split('?')[0])) {
     return code;
   }
@@ -149,6 +145,47 @@ function getEmptyImportReplacement(importStatement: string, globalReference: str
   return `void ${globalReference}${statementTerminator}`;
 }
 
+/**
+ * Rewrites a named or namespace re-export of a global; `export *` has no global equivalent and is
+ * left as is.
+ *
+ * @example
+ *
+ * ```js
+ * export { Tag, getFeatures as features } from 'storybook/preview-api';
+ * // becomes
+ * const { Tag: __sb_reexport_Tag, getFeatures: __sb_reexport_features } = __STORYBOOK_MODULE_PREVIEW_API__; export { __sb_reexport_Tag as Tag, __sb_reexport_features as features };
+ * ```
+ */
+function getReExportReplacement(
+  importStatement: string,
+  globalReference: string
+): string | undefined {
+  if (/^export\s*\*\s*from\b/.test(importStatement)) {
+    return importStatement;
+  }
+  const match = importStatement.match(/^export\s*(?:\*\s*as\s+([\w$]+)|\{([^}]*)\})\s*from\b/);
+  if (!match) {
+    return undefined;
+  }
+  const statementTerminator = importStatement.trimEnd().endsWith(';') ? ';' : '';
+  const [, namespace, specifiers] = match;
+  if (namespace) {
+    return `const __sb_reexport_${namespace} = ${globalReference}; export { __sb_reexport_${namespace} as ${namespace} }${statementTerminator}`;
+  }
+  const names = specifiers
+    .split(',')
+    .map((specifier) => specifier.trim())
+    .filter(Boolean)
+    .map((specifier) => {
+      const [imported, exported = imported] = specifier.split(/\s+as\s+/);
+      return { imported, exported };
+    });
+  const locals = names.map(({ imported, exported }) => `${imported}: __sb_reexport_${exported}`);
+  const exports = names.map(({ exported }) => `__sb_reexport_${exported} as ${exported}`);
+  return `const { ${locals.join(', ')} } = ${globalReference}; export { ${exports.join(', ')} }${statementTerminator}`;
+}
+
 function getSearchRegExp(packageName: string) {
   const staticKeys = [...replacementMap.keys()].map(escapeKeys);
   const packageNameLiteral = `.${packageName}.`;
@@ -166,6 +203,12 @@ export function rewriteImport(
 
   if (emptyImportReplacement) {
     return emptyImportReplacement;
+  }
+
+  const reExportReplacement = getReExportReplacement(importStatement, globs[packageName]);
+
+  if (reExportReplacement) {
+    return reExportReplacement;
   }
 
   const search = getSearchRegExp(packageName);

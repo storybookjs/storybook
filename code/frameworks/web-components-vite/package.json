@@ -38,19 +38,17 @@
       "code": "./src/node/index.ts",
       "default": "./dist/node/index.js"
     },
-    "./package.json": "./package.json",
-    "./preset": "./dist/preset.js"
+    "./package.json": "./package.json"
   },
   "files": [
     "dist/**/*",
     "template/**/*",
     "README.md",
-    "*.js",
-    "*.d.ts",
     "!src/**/*"
   ],
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
+    "@storybook/core": "workspace:*",
     "@storybook/web-components": "workspace:*"
   },
   "devDependencies": {
@@ -60,6 +58,11 @@
   "peerDependencies": {
     "storybook": "workspace:^",
     "vite": "^6.3.0 || ^7.0.0 || ^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "storybook": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

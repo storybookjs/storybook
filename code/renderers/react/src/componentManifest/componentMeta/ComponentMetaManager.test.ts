@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-import { once } from 'storybook/internal/node-logger';
+import { once } from '@storybook/core/internal/node-logger';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 

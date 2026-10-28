@@ -1,4 +1,4 @@
-import type { DocgenError } from 'storybook/internal/types';
+import type { DocgenError } from '@storybook/core/internal/types';
 
 import { describe, expect, it } from 'vitest';
 

@@ -1,4 +1,4 @@
-import type { globalSettings } from '../../cli/globalSettings.ts';
+import type { globalSettings } from '../../common/globalSettings.ts';
 import type { UniversalStore } from '../universal-store/index.ts';
 import type { StoreOptions } from '../universal-store/types.ts';
 import { initialState } from './checklistData.state.ts';

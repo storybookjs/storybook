@@ -1,27 +1,31 @@
-import type { Options } from 'storybook/internal/types';
+import './hooks.ts';
 
-import type { Server } from 'http';
-import type { InlineConfig, ServerOptions } from 'vite';
+import type { Storybook } from '@storybook/core';
+
+import type { Server } from 'node:http';
+import type { InlineConfig, ServerOptions, ViteDevServer } from 'vite';
 
 import { createViteLogger } from './logger.ts';
-import { commonConfig } from './vite-config.ts';
+import { commonConfig, getViteHookContext, type ViteConfigInput } from './vite-config.ts';
 
-export async function createViteServer(options: Options, devServer: Server) {
-  const { presets } = options;
-
-  const commonCfg = await commonConfig(options, 'development');
-
-  const { allowedHosts } = await presets.apply('core', {});
+export async function createViteServer(
+  storybook: Storybook,
+  input: ViteConfigInput & { server?: Server }
+): Promise<ViteDevServer> {
+  const { port, host } = storybook.options;
+  const [commonCfg, core] = await Promise.all([
+    commonConfig(storybook, input, 'development'),
+    storybook.callHook('core:config:extend', undefined),
+  ]);
+  const allowedHosts = core?.allowedHosts;
 
   const config: InlineConfig & { server: ServerOptions } = {
     ...commonCfg,
     server: {
       allowedHosts,
       middlewareMode: true,
-      hmr: {
-        port: options.port,
-        server: devServer,
-      },
+      // Without a host server, Vite would otherwise open its own WebSocket port for HMR.
+      ...(input.server ? { hmr: { port, server: input.server } } : { hmr: false, ws: false }),
       fs: {
         strict: true,
       },
@@ -31,13 +35,17 @@ export async function createViteServer(options: Options, devServer: Server) {
 
   // '0.0.0.0' binds to all interfaces, which is useful for Docker and other containerized environments
   if (
-    options.host === '0.0.0.0' &&
+    host === '0.0.0.0' &&
     (!allowedHosts || (Array.isArray(allowedHosts) && allowedHosts.length === 0))
   ) {
     config.server.allowedHosts = true;
   }
 
-  const finalConfig = await presets.apply('viteFinal', config, options);
+  const finalConfig = await storybook.callHook(
+    'builder:vite:extend',
+    config,
+    getViteHookContext(storybook)
+  );
 
   const { createServer } = await import('vite');
 

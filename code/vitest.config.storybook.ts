@@ -46,6 +46,8 @@ export default defineProject({
       '**/*.bench.ts', // benchmark files are Node-only; never run in the browser project
       '**/Zoom.stories.tsx', // expected to fail in Vitest because of fetching /iframe.html to cause ECONNREFUSED
       './addons/docs/src/blocks/**', // won't work because of https://github.com/storybookjs/storybook/issues/29783
+      // Moved from addons/docs/src/blocks; its play function still relies on the behaviour above.
+      './lib/ui/src/components/components/ArgsTable/controls/options/SelectOptions.stories.tsx',
     ],
     // TODO: bring this back once portable stories support storybook/preview-api hooks
     testNamePattern: /^(?!.*(UseState)).*$/,

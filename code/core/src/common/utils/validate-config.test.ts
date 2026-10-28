@@ -36,6 +36,17 @@ describe('validateFrameworkName', () => {
     expect(() => validateFrameworkName('@some-community/framework')).not.toThrow();
   });
 
+  it('should not throw if a community framework only has a native node entry', () => {
+    vi.mocked(resolveModulePath).mockImplementation((id) => {
+      if (String(id).endsWith('/preset')) {
+        throw new Error('cannot resolve');
+      }
+      return '/node_modules/native-framework/dist/node.js';
+    });
+
+    expect(() => validateFrameworkName('native-framework')).not.toThrow();
+  });
+
   it('should throw if framework is unknown and cannot be resolved', () => {
     vi.mocked(resolveModulePath).mockImplementation(() => {
       throw new Error('cannot resolve');

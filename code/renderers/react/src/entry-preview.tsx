@@ -2,17 +2,18 @@ import * as React from 'react';
 
 import { Tag } from 'storybook/internal/preview-api';
 
-import { global } from '@storybook/global';
-
+import { getFeatures } from 'storybook/preview-api';
 import { configure } from 'storybook/test';
 
 import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat.ts';
 import type { Decorator } from './public-types.ts';
 
-export { render } from './render.tsx';
-export { renderToCanvas } from './renderToCanvas.tsx';
-export { mount } from './mount.ts';
-export { applyDecorators } from './applyDecorators.ts';
+import { render } from './render.tsx';
+import { renderToCanvas } from './renderToCanvas.tsx';
+import { mount } from './mount.ts';
+import { applyDecorators } from './applyDecorators.ts';
+
+export { render, renderToCanvas, mount, applyDecorators };
 
 export const decorators: Decorator[] = [
   (story, context) => {
@@ -33,7 +34,7 @@ export const decorators: Decorator[] = [
   },
   (story, context) => {
     // @ts-expect-error this feature flag only exists in the react frameworks
-    if (context.tags?.includes(Tag.TEST_FN) && !global.FEATURES?.experimentalTestSyntax) {
+    if (context.tags?.includes(Tag.TEST_FN) && !getFeatures().experimentalTestSyntax) {
       throw new Error(
         'To use the experimental test function, you must enable the experimentalTestSyntax feature flag. See https://storybook.js.org/docs/api/main-config/main-config-features#experimentaltestsyntax'
       );
@@ -96,6 +97,16 @@ export const beforeAll = async () => {
     // no-op
     // storybook/test might not be available
   }
+};
+
+export default {
+  render,
+  renderToCanvas,
+  mount,
+  applyDecorators,
+  decorators,
+  parameters,
+  beforeAll,
 };
 
 /** Returns jest's fake-timer API when it's active, so callers can advance fake timers safely. */

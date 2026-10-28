@@ -9,7 +9,7 @@
 export { getToolName, toMcpToolName } from '../../toolset-names.ts';
 export type { ToolsetMethodId } from '../../toolset-names.ts';
 export { resolveToolsetDescription } from '../../toolset-definition.ts';
-export type { ToolsetCtx, ToolsetOutcome } from '../../toolset-definition.ts';
+export type { ToolsetBaseCtx, ToolsetCtx, ToolsetOutcome } from '../../toolset-definition.ts';
 export { DOCS_TOOLSET_INSTRUCTIONS } from './instructions.ts';
 export { emptyManifests } from './access.ts';
 export type { DocsAccess, EntryName, ResolvedDocsEntry } from './access.ts';
@@ -40,6 +40,8 @@ export type { CompositionDocsSourcesOptions, DocsSource } from './multi-source.t
 export {
   formatRequiresOwnMcpNotice,
   getSourceMcpEndpoint,
+  isManifestGetError,
+  isRequiresOwnMcpError,
   ManifestGetError,
   RequiresOwnMcpError,
 } from './sources.ts';

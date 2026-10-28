@@ -40,11 +40,6 @@
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
-    "./preset": {
-      "types": "./dist/preset.d.ts",
-      "code": "./src/preset.ts",
-      "default": "./dist/preset.js"
-    },
     "./preview": {
       "types": "./dist/preview.d.ts",
       "code": "./src/preview.tsx",
@@ -76,6 +71,7 @@
   ],
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
+    "@storybook/core": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*"
   },
@@ -103,6 +99,9 @@
       "optional": true
     },
     "@tanstack/start-client-core": {
+      "optional": true
+    },
+    "storybook": {
       "optional": true
     }
   },

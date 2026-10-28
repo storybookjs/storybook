@@ -1,24 +1,6 @@
-import type { Options } from 'storybook/internal/types';
-
 import { frameworkToRenderer } from './framework.ts';
-import { extractFrameworkPackageName, getFrameworkName } from './get-framework-name.ts';
+import { extractFrameworkPackageName } from './get-framework-name.ts';
 import { frameworkPackages } from './get-storybook-info.ts';
-
-/**
- * Render is set as a string on core. It must be set by the framework It falls back to the framework
- * name if not set
- */
-export async function getRendererName(options: Options) {
-  const core = await options.presets.apply('core', {}, options);
-
-  if (!core || !core.renderer) {
-    // At the moment some frameworks (Angular/Ember) do not define a renderer, but themselves
-    // serve the purpose (in particular exporting the symbols needed by entrypoints)
-    return getFrameworkName(options);
-  }
-
-  return core.renderer;
-}
 
 /**
  * Extracts the proper renderer name from the given framework name.

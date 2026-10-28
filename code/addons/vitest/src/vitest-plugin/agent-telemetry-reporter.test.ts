@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
 
-vi.mock('storybook/internal/telemetry', () => ({
+vi.mock('@storybook/core/internal/telemetry', () => ({
   telemetry: vi.fn(),
   isExampleStoryId: vi.fn(
     (id: string) =>
@@ -16,7 +16,7 @@ vi.mock('./agent-story-history-cache.ts', () => ({
   mergeAndWriteStoryHistory: vi.fn(async (results) => results),
 }));
 
-const { telemetry } = await import('storybook/internal/telemetry');
+const { telemetry } = await import('@storybook/core/internal/telemetry');
 const { mergeAndWriteStoryHistory } = await import('./agent-story-history-cache.ts');
 
 function createMockTestCase({

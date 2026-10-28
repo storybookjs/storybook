@@ -1,3 +1,4 @@
+import type { FrameworkPlugin } from 'storybook/internal/instance';
 import type { CompatibleString } from 'storybook/internal/types';
 
 import type {
@@ -30,6 +31,7 @@ type FrameworkName = CompatibleString<'@storybook/react-native-web-vite'>;
 /** The interface for Storybook configuration in `main.ts` files. */
 export type StorybookConfig = Omit<StorybookConfigBase, 'framework'> & {
   framework:
+    | FrameworkPlugin
     | FrameworkName
     | {
         name: FrameworkName;

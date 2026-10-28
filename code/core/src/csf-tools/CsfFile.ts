@@ -5,19 +5,19 @@ import {
   storyNameFromExport,
   toId,
   toTestId,
-} from 'storybook/internal/csf/csf-utils';
-import { logger } from 'storybook/internal/node-logger';
+} from '@storybook/core/internal/csf/csf-utils';
+import { logger } from '@storybook/core/internal/node-logger';
 import type {
   ComponentAnnotations,
   IndexInput,
   IndexInputStats,
   IndexedCSFFile,
   StoryAnnotations,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { Tag } from '../shared/constants/tags.ts';
+import { Tag } from '../constants/tags.ts';
 import type { PrintResultType } from './PrintResultType.ts';
 import { type CsfMutationDiagnostic, type CsfObject, type CsfObjectOptions } from './CsfObject.ts';
 import { discoverCsfObjects } from './CsfObjectDiscovery.ts';

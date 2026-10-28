@@ -54,7 +54,7 @@ Record the operator's approval, identity, date, and selected versions with the e
 
 Pin explicit versions (do not leave a live query):
 
-- `code/core/src/shared/constants/environments-support.ts` — `BROWSER_TARGETS` (`chromeN`, `edgeN`, `firefoxN`, `safariN.N`, `iosN.N`; Opera only if kept)
+- `code/core/src/constants/environments-support.ts` — `BROWSER_TARGETS` (`chromeN`, `edgeN`, `firefoxN`, `safariN.N`, `iosN.N`; Opera only if kept)
 - `code/package.json` — `browserslist`
 - `docs/get-started/install.mdx` — public list and older-browser fallback guidance, scoped to the same Storybook versions as `MIGRATION.md`; preserve the preview-only limitations
 - `MIGRATION.md` — next major `From version X.x to Y.0.0` section. Create that section at the top if it does not exist.

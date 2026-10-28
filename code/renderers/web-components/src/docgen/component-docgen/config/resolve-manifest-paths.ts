@@ -1,4 +1,4 @@
-import { findFilesUp } from 'storybook/internal/common';
+import { findFilesUp } from '@storybook/core/internal/common';
 
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';

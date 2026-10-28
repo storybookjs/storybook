@@ -38,11 +38,6 @@ const config: BuildEntries = {
         entryPoint: './src/node/vitest.ts',
       },
       {
-        exportEntries: ['./preset'],
-        entryPoint: './src/preset.ts',
-        dts: false,
-      },
-      {
         exportEntries: ['./builders/start-storybook'],
         entryPoint: './src/builders/start-storybook/index.ts',
         dts: false,

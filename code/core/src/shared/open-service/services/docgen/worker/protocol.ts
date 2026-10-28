@@ -7,7 +7,7 @@
  * `error` (mirroring `ModuleGraphStatus`), rather than an `ok` flag with nullable fields — a
  * response either carries its result or an error, never an ambiguous mix.
  */
-import type { LogLevel } from 'storybook/internal/node-logger';
+import type { LogLevel } from '@storybook/core/internal/node-logger';
 
 import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
 import type { ErrorLike } from '../../module-graph/types.ts';

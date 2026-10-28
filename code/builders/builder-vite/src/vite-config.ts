@@ -1,13 +1,10 @@
 import { existsSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 
-import {
-  getBuilderOptions,
-  getProjectRoot,
-  resolvePathInStorybookCache,
-} from 'storybook/internal/common';
-import { once } from 'storybook/internal/node-logger';
-import type { Options } from 'storybook/internal/types';
+import { getProjectRoot, resolvePathInStorybookCache } from '@storybook/core/internal/common';
+import type { HookContext, Storybook } from '@storybook/core';
+import { once } from '@storybook/core/internal/node-logger';
+import type { PreviewSources } from '@storybook/core/internal/preview-page';
 
 import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
@@ -24,10 +21,21 @@ import {
   storybookEntryPlugin,
   storybookExternalGlobalsPlugin,
 } from './plugins/index.ts';
-import { viteCorePlugins as corePlugins } from './preset.ts';
+import { storybookConfigPlugin } from './plugins/storybook-config-plugin.ts';
+import { storybookOptimizeDepsPlugin } from './plugins/storybook-optimize-deps-plugin.ts';
+import { storybookProjectAnnotationsPlugin } from './plugins/storybook-project-annotations-plugin.ts';
+import { storybookEnvPlugin } from './plugins/storybook-runtime-plugin.ts';
+import { viteInjectMockerRuntime } from './plugins/vite-inject-mocker/plugin.ts';
+import { viteMockPlugin } from './plugins/vite-mock/plugin.ts';
 import type { BuilderOptions } from './types.ts';
 
 export type PluginConfigType = 'build' | 'development';
+
+/** Inputs every Vite config of one builder shares. */
+export interface ViteConfigInput {
+  preview: PreviewSources;
+  options: BuilderOptions | undefined;
+}
 
 const configEnvServe: ConfigEnv = {
   mode: 'development',
@@ -52,6 +60,37 @@ const DEFAULT_VITE_CONFIG_FILES = [
 ];
 
 const warnOnce = once('warn');
+
+/** Create the Vite plugins shared by the builder and the Vitest addon. */
+export async function viteCorePlugins(
+  storybook: Storybook,
+  preview: PreviewSources
+): Promise<PluginOption[]> {
+  const { previewConfigPath } = preview;
+
+  return [
+    storybookProjectAnnotationsPlugin(preview),
+    ...storybookConfigPlugin({ configDir: storybook.configDir }),
+    storybookOptimizeDepsPlugin(storybook, preview),
+    storybookEnvPlugin(preview),
+    ...(previewConfigPath
+      ? [
+          viteInjectMockerRuntime({ previewConfigPath }),
+          viteMockPlugin({
+            previewConfigPath,
+            coreOptions: await storybook.callHook('core:config:extend', undefined),
+            configDir: storybook.configDir,
+          }),
+        ]
+      : []),
+  ];
+}
+
+/** Pass the instance options to `builder:vite:extend` handlers, as `viteFinal` received them. */
+export function getViteHookContext(storybook: Storybook): HookContext {
+  const { docs: _docs, ...options } = storybook.options;
+  return { ...options, channel: storybook.channel };
+}
 
 // loadConfigFromFile returns null without logging when discovery misses.
 function reportUnloadedUserViteConfig(configDir: string, projectRoot: string): void {
@@ -84,11 +123,32 @@ function reportUnloadedUserViteConfig(configDir: string, projectRoot: string): v
   );
 }
 
-async function loadUserViteConfig(options: Options, type: PluginConfigType): Promise<ViteConfig> {
+// `framework.options.builder` wins over factory options, then `main.ts` `core.builder.options`.
+async function resolveBuilderOptions(
+  storybook: Pick<Storybook, 'callHook'>,
+  options: BuilderOptions | undefined
+): Promise<BuilderOptions> {
+  const [framework, core] = await Promise.all([
+    storybook.callHook('core:framework:extend', undefined),
+    storybook.callHook('core:config:extend', undefined),
+  ]);
+  return (
+    (typeof framework === 'object' && framework?.options?.builder) ||
+    options ||
+    (typeof core?.builder === 'object' && core.builder.options) ||
+    {}
+  );
+}
+
+async function loadUserViteConfig(
+  storybook: Pick<Storybook, 'configDir' | 'callHook'>,
+  options: BuilderOptions | undefined,
+  type: PluginConfigType
+): Promise<ViteConfig> {
   const configEnv = type === 'development' ? configEnvServe : configEnvBuild;
   const { loadConfigFromFile } = await import('vite');
-  const { viteConfigPath, configLoader } = await getBuilderOptions<BuilderOptions>(options);
-  const projectRoot = resolve(options.configDir, '..');
+  const { viteConfigPath, configLoader } = await resolveBuilderOptions(storybook, options);
+  const projectRoot = resolve(storybook.configDir, '..');
 
   // Explicit `null` opts out: keep the user's Vite config unloaded and stay quiet.
   if (viteConfigPath === null) {
@@ -106,7 +166,7 @@ async function loadUserViteConfig(options: Options, type: PluginConfigType): Pro
 
   // An explicit `viteConfigPath` is the user's responsibility; Vite errors on it itself.
   if (!loaded && viteConfigPath === undefined) {
-    reportUnloadedUserViteConfig(options.configDir, projectRoot);
+    reportUnloadedUserViteConfig(storybook.configDir, projectRoot);
   }
 
   return loaded?.config ?? {};
@@ -115,72 +175,62 @@ async function loadUserViteConfig(options: Options, type: PluginConfigType): Pro
 // Mirrors Vite's own resolution: `publicDir` is relative to the root Storybook sets in
 // `commonConfig`, and `false` or an empty string disables it.
 export async function resolveVitePublicDir(
-  options: Options,
-  type: PluginConfigType
+  storybook: Pick<Storybook, 'configDir' | 'callHook'>,
+  options: BuilderOptions | undefined
 ): Promise<string | undefined> {
-  const { publicDir } = await loadUserViteConfig(options, type);
+  const { publicDir } = await loadUserViteConfig(storybook, options, 'build');
 
   if (publicDir === false || publicDir === '') {
     return undefined;
   }
 
-  const resolved = resolve(options.configDir, '..', publicDir ?? 'public');
+  const resolved = resolve(storybook.configDir, '..', publicDir ?? 'public');
 
   return existsSync(resolved) ? resolved : undefined;
 }
 
 // Vite config that is common to development and production mode
 export async function commonConfig(
-  options: Options,
-  _type: PluginConfigType
+  storybook: Storybook,
+  { preview, options }: ViteConfigInput,
+  type: PluginConfigType
 ): Promise<ViteInlineConfig> {
   const { mergeConfig } = await import('vite');
 
-  const projectRoot = resolve(options.configDir, '..');
+  const projectRoot = resolve(storybook.configDir, '..');
+  const { cacheKey } = storybook.options;
 
-  // I destructure away the `build` property from the user's config object
-  // I do this because I can contain config that breaks storybook, such as we had in a lit project.
-  // If the user needs to configure the `build` they need to do so in the viteFinal function in main.js.
+  // The user's `build` options can break Storybook; only `build.target` is kept, the rest goes
+  // through `viteFinal`.
   const { build: buildProperty = undefined, ...userConfig } = await loadUserViteConfig(
+    storybook,
     options,
-    _type
+    type
   );
 
-  // Storybook's Vite config is assembled from self-contained plugins.
-  // The config plugin handles base settings (root, cacheDir, resolve conditions, etc.),
-  // while other plugins handle entry points, docgen, and runtime globals.
-  // Shared vite plugins for mocking are defined in `./preset.ts` so that they can be
-  // shared between @storybook/builder-vite and @storybook/addon-vitest.
   const sbConfig: InlineConfig = {
     configFile: false,
-    plugins: await pluginConfig(options),
+    plugins: await pluginConfig(storybook, preview),
     root: projectRoot,
     // Allow storybook deployed as subfolder. See https://github.com/storybookjs/builder-vite/issues/238
     base: './',
-    ...(options.cacheKey
-      ? { cacheDir: resolvePathInStorybookCache('sb-vite', options.cacheKey) }
-      : {}),
-    // Pass build.target option from user's vite config
+    ...(cacheKey ? { cacheDir: resolvePathInStorybookCache('sb-vite', cacheKey) } : {}),
     build: {
       target: buildProperty?.target,
     },
   };
 
-  const config: ViteConfig = mergeConfig(userConfig, sbConfig);
-
-  return config;
+  return mergeConfig(userConfig, sbConfig);
 }
 
-export async function pluginConfig(options: Options) {
-  const plugins = [
-    // Shared core plugins (resolve conditions, envPrefix, fs.allow, externals, env vars, etc.)
-    ...(await corePlugins([], options)),
-    await storybookExternalGlobalsPlugin(options),
-    // Entry plugin: virtual modules for stories, addon setup, and main app entry
-    ...(await storybookEntryPlugin(options)),
-    // Builder-specific: webpack-compatible stats for turbosnap/chromatic
-    pluginWebpackStats({ workingDir: process.cwd() }),
-  ] as PluginOption[];
-
-  return plugins;
+export async function pluginConfig(
+  storybook: Storybook,
+  preview: PreviewSources
+): Promise<PluginOption[]> {
+  return [
+    ...(await viteCorePlugins(storybook, preview)),
+    await storybookExternalGlobalsPlugin(preview),
+    ...(await storybookEntryPlugin(storybook, preview)),
+    pluginWebpackStats({ workingDir: process.cwd(), virtualModuleIds: preview.virtualModuleIds }),
+  ];
 }

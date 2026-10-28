@@ -4,8 +4,8 @@ import { readFileSync, statSync } from 'node:fs';
 import {
   findTsconfigPath as findTsconfigPathCommon,
   resolveImport,
-} from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+} from '@storybook/core/internal/common';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import * as find from 'empathic/find';
 

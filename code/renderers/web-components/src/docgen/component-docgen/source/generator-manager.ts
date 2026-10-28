@@ -2,7 +2,7 @@ import {
   ComponentMetaManager,
   type ComponentMetaProjectFactory,
   parseTsconfigCommandLine,
-} from 'storybook/internal/component-meta';
+} from '@storybook/core/internal/component-meta';
 
 import type * as ts from 'typescript';
 

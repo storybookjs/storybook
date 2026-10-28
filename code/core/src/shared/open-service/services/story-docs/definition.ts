@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 
-import { defineService } from 'storybook/open-service';
+import { defineService } from '@storybook/core/open-service';
 import type { ServiceInstanceOf } from '../../types.ts';
 import type { StoryDocsPayload } from './types.ts';
 import { storyDocsQueryStaticPath } from './paths.ts';

@@ -1,5 +1,4 @@
-// this module just contains a map of all the instances of the UniversalStore
-// it's a separate module so it can be mocked in tests
+// Kept separate so tests can replace the default realm's store inventory.
 import type { UniversalStore } from './index.ts';
 
 export const instances: Map<string, UniversalStore<any, any>> = new Map();

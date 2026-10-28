@@ -1,15 +1,17 @@
-import { logger } from 'storybook/internal/node-logger';
-import { OpenServiceModuleGraphUnavailableError } from 'storybook/internal/server-errors';
-import { clearToolsetRegistry, defineToolset, registerToolset } from 'storybook/open-service';
+import { readFile } from 'node:fs/promises';
+
+import { logger } from '@storybook/core/internal/node-logger';
+import { OpenServiceModuleGraphUnavailableError } from '@storybook/core/internal/server-errors';
+import { getService } from '@storybook/core/internal/services';
+import { clearToolsetRegistry, defineToolset, registerToolset } from '@storybook/core/open-service';
 import * as v from 'valibot';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { getService } from 'storybook/internal/core-server';
 
 import { collectTelemetry } from '../telemetry.ts';
 import { callToolsetMethod, getToolsetToolMetadata } from './toolset-tools.ts';
 
-vi.mock('storybook/internal/core-server', { spy: true });
+vi.mock('node:fs/promises', { spy: true });
+vi.mock('@storybook/core/internal/services', { spy: true });
 vi.mock('../telemetry.ts', { spy: true });
 
 /**
@@ -127,6 +129,25 @@ describe('toolset-backed MCP tools', () => {
     ]);
   });
 
+  it('appends one image block per outcome image after the text blocks', async () => {
+    vi.mocked(readFile).mockResolvedValue(Buffer.from('png-bytes'));
+    registerStubStoriesToolset({
+      handler: async () => ({
+        ok: true,
+        data: { stories: [] },
+        markdown: 'Screenshot: /tmp/button--primary.png',
+        images: [{ path: '/tmp/button--primary.png', mimeType: 'image/png' }],
+      }),
+    });
+
+    const result = await callToolsetMethod(makeServer(), previewOptions, { id: 'x' });
+
+    expect(result.content).toEqual([
+      { type: 'text', text: 'Screenshot: /tmp/button--primary.png' },
+      { type: 'image', data: Buffer.from('png-bytes').toString('base64'), mimeType: 'image/png' },
+    ]);
+  });
+
   it('omits structuredContent when the method publishes no output schema', async () => {
     registerToolset(
       defineToolset({
@@ -179,9 +200,12 @@ describe('toolset-backed MCP tools', () => {
     const result = await callToolsetMethod(makeServer(), previewOptions, { id: 'x' });
 
     expect(result.isError).toBe(true);
-    expect(result.content[0].text).toBe(
-      "Storybook's story module graph hasn't built yet — it is still being constructed."
-    );
+    expect(result.content).toEqual([
+      {
+        type: 'text',
+        text: "Storybook's story module graph hasn't built yet — it is still being constructed.",
+      },
+    ]);
   });
 
   it('selects verbatim surfacing by the agentFacing trait, not an adapter class list', async () => {
@@ -199,7 +223,7 @@ describe('toolset-backed MCP tools', () => {
     const result = await callToolsetMethod(makeServer(), previewOptions, { id: 'x' });
 
     expect(result.isError).toBe(true);
-    expect(result.content[0].text).toBe('Do X, then retry the tool.');
+    expect(result.content).toEqual([{ type: 'text', text: 'Do X, then retry the tool.' }]);
     // A designed answer for the agent is not an incident for the maintainer.
     expect(logger.error).not.toHaveBeenCalled();
   });
@@ -214,7 +238,7 @@ describe('toolset-backed MCP tools', () => {
     const result = await callToolsetMethod(makeServer(), previewOptions, { id: 'x' });
 
     expect(result.isError).toBe(true);
-    expect(result.content[0].text).toBe('Error: boom');
+    expect(result.content).toEqual([{ type: 'text', text: 'Error: boom' }]);
     // Without the log, the only evidence of a bug would be the calling agent's transcript.
     expect(logger.error).toHaveBeenCalledTimes(1);
     expect(vi.mocked(logger.error).mock.calls[0][0]).toContain('boom');

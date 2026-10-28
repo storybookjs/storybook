@@ -1,5 +1,5 @@
-import { createMetaComponentResolver } from 'storybook/internal/common';
-import type { CsfFile } from 'storybook/internal/csf-tools';
+import { createMetaComponentResolver } from '@storybook/core/internal/common';
+import type { CsfFile } from '@storybook/core/internal/csf-tools';
 
 /** The component a story file documents, located on disk. */
 export interface ResolvedVueComponent {

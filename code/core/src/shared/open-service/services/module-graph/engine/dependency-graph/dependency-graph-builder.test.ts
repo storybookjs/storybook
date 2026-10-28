@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { readFile } from 'node:fs/promises';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { ParserRegistry } from '../parser-registry/parser-registry.ts';
 import type { ImportEdge, ImportParser } from '../parser-registry/types.ts';
@@ -13,7 +13,7 @@ import { DependencyGraphBuilder } from './dependency-graph-builder.ts';
 import type { ChangeDetectionResolverFactory } from './resolver-factory.ts';
 
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('@storybook/core/internal/node-logger', { spy: true });
 
 interface FakeWorld {
   /** Source files that exist (path -> content). Content is irrelevant — parser is stubbed. */

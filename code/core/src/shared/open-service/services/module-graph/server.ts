@@ -1,13 +1,16 @@
-import type { ChannelLike } from 'storybook/internal/channels';
-import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
-import type { Presets } from 'storybook/internal/types';
+import type { ChannelLike } from '@storybook/core/internal/channels';
+import { STORY_INDEX_INVALIDATED } from '@storybook/core/internal/core-events';
+import type { Presets } from '@storybook/core/internal/types';
 
+import { getInstanceContext, bindToInstance } from '../../../instance-context.ts';
 import { registerService } from '../../server.ts';
 import { registerModuleGraphIndexService } from '../module-graph-index/server.ts';
 import { moduleGraphServiceDef, type ChangeDetectionReadinessResult } from './definition.ts';
 import type { ChangeDetectionAdapter } from './engine/adapters/types.ts';
 import { ModuleGraphEngine, type ModuleGraphEngineOptions } from './engine/module-graph-engine.ts';
 import { errorToErrorLike } from './types.ts';
+
+const INSTANCE_ADAPTER = Symbol.for('storybook.instance.module-graph-adapter');
 
 export type RegisterModuleGraphServiceOptions = {
   channel: ChannelLike;
@@ -49,6 +52,13 @@ let adapterResolved = false;
 export function resolveChangeDetectionAdapter(
   adapter: ChangeDetectionAdapter | null | undefined
 ): void {
+  const resolve = getInstanceContext()?.state.get(INSTANCE_ADAPTER) as
+    | ((adapter: ChangeDetectionAdapter | null | undefined) => void)
+    | undefined;
+  if (resolve) {
+    resolve(adapter);
+    return;
+  }
   if (adapterResolved) {
     return;
   }
@@ -73,7 +83,22 @@ export function resetChangeDetectionAdapterForTests(): void {
  */
 export function registerModuleGraphService(options: RegisterModuleGraphServiceOptions) {
   const workingDir = options.workingDir ?? process.cwd();
-  const adapterPromise = adapterDeferred.promise;
+  const context = getInstanceContext();
+  const localAdapter = context ? createAdapterDeferred() : undefined;
+  let localResolved = false;
+  let closed = false;
+  const adapterPromise = localAdapter?.promise ?? adapterDeferred.promise;
+  const resolveAdapter = (adapter: ChangeDetectionAdapter | null | undefined): void => {
+    if (localAdapter) {
+      if (!localResolved) {
+        localResolved = true;
+        localAdapter.resolve(adapter);
+      }
+    } else {
+      resolveChangeDetectionAdapter(adapter);
+    }
+  };
+  context?.state.set(INSTANCE_ADAPTER, resolveAdapter);
   let engine: ModuleGraphEngine | undefined = undefined;
   let engineStarted = false;
   let obtainAdapter: Promise<void> | undefined;
@@ -158,7 +183,7 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
   });
 
   function applyAdapter(adapter: ChangeDetectionAdapter | null | undefined) {
-    if (engineStarted) {
+    if (engineStarted || closed) {
       return;
     }
     engineStarted = true;
@@ -173,7 +198,7 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
   }
 
   async function ensureAdapter() {
-    if (adapterResolved) {
+    if (localAdapter ? localResolved : adapterResolved) {
       return;
     }
     const getAdapter = options.getAdapter;
@@ -185,20 +210,25 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
       .then(() => getAdapter())
       .then(
         (adapter) => {
-          resolveChangeDetectionAdapter(adapter);
+          resolveAdapter(adapter);
         },
         () => {
-          resolveChangeDetectionAdapter(undefined);
+          resolveAdapter(undefined);
         }
       );
     await obtainAdapter;
   }
 
-  options.channel.on(STORY_INDEX_INVALIDATED, () => {
-    engine!.onStoryIndexInvalidated();
+  const onInvalidated = bindToInstance(() => engine!.onStoryIndexInvalidated());
+  options.channel.on(STORY_INDEX_INVALIDATED, onInvalidated);
+  context?.cleanups.add(async () => {
+    closed = true;
+    resolveAdapter(undefined);
+    options.channel.off(STORY_INDEX_INVALIDATED, onInvalidated);
+    await engine!.close();
   });
 
-  void adapterPromise.then(applyAdapter);
+  void adapterPromise.then(bindToInstance(applyAdapter));
 
   return runtime;
 }

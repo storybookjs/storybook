@@ -19,6 +19,7 @@ const ctx = {
   transport: 'cli',
   origin: 'http://localhost:6006',
   getService: vi.fn() as ToolsetCtx['getService'],
+  signal: new AbortController().signal,
 } satisfies ToolsetCtx;
 
 const mcpCtx = { ...ctx, transport: 'mcp' } satisfies ToolsetCtx;
@@ -170,6 +171,24 @@ describe('test API', () => {
       data: { ...completedRun, a11y: true },
     });
     expect(runStoryTests).toHaveBeenCalledTimes(2);
+  });
+
+  it('never triggers a queued run whose caller aborted while it waited', async () => {
+    let completePendingRun!: () => void;
+    pendingRun = new Promise((resolve) => {
+      completePendingRun = () => resolve(completedRun);
+    });
+    const controller = new AbortController();
+
+    const firstRun = runTests();
+    await vi.waitFor(() => expect(runStoryTests).toHaveBeenCalledOnce());
+    const secondRun = runTests({}, { ...ctx, signal: controller.signal });
+    controller.abort(new Error('cancelled'));
+
+    completePendingRun();
+    await firstRun;
+    await expect(secondRun).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: cancelled]`);
+    expect(runStoryTests).toHaveBeenCalledOnce();
   });
 
   describe('run outcome', () => {

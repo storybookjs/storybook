@@ -11,7 +11,7 @@ vi.mock('../sandbox.ts', () => ({ sandbox: mockSandbox }));
 vi.mock('storybook/internal/cli', () => ({
   globalSettings: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock('storybook/internal/core-server', () => ({
+vi.mock('storybook/internal/server', () => ({
   withTelemetry: (_eventType: string, _options: unknown, command: () => Promise<unknown>) =>
     command(),
 }));

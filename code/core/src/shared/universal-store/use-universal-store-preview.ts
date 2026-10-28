@@ -1,5 +1,5 @@
 import { isEqual } from 'es-toolkit/predicate';
-import { useEffect, useState } from 'storybook/preview-api';
+import { useEffect, useState } from '@storybook/core/preview-api';
 
 import type { UniversalStore } from './index.ts';
 

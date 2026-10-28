@@ -1,4 +1,4 @@
-import { loadCsf } from 'storybook/internal/csf-tools';
+import { loadCsf } from '@storybook/core/internal/csf-tools';
 
 import { describe, expect, it } from 'vitest';
 

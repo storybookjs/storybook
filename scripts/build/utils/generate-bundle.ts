@@ -10,13 +10,13 @@ import type { Plugin as RolldownPlugin } from 'rolldown';
 import { rolldown } from 'rolldown';
 import { dedent } from 'ts-dedent';
 
-import { globalsModuleInfoMap } from '../../../code/core/src/manager/globals/globals-module-info.ts';
+import { globalsModuleInfoMap } from '../../../code/lib/manager/src/ui/globals/globals-module-info.ts';
 import {
   BROWSER_TARGETS,
   NODE_TARGET,
   SUPPORTED_FEATURES,
-} from '../../../code/core/src/shared/constants/environments-support.ts';
-import { resolvePackageDir } from '../../../code/core/src/shared/utils/module.ts';
+} from '../../../code/core/src/constants/environments-support.ts';
+import { resolvePackageDir } from '../../../code/core/src/utils/module.ts';
 import {
   type BuildEntries,
   type EntryType,
@@ -90,6 +90,7 @@ function metafileWriterPlugin(entryType: EntryType, outputDir: string): esbuild.
 export async function generateBundle({
   cwd,
   entry,
+  name: packageName,
   isWatch,
 }: {
   cwd: string;
@@ -167,18 +168,13 @@ export async function generateBundle({
     alias: {
       // The following aliases ensures that the runtimes bundles in the actual sources of these modules
       // instead of attempting to resolve them to the dist files, because the dist files are not available yet.
-      'storybook/preview-api': './src/preview-api',
-      'storybook/manager-api': './src/manager-api',
-      'storybook/theming': './src/theming',
-      'storybook/test': './src/test',
-      'storybook/internal': './src',
-      'storybook/outline': './src/outline',
-      'storybook/backgrounds': './src/backgrounds',
-      'storybook/highlight': './src/highlight',
-      'storybook/measure': './src/measure',
-      'storybook/actions': './src/actions',
-      'storybook/viewport': './src/viewport',
-      'storybook/open-service': './src/shared/open-service',
+      ...Object.fromEntries(
+        Object.values(entries).flatMap((platformEntries) =>
+          platformEntries.flatMap(({ exportEntries = [], entryPoint }) =>
+            exportEntries.map((entry) => [`${packageName}${entry.slice(1)}`, entryPoint])
+          )
+        )
+      ),
       // The following aliases ensures that the manager has a single version of React,
       // even if transitive dependencies would depend on other versions.
       react: resolvePackageDir('react'),
@@ -193,16 +189,17 @@ export async function generateBundle({
 
   const buildChunkedRuntimeEntry = async ({
     entryPoint,
+    name,
     outDir,
     chunkDir,
     useGlobals,
   }: {
     entryPoint: string;
+    name: string;
     outDir: string;
     chunkDir: string;
     useGlobals: boolean;
   }) => {
-    const name = basename(entryPoint).replace(/\.[^.]+$/, '');
     const alias = Object.fromEntries(
       Object.entries(runtimeOptions.alias).map(([key, value]) => [
         key,
@@ -237,7 +234,7 @@ export async function generateBundle({
     });
     await build.close();
 
-    if (outDir === 'preview' && name === 'runtime') {
+    if (outDir === 'core/preview' && name === 'runtime') {
       const entryFile = join(DIR_CWD, 'dist', outDir, `${name}.js`);
       await writeFile(entryFile, tiePreviewRuntimeSetup(await readFile(entryFile, 'utf8')));
     }
@@ -250,7 +247,9 @@ export async function generateBundle({
     contexts.push(
       esbuild.context({
         ...sharedOptions,
-        entryPoints: entries.node.map(({ entryPoint }) => entryPoint),
+        entryPoints: entries.node.map(({ entryPoint, outputPath }) =>
+          outputPath ? { in: entryPoint, out: outputPath } : entryPoint
+        ),
         platform: 'node',
         target: NODE_TARGET,
         alias: {
@@ -302,7 +301,9 @@ export async function generateBundle({
           ...(sharedOptions.external as string[]),
           ...entries.browser.flatMap((entry) => entry.external ?? []),
         ].filter(Boolean),
-        entryPoints: entries.browser.map(({ entryPoint }) => entryPoint),
+        entryPoints: entries.browser.map(({ entryPoint, outputPath }) =>
+          outputPath ? { in: entryPoint, out: outputPath } : entryPoint
+        ),
         platform: 'browser',
         chunkNames: '_browser-chunks/[name]-[hash]',
         target: BROWSER_TARGETS,
@@ -318,12 +319,16 @@ export async function generateBundle({
   const regularRuntimeEntries = entries.runtime?.filter((entry) => !entry.chunkedRuntime) ?? [];
   const chunkedRuntimeEntries = entries.runtime?.filter((entry) => entry.chunkedRuntime) ?? [];
 
-  const chunkedRuntimeOutput = (entryPoint: string, useGlobals: boolean) => {
-    const outDir = basename(dirname(entryPoint));
+  const chunkedRuntimeOutput = (
+    { entryPoint, outputPath }: { entryPoint: string; outputPath?: string },
+    useGlobals: boolean
+  ) => {
+    const outDir = outputPath ? dirname(outputPath) : relative('src', dirname(entryPoint));
     return {
       entryPoint,
+      name: basename(outputPath ?? entryPoint).replace(/\.[^.]+$/, ''),
       outDir,
-      chunkDir: outDir === 'manager' ? '_manager-chunks' : '_chunks',
+      chunkDir: outDir === 'ui' ? '_manager-chunks' : '_chunks',
       useGlobals,
     };
   };
@@ -337,7 +342,9 @@ export async function generateBundle({
     contexts.push(
       esbuild.context({
         ...runtimeOptions,
-        entryPoints: esbuildRuntimeEntries.map(({ entryPoint }) => entryPoint),
+        entryPoints: esbuildRuntimeEntries.map(({ entryPoint, outputPath }) =>
+          outputPath ? { in: entryPoint, out: outputPath } : entryPoint
+        ),
         plugins: [
           ...runtimeOptions.plugins,
           metafileWriterPlugin('runtime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
@@ -363,11 +370,11 @@ export async function generateBundle({
   const compile = await Promise.all(contexts);
   if (!isWatch) {
     await Promise.all([
-      ...chunkedRuntimeEntries.map(({ entryPoint }) =>
-        buildChunkedRuntimeEntry(chunkedRuntimeOutput(entryPoint, false))
+      ...chunkedRuntimeEntries.map((runtimeEntry) =>
+        buildChunkedRuntimeEntry(chunkedRuntimeOutput(runtimeEntry, false))
       ),
-      ...(entries.globalizedRuntime ?? []).map(({ entryPoint }) =>
-        buildChunkedRuntimeEntry(chunkedRuntimeOutput(entryPoint, true))
+      ...(entries.globalizedRuntime ?? []).map((runtimeEntry) =>
+        buildChunkedRuntimeEntry(chunkedRuntimeOutput(runtimeEntry, true))
       ),
     ]);
   }

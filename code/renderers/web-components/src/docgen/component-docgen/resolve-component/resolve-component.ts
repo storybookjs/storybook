@@ -10,7 +10,7 @@ import {
   resolveBindingMembers,
   resolveObjectMembers,
   unwrapExpression,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 
 import { readFileSync } from 'node:fs';
 

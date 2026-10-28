@@ -72,7 +72,9 @@ export { getCsfFactoryAnnotations } from './modules/store/csf/index.ts';
 
 export type { PropDescriptor } from './store.ts';
 
-export { Tag } from '../shared/constants/tags.ts';
+export { Tag } from '../constants/tags.ts';
+
+export { getFeatures } from '../shared/features.ts';
 
 /** STORIES API */
 export { StoryStore, type Report, ReporterAPI } from './store.ts';
@@ -90,6 +92,8 @@ export type { SelectionStore, View } from './preview-web.ts';
 
 /** OPEN SERVICE API (preview leaf — register only; types on `storybook/open-service`) */
 export { getService, registerService } from '../shared/open-service/preview.ts';
+export { unregisterService as internal_unregisterService } from '../shared/open-service/service-registry.ts';
+export { storyDocsServiceDef as internal_storyDocsServiceDef } from '../shared/open-service/services/story-docs/definition.ts';
 export {
   clearChannel,
   ensureChannel,

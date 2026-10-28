@@ -1,0 +1,91 @@
+import React, { type ButtonHTMLAttributes, type ReactNode, forwardRef, useState } from 'react';
+
+import type { DecoratorFunction } from '@storybook/core/internal/types';
+
+import { UNSAFE_PortalProvider } from 'react-aria/PortalProvider';
+import type { PositionProps } from 'react-aria/useOverlayPosition';
+import memoize from 'memoizerific';
+import { styled } from '@storybook/ui/theming';
+
+export const POPPER_PLACEMENTS = [
+  'top',
+  'top-start',
+  'top-end',
+  'bottom',
+  'bottom-start',
+  'bottom-end',
+  'left',
+  'left-start',
+  'left-end',
+  'right',
+  'right-start',
+  'right-end',
+] as const;
+
+export type PopperPlacement = (typeof POPPER_PLACEMENTS)[number];
+
+export const convertToReactAriaPlacement = memoize(1000)((
+  p: PopperPlacement
+): NonNullable<PositionProps['placement']> => {
+  if (p === 'left-end') {
+    return 'left bottom';
+  }
+
+  if (p === 'right-end') {
+    return 'right bottom';
+  }
+
+  if (p === 'left-start') {
+    return 'left top';
+  }
+
+  if (p === 'right-start') {
+    return 'right top';
+  }
+
+  return p.replace('-', ' ') as NonNullable<PositionProps['placement']>;
+});
+
+// Story helper
+const Container = styled.div({
+  width: 500,
+  height: 500,
+  paddingTop: 100,
+  overflowY: 'scroll',
+  background: '#eee',
+  position: 'relative',
+});
+
+// Story helper
+interface TriggerProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  children: ReactNode;
+}
+export const Trigger = forwardRef<HTMLButtonElement, TriggerProps>((props, ref) => (
+  <button
+    {...props}
+    ref={ref}
+    style={{
+      width: 120,
+      height: 50,
+      margin: 10,
+    }}
+  />
+));
+Trigger.displayName = 'Trigger';
+
+/**
+ * Storybook decorator to help render PopoverProvider in stories. Internal to Storybook. Use at your
+ * own risk.
+ */
+export const OverlayTriggerDecorator: DecoratorFunction = (Story, { args }) => {
+  const [container, setContainer] = useState<HTMLElement | null>(null);
+
+  return (
+    <Container>
+      <UNSAFE_PortalProvider getContainer={() => container}>
+        <Story args={args} />
+      </UNSAFE_PortalProvider>
+      <div id="portal" ref={(element) => setContainer(element ?? null)}></div>
+    </Container>
+  );
+};

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import { getProjectRoot } from '@storybook/core/internal/common';
 
 import { resolve } from 'node:path';
 
@@ -8,7 +8,7 @@ import * as find from 'empathic/find';
 
 import { findTsconfigUp, resolveTsconfig } from './find-tsconfig.ts';
 
-vi.mock('storybook/internal/common', { spy: true });
+vi.mock('@storybook/core/internal/common', { spy: true });
 vi.mock('empathic/find', { spy: true });
 
 const WORKSPACE_ROOT = resolve('/workspace');

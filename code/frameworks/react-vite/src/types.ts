@@ -1,3 +1,4 @@
+import type { FrameworkPlugin } from 'storybook/internal/instance';
 import type {
   CompatibleString,
   StorybookConfig as StorybookConfigBase,
@@ -18,6 +19,7 @@ export type FrameworkOptions = {
 
 type StorybookConfigFramework = {
   framework:
+    | FrameworkPlugin
     | FrameworkName
     | {
         name: FrameworkName;

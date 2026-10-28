@@ -8,18 +8,18 @@ import {
   STORY_MISSING,
   STORY_RENDER_PHASE_CHANGED,
   STORY_THREW_EXCEPTION,
-} from 'storybook/internal/core-events';
+} from '@storybook/core/internal/core-events';
 import type {
   ModuleImportFn,
   ProjectAnnotations,
   Renderer,
   StoryIndex,
   TeardownRenderToCanvas,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 import { EventEmitter } from 'events';
 
-import { Tag } from '../../../shared/constants/tags.ts';
+import { Tag } from '../../../constants/tags.ts';
 import { composeConfigs } from '../store/index.ts';
 import type { RenderPhase } from './render/StoryRender.ts';
 

@@ -115,6 +115,7 @@
     "node-gyp": "^12.1.0",
     "npm-registry-client": "^8.6.0",
     "ora": "^5.4.1",
+    "oxc-parser": "^0.154.0",
     "oxlint": "1.85.0",
     "p-limit": "^7.2.0",
     "p-retry": "^7.1.0",

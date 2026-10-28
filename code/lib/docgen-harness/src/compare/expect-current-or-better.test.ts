@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
+import type { StrictArgTypes } from 'storybook/internal/csf';
 import { expectCurrentOrBetter } from './expect-current-or-better.ts';
 
 describe('expectCurrentOrBetter', () => {

@@ -4,9 +4,11 @@ import type { ArgTypesEnhancer } from 'storybook/internal/types';
 import { extractArgTypes } from './docgen/component-docgen/arg-types/extractArgTypes.ts';
 import type { VueRenderer } from './types.ts';
 
-export { render, renderToCanvas } from './render.ts';
-export { decorateStory as applyDecorators } from './decorateStory.ts';
-export { mount } from './mount.ts';
+import { render, renderToCanvas } from './render.ts';
+import { decorateStory as applyDecorators } from './decorateStory.ts';
+import { mount } from './mount.ts';
+
+export { render, renderToCanvas, applyDecorators, mount };
 
 export const parameters = {
   renderer: 'vue3',
@@ -18,3 +20,5 @@ export const parameters = {
 };
 
 export const argTypesEnhancers: ArgTypesEnhancer<VueRenderer>[] = [enhanceArgTypes];
+
+export default { render, renderToCanvas, applyDecorators, mount, parameters, argTypesEnhancers };

@@ -68,6 +68,27 @@ describe('Channel', () => {
     });
   });
 
+  it('sends and receives events through a transport added after creation', () => {
+    channel = new Channel({});
+    transport = { setHandler: vi.fn(), send: vi.fn() };
+    const listener = vi.fn();
+    channel.on('received', listener);
+    expect(channel.hasTransport).toBe(false);
+    channel.addTransport(transport);
+    expect(channel.hasTransport).toBe(true);
+    channel.emit('sent', 'outgoing');
+    expect(transport.send).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'sent', args: ['outgoing'] }),
+      {}
+    );
+    vi.mocked(transport.setHandler).mock.calls[0][0]({
+      type: 'received',
+      args: ['incoming'],
+      from: 'remote',
+    });
+    expect(listener).toHaveBeenCalledWith('incoming');
+  });
+
   describe('method:addListener', () => {
     it('should create one listener', () => {
       const eventName = 'event1';

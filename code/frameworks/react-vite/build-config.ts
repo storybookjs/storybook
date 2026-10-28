@@ -10,10 +10,6 @@ const config: BuildEntries = {
     ],
     node: [
       {
-        exportEntries: ['./preset'],
-        entryPoint: './src/preset.ts',
-      },
-      {
         exportEntries: ['./node'],
         entryPoint: './src/node/index.ts',
       },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { StoryIndex } from 'storybook/internal/types';
+import type { StoryIndex } from '@storybook/core/internal/types';
 
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../../status-store/index.ts';

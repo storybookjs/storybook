@@ -6,7 +6,7 @@ import type {
   StoryId,
   StrictArgTypes,
   Tag,
-} from 'storybook/internal/csf';
+} from '../../csf/index.ts';
 
 import type { ReporterAPI } from '../../preview-api/index.ts';
 import type {

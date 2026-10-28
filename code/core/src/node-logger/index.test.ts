@@ -5,7 +5,7 @@ import npmlog from 'npmlog';
 import { logger } from './index.ts';
 import * as loggerRaw from './logger/logger.ts';
 
-vi.mock('./logger/logger', () => ({
+vi.mock('./logger/logger.ts', () => ({
   log: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
@@ -36,7 +36,7 @@ vi.mock('npmlog', () => ({
   },
 }));
 
-vi.mock('./prompts/prompt-config', () => ({
+vi.mock('./prompts/prompt-config.ts', () => ({
   isClackEnabled: vi.fn(() => false),
 }));
 

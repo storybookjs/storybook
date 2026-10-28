@@ -8,16 +8,15 @@ import { join } from 'node:path';
 
 import { afterAll, describe, expect, it, vi } from 'vitest';
 
-// config.ts reads FEATURES through @storybook/global at call time, but the compodoc adapter in its
-// import graph destructures FEATURES at first import, so the stub must exist before that.
+// The features are read at call time, so mutating this stubbed object between calls is live.
 const flags = vi.hoisted(() => {
   const features = { angularFilterNonInputControls: false, docgenServer: false };
   vi.stubGlobal('FEATURES', features);
   return features;
 });
 
-import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
-import { mergeServiceArgTypes } from '../../../../core/src/docs-tools/argTypes/docgenServiceArgTypes.ts';
+import type { StrictArgTypes } from 'storybook/internal/csf';
+import { mergeServiceArgTypes } from 'storybook/internal/docs-tools';
 import { setCompodocJson } from '../../../../frameworks/angular-vite/src/client/compodoc.ts';
 import { parameters } from '../../../../frameworks/angular-vite/src/client/config.ts';
 import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';

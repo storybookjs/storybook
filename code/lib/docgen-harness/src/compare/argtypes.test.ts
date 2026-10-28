@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
+import type { StrictArgTypes } from 'storybook/internal/csf';
 import { compareArgTypes } from './argtypes.ts';
 
 const argTypes = (entries: StrictArgTypes): StrictArgTypes => entries;

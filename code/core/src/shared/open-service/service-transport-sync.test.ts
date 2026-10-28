@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { logger } from 'storybook/internal/client-logger';
+import { logger } from '@storybook/core/internal/client-logger';
 
 import { createTestChannel } from '../../channels/test-channel.ts';
 import {
@@ -11,7 +11,7 @@ import {
 import { createReconciler, formatFrontier, type LogWindow } from './service-sync.ts';
 import { connectRuntimeToChannel } from './service-transport.ts';
 
-vi.mock('storybook/internal/client-logger', { spy: true });
+vi.mock('@storybook/core/internal/client-logger', { spy: true });
 
 const SERVICE_ID = 'internal-fixture/transport-sync';
 

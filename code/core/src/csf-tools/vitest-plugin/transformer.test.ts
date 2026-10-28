@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getStoryTitle } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { getStoryTitle } from '@storybook/core/internal/common';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { type RawSourceMap, SourceMapConsumer } from 'source-map';
 
-import { Tag } from '../../shared/constants/tags.ts';
+import { Tag } from '../../constants/tags.ts';
 import { vitestTransform as originalTransform } from './transformer.ts';
 
-vi.mock('storybook/internal/common', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('storybook/internal/common')>();
+vi.mock('@storybook/core/internal/common', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@storybook/core/internal/common')>();
   return {
     ...actual,
     getStoryTitle: vi.fn(() => 'automatic/calculated/title'),

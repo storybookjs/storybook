@@ -21,6 +21,9 @@ Each framework has three test files:
 vue3 has a second recorder, `vue3-component-meta-baselines.test.ts`, because Vue ships two production docgen engines.
 It drives the opt-in `vue-component-meta` path (`docgen: 'vue-component-meta'` in vue3-vite) over the same fixtures and writes `cm-`-prefixed snapshots.
 
+The test files import renderer and framework source by relative path, because the internals they record have no package entry and a package name resolves to `dist` in Vitest.
+`code/.oxlintrc.json` exempts `src/**/*.test.ts` from the package-boundary import rule for that reason.
+
 ## Layout
 
 ```text

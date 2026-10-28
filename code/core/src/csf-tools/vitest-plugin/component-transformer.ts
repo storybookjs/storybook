@@ -1,11 +1,11 @@
 import path from 'node:path';
 
-import type { ArgTypes } from 'storybook/internal/csf';
+import type { ArgTypes } from '../../csf/index.ts';
 
 import {
   STORYBOOK_FN_PLACEHOLDER,
   generateDummyArgsFromArgTypes,
-} from '../../core-server/utils/get-dummy-args-from-argtypes.ts';
+} from '../../story-index/get-dummy-args-from-argtypes.ts';
 import { type E, type Node, outerSpan, unwrapExpression, walk } from '../estree/ast.ts';
 import {
   SourceEditor,

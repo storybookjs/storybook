@@ -1,10 +1,10 @@
-import { logger } from 'storybook/internal/client-logger';
+import { logger } from '@storybook/core/internal/client-logger';
 import type {
   Renderer,
   SBType,
   StoryContextForEnhancers,
   StrictArgTypes,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 import { mapValues } from 'es-toolkit/object';
 import { dedent } from 'ts-dedent';

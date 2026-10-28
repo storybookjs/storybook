@@ -36,25 +36,19 @@
       "code": "./src/node/index.ts",
       "default": "./dist/node/index.js"
     },
-    "./package.json": "./package.json",
-    "./preset": {
-      "types": "./dist/preset.d.ts",
-      "code": "./src/preset.ts",
-      "default": "./dist/preset.js"
-    }
+    "./package.json": "./package.json"
   },
   "files": [
     "dist/**/*",
     "template/**/*",
     "README.md",
-    "*.js",
-    "*.d.ts",
     "!src/**/*"
   ],
   "dependencies": {
     "@joshwooding/vite-plugin-react-docgen-typescript": "^0.7.0",
     "@rollup/pluginutils": "^5.0.2",
     "@storybook/builder-vite": "workspace:*",
+    "@storybook/core": "workspace:*",
     "@storybook/react": "workspace:*",
     "empathic": "^2.0.0",
     "magic-string": "^1.1.0",
@@ -75,6 +69,9 @@
     "vite": "^6.3.0 || ^7.0.0 || ^8.0.0"
   },
   "peerDependenciesMeta": {
+    "storybook": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     }

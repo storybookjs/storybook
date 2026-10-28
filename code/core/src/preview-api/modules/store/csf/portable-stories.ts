@@ -1,8 +1,8 @@
-import { type CleanupCallback, isExportStory } from 'storybook/internal/csf';
+import { type CleanupCallback, isExportStory } from '../../../../csf/index.ts';
 import {
   MountMustBeDestructuredError,
   ProjectAnnotationsAlreadyAppliedError,
-} from 'storybook/internal/preview-errors';
+} from '@storybook/core/internal/preview-errors';
 import type {
   Args,
   Canvas,
@@ -21,9 +21,9 @@ import type {
   StoryContext,
   StoryContextForRender,
   StrictArgTypes,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
-import type { UserEventObject } from 'storybook/test';
+import type { UserEventObject } from '@storybook/core/test';
 
 import { HooksContext } from '../../../addons.ts';
 import {

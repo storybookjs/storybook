@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 
-import { createWorkerGatedStoryDocsProvider } from 'storybook/internal/core-server';
+import { createWorkerGatedStoryDocsProvider } from '@storybook/core/internal/services';
 
 import { DOCGEN_WORKER_SPECIFIER } from './worker-specifier.ts';
 import { buildStoryDocsPayload } from './story-docs/build-story-docs.ts';

@@ -8,6 +8,8 @@ export type EntryType = 'node' | 'browser' | 'runtime' | 'globalizedRuntime';
 
 export type BuildEntry = {
   exportEntries?: ('.' | `./${string}`)[]; // the keys in the package.json's export map, e.g. ["./internal/manager-api", "./manager-api"]
+  /** Output path beneath dist, without an extension. */
+  outputPath?: string;
   entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts",
   external?: string[]; // the list of external dependencies to exclude from the bundle
   dts?: false; // default to generating d.ts files for all entries, except if set to false
@@ -49,6 +51,12 @@ export type BuildEntries = {
    */
   extraOutputs?: Record<string, any>;
   /**
+   * Emit the deep entries whose key mirrors their source path as one `./internal/deep/*` subpath
+   * pattern, keeping the exports map small. `scripts/check/check-deep-imports.ts` fails on imports
+   * the pattern matches but no entry builds.
+   */
+  deepExportsPattern?: true;
+  /**
    * The function to run before the build
    *
    * @note this runs only **once** when watch-mode is enabled
@@ -75,6 +83,10 @@ export const getExternal = async (cwd: string) => {
     with: { type: 'json' },
   });
 
+  const dependsOn = (name: string): boolean =>
+    !!(packageJson.dependencies?.[name] || packageJson.peerDependencies?.[name]);
+  const dependsOnStorybook =
+    packageJson.name === 'storybook' || dependsOn('storybook') || dependsOn('@storybook/core');
   const runtimeExternalInclude: string[] = [
     'react',
     'use-sync-external-store',
@@ -89,6 +101,8 @@ export const getExternal = async (cwd: string) => {
      * @see `code/frameworks/nextjs/src/images/next-image.tsx`
      */
     'sb-original',
+    // The packages behind `storybook` ship with it or with `@storybook/core`; a package depending on neither bundles them.
+    ...(dependsOnStorybook ? ['@storybook/core', '@storybook/ui', '@storybook/manager'] : []),
     packageJson.name,
     ...Object.keys(packageJson.dependencies || {}),
     ...Object.keys(packageJson.peerDependencies || {}),

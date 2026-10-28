@@ -20,6 +20,7 @@ const [mode, checkoutPath] = process.argv.slice(2);
 if (mode !== 'transforms' && (mode !== 'index' || !checkoutPath)) {
   throw new Error('Usage: record.mjs index <babel-checkout>/code | transforms [<checkout>/code]');
 }
+// `here` is <checkout>/code/core/src/csf-tools/__corpus__.
 const checkout = checkoutPath ? resolve(checkoutPath) : join(here, '../../../..');
 const require = createRequire(join(checkout, 'package.json'));
 const csfTools = await import(join(checkout, 'core/dist/csf-tools/index.js'));

@@ -10,10 +10,18 @@ preserving `parameters.docs.source.transform` handling in preview.
 
 ## Providers
 
-Renderers contribute payloads through the `experimental_storyDocsProvider` preset chain.
-A renderer whose snippets depend on its own docgen worker builds that preset with `createWorkerGatedStoryDocsProvider` from `storybook/internal/core-server`.
-The helper skips the renderer when its worker is not registered, reads only matching story files, logs a file it cannot read at debug level and hands it to the next provider, and merges its payload over the next provider's.
-Vue, Svelte and Web Components use it; React and Angular have no worker gate and keep their own presets.
+Renderers contribute payloads through the `core:story-docs-provider:extend` Reduce hook, registered from their `<pkg>/node` plugin.
+
+- React, Vue, Svelte and Web Components register it in `renderers/<name>/src/node.ts`.
+- Angular registers it from the `@storybook/angular-vite` framework in `frameworks/angular-vite/src/node/index.ts`.
+
+A provider whose snippets depend on its own docgen worker wraps it with `createWorkerGatedStoryDocsProvider`; Node code imports it from `@storybook/core/internal/services`.
+
+- The helper skips the provider when its worker is not registered.
+- It reads only matching story files.
+- It logs a file it cannot read at debug level and hands it to the next provider.
+- It merges its payload over the next provider's.
+- Vue, Svelte, Web Components and Angular use it; React has no worker gate.
 
 ## Components spread over several story files
 

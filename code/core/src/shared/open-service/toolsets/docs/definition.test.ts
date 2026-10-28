@@ -45,8 +45,12 @@ const docsAccess: DocsAccess = {
 
 const toolset = createDocsToolset({ docsAccess });
 
-const mcpCtx: ToolsetCtx = { transport: 'mcp', getService: () => ({}) as never };
-const cliCtx: ToolsetCtx = { transport: 'cli', getService: () => ({}) as never };
+const mcpCtx: ToolsetCtx = {
+  transport: 'mcp',
+  getService: () => ({}) as never,
+  signal: new AbortController().signal,
+};
+const cliCtx: ToolsetCtx = { ...mcpCtx, transport: 'cli' };
 
 describe('docs.list', () => {
   it('returns the manifests from the access and renders the list Markdown', async () => {

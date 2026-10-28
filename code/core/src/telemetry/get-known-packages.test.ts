@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { PackageJson } from 'storybook/internal/types';
+import type { PackageJson } from '@storybook/core/internal/types';
 
 import { analyzeEcosystemPackages, getSafeVersionSpecifier } from './get-known-packages.ts';
 import { getActualPackageVersion } from './package-json.ts';

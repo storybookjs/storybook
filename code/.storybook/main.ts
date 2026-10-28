@@ -1,33 +1,25 @@
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import onboarding from '@storybook/addon-onboarding/node';
+import themes from '@storybook/addon-themes/node';
+import docs from '@storybook/addon-docs/node';
+import vitest from '@storybook/addon-vitest/node';
+import a11y from '@storybook/addon-a11y/node';
+import mcp from '@storybook/addon-mcp/node';
+import pseudoStates from 'storybook-addon-pseudo-states/node';
+import { defineMain, reactVite } from '@storybook/react-vite/node';
 
-import { defineMain } from '@storybook/react-vite/node';
-import type { Options } from 'storybook/internal/types';
-
-import react from '@vitejs/plugin-react';
-import type { InlineConfig } from 'vite';
-
-import { BROWSER_TARGETS } from '../core/src/shared/constants/environments-support.ts';
-
-const currentFilePath = fileURLToPath(import.meta.url);
-const currentDirPath = dirname(currentFilePath);
-
-const componentsPath = join(currentDirPath, '../core/src/components/index.ts');
-const managerApiPath = join(currentDirPath, '../core/src/manager-api/index.mock.ts');
-const previewApiPath = join(currentDirPath, '../core/src/preview-api/index.ts');
-const themingCreatePath = join(currentDirPath, '../core/src/theming/create.ts');
-const themingPath = join(currentDirPath, '../core/src/theming/index.ts');
-const imageContextPath = join(currentDirPath, '../frameworks/nextjs/src/image-context.ts');
+import { internalServices } from './services-addon.ts';
+import { internalVite } from './vite-addon.ts';
 
 const config = defineMain({
   stories: [
     './bench/*.stories.@(js|jsx|ts|tsx)',
+    './module-instances.stories.tsx',
     {
-      directory: '../core/template/stories',
+      directory: '../lib/storybook/template/stories',
       titlePrefix: 'core',
     },
     {
-      directory: '../core/src/manager',
+      directory: '../lib/manager/src/ui',
       titlePrefix: 'manager',
     },
     {
@@ -43,27 +35,27 @@ const config = defineMain({
       titlePrefix: 'core/shared',
     },
     {
-      directory: '../core/src/components/brand',
+      directory: '../lib/ui/src/components/brand',
       titlePrefix: 'brand',
     },
     {
-      directory: '../core/src/components/components',
+      directory: '../lib/ui/src/components/components',
       titlePrefix: 'components',
     },
     {
-      directory: '../core/src/component-testing/components',
+      directory: '../lib/storybook/src/features/component-testing/components',
       titlePrefix: 'component-testing',
     },
     {
-      directory: '../core/src/controls/components',
+      directory: '../lib/storybook/src/features/controls/components',
       titlePrefix: 'controls',
     },
     {
-      directory: '../core/src/highlight',
+      directory: '../lib/storybook/src/features/highlight',
       titlePrefix: 'highlight',
     },
     {
-      directory: '../core/src/actions/containers',
+      directory: '../lib/storybook/src/features/actions/containers',
       titlePrefix: 'actions',
     },
     {
@@ -121,19 +113,20 @@ const config = defineMain({
     },
   ],
   addons: [
-    '@storybook/addon-onboarding',
-    '@storybook/addon-themes',
-    '@storybook/addon-docs',
+    onboarding(),
+    themes(),
+    docs(),
     '@storybook/addon-designs',
-    '@storybook/addon-vitest',
-    '@storybook/addon-a11y',
-    '@storybook/addon-mcp',
-    'storybook-addon-pseudo-states',
+    vitest(),
+    a11y(),
+    mcp(),
+    pseudoStates(),
     '@chromatic-com/storybook',
-    './services-preset.ts',
+    internalVite(),
+    internalServices(),
   ],
   previewAnnotations: [
-    './core/template/stories/preview.ts',
+    './lib/storybook/template/stories/preview.ts',
     './renderers/react/template/components/index.js',
   ],
   build: {
@@ -144,10 +137,7 @@ const config = defineMain({
       disableDocgen: false,
     },
   },
-  framework: {
-    name: '@storybook/react-vite',
-    options: {},
-  },
+  framework: reactVite({}),
   refs: {
     icons: {
       title: 'Icons',
@@ -165,49 +155,6 @@ const config = defineMain({
     experimentalSearchDocsHeadings: true,
   },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],
-  viteFinal: async (viteConfig: InlineConfig, { configType }: Options) => {
-    const { mergeConfig } = await import('vite');
-
-    return mergeConfig(viteConfig, {
-      resolve: {
-        alias:
-          configType === 'DEVELOPMENT'
-            ? {
-                'storybook/internal/components': componentsPath,
-                'storybook/manager-api': managerApiPath,
-                'storybook/preview-api': previewApiPath,
-                'storybook/theming/create': themingCreatePath,
-                'storybook/theming': themingPath,
-                'sb-original/image-context': imageContextPath,
-              }
-            : {
-                // The components dist bundle inlines react-aria; resolving to source keeps the
-                // preview on a single react-aria copy so FocusScopes can nest across modules.
-                'storybook/internal/components': componentsPath,
-                'storybook/manager-api': managerApiPath,
-                'storybook/preview-api': previewApiPath,
-              },
-      },
-      plugins: [react()],
-      build: {
-        // disable sourcemaps in CI to not run out of memory
-        sourcemap: process.env.CI !== 'true',
-        target: BROWSER_TARGETS,
-      },
-      server: {
-        watch: {
-          // Something odd happens with tsconfig and nx which causes Storybook to keep reloading, so we ignore them
-          ignored: [
-            '**/.nx/cache/**',
-            '**/tsconfig.json',
-            // Internal e2e writes traces under code/playwright-results while the dev server is running.
-            '**/playwright-results/**',
-            '**/playwright-report/**',
-          ],
-        },
-      },
-    } satisfies typeof viteConfig);
-  },
 });
 
 export default config;

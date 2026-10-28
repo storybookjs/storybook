@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path, { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { RN_STORYBOOK_DIR } from '../../../../../core/src/shared/constants/config-folder.ts';
+import { RN_STORYBOOK_DIR } from 'storybook/internal/common';
 import { SupportedLanguage } from 'storybook/internal/types';
 
 const ENTRYPOINT_TEMPLATE_DIR = join(

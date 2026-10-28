@@ -1,7 +1,7 @@
 import { extname } from 'pathe';
 
-import { logger } from 'storybook/internal/node-logger';
-import { parseWithOxc } from 'storybook/internal/oxc-parser';
+import { logger } from '@storybook/core/internal/node-logger';
+import { parseWithOxc } from '@storybook/core/internal/oxc-parser';
 
 import type { ImportEdge, ImportParser, ImportParserContext } from './types.ts';
 

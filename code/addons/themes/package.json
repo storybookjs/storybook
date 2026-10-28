@@ -41,6 +41,11 @@
       "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "code": "./src/node.ts",
+      "default": "./dist/node.js"
+    },
     "./package.json": "./package.json",
     "./postinstall": "./dist/postinstall.js",
     "./preview": {
@@ -57,6 +62,7 @@
     "!src/**/*"
   ],
   "dependencies": {
+    "@storybook/core": "workspace:*",
     "ts-dedent": "^2.2.0"
   },
   "devDependencies": {

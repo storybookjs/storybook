@@ -37,19 +37,17 @@
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
-    "./preset": "./dist/preset.js",
     "./vite-plugin": "./dist/vite-plugin.js"
   },
   "files": [
     "dist/**/*",
     "template/**/*",
     "README.md",
-    "*.js",
-    "*.d.ts",
     "!src/**/*"
   ],
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
+    "@storybook/core": "workspace:*",
     "@storybook/vue3": "workspace:*",
     "magic-string": "^1.1.0"
   },
@@ -66,6 +64,9 @@
     "vite": "^6.3.0 || ^7.0.0 || ^8.0.0"
   },
   "peerDependenciesMeta": {
+    "storybook": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     }

@@ -1,11 +1,11 @@
-import type { Channel } from 'storybook/internal/channels';
-import { DOCS_RENDERED } from 'storybook/internal/core-events';
-import type { Renderer, StoryId } from 'storybook/internal/types';
-import type { CSFFile, PreparedStory } from 'storybook/internal/types';
-import type { IndexEntry } from 'storybook/internal/types';
-import type { RenderContextCallbacks } from 'storybook/internal/types';
+import type { Channel } from '@storybook/core/internal/channels';
+import { DOCS_RENDERED } from '@storybook/core/internal/core-events';
+import type { Renderer, StoryId } from '@storybook/core/internal/types';
+import type { CSFFile, PreparedStory } from '@storybook/core/internal/types';
+import type { IndexEntry } from '@storybook/core/internal/types';
+import type { RenderContextCallbacks } from '@storybook/core/internal/types';
 
-import { isMdxEntry } from '../../../../shared/utils/story-index-filters.ts';
+import { isMdxEntry } from '../../../../utils/story-index-filters.ts';
 import type { StoryStore } from '../../../store.ts';
 import { DocsContext } from '../docs-context/DocsContext.ts';
 import type { DocsContextProps } from '../docs-context/DocsContextProps.ts';

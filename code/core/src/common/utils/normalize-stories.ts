@@ -1,8 +1,8 @@
 import { lstatSync } from 'node:fs';
 import { basename, dirname, relative, resolve } from 'node:path';
 
-import { InvalidStoriesEntryError } from 'storybook/internal/server-errors';
-import type { NormalizedStoriesSpecifier, StoriesEntry } from 'storybook/internal/types';
+import { InvalidStoriesEntryError } from '@storybook/core/internal/server-errors';
+import type { NormalizedStoriesSpecifier, StoriesEntry } from '@storybook/core/internal/types';
 
 import * as pico from 'picomatch';
 // eslint-disable-next-line depend/ban-dependencies

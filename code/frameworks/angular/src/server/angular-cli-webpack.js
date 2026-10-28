@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
 
-import { getTsconfigPathsBaseDir } from 'storybook/internal/common';
+import { getTsconfigPathsBaseDir } from '@storybook/core/internal/common';
 
 import StorybookNormalizeAngularEntryPlugin from './plugins/storybook-normalize-angular-entry-plugin';
 import { filterOutStylingRules } from './utils/filter-out-styling-rules';

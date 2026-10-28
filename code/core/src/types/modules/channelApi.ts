@@ -1,4 +1,4 @@
-import type { API_ViewMode } from './api.ts';
+import type { API_ViewMode } from '../api.ts';
 import type {
   ArgTypes,
   Args,

@@ -2,7 +2,7 @@ import { posix, win32 } from 'node:path';
 
 import { normalize } from 'pathe';
 
-import { slash } from '../../../utils/paths.ts';
+import { slash } from '../../../../utils/paths.ts';
 
 import type { ReverseIndex } from './engine/dependency-graph/types.ts';
 

@@ -1,4 +1,4 @@
-import type { IndexEntry } from 'storybook/internal/types';
+import type { IndexEntry } from '@storybook/core/internal/types';
 
 /**
  * Determines whether a story index entry was authored by the `storybook skills setup` flow.

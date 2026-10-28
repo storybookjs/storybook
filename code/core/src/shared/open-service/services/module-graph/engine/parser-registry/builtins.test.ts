@@ -3,11 +3,11 @@
 // test the stub, not the extractor's mapping from oxc nodes to ImportEdge.
 import { describe, expect, it, vi } from 'vitest';
 
-import { ChangeDetectionFailureError } from '../../../../../../core-server/change-detection/errors.ts';
+import { ChangeDetectionFailureError } from '../../../../../../services/change-detection/errors.ts';
 import { mdxImportParser, oxcImportParser } from './builtins.ts';
 import type { ImportParserContext } from './types.ts';
 
-vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('@storybook/core/internal/node-logger', { spy: true });
 
 const noopContext: ImportParserContext = {
   parseScriptWithOxc: async () => [],

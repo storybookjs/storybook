@@ -1,9 +1,13 @@
 import { expect, it, vi } from 'vitest';
 
-import { Channel } from 'storybook/internal/channels';
-import type { DocsIndexEntry, RenderContextCallbacks, Renderer } from 'storybook/internal/types';
+import { Channel } from '@storybook/core/internal/channels';
+import type {
+  DocsIndexEntry,
+  RenderContextCallbacks,
+  Renderer,
+} from '@storybook/core/internal/types';
 
-import { Tag } from '../../../../shared/constants/tags.ts';
+import { Tag } from '../../../../constants/tags.ts';
 import type { StoryStore } from '../../store/index.ts';
 import { csfFileParts } from '../docs-context/test-utils.ts';
 import { CsfDocsRender } from './CsfDocsRender.ts';

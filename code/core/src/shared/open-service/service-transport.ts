@@ -28,7 +28,7 @@
 
 import * as v from 'valibot';
 
-import { logger } from 'storybook/internal/client-logger';
+import { logger } from '@storybook/core/internal/client-logger';
 
 import {
   OpenServiceRemoteCommandConfigDriftError,

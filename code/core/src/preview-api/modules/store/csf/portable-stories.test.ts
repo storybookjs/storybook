@@ -1,17 +1,18 @@
 // @vitest-environment node
 import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
-import type { ProjectAnnotations } from 'storybook/internal/csf';
-import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
+import type { ProjectAnnotations } from '../../../../csf/index.ts';
+import { ArgTypesRemovedFromStoryContextError } from '@storybook/core/internal/preview-errors';
 import type {
   ComponentAnnotations as Meta,
   Store_CSFExports,
   StoryAnnotationsOrFn as Story,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
-import { getCoreAnnotations } from '../../../../csf/core-annotations.ts';
+import { getCoreAnnotations } from '../../../../csf/index.ts';
+import '../../../../csf/__testfixtures__/register-test-core-annotations.ts';
 import { definePreview } from '../../../../csf/csf-factories.ts';
-import { Tag } from '../../../../shared/constants/tags.ts';
+import { Tag } from '../../../../constants/tags.ts';
 import * as defaultExportAnnotations from './__mocks__/defaultExportAnnotations.mockfile.ts';
 import * as namedExportAnnotations from './__mocks__/namedExportAnnotations.mockfile.ts';
 import { composeStories, composeStory, setProjectAnnotations } from './portable-stories.ts';

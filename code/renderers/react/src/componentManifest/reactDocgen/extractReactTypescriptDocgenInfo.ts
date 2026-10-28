@@ -1,4 +1,4 @@
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import type { ParserOptions as ReactDocgenTypescriptOptions } from 'react-docgen-typescript';
 

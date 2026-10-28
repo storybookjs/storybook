@@ -1,9 +1,9 @@
 import { isAbsolute, relative } from 'node:path';
 
-import { JsPackageManagerFactory } from 'storybook/internal/common';
+import { JsPackageManagerFactory } from '@storybook/core/internal/common';
 
 import type { BuilderContext } from '@angular-devkit/architect';
-import { prompt } from 'storybook/internal/node-logger';
+import { prompt } from '@storybook/core/internal/node-logger';
 
 const hasTsConfigArg = (args: string[]) => args.indexOf('-p') !== -1;
 const hasOutputArg = (args: string[]) =>

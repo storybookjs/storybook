@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs';
 import { dirname, relative, sep } from 'node:path';
 
-import { findTsconfigPathForFile, getTsconfigPathsBaseDir } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { findTsconfigPathForFile, getTsconfigPathsBaseDir } from '@storybook/core/internal/common';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { createFilter } from '@rollup/pluginutils';
 import MagicString from 'magic-string';

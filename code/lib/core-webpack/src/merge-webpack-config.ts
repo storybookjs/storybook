@@ -3,7 +3,7 @@ import type {
   ModuleConfig,
   ResolveConfig,
   RulesConfig,
-} from './types.ts';
+} from '@storybook/builder-webpack5';
 
 function mergePluginsField(
   defaultPlugins: Required<Configuration>['plugins'] = [],
@@ -66,6 +66,7 @@ function mergeOptimizationField(
   };
 }
 
+/** @deprecated Unused by Storybook's builders; return a custom `webpack.config` function instead. */
 export function mergeConfigs(config: Configuration, customConfig: Configuration): Configuration {
   return {
     // We'll always load our configurations after the custom config.

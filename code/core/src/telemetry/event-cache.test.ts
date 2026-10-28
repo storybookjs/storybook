@@ -1,13 +1,13 @@
 import type { MockInstance } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { cache } from 'storybook/internal/common';
+import { cache } from '@storybook/core/internal/common';
 
 import type { CacheEntry } from './event-cache.ts';
 import { getLastEvents, getPrecedingUpgrade, set } from './event-cache.ts';
 import type { TelemetryEvent } from './types.ts';
 
-vi.mock('storybook/internal/common', { spy: true });
+vi.mock('@storybook/core/internal/common', { spy: true });
 
 expect.addSnapshotSerializer({
   print: (val: unknown) => JSON.stringify(val, null, 2),

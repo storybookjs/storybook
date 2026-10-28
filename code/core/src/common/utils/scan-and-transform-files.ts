@@ -1,4 +1,4 @@
-import { logger, prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from '@storybook/core/internal/node-logger';
 
 import { commonGlobOptions } from './common-glob-options.ts';
 import { getProjectRoot } from './paths.ts';

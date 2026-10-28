@@ -2,19 +2,20 @@ import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { HttpTransport } from '@tmcp/transport-http';
 import pkgJson from '../package.json' with { type: 'json' };
-import type { Source } from 'storybook/internal/toolsets-docs';
-import type { Options } from 'storybook/internal/types';
+import type { Source } from '@storybook/core/internal/toolsets-docs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { buffer } from 'node:stream/consumers';
 import { collectTelemetry } from './telemetry.ts';
-import type { DocsAccess } from 'storybook/internal/toolsets-docs';
-import type { AddonContext, AddonOptionsOutput } from './types.ts';
-import { logger } from 'storybook/internal/node-logger';
-import { getEffectiveToolAvailability, getToolAvailability } from 'storybook/internal/core-server';
+import type { DocsAccess } from '@storybook/core/internal/toolsets-docs';
+import type { AddonContext, AddonOptionsOutput, McpServerOptions } from './types.ts';
+import { logger } from '@storybook/core/internal/node-logger';
+import { getEffectiveToolAvailability, getToolAvailability } from 'storybook/internal/server';
 import { buildServerInstructions } from 'storybook/internal/skills';
 import type { CompositionAuth } from './auth/index.ts';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 import { registerAddonMcpTools } from './tools/tool-registry.ts';
+
+type McpHandlerOptions = Omit<McpServerOptions, 'getIndex'>;
 
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
@@ -23,9 +24,8 @@ let initialize: Promise<McpServer<any, AddonContext>> | undefined;
 let disableTelemetry: boolean | undefined;
 let a11yEnabled: boolean | undefined;
 
-const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
-  const core = await options.presets.apply('core', {});
-  disableTelemetry = core?.disableTelemetry ?? false;
+const initializeMCPServer = async (options: McpHandlerOptions, multiSource?: boolean) => {
+  disableTelemetry = options.core?.disableTelemetry ?? false;
 
   // Determine tool availability before creating server so instructions can be tailored.
   // Shares one source of truth with the browser landing page (core's `getToolAvailability`)
@@ -85,7 +85,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 type McpServerHandlerParams = {
   req: IncomingMessage;
   res: ServerResponse;
-  options: Options;
+  options: McpHandlerOptions;
   addonOptions: AddonOptionsOutput;
   /**
    * The MCP endpoint path (e.g. `/mcp` or a user-configured override).

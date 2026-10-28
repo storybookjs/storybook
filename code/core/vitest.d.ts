@@ -1,6 +1,6 @@
 import 'vitest';
 
-import { type LiveRegionMatcherOptions } from './core/src/shared/utils/toHaveLiveRegion';
+import { type LiveRegionMatcherOptions } from './core/src/utils/toHaveLiveRegion';
 
 interface CustomMatchers<R = unknown> {
   toMatchPaths(paths: string[]): R;

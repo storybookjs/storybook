@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 
-import { loadCsf } from 'storybook/internal/csf-tools';
+import { loadCsf } from '@storybook/core/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
 

@@ -8,7 +8,7 @@ import {
   SupportedRenderer,
 } from 'storybook/internal/types';
 
-import { applyPreviewImportsMap } from '../../../../../core/src/shared/constants/config-folder.ts';
+import { applyPreviewImportsMap } from 'storybook/internal/common';
 import reactNativeGeneratorModule from '../REACT_NATIVE/index.ts';
 import reactNativeWebGeneratorModule from '../REACT_NATIVE_WEB/index.ts';
 import { defineGeneratorModule } from '../modules/GeneratorModule.ts';

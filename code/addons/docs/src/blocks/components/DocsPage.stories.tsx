@@ -8,7 +8,7 @@ import { ArgsTable, Source } from '.';
 import { Markdown as MarkdownComponent } from '../blocks/Markdown';
 import * as markdown from '../blocks/Markdown.stories';
 import { Unstyled } from '../blocks/Unstyled';
-import * as argsTable from './ArgsTable/ArgsTable.stories';
+import { NORMAL_ARGS } from './ArgsTable/argsTableFixtures.ts';
 import { DocsPageWrapper, Subtitle, Title } from './DocsPage';
 import * as Preview from './Preview.stories';
 import * as source from './Source.stories';
@@ -57,7 +57,7 @@ export const WithSubtitle = () => (
     </Subtitle>
     <MarkdownComponent {...markdown.Text.args} />
     <Preview.Single />
-    <ArgsTable {...argsTable.Normal.args} />
+    <ArgsTable {...NORMAL_ARGS} />
     <Source {...source.JSX.args} />
   </DocsPageWrapper>
 );
@@ -66,7 +66,7 @@ export const NoText = () => (
   <DocsPageWrapper>
     <Title>no text</Title>
     <Preview.Single />
-    <ArgsTable {...argsTable.Normal.args} />
+    <ArgsTable {...NORMAL_ARGS} />
     <Source {...source.JSX.args} />
   </DocsPageWrapper>
 );
@@ -76,7 +76,7 @@ export const Text = () => (
     <Title>Sensorium</Title>
     <MarkdownComponent {...markdown.Text.args} />
     <Preview.Single />
-    <ArgsTable {...argsTable.Normal.args} />
+    <ArgsTable {...NORMAL_ARGS} />
     <Source {...source.JSX.args} />
   </DocsPageWrapper>
 );
@@ -86,7 +86,7 @@ export const Markdown = () => (
     <Title>markdown</Title>
     <MarkdownComponent {...markdown.Markdown.args} />
     <Preview.Single />
-    <ArgsTable {...argsTable.Normal.args} />
+    <ArgsTable {...NORMAL_ARGS} />
     <Source {...source.JSX.args} />
   </DocsPageWrapper>
 );

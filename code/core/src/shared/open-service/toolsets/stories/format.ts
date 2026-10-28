@@ -1,9 +1,10 @@
-import type { ToolsetCtx } from '../../toolset-definition.ts';
+import type { ToolsetBaseCtx } from '../../toolset-definition.ts';
 import { getToolName } from '../../toolset-names.ts';
 import type {
   ChangedStoriesOutput,
   FindByComponentOutput,
   PreviewStoriesOutput,
+  ScreenshotStoriesOutput,
 } from './definition.ts';
 
 function pluralize(count: number, singular: string, plural = `${singular}s`): string {
@@ -14,14 +15,14 @@ function pluralize(count: number, singular: string, plural = `${singular}s`): st
  * Recovery nudge for the review exit ramp: agents that skip the review tool end visual work on
  * exactly this call, so the result itself has to contradict that while a step remains to recover in.
  */
-function previewReviewNudge(ctx: ToolsetCtx): string {
+function previewReviewNudge(ctx: ToolsetBaseCtx): string {
   const reviewTool = getToolName(ctx)('review.create');
   return `These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The ${reviewTool} tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **${reviewTool}** and link that instead.`;
 }
 
 export function previewInstructions(
   stories: PreviewStoriesOutput['stories'],
-  ctx: ToolsetCtx
+  ctx: ToolsetBaseCtx
 ): string | undefined {
   // An all-error result has nothing to curate or open, so the nudge only applies once a URL resolved.
   if (!stories.some((story) => 'previewUrl' in story)) {
@@ -40,13 +41,32 @@ export function formatPreviewStories({ stories, instructions }: PreviewStoriesOu
   return instructions ? [...blocks, instructions] : blocks;
 }
 
+export function formatScreenshotStories({ stories }: ScreenshotStoriesOutput): string[] {
+  return stories.map((story) => {
+    if (!('status' in story)) {
+      return story.error;
+    }
+    const lines = [
+      `${story.storyId}: ${story.status} (${story.viewport.width}x${story.viewport.height})`,
+      story.path ? `Screenshot: ${story.path}` : 'No screenshot was captured.',
+    ];
+    if (story.error) {
+      lines.push(`Error: ${story.error}`);
+    }
+    if (story.consoleErrors.length > 0) {
+      lines.push('Console errors:', ...story.consoleErrors.map((error) => `- ${error}`));
+    }
+    return lines.join('\n');
+  });
+}
+
 function formatQuotedList(files: string[]): string {
   return files.map((file) => `\`${file}\``).join(', ');
 }
 
 function formatChangedFilesOutsideStories(
   { unreachableFiles, unreachableFilesTruncated, changedConfigFiles }: ChangedStoriesOutput,
-  ctx: ToolsetCtx
+  ctx: ToolsetBaseCtx
 ): string {
   const notes: string[] = [];
   if (changedConfigFiles.length > 0) {
@@ -63,7 +83,7 @@ function formatChangedFilesOutsideStories(
   return notes.map((note) => `\n\n${note}`).join('');
 }
 
-export function formatChangedStories(data: ChangedStoriesOutput, ctx: ToolsetCtx): string {
+export function formatChangedStories(data: ChangedStoriesOutput, ctx: ToolsetBaseCtx): string {
   const { stories, counts } = data;
   if (stories.length === 0) {
     return `No new, modified, or related stories detected.${formatChangedFilesOutsideStories(data, ctx)}`;

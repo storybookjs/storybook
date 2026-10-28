@@ -27,28 +27,38 @@
       "default": "./dist/index.js"
     },
     "./loader": "./dist/loader.js",
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "code": "./src/node.ts",
+      "default": "./dist/node.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "dist/**/*",
     "README.md",
-    "*.js",
-    "*.d.ts",
     "!src/**/*"
   ],
   "dependencies": {
-    "@storybook/core-webpack": "workspace:*",
+    "@storybook/builder-webpack5": "workspace:*",
+    "@storybook/core": "workspace:*",
     "safe-identifier": "^0.4.2",
     "ts-dedent": "^2.2.0",
     "yaml-loader": "^0.8.1"
   },
   "devDependencies": {
+    "@storybook/builder-webpack5": "workspace:*",
     "@types/node": "^22.19.1",
     "typescript": "^6.0.3",
     "yaml": "^2.8.1"
   },
   "peerDependencies": {
     "storybook": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "storybook": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

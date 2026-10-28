@@ -1,4 +1,4 @@
-import { unwrapExpression, type ImportBinding } from 'storybook/internal/csf-tools';
+import { unwrapExpression, type ImportBinding } from '@storybook/core/internal/csf-tools';
 
 import type { ClassifiedSlotArg } from '../classify-args/classify-args.ts';
 import { isFunctionExpression } from '../../shared/classify-value.ts';

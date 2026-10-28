@@ -2,7 +2,7 @@ import {
   ChangeDetectionFailureError,
   type ImportEdge,
   type ImportParser,
-} from 'storybook/internal/core-server';
+} from '@storybook/core/internal/services';
 
 // Vue 3.2.13+ re-exports `@vue/compiler-sfc` as `vue/compiler-sfc`, so we do NOT need
 // an explicit `@vue/compiler-sfc` dependency here. `vue` is already a peer dep of the

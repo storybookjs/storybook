@@ -1,4 +1,4 @@
-import type { StrictArgTypes } from 'storybook/internal/types';
+import type { StrictArgTypes } from '@storybook/core/internal/types';
 
 import type { Component } from '../types.ts';
 import type { PropDef } from './PropDef.ts';

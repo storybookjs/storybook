@@ -1,5 +1,5 @@
-import type { ESTree as E, ESTreeNode as Node } from 'storybook/internal/csf-tools';
-import { oneLineTextOf } from 'storybook/internal/csf-tools';
+import type { ESTree as E, ESTreeNode as Node } from '@storybook/core/internal/csf-tools';
+import { oneLineTextOf } from '@storybook/core/internal/csf-tools';
 
 import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
 import { fieldDefault, pairedAttribute } from './classify-args.ts';

@@ -1,5 +1,5 @@
-import { logger } from 'storybook/internal/node-logger';
-import type { DocgenPayload, DocgenProvider, IndexEntry } from 'storybook/internal/types';
+import { logger } from '@storybook/core/internal/node-logger';
+import type { DocgenPayload, DocgenProvider, IndexEntry } from '@storybook/core/internal/types';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -38,7 +38,7 @@ vi.mock('@storybook/angular-cm', () => ({
 }));
 // These tests cover the middleware chain, not payload building.
 vi.mock('./build-docgen.ts', () => ({ buildDocgenPayload: vi.fn() }));
-vi.mock(import('storybook/internal/node-logger'), { spy: true });
+vi.mock(import('@storybook/core/internal/node-logger'), { spy: true });
 
 beforeEach(() => {
   analyzer.instances = [];

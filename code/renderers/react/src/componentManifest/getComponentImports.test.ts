@@ -1,6 +1,6 @@
 import { beforeEach, expect, test, vi } from 'vitest';
 
-import { loadCsf } from 'storybook/internal/csf-tools';
+import { loadCsf } from '@storybook/core/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
 
@@ -10,7 +10,7 @@ import { setupMemfsMocks } from './memfs-test-setup.ts';
 vi.mock('node:fs');
 vi.mock('node:fs/promises');
 vi.mock(import('./utils.ts'), { spy: true });
-vi.mock('storybook/internal/common', { spy: true });
+vi.mock('@storybook/core/internal/common', { spy: true });
 vi.mock('empathic/find', { spy: true });
 vi.mock('tsconfig-paths', { spy: true });
 

@@ -1,5 +1,5 @@
-import { extractDeclaredSubcomponents } from 'storybook/internal/common';
-import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
+import { extractDeclaredSubcomponents } from '@storybook/core/internal/common';
+import { storyNameFromExport } from '@storybook/core/internal/csf/csf-utils';
 import {
   type ImportRef,
   type StoryReferences,
@@ -7,7 +7,7 @@ import {
   extractStoryJSDocInfo,
   loadCsf,
   unresolvedWarning,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 
 import { getCodeSnippet } from './generateCodeSnippet.ts';
 import {

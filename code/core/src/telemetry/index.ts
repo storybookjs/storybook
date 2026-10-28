@@ -1,4 +1,4 @@
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { notify } from './notify.ts';
 import { sanitizeError } from './sanitize.ts';

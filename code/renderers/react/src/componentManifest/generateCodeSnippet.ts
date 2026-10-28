@@ -20,7 +20,7 @@ import {
   resolveRenderFunction,
   storyShapeError,
   walk,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 
 import { invariant } from './utils.ts';
 

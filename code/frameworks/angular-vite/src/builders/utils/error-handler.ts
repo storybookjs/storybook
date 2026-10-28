@@ -1,4 +1,4 @@
-import { logger, instance as npmLog } from 'storybook/internal/node-logger';
+import { logger, instance as npmLog } from '@storybook/core/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 

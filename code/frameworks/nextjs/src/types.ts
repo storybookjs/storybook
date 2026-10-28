@@ -14,6 +14,13 @@ import type {
 import type * as NextImage from 'next/image';
 import type { NextRouter } from 'next/router';
 
+declare module 'storybook/internal/types' {
+  interface StorybookFeatures {
+    /** Remove the preset-env bugfixes option for Babel 8 compatibility. */
+    babelRemoveBugfixes?: boolean;
+  }
+}
+
 type FrameworkName = CompatibleString<'@storybook/nextjs'>;
 type BuilderName = CompatibleString<'@storybook/builder-webpack5'>;
 

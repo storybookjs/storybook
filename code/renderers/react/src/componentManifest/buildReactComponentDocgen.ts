@@ -1,17 +1,17 @@
-import { getComponentIdFromEntry } from 'storybook/internal/common';
+import { getComponentIdFromEntry } from '@storybook/core/internal/common';
 import {
   buildImportStatements,
   createStoryReferenceResolver,
   extractComponentDescription,
   extractDescription,
   storyShapeError,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 import type {
   ComponentManifest,
   ComponentSubcomponentManifest,
   IndexEntry,
   StoryDocsPayload,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 import path from 'pathe';
 

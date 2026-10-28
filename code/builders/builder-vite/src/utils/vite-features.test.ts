@@ -29,7 +29,10 @@ describe('applyChunkedPreviewRuntime', () => {
     }
 
     expect(
-      manualChunks.manualChunks('/abs/storybook/dist/preview/_chunks/runtime-abc.js', {} as never)
+      manualChunks.manualChunks(
+        '/abs/storybook/dist/core/preview/_chunks/runtime-abc.js',
+        {} as never
+      )
     ).toBe('runtime-abc');
     expect(manualChunks.manualChunks('/abs/src/Button.tsx', {} as never)).toBe('vendor');
     expect(previous).toHaveBeenCalledOnce();

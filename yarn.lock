@@ -3373,16 +3373,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@happy-dom/global-registrator@npm:^20.0.11":
-  version: 20.0.11
-  resolution: "@happy-dom/global-registrator@npm:20.0.11"
-  dependencies:
-    "@types/node": "npm:^20.0.0"
-    happy-dom: "npm:^20.0.11"
-  checksum: 10c0/c45d0adac56cd65f54da273102d6dfb27905360df294b88fea71d1ac1cfa88593a90298053eb7ff225db86e9c9f5e1c2c27d4c88cad4a1eee5ab6c69fec5df67
-  languageName: node
-  linkType: hard
-
 "@harperfast/extended-iterable@npm:^1.0.3":
   version: 1.0.3
   resolution: "@harperfast/extended-iterable@npm:1.0.3"
@@ -9071,19 +9061,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-aria/focus@npm:^3.22.1":
-  version: 3.22.1
-  resolution: "@react-aria/focus@npm:3.22.1"
-  dependencies:
-    "@swc/helpers": "npm:^0.5.0"
-    react-aria: "npm:^3.48.0"
-  peerDependencies:
-    react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
-    react-dom: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
-  checksum: 10c0/09cfe01fafcdb938acccbdaa300186d400250208caaeaebebce06a041c117a372289dac261f824076073469f631420a5fc31b4fafd4166aad3065bcfe9d68570
-  languageName: node
-  linkType: hard
-
 "@react-aria/live-announcer@npm:^3.5.1":
   version: 3.5.1
   resolution: "@react-aria/live-announcer@npm:3.5.1"
@@ -9572,13 +9549,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@rolldown/pluginutils@npm:1.0.0-beta.18":
-  version: 1.0.0-beta.18
-  resolution: "@rolldown/pluginutils@npm:1.0.0-beta.18"
-  checksum: 10c0/5a7444da546bdaf53b0541a5888e331bab18fbdf30589d5b65be6145efbc90be5f905dded46f1a605cbd5cb32c11de80fadcd1e09e62a3c91df46437fd8ef9e3
-  languageName: node
-  linkType: hard
-
 "@rolldown/pluginutils@npm:1.0.0-beta.27":
   version: 1.0.0-beta.27
   resolution: "@rolldown/pluginutils@npm:1.0.0-beta.27"
@@ -9898,6 +9868,7 @@ __metadata:
   resolution: "@storybook/addon-a11y@workspace:code/addons/a11y"
   dependencies:
     "@radix-ui/react-tabs": "npm:1.0.4"
+    "@storybook/core": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.2"
     "@testing-library/react": "npm:^14.0.0"
@@ -9941,6 +9912,7 @@ __metadata:
     "@mdx-js/mdx": "npm:^3.0.0"
     "@mdx-js/react": "npm:^3.0.0"
     "@rollup/pluginutils": "npm:^5.0.2"
+    "@storybook/core": "workspace:*"
     "@storybook/icons": "npm:^2.0.2"
     "@types/color-convert": "npm:^2.0.0"
     "@types/react": "npm:^18.0.0 || ^19.0.0"
@@ -9975,6 +9947,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/addon-links@workspace:code/addons/links"
   dependencies:
+    "@storybook/core": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     typescript: "npm:^6.0.3"
   peerDependencies:
@@ -9995,6 +9968,7 @@ __metadata:
   dependencies:
     "@storybook/addon-a11y": "workspace:*"
     "@storybook/addon-vitest": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@tmcp/adapter-valibot": "npm:^0.1.5"
     "@tmcp/transport-http": "npm:^0.8.5"
     storybook: "workspace:*"
@@ -10015,10 +9989,10 @@ __metadata:
   resolution: "@storybook/addon-onboarding@workspace:code/addons/onboarding"
   dependencies:
     "@neoconfetti/react": "npm:^1.0.0"
+    "@storybook/core": "workspace:*"
     "@storybook/icons": "npm:^2.0.2"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
-    react-joyride: "npm:^2.8.2"
     typescript: "npm:^6.0.3"
   peerDependencies:
     storybook: "workspace:^"
@@ -10029,6 +10003,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/addon-themes@workspace:code/addons/themes"
   dependencies:
+    "@storybook/core": "workspace:*"
     "@storybook/icons": "npm:^2.0.2"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
@@ -10045,6 +10020,7 @@ __metadata:
   dependencies:
     "@storybook/addon-a11y": "workspace:*"
     "@storybook/builder-vite": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.2"
     "@types/istanbul-lib-report": "npm:^3.0.3"
@@ -10124,6 +10100,7 @@ __metadata:
     "@storybook/angular-cm": "workspace:*"
     "@storybook/angular-compodoc": "workspace:*"
     "@storybook/builder-vite": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@types/node": "npm:^22.19.1"
     empathic: "npm:^2.0.0"
@@ -10185,6 +10162,7 @@ __metadata:
     "@angular/platform-browser-dynamic": "npm:^21.0.0"
     "@storybook/angular-compodoc": "workspace:*"
     "@storybook/builder-webpack5": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@storybook/core-webpack": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@types/node": "npm:^22.19.1"
@@ -10226,10 +10204,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/builder-vite@workspace:code/builders/builder-vite"
   dependencies:
+    "@storybook/core": "workspace:*"
     "@types/node": "npm:^22.19.1"
     empathic: "npm:^2.0.0"
     es-module-lexer: "npm:^1.5.0"
-    glob: "npm:^10.5.0"
     knitwork: "npm:^1.1.0"
     magic-string: "npm:^1.1.0"
     pathe: "npm:^1.1.2"
@@ -10239,6 +10217,9 @@ __metadata:
   peerDependencies:
     storybook: "workspace:^"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
+  peerDependenciesMeta:
+    storybook:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -10246,22 +10227,18 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/builder-webpack5@workspace:code/builders/builder-webpack5"
   dependencies:
-    "@storybook/core-webpack": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@types/node": "npm:^22.19.1"
     "@types/pretty-hrtime": "npm:^1.0.0"
     "@types/webpack-hot-middleware": "npm:^2.25.6"
     case-sensitive-paths-webpack-plugin: "npm:^2.4.0"
-    cjs-module-lexer: "npm:^1.2.3"
     css-loader: "npm:^7.1.2"
-    es-module-lexer: "npm:^1.5.0"
     fork-ts-checker-webpack-plugin: "npm:^9.1.0"
     html-webpack-plugin: "npm:^5.5.0"
-    magic-string: "npm:^1.1.0"
     memfs: "npm:^4.11.1"
     pretty-hrtime: "npm:^1.0.3"
     semver: "npm:^7.7.3"
     sirv: "npm:^2.0.4"
-    slash: "npm:^5.0.0"
     style-loader: "npm:^4.0.0"
     terser-webpack-plugin: "npm:^5.3.17"
     typescript: "npm:^6.0.3"
@@ -10272,6 +10249,8 @@ __metadata:
   peerDependencies:
     storybook: "workspace:^"
   peerDependenciesMeta:
+    storybook:
+      optional: true
     typescript:
       optional: true
   languageName: unknown
@@ -10450,12 +10429,132 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/core-webpack@workspace:code/lib/core-webpack"
   dependencies:
+    "@storybook/builder-webpack5": "workspace:*"
     "@types/node": "npm:^22.19.1"
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^6.0.3"
     webpack: "npm:5"
   peerDependencies:
     storybook: "workspace:^"
+  languageName: unknown
+  linkType: soft
+
+"@storybook/core@workspace:*, @storybook/core@workspace:code/core":
+  version: 0.0.0-use.local
+  resolution: "@storybook/core@workspace:code/core"
+  dependencies:
+    "@aw-web-design/x-default-browser": "npm:1.4.126"
+    "@babel/core": "npm:^7.28.5"
+    "@clack/prompts": "npm:1.0.0-alpha.7"
+    "@discoveryjs/json-ext": "npm:^0.5.3"
+    "@jridgewell/remapping": "npm:^2.3.5"
+    "@jridgewell/sourcemap-codec": "npm:^1.5.5"
+    "@ngard/tiny-isequal": "npm:^1.1.0"
+    "@preact/signals-core": "npm:^1.14.2"
+    "@standard-schema/spec": "npm:^1.1.0"
+    "@storybook/global": "npm:^5.0.0"
+    "@storybook/icons": "npm:^2.0.2"
+    "@testing-library/dom": "npm:^10.4.1"
+    "@testing-library/jest-dom": "npm:6.9.1"
+    "@testing-library/react": "npm:^14.0.0"
+    "@testing-library/user-event": "npm:^14.6.3"
+    "@types/chai": "npm:^5.2.2"
+    "@types/diff": "npm:^5.0.9"
+    "@types/js-yaml": "npm:^4.0.5"
+    "@types/node": "npm:^22.19.1"
+    "@types/npmlog": "npm:^7.0.0"
+    "@types/picomatch": "npm:^4.0.3"
+    "@types/prettier": "npm:^3.0.0"
+    "@types/pretty-hrtime": "npm:^1.0.0"
+    "@types/semver": "npm:^7.7.1"
+    "@valibot/to-json-schema": "npm:^1.3.0"
+    "@vitest/expect": "npm:3.2.4"
+    "@vitest/mocker": "npm:3.2.4"
+    "@vitest/spy": "npm:3.2.4"
+    "@vitest/utils": "npm:^3.2.4"
+    "@webcontainer/env": "npm:^1.1.1"
+    acorn: "npm:^8.15.0"
+    acorn-jsx: "npm:^5.3.2"
+    ansi-to-html: "npm:^0.7.2"
+    browser-dtector: "npm:^3.4.0"
+    chai: "npm:^5.1.1"
+    cjs-module-lexer: "npm:^1.2.3"
+    comment-parser: "npm:^1.4.1"
+    deepsignal: "npm:^1.6.0"
+    dequal: "npm:^2.0.2"
+    detect-indent: "npm:^7.0.1"
+    diff: "npm:^8.0.2"
+    empathic: "npm:^2.0.0"
+    es-module-lexer: "npm:^1.5.0"
+    es-toolkit: "npm:^1.43.0"
+    esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0 || ^0.28.0"
+    execa: "npm:^9.6.1"
+    exsolve: "npm:^1.0.7"
+    fetch-retry: "npm:^6.0.0"
+    github-slugger: "npm:^2.0.0"
+    glob: "npm:^10.5.0"
+    globby: "npm:^14.1.0"
+    hookable: "npm:^6.1.2"
+    js-yaml: "npm:^4.1.0"
+    jsdoc-type-pratt-parser: "npm:^4.0.0"
+    lazy-universal-dotenv: "npm:^4.0.0"
+    leven: "npm:^4.0.0"
+    magic-string: "npm:^1.1.0"
+    mdast-util-from-markdown: "npm:^2.0.0"
+    mdast-util-mdx: "npm:^3.0.0"
+    mdast-util-mdx-jsx: "npm:^3.2.0"
+    memfs: "npm:^4.11.1"
+    memoizerific: "npm:^1.11.3"
+    micromark-extension-mdxjs: "npm:^3.0.0"
+    nanoid: "npm:^4.0.2"
+    npmlog: "npm:^7.0.0"
+    oxc-parser: "npm:^0.154.0"
+    oxc-resolver: "npm:11.21.2"
+    p-limit: "npm:^7.2.0"
+    package-manager-detector: "npm:^1.1.0"
+    pathe: "npm:^1.1.2"
+    picocolors: "npm:^1.1.0"
+    picomatch: "npm:^4.0.5"
+    picoquery: "npm:^2.5.0"
+    polka: "npm:^1.0.0-next.28"
+    prettier: "npm:^3.7.1"
+    pretty-hrtime: "npm:^1.0.3"
+    react: "npm:^18.2.0"
+    react-dom: "npm:^18.2.0"
+    react-inspector: "npm:^6.0.0"
+    require-from-string: "npm:^2.0.2"
+    semver: "npm:^7.7.3"
+    sirv: "npm:^2.0.4"
+    slash: "npm:^5.0.0"
+    source-map: "npm:^0.7.4"
+    std-env: "npm:^4.0.0"
+    strip-json-comments: "npm:^5.0.1"
+    telejson: "npm:8.0.0"
+    tiny-invariant: "npm:^1.3.1"
+    tinyspy: "npm:^3.0.2"
+    ts-dedent: "npm:^2.2.0"
+    tsconfig-paths: "npm:^4.2.0"
+    type-fest: "npm:^5.6.0"
+    type-plus: "npm:^8.0.0-beta.8"
+    typescript: "npm:^6.0.3"
+    typescript-5: "npm:typescript@5.9.3"
+    unique-string: "npm:^3.0.0"
+    valibot: "npm:^1.4.0"
+    watchpack: "npm:^2.5.0"
+    wrap-ansi: "npm:^9.0.2"
+    yaml: "npm:^2.8.2"
+    zod: "npm:^3.25.76"
+  peerDependencies:
+    "@types/react": ^18.0.0 || ^19.0.0
+    prettier: ^2 || ^3
+    vite-plus: ^0.1.15 || ^0.2.0 || ^0.3.0
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+    prettier:
+      optional: true
+    vite-plus:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -10506,6 +10605,7 @@ __metadata:
   resolution: "@storybook/ember@workspace:code/frameworks/ember"
   dependencies:
     "@storybook/builder-webpack5": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     babel-loader: "npm:9.1.3"
     ember-source: "npm:~3.28.1"
@@ -10519,6 +10619,9 @@ __metadata:
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
+  peerDependenciesMeta:
+    storybook:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -10534,12 +10637,16 @@ __metadata:
   resolution: "@storybook/html-vite@workspace:code/frameworks/html-vite"
   dependencies:
     "@storybook/builder-vite": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@storybook/html": "workspace:*"
     "@types/node": "npm:^22.19.1"
     typescript: "npm:^6.0.3"
   peerDependencies:
     storybook: "workspace:^"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
+  peerDependenciesMeta:
+    storybook:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -10547,11 +10654,15 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/html@workspace:code/renderers/html"
   dependencies:
+    "@storybook/core": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^6.0.3"
   peerDependencies:
     storybook: "workspace:^"
+  peerDependenciesMeta:
+    storybook:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -10564,6 +10675,66 @@ __metadata:
   checksum: 10c0/072486356fc929ba5a1a225a8636f0e50b2019083e86e4d48d55aeeae4b40f17731cd1eea9cf1785c53e5fc4409fa93aeca15dccb96675c8e7ab536b18ba864c
   languageName: node
   linkType: hard
+
+"@storybook/manager@workspace:*, @storybook/manager@workspace:code/lib/manager":
+  version: 0.0.0-use.local
+  resolution: "@storybook/manager@workspace:code/lib/manager"
+  dependencies:
+    "@emotion/react": "npm:^11.14.0"
+    "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
+    "@react-types/shared": "npm:^3.34.0"
+    "@storybook/core": "workspace:*"
+    "@storybook/global": "npm:^5.0.0"
+    "@storybook/icons": "npm:^2.0.2"
+    "@storybook/ui": "workspace:*"
+    "@testing-library/react": "npm:^14.0.0"
+    "@types/ejs": "npm:^3.1.1"
+    "@types/node": "npm:^22.19.1"
+    "@types/semver": "npm:^7.7.1"
+    "@vitest/utils": "npm:^3.2.4"
+    browser-dtector: "npm:^3.4.0"
+    copy-to-clipboard: "npm:^3.3.1"
+    dequal: "npm:^2.0.2"
+    downshift: "npm:^9.0.4"
+    ejs: "npm:^3.1.10"
+    es-toolkit: "npm:^1.43.0"
+    esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0 || ^0.28.0"
+    exsolve: "npm:^1.0.7"
+    flush-promises: "npm:^1.0.2"
+    fuse.js: "npm:^3.6.1"
+    memoizerific: "npm:^1.11.3"
+    pathe: "npm:^1.1.2"
+    picoquery: "npm:^2.5.0"
+    polished: "npm:^4.2.2"
+    qrcode.react: "npm:^4.2.0"
+    react: "npm:^18.2.0"
+    react-aria: "npm:^3.52.1"
+    react-aria-components: "npm:^1.21.1"
+    react-dom: "npm:^18.2.0"
+    react-helmet-async: "npm:^1.3.0"
+    react-router-dom: "npm:6.15.0"
+    react-transition-state: "npm:^2.3.1"
+    rolldown: "npm:^1.1.4"
+    semver: "npm:^7.7.3"
+    sirv: "npm:^2.0.4"
+    slash: "npm:^5.0.0"
+    store2: "npm:^2.14.2"
+    telejson: "npm:8.0.0"
+    ts-dedent: "npm:^2.2.0"
+    typescript: "npm:^6.0.3"
+  peerDependencies:
+    "@types/react": ^18.0.0 || ^19.0.0
+    prettier: ^2 || ^3
+    vite-plus: ^0.1.15 || ^0.2.0 || ^0.3.0
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+    prettier:
+      optional: true
+    vite-plus:
+      optional: true
+  languageName: unknown
+  linkType: soft
 
 "@storybook/mcp@workspace:code/lib/mcp":
   version: 0.0.0-use.local
@@ -10589,6 +10760,7 @@ __metadata:
   resolution: "@storybook/nextjs-vite@workspace:code/frameworks/nextjs-vite"
   dependencies:
     "@storybook/builder-vite": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@storybook/react": "workspace:*"
     "@storybook/react-vite": "workspace:*"
     "@types/node": "npm:^22.19.1"
@@ -10611,6 +10783,8 @@ __metadata:
     "@types/react":
       optional: true
     "@types/react-dom":
+      optional: true
+    storybook:
       optional: true
     typescript:
       optional: true
@@ -10637,6 +10811,7 @@ __metadata:
     "@babel/types": "npm:^7.28.5"
     "@pmmmwh/react-refresh-webpack-plugin": "npm:^0.5.11"
     "@storybook/builder-webpack5": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@storybook/preset-react-webpack": "workspace:*"
     "@storybook/react": "workspace:*"
     "@types/babel__core": "npm:^7"
@@ -10683,10 +10858,30 @@ __metadata:
       optional: true
     "@types/react-dom":
       optional: true
+    storybook:
+      optional: true
     typescript:
       optional: true
     webpack:
       optional: true
+  languageName: unknown
+  linkType: soft
+
+"@storybook/open-service@workspace:*, @storybook/open-service@workspace:code/lib/open-service":
+  version: 0.0.0-use.local
+  resolution: "@storybook/open-service@workspace:code/lib/open-service"
+  dependencies:
+    "@standard-schema/spec": "npm:^1.1.0"
+    "@storybook/core": "workspace:*"
+    "@types/node": "npm:^22.19.1"
+    "@types/ws": "npm:^8"
+    "@valibot/to-json-schema": "npm:^1.3.0"
+    memfs: "npm:^4.11.1"
+    pathe: "npm:^1.1.2"
+    telejson: "npm:8.0.0"
+    typescript: "npm:^6.0.3"
+    valibot: "npm:^1.4.0"
+    ws: "npm:^8.21.1"
   languageName: unknown
   linkType: soft
 
@@ -10695,6 +10890,7 @@ __metadata:
   resolution: "@storybook/preact-vite@workspace:code/frameworks/preact-vite"
   dependencies:
     "@storybook/builder-vite": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@storybook/preact": "workspace:*"
     "@types/node": "npm:^22.19.1"
     typescript: "npm:^6.0.3"
@@ -10703,6 +10899,9 @@ __metadata:
     preact: ^10.8.0 || >= 11.0.0-0
     storybook: "workspace:^"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
+  peerDependenciesMeta:
+    storybook:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -10710,6 +10909,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/preact@workspace:code/renderers/preact"
   dependencies:
+    "@storybook/core": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     preact: "npm:^11.0.0"
     ts-dedent: "npm:^2.2.0"
@@ -10717,6 +10917,9 @@ __metadata:
   peerDependencies:
     preact: ^10.8.0 || >= 11.0.0-0
     storybook: "workspace:^"
+  peerDependenciesMeta:
+    storybook:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -10724,7 +10927,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/preset-react-webpack@workspace:code/presets/react-webpack"
   dependencies:
-    "@storybook/core-webpack": "workspace:*"
+    "@storybook/builder-webpack5": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@storybook/react-docgen-typescript-plugin": "npm:1.0.6--canary.9.0c3f3b7.0"
     "@types/node": "npm:^22.19.1"
     empathic: "npm:^2.0.0"
@@ -10739,6 +10943,8 @@ __metadata:
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
   peerDependenciesMeta:
+    storybook:
+      optional: true
     typescript:
       optional: true
   languageName: unknown
@@ -10748,7 +10954,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/preset-server-webpack@workspace:code/presets/server-webpack"
   dependencies:
-    "@storybook/core-webpack": "workspace:*"
+    "@storybook/builder-webpack5": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@types/node": "npm:^22.19.1"
     safe-identifier: "npm:^0.4.2"
     ts-dedent: "npm:^2.2.0"
@@ -10757,6 +10964,9 @@ __metadata:
     yaml-loader: "npm:^0.8.1"
   peerDependencies:
     storybook: "workspace:^"
+  peerDependenciesMeta:
+    storybook:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -10783,6 +10993,7 @@ __metadata:
   resolution: "@storybook/react-native-web-vite@workspace:code/frameworks/react-native-web-vite"
   dependencies:
     "@storybook/builder-vite": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@storybook/react": "workspace:*"
     "@storybook/react-vite": "workspace:*"
     "@types/node": "npm:^22.19.1"
@@ -10798,6 +11009,8 @@ __metadata:
     typescript: ">= 5.9.x"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
+    storybook:
+      optional: true
     typescript:
       optional: true
   languageName: unknown
@@ -10810,6 +11023,7 @@ __metadata:
     "@joshwooding/vite-plugin-react-docgen-typescript": "npm:^0.7.0"
     "@rollup/pluginutils": "npm:^5.0.2"
     "@storybook/builder-vite": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@storybook/react": "workspace:*"
     "@types/node": "npm:^22.19.1"
     empathic: "npm:^2.0.0"
@@ -10826,6 +11040,8 @@ __metadata:
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
+    storybook:
+      optional: true
     typescript:
       optional: true
   languageName: unknown
@@ -10836,6 +11052,7 @@ __metadata:
   resolution: "@storybook/react-webpack5@workspace:code/frameworks/react-webpack5"
   dependencies:
     "@storybook/builder-webpack5": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@storybook/preset-react-webpack": "workspace:*"
     "@storybook/react": "workspace:*"
     "@types/node": "npm:^22.19.1"
@@ -10845,6 +11062,8 @@ __metadata:
     storybook: "workspace:^"
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
   peerDependenciesMeta:
+    storybook:
+      optional: true
     typescript:
       optional: true
   languageName: unknown
@@ -10854,6 +11073,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/react@workspace:code/renderers/react"
   dependencies:
+    "@storybook/core": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@types/babel-plugin-react-docgen": "npm:^4.2.3"
     "@types/escodegen": "npm:^0.0.6"
@@ -10890,6 +11110,8 @@ __metadata:
     "@types/react":
       optional: true
     "@types/react-dom":
+      optional: true
+    storybook:
       optional: true
     typescript:
       optional: true
@@ -10989,6 +11211,7 @@ __metadata:
     node-gyp: "npm:^12.1.0"
     npm-registry-client: "npm:^8.6.0"
     ora: "npm:^5.4.1"
+    oxc-parser: "npm:^0.154.0"
     oxlint: "npm:1.85.0"
     p-limit: "npm:^7.2.0"
     p-retry: "npm:^7.1.0"
@@ -11047,12 +11270,16 @@ __metadata:
   resolution: "@storybook/server-webpack5@workspace:code/frameworks/server-webpack5"
   dependencies:
     "@storybook/builder-webpack5": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@storybook/preset-server-webpack": "workspace:*"
     "@storybook/server": "workspace:*"
     "@types/node": "npm:^22.19.1"
     typescript: "npm:^6.0.3"
   peerDependencies:
     storybook: "workspace:^"
+  peerDependenciesMeta:
+    storybook:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -11060,12 +11287,16 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/server@workspace:code/renderers/server"
   dependencies:
+    "@storybook/core": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^6.0.3"
     yaml: "npm:^2.8.1"
   peerDependencies:
     storybook: "workspace:^"
+  peerDependenciesMeta:
+    storybook:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -11075,6 +11306,7 @@ __metadata:
   dependencies:
     "@rolldown/pluginutils": "npm:^1.0.1"
     "@storybook/builder-vite": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@storybook/svelte": "workspace:*"
     "@sveltejs/vite-plugin-svelte": "npm:^6.2.0"
     "@types/estree": "npm:^1.0.6"
@@ -11091,6 +11323,9 @@ __metadata:
     svelte: ^5.0.0
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
+  peerDependenciesMeta:
+    storybook:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -11098,6 +11333,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/svelte@workspace:code/renderers/svelte"
   dependencies:
+    "@storybook/core": "workspace:*"
     "@sveltejs/vite-plugin-svelte": "npm:^6.2.0"
     "@testing-library/svelte": "npm:^5.2.4"
     "@types/estree": "npm:^1.0.6"
@@ -11119,6 +11355,8 @@ __metadata:
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
+    storybook:
+      optional: true
     typescript:
       optional: true
     vite:
@@ -11131,6 +11369,7 @@ __metadata:
   resolution: "@storybook/sveltekit@workspace:code/frameworks/sveltekit"
   dependencies:
     "@storybook/builder-vite": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@storybook/svelte": "workspace:*"
     "@storybook/svelte-vite": "workspace:*"
     "@types/node": "npm:^22.19.1"
@@ -11142,6 +11381,9 @@ __metadata:
     storybook: "workspace:^"
     svelte: ^5.0.0
     vite: ^8.0.0
+  peerDependenciesMeta:
+    storybook:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -11150,6 +11392,7 @@ __metadata:
   resolution: "@storybook/tanstack-react@workspace:code/frameworks/tanstack-react"
   dependencies:
     "@storybook/builder-vite": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@storybook/react": "workspace:*"
     "@storybook/react-vite": "workspace:*"
     "@tanstack/react-router": "npm:^1.168.10"
@@ -11173,6 +11416,65 @@ __metadata:
       optional: true
     "@tanstack/start-client-core":
       optional: true
+    storybook:
+      optional: true
+  languageName: unknown
+  linkType: soft
+
+"@storybook/ui@workspace:*, @storybook/ui@workspace:code/lib/ui":
+  version: 0.0.0-use.local
+  resolution: "@storybook/ui@workspace:code/lib/ui"
+  dependencies:
+    "@emotion/cache": "npm:^11.14.0"
+    "@emotion/is-prop-valid": "npm:^1.3.1"
+    "@emotion/react": "npm:^11.14.0"
+    "@emotion/styled": "npm:^11.14.0"
+    "@radix-ui/react-scroll-area": "npm:1.2.0-rc.7"
+    "@radix-ui/react-slot": "npm:^1.0.2"
+    "@react-aria/live-announcer": "npm:^3.5.1"
+    "@react-aria/overlays": "npm:^3.32.1"
+    "@react-stately/overlays": "npm:^3.7.1"
+    "@react-stately/tabs": "npm:^3.9.1"
+    "@react-types/shared": "npm:^3.34.0"
+    "@storybook/core": "workspace:*"
+    "@storybook/global": "npm:^5.0.0"
+    "@storybook/icons": "npm:^2.0.2"
+    "@testing-library/react": "npm:^14.0.0"
+    "@testing-library/user-event": "npm:^14.6.3"
+    "@types/color-convert": "npm:^2.0.0"
+    "@types/node": "npm:^22.19.1"
+    "@types/react-syntax-highlighter": "npm:11.0.5"
+    color-convert: "npm:^2.0.1"
+    deep-object-diff: "npm:^1.1.0"
+    es-toolkit: "npm:^1.43.0"
+    markdown-to-jsx: "npm:^7.7.2"
+    memoizerific: "npm:^1.11.3"
+    polished: "npm:^4.2.2"
+    react: "npm:^18.2.0"
+    react-aria: "npm:^3.52.1"
+    react-aria-components: "npm:^1.21.1"
+    react-colorful: "npm:^5.1.2"
+    react-dom: "npm:^18.2.0"
+    react-joyride: "npm:^2.8.2"
+    react-stately: "npm:^3.50.0"
+    react-syntax-highlighter: "npm:^15.4.5"
+    react-textarea-autosize: "npm:^8.3.0"
+    react-transition-state: "npm:^2.3.1"
+    ts-dedent: "npm:^2.2.0"
+    typescript: "npm:^6.0.3"
+    use-resize-observer: "npm:^9.1.0"
+    use-sync-external-store: "npm:^1.5.0"
+  peerDependencies:
+    "@types/react": ^18.0.0 || ^19.0.0
+    prettier: ^2 || ^3
+    vite-plus: ^0.1.15 || ^0.2.0 || ^0.3.0
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+    prettier:
+      optional: true
+    vite-plus:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -11181,6 +11483,7 @@ __metadata:
   resolution: "@storybook/vue3-vite@workspace:code/frameworks/vue3-vite"
   dependencies:
     "@storybook/builder-vite": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@storybook/vue3": "workspace:*"
     "@types/node": "npm:^22.19.1"
     magic-string: "npm:^1.1.0"
@@ -11193,6 +11496,8 @@ __metadata:
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
+    storybook:
+      optional: true
     typescript:
       optional: true
   languageName: unknown
@@ -11202,6 +11507,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/vue3@workspace:code/renderers/vue3"
   dependencies:
+    "@storybook/core": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@testing-library/vue": "npm:^8.0.0"
     "@types/pug": "npm:2.0.10"
@@ -11220,6 +11526,8 @@ __metadata:
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vue: ^3.0.0
   peerDependenciesMeta:
+    storybook:
+      optional: true
     typescript:
       optional: true
   languageName: unknown
@@ -11230,12 +11538,16 @@ __metadata:
   resolution: "@storybook/web-components-vite@workspace:code/frameworks/web-components-vite"
   dependencies:
     "@storybook/builder-vite": "workspace:*"
+    "@storybook/core": "workspace:*"
     "@storybook/web-components": "workspace:*"
     "@types/node": "npm:^22.19.1"
     typescript: "npm:^6.0.3"
   peerDependencies:
     storybook: "workspace:^"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
+  peerDependenciesMeta:
+    storybook:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -11243,6 +11555,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/web-components@workspace:code/renderers/web-components"
   dependencies:
+    "@storybook/core": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@types/cross-spawn": "npm:^6.0.6"
     "@types/node": "npm:^22.19.1"
@@ -11262,6 +11575,9 @@ __metadata:
   peerDependencies:
     lit: ^2.0.0 || ^3.0.0
     storybook: "workspace:^"
+  peerDependenciesMeta:
+    storybook:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -13061,13 +13377,6 @@ __metadata:
     anymatch: "npm:^3.0.0"
     source-map: "npm:^0.6.0"
   checksum: 10c0/ecd530e5db4c21ec61795eec538026f96c126323836249a83e72805afd1d0b1141fc781f14d4a59d77f877523384b4c5d79dc391cfb901e7a781a9aa085f8198
-  languageName: node
-  linkType: hard
-
-"@types/whatwg-mimetype@npm:^3.0.2":
-  version: 3.0.2
-  resolution: "@types/whatwg-mimetype@npm:3.0.2"
-  checksum: 10c0/dad39d1e4abe760a0a963c84bbdbd26b1df0eb68aff83bdf6ecbb50ad781ead777f6906d19a87007790b750f7500a12e5624d31fc6a1529d14bd19b5c3a316d1
   languageName: node
   linkType: hard
 
@@ -15510,13 +15819,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"aria-live-capture@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "aria-live-capture@npm:2.0.0"
-  checksum: 10c0/c706051c507320908d48b014bfd90ad225ad7104e3eb359c317e75f13888c7ef55a4c1b7cefdece9a28164774ad1ff4fd83cb492ea5c5fecd8172697144b12a8
-  languageName: node
-  linkType: hard
-
 "aria-query@npm:5.1.3":
   version: 5.1.3
   resolution: "aria-query@npm:5.1.3"
@@ -16827,17 +17129,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bundle-require@npm:^5.1.0":
-  version: 5.1.0
-  resolution: "bundle-require@npm:5.1.0"
-  dependencies:
-    load-tsconfig: "npm:^0.2.3"
-  peerDependencies:
-    esbuild: ">=0.18"
-  checksum: 10c0/8bff9df68eb686f05af952003c78e70ffed2817968f92aebb2af620cc0b7428c8154df761d28f1b38508532204278950624ef86ce63644013dc57660a9d1810f
-  languageName: node
-  linkType: hard
-
 "bytes@npm:3.1.0":
   version: 3.1.0
   resolution: "bytes@npm:3.1.0"
@@ -16982,13 +17273,6 @@ __metadata:
   version: 5.3.1
   resolution: "camelcase@npm:5.3.1"
   checksum: 10c0/92ff9b443bfe8abb15f2b1513ca182d16126359ad4f955ebc83dc4ddcc4ef3fdd2c078bc223f2673dc223488e75c99b16cc4d056624374b799e6a1555cf61b23
-  languageName: node
-  linkType: hard
-
-"camelcase@npm:^9.0.0":
-  version: 9.0.0
-  resolution: "camelcase@npm:9.0.0"
-  checksum: 10c0/7171e1540b9b227cab9d59b7afa05174d14c10268171c18bdf2240eb1485ad6851592f1253ddc291f7ae34caad42c18206d339538965c67fb17fc995c0bb509b
   languageName: node
   linkType: hard
 
@@ -20937,15 +21221,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"extend-to-be-announced@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "extend-to-be-announced@npm:2.0.0"
-  dependencies:
-    aria-live-capture: "npm:^2.0.0"
-  checksum: 10c0/8ad88d8711ce69ec60384f1febae31d7e5fcc2c63d7340d217800bcd5a43e906da1861243fc572d3b7a0484227502d037b38a6d55f397d8e0aa497cb682c23aa
-  languageName: node
-  linkType: hard
-
 "extend@npm:^3.0.0, extend@npm:^3.0.2, extend@npm:~3.0.2":
   version: 3.0.2
   resolution: "extend@npm:3.0.2"
@@ -22529,17 +22804,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"happy-dom@npm:^20.0.11":
-  version: 20.0.11
-  resolution: "happy-dom@npm:20.0.11"
-  dependencies:
-    "@types/node": "npm:^20.0.0"
-    "@types/whatwg-mimetype": "npm:^3.0.2"
-    whatwg-mimetype: "npm:^3.0.0"
-  checksum: 10c0/818c44630fdb73258d12932646ab966190953820e5d8d032bc6ef51d00d6400097a91d28e212483216898c87d645e1728ae577951256ad989f75da6f9c1f8792
-  languageName: node
-  linkType: hard
-
 "har-schema@npm:^2.0.0":
   version: 2.0.0
   resolution: "har-schema@npm:2.0.0"
@@ -22830,6 +23094,13 @@ __metadata:
   version: 4.12.32
   resolution: "hono@npm:4.12.32"
   checksum: 10c0/3bb2fc0b042af87202e0cb0e5f77ee5b578684d868e1e321ed3de53e02f1ef02fe700811fa0d2fc765636a217bae7633d552d55934175f3dec6307a1f63f4ecb
+  languageName: node
+  linkType: hard
+
+"hookable@npm:^6.1.2":
+  version: 6.1.2
+  resolution: "hookable@npm:6.1.2"
+  checksum: 10c0/ea5cdb1b1a1919b48cfbbfb55c8009f6843473ff50f67d6e959fd291cb2fd0a4934e85124bfd6531b1d2edf1e0675bc5954f85a12318a59b15c7a3e5667f0d4e
   languageName: node
   linkType: hard
 
@@ -25332,13 +25603,6 @@ __metadata:
   bin:
     download-lmdb-prebuilds: bin/download-prebuilds.js
   checksum: 10c0/1fd63b1fa981569ec79ea952886a5ac31773cca19d4d4d21f26297dda52c21ae67818cf2026af0adcc80efd675189afaf4c57e130308beaa1a4cfdb379b5c10a
-  languageName: node
-  linkType: hard
-
-"load-tsconfig@npm:^0.2.3":
-  version: 0.2.5
-  resolution: "load-tsconfig@npm:0.2.5"
-  checksum: 10c0/bf2823dd26389d3497b6567f07435c5a7a58d9df82e879b0b3892f87d8db26900f84c85bc329ef41c0540c0d6a448d1c23ddc64a80f3ff6838b940f3915a3fcb
   languageName: node
   linkType: hard
 
@@ -33532,6 +33796,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "storybook-addon-pseudo-states@workspace:code/addons/pseudo-states"
   dependencies:
+    "@storybook/core": "workspace:*"
     "@storybook/icons": "npm:^2.0.2"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
@@ -33541,167 +33806,66 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"storybook@workspace:*, storybook@workspace:^, storybook@workspace:code/core":
+"storybook@workspace:*, storybook@workspace:^, storybook@workspace:code/lib/storybook":
   version: 0.0.0-use.local
-  resolution: "storybook@workspace:code/core"
+  resolution: "storybook@workspace:code/lib/storybook"
   dependencies:
-    "@aw-web-design/x-default-browser": "npm:1.4.126"
-    "@babel/core": "npm:^7.28.5"
-    "@clack/prompts": "npm:1.0.0-alpha.7"
     "@devtools-ds/object-inspector": "npm:^1.1.2"
     "@discoveryjs/json-ext": "npm:^0.5.3"
-    "@emotion/cache": "npm:^11.14.0"
-    "@emotion/is-prop-valid": "npm:^1.3.1"
-    "@emotion/react": "npm:^11.14.0"
-    "@emotion/styled": "npm:^11.14.0"
-    "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
-    "@happy-dom/global-registrator": "npm:^20.0.11"
-    "@jridgewell/remapping": "npm:^2.3.5"
-    "@jridgewell/sourcemap-codec": "npm:^1.5.5"
-    "@ngard/tiny-isequal": "npm:^1.1.0"
     "@polka/compression": "npm:^1.0.0-next.28"
-    "@preact/signals-core": "npm:^1.14.2"
-    "@radix-ui/react-scroll-area": "npm:1.2.0-rc.7"
-    "@radix-ui/react-slot": "npm:^1.0.2"
-    "@react-aria/focus": "npm:^3.22.1"
     "@react-aria/live-announcer": "npm:^3.5.1"
-    "@react-aria/overlays": "npm:^3.32.1"
-    "@react-stately/overlays": "npm:^3.7.1"
-    "@react-stately/tabs": "npm:^3.9.1"
-    "@react-types/shared": "npm:^3.34.0"
-    "@rolldown/pluginutils": "npm:1.0.0-beta.18"
     "@standard-schema/spec": "npm:^1.1.0"
+    "@storybook/core": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.2"
-    "@testing-library/dom": "npm:^10.4.1"
-    "@testing-library/jest-dom": "npm:6.9.1"
-    "@testing-library/react": "npm:^14.0.0"
-    "@testing-library/user-event": "npm:^14.6.3"
-    "@types/chai": "npm:^5.2.2"
+    "@storybook/manager": "workspace:*"
+    "@storybook/open-service": "workspace:*"
+    "@storybook/ui": "workspace:*"
     "@types/cross-spawn": "npm:^6.0.6"
     "@types/detect-port": "npm:^1.3.0"
-    "@types/diff": "npm:^5.0.9"
-    "@types/ejs": "npm:^3.1.1"
-    "@types/js-yaml": "npm:^4.0.5"
     "@types/node": "npm:^22.19.1"
-    "@types/npmlog": "npm:^7.0.0"
-    "@types/picomatch": "npm:^4.0.3"
-    "@types/prettier": "npm:^3.0.0"
     "@types/pretty-hrtime": "npm:^1.0.0"
-    "@types/prompts": "npm:^2.0.9"
-    "@types/react-syntax-highlighter": "npm:11.0.5"
     "@types/semver": "npm:^7.7.1"
     "@types/ws": "npm:^8"
     "@valibot/to-json-schema": "npm:^1.3.0"
-    "@vitest/expect": "npm:3.2.4"
-    "@vitest/mocker": "npm:3.2.4"
-    "@vitest/spy": "npm:3.2.4"
-    "@vitest/utils": "npm:^3.2.4"
-    "@webcontainer/env": "npm:^1.1.1"
-    acorn: "npm:^8.15.0"
-    acorn-jsx: "npm:^5.3.2"
     ansi-to-html: "npm:^0.7.2"
-    browser-dtector: "npm:^3.4.0"
-    bundle-require: "npm:^5.1.0"
-    camelcase: "npm:^9.0.0"
-    chai: "npm:^5.1.1"
     commander: "npm:^14.0.2"
-    comment-parser: "npm:^1.4.1"
-    copy-to-clipboard: "npm:^3.3.1"
     cross-spawn: "npm:^7.0.6"
-    deep-object-diff: "npm:^1.1.0"
-    deepsignal: "npm:^1.6.0"
     dequal: "npm:^2.0.2"
     detect-indent: "npm:^7.0.1"
     detect-port: "npm:^1.6.1"
-    diff: "npm:^8.0.2"
-    downshift: "npm:^9.0.4"
-    ejs: "npm:^3.1.10"
     empathic: "npm:^2.0.0"
     es-toolkit: "npm:^1.43.0"
     esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0 || ^0.28.0"
     execa: "npm:^9.6.1"
-    exsolve: "npm:^1.0.7"
-    extend-to-be-announced: "npm:^2.0.0"
-    fetch-retry: "npm:^6.0.0"
-    flush-promises: "npm:^1.0.2"
-    fuse.js: "npm:^3.6.1"
     get-npm-tarball-url: "npm:^2.1.0"
-    github-slugger: "npm:^2.0.0"
-    glob: "npm:^10.5.0"
-    globby: "npm:^14.1.0"
-    hast-util-to-estree: "npm:^3.0.0"
     host-validation-middleware: "npm:^0.1.2"
     jiti: "npm:^2.6.1"
-    js-yaml: "npm:^4.1.0"
-    jsdoc-type-pratt-parser: "npm:^4.0.0"
     jsonc-parser: "npm:^3.3.1"
     launch-editor: "npm:^2.13.2"
-    lazy-universal-dotenv: "npm:^4.0.0"
     leven: "npm:^4.0.0"
-    magic-string: "npm:^1.1.0"
-    mdast-util-from-markdown: "npm:^2.0.0"
-    mdast-util-mdx: "npm:^3.0.0"
-    mdast-util-mdx-jsx: "npm:^3.2.0"
     memfs: "npm:^4.11.1"
-    memoizerific: "npm:^1.11.3"
-    micromark-extension-mdxjs: "npm:^3.0.0"
     modern-tar: "npm:^0.5.5"
-    nanoid: "npm:^4.0.2"
-    npmlog: "npm:^7.0.0"
     open: "npm:^10.2.0"
-    oxc-parser: "npm:^0.154.0"
-    oxc-resolver: "npm:11.21.2"
-    p-limit: "npm:^7.2.0"
-    package-manager-detector: "npm:^1.1.0"
     pathe: "npm:^1.1.2"
     picocolors: "npm:^1.1.0"
-    picomatch: "npm:^4.0.5"
-    picoquery: "npm:^2.5.0"
     polished: "npm:^4.2.2"
     polka: "npm:^1.0.0-next.28"
-    prettier: "npm:^3.7.1"
     pretty-hrtime: "npm:^1.0.3"
-    qrcode.react: "npm:^4.2.0"
     react: "npm:^18.2.0"
-    react-aria: "npm:^3.52.1"
-    react-aria-components: "npm:^1.21.1"
-    react-dom: "npm:^18.2.0"
-    react-helmet-async: "npm:^1.3.0"
     react-inspector: "npm:^6.0.0"
-    react-router-dom: "npm:6.15.0"
-    react-stately: "npm:^3.50.0"
-    react-syntax-highlighter: "npm:^15.4.5"
-    react-textarea-autosize: "npm:^8.3.0"
-    react-transition-state: "npm:^2.3.1"
-    require-from-string: "npm:^2.0.2"
-    rolldown: "npm:^1.1.4"
     semver: "npm:^7.7.3"
     sirv: "npm:^2.0.4"
-    slash: "npm:^5.0.0"
-    source-map: "npm:^0.7.4"
-    std-env: "npm:^4.0.0"
-    store2: "npm:^2.14.2"
     strip-ansi: "npm:^7.1.0"
     strip-json-comments: "npm:^5.0.1"
     telejson: "npm:8.0.0"
     tiny-invariant: "npm:^1.3.1"
-    tinyspy: "npm:^3.0.2"
     ts-dedent: "npm:^2.2.0"
-    tsconfig-paths: "npm:^4.2.0"
     type-fest: "npm:^5.6.0"
-    type-plus: "npm:^8.0.0-beta.8"
     typescript: "npm:^6.0.3"
-    typescript-5: "npm:typescript@5.9.3"
-    unique-string: "npm:^3.0.0"
-    use-resize-observer: "npm:^9.1.0"
-    use-sync-external-store: "npm:^1.5.0"
     valibot: "npm:^1.4.0"
     watchpack: "npm:^2.5.0"
-    wrap-ansi: "npm:^9.0.2"
     ws: "npm:^8.21.1"
-    yaml: "npm:^2.8.2"
-    zod: "npm:^3.25.76"
   peerDependencies:
     "@types/react": ^18.0.0 || ^19.0.0
     prettier: ^2 || ^3

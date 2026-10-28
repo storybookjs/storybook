@@ -1,5 +1,5 @@
-import { logger } from 'storybook/internal/node-logger';
-import type { DocgenError } from 'storybook/internal/types';
+import { logger } from '@storybook/core/internal/node-logger';
+import type { DocgenError } from '@storybook/core/internal/types';
 
 import { isAbsolute, normalize, relative } from 'pathe';
 import type ts from 'typescript';

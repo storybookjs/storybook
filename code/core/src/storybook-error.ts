@@ -22,6 +22,31 @@ export function appendErrorRef(url: string): string {
   }
 }
 
+/**
+ * Whether `error` is a Storybook error, optionally the one declared with `name`. Matches on
+ * identity fields instead of `instanceof`, which fails when the thrower and the checker load
+ * separate copies of this module.
+ *
+ * @example
+ *
+ * ```ts
+ * isStorybookError(err, 'NoStatsForViteDevError');
+ * ```
+ */
+export function isStorybookError<T extends StorybookError = StorybookError>(
+  error: unknown,
+  name?: string
+): error is T {
+  if (
+    typeof error !== 'object' ||
+    error === null ||
+    (error as Partial<StorybookError>).fromStorybook !== true
+  ) {
+    return false;
+  }
+  return name === undefined || String((error as Error).name).endsWith(` (${name})`);
+}
+
 export abstract class StorybookError extends Error {
   private _name: string | undefined;
 

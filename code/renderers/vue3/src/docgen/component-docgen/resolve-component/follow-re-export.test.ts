@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, describe, expect, it } from 'vitest';
 
-import type { IndexEntry } from 'storybook/internal/types';
+import type { IndexEntry } from '@storybook/core/internal/types';
 
 import ts from 'typescript';
 

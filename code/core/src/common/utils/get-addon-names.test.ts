@@ -1,8 +1,20 @@
 import { describe, expect, it } from 'vitest';
 
+import { defineAddon } from '../../instance/plugins.ts';
 import { getAddonNames, normalizeAddonName } from './get-addon-names.ts';
 
 describe('getAddonNames', () => {
+  it('extracts native addon metadata alongside preset entries', () => {
+    const native = defineAddon(() => ({
+      meta: { name: '@storybook/addon-docs' },
+      setup(): void {},
+    }));
+    expect(getAddonNames({ addons: [native(), '@storybook/addon-designs'] })).toEqual([
+      '@storybook/addon-docs',
+      '@storybook/addon-designs',
+    ]);
+  });
+
   it('should extract addon names from simple strings', () => {
     const config = {
       stories: [],

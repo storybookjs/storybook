@@ -3,7 +3,7 @@ import type {
   NormalizedProjectAnnotations,
   ProjectAnnotations,
   Renderer,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 import { inferArgTypes } from '../inferArgTypes.ts';
 import { inferControls } from '../inferControls.ts';

@@ -12,3 +12,5 @@ export const parameters = {
 };
 
 export const argTypesEnhancers: ArgTypesEnhancer<ReactRenderer>[] = [enhanceArgTypes];
+
+export default { parameters, argTypesEnhancers };

@@ -1,5 +1,5 @@
-import { createLazyDocgenMiddleware } from 'storybook/internal/common';
-import type { DocgenMiddleware } from 'storybook/internal/types';
+import { createLazyDocgenMiddleware } from '@storybook/core/internal/common';
+import type { DocgenMiddleware } from '@storybook/core/internal/types';
 
 import { buildDocgenPayload } from './component-docgen/build-docgen.ts';
 import { SVELTE_STORY_FILE_TEST_REGEXP } from './story-file.ts';

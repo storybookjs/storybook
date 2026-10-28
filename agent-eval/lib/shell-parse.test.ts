@@ -5,7 +5,10 @@ import { parseStorybookWorkflowShellCommands, workflowCallMatchesName } from './
 
 // Not a static import: tsc would then check the core source against this
 // package's stricter `noUncheckedIndexedAccess`.
-const toolTokensUrl = new URL('../../code/core/src/cli/tools/tool-tokens.ts', import.meta.url);
+const toolTokensUrl = new URL(
+  '../../code/lib/storybook/src/storybook/cli/tools/tool-tokens.ts',
+  import.meta.url
+);
 const { parseToolsTokens } = (await import(toolTokensUrl.href)) as {
   parseToolsTokens: (
     tokens: string[]

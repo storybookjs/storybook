@@ -1,12 +1,15 @@
 //* @vitest-environment happy-dom */
-import { describe, expect, expectTypeOf, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { testType } from 'type-plus';
 
-import { getCoreAnnotations, hasCoreAnnotations } from './core-annotations.ts';
+import { getCoreAnnotations, hasCoreAnnotations } from './index.ts';
+import './__testfixtures__/register-test-core-annotations.ts';
 import * as legacyDefault from './__testfixtures__/legacy-preview-default.ts';
 import * as legacyNamed from './__testfixtures__/legacy-preview-named.ts';
 import { definePreview, definePreviewAddon, getStoryChildren } from './csf-factories.ts';
 import type { Tag } from './story.ts';
+import { composeProjectAnnotationsWithCore } from '../preview-api/modules/store/csf/composeProjectAnnotationsWithCore.ts';
+import { setProjectAnnotations } from '../preview-api/modules/store/csf/portable-stories.ts';
 
 interface Addon1Types {
   parameters: { foo?: { value: string } };
@@ -199,6 +202,13 @@ describe('test function', () => {
 });
 
 describe('definePreview composed', () => {
+  beforeEach(() => {
+    vi.stubGlobal('globalProjectAnnotations', undefined);
+    vi.stubGlobal('__STORYBOOK_SET_PROJECT_ANNOTATIONS_CALLED__', false);
+    vi.stubGlobal('__STORYBOOK_ADDON_VITEST_PROJECT_ANNOTATIONS_APPLIED__', false);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
   test('composes the core annotations exactly once and marks the result', () => {
     const previewFactory = definePreview({ renderToCanvas: () => {} });
     const { composed } = previewFactory;
@@ -211,6 +221,89 @@ describe('definePreview composed', () => {
     const coreLoaderCount = getCoreAnnotations().flatMap((it) => (it as any).loaders ?? []).length;
     expect(coreLoaderCount).toBeGreaterThan(0);
     expect(composed.loaders).toHaveLength(coreLoaderCount);
+  });
+
+  test('composes core, collected entries, local addons, and preview annotations in order', () => {
+    const entries = ['renderer', 'first addon', 'second addon', 'legacy', 'local', 'preview'].map(
+      (name) => ({
+        loaders: [vi.fn()],
+        decorators: [vi.fn()],
+        parameters: { winner: name },
+      })
+    );
+    const core = getCoreAnnotations();
+    const preview = definePreview({ addons: [entries[4]], ...entries[5] });
+    const composed = preview.composeWith(entries.slice(0, 4));
+
+    expect(composed.loaders).toEqual([
+      ...core.flatMap((entry) => entry.loaders ?? []),
+      ...entries.flatMap((entry) => entry.loaders),
+    ]);
+    expect(composed.decorators).toEqual([
+      ...entries.toReversed().flatMap((entry) => entry.decorators),
+      ...core.toReversed().flatMap((entry) => entry.decorators ?? []),
+    ]);
+    expect(composed.parameters).toMatchObject({ winner: 'preview' });
+    expect(preview.composed).toBe(composed);
+    expect(hasCoreAnnotations(composed)).toBe(true);
+    expect(composeProjectAnnotationsWithCore([composed]).loaders).toEqual(composed.loaders);
+  });
+
+  test.each(['namespace', 'default export'])(
+    'deduplicates a collected %s and a local addon by annotation identity',
+    (kind) => {
+      const decorator = vi.fn();
+      const annotations = definePreviewAddon({ decorators: [decorator] });
+      const collected = kind === 'namespace' ? annotations : { default: annotations };
+      const preview = definePreview({ addons: [annotations, collected] });
+
+      const composed = preview.composeWith([collected, collected]);
+
+      expect(composed.decorators?.filter((entry) => entry === decorator)).toHaveLength(1);
+    }
+  );
+
+  test('keeps distinct annotation objects even when they share a decorator', () => {
+    const decorator = vi.fn();
+    const preview = definePreview({ addons: [{ decorators: [decorator] }] });
+    const composed = preview.composeWith([{ decorators: [decorator] }]);
+    expect(composed.decorators?.filter((entry) => entry === decorator)).toHaveLength(2);
+  });
+
+  test('refreshes the cache for addon edits and removal, including live module exports', () => {
+    const original = vi.fn();
+    const updated = vi.fn();
+    const collected = { decorators: [original] };
+    const preview = definePreview({});
+    const first = preview.composeWith([collected]);
+
+    collected.decorators = [updated];
+    const second = preview.composeWith([collected]);
+    expect(second).not.toBe(first);
+    expect(preview.composed).toBe(second);
+    expect(second.decorators).toContain(updated);
+    expect(second.decorators).not.toContain(original);
+    expect(preview.composeWith([]).decorators).not.toContain(updated);
+  });
+
+  test('keeps composition lazy and allows portable annotations to replace the global', () => {
+    const readParameters = vi.fn(() => ({ lazy: true }));
+    const preview = definePreview({
+      get parameters() {
+        return readParameters();
+      },
+    });
+    expect(readParameters).not.toHaveBeenCalled();
+
+    const composed = preview.composeWith([{ parameters: { collected: true } }]);
+    expect(globalThis.globalProjectAnnotations).toBe(composed);
+    expect(composed.parameters).toMatchObject({ collected: true, lazy: true });
+    expect(preview.composed).toBe(composed);
+    expect(readParameters).toHaveBeenCalledOnce();
+
+    const portable = setProjectAnnotations(composed);
+    expect(globalThis.globalProjectAnnotations).toBe(portable);
+    expect(portable.loaders).toEqual(composed.loaders);
   });
 });
 

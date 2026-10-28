@@ -8,4 +8,4 @@ addons.setConfig({
   },
 });
 
-import '../core/src/shared/open-service/sync-test/manager.tsx';
+import '../lib/manager/src/shared/open-service/sync-test/manager.tsx';

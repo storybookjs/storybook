@@ -5,7 +5,7 @@ import { global } from '@storybook/global';
 import { render as litRender } from 'lit';
 // Keep `.js` extension to avoid issue with Webpack (related to export map?)
 import { isTemplateResult } from 'lit/directive-helpers.js';
-import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
+import { getFeatures, simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 
 import { bindArgs } from './bind-args.ts';
@@ -23,7 +23,7 @@ export const render: ArgsStoryFn<WebComponentsRenderer> = (args, context) => {
   }
 
   const element = document.createElement(component);
-  if (!global.FEATURES?.docgenServer) {
+  if (!getFeatures().docgenServer) {
     return Object.assign(element, args);
   }
 

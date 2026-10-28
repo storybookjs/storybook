@@ -1,6 +1,9 @@
-import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
-import type { DocgenMiddleware, DocgenProvider } from 'storybook/internal/types';
+import {
+  STORY_FILE_TEST_REGEXP,
+  getStoryImportPathFromEntry,
+} from '@storybook/core/internal/common';
+import { logger } from '@storybook/core/internal/node-logger';
+import type { DocgenMiddleware, DocgenProvider } from '@storybook/core/internal/types';
 
 import type { ParsingLogger } from '@storybook/angular-cm';
 import { AngularComponentMetaManager } from '@storybook/angular-cm';

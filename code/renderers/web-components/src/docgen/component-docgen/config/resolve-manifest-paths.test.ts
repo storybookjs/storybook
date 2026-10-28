@@ -5,12 +5,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fs as memfs, vol } from 'memfs';
 
-import { findFilesUp } from 'storybook/internal/common';
+import { findFilesUp } from '@storybook/core/internal/common';
 
 import { resolveManifestPaths } from './resolve-manifest-paths.ts';
 
 vi.mock('node:fs', { spy: true });
-vi.mock('storybook/internal/common', { spy: true });
+vi.mock('@storybook/core/internal/common', { spy: true });
 
 beforeEach(() => {
   vi.clearAllMocks();

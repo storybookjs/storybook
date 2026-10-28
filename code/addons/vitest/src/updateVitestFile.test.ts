@@ -12,7 +12,8 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-vi.mock('../../../core/src/shared/utils/module', () => ({
+vi.mock('storybook/internal/common', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('storybook/internal/common')>()),
   resolvePackageDir: vi.fn().mockImplementation(() => join(__dirname, '..')),
 }));
 

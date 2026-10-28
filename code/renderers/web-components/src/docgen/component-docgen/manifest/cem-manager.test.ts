@@ -1,4 +1,4 @@
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { readFile, stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -11,7 +11,7 @@ import { CemManager } from './cem-manager.ts';
 import type { ManifestPackage } from './types.ts';
 
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('@storybook/core/internal/node-logger', { spy: true });
 
 beforeEach(() => {
   vol.reset();

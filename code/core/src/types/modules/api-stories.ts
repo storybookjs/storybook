@@ -1,4 +1,4 @@
-import type { API_SidebarOptions, StatusByTypeId } from 'storybook/internal/types';
+import type { API_SidebarOptions, StatusByTypeId } from '@storybook/core/internal/types';
 import type { DocsOptions } from './core-common.ts';
 import type { ArgTypes, Args, ComponentTitle, Parameters, Path, StoryId, Tag } from './csf.ts';
 import type { DocsAnchor, IndexEntry } from './indexer.ts';

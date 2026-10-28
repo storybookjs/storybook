@@ -30,6 +30,10 @@ yarn
 yarn build storybook <extra packages>
 ```
 
+`yarn build` builds only the packages it is given, matched by package name without the `@storybook/` scope, all at once and never their dependencies.
+`yarn build storybook` builds `code/lib/storybook` alone.
+If `code/core`, `code/lib/ui`, `code/lib/manager`, or `code/lib/open-service` changed, add `core`, `ui`, `manager`, or `open-service` to the list.
+
 Then, run in the background:
 
 ```bash

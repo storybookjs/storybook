@@ -1,4 +1,4 @@
-import type { Args, StoryContext } from 'storybook/internal/csf';
+import type { Args, StoryContext } from '../../../csf/index.ts';
 
 import { SNIPPET_RENDERED } from '../../../docs-tools/index.ts';
 import { addons } from '../addons/index.ts';

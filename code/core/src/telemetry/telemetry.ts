@@ -3,13 +3,13 @@ import { readFileSync } from 'node:fs';
 import * as os from 'node:os';
 import { join } from 'node:path';
 
-import { isCI } from 'storybook/internal/common';
+import { isCI } from '@storybook/core/internal/common';
 
 import retry from 'fetch-retry';
 import { nanoid } from 'nanoid';
 
 import { version } from '../../package.json';
-import { resolvePackageDir } from '../shared/utils/module.ts';
+import { getCorePackageDir } from '../common/utils/package-dir.ts';
 import { getAnonymousProjectId, getProjectSince } from './anonymous-id.ts';
 import { detectAgent } from './detect-agent.ts';
 import { set as saveToCache } from './event-cache.ts';
@@ -93,8 +93,7 @@ const prepareRequest = async (data: TelemetryData, context: Record<string, any>,
 
 function getVersionNumber() {
   try {
-    return JSON.parse(readFileSync(join(resolvePackageDir('storybook'), 'package.json'), 'utf8'))
-      .version;
+    return JSON.parse(readFileSync(join(getCorePackageDir(), 'package.json'), 'utf8')).version;
   } catch (e) {
     return version;
   }

@@ -1,7 +1,7 @@
 import { dirname } from 'node:path';
 
-import { findTsconfigPathForFile, getTsconfigPathsBaseDir } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { findTsconfigPathForFile, getTsconfigPathsBaseDir } from '@storybook/core/internal/common';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import MagicString from 'magic-string';
 import {

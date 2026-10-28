@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 
 import { createModuleResolver } from '../../common/utils/module-resolver.ts';
-import { jsTsSourceExtensions } from '../../shared/constants/extensions.ts';
+import { jsTsSourceExtensions } from '../../constants/extensions.ts';
 import type { Node } from '../estree/ast.ts';
 import { SourceEditor } from '../estree/editor.ts';
 import { isSelfContained } from './resolve-arg-value.ts';

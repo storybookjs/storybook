@@ -4,14 +4,14 @@ import {
   storyInputArraySchema,
   type StoryIndexAccess,
   type StoryInput,
-} from 'storybook/internal/core-server';
+} from '@storybook/core/internal/services';
 import {
   defineToolset,
   type ToolsetDefinition,
   type ToolsetMethod,
   type ToolsetOutcome,
   type ToolsetTelemetryReport,
-} from 'storybook/open-service';
+} from '@storybook/core/open-service';
 
 import { countTestRunFailures, formatTestRun, summarizeTestRun } from './format.ts';
 import { createAsyncQueue, runStoryTests, type TestChannel } from './run.ts';
@@ -259,6 +259,8 @@ export function createTestToolset({
         ): Promise<ToolsetOutcome<TestRunSuccessData, TestRunFailureData>> => {
           const done = await queue.wait();
           try {
+            // A run already triggered is not cancelled; a caller that gave up while queued is.
+            ctx.signal.throwIfAborted();
             const output = await runStoryTests({
               channel,
               getIndex: storyIndex.getIndex,

@@ -23,9 +23,9 @@ export const compile: Task<MonorepoDetails> = {
   async ready({ codeDir }, { link }) {
     try {
       if (link) {
-        await readFile(resolve(codeDir, './core/dist/manager-api/index.js'), 'utf8');
+        await readFile(resolve(codeDir, './lib/manager/dist/manager-api/index.js'), 'utf8');
       } else {
-        await readFile(resolve(codeDir, './core/dist/manager-api/index.d.ts'), 'utf8');
+        await readFile(resolve(codeDir, './lib/manager/dist/manager-api/index.d.ts'), 'utf8');
       }
       return true;
     } catch (err) {

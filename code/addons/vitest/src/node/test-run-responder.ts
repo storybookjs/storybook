@@ -1,10 +1,13 @@
-import type { Channel } from 'storybook/internal/channels';
-import { createFileSystemCache, resolvePathInStorybookCache } from 'storybook/internal/common';
+import type { Channel } from '@storybook/core/internal/channels';
+import {
+  createFileSystemCache,
+  resolvePathInStorybookCache,
+} from '@storybook/core/internal/common';
 import {
   internal_UniversalStore,
   experimental_getTestProviderStore,
-} from 'storybook/internal/core-server';
-import type { Options } from 'storybook/internal/types';
+} from '@storybook/core/internal/services';
+import { getInstanceContext } from '@storybook/core/internal/instance';
 
 import type { BuilderOptions } from '@storybook/builder-vite';
 
@@ -23,10 +26,11 @@ import { log } from '../logger.ts';
 import type { CachedState, ErrorLike, Store, StoreEvent, StoreState } from '../types.ts';
 import { errorToErrorLike } from '../utils.ts';
 import { runTestRunner } from './boot-test-runner.ts';
+import type { TestRunnerHost } from './host.ts';
 
 type ResponderOptions = {
   channel: Channel;
-  options: Options;
+  storybook: TestRunnerHost;
 };
 
 /** The preview builder name from the `core` preset value, however the builder was declared. */
@@ -43,16 +47,16 @@ let storePromise: Promise<Store> | undefined;
  * server (which additionally runs it eagerly, because the manager UI needs the store immediately)
  * share one store.
  */
-export const ensureTestRunnerStore = ({ channel, options }: ResponderOptions): Promise<Store> =>
-  (storePromise ??= createTestRunnerStore({ channel, options }).catch((error) => {
+export const ensureTestRunnerStore = ({ channel, storybook }: ResponderOptions): Promise<Store> =>
+  (storePromise ??= createTestRunnerStore({ channel, storybook }).catch((error) => {
     // A rejected setup must not be memoized: the next request retries instead of replaying the
     // cached rejection for the lifetime of the process.
     storePromise = undefined;
     throw error;
   }));
 
-const createTestRunnerStore = async ({ channel, options }: ResponderOptions): Promise<Store> => {
-  const core = await options.presets.apply('core');
+const createTestRunnerStore = async ({ channel, storybook }: ResponderOptions): Promise<Store> => {
+  const core = await storybook.callHook('core:config:extend', undefined);
   const configLoader =
     (typeof core?.builder !== 'string' &&
       (core?.builder?.options?.configLoader as BuilderOptions['configLoader'])) ||
@@ -77,8 +81,7 @@ const createTestRunnerStore = async ({ channel, options }: ResponderOptions): Pr
       ...selectCachedState(cachedState),
     },
     leader:
-      process.env.VITEST_CHILD_PROCESS !== 'true' &&
-      process.env.STORYBOOK_ATTACHED_TOOLS !== 'true',
+      process.env.VITEST_CHILD_PROCESS !== 'true' && !getInstanceContext()?.storybook?.attached,
   });
   store.onStateChange((state, previousState) => {
     if (!isEqual(selectCachedState(state), selectCachedState(previousState))) {
@@ -98,7 +101,7 @@ const createTestRunnerStore = async ({ channel, options }: ResponderOptions): Pr
       store,
       initEvent: STORE_CHANNEL_EVENT_NAME,
       initArgs: [{ event, eventInfo }],
-      options,
+      storybook,
       configLoader,
     }).catch(() => {
       // A boot failure already reported itself: bootTestRunner sends FATAL_ERROR before
@@ -153,17 +156,17 @@ const createTestRunnerStore = async ({ channel, options }: ResponderOptions): Pr
 
 /**
  * Answer test-run requests (`TRIGGER_TEST_RUN_REQUEST`) over the channel. Wired from the
- * `services` preset hook — adjacent to the `test` toolset registration, behind the same gate — so
+ * `core:services:register` hook — adjacent to the `test` toolset registration, behind the same gate — so
  * every consumer that can offer the tool can also answer it: the dev server and the `storybook
  * tools` CLI alike. The listener itself is cheap; the runner machinery is created on first
  * request.
  */
 export const wireTestRunResponder = async ({
   channel,
-  options,
+  storybook,
 }: {
   channel: Channel | undefined;
-  options: Options;
+  storybook: TestRunnerHost;
 }): Promise<void> => {
   // The vitest child process loads this same Storybook configuration in-process; answering
   // requests from inside it could recursively boot another child.
@@ -172,7 +175,7 @@ export const wireTestRunResponder = async ({
   }
   // An attached tools host shares the instance's channel. Answering here would create a second
   // UniversalStore leader for `storybook/test` and crash the running Storybook.
-  if (process.env.STORYBOOK_ATTACHED_TOOLS === 'true') {
+  if (getInstanceContext()?.storybook?.attached) {
     return;
   }
   // Without a channel there is no bus to answer on. In practice every configuration loader
@@ -186,9 +189,9 @@ export const wireTestRunResponder = async ({
   // error) so a request against a Webpack project fails immediately instead of waiting out the
   // requester's timeout: the tool is offered wherever the addon is enabled, so it must never be
   // offered-but-silent.
-  const viteBuilder = !!resolvePreviewBuilderName(await options.presets.apply('core'))?.includes(
-    'vite'
-  );
+  const viteBuilder = !!resolvePreviewBuilderName(
+    await storybook.callHook('core:config:extend', undefined)
+  )?.includes('vite');
 
   // `currentRun.startedAt` is written by the vitest child once it actually starts, so it lags the
   // TRIGGER_RUN dispatched below; without this marker two back-to-back requests would both pass
@@ -215,7 +218,7 @@ export const wireTestRunResponder = async ({
 
     let store: Store;
     try {
-      store = await ensureTestRunnerStore({ channel, options });
+      store = await ensureTestRunnerStore({ channel, storybook });
     } catch (error) {
       // Without a response the requester would wait out its full timeout; the dev server sets the
       // machinery up at startup and crashes visibly there, but a lazy consumer only learns of a

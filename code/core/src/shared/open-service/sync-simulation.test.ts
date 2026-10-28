@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { logger } from 'storybook/internal/client-logger';
+import { logger } from '@storybook/core/internal/client-logger';
 
 import {
   entryStampKey,
@@ -10,7 +10,7 @@ import {
 import { compareStamps } from './service-sync.ts';
 import { createWorld, topologies, type TopologyKind, type World } from './sync-simulation/world.ts';
 
-vi.mock('storybook/internal/client-logger', { spy: true });
+vi.mock('@storybook/core/internal/client-logger', { spy: true });
 
 const formatWorld = (world: World) =>
   `topology=${world.topology.name} replicas=${world.replicas.map((replica) => replica.id).join(',')}`;

@@ -2,9 +2,9 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import type { CoverageOptions, TestProject, TestSpecification, Vitest } from 'vitest/node';
 
-import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
-import { Tag } from 'storybook/internal/core-server';
-import type { StoryId, StoryIndexEntry } from 'storybook/internal/types';
+import { getProjectRoot, resolvePathInStorybookCache } from '@storybook/core/internal/common';
+import { Tag } from '@storybook/core/internal/story-index';
+import type { StoryId, StoryIndexEntry } from '@storybook/core/internal/types';
 
 import * as find from 'empathic/find';
 import * as walk from 'empathic/walk';

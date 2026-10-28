@@ -14,7 +14,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { buildServerInstructions } from 'storybook/internal/skills';
-import type { ToolAvailability } from 'storybook/internal/core-server';
+import type { ToolAvailability } from 'storybook/internal/server';
 import { registerCoreToolsetsForTest } from '../src/test-support/register-core-toolsets.ts';
 import { getAddonToolMetadata, type ToolMetadata } from '../src/tools/tool-registry.ts';
 

@@ -1,4 +1,4 @@
-import { Tag } from 'storybook/internal/core-server';
+import { Tag } from 'storybook/internal/story-index';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';

@@ -9,7 +9,7 @@ import {
   createStoryArgsResolver,
   loadCsf,
   resolveEffectiveRender,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 
 import type {
   ManifestClassField,

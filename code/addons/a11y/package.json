@@ -41,8 +41,12 @@
       "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "code": "./src/node.ts",
+      "default": "./dist/node.js"
+    },
     "./package.json": "./package.json",
-    "./preset": "./dist/preset.js",
     "./preview": {
       "types": "./dist/preview.d.ts",
       "code": "./src/preview.tsx",
@@ -57,6 +61,7 @@
     "!src/**/*"
   ],
   "dependencies": {
+    "@storybook/core": "workspace:*",
     "@storybook/global": "^5.0.0",
     "axe-core": "^4.2.0"
   },

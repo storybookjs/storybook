@@ -2,16 +2,15 @@ import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 import {
   HandledError,
   JsPackageManager,
+  isHandledError,
   getPkgPrNewPackageSpecifier,
   getProjectRoot,
   isPkgPrNewVersionSpecifier,
   isSatelliteAddon,
   versions,
 } from 'storybook/internal/common';
-import {
-  experimental_loadStorybook,
-  getStoriesPathsFromConfig,
-} from 'storybook/internal/core-server';
+import { createStorybook } from 'storybook/internal/instance';
+import { getStoriesPathsFromConfig } from 'storybook/internal/story-index';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import {
   UpgradeStorybookConfigDirNotFoundError,
@@ -768,9 +767,7 @@ export const getProjects = async (
 
     return selectedProjects ? { allProjects: validProjects, selectedProjects } : undefined;
   } catch (error) {
-    if (
-      !(error instanceof HandledError || error instanceof UpgradeStorybookConfigDirNotFoundError)
-    ) {
+    if (!(isHandledError(error) || error instanceof UpgradeStorybookConfigDirNotFoundError)) {
       logger.error('Failed to get projects');
     }
 
@@ -810,12 +807,13 @@ export const getEvaluatedStoryPaths = async (
   configDir: string,
   workingDir: string
 ): Promise<string[]> => {
-  const { presets } = await experimental_loadStorybook({
+  const storybook = await createStorybook({
     configDir,
-    packageJson: {},
+    mode: 'headless',
+    cliOptions: { packageJson: {} },
   });
-
-  const stories = await presets.apply('stories', []);
+  const { stories } = storybook.options;
+  await storybook.close();
 
   return getStoriesPathsFromConfig({
     stories,

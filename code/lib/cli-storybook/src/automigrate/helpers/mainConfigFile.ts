@@ -1,6 +1,10 @@
-import { extractFrameworkPackageName, frameworkPackages } from 'storybook/internal/common';
+import {
+  extractFrameworkPackageName,
+  frameworkPackages,
+  getFrameworkNameFromConfig,
+} from 'storybook/internal/common';
 import { frameworkToRenderer } from 'storybook/internal/common';
-import type { StorybookConfigRaw } from 'storybook/internal/types';
+import type { StorybookConfig } from 'storybook/internal/instance';
 
 /**
  * Given a Storybook configuration object, retrieves the package name or file path of the framework.
@@ -8,9 +12,8 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
  * @param mainConfig - The main Storybook configuration object to lookup.
  * @returns - The package name of the framework. If not found, returns null.
  */
-export const getFrameworkPackageName = (mainConfig?: StorybookConfigRaw) => {
-  const packageNameOrPath =
-    typeof mainConfig?.framework === 'string' ? mainConfig.framework : mainConfig?.framework?.name;
+export const getFrameworkPackageName = (mainConfig?: Pick<StorybookConfig, 'framework'>) => {
+  const packageNameOrPath = getFrameworkNameFromConfig(mainConfig?.framework);
 
   if (!packageNameOrPath) {
     return null;
@@ -25,7 +28,7 @@ export const getFrameworkPackageName = (mainConfig?: StorybookConfigRaw) => {
  * @param mainConfig - The main Storybook configuration object to lookup.
  * @returns - The renderer name. If not found, returns null.
  */
-export const getRendererName = (mainConfig?: StorybookConfigRaw) => {
+export const getRendererName = (mainConfig?: Pick<StorybookConfig, 'framework'>) => {
   const frameworkPackageName = getFrameworkPackageName(mainConfig);
 
   if (!frameworkPackageName) {

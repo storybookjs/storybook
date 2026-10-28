@@ -1,4 +1,4 @@
-import type { IndexEntry } from 'storybook/internal/types';
+import type { IndexEntry } from '@storybook/core/internal/types';
 
 import { readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';

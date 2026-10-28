@@ -38,22 +38,27 @@
       "default": "./dist/docgen/index.js"
     },
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "code": "./src/node.ts",
+      "default": "./dist/node.js"
+    },
     "./package.json": "./package.json",
     "./preset": {
-      "types": "./dist/preset.d.ts",
-      "code": "./src/preset.ts",
-      "default": "./dist/preset.js"
+      "types": "./dist/node.d.ts",
+      "code": "./src/node.ts",
+      "default": "./dist/node.js"
     }
   },
   "files": [
     "dist/**/*",
     "template/cli/**/*",
     "README.md",
-    "*.js",
     "*.d.ts",
     "!src/**/*"
   ],
   "dependencies": {
+    "@storybook/core": "workspace:*",
     "@storybook/global": "^5.0.0",
     "@types/pug": "2.0.10",
     "@vue/compiler-dom": "^3.2.47",
@@ -76,6 +81,9 @@
     "vue": "^3.0.0"
   },
   "peerDependenciesMeta": {
+    "storybook": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     }

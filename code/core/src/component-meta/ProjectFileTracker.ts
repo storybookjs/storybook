@@ -1,4 +1,4 @@
-import { isInNodeModules, slash } from '../shared/utils/paths.ts';
+import { isInNodeModules, slash } from '../utils/paths.ts';
 import type { FileChange, ProjectFileSystem } from './types.ts';
 
 export type FileSnapshotCache<Snapshot> = Map<string, [number | undefined, Snapshot | undefined]>;

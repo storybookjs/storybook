@@ -33,20 +33,20 @@ interface ReviewPayload {
   changedFiles?: string[];
 }
 
-const BADGE_COMPONENT_IMPORT_PATHS = ['./core/src/components/components/Badge/Badge.stories.tsx'];
+const BADGE_COMPONENT_IMPORT_PATHS = ['./lib/ui/src/components/components/Badge/Badge.stories.tsx'];
 
 const STATUS_BADGE_IMPORT_PATHS = [
-  './core/src/component-testing/components/StatusBadge.stories.tsx',
+  './lib/storybook/src/features/component-testing/components/StatusBadge.stories.tsx',
 ];
 
 /** Story files that render Badge directly, with the exports that actually show it. */
 const BADGE_DIRECT_USAGE: Array<{ importPaths: string[]; storyNames: string[] }> = [
   {
-    importPaths: ['./core/src/components/components/ActionList/ActionList.stories.tsx'],
+    importPaths: ['./lib/ui/src/components/components/ActionList/ActionList.stories.tsx'],
     storyNames: ['Default'],
   },
   {
-    importPaths: ['./core/src/manager/components/panel/Panel.stories.tsx'],
+    importPaths: ['./lib/manager/src/ui/components/panel/Panel.stories.tsx'],
     storyNames: ['JSX Titles'],
   },
 ];
@@ -54,15 +54,17 @@ const BADGE_DIRECT_USAGE: Array<{ importPaths: string[]; storyNames: string[] }>
 /** Manager surfaces where Badge appears in sidebar, filters, or error UI. */
 const BADGE_MANAGER_SURFACES: Array<{ importPaths: string[]; storyNames: string[] }> = [
   {
-    importPaths: ['./core/src/manager/components/sidebar/Filter.stories.tsx'],
+    importPaths: ['./lib/manager/src/ui/components/sidebar/Filter.stories.tsx'],
     storyNames: ['With Selection'],
   },
   {
-    importPaths: ['./core/src/manager/components/sidebar/FilterPanel.stories.tsx'],
+    importPaths: ['./lib/manager/src/ui/components/sidebar/FilterPanel.stories.tsx'],
     storyNames: ['With Statuses', 'With Statuses Included'],
   },
   {
-    importPaths: ['./core/src/manager/components/error-boundary/ManagerErrorBoundary.stories.tsx'],
+    importPaths: [
+      './lib/manager/src/ui/components/error-boundary/ManagerErrorBoundary.stories.tsx',
+    ],
     storyNames: ['With Error'],
   },
 ];
@@ -74,7 +76,9 @@ const BADGE_ADDON_PANELS: Array<{ importPaths: string[]; storyNames: string[] }>
     storyNames: ['Manual', 'Ready With Results'],
   },
   {
-    importPaths: ['./core/src/component-testing/components/InteractionsPanel.stories.tsx'],
+    importPaths: [
+      './lib/storybook/src/features/component-testing/components/InteractionsPanel.stories.tsx',
+    ],
     storyNames: ['Passing', 'Failed'],
   },
 ];
@@ -91,7 +95,7 @@ const BADGE_A11Y_REPORT: Array<{ importPaths: string[]; storyNames: string[] }> 
 const BADGE_REVIEW_SURFACES: Array<{ importPaths: string[]; storyNames: string[] }> = [
   {
     importPaths: [
-      './core/src/manager/components/review/components/ReviewToolbarHeader.stories.tsx',
+      './lib/manager/src/ui/components/review/components/ReviewToolbarHeader.stories.tsx',
     ],
     storyNames: ['New Story'],
   },

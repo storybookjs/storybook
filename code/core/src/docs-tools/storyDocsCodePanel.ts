@@ -1,3 +1,5 @@
+import { getFeatures } from '../shared/features.ts';
+
 import { SourceType } from './shared.ts';
 
 export type StoryDocsCodePanelParameters = {
@@ -48,7 +50,7 @@ export function shouldWaitForServiceSnippet(
   parameters: StoryDocsCodePanelParameters | undefined,
   storyPrepared: boolean | undefined
 ): boolean {
-  if (!globalThis.FEATURES?.docgenServer) {
+  if (!getFeatures().docgenServer) {
     return false;
   }
   return !storyPrepared || !shouldSkipStoryDocsEmit(parameters);

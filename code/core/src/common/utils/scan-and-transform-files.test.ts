@@ -13,11 +13,11 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock('./common-glob-options', () => ({
+vi.mock('./common-glob-options.ts', () => ({
   commonGlobOptions: mocks.commonGlobOptions,
 }));
 
-vi.mock('storybook/internal/node-logger', () => ({
+vi.mock('@storybook/core/internal/node-logger', () => ({
   logger: {
     log: mocks.loggerLog,
   },

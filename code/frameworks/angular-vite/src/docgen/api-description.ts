@@ -1,4 +1,4 @@
-import type { StrictArgTypes, StrictInputType } from 'storybook/internal/types';
+import type { StrictArgTypes, StrictInputType } from '@storybook/core/internal/types';
 
 interface Member {
   name: string;

@@ -1,7 +1,7 @@
 // Real temp directories: the lock and the run marker this orchestrates are real files whose
 // cross-process behaviour memfs cannot model. Compodoc itself is mocked out - what is under test
 // here is when it runs, not what it produces.
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -17,7 +17,7 @@ import {
 import { generateDocumentation } from './generate-documentation.ts';
 
 vi.mock('./generate-documentation.ts', { spy: true });
-vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('@storybook/core/internal/node-logger', { spy: true });
 
 let workspaceRoot: string;
 let outputDir: string;

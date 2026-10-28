@@ -10,7 +10,7 @@
  * suggests from come from the story index too.
  */
 
-import type { StoryIndex } from 'storybook/internal/types';
+import type { StoryIndex } from '@storybook/core/internal/types';
 
 import { getComponentIdFromEntry } from '../../../../common/utils/component-id.ts';
 import { selectComponentEntriesByComponentId } from '../../../../common/utils/select-component-entry.ts';
@@ -18,7 +18,7 @@ import {
   OpenServiceDocgenMissingComponentError,
   OpenServiceMissingServiceError,
 } from '../../../../server-errors.ts';
-import { Tag } from '../../../constants/tags.ts';
+import { Tag } from '../../../../constants/tags.ts';
 import type { DocgenService } from '../../services/docgen/definition.ts';
 import type { StoryDocsService } from '../../services/story-docs/definition.ts';
 import type { ToolsetGetService } from '../../toolset-definition.ts';

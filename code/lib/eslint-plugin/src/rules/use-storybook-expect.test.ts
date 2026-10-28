@@ -18,6 +18,13 @@ import rule from './use-storybook-expect.ts';
 ruleTester.run('use-storybook-expect', rule, {
   valid: [
     dedent`
+      import { expect } from '@storybook/core/test';
+
+      Default.play = () => {
+        expect(123).toEqual(123);
+      }
+    `,
+    dedent`
       import { expect } from '@storybook/jest';
 
       Default.play = () => {

@@ -7,8 +7,8 @@ import { x } from 'tinyexec';
 import {
   DEFAULT_PROMPT_NAME,
   PROMPT_NAMES,
-} from '../../../code/core/src/cli/skills/content/setup-prompts/index.ts';
-import { getAiSetupPrompt } from '../../../code/core/src/shared/utils/ai-prompts.ts';
+} from '../../../code/lib/storybook/src/storybook/cli/skills/content/setup-prompts/index.ts';
+import { getAiSetupPrompt } from '../../../code/core/src/utils/ai-prompts.ts';
 
 export interface Logger {
   log: (msg: string) => void;
@@ -18,7 +18,7 @@ export interface Logger {
 }
 
 export const REPO_ROOT = resolve(import.meta.dirname, '..', '..', '..');
-export const DISPATCHER_PATH = resolve(REPO_ROOT, 'code/core/dist/bin/dispatcher.js');
+export const DISPATCHER_PATH = resolve(REPO_ROOT, 'code/lib/storybook/dist/bin/dispatcher.js');
 export const EVAL_ROOT = resolve(REPO_ROOT, '..', 'storybook-eval');
 export const REPOS_DIR = resolve(EVAL_ROOT, 'repos');
 export const TRIALS_DIR = resolve(EVAL_ROOT, 'trials');
@@ -153,7 +153,7 @@ export function formatTable(headers: string[], rows: string[][]): string {
 
 /**
  * Resolves the absolute path to the local Storybook dispatcher CLI entrypoint
- * (`code/core/dist/bin/dispatcher.js`) and asserts it has been built. The eval
+ * (`code/lib/storybook/dist/bin/dispatcher.js`) and asserts it has been built. The eval
  * runs Storybook from this local checkout — not from the benchmark project's
  * installed `node_modules` — so changes under `code/` are exercised by the
  * trial. Throws a contributor-friendly error if the dispatcher is missing.

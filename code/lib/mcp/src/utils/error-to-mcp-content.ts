@@ -1,7 +1,7 @@
 import {
   formatRequiresOwnMcpNotice,
-  ManifestGetError,
-  RequiresOwnMcpError,
+  isManifestGetError,
+  isRequiresOwnMcpError,
 } from 'storybook/internal/toolsets-docs';
 
 type MCPTextResult = {
@@ -16,18 +16,17 @@ type MCPTextResult = {
  * where to go — so it is returned without the error flag.
  */
 export const errorToMCPContent = (error: unknown): MCPTextResult => {
-  if (error instanceof RequiresOwnMcpError) {
+  if (isRequiresOwnMcpError(error)) {
     return {
       content: [{ type: 'text', text: formatRequiresOwnMcpNotice(error.source, error.endpoint) }],
     };
   }
 
-  const errorPrefix =
-    error instanceof ManifestGetError ? 'Error getting manifest' : 'Unexpected error';
+  const errorPrefix = isManifestGetError(error) ? 'Error getting manifest' : 'Unexpected error';
   const errorMessage = error instanceof Error ? error.message : String(error);
 
   let fullMessage = `${errorPrefix}: ${errorMessage}`;
-  if (error instanceof ManifestGetError && error.cause) {
+  if (isManifestGetError(error) && error.cause) {
     const causeMessage = error.cause instanceof Error ? error.cause.message : String(error.cause);
     fullMessage += `\nCaused by: ${causeMessage}`;
   }

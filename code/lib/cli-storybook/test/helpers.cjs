@@ -1,16 +1,7 @@
 const { sync: spawnSync } = require('cross-spawn');
 const path = require('path');
 
-const CORE_CLI_PATH = path.join(
-  __dirname,
-  '..',
-  '..',
-  '..',
-  'core',
-  'dist',
-  'bin',
-  'dispatcher.js'
-);
+const CORE_CLI_PATH = path.join(__dirname, '..', '..', 'storybook', 'dist', 'bin', 'dispatcher.js');
 
 /**
  * Execute command

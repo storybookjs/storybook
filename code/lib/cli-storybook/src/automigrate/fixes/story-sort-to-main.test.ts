@@ -161,6 +161,10 @@ describe('story-sort-to-main', () => {
       `export default definePreview({ parameters: { options: { storySort: { order: ['Intro'] } } } })`,
     ],
     [
+      'definePreview.for',
+      `import { definePreview } from '@storybook/react-vite'; export default definePreview.for<M, X>()({ parameters: { options: { storySort: { order: ['Intro'] } } } })`,
+    ],
+    [
       'a root export identifier',
       `const config = { parameters: { options: { storySort: { order: ['Intro'] } } } }; export default config`,
     ],

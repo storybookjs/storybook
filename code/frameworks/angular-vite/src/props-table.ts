@@ -1,5 +1,5 @@
-import { deprecate, logger } from 'storybook/internal/node-logger';
-import type { StorybookFeatures } from 'storybook/internal/types';
+import { deprecate, logger } from '@storybook/core/internal/node-logger';
+import type { StorybookFeatures } from '@storybook/core/internal/types';
 
 import type { PropsTableMode } from '@storybook/angular-cm';
 import type { FrameworkOptions } from './types.ts';

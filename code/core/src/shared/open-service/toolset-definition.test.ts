@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import * as v from 'valibot';
 
-import { defineToolset } from './toolset-definition.ts';
+import { defineToolset, invokeToolsetMethod } from './toolset-definition.ts';
 
 const toolsetWithInput = (input: StandardSchemaV1) =>
   defineToolset({
@@ -43,5 +43,47 @@ describe('defineToolset', () => {
     };
 
     expect(() => toolsetWithInput(input)).not.toThrow();
+  });
+});
+
+describe('invokeToolsetMethod', () => {
+  const signalProbe = defineToolset({
+    id: 'probe',
+    description: 'Probe toolset.',
+    methods: {
+      signal: {
+        title: 'Signal',
+        description: 'Reports the signal it was handed.',
+        input: v.strictObject({}),
+        handler: (_, ctx) => ({
+          ok: true,
+          data: { isSignal: ctx.signal instanceof AbortSignal, aborted: ctx.signal.aborted },
+          markdown: '',
+        }),
+      },
+    },
+  });
+  const aborted = AbortSignal.abort();
+
+  it.each([
+    { name: 'no signal', input: {}, expected: { isSignal: true, aborted: false } },
+    {
+      name: 'an aborted signal',
+      input: { signal: aborted },
+      expected: { isSignal: true, aborted: true },
+    },
+  ])('hands the handler a signal when given $name', async ({ input, expected }) => {
+    const outcome = await invokeToolsetMethod(
+      signalProbe,
+      'signal',
+      {},
+      {
+        transport: 'sdk',
+        getService: () => ({}) as never,
+        ...input,
+      }
+    );
+
+    expect(outcome.data).toEqual(expected);
   });
 });

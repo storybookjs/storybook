@@ -12,7 +12,7 @@
  * mirror them here; keep them in sync with `core/module-graph` if it changes.
  */
 
-import type { Query } from 'storybook/internal/core-server';
+import type { Query } from 'storybook/internal/services';
 
 const MODULE_GRAPH_SERVICE_ID = 'core/module-graph';
 
@@ -57,7 +57,7 @@ let probed: GetServiceFn | null | undefined;
 async function probe(): Promise<GetServiceFn | null> {
   if (probed !== undefined) return probed;
   try {
-    const mod = (await import('storybook/internal/core-server')) as Record<string, unknown>;
+    const mod = (await import('storybook/internal/services')) as Record<string, unknown>;
     const fn = mod.getService;
     probed = typeof fn === 'function' ? (fn as GetServiceFn) : null;
   } catch {

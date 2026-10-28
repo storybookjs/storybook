@@ -1,10 +1,10 @@
-import type { ESTreeNode as Node, collectImportBindings } from 'storybook/internal/csf-tools';
+import type { ESTreeNode as Node, collectImportBindings } from '@storybook/core/internal/csf-tools';
 import {
   buildImportStatements,
   staticKey,
   resolveComponentImport,
   unwrapExpression,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 
 import type { HostComponentSnippetInput } from './story-docs-snippet.ts';
 

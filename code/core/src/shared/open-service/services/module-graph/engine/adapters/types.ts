@@ -1,7 +1,7 @@
 /**
  * Builder-agnostic change-detection adapter contract.
  *
- * The detector is owned by `code/core/src/core-server/change-detection/` and never imports a
+ * The detector is owned by `code/core/src/services/change-detection/` and never imports a
  * builder package. Each builder ships its own `ChangeDetectionAdapter` implementation that
  * (a) supplies static resolve config once at start, and (b) pushes file-system events as
  * they occur.
@@ -9,7 +9,7 @@
  * Builder-vite is the first consumer (see `code/builders/builder-vite/src/change-detection-adapter/`).
  */
 
-import type { ModuleResolveConfig } from 'storybook/internal/types';
+import type { ModuleResolveConfig } from '@storybook/core/internal/types';
 
 export type { ModuleResolveConfig };
 

@@ -1,4 +1,4 @@
-import type { ToolsetCtx } from 'storybook/open-service';
+import type { ToolsetBaseCtx } from '@storybook/core/open-service';
 
 import type { TestRunData, TestRunResult } from './definition.ts';
 
@@ -347,7 +347,7 @@ function formatCompletedRun(
  */
 export function formatTestRun(
   data: TestRunData,
-  ctx: ToolsetCtx,
+  ctx: ToolsetBaseCtx,
   { a11yEnabled }: { a11yEnabled: boolean }
 ): string {
   switch (data.status) {

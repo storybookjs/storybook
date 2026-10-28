@@ -4,7 +4,7 @@ import os from 'node:os';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { deprecate } from 'storybook/internal/node-logger';
+import { deprecate } from '@storybook/core/internal/node-logger';
 
 import { transformSync } from 'esbuild';
 
@@ -18,7 +18,7 @@ import {
 // Mock dependencies
 vi.mock('node:fs');
 vi.mock('node:fs/promises');
-vi.mock('storybook/internal/node-logger');
+vi.mock('@storybook/core/internal/node-logger');
 vi.mock('esbuild');
 
 describe('loader', () => {

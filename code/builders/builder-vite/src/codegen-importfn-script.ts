@@ -1,4 +1,4 @@
-import type { StoryIndex } from 'storybook/internal/types';
+import type { StoryIndex } from '@storybook/core/internal/types';
 
 import { genDynamicImport, genObjectFromRawEntries } from 'knitwork';
 import { join, normalize, relative } from 'pathe';

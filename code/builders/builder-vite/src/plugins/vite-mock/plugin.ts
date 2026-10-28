@@ -1,14 +1,8 @@
 import { readFileSync } from 'node:fs';
 
-import {
-  extractMockCalls,
-  findMockRedirect,
-  getAutomockCode,
-  getRealPath,
-  rewriteSbMockImportCalls,
-} from 'storybook/internal/mocking-utils';
-import { logger } from 'storybook/internal/node-logger';
-import type { CoreConfig } from 'storybook/internal/types';
+import type * as MockingUtils from '@storybook/core/internal/mocking-utils';
+import { logger } from '@storybook/core/internal/node-logger';
+import type { CoreConfig } from '@storybook/core/internal/types';
 
 import { normalize } from 'pathe';
 import type { Plugin, ResolvedConfig } from 'vite';
@@ -42,6 +36,10 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
   // --- Plugin State ---
   let viteConfig: ResolvedConfig;
   let mockCalls: MockCall[] = [];
+  // Loaded on first use, not at builder import; always set while `mockCalls` is not empty.
+  let mocking: typeof MockingUtils | undefined;
+  const loadMocking = async (): Promise<typeof MockingUtils> =>
+    (mocking ??= await import('@storybook/core/internal/mocking-utils'));
 
   const normalizedPreviewConfigPath = normalize(options.previewConfigPath);
 
@@ -54,7 +52,8 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
         viteConfig = config;
       },
 
-      buildStart() {
+      async buildStart() {
+        const { extractMockCalls, findMockRedirect } = await loadMocking();
         mockCalls = extractMockCalls(options, viteConfig.root, findMockRedirect);
       },
 
@@ -64,6 +63,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
             // Store the old mocks before updating
             const oldMockCalls = mockCalls;
             // Re-extract mocks to get the latest list
+            const { extractMockCalls, findMockRedirect } = await loadMocking();
             mockCalls = extractMockCalls(options, viteConfig.root, findMockRedirect);
 
             // Invalidate the preview file
@@ -100,6 +100,10 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
       load: {
         order: 'pre',
         handler(id) {
+          if (!mocking || mockCalls.length === 0) {
+            return null;
+          }
+          const { getRealPath } = mocking;
           const preserveSymlinks = viteConfig.resolve.preserveSymlinks;
 
           const idNorm = getRealPath(id, preserveSymlinks);
@@ -123,6 +127,10 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
       transform: {
         order: 'pre',
         handler(code, id) {
+          if (!mocking || mockCalls.length === 0) {
+            return null;
+          }
+          const { getAutomockCode, getRealPath } = mocking;
           for (const call of mockCalls) {
             const preserveSymlinks = viteConfig.resolve.preserveSymlinks;
 
@@ -163,8 +171,9 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
       name: 'storybook:mock-loader-preview',
       transform: {
         filter: { id: normalizedPreviewConfigPath },
-        handler(code, id) {
+        async handler(code, id) {
           if (id === normalizedPreviewConfigPath) {
+            const { rewriteSbMockImportCalls } = await loadMocking();
             try {
               return rewriteSbMockImportCalls(code, id);
             } catch (e) {

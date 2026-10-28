@@ -1,5 +1,5 @@
-import { rewriteSbMockImportCalls } from 'storybook/internal/mocking-utils';
-import { logger } from 'storybook/internal/node-logger';
+import { rewriteSbMockImportCalls } from '@storybook/core/internal/mocking-utils';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import type { LoaderDefinition } from 'webpack';
 

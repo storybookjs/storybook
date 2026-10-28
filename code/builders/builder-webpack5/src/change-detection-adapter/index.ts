@@ -2,12 +2,12 @@ import type {
   ChangeDetectionAdapter,
   FileChangeEvent,
   ModuleResolveConfig,
-} from 'storybook/internal/core-server';
+} from '@storybook/core/internal/services';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
-import { normalize } from 'pathe';
-import type { Compiler } from 'webpack';
+import { normalize, resolve } from 'pathe';
+import type { Compiler, Configuration } from 'webpack';
 
 /**
  * Webpack implementation of {@link ChangeDetectionAdapter}.
@@ -104,4 +104,21 @@ function normaliseWebpackAlias(
     // false = disabled alias, skip
   }
   return Object.keys(record).length > 0 ? record : undefined;
+}
+
+export function createHeadlessWebpackChangeDetectionAdapter(
+  getConfig: () => Promise<Configuration>,
+  configDir: string
+): ChangeDetectionAdapter {
+  return {
+    async getResolveConfig(): Promise<ModuleResolveConfig> {
+      const config = await getConfig();
+      return {
+        projectRoot: config.context ?? resolve(configDir, '..'),
+        alias: normaliseWebpackAlias(config.resolve?.alias),
+        conditions: config.resolve?.conditionNames,
+      };
+    },
+    onFileChange: () => () => {},
+  };
 }

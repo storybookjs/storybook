@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { IndexEntry } from 'storybook/internal/types';
+import type { IndexEntry } from '@storybook/core/internal/types';
 
 import { isStoryCreatedByAISetup } from './ai-setup-utils.ts';
 

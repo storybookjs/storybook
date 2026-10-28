@@ -18,13 +18,13 @@
 import { readFileSync, statSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import { getProjectRoot, slash } from 'storybook/internal/common';
+import { getProjectRoot, slash } from '@storybook/core/internal/common';
 import {
   ComponentMetaManager,
   type ComponentMetaProjectBase,
   type ComponentMetaProjectFactory,
   type FileChange,
-} from 'storybook/internal/component-meta';
+} from '@storybook/core/internal/component-meta';
 
 import { createParsedCommandLine, getAllExtensions } from '@vue/language-core';
 import type ts from 'typescript';

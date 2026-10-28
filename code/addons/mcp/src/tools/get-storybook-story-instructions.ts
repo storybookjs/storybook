@@ -1,6 +1,6 @@
-import { resolveSkillInputs } from 'storybook/internal/core-server';
+import { resolveSkillInputs } from 'storybook/internal/server';
 import { buildStoryInstructions } from 'storybook/internal/skills';
-import type { Options } from 'storybook/internal/types';
+import type { Options } from '@storybook/core/internal/types';
 import type { McpServer } from 'tmcp';
 import { collectTelemetry } from '../telemetry.ts';
 import type { AddonContext } from '../types.ts';

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { getComponentCandidates } from 'storybook/internal/core-server';
+import { getComponentCandidates } from 'storybook/internal/story-index';
 import {
   computeQualityScore,
   countTypeCheckErrors,

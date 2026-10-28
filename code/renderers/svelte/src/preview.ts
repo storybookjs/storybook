@@ -25,8 +25,8 @@ import StoryComponent from '@storybook/svelte/internal/svelte-csf/Story.svelte';
 import type { Component, ComponentProps, Snippet } from 'svelte';
 import type { Simplify } from 'type-fest';
 
-import * as svelteAnnotations from './entry-preview.ts';
-import * as svelteDocsAnnotations from './entry-preview-docs.ts';
+import svelteAnnotations from './entry-preview.ts';
+import svelteDocsAnnotations from './entry-preview-docs.ts';
 import type { SvelteTypes } from './types.ts';
 
 /**

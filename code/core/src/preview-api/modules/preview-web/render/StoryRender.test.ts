@@ -1,19 +1,19 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Channel } from 'storybook/internal/channels';
+import { Channel } from '@storybook/core/internal/channels';
 import {
   STORY_FINISHED,
   STORY_RENDERED,
   STORY_RENDER_PHASE_CHANGED,
-} from 'storybook/internal/core-events';
-import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
+} from '@storybook/core/internal/core-events';
+import { ArgTypesRemovedFromStoryContextError } from '@storybook/core/internal/preview-errors';
 import type {
   PreparedStory,
   Renderer,
   StoryContext,
   StoryIndexEntry,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 import { ReporterAPI, type StoryStore } from '../../store/index.ts';
 import { PREPARE_ABORTED } from './Render.ts';

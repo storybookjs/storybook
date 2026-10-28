@@ -134,7 +134,7 @@ const bumpCodeVersion = async (nextVersion: string) => {
 
 const bumpVersionSources = async (currentVersion: string, nextVersion: string) => {
   const filesToUpdate = [
-    join(CODE_DIR_PATH, 'core', 'src', 'manager-api', 'version.ts'),
+    join(CODE_DIR_PATH, 'lib', 'manager', 'src', 'manager-api', 'version.ts'),
     join(CODE_DIR_PATH, 'core', 'src', 'common', 'versions.ts'),
   ];
   console.log(`🤜 Bumping versions in...:\n  ${picocolors.cyan(filesToUpdate.join('\n  '))}`);

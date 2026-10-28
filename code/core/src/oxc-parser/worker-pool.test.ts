@@ -65,7 +65,7 @@ vi.mock('node:worker_threads', async () => {
 
 vi.mock('node:fs', () => ({ existsSync: () => true }));
 
-vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('@storybook/core/internal/node-logger', { spy: true });
 
 const loadModule = async () => await import('./worker-pool.ts');
 

@@ -8,9 +8,9 @@ import {
   collectImportBindings,
   resolveComponentImport,
   walk,
-} from 'storybook/internal/csf-tools';
-import { logger } from 'storybook/internal/node-logger';
-import type { TypescriptOptions as TypescriptOptionsBase } from 'storybook/internal/types';
+} from '@storybook/core/internal/csf-tools';
+import { logger } from '@storybook/core/internal/node-logger';
+import type { TypescriptOptions as TypescriptOptionsBase } from '@storybook/core/internal/types';
 
 import type { ParserOptions } from 'react-docgen-typescript';
 

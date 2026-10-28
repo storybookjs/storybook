@@ -31,8 +31,17 @@
     "./entry-preview-docs": "./dist/entry-preview-docs.js",
     "./entry-preview-rsc": "./dist/entry-preview-rsc.js",
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "code": "./src/node.ts",
+      "default": "./dist/node.js"
+    },
     "./package.json": "./package.json",
-    "./preset": "./dist/preset.js",
+    "./preset": {
+      "types": "./dist/node.d.ts",
+      "code": "./src/node.ts",
+      "default": "./dist/node.js"
+    },
     "./preview": {
       "types": "./dist/preview.d.ts",
       "code": "./src/preview.tsx",
@@ -48,6 +57,7 @@
     "!src/**/*"
   ],
   "dependencies": {
+    "@storybook/core": "workspace:*",
     "@storybook/global": "^5.0.0",
     "react-docgen": "^8.0.2",
     "react-docgen-typescript": "^2.2.2"
@@ -89,6 +99,9 @@
       "optional": true
     },
     "@types/react-dom": {
+      "optional": true
+    },
+    "storybook": {
       "optional": true
     },
     "typescript": {

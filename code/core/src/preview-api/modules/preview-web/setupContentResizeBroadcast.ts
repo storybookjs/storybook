@@ -4,8 +4,8 @@ import {
   IFRAME_RESIZE_CONTEXT,
   IFRAME_RESIZE_REQUEST_CONTEXT,
   iframeResizeViewportsEqual,
-} from '../../../shared/constants/iframe-resize.ts';
-import type { ResolvedViewportDimensions } from '../../../viewport/resolveViewport.ts';
+} from '../../../constants/iframe-resize.ts';
+import type { ResolvedViewportDimensions } from '../../../shared/viewport/resolveViewport.ts';
 
 import { shouldEmbed } from './embedMode.ts';
 import { shouldFreeze } from './setupStoryFreezer.ts';

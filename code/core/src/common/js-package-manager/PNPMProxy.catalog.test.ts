@@ -3,7 +3,7 @@ import { join } from 'pathe';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import * as find from 'empathic/find';
 import { fs as memfs, vol } from 'memfs';
@@ -16,7 +16,7 @@ vi.mock('node:fs', { spy: true });
 vi.mock('../utils/command.ts', { spy: true });
 vi.mock('empathic/find', { spy: true });
 vi.mock('../utils/paths.ts', { spy: true });
-vi.mock('storybook/internal/node-logger', () => ({
+vi.mock('@storybook/core/internal/node-logger', () => ({
   logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   prompt: { getPreferredStdio: vi.fn(() => 'inherit') },
 }));

@@ -23,7 +23,7 @@
  */
 import type ts from 'typescript';
 
-import { extractComponentJsDocInfo } from 'storybook/internal/component-meta';
+import { extractComponentJsDocInfo } from '@storybook/core/internal/component-meta';
 
 import type { ComponentRef, ResolvedComponentTarget } from '../types.ts';
 

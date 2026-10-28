@@ -7,6 +7,7 @@
  * so legacy code and builder preamble that read the global slot stay in sync.
  */
 
+import { getInstanceContext } from '../shared/instance-context.ts';
 import { Channel } from './main.ts';
 import type { ChannelLike } from './types.ts';
 
@@ -24,6 +25,11 @@ function syncGlobalSlot(next: ChannelLike | undefined): void {
  * `setChannel` from whichever copy installed the live websocket channel.
  */
 export function getChannel(): ChannelLike | null {
+  const context = getInstanceContext();
+  if (context) {
+    return context.channel;
+  }
+
   const fromGlobal = globalThis.__STORYBOOK_ADDONS_CHANNEL__ as ChannelLike | undefined;
   if (fromGlobal) {
     channel = fromGlobal;
@@ -52,6 +58,12 @@ export function requireChannel(): ChannelLike {
 
 /** Installs (or replaces) the shared addons channel. Pass `null` to clear. */
 export function setChannel(next: ChannelLike | null): void {
+  const context = getInstanceContext();
+  if (context) {
+    context.channel = next;
+    return;
+  }
+
   channel = next ?? undefined;
   syncGlobalSlot(channel);
 }

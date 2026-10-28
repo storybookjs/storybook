@@ -1,0 +1,1003 @@
+import { readFile, writeFile } from 'node:fs/promises';
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import * as find from 'empathic/find';
+import { dedent } from 'ts-dedent';
+import { logger } from '@storybook/core/internal/node-logger';
+
+import type { PackageJsonWithDepsAndDevDeps } from '@storybook/core/internal/common';
+import type { JsPackageManager } from '@storybook/core/internal/common';
+import {
+  configureFlatConfig,
+  configureEslintPlugin,
+  extractEslintInfo,
+  findEslintFile,
+  normalizeExtends,
+} from './eslintPlugin.ts';
+
+vi.mock('empathic/find', () => ({
+  up: vi.fn(),
+}));
+
+vi.mock('@storybook/core/internal/node-logger', { spy: true });
+
+vi.mock(import('node:fs/promises'), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    readFile: vi.fn(),
+    writeFile: vi.fn(),
+  };
+});
+
+describe('extractEslintInfo', () => {
+  const mockPackageManager = {
+    getAllDependencies: vi.fn(),
+    primaryPackageJson: {
+      packageJson: { dependencies: {}, devDependencies: {} } as PackageJsonWithDepsAndDevDeps,
+      packageJsonPath: '/some/path',
+      operationDir: '/some/path',
+    },
+  } satisfies Partial<JsPackageManager>;
+
+  beforeEach(() => {
+    vi.mocked(find).up.mockClear();
+    mockPackageManager.getAllDependencies.mockClear();
+  });
+
+  it('should find ESLint config file with supported extension', async () => {
+    vi.mocked(find).up.mockImplementation((fileName) => {
+      return String(fileName) === '.eslintrc.js' ? String(fileName) : undefined;
+    });
+
+    const result = findEslintFile(process.cwd());
+    expect(result).toBe('.eslintrc.js');
+  });
+
+  it('should return undefined if no ESLint config file is found', async () => {
+    vi.mocked(find).up.mockImplementation(() => undefined);
+
+    const result = findEslintFile(process.cwd());
+    expect(result).toBeUndefined();
+  });
+
+  it('should throw error for unsupported ESLint config file extensions', async () => {
+    vi.mocked(find).up.mockImplementation(() => {
+      return '.eslintrc.yaml';
+    });
+
+    expect(() => findEslintFile(process.cwd())).toThrowError(
+      'Unsupported ESLint config extension: .yaml'
+    );
+  });
+
+  it('should handle missing ESLint config and no dependencies correctly', async () => {
+    mockPackageManager.getAllDependencies.mockReturnValue({});
+    mockPackageManager.primaryPackageJson.packageJson = { dependencies: {}, devDependencies: {} };
+
+    vi.mocked(find).up.mockImplementation(() => undefined);
+
+    const result = await extractEslintInfo(mockPackageManager as any);
+
+    expect(result.hasEslint).toBe(false);
+    expect(result.isStorybookPluginInstalled).toBe(false);
+    expect(result.eslintConfigFile).toBeUndefined();
+  });
+
+  it('should extract ESLint info and detect ESLint config and Storybook plugin', async () => {
+    mockPackageManager.getAllDependencies.mockReturnValue({
+      'eslint-plugin-storybook': '1.0.0',
+      eslint: '7.0.0',
+    });
+    mockPackageManager.primaryPackageJson = {
+      packageJson: {
+        devDependencies: {},
+        dependencies: {},
+        eslintConfig: '.eslintrc.js',
+      },
+      packageJsonPath: '/some/path',
+      operationDir: '/some/path',
+    };
+
+    vi.mocked(find).up.mockImplementation((fileName) =>
+      String(fileName) === '.eslintrc.js' ? String(fileName) : undefined
+    );
+
+    const result = await extractEslintInfo(mockPackageManager as any);
+
+    expect(result.hasEslint).toBe(true);
+    expect(result.isStorybookPluginInstalled).toBe(true);
+    expect(result.eslintConfigFile).toBe('.eslintrc.js');
+    expect(result.isFlatConfig).toBe(false);
+  });
+});
+
+describe('configureEslintPlugin', () => {
+  describe('.eslintrc.json format', () => {
+    it('should not configure ESLint plugin if it is already configured', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`{
+      "extends": ["plugin:storybook/recommended"]
+    }`;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: '.eslintrc.json',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: false,
+      });
+      expect(vi.mocked(writeFile).mock.calls).toHaveLength(0);
+    });
+
+    it('should configure ESLint plugin correctly', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`{
+      "extends": ["plugin:other"]
+    }`;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: '.eslintrc.json',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: false,
+      });
+      const [filePath, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(filePath).toBe('.eslintrc.json');
+      expect(content).toMatchInlineSnapshot(`
+        "{
+          "extends": [
+            "plugin:other",
+            "plugin:storybook/recommended"
+          ]
+        }"
+      `);
+    });
+
+    it('should correctly parse, configure, and preserve comments in comment-json .eslintrc.json', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      // Mock file content with JSON5 features (comments, trailing comma)
+      const mockConfigFile = dedent`{
+        // Some comment here
+        "extends": ["plugin:other"],
+        // Top-level comment
+        "extends": [
+          // Comment before existing item
+          "plugin:other", // Inline comment for existing item
+        ],
+        "rules": {
+          // Comment for rules object
+          "no-unused-vars": "warn", // Another comment
+        },
+        // Trailing comment
+      }`;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: '.eslintrc.json',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: false,
+      });
+
+      // Expect writeFile to have been called (meaning parsing didn't crash)
+      expect(vi.mocked(writeFile)).toHaveBeenCalledTimes(1);
+      const [filePath, content] = vi.mocked(writeFile).mock.calls[0];
+
+      expect(filePath).toBe('.eslintrc.json');
+      expect(content).toMatchInlineSnapshot(`
+        "{
+          // Top-level comment
+          "extends": [
+            // Comment before existing item
+            "plugin:other", // Inline comment for existing item
+            "plugin:storybook/recommended"
+          ],
+          "rules": {
+            // Comment for rules object
+            "no-unused-vars": "warn" // Another comment
+          }
+          // Trailing comment
+        }"
+      `);
+      // Check that the output contains the new extend AND the original comments
+      expect(content).toContain('// Top-level comment');
+      expect(content).toContain('plugin:storybook/recommended');
+      expect(content).toContain('// Trailing comment');
+
+      // Optionally, check the full snapshot if formatting needs to be precise
+      // Note: comment-json might slightly alter whitespace/placement vs original
+      expect(content).toMatchInlineSnapshot(`
+        "{
+          // Top-level comment
+          "extends": [
+            // Comment before existing item
+            "plugin:other", // Inline comment for existing item
+            "plugin:storybook/recommended"
+          ],
+          "rules": {
+            // Comment for rules object
+            "no-unused-vars": "warn" // Another comment
+          }
+          // Trailing comment
+        }"
+      `);
+    });
+  });
+
+  describe('.eslintrc.js format', () => {
+    it('should not configure ESLint plugin if it is already configured', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`
+        module.exports = {
+          extends: ['plugin:storybook/recommended'],
+        };
+      `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: '.eslintrc.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: false,
+      });
+      expect(vi.mocked(writeFile).mock.calls).toHaveLength(0);
+    });
+
+    it('should configure ESLint plugin correctly', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`
+        module.exports = {
+          extends: ["plugin:other"],
+        };
+      `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: '.eslintrc.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: false,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "module.exports = {
+          extends: ["plugin:other", "plugin:storybook/recommended"],
+        };"
+      `);
+    });
+
+    it('leaves an extends it cannot read statically unchanged', async () => {
+      vi.mocked(readFile).mockResolvedValue('module.exports = { extends: getExtends() };');
+
+      await expect(
+        configureEslintPlugin({
+          eslintConfigFile: '.eslintrc.js',
+          packageManager: { getAllDependencies: vi.fn() } as any,
+          isFlatConfig: false,
+        })
+      ).rejects.toThrow('Cannot read the extends of .eslintrc.js statically');
+      expect(vi.mocked(writeFile)).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('flat config', () => {
+    it('configures a CommonJS array export without adding an ESM import', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`
+        const { FlatCompat } = require('@eslint/eslintrc');
+        const js = require('@eslint/js');
+        const cypress = require('eslint-plugin-cypress/flat');
+
+        const compat = new FlatCompat({ recommendedConfig: js.configs.recommended });
+
+        module.exports = [
+          ...compat.extends(
+            require.resolve('@acme/eslint-config/base'),
+            require.resolve('@acme/eslint-config/react'),
+          ),
+          cypress.configs.recommended,
+        ];
+      `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        const storybook = require('eslint-plugin-storybook');
+        const { FlatCompat } = require('@eslint/eslintrc');
+        const js = require('@eslint/js');
+        const cypress = require('eslint-plugin-cypress/flat');
+
+        const compat = new FlatCompat({ recommendedConfig: js.configs.recommended });
+
+        module.exports = [
+          ...compat.extends(
+            require.resolve('@acme/eslint-config/base'),
+            require.resolve('@acme/eslint-config/react'),
+          ),
+          cypress.configs.recommended,
+          ...storybook.configs['flat/recommended'],
+        ];"
+      `);
+      expect(content).not.toContain('import storybook');
+    });
+
+    it('adds the config spread when CommonJS already requires the Storybook plugin', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      vi.mocked(readFile).mockResolvedValue(dedent`
+        const storybook = require('eslint-plugin-storybook');
+
+        module.exports = [
+          { rules: { 'no-console': 'error' } },
+        ];
+      `);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "const storybook = require('eslint-plugin-storybook');
+
+        module.exports = [
+          { rules: { 'no-console': 'error' } },
+          ...storybook.configs['flat/recommended'],
+        ];"
+      `);
+    });
+
+    it('leaves an unsupported CommonJS export unchanged and asks to configure it manually', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      vi.mocked(readFile).mockResolvedValue(dedent`
+        module.exports = createConfig();
+      `);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+
+      expect(vi.mocked(writeFile)).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith(
+        "Could not automatically add eslint-plugin-storybook to eslint.config.js. Please add it manually: const storybook = require('eslint-plugin-storybook'); then add ...storybook.configs['flat/recommended'] to the exported config. See https://storybook.js.org/docs/configure/integration/eslint-plugin"
+      );
+    });
+
+    it('does not add an ESM import when CommonJS requires the plugin without module.exports', async () => {
+      const input = dedent`
+        const storybook = require('eslint-plugin-storybook');
+        exports.default = [];
+      `;
+
+      await expect(configureFlatConfig(input, 'eslint.config.js')).resolves.toBe(input);
+      expect(logger.warn).toHaveBeenCalledOnce();
+    });
+
+    it('configures a CommonJS defineConfig export', async () => {
+      const output = await configureFlatConfig(
+        dedent`
+          const { defineConfig } = require('eslint/config');
+
+          module.exports = defineConfig([{ rules: { 'no-console': 'error' } }]);
+        `,
+        'eslint.config.js'
+      );
+
+      expect(output).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        const storybook = require('eslint-plugin-storybook');
+        const { defineConfig } = require('eslint/config');
+
+        module.exports = defineConfig([{ rules: { 'no-console': 'error' } }, ...storybook.configs['flat/recommended']]);"
+      `);
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('configures a CommonJS typescript-eslint config export', async () => {
+      const output = await configureFlatConfig(
+        dedent`
+          const tseslint = require('typescript-eslint');
+
+          module.exports = tseslint.config(tseslint.configs.recommended);
+        `,
+        'eslint.config.js'
+      );
+
+      expect(output).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        const storybook = require('eslint-plugin-storybook');
+        const tseslint = require('typescript-eslint');
+
+        module.exports = tseslint.config(tseslint.configs.recommended, storybook.configs['flat/recommended']);"
+      `);
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('appends after a parenthesized typescript-eslint config argument', async () => {
+      const output = await configureFlatConfig(
+        dedent`
+          import tseslint from 'typescript-eslint';
+
+          export default tseslint.config(tseslint.configs.recommended, (local));
+        `,
+        'eslint.config.js'
+      );
+
+      expect(output).toContain(
+        "export default tseslint.config(tseslint.configs.recommended, (local), storybook.configs['flat/recommended']);"
+      );
+    });
+
+    it('configures a CommonJS export of a config variable', async () => {
+      const input = dedent`
+        const storybook = require('eslint-plugin-storybook');
+        const config = [{ rules: { 'no-console': 'error' } }];
+
+        module.exports = config;
+      `;
+      const output = await configureFlatConfig(input, 'eslint.config.js');
+
+      expect(output).toMatchInlineSnapshot(`
+        "const storybook = require('eslint-plugin-storybook');
+        const config = [{ rules: { 'no-console': 'error' } }, ...storybook.configs['flat/recommended']];
+
+        module.exports = config;"
+      `);
+      await expect(configureFlatConfig(output, 'eslint.config.js')).resolves.toBe(output);
+    });
+
+    it('does not reuse a CommonJS require declared after the config variable', async () => {
+      const output = await configureFlatConfig(
+        dedent`
+          const config = [];
+          const storybook = require('eslint-plugin-storybook');
+
+          module.exports = config;
+        `,
+        'eslint.config.js'
+      );
+
+      expect(output).toContain("const _storybook = require('eslint-plugin-storybook');");
+      expect(output).toContain("..._storybook.configs['flat/recommended']");
+    });
+
+    it('preserves computed CommonJS exports and warns', async () => {
+      const input = dedent`
+        module["exports"] = [{ rules: { 'no-console': 'error' } }];
+      `;
+
+      await expect(configureFlatConfig(input, 'eslint.config.js')).resolves.toBe(input);
+      expect(logger.warn).toHaveBeenCalledOnce();
+    });
+
+    it('preserves computed exports beside a direct CommonJS export', async () => {
+      const input = dedent`
+        module.exports = [];
+        module[process.env.ESLINT_EXPORT] = [];
+      `;
+
+      await expect(configureFlatConfig(input, 'eslint.config.js')).resolves.toBe(input);
+      expect(logger.warn).toHaveBeenCalledOnce();
+    });
+
+    it('does not reuse a nested CommonJS require binding', async () => {
+      const output = await configureFlatConfig(
+        dedent`
+        if (process.env.CI) {
+          const nestedStorybook = require('eslint-plugin-storybook');
+        }
+
+        module.exports = [];
+      `,
+        'eslint.config.js'
+      );
+
+      expect(output).toContain("const storybook = require('eslint-plugin-storybook');");
+      expect(output).toContain("...storybook.configs['flat/recommended']");
+      expect(output).not.toContain('...nestedStorybook.configs');
+    });
+
+    it('generates a collision-free CommonJS require binding', async () => {
+      const output = await configureFlatConfig(
+        dedent`
+        const storybook = createConfig();
+
+        module.exports = [];
+      `,
+        'eslint.config.js'
+      );
+
+      expect(output).toContain('const _storybook = require("eslint-plugin-storybook");');
+      expect(output).toContain('..._storybook.configs["flat/recommended"]');
+    });
+
+    it('does not reuse a CommonJS require declared after its export', async () => {
+      const input = dedent`
+        module.exports = [];
+        const storybook = require('eslint-plugin-storybook');
+      `;
+      const output = await configureFlatConfig(input, 'eslint.config.js');
+
+      expect(output).toContain("const _storybook = require('eslint-plugin-storybook');");
+      expect(output).toContain("..._storybook.configs['flat/recommended']");
+      await expect(configureFlatConfig(output, 'eslint.config.js')).resolves.toBe(output);
+    });
+
+    it('does not rewrite conditional or multiple CommonJS exports', async () => {
+      const conditionalConfig = dedent`
+        if (process.env.CI) {
+          module.exports = [];
+        }
+      `;
+      const multipleConfig = dedent`
+        module.exports = [];
+        module.exports = [];
+      `;
+
+      await expect(configureFlatConfig(conditionalConfig, 'eslint.config.js')).resolves.toBe(
+        conditionalConfig
+      );
+      await expect(configureFlatConfig(multipleConfig, 'eslint.config.js')).resolves.toBe(
+        multipleConfig
+      );
+      expect(logger.warn).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not rewrite logical CommonJS export assignments', async () => {
+      const input = dedent`
+        module.exports ||= [];
+      `;
+
+      await expect(configureFlatConfig(input, 'eslint.config.js')).resolves.toBe(input);
+      expect(logger.warn).toHaveBeenCalledOnce();
+    });
+
+    it('is idempotent for direct CommonJS requires', async () => {
+      const input = dedent`
+        const storybook = require('eslint-plugin-storybook');
+        module.exports = [];
+      `;
+
+      const output = await configureFlatConfig(input, 'eslint.config.js');
+
+      await expect(configureFlatConfig(output, 'eslint.config.js')).resolves.toBe(output);
+    });
+
+    it('does not duplicate direct CommonJS require config spreads', async () => {
+      const input = dedent`
+        module.exports = [...require('eslint-plugin-storybook').configs['flat/recommended']];
+      `;
+
+      await expect(configureFlatConfig(input, 'eslint.config.js')).resolves.toBe(input);
+    });
+
+    it('leaves configs with a destructured CommonJS require untouched', async () => {
+      const input = dedent`
+        const { configs } = require('eslint-plugin-storybook');
+        module.exports = [...configs['flat/recommended']];
+      `;
+
+      await expect(configureFlatConfig(input, 'eslint.config.js')).resolves.toBe(input);
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('should configure ESLint plugin correctly with default JS flat config', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`
+        import somePlugin from 'some-plugin';
+        export default [
+          somePlugin,
+        ]
+      `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        import storybook from 'eslint-plugin-storybook';
+        import somePlugin from 'some-plugin';
+        export default [
+          somePlugin,
+          ...storybook.configs['flat/recommended'],
+        ]"
+      `);
+    });
+
+    it('should configure ESLint plugin correctly with typescript-eslint flat config', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`
+        import somePlugin from 'some-plugin';
+        import tseslint from 'typescript-eslint';
+        export default tseslint.config(somePlugin);
+      `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.ts',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        import storybook from 'eslint-plugin-storybook';
+        import somePlugin from 'some-plugin';
+        import tseslint from 'typescript-eslint';
+        export default tseslint.config(somePlugin, storybook.configs['flat/recommended']);"
+      `);
+    });
+
+    it('should configure ESLint plugin correctly with reexported const declaration', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`import eslint from "@eslint/js";
+        const options = [
+          eslint.configs.recommended,
+        ]
+
+        export default options;
+      `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.ts',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        import storybook from "eslint-plugin-storybook";
+        import eslint from "@eslint/js";
+        const options = [
+          eslint.configs.recommended,
+          ...storybook.configs["flat/recommended"],
+        ]
+
+        export default options;"
+      `);
+    });
+
+    it('should configure ESLint plugin correctly with TS aliased config', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`import eslint from "@eslint/js";
+        const options = [
+          eslint.configs.recommended,
+        ] as Config
+
+        export default options;`;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        import storybook from "eslint-plugin-storybook";
+        import eslint from "@eslint/js";
+        const options = [
+          eslint.configs.recommended,
+          ...storybook.configs["flat/recommended"],
+        ] as Config
+
+        export default options;"
+      `);
+    });
+
+    it('should configure ESLint plugin correctly with TS satisfies config', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`import eslint from "@eslint/js";
+        export default [
+          eslint.configs.recommended,
+        ] satisfies Config;`;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.ts',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        import storybook from "eslint-plugin-storybook";
+        import eslint from "@eslint/js";
+        export default [
+          eslint.configs.recommended,
+          ...storybook.configs["flat/recommended"],
+        ] satisfies Config;"
+      `);
+    });
+
+    it('should configure ESLint plugin correctly with Next.js defineConfig style', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`import { defineConfig, globalIgnores } from "eslint/config";
+        import nextVitals from "eslint-config-next/core-web-vitals";
+        import nextTs from "eslint-config-next/typescript";
+
+        const eslintConfig = defineConfig([
+          ...nextVitals,
+          ...nextTs,
+          globalIgnores([
+            ".next/**",
+            "out/**",
+            "build/**",
+            "next-env.d.ts",
+          ]),
+        ]);
+
+        export default eslintConfig;`;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.mjs',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        import storybook from "eslint-plugin-storybook";
+        import { defineConfig, globalIgnores } from "eslint/config";
+        import nextVitals from "eslint-config-next/core-web-vitals";
+        import nextTs from "eslint-config-next/typescript";
+
+        const eslintConfig = defineConfig([
+          ...nextVitals,
+          ...nextTs,
+          globalIgnores([
+            ".next/**",
+            "out/**",
+            "build/**",
+            "next-env.d.ts",
+          ]),
+          ...storybook.configs["flat/recommended"],
+        ]);
+
+        export default eslintConfig;"
+      `);
+    });
+
+    it('should configure ESLint plugin correctly with direct export default defineConfig', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`import { defineConfig, globalIgnores } from "eslint/config";
+        import nextVitals from "eslint-config-next/core-web-vitals";
+        import nextTs from "eslint-config-next/typescript";
+
+        export default defineConfig([
+          ...nextVitals,
+          ...nextTs,
+          globalIgnores([
+            ".next/**",
+            "out/**",
+            "build/**",
+            "next-env.d.ts",
+          ]),
+        ]);`;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.mjs',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        import storybook from "eslint-plugin-storybook";
+        import { defineConfig, globalIgnores } from "eslint/config";
+        import nextVitals from "eslint-config-next/core-web-vitals";
+        import nextTs from "eslint-config-next/typescript";
+
+        export default defineConfig([
+          ...nextVitals,
+          ...nextTs,
+          globalIgnores([
+            ".next/**",
+            "out/**",
+            "build/**",
+            "next-env.d.ts",
+          ]),
+          ...storybook.configs["flat/recommended"],
+        ]);"
+      `);
+    });
+
+    it('should just add an import if config uses defineConfig from non-eslint/config source', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`import { defineConfig } from "some-other-config-lib";
+        
+        const eslintConfig = defineConfig([
+          { rules: { "no-console": "error" } },
+        ]);
+
+        export default eslintConfig;`;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        import storybook from "eslint-plugin-storybook";
+        import { defineConfig } from "some-other-config-lib";
+
+        const eslintConfig = defineConfig([
+          { rules: { "no-console": "error" } },
+        ]);
+
+        export default eslintConfig;"
+      `);
+    });
+
+    it('should just add an import if config is of custom unknown format', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`import someCustomConfig from 'my-eslint-config';
+      export default someCustomConfig({}, [{}]);`;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        import storybook from 'eslint-plugin-storybook';
+        import someCustomConfig from 'my-eslint-config';
+        export default someCustomConfig({}, [{}]);"
+      `);
+    });
+
+    it('should not modify config if eslint-plugin-storybook is already imported', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`
+        import sb from 'eslint-plugin-storybook';
+        export default [
+          ...sb.configs['flat/recommended'],
+        ];
+      `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      expect(vi.mocked(writeFile).mock.calls).toHaveLength(0);
+    });
+
+    it('should not modify config if eslint-plugin-storybook is already dynamically imported', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`
+        import { includeIgnoreFile } from '@eslint/compat';
+        import { FlatCompat } from '@eslint/eslintrc';
+        import { composer } from 'eslint-flat-config-utils';
+
+        export default composer(
+          import('eslint-plugin-storybook').then((m) => m.default.configs['flat/recommended']),
+        );
+      `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      expect(vi.mocked(writeFile).mock.calls).toHaveLength(0);
+    });
+  });
+});
+
+describe('normalizeExtends', () => {
+  it('returns empty array when existingExtends is falsy', () => {
+    expect(normalizeExtends(null)).toEqual([]);
+    expect(normalizeExtends(undefined)).toEqual([]);
+  });
+
+  it('returns existingExtends when it is a string', () => {
+    expect(normalizeExtends('foo')).toEqual(['foo']);
+  });
+
+  it('returns existingExtends when it is an array', () => {
+    expect(normalizeExtends(['foo'])).toEqual(['foo']);
+  });
+
+  it('throws when existingExtends is not a string or array', () => {
+    expect(() => normalizeExtends(true)).toThrowError('Invalid eslint extends true');
+  });
+});

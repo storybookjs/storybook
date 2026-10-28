@@ -3,8 +3,8 @@ import url from 'node:url';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { logger } from 'storybook/internal/node-logger';
-import type { IndexerOptions } from 'storybook/internal/types';
+import { logger } from '@storybook/core/internal/node-logger';
+import type { IndexerOptions } from '@storybook/core/internal/types';
 
 import { createIndexer } from './index.ts';
 import { parseForIndexer } from './parser.ts';

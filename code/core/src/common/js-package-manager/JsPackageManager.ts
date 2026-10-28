@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, normalize, resolve } from 'node:path';
 
-import { logger, prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from '@storybook/core/internal/node-logger';
 
 import detectIndent from 'detect-indent';
 import * as find from 'empathic/find';

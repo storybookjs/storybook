@@ -26,3 +26,5 @@ export const parameters: any = {
     },
   },
 };
+
+export default { parameters };

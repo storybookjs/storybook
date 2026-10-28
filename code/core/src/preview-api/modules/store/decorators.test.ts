@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Renderer, StoryContextForRender } from 'storybook/internal/types';
+import type { Renderer, StoryContextForRender } from '@storybook/core/internal/types';
 
 import { defaultDecorateStory } from './decorators.ts';
 

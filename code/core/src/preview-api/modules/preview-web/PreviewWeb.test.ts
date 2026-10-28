@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { logger } from 'storybook/internal/client-logger';
+import { logger } from '@storybook/core/internal/client-logger';
 import {
   CONFIG_ERROR,
   CURRENT_STORY_WAS_SET,
@@ -26,9 +26,9 @@ import {
   STORY_UNCHANGED,
   UPDATE_GLOBALS,
   UPDATE_STORY_ARGS,
-} from 'storybook/internal/core-events';
-import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
-import type { ModuleImportFn, ProjectAnnotations, Renderer } from 'storybook/internal/types';
+} from '@storybook/core/internal/core-events';
+import { ArgTypesRemovedFromStoryContextError } from '@storybook/core/internal/preview-errors';
+import type { ModuleImportFn, ProjectAnnotations, Renderer } from '@storybook/core/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -75,9 +75,9 @@ vi.mock('@storybook/global', async (importOriginal) => ({
   },
 }));
 
-vi.mock('storybook/internal/client-logger');
+vi.mock('@storybook/core/internal/client-logger');
 vi.mock('react-dom');
-vi.mock('./WebView');
+vi.mock('./WebView.ts');
 
 const serializeError = (error: Error) => {
   const { name = 'Error', message = String(error), stack } = error;
@@ -441,9 +441,7 @@ describe('PreviewWeb', () => {
           parameters: {
             __isArgsStory: false,
             docs: expect.any(Object),
-            backgrounds: expect.any(Object),
             fileName: './src/ComponentOne.stories.js',
-            throwPlayFunctionExceptions: false,
           },
           initialArgs: { foo: 'a', one: 1 },
           argTypes: {
@@ -501,9 +499,7 @@ describe('PreviewWeb', () => {
             parameters: {
               __isArgsStory: false,
               docs: expect.any(Object),
-              backgrounds: expect.any(Object),
               fileName: './src/ComponentOne.stories.js',
-              throwPlayFunctionExceptions: false,
             },
             initialArgs: { foo: 'a', one: 1 },
             args: { foo: 'a', one: 'mapped-1' },
@@ -3101,9 +3097,7 @@ describe('PreviewWeb', () => {
             parameters: {
               __isArgsStory: false,
               docs: expect.any(Object),
-              backgrounds: expect.any(Object),
               fileName: './src/ComponentOne.stories.js',
-              throwPlayFunctionExceptions: false,
             },
             initialArgs: { foo: 'edited', one: 1 },
             args: { foo: 'edited', one: 'mapped-1' },
@@ -3128,9 +3122,7 @@ describe('PreviewWeb', () => {
               parameters: {
                 __isArgsStory: false,
                 docs: expect.any(Object),
-                backgrounds: expect.any(Object),
                 fileName: './src/ComponentOne.stories.js',
-                throwPlayFunctionExceptions: false,
               },
               globals: expect.objectContaining({ a: 'b' }),
               initialArgs: { foo: 'edited', one: 1 },
@@ -3924,16 +3916,6 @@ describe('PreviewWeb', () => {
             "componentId": "component-one",
             "globals": {
               "a": "b",
-              "backgrounds": {
-                "grid": false,
-                "value": undefined,
-              },
-              "measureEnabled": false,
-              "outline": false,
-              "viewport": {
-                "isRotated": false,
-                "value": undefined,
-              },
             },
             "id": "component-one--a",
             "initialArgs": {
@@ -3944,21 +3926,12 @@ describe('PreviewWeb', () => {
             "name": "A",
             "parameters": {
               "__isArgsStory": false,
-              "backgrounds": {
-                "disable": false,
-                "grid": {
-                  "cellAmount": 5,
-                  "cellSize": 20,
-                  "opacity": 0.5,
-                },
-              },
               "docs": {
                 "container": [MockFunction],
                 "page": [MockFunction],
                 "renderer": [Function],
               },
               "fileName": "./src/ComponentOne.stories.js",
-              "throwPlayFunctionExceptions": false,
             },
             "story": "A",
             "storyGlobals": {},
@@ -3998,16 +3971,6 @@ describe('PreviewWeb', () => {
             "componentId": "component-one",
             "globals": {
               "a": "b",
-              "backgrounds": {
-                "grid": false,
-                "value": undefined,
-              },
-              "measureEnabled": false,
-              "outline": false,
-              "viewport": {
-                "isRotated": false,
-                "value": undefined,
-              },
             },
             "id": "component-one--b",
             "initialArgs": {
@@ -4018,21 +3981,12 @@ describe('PreviewWeb', () => {
             "name": "B",
             "parameters": {
               "__isArgsStory": false,
-              "backgrounds": {
-                "disable": false,
-                "grid": {
-                  "cellAmount": 5,
-                  "cellSize": 20,
-                  "opacity": 0.5,
-                },
-              },
               "docs": {
                 "container": [MockFunction],
                 "page": [MockFunction],
                 "renderer": [Function],
               },
               "fileName": "./src/ComponentOne.stories.js",
-              "throwPlayFunctionExceptions": false,
             },
             "story": "B",
             "storyGlobals": {},
@@ -4053,16 +4007,6 @@ describe('PreviewWeb', () => {
             "componentId": "component-one",
             "globals": {
               "a": "b",
-              "backgrounds": {
-                "grid": false,
-                "value": undefined,
-              },
-              "measureEnabled": false,
-              "outline": false,
-              "viewport": {
-                "isRotated": false,
-                "value": undefined,
-              },
             },
             "id": "component-one--e",
             "initialArgs": {},
@@ -4070,20 +4014,11 @@ describe('PreviewWeb', () => {
             "name": "E",
             "parameters": {
               "__isArgsStory": false,
-              "backgrounds": {
-                "disable": false,
-                "grid": {
-                  "cellAmount": 5,
-                  "cellSize": 20,
-                  "opacity": 0.5,
-                },
-              },
               "docs": {
                 "page": [MockFunction],
                 "renderer": [Function],
               },
               "fileName": "./src/ExtraComponentOne.stories.js",
-              "throwPlayFunctionExceptions": false,
             },
             "playFunction": undefined,
             "story": "E",
@@ -4114,16 +4049,6 @@ describe('PreviewWeb', () => {
             "componentId": "component-two",
             "globals": {
               "a": "b",
-              "backgrounds": {
-                "grid": false,
-                "value": undefined,
-              },
-              "measureEnabled": false,
-              "outline": false,
-              "viewport": {
-                "isRotated": false,
-                "value": undefined,
-              },
             },
             "id": "component-two--c",
             "initialArgs": {
@@ -4133,19 +4058,10 @@ describe('PreviewWeb', () => {
             "name": "C",
             "parameters": {
               "__isArgsStory": false,
-              "backgrounds": {
-                "disable": false,
-                "grid": {
-                  "cellAmount": 5,
-                  "cellSize": 20,
-                  "opacity": 0.5,
-                },
-              },
               "docs": {
                 "renderer": [Function],
               },
               "fileName": "./src/ComponentTwo.stories.js",
-              "throwPlayFunctionExceptions": false,
             },
             "playFunction": undefined,
             "story": "C",

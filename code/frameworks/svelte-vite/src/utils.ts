@@ -1,5 +1,4 @@
-import { SvelteViteWithSvelteKitError } from 'storybook/internal/server-errors';
-import type { Options } from 'storybook/internal/types';
+import { SvelteViteWithSvelteKitError } from '@storybook/core/internal/server-errors';
 
 import { hasVitePlugins } from '@storybook/builder-vite';
 
@@ -10,21 +9,21 @@ import type { PluginOption } from 'vite';
  * user that they should use the sveltekit framework instead. Should be removed when we decide to
  * remove support completely for SvelteKit in svelte-vite
  */
-export async function handleSvelteKit(plugins: PluginOption[], options: Options) {
+export async function handleSvelteKit(
+  plugins: PluginOption[],
+  frameworkName: string
+): Promise<void> {
   /*
   the sveltekit framework uses this svelte-vite framework under the hood
   so we have to take extra care of only throwing when the user is actually using
   svelte-vite directly and not just through sveltekit
   */
-  const frameworkPreset = await options.presets.apply('framework', {}, options);
-  const framework = typeof frameworkPreset === 'string' ? frameworkPreset : frameworkPreset.name;
-
   const hasSvelteKitPlugins = await hasVitePlugins(plugins, [
     'vite-plugin-sveltekit-setup',
     'vite-plugin-sveltekit-compile',
   ]);
 
-  if (hasSvelteKitPlugins && !framework.includes('@storybook/sveltekit')) {
+  if (hasSvelteKitPlugins && !frameworkName.includes('@storybook/sveltekit')) {
     throw new SvelteViteWithSvelteKitError();
   }
 }

@@ -1,6 +1,6 @@
-import { createLazyDocgenMiddleware } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
-import type { DocgenMiddleware } from 'storybook/internal/types';
+import { createLazyDocgenMiddleware } from '@storybook/core/internal/common';
+import { logger } from '@storybook/core/internal/node-logger';
+import type { DocgenMiddleware } from '@storybook/core/internal/types';
 
 import type { WebComponentsDocgenOptions } from './component-docgen/build-docgen.ts';
 import { buildDocgenPayload } from './component-docgen/build-docgen.ts';

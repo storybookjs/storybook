@@ -7,7 +7,7 @@ import type { ServiceId } from './shared/open-service/types.ts';
 import type { Status, StatusTypeId } from './shared/status-store/index.ts';
 import { StorybookError } from './storybook-error.ts';
 
-export { StorybookError } from './storybook-error.ts';
+export { StorybookError, isStorybookError } from './storybook-error.ts';
 
 /**
  * If you can't find a suitable category for your error, create one based on the package name/file
@@ -469,6 +469,33 @@ export class OpenServiceToolsetOutputMismatchError extends StorybookError {
   }
 }
 
+/** No host contributed a story renderer, so stories cannot be screenshotted here. */
+export class StoryRenderUnavailableError extends StorybookError {
+  constructor() {
+    super({
+      name: 'StoryRenderUnavailableError',
+      category: Category.CORE_COMMON,
+      code: 33,
+      message:
+        'Taking story screenshots needs a preview builder, which this Storybook host does not provide. Install the `storybook` package next to your framework, or run the tool against a running Storybook.',
+      agentFacing: true,
+    });
+  }
+}
+
+/** The headless browser for story screenshots is not installed or cannot start. */
+export class StoryScreenshotBrowserUnavailableError extends StorybookError {
+  constructor(public data: { reason: string }) {
+    super({
+      name: 'StoryScreenshotBrowserUnavailableError',
+      category: Category.CORE_COMMON,
+      code: 34,
+      message: `Taking story screenshots needs a headless Chromium: ${data.reason}\nInstall it in the project with \`npm install -D playwright\` and \`npx playwright install chromium\`, then retry.`,
+      agentFacing: true,
+    });
+  }
+}
+
 /** A toolset method id is not exactly `toolsetId.methodName` with non-empty parts. */
 export class OpenServiceInvalidToolsetMethodIdError extends StorybookError {
   constructor(public data: { methodId: string }) {
@@ -687,6 +714,20 @@ export class CriticalPresetLoadError extends StorybookError {
         If you believe this is a bug, please open an issue on Github.
         
         ${data.error.stack || data.error.message}`,
+    });
+  }
+}
+
+export class LegacyAdapterMissingError extends StorybookError {
+  constructor(public data: { name: string }) {
+    super({
+      name: 'LegacyAdapterMissingError',
+      category: Category.CORE_SERVER,
+      code: 20,
+      message: dedent`
+        "${data.name}" has no native entry (<pkg>/node), and this Storybook host cannot load legacy presets.
+
+        Install \`storybook\` and create the instance through storybook/internal/instance, which loads legacy presets.`,
     });
   }
 }
@@ -1068,6 +1109,41 @@ export class ViteModuleGraphSubscriptionError extends StorybookError {
       category: Category.BUILDER_VITE,
       code: 2,
       message: 'Vite module graph listeners must be registered before the builder starts.',
+    });
+  }
+}
+
+export class StorybookPackageRequiredError extends StorybookError {
+  constructor(public data: { feature: string; error: unknown }) {
+    super({
+      name: 'StorybookPackageRequiredError',
+      category: Category.CORE_SERVER,
+      code: 21,
+      message: dedent`
+        ${data.feature} needs the \`storybook\` package, which is not installed.
+
+        Install \`storybook\` next to \`@storybook/core\` to use it.`,
+      cause: data.error,
+    });
+  }
+}
+
+export class StorybookInstanceUnavailableError extends StorybookError {
+  constructor(public data: { reason: 'outside-instance' | 'loading-main' }) {
+    super({
+      name: 'StorybookInstanceUnavailableError',
+      category: Category.CORE_SERVER,
+      code: 22,
+      message:
+        data.reason === 'loading-main'
+          ? dedent`
+            getStorybook() was called while main.ts was being evaluated, before the Storybook instance exists.
+
+            Call it from a plugin's setup(storybook) or from a hook handler instead.`
+          : dedent`
+            getStorybook() was called outside a Storybook instance.
+
+            Use the storybook passed to setup(storybook). Wrap callbacks that run outside the instance, such as worker or library callbacks, with bindToInstance() where they are registered.`,
     });
   }
 }

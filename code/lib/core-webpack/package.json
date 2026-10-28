@@ -1,7 +1,7 @@
 {
   "name": "@storybook/core-webpack",
   "version": "11.0.0-alpha.7",
-  "description": "Storybook framework-agnostic API",
+  "description": "Deprecated: use @storybook/builder-webpack5",
   "keywords": [
     "storybook"
   ],
@@ -37,6 +37,7 @@
     "!src/**/*"
   ],
   "dependencies": {
+    "@storybook/builder-webpack5": "workspace:*",
     "ts-dedent": "^2.2.0"
   },
   "devDependencies": {

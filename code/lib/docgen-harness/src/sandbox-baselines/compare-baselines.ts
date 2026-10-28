@@ -1,4 +1,4 @@
-import type { StrictArgTypes, StrictInputType } from '../../../../core/src/csf/story.ts';
+import type { StrictArgTypes, StrictInputType } from 'storybook/internal/csf';
 import { compareArgTypes } from '../compare/argtypes.ts';
 import { deepEqual } from '../compare/deep-equal.ts';
 import type { ViolationKind } from '../compare/types.ts';

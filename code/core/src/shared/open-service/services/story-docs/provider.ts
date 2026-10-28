@@ -1,4 +1,7 @@
-import { logger } from 'storybook/internal/node-logger';
+import '../../../../services/hooks.ts';
+import { getInstanceContext } from '../../../instance-context.ts';
+
+import { logger } from '@storybook/core/internal/node-logger';
 
 import {
   STORY_FILE_TEST_REGEXP,
@@ -36,10 +39,10 @@ export function createWorkerGatedStoryDocsProvider({
   build,
 }: WorkerGatedStoryDocsProviderOptions): StoryDocsProviderPreset {
   return async (nextStoryDocs, options): Promise<StoryDocsProvider> => {
-    const descriptors = await options.presets.apply<DocgenProviderDescriptor[]>(
-      'experimental_docgenProvider',
-      []
-    );
+    const storybook = getInstanceContext()?.storybook;
+    const descriptors = storybook
+      ? await storybook.callHook('core:docgen-providers:collect', [])
+      : await options.presets.apply<DocgenProviderDescriptor[]>('experimental_docgenProvider', []);
     if (!descriptors.some((descriptor) => descriptor.moduleSpecifier === docgenWorker)) {
       return nextStoryDocs;
     }

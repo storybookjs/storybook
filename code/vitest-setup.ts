@@ -3,8 +3,8 @@ import { expect, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import './core/src/shared/utils/toHaveLiveRegion.ts';
-import { toHaveLiveRegion } from './core/src/shared/utils/toHaveLiveRegion.ts';
+import './core/src/utils/toHaveLiveRegion.ts';
+import { toHaveLiveRegion } from './core/src/utils/toHaveLiveRegion.ts';
 
 const ALLOWED_CONSOLE_PREDICATES: ((...args: any[]) => boolean)[] = [
   (message) => message.includes('":nth-child" is potentially unsafe'),
@@ -42,8 +42,6 @@ const ALLOWED_CONSOLE_PREDICATES: ((...args: any[]) => boolean)[] = [
   vi.spyOn(console, type).mockImplementation(failOnConsole);
 });
 
-globalThis.FEATURES ??= {};
-
 expect.extend({
   toMatchPaths(regex: RegExp, paths: string[]) {
     const matched = paths.map((p) => !!p.match(regex));
@@ -62,53 +60,10 @@ expect.extend({
 
 expect.extend({ toHaveLiveRegion });
 
-vi.mock('storybook/internal/node-logger', async (importOriginal) => {
-  return {
-    ...(await importOriginal<typeof import('storybook/internal/node-logger')>()),
-    prompt: {
-      select: vi.fn(),
-      multiSelect: vi.fn(),
-      confirm: vi.fn(),
-      text: vi.fn(),
-      getPreferredStdio: vi.fn(),
-      executeTask: vi.fn(),
-      executeTaskWithSpinner: vi.fn(),
-      spinner: vi.fn(() => ({ start: vi.fn(), stop: vi.fn(), message: vi.fn() })),
-      taskLog: vi.fn(() => ({
-        message: vi.fn(),
-        success: vi.fn(),
-        error: vi.fn(),
-      })),
-    },
-    logger: {
-      SYMBOLS: {
-        success: '✓',
-        error: '✗',
-      },
-      plain: vi.fn(),
-      line: vi.fn(),
-      error: vi.fn(),
-      log: vi.fn(),
-      warn: vi.fn(),
-      info: vi.fn(),
-      trace: vi.fn(),
-      debug: vi.fn(),
-      box: vi.fn(),
-      verbose: vi.fn(),
-      logBox: vi.fn(),
-      intro: vi.fn(),
-      outro: vi.fn(),
-      step: vi.fn(),
-    },
-  };
-});
-
-vi.mock('./core/src/shared/utils/module.ts', async (importOriginal) => {
-  return {
-    ...(await importOriginal()),
-    resolvePackageDir: vi.fn().mockReturnValue('/mocked/package/dir'),
-    importModule: vi.fn().mockResolvedValue({
-      mocked: true,
-    }),
-  };
-});
+vi.mock('storybook/internal/node-logger', async (importOriginal) =>
+  (await import('./vitest.node-logger-mock.ts')).mockNodeLogger(importOriginal)
+);
+// Node-side framework, renderer and builder code imports the logger from `@storybook/core`.
+vi.mock('@storybook/core/internal/node-logger', async (importOriginal) =>
+  (await import('./vitest.node-logger-mock.ts')).mockNodeLogger(importOriginal)
+);

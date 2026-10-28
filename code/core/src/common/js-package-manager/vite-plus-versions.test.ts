@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { clearVitePlusCache, getVitePlusVersions } from './vite-plus-versions.ts';
 
-vi.mock('storybook/internal/node-logger', () => ({
+vi.mock('@storybook/core/internal/node-logger', () => ({
   logger: { debug: vi.fn() },
 }));
 

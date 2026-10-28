@@ -1,7 +1,6 @@
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 
-// browser.ts destructures FEATURES from the global once at first import, so the stub must exist
-// before that import evaluates; only property mutation on this reference is live afterwards.
+// The flag is read at call time, so mutating this stubbed object between calls is live.
 const flags = vi.hoisted(() => {
   const features = { angularFilterNonInputControls: false };
   vi.stubGlobal('FEATURES', features);

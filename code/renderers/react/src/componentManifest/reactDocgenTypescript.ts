@@ -8,7 +8,7 @@ import {
 } from 'react-docgen-typescript';
 import type ts from 'typescript';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { asyncCache, cached, findTsconfigPath } from './utils.ts';
 

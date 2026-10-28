@@ -7,7 +7,10 @@
     }
   },
   "jsPlugins": [
-    { "name": "local-rules", "specifier": "../scripts/eslint-plugin-local-rules/index.js" },
+    {
+      "name": "local-rules",
+      "specifier": "../scripts/eslint-plugin-local-rules/index.js"
+    },
     "eslint-plugin-storybook",
     "eslint-plugin-playwright",
     "eslint-plugin-compat"
@@ -61,7 +64,9 @@
     ],
     "react/no-unknown-property": [
       "error",
-      { "ignore": ["jsx", "global", "popovertarget", "popovertargetaction"] }
+      {
+        "ignore": ["jsx", "global", "popovertarget", "popovertargetaction"]
+      }
     ],
     "react/react-in-jsx-scope": "off",
     "react/rules-of-hooks": "off",
@@ -96,15 +101,257 @@
       }
     },
     {
-      "files": ["core/src/cli/skills/content/**"],
+      "files": ["lib/storybook/src/storybook/cli/skills/content/**"],
       "rules": {
         "no-restricted-imports": [
           "error",
           {
             "patterns": [
               {
-                "group": ["**/core-server/**"],
+                "group": ["**/storybook/server/**", "storybook/internal/server"],
                 "message": "`cli/skills/content` is the pure `storybook/internal/skills` entry; probing and anything server-side belongs in `cli/skills/` outside `content/`."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["core/src/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react-aria",
+                "message": "Don't import from the react-aria root, but use the react-aria/HookOrComponent entrypoints which are optimised for tree-shaking",
+                "allowTypeImports": false
+              },
+              {
+                "name": "react-stately",
+                "message": "Don't import from the react-stately root, but use the react-stately/HookOrComponent entrypoints which are optimised for tree-shaking",
+                "allowTypeImports": false
+              },
+              {
+                "name": "react-aria-components",
+                "message": "Don't import from react-aria-components root, but use the react-aria-components/ComponentX entrypoints which are optimised for tree-shaking. See https://github.com/storybookjs/storybook/pull/32594",
+                "allowTypeImports": true
+              },
+              {
+                "name": "es-toolkit",
+                "message": "Don't import from es-toolkit root, but use the sub-exports like es-toolkit/array entrypoints instead which are optimised for tree-shaking.",
+                "allowTypeImports": true
+              }
+            ],
+            "patterns": [
+              {
+                "regex": "^(\\.\\./)+((lib|builders|frameworks|renderers)/|(addons|presets)/[^/]+/(src|dist)/)",
+                "message": "Packages must not reach into another package through relative paths. Import it through its package name."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["lib/ui/src/**", "lib/manager/src/**", "lib/storybook/src/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react-aria",
+                "message": "Don't import from the react-aria root, but use the react-aria/HookOrComponent entrypoints which are optimised for tree-shaking",
+                "allowTypeImports": false
+              },
+              {
+                "name": "react-stately",
+                "message": "Don't import from the react-stately root, but use the react-stately/HookOrComponent entrypoints which are optimised for tree-shaking",
+                "allowTypeImports": false
+              },
+              {
+                "name": "react-aria-components",
+                "message": "Don't import from react-aria-components root, but use the react-aria-components/ComponentX entrypoints which are optimised for tree-shaking. See https://github.com/storybookjs/storybook/pull/32594",
+                "allowTypeImports": true
+              },
+              {
+                "name": "es-toolkit",
+                "message": "Don't import from es-toolkit root, but use the sub-exports like es-toolkit/array entrypoints instead which are optimised for tree-shaking.",
+                "allowTypeImports": true
+              }
+            ],
+            "patterns": [
+              {
+                "regex": "^(\\.\\./)+((core|builders|frameworks|renderers)/|(addons|presets)/[^/]+/(src|dist)/)",
+                "message": "Packages must not reach into another package through relative paths. Import it through its package name."
+              },
+              {
+                "regex": "^\\.{1,2}/(.+/)?compat/",
+                "message": "Only storybook/instance.ts, storybook/server/index.ts, the shims and tests may import the legacy compat layer (storybook/compat/)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "lib/storybook/src/storybook/instance.ts",
+        "lib/storybook/src/storybook/server/index.ts",
+        "lib/storybook/src/storybook/compat/**",
+        "lib/storybook/src/shims/**",
+        "lib/storybook/src/**/*.test.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react-aria",
+                "message": "Don't import from the react-aria root, but use the react-aria/HookOrComponent entrypoints which are optimised for tree-shaking",
+                "allowTypeImports": false
+              },
+              {
+                "name": "react-stately",
+                "message": "Don't import from the react-stately root, but use the react-stately/HookOrComponent entrypoints which are optimised for tree-shaking",
+                "allowTypeImports": false
+              },
+              {
+                "name": "react-aria-components",
+                "message": "Don't import from react-aria-components root, but use the react-aria-components/ComponentX entrypoints which are optimised for tree-shaking. See https://github.com/storybookjs/storybook/pull/32594",
+                "allowTypeImports": true
+              },
+              {
+                "name": "es-toolkit",
+                "message": "Don't import from es-toolkit root, but use the sub-exports like es-toolkit/array entrypoints instead which are optimised for tree-shaking.",
+                "allowTypeImports": true
+              }
+            ],
+            "patterns": [
+              {
+                "regex": "^(\\.\\./)+((core|builders|frameworks|renderers)/|(addons|presets)/[^/]+/(src|dist)/)",
+                "message": "Packages must not reach into another package through relative paths. Import it through its package name."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["lib/*/src/**/*.test.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react-aria",
+                "message": "Don't import from the react-aria root, but use the react-aria/HookOrComponent entrypoints which are optimised for tree-shaking",
+                "allowTypeImports": false
+              },
+              {
+                "name": "react-stately",
+                "message": "Don't import from the react-stately root, but use the react-stately/HookOrComponent entrypoints which are optimised for tree-shaking",
+                "allowTypeImports": false
+              },
+              {
+                "name": "react-aria-components",
+                "message": "Don't import from react-aria-components root, but use the react-aria-components/ComponentX entrypoints which are optimised for tree-shaking. See https://github.com/storybookjs/storybook/pull/32594",
+                "allowTypeImports": true
+              },
+              {
+                "name": "es-toolkit",
+                "message": "Don't import from es-toolkit root, but use the sub-exports like es-toolkit/array entrypoints instead which are optimised for tree-shaking.",
+                "allowTypeImports": true
+              }
+            ],
+            "patterns": [
+              {
+                "regex": "^(\\.\\./)+((builders|frameworks|renderers)/|(addons|presets)/[^/]+/(src|dist)/)",
+                "message": "Packages must not reach into another package through relative paths. Import it through its package name. Tests and stories may import core source, which builds no entry for test-only files."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    // Test-only exemptions from the relative-path package boundary above: the docgen harness
+    // baselines renderer and framework internals, which have no entry and resolve to dist through
+    // a package name; the create-storybook test mocks the addon-vitest source its command bundles.
+    {
+      "files": [
+        "lib/docgen-harness/src/**/*.test.ts",
+        "lib/create-storybook/src/commands/AddonConfigurationCommand.test.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react-aria",
+                "message": "Don't import from the react-aria root, but use the react-aria/HookOrComponent entrypoints which are optimised for tree-shaking",
+                "allowTypeImports": false
+              },
+              {
+                "name": "react-stately",
+                "message": "Don't import from the react-stately root, but use the react-stately/HookOrComponent entrypoints which are optimised for tree-shaking",
+                "allowTypeImports": false
+              },
+              {
+                "name": "react-aria-components",
+                "message": "Don't import from react-aria-components root, but use the react-aria-components/ComponentX entrypoints which are optimised for tree-shaking. See https://github.com/storybookjs/storybook/pull/32594",
+                "allowTypeImports": true
+              },
+              {
+                "name": "es-toolkit",
+                "message": "Don't import from es-toolkit root, but use the sub-exports like es-toolkit/array entrypoints instead which are optimised for tree-shaking.",
+                "allowTypeImports": true
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["lib/*/src/**/*.stories.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react-aria",
+                "message": "Don't import from the react-aria root, but use the react-aria/HookOrComponent entrypoints which are optimised for tree-shaking",
+                "allowTypeImports": false
+              },
+              {
+                "name": "react-stately",
+                "message": "Don't import from the react-stately root, but use the react-stately/HookOrComponent entrypoints which are optimised for tree-shaking",
+                "allowTypeImports": false
+              },
+              {
+                "name": "react-aria-components",
+                "message": "Don't import from react-aria-components root, but use the react-aria-components/ComponentX entrypoints which are optimised for tree-shaking. See https://github.com/storybookjs/storybook/pull/32594",
+                "allowTypeImports": true
+              },
+              {
+                "name": "es-toolkit",
+                "message": "Don't import from es-toolkit root, but use the sub-exports like es-toolkit/array entrypoints instead which are optimised for tree-shaking.",
+                "allowTypeImports": true
+              }
+            ],
+            "patterns": [
+              {
+                "regex": "^(\\.\\./)+((builders|frameworks|renderers)/|(addons|presets)/[^/]+/(src|dist)/)",
+                "message": "Packages must not reach into another package through relative paths. Import it through its package name. Tests and stories may import core source, which builds no entry for test-only files."
+              },
+              {
+                "regex": "^\\.{1,2}/(.+/)?compat/",
+                "message": "Only storybook/instance.ts, storybook/server/index.ts, the shims and tests may import the legacy compat layer (storybook/compat/)."
               }
             ]
           }
@@ -211,13 +458,18 @@
       }
     },
     {
-      "files": ["**/renderers/**/*.stories.*", "**/core/template/**/*.stories.*"],
+      "files": ["**/renderers/**/*.stories.*", "**/lib/storybook/template/**/*.stories.*"],
       "rules": {
         "storybook/no-renderer-packages": "off"
       }
     },
     {
-      "files": ["core/**/*.stories.*"],
+      "files": [
+        "core/**/*.stories.*",
+        "lib/ui/**/*.stories.*",
+        "lib/manager/**/*.stories.*",
+        "lib/storybook/**/*.stories.*"
+      ],
       "rules": {
         "storybook/use-storybook-expect": "off"
       }
@@ -243,7 +495,12 @@
         "playwright/no-nested-step": "warn",
         "playwright/no-networkidle": "error",
         "playwright/no-page-pause": "warn",
-        "playwright/no-skipped-test": ["warn", { "allowConditional": true }],
+        "playwright/no-skipped-test": [
+          "warn",
+          {
+            "allowConditional": true
+          }
+        ],
         "playwright/no-standalone-expect": "error",
         "playwright/no-unsafe-references": "error",
         "playwright/no-useless-await": "warn",

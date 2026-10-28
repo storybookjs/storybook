@@ -1,12 +1,12 @@
 /// <reference path="../../typings.d.ts" />
-import { logger, pretty } from 'storybook/internal/client-logger';
-import * as EVENTS from 'storybook/internal/core-events';
+import { logger, pretty } from '@storybook/core/internal/client-logger';
+import * as EVENTS from '@storybook/core/internal/core-events';
 
 import { isJSON, parse, stringify } from 'telejson';
 import invariant from 'tiny-invariant';
 
 import { InvalidChannelPageError } from '../../preview-errors.ts';
-import { LOOPBACK_HOSTNAMES, matchesHostname } from '../../shared/utils/local-hosts.ts';
+import { LOOPBACK_HOSTNAMES, matchesHostname } from '../../utils/local-hosts.ts';
 import type {
   BufferedEvent,
   ChannelEvent,

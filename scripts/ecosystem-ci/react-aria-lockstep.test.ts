@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { satisfies } from 'semver';
 import { describe, expect, it } from 'vitest';
 
-import corePkgJson from '../../code/core/package.json';
+import uiPkgJson from '../../code/lib/ui/package.json';
 import rootPkgJson from '../../package.json';
 
 /*
@@ -18,8 +18,8 @@ update the `react-aria` / `react-stately` resolutions to match the react-aria-co
 release being installed (they are published in lockstep).
 */
 
-const coreRequire = createRequire(join(import.meta.dirname, '../../code/core/package.json'));
-const racPkgJson = coreRequire('react-aria-components/package.json');
+const uiRequire = createRequire(join(import.meta.dirname, '../../code/lib/ui/package.json'));
+const racPkgJson = uiRequire('react-aria-components/package.json');
 
 describe('react-aria lockstep', () => {
   it.each(['react-aria', 'react-stately'] as const)(
@@ -30,12 +30,10 @@ describe('react-aria lockstep', () => {
   );
 
   it.each(['react-aria', 'react-stately'] as const)(
-    'the %s resolution satisfies the range code/core declares',
+    'the %s resolution satisfies the range code/lib/ui declares',
     (name) => {
       // The manager UI is prebundled, so core declares these under devDependencies.
-      expect(satisfies(rootPkgJson.resolutions[name], corePkgJson.devDependencies[name])).toBe(
-        true
-      );
+      expect(satisfies(rootPkgJson.resolutions[name], uiPkgJson.devDependencies[name])).toBe(true);
     }
   );
 });

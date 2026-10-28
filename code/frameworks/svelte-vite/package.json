@@ -36,23 +36,17 @@
       "code": "./src/node/index.ts",
       "default": "./dist/node/index.js"
     },
-    "./package.json": "./package.json",
-    "./preset": {
-      "types": "./dist/preset.d.ts",
-      "code": "./src/preset.ts",
-      "default": "./dist/preset.js"
-    }
+    "./package.json": "./package.json"
   },
   "files": [
     "dist/**/*",
     "template/**/*",
     "README.md",
-    "*.js",
-    "*.d.ts",
     "!src/**/*"
   ],
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
+    "@storybook/core": "workspace:*",
     "@storybook/svelte": "workspace:*",
     "magic-string": "^1.1.0",
     "svelte2tsx": "^0.7.55",
@@ -73,6 +67,11 @@
     "svelte": "^5.0.0",
     "typescript": "^5.9.0 || ^6.0.0 || ^7.0.0",
     "vite": "^6.3.0 || ^7.0.0 || ^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "storybook": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

@@ -4,7 +4,7 @@ import {
   buildImportStatements,
   isStringLiteral,
   unwrapExpression,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 
 import type {
   ClassifiedArg,

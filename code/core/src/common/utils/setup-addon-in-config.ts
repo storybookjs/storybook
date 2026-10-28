@@ -1,5 +1,5 @@
-import type { ConfigFile } from 'storybook/internal/csf-tools';
-import { parseExpression, writeConfig } from 'storybook/internal/csf-tools';
+import type { ConfigFile } from '@storybook/core/internal/csf-tools';
+import { parseExpression, writeConfig } from '@storybook/core/internal/csf-tools';
 
 import { loadMainConfig } from './load-main-config.ts';
 import { syncStorybookAddons } from './sync-main-preview-addons.ts';

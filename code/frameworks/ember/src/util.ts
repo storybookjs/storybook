@@ -1,6 +1,6 @@
 import { dirname, join } from 'node:path';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import { getProjectRoot } from '@storybook/core/internal/common';
 
 import * as pkg from 'empathic/package';
 

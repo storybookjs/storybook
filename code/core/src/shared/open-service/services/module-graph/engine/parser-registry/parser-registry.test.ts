@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { ParserRegistry } from './parser-registry.ts';
 import { builtinImportParsers } from './builtins.ts';
 import type { ImportParser } from './types.ts';
 
-vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('@storybook/core/internal/node-logger', { spy: true });
 
 describe('ParserRegistry', () => {
   beforeEach(() => {

@@ -1,12 +1,10 @@
 import type { FC } from 'react';
 import React from 'react';
 
-import { TabsView } from 'storybook/internal/components';
+import type { ArgsTableProps } from 'storybook/internal/components';
+import { ArgsTable, TabsView } from 'storybook/internal/components';
 
 import { styled } from 'storybook/theming';
-
-import type { ArgsTableProps } from './ArgsTable';
-import { ArgsTable } from './ArgsTable';
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends any ? Omit<T, K> : never;
 

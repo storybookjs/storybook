@@ -1,10 +1,11 @@
-import { logger } from 'storybook/internal/client-logger';
-import type { CleanupCallback } from 'storybook/internal/csf';
-import type { StoryContext } from 'storybook/internal/types';
+import { logger } from '@storybook/core/internal/client-logger';
+import type { CleanupCallback } from '../../../../csf/index.ts';
+import type { StoryContext } from '@storybook/core/internal/types';
 import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePanel.ts';
 
-import { emitTransformCode, getService } from 'storybook/preview-api';
+import { emitTransformCode, getService } from '@storybook/core/preview-api';
 
+import { getFeatures } from '../../../features.ts';
 import { selectSnippetForStory, selectWarningForStory } from './snippet.ts';
 
 export { shouldSkipStoryDocsEmit };
@@ -14,7 +15,7 @@ export { shouldSkipStoryDocsEmit };
  * {@link emitTransformCode}. Runs once per story invocation; the snippet itself is static.
  */
 export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallback | void {
-  if (!globalThis.FEATURES?.docgenServer) {
+  if (!getFeatures().docgenServer) {
     return;
   }
   if (shouldSkipStoryDocsEmit(context.parameters)) {

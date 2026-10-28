@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
+import { legacyPreset } from 'storybook/internal/instance';
 
 import { getFrameworkPackageName, getRendererName } from './mainConfigFile.ts';
 
 describe('getFrameworkPackageName', () => {
+  it('reads plugin metadata for framework and renderer lookups', () => {
+    const mainConfig = { framework: legacyPreset('@storybook/react-vite', 'framework') };
+    expect(getFrameworkPackageName(mainConfig)).toBe('@storybook/react-vite');
+    expect(getRendererName(mainConfig)).toBe('react');
+  });
   it('should return null when mainConfig is undefined or null', () => {
     const packageName = getFrameworkPackageName(undefined);
     expect(packageName).toBeNull();

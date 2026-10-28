@@ -1,13 +1,13 @@
-import type { Renderer } from 'storybook/internal/types';
+import type { Renderer } from '@storybook/core/internal/types';
 
-import { PARAM_KEY } from '../../../viewport/constants.ts';
-import { MINIMAL_VIEWPORTS } from '../../../viewport/defaults.ts';
+import { PARAM_KEY } from '../../../shared/viewport/constants.ts';
+import { MINIMAL_VIEWPORTS } from '../../../shared/viewport/defaults.ts';
 import {
   resolveViewport,
   toResolvedViewportDimensions,
   type ResolvedViewportDimensions,
-} from '../../../viewport/resolveViewport.ts';
-import type { ViewportParameters } from '../../../viewport/types.ts';
+} from '../../../shared/viewport/resolveViewport.ts';
+import type { ViewportParameters } from '../../../shared/viewport/types.ts';
 import type { StoryStore } from '../store/StoryStore.ts';
 import type { StoryRender } from './render/StoryRender.ts';
 

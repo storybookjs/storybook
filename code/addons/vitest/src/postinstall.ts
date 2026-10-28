@@ -2,6 +2,7 @@ import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
 import os from 'node:os';
 
+// Postinstall runs inside the end-user CLI (create-storybook bundles it), so it stays on `storybook/*`.
 import { AddonVitestService } from 'storybook/internal/cli';
 import {
   JsPackageManagerFactory,

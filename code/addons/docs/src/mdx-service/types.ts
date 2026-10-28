@@ -1,5 +1,5 @@
-import type { MdxPayload } from 'storybook/internal/core-server';
-import type { DocsIndexEntry } from 'storybook/internal/types';
+import type { MdxPayload } from '@storybook/core/internal/story-index';
+import type { DocsIndexEntry } from '@storybook/core/internal/types';
 
 export interface MdxProviderInput {
   componentId: string;

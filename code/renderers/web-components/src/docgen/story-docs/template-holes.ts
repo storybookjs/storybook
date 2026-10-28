@@ -1,11 +1,15 @@
-import type { ESTree as E, ESTreeNode as Node, ImportBinding } from 'storybook/internal/csf-tools';
+import type {
+  ESTree as E,
+  ESTreeNode as Node,
+  ImportBinding,
+} from '@storybook/core/internal/csf-tools';
 import {
   oneLineTextOf,
   reindent,
   textOf,
   unwrapExpression,
   walk,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 
 import { FAILED, evaluateArgValue, isFunctionNode, primitiveLiteralValue } from './arg-values.ts';
 import type { AliasValue, HtmlTemplate, TemplateScope } from './template-scope.ts';

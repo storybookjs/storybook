@@ -1,5 +1,5 @@
 // @vitest-environment node
-import type { DocgenPayload, IndexEntry } from 'storybook/internal/types';
+import type { DocgenPayload, IndexEntry } from '@storybook/core/internal/types';
 
 import { describe, expect, it, vi } from 'vitest';
 

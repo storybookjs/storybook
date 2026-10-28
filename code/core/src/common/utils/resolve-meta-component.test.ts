@@ -64,7 +64,7 @@ describe('createMetaComponentResolver', () => {
     ).toEqual({
       component: {
         localName: 'ButtonComponent',
-        importId: './button.component',
+        importId: './button.component.ts',
         exportName: 'ButtonComponent',
         path: join(FIXTURES, 'button.component.ts'),
       },
@@ -173,7 +173,7 @@ describe('createMetaComponentResolver', () => {
       ).toEqual({
         component: {
           localName: 'ButtonComponent',
-          importId: './button.component',
+          importId: './button.component.ts',
           exportName: 'ButtonComponent',
           path: join(FIXTURES, 'button.component.ts'),
         },

@@ -2,7 +2,7 @@ import { type ChildProcess, spawn } from 'node:child_process';
 
 import type { TestProject } from 'vitest/node';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import treeKill from 'tree-kill';
 

@@ -1,10 +1,13 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
+import { checkDeepImports } from './check-deep-imports.ts';
+import { checkNoPresetShape } from './check-no-preset.ts';
+import { checkNoLowerPackageImports, checkRuntimeDeps } from './check-runtime-deps.ts';
 import { filterToPackageDiagnostics } from './utils/diagnostics.ts';
 import { getTSFilesAndConfig } from './utils/typescript.ts';
 
@@ -28,6 +31,16 @@ const tscPath = join(dirname(require.resolve('typescript-native/package.json')),
 // package fast instead of stalling the whole pooled check task until the CI
 // job timeout.
 const TSC_TIMEOUT_MS = 10 * 60 * 1000;
+
+// Packages whose built output must only import declared dependencies; other packages still have
+// known gaps (e.g. manager entries importing `@storybook/icons`, the `sb-original` alias).
+const RUNTIME_DEPS_CHECKED_PACKAGES = [
+  '@storybook/core',
+  '@storybook/ui',
+  '@storybook/manager',
+  '@storybook/open-service',
+  'storybook',
+];
 
 function checkProject(tsconfigPath: string, files?: string[]) {
   const result = spawnSync(
@@ -107,6 +120,23 @@ if (existsSync(strictTsconfigPath)) {
   );
 }
 
+const { name: packageName } = JSON.parse(readFileSync(join(normalizedCwd, 'package.json'), 'utf8'));
+if (
+  RUNTIME_DEPS_CHECKED_PACKAGES.includes(packageName)
+    ? !(await checkRuntimeDeps(normalizedCwd))
+    : !(await checkNoLowerPackageImports(normalizedCwd))
+) {
+  process.exit(1);
+}
+
+if (!(await checkDeepImports(normalizedCwd))) {
+  process.exit(1);
+}
+
+if (!(await checkNoPresetShape(normalizedCwd))) {
+  process.exit(1);
+}
+
 // TODO, add more package checks here, like:
-// - check for missing dependencies/peerDependencies
+// - check for unused dependencies
 // - check for unused exports

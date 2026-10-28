@@ -1,6 +1,7 @@
 /**
  * Consolidated packages are packages that have been merged into the main storybook package. This
- * object maps the old package name to the new package name.
+ * object maps the old package name to the new package name. `@storybook/{core,ui,manager}` are real
+ * packages again at the current major, so they are intentionally absent.
  */
 export const consolidatedPackages = {
   '@storybook/channels': 'storybook/internal/channels',
@@ -17,9 +18,8 @@ export const consolidatedPackages = {
   '@storybook/theming': 'storybook/theming',
   '@storybook/types': 'storybook/internal/types',
   '@storybook/manager-api': 'storybook/manager-api',
-  '@storybook/manager': 'storybook/internal/manager',
   '@storybook/preview': 'storybook/internal/preview',
-  '@storybook/core-server': 'storybook/internal/core-server',
+  '@storybook/core-server': 'storybook/internal/server',
   '@storybook/builder-manager': 'storybook/internal/builder-manager',
   '@storybook/components': 'storybook/internal/components',
   '@storybook/test': 'storybook/test',

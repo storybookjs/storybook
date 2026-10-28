@@ -1,6 +1,6 @@
 import { existsSync, realpathSync } from 'node:fs';
 
-import type { StoryIndex } from 'storybook/internal/types';
+import type { StoryIndex } from '@storybook/core/internal/types';
 
 import { basename, dirname, extname, join, normalize, resolve } from 'pathe';
 

@@ -3,7 +3,7 @@ import type { userEvent } from '@testing-library/user-event';
 
 import type { OmitIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
 
-import type { ToolbarArgType } from '../toolbar/index.ts';
+import type { ToolbarArgType } from '../types/toolbar.ts';
 import type { SBScalarType, SBType } from './SBType.ts';
 import type { CoreTypes } from './core-annotations.ts';
 
@@ -189,6 +189,8 @@ export interface GlobalTypes {
  * ```
  */
 export interface AddonTypes {
+  /** Identify factory-based annotations. */
+  csf4?: boolean;
   tags?: unknown;
   args?: unknown;
   parameters?: Record<string, any>;
@@ -196,6 +198,9 @@ export interface AddonTypes {
 }
 
 export interface Renderer extends AddonTypes {
+  /** Reject undeclared parameters when the main configuration supplies addon types. */
+  strictParameters?: boolean;
+
   /** What is the type of the `component` annotation in this renderer? */
   component: any;
 
@@ -373,8 +378,11 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
    *
    * @see [Parameters](https://storybook.js.org/docs/writing-stories/parameters)
    */
-  parameters?: Parameters &
-    (TRenderer['csf4'] extends true ? CoreTypes['parameters'] & TRenderer['parameters'] : unknown);
+  parameters?: TRenderer['csf4'] extends true
+    ? (TRenderer extends { strictParameters: true } ? unknown : Parameters) &
+        CoreTypes['parameters'] &
+        TRenderer['parameters']
+    : Parameters;
 
   /**
    * Dynamic data that are provided (and possibly updated by) Storybook and its addons.

@@ -1,5 +1,5 @@
 export * from './Source';
-export * from './EmptyBlock';
+export { EmptyBlock } from 'storybook/internal/components';
 export * from './DocsPage';
 
 export * from './Preview';

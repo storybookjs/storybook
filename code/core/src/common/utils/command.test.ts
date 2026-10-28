@@ -7,7 +7,7 @@ import { execa, execaCommandSync } from 'execa';
 import { executeCommand, executeCommandSync } from './command.ts';
 import { ExecaCommandFailedError } from '../../server-errors.ts';
 
-vi.mock('storybook/internal/node-logger', () => ({
+vi.mock('@storybook/core/internal/node-logger', () => ({
   logger: {
     debug: vi.fn(),
     warn: vi.fn(),

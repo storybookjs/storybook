@@ -1,18 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ConfigFile } from 'storybook/internal/csf-tools';
-import * as csfTools from 'storybook/internal/csf-tools';
-import type { StorybookConfigRaw } from 'storybook/internal/types';
+import type { ConfigFile } from '@storybook/core/internal/csf-tools';
+import * as csfTools from '@storybook/core/internal/csf-tools';
+import type { StorybookConfigRaw } from '@storybook/core/internal/types';
 
 import * as loadMainConfigModule from './load-main-config.ts';
 import { setupAddonInConfig } from './setup-addon-in-config.ts';
 import * as syncModule from './sync-main-preview-addons.ts';
 import * as wrapUtils from './wrap-getAbsolutePath-utils.ts';
 
-vi.mock('storybook/internal/csf-tools', { spy: true });
-vi.mock('./sync-main-preview-addons', { spy: true });
-vi.mock('./wrap-getAbsolutePath-utils', { spy: true });
-vi.mock('./load-main-config', { spy: true });
+vi.mock('@storybook/core/internal/csf-tools', { spy: true });
+vi.mock('./sync-main-preview-addons.ts', { spy: true });
+vi.mock('./wrap-getAbsolutePath-utils.ts', { spy: true });
+vi.mock('./load-main-config.ts', { spy: true });
 
 describe('setupAddonInConfig', () => {
   let mockMain: ConfigFile;

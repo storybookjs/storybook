@@ -1,14 +1,16 @@
 import { readFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
-import type { Options, Ref } from 'storybook/internal/types';
+import type { Options, Ref } from '@storybook/core/internal/types';
 
 import * as pkg from 'empathic/package';
 
 import { getProjectRoot } from './paths.ts';
 import { readDependencyManifest } from './read-dependency-manifest.ts';
 
-export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>> => {
+export const getAutoRefs = async (
+  options: Pick<Options, 'configDir'>
+): Promise<Record<string, Ref>> => {
   const location = pkg.up({ cwd: options.configDir, last: getProjectRoot() });
   if (!location) {
     return {};
@@ -85,6 +87,11 @@ export async function getRefs(options: Options) {
 
   const refs = await options.presets.apply<Record<string, Ref>>('refs', await getAutoRefs(options));
 
+  return resolveRefs(refs);
+}
+
+/** Normalize composition refs and check their public accessibility. */
+export async function resolveRefs(refs: Record<string, Ref>): Promise<Record<string, Ref>> {
   Object.entries(refs).forEach(([key, value]: [string, Ref]) => {
     if (value.disable) {
       // Also delete the ref that is disabled in definedRefs

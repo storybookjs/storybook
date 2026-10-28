@@ -1,6 +1,6 @@
 import * as v from 'valibot';
-import type { Options } from 'storybook/internal/types';
-import type { DocsAccess, ManifestProvider, Source } from 'storybook/internal/toolsets-docs';
+import type { CoreConfig, Options, StoryIndex } from '@storybook/core/internal/types';
+import type { DocsAccess, ManifestProvider, Source } from '@storybook/core/internal/toolsets-docs';
 
 const isLiteralEndpointPathname = (endpoint: string) => {
   try {
@@ -51,6 +51,14 @@ export type DocsServingContext = {
   sources?: Source[];
   /** Reads the local Storybook directly, in docgen-server mode. */
   localAccess?: DocsAccess;
+};
+
+/** Storybook options plus the instance state the MCP server reads. */
+export type McpServerOptions = Options & {
+  /** The resolved `core` config. */
+  core?: CoreConfig;
+  /** Read the live story index in-process. */
+  getIndex: () => Promise<StoryIndex>;
 };
 
 /**

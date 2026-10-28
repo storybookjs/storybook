@@ -1,6 +1,6 @@
 import type { BuilderContext, Target } from '@angular-devkit/architect';
 import type { JsonObject } from '@angular-devkit/core';
-import { deepMerge } from 'storybook/internal/common';
+import { deepMerge } from '@storybook/core/internal/common';
 
 // Options of the referenced Angular browser target are the base; the Storybook target's own
 // options win at every key, including nested ones like stylePreprocessorOptions.includePaths,

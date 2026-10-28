@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { formatConfig, loadConfig, printConfig } from './ConfigFile.ts';
+import { formatConfig, isCsfFactoryPreview, loadConfig, printConfig } from './ConfigFile.ts';
 import type { CsfExpression } from './CsfObject.ts';
 import { parseExpression } from './estree/ast.ts';
 
@@ -405,6 +405,104 @@ describe('ConfigFile', () => {
     });
 
     describe('factory config', () => {
+      it('reads and rewrites tags across preview factory forms and packages', () => {
+        const results = ['@storybook/react', '@storybook/react-vite'].flatMap((moduleName) =>
+          [
+            "definePreview({ tags: ['test', 'vitest'] })",
+            "definePreview({ tags: ['test', 'vitest'] }).type<T>()",
+            "definePreview.for<M>()({ tags: ['test', 'vitest'] })",
+            "definePreview.for<M, X>()({ tags: ['test', 'vitest'] })",
+            "definePreview.for()({ tags: ['test', 'vitest'] })",
+          ].map((expression) => {
+            const config = loadConfig(
+              `import { definePreview } from '${moduleName}';\nexport default ${expression};`
+            ).parse();
+
+            expect(isCsfFactoryPreview(config)).toBe(true);
+            expect(config.inspect(['tags'])).toMatchObject({ kind: 'value' });
+            expect(config.getValue(['tags'])).toEqual(['test', 'vitest']);
+            expect(config.getFieldNode(['tags'])?.type).toBe('ArrayExpression');
+            expect(config.set(['tags'], ['autodocs'])).toMatchObject({ ok: true });
+
+            const source = printConfig(config).code;
+            const reparsed = loadConfig(source).parse();
+            expect(reparsed.getValue(['tags'])).toEqual(['autodocs']);
+            expect(reparsed.appendValueToArray(['tags'], 'vitest')).toMatchObject({ ok: true });
+            expect(reparsed.getValue(['tags'])).toEqual(['autodocs', 'vitest']);
+            expect(reparsed.mutationDiagnostics).toEqual([]);
+            return source;
+          })
+        );
+
+        expect(results.join('\n\n')).toMatchInlineSnapshot(`
+          import { definePreview } from '@storybook/react';
+          export default definePreview({ tags: ['autodocs'] });
+
+          import { definePreview } from '@storybook/react';
+          export default definePreview({ tags: ['autodocs'] }).type<T>();
+
+          import { definePreview } from '@storybook/react';
+          export default definePreview.for<M>()({ tags: ['autodocs'] });
+
+          import { definePreview } from '@storybook/react';
+          export default definePreview.for<M, X>()({ tags: ['autodocs'] });
+
+          import { definePreview } from '@storybook/react';
+          export default definePreview.for()({ tags: ['autodocs'] });
+
+          import { definePreview } from '@storybook/react-vite';
+          export default definePreview({ tags: ['autodocs'] });
+
+          import { definePreview } from '@storybook/react-vite';
+          export default definePreview({ tags: ['autodocs'] }).type<T>();
+
+          import { definePreview } from '@storybook/react-vite';
+          export default definePreview.for<M>()({ tags: ['autodocs'] });
+
+          import { definePreview } from '@storybook/react-vite';
+          export default definePreview.for<M, X>()({ tags: ['autodocs'] });
+
+          import { definePreview } from '@storybook/react-vite';
+          export default definePreview.for()({ tags: ['autodocs'] });
+        `);
+      });
+
+      it.each([
+        "createPreview({ tags: ['vitest'] })",
+        "createPreview.for<M>()({ tags: ['vitest'] })",
+        "definePreview.other<M>()({ tags: ['vitest'] })",
+        "defineMain.for<M>()({ tags: ['vitest'] })",
+        "definePreview.for<M>(options)({ tags: ['vitest'] })",
+      ])('keeps an unrecognised factory unreadable: %s', (expression) => {
+        const source = `export default ${expression};`;
+        const config = loadConfig(source).parse();
+
+        expect(config.inspect(['tags'])).toMatchObject({
+          kind: 'unreadable',
+          diagnostic: {
+            code: 'unsupported-initializer',
+            message: 'Cannot mutate an arbitrary config factory call',
+          },
+        });
+        expect(config.getValue(['tags'])).toBeUndefined();
+        expect(config.set(['tags'], ['autodocs'])).toMatchObject({ ok: false });
+        expect(printConfig(config).code).toBe(source);
+      });
+
+      it.each([
+        "const config = definePreview.for<M>()({ tags: ['vitest'] }); export default config;",
+        "export const config = definePreview.for<M>()({ tags: ['vitest'] });",
+      ])('reads and rewrites an assigned typed preview: %s', (source) => {
+        const config = loadConfig(source).parse();
+
+        expect(config.getValue(['tags'])).toEqual(['vitest']);
+        expect(config.set(['tags'], ['test', 'vitest'])).toMatchObject({ ok: true });
+        expect(loadConfig(printConfig(config).code).parse().getValue(['tags'])).toEqual([
+          'test',
+          'vitest',
+        ]);
+      });
+
       it('parses correctly', () => {
         const source = dedent`
           import { definePreview } from '@storybook/react-vite';

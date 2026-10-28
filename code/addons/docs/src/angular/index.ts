@@ -1,12 +1,14 @@
 import { logger } from 'storybook/internal/client-logger';
 
+import { getFeatures } from 'storybook/preview-api';
+
 let warnedRedundant = false;
 
 /** Hand Compodoc's `documentation.json` to the Angular preview so Controls and Docs can read it. */
 export const setCompodocJson = (compodocJson: any) => {
   // Storybook extracts Angular metadata on the server under this feature, and reads neither this
   // value nor Compodoc itself.
-  if (globalThis.FEATURES?.docgenServer) {
+  if (getFeatures().docgenServer) {
     if (!warnedRedundant) {
       warnedRedundant = true;
       logger.warn(

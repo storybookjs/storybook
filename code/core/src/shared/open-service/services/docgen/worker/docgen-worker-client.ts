@@ -2,10 +2,11 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { Worker } from 'node:worker_threads';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
-import { importMetaResolve } from '../../../../utils/module.ts';
+import { getInstanceContext } from '../../../../instance-context.ts';
+import { importMetaResolve } from '../../../../../utils/module.ts';
 import type { ErrorLike } from '../../module-graph/types.ts';
 import type { DocgenPayload, DocgenProviderDescriptor } from '../types.ts';
 import type { DocgenWorkerRequest, DocgenWorkerResponse } from './protocol.ts';
@@ -122,6 +123,13 @@ class DocgenWorker implements DocgenWorkerClient {
     });
   }
 
+  async close(): Promise<void> {
+    this.death = new Error('Storybook instance closed.');
+    this.rejectReady(this.death);
+    this.rejectAllPending(this.death);
+    await this.worker.terminate();
+  }
+
   private keepProcessAliveWhileBusy(): void {
     if (this.pending.size > 0) {
       this.worker.ref();
@@ -209,7 +217,11 @@ export function createDocgenWorkerClient(
         logger.debug('docgen worker died after serving requests; spawning a replacement');
         worker = undefined;
       }
-      worker ??= new DocgenWorker(scriptPath, descriptors);
+      if (!worker) {
+        worker = new DocgenWorker(scriptPath, descriptors);
+        const ownedWorker = worker;
+        getInstanceContext()?.cleanups.add(() => ownedWorker.close());
+      }
       return worker.extract(entry);
     },
   };

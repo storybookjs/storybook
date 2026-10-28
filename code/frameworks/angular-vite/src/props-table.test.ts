@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { deprecate, logger } from 'storybook/internal/node-logger';
+import { deprecate, logger } from '@storybook/core/internal/node-logger';
 
 import { resolvePropsTable, warnAboutPropsTable } from './props-table.ts';
 
 // The shared setup's node-logger mock keeps the real `deprecate`, which logs past the mocked
 // `logger`, so deprecations are only observable through a file-local mock.
-vi.mock('storybook/internal/node-logger', () => ({
+vi.mock('@storybook/core/internal/node-logger', () => ({
   logger: { warn: vi.fn() },
   deprecate: vi.fn(),
 }));

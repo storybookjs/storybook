@@ -4,8 +4,8 @@
  * spread-copied `component` identifier against this module's imports, instead of the module that
  * wrote it, picks the wrong class.
  */
-import { ButtonComponent } from './legacy/button';
-import { base } from './shared2';
+import { ButtonComponent } from './legacy/button.ts';
+import { base } from './shared2.ts';
 
 export const other = ButtonComponent;
 export const config = { ...base, args: {} };

@@ -108,3 +108,5 @@ export const parameters = {
     test: 'todo',
   } as A11yParameters,
 };
+
+export default { decorators, afterEach, initialGlobals, parameters };

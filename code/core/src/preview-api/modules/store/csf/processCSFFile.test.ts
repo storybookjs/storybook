@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { hasCoreAnnotations } from '../../../../csf/core-annotations.ts';
+import { hasCoreAnnotations } from '../../../../csf/index.ts';
 import { definePreview } from '../../../../csf/csf-factories.ts';
 import { processCSFFile } from './processCSFFile.ts';
 

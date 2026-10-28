@@ -1,8 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { Channel } from 'storybook/internal/channels';
-import { Tag } from 'storybook/internal/core-server';
-import type { DocsIndexEntry, RenderContextCallbacks, Renderer } from 'storybook/internal/types';
+import { Channel } from '@storybook/core/internal/channels';
+import { Tag } from '@storybook/core/internal/story-index';
+import type {
+  DocsIndexEntry,
+  RenderContextCallbacks,
+  Renderer,
+} from '@storybook/core/internal/types';
 
 import type { StoryStore } from '../../store/index.ts';
 import { csfFileParts } from '../docs-context/test-utils.ts';

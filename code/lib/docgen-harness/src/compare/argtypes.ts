@@ -1,5 +1,4 @@
-import type { SBType } from '../../../../core/src/csf/SBType.ts';
-import type { StrictArgTypes, StrictInputType } from '../../../../core/src/csf/story.ts';
+import type { SBType, StrictArgTypes, StrictInputType } from 'storybook/internal/csf';
 import { deepEqual } from './deep-equal.ts';
 import type { Violation } from './types.ts';
 

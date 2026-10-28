@@ -1,6 +1,4 @@
 // `viteFinal` and the Compodoc run must agree here, or a redirected output regenerates every start.
-import type { Preset } from 'storybook/internal/types';
-
 import { resolve } from 'node:path';
 
 import { findTsconfigUp } from './find-tsconfig.ts';
@@ -41,7 +39,7 @@ const readCompodocOutputDir = (compodocArgs: string[]): string | undefined => {
  */
 export const resolveCompodocConfig = async (
   options?: {
-    presets?: { apply: (key: string, fallback?: unknown) => Promise<unknown> };
+    frameworkOptions?: { compodoc?: boolean; compodocArgs?: string[]; tsconfig?: string };
     configDir?: string;
     tsConfig?: string;
     angularBuilderContext?: { workspaceRoot?: string } | null;
@@ -49,13 +47,7 @@ export const resolveCompodocConfig = async (
   },
   extra: { viteRoot?: string } = {}
 ) => {
-  // `framework` is either the framework's package name or `{ name, options }`; only the latter
-  // carries the Compodoc settings.
-  // `presets.apply` is untyped here, so the shape is asserted once at the boundary rather than at
-  // each use.
-  const framework = (await options?.presets?.apply('framework')) as Preset | undefined;
-  const frameworkOptions: { compodoc?: boolean; compodocArgs?: string[]; tsconfig?: string } =
-    typeof framework === 'string' ? {} : (framework?.options ?? {});
+  const frameworkOptions = options?.frameworkOptions ?? {};
 
   const workspaceRoot =
     options?.angularBuilderContext?.workspaceRoot ??

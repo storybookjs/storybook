@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { StorybookError, appendErrorRef } from '../storybook-error.ts';
+import { StorybookError, appendErrorRef, isStorybookError } from '../storybook-error.ts';
 
 describe('StorybookError', () => {
   class TestError extends StorybookError {
@@ -141,5 +141,47 @@ describe('appendErrorRef', () => {
     const url = 'https://storybook.js.org/docs/example#target';
     const result = appendErrorRef(url);
     expect(result).toBe('https://storybook.js.org/docs/example?ref=error#target');
+  });
+});
+
+describe('isStorybookError', () => {
+  class TestError extends StorybookError {
+    constructor() {
+      super({ name: 'TestError', category: 'TEST_CATEGORY', code: 123, message: 'test' });
+    }
+  }
+
+  /** Stands in for `TestError` from a second copy of the module, where `instanceof` fails. */
+  class TestErrorFromOtherCopy extends Error {
+    readonly fromStorybook = true;
+    override name = 'SB_TEST_CATEGORY_0123 (TestError)';
+  }
+
+  it.each([
+    { name: 'same class, any', input: new TestError(), expected: true },
+    { name: 'same class, by name', input: new TestError(), errorName: 'TestError', expected: true },
+    {
+      name: 'same class, other name',
+      input: new TestError(),
+      errorName: 'OtherError',
+      expected: false,
+    },
+    { name: 'other copy, any', input: new TestErrorFromOtherCopy(), expected: true },
+    {
+      name: 'other copy, by name',
+      input: new TestErrorFromOtherCopy(),
+      errorName: 'TestError',
+      expected: true,
+    },
+    {
+      name: 'unrelated error',
+      input: new Error('SB_TEST_CATEGORY_0123 (TestError)'),
+      errorName: 'TestError',
+      expected: false,
+    },
+    { name: 'non-error value', input: 'TestError', errorName: 'TestError', expected: false },
+    { name: 'null', input: null, expected: false },
+  ])('$name', ({ input, errorName, expected }) => {
+    expect(isStorybookError(input, errorName)).toBe(expected);
   });
 });

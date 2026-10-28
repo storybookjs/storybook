@@ -4,7 +4,7 @@ import process from 'process';
 import { PREVIEW_STORY_TIMEOUT, waitForPreviewReady } from './helpers.ts';
 
 /**
- * E2E regression for the open-service sync demos (`code/core/src/shared/open-service/sync-test`).
+ * E2E regression for the open-service sync demos (`code/core/src/open-service/sync-test`).
  *
  * Validates local command execution, remote command execution, static JSON loading, unhandled remote
  * commands in static builds, manager/preview sync, dev-server reload bootstrap, a second tab joining

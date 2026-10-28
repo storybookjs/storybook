@@ -1,0 +1,377 @@
+{
+  "name": "storybook",
+  "version": "11.0.0-alpha.7",
+  "description": "Storybook: Develop, document, and test UI components in isolation",
+  "keywords": [
+    "storybook",
+    "component",
+    "components",
+    "design-systems",
+    "component-testing",
+    "react",
+    "next",
+    "next.js",
+    "react-native",
+    "react-native-web",
+    "vue",
+    "angular",
+    "svelte",
+    "sveltekit",
+    "web-components"
+  ],
+  "homepage": "https://storybook.js.org",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/lib/storybook"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "sideEffects": [
+    "./dist/core/csf/index.js",
+    "./dist/core/preview-api/index.js",
+    "./dist/core/preview/runtime.js",
+    "./dist/manager/ui/globals-runtime.js"
+  ],
+  "type": "module",
+  "imports": {
+    "#utils": {
+      "storybook": "./template/stories/utils.mock.ts",
+      "default": "./template/stories/utils.ts"
+    }
+  },
+  "exports": {
+    "./actions": {
+      "types": "./dist/features/actions/index.d.ts",
+      "code": "./src/features/actions/index.ts",
+      "default": "./dist/features/actions/index.js"
+    },
+    "./actions/decorator": {
+      "types": "./dist/features/actions/decorator.d.ts",
+      "code": "./src/features/actions/decorator.ts",
+      "default": "./dist/features/actions/decorator.js"
+    },
+    "./backgrounds": {
+      "types": "./dist/features/backgrounds/index.d.ts",
+      "code": "./src/features/backgrounds/index.ts",
+      "default": "./dist/features/backgrounds/index.js"
+    },
+    "./highlight": {
+      "types": "./dist/features/highlight/index.d.ts",
+      "code": "./src/features/highlight/index.ts",
+      "default": "./dist/features/highlight/index.js"
+    },
+    "./internal/bin/dispatcher": "./dist/bin/dispatcher.js",
+    "./internal/bin/loader": "./dist/storybook/bin/loader.js",
+    "./internal/channels": {
+      "types": "./dist/shims/internal/channels.d.ts",
+      "code": "./src/shims/internal/channels.ts",
+      "default": "./dist/core/channels/index.js"
+    },
+    "./internal/cli": {
+      "types": "./dist/storybook/cli/index.d.ts",
+      "code": "./src/storybook/cli/index.ts",
+      "default": "./dist/storybook/cli/index.js"
+    },
+    "./internal/client-logger": {
+      "types": "./dist/shims/internal/client-logger.d.ts",
+      "code": "./src/shims/internal/client-logger.ts",
+      "default": "./dist/core/client-logger/index.js"
+    },
+    "./internal/common": {
+      "types": "./dist/shims/internal/common.d.ts",
+      "code": "./src/shims/internal/common.ts",
+      "default": "./dist/core/common/index.js"
+    },
+    "./internal/component-meta": {
+      "types": "./dist/shims/internal/component-meta.d.ts",
+      "code": "./src/shims/internal/component-meta.ts",
+      "default": "./dist/core/component-meta/index.js"
+    },
+    "./internal/components": {
+      "types": "./dist/shims/internal/components.d.ts",
+      "code": "./src/shims/internal/components.ts",
+      "default": "./dist/manager/components/index.js"
+    },
+    "./internal/core-events": {
+      "types": "./dist/shims/internal/core-events.d.ts",
+      "code": "./src/shims/internal/core-events.ts",
+      "default": "./dist/core/core-events/index.js"
+    },
+    "./internal/core-server": {
+      "types": "./dist/shims/internal/core-server.d.ts",
+      "code": "./src/shims/internal/core-server.ts",
+      "default": "./dist/storybook/core-server/index.js"
+    },
+    "./internal/csf": {
+      "types": "./dist/storybook/preview/csf.d.ts",
+      "code": "./src/storybook/preview/csf.ts",
+      "default": "./dist/core/csf/index.js"
+    },
+    "./internal/csf-tools": {
+      "types": "./dist/shims/internal/csf-tools.d.ts",
+      "code": "./src/shims/internal/csf-tools.ts",
+      "default": "./dist/core/csf-tools/index.js"
+    },
+    "./internal/csf/csf-utils": {
+      "types": "./dist/shims/internal/csf/csf-utils.d.ts",
+      "code": "./src/shims/internal/csf/csf-utils.ts",
+      "default": "./dist/core/csf/csf-utils.js"
+    },
+    "./internal/docgen-worker": "./dist/core/shared/open-service/services/docgen/worker/docgen-worker.js",
+    "./internal/docs-tools": {
+      "types": "./dist/shims/internal/docs-tools.d.ts",
+      "code": "./src/shims/internal/docs-tools.ts",
+      "default": "./dist/core/docs-tools/index.js"
+    },
+    "./internal/instance": {
+      "types": "./dist/storybook/instance.d.ts",
+      "code": "./src/storybook/instance.ts",
+      "default": "./dist/core/instance/index.js"
+    },
+    "./internal/instrumenter": {
+      "types": "./dist/shims/internal/instrumenter.d.ts",
+      "code": "./src/shims/internal/instrumenter.ts",
+      "default": "./dist/core/test/instrumenter/index.js"
+    },
+    "./internal/manager-errors": {
+      "types": "./dist/shims/internal/manager-errors.d.ts",
+      "code": "./src/shims/internal/manager-errors.ts",
+      "default": "./dist/shared/manager-errors.js"
+    },
+    "./internal/manager/globals": {
+      "types": "./dist/shims/internal/manager/globals.d.ts",
+      "code": "./src/shims/internal/manager/globals.ts",
+      "default": "./dist/manager/ui/globals.js"
+    },
+    "./internal/manager/globals-runtime": "./dist/manager/ui/globals-runtime.js",
+    "./internal/manager/manager-stores": {
+      "types": "./dist/shims/internal/manager/manager-stores.d.ts",
+      "code": "./src/shims/internal/manager/manager-stores.ts",
+      "default": "./dist/manager/ui/manager-stores.js"
+    },
+    "./internal/mocking-utils": {
+      "types": "./dist/shims/internal/mocking-utils.d.ts",
+      "code": "./src/shims/internal/mocking-utils.ts",
+      "default": "./dist/core/test/mocking/index.js"
+    },
+    "./internal/mocking-utils/mocker-runtime": "./dist/core/test/mocking/mocker-runtime.js",
+    "./internal/node-logger": {
+      "types": "./dist/shims/internal/node-logger.d.ts",
+      "code": "./src/shims/internal/node-logger.ts",
+      "default": "./dist/core/node-logger/index.js"
+    },
+    "./internal/oxc-parser": {
+      "types": "./dist/shims/internal/oxc-parser.d.ts",
+      "code": "./src/shims/internal/oxc-parser.ts",
+      "default": "./dist/core/oxc-parser/index.js"
+    },
+    "./internal/preview-api": {
+      "types": "./dist/shims/preview-api.d.ts",
+      "code": "./src/shims/preview-api.ts",
+      "default": "./dist/core/preview-api/index.js"
+    },
+    "./internal/preview-errors": {
+      "types": "./dist/shims/internal/preview-errors.d.ts",
+      "code": "./src/shims/internal/preview-errors.ts",
+      "default": "./dist/core/preview-errors.js"
+    },
+    "./internal/preview-page": {
+      "types": "./dist/storybook/preview-page.d.ts",
+      "code": "./src/storybook/preview-page.ts",
+      "default": "./dist/core/preview-page/index.js"
+    },
+    "./internal/preview/globals": {
+      "types": "./dist/shims/internal/preview/globals.d.ts",
+      "code": "./src/shims/internal/preview/globals.ts",
+      "default": "./dist/core/preview/globals.js"
+    },
+    "./internal/preview/runtime": "./dist/core/preview/runtime.js",
+    "./internal/router": {
+      "types": "./dist/shims/internal/router.d.ts",
+      "code": "./src/shims/internal/router.ts",
+      "default": "./dist/manager/router/index.js"
+    },
+    "./internal/server": {
+      "types": "./dist/storybook/server/index.d.ts",
+      "code": "./src/storybook/server/index.ts",
+      "default": "./dist/storybook/server/index.js"
+    },
+    "./internal/server-errors": {
+      "types": "./dist/shims/internal/server-errors.d.ts",
+      "code": "./src/shims/internal/server-errors.ts",
+      "default": "./dist/core/server-errors.js"
+    },
+    "./internal/services": {
+      "types": "./dist/shims/internal/services.d.ts",
+      "code": "./src/shims/internal/services.ts",
+      "default": "./dist/core/services/index.js"
+    },
+    "./internal/skills": {
+      "types": "./dist/storybook/cli/skills/content/index.d.ts",
+      "code": "./src/storybook/cli/skills/content/index.ts",
+      "default": "./dist/storybook/cli/skills/content/index.js"
+    },
+    "./internal/story-index": {
+      "types": "./dist/shims/internal/story-index.d.ts",
+      "code": "./src/shims/internal/story-index.ts",
+      "default": "./dist/core/story-index/index.js"
+    },
+    "./internal/telemetry": {
+      "types": "./dist/shims/internal/telemetry.d.ts",
+      "code": "./src/shims/internal/telemetry.ts",
+      "default": "./dist/core/telemetry/index.js"
+    },
+    "./internal/tools": {
+      "types": "./dist/shims/internal/tools.d.ts",
+      "code": "./src/shims/internal/tools.ts",
+      "default": "./dist/storybook/cli/tools/sdk/index.js"
+    },
+    "./internal/tools/child-host": "./dist/storybook/cli/tools/sdk/child-host.js",
+    "./internal/toolsets-docs": {
+      "types": "./dist/shims/internal/toolsets-docs.d.ts",
+      "code": "./src/shims/internal/toolsets-docs.ts",
+      "default": "./dist/core/shared/open-service/toolsets/docs/public.js"
+    },
+    "./internal/tour-guide": {
+      "types": "./dist/shims/internal/tour-guide.d.ts",
+      "code": "./src/shims/internal/tour-guide.ts",
+      "default": "./dist/shims/internal/tour-guide.js"
+    },
+    "./internal/types": {
+      "types": "./dist/shims/internal/types.d.ts",
+      "code": "./src/shims/internal/types.ts",
+      "default": "./dist/core/types/index.js"
+    },
+    "./manager-api": {
+      "types": "./dist/shims/manager-api.d.ts",
+      "code": "./src/shims/manager-api.ts",
+      "default": "./dist/manager/manager-api/index.js"
+    },
+    "./open-service": {
+      "types": "./dist/shims/open-service.d.ts",
+      "code": "./src/shims/open-service.ts",
+      "default": "./dist/core/shared/open-service/index.js"
+    },
+    "./package.json": "./package.json",
+    "./preview-api": {
+      "types": "./dist/shims/preview-api.d.ts",
+      "code": "./src/shims/preview-api.ts",
+      "default": "./dist/core/preview-api/index.js"
+    },
+    "./test": {
+      "types": "./dist/shims/test.d.ts",
+      "code": "./src/shims/test.ts",
+      "default": "./dist/core/test/index.js"
+    },
+    "./theming": {
+      "types": "./dist/shims/theming.d.ts",
+      "code": "./src/shims/theming.ts",
+      "default": "./dist/manager/theming/index.js"
+    },
+    "./theming/create": {
+      "types": "./dist/shims/theming/create.d.ts",
+      "code": "./src/shims/theming/create.ts",
+      "default": "./dist/manager/theming/create.js"
+    },
+    "./viewport": {
+      "types": "./dist/features/viewport/index.d.ts",
+      "code": "./src/features/viewport/index.ts",
+      "default": "./dist/features/viewport/index.js"
+    }
+  },
+  "bin": "./dist/bin/dispatcher.js",
+  "files": [
+    "bin/**/*",
+    "dist/**/*",
+    "assets/**/*",
+    "README.md",
+    "!src/**/*",
+    "!assets/docs/**/*"
+  ],
+  "dependencies": {
+    "@storybook/core": "workspace:*",
+    "@storybook/global": "^5.0.0",
+    "@storybook/icons": "^2.0.2",
+    "@storybook/manager": "workspace:*",
+    "@storybook/open-service": "workspace:*",
+    "@storybook/ui": "workspace:*",
+    "jsonc-parser": "^3.3.1",
+    "open": "^10.2.0",
+    "semver": "^7.7.3",
+    "ws": "^8.21.1"
+  },
+  "devDependencies": {
+    "@devtools-ds/object-inspector": "^1.1.2",
+    "@discoveryjs/json-ext": "^0.5.3",
+    "@polka/compression": "^1.0.0-next.28",
+    "@react-aria/live-announcer": "^3.5.1",
+    "@standard-schema/spec": "^1.1.0",
+    "@types/cross-spawn": "^6.0.6",
+    "@types/detect-port": "^1.3.0",
+    "@types/node": "^22.19.1",
+    "@types/pretty-hrtime": "^1.0.0",
+    "@types/semver": "^7.7.1",
+    "@types/ws": "^8",
+    "@valibot/to-json-schema": "^1.3.0",
+    "ansi-to-html": "^0.7.2",
+    "commander": "^14.0.2",
+    "cross-spawn": "^7.0.6",
+    "dequal": "^2.0.2",
+    "detect-indent": "^7.0.1",
+    "detect-port": "^1.6.1",
+    "empathic": "^2.0.0",
+    "es-toolkit": "^1.43.0",
+    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0 || ^0.28.0",
+    "execa": "^9.6.1",
+    "get-npm-tarball-url": "^2.1.0",
+    "host-validation-middleware": "^0.1.2",
+    "jiti": "^2.6.1",
+    "launch-editor": "^2.13.2",
+    "leven": "^4.0.0",
+    "memfs": "^4.11.1",
+    "modern-tar": "^0.5.5",
+    "pathe": "^1.1.2",
+    "picocolors": "^1.1.0",
+    "polished": "^4.2.2",
+    "polka": "^1.0.0-next.28",
+    "pretty-hrtime": "^1.0.3",
+    "react": "^18.2.0",
+    "react-inspector": "^6.0.0",
+    "sirv": "^2.0.4",
+    "strip-ansi": "^7.1.0",
+    "strip-json-comments": "^5.0.1",
+    "telejson": "8.0.0",
+    "tiny-invariant": "^1.3.1",
+    "ts-dedent": "^2.2.0",
+    "type-fest": "^5.6.0",
+    "typescript": "^6.0.3",
+    "valibot": "^1.4.0",
+    "watchpack": "^2.5.0"
+  },
+  "peerDependencies": {
+    "@types/react": "^18.0.0 || ^19.0.0",
+    "prettier": "^2 || ^3",
+    "vite-plus": "^0.1.15 || ^0.2.0 || ^0.3.0"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "prettier": {
+      "optional": true
+    },
+    "vite-plus": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

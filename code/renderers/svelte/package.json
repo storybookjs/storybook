@@ -66,8 +66,17 @@
       "code": "./src/svelte-csf/compiler/transform.ts",
       "default": "./dist/svelte-csf/compiler/transform.js"
     },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "code": "./src/node.ts",
+      "default": "./dist/node.js"
+    },
     "./package.json": "./package.json",
-    "./preset": "./dist/preset.js"
+    "./preset": {
+      "types": "./dist/node.d.ts",
+      "code": "./src/node.ts",
+      "default": "./dist/node.js"
+    }
   },
   "files": [
     "dist/**/*",
@@ -79,6 +88,7 @@
     "!src/**/*"
   ],
   "dependencies": {
+    "@storybook/core": "workspace:*",
     "es-toolkit": "^1.43.0",
     "ts-dedent": "^2.2.0",
     "type-fest": "^5.6.0"
@@ -104,6 +114,9 @@
     "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
   },
   "peerDependenciesMeta": {
+    "storybook": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     },

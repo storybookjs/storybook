@@ -4,7 +4,7 @@ import {
   type ScopeInfo,
   SourceEditor,
   walk,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 import type { Plugin } from 'vite';
 
 type Span = { start: number; end: number };

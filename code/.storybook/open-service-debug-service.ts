@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 
 import { logger } from 'storybook/internal/node-logger';
-import type { StoryIndexGenerator } from '../core/src/core-server/utils/StoryIndexGenerator.ts';
+import type { StoryIndexGenerator } from '../core/src/story-index/StoryIndexGenerator.ts';
 
 import { defineService } from 'storybook/open-service';
 import { describeService, registerService } from '../core/src/shared/open-service/server.ts';
@@ -156,7 +156,7 @@ function createDebugServiceDef(storyIndexGeneratorPromise: Promise<StoryIndexGen
  *
  * The service self-demonstrates queries, commands, loads, subscriptions, static snapshot
  * generation, and story-index integration inside the internal Storybook. It is gated behind the
- * `STORYBOOK_OPEN_SERVICE_DEBUG=true` env flag in `code/.storybook/services-preset.ts`.
+ * `STORYBOOK_OPEN_SERVICE_DEBUG=true` env flag in `code/.storybook/services-addon.ts`.
  */
 export async function registerOpenServiceDebugService(
   storyIndexGeneratorPromise: Promise<StoryIndexGenerator>
@@ -177,8 +177,8 @@ export async function registerOpenServiceDebugService(
   try {
     // Trigger the main runtime behaviors once during registration so debug logs immediately show
     // the command, query, load, and subscription paths without extra manual setup.
-    await service.commands.syncStoryIndex({ reason: 'services-preset' });
-    await service.commands.addActivity({ message: 'registered via services preset' });
+    await service.commands.syncStoryIndex({ reason: 'services-addon' });
+    await service.commands.addActivity({ message: 'registered via services addon' });
     service.queries.activity.get({ limit: 10 });
     service.queries.storyIndexSummary.get({ includeSampleIds: true });
     await service.queries.preloadedValue.loaded({ entryId: 'startup' });

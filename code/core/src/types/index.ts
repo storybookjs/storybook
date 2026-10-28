@@ -1,11 +1,11 @@
 /// <reference path="../typings.d.ts" />
 
 export * from './modules/csf.ts';
-export * from './modules/addons.ts';
+export * from './addons.ts';
 export * from './modules/story.ts';
 export * from './modules/core-common.ts';
 export * from './modules/builder.ts';
-export * from './modules/api.ts';
+export * from './api.ts';
 export * from './modules/docs.ts';
 export * from './modules/api-stories.ts';
 export * from './modules/indexer.ts';

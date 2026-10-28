@@ -8,7 +8,7 @@ import {
   parseModule,
   reindent,
   unwrapExpression,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 
 import type { SnippetEnum } from './build-docgen.ts';
 import { isValidIdentifier } from '../template-grammar.ts';

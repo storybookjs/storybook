@@ -1,6 +1,6 @@
-import { getComponentIdFromEntry, groupBy, registerService } from 'storybook/internal/common';
-import { type MdxPayload, Tag } from 'storybook/internal/core-server';
-import type { DocsIndexEntry, StoryIndex } from 'storybook/internal/types';
+import { getComponentIdFromEntry, groupBy, registerService } from '@storybook/core/internal/common';
+import { type MdxPayload, Tag } from '@storybook/core/internal/story-index';
+import type { DocsIndexEntry, StoryIndex } from '@storybook/core/internal/types';
 
 import { createDocsManifestEntry } from '../manifest.ts';
 import { mdxServiceDef } from './definition.ts';

@@ -4,9 +4,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { resolve } from 'node:path';
 
-import { Channel } from 'storybook/internal/channels';
-import { getProjectRoot } from 'storybook/internal/common';
-import type { Options, Presets } from 'storybook/internal/types';
+import { Channel } from '@storybook/core/internal/channels';
+import { getProjectRoot } from '@storybook/core/internal/common';
+import type { Storybook } from '@storybook/core';
+import {
+  VITE_PREVIEW_MODULE_IDS,
+  type PreviewSources,
+} from '@storybook/core/internal/preview-page';
 
 import * as find from 'empathic/find';
 import { loadConfigFromFile } from 'vite';
@@ -24,51 +28,35 @@ vi.mock('vite', async (importOriginal) => ({
 const loadConfigFromFileMock = vi.mocked(loadConfigFromFile);
 
 vi.mock('empathic/find', { spy: true });
-vi.mock('storybook/internal/common', { spy: true });
+vi.mock('@storybook/core/internal/common', { spy: true });
 
 const { loggerWarnMock } = vi.hoisted(() => ({ loggerWarnMock: vi.fn() }));
-vi.mock('storybook/internal/node-logger', () => ({
+vi.mock('@storybook/core/internal/node-logger', () => ({
   // `once` passes straight through to the warn mock; deduping is node-logger's own tested behavior.
   once: () => (message: string) => loggerWarnMock(message),
   logger: { warn: loggerWarnMock, error: vi.fn(), log: vi.fn(), debug: vi.fn() },
 }));
 
-const dummyOptions: Options = {
-  configType: 'DEVELOPMENT',
-  configDir: '',
-  packageJson: {},
-  channel: new Channel({}),
-  presets: {
-    apply: async (key: string) =>
-      ({
-        framework: {
-          name: '',
-        },
-        addons: [],
-        core: {
-          builder: {},
-        },
-        options: {},
-      })[key],
-  } as Presets,
-  presetsList: [],
-};
+const PREVIEW = {
+  modules: { entry: '', projectAnnotations: '', addonSetup: '' },
+  virtualModuleIds: VITE_PREVIEW_MODULE_IDS,
+  externals: {},
+  define: () => ({}),
+  previewAnnotations: [],
+  previewConfigPath: undefined,
+  previewRuntimePath: '/storybook/dist/core/preview/runtime.js',
+} as unknown as PreviewSources;
 
-const presetsWith = (builderOptions: BuilderOptions): Presets =>
+const fakeStorybook = (configDir = '', framework?: unknown): Storybook =>
   ({
-    apply: async (key: string) =>
-      ({
-        framework: { name: '' },
-        addons: [],
-        core: {
-          builder: {
-            name: '@storybook/builder-vite',
-            options: builderOptions,
-          },
-        },
-        options: {},
-      })[key],
-  }) as Presets;
+    configDir,
+    channel: new Channel({}),
+    options: { configType: 'DEVELOPMENT' },
+    callHook: async (name: string, value: unknown) =>
+      name === 'core:framework:extend' ? framework : value,
+  }) as unknown as Storybook;
+
+const input = (options: BuilderOptions = {}) => ({ preview: PREVIEW, options });
 
 const mockExistsSync = async (pathToMock: string, exists: boolean) => {
   const actual = await vi.importActual<typeof import('node:fs')>('node:fs');
@@ -99,17 +87,12 @@ describe('commonConfig', () => {
         dependencies: [],
       })
     );
-    const config = await commonConfig(dummyOptions, 'development');
+    const config = await commonConfig(fakeStorybook(), input(), 'development');
     expect(config.configFile).toBe(false);
     expect(config.plugins).toBeDefined();
   });
 
   it('should pass configLoader option to loadConfigFromFile', async () => {
-    const optionsWithConfigLoader: Options = {
-      ...dummyOptions,
-      presets: presetsWith({ configLoader: 'native' }),
-    };
-
     // Inline mock: this test asserts a specific call signature, so it needs its
     // own one-shot return value distinct from the shared default mock.
     loadConfigFromFileMock.mockReturnValueOnce(
@@ -120,7 +103,7 @@ describe('commonConfig', () => {
       })
     );
 
-    await commonConfig(optionsWithConfigLoader, 'development');
+    await commonConfig(fakeStorybook(), input({ configLoader: 'native' }), 'development');
 
     // Verify loadConfigFromFile was called with configLoader as the 6th argument
     expect(loadConfigFromFileMock).toHaveBeenCalledWith(
@@ -131,6 +114,18 @@ describe('commonConfig', () => {
       undefined,
       'native'
     );
+  });
+});
+
+describe('builder options', () => {
+  it('prefers the legacy framework builder options over the factory options', async () => {
+    await commonConfig(
+      fakeStorybook('', { name: 'framework', options: { builder: { viteConfigPath: null } } }),
+      input({ viteConfigPath: '/ignored/vite.config.ts' }),
+      'development'
+    );
+
+    expect(loadConfigFromFileMock).not.toHaveBeenCalled();
   });
 });
 
@@ -173,7 +168,7 @@ describe('storybookConfigPlugin', () => {
 });
 
 describe('resolveVitePublicDir', () => {
-  const options: Options = { ...dummyOptions, configDir: '/project/.storybook' };
+  const storybook = fakeStorybook('/project/.storybook');
   const mockUserConfig = (config: Record<string, unknown>) =>
     loadConfigFromFileMock.mockResolvedValueOnce({ config, path: '', dependencies: [] });
 
@@ -181,28 +176,28 @@ describe('resolveVitePublicDir', () => {
     await mockExistsSync('/project/public', true);
     mockUserConfig({});
 
-    expect(await resolveVitePublicDir(options, 'build')).toBe(resolve('/project/public'));
+    expect(await resolveVitePublicDir(storybook, {})).toBe(resolve('/project/public'));
   });
 
   it('resolves a custom publicDir relative to the project root', async () => {
     await mockExistsSync('/project/assets/static', true);
     mockUserConfig({ publicDir: 'assets/static' });
 
-    expect(await resolveVitePublicDir(options, 'build')).toBe(resolve('/project/assets/static'));
+    expect(await resolveVitePublicDir(storybook, {})).toBe(resolve('/project/assets/static'));
   });
 
   it('returns undefined when publicDir is disabled', async () => {
     await mockExistsSync('/project/public', true);
     mockUserConfig({ publicDir: false });
 
-    expect(await resolveVitePublicDir(options, 'build')).toBeUndefined();
+    expect(await resolveVitePublicDir(storybook, {})).toBeUndefined();
   });
 
   it('returns undefined when the public directory does not exist', async () => {
     await mockExistsSync('/project/public', false);
     mockUserConfig({});
 
-    expect(await resolveVitePublicDir(options, 'build')).toBeUndefined();
+    expect(await resolveVitePublicDir(storybook, {})).toBeUndefined();
   });
 });
 
@@ -212,10 +207,7 @@ describe('discovery miss reporting', () => {
     vi.mocked(find.any).mockReturnValueOnce(resolve('/project/vite.config.mjs'));
     loadConfigFromFileMock.mockResolvedValueOnce(null);
 
-    await commonConfig(
-      { ...dummyOptions, configDir: '/project/configuration/storybook' },
-      'development'
-    );
+    await commonConfig(fakeStorybook('/project/configuration/storybook'), input(), 'development');
 
     expect(vi.mocked(find.any)).toHaveBeenCalledWith(expect.anything(), {
       cwd: resolve('/project/configuration'),
@@ -234,7 +226,7 @@ describe('discovery miss reporting', () => {
     vi.mocked(find.any).mockReturnValueOnce(undefined);
     loadConfigFromFileMock.mockResolvedValueOnce(null);
 
-    await commonConfig({ ...dummyOptions, configDir: '/project/.storybook' }, 'development');
+    await commonConfig(fakeStorybook('/project/.storybook'), input(), 'development');
 
     expect(loggerWarnMock).not.toHaveBeenCalled();
   });
@@ -242,7 +234,7 @@ describe('discovery miss reporting', () => {
   it('stays quiet when discovery loads a config in the standard layout', async () => {
     loadConfigFromFileMock.mockResolvedValueOnce({ config: {}, path: '', dependencies: [] });
 
-    await commonConfig({ ...dummyOptions, configDir: '/project/.storybook' }, 'development');
+    await commonConfig(fakeStorybook('/project/.storybook'), input(), 'development');
 
     expect(vi.mocked(find.any)).not.toHaveBeenCalled();
     expect(loggerWarnMock).not.toHaveBeenCalled();
@@ -252,11 +244,8 @@ describe('discovery miss reporting', () => {
     loadConfigFromFileMock.mockResolvedValueOnce(null);
 
     await commonConfig(
-      {
-        ...dummyOptions,
-        configDir: '/project/.storybook',
-        presets: presetsWith({ viteConfigPath: '/custom/vite.config.ts' }),
-      },
+      fakeStorybook('/project/.storybook'),
+      input({ viteConfigPath: '/custom/vite.config.ts' }),
       'development'
     );
 
@@ -268,11 +257,8 @@ describe('discovery miss reporting', () => {
     loadConfigFromFileMock.mockResolvedValueOnce(null);
 
     await commonConfig(
-      {
-        ...dummyOptions,
-        configDir: '/project/.storybook',
-        presets: presetsWith({ viteConfigPath: null }),
-      },
+      fakeStorybook('/project/.storybook'),
+      input({ viteConfigPath: null }),
       'development'
     );
 
@@ -287,7 +273,7 @@ describe('discovery miss reporting', () => {
     vi.mocked(getProjectRoot).mockReturnValue('/workspace');
     loadConfigFromFileMock.mockResolvedValueOnce(null);
 
-    await commonConfig({ ...dummyOptions, configDir: '/project/.storybook' }, 'development');
+    await commonConfig(fakeStorybook('/project/.storybook'), input(), 'development');
 
     expect(vi.mocked(find.any)).not.toHaveBeenCalled();
     expect(loggerWarnMock).not.toHaveBeenCalled();

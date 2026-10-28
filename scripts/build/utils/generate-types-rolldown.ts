@@ -3,7 +3,7 @@ import { readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { sep } from 'node:path';
 
-import { basename, dirname, join, relative } from 'pathe';
+import { dirname, join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import type { Plugin } from 'rolldown';
 import { rolldown } from 'rolldown';
@@ -44,6 +44,112 @@ async function resolveTsconfigCompilerOptions(tsconfigPath: string): Promise<Rec
 }
 
 const RE_DTS_IMPORTER = /\.d\.[cm]?ts(?:\?|$)/;
+
+/** A `declare module` block naming a relative path: bundling moves it away from its target. */
+const RE_RELATIVE_AUGMENTATION = /^\s*declare module\s+['"](\.{1,2}\/[^'"]*)['"]/m;
+/** A `declare module` block naming a package, as opposed to a shorthand or wildcard declaration. */
+const RE_PACKAGE_AUGMENTATION = /^\s*declare module\s+['"][^.'"*][^'"*]*['"]\s*\{/m;
+/** Only a module file augments; the same block in a script file declares an ambient module. */
+const RE_MODULE_FILE = /^\s*(?:import|export)\b/m;
+
+/** A bare `import 'pkg';` in a declaration file, which only exists to load augmentations. */
+const RE_BARE_PACKAGE_IMPORT = /^\s*import\s+['"]([^.'"][^'"]*)['"]/gm;
+
+/**
+ * Tree-shaking strategy for declaration bundling: keep modules that augment a package, and
+ * externals in `bareImports`. Nothing imports either for a binding, so with side effects off the
+ * bundler drops them.
+ */
+export function createAugmentationSideEffects(
+  bareImports: ReadonlySet<string> = new Set(),
+  readFile: (path: string) => string | undefined = (path) => ts.sys.readFile(path)
+): (id: string, external: boolean) => boolean {
+  const cache = new Map<string, boolean>();
+  return (id, external) => {
+    const path = id.split('?')[0];
+    if (external) {
+      return bareImports.has(id);
+    }
+    if (!RE_DTS_IMPORTER.test(path)) {
+      return false;
+    }
+    let augments = cache.get(path);
+    if (augments === undefined) {
+      const text = readFile(path) ?? '';
+      augments = RE_MODULE_FILE.test(text) && RE_PACKAGE_AUGMENTATION.test(text);
+      cache.set(path, augments);
+    }
+    return augments;
+  };
+}
+
+/** Fail the build when a bundled declaration file still augments a relative module. */
+export function assertNoRelativeAugmentations(files: { fileName: string; code: string }[]): void {
+  const offenders = files.flatMap(({ fileName, code }) => {
+    const match = RE_RELATIVE_AUGMENTATION.exec(code);
+    return match ? [`${fileName}: declare module '${match[1]}'`] : [];
+  });
+  if (offenders.length > 0) {
+    throw new Error(
+      `Bundled declarations augment relative modules, which consumers cannot resolve:\n  ${offenders.join('\n  ')}\n` +
+        `Augment the public specifier (e.g. '@storybook/core') or extend the interface directly.`
+    );
+  }
+}
+
+/**
+ * Re-add a bare import for each declaration chunk, or each external in `bareImports`, that
+ * `imports` lists but `code` no longer references, so augmentations stay reachable.
+ */
+export function restoreSideEffectImports(
+  code: string,
+  fileName: string,
+  imports: string[],
+  bareImports: ReadonlySet<string>
+): string {
+  const missing = imports
+    .flatMap((imported) => {
+      if (bareImports.has(imported)) {
+        return [imported];
+      }
+      if (!/\.d\.[cm]?ts$/.test(imported)) {
+        return [];
+      }
+      const specifier = relative(dirname(fileName), imported).replace(/\.d\.([cm]?)ts$/, '.$1js');
+      return [specifier.startsWith('.') ? specifier : `./${specifier}`];
+    })
+    .filter((specifier) => !code.includes(`"${specifier}"`) && !code.includes(`'${specifier}'`));
+  return missing.length > 0
+    ? `${missing.map((specifier) => `import "${specifier}";\n`).join('')}${code}`
+    : code;
+}
+
+/**
+ * Records bare package imports for `createAugmentationSideEffects`, then re-adds the bare imports
+ * that the dts plugin removes because it mistakes them for its own helper imports.
+ */
+function createSideEffectImportPlugin(bareImports: Set<string>): Plugin {
+  return {
+    name: 'dts-side-effect-imports',
+    transform: {
+      order: 'pre',
+      filter: { id: RE_DTS_IMPORTER },
+      handler(code) {
+        for (const [, specifier] of code.matchAll(RE_BARE_PACKAGE_IMPORT)) {
+          bareImports.add(specifier);
+        }
+        return null;
+      },
+    },
+    renderChunk(code, chunk) {
+      if (!RE_DTS_IMPORTER.test(chunk.fileName)) {
+        return null;
+      }
+      const restored = restoreSideEffectImports(code, chunk.fileName, chunk.imports, bareImports);
+      return restored === code ? null : restored;
+    },
+  };
+}
 
 /**
  * The plugin's default 'oxc' resolver does not fall back to DefinitelyTyped
@@ -257,6 +363,19 @@ function emitPackageDeclarationsNative(
   copyHandwrittenDeclarations(parseWrapperTsconfig(wrapperTsconfig).fileNames, outDir);
 }
 
+/**
+ * Temporary tsconfig paths at the repo root for one package's d.ts build, keyed by the package's
+ * repo-relative path: packages build in parallel and folder basenames collide (`lib/mcp`,
+ * `addons/mcp`).
+ */
+export function getDtsTempTsconfigPaths(cwd: string): { wrapper: string; emit: string } {
+  const key = relative(DIR_ROOT, cwd).replace(/[^a-zA-Z0-9]+/g, '-');
+  return {
+    wrapper: join(DIR_ROOT, `tsconfig.dts-tmp-${key}.json`),
+    emit: join(DIR_ROOT, `tsconfig.dts-tmp-${key}-emit.json`),
+  };
+}
+
 export async function generateTypesFiles(
   cwd: string,
   data: BuildEntries,
@@ -305,9 +424,8 @@ export async function generateTypesFiles(
   // The dts plugin and tsgo derive rootDir from path.dirname(tsconfig).
   // When rootDir is the package dir, declarations for cross-package imports
   // would be emitted next to their source files. Fix: create a temporary
-  // tsconfig at the repo root so rootDir covers the entire monorepo. Use a
-  // per-package filename to avoid races when NX compiles packages in parallel.
-  const wrapperTsconfig = join(DIR_ROOT, `tsconfig.dts-tmp-${basename(cwd)}.json`);
+  // tsconfig at the repo root so rootDir covers the entire monorepo.
+  const { wrapper: wrapperTsconfig, emit: emitTsconfig } = getDtsTempTsconfigPaths(cwd);
   const packageTsconfig = join(cwd, 'tsconfig.json');
 
   const useTsgo = options?.tsgo ?? false;
@@ -334,12 +452,9 @@ export async function generateTypesFiles(
   // directory never ships (removed in `finally`).
   const emitDir = join(cwd, '.dts-emit');
 
-  // TS 7 has no JS compiler API, so its emit options cannot be passed
-  // programmatically; write them into a second temporary tsconfig instead.
-  const emitTsconfig = join(DIR_ROOT, `tsconfig.dts-tmp-${basename(cwd)}-emit.json`);
-
   try {
     if (useTsgo) {
+      // TS 7 has no JS compiler API, so its emit options go into a second temporary tsconfig.
       await writeFile(
         emitTsconfig,
         JSON.stringify({
@@ -374,9 +489,12 @@ export async function generateTypesFiles(
       bundleInput: Record<string, string>,
       isExternal: (id: string) => boolean
     ) => {
+      const bareImports = new Set<string>();
       const out = await rolldown({
         input: bundleInput,
         external: isExternal,
+        // Overrides the dts plugin's blanket `moduleSideEffects: false`, which drops augmentations.
+        treeshake: { moduleSideEffects: createAugmentationSideEffects(bareImports) },
         plugins: [
           createTextAssetStubPlugin(),
           ...(resolver === 'hybrid' ? [createTypesFallbackResolverPlugin(isExternal)] : []),
@@ -387,6 +505,7 @@ export async function generateTypesFiles(
             emitDtsOnly: true,
             resolver: resolver === 'tsc' ? 'tsc' : 'oxc',
           }),
+          createSideEffectImportPlugin(bareImports),
         ],
         logLevel: 'warn',
       });
@@ -399,6 +518,11 @@ export async function generateTypesFiles(
         // which varies across runs and would make the output non-deterministic.
         chunkFileNames: 'chunk-[hash].js',
       });
+      assertNoRelativeAugmentations(
+        output.flatMap((chunk) =>
+          chunk.type === 'chunk' && /\.d\.[cm]?ts$/.test(chunk.fileName) ? [chunk] : []
+        )
+      );
       return output;
     };
 

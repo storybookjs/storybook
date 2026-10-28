@@ -1,5 +1,5 @@
-import { once } from 'storybook/internal/client-logger';
-import type { NormalizedStoriesSpecifier } from 'storybook/internal/types';
+import { once } from '@storybook/core/internal/client-logger';
+import type { NormalizedStoriesSpecifier } from '@storybook/core/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';

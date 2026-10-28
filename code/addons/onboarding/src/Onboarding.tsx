@@ -2,12 +2,12 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import { SyntaxHighlighter } from 'storybook/internal/components';
 import { SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
+import { HighlightElement, TourGuide } from 'storybook/internal/tour-guide';
+import type { TourGuideStep } from 'storybook/internal/tour-guide';
 
 import { type API } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
-import { HighlightElement } from '../../../core/src/manager/components/TourGuide/HighlightElement.tsx';
-import { TourGuide } from '../../../core/src/manager/components/TourGuide/TourGuide.tsx';
 import { Confetti } from './components/Confetti/Confetti.tsx';
 import type { STORYBOOK_ADDON_ONBOARDING_STEPS } from './constants.ts';
 import { ADDON_CONTROLS_ID, ADDON_ONBOARDING_CHANNEL } from './constants.ts';
@@ -194,7 +194,7 @@ export default function Onboarding({
   const snippet = source?.slice(startIndex).trim();
   const startingLineNumber = source?.slice(0, startIndex).split('\n').length;
 
-  const controlsTour = [
+  const controlsTour: TourGuideStep[] = [
     {
       key: '2:Controls',
       target: '#control-primary',
@@ -280,7 +280,7 @@ export default function Onboarding({
     },
   ];
 
-  const checklistTour = [
+  const checklistTour: TourGuideStep[] = [
     {
       key: '7:FinishedOnboarding',
       target: '#storybook-checklist-module',
@@ -317,8 +317,6 @@ export default function Onboarding({
         />
       ) : step === '7:FinishedOnboarding' ? (
         <TourGuide
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore Circular reference in Step type
           step={step}
           steps={checklistTour}
           onComplete={() => disableOnboarding()}
@@ -326,8 +324,6 @@ export default function Onboarding({
         />
       ) : (
         <TourGuide
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore Circular reference in Step type
           step={step}
           steps={controlsTour}
           onComplete={() => setStep(hasCompletedSurvey ? '7:FinishedOnboarding' : '6:IntentSurvey')}

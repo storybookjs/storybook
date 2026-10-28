@@ -1,0 +1,88 @@
+import type { FC } from 'react';
+import React, { useMemo, useState } from 'react';
+
+import { Addon_TypesEnum } from '@storybook/core/internal/types';
+
+import { useChannel, useStorybookApi, useStorybookState } from '@storybook/manager/manager-api';
+
+import { STORY_PREPARED } from '@storybook/core/internal/core-events';
+import { focusableUIElements } from '../../manager-api/modules/layout.ts';
+import { AddonPanel } from '../components/panel/Panel.tsx';
+
+const Panel: FC<any> = (props) => {
+  const api = useStorybookApi();
+  const state = useStorybookState();
+  const [story, setStory] = useState(api.getCurrentStoryData());
+
+  useChannel(
+    {
+      [STORY_PREPARED]: () => {
+        setStory(api.getCurrentStoryData());
+      },
+    },
+    []
+  );
+
+  const { parameters, type } = story ?? {};
+
+  const panelActions = useMemo(
+    () => ({
+      onSelect: (panel: string) => api.setSelectedPanel(panel),
+      toggleVisibility: async () => {
+        const wasPanelShown = api.getIsPanelShown();
+        api.togglePanel();
+        if (wasPanelShown) {
+          const success = await api.focusOnUIElement(focusableUIElements.showAddonPanel);
+          // Fallback to body for predictable behavior.
+          if (success === false) {
+            document.body.focus();
+          }
+        }
+      },
+      togglePosition: () => api.togglePanelPosition(),
+    }),
+    [api]
+  );
+
+  const panels = useMemo(() => {
+    const allPanels = api.getElements(Addon_TypesEnum.PANEL);
+
+    if (!allPanels) {
+      return allPanels;
+    }
+
+    // With no story entry yet (index not loaded), the filter still runs with
+    // undefined parameters — the same input disabled callbacks already get
+    // when an entry exists but is not prepared (e.g. switching docs to story).
+    if (story && type !== 'story') {
+      return allPanels;
+    }
+
+    const filteredPanels: typeof allPanels = {};
+    Object.entries(allPanels).forEach(([id, p]) => {
+      const { paramKey }: any = p;
+      if (paramKey && parameters && parameters[paramKey] && parameters[paramKey].disable) {
+        return;
+      }
+      if (p.disabled === true || (typeof p.disabled === 'function' && p.disabled(parameters))) {
+        return;
+      }
+      filteredPanels[id] = p;
+    });
+
+    return filteredPanels;
+  }, [api, story]);
+
+  return (
+    <AddonPanel
+      panels={panels}
+      selectedPanel={api.getSelectedPanel()}
+      panelPosition={state.layout.panelPosition}
+      actions={panelActions}
+      shortcuts={api.getShortcutKeys()}
+      {...props}
+    />
+  );
+};
+
+export default Panel;

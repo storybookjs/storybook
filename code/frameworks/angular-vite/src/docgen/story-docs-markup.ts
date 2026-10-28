@@ -6,7 +6,7 @@ import type {
   ESTree as E,
   ESTreeNode as Node,
   ResolvedMembers,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 import {
   importedName,
   isCanonicalCsf2BindCall,
@@ -16,7 +16,7 @@ import {
   templateParts,
   type TemplateParts,
   unwrapExpression,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 
 import { formatPropInTemplate } from '../template-grammar.ts';
 

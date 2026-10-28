@@ -1,4 +1,4 @@
-import { getTsconfigPathsBaseDir } from 'storybook/internal/common';
+import { getTsconfigPathsBaseDir } from '@storybook/core/internal/common';
 import { loadConfig } from 'tsconfig-paths';
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
 import type { Configuration as WebpackConfig } from 'webpack';

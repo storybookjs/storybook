@@ -32,18 +32,27 @@
     },
     "./entry-preview": "./dist/entry-preview.js",
     "./entry-preview-docs": "./dist/entry-preview-docs.js",
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "code": "./src/node.ts",
+      "default": "./dist/node.js"
+    },
     "./package.json": "./package.json",
-    "./preset": "./dist/preset.js"
+    "./preset": {
+      "types": "./dist/node.d.ts",
+      "code": "./src/node.ts",
+      "default": "./dist/node.js"
+    }
   },
   "files": [
     "dist/**/*",
     "template/cli/**/*",
     "README.md",
-    "*.js",
     "*.d.ts",
     "!src/**/*"
   ],
   "dependencies": {
+    "@storybook/core": "workspace:*",
     "@storybook/global": "^5.0.0",
     "ts-dedent": "^2.2.0"
   },
@@ -54,6 +63,11 @@
   "peerDependencies": {
     "preact": "^10.8.0 || >= 11.0.0-0",
     "storybook": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "storybook": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

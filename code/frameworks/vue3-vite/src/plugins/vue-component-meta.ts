@@ -1,13 +1,12 @@
-import { logger } from 'storybook/internal/node-logger';
-import { parseDefaultImports, parseLocalBindings } from 'storybook/internal/oxc-parser';
+import { logger } from '@storybook/core/internal/node-logger';
+import { parseDefaultImports, parseLocalBindings } from '@storybook/core/internal/oxc-parser';
 
 import MagicString from 'magic-string';
 import type { ModuleNode, Plugin, ViteDevServer } from 'vite';
 
-import type { experimental_vueDocgenEngine } from '@storybook/vue3/preset';
+import type { VueDocgenEngine } from '@storybook/vue3/node';
 
-/** The renderer's shared vue-component-meta engine, applied through the preset chain. */
-export type VueDocgenEngine = Awaited<ReturnType<typeof experimental_vueDocgenEngine>>;
+export type { VueDocgenEngine };
 
 export async function vueComponentMeta(
   engine: VueDocgenEngine,

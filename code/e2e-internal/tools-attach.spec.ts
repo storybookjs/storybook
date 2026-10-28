@@ -16,7 +16,7 @@ import { expect, test } from '@playwright/test';
  */
 
 const execFileAsync = promisify(execFile);
-const dispatcher = join(process.cwd(), 'core/dist/bin/dispatcher.js');
+const dispatcher = join(process.cwd(), 'lib/storybook/dist/bin/dispatcher.js');
 const runsAgainstDevServer = !['build', 'static'].includes(process.env.STORYBOOK_TYPE || 'dev');
 
 async function runTools(args: string[], cwd = process.cwd(), extraEnv: NodeJS.ProcessEnv = {}) {
@@ -115,7 +115,7 @@ test.describe('storybook tools attach', () => {
     // Covers the polling budget plus one CLI run that started just inside it, so a timeout cannot
     // skip the restore below.
     test.setTimeout(150_000);
-    const storyFile = join(process.cwd(), 'core/template/stories/names.stories.ts');
+    const storyFile = join(process.cwd(), 'lib/storybook/template/stories/names.stories.ts');
     const original = await readFile(storyFile, 'utf8');
     try {
       await writeFile(storyFile, `${original}\n// tools-attach e2e\n`);

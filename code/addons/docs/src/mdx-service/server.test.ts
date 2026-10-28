@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { Tag } from 'storybook/internal/core-server';
+import {
+  internal_buildStaticFiles as buildStaticFiles,
+  internal_clearRegistry as clearRegistry,
+} from 'storybook/internal/services';
+import { Tag } from 'storybook/internal/story-index';
 import type { DocsIndexEntry, IndexEntry, StoryIndex } from 'storybook/internal/types';
 
-import {
-  buildStaticFiles,
-  clearRegistry,
-} from '../../../../core/src/shared/open-service/server.ts';
 import { registerMdxService } from './server.ts';
 import type { MdxProvider } from './types.ts';
 

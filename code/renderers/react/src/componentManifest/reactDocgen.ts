@@ -5,9 +5,9 @@ import {
   findTsconfigPathForPath,
   getTsconfigPathsBaseDir,
   supportedExtensions,
-} from 'storybook/internal/common';
-import { extractJSDocInfo, parseModule } from 'storybook/internal/csf-tools';
-import { logger } from 'storybook/internal/node-logger';
+} from '@storybook/core/internal/common';
+import { extractJSDocInfo, parseModule } from '@storybook/core/internal/csf-tools';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import {
   type Documentation,

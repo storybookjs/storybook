@@ -7,7 +7,7 @@ import type { Args, Globals, Renderer, StrictArgTypes } from 'storybook/internal
 import type { DocsContextProps, ModuleExports, PreparedStory } from 'storybook/internal/types';
 
 import type { PropDescriptor } from 'storybook/preview-api';
-import { filterArgTypes } from 'storybook/preview-api';
+import { filterArgTypes, getFeatures } from 'storybook/preview-api';
 
 import type { SortType } from '../components';
 import { ArgsTable as PureArgsTable, TabbedArgsTable } from '../components';
@@ -210,7 +210,7 @@ const ControlsImpl: FC<ControlsProps> = (props) => {
 
   const storyProps = { ...props, story, context };
 
-  return globalThis.FEATURES?.docgenServer ? (
+  return getFeatures().docgenServer ? (
     <DocgenServiceControls {...storyProps} />
   ) : (
     <LegacyControls {...storyProps} />

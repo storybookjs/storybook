@@ -2,8 +2,8 @@ import * as domTestingLibrary from '@testing-library/dom';
 import type { FireFunction, FireObject } from '@testing-library/dom';
 import * as _userEvent from '@testing-library/user-event';
 
-import { once } from 'storybook/internal/client-logger';
-import { instrument } from 'storybook/internal/instrumenter';
+import { once } from '@storybook/core/internal/client-logger';
+import { instrument } from '@storybook/core/internal/instrumenter';
 
 import { dedent } from 'ts-dedent';
 import type { Writable } from 'type-fest';

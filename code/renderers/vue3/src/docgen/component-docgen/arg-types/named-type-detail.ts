@@ -10,7 +10,7 @@
  * at most 20 property lines, nothing declared in node_modules or ambient .d.ts files, and no
  * recursion — a `parent: User` line renders as text instead of expanding `User` again.
  */
-import { slash } from 'storybook/internal/common';
+import { slash } from '@storybook/core/internal/common';
 
 import type ts from 'typescript';
 import type { ComponentMetaChecker } from 'vue-component-meta';

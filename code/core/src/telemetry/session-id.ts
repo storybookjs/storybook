@@ -1,4 +1,4 @@
-import { cache } from 'storybook/internal/common';
+import { cache } from '@storybook/core/internal/common';
 
 import { nanoid } from 'nanoid';
 

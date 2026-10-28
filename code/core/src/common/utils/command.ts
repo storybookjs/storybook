@@ -1,4 +1,4 @@
-import { logger, prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from '@storybook/core/internal/node-logger';
 import { existsSync } from 'node:fs';
 import { delimiter, join } from 'node:path';
 

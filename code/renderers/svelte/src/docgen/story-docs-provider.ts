@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 
-import { createWorkerGatedStoryDocsProvider } from 'storybook/internal/core-server';
+import { createWorkerGatedStoryDocsProvider } from '@storybook/core/internal/services';
 
 import { buildStoryDocsPayload } from './story-docs/build-story-docs.ts';
 import { SVELTE_STORY_FILE_TEST_REGEXP } from './story-file.ts';

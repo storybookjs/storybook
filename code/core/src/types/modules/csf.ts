@@ -1,6 +1,6 @@
-import type { ViewMode as ViewModeBase } from 'storybook/internal/csf';
+import type { ViewMode as ViewModeBase } from '../../csf/index.ts';
 
-import type { Addon_OptionsParameterV7 } from './addons.ts';
+import type { Addon_OptionsParameterV7 } from '../addons.ts';
 
 export type {
   AfterEach,
@@ -62,7 +62,7 @@ export type {
   StrictInputType,
   Tag,
   TestFunction,
-} from 'storybook/internal/csf';
+} from '../../csf/index.ts';
 
 type OrString<T extends string> = T | (string & {});
 

@@ -1,4 +1,4 @@
-import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
+import type { StrictArgTypes } from 'storybook/internal/csf';
 
 const WHITESPACE = ' \t\n\r';
 

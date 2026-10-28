@@ -1,6 +1,6 @@
 import { dirname } from 'node:path';
 
-import { slash } from '../shared/utils/paths.ts';
+import { slash } from '../utils/paths.ts';
 import type { ProjectCommandLine } from './types.ts';
 
 /**

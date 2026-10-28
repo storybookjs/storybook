@@ -1,6 +1,6 @@
-import { MissingStoryAfterHmrError } from 'storybook/internal/preview-errors';
-import type { ComponentTitle, Path, StoryId, StoryName } from 'storybook/internal/types';
-import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
+import { MissingStoryAfterHmrError } from '@storybook/core/internal/preview-errors';
+import type { ComponentTitle, Path, StoryId, StoryName } from '@storybook/core/internal/types';
+import type { IndexEntry, StoryIndex } from '@storybook/core/internal/types';
 
 import memoize from 'memoizerific';
 

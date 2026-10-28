@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { StoryContext } from 'storybook/internal/types';
 import { logger, once } from 'storybook/internal/client-logger';
 
-import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
+import type { StrictArgTypes } from 'storybook/internal/csf';
 import {
   extractArgTypes,
   extractComponentDescription,

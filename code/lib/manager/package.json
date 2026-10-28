@@ -1,0 +1,165 @@
+{
+  "name": "@storybook/manager",
+  "version": "11.0.0-alpha.7",
+  "description": "Storybook manager: the manager app, manager API, router and manager builder",
+  "keywords": [
+    "storybook"
+  ],
+  "homepage": "https://storybook.js.org",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/lib/manager"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "type": "module",
+  "imports": {
+    "#manager-stores": {
+      "storybook": "./src/ui/manager-stores.mock.ts",
+      "default": "./src/ui/manager-stores.ts"
+    }
+  },
+  "exports": {
+    "./internal/deep/builder-manager": {
+      "types": "./dist/builder-manager/index.d.ts",
+      "code": "./src/builder-manager/index.ts",
+      "default": "./dist/builder-manager/index.js"
+    },
+    "./internal/deep/builder-manager/hooks": {
+      "types": "./dist/builder-manager/hooks.d.ts",
+      "code": "./src/builder-manager/hooks.ts",
+      "default": "./dist/builder-manager/hooks.js"
+    },
+    "./internal/deep/builder-manager/host": {
+      "types": "./dist/builder-manager/host.d.ts",
+      "code": "./src/builder-manager/host.ts",
+      "default": "./dist/builder-manager/host.js"
+    },
+    "./internal/deep/shared/open-service/services/docgen/manager": {
+      "types": "./dist/shared/open-service/services/docgen/manager.d.ts",
+      "code": "./src/shared/open-service/services/docgen/manager.tsx",
+      "default": "./dist/shared/open-service/services/docgen/manager.js"
+    },
+    "./internal/deep/shared/open-service/services/review/manager": {
+      "types": "./dist/shared/open-service/services/review/manager.d.ts",
+      "code": "./src/shared/open-service/services/review/manager.tsx",
+      "default": "./dist/shared/open-service/services/review/manager.js"
+    },
+    "./internal/deep/shared/open-service/services/review/node": {
+      "types": "./dist/shared/open-service/services/review/node.d.ts",
+      "code": "./src/shared/open-service/services/review/node.ts",
+      "default": "./dist/shared/open-service/services/review/node.js"
+    },
+    "./internal/deep/shared/viewport/useViewport": {
+      "types": "./dist/shared/viewport/useViewport.d.ts",
+      "code": "./src/shared/viewport/useViewport.ts",
+      "default": "./dist/shared/viewport/useViewport.js"
+    },
+    "./internal/deep/ui/utils/trySelectStory": {
+      "types": "./dist/ui/utils/trySelectStory.d.ts",
+      "code": "./src/ui/utils/trySelectStory.ts",
+      "default": "./dist/ui/utils/trySelectStory.js"
+    },
+    "./internal/manager/globals": {
+      "types": "./dist/ui/globals.d.ts",
+      "code": "./src/ui/globals.ts",
+      "default": "./dist/ui/globals.js"
+    },
+    "./internal/manager/globals-runtime": "./dist/ui/globals-runtime.js",
+    "./internal/manager/manager-stores": {
+      "types": "./dist/ui/manager-stores.d.ts",
+      "code": "./src/ui/manager-stores.ts",
+      "default": "./dist/ui/manager-stores.js"
+    },
+    "./internal/router": {
+      "types": "./dist/router/index.d.ts",
+      "code": "./src/router/index.ts",
+      "default": "./dist/router/index.js"
+    },
+    "./manager-api": {
+      "types": "./dist/manager-api/index.d.ts",
+      "code": "./src/manager-api/index.ts",
+      "default": "./dist/manager-api/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/**/*",
+    "assets/**/*",
+    "README.md",
+    "!src/**/*"
+  ],
+  "dependencies": {
+    "@storybook/core": "workspace:*",
+    "@storybook/global": "^5.0.0",
+    "@storybook/icons": "^2.0.2",
+    "@storybook/ui": "workspace:*",
+    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0 || ^0.28.0",
+    "semver": "^7.7.3"
+  },
+  "devDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
+    "@react-types/shared": "^3.34.0",
+    "@testing-library/react": "^14.0.0",
+    "@types/ejs": "^3.1.1",
+    "@types/node": "^22.19.1",
+    "@types/semver": "^7.7.1",
+    "@vitest/utils": "^3.2.4",
+    "browser-dtector": "^3.4.0",
+    "copy-to-clipboard": "^3.3.1",
+    "dequal": "^2.0.2",
+    "downshift": "^9.0.4",
+    "ejs": "^3.1.10",
+    "es-toolkit": "^1.43.0",
+    "exsolve": "^1.0.7",
+    "flush-promises": "^1.0.2",
+    "fuse.js": "^3.6.1",
+    "memoizerific": "^1.11.3",
+    "pathe": "^1.1.2",
+    "picoquery": "^2.5.0",
+    "polished": "^4.2.2",
+    "qrcode.react": "^4.2.0",
+    "react": "^18.2.0",
+    "react-aria": "^3.52.1",
+    "react-aria-components": "^1.21.1",
+    "react-dom": "^18.2.0",
+    "react-helmet-async": "^1.3.0",
+    "react-router-dom": "6.15.0",
+    "react-transition-state": "^2.3.1",
+    "rolldown": "^1.1.4",
+    "sirv": "^2.0.4",
+    "slash": "^5.0.0",
+    "store2": "^2.14.2",
+    "telejson": "8.0.0",
+    "ts-dedent": "^2.2.0",
+    "typescript": "^6.0.3"
+  },
+  "peerDependencies": {
+    "@types/react": "^18.0.0 || ^19.0.0",
+    "prettier": "^2 || ^3",
+    "vite-plus": "^0.1.15 || ^0.2.0 || ^0.3.0"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "prettier": {
+      "optional": true
+    },
+    "vite-plus": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

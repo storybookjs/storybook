@@ -1,4 +1,4 @@
-import type { PackageJson } from 'storybook/internal/types';
+import type { PackageJson } from '@storybook/core/internal/types';
 
 import semver from 'semver';
 
@@ -12,7 +12,7 @@ import {
   TEST_PACKAGES,
   UI_LIBRARY_PACKAGES,
   matchesPackagePattern,
-} from '../shared/utils/ecosystem-identifier.ts';
+} from '../utils/ecosystem-identifier.ts';
 import { getActualPackageVersion } from './package-json.ts';
 
 type PackageGroupResult = Record<string, string | null | undefined>;

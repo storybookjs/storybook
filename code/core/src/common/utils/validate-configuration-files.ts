@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
 
-import { once } from 'storybook/internal/node-logger';
-import { MainFileMissingError } from 'storybook/internal/server-errors';
+import { once } from '@storybook/core/internal/node-logger';
+import { MainFileMissingError } from '@storybook/core/internal/server-errors';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';

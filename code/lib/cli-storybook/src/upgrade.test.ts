@@ -6,9 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as sbcc from 'storybook/internal/common';
 import { type JsPackageManager, PackageManagerName, versions } from 'storybook/internal/common';
+import { getStorybookData as sourceGetStorybookData } from 'storybook/internal/cli';
 import { logger } from 'storybook/internal/node-logger';
 
-import { getStorybookData as sourceGetStorybookData } from '../../../core/src/cli/getStorybookData.ts';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
 import type { UpgradeOptions } from './upgrade.ts';
 import { checkVersionConsistency, getStorybookVersion } from './upgrade.ts';

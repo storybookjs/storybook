@@ -1,5 +1,5 @@
-import type { ModuleExports, NormalizedProjectAnnotations } from 'storybook/internal/types';
-import type { Renderer } from 'storybook/internal/types';
+import type { ModuleExports, NormalizedProjectAnnotations } from '@storybook/core/internal/types';
+import type { Renderer } from '@storybook/core/internal/types';
 
 import { combineParameters } from '../parameters.ts';
 import { composeBeforeAllHooks } from './beforeAll.ts';

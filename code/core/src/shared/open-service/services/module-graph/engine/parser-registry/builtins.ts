@@ -1,6 +1,6 @@
-import { parseWithOxc } from 'storybook/internal/oxc-parser';
+import { parseWithOxc } from '@storybook/core/internal/oxc-parser';
 
-import { jsTsSourceExtensions } from '../../../../../constants/extensions.ts';
+import { jsTsSourceExtensions } from '../../../../../../constants/extensions.ts';
 import { mdxParse } from './mdx-parse.ts';
 import type { ImportParser } from './types.ts';
 

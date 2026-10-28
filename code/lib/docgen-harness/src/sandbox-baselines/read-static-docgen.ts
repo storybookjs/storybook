@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { DocgenPayload } from '../../../../core/src/shared/open-service/services/docgen/types.ts';
+import type { DocgenPayload } from 'storybook/open-service';
 
 // Where `build-storybook` writes one docgen snapshot per component under the static output dir.
 export const DOCGEN_SNAPSHOT_DIR = join('services', 'core', 'docgen');

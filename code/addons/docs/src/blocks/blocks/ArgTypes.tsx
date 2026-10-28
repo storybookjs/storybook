@@ -6,7 +6,7 @@ import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 import type { ModuleExports } from 'storybook/internal/types';
 
 import type { PropDescriptor } from 'storybook/preview-api';
-import { filterArgTypes } from 'storybook/preview-api';
+import { filterArgTypes, getFeatures } from 'storybook/preview-api';
 
 import type { SortType } from '../components';
 import { ArgsTableError, ArgsTable as PureArgsTable, TabbedArgsTable } from '../components';
@@ -204,7 +204,7 @@ const DocgenServiceArgTypesRows: FC<ResolvedArgTypes & { componentId: string }> 
 };
 
 const ArgTypesImpl: FC<ArgTypesProps> = (props) => {
-  return globalThis.FEATURES?.docgenServer ? (
+  return getFeatures().docgenServer ? (
     <DocgenServiceArgTypes {...props} />
   ) : (
     <LegacyArgTypes {...props} />

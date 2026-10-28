@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { prompt } from 'storybook/internal/node-logger';
-import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
+import { prompt } from '@storybook/core/internal/node-logger';
+import { MinimumReleaseAgeHandledError } from '@storybook/core/internal/server-errors';
 
 import { logger } from '../../node-logger/index.ts';
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { Yarn2Proxy } from './Yarn2Proxy.ts';
 
-vi.mock('storybook/internal/node-logger', () => ({
+vi.mock('@storybook/core/internal/node-logger', () => ({
   prompt: {
     executeTaskWithSpinner: vi.fn(),
     getPreferredStdio: vi.fn(() => 'inherit'),
@@ -31,7 +31,7 @@ vi.mock('../../node-logger/index.ts', () => ({
   },
 }));
 
-vi.mock('../utils/command', { spy: true });
+vi.mock('../utils/command.ts', { spy: true });
 const mockedExecuteCommand = vi.mocked(executeCommand);
 
 describe('Yarn 2 Proxy', () => {

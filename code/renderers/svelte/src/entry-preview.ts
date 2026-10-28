@@ -4,6 +4,9 @@ import type { ArgTypesEnhancer } from 'storybook/internal/types';
 import { extractArgTypes } from './extractArgTypes.ts';
 import { extractComponentDescription } from './extractComponentDescription.ts';
 import type { SvelteRenderer } from './types.ts';
+import { render, renderToCanvas } from './render.ts';
+import { decorateStory as applyDecorators } from './decorators.ts';
+import { mount } from './mount.ts';
 
 export const parameters = {
   renderer: 'svelte',
@@ -14,8 +17,8 @@ export const parameters = {
   },
 };
 
-export { render, renderToCanvas } from './render.ts';
-export { decorateStory as applyDecorators } from './decorators.ts';
-export { mount } from './mount.ts';
+export { render, renderToCanvas, applyDecorators, mount };
 
 export const argTypesEnhancers: ArgTypesEnhancer<SvelteRenderer>[] = [enhanceArgTypes];
+
+export default { render, renderToCanvas, applyDecorators, mount, parameters, argTypesEnhancers };

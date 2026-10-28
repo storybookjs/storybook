@@ -8,10 +8,10 @@ Storybook is a TypeScript monorepo: code lives in `code/`, build tooling in `scr
 - Run commands from the repository root unless stated otherwise.
 - After editing, format with `cd code && yarn fmt:write`.
 - Test React components with stories and `play` functions, never `*.test.tsx`.
-- Log through `storybook/internal/node-logger` or `storybook/internal/client-logger`, not `console.*`.
+- Log through the logger entries, not `console.*`: `@storybook/core/internal/{node,client}-logger` in packages below `storybook` (core, ui, manager) and in plugin Node code, `storybook/internal/{node,client}-logger` elsewhere.
 - Use explicit extensions on relative TS imports (`./foo.ts`), except framework component files such as `.vue` and `.svelte`.
 - Prefer `pathe` over `node:path`. It normalizes separators to `/`, so path code should not rewrite slashes itself.
-- Do not commit incidental changes to generated files such as `code/core/src/manager/globals/exports.ts`.
+- Do not commit incidental changes to generated files such as `code/lib/manager/src/ui/globals/exports.ts`.
 
 ## Never Run
 
@@ -29,7 +29,7 @@ Both start long-running dev servers.
 | write or edit code                                        | [Code authoring](.agents/guidelines/code-authoring.md) and [Comments and JSDoc](.agents/guidelines/comments-and-jsdoc.md) |
 | write or run tests                                        | [Testing](.agents/guidelines/testing.md)                                                                        |
 | open or update a PR                                       | [Pull requests](.agents/guidelines/pull-requests.md)                                                            |
-| touch `code/core` internals, presets, open services, or the tools CLI | [Architecture](.agents/guidelines/architecture.md)                                                  |
+| touch core internals (`code/core`, `code/lib/{ui,manager,storybook,open-service}`), presets, open services, or the tools CLI | [Architecture](.agents/guidelines/architecture.md) |
 | do sandbox, E2E, or CI-parity work                        | [NX and `yarn task`](.agents/guidelines/nx-and-yarn-task.md) and [Sandboxes](.agents/guidelines/sandboxes.md)   |
 | call a Chromatic tool or debug a Chromatic build          | [Chromatic projects](.agents/guidelines/chromatic-projects.md)                                                  |
 | add or change an automigration                            | [`code/lib/cli-storybook/src/automigrate/README.md`](code/lib/cli-storybook/src/automigrate/README.md)          |

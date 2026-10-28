@@ -16,7 +16,7 @@ import {
   type FileSnapshotCache,
   ProgramBackedProject,
   ProjectFileTracker,
-} from 'storybook/internal/component-meta';
+} from '@storybook/core/internal/component-meta';
 
 import { FileMap, createLanguage } from '@volar/language-core';
 import {

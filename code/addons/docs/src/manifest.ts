@@ -1,7 +1,7 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
-import { getComponentIdFromEntry, groupBy } from 'storybook/internal/common';
+import { getComponentIdFromEntry, groupBy } from '@storybook/core/internal/common';
 import {
   type DocsManifestEntry,
   type DocsManifestRefEntry,
@@ -9,21 +9,20 @@ import {
   Tag,
   analyzeMdx,
   mdxManifestRef,
-} from 'storybook/internal/core-server';
-import { logger } from 'storybook/internal/node-logger';
+} from '@storybook/core/internal/story-index';
+import { logger } from '@storybook/core/internal/node-logger';
 import type {
   ComponentManifest,
   ComponentsManifest,
   DocsIndexEntry,
   IndexEntry,
   Manifests,
-  PresetPropertyFn,
-  StorybookConfigRaw,
-} from 'storybook/internal/types';
+  StorybookFeatures,
+} from '@storybook/core/internal/types';
 
 import { extractDocsSummary } from './extract-docs-summary.ts';
 
-export type { DocsManifestEntry } from 'storybook/internal/core-server';
+export type { DocsManifestEntry } from '@storybook/core/internal/story-index';
 
 interface DocsManifest {
   v: number;
@@ -176,13 +175,11 @@ async function applyAttachedDocs(
  * In `docgenServer` mode docs become shallow `$ref` rows (resolved from the MDX service
  * snapshots); otherwise the full content is inlined.
  */
-export const manifests: PresetPropertyFn<
-  'experimental_manifests',
-  StorybookConfigRaw,
-  { manifestEntries: IndexEntry[] }
-> = async (existingManifests = {}, { manifestEntries, presets }) => {
+export async function manifests(
+  existingManifests: Manifests | undefined = {},
+  { manifestEntries, features }: { manifestEntries: IndexEntry[]; features?: StorybookFeatures }
+): Promise<Manifests> {
   const startPerformance = performance.now();
-  const features = await presets?.apply?.('features');
   const useMdxService = features?.docgenServer === true && features?.componentsManifest === true;
 
   const docsEntries = manifestEntries.filter(
@@ -237,4 +234,4 @@ export const manifests: PresetPropertyFn<
   // Augmented with docs but structurally a `Manifests` at runtime; component rows may be the
   // minimal `{ id, name }` shells synthesized for attached docs in docgen-server mode.
   return result as Manifests;
-};
+}

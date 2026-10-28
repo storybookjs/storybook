@@ -16,7 +16,7 @@ const getCliIntegrationFromAncestry =
 
 vi.mock('storybook/internal/telemetry');
 
-vi.mock('storybook/internal/core-server', () => ({
+vi.mock('storybook/internal/server', () => ({
   getServerPort: vi.fn().mockResolvedValue(6006),
   withTelemetry: vi.fn(),
 }));

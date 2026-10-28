@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { vol } from 'memfs';
 
-import type { DocgenPayload } from '../../../../core/src/shared/open-service/services/docgen/types.ts';
+import type { DocgenPayload } from 'storybook/open-service';
 import { SANDBOX_TOKEN, readStaticDocgen, toBaseline } from './read-static-docgen.ts';
 
 vi.mock('node:fs', async () => {

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { type ESTreeNode as Node, parseExpression, staticKey } from 'storybook/internal/csf-tools';
+import {
+  type ESTreeNode as Node,
+  parseExpression,
+  staticKey,
+} from '@storybook/core/internal/csf-tools';
 
 import { classifyArgs, type ClassifiedArg } from './classify-args.ts';
 import { printValue } from '../../shared/classify-value.ts';

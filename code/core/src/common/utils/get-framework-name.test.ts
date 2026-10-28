@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import { extractFrameworkPackageName } from './get-framework-name.ts';
+import { extractFrameworkPackageName, getFrameworkNameFromConfig } from './get-framework-name.ts';
+import { legacyPreset } from '../../instance/plugins.ts';
 
 describe('get-framework-name', () => {
+  it('reads native metadata and legacy framework entries', () => {
+    expect(getFrameworkNameFromConfig(legacyPreset('@storybook/react-vite', 'framework'))).toBe(
+      '@storybook/react-vite'
+    );
+    expect(getFrameworkNameFromConfig({ name: '@storybook/react-vite', options: {} })).toBe(
+      '@storybook/react-vite'
+    );
+    expect(getFrameworkNameFromConfig('@storybook/react-vite')).toBe('@storybook/react-vite');
+    expect(getFrameworkNameFromConfig(undefined)).toBeUndefined();
+  });
   describe('extractProperFrameworkName', () => {
     it('should extract the proper framework name from the given framework field', () => {
       expect(extractFrameworkPackageName('@storybook/angular')).toBe('@storybook/angular');

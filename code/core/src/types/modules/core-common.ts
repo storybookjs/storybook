@@ -1,9 +1,9 @@
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
-import type { ChannelLike } from 'storybook/internal/channels';
-import type { FileSystemCache } from 'storybook/internal/common';
-import type { StoryIndexGenerator } from 'storybook/internal/core-server';
-import type { CsfFile } from 'storybook/internal/csf-tools';
-import type { LogLevel } from 'storybook/internal/node-logger';
+import type { ChannelLike } from '@storybook/core/internal/channels';
+import type { FileSystemCache } from '@storybook/core/internal/common';
+import type { StoryIndexGenerator } from '@storybook/core/internal/story-index';
+import type { CsfFile } from '@storybook/core/internal/csf-tools';
+import type { LogLevel } from '@storybook/core/internal/node-logger';
 
 import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { Server as NetServer } from 'net';
@@ -16,7 +16,7 @@ import type { SupportedBuilder } from './builders.ts';
 import type { SupportedFramework } from './frameworks.ts';
 import type { Indexer, StoriesEntry } from './indexer.ts';
 import type { SupportedRenderer } from './renderers.ts';
-import type { Addon_StorySortParameterV7 } from './addons.ts';
+import type { Addon_StorySortParameterV7 } from '../addons.ts';
 
 export type {
   DocgenError,
@@ -277,8 +277,13 @@ export interface BuilderOptions {
 
 export interface StorybookConfigOptions {
   presets: Presets;
+  /** @deprecated Use `plugins`, or `storybook.plugins` in define* plugins. Removed in Storybook 12. */
   presetsList?: LoadedPreset[];
+  /** Name and kind of every instance plugin, read by `main.ts` function fields. */
+  plugins?: readonly { name: string; kind: 'framework' | 'builder' | 'renderer' | 'addon' }[];
   channel: ChannelLike;
+  /** Read the preview annotations collected by the instance. */
+  previewAnnotations?: PreviewAnnotation[];
 }
 
 export type Options = LoadOptions &
@@ -669,7 +674,7 @@ export interface StorybookFeatures {
   /**
    * Keep Vite from merging the pre-split preview runtime back into one output chunk.
    *
-   * Webpack always serves the chunked `dist/preview` at `/sb-preview`. This flag only
+   * Webpack always serves the chunked `dist/core/preview` at `/sb-preview`. This flag only
    * affects the Vite production build: Rolldown `maxSize` on Vite 8, and on Vite 5–7
    * Rollup pins each pre-split preview module to its own chunk.
    *

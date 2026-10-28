@@ -1,27 +1,46 @@
-import type { ChangeDetectionAdapter, ModuleResolveConfig } from 'storybook/internal/core-server';
-import type { Options } from 'storybook/internal/types';
+import '../hooks.ts';
 
-import { commonConfig } from '../vite-config.ts';
+import type { Storybook } from '@storybook/core';
+import { StorybookPackageRequiredError } from '@storybook/core/internal/server-errors';
+import type {
+  ChangeDetectionAdapter,
+  ModuleResolveConfig,
+} from '@storybook/core/internal/services';
+
+import type { BuilderOptions } from '../types.ts';
+import { commonConfig, getViteHookContext } from '../vite-config.ts';
 
 /**
  * Headless implementation of {@link ChangeDetectionAdapter}, for consumers that host the module
  * graph without a dev server (the `storybook tools` CLI).
  *
- * It assembles the same config the dev server would (`commonConfig` in development mode followed by
- * the `viteFinal` preset) and resolves it with Vite's server-less `resolveConfig`, so plugin
- * `config` hooks apply and `resolve.alias` / `resolve.conditions` / `root` come out normalised
- * exactly as the server-bound adapter snapshots them from `server.config`.
- *
- * There is no live builder, so `onFileChange` never fires: the consumer's graph is built once per
- * invocation and never needs invalidation.
+ * It resolves the dev server's config (`commonConfig` in development mode, then
+ * `builder:vite:extend`) with Vite's server-less `resolveConfig`. `onFileChange` never fires.
  */
-export function createHeadlessViteChangeDetectionAdapter(options: Options): ChangeDetectionAdapter {
+export function createHeadlessViteChangeDetectionAdapter(
+  storybook: Storybook,
+  options: BuilderOptions | undefined
+): ChangeDetectionAdapter {
   return {
     async getResolveConfig(): Promise<ModuleResolveConfig> {
       const { resolveConfig } = await import('vite');
+      // The preview runtime ships with `storybook`; load it lazily so the builder runs without it.
+      const { getPreviewSources } = await import('storybook/internal/preview-page').catch(
+        (error: unknown) => {
+          throw new StorybookPackageRequiredError({
+            feature: 'Headless Vite change detection',
+            error,
+          });
+        }
+      );
 
-      const config = await commonConfig(options, 'development');
-      const finalConfig = await options.presets.apply('viteFinal', config, options);
+      const preview = await getPreviewSources(storybook, { hmr: 'vite' });
+      const config = await commonConfig(storybook, { preview, options }, 'development');
+      const finalConfig = await storybook.callHook(
+        'builder:vite:extend',
+        config,
+        getViteHookContext(storybook)
+      );
       const resolved = await resolveConfig(finalConfig, 'serve', 'development');
 
       return {

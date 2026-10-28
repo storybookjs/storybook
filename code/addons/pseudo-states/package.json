@@ -39,6 +39,11 @@
       "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "code": "./src/node.ts",
+      "default": "./dist/node.js"
+    },
     "./package.json": "./package.json",
     "./preview": {
       "types": "./dist/preview.d.ts",
@@ -52,6 +57,9 @@
     "dist/**/*",
     "!src/**/*"
   ],
+  "dependencies": {
+    "@storybook/core": "workspace:*"
+  },
   "devDependencies": {
     "@storybook/icons": "^2.0.2",
     "react": "^18.2.0",

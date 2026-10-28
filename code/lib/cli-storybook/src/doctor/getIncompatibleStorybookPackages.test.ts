@@ -126,6 +126,47 @@ describe('checkPackageCompatibility', () => {
       })
     );
   });
+
+  it.each([
+    {
+      name: 'core at current major',
+      dependency: '@storybook/core',
+      range: '^9.0.0',
+      expected: false,
+    },
+    { name: 'ui at current major', dependency: '@storybook/ui', range: '^9.0.0', expected: false },
+    {
+      name: 'manager at current major',
+      dependency: '@storybook/manager',
+      range: '^9.0.0',
+      expected: false,
+    },
+    {
+      name: 'core at legacy major',
+      dependency: '@storybook/core',
+      range: '^8.0.0',
+      expected: true,
+    },
+    {
+      name: 'manager at legacy major',
+      dependency: '@storybook/manager',
+      range: '^8.0.0',
+      expected: true,
+    },
+  ])('$name: hasIncompatibleDependencies is $expected', async ({ dependency, range, expected }) => {
+    vi.mocked(packageManagerMock.getModulePackageJSON).mockResolvedValueOnce({
+      name: 'my-storybook-addon',
+      version: '1.0.0',
+      peerDependencies: { [dependency]: range },
+    });
+
+    const result = await checkPackageCompatibility('my-storybook-addon', {
+      currentStorybookVersion: '9.0.0',
+      packageManager: packageManagerMock,
+    });
+
+    expect(result.hasIncompatibleDependencies).toBe(expected);
+  });
 });
 
 describe('getIncompatibleStorybookPackages', () => {

@@ -1,0 +1,218 @@
+import React, { useEffect, useRef } from 'react';
+
+import type { PlayFunction } from '@storybook/core/internal/csf';
+
+import { ManagerContext } from '@storybook/manager/manager-api';
+import { expect, fn, within } from '@storybook/core/test';
+
+import preview from '../../../../../../.storybook/preview.tsx';
+import { initialState } from '@storybook/core/internal/deep/shared/checklist-store/checklistData.state';
+import { internal_universalChecklistStore as mockStore } from '../../manager-stores.mock.ts';
+import { ChecklistWidget } from './ChecklistWidget.tsx';
+
+const managerContext: any = {
+  state: {},
+  api: {
+    getIsNavShown: () => true,
+    getData: fn().mockName('api::getData'),
+    getIndex: fn().mockName('api::getIndex'),
+    getUrlState: fn().mockName('api::getUrlState'),
+    navigate: fn().mockName('api::navigate'),
+    on: fn().mockName('api::on'),
+    off: fn().mockName('api::off'),
+    once: fn().mockName('api::once'),
+  },
+};
+
+const meta = preview.meta({
+  component: ChecklistWidget,
+  decorators: [
+    (Story) => (
+      <ManagerContext.Provider value={managerContext}>
+        <div style={{ width: 300, height: 250 }}>{Story()}</div>
+      </ManagerContext.Provider>
+    ),
+  ],
+  beforeEach: async () => {
+    mockStore.setState({
+      loaded: true,
+      widget: {},
+      items: {
+        ...initialState.items,
+        controls: { status: 'accepted' },
+        renderComponent: { status: 'done' },
+        installVitest: { status: 'done' },
+        moreComponents: { status: 'skipped' },
+        moreStories: { status: 'skipped' },
+      },
+    });
+  },
+});
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const play: PlayFunction = async ({ canvasElement, step }) => {
+  await wait(3000);
+
+  await step('Verify the outline animation respects motion preferences', async () => {
+    const cardContent = canvasElement.querySelector('#storybook-checklist-widget');
+    await expect(cardContent).not.toBeNull();
+
+    const cardOutline = cardContent?.parentElement;
+    await expect(cardOutline).not.toBeNull();
+
+    const styles = window.getComputedStyle(cardOutline!, '::before');
+    await expect(styles.animationPlayState).toBe('running');
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) {
+      await expect(styles.animationIterationCount).toBe('2');
+    } else {
+      await expect(styles.animationIterationCount).toBe('1');
+    }
+  });
+
+  await step('Complete viewports task', () => {
+    mockStore.setState({
+      loaded: true,
+      widget: {},
+      items: {
+        ...initialState.items,
+        controls: { status: 'accepted' },
+        renderComponent: { status: 'done' },
+        installVitest: { status: 'done' },
+        viewports: { status: 'done' },
+        moreComponents: { status: 'skipped' },
+        moreStories: { status: 'skipped' },
+      },
+    });
+  });
+
+  await wait(1000);
+  await step('Skip installVitest task', () => {
+    mockStore.setState({
+      loaded: true,
+      widget: {},
+      items: {
+        ...initialState.items,
+        controls: { status: 'accepted' },
+        renderComponent: { status: 'done' },
+        installVitest: { status: 'done' },
+        viewports: { status: 'done' },
+        moreComponents: { status: 'skipped' },
+        moreStories: { status: 'skipped' },
+        writeInteractions: { status: 'skipped' },
+      },
+    });
+  });
+};
+
+export const Default = meta.story({
+  play,
+});
+
+export const Narrow = meta.story({
+  decorators: [(Story) => <div style={{ width: 200, height: 250 }}>{Story()}</div>],
+  play,
+});
+
+const withAiSetupState = {
+  loaded: true,
+  aiOptIn: true,
+  aiSetupRun: true,
+  widget: {},
+  items: {
+    ...initialState.items,
+    // aiSetup is intentionally left 'open' so it appears in the widget's task list
+    controls: { status: 'accepted' as const },
+    renderComponent: { status: 'done' as const },
+  },
+};
+
+export const WithAiSetup = meta.story({
+  beforeEach: async () => {
+    mockStore.setState(withAiSetupState);
+  },
+});
+
+export const StableAcrossStateSyncs = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findAllByRole('listitem');
+    // Wait for the widget to enter animated mode and for the first enter transitions to end.
+    await wait(3000);
+    const rows = [...canvasElement.querySelectorAll('li')];
+    await expect(rows.length).toBeGreaterThan(0);
+
+    // Each row gets a different Emotion class for each transition status. A class change after
+    // an unrelated state sync therefore means that the enter transition ran again.
+    const mutations: MutationRecord[] = [];
+    const observer = new MutationObserver((records) => mutations.push(...records));
+    rows.forEach((row) => observer.observe(row, { attributes: true, attributeFilter: ['class'] }));
+    mockStore.setState({
+      loaded: true,
+      widget: {},
+      items: {
+        ...initialState.items,
+        controls: { status: 'accepted' },
+        renderComponent: { status: 'done' },
+        installVitest: { status: 'done' },
+        moreComponents: { status: 'skipped' },
+        moreStories: { status: 'skipped' },
+      },
+    });
+    await wait(600);
+    observer.disconnect();
+    await expect(mutations).toEqual([]);
+    for (const row of rows) {
+      await expect(canvasElement.contains(row)).toBe(true);
+    }
+  },
+});
+
+const cardHeights: number[] = [];
+
+const RecordCardHeights = ({ children }: { children: React.ReactNode }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const card = ref.current!.querySelector('#storybook-checklist-widget')!;
+    const observer = new MutationObserver(() =>
+      cardHeights.push(card.getBoundingClientRect().height)
+    );
+    observer.observe(card, { subtree: true, childList: true, attributes: true });
+    return () => observer.disconnect();
+  }, []);
+  return <div ref={ref}>{children}</div>;
+};
+
+export const StableHeightOnTaskCompletion = meta.story({
+  decorators: [(Story) => <RecordCardHeights>{Story()}</RecordCardHeights>],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Check responsiveness with Viewports');
+    await wait(3000);
+    const card = canvasElement.querySelector('#storybook-checklist-widget')!;
+    cardHeights.length = 0;
+    cardHeights.push(card.getBoundingClientRect().height);
+    mockStore.setState({
+      loaded: true,
+      widget: {},
+      items: {
+        ...initialState.items,
+        controls: { status: 'accepted' },
+        renderComponent: { status: 'done' },
+        installVitest: { status: 'done' },
+        viewports: { status: 'done' },
+        moreComponents: { status: 'skipped' },
+        moreStories: { status: 'skipped' },
+      },
+    });
+    await wait(3000);
+
+    await expect(canvas.queryByText('Check responsiveness with Viewports')).not.toBeInTheDocument();
+    await expect(canvas.getByText('Group your components')).toBeInTheDocument();
+    const increases = cardHeights.filter((height, i) => i > 0 && height > cardHeights[i - 1]);
+    await expect(increases).toEqual([]);
+  },
+});

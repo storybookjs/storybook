@@ -7,9 +7,8 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, getDiff } from 'storybook/internal/common';
 
-import { getDiff } from '../../../../../core/src/core-server/utils/save-story/getDiff.ts';
 import {
   METRO_FALLBACK_COMMENT_MARKER,
   containsStorybookImport,

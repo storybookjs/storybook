@@ -1,6 +1,6 @@
 import { definePreviewAddon } from 'storybook/internal/csf';
 
-import * as addonAnnotations from './preview.ts';
+import addonAnnotations from './preview.ts';
 import type { PseudoTypes } from './types.ts';
 
 export { PARAM_KEY } from './constants.ts';

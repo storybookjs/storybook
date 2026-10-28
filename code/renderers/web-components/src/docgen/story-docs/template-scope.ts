@@ -4,7 +4,7 @@ import type {
   ESTreeNode as Node,
   ImportBinding,
   RenderFunction,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 import {
   collectImportBindings,
   isStringLiteral,
@@ -12,7 +12,7 @@ import {
   returnedExpression,
   oneLineTextOf,
   unwrapExpression,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 
 import { FAILED, primitiveLiteralValue } from './arg-values.ts';
 

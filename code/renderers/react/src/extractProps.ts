@@ -3,7 +3,7 @@ import {
   TypeSystem,
   extractComponentProps,
   hasDocgen,
-} from 'storybook/internal/docs-tools';
+} from '@storybook/core/internal/docs-tools';
 
 import { isMemo } from './docs/lib/componentTypes.ts';
 import { enhancePropTypesProps } from './docs/propTypes/handleProp.ts';

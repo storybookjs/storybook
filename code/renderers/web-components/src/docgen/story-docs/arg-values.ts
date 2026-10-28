@@ -5,7 +5,7 @@ import {
   oneLineTextOf,
   templateParts,
   unwrapExpression,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 
 export type ArgValue =
   | { kind: 'value'; value: unknown }

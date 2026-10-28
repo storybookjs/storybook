@@ -1,5 +1,5 @@
-import type { SBType } from 'storybook/internal/csf';
-import { findTsconfigPathForFile } from 'storybook/internal/common';
+import type { SBType } from '@storybook/core/internal/csf';
+import { findTsconfigPathForFile } from '@storybook/core/internal/common';
 
 import { dirname } from 'node:path';
 import type {

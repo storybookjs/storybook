@@ -1,0 +1,41 @@
+import type { PartialStoryFn, StoryContext } from '@storybook/core/internal/types';
+
+import { global as globalThis } from '@storybook/global';
+
+import { expect, within } from '@storybook/core/test';
+
+export default {
+  component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
+  tags: ['!dev', '!autodocs', '!test'],
+  decorators: [
+    (storyFn: PartialStoryFn, context: StoryContext) => {
+      return storyFn({
+        args: { object: { tags: context.tags } },
+      });
+    },
+  ],
+  parameters: { chromatic: { disableSnapshot: true } },
+};
+
+export const Inheritance = {
+  tags: ['story-one', '!vitest'],
+  play: async ({ canvasElement }: StoryContext<any>) => {
+    const canvas = within(canvasElement);
+    await expect(JSON.parse(canvas.getByTestId('pre').innerText)).toEqual({
+      tags: ['story-one'],
+    });
+  },
+  parameters: { chromatic: { disableSnapshot: false } },
+};
+
+export const Dev = {
+  tags: ['dev'],
+};
+
+export const Autodocs = {
+  tags: ['autodocs'],
+};
+
+export const Test = {
+  tags: ['test'],
+};

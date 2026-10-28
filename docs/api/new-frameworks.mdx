@@ -59,7 +59,7 @@ Let’s look at the `@storybook/vue`’s options definition:
 
 The value of the `framework` option (i.e., ‘vue’) is something that gets passed to addons and allows them to do specific tasks related to your framework.
 
-The essence of this file is the framework presets, and these are standard [Storybook presets](../addons/writing-presets.mdx) -- you can look at framework packages in the Storybook monorepo (e.g. [React](https://github.com/storybookjs/storybook/blob/next/code/frameworks/react-vite/src/preset.ts), [Vue](https://github.com/storybookjs/storybook/blob/next/code/frameworks/vue3-vite/src/preset.ts), [Web Components](https://github.com/storybookjs/storybook/blob/next/code/frameworks/web-components-vite/src/preset.ts)) to see examples of framework-specific customizations.
+The essence of this file is the framework configuration. Framework packages in the Storybook monorepo register it from their `node` entry (e.g. [React](https://github.com/storybookjs/storybook/blob/next/code/frameworks/react-vite/src/node/index.ts), [Vue](https://github.com/storybookjs/storybook/blob/next/code/frameworks/vue3-vite/src/node/index.ts), [Web Components](https://github.com/storybookjs/storybook/blob/next/code/frameworks/web-components-vite/src/node/index.ts)); a third-party framework can still ship a standard [Storybook preset](../addons/writing-presets.mdx).
 
 While developing your custom framework, not maintained by Storybook, you can specify the path to the location file with the `frameworkPath` key:
 

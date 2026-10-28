@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   IFRAME_RESIZE_CONTEXT,
   IFRAME_RESIZE_REQUEST_CONTEXT,
-} from '../../../shared/constants/iframe-resize.ts';
+} from '../../../constants/iframe-resize.ts';
 
 import {
   isPassThroughContainer,

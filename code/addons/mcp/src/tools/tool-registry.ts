@@ -1,10 +1,11 @@
-import type { ToolAvailability } from 'storybook/internal/core-server';
-import { logger } from 'storybook/internal/node-logger';
+import type { ToolAvailability } from 'storybook/internal/server';
+import { logger } from '@storybook/core/internal/node-logger';
+import { isStorybookError } from '@storybook/core/internal/server-errors';
 import {
   createCompositionDocsSources,
   createDocsToolset,
   type DocsToolset,
-} from 'storybook/internal/toolsets-docs';
+} from '@storybook/core/internal/toolsets-docs';
 import type { McpServer } from 'tmcp';
 import type { AddonContext } from '../types.ts';
 import { withFriendlyErrors } from '../utils/format-validation-issues.ts';
@@ -13,10 +14,7 @@ import {
   getStorybookStoryInstructionsToolMetadata,
 } from './get-storybook-story-instructions.ts';
 import { addPreviewStoriesResource, PREVIEW_STORIES_RESOURCE_URI } from './preview-stories.ts';
-// The error class must come from the same entry as `getToolset` (which throws it, via
-// `toolset-tools.ts`); a copy from another core entry is a different constructor and
-// `instanceof` would silently fail.
-import { OpenServiceMissingToolsetError, toMcpToolName } from 'storybook/open-service';
+import { toMcpToolName } from '@storybook/core/open-service';
 import { GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME } from './tool-names.ts';
 import {
   getToolsetToolMetadata,
@@ -179,6 +177,10 @@ const addonToolDefinitions: AddonToolDefinition[] = [
   },
   fromToolset({
     toolset: 'dev',
+    options: { method: 'stories.screenshot', mcpEventName: 'tool:screenshotStories' },
+  }),
+  fromToolset({
+    toolset: 'dev',
     options: { method: 'stories.changed', mcpEventName: 'tool:getChangedStories' },
   }),
   fromToolset({
@@ -214,7 +216,7 @@ const addonToolDefinitions: AddonToolDefinition[] = [
  * failure rethrows, so a genuinely broken adapter still fails fast.
  */
 function dropToolIfToolsetMissing(name: string, error: unknown): undefined {
-  if (!(error instanceof OpenServiceMissingToolsetError)) {
+  if (!isStorybookError(error, 'OpenServiceMissingToolsetError')) {
     throw error;
   }
   logger.error(`Skipping MCP tool "${name}", its backing toolset is not registered: ${error}`);

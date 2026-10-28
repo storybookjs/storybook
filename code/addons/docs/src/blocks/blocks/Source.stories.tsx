@@ -3,8 +3,18 @@ import React, { Profiler, memo, useCallback, useRef, useState } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import { SourceType } from 'storybook/internal/docs-tools';
-import type { ModuleExport, StoryContext, StoryDocsPayload } from 'storybook/internal/types';
-import { registerService } from 'storybook/preview-api';
+import type {
+  ModuleExport,
+  StorybookFeatures,
+  StoryContext,
+  StoryDocsPayload,
+} from 'storybook/internal/types';
+import {
+  getFeatures,
+  internal_storyDocsServiceDef as storyDocsServiceDef,
+  internal_unregisterService as unregisterService,
+  registerService,
+} from 'storybook/preview-api';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
@@ -16,8 +26,6 @@ import * as ParametersStories from '../examples/SourceParameters.stories';
 import { Source } from './Source';
 import { SourceContext, argsHash } from './SourceContainer';
 import type { DocsContextProps } from './DocsContext.ts';
-import { storyDocsServiceDef } from '../../../../../core/src/shared/open-service/services/story-docs/definition.ts';
-import { unregisterService } from '../../../../../core/src/shared/open-service/service-registry.ts';
 
 type StoryDocsMockData = {
   snippet?: string;
@@ -55,8 +63,9 @@ function storyDocsServiceStoryBeforeEach(of: ModuleExport, data: StoryDocsMockDa
     // The docs blocks only consume the story-docs service when this feature is enabled, but it is
     // disabled by default in production builds (e.g. Chromatic). Enable it here so the service-backed
     // story renders the mocked data instead of falling back to the non-service path.
-    const previousFeatures = globalThis.FEATURES;
-    globalThis.FEATURES = { ...previousFeatures, docgenServer: true };
+    const previousFeatures = getFeatures();
+    const realm = globalThis as { FEATURES?: StorybookFeatures };
+    realm.FEATURES = { ...previousFeatures, docgenServer: true };
 
     const payload = createStoryDocsPayload(docsContext, of, data);
     unregisterService('core/story-docs');
@@ -83,7 +92,7 @@ function storyDocsServiceStoryBeforeEach(of: ModuleExport, data: StoryDocsMockDa
 
     return () => {
       unregisterService('core/story-docs');
-      globalThis.FEATURES = previousFeatures;
+      realm.FEATURES = previousFeatures;
     };
   };
 }

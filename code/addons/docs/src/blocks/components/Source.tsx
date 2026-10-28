@@ -2,7 +2,7 @@ import type { ComponentProps, FunctionComponent } from 'react';
 import React from 'react';
 
 import type { SupportedLanguage, SyntaxHighlighterProps } from 'storybook/internal/components';
-import { SyntaxHighlighter } from 'storybook/internal/components';
+import { EmptyBlock, SyntaxHighlighter } from 'storybook/internal/components';
 
 import {
   ThemeProvider,
@@ -13,7 +13,6 @@ import {
   useTheme,
 } from 'storybook/theming';
 
-import { EmptyBlock } from './EmptyBlock';
 import { SnippetWarning } from './SnippetWarning';
 
 const StyledSyntaxHighlighter: React.FunctionComponent<SyntaxHighlighterProps> = styled(

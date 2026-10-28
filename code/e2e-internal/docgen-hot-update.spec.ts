@@ -10,7 +10,7 @@ const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
 const runsAgainstDevServer = !['build', 'static'].includes(process.env.STORYBOOK_TYPE || 'dev');
 
 const codeDir = process.cwd();
-const buttonSourcePath = join(codeDir, 'core/src/components/components/Button/Button.tsx');
+const buttonSourcePath = join(codeDir, 'lib/ui/src/components/components/Button/Button.tsx');
 const storyPath = '/story/button-component--base';
 const hotUpdatePropName = 'e2eDocgenHotUpdateProp';
 const hotUpdatePropSource = `

@@ -33,11 +33,6 @@ const config: BuildEntries = {
         entryPoint: './src/vite-plugin.ts',
         dts: false,
       },
-      {
-        exportEntries: ['./preset'],
-        entryPoint: './src/preset.ts',
-        dts: false,
-      },
     ],
   },
   extraOutputs: {

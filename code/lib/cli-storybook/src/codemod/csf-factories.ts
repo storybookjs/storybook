@@ -3,7 +3,12 @@ import { join } from 'node:path';
 
 import {
   type JsPackageManager,
+  applyPreviewImportsMap,
+  hasSiblingReactNativeConfig,
+  isReactNativeStorybookPath,
   optionalEnvToBoolean,
+  previewFileForImports,
+  previewImportTarget,
   syncStorybookAddons,
 } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -11,13 +16,6 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import {
-  applyPreviewImportsMap,
-  hasSiblingReactNativeConfig,
-  isReactNativeStorybookPath,
-  previewFileForImports,
-  previewImportTarget,
-} from '../../../../core/src/shared/constants/config-folder.ts';
 import { runCodemod } from '../automigrate/codemod.ts';
 import { getFrameworkPackageName } from '../automigrate/helpers/mainConfigFile.ts';
 import type { CommandFix } from '../automigrate/types.ts';

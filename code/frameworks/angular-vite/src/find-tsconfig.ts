@@ -1,4 +1,4 @@
-import { getProjectRoot } from 'storybook/internal/common';
+import { getProjectRoot } from '@storybook/core/internal/common';
 
 import { resolve } from 'node:path';
 

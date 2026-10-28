@@ -1,5 +1,5 @@
-import { type CleanupCallback, combineTags, includeConditionalArg } from 'storybook/internal/csf';
-import { NoRenderFunctionError } from 'storybook/internal/preview-errors';
+import { type CleanupCallback, combineTags, includeConditionalArg } from '../../../../csf/index.ts';
+import { NoRenderFunctionError } from '@storybook/core/internal/preview-errors';
 import type {
   Args,
   ArgsStoryFn,
@@ -16,12 +16,12 @@ import type {
   StoryContextForEnhancers,
   StoryContextForRender,
   StrictArgTypes,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
-import { global } from '@storybook/global';
 import { global as globalThis } from '@storybook/global';
 
-import { Tag } from '../../../../shared/constants/tags.ts';
+import { Tag } from '../../../../constants/tags.ts';
+import { getFeatures } from '../../../../shared/features.ts';
 import { applyHooks } from '../../addons/index.ts';
 import { mountDestructured } from '../../preview-web/render/mount-utils.ts';
 import { UNTARGETED, groupArgsByTarget } from '../args.ts';
@@ -266,7 +266,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     .filter((enhancer) => {
       // Server docgen merges component prop metadata at UI read time (`mergeServiceArgTypes`).
       // Second-pass enhancers run there instead so `customArgTypes` stays annotation-only.
-      if (global.FEATURES?.docgenServer && enhancer.secondPass) {
+      if (getFeatures().docgenServer && enhancer.secondPass) {
         return false;
       }
       return true;
@@ -312,7 +312,7 @@ export function prepareContext<
     allArgs: undefined,
     argsByTarget: undefined,
   };
-  if (global.FEATURES?.argTypeTargetsV7) {
+  if (getFeatures().argTypeTargetsV7) {
     const argsByTarget = groupArgsByTarget(context);
     targetedContext = {
       ...context,

@@ -1,5 +1,5 @@
-import { UnknownArgTypesError } from 'storybook/internal/preview-errors';
-import type { SBType } from 'storybook/internal/types';
+import { UnknownArgTypesError } from '@storybook/core/internal/preview-errors';
+import type { SBType } from '@storybook/core/internal/types';
 
 import { parseLiteral } from '../utils.ts';
 import type { TSSigType, TSType } from './types.ts';

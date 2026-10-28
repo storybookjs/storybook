@@ -1,4 +1,4 @@
-import type { Channel } from 'storybook/internal/channels';
+import type { Channel } from '@storybook/core/internal/channels';
 
 import type { UniversalStore } from './index.ts';
 

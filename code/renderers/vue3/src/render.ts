@@ -9,6 +9,7 @@ import {
 } from 'storybook/internal/types';
 
 import type { PreviewWeb } from 'storybook/preview-api';
+import { getFeatures } from 'storybook/preview-api';
 import type { App, ComponentPropsOptions } from 'vue';
 import { camelize, createApp, h, isReactive, isVNode, reactive } from 'vue';
 
@@ -127,7 +128,7 @@ function getSlots(props: Args, context: StoryContextForRender<VueRenderer, Args>
   // Server docgen keeps docgen argTypes out of the preview, so the slot category is unknown here.
   // Every arg that is neither a runtime-declared prop nor an event listener is then a slot.
   const runtimeProps = (component as { props?: ComponentPropsOptions } | undefined)?.props;
-  const declaredProps = globalThis.FEATURES?.docgenServer
+  const declaredProps = getFeatures().docgenServer
     ? new Set(
         (Array.isArray(runtimeProps) ? runtimeProps : Object.keys(runtimeProps ?? {})).map(camelize)
       )

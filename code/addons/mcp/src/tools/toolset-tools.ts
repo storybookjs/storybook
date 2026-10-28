@@ -6,10 +6,12 @@
  * toolset the method belongs to.
  */
 
+import { readFile } from 'node:fs/promises';
+
 import type { StandardSchemaV1 } from '@standard-schema/spec';
-import { getService } from 'storybook/internal/core-server';
-import { logger } from 'storybook/internal/node-logger';
-import { OpenServiceToolsetOutputMismatchError } from 'storybook/internal/server-errors';
+import { getService } from '@storybook/core/internal/services';
+import { logger } from '@storybook/core/internal/node-logger';
+import { OpenServiceToolsetOutputMismatchError } from '@storybook/core/internal/server-errors';
 import {
   getToolset,
   invokeToolsetMethod,
@@ -18,11 +20,11 @@ import {
   toMcpToolName,
   type AnyToolsetDefinition,
   type AnyToolsetOutcome,
-  type ToolsetCtx,
+  type ToolsetBaseCtx,
   type ToolsetMethod,
   type ToolsetMethodId,
   type ToolsetMethodReport,
-} from 'storybook/open-service';
+} from '@storybook/core/open-service';
 import type { McpServer } from 'tmcp';
 
 import { collectTelemetry } from '../telemetry.ts';
@@ -98,7 +100,7 @@ async function toStructuredContent(
   return result.value as Record<string, unknown>;
 }
 
-function buildContext(server: Server): ToolsetCtx {
+function buildContext(server: Server): ToolsetBaseCtx {
   return {
     transport: 'mcp',
     // The toolset origin is the complete UI base URL, including any deployment subpath.
@@ -120,7 +122,9 @@ async function reportToolsetTelemetry(
 }
 
 type ToolCallResult = {
-  content: Array<{ type: 'text'; text: string }>;
+  content: Array<
+    { type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string }
+  >;
   structuredContent?: Record<string, unknown>;
   isError?: boolean;
 };
@@ -142,7 +146,16 @@ export async function callToolsetMethod(
     const blocks = Array.isArray(outcome.markdown) ? outcome.markdown : [outcome.markdown];
 
     return {
-      content: blocks.map((text) => ({ type: 'text' as const, text })),
+      content: [
+        ...blocks.map((text) => ({ type: 'text' as const, text })),
+        ...(await Promise.all(
+          (outcome.images ?? []).map(async ({ path, mimeType }) => ({
+            type: 'image' as const,
+            data: (await readFile(path)).toString('base64'),
+            mimeType,
+          }))
+        )),
+      ],
       ...(structuredContent !== undefined ? { structuredContent } : {}),
       ...(outcome.ok ? {} : { isError: true }),
     };
@@ -161,7 +174,7 @@ export async function callToolsetMethod(
 /** Metadata for one toolset-backed MCP tool, with the frozen name and title. */
 export function getToolsetToolMetadata(options: ToolsetToolOptions) {
   const method = resolveMethod(resolveToolset(options), options);
-  const descriptionCtx: ToolsetCtx = {
+  const descriptionCtx: ToolsetBaseCtx = {
     transport: 'mcp',
     getService: (serviceId, serviceOptions) => getService(serviceId as any, serviceOptions) as any,
   };

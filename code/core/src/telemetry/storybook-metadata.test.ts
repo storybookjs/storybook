@@ -3,24 +3,25 @@ import path from 'node:path';
 import type { MockInstance } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getStorybookInfo, isCI } from 'storybook/internal/common';
+import { getStorybookInfo, isCI } from '@storybook/core/internal/common';
 import {
   type PackageJson,
   type StorybookConfig,
   SupportedBuilder,
   SupportedFramework,
   SupportedRenderer,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 import { detect } from 'package-manager-detector';
 
-import { type Settings, globalSettings } from '../cli/globalSettings.ts';
+import { type Settings, globalSettings } from '../common/globalSettings.ts';
+import { defineAddon } from '../instance/plugins.ts';
 import { detectAgent } from './detect-agent.ts';
-import { getApplicationFileCount } from '../telemetry/get-application-file-count.ts';
-import { analyzeEcosystemPackages } from '../telemetry/get-known-packages.ts';
-import { getMonorepoType } from '../shared/utils/get-monorepo-type.ts';
-import { getPackageManagerInfo } from '../telemetry/get-package-manager-info.ts';
-import { getPortableStoriesFileCount } from '../telemetry/get-portable-stories-usage.ts';
+import { getApplicationFileCount } from './get-application-file-count.ts';
+import { analyzeEcosystemPackages } from './get-known-packages.ts';
+import { getMonorepoType } from '../utils/get-monorepo-type.ts';
+import { getPackageManagerInfo } from './get-package-manager-info.ts';
+import { getPortableStoriesFileCount } from './get-portable-stories-usage.ts';
 import {
   getActualPackageJson,
   getActualPackageVersion,
@@ -33,20 +34,20 @@ import {
   sanitizeAddonName,
 } from './storybook-metadata.ts';
 
-vi.mock(import('../cli/globalSettings.ts'), { spy: true });
+vi.mock(import('../common/globalSettings.ts'), { spy: true });
 vi.mock('./detect-agent.ts', () => ({
   detectAgent: vi.fn().mockReturnValue(undefined),
 }));
 vi.mock(import('./package-json.ts'), { spy: true });
 vi.mock(import('./get-has-next-custom-webpack.ts'), { spy: true });
-vi.mock(import('../shared/utils/get-monorepo-type.ts'), { spy: true });
+vi.mock(import('../utils/get-monorepo-type.ts'), { spy: true });
 vi.mock(import('./get-framework-info.ts'), { spy: true });
 vi.mock(import('./get-package-manager-info.ts'), { spy: true });
 vi.mock(import('./get-portable-stories-usage.ts'), { spy: true });
 vi.mock(import('./get-application-file-count.ts'), { spy: true });
 vi.mock(import('./get-known-packages.ts'), { spy: true });
 vi.mock(import('package-manager-detector'), { spy: true });
-vi.mock(import('storybook/internal/common'), { spy: true });
+vi.mock(import('@storybook/core/internal/common'), { spy: true });
 
 const packageJsonMock: PackageJson = {
   name: 'some-user-project',
@@ -261,6 +262,22 @@ describe('storybook-metadata', () => {
   });
 
   describe('computeStorybookMetadata', () => {
+    it('reports native addon names from metadata', async () => {
+      const native = defineAddon(() => ({
+        meta: { name: '@storybook/addon-docs' },
+        setup(): void {},
+      }));
+      const result = await computeStorybookMetadata({
+        packageJson: packageJsonMock,
+        packageJsonPath,
+        configDir: '.storybook',
+        mainConfig: { stories: [], addons: [native()] },
+      });
+      expect(result.addons).toEqual({
+        '@storybook/addon-docs': { options: undefined, version: 'x.x.x' },
+      });
+    });
+
     describe('pnp paths', () => {
       it('should parse pnp paths for known frameworks', async () => {
         const unixResult = await computeStorybookMetadata({

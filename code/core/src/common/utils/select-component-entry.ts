@@ -1,8 +1,8 @@
 import { dedent } from 'ts-dedent';
 
-import { once } from 'storybook/internal/node-logger';
+import { once } from '@storybook/core/internal/node-logger';
 
-import { Tag } from '../../shared/constants/tags.ts';
+import { Tag } from '../../constants/tags.ts';
 import type { DocsIndexEntry, IndexEntry } from '../../types/modules/indexer.ts';
 
 import { getComponentIdFromEntry } from './component-id.ts';

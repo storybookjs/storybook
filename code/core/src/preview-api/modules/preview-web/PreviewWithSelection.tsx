@@ -1,4 +1,4 @@
-import { logger } from 'storybook/internal/client-logger';
+import { logger } from '@storybook/core/internal/client-logger';
 import {
   CURRENT_STORY_WAS_SET,
   DOCS_PREPARED,
@@ -16,13 +16,13 @@ import {
   STORY_THREW_EXCEPTION,
   STORY_UNCHANGED,
   UPDATE_QUERY_PARAMS,
-} from 'storybook/internal/core-events';
+} from '@storybook/core/internal/core-events';
 import {
   CalledPreviewMethodBeforeInitializationError,
   EmptyIndexError,
   MdxFileWithNoCsfReferencesError,
   NoStoryMatchError,
-} from 'storybook/internal/preview-errors';
+} from '@storybook/core/internal/preview-errors';
 import type {
   Args,
   Globals,
@@ -32,12 +32,12 @@ import type {
   StoryId,
   StoryIndex,
   ViewMode,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 import invariant from 'tiny-invariant';
 
-import { Tag } from '../../../shared/constants/tags.ts';
-import { isMdxEntry } from '../../../shared/utils/story-index-filters.ts';
+import { Tag } from '../../../constants/tags.ts';
+import { isMdxEntry } from '../../../utils/story-index-filters.ts';
 import type { StorySpecifier } from '../store/StoryIndexStore.ts';
 import type { MaybePromise } from './Preview.tsx';
 import { Preview } from './Preview.tsx';

@@ -1,6 +1,6 @@
 import { normalize } from 'pathe';
 
-import { logger as defaultLogger } from 'storybook/internal/node-logger';
+import { logger as defaultLogger } from '@storybook/core/internal/node-logger';
 
 import type { FileChangeEvent } from '../adapters/types.ts';
 import type { ParserRegistry } from '../parser-registry/parser-registry.ts';

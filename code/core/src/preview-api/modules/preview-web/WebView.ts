@@ -1,5 +1,5 @@
-import { logger } from 'storybook/internal/client-logger';
-import type { PreparedStory } from 'storybook/internal/types';
+import { logger } from '@storybook/core/internal/client-logger';
+import type { PreparedStory } from '@storybook/core/internal/types';
 
 import { global } from '@storybook/global';
 

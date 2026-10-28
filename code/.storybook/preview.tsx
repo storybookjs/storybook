@@ -7,15 +7,10 @@ import { global } from '@storybook/global';
 import type { Decorator, Loader, ReactRenderer } from '@storybook/react-vite';
 import { definePreview } from '@storybook/react-vite';
 
-import addonA11y from '@storybook/addon-a11y';
 // TODO add empty preview
 // import * as designs from '@storybook/addon-designs/preview';
-import addonDocs from '@storybook/addon-docs';
 import { DocsContext } from '@storybook/addon-docs/blocks';
-import addonThemes from '@storybook/addon-themes';
-import addonTest from '@storybook/addon-vitest';
 
-import addonPseudoStates from 'storybook-addon-pseudo-states';
 import { DocsContext as DocsContextProps, useArgs } from 'storybook/preview-api';
 import type { PreviewWeb } from 'storybook/preview-api';
 import { expect, sb } from 'storybook/test';
@@ -30,9 +25,10 @@ import {
 } from 'storybook/theming';
 
 import { DocsPageWrapper } from '../addons/docs/src/blocks/components/index.ts';
-import { toHaveLiveRegion } from '../core/src/shared/utils/toHaveLiveRegion.ts';
-import * as templatePreview from '../core/template/stories/preview.ts';
+import { toHaveLiveRegion } from '../core/src/utils/toHaveLiveRegion.ts';
+import * as templatePreview from '../lib/storybook/template/stories/preview.ts';
 import '../renderers/react/template/components/index.js';
+import type config from './main.ts';
 import { isChromatic } from './isChromatic.ts';
 import * as vitestPreview from './vitest.preview.ts';
 
@@ -41,10 +37,10 @@ sb.mock(import('@storybook/global'), { spy: true });
 // Register custom matchers on storybook/test's expect so play functions can use them
 expect.extend({ toHaveLiveRegion });
 
-sb.mock('../core/template/stories/test/ModuleMocking.utils.ts');
-sb.mock('../core/template/stories/test/ModuleSpyMocking.utils.ts', { spy: true });
-sb.mock('../core/template/stories/test/ModuleAutoMocking.utils.ts');
-sb.mock('../core/template/stories/test/ClearModuleMocksMocking.api.ts', { spy: true });
+sb.mock('../lib/storybook/template/stories/test/ModuleMocking.utils.ts');
+sb.mock('../lib/storybook/template/stories/test/ModuleSpyMocking.utils.ts', { spy: true });
+sb.mock('../lib/storybook/template/stories/test/ModuleAutoMocking.utils.ts');
+sb.mock('../lib/storybook/template/stories/test/ClearModuleMocksMocking.api.ts', { spy: true });
 /* eslint-disable depend/ban-dependencies */
 sb.mock(import('lodash-es'));
 sb.mock(import('lodash-es/add'));
@@ -429,13 +425,8 @@ const parameters = {
   },
 };
 
-export default definePreview({
+export default definePreview.for<typeof config, { parameters: Record<string, unknown> }>()({
   addons: [
-    addonDocs(),
-    addonThemes(),
-    addonA11y(),
-    addonTest(),
-    addonPseudoStates(),
     templatePreview,
     ...((import.meta as { env?: { VITEST?: unknown } }).env?.VITEST ? [vitestPreview] : []),
   ],

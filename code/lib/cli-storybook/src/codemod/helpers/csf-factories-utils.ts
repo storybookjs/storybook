@@ -10,7 +10,7 @@ import {
 
 import path from 'path';
 
-import { DOCUMENTED_PREVIEW_IMPORT } from '../../../../../core/src/shared/constants/config-folder.ts';
+import { DOCUMENTED_PREVIEW_IMPORT } from 'storybook/internal/common';
 
 const projectAnnotationNames = [
   'decorators',

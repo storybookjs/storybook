@@ -10,7 +10,7 @@ import {
   getProcessAncestry,
 } from 'storybook/internal/common';
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
-import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
+import { isStorybookError } from 'storybook/internal/server-errors';
 
 import { dedent } from 'ts-dedent';
 
@@ -97,7 +97,7 @@ export class PreflightCheckCommand {
         installContext: 'create',
       });
     } catch (error) {
-      if (error instanceof MinimumReleaseAgeHandledError) {
+      if (isStorybookError(error, 'MinimumReleaseAgeHandledError')) {
         throw error;
       }
 

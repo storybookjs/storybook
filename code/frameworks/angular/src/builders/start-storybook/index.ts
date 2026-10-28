@@ -1,10 +1,14 @@
 import { readFileSync } from 'node:fs';
 
-import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/common';
-import { buildDevStandalone, withTelemetry } from 'storybook/internal/core-server';
-import { addToGlobalContext } from 'storybook/internal/telemetry';
-import type { CLIOptions } from 'storybook/internal/types';
-import { logger, logTracker } from 'storybook/internal/node-logger';
+import { getEnvConfig, getProjectRoot, versions } from '@storybook/core/internal/common';
+import {
+  buildDevStandalone,
+  exitOnDevServerSignal,
+  withTelemetry,
+} from 'storybook/internal/server';
+import { addToGlobalContext } from '@storybook/core/internal/telemetry';
+import type { CLIOptions } from '@storybook/core/internal/types';
+import { logger, logTracker } from '@storybook/core/internal/node-logger';
 
 import type {
   BuilderContext,
@@ -31,7 +35,7 @@ import * as pkg from 'empathic/package';
 import { errorSummary, printErrorDetails } from '../utils/error-handler.ts';
 import { runCompodoc } from '../utils/run-compodoc.ts';
 import type { StandaloneOptions } from '../utils/standalone-options.ts';
-import { Channel } from 'storybook/internal/channels';
+import { Channel } from '@storybook/core/internal/channels';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
@@ -74,11 +78,19 @@ export type StorybookBuilderOptions = JsonObject & {
 
 export type StorybookBuilderOutput = JsonObject & BuilderOutput & {};
 
+type DevServer = Awaited<ReturnType<typeof buildDevStandalone>>;
+
+const SMOKE_TEST_EXIT_GRACE_MS = 3000;
+
 const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
   options,
   context
 ): Observable<BuilderOutput> => {
   return new Observable<BuilderOutput>((observer) => {
+    let server: DevServer | undefined;
+    let removeSignalListeners: (() => void) | undefined;
+    let tornDown = false;
+
     (async () => {
       try {
         // Apply logger configuration from builder options
@@ -186,14 +198,25 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           loglevel,
         };
 
-        const startedPort = await runInstance(standaloneOptions);
+        const result = await runInstance(standaloneOptions);
+        if (tornDown) {
+          await result.close();
+          return;
+        }
 
-        // Emit success output - the dev server is now running
-        observer.next({ success: true, info: { port: startedPort } } as BuilderOutput);
+        if (result.exitCode !== undefined) {
+          await result.close();
+          observer.next({ success: result.exitCode === 0, info: { port: result.port } });
+          observer.complete();
+          // The Angular CLI never calls process.exit, so a lingering handle would hang the smoke test.
+          setTimeout(() => process.exit(result.exitCode), SMOKE_TEST_EXIT_GRACE_MS).unref();
+          return;
+        }
 
-        // Don't call observer.complete() - this keeps the Observable alive
-        // so the dev server continues running. Architect will keep subscribing
-        // until the Observable completes, which allows watch mode to work.
+        server = result;
+        removeSignalListeners = exitOnDevServerSignal(result);
+        // Never complete in dev mode: Architect keeps the builder, and so the server, running.
+        observer.next({ success: true, info: { port: result.port } });
       } catch (error) {
         // Write logs to file on failure when enabled
         try {
@@ -207,6 +230,14 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
         observer.error(error);
       }
     })();
+
+    return () => {
+      tornDown = true;
+      removeSignalListeners?.();
+      server
+        ?.close()
+        .catch((error: unknown) => logger.debug(`Failed to close Storybook: ${error}`));
+    };
   });
 };
 
@@ -236,7 +267,7 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
 
   return { tsConfig };
 }
-async function runInstance(options: StandaloneOptions) {
+async function runInstance(options: StandaloneOptions): Promise<DevServer> {
   try {
     const result = await withTelemetry(
       'dev',
@@ -257,7 +288,7 @@ async function runInstance(options: StandaloneOptions) {
     if (!result) {
       throw new Error('Storybook dev server did not start');
     }
-    return result.port;
+    return result;
   } catch (error) {
     const summarized = errorSummary(error);
     throw new Error(String(summarized));

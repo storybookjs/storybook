@@ -5,10 +5,8 @@ import type {
   StorybookConfigWebpack,
   TypescriptOptions as TypescriptOptionsBuilder,
 } from '@storybook/builder-webpack5';
-import type {
-  StorybookConfig as StorybookConfigBase,
-  TypescriptOptions as TypescriptOptionsReact,
-} from '@storybook/core-webpack';
+import type { WebpackStorybookConfig as StorybookConfigBase } from '@storybook/builder-webpack5';
+import type { TypescriptOptions as TypescriptOptionsReact } from 'storybook/internal/types';
 
 type FrameworkName = CompatibleString<'@storybook/angular'>;
 type BuilderName = CompatibleString<'@storybook/builder-webpack5'>;

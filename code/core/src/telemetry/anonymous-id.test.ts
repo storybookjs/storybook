@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { executeCommandSync } from 'storybook/internal/common';
+import { executeCommandSync } from '@storybook/core/internal/common';
 
 import {
   getAnonymousProjectId,
@@ -9,7 +9,7 @@ import {
   unhashedProjectId,
 } from './anonymous-id.ts';
 
-vi.mock(import('storybook/internal/common'), async (actualModule) => {
+vi.mock(import('@storybook/core/internal/common'), async (actualModule) => {
   const actual = await actualModule();
 
   return {

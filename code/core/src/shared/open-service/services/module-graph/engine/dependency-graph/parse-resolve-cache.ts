@@ -2,8 +2,8 @@ import { readFile } from 'node:fs/promises';
 
 import { normalize } from 'pathe';
 
-import { parseBarrelInfo } from 'storybook/internal/oxc-parser';
-import type { BarrelInfo } from 'storybook/internal/oxc-parser';
+import { parseBarrelInfo } from '@storybook/core/internal/oxc-parser';
+import type { BarrelInfo } from '@storybook/core/internal/oxc-parser';
 
 import type { ParserRegistry } from '../parser-registry/parser-registry.ts';
 import type { ImportEdge } from './types.ts';

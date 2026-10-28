@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { readFile } from 'node:fs/promises';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { ParserRegistry } from '../parser-registry/parser-registry.ts';
 import type { ImportEdge, ImportParser } from '../parser-registry/types.ts';
@@ -13,7 +13,7 @@ import { ReverseIndexImpl } from './reverse-index.ts';
 import type { DependencyGraph } from './types.ts';
 
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('@storybook/core/internal/node-logger', { spy: true });
 
 interface PatcherWorld {
   edges: Map<string, ImportEdge[]>;

@@ -2,7 +2,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-import { SupportedRenderer } from 'storybook/internal/types';
+import { SupportedRenderer } from '@storybook/core/internal/types';
 
 import { afterEach, describe, expect, it } from 'vitest';
 

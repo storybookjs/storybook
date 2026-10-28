@@ -47,6 +47,7 @@
   - [Internal WebSocket heartbeat controls removed](#internal-websocket-heartbeat-controls-removed)
   - [Internal toolset telemetry now returns with the outcome](#internal-toolset-telemetry-now-returns-with-the-outcome)
   - [Internal toolset inputs must be strict objects](#internal-toolset-inputs-must-be-strict-objects)
+  - [The tools SDK moved to `@storybook/open-service`](#the-tools-sdk-moved-to-storybookopen-service)
   - [Internal `satisfies` helper removed](#internal-satisfies-helper-removed)
   - [Experimental `UniversalStore` API is now internal](#experimental-universalstore-api-is-now-internal)
   - [`mockChannel` removed from `storybook/preview-api` and `storybook/manager-api`](#mockchannel-removed-from-storybookpreview-api-and-storybookmanager-api)
@@ -77,6 +78,12 @@
   - [`core/module-graph` query aliases removed](#coremodule-graph-query-aliases-removed)
   - [ExternalDocs and ExternalDocsContainer are removed](#externaldocs-and-externaldocscontainer-are-removed)
   - [CSF `.story` annotations removed](#csf-story-annotations-removed)
+  - [`options.presetsList` is deprecated](#optionspresetslist-is-deprecated)
+  - [Official packages no longer export presets](#official-packages-no-longer-export-presets)
+  - [`legacy:core:extend` hook renamed to `core:config:extend`](#legacycoreextend-hook-renamed-to-coreconfigextend)
+  - [`@storybook/core-webpack` is deprecated](#storybookcore-webpack-is-deprecated)
+  - [`storybook/internal/manager/globals-runtime` moved to `@storybook/manager`](#storybookinternalmanagerglobals-runtime-moved-to-storybookmanager)
+  - [`storybook/internal/core-server` is deprecated](#storybookinternalcore-server-is-deprecated)
 - [From version 10.6.1 to 10.6.2](#from-version-1061-to-1062)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-1)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-1)
@@ -1475,6 +1482,14 @@ Custom SDK callers must remove the `telemetry` callback from `ToolsCallOptions`.
 
 If you implement toolsets using Storybook's internal open-service APIs, declare each method's valibot `input` with `v.strictObject` instead of `v.object` or `v.looseObject`. `defineToolset` now reports any other valibot input as a type error and throws when the toolset is defined, so a mistyped CLI flag or MCP argument is rejected instead of silently ignored.
 
+### The tools SDK moved to `@storybook/open-service`
+
+If you call the tools SDK from `storybook/internal/tools`, import it from `@storybook/open-service` instead. The API is unchanged. `storybook/internal/tools` and `storybook/internal/tools/child-host` still work as deprecated re-exports.
+
+`@storybook/open-service` depends only on `@storybook/core`, so it runs without `storybook`. Without `storybook`, it loads the project with core's defaults; a configuration that uses legacy presets then asks you to install `storybook`. Pass `createStorybook` to choose the instance factory yourself.
+
+Attach now compares `@storybook/core` installations instead of `storybook` installations. Instance records from older servers, which lack `corePath`, derive it from their `storybookPath`.
+
 ### Internal `satisfies` helper removed
 
 The `satisfies` function is no longer exported from `storybook/internal/common`. It existed to mimic TypeScript's `satisfies` operator before Storybook required TypeScript 4.9, and Storybook 11 [requires TypeScript 5.9 or higher](#typescript-59-or-6x).
@@ -2122,6 +2137,79 @@ If the value is not a static object, move the fields yourself. This includes a v
 ```
 
 `storybook migrate csf-2-to-3` still lifts a static `Story.story = { ... }` into a CSF 3 story object. It does not rewrite the dynamic cases above. The old `csf-hoist-story-annotations` codemod no longer ships.
+
+### `options.presetsList` is deprecated
+
+Preset function fields receive `options.presetsList`, the raw list of loaded presets. It still works, but logs a deprecation warning on first read and will be removed in Storybook 12.
+
+- In `main.ts` function fields and legacy presets, read `options.plugins` instead. It is a read-only `{ name, kind }[]` list of the instance plugins.
+- In `define*` plugins, use `storybook.plugins` or `storybook.hasPlugin(name)`.
+
+```diff
+ export const viteFinal = async (config, options) => {
+-  const hasAddon = options.presetsList.some((preset) => preset.name.includes('@storybook/addon-docs'));
++  const hasAddon = options.plugins.some((plugin) => plugin.name === '@storybook/addon-docs');
+   return config;
+ };
+```
+
+### Official packages no longer export presets
+
+Official addons, frameworks, renderers, builders and presets register through one Node entry, `<package>/node`.
+Their `./preset` exports, root `preset.js` files and `./server/framework-preset-*` exports are removed.
+Renderers keep `./preset` as a deprecated alias of `./node`, so third-party frameworks that call `import.meta.resolve('@storybook/react/preset')` still resolve; it will be removed in Storybook 12.
+
+- String entries in `main.ts`, such as `addons: ['@storybook/addon-docs']`, load `<package>/node` with no change.
+- Old preset paths, such as `'@storybook/addon-docs/preset'`, `core.renderer: '@storybook/react/preset'` or `'@storybook/preset-react-webpack/preset-react-docs'`, still work and log a deprecation warning. Replace them with the package name.
+- Code that imported a preset module directly must import from `<package>/node` instead. For example, `DOCGEN_WORKER_SPECIFIER` now comes from `@storybook/vue3/node`.
+- `storybook-addon-pseudo-states/preset` is mapped the same way, to `storybook-addon-pseudo-states/node` when the installed version ships one.
+- Third-party presets load as before.
+
+### `legacy:core:extend` hook renamed to `core:config:extend`
+
+The instance hook that holds the `core` config is now `core:config:extend`. The old name still registers and calls the same hook, and will be removed in Storybook 12.
+
+```diff
+-storybook.hook('legacy:core:extend', (core) => ({ ...core, disableTelemetry: true }));
++storybook.hook('core:config:extend', (core) => ({ ...core, disableTelemetry: true }));
+```
+
+### `@storybook/core-webpack` is deprecated
+
+`toImportFn`, `toImportFnPart`, `webpackIncludeRegexp`, `importPipeline`, `loadCustomWebpackConfig` and the Webpack config types moved to `@storybook/builder-webpack5`. `@storybook/core-webpack` re-exports them until Storybook 12; its `StorybookConfig` type is `WebpackStorybookConfig` in the builder.
+
+```diff
+-import type { StorybookConfig, WebpackConfiguration } from '@storybook/core-webpack';
+-import { loadCustomWebpackConfig } from '@storybook/core-webpack';
++import type { WebpackStorybookConfig as StorybookConfig, WebpackConfiguration } from '@storybook/builder-webpack5';
++import { loadCustomWebpackConfig } from '@storybook/builder-webpack5';
+```
+
+The internal `serverRequire` helper is removed from `storybook/internal/common`; it only served `loadCustomWebpackConfig`.
+
+### `storybook/internal/manager/globals-runtime` moved to `@storybook/manager`
+
+The prebuilt manager globals runtime ships only in `@storybook/manager`, and the manager builder serves it from `@storybook/manager/dist/ui`.
+The `storybook` package no longer carries a copy, and the `storybook/internal/manager/globals-runtime` key now resolves to a file that throws a migration error.
+Custom builders that load the runtime by path resolve `@storybook/manager/internal/manager/globals-runtime` instead.
+
+### `storybook/internal/core-server` is deprecated
+
+`storybook/internal/core-server` is now a compatibility entry that re-exports three narrower entries.
+It will be removed in Storybook 12.
+
+- `storybook/internal/server`: `build`, `buildDevStandalone`, `buildStaticStandalone`, `withTelemetry`, `sendTelemetryError` and the other server helpers.
+- `storybook/internal/services`: services, toolsets, change detection, and the status and test provider stores.
+- `storybook/internal/story-index`: `StoryIndexGenerator`, `buildIndex`, manifests, and the MDX payload helpers.
+
+`build` and `buildDevStandalone` from `storybook/internal/core-server` keep their old behavior: a dev build exits the process when the smoke test ends or a signal arrives.
+The same functions from `storybook/internal/server` never exit the process; call `exitOnDevServerSignal` yourself if you need that.
+
+```diff
+-import { buildDevStandalone, experimental_getStatusStore } from 'storybook/internal/core-server';
++import { buildDevStandalone } from 'storybook/internal/server';
++import { experimental_getStatusStore } from 'storybook/internal/services';
+```
 
 ## From version 10.6.1 to 10.6.2
 

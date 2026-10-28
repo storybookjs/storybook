@@ -1,0 +1,97 @@
+import React, { useRef } from 'react';
+
+import { Match } from '@storybook/manager/internal/router';
+
+import { styled } from '@storybook/ui/theming';
+
+import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
+import { useLandmark } from '../../hooks/useLandmark.ts';
+
+interface PagesContainerProps {
+  children: React.ReactNode;
+}
+
+const PagesInnerContainer = styled.main(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  // On mobile the layout root is a column flexbox; fill it and let pages scroll internally
+  // instead of growing past the viewport, which is not scrollable.
+  flex: 1,
+  minHeight: 0,
+  backgroundColor: theme.appContentBg,
+  zIndex: 1,
+
+  [MEDIA_DESKTOP_BREAKPOINT]: {
+    gridRowStart: 'sidebar-start',
+    gridRowEnd: '-1',
+    gridColumnStart: 'sidebar-end',
+    gridColumnEnd: '-1',
+  },
+}));
+
+/**
+ * Shows Router-controlled pages (e.g. settings/about), inside a landmark for navigability. Assumes
+ * that the main preview area is not concurrently reachable by assistive technologies, since these
+ * components both define a `main` role.
+ */
+const PagesContainer = React.memo<PagesContainerProps>(function PagesContainer(props) {
+  const { children } = props;
+
+  const mainRef = useRef<HTMLElement>(null);
+  const { landmarkProps } = useLandmark(
+    { 'aria-labelledby': 'main-content-heading', role: 'main' },
+    mainRef
+  );
+
+  return (
+    <PagesInnerContainer id="main-content-wrapper" ref={mainRef} {...landmarkProps}>
+      <h2 id="main-content-heading" className="sb-sr-only">
+        Main content
+      </h2>
+      {children}
+    </PagesInnerContainer>
+  );
+});
+
+const MainInnerContainer = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
+  flex: 1,
+  position: 'relative',
+  backgroundColor: theme.appContentBg,
+  display: shown ? 'grid' : 'none', // This is needed to make the content container fill the available space
+  overflow: 'auto',
+
+  [MEDIA_DESKTOP_BREAKPOINT]: {
+    flex: 'auto',
+    gridArea: 'content',
+  },
+}));
+
+interface MainAreaContainerProps {
+  showPages: boolean;
+  slotMain: React.ReactNode;
+  slotPages: React.ReactNode;
+}
+
+/**
+ * Shows Router-controlled pages (e.g. settings/about), inside a landmark for navigability, OR shows
+ * the preview area. Ensures a single `main` landmark exists at a time.
+ */
+const MainAreaContainer = React.memo<MainAreaContainerProps>(function MainAreaContainer({
+  showPages,
+  slotMain,
+  slotPages,
+}) {
+  return (
+    <>
+      {showPages ? (
+        <PagesContainer>{slotPages}</PagesContainer>
+      ) : (
+        <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>
+          {({ match }) => <MainInnerContainer shown={!!match}>{slotMain}</MainInnerContainer>}
+        </Match>
+      )}
+    </>
+  );
+});
+
+export { MainAreaContainer };

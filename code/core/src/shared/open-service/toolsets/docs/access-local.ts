@@ -12,7 +12,7 @@
  * this access before the `services` preset hooks have necessarily run.
  */
 
-import type { StoryIndex } from 'storybook/internal/types';
+import type { StoryIndex } from '@storybook/core/internal/types';
 
 import { DOCGEN_SERVICE_ID } from '../../services/docgen/paths.ts';
 import { STORY_DOCS_SERVICE_ID } from '../../services/story-docs/paths.ts';

@@ -1,7 +1,7 @@
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi, vitest } from 'vitest';
 
-import { extractComponentProps, hasDocgen } from 'storybook/internal/docs-tools';
+import { extractComponentProps, hasDocgen } from '@storybook/core/internal/docs-tools';
 import { inferControls } from 'storybook/internal/preview-api';
 
 import {
@@ -11,7 +11,7 @@ import {
 } from './extractArgTypes.ts';
 import type { VueDocgenInfoEntry } from '../../../types.ts';
 
-vitest.mock('storybook/internal/docs-tools', async (importOriginal) => {
+vitest.mock('@storybook/core/internal/docs-tools', async (importOriginal) => {
   const module: Record<string, unknown> = await importOriginal();
   return {
     ...module,

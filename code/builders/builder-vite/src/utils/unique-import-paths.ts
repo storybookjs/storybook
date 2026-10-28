@@ -1,4 +1,4 @@
-import type { StoryIndex } from 'storybook/internal/types';
+import type { StoryIndex } from '@storybook/core/internal/types';
 
 /** Takes the story index and returns an array of unique import paths. */
 export function getUniqueImportPaths(index: StoryIndex): string[] {

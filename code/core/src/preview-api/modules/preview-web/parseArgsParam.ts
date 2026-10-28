@@ -1,5 +1,5 @@
-import { once } from 'storybook/internal/client-logger';
-import type { Args } from 'storybook/internal/types';
+import { once } from '@storybook/core/internal/client-logger';
+import type { Args } from '@storybook/core/internal/types';
 
 import { isPlainObject } from 'es-toolkit/predicate';
 import { type Options, parse } from 'picoquery';

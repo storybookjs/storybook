@@ -35,31 +35,26 @@
     "./loaders/export-order-loader": "./dist/loaders/export-order-loader.js",
     "./loaders/storybook-mock-transform-loader": "./dist/loaders/storybook-mock-transform-loader.js",
     "./loaders/webpack-automock-loader": "./dist/loaders/webpack-automock-loader.js",
-    "./package.json": "./package.json",
-    "./presets/custom-webpack-preset": "./dist/presets/custom-webpack-preset.js",
-    "./presets/preview-preset": "./dist/presets/preview-preset.js",
-    "./templates/preview.ejs": "./templates/preview.ejs",
-    "./templates/virtualModuleEntry.template.js": "./templates/virtualModuleEntry.template.js",
-    "./templates/virtualModuleModernEntry.js": "./templates/virtualModuleModernEntry.js",
-    "./templates/virtualModuleStory.template.js": "./templates/virtualModuleStory.template.js"
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "code": "./src/node/index.ts",
+      "default": "./dist/node/index.js"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist/**/*",
-    "templates/**/*",
     "README.md",
     "*.js",
     "*.d.ts",
     "!src/**/*"
   ],
   "dependencies": {
-    "@storybook/core-webpack": "workspace:*",
+    "@storybook/core": "workspace:*",
     "case-sensitive-paths-webpack-plugin": "^2.4.0",
-    "cjs-module-lexer": "^1.2.3",
     "css-loader": "^7.1.2",
-    "es-module-lexer": "^1.5.0",
     "fork-ts-checker-webpack-plugin": "^9.1.0",
     "html-webpack-plugin": "^5.5.0",
-    "magic-string": "^1.1.0",
     "semver": "^7.7.3",
     "style-loader": "^4.0.0",
     "terser-webpack-plugin": "^5.3.17",
@@ -75,13 +70,15 @@
     "memfs": "^4.11.1",
     "pretty-hrtime": "^1.0.3",
     "sirv": "^2.0.4",
-    "slash": "^5.0.0",
     "typescript": "^6.0.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"
   },
   "peerDependenciesMeta": {
+    "storybook": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     }

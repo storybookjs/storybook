@@ -1,4 +1,4 @@
-import { once } from 'storybook/internal/node-logger';
+import { once } from '@storybook/core/internal/node-logger';
 
 import { getPrettyPackageManagerName, PackageManagerName } from './JsPackageManager.ts';
 

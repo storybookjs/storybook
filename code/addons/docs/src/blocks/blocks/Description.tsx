@@ -3,6 +3,8 @@ import React, { useContext } from 'react';
 
 import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 
+import { getFeatures } from 'storybook/preview-api';
+
 import { DocsContext } from './DocsContext';
 import { Markdown } from './Markdown';
 import { useServiceDocgen } from './use-service-docgen.ts';
@@ -135,7 +137,7 @@ const DescriptionImpl: FC<DescriptionProps> = (props) => {
   // (story-docs by story id, docgen by component id), so each lives in its own child component to
   // keep the hook call unconditional. When the feature is off — or a bare `of={Component}` has no
   // resolvable component id — render without a service fallback.
-  if (globalThis.FEATURES?.docgenServer) {
+  if (getFeatures().docgenServer) {
     if (resolvedOf.type === 'story') {
       return <DescriptionStoryWithServices resolvedOf={resolvedOf} />;
     }

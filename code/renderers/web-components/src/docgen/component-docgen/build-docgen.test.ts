@@ -1,4 +1,4 @@
-import type { DocgenError, IndexEntry } from 'storybook/internal/types';
+import type { DocgenError, IndexEntry } from '@storybook/core/internal/types';
 
 import { readFileSync } from 'node:fs';
 

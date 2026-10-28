@@ -8,6 +8,7 @@ import type {
   MetaInput,
   MetaTypes,
   StoryArgs,
+  StoryInput,
   TypedMetaArgKeys,
   Preview,
   PreviewAddon,
@@ -25,9 +26,9 @@ import type {
 
 import type { Simplify } from 'type-fest';
 
-import * as reactAnnotations from './entry-preview.tsx';
-import * as reactArgTypesAnnotations from './entry-preview-argtypes.ts';
-import * as reactDocsAnnotations from './entry-preview-docs.ts';
+import reactAnnotations from './entry-preview.tsx';
+import reactArgTypesAnnotations from './entry-preview-argtypes.ts';
+import reactDocsAnnotations from './entry-preview-docs.ts';
 import type { ReactTypes } from './types.ts';
 
 /**
@@ -163,7 +164,7 @@ export interface ReactMeta<
           render: () => ReactTypes['storyResult'];
         }),
   >(
-    story: TInput
+    story: StoryInput<T, TInput>
   ): ReactStory<T, TInput extends () => ReactTypes['storyResult'] ? { render: TInput } : TInput>;
 
   /**
@@ -190,7 +191,7 @@ export interface ReactMeta<
   story<
     TInput extends Simplify<StoryAnnotations<T, T['args'], StoryArgs<T['args'], TMetaArgKeys>>>,
   >(
-    story: TInput
+    story: StoryInput<T, TInput>
   ): ReactStory<T, TInput>;
 
   /**

@@ -3,16 +3,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
-// compodoc.ts destructures FEATURES from the global once at first import, so the stub
-// must exist before that import evaluates; only property mutation on this reference is
-// live afterwards (the precedent test's direct globalThis assignment is banned).
-const flags = vi.hoisted(() => {
-  const f = { angularFilterNonInputControls: false };
-  vi.stubGlobal('FEATURES', f);
-  return f;
-});
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   extractArgTypes,
@@ -23,11 +14,18 @@ import { BASELINE_PATH } from './baseline-path.ts';
 import { attachAotCmp, recordSnippets } from './render-helpers.ts';
 import { fixtureCases, fixturesDir } from './snippet-recorder.ts';
 
+const flags = { angularFilterNonInputControls: false };
+
 if (BASELINE_PATH !== 'legacy') {
   throw new Error(
     'angular-baselines.test.ts records the legacy Compodoc client path; update the recorder or baseline-path.ts'
   );
 }
+
+// The flag is read at call time, so each test re-stubs the global that the previous one removed.
+beforeEach(() => {
+  vi.stubGlobal('FEATURES', flags);
+});
 
 afterEach(() => {
   vi.unstubAllGlobals();

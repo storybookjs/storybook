@@ -1,6 +1,4 @@
-import { expect, it, vi } from 'vitest';
-
-vi.mock('storybook/internal/preview/globals', { spy: true });
+import { expect, it } from 'vitest';
 
 import {
   ensurePreviewRuntimePrecedesGlobals,
@@ -75,15 +73,34 @@ const cases = [
     input: `const { Afternoon } = await import('${packageName}')`,
     output: `const { Afternoon } = ${globals[packageName]}`,
   },
+  {
+    globals,
+    packageName,
+    input: `export { Rain, Jour as Day } from '${packageName}';`,
+    output: `const { Rain: __sb_reexport_Rain, Jour: __sb_reexport_Day } = ${globals[packageName]}; export { __sb_reexport_Rain as Rain, __sb_reexport_Day as Day };`,
+  },
+  {
+    globals,
+    packageName,
+    input: `export * as Weather from '${packageName}'`,
+    output: `const __sb_reexport_Weather = ${globals[packageName]}; export { __sb_reexport_Weather as Weather }`,
+  },
+  {
+    globals,
+    packageName,
+    input: `export * from '${packageName}';`,
+    output: `export * from '${packageName}';`,
+  },
 ];
 
 it('calls preview setup before a rewritten global', () => {
   const code = ensurePreviewRuntimePrecedesGlobals(
     'const { Channel } = __STORYBOOK_MODULE_CHANNELS__;',
-    '/proj/src/preview.ts'
+    '/proj/src/preview.ts',
+    '/storybook/dist/core/preview/runtime.js'
   );
 
-  expect(code).toContain('dist/preview/runtime.js');
+  expect(code).toContain('/storybook/dist/core/preview/runtime.js');
   expect(code.indexOf('__sbInitializePreviewGlobals();')).toBeLessThan(
     code.indexOf('__STORYBOOK_MODULE_CHANNELS__')
   );
@@ -92,10 +109,18 @@ it('calls preview setup before a rewritten global', () => {
 it('does not import the runtime from the bundled preview runtime', () => {
   const code = 'const { Channel } = __STORYBOOK_MODULE_CHANNELS__;';
   expect(
-    ensurePreviewRuntimePrecedesGlobals(code, '/pkg/dist/preview/_chunks/runtime-abc.js')
+    ensurePreviewRuntimePrecedesGlobals(
+      code,
+      '/pkg/dist/core/preview/_chunks/runtime-abc.js',
+      '/pkg/dist/core/preview/runtime.js'
+    )
   ).toBe(code);
   expect(
-    ensurePreviewRuntimePrecedesGlobals(code, 'C:\\pkg\\dist\\preview\\_chunks\\runtime-abc.js?v=1')
+    ensurePreviewRuntimePrecedesGlobals(
+      code,
+      'C:\\pkg\\dist\\core\\preview\\_chunks\\runtime-abc.js?v=1',
+      'C:/pkg/dist/core/preview/runtime.js'
+    )
   ).toBe(code);
 });
 

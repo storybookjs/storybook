@@ -1,19 +1,13 @@
-import { expect, test, vi } from 'vitest';
+import { expect, test } from 'vitest';
 
-import { type InterPresetOptions, getPresets } from 'storybook/internal/common';
-import { formatCsf, loadCsf } from 'storybook/internal/csf-tools';
+import { formatCsf, loadCsf } from '@storybook/core/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
 
-import { enrichCsf } from './enrichCsf.ts';
-
-vi.mock('my-preset', () => ({
-  default: { experimental_enrichCsf: enrichCsf, features: { experimentalCodeExamples: true } },
-}));
+import { createCsfEnricher } from './enrichCsf.ts';
 
 test('should enrich csf with code parameters', async () => {
-  const presets = await getPresets(['my-preset'], { isCritical: true } as InterPresetOptions);
-  const enrichCsf = await presets.apply('experimental_enrichCsf');
+  const enrichCsf = createCsfEnricher({ experimentalCodeExamples: true });
 
   const code = dedent`
     import preview from '#.storybook/preview';
@@ -41,12 +35,7 @@ test('should enrich csf with code parameters', async () => {
 });
 
 test('should not enrich when experimentalCodeExamples is disabled', async () => {
-  // @ts-expect-error module does not exist
-  vi.spyOn((await import('my-preset')).default, 'features', 'get').mockImplementation(() => ({
-    experimentalCodeExamples: false,
-  }));
-  const presets = await getPresets(['my-preset'], { isCritical: true } as InterPresetOptions);
-  const enrichCsf = await presets.apply('experimental_enrichCsf');
+  const enrichCsf = createCsfEnricher({ experimentalCodeExamples: false });
 
   const code = dedent`
     import preview from '#.storybook/preview';

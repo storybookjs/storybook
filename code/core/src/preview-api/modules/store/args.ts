@@ -1,4 +1,4 @@
-import { once } from 'storybook/internal/client-logger';
+import { once } from '@storybook/core/internal/client-logger';
 import type {
   ArgTypes,
   Args,
@@ -6,7 +6,7 @@ import type {
   Renderer,
   SBType,
   StoryContext,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 import { isEqual as deepEqual, isPlainObject } from 'es-toolkit/predicate';
 import { dedent } from 'ts-dedent';

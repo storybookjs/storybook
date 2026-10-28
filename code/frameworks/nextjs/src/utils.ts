@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import { getProjectRoot, resolvePackageDir } from '@storybook/core/internal/common';
 
 import { WebpackDefinePlugin } from '@storybook/builder-webpack5';
 
@@ -11,8 +11,6 @@ import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js';
 import nextJsLoadConfigModule from 'next/dist/server/config.js';
 import semver from 'semver';
 import type { Configuration as WebpackConfig } from 'webpack';
-
-import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
 
 export const configureRuntimeNextjsVersionResolution = (baseConfig: WebpackConfig): void => {
   baseConfig.plugins?.push(

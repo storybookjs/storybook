@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { resolvePackageDir } from 'storybook/internal/common';
+import { resolvePackageDir } from '@storybook/core/internal/common';
 
 import type { Plugin } from 'vite';
 

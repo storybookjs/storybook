@@ -1,5 +1,5 @@
 import type { BuilderContext } from '@angular-devkit/architect';
-import type { BuilderOptions, CLIOptions, LoadOptions } from 'storybook/internal/types';
+import type { BuilderOptions, CLIOptions, LoadOptions } from '@storybook/core/internal/types';
 
 export type StandaloneOptions = CLIOptions &
   LoadOptions &

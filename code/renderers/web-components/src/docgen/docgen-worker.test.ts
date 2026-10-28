@@ -1,4 +1,4 @@
-import type { IndexEntry } from 'storybook/internal/types';
+import type { IndexEntry } from '@storybook/core/internal/types';
 
 import { readFileSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
@@ -6,7 +6,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fs as memfs, vol } from 'memfs';
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { createDocgenProvider } from './docgen-worker.ts';
 import { loadGenerator } from './component-docgen/source/generator.ts';
@@ -18,7 +18,7 @@ const generator = { generate: vi.fn() };
 
 vi.mock('node:fs', { spy: true });
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('@storybook/core/internal/node-logger', { spy: true });
 // A factory, not `spy: true`: the real module cannot load once `node:fs` reads from memfs.
 vi.mock('typescript', () => ({ default: typescript }));
 vi.mock('./component-docgen/source/generator.ts', { spy: true });

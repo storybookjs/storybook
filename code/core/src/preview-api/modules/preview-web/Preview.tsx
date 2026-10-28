@@ -1,5 +1,5 @@
-import type { Channel } from 'storybook/internal/channels';
-import { deprecate, logger } from 'storybook/internal/client-logger';
+import type { Channel } from '@storybook/core/internal/channels';
+import { deprecate, logger } from '@storybook/core/internal/client-logger';
 import {
   ARGTYPES_INFO_REQUEST,
   ARGTYPES_INFO_RESPONSE,
@@ -19,14 +19,14 @@ import {
   STORY_INDEX_INVALIDATED,
   UPDATE_GLOBALS,
   UPDATE_STORY_ARGS,
-} from 'storybook/internal/core-events';
-import type { CleanupCallback } from 'storybook/internal/csf';
+} from '@storybook/core/internal/core-events';
+import type { CleanupCallback } from '../../../csf/index.ts';
 import {
   CalledPreviewMethodBeforeInitializationError,
   MissingRenderToCanvasError,
   StoryIndexFetchError,
   StoryStoreAccessedBeforeInitializationError,
-} from 'storybook/internal/preview-errors';
+} from '@storybook/core/internal/preview-errors';
 import type {
   Args,
   Globals,
@@ -41,7 +41,7 @@ import type {
   StoryId,
   StoryIndex,
   StoryRenderOptions,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 import { global } from '@storybook/global';
 

@@ -1,4 +1,4 @@
-import { sanitize } from 'storybook/internal/csf';
+import { sanitize } from '@storybook/core/internal/csf/csf-utils';
 
 /**
  * @example storyIdToExportName('some-story') => 'SomeStory'

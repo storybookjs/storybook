@@ -1,4 +1,4 @@
-import type { SBType, StrictInputType } from 'storybook/internal/types';
+import type { SBType, StrictInputType } from '@storybook/core/internal/types';
 
 /** Server argTypes skip the client normalizer, so controls are always the object form. */
 export type ServiceControl = Exclude<StrictInputType['control'], string>;

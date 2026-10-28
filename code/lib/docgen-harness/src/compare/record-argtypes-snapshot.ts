@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import { expect } from 'vitest';
 
-import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
+import type { StrictArgTypes } from 'storybook/internal/csf';
 import type { CompareArgTypesOptions } from './argtypes.ts';
 import type { ArgTypesComparisonOptions } from './expect-current-or-better.ts';
 import { expectCurrentOrBetter } from './expect-current-or-better.ts';

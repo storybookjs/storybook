@@ -1,5 +1,5 @@
-import type { DocgenPropType, ExtractedProp, PropType } from 'storybook/internal/docs-tools';
-import { createSummaryValue, isTooLongForTypeSummary } from 'storybook/internal/docs-tools';
+import type { DocgenPropType, ExtractedProp, PropType } from '@storybook/core/internal/docs-tools';
+import { createSummaryValue, isTooLongForTypeSummary } from '@storybook/core/internal/docs-tools';
 
 import {
   ARRAY_CAPTION,

@@ -298,6 +298,7 @@ describe('createTestToolset channel identity', () => {
         getService: () => {
           throw new Error('unused');
         },
+        signal: new AbortController().signal,
       }
     );
 

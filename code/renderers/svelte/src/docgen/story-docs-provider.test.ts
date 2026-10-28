@@ -4,11 +4,11 @@ import type {
   IndexEntry,
   Options,
   StoryDocsPayload,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { experimental_docgenProvider } from './preset.ts';
+import { getDocgenProvider } from './provider.ts';
 import { buildStoryDocsPayload } from './story-docs/build-story-docs.ts';
 import { experimental_storyDocsProvider } from './story-docs-provider.ts';
 
@@ -25,7 +25,7 @@ const DOWNSTREAM: StoryDocsPayload = {
 const optionsWith = (apply: (key: string) => Promise<object | undefined>): Options =>
   ({ presets: { apply } }) as Options;
 
-const SVELTE_DESCRIPTORS = await experimental_docgenProvider([]);
+const SVELTE_DESCRIPTORS = [getDocgenProvider()];
 
 const svelteWorkerOptions = optionsWith(async () => SVELTE_DESCRIPTORS);
 

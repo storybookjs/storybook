@@ -18,7 +18,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { generateDocumentation, resolveCompodocCli } from './generate-documentation.ts';
 
-vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('@storybook/core/internal/node-logger', { spy: true });
 
 /**
  * Stands in for the Compodoc binary, without the cost of a real scan. It keeps the two behaviours

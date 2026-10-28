@@ -1,4 +1,4 @@
-import type { internal_UniversalStore } from 'storybook/internal/core-server';
+import type { internal_UniversalStore } from 'storybook/internal/services';
 import type { Status, StoryId } from 'storybook/internal/types';
 import type { API_HashEntry } from 'storybook/internal/types';
 import type { Report } from 'storybook/preview-api';

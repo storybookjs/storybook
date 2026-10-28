@@ -1,5 +1,8 @@
-import { logger } from 'storybook/internal/node-logger';
-import type { Options } from 'storybook/internal/types';
+import './hooks.ts';
+
+import type { Storybook } from '@storybook/core';
+import { logger } from '@storybook/core/internal/node-logger';
+import type { BuilderStats } from '@storybook/core/internal/types';
 
 import { dedent } from 'ts-dedent';
 import type { InlineConfig } from 'vite';
@@ -9,21 +12,25 @@ import type { WebpackStatsPlugin } from './plugins/index.ts';
 import { hasVitePlugins } from './utils/has-vite-plugins.ts';
 import { bundlerOptionsKey } from './utils/vite-features.ts';
 import { withoutVitePlugins } from './utils/without-vite-plugins.ts';
-import { commonConfig } from './vite-config.ts';
+import { commonConfig, getViteHookContext, type ViteConfigInput } from './vite-config.ts';
 
 function findPlugin(config: InlineConfig, name: string) {
   return config.plugins?.find((p) => p && 'name' in p && p.name === name);
 }
 
-export async function build(options: Options) {
+export async function build(
+  storybook: Storybook,
+  input: ViteConfigInput & { outDir: string }
+): Promise<BuilderStats | undefined> {
   const { build: viteBuild, mergeConfig } = await import('vite');
-  const { presets } = options;
+  const { outDir } = input;
+  const { test, build: buildOptions } = storybook.options;
 
-  const config = await commonConfig(options, 'build');
+  const config = await commonConfig(storybook, input, 'build');
 
   config.build = mergeConfig(config, {
     build: {
-      outDir: options.outputDir,
+      outDir,
       emptyOutDir: false, // do not clean before running Vite build - Storybook has already added assets in there!
       // Storybook copies the public dir itself through the `staticDirs` preset so that its own
       // output files and user `staticDirs` take precedence over public assets.
@@ -32,18 +39,22 @@ export async function build(options: Options) {
       [bundlerOptionsKey]: {
         external: [/\.\/sb-common-assets\/.*\.woff2/],
       },
-      ...(options.test
+      ...(test
         ? {
             reportCompressedSize: false,
-            sourcemap: !options.build?.test?.disableSourcemaps,
+            sourcemap: !buildOptions?.test?.disableSourcemaps,
             target: 'esnext',
-            treeshake: !options.build?.test?.disableTreeShaking,
+            treeshake: !buildOptions?.test?.disableTreeShaking,
           }
         : {}),
     },
   } as InlineConfig).build;
 
-  const finalConfig = (await presets.apply('viteFinal', config, options)) as InlineConfig;
+  const finalConfig = await storybook.callHook(
+    'builder:vite:extend',
+    config,
+    getViteHookContext(storybook)
+  );
 
   // Add a plugin to enforce key build properties that may be overwritten
   // by framework plugins like Nitro or Adonis. We run in `enforce: 'post'`
@@ -54,7 +65,7 @@ export async function build(options: Options) {
     config: () => ({
       build: {
         emptyOutDir: false,
-        outDir: options.outputDir,
+        outDir,
       },
     }),
     // Our builds only touch the client environment. No need to change build
@@ -64,24 +75,11 @@ export async function build(options: Options) {
         ? {
             build: {
               emptyOutDir: false,
-              outDir: options.outputDir,
+              outDir,
             },
           }
         : null,
   });
-
-  if (options.features?.developmentModeForBuild) {
-    finalConfig.plugins?.push({
-      name: 'storybook:define-env',
-      config: () => {
-        return {
-          define: {
-            'process.env.NODE_ENV': JSON.stringify('development'),
-          },
-        };
-      },
-    });
-  }
 
   const turbosnapPluginName = 'rollup-plugin-turbosnap';
   const hasTurbosnapPlugin =

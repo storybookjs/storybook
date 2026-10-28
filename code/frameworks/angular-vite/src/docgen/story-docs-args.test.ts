@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseExpression } from 'storybook/internal/csf-tools';
+import { parseExpression } from '@storybook/core/internal/csf-tools';
 
 import { argFieldValue, evaluateArgExpression } from './story-docs-args.ts';
 

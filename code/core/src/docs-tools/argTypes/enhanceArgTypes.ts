@@ -1,4 +1,8 @@
-import type { Renderer, StoryContextForEnhancers, Parameters } from 'storybook/internal/types';
+import type {
+  Renderer,
+  StoryContextForEnhancers,
+  Parameters,
+} from '@storybook/core/internal/types';
 
 import { combineParameters } from '../../preview-api/modules/store/parameters.ts';
 

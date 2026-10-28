@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 
-import { TabsView } from 'storybook/internal/components';
+import { ArgsTable, TabsView } from 'storybook/internal/components';
+import type { Args } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect, userEvent, within } from 'storybook/test';
 
-import * as ArgRow from './ArgRow.stories';
-import { ArgsTable } from './ArgsTable';
-import { Compact, Normal, Sections } from './ArgsTable.stories';
+import {
+  COMPACT_ARGS,
+  NORMAL_ARGS,
+  NUMBER_ROW,
+  SECTIONS_ARGS,
+  STRING_ROW,
+} from './argsTableFixtures.ts';
 import type { TabbedArgsTableProps } from './TabbedArgsTable';
 import { TabbedArgsTable } from './TabbedArgsTable';
-import type { Args } from './types';
 
 const meta = {
   component: TabbedArgsTable,
@@ -24,9 +28,9 @@ export default meta;
 export const Tabs: StoryObj<typeof meta> = {
   args: {
     tabs: {
-      Normal: Normal.args,
-      Compact: Compact.args,
-      Sections: Sections.args,
+      Normal: NORMAL_ARGS,
+      Compact: COMPACT_ARGS,
+      Sections: SECTIONS_ARGS,
     },
   },
 };
@@ -34,9 +38,9 @@ export const Tabs: StoryObj<typeof meta> = {
 export const TabsInAddonPanel: StoryObj<typeof meta> = {
   args: {
     tabs: {
-      Normal: Normal.args,
-      Compact: Compact.args,
-      Sections: Sections.args,
+      Normal: NORMAL_ARGS,
+      Compact: COMPACT_ARGS,
+      Sections: SECTIONS_ARGS,
     },
     inAddonPanel: true,
   },
@@ -51,9 +55,9 @@ export const Empty: StoryObj<typeof meta> = {
 export const WithContentAround: StoryObj<typeof meta> = {
   args: {
     tabs: {
-      Normal: Normal.args,
-      Compact: Compact.args,
-      Sections: Sections.args,
+      Normal: NORMAL_ARGS,
+      Compact: COMPACT_ARGS,
+      Sections: SECTIONS_ARGS,
     },
   },
   render: (args) => (
@@ -74,12 +78,12 @@ export const RetainControlFocusWithTabs: StoryObj<typeof meta> = {
     tabs: {
       Main: {
         rows: {
-          someString: ArgRow.String.args.row,
+          someString: STRING_ROW,
         },
       },
       Other: {
         rows: {
-          numberType: ArgRow.Number.args.row,
+          numberType: NUMBER_ROW,
         },
       },
     },

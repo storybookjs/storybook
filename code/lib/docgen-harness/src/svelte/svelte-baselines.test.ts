@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { cleanup } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { Channel, setChannel } from 'storybook/internal/channels';
 import { SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
 import type {
   AnnotatedStoryFn,
@@ -18,10 +19,6 @@ import type {
 import { flushSync } from 'svelte';
 import type { Component } from 'svelte';
 
-import {
-  createTestChannel,
-  installTestChannel,
-} from '../../../../core/src/channels/test-channel.ts';
 import { extractArgTypes } from '../../../../renderers/svelte/src/extractArgTypes.ts';
 import { extractComponentDescription } from '../../../../renderers/svelte/src/extractComponentDescription.ts';
 import { generateSvelteSource } from '../../../../renderers/svelte/src/docs/sourceDecorator.ts';
@@ -49,8 +46,8 @@ const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
 
 const CHANNEL_WAIT_MS = 1000;
 
-const channel = createTestChannel();
-installTestChannel(channel);
+const channel = new Channel({ transport: { setHandler: () => {}, send: () => {} } });
+setChannel(channel);
 setProjectAnnotations([]);
 
 type ComponentWithDocgen = Component & {

@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { stat } from 'node:fs/promises';
-import { getProjectRoot } from 'storybook/internal/common';
+import { getProjectRoot } from '@storybook/core/internal/common';
 import { createCheckerByJson, TypeMeta } from 'vue-component-meta';
 
 vi.mock('vue-component-meta', { spy: true });
-vi.mock('storybook/internal/common', { spy: true });
+vi.mock('@storybook/core/internal/common', { spy: true });
 vi.mock('vue-docgen-api', { spy: true });
 vi.mock('node:fs/promises', { spy: true });
 
@@ -29,8 +29,8 @@ type TransformHandler = (src: string, id: string) => Promise<{ code: string } | 
 
 async function getPlugin() {
   const { vueComponentMeta } = await import('./vue-component-meta.ts');
-  const { experimental_vueDocgenEngine } = await import('@storybook/vue3/preset');
-  const plugin = await vueComponentMeta(await experimental_vueDocgenEngine());
+  const { vueDocgenEngine } = await import('@storybook/vue3/node');
+  const plugin = await vueComponentMeta(await vueDocgenEngine());
 
   const handler =
     typeof plugin.transform === 'function'

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
+import type { IndexEntry, StoryIndex } from '@storybook/core/internal/types';
 
 import {
   OpenServiceDocgenMissingComponentError,

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
-import { logger } from 'storybook/internal/client-logger';
+import { logger } from '@storybook/core/internal/client-logger';
 
 import { OpenServiceMissingChannelError } from '../../server-errors.ts';
 import { createTestChannel, installTestChannel } from '../../channels/test-channel.ts';
@@ -17,7 +17,7 @@ import { SERVICE_ENTRY, SERVICE_SYNC_REPLY, SERVICE_SYNC_REQUEST } from './servi
 import { unregisterService, registerService as registerLeaf } from './service-registry.ts';
 import { clearRegistry, registerService as registerHub } from './server.ts';
 
-vi.mock('storybook/internal/client-logger', { spy: true });
+vi.mock('@storybook/core/internal/client-logger', { spy: true });
 
 const { id: recordServiceId } = mutableRecordLookupServiceDef;
 

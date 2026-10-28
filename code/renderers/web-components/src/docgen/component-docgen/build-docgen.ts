@@ -1,10 +1,13 @@
-import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
+import {
+  getComponentIdFromEntry,
+  getStoryImportPathFromEntry,
+} from '@storybook/core/internal/common';
 import {
   type JsDocTagMap,
   extractComponentDescription,
   extractDescription,
-} from 'storybook/internal/csf-tools';
-import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
+} from '@storybook/core/internal/csf-tools';
+import type { DocgenPayload, DocgenProviderInput } from '@storybook/core/internal/types';
 
 import { resolve } from 'pathe';
 

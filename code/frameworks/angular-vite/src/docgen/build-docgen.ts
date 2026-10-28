@@ -1,5 +1,12 @@
-import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
-import type { DocgenJsDocTags, DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
+import {
+  getComponentIdFromEntry,
+  getStoryImportPathFromEntry,
+} from '@storybook/core/internal/common';
+import type {
+  DocgenJsDocTags,
+  DocgenPayload,
+  DocgenProviderInput,
+} from '@storybook/core/internal/types';
 
 import { resolve } from 'node:path';
 

@@ -2,9 +2,9 @@ import { readFile } from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { SourceEditor } from 'storybook/internal/csf-tools';
-import type { IndexEntry } from 'storybook/internal/types';
-import type { DocgenPayload } from 'storybook/open-service';
+import { SourceEditor } from '@storybook/core/internal/csf-tools';
+import type { IndexEntry } from '@storybook/core/internal/types';
+import type { DocgenPayload } from '@storybook/core/open-service';
 
 import { vol } from 'memfs';
 

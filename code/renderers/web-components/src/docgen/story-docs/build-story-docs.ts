@@ -1,11 +1,14 @@
-import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
-import { storyNameFromExport } from 'storybook/internal/csf';
+import {
+  getComponentIdFromEntry,
+  getStoryImportPathFromEntry,
+} from '@storybook/core/internal/common';
+import { storyNameFromExport } from '@storybook/core/internal/csf';
 import type {
   CsfFile,
   ESTreeNode as Node,
   StoryArgsResolver,
   StoryReferences,
-} from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/csf-tools';
 import {
   authoredSource,
   createStoryArgsResolver,
@@ -16,8 +19,12 @@ import {
   oneLineTextOf,
   unwrapExpression,
   unresolvedWarning,
-} from 'storybook/internal/csf-tools';
-import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
+} from '@storybook/core/internal/csf-tools';
+import type {
+  StoryDoc,
+  StoryDocsPayload,
+  StoryDocsProviderInput,
+} from '@storybook/core/internal/types';
 
 import { resolve } from 'node:path';
 

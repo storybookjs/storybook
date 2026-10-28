@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { ImportEdge, ImportParserContext } from 'storybook/internal/core-server';
-import { ChangeDetectionFailureError } from 'storybook/internal/core-server';
+import type { ImportEdge, ImportParserContext } from '@storybook/core/internal/services';
+import { ChangeDetectionFailureError } from '@storybook/core/internal/services';
 
 import { vueImportParser } from './vueImportParser.ts';
 

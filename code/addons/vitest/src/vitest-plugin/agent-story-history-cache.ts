@@ -1,5 +1,8 @@
-import { createFileSystemCache, resolvePathInStorybookCache } from 'storybook/internal/common';
-import type { StoryTestResult, StoryTestResultHistory } from 'storybook/internal/core-server';
+import {
+  createFileSystemCache,
+  resolvePathInStorybookCache,
+} from '@storybook/core/internal/common';
+import type { StoryTestResult, StoryTestResultHistory } from '@storybook/core/internal/services';
 
 const CACHE_KEY = 'agent-self-healing-story-history';
 

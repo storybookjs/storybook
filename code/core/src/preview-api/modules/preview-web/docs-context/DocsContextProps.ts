@@ -1,1 +1,1 @@
-export type { DocsContextProps } from 'storybook/internal/types';
+export type { DocsContextProps } from '@storybook/core/internal/types';

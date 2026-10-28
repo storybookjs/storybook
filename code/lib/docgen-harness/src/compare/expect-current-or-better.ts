@@ -1,4 +1,4 @@
-import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
+import type { StrictArgTypes } from 'storybook/internal/csf';
 import type { CompareArgTypesOptions } from './argtypes.ts';
 import { compareArgTypes } from './argtypes.ts';
 import type { CompareSnippetInput } from './snippets.ts';

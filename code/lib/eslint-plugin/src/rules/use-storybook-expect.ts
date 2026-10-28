@@ -46,7 +46,8 @@ export default createStorybookRule<TDefaultOptions, string>({
       const usesExpectFromStorybook =
         packageName === '@storybook/jest' ||
         packageName === '@storybook/test' ||
-        packageName === 'storybook/test';
+        packageName === 'storybook/test' ||
+        packageName === '@storybook/core/test';
       return (
         usesExpectFromStorybook &&
         node.specifiers.find(

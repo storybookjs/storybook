@@ -3,7 +3,7 @@ import type {
   InputType,
   StrictArgTypes,
   StrictInputType,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 import { mapValues } from 'es-toolkit/object';
 

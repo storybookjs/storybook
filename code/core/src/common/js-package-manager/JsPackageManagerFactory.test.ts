@@ -16,7 +16,7 @@ import { PNPMProxy } from './PNPMProxy.ts';
 import { Yarn1Proxy } from './Yarn1Proxy.ts';
 import { Yarn2Proxy } from './Yarn2Proxy.ts';
 
-vi.mock('../utils/command', { spy: true });
+vi.mock('../utils/command.ts', { spy: true });
 const executeCommandSyncMock = vi.mocked(executeCommandSync);
 
 vi.mock('empathic/find');
@@ -25,7 +25,7 @@ const findMock = vi.mocked(find);
 vi.mock('empathic/walk');
 const walkMock = vi.mocked(walk);
 
-vi.mock('../utils/paths', { spy: true });
+vi.mock('../utils/paths.ts', { spy: true });
 const getProjectRootMock = vi.mocked(getProjectRoot);
 
 vi.mock('node:fs', { spy: true });

@@ -1,4 +1,4 @@
-import { registerService } from 'storybook/internal/common';
+import { registerService } from '@storybook/core/internal/common';
 import { remoteCommandSyncServiceDef } from './definition.ts';
 
 export function registerRemoteCommandSyncService() {

@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { logger, prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from '@storybook/core/internal/node-logger';
 
 import { JsPackageManager } from './JsPackageManager.ts';
 
-vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('@storybook/core/internal/node-logger', { spy: true });
 
 const mockVersions = vi.hoisted(() => ({
   '@storybook/react': '8.3.0',
 }));
 
-vi.mock('../versions', () => ({
+vi.mock('../versions.ts', () => ({
   default: mockVersions,
 }));
 

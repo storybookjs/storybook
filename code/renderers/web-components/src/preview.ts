@@ -23,8 +23,8 @@ import type {
 
 import type { Simplify } from 'type-fest';
 
-import * as webComponentsAnnotations from './entry-preview.ts';
-import * as webComponentsDocsAnnotations from './entry-preview-docs.ts';
+import webComponentsAnnotations from './entry-preview.ts';
+import webComponentsDocsAnnotations from './entry-preview-docs.ts';
 import { type WebComponentsTypes } from './types.ts';
 
 /**

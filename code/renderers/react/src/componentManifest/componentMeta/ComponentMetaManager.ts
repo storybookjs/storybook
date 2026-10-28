@@ -13,8 +13,8 @@ import {
   type ComponentMetaProjectFactory,
   type FileSnapshotCache,
   parseTsconfigCommandLine,
-} from 'storybook/internal/component-meta';
-import { logger } from 'storybook/internal/node-logger';
+} from '@storybook/core/internal/component-meta';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import type ts from 'typescript';
 
@@ -23,7 +23,7 @@ import { groupByToMap } from '../utils.ts';
 import { ComponentMetaProject } from './ComponentMetaProject.ts';
 
 // The manager's tsconfig-matching helpers are re-exported for existing consumers and tests.
-export { isFileInDir, sortTSConfigs } from 'storybook/internal/component-meta';
+export { isFileInDir, sortTSConfigs } from '@storybook/core/internal/component-meta';
 
 const DEFAULT_INFERRED_OPTIONS: ts.CompilerOptions = {
   strict: true,

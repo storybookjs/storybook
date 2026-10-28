@@ -1,14 +1,14 @@
 import type { SerializedError, TaskMeta } from 'vitest';
 import type { Reporter, TestCase, TestModule, Vitest } from 'vitest/node';
 
-import type { Report } from 'storybook/preview-api';
-import { analyzeTestResults, toStoryTestResult } from 'storybook/internal/core-server';
-import type { StoryTestResult } from 'storybook/internal/core-server';
-import { isExampleStoryId, telemetry } from 'storybook/internal/telemetry';
-import type { AgentInfo } from 'storybook/internal/telemetry';
+import type { Report } from '@storybook/core/preview-api';
+import { analyzeTestResults, toStoryTestResult } from '@storybook/core/internal/services';
+import type { StoryTestResult } from '@storybook/core/internal/services';
+import { isExampleStoryId, telemetry } from '@storybook/core/internal/telemetry';
+import type { AgentInfo } from '@storybook/core/internal/telemetry';
 
 import { mergeAndWriteStoryHistory } from './agent-story-history-cache.ts';
-import { getAiSetupRunId } from '../../../../core/src/shared/utils/ai-checklist-flags.ts';
+import { getAiSetupRunId } from '@storybook/core/internal/common';
 
 interface AgentTelemetryReporterOptions {
   configDir: string;

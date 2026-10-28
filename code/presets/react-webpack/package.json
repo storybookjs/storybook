@@ -26,19 +26,22 @@
       "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "code": "./src/node.ts",
+      "default": "./dist/node.js"
+    },
     "./package.json": "./package.json",
-    "./preset-react-docs": "./dist/framework-preset-react-docs.js",
     "./react-docgen-loader": "./dist/loaders/react-docgen-loader.js"
   },
   "files": [
     "dist/**/*",
     "README.md",
-    "*.js",
-    "*.d.ts",
     "!src/**/*"
   ],
   "dependencies": {
-    "@storybook/core-webpack": "workspace:*",
+    "@storybook/builder-webpack5": "workspace:*",
+    "@storybook/core": "workspace:*",
     "@storybook/react-docgen-typescript-plugin": "1.0.6--canary.9.0c3f3b7.0",
     "magic-string": "^1.1.0",
     "react-docgen": "^8.0.2",
@@ -47,6 +50,7 @@
     "webpack": "5"
   },
   "devDependencies": {
+    "@storybook/builder-webpack5": "workspace:*",
     "@types/node": "^22.19.1",
     "empathic": "^2.0.0",
     "typescript": "^6.0.3"
@@ -57,6 +61,9 @@
     "storybook": "workspace:^"
   },
   "peerDependenciesMeta": {
+    "storybook": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     }

@@ -6,7 +6,7 @@
  * reach the same work at the same moment. An in-process promise memo does not cover that, and it does
  * not even cover one process, since a worker thread has its own module registry.
  */
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { randomUUID } from 'node:crypto';
 import { readFileSync, rmSync } from 'node:fs';

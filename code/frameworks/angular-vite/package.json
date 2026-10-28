@@ -43,7 +43,6 @@
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
-    "./preset": "./dist/preset.js",
     "./vitest": {
       "types": "./dist/node/vitest.d.ts",
       "code": "./src/node/vitest.ts",
@@ -57,13 +56,11 @@
     "dist/**/*",
     "template/cli/**/*",
     "README.md",
-    "*.js",
-    "*.mjs",
-    "*.d.ts",
     "!src/**/*"
   ],
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
+    "@storybook/core": "workspace:*",
     "@storybook/global": "^5.0.0",
     "telejson": "8.0.0",
     "ts-dedent": "^2.2.0",

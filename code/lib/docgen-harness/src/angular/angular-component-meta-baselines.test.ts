@@ -10,7 +10,7 @@ import ts from 'typescript';
 
 import type { PropsTableMode } from '@storybook/angular-cm';
 import { AngularComponentMetaManager, extractArgTypesFromData } from '@storybook/angular-cm';
-import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
+import type { StrictArgTypes } from 'storybook/internal/csf';
 import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
 import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';

@@ -1,4 +1,4 @@
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { basename, dirname, relative, resolve as resolvePath } from 'pathe';
 

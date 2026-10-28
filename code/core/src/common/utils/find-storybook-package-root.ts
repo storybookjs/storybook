@@ -1,22 +1,19 @@
 import { readFileSync, realpathSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 
 import { dirname, join, normalize } from 'pathe';
 
-const ownDir = normalize(dirname(fileURLToPath(import.meta.url)));
-
 /**
- * Find the root directory of the `storybook` package this module runs from, as a realpathed
+ * Find the root directory of the package named `name` that `fromDir` belongs to, as a realpathed
  * normalized path.
  *
- * Walks up from this module's own directory to the first `package.json` whose `name` is
- * `storybook`; manifests with other names, such as ESM/CJS type markers in dist subfolders, are
- * skipped. Returns `undefined` when no such manifest exists.
+ * Walks up from `fromDir` to the first `package.json` whose `name` matches; manifests with other
+ * names, such as ESM/CJS type markers in dist subfolders, are skipped. Returns `undefined` when no
+ * such manifest exists.
  */
-export function findStorybookPackageRoot(): string | undefined {
-  let dir = ownDir;
+export function findPackageRoot(fromDir: string, name: string): string | undefined {
+  let dir = normalize(fromDir);
   while (true) {
-    if (readManifestName(dir) === 'storybook') {
+    if (readManifestName(dir) === name) {
       try {
         return normalize(realpathSync(dir));
       } catch {
@@ -29,6 +26,11 @@ export function findStorybookPackageRoot(): string | undefined {
     }
     dir = parent;
   }
+}
+
+/** Find the root directory of the `storybook` package that `fromDir` belongs to. */
+export function findStorybookPackageRoot(fromDir: string): string | undefined {
+  return findPackageRoot(fromDir, 'storybook');
 }
 
 function readManifestName(dir: string): string | undefined {

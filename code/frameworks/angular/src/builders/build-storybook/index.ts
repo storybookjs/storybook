@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
 
-import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/common';
-import { buildStaticStandalone, withTelemetry } from 'storybook/internal/core-server';
-import { addToGlobalContext } from 'storybook/internal/telemetry';
-import type { CLIOptions } from 'storybook/internal/types';
-import { logger, logTracker } from 'storybook/internal/node-logger';
+import { getEnvConfig, getProjectRoot, versions } from '@storybook/core/internal/common';
+import { buildStaticStandalone, withTelemetry } from 'storybook/internal/server';
+import { addToGlobalContext } from '@storybook/core/internal/telemetry';
+import type { CLIOptions } from '@storybook/core/internal/types';
+import { logger, logTracker } from '@storybook/core/internal/node-logger';
 
 import type {
   BuilderContext,
@@ -30,7 +30,7 @@ import * as pkg from 'empathic/package';
 import { errorSummary, printErrorDetails } from '../utils/error-handler.ts';
 import { runCompodoc } from '../utils/run-compodoc.ts';
 import type { StandaloneOptions } from '../utils/standalone-options.ts';
-import { Channel } from 'storybook/internal/channels';
+import { Channel } from '@storybook/core/internal/channels';
 
 addToGlobalContext('cliVersion', versions.storybook);
 

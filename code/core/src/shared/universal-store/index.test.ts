@@ -8,8 +8,8 @@ import { MockUniversalStore } from './mock.ts';
 import type { ChannelEvent } from './types.ts';
 import { UniversalStoreFollowerTimeoutError } from '../../manager-errors.ts';
 
-vi.mock('./instances');
-vi.mock('./first-party-store-ids');
+vi.mock('./instances.ts');
+vi.mock('./first-party-store-ids.ts');
 
 const mockChannelListeners = new Map<string, Set<(...args: any[]) => void>>();
 

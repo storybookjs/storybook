@@ -1,13 +1,12 @@
 import { beforeEach, expect, test, vi } from 'vitest';
 
-import { Tag } from 'storybook/internal/core-server';
-
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
+import { Tag } from '@storybook/core/internal/story-index';
 import { ComponentMetaManager } from './componentMeta/ComponentMetaManager.ts';
 import { indexJson } from './fixtures.ts';
-import { manifests } from './generator.ts';
+import { buildManifests } from './generator.ts';
 import { setupMemfsMocks } from './memfs-test-setup.ts';
 
 // Opt into memfs for this file (loads from __mocks__/fs.cjs)
@@ -15,25 +14,25 @@ vi.mock('node:fs');
 vi.mock('node:fs/promises');
 
 vi.mock(import('./utils.ts'), { spy: true });
-vi.mock('storybook/internal/common', { spy: true });
+vi.mock('@storybook/core/internal/common', { spy: true });
 vi.mock('empathic/find', { spy: true });
 vi.mock('tsconfig-paths', { spy: true });
 
-/** Call manifests with only the fields tests need (presets/watch are optional-chained at runtime). */
-type ManifestOptions = Parameters<typeof manifests>[1];
+type ManifestOptions = Parameters<typeof buildManifests>[1];
 type ManifestEntries = ManifestOptions['manifestEntries'];
-const createManifestOptions = (
-  manifestEntries: ManifestEntries,
-  options: Partial<ManifestOptions> = {}
-): ManifestOptions => ({ watch: false, manifestEntries, ...options }) as ManifestOptions;
 
-const runManifests = (manifestEntries: ManifestEntries) =>
-  manifests(undefined, createManifestOptions(manifestEntries));
+const COMPONENT_META_FEATURES = { experimentalReactComponentMeta: true };
 
 const runManifestsWithOptions = (
   manifestEntries: ManifestEntries,
   options: Partial<ManifestOptions> = {}
-) => manifests(undefined, createManifestOptions(manifestEntries, options));
+) =>
+  buildManifests(
+    {},
+    { watch: false, manifestEntries, typescriptOptions: {}, features: undefined, ...options }
+  );
+
+const runManifests = (manifestEntries: ManifestEntries) => runManifestsWithOptions(manifestEntries);
 
 beforeEach(() => {
   setupMemfsMocks();
@@ -780,18 +779,6 @@ test('includes aliased member-expression subcomponents', async () => {
       }
     });
 
-  const presets = {
-    apply: async (extension: string, config?: unknown) => {
-      if (extension === 'typescript') {
-        return {};
-      }
-      if (extension === 'features') {
-        return { experimentalReactComponentMeta: true };
-      }
-      return config;
-    },
-  } as NonNullable<ManifestOptions['presets']>;
-
   const manifestEntries: ManifestEntries = [
     {
       type: 'story',
@@ -806,7 +793,9 @@ test('includes aliased member-expression subcomponents', async () => {
     },
   ];
 
-  const result = await runManifestsWithOptions(manifestEntries, { presets });
+  const result = await runManifestsWithOptions(manifestEntries, {
+    features: COMPONENT_META_FEATURES,
+  });
   const comboBox = result?.components?.components?.['example-combo-box'] as any;
 
   expect(comboBox?.subcomponents?.Item?.name).toBe('Item');
@@ -888,20 +877,10 @@ test('generator uses reactComponentMeta displayName from batch extraction', asyn
       }
     });
 
-  const presets = {
-    apply: async (extension: string, config?: unknown) => {
-      if (extension === 'typescript') {
-        return {};
-      }
-      if (extension === 'features') {
-        return { experimentalReactComponentMeta: true };
-      }
-      return config;
-    },
-  } as NonNullable<ManifestOptions['presets']>;
-
   const manifestEntries: ManifestEntries = [indexJson.entries['example-header--logged-in']];
-  const result = await runManifestsWithOptions(manifestEntries, { presets });
+  const result = await runManifestsWithOptions(manifestEntries, {
+    features: COMPONENT_META_FEATURES,
+  });
   const header = result?.components?.components?.['example-header'];
 
   expect(
@@ -935,20 +914,10 @@ test('generator preserves @import override when reactComponentMeta is enabled', 
       }
     });
 
-  const presets = {
-    apply: async (extension: string, config?: unknown) => {
-      if (extension === 'typescript') {
-        return {};
-      }
-      if (extension === 'features') {
-        return { experimentalReactComponentMeta: true };
-      }
-      return config;
-    },
-  } as NonNullable<ManifestOptions['presets']>;
-
   const manifestEntries: ManifestEntries = [indexJson.entries['example-button--primary']];
-  const result = await runManifestsWithOptions(manifestEntries, { presets });
+  const result = await runManifestsWithOptions(manifestEntries, {
+    features: COMPONENT_META_FEATURES,
+  });
   const button = result?.components?.components?.['example-button'];
 
   // `fn` joins the block because the story's args call it, so the snippet compiles as pasted.
@@ -1013,18 +982,6 @@ test('generator falls back to title-based matching when meta.component aliases a
       }
     });
 
-  const presets = {
-    apply: async (extension: string, config?: unknown) => {
-      if (extension === 'typescript') {
-        return {};
-      }
-      if (extension === 'features') {
-        return { experimentalReactComponentMeta: true };
-      }
-      return config;
-    },
-  } as NonNullable<ManifestOptions['presets']>;
-
   const manifestEntries = [
     {
       type: 'story' as const,
@@ -1039,7 +996,9 @@ test('generator falls back to title-based matching when meta.component aliases a
     },
   ] satisfies ManifestEntries;
 
-  const result = await runManifestsWithOptions(manifestEntries, { presets });
+  const result = await runManifestsWithOptions(manifestEntries, {
+    features: COMPONENT_META_FEATURES,
+  });
   const accordion = result?.components?.components?.['example-accordion'];
 
   expect(accordion?.error).toBeUndefined();

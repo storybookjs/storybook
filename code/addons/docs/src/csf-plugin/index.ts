@@ -1,7 +1,7 @@
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { EnrichCsfOptions } from 'storybook/internal/csf-tools';
+import type { EnrichCsfOptions } from '@storybook/core/internal/csf-tools';
 
 import type { UnpluginFactory } from 'unplugin';
 import { createUnplugin } from 'unplugin';

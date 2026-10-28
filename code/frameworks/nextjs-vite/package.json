@@ -59,7 +59,6 @@
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
-    "./preset": "./dist/preset.js",
     "./preview": {
       "types": "./dist/preview.d.ts",
       "code": "./src/preview.tsx",
@@ -83,12 +82,11 @@
     "dist/**/*",
     "template/cli/**/*",
     "README.md",
-    "*.js",
-    "*.d.ts",
     "!src/**/*"
   ],
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
+    "@storybook/core": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
     "styled-jsx": "5.1.6",
@@ -116,6 +114,9 @@
       "optional": true
     },
     "@types/react-dom": {
+      "optional": true
+    },
+    "storybook": {
       "optional": true
     },
     "typescript": {

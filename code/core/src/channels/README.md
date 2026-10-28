@@ -33,9 +33,8 @@ For more information visit: [storybook.js.org](https://storybook.js.org)
 
 ## Channel access (internal)
 
-Storybook installs one shared addons channel per runtime (manager, preview iframe, dev server).
-Use the channel-slot API from `storybook/internal/channels` in TypeScript — not direct reads of
-`__STORYBOOK_ADDONS_CHANNEL__`.
+Each runtime has one shared addons channel; inside a Node process, each Storybook instance has its own.
+Use the channel-slot API from `storybook/internal/channels` in TypeScript, not direct reads of `__STORYBOOK_ADDONS_CHANNEL__`.
 
 | Operation | API |
 | --------- | --- |
@@ -44,13 +43,17 @@ Use the channel-slot API from `storybook/internal/channels` in TypeScript — no
 | Install / replace | `setChannel(channel)` or `addons.setChannel(channel)` |
 | Clear | `clearChannel()` / `setChannel(null)` |
 
-The global `__STORYBOOK_ADDONS_CHANNEL__` is mirrored when `setChannel` runs so builder preamble and
-legacy snippets stay in sync. `getChannel()` reads the global slot first so duplicate bundles still
-see the live channel.
+Lookup order in `getChannel()`:
 
-**Per-runtime install (call sites do not wait):**
+- Inside an instance, it returns the instance's channel.
+- Otherwise it reads the global slot first, so duplicate bundles still see the live channel, then the module slot.
 
-- **Preview iframe:** builders run generated `addons.setChannel(createBrowserChannel(...))` before `preview.ts` loads.
-- **Manager:** `addons.setChannel` during manager boot, before `addons.register` callbacks.
-- **Node server:** `services` preset calls `setChannel(options.channel)` before registering services; a noop channel is also bootstrapped at import in non-browser realms.
-- **Tests:** `setChannel(mock)` in `beforeEach`, or rely on the Node import bootstrap noop.
+`setChannel` inside an instance replaces the instance's channel; outside one it writes the module slot and mirrors it to `__STORYBOOK_ADDONS_CHANNEL__` for builder preamble and legacy snippets.
+
+Per-runtime install (call sites do not wait):
+
+- Preview iframe: builders run generated `addons.setChannel(createBrowserChannel(...))` before `preview.ts` loads.
+- Manager: `addons.setChannel` during manager boot, before `addons.register` callbacks.
+- Node: each instance creates its channel in `createStorybook`; nothing on the server calls `setChannel`.
+  - Outside an instance, a noop channel is bootstrapped at import in non-browser realms.
+- Tests: `setChannel(mock)` in `beforeEach`, or rely on the Node import bootstrap noop.

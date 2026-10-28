@@ -5,7 +5,7 @@ import type { OptionSpecifier, OptionValues } from './options.ts';
 import { createOptions, getCommand } from './options.ts';
 
 const require = createRequire(import.meta.url);
-const cliExecutable = require.resolve('../../code/core/dist/bin/dispatcher.js');
+const cliExecutable = require.resolve('../../code/lib/storybook/dist/bin/dispatcher.js');
 const toolboxExecutable = require.resolve('../../code/lib/cli-storybook/dist/bin/index.js');
 const createStorybookExecutable =
   require.resolve('../../code/lib/create-storybook/dist/bin/index.js');

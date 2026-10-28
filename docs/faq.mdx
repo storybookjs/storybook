@@ -36,8 +36,8 @@ Storybook's [Next.js framework](./get-started/frameworks/nextjs.mdx) will read f
 If your project is set up within a monorepo, or uses a package manager with a non-standard `node_modules` layout (such as pnpm), you might run into issues with module resolution similar to this when running Storybook:
 
 ```shell
-WARN   Failed to load preset: "@storybook/react-webpack5/preset"
-Required package: @storybook/react-webpack5 (via "@storybook/react-webpack5/preset")
+WARN   Failed to load preset: "my-storybook-addon/preset"
+Required package: my-storybook-addon (via "my-storybook-addon/preset")
 ```
 
 To fix this, you can wrap the package name inside your Storybook configuration file (i.e., `.storybook/main.js|ts`) as follows:

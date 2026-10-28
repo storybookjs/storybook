@@ -1,12 +1,12 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 import invariant from 'tiny-invariant';
 
 import type { PrintResultType } from './PrintResultType.ts';
-import { createConfigObject, locateConfigRoot } from './ConfigObject.ts';
+import { createConfigObject, isConfigFactory, locateConfigRoot } from './ConfigObject.ts';
 import {
   type CsfExpression,
   type CsfInspection,
@@ -527,7 +527,6 @@ export class ConfigFile implements CsfObject {
         this.hasDefaultExport = true;
         let decl = this._resolveDeclaration(node.declaration as Node, isTopLevel);
 
-        // csf factory - unwrap call expressions like definePreview({...}) or definePreview({...}).type<T>()
         while (decl?.type === 'CallExpression') {
           if (decl.arguments[0]?.type === 'ObjectExpression') {
             decl = decl.arguments[0];
@@ -662,7 +661,7 @@ export class ConfigFile implements CsfObject {
         }
       } else if (
         node.type === 'CallExpression' &&
-        isIdentifier(node.callee, 'definePreview') &&
+        isConfigFactory(this.editor, node.callee, ['definePreview']) &&
         node.arguments.length === 1 &&
         node.arguments[0].type === 'ObjectExpression'
       ) {

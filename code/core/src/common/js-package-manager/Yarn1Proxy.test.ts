@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { prompt } from 'storybook/internal/node-logger';
+import { prompt } from '@storybook/core/internal/node-logger';
 
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import { Yarn1Proxy } from './Yarn1Proxy.ts';
 
-vi.mock('storybook/internal/node-logger', () => ({
+vi.mock('@storybook/core/internal/node-logger', () => ({
   prompt: {
     executeTaskWithSpinner: vi.fn(),
     getPreferredStdio: vi.fn(() => 'inherit'),

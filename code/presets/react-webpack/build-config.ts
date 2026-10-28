@@ -8,9 +8,8 @@ const config: BuildEntries = {
         entryPoint: './src/index.ts',
       },
       {
-        exportEntries: ['./preset-react-docs'],
-        entryPoint: './src/framework-preset-react-docs.ts',
-        dts: false,
+        exportEntries: ['./node'],
+        entryPoint: './src/node.ts',
       },
       {
         exportEntries: ['./react-docgen-loader'],

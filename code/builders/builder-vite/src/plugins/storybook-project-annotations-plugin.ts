@@ -1,39 +1,23 @@
-import type { Options } from 'storybook/internal/types';
+import type { PreviewSources } from '@storybook/core/internal/preview-page';
 
 import type { Plugin } from 'vite';
 
-import { generateProjectAnnotationsCode } from '../codegen-project-annotations.ts';
-import { getResolvedVirtualModuleId } from '../virtual-file-names.ts';
-
-export const VIRTUAL_ID = 'virtual:/@storybook/builder-vite/project-annotations.js';
-const RESOLVED_VIRTUAL_ID = getResolvedVirtualModuleId(VIRTUAL_ID);
-
-/**
- * A Vite plugin that serves the project annotations virtual module.
- *
- * The virtual module can be imported as:
- *
- * ```ts
- * import { getProjectAnnotations } from 'virtual:/@storybook/builder-vite/project-annotations.js';
- * ```
- */
-export function storybookProjectAnnotationsPlugin(options: Options): Plugin {
-  let projectRoot: string;
+/** Serve core's project annotations module, which the Vitest addon also imports. */
+export function storybookProjectAnnotationsPlugin(preview: PreviewSources): Plugin {
+  const id = preview.virtualModuleIds.projectAnnotations;
+  const resolvedId = `\0${id}`;
 
   return {
     name: 'storybook:project-annotations-plugin',
     enforce: 'pre',
-    configResolved(config) {
-      projectRoot = config.root;
-    },
     resolveId(source) {
-      if (source === VIRTUAL_ID) {
-        return RESOLVED_VIRTUAL_ID;
+      if (source === id) {
+        return resolvedId;
       }
     },
-    async load(id) {
-      if (id === RESOLVED_VIRTUAL_ID) {
-        return generateProjectAnnotationsCode(options, projectRoot);
+    load(loadedId) {
+      if (loadedId === resolvedId) {
+        return preview.modules.projectAnnotations;
       }
     },
   };

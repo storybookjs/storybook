@@ -34,21 +34,6 @@ const config: BuildEntries = {
         entryPoint: './src/node/index.ts',
       },
       {
-        exportEntries: ['./preset'],
-        entryPoint: './src/preset.ts',
-        dts: false,
-      },
-      {
-        exportEntries: ['./server/framework-preset-angular-ivy'],
-        entryPoint: './src/server/framework-preset-angular-ivy.ts',
-        dts: false,
-      },
-      {
-        exportEntries: ['./server/framework-preset-angular-cli'],
-        entryPoint: './src/server/framework-preset-angular-cli.ts',
-        dts: false,
-      },
-      {
         exportEntries: ['./builders/start-storybook'],
         entryPoint: './src/builders/start-storybook/index.ts',
         dts: false,

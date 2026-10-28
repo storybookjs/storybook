@@ -1,7 +1,8 @@
 import type { TestError } from 'vitest';
 import type { TestResult, TestState } from 'vitest/node';
 
-import type { internal_UniversalStore } from 'storybook/internal/core-server';
+import type { Report } from '@storybook/core/preview-api';
+import type { internal_UniversalStore } from '@storybook/core/internal/services';
 import type {
   Options,
   PreviewAnnotation,
@@ -9,12 +10,11 @@ import type {
   StatusValue,
   StoryIndex,
   TestProviderStoreById,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 import type { BuilderOptions } from '@storybook/builder-vite';
 
 import { throttle } from 'es-toolkit/function';
-import type { Report } from 'storybook/preview-api';
 
 import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants.ts';
 import type {

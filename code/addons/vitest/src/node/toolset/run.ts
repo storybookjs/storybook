@@ -1,12 +1,12 @@
-import type { ChannelLike } from 'storybook/internal/channels';
+import type { ChannelLike } from '@storybook/core/internal/channels';
 import {
   findStoryIds,
   type FoundStory,
   type NotFoundStory,
   type StoryInput,
-} from 'storybook/internal/core-server';
-import { OpenServiceTestRunTimeoutError } from 'storybook/internal/server-errors';
-import type { StoryIndex } from 'storybook/internal/types';
+} from '@storybook/core/internal/services';
+import { OpenServiceTestRunTimeoutError } from '@storybook/core/internal/server-errors';
+import type { StoryIndex } from '@storybook/core/internal/types';
 
 import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from '../../constants.ts';
 import type { TestRunOutput, TestRunResult } from './definition.ts';

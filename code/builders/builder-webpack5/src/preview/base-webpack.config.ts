@@ -1,18 +1,13 @@
 import { fileURLToPath } from 'node:url';
 
-import { logger } from 'storybook/internal/node-logger';
-import type { Options } from 'storybook/internal/types';
+import { logger } from '@storybook/core/internal/node-logger';
 
 import type { Configuration } from 'webpack';
 
-export async function createDefaultWebpackConfig(
+export function createDefaultWebpackConfig(
   storybookBaseConfig: Configuration,
-  options: Options
-): Promise<Configuration> {
-  const hasPostcssAddon = options.presetsList?.some((preset) =>
-    /@storybook(\/|\\)addon-postcss/.test(typeof preset === 'string' ? preset : preset.name)
-  );
-
+  { hasPostcssAddon }: { hasPostcssAddon: boolean }
+): Configuration {
   let cssLoaders = {};
   if (!hasPostcssAddon) {
     logger.info(`Using implicit CSS loaders`);

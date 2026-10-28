@@ -7,6 +7,7 @@ import {
 } from './mcp-handler.ts';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { PassThrough } from 'node:stream';
+import { fileURLToPath } from 'node:url';
 import { CompositionAuth } from './auth/index.ts';
 
 // Test helpers to reduce boilerplate
@@ -281,7 +282,9 @@ describe('mcpServerHandler', () => {
   }
 
   it('should initialize MCP server and handle requests', async () => {
-    const mockOptions = createMockOptions();
+    const mockOptions = createMockOptions({
+      configDir: fileURLToPath(new URL('./test-support/with-addon-vitest', import.meta.url)),
+    });
     const mockReq = createMockIncomingMessage({
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -406,13 +409,9 @@ describe('mcpServerHandler', () => {
 
     const mockOptions = createMockOptions({
       port: 6007,
+      core: { disableTelemetry: true },
       presets: {
-        apply: vi.fn(async (key: string) => {
-          if (key === 'core') {
-            return { disableTelemetry: true };
-          }
-          return {};
-        }),
+        apply: vi.fn(async () => ({})),
       },
     });
     const mockReq = createMockIncomingMessage({

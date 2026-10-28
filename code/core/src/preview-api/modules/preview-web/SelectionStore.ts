@@ -1,4 +1,4 @@
-import type { Args, StoryId, ViewMode } from 'storybook/internal/types';
+import type { Args, StoryId, ViewMode } from '@storybook/core/internal/types';
 
 import type { StorySpecifier } from '../store/StoryIndexStore.ts';
 

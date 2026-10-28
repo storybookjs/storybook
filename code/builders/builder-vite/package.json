@@ -33,27 +33,28 @@
       "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
-    "./input/iframe.html": "./input/iframe.html",
-    "./package.json": "./package.json",
-    "./preset": "./dist/preset.js"
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "code": "./src/node/index.ts",
+      "default": "./dist/node/index.js"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist/**/*",
-    "input/**/*",
     "README.md",
     "*.js",
     "*.d.ts",
-    "preset.js",
     "!src/**/*"
   ],
   "dependencies": {
+    "@storybook/core": "workspace:*",
     "ts-dedent": "^2.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.19.1",
     "empathic": "^2.0.0",
     "es-module-lexer": "^1.5.0",
-    "glob": "^10.5.0",
     "knitwork": "^1.1.0",
     "magic-string": "^1.1.0",
     "pathe": "^1.1.2",
@@ -63,6 +64,11 @@
   "peerDependencies": {
     "storybook": "workspace:^",
     "vite": "^6.3.0 || ^7.0.0 || ^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "storybook": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

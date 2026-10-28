@@ -16,7 +16,7 @@ import { ANALOG_VITE_PLUGIN_ANGULAR_VERSION } from 'storybook/internal/cli';
 import { globby } from 'globby';
 import { fs, vol } from 'memfs';
 
-import { resolveZoneless } from '../../../../../frameworks/angular-vite/src/preset.ts';
+import { resolveZoneless } from '../../../../../frameworks/angular-vite/src/vite-config.ts';
 import { add } from '../../add.ts';
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
 import type { CheckOptions, RunOptions } from '../types.ts';

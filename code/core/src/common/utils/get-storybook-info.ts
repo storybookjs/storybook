@@ -5,22 +5,22 @@ import type {
   CoreCommon_StorybookInfo,
   PackageJson,
   StorybookConfigRaw,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 import {
   CoreWebpackCompiler,
   SupportedBuilder,
   SupportedFramework,
   SupportedRenderer,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 import invariant from 'tiny-invariant';
 
-import { RN_STORYBOOK_DIR } from '../../shared/constants/config-folder.ts';
-import { storybookConfigExtensions } from '../../shared/constants/extensions.ts';
+import { RN_STORYBOOK_DIR } from '../../constants/config-folder.ts';
+import { storybookConfigExtensions } from '../../constants/extensions.ts';
 import { JsPackageManager } from '../js-package-manager/JsPackageManager.ts';
 import { frameworkToBuilder } from './framework.ts';
 import { getAddonNames } from './get-addon-names.ts';
-import { extractFrameworkPackageName } from './get-framework-name.ts';
+import { extractFrameworkPackageName, getFrameworkNameFromConfig } from './get-framework-name.ts';
 import { extractRenderer } from './get-renderer-name.ts';
 import { getStorybookConfiguration } from './get-storybook-configuration.ts';
 import { loadMainConfig } from './load-main-config.ts';
@@ -160,7 +160,7 @@ export const getStorybookInfo = async (
   invariant(mainConfig, `Unable to find or evaluate ${configInfo.mainConfigPath}`);
 
   const frameworkValue = mainConfig.framework;
-  const frameworkField = typeof frameworkValue === 'string' ? frameworkValue : frameworkValue?.name;
+  const frameworkField = getFrameworkNameFromConfig(frameworkValue);
   const addons = getAddonNames(mainConfig);
   const versionSpecifier = getStorybookVersionSpecifier(configDir);
 

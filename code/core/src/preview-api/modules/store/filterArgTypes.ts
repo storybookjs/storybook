@@ -1,4 +1,4 @@
-import type { StrictArgTypes } from 'storybook/internal/types';
+import type { StrictArgTypes } from '@storybook/core/internal/types';
 
 import { pickBy } from 'es-toolkit/object';
 

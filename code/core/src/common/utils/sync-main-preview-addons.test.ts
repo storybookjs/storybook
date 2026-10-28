@@ -1,15 +1,15 @@
 import type { Mock } from 'vitest';
 import { describe, expect, it, vi } from 'vitest';
 
-import { loadConfig, printConfig } from 'storybook/internal/csf-tools';
-import type { StorybookConfigRaw } from 'storybook/internal/types';
+import { loadConfig, printConfig } from '@storybook/core/internal/csf-tools';
+import type { StorybookConfigRaw } from '@storybook/core/internal/types';
 
 import { dedent } from 'ts-dedent';
 
 import { getAddonAnnotations } from './get-addon-annotations.ts';
 import { syncPreviewAddonsWithMainConfig } from './sync-main-preview-addons.ts';
 
-vi.mock('./get-addon-annotations');
+vi.mock('./get-addon-annotations.ts');
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? dedent(val) : dedent(val.toString())),
@@ -79,6 +79,36 @@ describe('syncPreviewAddonsWithMainConfig', () => {
             });
     `);
   });
+
+  it.each([false, true])(
+    'syncs a typed preview with an existing addons field: %s',
+    async (hasAddons) => {
+      const preview = loadConfig(dedent`
+      import { definePreview } from '@storybook/react-vite';
+      export default definePreview.for<M, X>()({ ${hasAddons ? 'addons: [],' : ''} tags: ['vitest'] });
+    `).parse();
+      vi.mocked(getAddonAnnotations).mockResolvedValue({
+        importName: 'addonA11yAnnotations',
+        importPath: '@storybook/addon-a11y/preview',
+        isCoreAddon: false,
+      });
+
+      const result = await syncPreviewAddonsWithMainConfig(mainConfig, preview, configDir);
+      const source = printConfig(result).code;
+      const reparsed = loadConfig(source).parse();
+
+      expect(result.mutationDiagnostics).toEqual([]);
+      expect(source).toContain('definePreview.for<M, X>()(');
+      expect(source).toContain(
+        "import * as addonA11yAnnotations from '@storybook/addon-a11y/preview';"
+      );
+      expect(reparsed.getFieldNode(['addons'])).toMatchObject({
+        type: 'ArrayExpression',
+        elements: [{ type: 'Identifier', name: 'addonA11yAnnotations' }],
+      });
+      expect(reparsed.getValue(['tags'])).toEqual(['vitest']);
+    }
+  );
 
   it('should add addons if the preview has no addons field', async () => {
     const originalCode = dedent`

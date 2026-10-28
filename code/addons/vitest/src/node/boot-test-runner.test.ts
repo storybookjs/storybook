@@ -2,9 +2,9 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Channel, type ChannelTransport } from 'storybook/internal/channels';
-import { executeNodeCommand } from 'storybook/internal/common';
-import type { Options, StoryIndex } from 'storybook/internal/types';
+import { Channel, type ChannelTransport } from '@storybook/core/internal/channels';
+import { executeNodeCommand } from '@storybook/core/internal/common';
+import type { StoryIndex } from '@storybook/core/internal/types';
 
 import {
   STATUS_STORE_CHANNEL_EVENT_NAME,
@@ -17,6 +17,7 @@ import { log } from '../logger.ts';
 import type { StoreEvent } from '../types.ts';
 import type { StoreState } from '../types.ts';
 import { killTestRunner, runTestRunner, sendStoryIndexToTestRunner } from './boot-test-runner.ts';
+import type { TestRunnerHost } from './host.ts';
 
 let stdout: (chunk: Buffer | string) => void;
 let stderr: (chunk: Buffer | string) => void;
@@ -55,11 +56,16 @@ const child = vi.hoisted(() => ({
   kill: vi.fn(),
 }));
 
-vi.mock('storybook/internal/common', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('storybook/internal/common')>();
+vi.mock('@storybook/core/internal/common', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@storybook/core/internal/common')>();
   return {
     ...actual,
     executeNodeCommand: vi.fn().mockReturnValue(child),
+    importMetaResolve: vi
+      .fn()
+      .mockImplementation(
+        () => 'file://' + join(__dirname, '..', '..', 'dist', 'node', 'vitest.js')
+      ),
   };
 });
 
@@ -67,14 +73,8 @@ vi.mock('../logger', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../../../../core/src/shared/utils/module', () => ({
-  importMetaResolve: vi
-    .fn()
-    .mockImplementation(() => 'file://' + join(__dirname, '..', '..', 'dist', 'node', 'vitest.js')),
-}));
-
-vi.mock('storybook/internal/core-server', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('storybook/internal/core-server')>();
+vi.mock('@storybook/core/internal/services', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@storybook/core/internal/services')>();
   return {
     ...actual,
     internal_universalStatusStore: {
@@ -105,30 +105,22 @@ const mockChannel = new Channel({ transport });
 
 describe('bootTestRunner', () => {
   let mockStore: InstanceType<
-    typeof import('storybook/internal/core-server').experimental_MockUniversalStore<
+    typeof import('@storybook/core/internal/services').experimental_MockUniversalStore<
       StoreState,
       StoreEvent
     >
   >;
-  const mockOptions = {
+  const mockStorybook = {
     configDir: '.storybook',
-    presets: {
-      apply: vi.fn(async (key: string, fallback?: unknown) => {
-        switch (key) {
-          case 'storyIndexGenerator':
-            return storyIndexGenerator;
-          case 'previewAnnotations':
-            return ['/project/.storybook/preview.ts'];
-          default:
-            return fallback;
-        }
-      }),
-    },
-  } as unknown as Options;
+    getStoryIndexGenerator: vi.fn(async () => storyIndexGenerator),
+    callHook: vi.fn(async (name: string, value?: unknown) =>
+      name === 'preview:annotations:collect' ? ['/project/.storybook/preview.ts'] : value
+    ),
+  } as unknown as TestRunnerHost;
 
   beforeEach(async () => {
     const { experimental_MockUniversalStore: MockUniversalStore } =
-      await import('storybook/internal/core-server');
+      await import('@storybook/core/internal/services');
     mockStore = new MockUniversalStore<StoreState, StoreEvent>(storeOptions);
     vi.mocked(executeNodeCommand).mockClear();
     vi.mocked(log).mockClear();
@@ -138,7 +130,11 @@ describe('bootTestRunner', () => {
   });
 
   it('should execute vitest.js', async () => {
-    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    const promise = runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      storybook: mockStorybook,
+    });
     await childSpawned();
     expect(vi.mocked(executeNodeCommand)).toHaveBeenCalledWith({
       scriptPath: expect.stringMatching(/vitest\.js$/),
@@ -159,7 +155,11 @@ describe('bootTestRunner', () => {
   });
 
   it('should log stdout and stderr', async () => {
-    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    const promise = runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      storybook: mockStorybook,
+    });
     await childSpawned();
     stdout('foo');
     stderr('bar');
@@ -174,7 +174,7 @@ describe('bootTestRunner', () => {
     const promise = runTestRunner({
       channel: mockChannel,
       store: mockStore,
-      options: mockOptions,
+      storybook: mockStorybook,
     }).then(() => {
       ready = true;
     });
@@ -189,7 +189,7 @@ describe('bootTestRunner', () => {
     const promise = runTestRunner({
       channel: mockChannel,
       store: mockStore,
-      options: mockOptions,
+      storybook: mockStorybook,
     });
     await childSpawned();
     vi.advanceTimersByTime(30001);
@@ -197,7 +197,11 @@ describe('bootTestRunner', () => {
   });
 
   it('should forward universal store events', async () => {
-    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    const promise = runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      storybook: mockStorybook,
+    });
     await childSpawned();
     message({ type: 'ready' });
     await promise;
@@ -228,7 +232,11 @@ describe('bootTestRunner', () => {
   });
 
   it('should deliver universal store events from the child without re-broadcasting them', async () => {
-    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    const promise = runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      storybook: mockStorybook,
+    });
     await childSpawned();
     message({ type: 'ready' });
     await promise;
@@ -258,12 +266,16 @@ describe('bootTestRunner', () => {
   });
 
   it('should broadcast child store events to clients exactly once, via the leader forward', async () => {
-    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    const promise = runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      storybook: mockStorybook,
+    });
     await childSpawned();
     message({ type: 'ready' });
     await promise;
 
-    const { internal_UniversalStore } = await import('storybook/internal/core-server');
+    const { internal_UniversalStore } = await import('@storybook/core/internal/services');
     (internal_UniversalStore as any).__prepare(
       mockChannel,
       internal_UniversalStore.Environment.SERVER
@@ -303,7 +315,7 @@ describe('bootTestRunner', () => {
     const promise = runTestRunner({
       channel: mockChannel,
       store: mockStore,
-      options: mockOptions,
+      storybook: mockStorybook,
       initEvent: 'init',
       initArgs: ['foo'],
     });
@@ -321,7 +333,7 @@ describe('bootTestRunner', () => {
     const promise = runTestRunner({
       channel: mockChannel,
       store: mockStore,
-      options: mockOptions,
+      storybook: mockStorybook,
       initEvent: 'init',
       initArgs: ['foo'],
     });
@@ -340,7 +352,11 @@ describe('bootTestRunner', () => {
   });
 
   it('should send a new story index to a running child', async () => {
-    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    const promise = runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      storybook: mockStorybook,
+    });
     await childSpawned();
     message({ type: 'ready' });
     await promise;
@@ -364,7 +380,7 @@ describe('bootTestRunner', () => {
     const promise = runTestRunner({
       channel: mockChannel,
       store: mockStore,
-      options: mockOptions,
+      storybook: mockStorybook,
       initEvent: 'init',
       initArgs: ['foo'],
     });
@@ -402,7 +418,7 @@ describe('bootTestRunner', () => {
       runTestRunner({
         channel: mockChannel,
         store: mockStore,
-        options: mockOptions,
+        storybook: mockStorybook,
         initEvent: STORE_CHANNEL_EVENT_NAME,
         initArgs: [{ event, eventInfo }],
       }).catch(() => {});
@@ -421,7 +437,11 @@ describe('bootTestRunner', () => {
   });
 
   it('should keep the newest story index when getIndex() calls resolve out of order', async () => {
-    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    const promise = runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      storybook: mockStorybook,
+    });
     await childSpawned();
     message({ type: 'ready' });
     await promise;
@@ -446,7 +466,7 @@ describe('bootTestRunner', () => {
     const promise = runTestRunner({
       channel: mockChannel,
       store: mockStore,
-      options: mockOptions,
+      storybook: mockStorybook,
       initEvent: 'init',
     });
     await childSpawned();
@@ -490,7 +510,11 @@ describe('bootTestRunner', () => {
   });
 
   it('should not resend an unchanged story index while a story file stays broken', async () => {
-    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    const promise = runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      storybook: mockStorybook,
+    });
     await childSpawned();
     message({ type: 'ready' });
     await promise;
@@ -505,7 +529,11 @@ describe('bootTestRunner', () => {
   });
 
   it('should send the story index to a booting child once', async () => {
-    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    const promise = runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      storybook: mockStorybook,
+    });
     await childSpawned();
     await sendStoryIndexToTestRunner(storyIndexGenerator as never);
     message({ type: 'ready' });
@@ -517,13 +545,13 @@ describe('bootTestRunner', () => {
   it('should report a fatal error when the story index generator cannot be loaded', async () => {
     const fatalErrors = vi.fn();
     mockStore.subscribe('FATAL_ERROR', fatalErrors);
-    const options = {
-      ...mockOptions,
-      presets: { apply: vi.fn().mockRejectedValue(new Error('no index')) },
-    } as unknown as Options;
+    const storybook = {
+      ...mockStorybook,
+      getStoryIndexGenerator: vi.fn().mockRejectedValue(new Error('no index')),
+    } as unknown as TestRunnerHost;
 
     await expect(
-      runTestRunner({ channel: mockChannel, store: mockStore, options })
+      runTestRunner({ channel: mockChannel, store: mockStore, storybook })
     ).rejects.toThrow('no index');
 
     expect(fatalErrors).toHaveBeenCalledWith(
@@ -574,7 +602,11 @@ describe('bootTestRunner', () => {
   it('should report one fatal error and close the open run when a ready child dies', async () => {
     const fatalErrors = vi.fn();
     mockStore.subscribe('FATAL_ERROR', fatalErrors);
-    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    const promise = runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      storybook: mockStorybook,
+    });
     await childSpawned();
     message({ type: 'ready' });
     await promise;
@@ -594,7 +626,11 @@ describe('bootTestRunner', () => {
   it('should report one fatal error when the child crashes before it is ready', async () => {
     const fatalErrors = vi.fn();
     mockStore.subscribe('FATAL_ERROR', fatalErrors);
-    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    const promise = runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      storybook: mockStorybook,
+    });
     await childSpawned();
 
     message({
@@ -613,7 +649,7 @@ describe('bootTestRunner', () => {
     const fatalErrors = vi.fn();
     mockStore.subscribe('FATAL_ERROR', fatalErrors);
     let outcome: unknown;
-    runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions }).then(
+    runTestRunner({ channel: mockChannel, store: mockStore, storybook: mockStorybook }).then(
       () => (outcome = 'resolved'),
       (error) => (outcome = error)
     );
@@ -634,7 +670,7 @@ describe('bootTestRunner', () => {
       const promise = runTestRunner({
         channel: mockChannel,
         store: mockStore,
-        options: mockOptions,
+        storybook: mockStorybook,
       });
       await childSpawned();
       message({ type: 'ready' });
@@ -653,7 +689,11 @@ describe('bootTestRunner', () => {
   });
 
   it('should close the open run when a ready child reports an uncaught error and exits', async () => {
-    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    const promise = runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      storybook: mockStorybook,
+    });
     await childSpawned();
     message({ type: 'ready' });
     await promise;
@@ -679,7 +719,11 @@ describe('bootTestRunner', () => {
   it('should report one fatal error when the exit arrives before the uncaught-error message', async () => {
     const fatalErrors = vi.fn();
     mockStore.subscribe('FATAL_ERROR', fatalErrors);
-    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    const promise = runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      storybook: mockStorybook,
+    });
     await childSpawned();
 
     exitChild(1, null);
@@ -719,7 +763,7 @@ describe('bootTestRunner', () => {
     const fatalErrors = vi.fn();
     mockStore.subscribe('FATAL_ERROR', fatalErrors);
     let outcome: unknown;
-    runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions }).then(
+    runTestRunner({ channel: mockChannel, store: mockStore, storybook: mockStorybook }).then(
       () => (outcome = 'resolved'),
       (error) => (outcome = error)
     );
@@ -810,7 +854,11 @@ describe('bootTestRunner', () => {
 
     it('should boot a new child when a ready child dies while watch mode is on', async () => {
       mockStore.setState((s) => ({ ...s, watching: true }));
-      const boot = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+      const boot = runTestRunner({
+        channel: mockChannel,
+        store: mockStore,
+        storybook: mockStorybook,
+      });
       await vi.waitFor(() => expect(spawned).toHaveLength(1));
       spawned[0].message({ type: 'ready' });
       await boot;
@@ -825,7 +873,11 @@ describe('bootTestRunner', () => {
         mockStore.setState((s) => ({ ...s, fatalError: event.payload }))
       );
       mockStore.setState((s) => ({ ...s, watching: true }));
-      const boot = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+      const boot = runTestRunner({
+        channel: mockChannel,
+        store: mockStore,
+        storybook: mockStorybook,
+      });
       await vi.waitFor(() => expect(spawned).toHaveLength(1));
       spawned[0].message({ type: 'ready' });
       await boot;
@@ -840,7 +892,11 @@ describe('bootTestRunner', () => {
 
     it('should not boot again when the child fails to start while watch mode is on', async () => {
       mockStore.setState((s) => ({ ...s, watching: true }));
-      const boot = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+      const boot = runTestRunner({
+        channel: mockChannel,
+        store: mockStore,
+        storybook: mockStorybook,
+      });
       boot.catch(() => {});
       await vi.waitFor(() => expect(spawned).toHaveLength(1));
 
@@ -851,32 +907,32 @@ describe('bootTestRunner', () => {
       expect(spawned).toHaveLength(1);
     });
 
-    it('should not spawn a child for a boot that was killed while it read its presets', async () => {
-      let releasePresets!: () => void;
-      const presetsRead = new Promise<void>((resolve) => {
-        releasePresets = resolve;
+    it('should not spawn a child for a boot that was killed while it read the instance', async () => {
+      let releaseInstance!: () => void;
+      const instanceRead = new Promise<void>((resolve) => {
+        releaseInstance = resolve;
       });
-      const apply = vi.mocked(mockOptions.presets.apply);
-      const defaultApply = apply.getMockImplementation()!;
-      apply.mockImplementation(async (key: string, fallback?: unknown) => {
-        await presetsRead;
-        return defaultApply(key, fallback);
+      const getGenerator = vi.mocked(mockStorybook.getStoryIndexGenerator);
+      const defaultGetGenerator = getGenerator.getMockImplementation()!;
+      getGenerator.mockImplementation(async () => {
+        await instanceRead;
+        return defaultGetGenerator();
       });
       try {
         const boot = runTestRunner({
           channel: mockChannel,
           store: mockStore,
-          options: mockOptions,
+          storybook: mockStorybook,
         });
         boot.catch(() => {});
 
         killTestRunner();
-        releasePresets();
+        releaseInstance();
         await vi.advanceTimersByTimeAsync(0);
 
         expect(spawned).toHaveLength(0);
       } finally {
-        apply.mockImplementation(defaultApply);
+        getGenerator.mockImplementation(defaultGetGenerator);
       }
     });
 

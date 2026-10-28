@@ -1,6 +1,6 @@
 /**
  * Series harness for the vue-docgen-api engine - Vue's legacy docgen and still the default
- * (`resolveDocgenOptions` in `code/frameworks/vue3-vite/src/preset.ts`), the Vue equivalent of the
+ * (`resolveDocgenOptions` in `code/frameworks/vue3-vite/src/docgen/options.ts`), the Vue equivalent of the
  * react-docgen control.
  *
  * The parser reads from disk on every call and keeps no cache, so one save costs one `parse` and

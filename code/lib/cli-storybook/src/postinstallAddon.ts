@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { importModule } from '../../../core/src/shared/utils/module.ts';
+import { importModule } from 'storybook/internal/common';
 import type { PostinstallOptions } from './add.ts';
 
 const DIR_CWD = process.cwd();

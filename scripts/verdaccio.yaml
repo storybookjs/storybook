@@ -67,10 +67,6 @@ packages:
     access: $all
     publish: $all
     proxy: npmjs
-  '@storybook/manager':
-    access: $all
-    publish: $all
-    proxy: npmjs
   '@storybook/node-logger':
     access: $all
     publish: $all

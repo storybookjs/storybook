@@ -1,8 +1,8 @@
-import type { StrictArgTypes } from 'storybook/internal/types';
+import type { StrictArgTypes } from '@storybook/core/internal/types';
 
 import * as v from 'valibot';
 
-import { defineService } from 'storybook/open-service';
+import { defineService } from '@storybook/core/open-service';
 import type { ServiceInstanceOf } from '../../types.ts';
 import type { DocgenPayload } from './types.ts';
 import { docgenQueryStaticPath } from './paths.ts';

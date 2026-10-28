@@ -2,7 +2,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { global as globalRef } from '@storybook/global';
-import { STORY_HOT_UPDATED, STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
+import {
+  STORY_HOT_UPDATED,
+  STORY_RENDER_PHASE_CHANGED,
+} from '@storybook/core/internal/core-events';
 
 import { setupStoryFreezer, shouldFreeze } from './setupStoryFreezer.ts';
 

@@ -1,5 +1,9 @@
-import { Channel } from 'storybook/internal/channels';
-import type { Presets } from 'storybook/internal/types';
+import { Channel } from '@storybook/core/internal/channels';
+import type { Storybook } from '@storybook/core';
+import {
+  VITE_PREVIEW_MODULE_IDS,
+  type PreviewSources,
+} from '@storybook/core/internal/preview-page';
 
 import type { InlineConfig, Plugin } from 'vite';
 import { resolveConfig, build as viteBuild } from 'vite';
@@ -13,16 +17,29 @@ vi.mock(import('vite'), async (importOriginal) => ({
   loadConfigFromFile: vi.fn(async () => null),
 }));
 
-it('keeps Vite from copying the public dir, which Storybook copies through staticDirs', async () => {
-  await build({
-    configType: 'PRODUCTION',
+const PREVIEW = {
+  modules: { entry: '', projectAnnotations: '', addonSetup: '' },
+  virtualModuleIds: VITE_PREVIEW_MODULE_IDS,
+  externals: {},
+  define: () => ({}),
+  previewAnnotations: [],
+  previewConfigPath: undefined,
+  previewRuntimePath: '/storybook/dist/core/preview/runtime.js',
+} as unknown as PreviewSources;
+
+function fakeStorybook(extend: (config: InlineConfig) => InlineConfig = (config) => config) {
+  return {
+    mode: 'build',
     configDir: '',
     channel: new Channel({}),
-    presets: {
-      apply: async (key: string, config: unknown) =>
-        ({ core: { builder: {} }, viteFinal: config })[key],
-    } as Presets,
-  });
+    options: { configType: 'PRODUCTION' },
+    callHook: async (name: string, value: unknown) =>
+      name === 'builder:vite:extend' ? extend(value as InlineConfig) : value,
+  } as unknown as Storybook;
+}
+
+it('keeps Vite from copying the public dir, which Storybook copies through staticDirs', async () => {
+  await build(fakeStorybook(), { preview: PREVIEW, options: {}, outDir: 'storybook-static' });
 
   expect(viteBuild).toHaveBeenCalledWith(
     expect.objectContaining({
@@ -47,19 +64,13 @@ it("re-asserts Storybook's build options when a user plugin's config hook overri
     }),
   };
 
-  await build({
-    configType: 'PRODUCTION',
-    configDir: '',
-    outputDir: 'storybook-static-test',
-    channel: new Channel({}),
-    presets: {
-      apply: async (key: string, config?: InlineConfig) =>
-        ({
-          core: { builder: {} },
-          viteFinal: { ...config, plugins: [...(config?.plugins ?? []), clobberingPlugin] },
-        })[key],
-    } as Presets,
-  });
+  await build(
+    fakeStorybook((config) => ({
+      ...config,
+      plugins: [...(config.plugins ?? []), clobberingPlugin],
+    })),
+    { preview: PREVIEW, options: {}, outDir: 'storybook-static-test' }
+  );
 
   const finalConfig = vi.mocked(viteBuild).mock.lastCall?.[0] as InlineConfig;
   const guardPlugins = (finalConfig.plugins ?? []).filter(

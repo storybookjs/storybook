@@ -1,8 +1,8 @@
-import type { CleanupCallback } from 'storybook/internal/csf';
+import type { CleanupCallback } from '../../../csf/index.ts';
 import {
   CalledExtractOnStoreError,
   MissingStoryFromCsfFileError,
-} from 'storybook/internal/preview-errors';
+} from '@storybook/core/internal/preview-errors';
 import type {
   ComponentTitle,
   CSFFile,
@@ -19,7 +19,7 @@ import type {
   StoryId,
   StoryIndex,
   StoryName,
-} from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
 
 import { omitBy, pick } from 'es-toolkit/object';
 import memoize from 'memoizerific';

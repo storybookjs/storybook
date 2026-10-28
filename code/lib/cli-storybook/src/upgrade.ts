@@ -21,9 +21,9 @@ import {
 } from 'storybook/internal/node-logger';
 import type { LogLevel } from 'storybook/internal/node-logger';
 import {
-  MinimumReleaseAgeHandledError,
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
+  isStorybookError,
 } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 
@@ -431,7 +431,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
             installContext: 'upgrade',
           });
         } catch (error) {
-          if (error instanceof MinimumReleaseAgeHandledError) {
+          if (isStorybookError(error, 'MinimumReleaseAgeHandledError')) {
             throw error;
           }
 

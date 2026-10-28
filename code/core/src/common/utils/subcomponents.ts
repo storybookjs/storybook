@@ -1,4 +1,4 @@
-import type { CsfFile } from 'storybook/internal/csf-tools';
+import type { CsfFile } from '@storybook/core/internal/csf-tools';
 
 import { type E, type Node, isStringLiteral } from '../../csf-tools/estree/ast.ts';
 

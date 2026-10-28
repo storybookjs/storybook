@@ -2,11 +2,11 @@ import {
   CouldNotEvaluateFrameworkError,
   InvalidFrameworkNameError,
   MissingFrameworkFieldError,
-} from 'storybook/internal/server-errors';
+} from '@storybook/core/internal/server-errors';
 
 import { resolveModulePath } from 'exsolve';
 
-import { jsModuleExtensions } from '../../shared/constants/extensions.ts';
+import { jsModuleExtensions } from '../../constants/extensions.ts';
 import { extractFrameworkPackageName } from '../index.ts';
 import { frameworkPackages } from './get-storybook-info.ts';
 
@@ -34,13 +34,19 @@ export function validateFrameworkName(
     return;
   }
 
-  // If it's not a known framework, we need to validate that it's a valid package at least
-  try {
-    resolveModulePath(`${frameworkName}/preset`, {
-      extensions: [...jsModuleExtensions],
-      conditions: ['node', 'import', 'require'],
-    });
-  } catch (err) {
+  // A third-party framework needs a legacy preset or a native `./node` entry
+  const resolvable = ['preset', 'node'].some((entry) => {
+    try {
+      resolveModulePath(`${frameworkName}/${entry}`, {
+        extensions: [...jsModuleExtensions],
+        conditions: ['node', 'import', 'require'],
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  });
+  if (!resolvable) {
     throw new CouldNotEvaluateFrameworkError({ frameworkName });
   }
 }

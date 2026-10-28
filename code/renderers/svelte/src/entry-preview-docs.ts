@@ -4,3 +4,5 @@ import { sourceDecorator } from './docs/sourceDecorator.ts';
 import type { SvelteRenderer } from './types.ts';
 
 export const decorators: DecoratorFunction<SvelteRenderer>[] = [sourceDecorator];
+
+export default { decorators };

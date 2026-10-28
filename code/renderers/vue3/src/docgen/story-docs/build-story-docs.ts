@@ -5,9 +5,9 @@ import {
   STORY_FILE_TEST_REGEXP,
   getComponentIdFromEntry,
   getStoryImportPathFromEntry,
-} from 'storybook/internal/common';
-import { getService } from 'storybook/internal/core-server';
-import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
+} from '@storybook/core/internal/common';
+import { getService } from '@storybook/core/internal/services';
+import { storyNameFromExport } from '@storybook/core/internal/csf/csf-utils';
 import {
   type ESTree as E,
   type ESTreeNode as Node,
@@ -33,9 +33,13 @@ import {
   returnedExpression,
   unresolvedWarning,
   unwrapExpression,
-} from 'storybook/internal/csf-tools';
-import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
-import type { DocgenPayload, DocgenService } from 'storybook/open-service';
+} from '@storybook/core/internal/csf-tools';
+import type {
+  StoryDoc,
+  StoryDocsPayload,
+  StoryDocsProviderInput,
+} from '@storybook/core/internal/types';
+import type { DocgenPayload, DocgenService } from '@storybook/core/open-service';
 
 import {
   classifyArgs,

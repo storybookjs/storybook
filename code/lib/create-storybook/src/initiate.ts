@@ -13,7 +13,7 @@ import {
   executeCommand,
   type JsPackageManager,
 } from 'storybook/internal/common';
-import { getServerPort, withTelemetry } from 'storybook/internal/core-server';
+import { getServerPort, withTelemetry } from 'storybook/internal/server';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { setTelemetryEnabled, telemetry } from 'storybook/internal/telemetry';
 import type {

@@ -1,7 +1,7 @@
 import type { SerializedError, TaskMeta } from 'vitest';
 import type { Reporter, TestCase, TestModule, Vitest } from 'vitest/node';
 
-import type { Report } from 'storybook/preview-api';
+import type { Report } from '@storybook/core/preview-api';
 
 import type { VitestError } from '../types.ts';
 import type { TestManager } from './test-manager.ts';

@@ -2,9 +2,9 @@ import { join } from 'node:path';
 
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
+import { PackageManagerName } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { PackageManagerName } from '../../../core/src/common/index.ts';
 import { add, getVersionSpecifier } from './add.ts';
 
 const MockedConfig = vi.hoisted(() => {
@@ -78,7 +78,6 @@ vi.mock('./codemod/helpers/csf-factories-utils');
 vi.mock('storybook/internal/common', () => {
   return {
     getStorybookInfo: vi.fn(() => ({ mainConfig: {}, configDir: '' })),
-    serverRequire: vi.fn(() => ({})),
     loadMainConfig: vi.fn(() => ({})),
     JsPackageManagerFactory: {
       getPackageManager: vi.fn(() => MockedPackageManager),
@@ -93,6 +92,7 @@ vi.mock('storybook/internal/common', () => {
       '@storybook/addon-mcp': '8.0.0',
     },
     frameworkToRenderer: vi.fn(),
+    PackageManagerName: { NPM: 'npm' },
   };
 });
 

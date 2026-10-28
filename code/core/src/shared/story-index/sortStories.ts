@@ -6,9 +6,9 @@ import type {
   IndexEntry,
   IndexEntryLegacy,
   StoryIndexEntry,
-} from 'storybook/internal/types';
-import type { Parameters, Path, Renderer } from 'storybook/internal/types';
-import type { PreparedStory } from 'storybook/internal/types';
+} from '@storybook/core/internal/types';
+import type { Parameters, Path, Renderer } from '@storybook/core/internal/types';
+import type { PreparedStory } from '@storybook/core/internal/types';
 
 import { dedent } from 'ts-dedent';
 

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Renderer, StoryAnnotationsOrFn } from 'storybook/internal/types';
+import type { Renderer, StoryAnnotationsOrFn } from '@storybook/core/internal/types';
 
 import { normalizeStory } from './normalizeStory.ts';
 

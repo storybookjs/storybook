@@ -49,14 +49,21 @@ const baseConfig = {
       project,
     },
     core: {
+      entry: ['src/*/{globals*,index,decorator,manager,preview,runtime}.{ts,tsx}'],
+      project,
+    },
+    'lib/manager': {
       entry: [
         'src/manager-api/index.mock.ts',
-        'src/shared/preview/csf4.ts',
-        // with srcDir → outDir in tsconfig.json we could omit all of these:
-        'src/index.ts',
-        'src/cli/bin/index.ts',
         'src/*/{globals*,index,decorator,manager,preview,runtime}.{ts,tsx}',
-        'src/core-server/presets/*.ts',
+      ],
+      project,
+    },
+    'lib/storybook': {
+      entry: [
+        'src/*/{globals*,index,decorator,manager,preview,runtime}.{ts,tsx}',
+        'src/storybook/bin/*.ts',
+        'src/storybook/server/presets/*.ts',
       ],
       project,
     },

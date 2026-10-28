@@ -2,7 +2,7 @@ import { dedent } from 'ts-dedent';
 
 import { UniversalStoreFollowerTimeoutError } from '../../manager-errors.ts';
 import { isFirstPartyStoreId } from './first-party-store-ids.ts';
-import { instances } from './instances.ts';
+import { createUniversalStoreRealm, getUniversalStoreRealm } from './realm.ts';
 import type {
   Actor,
   ChannelEvent,
@@ -110,7 +110,7 @@ export class UniversalStore<
 
   /** The environment this realm was prepared as, or `undefined` before `__prepare`. */
   public static get preparedEnvironment(): EnvironmentType | undefined {
-    return UniversalStore.preparation.environment;
+    return getUniversalStoreRealm().environment;
   }
 
   /**
@@ -136,44 +136,11 @@ export class UniversalStore<
   // This is used to check if constructor was called from the static factory create()
   protected static isInternalConstructing = false;
 
-  static {
-    UniversalStore.setupPreparationPromise();
-  }
+  private readonly realm = getUniversalStoreRealm();
 
-  /**
-   * The preparation construct is used to keep track of all store's preparation state the promise is
-   * resolved when the store is prepared with the static __prepare() method which will also change
-   * the state from PENDING to RESOLVED
-   */
-  private static preparation: {
-    channel?: ChannelLike;
-    environment?: EnvironmentType;
-    resolve: (args: Awaited<typeof UniversalStore.preparation.promise>) => void;
-    reject: (error: Error) => void;
-    promise: Promise<{ channel: ChannelLike; environment: EnvironmentType }>;
-  };
+  private disposed = false;
 
-  private static setupPreparationPromise() {
-    let resolveRef: typeof UniversalStore.preparation.resolve;
-    let rejectRef: typeof UniversalStore.preparation.reject;
-
-    const promise = new Promise<Awaited<typeof UniversalStore.preparation.promise>>(
-      (resolve, reject) => {
-        resolveRef = (args) => {
-          resolve(args);
-        };
-        rejectRef = (...args) => {
-          reject(args);
-        };
-      }
-    );
-
-    UniversalStore.preparation = {
-      resolve: resolveRef!,
-      reject: rejectRef!,
-      promise,
-    };
-  }
+  private syncingTimeout?: ReturnType<typeof setTimeout>;
 
   /** Enable debug logs for this store */
   public debugging = false;
@@ -217,13 +184,8 @@ export class UniversalStore<
    * hundred milliseconds.
    */
   public untilReady() {
-    // A store that already has its own channel and environment is prepared (e.g. an isolated
-    // mock), so its readiness no longer depends on the global preparation. This mirrors the
-    // `status` getter, which is UNPREPARED only while channel/environment are missing. Relying on
-    // the global preparation here would hang for isolated mocks that intentionally do not resolve
-    // it (resolving it would leak their private channel to other stores awaiting preparation).
     const preparation =
-      this.channel && this.environment ? Promise.resolve() : UniversalStore.preparation.promise;
+      this.channel && this.environment ? Promise.resolve() : this.realm.preparation.promise;
     return Promise.all([preparation, this.syncing?.promise]);
   }
 
@@ -244,10 +206,8 @@ export class UniversalStore<
 
   private state: State;
 
-  // Unless overridden with the environmentOverrides constructor parameter, this will be the same as the static channel
   private channel?: ChannelLike;
 
-  // Unless overridden with the environmentOverrides constructor parameter, this will be the same as the static environment
   private environment?: EnvironmentType;
 
   // TODO: narrow type of listeners based on event type
@@ -333,23 +293,13 @@ export class UniversalStore<
     this.handleChannelEvents = this.handleChannelEvents.bind(this);
     this.debug = this.debug.bind(this);
 
-    this.channel = environmentOverrides?.channel ?? UniversalStore.preparation.channel;
-    this.environment = environmentOverrides?.environment ?? UniversalStore.preparation.environment;
+    this.channel = environmentOverrides?.channel ?? this.realm.channel;
+    this.environment = environmentOverrides?.environment ?? this.realm.environment;
 
     if (this.channel && this.environment) {
-      // Only stores using the shared (globally-prepared) channel may resolve the global
-      // preparation. A store with environment overrides is isolated (e.g. a mock with its own
-      // channel); resolving the global preparation would leak its private channel to other
-      // stores still awaiting preparation, causing duplicate leaders to collide on it.
-      if (!environmentOverrides) {
-        UniversalStore.preparation.resolve({
-          channel: this.channel,
-          environment: this.environment,
-        });
-      }
       this.prepareThis({ channel: this.channel, environment: this.environment });
     } else {
-      UniversalStore.preparation.promise.then(this.prepareThis);
+      this.realm.preparation.promise.then(this.prepareThis);
     }
   }
 
@@ -374,7 +324,8 @@ export class UniversalStore<
       );
     }
 
-    const existing = instances.get(options.id);
+    const realm = getUniversalStoreRealm();
+    const existing = realm.instances.get(options.id);
     if (existing) {
       console.warn(dedent`UniversalStore with id "${options.id}" already exists in this environment, re-using existing.
         You should reuse the existing instance instead of trying to create a new one.`);
@@ -383,7 +334,7 @@ export class UniversalStore<
 
     UniversalStore.isInternalConstructing = true;
     const store = new UniversalStore<State, CustomEvent>(options);
-    instances.set(options.id, store);
+    realm.instances.set(options.id, store);
     return store;
   }
 
@@ -394,9 +345,10 @@ export class UniversalStore<
    * @internal
    */
   static __prepare(channel: ChannelLike, environment: EnvironmentType) {
-    UniversalStore.preparation.channel = channel;
-    UniversalStore.preparation.environment = environment;
-    UniversalStore.preparation.resolve({ channel, environment });
+    const realm = getUniversalStoreRealm();
+    realm.channel = channel;
+    realm.environment = environment;
+    realm.preparation.resolve({ channel, environment });
   }
 
   /** Gets the current state */
@@ -547,6 +499,9 @@ export class UniversalStore<
     channel: ChannelLike;
     environment: EnvironmentType;
   }) {
+    if (this.disposed) {
+      return;
+    }
     this.channel = channel;
     this.environment = environment;
 
@@ -569,7 +524,7 @@ export class UniversalStore<
         { actor: this.actor }
       );
       // 2. Wait 1 sec for a response, then reject the syncing promise if not already resolved
-      setTimeout(() => {
+      this.syncingTimeout = setTimeout(() => {
         this.syncing!.reject!(new UniversalStoreFollowerTimeoutError(this.id));
       }, 1000);
     }
@@ -704,13 +659,26 @@ export class UniversalStore<
   }
 
   /**
-   * Used to reset the static fields of the UniversalStore class when cleaning up tests
+   * Reset preparation in the current realm when cleaning up tests.
    *
    * @internal
    */
   static __reset() {
-    UniversalStore.preparation.reject(new Error('reset'));
-    UniversalStore.setupPreparationPromise();
+    const realm = getUniversalStoreRealm();
+    realm.preparation.reject(new Error('reset'));
+    realm.preparation = createUniversalStoreRealm().preparation;
+    realm.channel = undefined;
+    realm.environment = undefined;
     UniversalStore.isInternalConstructing = false;
+  }
+
+  /** @internal */
+  public __dispose(): void {
+    this.disposed = true;
+    this.channel?.off(this.channelEventName, this.handleChannelEvents);
+    clearTimeout(this.syncingTimeout);
+    this.listeners.clear();
+    this.channel = undefined;
+    this.environment = undefined;
   }
 }

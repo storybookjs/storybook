@@ -9,17 +9,18 @@ import {
   isCI,
   loadMainConfig,
   versions,
-} from 'storybook/internal/common';
-import { getInterpretedFile } from 'storybook/internal/common';
-import { readConfig } from 'storybook/internal/csf-tools';
-import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
+} from '@storybook/core/internal/common';
+import { getInterpretedFile } from '@storybook/core/internal/common';
+import { readConfig } from '@storybook/core/internal/csf-tools';
+import type { PackageJson, StorybookConfig } from '@storybook/core/internal/types';
+import type { StorybookConfig as InstanceConfig } from '../instance/plugins.ts';
 
-import { RN_STORYBOOK_DIR } from '../shared/constants/config-folder.ts';
+import { RN_STORYBOOK_DIR } from '../constants/config-folder.ts';
 
 import * as pkg from 'empathic/package';
 
 import { version } from '../../package.json';
-import { globalSettings } from '../cli/globalSettings.ts';
+import { globalSettings } from '../common/globalSettings.ts';
 import { detectAgent } from './detect-agent.ts';
 import { getApplicationFileCount } from './get-application-file-count.ts';
 import { getChromaticVersionSpecifier } from './get-chromatic-version.ts';
@@ -30,7 +31,7 @@ import { getHasNextCustomWebpack } from './get-has-next-custom-webpack.ts';
 import { getRendererPackages } from './get-renderer-packages.ts';
 import { getHasTurbopack } from './get-has-turbopack.ts';
 import { analyzeEcosystemPackages } from './get-known-packages.ts';
-import { getMonorepoType } from '../shared/utils/get-monorepo-type.ts';
+import { getMonorepoType } from '../utils/get-monorepo-type.ts';
 import { getPackageManagerInfo } from './get-package-manager-info.ts';
 import { getPortableStoriesFileCount } from './get-portable-stories-usage.ts';
 import { getActualPackageVersion, getActualPackageVersions } from './package-json.ts';
@@ -117,7 +118,9 @@ export const computeStorybookMetadata = async ({
 }: {
   packageJsonPath: string;
   packageJson: PackageJson;
-  mainConfig?: StorybookConfig & Record<string, any>;
+  mainConfig?: Omit<StorybookConfig, 'addons'> &
+    Pick<InstanceConfig, 'addons'> &
+    Record<string, any>;
   configDir: string;
 }): Promise<StorybookMetadata> => {
   const settings = isCI() && !detectAgent() ? undefined : await globalSettings();
@@ -210,6 +213,8 @@ export const computeStorybookMetadata = async ({
 
       if (typeof addon === 'string') {
         addonName = sanitizeAddonName(addon);
+      } else if ('meta' in addon) {
+        addonName = sanitizeAddonName(addon.meta.name);
       } else {
         if (addon.name.includes('addon-essentials')) {
           options = addon.options;

@@ -1,4 +1,4 @@
-import { slash } from '../shared/utils/paths.ts';
+import { slash } from '../utils/paths.ts';
 import type { ProjectFileTracker } from './ProjectFileTracker.ts';
 import { filterSourceFilePaths } from './ProjectFileTracker.ts';
 import type { ComponentMetaProjectBase, FileChange, ProjectCommandLine } from './types.ts';

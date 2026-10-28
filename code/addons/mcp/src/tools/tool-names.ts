@@ -1,4 +1,4 @@
-import { toMcpToolName } from 'storybook/open-service';
+import { toMcpToolName } from '@storybook/core/open-service';
 
 /**
  * Tool names used in this addon's own prose and resource URIs.

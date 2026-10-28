@@ -56,6 +56,7 @@ beforeEach(() => {
     transport: 'cli',
     origin: 'http://localhost:6006',
     getService: vi.fn(() => ({ commands: { setReview } })) as ToolsetCtx['getService'],
+    signal: new AbortController().signal,
   };
   mcpCtx = { ...cliCtx, transport: 'mcp' };
 });

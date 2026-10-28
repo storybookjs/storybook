@@ -1,11 +1,11 @@
-import type { MetaComponentResolution } from 'storybook/internal/common';
+import type { MetaComponentResolution } from '@storybook/core/internal/common';
 import {
   createMetaComponentResolver,
   createModuleResolver,
   jsTsSourceExtensions,
-} from 'storybook/internal/common';
-import type { CsfFile } from 'storybook/internal/csf-tools';
-import { loadCsf } from 'storybook/internal/csf-tools';
+} from '@storybook/core/internal/common';
+import type { CsfFile } from '@storybook/core/internal/csf-tools';
+import { loadCsf } from '@storybook/core/internal/csf-tools';
 
 import { readFileSync } from 'node:fs';
 

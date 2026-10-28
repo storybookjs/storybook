@@ -4,15 +4,14 @@
  * onto the MCP `isError` flag is the generic unwrap's contract, pinned in `toolset-tools.test.ts`.
  */
 
-import { logger } from 'storybook/internal/node-logger';
-
-import { clearToolsetRegistry, defineToolset, registerToolset } from 'storybook/open-service';
+import { logger } from '@storybook/core/internal/node-logger';
+import { clearToolsetRegistry, defineToolset, registerToolset } from '@storybook/core/open-service';
 import * as v from 'valibot';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { collectTelemetry } from '../telemetry.ts';
 import { registerCoreToolsetsForTest } from '../test-support/register-core-toolsets.ts';
-import type { ToolAvailability } from 'storybook/internal/core-server';
+import type { ToolAvailability } from 'storybook/internal/server';
 import {
   type AddonToolRegistryContext,
   getAddonToolMetadata,
@@ -20,7 +19,7 @@ import {
 } from './tool-registry.ts';
 
 vi.mock('../telemetry.ts', { spy: true });
-vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('@storybook/core/internal/node-logger', { spy: true });
 
 const loggerError = vi.mocked(logger.error);
 

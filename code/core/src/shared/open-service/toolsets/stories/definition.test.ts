@@ -1,6 +1,6 @@
 import { existsSync, realpathSync } from 'node:fs';
 
-import type { StoryIndex } from 'storybook/internal/types';
+import type { StoryIndex } from '@storybook/core/internal/types';
 
 import { toJsonSchema } from '@valibot/to-json-schema';
 import { vol } from 'memfs';
@@ -146,6 +146,7 @@ beforeEach(() => {
     transport: 'cli',
     origin: 'http://localhost:6006',
     getService: vi.fn(() => moduleGraph) as ToolsetCtx['getService'],
+    signal: new AbortController().signal,
   };
   mcpCtx = { ...cliCtx, transport: 'mcp' };
   getIndex.mockResolvedValue(index);

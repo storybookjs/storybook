@@ -192,7 +192,7 @@ Add `agent-eval:eval` to a PR that can change how coding agents work with
 Storybook. For example, changes to:
 
 - the MCP server and addon (`code/lib/mcp`, `code/addons/mcp`)
-- the agent skills and instructions (`code/core/src/cli/skills`)
+- the agent skills and instructions (`code/lib/storybook/src/storybook/cli/skills`)
 - the `storybook tools` CLI
 - the eval suite itself (`agent-eval/`)
 

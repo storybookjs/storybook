@@ -23,6 +23,7 @@ Fork CI compiles with `--no-link` before unit tests to generate the declarations
 When writing tests for components:
 
 - Add or update `<Component>.stories.tsx` with stories covering each behavior; use `play` functions with `expect`, `userEvent`, `within` from `storybook/test`
+  - Inside `@storybook/core`, `@storybook/ui`, and `@storybook/manager`, import them from `@storybook/core/test` instead: those packages never import `storybook`
 - Mock external context (e.g. `ManagerContext.Provider`) inside story decorators or `beforeEach`
 
 When writing unit tests (utilities, hooks, non-React modules):
@@ -32,6 +33,7 @@ When writing unit tests (utilities, hooks, non-React modules):
 - Make the input and expected result easy to read together. For a mapper with stable output, prefer `toMatchInlineSnapshot` when it shows the full result more clearly, as in the automigration fix tests.
 - Use coverage when useful: `yarn vitest run --coverage <test-file>`
 - Mock external dependencies like file system access and loggers
+- Import test-only core files by relative path; never add a package entry just for a test
 - Use Node's path.resolve to wrap expected FS paths when writing path-related tests, so they work on Windows
 
 ## Filesystem tests with `memfs`

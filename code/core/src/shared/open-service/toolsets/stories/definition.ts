@@ -1,17 +1,26 @@
-import type { StoryIndex } from 'storybook/internal/types';
+import { mkdir, mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 
+import type { StoryIndex } from '@storybook/core/internal/types';
+
+import { join, resolve } from 'pathe';
 import * as v from 'valibot';
 
 import {
   OpenServiceMissingOriginError,
   OpenServiceModuleGraphUnavailableError,
+  StoryRenderUnavailableError,
 } from '../../../../server-errors.ts';
 import type {
   ChangeDetectionReadinessResult,
   ModuleGraphService,
 } from '../../services/module-graph/definition.ts';
 import type { ModuleGraphIndexService } from '../../services/module-graph-index/definition.ts';
-import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
+import {
+  defineToolset,
+  type ToolsetBaseCtx,
+  type ToolsetOutcome,
+} from '../../toolset-definition.ts';
 import { getToolName } from '../../toolset-names.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
 import { getChangedStories } from './changed.ts';
@@ -23,9 +32,11 @@ import {
   formatChangedStories,
   formatFindByComponent,
   formatPreviewStories,
+  formatScreenshotStories,
   previewInstructions,
 } from './format.ts';
 import { previewStories } from './preview-stories.ts';
+import { type StoryRenderAccess, screenshotStories } from './screenshot-stories.ts';
 import { storyInputArraySchema, storyInputSchema } from './story-input.ts';
 
 const previewSuccessSchema = v.object({
@@ -48,6 +59,34 @@ const previewOutputSchema = v.object({
 });
 
 export type PreviewStoriesOutput = v.InferOutput<typeof previewOutputSchema>;
+
+const viewportSchema = v.strictObject({
+  width: v.pipe(v.number(), v.integer(), v.minValue(1)),
+  height: v.pipe(v.number(), v.integer(), v.minValue(1)),
+});
+
+const screenshotSuccessSchema = v.object({
+  storyId: v.string(),
+  status: v.pipe(
+    v.picklist(['rendered', 'errored', 'play-failed', 'timeout']),
+    v.description(
+      '`rendered`: the story finished without errors. `errored`: rendering threw. `play-failed`: the play function threw. `timeout`: the story did not finish in time; the image shows its state at that moment.'
+    )
+  ),
+  path: v.pipe(v.optional(v.string()), v.description('Absolute path of the PNG screenshot.')),
+  viewport: viewportSchema,
+  error: v.optional(v.string()),
+  consoleErrors: v.array(v.string()),
+});
+
+const screenshotOutputSchema = v.object({
+  stories: v.array(v.union([screenshotSuccessSchema, previewFailureSchema])),
+});
+
+export type ScreenshotStoriesOutput = v.InferOutput<typeof screenshotOutputSchema>;
+
+const DEFAULT_VIEWPORT = { width: 1280, height: 720 };
+const DEFAULT_SCREENSHOT_TIMEOUT_MS = 15_000;
 
 const changeStatusSchema = v.union([
   v.literal('status-value:new'),
@@ -153,6 +192,7 @@ export type CreateStoriesToolsetOptions = {
   /** Change-detection status snapshot; wired by the server host, not imported from core-server. */
   changeStatuses: StoriesChangeStatusesAccess;
   storybookDirs: StorybookDirsAccess;
+  storyRender?: { get: () => Promise<StoryRenderAccess | undefined> };
 };
 
 const GIT_UNUSABLE_REASONS = new Set(['not a git repository', 'git is not available']);
@@ -188,20 +228,20 @@ function isGitUnusableReadiness(readiness: ChangeDetectionReadinessResult): bool
   return readiness.status === 'unavailable' && GIT_UNUSABLE_REASONS.has(readiness.reason);
 }
 
-function describePreview(ctx: ToolsetCtx): string {
+function describePreview(ctx: ToolsetBaseCtx): string {
   // No "include the URLs in your final response" and no "when available" hedge: both let agents
   // end visual work at preview links.
   return `Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
 Do not end visual work or browse requests with these links — publish a curated review with ${getToolName(ctx)('review.create')} instead (passing changedFiles: [] when no code changed) and link that.`;
 }
 
-function describeChanged(ctx: ToolsetCtx): string {
+function describeChanged(ctx: ToolsetBaseCtx): string {
   return `Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).
 
 The result reflects the cumulative working-tree diff, not just your latest edit — after multiple edits in one session, a non-empty result may cover an earlier sub-change and miss your most recent one. Check that every file you touched is represented; for any that isn't, find its consumer components and pass their paths to ${getToolName(ctx)('stories.findByComponent')} instead. The response surfaces this gap with a "coverage sanity check" hint when it detects unreachable working-tree files.`;
 }
 
-function describeFindByComponent(ctx: ToolsetCtx): string {
+function describeFindByComponent(ctx: ToolsetBaseCtx): string {
   const ref = getToolName(ctx);
 
   return `Map component source files to the stories that render them, returning grounded storyId values from the live Storybook index; hand these to ${ref('stories.preview')} or ${ref('review.create')} instead of guessing. When the result says a component has no stories found, it has none yet: say so, never fabricate IDs.
@@ -217,7 +257,7 @@ Needs a dev server builder with change detection (e.g. Vite); otherwise returns 
 
 // Hot status + cold reverse-index queries, composed for ModuleGraphAccess consumers.
 function moduleGraphAccessFromCtx(
-  ctx: ToolsetCtx,
+  ctx: ToolsetBaseCtx,
   moduleGraph: ModuleGraphService = ctx.getService<ModuleGraphService>('core/module-graph', {
     internal: true,
   })
@@ -243,6 +283,7 @@ export function createStoriesToolset({
   git,
   changeStatuses,
   storybookDirs,
+  storyRender,
 }: CreateStoriesToolsetOptions) {
   return defineToolset({
     id: 'stories',
@@ -290,6 +331,76 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
               payload: {
                 inputStoryCount: input.stories.length,
                 outputStoryCount: data.stories.length,
+              },
+            },
+          };
+        },
+      },
+      screenshot: {
+        input: v.strictObject({
+          stories: v.pipe(
+            storyInputArraySchema,
+            v.minLength(1),
+            v.description(
+              'Stories to screenshot. Prefer { storyId }; props and globals render the story with those args and globals.'
+            )
+          ),
+          viewport: v.pipe(
+            v.optional(viewportSchema),
+            v.description(
+              `Browser viewport in CSS pixels. Defaults to ${DEFAULT_VIEWPORT.width}x${DEFAULT_VIEWPORT.height}.`
+            )
+          ),
+          outDir: v.pipe(
+            v.optional(v.string()),
+            v.description('Directory for the PNG files. Defaults to a new temporary directory.')
+          ),
+          timeoutMs: v.pipe(
+            v.optional(v.pipe(v.number(), v.integer(), v.minValue(1))),
+            v.description(
+              `How long to wait for each story to finish rendering and playing. Defaults to ${DEFAULT_SCREENSHOT_TIMEOUT_MS}.`
+            )
+          ),
+        }),
+        output: screenshotOutputSchema,
+        title: 'Screenshot stories',
+        description: `Render stories in a headless browser and return a PNG screenshot of each, with its render status and console errors. Use it to check how a story looks after a change.`,
+        handler: async (input, ctx): Promise<ToolsetOutcome<ScreenshotStoriesOutput>> => {
+          const access = await storyRender?.get();
+          if (!access) {
+            throw new StoryRenderUnavailableError();
+          }
+          const outDir = input.outDir
+            ? resolve(input.outDir)
+            : await mkdtemp(join(tmpdir(), 'storybook-screenshots-'));
+          await mkdir(outDir, { recursive: true });
+          const stories = await screenshotStories({
+            access,
+            index: await storyIndex.getIndex(),
+            stories: input.stories,
+            origin: ctx.origin,
+            viewport: input.viewport ?? DEFAULT_VIEWPORT,
+            outDir,
+            timeoutMs: input.timeoutMs ?? DEFAULT_SCREENSHOT_TIMEOUT_MS,
+            signal: ctx.signal,
+          });
+          const data = { stories };
+          const rendered = stories.filter(
+            (story) => 'status' in story && story.status === 'rendered'
+          ).length;
+          return {
+            ok: rendered === stories.length,
+            data,
+            markdown: formatScreenshotStories(data),
+            images: stories.flatMap((story) =>
+              'path' in story && story.path
+                ? [{ path: story.path, mimeType: 'image/png' as const }]
+                : []
+            ),
+            telemetry: {
+              payload: {
+                inputStoryCount: input.stories.length,
+                renderedStoryCount: rendered,
               },
             },
           };

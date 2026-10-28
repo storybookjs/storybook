@@ -1,7 +1,7 @@
 {
-  "name": "storybook",
+  "name": "@storybook/core",
   "version": "11.0.0-alpha.7",
-  "description": "Storybook: Develop, document, and test UI components in isolation",
+  "description": "Storybook core: the shared runtime, types and Node utilities behind `storybook`",
   "keywords": [
     "storybook",
     "component",
@@ -36,47 +36,26 @@
   "sideEffects": false,
   "type": "module",
   "imports": {
-    "#manager-stores": {
-      "storybook": "./src/manager/manager-stores.mock.ts",
-      "default": "./src/manager/manager-stores.ts"
+    "#docgen-addon-setup": {
+      "node": "./src/shared/open-service/services/docgen/setup.ts",
+      "default": "./src/empty-addon-setup.ts"
     },
-    "#utils": {
-      "storybook": "./template/stories/utils.mock.ts",
-      "default": "./template/stories/utils.ts"
+    "#story-docs-addon-setup": {
+      "node": "./src/shared/open-service/services/story-docs/setup.ts",
+      "default": "./src/empty-addon-setup.ts"
     }
   },
   "exports": {
-    "./actions": {
-      "types": "./dist/actions/index.d.ts",
-      "code": "./src/actions/index.ts",
-      "default": "./dist/actions/index.js"
+    ".": {
+      "types": "./dist/instance/public.d.ts",
+      "code": "./src/instance/public.ts",
+      "default": "./dist/instance/public.js"
     },
-    "./actions/decorator": {
-      "types": "./dist/actions/decorator.d.ts",
-      "code": "./src/actions/decorator.ts",
-      "default": "./dist/actions/decorator.js"
-    },
-    "./backgrounds": {
-      "types": "./dist/backgrounds/index.d.ts",
-      "code": "./src/backgrounds/index.ts",
-      "default": "./dist/backgrounds/index.js"
-    },
-    "./highlight": {
-      "types": "./dist/highlight/index.d.ts",
-      "code": "./src/highlight/index.ts",
-      "default": "./dist/highlight/index.js"
-    },
-    "./internal/bin/dispatcher": "./dist/bin/dispatcher.js",
-    "./internal/bin/loader": "./dist/bin/loader.js",
+    "./internal/bin/loader": "./dist/storybook/bin/loader.js",
     "./internal/channels": {
       "types": "./dist/channels/index.d.ts",
       "code": "./src/channels/index.ts",
       "default": "./dist/channels/index.js"
-    },
-    "./internal/cli": {
-      "types": "./dist/cli/index.d.ts",
-      "code": "./src/cli/index.ts",
-      "default": "./dist/cli/index.js"
     },
     "./internal/client-logger": {
       "types": "./dist/client-logger/index.d.ts",
@@ -93,22 +72,11 @@
       "code": "./src/component-meta/index.ts",
       "default": "./dist/component-meta/index.js"
     },
-    "./internal/components": {
-      "types": "./dist/components/index.d.ts",
-      "code": "./src/components/index.ts",
-      "default": "./dist/components/index.js"
-    },
     "./internal/core-events": {
       "types": "./dist/core-events/index.d.ts",
       "code": "./src/core-events/index.ts",
       "default": "./dist/core-events/index.js"
     },
-    "./internal/core-server": {
-      "types": "./dist/core-server/index.d.ts",
-      "code": "./src/core-server/index.ts",
-      "default": "./dist/core-server/index.js"
-    },
-    "./internal/core-server/presets/common-override-preset": "./dist/core-server/presets/common-override-preset.js",
     "./internal/csf": {
       "types": "./dist/csf/index.d.ts",
       "code": "./src/csf/index.ts",
@@ -124,39 +92,89 @@
       "code": "./src/csf/csf-utils.ts",
       "default": "./dist/csf/csf-utils.js"
     },
+    "./internal/deep/*": {
+      "types": "./dist/*.d.ts",
+      "code": "./src/*.ts",
+      "default": "./dist/*.js"
+    },
+    "./internal/deep/shared/checklist-store": {
+      "types": "./dist/shared/checklist-store/index.d.ts",
+      "code": "./src/shared/checklist-store/index.ts",
+      "default": "./dist/shared/checklist-store/index.js"
+    },
+    "./internal/deep/shared/open-service/services/docgen/node": {
+      "types": "./dist/shared/open-service/services/docgen/node.d.ts",
+      "code": "./src/shared/open-service/services/docgen/node.ts",
+      "node": "./dist/_node/shared/open-service/services/docgen/node.js",
+      "default": "./dist/shared/open-service/services/docgen/node.js"
+    },
+    "./internal/deep/shared/open-service/services/story-docs/node": {
+      "types": "./dist/shared/open-service/services/story-docs/node.d.ts",
+      "code": "./src/shared/open-service/services/story-docs/node.ts",
+      "node": "./dist/_node/shared/open-service/services/story-docs/node.js",
+      "default": "./dist/shared/open-service/services/story-docs/node.js"
+    },
+    "./internal/deep/shared/status-store": {
+      "types": "./dist/shared/status-store/index.d.ts",
+      "code": "./src/shared/status-store/index.ts",
+      "default": "./dist/shared/status-store/index.js"
+    },
+    "./internal/deep/shared/test-provider-store": {
+      "types": "./dist/shared/test-provider-store/index.d.ts",
+      "code": "./src/shared/test-provider-store/index.ts",
+      "default": "./dist/shared/test-provider-store/index.js"
+    },
+    "./internal/deep/shared/test-provider-store/AddonVitestService.constants": {
+      "types": "./dist/shared/test-provider-store/AddonVitestService.constants.d.ts",
+      "code": "./src/shared/test-provider-store/AddonVitestService.constants.ts",
+      "node": "./dist/_node/shared/test-provider-store/AddonVitestService.constants.js",
+      "default": "./dist/shared/test-provider-store/AddonVitestService.constants.js"
+    },
+    "./internal/deep/shared/universal-store": {
+      "types": "./dist/shared/universal-store/index.d.ts",
+      "code": "./src/shared/universal-store/index.ts",
+      "node": "./dist/_node/shared/universal-store/index.js",
+      "default": "./dist/shared/universal-store/index.js"
+    },
+    "./internal/deep/story-index/ghost-stories/node": {
+      "types": "./dist/story-index/ghost-stories/node.d.ts",
+      "code": "./src/story-index/ghost-stories/node.ts",
+      "node": "./dist/_node/story-index/ghost-stories/node.js",
+      "default": "./dist/story-index/ghost-stories/node.js"
+    },
+    "./internal/deep/test/node": {
+      "types": "./dist/test/node.d.ts",
+      "code": "./src/test/node.ts",
+      "node": "./dist/_node/test/node.js",
+      "default": "./dist/test/node.js"
+    },
     "./internal/docgen-worker": "./dist/shared/open-service/services/docgen/worker/docgen-worker.js",
     "./internal/docs-tools": {
       "types": "./dist/docs-tools/index.d.ts",
       "code": "./src/docs-tools/index.ts",
       "default": "./dist/docs-tools/index.js"
     },
+    "./internal/instance": {
+      "types": "./dist/instance/index.d.ts",
+      "code": "./src/instance/index.ts",
+      "default": "./dist/instance/index.js"
+    },
     "./internal/instrumenter": {
-      "types": "./dist/instrumenter/index.d.ts",
-      "code": "./src/instrumenter/index.ts",
-      "default": "./dist/instrumenter/index.js"
+      "types": "./dist/test/instrumenter/index.d.ts",
+      "code": "./src/test/instrumenter/index.ts",
+      "default": "./dist/test/instrumenter/index.js"
     },
     "./internal/manager-errors": {
       "types": "./dist/manager-errors.d.ts",
       "code": "./src/manager-errors.ts",
       "default": "./dist/manager-errors.js"
     },
-    "./internal/manager/globals": {
-      "types": "./dist/manager/globals.d.ts",
-      "code": "./src/manager/globals.ts",
-      "default": "./dist/manager/globals.js"
-    },
-    "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js",
-    "./internal/manager/manager-stores": {
-      "types": "./dist/manager/manager-stores.d.ts",
-      "code": "./src/manager/manager-stores.ts",
-      "default": "./dist/manager/manager-stores.js"
-    },
     "./internal/mocking-utils": {
-      "types": "./dist/mocking-utils/index.d.ts",
-      "code": "./src/mocking-utils/index.ts",
-      "default": "./dist/mocking-utils/index.js"
+      "types": "./dist/test/mocking/index.d.ts",
+      "code": "./src/test/mocking/index.ts",
+      "default": "./dist/test/mocking/index.js"
     },
-    "./internal/mocking-utils/mocker-runtime": "./dist/mocking-utils/mocker-runtime.js",
+    "./internal/mocking-utils/mocker-runtime": "./dist/test/mocking/mocker-runtime.js",
     "./internal/node-logger": {
       "types": "./dist/node-logger/index.d.ts",
       "code": "./src/node-logger/index.ts",
@@ -177,41 +195,35 @@
       "code": "./src/preview-errors.ts",
       "default": "./dist/preview-errors.js"
     },
+    "./internal/preview-page": {
+      "types": "./dist/preview-page/index.d.ts",
+      "code": "./src/preview-page/index.ts",
+      "default": "./dist/preview-page/index.js"
+    },
     "./internal/preview/globals": {
       "types": "./dist/preview/globals.d.ts",
       "code": "./src/preview/globals.ts",
       "default": "./dist/preview/globals.js"
-    },
-    "./internal/preview/runtime": "./dist/preview/runtime.js",
-    "./internal/router": {
-      "types": "./dist/router/index.d.ts",
-      "code": "./src/router/index.ts",
-      "default": "./dist/router/index.js"
     },
     "./internal/server-errors": {
       "types": "./dist/server-errors.d.ts",
       "code": "./src/server-errors.ts",
       "default": "./dist/server-errors.js"
     },
-    "./internal/skills": {
-      "types": "./dist/cli/skills/content/index.d.ts",
-      "code": "./src/cli/skills/content/index.ts",
-      "default": "./dist/cli/skills/content/index.js"
+    "./internal/services": {
+      "types": "./dist/services/index.d.ts",
+      "code": "./src/services/index.ts",
+      "default": "./dist/services/index.js"
+    },
+    "./internal/story-index": {
+      "types": "./dist/story-index/index.d.ts",
+      "code": "./src/story-index/index.ts",
+      "default": "./dist/story-index/index.js"
     },
     "./internal/telemetry": {
       "types": "./dist/telemetry/index.d.ts",
       "code": "./src/telemetry/index.ts",
       "default": "./dist/telemetry/index.js"
-    },
-    "./internal/tools": {
-      "types": "./dist/cli/tools/sdk/index.d.ts",
-      "code": "./src/cli/tools/sdk/index.ts",
-      "default": "./dist/cli/tools/sdk/index.js"
-    },
-    "./internal/tools/child-host": {
-      "types": "./dist/cli/tools/sdk/child-host.d.ts",
-      "code": "./src/cli/tools/sdk/child-host.ts",
-      "default": "./dist/cli/tools/sdk/child-host.js"
     },
     "./internal/toolsets-docs": {
       "types": "./dist/shared/open-service/toolsets/docs/public.d.ts",
@@ -222,11 +234,6 @@
       "types": "./dist/types/index.d.ts",
       "code": "./src/types/index.ts",
       "default": "./dist/types/index.js"
-    },
-    "./manager-api": {
-      "types": "./dist/manager-api/index.d.ts",
-      "code": "./src/manager-api/index.ts",
-      "default": "./dist/manager-api/index.js"
     },
     "./open-service": {
       "types": "./dist/shared/open-service/index.d.ts",
@@ -243,26 +250,9 @@
       "types": "./dist/test/index.d.ts",
       "code": "./src/test/index.ts",
       "default": "./dist/test/index.js"
-    },
-    "./theming": {
-      "types": "./dist/theming/index.d.ts",
-      "code": "./src/theming/index.ts",
-      "default": "./dist/theming/index.js"
-    },
-    "./theming/create": {
-      "types": "./dist/theming/create.d.ts",
-      "code": "./src/theming/create.ts",
-      "default": "./dist/theming/create.js"
-    },
-    "./viewport": {
-      "types": "./dist/viewport/index.d.ts",
-      "code": "./src/viewport/index.ts",
-      "default": "./dist/viewport/index.js"
     }
   },
-  "bin": "./dist/bin/dispatcher.js",
   "files": [
-    "bin/**/*",
     "dist/**/*",
     "assets/**/*",
     "README.md",
@@ -279,56 +269,30 @@
     "@vitest/spy": "3.2.4",
     "@webcontainer/env": "^1.1.1",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0 || ^0.28.0",
-    "jsonc-parser": "^3.3.1",
-    "open": "^10.2.0",
+    "hookable": "^6.1.2",
     "oxc-parser": "^0.154.0",
     "oxc-resolver": "11.21.2",
-    "semver": "^7.7.3",
-    "use-sync-external-store": "^1.5.0",
-    "ws": "^8.21.1"
+    "semver": "^7.7.3"
   },
   "devDependencies": {
     "@aw-web-design/x-default-browser": "1.4.126",
     "@babel/core": "^7.28.5",
     "@clack/prompts": "1.0.0-alpha.7",
-    "@devtools-ds/object-inspector": "^1.1.2",
     "@discoveryjs/json-ext": "^0.5.3",
-    "@emotion/cache": "^11.14.0",
-    "@emotion/is-prop-valid": "^1.3.1",
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0",
-    "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
-    "@happy-dom/global-registrator": "^20.0.11",
     "@jridgewell/remapping": "^2.3.5",
     "@jridgewell/sourcemap-codec": "^1.5.5",
     "@ngard/tiny-isequal": "^1.1.0",
-    "@polka/compression": "^1.0.0-next.28",
     "@preact/signals-core": "^1.14.2",
-    "@radix-ui/react-scroll-area": "1.2.0-rc.7",
-    "@radix-ui/react-slot": "^1.0.2",
-    "@react-aria/focus": "^3.22.1",
-    "@react-aria/live-announcer": "^3.5.1",
-    "@react-aria/overlays": "^3.32.1",
-    "@react-stately/overlays": "^3.7.1",
-    "@react-stately/tabs": "^3.9.1",
-    "@react-types/shared": "^3.34.0",
-    "@rolldown/pluginutils": "1.0.0-beta.18",
     "@standard-schema/spec": "^1.1.0",
     "@testing-library/react": "^14.0.0",
-    "@types/cross-spawn": "^6.0.6",
-    "@types/detect-port": "^1.3.0",
     "@types/diff": "^5.0.9",
-    "@types/ejs": "^3.1.1",
     "@types/js-yaml": "^4.0.5",
     "@types/node": "^22.19.1",
     "@types/npmlog": "^7.0.0",
     "@types/picomatch": "^4.0.3",
     "@types/prettier": "^3.0.0",
     "@types/pretty-hrtime": "^1.0.0",
-    "@types/prompts": "^2.0.9",
-    "@types/react-syntax-highlighter": "11.0.5",
     "@types/semver": "^7.7.1",
-    "@types/ws": "^8",
     "@valibot/to-json-schema": "^1.3.0",
     "@vitest/mocker": "3.2.4",
     "@vitest/utils": "^3.2.4",
@@ -336,40 +300,24 @@
     "acorn-jsx": "^5.3.2",
     "ansi-to-html": "^0.7.2",
     "browser-dtector": "^3.4.0",
-    "bundle-require": "^5.1.0",
-    "camelcase": "^9.0.0",
     "chai": "^5.1.1",
-    "commander": "^14.0.2",
+    "cjs-module-lexer": "^1.2.3",
     "comment-parser": "^1.4.1",
-    "copy-to-clipboard": "^3.3.1",
-    "cross-spawn": "^7.0.6",
-    "deep-object-diff": "^1.1.0",
     "deepsignal": "^1.6.0",
     "dequal": "^2.0.2",
     "detect-indent": "^7.0.1",
-    "detect-port": "^1.6.1",
     "diff": "^8.0.2",
-    "downshift": "^9.0.4",
-    "ejs": "^3.1.10",
     "empathic": "^2.0.0",
+    "es-module-lexer": "^1.5.0",
     "es-toolkit": "^1.43.0",
-    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0 || ^0.28.0",
     "execa": "^9.6.1",
     "exsolve": "^1.0.7",
-    "extend-to-be-announced": "^2.0.0",
     "fetch-retry": "^6.0.0",
-    "flush-promises": "^1.0.2",
-    "fuse.js": "^3.6.1",
-    "get-npm-tarball-url": "^2.1.0",
     "github-slugger": "^2.0.0",
     "glob": "^10.5.0",
     "globby": "^14.1.0",
-    "hast-util-to-estree": "^3.0.0",
-    "host-validation-middleware": "^0.1.2",
-    "jiti": "^2.6.1",
     "js-yaml": "^4.1.0",
     "jsdoc-type-pratt-parser": "^4.0.0",
-    "launch-editor": "^2.13.2",
     "lazy-universal-dotenv": "^4.0.0",
     "leven": "^4.0.0",
     "magic-string": "^1.1.0",
@@ -379,7 +327,6 @@
     "memfs": "^4.11.1",
     "memoizerific": "^1.11.3",
     "micromark-extension-mdxjs": "^3.0.0",
-    "modern-tar": "^0.5.5",
     "nanoid": "^4.0.2",
     "npmlog": "^7.0.0",
     "p-limit": "^7.2.0",
@@ -388,30 +335,17 @@
     "picocolors": "^1.1.0",
     "picomatch": "^4.0.5",
     "picoquery": "^2.5.0",
-    "polished": "^4.2.2",
     "polka": "^1.0.0-next.28",
     "prettier": "^3.7.1",
     "pretty-hrtime": "^1.0.3",
-    "qrcode.react": "^4.2.0",
     "react": "^18.2.0",
-    "react-aria": "^3.52.1",
-    "react-aria-components": "^1.21.1",
     "react-dom": "^18.2.0",
-    "react-helmet-async": "^1.3.0",
     "react-inspector": "^6.0.0",
-    "react-router-dom": "6.15.0",
-    "react-stately": "^3.50.0",
-    "react-syntax-highlighter": "^15.4.5",
-    "react-textarea-autosize": "^8.3.0",
-    "react-transition-state": "^2.3.1",
     "require-from-string": "^2.0.2",
-    "rolldown": "^1.1.4",
     "sirv": "^2.0.4",
     "slash": "^5.0.0",
     "source-map": "^0.7.4",
     "std-env": "^4.0.0",
-    "store2": "^2.14.2",
-    "strip-ansi": "^7.1.0",
     "strip-json-comments": "^5.0.1",
     "telejson": "8.0.0",
     "tiny-invariant": "^1.3.1",
@@ -423,7 +357,6 @@
     "typescript": "^6.0.3",
     "typescript-5": "npm:typescript@5.9.3",
     "unique-string": "^3.0.0",
-    "use-resize-observer": "^9.1.0",
     "valibot": "^1.4.0",
     "watchpack": "^2.5.0",
     "wrap-ansi": "^9.0.2",

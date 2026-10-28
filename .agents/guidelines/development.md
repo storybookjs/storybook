@@ -38,8 +38,18 @@ Add `-c production` only when you need sandbox-related NX tasks or are explicitl
 | Run the docgen perf bench       | `yarn workspace @storybook/docgen-harness bench:docgen-perf`                 |
 | Run the docgen memory gate      | `yarn workspace @storybook/docgen-harness bench:docgen-memory`               |
 | Verify sandbox docgen baselines | `yarn workspace @storybook/docgen-harness baselines:sandbox`                 |
-| List docs via tools CLI         | `cd code && node core/dist/bin/dispatcher.js tools docs list`                |
+| List docs via tools CLI         | `cd code && node lib/storybook/dist/bin/dispatcher.js tools docs list`                |
 | Require attach / force local    | add `--attach` or `--no-attach` before the toolset name                      |
+
+Nx project names for the core packages:
+
+| Package                   | Nx project     |
+| ------------------------- | -------------- |
+| `@storybook/core`         | `core`         |
+| `@storybook/ui`           | `ui`           |
+| `@storybook/manager`      | `manager`      |
+| `storybook`               | `storybook`    |
+| `@storybook/open-service` | `open-service` |
 
 ## Normal code changes
 

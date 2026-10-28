@@ -1,7 +1,7 @@
 import { type Dirent, lstatSync, readdirSync } from 'node:fs';
 import { basename, join, relative, resolve } from 'node:path';
 
-import { commonGlobOptions } from 'storybook/internal/common';
+import { commonGlobOptions, getSpecifierImportPath } from 'storybook/internal/common';
 import type { NormalizedStoriesSpecifier, Path } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
@@ -69,7 +69,9 @@ export function watchStorySpecifiers(
     // to watch. Convert to an import path so we can run against the specifiers.
     const importPath = toImportPath(absolutePath);
 
-    const matchingSpecifier = specifiers.find((ns) => ns.importPathMatcher.exec(importPath));
+    const matchingSpecifier = specifiers.find((ns) =>
+      ns.importPathMatcher.exec(getSpecifierImportPath(ns, absolutePath, options.workingDir))
+    );
     if (matchingSpecifier) {
       onInvalidate(importPath, removed);
       return;
@@ -84,8 +86,11 @@ export function watchStorySpecifiers(
       await Promise.all(
         specifiers
           // We only receive events for files (incl. directories) that are *within* a specifier,
-          // so will match one (or more) specifiers with this simple `startsWith`
-          .filter((specifier) => importPath.startsWith(specifier.directory))
+          // so will match one (or more) specifiers
+          .filter((specifier) => {
+            const directory = resolve(options.workingDir, specifier.directory);
+            return !relative(directory, absolutePath).startsWith('..');
+          })
           .map(async (specifier) => {
             // If `./path/to/dir` was added, check all files matching `./path/to/dir/**/*.stories.*`
             // (where the last bit depends on `files`).
@@ -107,7 +112,11 @@ export function watchStorySpecifiers(
             addedFiles.forEach((filePath: Path) => {
               const fileImportPath = toImportPath(filePath);
 
-              if (specifier.importPathMatcher.exec(fileImportPath)) {
+              if (
+                specifier.importPathMatcher.exec(
+                  getSpecifierImportPath(specifier, filePath, options.workingDir)
+                )
+              ) {
                 onInvalidate(fileImportPath, removed);
               }
             });

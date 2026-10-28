@@ -35,6 +35,14 @@ export const getDirectoryFromWorkingDir = ({
   return normalizeStoryPath(directoryFromWorking);
 };
 
+// `./Button.stories.ts` becomes `../core/Button.stories.ts` when the working dir `core` is inside
+// the directory `..`, the form `importPathMatcher` and auto-titles expect.
+export const getSpecifierImportPath = (
+  { directory }: NormalizedStoriesSpecifier,
+  absolutePath: string,
+  workingDir: string
+) => `${directory}/${slash(relative(resolve(workingDir, directory), absolutePath))}`;
+
 export const normalizeStoriesEntry = (
   entry: StoriesEntry,
   { configDir, workingDir, defaultFilesPattern = DEFAULT_FILES_PATTERN }: NormalizeOptions

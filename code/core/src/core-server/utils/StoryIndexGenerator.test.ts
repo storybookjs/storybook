@@ -377,6 +377,26 @@ describe('StoryIndexGenerator', () => {
         `);
       });
     });
+    describe('working dir inside the specifier directory', () => {
+      it('extracts stories from the working dir and its siblings', async () => {
+        const nestedOptions = { ...options, workingDir: join(options.workingDir, 'src', 'nested') };
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/@(nested|second-nested)/*.stories.ts',
+          nestedOptions
+        );
+
+        const generator = new StoryIndexGenerator([specifier], nestedOptions);
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(
+          Object.values(storyIndex.entries).map(({ importPath, title }) => ({ importPath, title }))
+        ).toEqual([
+          { importPath: './Button.stories.ts', title: 'nested/Button' },
+          { importPath: '../second-nested/G.stories.ts', title: 'second-nested/G' },
+        ]);
+      });
+    });
     describe('recursive specifier', () => {
       it('extracts stories from the right files', async () => {
         const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(

@@ -1,12 +1,5 @@
-/**
- * NOTE:
- *
- * 1. Why Svelte AST nodes had to be included?
- *    - During the compilation from Svelte to JS, HTML comments are removed.
- *    - Rollup' internal `this.parse()` excludes `leadingComments` from parsing.
- *      I couldn't find an option to override this behavior.
- *      I wanted to avoid adding another package for parsing _(getting AST)_ - e.g. `acorn`
- */
+// The Svelte source is parsed as well, because the compiled JS has no HTML comments and Rollup's
+// `this.parse()` drops `leadingComments`.
 
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';

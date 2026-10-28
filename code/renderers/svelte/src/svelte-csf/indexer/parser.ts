@@ -231,8 +231,6 @@ export async function parseForIndexer(filename: string): Promise<Results> {
         const hasTemplate = storyAttributes.template || templateSnippet;
         const hasAsChild = storyAttributes.asChild !== undefined;
 
-        // TODO: This could actually work in the future, by supporting referencing a template
-        // and forwarding any children to that.
         if (storyAttributes.template && hasChildren) {
           throw new StoryTemplateAndChildrenError({ component: node, filename });
         }

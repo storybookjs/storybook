@@ -19,11 +19,7 @@ type Result<Properties extends Array<keyof ComponentAnnotations<Cmp>>> = Partial
   [Key in Properties[number]]: ESTreeAST.Property;
 }>;
 
-/**
- * Extract selected properties from `defineMeta` as AST node {@link Property}.
- * It works for original svelte code as well as compiled code,
- * because in both cases, the AST structure is the same _(or should be!)_.
- */
+// Works on both the Svelte and the compiled AST, because `defineMeta()` has the same shape in both.
 export function extractDefineMetaPropertiesNodes<
   const Properties extends Array<keyof ComponentAnnotations<Cmp>>,
 >(options: Options<Properties>): Result<Properties> {
@@ -44,10 +40,6 @@ export function extractDefineMetaPropertiesNodes<
   return results;
 }
 
-/**
- * `defineMeta` and `preview.meta` accept only one argument - an {@link ObjectExpression},
- * which should satisfy `@storybook/svelte`'s interface {@link Meta}.
- */
 export function getDefineMetaFirstArgumentObjectExpression(
   options: Pick<Options<Array<keyof ComponentAnnotations<Cmp>>>, 'filename' | 'nodes'>
 ): ESTreeAST.ObjectExpression {

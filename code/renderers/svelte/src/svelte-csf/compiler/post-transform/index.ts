@@ -24,9 +24,6 @@ interface Params {
   originalCode: string;
 }
 
-/**
- * Updates the {@link MagicString} code with necessary transformations for this addon to work correctly.
- */
 export async function transformStoriesCode(params: Params): Promise<void> {
   const { code, nodes, filename, originalCode } = params;
 
@@ -42,13 +39,7 @@ export async function transformStoriesCode(params: Params): Promise<void> {
     .reverse();
   const compiledStories = [...extractedCompiledStoriesNodes].reverse();
 
-  /*
-   * WARN:
-   * IMPORTANT! The plugins starts updating the compiled output code from the bottom.
-   * Why? Because once we start updating nodes in the stringified output from the top,
-   * then other nodes' `start` and `end` numbers will not be correct anymore.
-   * Hence the reason why reversing both arrays with stories _(svelte and compiled)_.
-   */
+  // Stories are transformed bottom-up, so that each edit keeps the `start` and `end` offsets of the stories above it valid.
   compiledStories.forEach((compiled, index) => {
     transformStory({
       code,

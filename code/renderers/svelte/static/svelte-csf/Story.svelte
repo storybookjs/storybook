@@ -56,8 +56,7 @@
     }
   }
 
-  // TODO: Svelte maintainers is still discussing internally if they want to implement official typeguard function.
-  // Keep a pulse on this case and then this can be replaced.
+  // Svelte has no official type guard for snippets.
   function isSnippet<T extends unknown[]>(value: unknown): value is Snippet<T> {
     return typeof value === 'function';
   }

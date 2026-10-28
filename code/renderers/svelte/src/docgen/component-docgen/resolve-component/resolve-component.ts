@@ -26,7 +26,6 @@ import {
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { getIndexableAST } from '../../../svelte-csf/indexer/parser.ts';
-import { getSvelteAST } from '../../../svelte-csf/parser/ast.ts';
 import { getDefineMetaComponentValue } from '../../../svelte-csf/parser/analyse/define-meta/component-identifier.ts';
 import { getDefineMetaFirstArgumentObjectExpression } from '../../../svelte-csf/parser/extract/svelte/define-meta.ts';
 import { extractSvelteASTNodes } from '../../../svelte-csf/parser/extract/svelte/nodes.ts';
@@ -163,7 +162,7 @@ export async function resolveStoryComponent(
   const source = await readFile(storyPath, 'utf8');
 
   if (storyPath.endsWith('.svelte')) {
-    const ast = getSvelteAST({ code: source, filename: storyPath });
+    const ast = getIndexableAST(source);
     const nodes = await extractSvelteASTNodes({ ast, filename: storyPath });
     const component = getDefineMetaComponentValue({ nodes, filename: storyPath });
     if (!component) return undefined;
@@ -288,7 +287,7 @@ function readCsfMeta(source: string, entry: IndexEntry) {
 }
 
 async function readSvelteMeta(source: string, storyPath: string) {
-  const ast = getSvelteAST({ code: source, filename: storyPath });
+  const ast = getIndexableAST(source);
   const nodes = await extractSvelteASTNodes({ ast, filename: storyPath });
   const { start, end } = getDefineMetaFirstArgumentObjectExpression({
     nodes,

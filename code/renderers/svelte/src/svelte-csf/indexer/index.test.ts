@@ -8,6 +8,7 @@ import type { IndexerOptions } from 'storybook/internal/types';
 
 import { createIndexer } from './index.ts';
 import { parseForIndexer } from './parser.ts';
+import { MissingModuleTagError } from '../utils/error/parser/extract/svelte.ts';
 
 vi.mock('./parser.ts', () => ({ parseForIndexer: vi.fn() }));
 
@@ -26,6 +27,14 @@ const indexWithParserError = async (cause: unknown) => {
 describe('createIndexer', () => {
   beforeEach(() => {
     vi.mocked(logger.shouldLog).mockReturnValue(false);
+  });
+
+  it('rethrows a Svelte CSF error as it is', async () => {
+    const svelteCsfError = new MissingModuleTagError(FILENAME);
+
+    const error = await indexWithParserError(svelteCsfError);
+
+    expect(error).toBe(svelteCsfError);
   });
 
   describe('when the parser throws an unrecognized error', () => {

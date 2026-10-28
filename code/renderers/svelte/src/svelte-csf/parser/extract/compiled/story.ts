@@ -38,8 +38,5 @@ export function getStoryPropsObjectExpression(params: Params): ESTreeAST.ObjectE
     return node.expression.arguments[1];
   }
 
-  throw new NoCompiledStoryPropsObjectExpression({
-    filename,
-    node,
-  });
+  throw new NoCompiledStoryPropsObjectExpression(filename);
 }

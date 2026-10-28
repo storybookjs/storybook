@@ -65,8 +65,5 @@ export function getDefineMetaFirstArgumentObjectExpression(
     return argument;
   }
 
-  throw new GetDefineMetaFirstArgumentError({
-    filename,
-    defineMetaVariableDeclaration,
-  });
+  throw new GetDefineMetaFirstArgumentError(filename);
 }

@@ -28,7 +28,6 @@ const Versions = {
   MAJOR: 'MAJOR',
 };
 
-const ciLabels = ['ci:focus', 'ci:normal', 'ci:merged', 'ci:daily', 'ci:docs'];
 const qaLabels = ['qa:needed', 'qa:skip', 'qa:success'];
 
 const { labels } = danger.github.issue;
@@ -78,19 +77,12 @@ const checkRequiredLabels = (labels: string[]) => {
     }
     return;
   } else {
-    // All other PRs to `next` to a qualifying change type and one of several applicable CI labels.
+    // All other PRs to `next` need a qualifying change type and a QA label.
     const foundRequiredLabels = intersection(requiredLabels, labels);
     if (foundRequiredLabels.length === 0) {
       fail(`PR is not labeled with one of: ${JSON.stringify(requiredLabels)}`);
     } else if (foundRequiredLabels.length > 1) {
       fail(`Please choose only one of these labels: ${JSON.stringify(foundRequiredLabels)}`);
-    }
-
-    const foundCILabels = intersection(ciLabels, labels);
-    if (foundCILabels.length === 0) {
-      fail(`PR is not labeled with one of: ${JSON.stringify(ciLabels)}`);
-    } else if (foundCILabels.length > 1) {
-      fail(`Please choose only one of these labels: ${JSON.stringify(foundCILabels)}`);
     }
 
     const foundQALabels = intersection(qaLabels, labels);

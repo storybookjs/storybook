@@ -12,6 +12,7 @@ import type {
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { extractComponentDescription } from 'storybook/internal/csf-tools';
 
+import { buildApiDescription } from './api-description/api-description.ts';
 import { createServerArgTypes } from './arg-types/create-server-arg-types.ts';
 import {
   resolveStoryComponent,
@@ -45,7 +46,7 @@ export async function buildDocgenPayload(
   try {
     const component = await resolveStoryComponent(input.entry);
     if (!component) return undefined;
-    const docs = await componentDocs(component.componentPath, context);
+    const docs = await componentDocs(component.componentPath, component.name, context);
     const subcomponents: Record<string, DocgenSubcomponent> = {};
     for (const [name, subcomponent] of Object.entries(
       await resolveStorySubcomponents(input.entry)
@@ -54,7 +55,7 @@ export async function buildDocgenPayload(
         subcomponents[name] = {
           name,
           path: pathFromStory(path, subcomponent.componentPath),
-          ...(await componentDocs(subcomponent.componentPath, context)),
+          ...(await componentDocs(subcomponent.componentPath, name, context)),
         };
       } catch {
         continue;
@@ -77,7 +78,7 @@ export async function buildDocgenPayload(
   }
 }
 
-async function componentDocs(componentPath: string, context: BuildDocgenContext) {
+async function componentDocs(componentPath: string, name: string, context: BuildDocgenContext) {
   const source = await readFile(componentPath, 'utf8');
   const documentationSource = await preprocess(source, { style: () => ({ code: '' }) });
   const docgen = context.componentMetaManager.generateDocgen(componentPath, {
@@ -87,5 +88,6 @@ async function componentDocs(componentPath: string, context: BuildDocgenContext)
   return {
     ...extractComponentDescription(undefined, docgen.description, docgen.jsDocTags),
     argTypes: createServerArgTypes(docgen),
+    apiDescription: buildApiDescription(name, docgen),
   };
 }

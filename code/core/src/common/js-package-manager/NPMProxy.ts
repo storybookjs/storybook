@@ -208,7 +208,7 @@ export class NPMProxy extends JsPackageManager {
     };
   }
 
-  protected runInstall(options?: { force?: boolean }) {
+  protected runInstall(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     const packageJsonPath = this.packageJsonPaths[0];
     const workspacePackageJsonPath = this.packageJsonPaths.find((ancestorPath) => {
       const workspaces = JsPackageManager.getPackageJson(ancestorPath).workspaces;
@@ -235,13 +235,18 @@ export class NPMProxy extends JsPackageManager {
 
     return executeCommand({
       command: 'npm',
-      args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
+      args: [
+        'install',
+        ...this.getInstallArgs(),
+        ...(options?.force ? ['--force'] : []),
+        ...(options?.legacyPeerDeps ? ['--legacy-peer-deps'] : []),
+      ],
       cwd: workspacePackageJsonPath ? dirname(workspacePackageJsonPath) : this.cwd,
       stdio: prompt.getPreferredStdio(),
     });
   }
 
-  async installDependencies(options?: { force?: boolean }) {
+  async installDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     try {
       await super.installDependencies(options);
     } catch (error) {
@@ -373,6 +378,20 @@ export class NPMProxy extends JsPackageManager {
         packageName,
       });
     }
+  }
+
+  protected async runGetPeerDependencies(
+    packageSpec: string
+  ): Promise<Record<string, string> | undefined> {
+    const result = await executeCommand({
+      command: 'npm',
+      args: ['info', packageSpec, 'peerDependencies', '--json'],
+      cwd: this.cwd,
+      stdio: 'pipe',
+    });
+    // npm prints nothing when the version has no peer dependencies.
+    const output = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+    return output ? JSON.parse(output) : undefined;
   }
 
   /**

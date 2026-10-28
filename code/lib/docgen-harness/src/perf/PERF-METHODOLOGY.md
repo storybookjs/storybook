@@ -221,9 +221,8 @@ Without that, a gate whose failure path had silently broken would be indistingui
 
 ### When it runs
 
-On CircleCI's daily tier, which is triggered by the `ci:daily` label on a pull request.
-Nothing schedules that tier, so this is on-demand protection rather than nightly protection.
-A regression that lands on a Tuesday is caught whenever someone next asks for a daily run, not overnight.
+On CircleCI's daily tier, which runs nightly on `next` and on demand via the `ci:daily` label on a pull request.
+A regression that lands on a Tuesday is caught by Tuesday night's run, which posts the failed jobs to #sb-agility.
 
 ### Memory budgets
 

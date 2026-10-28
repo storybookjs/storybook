@@ -38,7 +38,7 @@ describe(getStringValueFromAttribute.name, () => {
 
         A '<Story name="undefined" />' has a prop 'name' whose value must be a static literal string.
 
-        More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001
+        More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_analyse_story_0001
         ]
       `);
   });
@@ -109,7 +109,7 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
       A '<Story name="Default" />' has a prop'tags' whose value was expected to be a static array.
       Instead the value type is '0'.
 
-      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0002
+      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_analyse_story_0002
       ]
     `
     );
@@ -149,7 +149,7 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
       A '<Story name="Default" />' has attribute 'tags' whose value was expected to be an array expression.
       All elements in the array must be static literal strings only, but one of the elements is of type 'undefined'.
 
-      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0003
+      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_analyse_story_0003
       ]
     `
     );

@@ -24,9 +24,16 @@ const options = {
   storiesPaths: [],
 };
 
-const check = (source: string, storybookVersion = '11.0.0') => {
+const check = (
+  source: string,
+  features: Record<string, boolean | undefined>,
+  storybookVersion = '11.0.0'
+) => {
   vol.fromJSON({ [mainConfigPath]: source });
-  return checkFix(removeLegacyFeatureFlags, { ...options, storybookVersion });
+  // The parsed config still carries the removed keys at runtime, even though the 11.0
+  // `StorybookFeatures` type no longer declares them — hence the cast.
+  const mainConfig = { ...options.mainConfig, features } as StorybookConfigRaw;
+  return checkFix(removeLegacyFeatureFlags, { ...options, mainConfig, storybookVersion });
 };
 
 const migrate = async (source: string) => {
@@ -68,16 +75,22 @@ afterEach(() => {
 
 describe('remove-legacy-feature-flags', () => {
   it.each([
-    ['argTypeTargetsV7', 'true'],
-    ['argTypeTargetsV7', 'false'],
-    ['disallowImplicitActionsInRenderV8', 'true'],
-    ['disallowImplicitActionsInRenderV8', 'false'],
+    ['argTypeTargetsV7', true],
+    ['argTypeTargetsV7', false],
+    ['disallowImplicitActionsInRenderV8', true],
+    ['disallowImplicitActionsInRenderV8', false],
   ])('applies to a main config that sets %s to %s', async (flag, value) => {
-    expect(await check(mainWith(`features: { ${flag}: ${value} },`))).not.toBeNull();
+    expect(
+      await check(mainWith(`features: { ${flag}: ${value} },`), { [flag]: value })
+    ).not.toBeNull();
   });
 
   it('does not apply to a main config without the flags', async () => {
-    expect(await check(mainWith('features: { experimentalTestSyntax: true },'))).toBeNull();
+    expect(
+      await check(mainWith('features: { experimentalTestSyntax: true },'), {
+        experimentalTestSyntax: true,
+      })
+    ).toBeNull();
   });
 
   it('does not apply when the flags are only commented out next to a spread', async () => {
@@ -85,7 +98,7 @@ describe('remove-legacy-feature-flags', () => {
       'features: {\n    ...sharedFeatures,\n    // argTypeTargetsV7: false,\n  },'
     );
 
-    expect(await check(source)).toBeNull();
+    expect(await check(source, {})).toBeNull();
   });
 
   it.each([
@@ -93,18 +106,30 @@ describe('remove-legacy-feature-flags', () => {
     ['argTypeTargetsV7', 'argTypeTargetsV7'],
     ["['disallowImplicitActionsInRenderV8']: false", 'disallowImplicitActionsInRenderV8'],
     ['disallowImplicitActionsInRenderV8', 'disallowImplicitActionsInRenderV8'],
-  ])('applies to a flag written as %s', async (property) => {
+  ])('applies to a flag written as %s', async (property, flag) => {
     const source = `const argTypeTargetsV7 = false;\n${mainWith(`features: { ${property} },`)}`;
 
-    expect(await check(source)).not.toBeNull();
+    expect(await check(source, { [flag]: false })).not.toBeNull();
   });
 
   it.each(['11.0.0-alpha.1', '11.0.0', '11.1.0'])('applies on Storybook %s', async (version) => {
-    expect(await check(mainWith('features: { argTypeTargetsV7: true },'), version)).not.toBeNull();
+    expect(
+      await check(
+        mainWith('features: { argTypeTargetsV7: true },'),
+        { argTypeTargetsV7: true },
+        version
+      )
+    ).not.toBeNull();
   });
 
   it('does not apply on Storybook 10, which still reads the flags', async () => {
-    expect(await check(mainWith('features: { argTypeTargetsV7: true },'), '10.6.0')).toBeNull();
+    expect(
+      await check(
+        mainWith('features: { argTypeTargetsV7: true },'),
+        { argTypeTargetsV7: true },
+        '10.6.0'
+      )
+    ).toBeNull();
   });
 
   it('removes both flags and keeps the other features', async () => {

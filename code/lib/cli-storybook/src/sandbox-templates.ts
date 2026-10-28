@@ -290,6 +290,11 @@ export const baseTemplates = {
         features: {
           developmentModeForBuild: true,
           experimentalTestSyntax: true,
+          // This sandbox documents its components with `prop-types`, which the docgen server does
+          // not read: `prop-types` support stays with the builder docgen (react-docgen) while it is
+          // phased out. Without this, a JavaScript project gets TypeScript from `storybook init`,
+          // the docgen server turns on, and every prop without a default is typed `any`.
+          docgenServer: false,
         },
       },
     },

@@ -2,8 +2,9 @@
 // (`O_EXCL` creation, mtime), and the lock exists to exclude other OS processes, which a per-process
 // virtual filesystem cannot represent at all. Cross-process behaviour is in the sibling test.
 // The one exception is the stale-break race below: a wall-clock mtime made that test itself flaky
-// on loaded Windows CI, so the block virtualizes mtime through the `node:fs/promises` mock while
-// keeping real files, real `O_EXCL` creation and real payloads.
+// on loaded Windows CI, so that block spies the `node:fs/promises` functions it needs (per
+// .cursor/rules/spy-mocking.mdc, with implementations installed in its beforeEach) and virtualizes
+// mtime while keeping real files, real `O_EXCL` creation and real payloads.
 import {
   existsSync,
   mkdtempSync,
@@ -13,6 +14,7 @@ import {
   writeFileSync,
   type PathLike,
 } from 'node:fs';
+import * as fsPromises from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as realSleep } from 'node:timers/promises';
@@ -21,70 +23,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { withFileLock, type FileLockOptions } from './file-lock.ts';
 
-/** Shared state for the `node:fs/promises` mock below; only the stale-break block arms it. */
-const clock = vi.hoisted(
-  (): {
-    armed: boolean;
-    mtimeMs: number;
-    mtimeTracksNow: boolean;
-    failHeartbeats: boolean;
-    successorPayload: string | undefined;
-    successorReadsBefore: number;
-  } => ({
-    armed: false,
-    mtimeMs: 0,
-    mtimeTracksNow: false,
-    failHeartbeats: false,
-    successorPayload: undefined,
-    successorReadsBefore: 0,
-  })
-);
+vi.mock('node:fs/promises', { spy: true });
+const fsMock = vi.mocked(fsPromises);
+const actualFs = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises');
 
-// Pass-through mock: every test runs against the real filesystem unless it arms the clock, in
-// which case `stat`/`utimes`/`readFile` are diverted just enough to make the heartbeat-versus-
-// stale-break race deterministic (a virtual mtime instead of a wall-clock one, and a scripted
-// payload swap for the successor case).
-vi.mock('node:fs/promises', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('node:fs/promises')>();
-  const { writeFileSync } = await import('node:fs');
-
-  return {
-    ...actual,
-    stat: vi.fn(async (path: PathLike) => {
-      const stats = await actual.stat(path);
-      if (!clock.armed) {
-        return stats;
-      }
-      return { ...stats, mtimeMs: clock.mtimeTracksNow ? Date.now() : clock.mtimeMs };
-    }),
-    utimes: vi.fn(async (path: PathLike, atime: Date, mtime: Date) => {
-      if (!clock.armed) {
-        return actual.utimes(path, atime, mtime);
-      }
-      if (clock.failHeartbeats) {
-        throw Object.assign(new Error('simulated heartbeat failure'), { code: 'EPERM' });
-      }
-      clock.mtimeMs = mtime.getTime();
-    }),
-    readFile: vi.fn(async (path: PathLike, encoding?: BufferEncoding) => {
-      if (clock.armed && clock.successorPayload !== undefined) {
-        if (clock.successorReadsBefore > 0) {
-          clock.successorReadsBefore -= 1;
-        } else {
-          // A successor broke the stale lock and re-took it between the waiter's two payload
-          // reads: its payload is what the waiter sees from here on, and its fresh lock file is
-          // now on disk.
-          const successor = clock.successorPayload;
-          clock.successorPayload = undefined;
-          writeFileSync(String(path), successor);
-          clock.mtimeTracksNow = true;
-          return successor;
-        }
-      }
-      return actual.readFile(path, encoding);
-    }),
-  };
-});
+/** Shared state for the stale-break block's fs spies; reset by its beforeEach/afterEach. */
+const clock = {
+  mtimeMs: 0,
+  mtimeTracksNow: false,
+  failHeartbeats: false,
+  successorPayload: undefined as string | undefined,
+  successorReadsBefore: 0,
+  /** Diverted fs calls started but not finished: time must not advance while any is in flight. */
+  inFlight: 0,
+};
 
 let workDir: string;
 let lockPath: string;
@@ -178,18 +130,71 @@ describe('withFileLock', () => {
       vi.useFakeTimers({
         toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'],
       });
-      clock.armed = true;
       clock.mtimeMs = Date.now();
-    });
-
-    afterEach(() => {
-      clock.armed = false;
       clock.mtimeTracksNow = false;
       clock.failHeartbeats = false;
       clock.successorPayload = undefined;
       clock.successorReadsBefore = 0;
+      clock.inFlight = 0;
+
+      fsMock.stat.mockImplementation((path: PathLike) =>
+        track(async () => {
+          // A real Stats instance with its methods intact; only mtimeMs is virtualized.
+          const stats = await actualFs.stat(path);
+          const mtimeMs = clock.mtimeTracksNow ? Date.now() : clock.mtimeMs;
+          return Object.assign(stats, { mtimeMs });
+        })
+      );
+      fsMock.utimes.mockImplementation((path: PathLike, atime: Date, mtime: Date) =>
+        track(async () => {
+          if (clock.failHeartbeats) {
+            throw Object.assign(new Error('simulated heartbeat failure'), { code: 'EPERM' });
+          }
+          // The beat itself is what keeps the virtual mtime fresh for the waiter's stat.
+          clock.mtimeMs = mtime.getTime();
+          await actualFs.utimes(path, atime, mtime);
+        })
+      );
+      fsMock.readFile.mockImplementation((path: PathLike, encoding?: BufferEncoding) =>
+        track(async () => {
+          if (clock.successorReadsBefore > 0) {
+            clock.successorReadsBefore -= 1;
+            return actualFs.readFile(path, encoding);
+          }
+          if (clock.successorPayload !== undefined) {
+            // A successor broke the stale lock and re-took it between the waiter's two payload
+            // reads: its payload is what the waiter sees from here on, and its fresh lock file
+            // is now on disk. The successor is a live holder, so from here on its heartbeats
+            // keep the virtual mtime at now no matter how far the test advances the clock.
+            const successor = clock.successorPayload;
+            clock.successorPayload = undefined;
+            writeFileSync(String(path), successor);
+            clock.mtimeTracksNow = true;
+            return successor;
+          }
+          return actualFs.readFile(path, encoding);
+        })
+      );
+    });
+
+    afterEach(() => {
+      // Back to pass-through spies: the other tests in this file run against the real fs.
+      fsMock.stat.mockReset();
+      fsMock.utimes.mockReset();
+      fsMock.readFile.mockReset();
       vi.useRealTimers();
     });
+
+    /** Counts a diverted fs call from start to finish, so the clock helpers can tell when the
+     * threadpool has drained and it is safe to move time. */
+    const track = async <T>(work: () => Promise<T>): Promise<T> => {
+      clock.inFlight += 1;
+      try {
+        return await work();
+      } finally {
+        clock.inFlight -= 1;
+      }
+    };
 
     /** Waits in real time for real-fs work to land: fake timers do not patch
      * `node:timers/promises`, and the event loop processes threadpool completions while it sleeps. */
@@ -200,9 +205,19 @@ describe('withFileLock', () => {
       expect(condition(), description).toBe(true);
     };
 
-    /** Drives a competing caller to completion: fake-time advances move its poll loop and the
-     * heartbeat, and the real sleeps let the real-fs steps (open, payload read, removal) land
-     * in between. */
+    /** Advances the virtual clock at explicit checkpoints: never while a diverted fs call is in
+     * flight, because `breakStaleLock` computes the lock's age from a `stat` taken before its
+     * payload read — an advance between the two would manufacture staleness that no heartbeat
+     * could have prevented. */
+    const advance = async (ms: number) => {
+      await waitFor(() => clock.inFlight === 0, 'no diverted fs call in flight');
+      await vi.advanceTimersByTimeAsync(ms);
+      await waitFor(() => clock.inFlight === 0, 'fs work started by timers settled');
+    };
+
+    /** Drives a competing caller to completion: checkpointed fake-time advances move its poll loop
+     * and the heartbeat, and the real sleeps inside `waitFor` let the real-fs steps (open, payload
+     * read, removal) land in between. */
     const settleWaiter = async (waiter: Promise<'ran' | 'busy'>) => {
       let outcome: 'ran' | 'busy' | undefined;
       let failure: unknown;
@@ -215,8 +230,7 @@ describe('withFileLock', () => {
         }
       );
       for (let i = 0; i < 100 && outcome === undefined && failure === undefined; i += 1) {
-        await vi.advanceTimersByTimeAsync(50);
-        await realSleep(5);
+        await advance(50);
       }
       if (failure !== undefined) {
         throw failure;
@@ -242,7 +256,16 @@ describe('withFileLock', () => {
         },
         options
       );
-      await waitFor(() => entered, 'the holder acquired the lock and entered the work');
+      try {
+        await waitFor(() => entered, 'the holder acquired the lock and entered the work');
+      } catch (error) {
+        // The holder never proved it entered, but it may still be starting: let its work end so
+        // nothing outlives the test. A rejection from `done` here is cleanup noise, not the
+        // failure under test.
+        releaseHolder();
+        await done.catch(() => undefined);
+        throw error;
+      }
       return { done, release: releaseHolder };
     };
 
@@ -251,14 +274,18 @@ describe('withFileLock', () => {
 
       const waiterWork = vi.fn();
       const waiter = withFileLock(lockPath, waiterWork, { waitBudgetMs: 2000, staleAfterMs: 150 });
-      // The heartbeat refreshes the lock every 50ms, so the observed age never exceeds one beat
-      // and the waiter stays out until its wait budget is spent.
-      expect(await settleWaiter(waiter)).toBe('busy');
-      expect(waiterWork).not.toHaveBeenCalled();
-      expect(existsSync(lockPath)).toBe(true);
-
-      holder.release();
-      await expect(holder.done).resolves.toBe('ran');
+      // The heartbeat refreshes the virtual mtime every 50ms while the waiter's age is only read
+      // at its own stat, so the observed age can never exceed one beat and the waiter stays out
+      // until its wait budget is spent.
+      try {
+        expect(await settleWaiter(waiter)).toBe('busy');
+        expect(waiterWork).not.toHaveBeenCalled();
+        expect(existsSync(lockPath)).toBe(true);
+      } finally {
+        // Released on every path: a suspended holder must never outlive a failed assertion.
+        holder.release();
+        await holder.done;
+      }
       expect(existsSync(lockPath)).toBe(false);
     });
 
@@ -270,22 +297,25 @@ describe('withFileLock', () => {
       // Two healthy heartbeats land, then every heartbeat write starts failing, which is exactly
       // the failure `holdLock` swallows. The holder is alive but no longer reporting, so its lock
       // must go stale and be broken.
-      await vi.advanceTimersByTimeAsync(100);
-      await realSleep(20);
+      await advance(100);
       clock.failHeartbeats = true;
 
-      expect(await settleWaiter(waiter)).toBe('ran');
-      expect(waiterWork).toHaveBeenCalledTimes(1); // the waiter entered while the holder still is
-
-      holder.release();
-      await expect(holder.done).resolves.toBe('ran'); // the swallowed heartbeat errors never hurt it
+      try {
+        expect(await settleWaiter(waiter)).toBe('ran');
+        expect(waiterWork).toHaveBeenCalledTimes(1); // the waiter entered while the holder still is
+      } finally {
+        // Released on every path; resolving `done` proves the swallowed heartbeat errors
+        // never hurt the holder.
+        holder.release();
+        await holder.done;
+      }
       expect(existsSync(lockPath)).toBe(false);
     });
 
     it('does not delete a lock whose token changes under the waiter', async () => {
       // A stale lock from a first holder; between the waiter's two payload reads a successor
-      // breaks and re-takes the lock. The readFile branch of the mock stands in for the
-      // successor's write, which makes the interleaving deterministic.
+      // breaks and re-takes the lock. The readFile spy stands in for the successor's write,
+      // which makes the interleaving deterministic.
       writeFileSync(lockPath, JSON.stringify({ token: 'first-holder', pid: process.pid }));
       clock.mtimeMs = Date.now() - 60_000;
       clock.successorPayload = JSON.stringify({ token: 'successor', pid: process.pid });

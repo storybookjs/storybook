@@ -3,28 +3,44 @@
 exports[`Svelte CSF errors > ArrayElementNotStringError 1`] = `
 [SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0005 (ArrayElementNotStringError): All entries in the 'tags' property passed to 'defineMeta()' must be static strings.
 One of the elements is not a string but is instead of type 'Identifier'.
+For example: defineMeta({ tags: ['autodocs', '!dev'] })
 
-This issue occurred in stories file: <cwd>/Button.stories.svelte]
+This issue occurred in stories file: <cwd>/Button.stories.svelte
+
+More info: https://storybook.js.org/docs/writing-stories/tags?renderer=svelte&ref=error
+]
 `;
 
 exports[`Svelte CSF errors > AttributeNotArrayError 1`] = `
 [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0002 (AttributeNotArrayError): In the stories file: <cwd>/Button.stories.svelte
 
 A '<Story name="Primary" />' has a prop'tags' whose value was expected to be a static array.
-Instead the value type is 'autodocs'.]
+Instead the value type is 'autodocs'.
+For example: <Story tags={['autodocs', '!dev']} />
+
+More info: https://storybook.js.org/docs/writing-stories/tags?renderer=svelte&ref=error
+]
 `;
 
 exports[`Svelte CSF errors > AttributeNotArrayOfStringsError 1`] = `
 [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0003 (AttributeNotArrayOfStringsError): In the stories file: <cwd>/Button.stories.svelte
 
 A '<Story name="Secondary" />' has attribute 'tags' whose value was expected to be an array expression.
-All elements in the array must be static literal strings only, but one of the elements is of type 'undefined'.]
+All elements in the array must be static literal strings only, but one of the elements is of type 'Identifier'.
+For example: <Story tags={['autodocs', '!dev']} />
+
+More info: https://storybook.js.org/docs/writing-stories/tags?renderer=svelte&ref=error
+]
 `;
 
 exports[`Svelte CSF errors > AttributeNotStringError 1`] = `
 [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001 (AttributeNotStringError): In the stories file: <cwd>/Button.stories.svelte
 
-A '<Story name="Primary" />' has a prop 'name' whose value must be a static literal string.]
+A '<Story name="Primary" />' has a prop 'name' whose value must be a static literal string.
+Dynamic values, such as variables, function calls or template strings, are not supported. For example: <Story name="Primary" />
+
+More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#defining-stories
+]
 `;
 
 exports[`Svelte CSF errors > DefaultOrNamespaceImportUsedError 1`] = `
@@ -34,7 +50,10 @@ and doesn't import defineMeta by name. Import it with a named import, like so:
 
 import { defineMeta } from "@storybook/svelte-vite";
 
-In a SvelteKit project, import defineMeta from "@storybook/sveltekit".]
+In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
+
+More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
+]
 `;
 
 exports[`Svelte CSF errors > DuplicateStoryIdentifiersError 1`] = `
@@ -46,14 +65,20 @@ Second instance: <Story name="Primary!" exportName="Primary" ... />
 This can happen when 'exportName' is implicitly derived by 'name'.
 Complex names will be simplified to a PascalCased, valid JavaScript variable name,
 eg. 'Some story name!!' will be converted to 'SomeStoryName'.
-You can fix this collision by providing a unique 'exportName' prop with <Story exportName="SomeUniqueExportName" ... />.]
+You can fix this collision by providing a unique 'exportName' prop with <Story exportName="SomeUniqueExportName" ... />.
+
+More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#rename-stories
+]
 `;
 
 exports[`Svelte CSF errors > GetDefineMetaFirstArgumentError 1`] = `
 [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0006 (GetDefineMetaFirstArgumentError): The file '<cwd>/Button.stories.svelte'
 passes an invalid first argument to the 'defineMeta' or 'preview.meta' call.
 
-The first argument must be an object expression with the meta properties set.]
+The first argument must be an object expression with the meta properties set.
+
+More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
+]
 `;
 
 exports[`Svelte CSF errors > IndexerParseError 1`] = `
@@ -69,15 +94,24 @@ If the original error doesn't point to a problem in the stories file, please rep
 exports[`Svelte CSF errors > InvalidComponentValueError 1`] = `
 [SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0001 (InvalidComponentValueError): The 'component' property of 'defineMeta' must reference an imported Svelte component.
 The current type of the property is 'Literal'.
+For example: defineMeta({ component: Button }) or defineMeta({ component: Input.Select }), with Button or Input imported.
+Computed access such as Input['Select'], deeper chains such as Input.Group.Item, and expressions on 'this' are not supported.
 
-The issue occurred in Stories file: <cwd>/Button.stories.svelte]
+The issue occurred in Stories file: <cwd>/Button.stories.svelte
+
+More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
+]
 `;
 
 exports[`Svelte CSF errors > InvalidRenderValueError 1`] = `
 [SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0006 (InvalidRenderValueError): The 'render' property of 'defineMeta' must reference a root-level Svelte snippet.
 The current type of the property is 'ArrowFunctionExpression'.
+For example: defineMeta({ render: template }), with {#snippet template(args)} ... {/snippet} at the root of the stories file.
 
-The issue occurred in Stories file: <cwd>/Button.stories.svelte]
+The issue occurred in Stories file: <cwd>/Button.stories.svelte
+
+More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#custom-rendering
+]
 `;
 
 exports[`Svelte CSF errors > InvalidStoryExportNameError 1`] = `
@@ -85,7 +119,10 @@ exports[`Svelte CSF errors > InvalidStoryExportNameError 1`] = `
 
 'exportName' value must be a valid JavaScript variable name.
 It must start with a letter, $ or _, followed by letters, numbers, $ or _.
-Reserved words like 'default' are also not allowed (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#reserved_words)]
+Reserved words like 'default' are also not allowed (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#reserved_words)
+
+More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#rename-stories
+]
 `;
 
 exports[`Svelte CSF errors > InvalidStoryTemplateAttributeError 1`] = `
@@ -100,7 +137,10 @@ Eg.:
   ...
 {/snippet}
 
-<Story name="Primary" template={template} />]
+<Story name="Primary" template={template} />
+
+More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#custom-rendering
+]
 `;
 
 exports[`Svelte CSF errors > MissingDefineMetaImportError 1`] = `
@@ -116,10 +156,17 @@ Make sure to import defineMeta from the package and use it inside the module con
 </script>
 
 In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
-With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.]
+With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
+
+More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
+]
 `;
 
-exports[`Svelte CSF errors > MissingDefineMetaVariableDeclarationError (compiled) 1`] = `[SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0002 (MissingDefineMetaVariableDeclarationError): Could not find variable declaration from 'defineMeta' or 'preview.meta' call in the compiled output of the stories file: <cwd>/Button.stories.svelte]`;
+exports[`Svelte CSF errors > MissingDefineMetaVariableDeclarationError (compiled) 1`] = `
+[SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0002 (MissingDefineMetaVariableDeclarationError): Could not find variable declaration from 'defineMeta' or 'preview.meta' call in the compiled output of the stories file: <cwd>/Button.stories.svelte
+
+This is a bug in Storybook. Please report it at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml, and include the stories file.]
+`;
 
 exports[`Svelte CSF errors > MissingDefineMetaVariableDeclarationError (svelte) 1`] = `
 [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004 (MissingDefineMetaVariableDeclarationError): The file '<cwd>/Button.stories.svelte'
@@ -133,10 +180,17 @@ it's return value needs to be stored and destructured for the parsing to succeed
 </script>
 
 In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
-With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.]
+With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
+
+More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
+]
 `;
 
-exports[`Svelte CSF errors > MissingImportedDefineMetaError 1`] = `[SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0001 (MissingImportedDefineMetaError): Could not find the import statement of 'defineMeta' from "@storybook/svelte-vite" or "@storybook/sveltekit", or of the preview from .storybook/preview, in the compiled output of: <cwd>/Button.stories.svelte]`;
+exports[`Svelte CSF errors > MissingImportedDefineMetaError 1`] = `
+[SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0001 (MissingImportedDefineMetaError): Could not find the import statement of 'defineMeta' from "@storybook/svelte-vite" or "@storybook/sveltekit", or of the preview from .storybook/preview, in the compiled output of: <cwd>/Button.stories.svelte
+
+This is a bug in Storybook. Please report it at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml, and include the stories file.]
+`;
 
 exports[`Svelte CSF errors > MissingModuleTagError 1`] = `
 [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001 (MissingModuleTagError): The file '<cwd>/Button.stories.svelte'
@@ -151,40 +205,69 @@ defineMeta(...) or preview.meta(...) should be called inside a module script tag
 </script>
 
 In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
-With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.]
+With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
+
+More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
+]
 `;
 
 exports[`Svelte CSF errors > MixedMetaError 1`] = `
 [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0010 (MixedMetaError): The file '<cwd>/Button.stories.svelte'
 calls both defineMeta() and preview.meta(). A stories file can only have one meta.
-Use preview.meta() for CSF factories, or defineMeta() otherwise.]
+Use preview.meta() for CSF factories, or defineMeta() otherwise.
+
+More info: https://storybook.js.org/docs/writing-stories/csf/api?renderer=svelte&ref=error#previewmeta
+]
 `;
 
 exports[`Svelte CSF errors > MultipleMetaError 1`] = `
 [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0012 (MultipleMetaError): The file '<cwd>/Button.stories.svelte'
 calls preview.meta() more than once. A stories file can only have one meta.
-Move the stories of each meta to their own stories file.]
+Move the stories of each meta to their own stories file.
+
+More info: https://storybook.js.org/docs/writing-stories/csf/api?renderer=svelte&ref=error#previewmeta
+]
 `;
 
 exports[`Svelte CSF errors > NoArrayExpressionError 1`] = `
 [SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0004 (NoArrayExpressionError): The 'tags' passed to 'defineMeta()' must be a static array.
 But it is of type 'Identifier'.
+For example: defineMeta({ tags: ['autodocs', '!dev'] })
 
-This issue occurred in stories file: <cwd>/Button.stories.svelte]
+This issue occurred in stories file: <cwd>/Button.stories.svelte
+
+More info: https://storybook.js.org/docs/writing-stories/tags?renderer=svelte&ref=error
+]
 `;
 
-exports[`Svelte CSF errors > NoCompiledStoryPropsObjectExpression 1`] = `[SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0006 (NoCompiledStoryPropsObjectExpression): Failed to extract compiled Story component props as object expression in the compiled output of stories file: <cwd>/Button.stories.svelte]`;
+exports[`Svelte CSF errors > NoCompiledStoryPropsObjectExpression 1`] = `
+[SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0006 (NoCompiledStoryPropsObjectExpression): Failed to extract compiled Story component props as object expression in the compiled output of stories file: <cwd>/Button.stories.svelte
+
+This is a bug in Storybook. Please report it at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml, and include the stories file.]
+`;
 
 exports[`Svelte CSF errors > NoDestructuredDefineMetaCallError 1`] = `
 [SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0002 (NoDestructuredDefineMetaCallError): The return value of the 'defineMeta' call was not destructured to { Story }.
 The issue occurred in Stories file: <cwd>/Button.stories.svelte
 
-The current pattern type is: "Identifier", and expected is "ObjectPattern".]
+The current pattern type is: "Identifier", and expected is "ObjectPattern".
+For example: const { Story } = defineMeta({ ... });
+
+More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
+]
 `;
 
-exports[`Svelte CSF errors > NoExportDefaultError 1`] = `[SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0003 (NoExportDefaultError): Could not find 'export default' in the compiled output of the stories file: <cwd>/Button.stories.svelte]`;
+exports[`Svelte CSF errors > NoExportDefaultError 1`] = `
+[SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0003 (NoExportDefaultError): Could not find 'export default' in the compiled output of the stories file: <cwd>/Button.stories.svelte
 
-exports[`Svelte CSF errors > NoStoriesFunctionDeclarationError 1`] = `[SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0005 (NoStoriesFunctionDeclarationError): Could not find the stories component '*.stories.svelte' function declaration compiled output of the stories file: <cwd>/Button.stories.svelte]`;
+This is a bug in Storybook. Please report it at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml, and include the stories file.]
+`;
+
+exports[`Svelte CSF errors > NoStoriesFunctionDeclarationError 1`] = `
+[SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0005 (NoStoriesFunctionDeclarationError): Could not find the stories component '*.stories.svelte' function declaration compiled output of the stories file: <cwd>/Button.stories.svelte
+
+This is a bug in Storybook. Please report it at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml, and include the stories file.]
+`;
 
 exports[`Svelte CSF errors > NoStoryComponentDestructuredError 1`] = `
 [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0005 (NoStoryComponentDestructuredError): The file '<cwd>/Button.stories.svelte'
@@ -198,21 +281,35 @@ eg.:
 </script>
 
 In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
-With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.]
+With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
+
+More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
+]
 `;
 
 exports[`Svelte CSF errors > NoStoryIdentifierError 1`] = `
 [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0004 (NoStoryIdentifierError): Missing 'name' or 'exportName' attribute (prop) in a '<Story />' definition in the stories file:  '<cwd>/Button.stories.svelte'.
-All stories must either have a 'name' or an 'exportName' prop, or both.]
+All stories must either have a 'name' or an 'exportName' prop, or both.
+
+More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#rename-stories
+]
 `;
 
-exports[`Svelte CSF errors > NoStoryIdentifierFoundError 1`] = `[SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0004 (NoStoryIdentifierFoundError): Could not find a 'Story' identifier in the compiled output of the stories file: <cwd>/Button.stories.svelte]`;
+exports[`Svelte CSF errors > NoStoryIdentifierFoundError 1`] = `
+[SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0004 (NoStoryIdentifierFoundError): Could not find a 'Story' identifier in the compiled output of the stories file: <cwd>/Button.stories.svelte
+
+This is a bug in Storybook. Please report it at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml, and include the stories file.]
+`;
 
 exports[`Svelte CSF errors > NoStringLiteralError 1`] = `
 [SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0003 (NoStringLiteralError): The 'title' passed to 'defineMeta()' must be a static string literal.
 But it is of type 'Identifier'.
+Dynamic values, such as variables, function calls or template strings, are not supported.
 
-This issue occurred in stories file: <cwd>/Button.stories.svelte]
+This issue occurred in stories file: <cwd>/Button.stories.svelte
+
+More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
+]
 `;
 
 exports[`Svelte CSF errors > PreviewNotImportedError 1`] = `
@@ -225,53 +322,83 @@ calls preview.meta(), but it doesn't import preview from the preview file of Sto
   const { Story } = preview.meta({});
 </script>
 
-The import path must end with '/preview', with or without a file extension.]
+The import path must end with '/preview', with or without a file extension.
+
+More info: https://storybook.js.org/docs/writing-stories/csf/api?renderer=svelte&ref=error#previewmeta
+]
 `;
 
 exports[`Svelte CSF errors > StoryAsChildWithoutChildrenError 1`] = `
 [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0009 (StoryAsChildWithoutChildrenError): A '<Story name="Primary" />' has the 'asChild' prop set, but no children were provided. The 'asChild' prop requires children to render the story content.
-Found in file: <cwd>/Button.stories.svelte]
+Add children to the <Story>, or remove the 'asChild' prop.
+Found in file: <cwd>/Button.stories.svelte
+
+More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#defining-stories
+]
 `;
 
 exports[`Svelte CSF errors > StoryExtendCycleError 1`] = `
 [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0014 (StoryExtendCycleError): Stories extend each other in a cycle: 'Primary' extends 'Secondary' extends 'Primary'.
 Remove the 'extend' prop from one of these stories.
-Found in file: <cwd>/Button.stories.svelte]
+Found in file: <cwd>/Button.stories.svelte
+
+More info: https://storybook.js.org/docs/writing-stories/csf/api?renderer=svelte&ref=error#storyextend
+]
 `;
 
 exports[`Svelte CSF errors > StoryExtendDuplicateNameError 1`] = `
 [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0013 (StoryExtendDuplicateNameError): A '<Story name="Primary" />' extends the story 'Primary', but more than one story in the file has the name 'Primary'.
 Give the story to extend a unique name.
-Found in file: <cwd>/Button.stories.svelte]
+Found in file: <cwd>/Button.stories.svelte
+
+More info: https://storybook.js.org/docs/writing-stories/csf/api?renderer=svelte&ref=error#storyextend
+]
 `;
 
 exports[`Svelte CSF errors > StoryExtendNotFoundError 1`] = `
 [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0011 (StoryExtendNotFoundError): A '<Story name="Primary" />' extends the story 'PrimaryLarge', but no story in the file has the name 'PrimaryLarge'.
 The 'extend' prop takes the 'name' of a story in the same file, not its 'exportName'.
 Did you mean extend="Primary Large"?
-Found in file: <cwd>/Button.stories.svelte]
+Found in file: <cwd>/Button.stories.svelte
+
+More info: https://storybook.js.org/docs/writing-stories/csf/api?renderer=svelte&ref=error#storyextend
+]
 `;
 
 exports[`Svelte CSF errors > StoryExtendUnnamedError 1`] = `
 [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0012 (StoryExtendUnnamedError): A '<Story name="Primary" />' extends the story with the exportName 'Primary', but that story has no 'name' prop.
 The 'extend' prop takes the 'name' of a story. Give the story a name, for example <Story name="Primary" />, and extend that name.
-Found in file: <cwd>/Button.stories.svelte]
+Found in file: <cwd>/Button.stories.svelte
+
+More info: https://storybook.js.org/docs/writing-stories/csf/api?renderer=svelte&ref=error#storyextend
+]
 `;
 
 exports[`Svelte CSF errors > StoryExtendWithoutFactoryError 1`] = `
 [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0010 (StoryExtendWithoutFactoryError): A '<Story name="Primary" />' has the 'extend' prop, but the stories file calls 'defineMeta()'.
-Only the stories of 'preview.meta()' can extend another story.
-Found in file: <cwd>/Button.stories.svelte]
+Only the stories of 'preview.meta()' can extend another story. Call 'preview.meta()' in place of 'defineMeta()', with preview imported from '#.storybook/preview'.
+Found in file: <cwd>/Button.stories.svelte
+
+More info: https://storybook.js.org/docs/writing-stories/csf/api?renderer=svelte&ref=error#storyextend
+]
 `;
 
 exports[`Svelte CSF errors > StoryTemplateAndAsChildError 1`] = `
 [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0008 (StoryTemplateAndAsChildError): A '<Story name="Primary" />' has both a 'template' prop and the 'asChild' prop set.
-Use the 'template' snippet to define the story's content structure.
-Found in file: <cwd>/Button.stories.svelte]
+Remove 'asChild' to render the 'template' snippet, or remove the 'template' prop to render the children as the story.
+Found in file: <cwd>/Button.stories.svelte
+
+More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#custom-rendering
+]
 `;
 
 exports[`Svelte CSF errors > StoryTemplateAndChildrenError 1`] = `
 [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0007 (StoryTemplateAndChildrenError): A '<Story name="Primary" />' has both a 'template' prop and children elements defined, which is not allowed.
-Use the 'template' snippet to define the story's content structure.
-Found in file: <cwd>/Button.stories.svelte]
+- To render the 'template' snippet, remove the children.
+- To pass the children to the component, remove the 'template' prop.
+- To use a template with children, remove the 'template' prop, and define a snippet named 'template' inside the <Story> with the children in it.
+Found in file: <cwd>/Button.stories.svelte
+
+More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#custom-rendering
+]
 `;

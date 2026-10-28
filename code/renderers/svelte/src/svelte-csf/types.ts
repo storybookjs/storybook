@@ -100,7 +100,7 @@ export type StoryProps<
         /**
          * The content to render in the story with a snippet taking `args` and `storyContext` as parameters
          *
-         * NOTE: Can be omitted if a default template is set with [`render`](https://github.com/storybookjs/addon-svelte-csf/blob/main/README.md#default-snippet)
+         * NOTE: Can be omitted if a default template is set with [`render`](https://storybook.js.org/docs/writing-stories?renderer=svelte#custom-rendering)
          */
         template?: Snippet<[TArgs, StoryContext<TArgs>]>;
       }

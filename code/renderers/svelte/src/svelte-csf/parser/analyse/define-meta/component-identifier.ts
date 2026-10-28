@@ -27,6 +27,7 @@ export function getDefineMetaComponentValue(params: Params): DefineMetaComponent
   const { component } = extractDefineMetaPropertiesNodes({
     nodes,
     properties: ['component'],
+    filename,
   });
 
   if (!component) {

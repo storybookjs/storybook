@@ -15,6 +15,7 @@ export function getDefineMetaRenderValue(params: Params): ESTreeAST.Identifier |
   const { render } = extractDefineMetaPropertiesNodes({
     nodes,
     properties: ['render'],
+    filename,
   });
 
   if (!render) {

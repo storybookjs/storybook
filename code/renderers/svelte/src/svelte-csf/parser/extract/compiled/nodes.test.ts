@@ -65,7 +65,10 @@ describe(extractCompiledASTNodes.name, () => {
 
       import { defineMeta } from "@storybook/svelte-vite";
 
-      In a SvelteKit project, import defineMeta from "@storybook/sveltekit".]
+      In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
+
+      More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
+      ]
     `);
   });
   it('finds preview.meta()', async ({ expect }) => {

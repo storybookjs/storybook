@@ -25,7 +25,10 @@ describe(extractModuleNodes.name, () => {
       </script>
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
-      With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.]
+      With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
+
+      More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
+      ]
     `);
   });
 
@@ -47,7 +50,10 @@ describe(extractModuleNodes.name, () => {
       </script>
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
-      With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.]
+      With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
+
+      More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
+      ]
     `);
   });
 
@@ -72,7 +78,10 @@ describe(extractModuleNodes.name, () => {
       </script>
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
-      With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.]
+      With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
+
+      More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
+      ]
     `);
   });
 
@@ -97,7 +106,10 @@ describe(extractModuleNodes.name, () => {
       </script>
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
-      With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.]
+      With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
+
+      More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
+      ]
     `);
   });
 
@@ -255,7 +267,10 @@ describe(extractModuleNodes.name, () => {
 
         import { defineMeta } from "@storybook/svelte-vite";
 
-        In a SvelteKit project, import defineMeta from "@storybook/sveltekit".]
+        In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
+
+        More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
+        ]
       `);
     });
   });
@@ -370,7 +385,10 @@ describe(extractModuleNodes.name, () => {
         </script>
 
         In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
-        With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.]
+        With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
+
+        More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
+        ]
       `);
     });
 
@@ -389,7 +407,10 @@ describe(extractModuleNodes.name, () => {
       await expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
         [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0010 (MixedMetaError): The file '<path not specified>'
         calls both defineMeta() and preview.meta(). A stories file can only have one meta.
-        Use preview.meta() for CSF factories, or defineMeta() otherwise.]
+        Use preview.meta() for CSF factories, or defineMeta() otherwise.
+
+        More info: https://storybook.js.org/docs/writing-stories/csf/api?renderer=svelte&ref=error#previewmeta
+        ]
       `);
     });
 
@@ -430,7 +451,10 @@ describe(extractModuleNodes.name, () => {
           const { Story } = preview.meta({});
         </script>
 
-        The import path must end with '/preview', with or without a file extension.]
+        The import path must end with '/preview', with or without a file extension.
+
+        More info: https://storybook.js.org/docs/writing-stories/csf/api?renderer=svelte&ref=error#previewmeta
+        ]
       `);
     });
 

@@ -6,6 +6,7 @@ import { dedent } from 'ts-dedent';
 
 import type { SvelteAST } from '../../../../parser/ast.ts';
 import {
+  DOCS,
   StorybookSvelteCSFError,
   filepathURL,
   quickStoryRawCodeIdentifier,
@@ -31,6 +32,7 @@ export class MissingModuleTagError extends StorybookSvelteCSFError {
       name: 'MissingModuleTagError',
       category,
       code: 1,
+      documentation: DOCS.meta,
       message: dedent`
         The file '${filepathURL(filename)}'
         does not have a module context (<script module> ... </script>).
@@ -49,6 +51,7 @@ export class DefaultOrNamespaceImportUsedError extends StorybookSvelteCSFError {
       name: 'DefaultOrNamespaceImportUsedError',
       category,
       code: 2,
+      documentation: DOCS.meta,
       message: dedent`
         The file '${filepathURL(filename)}'
         is using a default or namespace import of ${StorybookSvelteCSFError.importSourcesText},
@@ -68,6 +71,7 @@ export class MissingDefineMetaImportError extends StorybookSvelteCSFError {
       name: 'MissingDefineMetaImportError',
       category,
       code: 3,
+      documentation: DOCS.meta,
       message: dedent`
         The file '${filepathURL(filename)}'
         does not import defineMeta from ${StorybookSvelteCSFError.importSourcesText}, or the preview from .storybook/preview, inside the module context.
@@ -86,6 +90,7 @@ export class MissingDefineMetaVariableDeclarationError extends StorybookSvelteCS
       name: 'MissingDefineMetaVariableDeclarationError',
       category,
       code: 4,
+      documentation: DOCS.meta,
       message: dedent`
         The file '${filepathURL(filename)}'
         does not store the result of calling defineMeta() or preview.meta(). While it might have been called,
@@ -110,6 +115,7 @@ export class NoStoryComponentDestructuredError extends StorybookSvelteCSFError {
       name: 'NoStoryComponentDestructuredError',
       category,
       code: 5,
+      documentation: DOCS.meta,
       message: dedent`
         The file '${filepathURL(filename)}'
         does not destructure the Story component from the '${metaFunctionName}({ ... })' function call.
@@ -127,6 +133,7 @@ export class GetDefineMetaFirstArgumentError extends StorybookSvelteCSFError {
       name: 'GetDefineMetaFirstArgumentError',
       category,
       code: 6,
+      documentation: DOCS.meta,
       message: dedent`
         The file '${filepathURL(filename)}'
         passes an invalid first argument to the 'defineMeta' or 'preview.meta' call.
@@ -143,6 +150,7 @@ export class InvalidStoryTemplateAttributeError extends StorybookSvelteCSFError 
       name: 'InvalidStoryTemplateAttributeError',
       category,
       code: 7,
+      documentation: DOCS.customRendering,
       message: dedent`
         Component '${quickStoryRawCodeIdentifier(component)}' in the stories file '${filepathURL(filename)}'
         has an invalid 'template'-prop.
@@ -204,6 +212,7 @@ export class MixedMetaError extends StorybookSvelteCSFError {
       name: 'MixedMetaError',
       category,
       code: 10,
+      documentation: DOCS.previewMeta,
       message: dedent`
         The file '${filepathURL(filename)}'
         calls both defineMeta() and preview.meta(). A stories file can only have one meta.
@@ -219,6 +228,7 @@ export class PreviewNotImportedError extends StorybookSvelteCSFError {
       name: 'PreviewNotImportedError',
       category,
       code: 11,
+      documentation: DOCS.previewMeta,
       message: dedent`
         The file '${filepathURL(filename)}'
         calls preview.meta(), but it doesn't import preview from the preview file of Storybook. Import it like so:
@@ -241,6 +251,7 @@ export class MultipleMetaError extends StorybookSvelteCSFError {
       name: 'MultipleMetaError',
       category,
       code: 12,
+      documentation: DOCS.previewMeta,
       message: dedent`
         The file '${filepathURL(filename)}'
         calls preview.meta() more than once. A stories file can only have one meta.

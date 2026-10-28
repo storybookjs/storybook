@@ -73,7 +73,7 @@ describe('story-docs open service', () => {
     const staticFiles = await writeOpenServiceStaticFiles('/app/dist');
 
     await expect(staticFiles.summarizeTelemetry()).resolves.toEqual({
-      'core/story-docs': { errorRatio: 0.5, warningRatio: 0.5 },
+      'core/story-docs': { errorRatio: 0.5, noSnippetRatio: 0, warningRatio: 0.5 },
     });
   });
 

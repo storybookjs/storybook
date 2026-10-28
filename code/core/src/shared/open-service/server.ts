@@ -115,7 +115,7 @@ export async function writeOpenServiceStaticFiles(
     })
   );
 
-  return { summarizeTelemetry: () => summarizeSnapshotsForTelemetry(snapshots) };
+  return { summarizeTelemetry: prepareTelemetrySummary(snapshots) };
 }
 
 async function buildStaticSnapshots(): Promise<BuildTaskResult[]> {
@@ -174,21 +174,29 @@ function toStaticStore(snapshots: BuildTaskResult[]): StaticStore {
   return store;
 }
 
-async function summarizeSnapshotsForTelemetry(
+/** Keeps only the states a telemetry hook reads, so the rest can be freed while the preview bundles. */
+function prepareTelemetrySummary(
   snapshots: BuildTaskResult[]
-): Promise<Record<string, ServiceTelemetry> | undefined> {
-  const summaries = await Promise.all(
-    Array.from(getRegisteredServiceTelemetry(), async ([serviceId, telemetry]) => {
-      const states = snapshots
-        .filter((snapshot) => snapshot.serviceId === serviceId)
-        .map((snapshot) => snapshot.state);
-      return [serviceId, await telemetry(states)] as const;
-    })
-  );
+): OpenServiceStaticFiles['summarizeTelemetry'] {
+  const reports = Array.from(getRegisteredServiceTelemetry(), ([serviceId, telemetry]) => ({
+    serviceId,
+    telemetry,
+    states: snapshots
+      .filter((snapshot) => snapshot.serviceId === serviceId)
+      .map((snapshot) => snapshot.state),
+  }));
 
-  const reported = summaries.filter(
-    (entry): entry is readonly [string, ServiceTelemetry] => entry[1] !== undefined
-  );
+  return async () => {
+    const summaries = await Promise.all(
+      reports.map(
+        async ({ serviceId, telemetry, states }) => [serviceId, await telemetry(states)] as const
+      )
+    );
 
-  return reported.length > 0 ? Object.fromEntries(reported) : undefined;
+    const reported = summaries.filter(
+      (entry): entry is readonly [string, ServiceTelemetry] => entry[1] !== undefined
+    );
+
+    return reported.length > 0 ? Object.fromEntries(reported) : undefined;
+  };
 }

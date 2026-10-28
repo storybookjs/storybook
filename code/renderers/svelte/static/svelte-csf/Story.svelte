@@ -75,7 +75,6 @@
     {#if rendersAsChild}
       {@render children()}
     {:else if renderer.storyContext.component}
-      {/* @ts-ignore */ null}
       <renderer.storyContext.component {...renderer.args} {children} />
     {:else}
       {@render children()}
@@ -83,7 +82,6 @@
   {:else if renderer.metaRenderSnippet}
     {@render renderer.metaRenderSnippet(renderer.args, renderer.storyContext)}
   {:else if renderer.storyContext.component}
-    {/* @ts-ignore */ null}
     <renderer.storyContext.component {...renderer.args} />
   {:else}
     <p>

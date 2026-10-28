@@ -34,7 +34,7 @@ components/
 
 <If renderer="svelte">
 
-We can define stories according to the [Component Story Format](../api/csf/index.mdx) (CSF), an ES6 module-based standard that is easy to write and portable between tools, or use Svelte CSF, which ships with the Svelte frameworks and provides a similar experience.
+We can define stories according to the [Component Story Format](../writing-stories/csf/index.mdx) (CSF), an ES6 module-based standard that is easy to write and portable between tools, or use Svelte CSF, which ships with the Svelte frameworks and provides a similar experience.
 
 With Svelte CSF, the essential elements are the `defineMeta` function, which describes the component, and the `Story` component, which describes the stories. This pattern is different from the standard CSF, which uses a [default export](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_the_default_export) and [named exports](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_named_exports) to apply the same concepts.
 
@@ -42,41 +42,33 @@ With Svelte CSF, the essential elements are the `defineMeta` function, which des
 
 <If notRenderer="svelte">
 
-We define stories according to the [Component Story Format](../api/csf/index.mdx) (CSF), an ES6 module-based standard that is easy to write and portable between tools.
+We define stories according to the [Component Story Format](../writing-stories/csf/index.mdx) (CSF), an ES6 module-based standard that is easy to write and portable between tools.
 
 The key ingredients are the meta (or [default export](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_the_default_export)) that describes the component, and [named exports](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_named_exports) that describe the stories.
 
 </If>
 
-### Default export
+### Meta
 
 <If renderer="svelte">
 
-The `defineMeta` function in Svelte CSF with native templating syntax controls how Storybook lists your stories and provides information used by addons. However, if you're not using this story format and relying on standard CSF, use the _default_ export to achieve the same result. Below is an example of a story file with both approaches:
-
-<CodeSnippets path="button-story-default-export-with-component.md" />
+The `preview.meta` or `defineMeta` functions in Svelte CSF with native templating syntax control how Storybook lists your stories and provides information used by addons.
 
 </If>
 
 <If notRenderer="svelte">
 
-The _default_ export metadata controls how Storybook lists your stories and provides information used by addons. For example, here’s the meta (or default export) for a story file `Button.stories.js|ts`:
-
-<CodeSnippets path="button-story-default-export-with-component.md" />
-
-<Callout variant="info">
-
-Starting with Storybook version 7.0, story titles are analyzed statically as part of the build process. The _default_ export must contain a `title` property that can be read statically or a `component` property from which an automatic title can be computed. Using the `id` property to customize your story URL must also be statically readable.
-
-</Callout>
+The meta controls how Storybook lists your stories and provides information used by addons. For example, here’s the meta (or default export) for a story file `Button.stories.js|ts`:
 
 </If>
+
+<CodeSnippets path="button-story-default-export-with-component.md" />
 
 ### Defining stories
 
 <If renderer="svelte">
 
-If you're using Svelte CSF, define your stories with the `Story` component, otherwise use the named exports of a standard CSF file. We recommend you use UpperCamelCase for your story exports. Here’s how to render `Button` in the “primary” state and export a story called `Primary` using both methods.
+If you're using Svelte CSF, define your stories with the `Story` component. Here’s how to render `Button` in the “primary” state and export a story called `Primary`.
 
 </If>
 
@@ -260,7 +252,7 @@ You can also use the Controls panel to edit or save a new story after adjusting 
 
 <Callout variant="info">
 
-This feature is not supported with the Svelte CSF. To opt-in to this feature with Svelte, you must use Storybook's [Component Story Format](../api/csf/index.mdx).
+This feature is not supported with the Svelte CSF. To opt-in to this feature with Svelte, you must use Storybook's [Component Story Format](../writing-stories/csf/index.mdx).
 
 </Callout>
 

@@ -36,20 +36,21 @@ A story renders a Remix component by creating a DOM node, mounting into it with 
 
 ```tsx
 import { createRoot } from 'remix/component';
+import preview from '../.storybook/preview';
 
 import { Counter } from './Counter';
 
-export default {
+const meta = preview.meta({
   component: Counter,
-};
+});
 
-export const Default = {
+export const Default = meta.story({
   render: (args) => {
     const div = document.createElement('div');
     createRoot(div).render(<Counter {...args} />);
     return div;
   },
-};
+});
 ```
 
 Vite picks up `jsxImportSource` from `tsconfig.json`. When that option is already `"remix/component"`, the JSX in the story compiles against Remix.

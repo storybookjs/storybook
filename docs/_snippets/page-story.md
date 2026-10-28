@@ -221,7 +221,7 @@ const meta = preview.meta({
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const LoggedIn = meta.story({
@@ -252,7 +252,7 @@ const meta = preview.meta({
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const LoggedIn = meta.story({
@@ -287,7 +287,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -317,7 +317,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/writing-stories/csf
  * to learn how to use render functions.
  */
 export const LoggedIn = {

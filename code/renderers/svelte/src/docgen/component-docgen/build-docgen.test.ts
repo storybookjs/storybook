@@ -32,6 +32,7 @@ it('documents the subcomponents a meta lists', async () => {
   expect(payload?.subcomponents?.Icon).toMatchObject({
     name: 'Icon',
     argTypes: { name: { name: 'name', type: { name: 'string', required: true } } },
+    apiDescription: expect.stringContaining('export type IconProps = {'),
   });
   expect(payload?.subcomponents?.Icon?.path).toBe(
     join(fixtures, 'subcomponents/Icon.svelte').replaceAll('\\', '/')

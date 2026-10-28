@@ -53,7 +53,15 @@ export interface CoreConfig {
       };
   renderer?: RendererName;
   disableWebpackDefaults?: boolean;
-  channelOptions?: Partial<TelejsonOptions> & { wsToken?: string };
+  channelOptions?: Partial<TelejsonOptions> & {
+    wsToken?: string;
+    /**
+     * WebSocket path the manager and preview connect to. Defaults to `/storybook-server-channel`.
+     * Only the browser side honours it: the host serving Storybook must route this path to the
+     * server channel.
+     */
+    wsPath?: string;
+  };
   /** Disables the generation of project.json, a file containing Storybook metadata */
   disableProjectJson?: boolean;
   /**

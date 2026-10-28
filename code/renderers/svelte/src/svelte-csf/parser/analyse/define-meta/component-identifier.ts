@@ -1,3 +1,5 @@
+import { unwrapExpression } from 'storybook/internal/csf-tools';
+
 import type { ESTreeAST } from '../../ast.ts';
 import { extractDefineMetaPropertiesNodes } from '../../extract/svelte/define-meta.ts';
 import type { SvelteASTNodes } from '../../extract/svelte/nodes.ts';
@@ -31,7 +33,7 @@ export function getDefineMetaComponentValue(params: Params): DefineMetaComponent
     return;
   }
 
-  const { value } = component;
+  const value = withoutTypeArguments(unwrapExpression(component.value));
 
   if (!isValidComponentValue(value)) {
     throw new InvalidComponentValueError({
@@ -41,6 +43,12 @@ export function getDefineMetaComponentValue(params: Params): DefineMetaComponent
   }
 
   return value;
+}
+
+// A generic component takes type arguments, as in `component: List<Item>`. `parse` keeps them.
+function withoutTypeArguments(value: ESTreeAST.Property['value']): ESTreeAST.Property['value'] {
+  const node = value as { type: string; expression: ESTreeAST.Expression };
+  return node.type === 'TSInstantiationExpression' ? unwrapExpression(node.expression) : value;
 }
 
 /**

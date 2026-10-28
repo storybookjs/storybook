@@ -98,7 +98,7 @@ const StickyRow = styled.button<{ $level: number; $isRoot: boolean }>(
   })
 );
 
-const StickyMenuButton = styled.div(({ theme }) => ({
+const StickyMenuButton = styled.span(({ theme }) => ({
   display: 'none',
   alignItems: 'center',
   justifyContent: 'center',
@@ -284,6 +284,7 @@ function StickyRowItem({
       {openContextMenu &&
         hasContextMenu(entry, hasProviderMenuEntriesFor(api, entry, hasTestProviders)) && (
           <StickyMenuButton
+            role="button"
             data-sticky-menu
             data-testid="sticky-context-menu"
             aria-label="Open context menu"

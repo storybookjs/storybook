@@ -36,8 +36,8 @@ export interface PopoverProviderProps {
    * Whether the content scrolls once the popover is as tall as the space left in the viewport.
    * True by default.
    *
-   * A scrolling popover clips its content, so turn this off for content that draws outside the
-   * popover box, such as a drag handle centered on an edge.
+   * ScrollArea clips Popover content, so turn this off for content that draws outside the
+   * popover box, like the Color control handle.
    */
   scrollable?: boolean;
 

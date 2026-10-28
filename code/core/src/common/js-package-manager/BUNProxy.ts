@@ -171,7 +171,8 @@ export class BUNProxy extends JsPackageManager {
     const exec = async ({ packageDepth }: { packageDepth: number }) => {
       return executeCommand({
         command: 'npm',
-        args: ['ls', '--json', `--depth=${packageDepth}`],
+        // `storybook build` sets NODE_ENV=production, which makes npm omit devDependencies
+        args: ['ls', '--json', `--depth=${packageDepth}`, '--include=dev'],
         cwd: this.cwd,
         stdio: ['ignore', 'pipe', 'ignore'],
         env: {

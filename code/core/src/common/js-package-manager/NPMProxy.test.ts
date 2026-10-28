@@ -332,7 +332,7 @@ describe('NPM Proxy', () => {
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'npm',
-          args: ['ls', '--json', '--depth=99'],
+          args: ['ls', '--json', '--depth=99', '--include=dev'],
           env: { FORCE_COLOR: 'false' },
           stdio: ['pipe', 'pipe', 'ignore'],
         })
@@ -385,11 +385,11 @@ describe('NPM Proxy', () => {
 
       expect(mockedExecuteCommand).toHaveBeenNthCalledWith(
         1,
-        expect.objectContaining({ args: ['ls', '--json', '--depth=99'] })
+        expect.objectContaining({ args: ['ls', '--json', '--depth=99', '--include=dev'] })
       );
       expect(mockedExecuteCommand).toHaveBeenNthCalledWith(
         2,
-        expect.objectContaining({ args: ['ls', '--json', '--depth=0'] })
+        expect.objectContaining({ args: ['ls', '--json', '--depth=0', '--include=dev'] })
       );
       expect(installations).toMatchObject({
         dependencies: {

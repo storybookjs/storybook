@@ -193,7 +193,14 @@ export class PNPMProxy extends JsPackageManager {
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
     try {
-      const args = ['list', pattern.map((p) => `"${p}"`).join(' '), '--json', `--depth=${depth}`];
+      // `storybook build` sets NODE_ENV=production, which makes pnpm 9 omit devDependencies
+      const args = [
+        'list',
+        pattern.map((p) => `"${p}"`).join(' '),
+        '--json',
+        `--depth=${depth}`,
+        '--config.production=false',
+      ];
       const childProcess = await executeCommand({
         command: 'pnpm',
         shell: true,

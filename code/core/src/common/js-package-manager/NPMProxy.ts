@@ -165,7 +165,8 @@ export class NPMProxy extends JsPackageManager {
     const exec = ({ packageDepth }: { packageDepth: number }) => {
       return executeCommand({
         command: 'npm',
-        args: ['ls', '--json', `--depth=${packageDepth}`],
+        // `storybook build` sets NODE_ENV=production, which makes npm omit devDependencies
+        args: ['ls', '--json', `--depth=${packageDepth}`, '--include=dev'],
         env: {
           FORCE_COLOR: 'false',
         },

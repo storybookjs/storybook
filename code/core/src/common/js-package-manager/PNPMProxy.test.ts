@@ -731,6 +731,27 @@ describe('PNPM Proxy', () => {
     });
   });
 
+  describe('findInstallations', () => {
+    it('lists devDependencies even when NODE_ENV is production', async () => {
+      mockedExecuteCommand.mockResolvedValue({ stdout: '[]' } as any);
+
+      await pnpmProxy.findInstallations(['@storybook/*', 'storybook']);
+
+      expect(mockedExecuteCommand).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: [
+            'list',
+            '"@storybook/*" "storybook"',
+            '--json',
+            '--depth=99',
+            '--config.production=false',
+          ],
+        })
+      );
+    });
+  });
+
   describe('mapDependencies', () => {
     it('should display duplicated dependencies based on pnpm output', async () => {
       // pnpm list "@storybook/*" "storybook" --depth 10 --json

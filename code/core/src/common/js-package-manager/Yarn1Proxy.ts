@@ -122,7 +122,14 @@ export class Yarn1Proxy extends JsPackageManager {
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
-    const yarnArgs = ['list', '--pattern', pattern.map((p) => `"${p}"`).join(' '), '--json'];
+    // `storybook build` sets NODE_ENV=production, which makes yarn omit devDependencies
+    const yarnArgs = [
+      'list',
+      '--pattern',
+      pattern.map((p) => `"${p}"`).join(' '),
+      '--json',
+      '--production=false',
+    ];
 
     if (depth !== 0) {
       yarnArgs.push('--recursive');

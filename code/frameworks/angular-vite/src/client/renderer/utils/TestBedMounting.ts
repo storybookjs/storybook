@@ -15,6 +15,7 @@ import {
   reflectComponentType,
   signal,
   ɵflushModuleScopingQueueAsMuchAsPossible as flushModuleScopingQueue,
+  ɵgetComponentDef as getComponentDef,
 } from '@angular/core';
 import type { TestBed } from '@angular/core/testing';
 import { ComponentFixture, getTestBed } from '@angular/core/testing';
@@ -28,7 +29,7 @@ import type { StoryMountOptions } from '../AbstractRenderer.ts';
 import { computesTemplateFromComponent } from '../ComputesTemplateFromComponent.ts';
 import { getApplication } from '../StorybookModule.ts';
 import { STORY_PROPS } from '../StorybookProvider.ts';
-import { getComponentDecoratorMetadata, getComponentInputsOutputs } from './NgComponentAnalyzer.ts';
+import { getComponentInputsOutputs } from './NgComponentAnalyzer.ts';
 
 // Must run before the next story's wrapper component and declarations module are created:
 // resetTestingModule() also clears Angular's JIT module scoping queue, and the freshly decorated
@@ -96,15 +97,20 @@ export async function mountWithTestBed(options: StoryMountOptions): Promise<Appl
       providers,
     });
   } else {
-    testBed.configureTestingModule({ imports: [rootComponent], providers });
-  }
-  if (component) {
-    deferShadowedProvidersToStory(testBed, component, analyzedMetadata.providers);
+    testBed.configureTestingModule({ providers });
   }
 
   await testBed.compileComponents();
   // bootstrapApplication awaits the app initializers before creating the root component.
   await testBed.inject(ApplicationInitStatus).donePromise;
+
+  if (component) {
+    deferShadowedProvidersToStory(
+      component,
+      analyzedMetadata.providers,
+      testBed.inject(ApplicationRef)
+    );
+  }
 
   const environmentInjector = testBed.inject(EnvironmentInjector);
   if (rootComponent === component) {
@@ -226,33 +232,33 @@ const providerTokens = (providers: Provider[] = []): unknown[] =>
 // moduleMetadata.providers live in the injector right above the story component. A token the
 // component also provides for itself would shadow the story's provider, so that registration is
 // sent one level up instead. https://github.com/storybookjs/storybook/issues/22352
+// The component's compiled definition is patched rather than recompiled through
+// TestBed.overrideComponent(): a production build defines ɵfac non-configurable, so a second
+// recompile of the same component throws.
 function deferShadowedProvidersToStory(
-  testBed: TestBed,
   component: Type<unknown>,
-  storyProviders: Provider[]
+  storyProviders: Provider[],
+  applicationRef: ApplicationRef
 ) {
   const storyTokens = new Set(providerTokens(storyProviders));
-  if (storyTokens.size === 0) {
+  const definition = getComponentDef(component);
+  const resolveProviders = definition?.providersResolver;
+  if (storyTokens.size === 0 || !definition || !resolveProviders) {
     return;
   }
 
-  const metadata = getComponentDecoratorMetadata(component);
-  const toStory = (own: Provider[] | undefined) =>
-    [...new Set(providerTokens(own))]
-      .filter((token) => storyTokens.has(token))
-      .map((token) => ({
-        provide: token,
-        useFactory: () => inject(token as ProviderToken<unknown>, { skipSelf: true }),
-      }));
-  const providers = toStory(metadata?.providers);
-  const viewProviders = toStory(metadata?.viewProviders);
-
-  if (providers.length > 0 || viewProviders.length > 0) {
-    testBed.overrideComponent(component, {
-      add: {
-        ...(providers.length > 0 ? { providers } : {}),
-        ...(viewProviders.length > 0 ? { viewProviders } : {}),
-      },
+  definition.providersResolver = (def, processProvidersFn) =>
+    resolveProviders(def, (ownProviders) => {
+      const own = processProvidersFn ? processProvidersFn(ownProviders) : ownProviders;
+      const toStory = [...new Set(providerTokens(own))]
+        .filter((token) => storyTokens.has(token))
+        .map((token) => ({
+          provide: token,
+          useFactory: () => inject(token as ProviderToken<unknown>, { skipSelf: true }),
+        }));
+      return [...own, ...toStory];
     });
-  }
+  applicationRef.onDestroy(() => {
+    definition.providersResolver = resolveProviders;
+  });
 }

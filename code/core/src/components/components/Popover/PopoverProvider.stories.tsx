@@ -246,6 +246,99 @@ export const InteractivePopoverMouse = meta.story({
   },
 });
 
+const findPopoverIn = (overlay: HTMLElement, content: HTMLElement) =>
+  Array.from(overlay.children).find((child) => child.contains(content)) as HTMLElement;
+
+/**
+ * The overlay react-aria positions against the trigger must be exactly as tall as the popover.
+ * Any extra space below the popover shifts a top-placed popover away from its trigger.
+ */
+export const FillsTheOverlay = meta.story({
+  args: {
+    visible: true,
+    children: <Trigger>Trigger</Trigger>,
+    popover: <SamplePopover />,
+    placement: 'top',
+  },
+  play: async ({ args }) => {
+    const overlay = await screen.findByLabelText(args.ariaLabel!);
+    const popover = findPopoverIn(overlay, screen.getByText('Lorem ipsum dolor sit amet'));
+    await expect(overlay.getBoundingClientRect().height).toBe(
+      popover.getBoundingClientRect().height
+    );
+  },
+});
+
+const OverhangingContent = styled.div({
+  position: 'relative',
+  width: 120,
+  height: 60,
+  background: 'lightblue',
+});
+
+const Handle = styled.div({
+  position: 'absolute',
+  top: -14,
+  right: -14,
+  width: 28,
+  height: 28,
+  borderRadius: '50%',
+  background: 'crimson',
+});
+
+/**
+ * Content such as a color picker draws a drag handle past the popover's edge. A non-scrolling
+ * popover must leave it visible rather than clip it.
+ */
+export const WithOverhangingContent = meta.story({
+  args: {
+    visible: true,
+    scrollable: false,
+    children: <Trigger>Trigger</Trigger>,
+    popover: (
+      <OverhangingContent>
+        <Handle role="img" aria-label="Handle" />
+      </OverhangingContent>
+    ),
+  },
+  play: async ({ args }) => {
+    const overlay = await screen.findByLabelText(args.ariaLabel!);
+    const handle = screen.getByRole('img', { name: 'Handle' });
+    const popover = findPopoverIn(overlay, handle);
+    const { top, right } = handle.getBoundingClientRect();
+    const popoverRect = popover.getBoundingClientRect();
+    await expect(top).toBeLessThan(popoverRect.top);
+    await expect(right).toBeGreaterThan(popoverRect.right);
+    await expect(document.elementFromPoint(right - 4, top + 4)).toBe(handle);
+  },
+});
+
+const TallContent = styled.div({
+  width: 200,
+  height: 3000,
+  background: 'linear-gradient(lightblue, crimson)',
+});
+
+/** Content taller than the viewport scrolls inside the popover instead of overflowing the screen. */
+export const WithTallContent = meta.story({
+  args: {
+    visible: true,
+    children: <Trigger>Trigger</Trigger>,
+    popover: <TallContent role="img" aria-label="Tall content" />,
+    placement: 'bottom-start',
+  },
+  play: async ({ args }) => {
+    const overlay = await screen.findByLabelText(args.ariaLabel!);
+    const { top, bottom } = overlay.getBoundingClientRect();
+    await expect(top).toBeGreaterThanOrEqual(0);
+    await expect(bottom).toBeLessThanOrEqual(window.innerHeight);
+
+    const viewport = overlay.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+    await expect(viewport.scrollHeight).toBeGreaterThan(viewport.clientHeight);
+    await expect(screen.getByRole('img', { name: 'Tall content' })).toBeVisible();
+  },
+});
+
 export const WithLongContent = meta.story({
   args: {
     children: <Trigger>Long content</Trigger>,

@@ -5,6 +5,7 @@ import { CloseIcon } from '@storybook/icons';
 import { lighten, styled } from 'storybook/theming/emotion';
 
 import { Button } from '../Button/Button.tsx';
+import { ScrollArea } from '../ScrollArea/ScrollArea.tsx';
 
 export interface PopoverProps extends HTMLAttributes<HTMLDivElement> {
   /** Content of the popover. */
@@ -24,6 +25,15 @@ export interface PopoverProps extends HTMLAttributes<HTMLDivElement> {
 
   /** Padding between the content and popover edge. */
   padding?: number | string;
+
+  /**
+   * Whether the content scrolls once the popover is as tall as the space left in the viewport.
+   * True by default.
+   *
+   * A scrolling popover clips its content, so turn this off for content that draws outside the
+   * popover box, such as a drag handle centered on an edge.
+   */
+  scrollable?: boolean;
 }
 
 const Wrapper = styled.div<{
@@ -31,14 +41,21 @@ const Wrapper = styled.div<{
   hasChrome: boolean;
   hasCloseButton: boolean;
   padding: NonNullable<PopoverProps['padding']>;
+  scrollable: boolean;
 }>(
-  ({ theme, hasCloseButton, padding }) => ({
-    display: 'inline-block',
+  ({ theme, hasCloseButton, padding, scrollable }) => ({
+    display: 'inline-flex',
+    flexDirection: 'column',
+    // Baseline alignment would add the overlay's descender space below the popover.
+    verticalAlign: 'top',
     position: 'relative',
     minHeight: hasCloseButton ? 36 : undefined,
     zIndex: 2147483647,
     colorScheme: theme.base,
-    padding,
+    padding: scrollable ? 0 : padding,
+    // The overlay caps its height to the viewport; the cap carries down to the scroll viewport.
+    maxHeight: 'inherit',
+    boxSizing: 'border-box',
   }),
   ({ theme, hasChrome }) =>
     hasChrome
@@ -69,6 +86,18 @@ const Wrapper = styled.div<{
     }
 );
 
+// The viewport inherits the wrapper's full max-height, so the padding must sit inside it.
+const Scroller = styled(ScrollArea, {
+  shouldForwardProp: (prop) => prop !== 'padding',
+})<{ padding: NonNullable<PopoverProps['padding']> }>(({ padding }) => ({
+  maxHeight: 'inherit',
+  '[data-radix-scroll-area-viewport]': {
+    maxHeight: 'inherit',
+    boxSizing: 'border-box',
+    padding,
+  },
+}));
+
 const AbsoluteButton = styled(Button)({
   position: 'absolute',
   top: 4,
@@ -84,6 +113,7 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(
       hideLabel = 'Close',
       onHide,
       padding = 8,
+      scrollable = true,
       ...props
     },
     ref
@@ -94,10 +124,17 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(
         hasChrome={hasChrome}
         hasCloseButton={!!onHide}
         padding={padding}
+        scrollable={scrollable}
         ref={ref}
         {...props}
       >
-        {children}
+        {scrollable ? (
+          <Scroller vertical padding={padding}>
+            {children}
+          </Scroller>
+        ) : (
+          children
+        )}
         {onHide && (
           <AbsoluteButton
             ariaLabel={hideLabel}

@@ -32,6 +32,7 @@ import { writeManifests } from './utils/manifests/manifests.ts';
 import { extractStorybookMetadata } from './utils/metadata.ts';
 import { outputStats } from './utils/output-stats.ts';
 import { summarizeIndex } from './utils/summarizeIndex.ts';
+import { warnOnMismatchingVersions } from './utils/warnOnMismatchingVersions.ts';
 
 export type BuildStaticStandaloneOptions = CLIOptions &
   LoadOptions &
@@ -190,6 +191,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   logger.info('Building preview..');
 
   const startTime = process.hrtime();
+  let previewFailure: { error: unknown } | undefined;
   await Promise.all([
     previewBuilder
       .build({
@@ -208,10 +210,16 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       .catch((error) => {
         logger.error('Failed to build the preview');
         process.exitCode = 1;
+        previewFailure = { error };
         throw error;
       }),
     ...effects,
-  ]);
+  ]).catch(async (error) => {
+    if (previewFailure !== undefined && previewFailure.error === error) {
+      await warnOnMismatchingVersions(options.configDir);
+    }
+    throw error;
+  });
 
   // Now the code has successfully built, we can count this as a 'build' event.
   // NOTE: we don't send the 'build' event for test runs as we want to be as fast as possible.

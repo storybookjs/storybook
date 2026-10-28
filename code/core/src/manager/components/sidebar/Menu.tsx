@@ -92,77 +92,81 @@ export type SidebarMenuItem = MenuItem | { id: string; content: ReactNode };
 export const SidebarMenuList: FC<{
   menu: SidebarMenuItem[][];
   onHide: () => void;
-}> = ({ menu, onHide }) => (
-  <Container>
-    {menu
-      .filter((links) => links.length)
-      .flatMap((links) => (
-        <ActionList key={links.map((link) => link.id).join('_')}>
-          {links.map((link) => {
-            if ('content' in link) {
-              return <React.Fragment key={link.id}>{link.content}</React.Fragment>;
-            }
+}> = ({ menu, onHide }) => {
+  const hasIcons = menu.some((links) =>
+    links.some((link) => !('content' in link) && (link.icon || link.input))
+  );
 
-            const linkContent = (
-              <>
-                {(link.icon || link.input) && (
-                  <ActionList.Icon>{link.icon || link.input}</ActionList.Icon>
-                )}
-                {link.title && <ActionList.Text>{link.title}</ActionList.Text>}
-                {link.right}
-              </>
-            );
+  return (
+    <Container>
+      {menu
+        .filter((links) => links.length)
+        .flatMap((links) => (
+          <ActionList key={links.map((link) => link.id).join('_')}>
+            {links.map((link) => {
+              if ('content' in link) {
+                return <React.Fragment key={link.id}>{link.content}</React.Fragment>;
+              }
 
-            return (
-              <ActionList.Item key={link.id} active={link.active}>
-                <ActionList.Action
-                  asChild={!!link.href}
-                  ariaLabel={link.ariaLabel ?? false}
-                  id={`list-item-${link.id}`}
-                  disabled={link.disabled}
-                  autoFocus={link.autoFocus}
-                  onClick={(e) => {
-                    // Prevent interaction with disabled links
-                    if (link.disabled) {
-                      e.preventDefault();
-                      return;
-                    }
-                    // Prevent browser navigation for internal links, where we'll use our
-                    // router API instead, but want to show an `href` for UX/SEO purposes.
-                    if (link.href && link.internal) {
-                      e.preventDefault();
-                    }
-                    link.onClick?.(e, {
-                      id: link.id,
-                      active: link.active,
-                      disabled: link.disabled,
-                      title: link.title,
-                      href: link.href,
-                    });
-                    if (link.closeOnClick) {
-                      onHide();
-                    }
-                  }}
-                >
-                  {link.href ? (
-                    <a
-                      href={link.href}
-                      target={link.internal ? undefined : '_blank'}
-                      rel={link.internal ? 'canonical' : 'noreferrer'}
-                    >
-                      {linkContent}
-                    </a>
-                  ) : (
-                    linkContent
-                  )}
-                </ActionList.Action>
-              </ActionList.Item>
-            );
-          })}
-        </ActionList>
-      ))}
-  </Container>
-);
+              const linkContent = (
+                <>
+                  {hasIcons && <ActionList.Icon>{link.icon || link.input}</ActionList.Icon>}
+                  {link.title && <ActionList.Text>{link.title}</ActionList.Text>}
+                  {link.right}
+                </>
+              );
+
+              return (
+                <ActionList.Item key={link.id} active={link.active}>
+                  <ActionList.Action
+                    asChild={!!link.href}
+                    ariaLabel={link.ariaLabel ?? false}
+                    id={`list-item-${link.id}`}
+                    disabled={link.disabled}
+                    autoFocus={link.autoFocus}
+                    onClick={(e) => {
+                      // Prevent interaction with disabled links
+                      if (link.disabled) {
+                        e.preventDefault();
+                        return;
+                      }
+                      // Prevent browser navigation for internal links, where we'll use our
+                      // router API instead, but want to show an `href` for UX/SEO purposes.
+                      if (link.href && link.internal) {
+                        e.preventDefault();
+                      }
+                      link.onClick?.(e, {
+                        id: link.id,
+                        active: link.active,
+                        disabled: link.disabled,
+                        title: link.title,
+                        href: link.href,
+                      });
+                      if (link.closeOnClick) {
+                        onHide();
+                      }
+                    }}
+                  >
+                    {link.href ? (
+                      <a
+                        href={link.href}
+                        target={link.internal ? undefined : '_blank'}
+                        rel={link.internal ? 'canonical' : 'noreferrer'}
+                      >
+                        {linkContent}
+                      </a>
+                    ) : (
+                      linkContent
+                    )}
+                  </ActionList.Action>
+                </ActionList.Item>
+              );
+            })}
+          </ActionList>
+        ))}
+    </Container>
+  );
+};
 
 export interface SidebarMenuProps {
   menu: MenuList;

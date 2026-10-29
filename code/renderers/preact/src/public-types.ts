@@ -23,7 +23,7 @@ export type { PreactRenderer };
 /**
  * Metadata to configure the stories for a component.
  *
- * @see [Default export](https://storybook.js.org/docs/api/csf#default-export)
+ * @see [Meta](https://storybook.js.org/docs/writing-stories/csf#meta)
  */
 export type Meta<TCmpOrArgs = Args> = [TCmpOrArgs] extends [ComponentType<any>]
   ? ComponentAnnotations<PreactRenderer, ComponentProps<TCmpOrArgs>>
@@ -32,7 +32,7 @@ export type Meta<TCmpOrArgs = Args> = [TCmpOrArgs] extends [ComponentType<any>]
 /**
  * Story function that represents a CSFv2 component example.
  *
- * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
+ * @see [Stories](https://storybook.js.org/docs/writing-stories/csf#stories)
  */
 export type StoryFn<TCmpOrArgs = Args> = [TCmpOrArgs] extends [ComponentType<any>]
   ? AnnotatedStoryFn<PreactRenderer, ComponentProps<TCmpOrArgs>>
@@ -41,7 +41,7 @@ export type StoryFn<TCmpOrArgs = Args> = [TCmpOrArgs] extends [ComponentType<any
 /**
  * Story object that represents a CSFv3 component example.
  *
- * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
+ * @see [Stories](https://storybook.js.org/docs/writing-stories/csf#stories)
  */
 export type StoryObj<TMetaOrCmpOrArgs = Args> = [TMetaOrCmpOrArgs] extends [
   {

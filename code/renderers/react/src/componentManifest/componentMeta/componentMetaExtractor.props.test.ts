@@ -1,8 +1,77 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
+import { loadCsf } from 'storybook/internal/csf-tools';
 import { dedent } from 'ts-dedent';
+import ts from 'typescript';
 
+import { type StoryRef, getComponents } from '../getComponentImports.ts';
+import { findMatchingComponent } from '../resolveComponents.ts';
+import { ComponentMetaProject } from './ComponentMetaProject.ts';
 import { extract, extractFromStory } from './componentMetaExtractor.test-helpers.ts';
+import { cleanup, createTempProject } from './test-helpers.ts';
+
+/** Same as the shared default tsconfig, but with allowJs so untyped .jsx components join the program. */
+const JS_TSCONFIG = {
+  compilerOptions: {
+    target: 'ES2020',
+    module: 'ESNext',
+    jsx: 'react-jsx',
+    strict: true,
+    esModuleInterop: true,
+    moduleResolution: 'bundler',
+    allowJs: true,
+  },
+  include: ['./**/*.ts', './**/*.tsx', './**/*.js', './**/*.jsx'],
+};
+
+/**
+ * Extraction through a dedicated allowJs project. The shared test project excludes JS files, and
+ * a .jsx component with untyped props only reproduces the sandbox failure inside an allowJs
+ * program — sharing one global config would change behavior for every other suite (e.g. docgen's
+ * unresolved-default resolution), so these tests build their own.
+ */
+async function extractFromJsStory(
+  files: Record<string, string>,
+  storyFileName: string
+): Promise<StoryRef> {
+  const { projectDir, configPath, filePaths } = createTempProject(files, JS_TSCONFIG);
+  try {
+    const storyPath = filePaths[storyFileName];
+    const title = path.basename(storyFileName).replace(/\.stories\.\w+$/, '');
+    const csf = loadCsf(fs.readFileSync(storyPath, 'utf-8'), {
+      makeTitle: () => title,
+    }).parse();
+
+    const components = await getComponents({
+      csf,
+      storyFilePath: storyPath,
+      docgenEngine: 'react-component-meta',
+    });
+
+    const component = findMatchingComponent(components, csf._meta?.component, title);
+    const project = new ComponentMetaProject(
+      ts,
+      ts.parseJsonSourceFileConfigFileContent(
+        ts.readJsonConfigFile(configPath, ts.sys.readFile),
+        ts.sys,
+        projectDir,
+        {},
+        configPath
+      ),
+      configPath,
+      new Map()
+    );
+
+    const entry: StoryRef = { storyPath, component };
+    project.extractPropsFromStories([entry]);
+    return entry;
+  } finally {
+    cleanup(projectDir);
+  }
+}
 
 describe('prop extraction', () => {
   it('leaves out a prop marked @ignore, like builder docgen did', async () => {
@@ -839,6 +908,81 @@ describe('prop extraction', () => {
       expect(entry.component?.reactComponentMeta).toMatchObject({
         description: 'Primary UI component for user interaction',
       });
+    });
+  });
+});
+
+describe('PropTypes fallback for JS components', () => {
+  it('reads PropTypes annotations the checker cannot resolve', async () => {
+    const entry = await extractFromJsStory(
+      {
+        'test/PropTypesButton.jsx': dedent`
+          import React from 'react';
+          import PropTypes from 'prop-types';
+
+          export const Button = ({ label, primary = false, onClick, size, ...props }) => (
+            <button onClick={onClick}>{label}</button>
+          );
+
+          Button.propTypes = {
+            label: PropTypes.string.isRequired,
+            primary: PropTypes.bool,
+            size: PropTypes.oneOf(['small', 'medium', 'large']),
+            onClick: PropTypes.func,
+          };
+        `,
+        'test/PropTypesButton.stories.jsx': dedent`
+          import { Button } from './PropTypesButton';
+
+          export default { component: Button };
+        `,
+      },
+      'test/PropTypesButton.stories.jsx'
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        label: { type: { name: 'string' }, required: true },
+        // `= false` gives the checker a real boolean; the fallback only covers checker-`any` props.
+        primary: { type: { name: 'boolean' } },
+        size: {
+          type: {
+            name: 'enum',
+            value: [{ value: '"small"' }, { value: '"medium"' }, { value: '"large"' }],
+          },
+        },
+        onClick: { type: { name: 'func' } },
+      },
+    });
+  });
+
+  it('keeps the checker type when it is informative', async () => {
+    const entry = await extractFromJsStory(
+      {
+        'test/DefaultSizeButton.jsx': dedent`
+          import React from 'react';
+          import PropTypes from 'prop-types';
+
+          export const Button = ({ size = 'medium' }) => <button />;
+
+          Button.propTypes = {
+            size: PropTypes.oneOf(['small', 'medium', 'large']),
+          };
+        `,
+        'test/DefaultSizeButton.stories.jsx': dedent`
+          import { Button } from './DefaultSizeButton';
+
+          export default { component: Button };
+        `,
+      },
+      'test/DefaultSizeButton.stories.jsx'
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        // The destructuring default gives the checker a real type, which wins over oneOf's enum.
+        size: { type: { name: 'string' } },
+      },
     });
   });
 });

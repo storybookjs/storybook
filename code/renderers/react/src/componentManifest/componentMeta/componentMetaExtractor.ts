@@ -1273,6 +1273,196 @@ function getJSDocDefault(
 }
 
 // ---------------------------------------------------------------------------
+// PropTypes fallback (legacy React pattern)
+// ---------------------------------------------------------------------------
+
+/**
+ * PropTypes scalar members that map directly to a legacy react-docgen type name. The names are the
+ * docgen conventions (`bool`, `func`) because the core argTypes converter switches on them. Anything
+ * unrecognized — including the composite members (`oneOfType`, `arrayOf`, `shape`, `exact`) — stays
+ * with the checker's type (`any`).
+ */
+const PROPTYPES_SCALAR_MEMBERS = new Set([
+  'string',
+  'number',
+  'bool',
+  'func',
+  'object',
+  'array',
+  'node',
+  'element',
+  'elementType',
+  'symbol',
+]);
+
+/**
+ * Reads one PropTypes annotation into the RDT-compatible {@link PropItemType}.
+ *
+ * Purely syntactic — `prop-types` may not even resolve in the project — so only the member names
+ * of the access/call chain are interpreted. Returns `undefined` for anything unrecognized, which
+ * keeps the checker's type.
+ *
+ * # ponytail: only scalars and `oneOf` are covered. The composite members need `PropItemType.value`
+ * shapes (`value` as a single type, a record, or full type arrays) that the interface — and both
+ * manifest consumers, which `.map` over `value` expecting `{ value }` members — do not model.
+ * Widen `PropItemType.value` first, then add them here.
+ */
+function serializePropTypeExpression(
+  typescript: typeof ts,
+  expression: ts.Expression,
+  depth = 0
+): PropItemType | undefined {
+  if (depth > MAX_SERIALIZATION_DEPTH) {
+    return undefined;
+  }
+
+  // Unwrap a trailing `.isRequired` (the required flag already comes from the checker's symbol).
+  let node: ts.Expression = expression;
+  if (typescript.isPropertyAccessExpression(node) && node.name.text === 'isRequired') {
+    node = node.expression;
+  }
+
+  // Scalar members: PropTypes.string → { name: 'string' }
+  if (typescript.isPropertyAccessExpression(node)) {
+    const member = node.name.text;
+    return PROPTYPES_SCALAR_MEMBERS.has(member) ? { name: member } : undefined;
+  }
+
+  if (typescript.isCallExpression(node)) {
+    const callee = typescript.isPropertyAccessExpression(node.expression)
+      ? node.expression
+      : undefined;
+    if (!callee) {
+      return undefined;
+    }
+    const arg = node.arguments[0];
+
+    // oneOf(['small', 'medium']) → enum, mirroring serializeType's literal-union output
+    if (callee.name.text === 'oneOf') {
+      if (!arg || !typescript.isArrayLiteralExpression(arg)) {
+        return undefined;
+      }
+      const elements = arg.elements;
+      const allLiterals = elements.every(
+        (element) => typescript.isStringLiteral(element) || typescript.isNumericLiteral(element)
+      );
+      if (!allLiterals || elements.length === 0) {
+        return undefined;
+      }
+      const values = elements.map((element) =>
+        typescript.isStringLiteral(element)
+          ? element.text
+          : Number((element as ts.NumericLiteral).text)
+      );
+      return {
+        name: 'enum',
+        raw: values.map((value) => JSON.stringify(value)).join(' | '),
+        value: values.map((value) => ({ value: JSON.stringify(value) })),
+      };
+    }
+
+    return undefined;
+  }
+
+  return undefined;
+}
+
+function collectPropTypeEntries(
+  typescript: typeof ts,
+  objectLiteral: ts.ObjectLiteralExpression,
+  propTypes: Map<string, PropItemType>
+): void {
+  for (const property of objectLiteral.properties) {
+    if (!typescript.isPropertyAssignment(property) || !typescript.isIdentifier(property.name)) {
+      continue;
+    }
+    const itemType = serializePropTypeExpression(typescript, property.initializer);
+    if (itemType) {
+      propTypes.set(property.name.text, itemType);
+    }
+  }
+}
+
+/**
+ * Extracts prop types from a `Component.propTypes = {...}` assignment (or `static propTypes`),
+ * the legacy React pattern that carries the only type information for untyped JS components.
+ *
+ * The TypeScript checker resolves a JS component's destructured, unannotated props to `any`, so
+ * callers use this map to replace an uninformative `any` with the annotated type. Mirrors the
+ * `defaultProps` scan in {@link extractStaticDefaultProps}.
+ */
+function extractPropTypes(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  resolved: ts.Symbol
+): Map<string, PropItemType> {
+  const propTypes = new Map<string, PropItemType>();
+
+  const decl = resolved.valueDeclaration ?? resolved.getDeclarations()?.[0];
+  if (!decl) {
+    return propTypes;
+  }
+  const componentSourceFile = decl.getSourceFile();
+
+  for (const stmt of componentSourceFile.statements) {
+    // Pattern 1: Class with static propTypes = { size: PropTypes.string }
+    if (typescript.isClassDeclaration(stmt) && stmt.name) {
+      const classSymbol = checker.getSymbolAtLocation(stmt.name);
+      if (classSymbol !== resolved) {
+        continue;
+      }
+      for (const member of stmt.members) {
+        if (!typescript.isPropertyDeclaration(member)) {
+          continue;
+        }
+        if (!member.name || member.name.getText() !== 'propTypes') {
+          continue;
+        }
+        if (member.initializer && typescript.isObjectLiteralExpression(member.initializer)) {
+          collectPropTypeEntries(typescript, member.initializer, propTypes);
+        }
+      }
+    }
+
+    // Pattern 2: Button.propTypes = { label: PropTypes.string.isRequired }
+    if (
+      typescript.isExpressionStatement(stmt) &&
+      typescript.isBinaryExpression(stmt.expression) &&
+      stmt.expression.operatorToken.kind === typescript.SyntaxKind.EqualsToken
+    ) {
+      const left = stmt.expression.left;
+      if (!typescript.isPropertyAccessExpression(left)) {
+        continue;
+      }
+      if (left.name.text !== 'propTypes') {
+        continue;
+      }
+
+      // Check if the expression target is our component
+      const targetSymbol = checker.getSymbolAtLocation(left.expression);
+      if (!targetSymbol) {
+        continue;
+      }
+
+      const targetResolved =
+        targetSymbol.flags & typescript.SymbolFlags.Alias
+          ? checker.getAliasedSymbol(targetSymbol)
+          : targetSymbol;
+
+      if (targetResolved !== resolved) {
+        continue;
+      }
+
+      if (typescript.isObjectLiteralExpression(stmt.expression.right)) {
+        collectPropTypeEntries(typescript, stmt.expression.right, propTypes);
+      }
+    }
+  }
+
+  return propTypes;
+}
+
+// ---------------------------------------------------------------------------
 // Single prop extraction
 // ---------------------------------------------------------------------------
 
@@ -1282,14 +1472,20 @@ function extractPropItem(
   prop: ts.Symbol,
   contextNode: ts.Node,
   defaultsMap?: Map<string, string>,
-  typeOverride?: ts.Type
+  typeOverride?: ts.Type,
+  propTypesMap?: Map<string, PropItemType>
 ): PropItem {
   const isOptional = !!(prop.flags & typescript.SymbolFlags.Optional);
   const isRequired = !isOptional;
 
   // Union props keep one member's metadata but need the merged type.
   const propType = typeOverride ?? checker.getTypeOfSymbolAtLocation(prop, contextNode);
-  const type = serializeType(typescript, checker, propType, isRequired);
+  let type = serializeType(typescript, checker, propType, isRequired);
+  // A JS component's unannotated props resolve to `any`; its propTypes block carries the real type.
+  const propTypesType = propTypesMap?.get(prop.getName());
+  if (type.name === 'any' && propTypesType) {
+    type = propTypesType;
+  }
 
   const description = typescript.displayPartsToString(prop.getDocumentationComment(checker));
 
@@ -1531,6 +1727,9 @@ export function serializeComponentDoc(
     }
   }
 
+  // PropTypes (same legacy pattern): the only type source for untyped JS components
+  const propTypesMap = extractPropTypes(typescript, checker, implementation);
+
   const props: Record<string, PropItem> = {};
   for (const prop of allProperties) {
     if (
@@ -1551,7 +1750,8 @@ export function serializeComponentDoc(
       prop,
       contextNode,
       defaultsMap,
-      unionPropType
+      unionPropType,
+      propTypesMap
     );
     if (unionForceOptional?.has(prop.getName())) {
       item.required = false;

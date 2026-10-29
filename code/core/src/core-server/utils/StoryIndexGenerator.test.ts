@@ -2106,54 +2106,91 @@ describe('StoryIndexGenerator', () => {
         });
       });
 
-      it('keeps dev on mdx docs when project tags remove it, unless their own Meta removes it', async () => {
-        const csfSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
-          './dev-tag/*.stories.js',
-          options
-        );
-        const devTagDocsSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
-          './dev-tag/*.mdx',
-          options
-        );
+      describe('dev tag on mdx docs', () => {
+        const getTagsById = async (generator: StoryIndexGenerator) => {
+          await generator.initialize();
+          const { storyIndex } = await generator.getIndexAndStats();
+          return Object.fromEntries(
+            Object.values(storyIndex.entries).map((entry) => [entry.id, entry.tags])
+          );
+        };
 
-        const generator = new StoryIndexGenerator([csfSpecifier, devTagDocsSpecifier], options);
-        generator.getProjectTags = () => [Tag.DEV, Tag.TEST, Tag.MANIFEST, '!dev'];
-        await generator.initialize();
+        it('keeps dev when project tags remove it, unless their own Meta removes it', async () => {
+          const generator = new StoryIndexGenerator(
+            [
+              normalizeStoriesEntry('./dev-tag/*.stories.js', options),
+              normalizeStoriesEntry('./dev-tag/*.mdx', options),
+            ],
+            options
+          );
+          generator.getProjectTags = () => [Tag.DEV, Tag.TEST, Tag.MANIFEST, '!dev'];
 
-        const { storyIndex } = await generator.getIndexAndStats();
-        const tagsById = Object.fromEntries(
-          Object.values(storyIndex.entries).map((entry) => [entry.id, entry.tags])
-        );
-        expect(tagsById).toMatchInlineSnapshot(`
-          {
-            "button--docs": [
-              "test",
-              "manifest",
-              "dev",
-              "attached-mdx",
+          expect(await getTagsById(generator)).toMatchInlineSnapshot(`
+            {
+              "button--docs": [
+                "test",
+                "manifest",
+                "dev",
+                "attached-mdx",
+              ],
+              "button--hiddenbutton": [
+                "test",
+                "manifest",
+                "attached-mdx",
+              ],
+              "button--story-one": [
+                "test",
+                "manifest",
+              ],
+              "guide--docs": [
+                "test",
+                "manifest",
+                "dev",
+                "unattached-mdx",
+              ],
+              "hiddenguide--docs": [
+                "test",
+                "manifest",
+                "unattached-mdx",
+              ],
+              "nodev--docs": [
+                "test",
+                "manifest",
+                "dev",
+                "attached-mdx",
+              ],
+              "nodev--story-one": [
+                "test",
+                "manifest",
+              ],
+            }
+          `);
+        });
+
+        it('keeps dev on attached mdx when the CSF meta removes it', async () => {
+          const generator = new StoryIndexGenerator(
+            [
+              normalizeStoriesEntry('./dev-tag/NoDev.stories.js', options),
+              normalizeStoriesEntry('./dev-tag/NoDev.mdx', options),
             ],
-            "button--hiddenbutton": [
-              "test",
-              "manifest",
-              "attached-mdx",
-            ],
-            "button--story-one": [
-              "test",
-              "manifest",
-            ],
-            "guide--docs": [
-              "test",
-              "manifest",
-              "dev",
-              "unattached-mdx",
-            ],
-            "hiddenguide--docs": [
-              "test",
-              "manifest",
-              "unattached-mdx",
-            ],
-          }
-        `);
+            options
+          );
+
+          expect(await getTagsById(generator)).toMatchInlineSnapshot(`
+            {
+              "nodev--docs": [
+                "dev",
+                "test",
+                "manifest",
+                "attached-mdx",
+              ],
+              "nodev--story-one": [
+                "test",
+                "manifest",
+              ],
+            }
+          `);
+        });
       });
     });
 

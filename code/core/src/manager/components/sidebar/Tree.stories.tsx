@@ -684,9 +684,9 @@ export const ContextMenuOutsideDismiss: Story = {
 };
 
 /**
- * Keyboard focus on a row shows the shortcut tooltip that advertises the row's context-menu
- * key binding. The pill is anchored to the focused row via CSS anchor positioning, so it
- * stays with the row that holds keyboard focus.
+ * The pill advertising the row's context-menu shortcut follows keyboard focus only: the pointer
+ * never asks for a shortcut hint, and an unanchored pill would otherwise sit at the viewport
+ * origin for every click.
  */
 export const FocusTooltipShowsShortcut: Story = {
   args: { refId: DEFAULT_REF_ID },
@@ -700,14 +700,26 @@ export const FocusTooltipShowsShortcut: Story = {
     const canvas = within(canvasElement);
     const row = (id: string) => canvasElement.querySelector<HTMLElement>(`[data-item-id="${id}"]`);
     const first = await canvas.findByText('marketing hero');
+    // A pointer click focuses the row without making the focus keyboard-visible: no pill.
     await userEvent.click(first);
-    // Make the focus a keyboard one; ArrowRight on a leaf row moves nothing.
+    await waitFor(() =>
+      expect(row('images--marketing-hero')).toHaveAttribute('data-focused', 'true')
+    );
+    expect(canvas.queryByText('Actions')).toBeNull();
+
+    // ArrowRight on a leaf row moves nothing but promotes the focus to a keyboard focus: the
+    // pill then appears, anchored to the focused row.
     await userEvent.keyboard('{ArrowRight}');
     await waitFor(() =>
       expect(row('images--marketing-hero')).toHaveAttribute('data-focus-visible', 'true')
     );
     const note = canvas.getByText('Actions');
     await expect(note).toBeVisible();
+
+    // A fresh pointer click on a different row drops the keyboard-focus flag and hides the pill.
+    await userEvent.click(await canvas.findByText('brand'));
+    await waitFor(() => expect(row('images--brand')).toHaveAttribute('data-focused', 'true'));
+    expect(canvas.queryByText('Actions')).toBeNull();
   },
 };
 

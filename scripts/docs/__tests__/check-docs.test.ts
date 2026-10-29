@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import fs from 'node:fs/promises';
-import path from 'path';
+import path from 'pathe';
 import os from 'os';
 import {
   checkRelativeLinks,
@@ -17,8 +17,8 @@ import {
   checkSnippetCsfOrder,
   checkSnippetLegacyCsfTitle,
   runAllChecks,
-} from '../check-docs';
-import { fixSnippetCsfOrder } from '../fix-snippet-order';
+} from '../check-docs.ts';
+import { fixSnippetCsfOrder } from '../fix-snippet-order.ts';
 
 async function writeFile(filePath: string, content: string) {
   await fs.mkdir(path.dirname(filePath), { recursive: true });

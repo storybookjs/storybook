@@ -20,7 +20,7 @@ const Wrapper = styled.div({
 
 const TooltipContent = styled.div({
   width: 200,
-  margin: 8,
+  margin: 5,
 
   '.react-colorful__saturation': {
     borderRadius: '4px 4px 0 0',
@@ -408,6 +408,7 @@ export const ColorControl: FC<ColorControlProps> = ({
         defaultVisible={startOpen}
         visible={readOnly ? false : undefined}
         onVisibleChange={() => color && addPreset(color)}
+        scrollable={false}
         popover={
           <TooltipContent>
             <Picker

@@ -1,9 +1,8 @@
 import fs from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { afterEach } from 'node:test';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { migrateLegacySettings } from '../common/utils/migrate-legacy-settings.ts';
 import { type Settings, _clearGlobalSettings, globalSettings } from './globalSettings.ts';
@@ -108,6 +107,19 @@ describe('globalSettings default path', () => {
     await globalSettings(TEST_SETTINGS_FILE);
 
     expect(migrateLegacySettings).not.toHaveBeenCalled();
+  });
+
+  it('logs a warning and still loads settings if the migration fails', async () => {
+    vi.stubEnv('XDG_CONFIG_HOME', '/tmp/xdg-config');
+    vi.mocked(migrateLegacySettings).mockRejectedValue(new Error('Copy error'));
+    vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
+
+    const settings = await globalSettings();
+
+    expect(settings.value.userSince).toBe(+userSince);
+    expect(console.warn).toHaveBeenCalledWith(
+      `Unable to migrate legacy global settings to ${join('/tmp/xdg-config', 'storybook', 'settings.json')}\nReason: Copy error`
+    );
   });
 });
 

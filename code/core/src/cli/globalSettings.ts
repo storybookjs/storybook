@@ -69,7 +69,13 @@ export async function globalSettings(filePath = getDefaultSettingsPath()) {
   }
 
   if (filePath === getDefaultSettingsPath()) {
-    await migrateLegacySettings();
+    try {
+      await migrateLegacySettings();
+    } catch (err) {
+      console.warn(dedent`
+        Unable to migrate legacy global settings to ${filePath}
+        Reason: ${(err as Error).message ?? err}`);
+    }
   }
 
   try {

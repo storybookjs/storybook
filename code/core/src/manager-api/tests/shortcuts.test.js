@@ -1,6 +1,13 @@
-import { describe, expect, it, vi } from 'vitest';
+// @vitest-environment happy-dom
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { logger } from 'storybook/internal/client-logger';
+import { PREVIEW_KEYDOWN } from 'storybook/internal/core-events';
+
+import { init as initLayout } from '../modules/layout';
 import { init as initShortcuts } from '../modules/shortcuts';
+
+vi.mock('storybook/internal/client-logger');
 
 function createMockStore() {
   let state = {};
@@ -287,5 +294,337 @@ describe('shortcuts api', () => {
         `${mockSecondAddonShortcut.addon}-${mockSecondAddonShortcut.shortcut.actionName}`
       ]
     ).toEqual(['G']);
+  });
+});
+
+describe('addon shortcut matching', () => {
+  const initWithUi = () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'shown' };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: true }, storyId: 'a', refId: undefined });
+    return api;
+  };
+
+  it('addon shortcuts match and fire', async () => {
+    const api = initWithUi();
+    const action = vi.fn();
+    await api.setAddonShortcut('my-addon', {
+      label: 'Do it',
+      defaultShortcut: ['O'],
+      actionName: 'doIt',
+      action,
+    });
+
+    expect(api.handleKeydownEvent({ key: 'O', code: 'KeyO' })).toBe('my-addon-doIt');
+    expect(action).toHaveBeenCalled();
+  });
+
+  it('persisted addon bindings whose addon did not re-register are ignored', () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'shown' };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({
+      ...state,
+      ui: { enableShortcuts: true },
+      shortcuts: { ...state.shortcuts, 'stale-addon-gone': ['ArrowUp'] },
+    });
+
+    expect(() => api.handleKeydownEvent({ key: 'ArrowUp' })).not.toThrow();
+    expect(api.handleKeydownEvent({ key: 'ArrowUp' })).toBeUndefined();
+  });
+
+  it('handleShortcutFeature warns instead of throwing for a feature id with no registered action', () => {
+    const api = initWithUi();
+
+    expect(() => api.handleShortcutFeature('stale-addon-gone', {})).not.toThrow();
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      expect.stringContaining('stale-addon-gone')
+    );
+  });
+});
+
+describe('focus region shortcuts', () => {
+  const setup = ({ navShown = true, panelShown = true } = {}) => {
+    const store = createMockStore();
+    const fullAPI = {
+      getNavAvailability: () => 'shown',
+      getIsFullscreen: () => false,
+      getIsNavShown: () => navShown,
+      getIsPanelShown: () => panelShown,
+      toggleNav: vi.fn(),
+      togglePanel: vi.fn(),
+      focusOnUIElement: vi.fn(),
+    };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: true }, storyId: 'a', refId: undefined });
+    return { api, fullAPI };
+  };
+
+  it.each([
+    ['focusNav', 'storybook-sidebar-region'],
+    ['focusIframe', 'storybook-preview-region'],
+    ['focusPanel', 'storybook-panel-region'],
+  ])('%s forces focus onto the landmark region', (feature, regionId) => {
+    const { api, fullAPI } = setup();
+
+    api.handleShortcutFeature(feature, {});
+
+    expect(fullAPI.focusOnUIElement).toHaveBeenCalledWith(regionId, {
+      forceFocus: true,
+      poll: true,
+      signal: expect.any(AbortSignal),
+    });
+  });
+
+  it('supersedes the pending focus of an earlier shortcut', () => {
+    const { api, fullAPI } = setup();
+
+    api.handleShortcutFeature('focusNav', {});
+    api.handleShortcutFeature('focusIframe', {});
+
+    const [[, first], [, second]] = fullAPI.focusOnUIElement.mock.calls;
+    expect(first.signal.aborted).toBe(true);
+    expect(second.signal.aborted).toBe(false);
+  });
+
+  it('does not fall back to the body when a superseded focus move gives up', async () => {
+    const { api, fullAPI } = setup();
+    document.body.innerHTML = '<div id="storybook-panel-region"><button></button></div>';
+    document.querySelector('button').focus();
+    vi.spyOn(document.body, 'focus');
+    fullAPI.focusOnUIElement.mockImplementation(
+      (_, { signal }) =>
+        new Promise((resolve) => signal.addEventListener('abort', () => resolve(false)))
+    );
+
+    api.handleShortcutFeature('togglePanel', {});
+    api.handleShortcutFeature('focusNav', {});
+    await Promise.resolve();
+
+    expect(fullAPI.focusOnUIElement).toHaveBeenCalledWith(
+      'storybook-show-addon-panel',
+      expect.objectContaining({ poll: true })
+    );
+    expect(document.body.focus).not.toHaveBeenCalled();
+  });
+
+  it('shows hidden regions before focusing them', () => {
+    const { api, fullAPI } = setup({ navShown: false, panelShown: false });
+
+    api.handleShortcutFeature('focusNav', {});
+    api.handleShortcutFeature('focusPanel', {});
+
+    expect(fullAPI.toggleNav).toHaveBeenCalledWith(true);
+    expect(fullAPI.togglePanel).toHaveBeenCalledWith(true);
+  });
+
+  describe('with a region that mounts after the shortcut ran', () => {
+    // The real focusOnUIElement, so that forcing focus and polling for the region run against
+    // the DOM instead of a mock.
+    const setupWithLayout = () => {
+      const store = createMockStore();
+      const layoutApi = initLayout({
+        store,
+        provider: { getConfig: () => ({}) },
+        singleStory: false,
+      }).api;
+      const { api, fullAPI } = setup({ panelShown: false });
+      fullAPI.focusOnUIElement.mockImplementation(layoutApi.focusOnUIElement);
+      return api;
+    };
+
+    const mountRegion = (region) => {
+      const element = document.createElement('div');
+      element.id = `storybook-${region}-region`;
+      element.setAttribute('data-sb-landmark', '');
+      document.body.appendChild(element);
+      return element;
+    };
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      document.body.innerHTML = '';
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('focuses the region once it appears', async () => {
+      const api = setupWithLayout();
+
+      api.handleShortcutFeature('focusPanel', {});
+      const panel = mountRegion('panel');
+      await vi.advanceTimersByTimeAsync(100);
+
+      expect(document.activeElement).toBe(panel);
+    });
+
+    it('leaves focus where a later shortcut put it', async () => {
+      const api = setupWithLayout();
+      const sidebar = mountRegion('sidebar');
+
+      api.handleShortcutFeature('focusPanel', {});
+      api.handleShortcutFeature('focusNav', {});
+      expect(document.activeElement).toBe(sidebar);
+
+      mountRegion('panel');
+      await vi.advanceTimersByTimeAsync(600);
+
+      expect(document.activeElement).toBe(sidebar);
+    });
+  });
+});
+
+describe('landmark navigation relayed from the preview', () => {
+  const setup = () => {
+    document.body.innerHTML = '<div id="storybook-preview-region" data-sb-landmark></div>';
+    const store = createMockStore();
+    const channel = { on: vi.fn() };
+    const fullAPI = {
+      getNavAvailability: () => 'shown',
+      getIsFullscreen: () => false,
+      toggleFullscreen: vi.fn(),
+    };
+    const { state, init } = initShortcuts({ store, provider: { channel }, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: true }, storyId: 'a' });
+    init();
+
+    const [, onPreviewKeydown] = channel.on.mock.calls.find(([name]) => name === PREVIEW_KEYDOWN);
+    const replayed = [];
+    const listener = (event) => replayed.push(event);
+    document.addEventListener('keydown', listener, { capture: true });
+    return {
+      fullAPI,
+      replayed,
+      region: document.getElementById('storybook-preview-region'),
+      pressInPreview: (event) => {
+        onPreviewKeydown({ event: { altKey: false, ctrlKey: false, metaKey: false, ...event } });
+        document.removeEventListener('keydown', listener, { capture: true });
+      },
+    };
+  };
+
+  it('replays F6 on the preview landmark for React Aria to navigate from', () => {
+    const { pressInPreview, replayed, region } = setup();
+
+    pressInPreview({ key: 'F6', code: 'F6', shiftKey: true });
+
+    expect(replayed).toHaveLength(1);
+    expect(replayed[0].target).toBe(region);
+    expect(replayed[0].key).toBe('F6');
+    expect(replayed[0].shiftKey).toBe(true);
+  });
+
+  it('does not replay other keys', () => {
+    const { pressInPreview, replayed } = setup();
+
+    pressInPreview({ key: 'F', code: 'KeyF', altKey: true, shiftKey: false });
+
+    expect(replayed).toHaveLength(0);
+  });
+});
+
+describe('keydown match gating', () => {
+  it('reports no match when shortcuts are disabled, so the key is not swallowed', () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'shown', toggleFullscreen: vi.fn() };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: false }, storyId: 'a' });
+
+    expect(api.handleKeydownEvent({ key: 'F', altKey: true })).toBeUndefined();
+    expect(fullAPI.toggleFullscreen).not.toHaveBeenCalled();
+  });
+
+  it('reports no match for sidebar shortcuts while the nav is unavailable', () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'unavailable', toggleFullscreen: vi.fn() };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: true }, storyId: 'a' });
+
+    expect(api.handleKeydownEvent({ key: 'S', code: 'KeyS', altKey: true })).toBeUndefined();
+    expect(api.handleKeydownEvent({ key: 'F', altKey: true })).toBe('fullScreen');
+  });
+
+  it('reports no match for an escape binding persisted by an older Storybook, so overlays receive the key', () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'shown' };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({
+      ...state,
+      ui: { enableShortcuts: true },
+      shortcuts: { ...state.shortcuts, escape: ['escape'] },
+    });
+
+    expect(api.handleKeydownEvent({ key: 'Escape' })).toBeUndefined();
+  });
+});
+
+describe('keydown listeners registered by init', () => {
+  let fullAPI;
+
+  const dispatch = (eventInit) => {
+    const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...eventInit });
+    vi.spyOn(event, 'stopPropagation');
+    document.body.dispatchEvent(event);
+    return event;
+  };
+
+  beforeAll(() => {
+    const store = createMockStore();
+    fullAPI = {
+      getNavAvailability: () => 'shown',
+      toggleFullscreen: vi.fn(),
+      getIsFullscreen: vi.fn().mockReturnValue(false),
+    };
+    const { state, init } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({
+      ...state,
+      ui: { enableShortcuts: true },
+      storyId: 'a',
+      shortcuts: { ...state.shortcuts, 'stale-addon-gone': ['alt', 'shift', 'Q'] },
+    });
+    init();
+  });
+
+  it('stops propagation of a matched shortcut at the capture phase and runs its action', () => {
+    const event = dispatch({ key: 'F', code: 'KeyF', altKey: true });
+
+    expect(fullAPI.toggleFullscreen).toHaveBeenCalled();
+    expect(event.stopPropagation).toHaveBeenCalled();
+  });
+
+  it('lets landmark navigation keys through to react-aria', () => {
+    const event = dispatch({ key: 'F6', code: 'F6' });
+
+    expect(event.stopPropagation).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('leaves events untouched when they only match an orphaned persisted addon binding', () => {
+    const event = dispatch({ key: 'Q', code: 'KeyQ', altKey: true, shiftKey: true });
+
+    expect(event.stopPropagation).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('exits fullscreen on a bubbled Escape that no overlay consumed', () => {
+    fullAPI.getIsFullscreen.mockReturnValue(true);
+
+    const event = dispatch({ key: 'Escape' });
+
+    expect(fullAPI.toggleFullscreen).toHaveBeenCalledWith(false);
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  it('does not exit fullscreen when an overlay already consumed Escape', () => {
+    fullAPI.getIsFullscreen.mockReturnValue(true);
+
+    const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    event.preventDefault();
+    document.body.dispatchEvent(event);
+
+    expect(fullAPI.toggleFullscreen).not.toHaveBeenCalled();
   });
 });

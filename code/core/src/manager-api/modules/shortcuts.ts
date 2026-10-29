@@ -1,6 +1,7 @@
 import {
   FORCE_REMOUNT,
   PREVIEW_KEYDOWN,
+  SIDEBAR_OPEN_CONTEXT_MENU,
   STORIES_COLLAPSE_ALL,
   STORIES_EXPAND_ALL,
 } from 'storybook/internal/core-events';
@@ -9,6 +10,7 @@ import { global } from '@storybook/global';
 
 import copy from 'copy-to-clipboard';
 
+import { logger } from 'storybook/internal/client-logger';
 import type { KeyboardEventLike } from '../lib/shortcut.ts';
 import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut.ts';
 import type { ModuleFn } from '../lib/types.tsx';
@@ -85,15 +87,16 @@ export interface SubAPI {
    * Handles a keydown event.
    *
    * @param event The event to handle.
+   * @returns The name of the matched shortcut action, or `undefined` when no shortcut matches.
    */
-  handleKeydownEvent(event: KeyboardEventLike): void;
+  handleKeydownEvent(event: KeyboardEventLike): API_MatchableAction | undefined;
   /**
    * Handles a shortcut feature.
    *
    * @param feature The feature to handle.
    * @param event The event to handle.
    */
-  handleShortcutFeature(feature: API_Action, event: KeyboardEventLike): void;
+  handleShortcutFeature(feature: API_MatchableAction, event: KeyboardEventLike): void;
 }
 
 export type API_KeyCollection = string[];
@@ -114,7 +117,6 @@ export interface API_Shortcuts {
   nextStory: API_KeyCollection;
   shortcutsPage: API_KeyCollection;
   aboutPage: API_KeyCollection;
-  escape: API_KeyCollection;
   collapseAll: API_KeyCollection;
   expandAll: API_KeyCollection;
   remount: API_KeyCollection;
@@ -123,11 +125,19 @@ export interface API_Shortcuts {
   copyStoryLink: API_KeyCollection;
   goToPreviousLandmark: API_KeyCollection;
   goToNextLandmark: API_KeyCollection;
+  contextMenu: API_KeyCollection;
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: API_KeyCollection;
 }
 
 export type API_Action = keyof API_Shortcuts;
+
+/**
+ * A built-in shortcut action, or the id of a shortcut that `setAddonShortcut` registers
+ * (`` `${addon}-${actionName}` ``). The `(string & {})` member accepts an addon id and keeps the
+ * autocompletion of the built-in names.
+ */
+export type API_MatchableAction = API_Action | (string & {});
 
 interface API_AddonShortcut {
   label: string;
@@ -156,7 +166,6 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   nextStory: ['alt', 'ArrowRight'],
   shortcutsPage: [controlOrMetaKey(), 'shift', ','],
   aboutPage: [controlOrMetaKey(), ','],
-  escape: ['escape'], // This one is not customizable
   collapseAll: [controlOrMetaKey(), 'shift', 'ArrowUp'],
   expandAll: [controlOrMetaKey(), 'shift', 'ArrowDown'],
   remount: ['alt', 'R'],
@@ -165,6 +174,7 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   copyStoryLink: ['alt', 'shift', 'L'],
   goToPreviousLandmark: ['shift', 'F6'], // hardcoded in react-aria
   goToNextLandmark: ['F6'], // hardcoded in react-aria
+  contextMenu: [controlOrMetaKey(), 'shift', 'U'],
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: ['alt', 'shift', 'C'],
 });
@@ -185,6 +195,30 @@ function shouldSkipShortcut(event: KeyboardEvent) {
 }
 
 export const init: ModuleFn = ({ store, fullAPI, provider }) => {
+  // A shortcut's focus move may have to wait for its target to mount (a region that was just
+  // toggled on, or a button that replaces one toggled off). Only the latest move may complete:
+  // an older one finishing later would pull focus away from wherever the user has moved it since.
+  let pendingFocus: AbortController | undefined;
+  const focusFromShortcut = (
+    elementId: string,
+    {
+      onUnavailable,
+      ...options
+    }: { forceFocus?: boolean; select?: boolean; onUnavailable?: () => void } = {}
+  ) => {
+    pendingFocus?.abort();
+    const controller = new AbortController();
+    pendingFocus = controller;
+
+    Promise.resolve(
+      fullAPI.focusOnUIElement(elementId, { ...options, poll: true, signal: controller.signal })
+    ).then((success) => {
+      if (!success && !controller.signal.aborted) {
+        onUnavailable?.();
+      }
+    });
+  };
+
   const api: SubAPI = {
     // Getting and setting shortcuts
     getShortcutKeys(): API_Shortcuts {
@@ -244,15 +278,37 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
 
     // Listening to shortcut events
     handleKeydownEvent(event) {
+      // Report no match while shortcuts are disabled. The capture listener stops propagation
+      // for a matched shortcut, so a match here would swallow the key and run no action.
+      if (!store.getState().ui.enableShortcuts) {
+        return undefined;
+      }
       const shortcut = eventToShortcut(event);
       const shortcuts = api.getShortcutKeys();
       const actions = keys(shortcuts);
-      const matchedFeature = actions.find((feature: API_Action) =>
-        shortcutMatchesShortcut(shortcut!, shortcuts[feature])
-      );
+      const matchedFeature = actions.find((feature: API_Action) => {
+        if (!shortcutMatchesShortcut(shortcut!, shortcuts[feature])) {
+          return false;
+        }
+
+        // Do not match the sidebar shortcuts while the sidebar is hidden.
+        const isSidebarShortcutBlocked = fullAPI.getNavAvailability() === 'unavailable';
+        if (isSidebarShortcutBlocked && ['focusNav', 'search', 'toggleNav'].includes(feature)) {
+          return false;
+        }
+
+        // An old addon or Storybook version can leave an orphaned binding in localStorage.
+        // Such a binding must not match, because the capture listener then calls
+        // stopPropagation() and the key reaches nothing else.
+        if (!(feature in defaultShortcuts)) {
+          return feature in addonsShortcuts;
+        }
+        return true;
+      });
       if (matchedFeature) {
         api.handleShortcutFeature(matchedFeature, event);
       }
+      return matchedFeature;
     },
 
     // warning: event might not have a full prototype chain because it may originate from the channel
@@ -279,16 +335,6 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         event.preventDefault();
       }
       switch (feature) {
-        case 'escape': {
-          if (fullAPI.getIsFullscreen()) {
-            fullAPI.toggleFullscreen(false);
-          } else if (isDesktopViewport() && fullAPI.getIsNavShown()) {
-            // On mobile toggleNav opens the drawer, so Escape must not reach it — only the desktop nav.
-            fullAPI.toggleNav(true);
-          }
-          break;
-        }
-
         // Handled by @react-aria/interactions and useLandmarkIndicator
         case 'goToNextLandmark':
         case 'goToPreviousLandmark':
@@ -301,7 +347,7 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           if (!fullAPI.getIsNavShown()) {
             fullAPI.toggleNav(true);
           }
-          fullAPI.focusOnUIElement(focusableUIElements.storyListMenu);
+          focusFromShortcut(focusableUIElements.sidebarRegion, { forceFocus: true });
           break;
         }
 
@@ -314,22 +360,13 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           }
 
           setTimeout(() => {
-            fullAPI.focusOnUIElement(focusableUIElements.storySearchField, true);
+            focusFromShortcut(focusableUIElements.storySearchField, { select: true });
           }, 0);
           break;
         }
 
         case 'focusIframe': {
-          const element = document.getElementById('storybook-preview-iframe') as HTMLIFrameElement;
-
-          if (element) {
-            try {
-              // should be like a channel message and all that, but yolo for now
-              element.contentWindow!.focus();
-            } catch (e) {
-              //
-            }
-          }
+          focusFromShortcut(focusableUIElements.previewRegion, { forceFocus: true });
           break;
         }
 
@@ -340,7 +377,7 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           if (!fullAPI.getIsPanelShown()) {
             fullAPI.togglePanel(true);
           }
-          fullAPI.focusOnUIElement(focusableUIElements.storyPanelRoot);
+          focusFromShortcut(focusableUIElements.addonPanel, { forceFocus: true });
           break;
         }
 
@@ -355,12 +392,12 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         }
 
         case 'nextComponent': {
-          fullAPI.jumpToComponent(1);
+          fullAPI.jumpToSubtree(1);
           break;
         }
 
         case 'prevComponent': {
-          fullAPI.jumpToComponent(-1);
+          fullAPI.jumpToSubtree(-1);
           break;
         }
 
@@ -376,24 +413,14 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           fullAPI.togglePanel();
 
           if (wasPanelShown && wasFocusInElement(panelElement)) {
-            // poll: true always returns a Promise.
-            (
-              fullAPI.focusOnUIElement(focusableUIElements.showAddonPanel, {
-                poll: true,
-              }) as Promise<boolean>
-            ).then((success) => {
+            focusFromShortcut(focusableUIElements.showAddonPanel, {
               // Fallback to body for predictable behavior.
-              if (success === false) {
-                document.body.focus();
-              }
+              onUnavailable: () => document.body.focus(),
             });
           }
 
           if (!wasPanelShown) {
-            fullAPI.focusOnUIElement(focusableUIElements.addonPanel, {
-              forceFocus: true,
-              poll: true,
-            });
+            focusFromShortcut(focusableUIElements.addonPanel, { forceFocus: true });
           }
           break;
         }
@@ -409,24 +436,14 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
 
           if (isDesktop) {
             if (wasNavShown && wasFocusInElement(sidebarElement)) {
-              // poll: true always returns a Promise.
-              (
-                fullAPI.focusOnUIElement(focusableUIElements.showSidebar, {
-                  poll: true,
-                }) as Promise<boolean>
-              ).then((success) => {
+              focusFromShortcut(focusableUIElements.showSidebar, {
                 // Fallback to body for predictable behavior.
-                if (success === false) {
-                  document.body.focus();
-                }
+                onUnavailable: () => document.body.focus(),
               });
             }
 
             if (!wasNavShown) {
-              fullAPI.focusOnUIElement(focusableUIElements.sidebarRegion, {
-                forceFocus: true,
-                poll: true,
-              });
+              focusFromShortcut(focusableUIElements.sidebarRegion, { forceFocus: true });
             }
           }
 
@@ -467,6 +484,10 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           fullAPI.emit(STORIES_EXPAND_ALL);
           break;
         }
+        case 'contextMenu': {
+          fullAPI.emit(SIDEBAR_OPEN_CONTEXT_MENU);
+          break;
+        }
         case 'remount': {
           fullAPI.emit(FORCE_REMOUNT, { storyId });
           break;
@@ -502,7 +523,11 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           break;
         }
         default:
-          addonsShortcuts[feature].action();
+          if (feature in addonsShortcuts) {
+            addonsShortcuts[feature].action();
+          } else {
+            logger.warn(`api.handleShortcutFeature called with unknown feature: ${feature}.`);
+          }
           break;
       }
     },
@@ -518,16 +543,74 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
   };
 
   const initModule = () => {
-    // Listen for keydown events in the manager
-    document.addEventListener('keydown', (event: KeyboardEvent) => {
-      if (!shouldSkipShortcut(event)) {
-        api.handleKeydownEvent(event);
+    // Listen for keydown events in the manager.
+    // The capture phase runs before React Aria and other component libraries call
+    // stopPropagation(). Such a call stops every bubble-phase listener.
+    // A matched shortcut also stops propagation. React Aria re-dispatches ArrowUp and ArrowDown
+    // events, which would run the action twice and move the tree selection.
+    // The landmark shortcuts (F6 and Shift+F6) are the exception. Storybook does nothing for
+    // them, so React Aria must receive them.
+    document.addEventListener(
+      'keydown',
+      (event: KeyboardEvent) => {
+        if (!shouldSkipShortcut(event)) {
+          const matched = api.handleKeydownEvent(event);
+          if (matched && matched !== 'goToNextLandmark' && matched !== 'goToPreviousLandmark') {
+            event.stopPropagation();
+          }
+        }
+      },
+      { capture: true }
+    );
+
+    // Escape is not part of the shortcut map. React Aria overlays (menus, popovers, modals)
+    // handle Escape on the element and stop propagation when they consume it. This bubble-phase
+    // listener therefore receives only the presses that no overlay claimed, and it exits
+    // fullscreen. A capture-phase listener would close an overlay and exit fullscreen with one
+    // press.
+    window.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (
+        event.key === 'Escape' &&
+        !event.defaultPrevented &&
+        !shouldSkipShortcut(event) &&
+        store.getState().ui.enableShortcuts &&
+        fullAPI.getIsFullscreen()
+      ) {
+        event.preventDefault();
+        fullAPI.toggleFullscreen(false);
       }
     });
 
     // Also listen to keydown events sent over the channel
     provider.channel?.on(PREVIEW_KEYDOWN, (data: { event: KeyboardEventLike }) => {
       api.handleKeydownEvent(data.event);
+      // The preview forwards a keydown event only when the focus is outside an input field.
+      // Escape from the story therefore exits fullscreen, the same as Escape in the manager.
+      if (
+        data.event.key === 'Escape' &&
+        store.getState().ui.enableShortcuts &&
+        fullAPI.getIsFullscreen()
+      ) {
+        fullAPI.toggleFullscreen(false);
+      }
+
+      // React Aria navigates landmarks on F6 / Shift+F6 (keys no shortcut can be bound to), but
+      // only sees keydowns in the manager document. A press inside the preview is replayed on
+      // the preview landmark, from where React Aria navigates exactly as it would for a press on
+      // the preview iframe.
+      if (data.event.key === 'F6') {
+        const { key, altKey, ctrlKey, metaKey, shiftKey } = data.event;
+        document.getElementById(focusableUIElements.previewRegion)?.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key,
+            altKey,
+            ctrlKey,
+            metaKey,
+            shiftKey,
+            cancelable: true,
+          })
+        );
+      }
     });
   };
 

@@ -169,6 +169,23 @@ describe('runFixes', () => {
     );
   });
 
+  it('skips an opt-in fix with --yes unless the user named it', async () => {
+    const optIn = { ...fixes[0], id: 'opt-in', defaultSelected: false };
+
+    const unnamed = await runFixes({ ...common, fixes: [optIn], storybookVersion: '7.0.0' });
+    expect(unnamed.fixResults).toEqual({ 'opt-in': 'skipped' });
+    expect(run1).not.toHaveBeenCalled();
+
+    const named = await runFixes({
+      ...common,
+      fixes: [optIn],
+      fixId: 'opt-in',
+      storybookVersion: '7.0.0',
+    });
+    expect(named.fixResults).toEqual({ 'opt-in': 'succeeded' });
+    expect(run1).toHaveBeenCalled();
+  });
+
   it('should fail if an error is thrown by migration', async () => {
     check1.mockRejectedValue(new Error('check1 error'));
 

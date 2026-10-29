@@ -8,7 +8,7 @@ import { MarkupIcon } from '@storybook/icons';
 import convert from 'color-convert';
 import { debounce } from 'es-toolkit/function';
 import { HexColorPicker, HslaStringColorPicker, RgbaStringColorPicker } from 'react-colorful';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { getControlId } from './helpers';
 import type { ColorConfig, ColorValue, ControlProps, PresetColor } from './types';
@@ -20,7 +20,7 @@ const Wrapper = styled.div({
 
 const TooltipContent = styled.div({
   width: 200,
-  margin: 5,
+  margin: 8,
 
   '.react-colorful__saturation': {
     borderRadius: '4px 4px 0 0',

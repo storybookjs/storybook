@@ -70,19 +70,43 @@ describe('Yarn 1 Proxy', () => {
   });
 
   describe('runScript', () => {
-    it('should execute script `yarn compodoc -- -e json -d .`', () => {
-      const executeCommandSpy = mockedExecuteCommand.mockReturnValue(
-        Promise.resolve({ stdout: '7.1.0' }) as any
-      );
+    beforeEach(() => {
+      mockedExecuteCommand.mockResolvedValue({ stdout: '' } as never);
+    });
 
+    it('should execute script `yarn compodoc -- -e json -d .`', () => {
       yarn1Proxy.runPackageCommand({ args: ['compodoc', '-e', 'json', '-d', '.'] });
 
-      expect(executeCommandSpy).toHaveBeenLastCalledWith(
+      expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
         expect.objectContaining({
           command: 'yarn',
           args: ['exec', 'compodoc', '--', '-e', 'json', '-d', '.'],
         })
       );
+    });
+
+    it('forwards the caller options to `npx` when running a remote package', () => {
+      const args = ['some-package@1.2.3', 'run', '--flag'];
+      const options = {
+        cwd: '/repo',
+        stdio: 'inherit' as const,
+        signal: new AbortController().signal,
+        ignoreError: true,
+      };
+
+      yarn1Proxy.runPackageCommand({
+        args,
+        useRemotePkg: true,
+        env: { SOME_VAR: '1' },
+        ...options,
+      });
+
+      expect(mockedExecuteCommand).toHaveBeenLastCalledWith({
+        command: 'npx',
+        args,
+        env: { npm_config_yes: 'true', SOME_VAR: '1' },
+        ...options,
+      });
     });
   });
 
@@ -132,6 +156,49 @@ describe('Yarn 1 Proxy', () => {
         expect.any(String)
       );
       expect(executeCommandSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getPublishedPeerDependencies', () => {
+    const readPeers = () =>
+      yarn1Proxy.getPublishedPeerDependencies('@storybook/react-native', '11.0.0-next.0');
+
+    describe('when the version has peer dependencies', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({
+          stdout: '{"type":"inspect","data":{"storybook":"^10.5.4"}}',
+        } as any);
+      });
+
+      it('reads them through the package manager', async () => {
+        await expect(readPeers()).resolves.toEqual({ storybook: '^10.5.4' });
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({
+            command: 'yarn',
+            args: ['info', '@storybook/react-native@11.0.0-next.0', 'peerDependencies', '--json'],
+          })
+        );
+      });
+    });
+
+    describe('when the version has no peer dependencies', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({ stdout: '{"type":"inspect"}' } as any);
+      });
+
+      it('returns an empty object', async () => {
+        await expect(readPeers()).resolves.toEqual({});
+      });
+    });
+
+    describe('when the lookup fails', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockRejectedValue(new Error('401 Unauthorized'));
+      });
+
+      it('returns null', async () => {
+        await expect(readPeers()).resolves.toBeNull();
+      });
     });
   });
 

@@ -4,8 +4,10 @@ import type { DocgenError } from 'storybook/internal/types';
 import { stat } from 'node:fs/promises';
 import { relative } from 'node:path';
 
+import type { TagResolver } from '../tag-resolver.ts';
 import { errorMessage } from '../utils.ts';
 import { buildTagIndex, type TagIndex } from './build-tag-index.ts';
+import { flattenInheritance } from './flatten-inheritance.ts';
 import { isFailedManifest, loadManifest, type FailedManifest } from './load-manifest.ts';
 import type { ManifestDeclaration } from './types.ts';
 
@@ -39,7 +41,7 @@ interface CemState {
   lastWarning?: string;
 }
 
-export class CemManager {
+export class CemManager implements TagResolver {
   private states: CemState[];
 
   private current?: Promise<CemSnapshot>;
@@ -51,6 +53,10 @@ export class CemManager {
       absolutePath,
       path: relative(process.cwd(), absolutePath),
     }));
+  }
+
+  async find(tag: string): Promise<CemTag | DocgenError> {
+    return findInSnapshot(await this.refresh(), tag);
   }
 
   refresh(): Promise<CemSnapshot> {
@@ -111,7 +117,7 @@ export class CemManager {
 
     const entry: CemEntry = {
       path: loaded.path,
-      tags: buildTagIndex(loaded.manifest),
+      tags: buildTagIndex(flattenInheritance(loaded.manifest)),
     };
     const nextState: CemState = {
       ...state,
@@ -141,6 +147,19 @@ export class CemManager {
     state.lastWarning = message;
     logger.warn(message);
   }
+}
+
+/** A load error outranks a plain miss, because the tag may be in the manifest that failed. */
+export function findInSnapshot(snapshot: CemSnapshot, tag: string): CemTag | DocgenError {
+  return (
+    snapshot.tags.get(tag) ??
+    snapshot.errors[0] ?? {
+      name: 'tag-not-found',
+      message:
+        `No declaration for "${tag}" was found in ${snapshot.paths.join(', ')}. ` +
+        'If the element is new, rerun the custom elements manifest analyzer.',
+    }
+  );
 }
 
 function buildSnapshot(states: CemState[]): CemSnapshot {

@@ -31,7 +31,7 @@ export const eslintPlugin: Fix<{
     }
 
     if (!eslintConfigFile) {
-      logger.warn('Unable to find eslint config file, skipping');
+      logger.debug('Unable to find eslint config file, skipping');
       return null;
     }
     return { eslintConfigFile, unsupportedExtension, isFlatConfig };

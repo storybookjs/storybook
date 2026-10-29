@@ -9,7 +9,7 @@ import { startCase } from 'es-toolkit/string';
 import { action } from 'storybook/actions';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { isChromatic } from '../../../../../.storybook/isChromatic.ts';
 import {
@@ -497,16 +497,14 @@ export const KeyboardRightPanelMinSize: Story = {
 };
 
 export const Mobile = {
+  globals: { viewport: { value: 'mobile1' } },
   parameters: {
-    viewport: {
-      defaultViewport: 'mobile1',
-    },
     chromatic: { viewports: [320] },
   },
 };
 export const MobileDark = {
   ...Mobile,
-  globals: { sb_theme: 'dark' },
+  globals: { ...Mobile.globals, sb_theme: 'dark' },
 };
 
 export const MobileDocs = {

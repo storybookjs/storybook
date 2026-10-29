@@ -24,7 +24,8 @@ function isAttachedDocsEntry(
   );
 }
 
-function isEligibleStoryEntry(entry: IndexEntry): boolean {
+/** Whether an index entry is a story of a component, as opposed to a test or a docs entry. */
+export function isEligibleStoryEntry(entry: IndexEntry): boolean {
   return entry.type === 'story' && entry.subtype === 'story';
 }
 
@@ -53,7 +54,7 @@ function buildCollisionWarning(
   return dedent`
     Multiple story files share the component id '${componentId}':
     ${sortedPaths.map((path) => `  - ${path}`).join('\n')}
-    Component-level docs (props tables, code snippets, manifests, MCP docs) for this id are generated from '${winner.importPath}' only, so stories in the other files are left out of them. If these files document different components, give each file a unique title so every component keeps its docs.
+    The props table and description for this id are generated from '${winner.importPath}' only. If these files document different components, give each file a unique title so every component keeps its docs.
   `;
 }
 
@@ -62,8 +63,8 @@ function buildCollisionWarning(
  * story exists for that componentId.
  *
  * Several story files can collapse onto one componentId by sharing a title. The selection cannot
- * represent that, so it warns (deduplicated per distinct collision) that component-level docs cover
- * only the winning file.
+ * represent that, so it warns (deduplicated per distinct collision) that the component's own docs
+ * cover only the winning file.
  */
 export function selectComponentEntriesByComponentId(
   indexEntries: IndexEntry[]

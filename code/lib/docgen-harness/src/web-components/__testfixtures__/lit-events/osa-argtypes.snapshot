@@ -55,24 +55,6 @@
       "value": "CustomEvent<void>",
     },
   },
-  "onMyChange": {
-    "action": {
-      "name": "my-change",
-    },
-    "name": "onMyChange",
-    "table": {
-      "disable": true,
-    },
-  },
-  "onMyClose": {
-    "action": {
-      "name": "my-close",
-    },
-    "name": "onMyClose",
-    "table": {
-      "disable": true,
-    },
-  },
   "value": {
     "description": "Current text value.",
     "name": "value",

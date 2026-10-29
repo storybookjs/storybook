@@ -158,7 +158,7 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
         if (!this.mounted) {
           // Before mount (e.g. during addon registration in the constructor) React's setState is a
           // no-op, so apply the patch directly to this.state and resolve synchronously. This ensures
-          // register-time writes (like experimental_setFilters) land in the first render.
+          // register-time writes (like setFilters) land in the first render.
           const patch =
             typeof stateChange === 'function'
               ? (stateChange as (s: State) => Partial<State>)(this.state)
@@ -334,14 +334,13 @@ export function useStorybookApi(): API {
 }
 
 export type {
-  /** @deprecated Now IndexHash */
-  API_IndexHash as StoriesHash,
   API_IndexHash as IndexHash,
   API_RootEntry as RootEntry,
   API_GroupEntry as GroupEntry,
   API_ComponentEntry as ComponentEntry,
   API_DocsEntry as DocsEntry,
   API_StoryEntry as StoryEntry,
+  API_TestEntry as TestEntry,
   API_HashEntry as HashEntry,
   API_LeafEntry as LeafEntry,
   API_ComposedRef as ComposedRef,
@@ -546,4 +545,4 @@ const typesX = types;
 export { typesX as types };
 
 /* deprecated */
-export { mockChannel, type Addon, type AddonStore } from './lib/addons.ts';
+export { type Addon, type AddonStore } from './lib/addons.ts';

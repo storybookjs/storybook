@@ -1,0 +1,17 @@
+{
+  "id": "webcomponentsstorydocs-no-component",
+  "name": "no-component",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsstorydocs-no-component--authored": {
+      "id": "webcomponentsstorydocs-no-component--authored",
+      "name": "Authored",
+      "snippet": "<h1>Authored</h1>",
+    },
+    "webcomponentsstorydocs-no-component--default": {
+      "id": "webcomponentsstorydocs-no-component--default",
+      "name": "Default",
+      "warning": "No static snippet: `meta.component` is not set.",
+    },
+  },
+}

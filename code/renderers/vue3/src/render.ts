@@ -5,11 +5,12 @@ import {
   type ArgsStoryFn,
   type RenderContext,
   type StoryContext,
+  type StoryContextForRender,
 } from 'storybook/internal/types';
 
 import type { PreviewWeb } from 'storybook/preview-api';
-import type { App } from 'vue';
-import { createApp, h, isReactive, isVNode, reactive } from 'vue';
+import type { App, ComponentPropsOptions } from 'vue';
+import { camelize, createApp, h, isReactive, isVNode, reactive } from 'vue';
 
 import type { StoryFnVueReturnType, StoryID, VueRenderer } from './types.ts';
 
@@ -121,10 +122,22 @@ export async function renderToCanvas(
 }
 
 /** Generate slots for default story without render function template */
-function getSlots(props: Args, context: StoryContext<VueRenderer, Args>) {
-  const { argTypes } = context;
+function getSlots(props: Args, context: StoryContextForRender<VueRenderer, Args>) {
+  const { argTypes, component } = context;
+  // Server docgen keeps docgen argTypes out of the preview, so the slot category is unknown here.
+  // Every arg that is neither a runtime-declared prop nor an event listener is then a slot.
+  const runtimeProps = (component as { props?: ComponentPropsOptions } | undefined)?.props;
+  const declaredProps = globalThis.FEATURES?.docgenServer
+    ? new Set(
+        (Array.isArray(runtimeProps) ? runtimeProps : Object.keys(runtimeProps ?? {})).map(camelize)
+      )
+    : undefined;
+  const isSlot = (key: string) =>
+    argTypes[key]?.table?.category === 'slots' ||
+    (declaredProps !== undefined && !declaredProps.has(key) && !/^on[A-Z]/.test(key));
+
   const slots = Object.entries(props)
-    .filter(([key]) => argTypes[key]?.table?.category === 'slots')
+    .filter(([key]) => isSlot(key))
     .map(([key, value]) => [key, typeof value === 'function' ? value : () => value]);
 
   return Object.fromEntries(slots);

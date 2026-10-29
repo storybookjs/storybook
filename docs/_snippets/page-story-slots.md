@@ -33,9 +33,9 @@ import preview from '../.storybook/preview';
 
 import { Page } from './page.component';
 
-type PagePropsAndCustomArgs = Page & { footer?: string };
+type CustomArgs = { footer?: string };
 
-const meta = preview.type<{ args: PagePropsAndCustomArgs }>().meta({
+const meta = preview.type<{ args: CustomArgs }>().meta({
   component: Page,
   render: ({ footer, ...args }) => ({
     props: args,
@@ -148,7 +148,8 @@ export const CustomFooter = {
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Page from './Page.svelte';
 
@@ -166,13 +167,54 @@ export const CustomFooter = {
 </Story>
 ```
 
-```svelte filename="Page.stories.svelte" renderer="svelte" language="ts"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import preview from '../.storybook/preview';
+
+  import Page from './Page.svelte';
+
+  const { Story } = preview.meta({
+    component: Page
+  });
+</script>
+
+<Story name="CustomFooter" args={{ footer: 'Built with Storybook' }}>
+  {#snippet template(args)}
+    <Page {...args} >
+      <footer>{args.footer}</footer>
+    </Page>
+  {/snippet}
+</Story>
+```
+
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Page from './Page.svelte';
 
   const { Story } = defineMeta({
+    component: Page
+  });
+</script>
+
+<Story name="CustomFooter" args={{ footer: 'Built with Storybook' }}>
+  {#snippet template(args)}
+    <Page {...args} >
+      <footer>{args.footer}</footer>
+    </Page>
+  {/snippet}
+</Story>
+```
+
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+
+  import Page from './Page.svelte';
+
+  const { Story } = preview.meta({
     component: Page
   });
 </script>
@@ -248,15 +290,13 @@ export const Primary = {
 ```
 
 ```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import type { ComponentPropsAndSlots } from '@storybook/vue3-vite';
-
 import preview from '../.storybook/preview';
 
 import Page from './Page.vue';
 
-type PagePropsAndCustomArgs = ComponentPropsAndSlots<typeof Page> & { footer?: string };
+type CustomArgs = { footer?: string };
 
-const meta = preview.type<{ args: PagePropsAndCustomArgs }>().meta({
+const meta = preview.type<{ args: CustomArgs }>().meta({
   component: Page,
   render: (args) => ({
     components: { Page },
@@ -405,11 +445,9 @@ import preview from '../.storybook/preview';
 
 import { Page } from './Page';
 
-type PagePropsAndCustomArgs = React.ComponentProps<typeof Page> & {
-  footer?: string;
-};
+type CustomArgs = { footer?: string };
 
-const meta = preview.type<{ args: PagePropsAndCustomArgs }>().meta({
+const meta = preview.type<{ args: CustomArgs }>().meta({
   component: Page,
   render: ({ footer, ...args }) => (
     <Page {...args}>

@@ -810,11 +810,13 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       // runner configures it after the batched install completes.
       expect(mockAdd).toHaveBeenCalledWith(
         '@storybook/addon-vitest',
-        expect.objectContaining({ skipInstall: true, skipPostinstall: true })
+        expect.objectContaining({ skipInstall: true, skipPostinstall: true }),
+        expect.objectContaining({ log: logger.debug })
       );
       expect(mockAdd).toHaveBeenCalledWith(
         '@storybook/addon-a11y',
-        expect.objectContaining({ skipInstall: true, skipPostinstall: true })
+        expect.objectContaining({ skipInstall: true, skipPostinstall: true }),
+        expect.objectContaining({ log: logger.debug })
       );
       expect(addonsToPostinstall).toEqual(['@storybook/addon-vitest']);
     });
@@ -883,7 +885,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       expect(written.indexOf('storybookAngularVitest({})')).toBeLessThan(
         written.indexOf('storybookTest(')
       );
-      expect(written).toContain("path.join(dirname, '.storybook')");
+      expect(written).toContain("path.join(import.meta.dirname, '.storybook')");
     });
 
     it('does not create a vitest.config.ts when one already exists', async () => {

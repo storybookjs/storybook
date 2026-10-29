@@ -1,1 +1,13 @@
-undefined
+{
+  "description": "Panel with string, number and boolean props.",
+  "id": "sveltefixtures-panel",
+  "jsDocTags": {
+    "summary": [
+      "Basic props fixture.",
+    ],
+  },
+  "name": "Panel",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": "Basic props fixture.",
+}

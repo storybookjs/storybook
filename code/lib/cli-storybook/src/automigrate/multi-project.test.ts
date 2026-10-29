@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   type ProjectAutomigrationData,
   collectAutomigrationsAcrossProjects,
+  logAutomigrationDetails,
   promptForAutomigrations,
 } from './multi-project.ts';
 import type { Fix } from './types.ts';
@@ -16,6 +17,7 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
     },
     logger: {
       log: vi.fn(),
+      logBox: vi.fn(),
       error: vi.fn(),
       debug: vi.fn(),
       SYMBOLS: {
@@ -233,6 +235,8 @@ describe('multi-project automigrations', () => {
     });
 
     it('should exclude opt-in non-auto automigrations when yes option is true', async () => {
+      const { logger } = await import('storybook/internal/node-logger');
+      const logSpy = vi.spyOn(logger, 'log');
       const project1 = createMockProject('/project1/.storybook');
       const defaultFix = createMockFix('default-fix');
       const optInFix = createMockFix(
@@ -252,6 +256,11 @@ describe('multi-project automigrations', () => {
       const result = await promptForAutomigrations(automigrations, { dryRun: false, yes: true });
 
       expect(result.map(({ fix }) => fix.id)).toEqual(['default-fix']);
+      expect(logSpy).toHaveBeenCalledWith('Running these detected automigrations:');
+      expect(logSpy).toHaveBeenCalledWith(
+        'Not run with --yes because they are opt-in (run `storybook automigrate <id>` to apply one):'
+      );
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('opt-in-fix'));
     });
 
     it('should keep opt-in automigrations that declare promptType auto when yes option is true', async () => {
@@ -378,6 +387,77 @@ describe('multi-project automigrations', () => {
       expect(logSpy).toHaveBeenCalledWith(
         'Detected automigrations (dry run - no changes will be made):'
       );
+    });
+  });
+
+  describe('logAutomigrationDetails', () => {
+    const detailedFix = () =>
+      createMockFix(
+        'detailed-fix',
+        {},
+        {
+          prompt: vi.fn((result?: { files: string[] }) =>
+            result ? `Migrate\n\nFiles:\n${result.files.join('\n')}` : 'Migrate'
+          ),
+        }
+      );
+
+    it("shows a fix's details for each project where its check succeeded", async () => {
+      const { logger } = await import('storybook/internal/node-logger');
+      const fix = detailedFix();
+      const reports = [
+        {
+          result: { files: ['a.ts'] },
+          status: 'check_succeeded' as const,
+          project: createMockProject('/repo/app-a/.storybook'),
+        },
+        {
+          result: null,
+          status: 'not_applicable' as const,
+          project: createMockProject('/repo/app-b/.storybook'),
+        },
+      ];
+
+      logAutomigrationDetails([{ fix, reports }]);
+
+      expect(logger.logBox).toHaveBeenCalledTimes(1);
+      expect(logger.logBox).toHaveBeenCalledWith(
+        'Migrate\n\nFiles:\na.ts',
+        expect.objectContaining({ title: expect.stringContaining('detailed-fix') })
+      );
+    });
+
+    it('shows nothing for a fix whose prompt does not depend on the check result', async () => {
+      const { logger } = await import('storybook/internal/node-logger');
+
+      logAutomigrationDetails([
+        asAutomigration(createMockFix('plain-fix'), createMockProject('/repo/.storybook')),
+      ]);
+
+      expect(logger.logBox).not.toHaveBeenCalled();
+    });
+
+    it('shows the details in a dry run', async () => {
+      const { logger } = await import('storybook/internal/node-logger');
+      const fix = detailedFix();
+
+      await promptForAutomigrations(
+        [
+          {
+            fix,
+            reports: [
+              {
+                result: { files: ['a.ts'] },
+                status: 'check_succeeded' as const,
+                project: createMockProject('/repo/.storybook'),
+              },
+            ],
+          },
+        ],
+        { dryRun: true }
+      );
+
+      expect(logger.logBox).toHaveBeenCalledWith('Migrate\n\nFiles:\na.ts', expect.anything());
     });
   });
 });

@@ -1,9 +1,10 @@
 import {
-  getAbsolutePathWrapperAsCallExpression,
+  ensureNamedImport,
+  getAbsolutePathWrapperDeclaration,
   getAbsolutePathWrapperName,
   getFieldsForGetAbsolutePathWrapper,
   isGetAbsolutePathWrapperNecessary,
-  wrapValueWithGetAbsolutePathWrapper,
+  wrapValuesWithGetAbsolutePathWrapper,
 } from 'storybook/internal/common';
 import { CommonJsConfigNotSupportedError } from 'storybook/internal/server-errors';
 
@@ -29,15 +30,19 @@ export const wrapGetAbsolutePath: Fix = {
         if (!fields.some((node) => isGetAbsolutePathWrapperNecessary(node))) {
           return;
         }
-        fields.forEach((node) => wrapValueWithGetAbsolutePathWrapper(mainConfig, node));
+        wrapValuesWithGetAbsolutePathWrapper(mainConfig, fields);
 
         if (getAbsolutePathWrapperName(mainConfig) === null) {
           if (/\.c[jt]sx?$/.test(id) || mainConfig._code.includes('module.exports')) {
             throw new CommonJsConfigNotSupportedError();
           }
-          mainConfig.setImport(['dirname'], 'node:path');
-          mainConfig.setImport(['fileURLToPath'], 'node:url');
-          mainConfig.setBodyDeclaration(getAbsolutePathWrapperAsCallExpression(/\.tsx?$/.test(id)));
+          const names = {
+            dirname: ensureNamedImport(mainConfig, 'dirname', 'node:path'),
+            fileURLToPath: ensureNamedImport(mainConfig, 'fileURLToPath', 'node:url'),
+          };
+          mainConfig.setBodyDeclaration(
+            getAbsolutePathWrapperDeclaration(mainConfig, /\.tsx?$/.test(id), names)
+          );
         }
       },
     },

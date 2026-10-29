@@ -1,14 +1,23 @@
 import { fileURLToPath } from 'node:url';
 
+import { isTypeScriptReadyForDocgen } from 'storybook/internal/common';
 import type { ImportParser } from 'storybook/internal/core-server';
-import type { PresetProperty } from 'storybook/internal/types';
+import type { Options, PresetProperty } from 'storybook/internal/types';
 
 export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
+// Default for `features.docgenServer`; a project without a usable `typescript` keeps builder docgen.
+export const isDocgenProviderEnabled = (_existing: unknown, options: Options) =>
+  isTypeScriptReadyForDocgen((specifier) => import.meta.resolve(specifier), options);
 export { experimental_storyDocsProvider } from './docgen/story-docs-provider.ts';
 // Consumed by external framework packages like storybook-vue3-rsbuild.
 export { DOCGEN_WORKER_SPECIFIER } from './docgen/worker-specifier.ts';
 
 export { experimental_vueDocgenEngine } from './docgen/engine.ts';
+
+export const features: PresetProperty<'features'> = async (existing) => ({
+  ...existing,
+  componentsManifest: true,
+});
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],

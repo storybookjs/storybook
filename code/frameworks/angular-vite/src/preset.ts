@@ -1,6 +1,5 @@
-import { findConfigFile } from 'storybook/internal/common';
+import { findConfigFile, isTypeScriptReadyForDocgen } from 'storybook/internal/common';
 import {
-  babelParser,
   extractMockCalls,
   findMockRedirect,
   getAutomockCode,
@@ -26,16 +25,16 @@ import type { FrameworkOptions } from './types.ts';
 import type { UserConfig, Plugin } from 'vite';
 
 export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
+// Default for `features.docgenServer`; a project without a usable `typescript` keeps builder docgen.
+export const isDocgenProviderEnabled = (_existing: unknown, options: Options) =>
+  isTypeScriptReadyForDocgen((specifier) => import.meta.resolve(specifier), options);
 export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
 
 export const addons: PresetProperty<'addons'> = [];
 
-// `angular-vite` is itself experimental, so it ships one docgen path rather than two: server-side
-// extraction is the default here, while the stable webpack `@storybook/angular` keeps Compodoc.
-// A user's `main.ts` merges over this, so `features: { experimentalDocgenServer: false }` opts out.
 export const features: PresetProperty<'features'> = async (existing) => ({
   ...existing,
-  experimentalDocgenServer: true,
+  componentsManifest: true,
 });
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
@@ -114,12 +113,14 @@ export const viteFinal = async (config: UserConfig, options: Options & Standalon
     'features',
     {}
   );
-  const docgenServer = !!resolvedFeatures?.experimentalDocgenServer;
+  const docgenServer = !!resolvedFeatures?.docgenServer;
+  // Test builds turn `docgenServer` off to skip docgen entirely, not to fall back to Compodoc.
+  const skipDocgen = !!options.build?.test?.disableDocgen;
 
   // With the docgen server on, ACM extracts in-process and nothing reads `documentation.json`, so
   // the whole-project scan (1.0 s to 35.6 s on real repositories) buys nothing.
   const compodocConfig = await resolveCompodocConfig(options, { viteRoot: config?.root });
-  if (compodocConfig.enabled && !docgenServer) {
+  if (compodocConfig.enabled && !docgenServer && !skipDocgen) {
     await ensureCompodocDocumentation({
       compodocArgs: compodocConfig.compodocArgs,
       tsconfig: compodocConfig.tsconfig,
@@ -129,13 +130,15 @@ export const viteFinal = async (config: UserConfig, options: Options & Standalon
   }
 
   const propsTable = resolvePropsTable(frameworkOptions, resolvedFeatures);
-  warnAboutPropsTable(frameworkOptions, resolvedFeatures);
+  if (!skipDocgen) {
+    warnAboutPropsTable(frameworkOptions, resolvedFeatures);
+  }
 
-  if (resolvedFeatures?.componentsManifest && !docgenServer) {
+  if (resolvedFeatures?.componentsManifest && !docgenServer && !skipDocgen) {
     logger.warn(
-      `The \`componentsManifest\` feature needs the \`experimentalDocgenServer\` feature, which is off, so this Storybook publishes no components manifest ` +
+      `The \`componentsManifest\` feature needs the \`docgenServer\` feature, which is off, so this Storybook publishes no components manifest ` +
         `and MCP clients get no component API from it. ` +
-        `Turn the docgen server on with \`features: { experimentalDocgenServer: true }\` in your \`main.ts\`.`
+        `Turn the docgen server on with \`features: { docgenServer: true }\` in your \`main.ts\`.`
     );
   }
 
@@ -229,7 +232,9 @@ export const viteFinal = async (config: UserConfig, options: Options & Standalon
       angularOptionsPlugin(options, { normalizePath, zoneless }),
       stylePreprocessorCheckPlugin(),
       storybookOxcPlugin(),
-      ...(docgenServer && options.configDir ? [compodocJsonStubPlugin(options.configDir)] : []),
+      ...((docgenServer || skipDocgen) && options.configDir
+        ? [compodocJsonStubPlugin(options.configDir)]
+        : []),
     ],
     define: {
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
@@ -528,7 +533,7 @@ export function angularOptionsPlugin(
 // the same mock calls and re-applies them on whatever analogjs produced:
 //   - `__mocks__/…` redirect → return the redirect file contents.
 //   - plain `sb.mock(...)` automock → wrap the post-analogjs exports with
-//     `getAutomockCode(code, spy, parse)`.
+//     `getAutomockCode(code, spy, id)`.
 function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
   let viteConfig: { resolve?: { preserveSymlinks?: boolean } } = {};
   let redirects: Array<{ absolutePath: string; redirectPath: string }> = [];
@@ -549,7 +554,6 @@ function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
       try {
         const calls = extractMockCalls(
           { previewConfigPath, configDir: options.configDir },
-          babelParser,
           (viteConfig as any).root ?? process.cwd(),
           findMockRedirect
         );
@@ -602,7 +606,7 @@ function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
           return null;
         }
         try {
-          const automocked = getAutomockCode(code, a.spy, babelParser as any);
+          const automocked = getAutomockCode(code, a.spy, id);
           return {
             code: automocked.toString(),
             map: automocked.generateMap(),

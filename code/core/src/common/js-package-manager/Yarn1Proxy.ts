@@ -63,6 +63,10 @@ export class Yarn1Proxy extends JsPackageManager {
     return `yarn exec ${command} -- ${rest.join(' ')}`;
   }
 
+  getRemoteRunCommand(args: string[]): string {
+    return `npx ${args.join(' ')}`;
+  }
+
   public runPackageCommand({
     args,
     useRemotePkg = false,
@@ -72,16 +76,11 @@ export class Yarn1Proxy extends JsPackageManager {
     useRemotePkg?: boolean;
   }): ResultPromise {
     const [command, ...rest] = args;
-    if (useRemotePkg) {
-      return executeCommand({
-        command: 'npx',
-        args,
-      });
-    }
     return executeCommand({
-      command: `yarn`,
-      args: ['exec', command, '--', ...rest],
       ...options,
+      ...(useRemotePkg
+        ? { command: 'npx', args, env: { npm_config_yes: 'true', ...options.env } }
+        : { command: 'yarn', args: ['exec', command, '--', ...rest] }),
     });
   }
 
@@ -220,6 +219,25 @@ export class Yarn1Proxy extends JsPackageManager {
         packageName,
       });
     }
+  }
+
+  protected async runGetPeerDependencies(
+    packageSpec: string
+  ): Promise<Record<string, string> | undefined> {
+    const result = await executeCommand({
+      command: 'yarn',
+      args: ['info', packageSpec, 'peerDependencies', '--json'],
+      cwd: this.cwd,
+      stdio: 'pipe',
+    });
+    const output = typeof result.stdout === 'string' ? result.stdout : '';
+    const parsedOutput = JSON.parse(output);
+    if (parsedOutput.type !== 'inspect') {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
+      throw new Error(`Yarn did not provide an output with type 'inspect'.`);
+    }
+    // `data` is missing when the version has no peer dependencies.
+    return parsedOutput.data;
   }
 
   protected mapDependencies(input: Yarn1ListOutput, pattern: string[]): InstallationMetadata {

@@ -9,37 +9,29 @@ import { buffer } from 'node:stream/consumers';
 import { collectTelemetry } from './telemetry.ts';
 import type { DocsAccess } from 'storybook/internal/toolsets-docs';
 import type { AddonContext, AddonOptionsOutput } from './types.ts';
-import { logger } from 'storybook/internal/node-logger';
 import { getEffectiveToolAvailability, getToolAvailability } from 'storybook/internal/core-server';
 import { buildServerInstructions } from 'storybook/internal/skills';
 import type { CompositionAuth } from './auth/index.ts';
-import { DEFAULT_MCP_ENDPOINT, STORYBOOK_MCP_PROXY_HEADER } from './constants.ts';
+import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 import { registerAddonMcpTools } from './tools/tool-registry.ts';
+import { toBaseUrl } from './utils/base-url.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
-let origin: string | undefined;
 // Promise that ensures single initialization, even with concurrent requests
 let initialize: Promise<McpServer<any, AddonContext>> | undefined;
 let disableTelemetry: boolean | undefined;
 let a11yEnabled: boolean | undefined;
-let reviewGates: { reviewEnabled: boolean; reviewEnabledForCli: boolean } | undefined;
 
 const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
   const core = await options.presets.apply('core', {});
-  const features = await options.presets.apply('features', {});
   disableTelemetry = core?.disableTelemetry ?? false;
 
   // Determine tool availability before creating server so instructions can be tailored.
   // Shares one source of truth with the browser landing page (core's `getToolAvailability`)
-  // so the registered tools and the page's enabled/disabled badges can't drift. Reuse the
-  // already-resolved `features` so it doesn't re-apply the preset and risk a different snapshot.
-  const rawAvailability = await getToolAvailability(options, { features });
+  // so the registered tools and the page's enabled/disabled badges can't drift.
+  const rawAvailability = await getToolAvailability(options);
   const availability = getEffectiveToolAvailability(rawAvailability, { multiSource });
   a11yEnabled = availability.a11yEnabled;
-  reviewGates = {
-    reviewEnabled: availability.reviewEnabled,
-    reviewEnabledForCli: availability.reviewEnabledForCli,
-  };
 
   // oxlint-disable-next-line prefer-const -- the instructions getter below may run before this is assigned
   let server: McpServer<any, AddonContext>;
@@ -52,9 +44,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
         devEnabled: server?.ctx.custom?.toolsets?.dev ?? true,
         testSupported: (server?.ctx.custom?.toolsets?.test ?? true) && availability.testSupported,
         docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && availability.docsEnabled,
-        changeDetectionEnabled: availability.changeDetectionEnabled,
         moduleGraphSupported: availability.moduleGraphSupported,
-        reviewEnabled: server?.ctx.custom?.reviewEnabled ?? availability.reviewEnabled,
       });
     },
     capabilities: {
@@ -82,8 +72,6 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 
   transport = new HttpTransport(server, { path: null });
 
-  origin = `http://localhost:${options.port}`;
-  logger.debug(`MCP server origin: ${origin}`);
   return server;
 };
 
@@ -96,6 +84,10 @@ type McpServerHandlerParams = {
   res: ServerResponse;
   options: Options;
   addonOptions: AddonOptionsOutput;
+  /** Origin of the local Storybook, e.g. `http://localhost:6006`. */
+  origin: string;
+  /** URL path prefix the local Storybook is served from, `/` or `/seg/`. */
+  basePath: string;
   /**
    * The MCP endpoint path (e.g. `/mcp` or a user-configured override).
    * Used to derive the Storybook root from the incoming request URL inside
@@ -112,7 +104,7 @@ type McpServerHandlerParams = {
     source?: Source
   ) => Promise<string>;
   /**
-   * Optional in-process single-entry resolver for `experimentalDocgenServer` mode.
+   * Optional in-process single-entry resolver for `docgenServer` mode.
    * Selected (alongside `manifestProvider`) by the caller; the doc tools only consult
    * it for the local source. Undefined on older Storybook versions / when the feature is off.
    */
@@ -126,6 +118,8 @@ export const mcpServerHandler = async ({
   res,
   options,
   addonOptions,
+  origin,
+  basePath,
   endpoint = DEFAULT_MCP_ENDPOINT,
   sources,
   manifestProvider,
@@ -148,9 +142,8 @@ export const mcpServerHandler = async ({
     options,
     endpoint,
     toolsets: getToolsets(webRequest, addonOptions),
-    reviewEnabled: isReviewEnabledForRequest(webRequest, reviewGates!),
-    cliClient: webRequest.headers.get(STORYBOOK_MCP_PROXY_HEADER) === 'true',
-    origin: origin!,
+    origin,
+    basePath,
     disableTelemetry: disableTelemetry!,
     a11yEnabled,
     request: webRequest,
@@ -171,7 +164,7 @@ export const mcpServerHandler = async ({
           status: 401,
           headers: {
             'Content-Type': 'text/plain',
-            'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(origin!),
+            'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(toBaseUrl(origin, basePath)),
           },
         })
       : new Response(body, { status: response.status, headers: response.headers });
@@ -227,22 +220,6 @@ export async function webResponseToServerResponse(
   }
 
   nodeResponse.end();
-}
-
-/**
- * Review is on for a request when the `experimentalReview` flag enables it
- * globally, or when the request marks itself as coming from the `storybook ai`
- * CLI (the Claude/Codex plugins) via {@link STORYBOOK_MCP_PROXY_HEADER} —
- * that channel gets review by default, direct MCP clients stay opt-in.
- */
-export function isReviewEnabledForRequest(
-  request: Request,
-  gates: { reviewEnabled: boolean; reviewEnabledForCli: boolean }
-): boolean {
-  return (
-    gates.reviewEnabled ||
-    (gates.reviewEnabledForCli && request.headers.get(STORYBOOK_MCP_PROXY_HEADER) === 'true')
-  );
 }
 
 export function getToolsets(

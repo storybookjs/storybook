@@ -13,7 +13,7 @@ export class RequestResponseError<Payload extends Record<string, any> | void> ex
 export const experimental_requestResponse = <
   RequestPayload,
   ResponsePayload = void,
-  CreateNewStoryErrorPayload extends Record<string, any> | void = void,
+  ErrorPayload extends Record<string, any> | void = void,
 >(
   channel: Channel,
   requestEvent: string,
@@ -29,9 +29,7 @@ export const experimental_requestResponse = <
       payload,
     };
 
-    const responseHandler = (
-      response: ResponseData<ResponsePayload, CreateNewStoryErrorPayload>
-    ) => {
+    const responseHandler = (response: ResponseData<ResponsePayload, ErrorPayload>) => {
       if (response.id !== request.id) {
         return;
       }

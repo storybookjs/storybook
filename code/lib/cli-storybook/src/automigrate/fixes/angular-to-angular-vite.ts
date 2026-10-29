@@ -1,4 +1,3 @@
-import { types as t } from 'storybook/internal/babel';
 import {
   ANALOG_VITE_PLUGIN_ANGULAR_VERSION,
   editJsonText,
@@ -7,8 +6,14 @@ import {
   type StorybookBuilderTarget,
   toDevkitVersion,
 } from 'storybook/internal/cli';
-import { formatFileContent, getProjectRoot, transformImports } from 'storybook/internal/common';
+import {
+  type JsPackageManager,
+  formatFileContent,
+  getProjectRoot,
+  transformImports,
+} from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import { dirname, relative, resolve } from 'pathe';
@@ -17,11 +22,13 @@ import { dedent } from 'ts-dedent';
 
 import { add } from '../../add.ts';
 import type { FixFiles } from '../fix-files.ts';
+import { automigrationLogger } from '../helpers/automigration-logger.ts';
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import type { FixTransform } from '../pipeline.ts';
 import { assertMainConfigNamesFramework } from '../helpers/main-config-framework.ts';
+import { readJsonFile } from '../helpers/workspace-files.ts';
 import type { Fix } from '../types.ts';
-import { findWorkspaceJsonFiles, getTargetGroups, readJsonFile } from './angular-workspace.ts';
+import { findWorkspaceJsonFiles, getTargetGroups } from './angular-workspace.ts';
 import {
   compodocTransforms,
   findCompodocSetup,
@@ -78,7 +85,6 @@ const VITE_CONFIG_FILES = ['vite.config', 'vitest.config'].flatMap((basename) =>
 const buildAngularVitestConfig = (
   configDirRelative: string
 ): string => `import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from 'vitest/config';
 
@@ -86,9 +92,6 @@ import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import { storybookAngularVitest } from '@storybook/angular-vite/vitest';
 
 import { playwright } from '@vitest/browser-playwright';
-
-const dirname =
-  typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
@@ -101,7 +104,7 @@ export default defineConfig({
           storybookAngularVitest({}),
           // The plugin will run tests for the stories defined in your Storybook config
           // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-          storybookTest({ configDir: path.join(dirname, '${configDirRelative}') }),
+          storybookTest({ configDir: path.join(import.meta.dirname, '${configDirRelative}') }),
         ],
         test: {
           name: 'storybook',
@@ -208,9 +211,9 @@ const rewriteWorkspaceJson = (files: FixFiles, paths: string[]) =>
 const addZoneJsImport: FixTransform = {
   filter: { kind: ['preview'] },
   editConfig: (preview, { id }) => {
-    const hasZoneJsImport = preview._ast.program.body.some(
+    const hasZoneJsImport = preview.program.body.some(
       (node) =>
-        t.isImportDeclaration(node) &&
+        node.type === 'ImportDeclaration' &&
         (node.source.value === 'zone.js' || node.source.value.startsWith('zone.js/'))
     );
     if (hasZoneJsImport) {
@@ -227,6 +230,42 @@ const getGuaranteedAngularMajor = (specifier: string | null): number | null => {
   return major === 0 ? null : major;
 };
 
+/** The facts that decide whether `angularToAngularVite` applies; its check adds the warnings. */
+const inspectMigration = async (
+  packageManager: JsPackageManager,
+  mainConfig: StorybookConfigRaw
+) => {
+  const allDeps = packageManager.getAllDependencies();
+
+  if (allDeps[ANGULAR_VITE_PACKAGE] || MIGRATABLE_FRAMEWORKS.every((pkg) => !allDeps[pkg])) {
+    return null;
+  }
+
+  const angularSpecifier = await packageManager.getDeclaredVersionSpecifier('@angular/core');
+  // `@analogjs/storybook-angular` declares `@storybook/angular` as its peer, so the dependency
+  // alone does not say which framework the project renders with, and a framework this migration
+  // cannot rewrite would come out a half-migrated hybrid. Only the `framework` field decides.
+  const frameworkPackageName = getFrameworkPackageName(mainConfig);
+  return {
+    angularSpecifier,
+    frameworkPackageName,
+    framework: matchMigratableFramework(frameworkPackageName),
+    angularMajor: getGuaranteedAngularMajor(angularSpecifier),
+  };
+};
+
+/** Whether `angularToAngularVite` is offered to this project. */
+export const offersAngularViteMigration = async (
+  packageManager: JsPackageManager,
+  mainConfig: StorybookConfigRaw
+) => {
+  const migration = await inspectMigration(packageManager, mainConfig);
+  return (
+    !!migration?.framework &&
+    (migration.angularMajor === null || migration.angularMajor >= ANGULAR_MIN_MAJOR)
+  );
+};
+
 export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
   id: 'angular-to-angular-vite',
   link: FRAMEWORK_DOC_URL,
@@ -238,19 +277,12 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     mainConfig,
     mainConfigPath,
   }): Promise<AngularToAngularViteOptions | null> {
-    const allDeps = packageManager.getAllDependencies();
-
-    if (allDeps[ANGULAR_VITE_PACKAGE] || MIGRATABLE_FRAMEWORKS.every((pkg) => !allDeps[pkg])) {
+    const migration = await inspectMigration(packageManager, mainConfig);
+    if (!migration) {
       return null;
     }
 
-    const angularSpecifier = await packageManager.getDeclaredVersionSpecifier('@angular/core');
-
-    // `@analogjs/storybook-angular` declares `@storybook/angular` as its peer, so the dependency
-    // alone does not say which framework the project renders with, and a framework this migration
-    // cannot rewrite would come out a half-migrated hybrid. Only the `framework` field decides.
-    const frameworkPackageName = getFrameworkPackageName(mainConfig);
-    const framework = matchMigratableFramework(frameworkPackageName);
+    const { angularSpecifier, frameworkPackageName, framework, angularMajor } = migration;
     if (!framework) {
       if (angularSpecifier) {
         logger.warn(
@@ -263,7 +295,6 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       return null;
     }
 
-    const angularMajor = getGuaranteedAngularMajor(angularSpecifier);
     if (angularMajor !== null && angularMajor < ANGULAR_MIN_MAJOR) {
       logger.warn(
         `Skipped ${ANGULAR_VITE_PACKAGE} migration: it needs Angular ${ANGULAR_MIN_MAJOR}, and ` +
@@ -404,13 +435,17 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       }
 
       // The addon is not installed until the end of the run, so its postinstall is deferred.
-      await add('@storybook/addon-vitest', {
-        packageManager: packageManager.type,
-        configDir,
-        skipInstall: true,
-        skipPostinstall: true,
-        yes: !!yes,
-      });
+      await add(
+        '@storybook/addon-vitest',
+        {
+          packageManager: packageManager.type,
+          configDir,
+          skipInstall: true,
+          skipPostinstall: true,
+          yes: !!yes,
+        },
+        automigrationLogger
+      );
       addonsToPostinstall?.push('@storybook/addon-vitest');
     }
 
@@ -422,13 +457,17 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       }));
 
     if (wantsA11y) {
-      await add('@storybook/addon-a11y', {
-        packageManager: packageManager.type,
-        configDir,
-        skipInstall: true,
-        skipPostinstall: true,
-        yes: !!yes,
-      });
+      await add(
+        '@storybook/addon-a11y',
+        {
+          packageManager: packageManager.type,
+          configDir,
+          skipInstall: true,
+          skipPostinstall: true,
+          yes: !!yes,
+        },
+        automigrationLogger
+      );
     }
 
     // `@analogjs/storybook-angular` declares `@storybook/angular` as a peer, so an Analog project

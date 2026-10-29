@@ -1,5 +1,5 @@
 import { Component, Input, Output } from '@angular/core';
-import type { DecoratorFunction, StoryContext } from 'storybook/internal/types';
+import type { DecoratorFunction, StoryContextForRender } from 'storybook/internal/types';
 import { assert, describe, expect, it } from 'vitest';
 import { componentWrapperDecorator } from './decorators.ts';
 
@@ -209,7 +209,7 @@ describe.skip('decorateStory', () => {
 
     it('should only keeps args with a control or an action in argTypes', () => {
       const decorated = decorateStory(
-        (context: StoryContext) => ({
+        (context: StoryContextForRender<AngularRenderer>) => ({
           template: `Args available in the story : ${Object.keys(context.args).join()}`,
         }),
         []
@@ -280,7 +280,10 @@ describe.skip('decorateStory', () => {
           return { ...story, props: { a: [...story.props.a, c.k] } };
         },
       ];
-      const decorated = decorateStory((c: StoryContext) => ({ props: { a: [c.k] } }), decorators);
+      const decorated = decorateStory(
+        (c: StoryContextForRender<AngularRenderer>) => ({ props: { a: [c.k] } }),
+        decorators
+      );
 
       expect(decorated(makeContext({ k: 0 }))).toEqual({ props: { a: [1, 2, 3, 0] } });
     });
@@ -313,7 +316,9 @@ describe.skip('decorateStory', () => {
         },
       ];
       const decorated = decorateStory(
-        (c: StoryContext) => ({ props: { a: [c.k], p: [c.parameters.p] } }),
+        (c: StoryContextForRender<AngularRenderer>) => ({
+          props: { a: [c.k], p: [c.parameters.p] },
+        }),
         decorators
       );
 
@@ -324,30 +329,25 @@ describe.skip('decorateStory', () => {
   });
 });
 
-function makeContext(input: Record<string, unknown>): StoryContext<AngularRenderer> {
+function makeContext(input: Record<string, unknown>): StoryContextForRender<AngularRenderer> {
   return {
     id: 'id',
-    kind: 'kind',
     name: 'name',
     viewMode: 'story',
     parameters: {},
     ...input,
-  } as StoryContext<AngularRenderer>;
+  } as StoryContextForRender<AngularRenderer>;
 }
 
 @Component({
   selector: 'foo',
-  template: `
-    foo
-  `,
+  template: ` foo `,
 })
 class FooComponent {}
 
 @Component({
   selector: 'parent',
-  template: `
-    <ng-content></ng-content>
-  `,
+  template: ` <ng-content></ng-content> `,
 })
 class ParentComponent {
   @Input()

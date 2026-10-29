@@ -11,9 +11,8 @@ import { SbPage } from './util.ts';
  *   1. STORYBOOK_URL — URL of a running Storybook dev server
  *   2. STORYBOOK_SANDBOX_DIR — path to the sandbox root
  *      (e.g. ../storybook-sandboxes/react-vite-default-ts)
- *   3. The sandbox's .storybook/main.ts must have: features: { changeDetection: true }
- *   4. STORYBOOK_TEMPLATE_NAME must be one of the supported templates (or be unset for local runs)
- *   5. The sandbox must already have a git repo with an initial commit — this is handled
+ *   3. STORYBOOK_TEMPLATE_NAME must be one of the supported templates (or be unset for local runs)
+ *   4. The sandbox must already have a git repo with an initial commit — this is handled
  *      automatically by the sandbox generation task (scripts/tasks/sandbox.ts).
  *
  * Supported templates: react-vite/default-ts, nextjs-vite/default-ts,
@@ -72,7 +71,7 @@ test.describe('Change Detection', () => {
         newStoryPath,
         [
           '<script module>',
-          "  import { defineMeta } from '@storybook/addon-svelte-csf';",
+          "  import { defineMeta } from '@storybook/svelte-vite';",
           "  import Button from './Button.svelte';",
           "  import { fn } from 'storybook/test';",
           '',

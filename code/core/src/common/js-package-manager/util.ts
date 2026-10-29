@@ -1,4 +1,4 @@
-import { gt, prerelease, valid } from 'semver';
+import { compare, gt, prerelease, valid } from 'semver';
 
 import type { JsPackageManager } from './JsPackageManager.ts';
 import { PackageManagerName } from './JsPackageManager.ts';
@@ -10,6 +10,7 @@ export const STORYBOOK_PACKAGE_PATTERNS = [
   '@storybook/*',
   'eslint-plugin-storybook',
   '@chromatic-com/storybook',
+  'chromatic',
 ] as const;
 
 const escapePatternForRegex = (pattern: string) => pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -28,12 +29,13 @@ export const hasStorybookMinimumAgeExclusions = (configuredPatterns: string[]) =
 // input: @storybook/addon-essentials@npm:7.0.0
 // output: { name: '@storybook/addon-essentials', value: { version : '7.0.0', location: '' } }
 export const parsePackageData = (packageName = '') => {
-  const [first, second, third] = packageName
-    .replace(/[└─├]+/g, '')
-    .trim()
-    .split('@');
-  const version = (third || second).replace('npm:', '');
-  const name = third ? `@${second}` : first;
+  const descriptor = packageName.replace(/[└─├]+/g, '').trim();
+  const separator = descriptor.indexOf('@', 1);
+  const name = descriptor.slice(0, separator);
+  const reference = descriptor.slice(separator + 1);
+  // Yarn Berry lists patched packages, such as its built-in `typescript` compat patch, as
+  // `typescript@patch:typescript@npm%3A7.0.2#optional!builtin<compat/typescript>::version=7.0.2&hash=…`.
+  const version = reference.match(/::version=([^&]+)/)?.[1] ?? reference.replace('npm:', '');
 
   const value = { version, location: '' };
   return { name, value };
@@ -59,6 +61,73 @@ export const parsePositiveIntegerConfigValue = (value: string | null | undefined
   return parsedValue;
 };
 
+const YARN_AGE_GATE_UNITS_IN_MINUTES = {
+  ms: 1 / 60_000,
+  s: 1 / 60,
+  m: 1,
+  h: 60,
+  d: 60 * 24,
+  w: 60 * 24 * 7,
+} as const;
+
+export const parseYarnMinimalAgeGateMinutes = (value: string | null | undefined): number | null => {
+  const normalizedValue = value?.trim() ?? '';
+
+  if (
+    !normalizedValue ||
+    normalizedValue === 'undefined' ||
+    normalizedValue === 'null' ||
+    normalizedValue === 'false'
+  ) {
+    return null;
+  }
+
+  if (normalizedValue.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(normalizedValue) as { secs?: unknown; nanos?: unknown };
+      if (typeof parsed.secs === 'number') {
+        const nanos = typeof parsed.nanos === 'number' ? parsed.nanos : 0;
+        const minutes = parsed.secs / 60 + nanos / 60_000_000_000;
+        return minutes > 0 ? minutes : null;
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }
+
+  const duration = normalizedValue.match(/^(\d+(?:\.\d+)?)(ms|s|m|h|d|w)$/);
+  if (duration) {
+    const amount = Number(duration[1]);
+    const unit = duration[2] as keyof typeof YARN_AGE_GATE_UNITS_IN_MINUTES;
+    const minutes = amount * YARN_AGE_GATE_UNITS_IN_MINUTES[unit];
+    return minutes > 0 ? minutes : null;
+  }
+
+  if (!/^\d+$/.test(normalizedValue)) {
+    return null;
+  }
+
+  const parsedValue = Number(normalizedValue);
+  return parsedValue > 0 ? parsedValue : null;
+};
+
+export const readPackageVersions = (value: unknown): string[] | null => {
+  if (Array.isArray(value)) {
+    const versions = value.filter(
+      (entry): entry is string => typeof entry === 'string' && !!valid(entry)
+    );
+    return versions.length > 0 ? versions : null;
+  }
+
+  if (value && typeof value === 'object') {
+    const versions = Object.keys(value).filter((version) => !!valid(version));
+    return versions.length > 0 ? versions.sort(compare) : null;
+  }
+
+  return null;
+};
+
 export const parseReleaseTime = (value: unknown): Date | null => {
   if (typeof value !== 'string' || value.length === 0) {
     return null;
@@ -69,6 +138,12 @@ export const parseReleaseTime = (value: unknown): Date | null => {
 };
 
 export const parsePackageTimeMap = (value: unknown): Record<string, string> | null => {
+  // pnpm < 11 forwards `view` to npm. With npm 12, the time map is wrapped in an array.
+  // https://github.com/npm/cli/releases/tag/v12.0.0
+  if (Array.isArray(value) && value.length === 1) {
+    value = value[0];
+  }
+
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null;
   }
@@ -225,3 +300,21 @@ export const getInstallErrorTail = (error: unknown, lines: number = INSTALL_ERRO
   const allLines = output.split('\n');
   return allLines.slice(-lines).join('\n').trim();
 };
+
+/** The package manager error code (e.g. npm `ERESOLVE`, pnpm `ERR_PNPM_…`) in captured output. */
+export function extractPackageManagerErrorCode(logs: string): string | undefined {
+  const npmMatch = logs.match(/npm\s+(?:ERR!|error)\s+code\s+([A-Z0-9_]+)/i);
+  if (npmMatch) {
+    return npmMatch[1];
+  }
+
+  const pnpmMatch = logs.match(/(ERR_PNPM_[A-Z0-9_]+)/);
+  if (pnpmMatch) {
+    return pnpmMatch[1];
+  }
+
+  return undefined;
+}
+
+export const isNpmPeerResolutionError = (error: unknown): boolean =>
+  extractPackageManagerErrorCode(getErrorLogs(error)) === 'ERESOLVE';

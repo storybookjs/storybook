@@ -19,7 +19,7 @@ import type {
 import { ChevronSmallUpIcon, PlayAllHollowIcon, SweepIcon } from '@storybook/icons';
 
 import { internal_fullTestProviderStore } from '#manager-stores';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { Optional } from '../Optional/Optional.tsx';
@@ -230,11 +230,15 @@ export const TestingWidget = ({
   );
   const hasTestProviders = Object.values(registeredTestProviders).length > 0;
 
+  // Expand the widget once for each crash, so that the crash is seen. The error output must not
+  // reopen after the user collapses it.
+  const wasCrashedRef = useRef(false);
   useEffect(() => {
-    if (isCrashed && isCollapsed) {
+    if (isCrashed && !wasCrashedRef.current) {
       toggleCollapsed(undefined, false);
     }
-  }, [isCrashed, isCollapsed, toggleCollapsed]);
+    wasCrashedRef.current = isCrashed;
+  }, [isCrashed, toggleCollapsed]);
 
   useDynamicFavicon(
     isCrashed

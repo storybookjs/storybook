@@ -1154,6 +1154,97 @@ function followVariableReferences(
   return current;
 }
 
+/** Follows an identifier reference (`Button.propTypes = myPropTypes`) to its object literal. */
+function followObjectLiteralReference(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  expression: ts.Expression
+): ts.ObjectLiteralExpression | undefined {
+  let node = expression;
+  if (typescript.isIdentifier(node)) {
+    const sym = checker.getSymbolAtLocation(node);
+    const symDecl = sym?.valueDeclaration;
+    if (symDecl && typescript.isVariableDeclaration(symDecl) && symDecl.initializer) {
+      node = symDecl.initializer;
+    }
+  }
+  return typescript.isObjectLiteralExpression(node) ? node : undefined;
+}
+
+/**
+ * Finds the initializer expressions assigned to a named component annotation —
+ * `Component.<annotationName> = {...}` and `class Component { static <annotationName> = {...} }` —
+ * resolving the component symbol through imports and aliases. Value readers stay in the callers.
+ */
+function findComponentAnnotationInitializers(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  resolved: ts.Symbol,
+  annotationName: string
+): ts.ObjectLiteralExpression[] {
+  const initializers: ts.ObjectLiteralExpression[] = [];
+
+  const decl = resolved.valueDeclaration ?? resolved.getDeclarations()?.[0];
+  if (!decl) {
+    return initializers;
+  }
+  const componentSourceFile = decl.getSourceFile();
+
+  for (const stmt of componentSourceFile.statements) {
+    // Pattern 1: Class with static <annotationName> = { size: 'md' }
+    if (typescript.isClassDeclaration(stmt) && stmt.name) {
+      const classSymbol = checker.getSymbolAtLocation(stmt.name);
+      if (classSymbol !== resolved) {
+        continue;
+      }
+
+      for (const member of stmt.members) {
+        if (!typescript.isPropertyDeclaration(member)) {
+          continue;
+        }
+        if (!member.name || member.name.getText() !== annotationName || !member.initializer) {
+          continue;
+        }
+        const initializer = followObjectLiteralReference(typescript, checker, member.initializer);
+        if (initializer) {
+          initializers.push(initializer);
+        }
+      }
+    }
+
+    // Pattern 2: Component.<annotationName> = { size: 'md' }
+    if (
+      typescript.isExpressionStatement(stmt) &&
+      typescript.isBinaryExpression(stmt.expression) &&
+      stmt.expression.operatorToken.kind === typescript.SyntaxKind.EqualsToken
+    ) {
+      const left = stmt.expression.left;
+      if (!typescript.isPropertyAccessExpression(left) || left.name.text !== annotationName) {
+        continue;
+      }
+
+      const targetSymbol = checker.getSymbolAtLocation(left.expression);
+      if (!targetSymbol) {
+        continue;
+      }
+      const targetResolved =
+        targetSymbol.flags & typescript.SymbolFlags.Alias
+          ? checker.getAliasedSymbol(targetSymbol)
+          : targetSymbol;
+      if (targetResolved !== resolved) {
+        continue;
+      }
+
+      const initializer = followObjectLiteralReference(typescript, checker, stmt.expression.right);
+      if (initializer) {
+        initializers.push(initializer);
+      }
+    }
+  }
+
+  return initializers;
+}
+
 /**
  * Extracts default values from `Component.defaultProps = {...}` and `static defaultProps = {...}`
  * patterns.
@@ -1167,93 +1258,14 @@ function extractStaticDefaultProps(
   resolved: ts.Symbol
 ): Map<string, string> {
   const defaults = new Map<string, string>();
-
-  const decl = resolved.valueDeclaration ?? resolved.getDeclarations()?.[0];
-  if (!decl) {
-    return defaults;
+  for (const initializer of findComponentAnnotationInitializers(
+    typescript,
+    checker,
+    resolved,
+    'defaultProps'
+  )) {
+    collectObjectLiteralDefaults(typescript, checker, initializer, defaults);
   }
-  const componentSourceFile = decl.getSourceFile();
-
-  for (const stmt of componentSourceFile.statements) {
-    // Pattern 1: Class with static defaultProps = { size: 'md' }
-    if (typescript.isClassDeclaration(stmt) && stmt.name) {
-      const classSymbol = checker.getSymbolAtLocation(stmt.name);
-      if (classSymbol !== resolved) {
-        continue;
-      }
-
-      for (const member of stmt.members) {
-        if (!typescript.isPropertyDeclaration(member)) {
-          continue;
-        }
-        if (!member.name || member.name.getText() !== 'defaultProps') {
-          continue;
-        }
-        if (!member.initializer) {
-          continue;
-        }
-
-        let initializer: ts.Expression = member.initializer;
-        // Follow identifier reference: static defaultProps = myDefaults
-        if (typescript.isIdentifier(initializer)) {
-          const sym = checker.getSymbolAtLocation(initializer);
-          const symDecl = sym?.valueDeclaration;
-          if (symDecl && typescript.isVariableDeclaration(symDecl) && symDecl.initializer) {
-            initializer = symDecl.initializer;
-          }
-        }
-
-        if (typescript.isObjectLiteralExpression(initializer)) {
-          collectObjectLiteralDefaults(typescript, checker, initializer, defaults);
-        }
-      }
-    }
-
-    // Pattern 2: Component.defaultProps = { size: 'md' }
-    if (
-      typescript.isExpressionStatement(stmt) &&
-      typescript.isBinaryExpression(stmt.expression) &&
-      stmt.expression.operatorToken.kind === typescript.SyntaxKind.EqualsToken
-    ) {
-      const left = stmt.expression.left;
-      if (!typescript.isPropertyAccessExpression(left)) {
-        continue;
-      }
-      if (left.name.text !== 'defaultProps') {
-        continue;
-      }
-
-      // Check if the expression target is our component
-      const targetSymbol = checker.getSymbolAtLocation(left.expression);
-      if (!targetSymbol) {
-        continue;
-      }
-
-      const targetResolved =
-        targetSymbol.flags & typescript.SymbolFlags.Alias
-          ? checker.getAliasedSymbol(targetSymbol)
-          : targetSymbol;
-
-      if (targetResolved !== resolved) {
-        continue;
-      }
-
-      let right: ts.Expression = stmt.expression.right;
-      // Follow identifier reference: Button.defaultProps = myDefaults
-      if (typescript.isIdentifier(right)) {
-        const sym = checker.getSymbolAtLocation(right);
-        const symDecl = sym?.valueDeclaration;
-        if (symDecl && typescript.isVariableDeclaration(symDecl) && symDecl.initializer) {
-          right = symDecl.initializer;
-        }
-      }
-
-      if (typescript.isObjectLiteralExpression(right)) {
-        collectObjectLiteralDefaults(typescript, checker, right, defaults);
-      }
-    }
-  }
-
   return defaults;
 }
 
@@ -1342,18 +1354,10 @@ function serializePropTypeExpression(
       if (!arg || !typescript.isArrayLiteralExpression(arg)) {
         return undefined;
       }
-      const elements = arg.elements;
-      const allLiterals = elements.every(
-        (element) => typescript.isStringLiteral(element) || typescript.isNumericLiteral(element)
-      );
-      if (!allLiterals || elements.length === 0) {
+      const values = arg.elements.map((element) => readOneOfElementValue(typescript, element));
+      if (values.length === 0 || values.some((value) => value === undefined)) {
         return undefined;
       }
-      const values = elements.map((element) =>
-        typescript.isStringLiteral(element)
-          ? element.text
-          : Number((element as ts.NumericLiteral).text)
-      );
       return {
         name: 'enum',
         raw: values.map((value) => JSON.stringify(value)).join(' | '),
@@ -1367,18 +1371,57 @@ function serializePropTypeExpression(
   return undefined;
 }
 
+/**
+ * Reads a `oneOf` array element into its JSON-serialized value — string, number (including a
+ * unary minus like `-1`), or boolean. Returns `undefined` for anything else, which rejects the
+ * whole enum and keeps the checker's type.
+ */
+function readOneOfElementValue(
+  typescript: typeof ts,
+  element: ts.Expression
+): string | number | boolean | undefined {
+  if (typescript.isStringLiteral(element)) {
+    return element.text;
+  }
+  if (typescript.isNumericLiteral(element)) {
+    return Number(element.text);
+  }
+  if (
+    typescript.isPrefixUnaryExpression(element) &&
+    element.operator === typescript.SyntaxKind.MinusToken &&
+    typescript.isNumericLiteral(element.operand)
+  ) {
+    return -Number(element.operand.text);
+  }
+  if (element.kind === typescript.SyntaxKind.TrueKeyword) {
+    return true;
+  }
+  if (element.kind === typescript.SyntaxKind.FalseKeyword) {
+    return false;
+  }
+  return undefined;
+}
+
 function collectPropTypeEntries(
   typescript: typeof ts,
   objectLiteral: ts.ObjectLiteralExpression,
   propTypes: Map<string, PropItemType>
 ): void {
   for (const property of objectLiteral.properties) {
-    if (!typescript.isPropertyAssignment(property) || !typescript.isIdentifier(property.name)) {
+    if (!typescript.isPropertyAssignment(property)) {
+      continue;
+    }
+    // A quoted key ({ 'label': PropTypes.string }) names the same prop as an identifier key.
+    const propName =
+      typescript.isIdentifier(property.name) || typescript.isStringLiteral(property.name)
+        ? property.name.text
+        : undefined;
+    if (!propName) {
       continue;
     }
     const itemType = serializePropTypeExpression(typescript, property.initializer);
     if (itemType) {
-      propTypes.set(property.name.text, itemType);
+      propTypes.set(propName, itemType);
     }
   }
 }
@@ -1388,8 +1431,8 @@ function collectPropTypeEntries(
  * the legacy React pattern that carries the only type information for untyped JS components.
  *
  * The TypeScript checker resolves a JS component's destructured, unannotated props to `any`, so
- * callers use this map to replace an uninformative `any` with the annotated type. Mirrors the
- * `defaultProps` scan in {@link extractStaticDefaultProps}.
+ * callers use this map to replace an uninformative `any` with the annotated type. Uses the same
+ * annotation lookup as {@link extractStaticDefaultProps}.
  */
 function extractPropTypes(
   typescript: typeof ts,
@@ -1397,68 +1440,14 @@ function extractPropTypes(
   resolved: ts.Symbol
 ): Map<string, PropItemType> {
   const propTypes = new Map<string, PropItemType>();
-
-  const decl = resolved.valueDeclaration ?? resolved.getDeclarations()?.[0];
-  if (!decl) {
-    return propTypes;
+  for (const initializer of findComponentAnnotationInitializers(
+    typescript,
+    checker,
+    resolved,
+    'propTypes'
+  )) {
+    collectPropTypeEntries(typescript, initializer, propTypes);
   }
-  const componentSourceFile = decl.getSourceFile();
-
-  for (const stmt of componentSourceFile.statements) {
-    // Pattern 1: Class with static propTypes = { size: PropTypes.string }
-    if (typescript.isClassDeclaration(stmt) && stmt.name) {
-      const classSymbol = checker.getSymbolAtLocation(stmt.name);
-      if (classSymbol !== resolved) {
-        continue;
-      }
-      for (const member of stmt.members) {
-        if (!typescript.isPropertyDeclaration(member)) {
-          continue;
-        }
-        if (!member.name || member.name.getText() !== 'propTypes') {
-          continue;
-        }
-        if (member.initializer && typescript.isObjectLiteralExpression(member.initializer)) {
-          collectPropTypeEntries(typescript, member.initializer, propTypes);
-        }
-      }
-    }
-
-    // Pattern 2: Button.propTypes = { label: PropTypes.string.isRequired }
-    if (
-      typescript.isExpressionStatement(stmt) &&
-      typescript.isBinaryExpression(stmt.expression) &&
-      stmt.expression.operatorToken.kind === typescript.SyntaxKind.EqualsToken
-    ) {
-      const left = stmt.expression.left;
-      if (!typescript.isPropertyAccessExpression(left)) {
-        continue;
-      }
-      if (left.name.text !== 'propTypes') {
-        continue;
-      }
-
-      // Check if the expression target is our component
-      const targetSymbol = checker.getSymbolAtLocation(left.expression);
-      if (!targetSymbol) {
-        continue;
-      }
-
-      const targetResolved =
-        targetSymbol.flags & typescript.SymbolFlags.Alias
-          ? checker.getAliasedSymbol(targetSymbol)
-          : targetSymbol;
-
-      if (targetResolved !== resolved) {
-        continue;
-      }
-
-      if (typescript.isObjectLiteralExpression(stmt.expression.right)) {
-        collectPropTypeEntries(typescript, stmt.expression.right, propTypes);
-      }
-    }
-  }
-
   return propTypes;
 }
 

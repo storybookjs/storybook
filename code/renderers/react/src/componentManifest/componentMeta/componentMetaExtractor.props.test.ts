@@ -1,17 +1,12 @@
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-
 import { describe, expect, it } from 'vitest';
 
-import { loadCsf } from 'storybook/internal/csf-tools';
 import { dedent } from 'ts-dedent';
-import ts from 'typescript';
 
-import { type StoryRef, getComponents } from '../getComponentImports.ts';
-import { findMatchingComponent } from '../resolveComponents.ts';
-import { ComponentMetaProject } from './ComponentMetaProject.ts';
-import { extract, extractFromStory } from './componentMetaExtractor.test-helpers.ts';
-import { cleanup, createTempProject } from './test-helpers.ts';
+import {
+  extract,
+  extractFromStory,
+  extractFromStoryWithConfig,
+} from './componentMetaExtractor.test-helpers.ts';
 
 /** Same as the shared default tsconfig, but with allowJs so untyped .jsx components join the program. */
 const JS_TSCONFIG = {
@@ -26,52 +21,6 @@ const JS_TSCONFIG = {
   },
   include: ['./**/*.ts', './**/*.tsx', './**/*.js', './**/*.jsx'],
 };
-
-/**
- * Extraction through a dedicated allowJs project. The shared test project excludes JS files, and
- * a .jsx component with untyped props only reproduces the sandbox failure inside an allowJs
- * program — sharing one global config would change behavior for every other suite (e.g. docgen's
- * unresolved-default resolution), so these tests build their own.
- */
-async function extractFromJsStory(
-  files: Record<string, string>,
-  storyFileName: string
-): Promise<StoryRef> {
-  const { projectDir, configPath, filePaths } = createTempProject(files, JS_TSCONFIG);
-  try {
-    const storyPath = filePaths[storyFileName];
-    const title = path.basename(storyFileName).replace(/\.stories\.\w+$/, '');
-    const csf = loadCsf(fs.readFileSync(storyPath, 'utf-8'), {
-      makeTitle: () => title,
-    }).parse();
-
-    const components = await getComponents({
-      csf,
-      storyFilePath: storyPath,
-      docgenEngine: 'react-component-meta',
-    });
-
-    const component = findMatchingComponent(components, csf._meta?.component, title);
-    const project = new ComponentMetaProject(
-      ts,
-      ts.parseJsonSourceFileConfigFileContent(
-        ts.readJsonConfigFile(configPath, ts.sys.readFile),
-        ts.sys,
-        projectDir,
-        {},
-        configPath
-      ),
-      configPath,
-      new Map()
-    );
-
-    const entry: StoryRef = { storyPath, component };
-    project.extractPropsFromStories([entry]);
-    return entry;
-  } finally {
-    cleanup(projectDir);
-  }
-}
 
 describe('prop extraction', () => {
   it('leaves out a prop marked @ignore, like builder docgen did', async () => {
@@ -914,7 +863,7 @@ describe('prop extraction', () => {
 
 describe('PropTypes fallback for JS components', () => {
   it('reads PropTypes annotations the checker cannot resolve', async () => {
-    const entry = await extractFromJsStory(
+    const entry = await extractFromStoryWithConfig(
       {
         'test/PropTypesButton.jsx': dedent`
           import React from 'react';
@@ -937,7 +886,8 @@ describe('PropTypes fallback for JS components', () => {
           export default { component: Button };
         `,
       },
-      'test/PropTypesButton.stories.jsx'
+      'test/PropTypesButton.stories.jsx',
+      JS_TSCONFIG
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
@@ -956,8 +906,46 @@ describe('PropTypes fallback for JS components', () => {
     });
   });
 
+  it('accepts quoted keys, signed numbers, and boolean literals in oneOf', async () => {
+    const entry = await extractFromStoryWithConfig(
+      {
+        'test/EdgeCaseButton.jsx': dedent`
+          import React from 'react';
+          import PropTypes from 'prop-types';
+
+          export const Button = ({ label, level, flag }) => <button />;
+
+          Button.propTypes = {
+            'label': PropTypes.string,
+            level: PropTypes.oneOf([-1, 0, 1]),
+            flag: PropTypes.oneOf([true, false]),
+          };
+        `,
+        'test/EdgeCaseButton.stories.jsx': dedent`
+          import { Button } from './EdgeCaseButton';
+
+          export default { component: Button };
+        `,
+      },
+      'test/EdgeCaseButton.stories.jsx',
+      JS_TSCONFIG
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        label: { type: { name: 'string' } },
+        level: {
+          type: { name: 'enum', value: [{ value: '-1' }, { value: '0' }, { value: '1' }] },
+        },
+        flag: {
+          type: { name: 'enum', value: [{ value: 'true' }, { value: 'false' }] },
+        },
+      },
+    });
+  });
+
   it('keeps the checker type when it is informative', async () => {
-    const entry = await extractFromJsStory(
+    const entry = await extractFromStoryWithConfig(
       {
         'test/DefaultSizeButton.jsx': dedent`
           import React from 'react';
@@ -975,7 +963,8 @@ describe('PropTypes fallback for JS components', () => {
           export default { component: Button };
         `,
       },
-      'test/DefaultSizeButton.stories.jsx'
+      'test/DefaultSizeButton.stories.jsx',
+      JS_TSCONFIG
     );
 
     expect(entry.component?.reactComponentMeta).toMatchObject({

@@ -710,14 +710,13 @@ export const ContextMenuOutsideDismissSurvivesFocusTrap: Story = {
     await screen.findByRole('dialog');
 
     // Stand in for a react-aria FocusScope that restores focus to the row synchronously inside
-    // our own blur call: focusout re-focuses the row, which fires focusin again. The handler
-    // must break the loop rather than recurse through blur → focusout → focus → focusin.
-    // The sentinel caps restorations: unguarded the loop blows the stack, so the test itself
-    // would never return.
+    // our own blur call: focusout on any element in the row re-focuses the row, which fires
+    // focusin and would recurse through blur → focusout → focus → focusin without the guard.
+    // The sentinel caps restorations so the test returns even against an unpatched handler.
     const doc = canvasElement.ownerDocument;
     let restores = 0;
     const onFocusOut = (event: FocusEvent) => {
-      if (event.target === row && restores < 1000) {
+      if (event.target instanceof HTMLElement && row.contains(event.target) && restores < 1000) {
         restores += 1;
         row.focus();
       }
@@ -729,9 +728,12 @@ export const ContextMenuOutsideDismissSurvivesFocusTrap: Story = {
       )!;
       await userEvent.click(outside);
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-      // One blur made it through before the guard stood the handler down; a loop would have
-      // either overflowed the stack or burned through the cap.
-      expect(restores).toBeLessThan(1000);
+      // Prime the handler: the post-dismissal focusin listener blurs any focus landing back on
+      // the row, which the focusout stand-in refocuses, which recurses without the guard.
+      row.focus();
+      // The handler sees exactly one blur before the sync re-entry stands it down.
+      await waitFor(() => expect(restores).toBeGreaterThanOrEqual(1));
+      expect(restores).toBe(1);
     } finally {
       doc.removeEventListener('focusout', onFocusOut, true);
     }

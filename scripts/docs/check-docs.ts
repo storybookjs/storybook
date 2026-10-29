@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'pathe';
 import fs from 'node:fs/promises';
 import {
   getMdxFiles,
@@ -7,7 +7,7 @@ import {
   getHeadingSlugs,
   getLineContexts,
   getMisorderedCsfSegments,
-} from './utils';
+} from './utils.ts';
 import { esMain } from '../utils/esmain.ts';
 
 export interface RelativeLinkError {

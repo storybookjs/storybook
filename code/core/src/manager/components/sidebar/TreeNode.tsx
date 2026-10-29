@@ -43,8 +43,8 @@ const StyledTreeItem = styled(TreeItem)<{
   $level: number;
   $textColor: string | null;
   $startsSection: boolean;
-  $isRoot: boolean;
-}>(({ $level, theme, $textColor, $startsSection, $isRoot }) => ({
+  $defaultTextColor: string;
+}>(({ $level, theme, $textColor, $startsSection, $defaultTextColor }) => ({
   // General layout.
   position: 'relative',
   display: 'flex',
@@ -77,7 +77,7 @@ const StyledTreeItem = styled(TreeItem)<{
 
   // Base colors.
   fontSize: theme.typography.size.s2,
-  color: $textColor ?? ($isRoot ? theme.textMutedColor : theme.color.defaultText),
+  color: $textColor ?? $defaultTextColor,
 
   // Hover colors. React-aria keeps data-focused on a row that a pointer press focused, long after
   // the pointer has left it, so the highlight follows the pointer and the keyboard focus ring
@@ -450,7 +450,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       $level={item.depth}
       $textColor={statusTextColor}
       $startsSection={startsSection}
-      $isRoot={item.type === 'root'}
+      $defaultTextColor={item.type === 'root' ? theme.textMutedColor : theme.color.defaultText}
       textValue={item.name}
       aria-label={ariaLabel}
       // The collection key must be the raw entry id: selection, expansion, and the delegated

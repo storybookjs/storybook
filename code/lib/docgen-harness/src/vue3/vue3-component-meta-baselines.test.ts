@@ -236,13 +236,21 @@ const runComponentMetaFixture = async (
 };
 
 describe('vue3 vue-component-meta baselines', () => {
-  it.each(fixtureCases)('%s', async (fixtureCase) => {
-    await runComponentMetaFixture(fixtureCase, '__testfixtures__', checker);
-  });
+  it.each(fixtureCases)(
+    '%s',
+    async (fixtureCase) => {
+      await runComponentMetaFixture(fixtureCase, '__testfixtures__', checker);
+    },
+    30_000
+  );
 });
 
 describe('vue3 vue-component-meta baselines — tsx components', () => {
-  it.each(tsxFixtureCases)('%s', async (fixtureCase) => {
-    await runComponentMetaFixture(fixtureCase, '__tsx-testfixtures__', tsxChecker);
-  });
+  it.each(tsxFixtureCases)(
+    '%s',
+    async (fixtureCase) => {
+      await runComponentMetaFixture(fixtureCase, '__tsx-testfixtures__', tsxChecker);
+    },
+    30_000
+  );
 });

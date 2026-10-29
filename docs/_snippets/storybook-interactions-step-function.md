@@ -156,6 +156,7 @@ export const Submitted = meta.story({
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // ...rest of story file
 
 export const Submitted = {
@@ -173,6 +174,7 @@ export const Submitted = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // ...rest of story file
 
 export const Submitted: Story = {

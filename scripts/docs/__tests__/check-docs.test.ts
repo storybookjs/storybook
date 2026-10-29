@@ -17,7 +17,7 @@ import {
   checkSnippetCsfOrder,
   runAllChecks,
 } from '../check-docs';
-import { fixSnippetCsfOrder } from '../fix-snippet-order';
+import { fixSnippetCsfOrder } from '../fix-snippet-order.ts';
 
 async function writeFile(filePath: string, content: string) {
   await fs.mkdir(path.dirname(filePath), { recursive: true });

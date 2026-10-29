@@ -34,23 +34,25 @@ storybook init --type html --builder vite
 
 A story renders a Remix component by creating a DOM node, mounting into it with `createRoot` from `remix/component`, and returning that node:
 
-```tsx
+```tsx title="Counter.stories.ts"
 import { createRoot } from 'remix/component';
-import preview from '../.storybook/preview';
+import type { Meta, StoryObj } from 'storybook/html-vite';
 
 import { Counter } from './Counter';
 
-const meta = preview.meta({
+const meta = {
   component: Counter,
-});
+} satisfies Meta<typeof Counter>;
 
-export const Default = meta.story({
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
   render: (args) => {
     const div = document.createElement('div');
     createRoot(div).render(<Counter {...args} />);
     return div;
   },
-});
+};
 ```
 
 Vite picks up `jsxImportSource` from `tsconfig.json`. When that option is already `"remix/component"`, the JSX in the story compiles against Remix.

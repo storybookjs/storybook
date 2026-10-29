@@ -22,7 +22,7 @@ You can automatically upgrade all of your project's stories from CSF 3 to CSF 4 
 
 ### Monorepos
 
-If your project has multiple Storybook configurations, run the command with the `-c` flag pointing to each config directory:
+If your project has multiple Storybook configurations, run the command with the `--config-dir` flag pointing to each config directory:
 
 <CodeSnippets path="csf-factories-automigrate-with-config-directory.md" />
 
@@ -273,32 +273,11 @@ If you want to access the direct input to the story, you can use `Story.input` i
 
 **4. Update your Vitest setup file**
 
-If you're using [Storybook's Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx), you can remove your Vitest setup file (`.storybook/vitest.setup.ts`).
+If you're using [Storybook's Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx), you no longer need a Vitest setup file (`.storybook/vitest.setup.ts`) and must remove it.
 
-If you are using [portable stories in Vitest](../../api/portable-stories/portable-stories-vitest.mdx), you may use a Vitest setup file to configure your stories. This file must be updated to use the new CSF 4 format.
+<If notRenderer="svelte">
 
-<Callout variant="warning">
-
-Note that this only applies if you use CSF 4 for **all** your tested stories. If you use a mix of CSF 1, 2, or 3 and CSF 4, you must maintain two separate setup files.
-
-</Callout>
-
-```diff title="vitest.setup.js|ts"
-import { beforeAll } from 'vitest';
-// 👇 No longer necessary
-- // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
-import { setProjectAnnotations } from '@storybook/your-framework';
-- import * as addonAnnotations from 'my-addon/preview';
-+ import preview from './.storybook/preview';
-- import * as previewAnnotations from './.storybook/preview';
-
-// No longer necessary
-- const annotations = setProjectAnnotations([previewAnnotations, addonAnnotations]);
-
-// Run Storybook's beforeAll hook
-+ beforeAll(preview.composed.beforeAll);
-- beforeAll(annotations.beforeAll);
-```
+If you are using [portable stories in Vitest](../../api/portable-stories/portable-stories-vitest.mdx), you may use a Vitest setup file to configure your stories. This file must be [updated to use the new CSF 4 format](../../api/portable-stories/portable-stories-vitest.mdx#setprojectannotations).
 
 **5. Reusing stories in test files**
 
@@ -330,3 +309,5 @@ The `Story` object also provides a `Component` property, enabling you to render 
 Here's an example of how you can reuse a story in a test file by rendering its component:
 
 <CodeSnippets path="portable-stories-csf-factory-render.md" />
+
+</If>

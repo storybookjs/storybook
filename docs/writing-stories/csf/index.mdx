@@ -29,7 +29,7 @@ This document is primarily a reference for the latest version of the Component S
 There are two types of files in CSF:
 
 - **Preview file**: This file contains the global configuration for your stories, such as decorators, parameters, and addons. It is typically located in the `.storybook` directory and named `preview.js|jsx` or `preview.ts|tsx`.
-- **Story files**: These files define the individual stories for your components. They include the component metadata and the story definitions themselves. Story files usually have the `.stories.js|jsx`, `.stories.ts|tsx`, or `.stories.svelte` extensions.
+- **Story files**: These files define the individual stories for your components. They include the component metadata and the story definitions themselves. Story files usually have the <If notRenderer="svelte">`.stories.js|jsx`, `.stories.ts|tsx`, or `.stories.svelte` extensions</If><If renderer="svelte">`.stories.svelte` extension</If>.
 
 ## Preview file
 
@@ -120,7 +120,7 @@ In addition to configuring individual stories, nearly all annotations can be def
 
 <If notRenderer="svelte">
 
-For a story's display name, the exported identifiers will be converted to "start case" using Lodash's [startCase](https://lodash.com/docs/#startCase) function. For example:
+For a story's display name, the exported identifiers will be converted to "start case" similar to Lodash's [startCase](https://lodash.com/docs/#startCase) function. For example:
 
 | Identifier       | Transformation    |
 | ---------------- | ----------------- |
@@ -169,6 +169,8 @@ The example above demonstrates how to define a custom render function at the met
 
 </If>
 
+<If notRenderer="svelte">
+
 ### Non-story exports
 
 In some cases, you may want to export a mixture of stories and non-stories (e.g., mocked data).
@@ -191,6 +193,8 @@ For this particular example, you could achieve the same result in different ways
 - `excludeStories: ['simpleData', 'complexData']`
 
 The first option is the recommended solution if you follow the best practice of starting story exports with an uppercase letter (i.e., use UpperCamelCase).
+
+</If>
 
 ## Frequently asked questions (FAQ)
 

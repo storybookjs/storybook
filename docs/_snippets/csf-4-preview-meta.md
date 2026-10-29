@@ -29,7 +29,7 @@ const meta = preview.meta({
 ```ts filename="Button.stories.js|ts" renderer="vue" language="ts"
 import preview from '../.storybook/preview';
 
-import { Button } from './button.vue';
+import Button from './Button.vue';
 
 const meta = preview.meta({
   component: Button,

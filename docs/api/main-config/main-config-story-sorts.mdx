@@ -70,7 +70,7 @@ To give your own sorters precedence over them, write `storySorts` as a function 
 
 ```js title=".storybook/main.ts"
 // Replace your-framework with the framework you are using (e.g., nextjs-vite, sveltekit, etc.)
-import { defineMain } from '@storybook/your-framework';
+import { defineMain } from '@storybook/your-framework/node';
 
 export default defineMain({
   storySorts: (existing = []) => [{ order: ['Intro'] }, ...existing],

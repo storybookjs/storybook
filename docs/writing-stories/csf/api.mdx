@@ -16,7 +16,7 @@ This API reference only documents the latest version of the Component Story Form
 
 ## `defineMain`
 
-Type: `(config: StorybookConfig) => TK`
+Type: `(config: StorybookConfig) => StorybookConfig`
 
 The [main Storybook config](../../api/main-config/main-config.mdx) is specified by the `defineMain` function. This function is type-safe and will automatically infer types for your project.
 
@@ -69,7 +69,7 @@ Type: `(annotations: Annotations) => Meta`
 
 The `meta` function on the [`preview`](#definepreview) object is used to define the metadata for your stories. It accepts an object containing the [`component`](#component), [`title`](#title), and other [annotations](#annotations).
 
-The `component` field is required and used for automatic prop table generation and display of other component metadata.
+The `component` field is used to render your component (unless a [custom render function](./index.mdx#custom-render-functions) is provided). It is also used for automatic prop table generation and display of other component metadata.
 
 The `title` field is optional and should be unique (i.e., not re-used across files). If you don't specify one, it can be inferred from the story's path on disk. For more information, see the section on [configuring story loading](../../configure/index.mdx#configure-story-loading).
 
@@ -228,6 +228,8 @@ Svelte CSF stories have no `.test` method. You can still use it in `.stories.ts`
 
 A more ergonomic way to define [tests for your stories](../../writing-tests/index.mdx). While this API is still experimental, it is [documented in the RFC to gather feedback](https://github.com/storybookjs/storybook/discussions/30119) and must be enabled via the [`experimentalTestSyntax` feature flag](../../api/main-config/main-config-features.mdx#experimentaltestsyntax).
 
+<CodeSnippets path="csf-4-story-test.md" />
+
 ## Annotations
 
 Annotations are metadata to configure and control the behavior of stories. Unless otherwise specified, they can be defined at multiple levels:
@@ -244,13 +246,15 @@ Annotation definitions _cascade_, meaning that story-level annotations override 
 
 ### `addons`
 
-Type: `Array<() => TK>`
+Type: `Array<PreviewAddonEntry>`
 
-Allowed within: [Preview](#definepreview)
+Valid within: [Preview](#definepreview)
 
 _Only supported in CSF 4_
 
 Addons included here will have their types made available to your project.
+
+See [`definePreview`](#definepreview) for more details.
 
 ### `afterEach`
 
@@ -261,11 +265,11 @@ Type:
 | Array<(context: StoryContext) => void>
 ```
 
-Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+Valid within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
 
 Runs after the [play function](#play), for final assertions. Can be async. One function or an array of them.
 
-Do not use this for cleanup operations. Instead, perform any necessary cleanup in the return function of [`beforeAll`](#beforeall) or [`beforeEach`](#beforeeach). This ensures that cleanup happens before the next story renders.
+Do not use this for cleanup operations. Instead, perform any necessary cleanup in the return function of [`beforeAll`](#beforeall) or [`beforeEach`](#beforeeach). This ensures that cleanup happens when it should: before the next story renders instead of immediately after the current story has finished rendering.
 
 <CodeSnippets path="after-each-in-meta.md" />
 
@@ -273,7 +277,7 @@ Do not use this for cleanup operations. Instead, perform any necessary cleanup i
 
 Type: `{ [argName: string]: any }`
 
-Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+Valid within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
 
 Values passed to the component as props or attributes.
 
@@ -285,7 +289,7 @@ See the [Args guide](../args.mdx) for more details.
 
 Type: `{ [argName: string]: InputType }`
 
-Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+Valid within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
 
 Metadata for each arg, such as its control, description, and options. Storybook infers most of it from the component.
 
@@ -297,9 +301,9 @@ See the [ArgTypes reference](../../api/arg-types.mdx) for more details.
 
 Type: `() => (void | (() => void))`
 
-Allowed within: [Preview](#definepreview)
+Valid within: [Preview](#definepreview)
 
-Runs once before any story loads. Can be async. Can return a cleanup function, which can also by async and runs TK (when?).
+Runs once before any story loads. Can be async. Can return a cleanup function, which can also by async. When rendering stories in Storybook, the cleanup function is called before `beforeAll` is called again (i.e. after you make a change to `preview.ts`). When rendering stories in Vitest, the cleanup function is called after all tests in a test file have finished running.
 
 <CodeSnippets path="before-all-in-preview.md" />
 
@@ -312,9 +316,9 @@ Type:
 | Array<(context: StoryContext) => (void | (() => void))>
 ```
 
-Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+Valid within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
 
-Runs before the story renders. Can be async. One function or an array of them. Can return a cleanup function, which can also be async and runs TK (when?).
+Runs before the story renders. Can be async. One function or an array of them. Can return a cleanup function, which can also be async and runs when Storybook tears down the story, just before the next story (or the same story) starts rendering.
 
 <CodeSnippets path="before-each-in-meta-mock-date.md" />
 
@@ -322,7 +326,7 @@ Runs before the story renders. Can be async. One function or an array of them. C
 
 Type: Depends on the renderer being used (e.g., `React.ComponentType<any>` for React).
 
-Allowed within: [Meta](#previewmeta)
+Valid within: [Meta](#previewmeta)
 
 The component that the stories document. Storybook uses it to infer [`argTypes`](#argtypes) and to render stories by default.
 
@@ -332,7 +336,7 @@ The component that the stories document. Storybook uses it to infer [`argTypes`]
 
 Type: Depends on the renderer (e.g., `Array<(Story: () => JSX.Element, context: StoryContext) => JSX.Element>` for React)
 
-Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+Valid within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
 
 Functions that wrap the story in extra markup or context. One function or an array of them. Story decorators wrap the story first, then meta decorators, then preview decorators.
 
@@ -344,7 +348,7 @@ See the [Decorators guide](../decorators.mdx) for more details.
 
 Type: `string[] | RegExp`
 
-Allowed within: [Meta](#previewmeta)
+Valid within: [Meta](#previewmeta)
 
 Exports will be checked against this array or regular expression, and any matching exports will not be treated as stories.
 
@@ -354,11 +358,11 @@ See [Non-story exports](./index.mdx#non-story-exports) for more details.
 
 ### `globals`
 
-Type: `{ [globalName: string]: { value: string, [key: string]: any } }`
+Type: `{ [globalName: string]: Value }`
 
-Allowed within: [Meta](#previewmeta), [Story](#metastory)
+Valid within: [Meta](#previewmeta), [Story](#metastory)
 
-Sets global values for these stories and locks them in the toolbar.
+Sets global values for these stories and locks them in the toolbar. The exact type of `Value` depends on the definition of the [`globalType`](#globaltypes) you are setting.
 
 See the [Toolbars & globals guide](../../essentials/toolbars-and-globals.mdx#setting-globals-on-a-story) for more details.
 
@@ -368,7 +372,7 @@ See the [Toolbars & globals guide](../../essentials/toolbars-and-globals.mdx#set
 
 Type: `{ [globalName: string]: ToolbarType }`
 
-Allowed within: [Preview](#definepreview)
+Valid within: [Preview](#definepreview)
 
 Defines globals and their toolbar menus.
 
@@ -380,7 +384,7 @@ See the [Toolbars & globals guide](../../essentials/toolbars-and-globals.mdx) fo
 
 Type: `string`
 
-Allowed within: [Meta](#previewmeta)
+Valid within: [Meta](#previewmeta)
 
 The ID used in story URLs. Must be statically analyzable. Generally not used. Set it to keep URLs the same after you rename a [title](#title).
 
@@ -388,7 +392,7 @@ The ID used in story URLs. Must be statically analyzable. Generally not used. Se
 
 Type: `string[] | RegExp`
 
-Allowed within: [Meta](#previewmeta)
+Valid within: [Meta](#previewmeta)
 
 Exports will be checked against this array or regular expression, and **only** matching exports will be treated as stories.
 
@@ -400,7 +404,7 @@ See [Non-story exports](./index.mdx#non-story-exports) for more details.
 
 Type: `{ [globalName: string]: { [key: string]: string } }`
 
-Allowed within: [Preview](#definepreview)
+Valid within: [Preview](#definepreview)
 
 Starting values for globals, such as theme or locale.
 
@@ -412,7 +416,7 @@ See the [Toolbars & globals guide](../../essentials/toolbars-and-globals.mdx) fo
 
 Type: `(context: StoryContext) => { [key: string]: any } | void`
 
-Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+Valid within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
 
 Functions that load data before the story renders. Can be async. The results are merged into `context.loaded`.
 
@@ -424,7 +428,7 @@ See the [Loaders guide](../loaders.mdx) for more details.
 
 Type: Depends on the renderer (e.g., `(context: StoryContext) => (ui?: JSX.Element) => Promise<Canvas>` for React)
 
-Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+Valid within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
 
 Replaces the function that the [play function](#play) gets as `mount`. The `Canvas` it resolves to has Testing Library queries for the story's root element. Most projects do not need it.
 
@@ -432,7 +436,7 @@ Replaces the function that the [play function](#play) gets as `mount`. The `Canv
 
 Type: `string`
 
-Allowed within: [Story](#metastory)
+Valid within: [Story](#metastory)
 
 The story's name in the sidebar. If you do not set it, Storybook makes it from the export name.
 
@@ -442,7 +446,7 @@ The story's name in the sidebar. If you do not set it, Storybook makes it from t
 
 Type: `{ [name: string]: any }`
 
-Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+Valid within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
 
 Static metadata, usually for addons and features. Storybook deep-merges it from preview to meta to story.
 
@@ -452,9 +456,9 @@ See the [Parameters guide](../parameters.mdx) for more details.
 
 ### `play`
 
-Type: `(context: StoryContext & { canvas: TK; userEvent: TK; context: StoryContext }) => void`
+Type: `(context: StoryContext & { canvas: TestingLibraryCanvas; userEvent: TestingLibraryUserEvent; context: StoryContext }) => void`
 
-Allowed within: [Meta](#previewmeta), [Story](#metastory)
+Valid within: [Meta](#previewmeta), [Story](#metastory)
 
 Runs after the story renders, to interact with it and make assertions.
 
@@ -466,7 +470,7 @@ See the [Play function guide](../play-function.mdx) for more details.
 
 Type: Depends on the renderer (e.g., `(args: { [argName: string]: any }, context: StoryContext) => JSX.Element` for React)
 
-Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+Valid within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
 
 Sets how the story renders from its args. If you do not set it, Storybook renders the [`component`](#component) with the args.
 
@@ -476,7 +480,7 @@ Sets how the story renders from its args. If you do not set it, Storybook render
 
 Type: Depends on the renderer (e.g., `{ [name: string]: React.ComponentType<any> }` for React)
 
-Allowed within: [Meta](#previewmeta)
+Valid within: [Meta](#previewmeta)
 
 Related components to show in the [Controls table](../../api/doc-blocks/doc-block-controls.mdx), each in its own tab.
 
@@ -488,7 +492,7 @@ See the [Stories for multiple components guide](../stories-for-multiple-componen
 
 Type: `string[]`
 
-Allowed within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
+Valid within: [Preview](#definepreview), [Meta](#previewmeta), [Story](#metastory)
 
 Apply built-in and custom tags to stories, for example to indicate their status or categorize them. A `!` prefix removes a tag that a higher level added.
 
@@ -500,7 +504,7 @@ See the [Tags guide](../tags.mdx) for more details.
 
 Type: `string`
 
-Allowed within: [Meta](#previewmeta)
+Valid within: [Meta](#previewmeta)
 
 Controls where the component appears in the sidebar. Separate levels with `/`. Must be statically analyzable.
 

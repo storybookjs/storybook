@@ -74,13 +74,13 @@ export const WithIcon = meta.type<{ args: CustomArgs }>().story({
   const { Story: IconStory } = meta.type<{ args: { icon: string } }>();
 </script>
 
-<Story name="Primary" args={{ children: 'Button' }} />
+<Story name="Primary" args={{ label: 'Button' }} />
 
 <!-- 👇 `icon` is typed, and required, in the stories of IconStory only -->
-<IconStory name="With icon" args={{ children: 'Button', icon: 'star' }} >
-  {#snippet template({ icon, ...args })}
+<IconStory name="With icon" args={{ label: 'Button', icon: 'star' }} >
+  {#snippet template({ icon, label, ...args })}
     <Button {...args}>
-      <Icon name={icon} /> {children}
+      <Icon name={icon} /> {label}
     </Button>
   {/snippet}
 </IconStory>

@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ComponentRef } from '@angular/core';
 import {
+  APP_BOOTSTRAP_LISTENER,
   Component,
   EventEmitter,
   Injectable,
@@ -235,6 +237,27 @@ describe('TestBedRenderer', () => {
 
     expect(storyRoot().getAttribute('ng-version')).toBe(VERSION.full);
     expect(storyRoot().textContent).toBe('original Api Service');
+  });
+
+  it('runs the application bootstrap listeners with the mounted component, like bootstrapApplication', async () => {
+    @Component({ selector: 'foo', template: '🦊' })
+    class FooComponent {}
+    const listener = vi.fn();
+
+    await renderStory(
+      {
+        props: {},
+        applicationConfig: {
+          providers: [{ provide: APP_BOOTSTRAP_LISTENER, multi: true, useValue: listener }],
+        },
+      },
+      FooComponent
+    );
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    const componentRef: ComponentRef<unknown> = listener.mock.calls[0][0];
+    expect(componentRef.instance).toBeInstanceOf(FooComponent);
+    expect(componentRef.location.nativeElement).toBe(storyRoot().firstElementChild);
   });
 
   it('keeps the wrapper component for a story with styles', async () => {

@@ -1,5 +1,6 @@
 import type { ComponentRef, Provider, ProviderToken, Type } from '@angular/core';
 import {
+  APP_BOOTSTRAP_LISTENER,
   ApplicationInitStatus,
   ApplicationRef,
   ChangeDetectorRef,
@@ -129,17 +130,6 @@ export async function mountWithTestBed(options: StoryMountOptions): Promise<Appl
     );
   }
 
-  // TestBed never bootstraps, so provideRouter()'s bootstrap listener never navigates. Router is
-  // providedIn root, so only a story that provided routes gets one.
-  try {
-    const { ROUTES, Router } = await import('@angular/router');
-    if (testBed.inject(ROUTES, null, { optional: true })) {
-      testBed.inject(Router).initialNavigation();
-    }
-  } catch {
-    // @angular/router is an optional peer dependency.
-  }
-
   return testBed.inject(ApplicationRef);
 }
 
@@ -200,14 +190,26 @@ function mountStoryComponent(
 }
 
 function createFixture<T>(testBed: TestBed, create: () => ComponentRef<T>) {
-  const fixture = testBed
-    .inject(NgZone)
-    .run(() => testBed.runInInjectionContext(() => new ComponentFixture(create())));
-  testBed.inject(ApplicationRef).onDestroy(() => fixture.destroy());
+  const applicationRef = testBed.inject(ApplicationRef);
+  const ngZone = testBed.inject(NgZone);
+  const fixture = ngZone.run(() =>
+    testBed.runInInjectionContext(() => new ComponentFixture(create()))
+  );
+  applicationRef.onDestroy(() => fixture.destroy());
   // Runs the first change detection synchronously and keeps it running afterwards for play
   // functions and story props. Like bootstrapApplication, the mount does not wait for the
   // application to become stable: a story may legitimately hold a pending task forever.
   fixture.autoDetectChanges();
+
+  // What ApplicationRef.bootstrap() does after the first change detection, and TestBed never
+  // does: provideRouter()'s initial navigation is such a listener, and it checks that the
+  // component is the application's first one.
+  applicationRef.components.push(fixture.componentRef);
+  ngZone.run(() => {
+    for (const listener of testBed.inject(APP_BOOTSTRAP_LISTENER, [])) {
+      listener(fixture.componentRef);
+    }
+  });
   return fixture;
 }
 

@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
-import os from 'os';
+import { vol } from 'memfs';
 import path from 'pathe';
+import { glob, type GlobOptions } from 'tinyglobby';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   checkBareUrls,
@@ -29,15 +30,25 @@ async function writeFile(filePath: string, content: string) {
   await fs.writeFile(filePath, content);
 }
 
+vi.mock('node:fs/promises', { spy: true });
+vi.mock('tinyglobby', { spy: true });
+
+beforeEach(async () => {
+  const memfs = await vi.importActual<typeof import('memfs')>('memfs');
+  const actualGlob = await vi.importActual<typeof import('tinyglobby')>('tinyglobby');
+  vol.reset();
+  for (const method of ['access', 'mkdir', 'readFile', 'writeFile'] as const) {
+    vi.mocked(fs[method]).mockImplementation(memfs.fs.promises[method] as any);
+  }
+  vi.mocked(glob).mockImplementation(((patterns: string[], options: GlobOptions) =>
+    actualGlob.glob(patterns, { ...options, fs: memfs.fs as any })) as typeof glob);
+});
+
 describe('check-docs', () => {
-  let tmpDir: string;
-  let docsDir: string;
-  let snippetsDir: string;
+  const docsDir = '/docs';
+  const snippetsDir = path.join(docsDir, '_snippets');
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'docs-check-'));
-    docsDir = path.join(tmpDir, 'docs');
-    snippetsDir = path.join(docsDir, '_snippets');
     await fs.mkdir(snippetsDir, { recursive: true });
   });
 

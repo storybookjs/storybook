@@ -109,6 +109,7 @@
     "json5": "^2.2.3",
     "junit-xml": "^1.2.0",
     "knip": "^6.38.0",
+    "memfs": "^4.68.2",
     "memoizerific": "^1.11.3",
     "minimatch": "^10.0.1",
     "node-gyp": "^12.1.0",

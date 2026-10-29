@@ -8,7 +8,7 @@ function normalizePath(id: string) {
 }
 
 // We need to convert from an absolute path, to a traditional node module import path,
-// so that vite can correctly pre-bundle/optimize
+// so that Vite can correctly pre-bundle and optimize it
 export function stripAbsNodeModulesPath(absPath: string) {
   const splits = absPath.split(`node_modules${sep}`);
   // Return everything after the final "node_modules/"

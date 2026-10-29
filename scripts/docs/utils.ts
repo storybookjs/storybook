@@ -217,39 +217,18 @@ function getCsfSegments(segments: SnippetSegment[]): CsfSegment[] {
 }
 
 /**
- * The docs site shows a reader the blocks for their renderer plus all `common` blocks, so two
- * segments can appear together if either one is `common`.
- */
-function canShareView(a: SnippetSegment, b: SnippetSegment) {
-  const rendererA = a.attributes.renderer;
-  const rendererB = b.attributes.renderer;
-  return rendererA === rendererB || rendererA === 'common' || rendererB === 'common';
-}
-
-/**
  * Groups the CSF 3 and CSF Next segments of a snippet file. A group holds every segment that can
- * appear as the same tab in one reader's view, including through a shared `common` segment.
+ * appear as the same tab in one reader's view. The docs site shows a reader the blocks for their
+ * renderer plus all `common` blocks, so a tab with a `common` segment forms one group. Otherwise,
+ * each renderer forms its own group.
  */
 export function getCsfSegmentGroups(segments: SnippetSegment[]): CsfSegment[][] {
-  const csfSegments = getCsfSegments(segments);
-  const groupOf = csfSegments.map((_, idx) => idx);
-  const findGroup = (idx: number): number =>
-    groupOf[idx] === idx ? idx : (groupOf[idx] = findGroup(groupOf[idx]));
-
-  csfSegments.forEach((a, i) => {
-    csfSegments.forEach((b, j) => {
-      if (j > i && a.key === b.key && canShareView(a.segment, b.segment)) {
-        groupOf[findGroup(j)] = findGroup(i);
-      }
-    });
-  });
-
-  const groups = new Map<number, CsfSegment[]>();
-  csfSegments.forEach((csfSegment, idx) => {
-    const group = findGroup(idx);
-    groups.set(group, [...(groups.get(group) ?? []), csfSegment]);
-  });
-  return [...groups.values()];
+  const tabs = Map.groupBy(getCsfSegments(segments), ({ key }) => key);
+  return [...tabs.values()].flatMap((tab) =>
+    tab.some(({ segment }) => segment.attributes.renderer === 'common')
+      ? [tab]
+      : [...Map.groupBy(tab, ({ segment }) => segment.attributes.renderer).values()]
+  );
 }
 
 /**

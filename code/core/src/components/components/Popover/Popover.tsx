@@ -27,8 +27,8 @@ export interface PopoverProps extends HTMLAttributes<HTMLDivElement> {
   padding?: number | string;
 
   /**
-   * Whether the content scrolls once the popover is as tall as the space left in the viewport.
-   * True by default.
+   * Whether the content scrolls once the popover is as tall as the space left in the viewport, or
+   * wider than the viewport. True by default.
    *
    * ScrollArea clips Popover content, so turn this off for content that draws outside the
    * popover box, like the Color control handle.
@@ -56,6 +56,7 @@ const Wrapper = styled.div<{
     padding: scrollable ? 0 : padding,
     // The overlay caps its height to the viewport; the cap carries down to the scroll viewport.
     maxHeight: 'inherit',
+    maxWidth: 'calc(100vw - 24px)',
     boxSizing: 'border-box',
   }),
   ({ theme, hasChrome }) =>
@@ -122,7 +123,7 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(
         {...props}
       >
         {scrollable ? (
-          <ScrollArea vertical>
+          <ScrollArea vertical horizontal>
             <Padded padding={padding}>{children}</Padded>
           </ScrollArea>
         ) : (

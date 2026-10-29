@@ -33,8 +33,8 @@ export interface PopoverProviderProps {
   padding?: number | string;
 
   /**
-   * Whether the content scrolls once the popover is as tall as the space left in the viewport.
-   * True by default.
+   * Whether the content scrolls once the popover is as tall as the space left in the viewport, or
+   * wider than the viewport. True by default.
    *
    * ScrollArea clips Popover content, so turn this off for content that draws outside the
    * popover box, like the Color control handle.

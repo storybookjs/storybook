@@ -339,6 +339,31 @@ export const WithTallContent = meta.story({
   },
 });
 
+const WideContent = styled.div({
+  width: 3000,
+  height: 40,
+  background: 'linear-gradient(to right, lightblue, crimson)',
+});
+
+/** Content wider than the viewport scrolls inside the popover instead of overflowing the screen. */
+export const WithWideContent = meta.story({
+  args: {
+    visible: true,
+    children: <Trigger>Trigger</Trigger>,
+    popover: <WideContent role="img" aria-label="Wide content" />,
+    placement: 'bottom-start',
+  },
+  play: async ({ args }) => {
+    const overlay = await screen.findByLabelText(args.ariaLabel!);
+    const { left, right } = overlay.getBoundingClientRect();
+    await expect(left).toBeGreaterThanOrEqual(0);
+    await expect(right).toBeLessThanOrEqual(window.innerWidth);
+
+    const viewport = overlay.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+    await expect(viewport.scrollWidth).toBeGreaterThan(viewport.clientWidth);
+  },
+});
+
 export const WithLongContent = meta.story({
   args: {
     children: <Trigger>Long content</Trigger>,

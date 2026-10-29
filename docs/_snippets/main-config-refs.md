@@ -1,6 +1,8 @@
-```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 3"
-export default {
-  // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   refs: {
@@ -11,27 +13,7 @@ export default {
       sourceUrl: 'https://github.com/storybookjs/storybook', // Optional
     },
   },
-};
-```
-
-```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
-import type { StorybookConfig } from '@storybook/your-framework';
-
-const config: StorybookConfig = {
-  framework: '@storybook/your-framework',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  refs: {
-    'design-system': {
-      title: 'Storybook Design System',
-      url: 'https://master--5ccbc373887ca40020446347.chromatic.com/',
-      expanded: false, // Optional, true by default,
-      sourceUrl: 'https://github.com/storybookjs/storybook', // Optional
-    },
-  },
-};
-
-export default config;
+});
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
@@ -46,26 +28,6 @@ export default defineMain({
       title: 'Storybook Design System',
       url: 'https://master--5ccbc373887ca40020446347.chromatic.com/',
       expanded: false, // Optional, true by default,
-      sourceUrl: 'https://github.com/storybookjs/storybook', // Optional
-    },
-  },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { defineMain } from '@storybook/your-framework/node';
-
-export default defineMain({
-  framework: '@storybook/your-framework',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  refs: {
-    'design-system': {
-      title: 'Storybook Design System',
-      url: 'https://master--5ccbc373887ca40020446347.chromatic.com/',
-      expanded: false, // Optional, true by default
       sourceUrl: 'https://github.com/storybookjs/storybook', // Optional
     },
   },
@@ -123,6 +85,23 @@ export default defineMain({
 });
 ```
 
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+export default defineMain({
+  framework: '@storybook/web-components-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  refs: {
+    'design-system': {
+      title: 'Storybook Design System',
+      url: 'https://master--5ccbc373887ca40020446347.chromatic.com/',
+      expanded: false, // Optional, true by default
+      sourceUrl: 'https://github.com/storybookjs/storybook', // Optional
+    },
+  },
+});
+```
+
 ```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import { defineMain } from '@storybook/web-components-vite/node';
 
@@ -140,13 +119,30 @@ export default defineMain({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
+```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import type { StorybookConfig } from '@storybook/your-framework';
 
-```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import { defineMain } from '@storybook/web-components-vite/node';
+const config: StorybookConfig = {
+  framework: '@storybook/your-framework',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  refs: {
+    'design-system': {
+      title: 'Storybook Design System',
+      url: 'https://master--5ccbc373887ca40020446347.chromatic.com/',
+      expanded: false, // Optional, true by default,
+      sourceUrl: 'https://github.com/storybookjs/storybook', // Optional
+    },
+  },
+};
 
-export default defineMain({
-  framework: '@storybook/web-components-vite',
+export default config;
+```
+
+```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 3"
+export default {
+  // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+  framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   refs: {
     'design-system': {
@@ -156,5 +152,5 @@ export default defineMain({
       sourceUrl: 'https://github.com/storybookjs/storybook', // Optional
     },
   },
-});
+};
 ```

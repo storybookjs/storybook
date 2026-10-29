@@ -1,3 +1,103 @@
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './my-component.component';
+
+const meta = preview.meta({
+  component: MyComponent,
+  //👇 Provides the `test-only` tag to all stories in this file
+  tags: ['test-only'],
+});
+
+export const IncludeStory = meta.story({
+  //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
+  tags: ['test-only'],
+});
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+  //👇 Provides the `test-only` tag to all stories in this file
+  tags: ['test-only'],
+});
+
+export const IncludeStory = meta.story({
+  //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
+  tags: ['test-only'],
+});
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+  //👇 Provides the `test-only` tag to all stories in this file
+  tags: ['test-only'],
+});
+
+export const IncludeStory = meta.story({
+  //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
+  tags: ['test-only'],
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+  //👇 Provides the `test-only` tag to all stories in this file
+  tags: ['test-only'],
+});
+
+export const IncludeStory = meta.story({
+  //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
+  tags: ['test-only'],
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+  //👇 Provides the `test-only` tag to all stories in this file
+  tags: ['test-only'],
+});
+
+export const IncludeStory = meta.story({
+  //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
+  tags: ['test-only'],
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+  //👇 Provides the `test-only` tag to all stories in this file
+  tags: ['test-only'],
+});
+
+export const IncludeStory = meta.story({
+  //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
+  tags: ['test-only'],
+});
+```
+
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
@@ -18,13 +118,11 @@ export const IncludeStory: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { MyComponent } from './my-component.component';
-
 const meta = preview.meta({
-  component: MyComponent,
+  component: 'my-component',
   //👇 Provides the `test-only` tag to all stories in this file
   tags: ['test-only'],
 });
@@ -71,89 +169,6 @@ export const IncludeStory: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-  //👇 Provides the `test-only` tag to all stories in this file
-  tags: ['test-only'],
-});
-
-export const IncludeStory = meta.story({
-  //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
-  tags: ['test-only'],
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-  //👇 Provides the `test-only` tag to all stories in this file
-  tags: ['test-only'],
-});
-
-export const IncludeStory = meta.story({
-  //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
-  tags: ['test-only'],
-});
-```
-
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import MyComponent from './MyComponent.vue';
-
-const meta = preview.meta({
-  component: MyComponent,
-  //👇 Provides the `test-only` tag to all stories in this file
-  tags: ['test-only'],
-});
-
-export const IncludeStory = meta.story({
-  //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
-  tags: ['test-only'],
-});
-```
-
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import MyComponent from './MyComponent.vue';
-
-const meta = preview.meta({
-  component: MyComponent,
-  //👇 Provides the `test-only` tag to all stories in this file
-  tags: ['test-only'],
-});
-
-export const IncludeStory = meta.story({
-  //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
-  tags: ['test-only'],
-});
-```
-
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
-export default {
-  component: 'my-component',
-  //👇 Provides the `test-only` tag to all stories in this file
-  tags: ['test-only'],
-};
-
-export const IncludeStory = {
-  //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
-  tags: ['test-only'],
-};
-```
-
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
@@ -172,32 +187,15 @@ export const IncludeStory: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+export default {
   component: 'my-component',
   //👇 Provides the `test-only` tag to all stories in this file
   tags: ['test-only'],
-});
+};
 
-export const IncludeStory = meta.story({
+export const IncludeStory = {
   //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
   tags: ['test-only'],
-});
-```
-
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'my-component',
-  //👇 Provides the `test-only` tag to all stories in this file
-  tags: ['test-only'],
-});
-
-export const IncludeStory = meta.story({
-  //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
-  tags: ['test-only'],
-});
+};
 ```

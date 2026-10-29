@@ -1,21 +1,3 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import type { Meta } from '@storybook/angular';
-
-import { Button } from './button.component';
-
-const meta: Meta<Button> = {
-  component: Button,
-  argTypes: {
-    variant: {
-      options: ['primary', 'secondary'],
-      control: { type: 'radio' },
-    },
-  },
-};
-
-export default meta;
-```
-
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
@@ -23,155 +5,6 @@ import { Button } from './button.component';
 
 const meta = preview.meta({
   component: Button,
-  argTypes: {
-    variant: {
-      options: ['primary', 'secondary'],
-      control: { type: 'radio' },
-    },
-  },
-});
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-    argTypes: {
-      variant: {
-        options: ['primary', 'secondary'],
-        control: { type: 'radio' },
-      },
-    },
-  });
-</script>
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
-<script module>
-  import preview from '../.storybook/preview';
-
-  import Button from './Button.svelte';
-
-  const { Story } = preview.meta({
-    component: Button,
-    argTypes: {
-      variant: {
-        options: ['primary', 'secondary'],
-        control: { type: 'radio' },
-      },
-    },
-  });
-</script>
-```
-
-```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
-import { Button } from './Button';
-
-export default {
-  component: Button,
-  argTypes: {
-    variant: {
-      options: ['primary', 'secondary'],
-      control: { type: 'radio' },
-    },
-  },
-};
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-    argTypes: {
-      variant: {
-        options: ['primary', 'secondary'],
-        control: { type: 'radio' },
-      },
-    },
-  });
-</script>
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
-<script module lang="ts">
-  import preview from '../.storybook/preview';
-
-  import Button from './Button.svelte';
-
-  const { Story } = preview.meta({
-    component: Button,
-    argTypes: {
-      variant: {
-        options: ['primary', 'secondary'],
-        control: { type: 'radio' },
-      },
-    },
-  });
-</script>
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
-import type { Meta } from '@storybook/your-framework';
-
-import { Button } from './Button';
-
-const meta = {
-  component: Button,
-  argTypes: {
-    variant: {
-      options: ['primary', 'secondary'],
-      control: { type: 'radio' },
-    },
-  },
-} satisfies Meta<typeof Button>;
-
-export default meta;
-```
-
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
-export default {
-  component: 'demo-button',
-  argTypes: {
-    variant: {
-      options: ['primary', 'secondary'],
-      control: { type: 'radio' },
-    },
-  },
-};
-```
-
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
-import type { Meta } from '@storybook/web-components-vite';
-
-const meta: Meta = {
-  component: 'demo-button',
-  argTypes: {
-    variant: {
-      options: ['primary', 'secondary'],
-      control: { type: 'radio' },
-    },
-  },
-};
-
-export default meta;
-```
-
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'demo-button',
   argTypes: {
     variant: {
       options: ['primary', 'secondary'],
@@ -195,6 +28,94 @@ const meta = preview.meta({
 });
 ```
 
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
+
+  import Button from './Button.svelte';
+
+  const { Story } = preview.meta({
+    component: Button,
+    argTypes: {
+      variant: {
+        options: ['primary', 'secondary'],
+        control: { type: 'radio' },
+      },
+    },
+  });
+</script>
+```
+
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    argTypes: {
+      variant: {
+        options: ['primary', 'secondary'],
+        control: { type: 'radio' },
+      },
+    },
+  });
+</script>
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  argTypes: {
+    variant: {
+      options: ['primary', 'secondary'],
+      control: { type: 'radio' },
+    },
+  },
+});
+```
+
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+
+  import Button from './Button.svelte';
+
+  const { Story } = preview.meta({
+    component: Button,
+    argTypes: {
+      variant: {
+        options: ['primary', 'secondary'],
+        control: { type: 'radio' },
+      },
+    },
+  });
+</script>
+```
+
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    argTypes: {
+      variant: {
+        options: ['primary', 'secondary'],
+        control: { type: 'radio' },
+      },
+    },
+  });
+</script>
+```
+
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
@@ -210,8 +131,6 @@ const meta = preview.meta({
   },
 });
 ```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
@@ -245,8 +164,6 @@ const meta = preview.meta({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
@@ -261,4 +178,83 @@ const meta = preview.meta({
     },
   },
 });
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+import type { Meta } from '@storybook/angular';
+
+import { Button } from './button.component';
+
+const meta: Meta<Button> = {
+  component: Button,
+  argTypes: {
+    variant: {
+      options: ['primary', 'secondary'],
+      control: { type: 'radio' },
+    },
+  },
+};
+
+export default meta;
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import type { Meta } from '@storybook/your-framework';
+
+import { Button } from './Button';
+
+const meta = {
+  component: Button,
+  argTypes: {
+    variant: {
+      options: ['primary', 'secondary'],
+      control: { type: 'radio' },
+    },
+  },
+} satisfies Meta<typeof Button>;
+
+export default meta;
+```
+
+```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+import { Button } from './Button';
+
+export default {
+  component: Button,
+  argTypes: {
+    variant: {
+      options: ['primary', 'secondary'],
+      control: { type: 'radio' },
+    },
+  },
+};
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+import type { Meta } from '@storybook/web-components-vite';
+
+const meta: Meta = {
+  component: 'demo-button',
+  argTypes: {
+    variant: {
+      options: ['primary', 'secondary'],
+      control: { type: 'radio' },
+    },
+  },
+};
+
+export default meta;
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+export default {
+  component: 'demo-button',
+  argTypes: {
+    variant: {
+      options: ['primary', 'secondary'],
+      control: { type: 'radio' },
+    },
+  },
+};
 ```

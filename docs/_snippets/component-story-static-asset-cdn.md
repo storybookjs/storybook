@@ -1,3 +1,22 @@
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './my-component.component';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const WithAnImage = meta.story({
+  render: () => ({
+    props: {
+      src: 'https://storybook.js.org/images/placeholders/350x150.png',
+      alt: 'My CDN placeholder',
+    },
+  }),
+});
+```
+
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
@@ -20,57 +39,36 @@ export const WithAnImage: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { MyComponent } from './my-component.component';
+import { MyComponent } from './MyComponent';
 
 const meta = preview.meta({
   component: MyComponent,
 });
 
 export const WithAnImage = meta.story({
-  render: () => ({
-    props: {
-      src: 'https://storybook.js.org/images/placeholders/350x150.png',
-      alt: 'My CDN placeholder',
-    },
-  }),
+  render: () => (
+    <img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder" />
+  ),
 });
 ```
 
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
-import { MyComponent } from './MyComponent';
-
-export default {
-  component: MyComponent,
-};
-
-export const WithAnImage = {
-  render: () => (
-    <img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder" />
-  ),
-};
-```
-
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
 
-const meta = {
+const meta = preview.meta({
   component: MyComponent,
-} satisfies Meta<typeof MyComponent>;
+});
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const WithAnImage: Story = {
+export const WithAnImage = meta.story({
   render: () => (
     <img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder" />
   ),
-};
+});
 ```
 
 ```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js"
@@ -106,26 +104,6 @@ export const WithAnImage: Story = {
 };
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import MyComponent from './MyComponent.svelte';
-
-	const { Story } = defineMeta({
-		component: MyComponent,
-	});
-</script>
-
-<Story name="WithAnImage">
-  <MyComponent
-    src="https://storybook.js.org/images/placeholders/350x150.png"
-    alt="My CDN placeholder"
-  />
-</Story>
-```
-
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
 <script module>
   import preview from '../.storybook/preview';
@@ -145,7 +123,7 @@ export const WithAnImage: Story = {
 </Story>
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -184,19 +162,58 @@ export const WithAnImage: Story = {
 </Story>
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import MyComponent from './MyComponent.svelte';
+
+	const { Story } = defineMeta({
+		component: MyComponent,
+	});
+</script>
+
+<Story name="WithAnImage">
+  <MyComponent
+    src="https://storybook.js.org/images/placeholders/350x150.png"
+    alt="My CDN placeholder"
+  />
+</Story>
+```
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
 import MyComponent from './MyComponent.vue';
 
-export default {
+const meta = preview.meta({
   component: MyComponent,
-};
+});
 
-export const WithAnImage = {
+export const WithAnImage = meta.story({
   render: () => ({
     template:
       '<img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder" />',
   }),
-};
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const WithAnImage = meta.story({
+  render: () => ({
+    template:
+      '<img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder" />',
+  }),
+});
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
@@ -219,39 +236,54 @@ export const WithAnImage: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import MyComponent from './MyComponent.vue';
 
-const meta = preview.meta({
+export default {
   component: MyComponent,
-});
+};
 
-export const WithAnImage = meta.story({
+export const WithAnImage = {
   render: () => ({
     template:
       '<img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder" />',
   }),
+};
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const WithAnImage = meta.story({
+  render: () =>
+    html`<img
+      src="https://storybook.js.org/images/placeholders/350x150.png"
+      alt="My CDN placeholder"
+    />`,
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import MyComponent from './MyComponent.vue';
-
 const meta = preview.meta({
-  component: MyComponent,
+  component: 'my-component',
 });
 
 export const WithAnImage = meta.story({
-  render: () => ({
-    template:
-      '<img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder" />',
-  }),
+  render: () =>
+    html`<img
+      src="https://storybook.js.org/images/placeholders/350x150.png"
+      alt="My CDN placeholder"
+    />`,
 });
 ```
 
@@ -292,72 +324,36 @@ export const WithAnImage: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import { html } from 'lit';
-
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'my-component',
-});
-
-export const WithAnImage = meta.story({
-  render: () =>
-    html`<img
-      src="https://storybook.js.org/images/placeholders/350x150.png"
-      alt="My CDN placeholder"
-    />`,
-});
-```
-
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import { html } from 'lit';
-
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'my-component',
-});
-
-export const WithAnImage = meta.story({
-  render: () =>
-    html`<img
-      src="https://storybook.js.org/images/placeholders/350x150.png"
-      alt="My CDN placeholder"
-    />`,
-});
-```
-
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { MyComponent } from './MyComponent';
 
-const meta = preview.meta({
+const meta = {
   component: MyComponent,
-});
+} satisfies Meta<typeof MyComponent>;
 
-export const WithAnImage = meta.story({
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const WithAnImage: Story = {
   render: () => (
     <img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder" />
   ),
-});
+};
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { MyComponent } from './MyComponent';
 
-const meta = preview.meta({
+export default {
   component: MyComponent,
-});
+};
 
-export const WithAnImage = meta.story({
+export const WithAnImage = {
   render: () => (
     <img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder" />
   ),
-});
+};
 ```

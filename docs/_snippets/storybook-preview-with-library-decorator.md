@@ -27,6 +27,92 @@ export default preview;
 import '@angular/localize/init';
 ```
 
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="library (CSF Next 🧪)"
+import { definePreview, setup } from '@storybook/vue3-vite';
+
+import { createPinia } from 'pinia';
+
+setup((app) => {
+  //👇 Registers a global Pinia instance inside Storybook to be consumed by existing stories
+  app.use(createPinia());
+});
+
+export default definePreview({
+  decorators: [
+    (story) => ({
+      components: { story },
+      template: '<div style="margin: 3em;"><story /></div>',
+    }),
+  ],
+});
+```
+
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="component (CSF Next 🧪)"
+import { definePreview, setup } from '@storybook/vue3-vite';
+
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { faPlusSquare as fasPlusSquare } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+
+setup((app) => {
+  //👇 Adds the icon to the library so you can use it in your story.
+  library.add(fasPlusSquare);
+  app.component('font-awesome-icon', FontAwesomeIcon);
+});
+
+export default definePreview({
+  decorators: [
+    (story) => ({
+      components: { story },
+      template: '<div style="margin: 3em;"><story /></div>',
+    }),
+  ],
+});
+```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="library (CSF Next 🧪)"
+import { definePreview, setup } from '@storybook/vue3-vite';
+
+import { createPinia } from 'pinia';
+
+setup((app) => {
+  //👇 Registers a global Pinia instance inside Storybook to be consumed by existing stories
+  app.use(createPinia());
+});
+
+export default definePreview({
+  decorators: [
+    (story) => ({
+      components: { story },
+      template: '<div style="margin: 3em;"><story /></div>',
+    }),
+  ],
+});
+```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="component (CSF Next 🧪)"
+import { definePreview, setup } from '@storybook/vue3-vite';
+
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { faPlusSquare as fasPlusSquare } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+
+setup((app) => {
+  //👇 Adds the icon to the library so you can use it in your story.
+  library.add(fasPlusSquare);
+  app.component('font-awesome-icon', FontAwesomeIcon);
+});
+
+export default definePreview({
+  decorators: [
+    (story) => ({
+      components: { story },
+      template: '<div style="margin: 3em;"><story /></div>',
+    }),
+  ],
+});
+```
+
 ```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="library (CSF 3)"
 import { setup } from '@storybook/vue3-vite';
 
@@ -115,90 +201,4 @@ const preview: Preview = {
 };
 
 export default preview;
-```
-
-```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="library (CSF Next 🧪)"
-import { definePreview, setup } from '@storybook/vue3-vite';
-
-import { createPinia } from 'pinia';
-
-setup((app) => {
-  //👇 Registers a global Pinia instance inside Storybook to be consumed by existing stories
-  app.use(createPinia());
-});
-
-export default definePreview({
-  decorators: [
-    (story) => ({
-      components: { story },
-      template: '<div style="margin: 3em;"><story /></div>',
-    }),
-  ],
-});
-```
-
-```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="component (CSF Next 🧪)"
-import { definePreview, setup } from '@storybook/vue3-vite';
-
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { faPlusSquare as fasPlusSquare } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-
-setup((app) => {
-  //👇 Adds the icon to the library so you can use it in your story.
-  library.add(fasPlusSquare);
-  app.component('font-awesome-icon', FontAwesomeIcon);
-});
-
-export default definePreview({
-  decorators: [
-    (story) => ({
-      components: { story },
-      template: '<div style="margin: 3em;"><story /></div>',
-    }),
-  ],
-});
-```
-
-```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="library (CSF Next 🧪)"
-import { definePreview, setup } from '@storybook/vue3-vite';
-
-import { createPinia } from 'pinia';
-
-setup((app) => {
-  //👇 Registers a global Pinia instance inside Storybook to be consumed by existing stories
-  app.use(createPinia());
-});
-
-export default definePreview({
-  decorators: [
-    (story) => ({
-      components: { story },
-      template: '<div style="margin: 3em;"><story /></div>',
-    }),
-  ],
-});
-```
-
-```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="component (CSF Next 🧪)"
-import { definePreview, setup } from '@storybook/vue3-vite';
-
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { faPlusSquare as fasPlusSquare } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-
-setup((app) => {
-  //👇 Adds the icon to the library so you can use it in your story.
-  library.add(fasPlusSquare);
-  app.component('font-awesome-icon', FontAwesomeIcon);
-});
-
-export default definePreview({
-  decorators: [
-    (story) => ({
-      components: { story },
-      template: '<div style="margin: 3em;"><story /></div>',
-    }),
-  ],
-});
 ```

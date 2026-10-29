@@ -111,3 +111,179 @@ export async function getHeadingSlugs(filePath: string): Promise<Set<string>> {
 
   return slugs;
 }
+
+/**
+ * Collects all .md snippet files in the docs `_snippets` directory.
+ */
+export async function getSnippetFiles(docsDir: string): Promise<string[]> {
+  return glob(['_snippets/**/*.md'], { cwd: docsDir, absolute: true });
+}
+
+export interface SnippetSegment {
+  /** First line of the segment, including any HTML comments attached above the fence */
+  start: number;
+  /** Line of the opening fence */
+  fenceLine: number;
+  /** Line of the closing fence */
+  end: number;
+  attributes: Record<string, string>;
+}
+
+/**
+ * Splits a snippet file into segments: one per fenced code block, plus the HTML comments
+ * directly above it (blank lines between them are allowed). Comments such as
+ * `<!-- prettier-ignore -->` belong to the block that follows, so they move with it.
+ */
+export function getSnippetSegments(lines: string[]): SnippetSegment[] {
+  const segments: SnippetSegment[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const openMatch = lines[i].match(/^(`{3,}|~{3,})/);
+    if (!openMatch) continue;
+
+    const fence = openMatch[1];
+    const fenceLine = i;
+    const isClosingFence = (line: string) => {
+      const closeMatch = line.trim().match(/^(`{3,}|~{3,})$/);
+      return closeMatch?.[1][0] === fence[0] && closeMatch[1].length >= fence.length;
+    };
+    let end = i + 1;
+    while (end < lines.length - 1 && !isClosingFence(lines[end])) {
+      end++;
+    }
+
+    const lowerBound = segments.length ? segments[segments.length - 1].end + 1 : 0;
+    let start = fenceLine;
+    let cursor = fenceLine - 1;
+    while (cursor >= lowerBound) {
+      if (lines[cursor].trim() === '') {
+        cursor--;
+        continue;
+      }
+      if (!lines[cursor].trim().endsWith('-->')) break;
+      let commentStart = cursor;
+      while (commentStart >= lowerBound && !lines[commentStart].trim().startsWith('<!--')) {
+        commentStart--;
+      }
+      if (commentStart < lowerBound) break;
+      start = commentStart;
+      cursor = commentStart - 1;
+    }
+
+    const attributes: Record<string, string> = {};
+    for (const [, key, value] of lines[fenceLine].matchAll(/([\w.-]+)="([^"]*)"/g)) {
+      attributes[key] = value;
+    }
+
+    segments.push({ start, fenceLine, end, attributes });
+    i = end;
+  }
+
+  return segments;
+}
+
+type CsfVersion = 'next' | 'csf3';
+
+const CSF_TAB_TITLE_REGEX = /\(?CSF (Next 🧪|3)\)?/;
+
+/**
+ * Returns which CSF version a snippet's `tabTitle` names, and the rest of the title. Titles like
+ * `Head (CSF 3)` and `Head (CSF Next 🧪)` share the base `Head`, so they pair up.
+ * `Svelte CSF` is the CSF 3 counterpart of `Svelte CSF Next 🧪`.
+ */
+function parseCsfTabTitle(tabTitle = ''): { version?: CsfVersion; base: string } {
+  if (tabTitle === 'Svelte CSF') return { version: 'csf3', base: 'Svelte' };
+  const match = tabTitle.match(CSF_TAB_TITLE_REGEX);
+  if (!match) return { base: tabTitle };
+  return {
+    version: match[1] === '3' ? 'csf3' : 'next',
+    base: tabTitle.replace(CSF_TAB_TITLE_REGEX, '').trim(),
+  };
+}
+
+interface CsfSegment {
+  segment: SnippetSegment;
+  version: CsfVersion;
+  /** Everything except the renderer that decides whether two segments are versions of one tab */
+  key: string;
+}
+
+function getCsfSegments(segments: SnippetSegment[]): CsfSegment[] {
+  return segments.flatMap((segment) => {
+    const { language, packageManager, tabTitle } = segment.attributes;
+    const { version, base } = parseCsfTabTitle(tabTitle);
+    return version ? [{ segment, version, key: [language, packageManager, base].join('|') }] : [];
+  });
+}
+
+/**
+ * Groups the CSF 3 and CSF Next segments of a snippet file. A group holds every segment that can
+ * appear as the same tab in one reader's view. The docs site shows a reader the blocks for their
+ * renderer plus all `common` blocks, so a tab with a `common` segment forms one group. Otherwise,
+ * each renderer forms its own group.
+ */
+export function getCsfSegmentGroups(segments: SnippetSegment[]): CsfSegment[][] {
+  const tabs = Map.groupBy(getCsfSegments(segments), ({ key }) => key);
+  return [...tabs.values()].flatMap((tab) =>
+    tab.some(({ segment }) => segment.attributes.renderer === 'common')
+      ? [tab]
+      : [...Map.groupBy(tab, ({ segment }) => segment.attributes.renderer).values()]
+  );
+}
+
+/**
+ * Returns the CSF 3 segments that come before their CSF Next counterpart in any reader's view.
+ * A view is one renderer's blocks plus the `common` blocks, as the docs site shows them.
+ */
+export function getMisorderedCsfSegments(lines: string[]): SnippetSegment[] {
+  const csfSegments = getCsfSegments(getSnippetSegments(lines));
+  const renderers = new Set(csfSegments.map(({ segment }) => segment.attributes.renderer));
+  const misordered = new Set<SnippetSegment>();
+
+  for (const renderer of renderers) {
+    const view = csfSegments.filter(({ segment }) =>
+      [renderer, 'common'].includes(segment.attributes.renderer)
+    );
+    for (const key of new Set(view.map((csfSegment) => csfSegment.key))) {
+      const tab = view.filter((csfSegment) => csfSegment.key === key);
+      const firstNext = tab.findIndex(({ version }) => version === 'next');
+      const firstCsf3 = tab.findIndex(({ version }) => version === 'csf3');
+      if (firstNext > -1 && firstCsf3 > -1 && firstCsf3 < firstNext) {
+        misordered.add(tab[firstCsf3].segment);
+      }
+    }
+  }
+  return [...misordered].sort((a, b) => a.start - b.start);
+}
+
+/**
+ * Moves each CSF Next segment before its CSF 3 counterpart. Segments trade places within the slots
+ * their group already occupies, so all other content stays where it is.
+ * Returns the reordered lines, or `undefined` if nothing changed.
+ */
+export function sortCsfSegments(lines: string[]): string[] | undefined {
+  const replacements = new Map<SnippetSegment, SnippetSegment>();
+  for (const group of getCsfSegmentGroups(getSnippetSegments(lines))) {
+    const sorted = [
+      ...group.filter(({ version }) => version === 'next'),
+      ...group.filter(({ version }) => version === 'csf3'),
+    ];
+    group.forEach(({ segment }, idx) => {
+      if (sorted[idx].segment !== segment) replacements.set(segment, sorted[idx].segment);
+    });
+  }
+  if (replacements.size === 0) return undefined;
+
+  const result: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const slot = [...replacements.keys()].find((segment) => segment.start === i);
+    if (slot) {
+      const replacement = replacements.get(slot)!;
+      result.push(...lines.slice(replacement.start, replacement.end + 1));
+      i = slot.end;
+    } else {
+      result.push(lines[i]);
+    }
+  }
+  return result;
+}

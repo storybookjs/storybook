@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import os from 'os';
-import path from 'path';
+import path from 'pathe';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   checkBareUrls,
@@ -18,8 +18,8 @@ import {
   checkSnippetCsfOrder,
   checkSnippetLegacyCsfTitle,
   runAllChecks,
-} from '../check-docs';
-import { fixSnippets } from '../fix-snippets';
+} from '../check-docs.ts';
+import { fixSnippets } from '../fix-snippets.ts';
 
 const CSF3_DEPRECATION_COMMENT =
   '// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4';

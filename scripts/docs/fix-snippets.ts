@@ -1,6 +1,6 @@
-import path from 'path';
+import path from 'pathe';
 import fs from 'node:fs/promises';
-import { addCsf3Deprecation, getSnippetFiles, readFileLines, sortCsfSegments } from './utils';
+import { addCsf3Deprecation, getSnippetFiles, readFileLines, sortCsfSegments } from './utils.ts';
 import { esMain } from '../utils/esmain.ts';
 
 /**

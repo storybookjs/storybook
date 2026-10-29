@@ -3,7 +3,7 @@ import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
-import { fn, userEvent, within } from 'storybook/test';
+import { expect, fn, screen, userEvent, within } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
 import { standardData as standardHeaderData } from './Heading.stories.tsx';
@@ -233,6 +233,10 @@ export const ErroredMobileWithErrorOpen: StoryObj = {
     const canvas = within(canvasElement);
     const button = await canvas.findByText('View error');
     await userEvent.click(button);
+    const popover = await screen.findByLabelText('Error details');
+    const { left, right } = popover.getBoundingClientRect();
+    await expect(left).toBeGreaterThanOrEqual(0);
+    await expect(right).toBeLessThanOrEqual(window.innerWidth);
   },
 };
 export const ErroredWithIndicatorOpen: StoryObj = {

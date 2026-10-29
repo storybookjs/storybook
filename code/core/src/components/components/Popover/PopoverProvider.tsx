@@ -32,6 +32,15 @@ export interface PopoverProviderProps {
   /** Optional custom padding for the popover overlay. */
   padding?: number | string;
 
+  /**
+   * Whether the content scrolls once the popover is as tall as the space left in the viewport, or
+   * wider than the viewport. True by default.
+   *
+   * ScrollArea clips Popover content, so turn this off for content that draws outside the
+   * popover box, like the Color control handle.
+   */
+  scrollable?: boolean;
+
   /** Distance between the trigger and Popover. Customize only if you have a good reason to. */
   offset?: number;
 
@@ -68,6 +77,7 @@ export const PopoverProvider = ({
   closeLabel,
   offset = 8,
   padding,
+  scrollable = true,
   popover,
   children,
   defaultVisible,
@@ -122,6 +132,7 @@ export const PopoverProvider = ({
           hideLabel={closeLabel}
           onHide={hasCloseButton ? onHide : undefined}
           padding={padding}
+          scrollable={scrollable}
         >
           {typeof popover === 'function' ? popover({ onHide }) : popover}
         </Popover>

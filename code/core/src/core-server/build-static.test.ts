@@ -2,51 +2,33 @@ import { cp, mkdir, rm } from 'node:fs/promises';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { JsPackageManagerFactory } from 'storybook/internal/common';
+import { JsPackageManagerFactory, loadAllPresets, loadMainConfig } from 'storybook/internal/common';
 import type { InstallationMetadata, JsPackageManager } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import type { Builder } from 'storybook/internal/types';
+import { getPrecedingUpgrade, telemetry } from 'storybook/internal/telemetry';
+import type { Builder, Presets } from 'storybook/internal/types';
 
 import { vol } from 'memfs';
 
+import { getRegisteredServices } from '../shared/open-service/server.ts';
+import { resolvePackageDir } from '../shared/utils/module.ts';
 import { buildStaticStandalone } from './build-static.ts';
 import type { BuildStaticStandaloneOptions } from './build-static.ts';
+import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 import { getBuilders } from './utils/get-builders.ts';
 import { writeIndexJson } from './utils/index-json.ts';
-
-const { presets } = vi.hoisted(() => ({
-  presets: {
-    apply: vi.fn(async (name: string) =>
-      ['core', 'build', 'features'].includes(name) ? {} : undefined
-    ),
-  },
-}));
+import { extractStorybookMetadata } from './utils/metadata.ts';
 
 vi.mock('node:fs/promises', { spy: true });
-
-vi.mock('storybook/internal/common', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('storybook/internal/common')>();
-  return {
-    ...actual,
-    loadMainConfig: vi.fn(async () => ({ framework: '@storybook/react-vite' })),
-    loadAllPresets: vi.fn(async () => presets),
-    JsPackageManagerFactory: { getPackageManager: vi.fn() },
-  };
-});
-
-vi.mock('storybook/internal/node-logger');
-
-vi.mock('../shared/utils/module.ts', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../shared/utils/module.ts')>()),
-  resolvePackageDir: vi.fn(() => '/storybook'),
-}));
-
-vi.mock('./utils/apply-services-preset-once.ts', () => ({
-  applyServicesPresetOnce: vi.fn(async () => {}),
-}));
-vi.mock('./utils/get-builders.ts', () => ({ getBuilders: vi.fn() }));
-vi.mock('./utils/index-json.ts', () => ({ writeIndexJson: vi.fn() }));
-vi.mock('./utils/metadata.ts', () => ({ extractStorybookMetadata: vi.fn(async () => {}) }));
+vi.mock('storybook/internal/common', { spy: true });
+vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('storybook/internal/telemetry', { spy: true });
+vi.mock('../shared/open-service/server.ts', { spy: true });
+vi.mock('../shared/utils/module.ts', { spy: true });
+vi.mock('./utils/apply-services-preset-once.ts', { spy: true });
+vi.mock('./utils/get-builders.ts', { spy: true });
+vi.mock('./utils/index-json.ts', { spy: true });
+vi.mock('./utils/metadata.ts', { spy: true });
 
 const installations = (versions: Record<string, string>): InstallationMetadata => ({
   dependencies: Object.fromEntries(
@@ -63,8 +45,16 @@ const mismatched = installations({
   '@storybook/builder-vite': '10.2.0',
 });
 
+const aligned = installations({
+  storybook: '10.2.1',
+  '@storybook/react-vite': '10.2.1',
+  '@storybook/builder-vite': '10.2.1',
+});
+
+const presets = { apply: vi.fn() };
 const findInstallations = vi.fn();
 const previewBuild = vi.fn();
+const managerBuild = vi.fn();
 
 const build = () =>
   buildStaticStandalone({
@@ -78,9 +68,12 @@ const warnings = () => vi.mocked(logger.warn).mock.calls.map(([message]) => Stri
 const mismatchHint = 'There seems to be a mismatch between your Storybook package versions';
 
 const previewError = new Error('Could not resolve entry module "mocker-runtime.template.js"');
+const indexError = new Error('Unable to index stories');
 
 describe('buildStaticStandalone', () => {
   beforeEach(async () => {
+    vi.resetAllMocks();
+
     const memfs = await vi.importActual<typeof import('memfs')>('memfs');
     vi.mocked(rm).mockImplementation(
       memfs.fs.promises.rm as unknown as typeof import('node:fs/promises').rm
@@ -93,15 +86,39 @@ describe('buildStaticStandalone', () => {
     );
     vol.fromNestedJSON({ '/storybook/assets/browser/favicon.svg': '<svg />' });
 
-    vi.stubGlobal('FEATURES', undefined);
+    for (const method of ['step', 'info', 'warn', 'error', 'trace', 'debug'] as const) {
+      vi.mocked(logger[method]).mockImplementation(() => {});
+    }
+    vi.mocked(telemetry).mockResolvedValue(undefined);
+    vi.mocked(getPrecedingUpgrade).mockResolvedValue(undefined);
+
+    presets.apply.mockImplementation(async (name: string) =>
+      ['core', 'build', 'features'].includes(name) ? {} : undefined
+    );
+    vi.mocked(loadMainConfig).mockResolvedValue({
+      stories: [],
+      framework: '@storybook/react-vite',
+    });
+    vi.mocked(loadAllPresets).mockResolvedValue(presets as unknown as Presets);
+    vi.mocked(resolvePackageDir).mockReturnValue('/storybook');
+    vi.mocked(applyServicesPresetOnce).mockResolvedValue(undefined);
+    vi.mocked(getRegisteredServices).mockReturnValue([]);
     vi.mocked(writeIndexJson).mockResolvedValue(undefined);
+    vi.mocked(extractStorybookMetadata).mockResolvedValue(undefined);
+
+    previewBuild.mockResolvedValue(undefined);
+    managerBuild.mockResolvedValue(undefined);
+    vi.mocked(getBuilders).mockResolvedValue([
+      { build: previewBuild } as unknown as Builder<unknown>,
+      { build: managerBuild } as unknown as Builder<unknown>,
+    ]);
+
+    findInstallations.mockResolvedValue(mismatched);
     vi.mocked(JsPackageManagerFactory.getPackageManager).mockReturnValue({
       findInstallations,
     } as unknown as JsPackageManager);
-    vi.mocked(getBuilders).mockResolvedValue([
-      { build: previewBuild } as unknown as Builder<unknown>,
-      { build: vi.fn(async () => {}) } as unknown as Builder<unknown>,
-    ]);
+
+    vi.stubGlobal('FEATURES', undefined);
   });
 
   afterEach(() => {
@@ -110,83 +127,93 @@ describe('buildStaticStandalone', () => {
     process.exitCode = undefined;
   });
 
-  it('warns about mismatching Storybook versions and rethrows when the preview build fails', async () => {
-    previewBuild.mockRejectedValue(previewError);
-    findInstallations.mockResolvedValue(mismatched);
+  describe('when the preview build succeeds', () => {
+    it('does not check versions', async () => {
+      await expect(build()).resolves.toBeUndefined();
 
-    await expect(build()).rejects.toBe(previewError);
-
-    expect(process.exitCode).toBe(1);
-    expect(logger.error).toHaveBeenCalledWith('Failed to build the preview');
-    expect(warnings()).toContainEqual(expect.stringContaining(mismatchHint));
-    expect(warnings()).toContainEqual(expect.stringContaining('npx storybook doctor'));
+      expect(JsPackageManagerFactory.getPackageManager).not.toHaveBeenCalled();
+      expect(vol.existsSync('/project/storybook-static/favicon.svg')).toBe(true);
+    });
   });
 
-  it('does not warn when the Storybook versions match and the preview build fails', async () => {
-    previewBuild.mockRejectedValue(previewError);
-    findInstallations.mockResolvedValue(
-      installations({
-        storybook: '10.2.1',
-        '@storybook/react-vite': '10.2.1',
-        '@storybook/builder-vite': '10.2.1',
-      })
-    );
-
-    await expect(build()).rejects.toBe(previewError);
-
-    expect(process.exitCode).toBe(1);
-    expect(findInstallations).toHaveBeenCalled();
-    expect(warnings()).not.toContainEqual(expect.stringContaining(mismatchHint));
-  });
-
-  it('rethrows the preview error when the package manager cannot be detected', async () => {
-    previewBuild.mockRejectedValue(previewError);
-    vi.mocked(JsPackageManagerFactory.getPackageManager).mockImplementation(() => {
-      throw new Error('Unable to find a usable package manager');
+  describe('when another build step fails before the preview build settles', () => {
+    beforeEach(() => {
+      vi.mocked(writeIndexJson).mockRejectedValue(indexError);
+      previewBuild.mockReturnValue(new Promise(() => {}));
     });
 
-    await expect(build()).rejects.toBe(previewError);
+    it('rethrows that error without checking versions', async () => {
+      await expect(build()).rejects.toBe(indexError);
 
-    expect(process.exitCode).toBe(1);
-    expect(warnings()).not.toContainEqual(expect.stringContaining(mismatchHint));
+      expect(JsPackageManagerFactory.getPackageManager).not.toHaveBeenCalled();
+    });
   });
 
-  it('rethrows the preview error when another build step fails while versions are being checked', async () => {
-    const indexError = new Error('Unable to index stories');
-    let failIndex: (error: Error) => void = () => {};
-    vi.mocked(writeIndexJson).mockReturnValue(
-      new Promise((_, reject) => {
-        failIndex = reject;
-      })
-    );
-    previewBuild.mockRejectedValue(previewError);
-    findInstallations.mockImplementation(async () => {
-      failIndex(indexError);
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      return mismatched;
+  describe('when the preview build fails', () => {
+    beforeEach(() => {
+      previewBuild.mockRejectedValue(previewError);
     });
 
-    await expect(build()).rejects.toBe(previewError);
+    describe('and the Storybook versions are mismatched', () => {
+      it('warns about the mismatch and rethrows the preview error', async () => {
+        await expect(build()).rejects.toBe(previewError);
 
-    expect(warnings()).toContainEqual(expect.stringContaining(mismatchHint));
-  });
+        expect(process.exitCode).toBe(1);
+        expect(logger.error).toHaveBeenCalledWith('Failed to build the preview');
+        expect(warnings()).toContainEqual(expect.stringContaining(mismatchHint));
+        expect(warnings()).toContainEqual(expect.stringContaining('npx storybook doctor'));
+      });
+    });
 
-  it('rethrows a build step error that fails before the preview without checking versions', async () => {
-    const indexError = new Error('Unable to index stories');
-    vi.mocked(writeIndexJson).mockRejectedValue(indexError);
-    previewBuild.mockReturnValue(new Promise(() => {}));
+    describe('and the Storybook versions match', () => {
+      beforeEach(() => {
+        findInstallations.mockResolvedValue(aligned);
+      });
 
-    await expect(build()).rejects.toBe(indexError);
+      it('does not warn and rethrows the preview error', async () => {
+        await expect(build()).rejects.toBe(previewError);
 
-    expect(JsPackageManagerFactory.getPackageManager).not.toHaveBeenCalled();
-  });
+        expect(process.exitCode).toBe(1);
+        expect(findInstallations).toHaveBeenCalled();
+        expect(warnings()).not.toContainEqual(expect.stringContaining(mismatchHint));
+      });
+    });
 
-  it('does not check versions when the preview build succeeds', async () => {
-    previewBuild.mockResolvedValue(undefined);
+    describe('and the package manager cannot be detected', () => {
+      beforeEach(() => {
+        vi.mocked(JsPackageManagerFactory.getPackageManager).mockImplementation(() => {
+          throw new Error('Unable to find a usable package manager');
+        });
+      });
 
-    await expect(build()).resolves.toBeUndefined();
+      it('rethrows the preview error', async () => {
+        await expect(build()).rejects.toBe(previewError);
 
-    expect(JsPackageManagerFactory.getPackageManager).not.toHaveBeenCalled();
-    expect(vol.existsSync('/project/storybook-static/favicon.svg')).toBe(true);
+        expect(process.exitCode).toBe(1);
+        expect(warnings()).not.toContainEqual(expect.stringContaining(mismatchHint));
+      });
+    });
+
+    describe('and another build step fails while versions are being checked', () => {
+      beforeEach(() => {
+        let failIndex: (error: Error) => void = () => {};
+        vi.mocked(writeIndexJson).mockReturnValue(
+          new Promise((_, reject) => {
+            failIndex = reject;
+          })
+        );
+        findInstallations.mockImplementation(async () => {
+          failIndex(indexError);
+          await new Promise((resolve) => setTimeout(resolve, 0));
+          return mismatched;
+        });
+      });
+
+      it('still rethrows the preview error', async () => {
+        await expect(build()).rejects.toBe(previewError);
+
+        expect(warnings()).toContainEqual(expect.stringContaining(mismatchHint));
+      });
+    });
   });
 });

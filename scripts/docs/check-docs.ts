@@ -7,6 +7,8 @@ import {
   getHeadingSlugs,
   getLineContexts,
   getMisorderedCsfSegments,
+  getLegacyCsfTitleSegments,
+  getRenamedCsfTabTitle,
 } from './utils.ts';
 import { esMain } from '../utils/esmain.ts';
 
@@ -421,7 +423,7 @@ export async function checkBareUrls(docsDir: string): Promise<DocLineError[]> {
 }
 
 /**
- * Checks that each CSF Next snippet comes before its CSF 3 counterpart in snippet files.
+ * Checks that each CSF 4 snippet comes before its CSF 3 counterpart in snippet files.
  */
 export async function checkSnippetCsfOrder(docsDir: string): Promise<DocLineError[]> {
   const snippetFiles = await getSnippetFiles(docsDir);
@@ -434,7 +436,29 @@ export async function checkSnippetCsfOrder(docsDir: string): Promise<DocLineErro
         file,
         line: segment.fenceLine + 1,
         message:
-          'CSF 3 snippet comes before its CSF Next snippet. Run `yarn --cwd scripts docs:fix-snippet-order` to fix.',
+          'CSF 3 snippet comes before its CSF 4 snippet. Run `yarn --cwd scripts docs:fix-snippet-order` to fix.',
+      });
+    }
+  }
+  return errors;
+}
+
+/**
+ * Checks that snippet tab titles use `CSF 3` and `CSF 4`, not the old `CSF Next` and `Svelte CSF`
+ * names.
+ */
+export async function checkSnippetLegacyCsfTitle(docsDir: string): Promise<DocLineError[]> {
+  const snippetFiles = await getSnippetFiles(docsDir);
+  const errors: DocLineError[] = [];
+
+  for (const file of snippetFiles) {
+    const lines = await readFileLines(file);
+    for (const segment of getLegacyCsfTitleSegments(lines)) {
+      const { tabTitle } = segment.attributes;
+      errors.push({
+        file,
+        line: segment.fenceLine + 1,
+        message: `Snippet tabTitle "${tabTitle}" uses an old CSF name. Use "${getRenamedCsfTabTitle(tabTitle)}" instead.`,
       });
     }
   }
@@ -458,6 +482,7 @@ export async function runAllChecks(docsDir: string) {
     redundantSidebar,
     bareUrls,
     snippetCsfOrder,
+    snippetLegacyCsfTitle,
   ] = await Promise.all([
     checkRelativeLinks(docsDir),
     checkCodeSnippetPaths(docsDir),
@@ -471,6 +496,7 @@ export async function runAllChecks(docsDir: string) {
     checkRedundantSidebarTitle(docsDir),
     checkBareUrls(docsDir),
     checkSnippetCsfOrder(docsDir),
+    checkSnippetLegacyCsfTitle(docsDir),
   ]);
   const all = [
     ...rel.map((e) => ({ ...e, type: 'relative-link' })),
@@ -485,6 +511,7 @@ export async function runAllChecks(docsDir: string) {
     ...redundantSidebar.map((e) => ({ ...e, type: 'redundant-sidebar-title' })),
     ...bareUrls.map((e) => ({ ...e, type: 'bare-url' })),
     ...snippetCsfOrder.map((e) => ({ ...e, type: 'snippet-csf-order' })),
+    ...snippetLegacyCsfTitle.map((e) => ({ ...e, type: 'snippet-legacy-csf-title' })),
   ];
   if (all.length === 0) {
     console.log('✅ Docs check: no errors found.');
@@ -503,6 +530,7 @@ export async function runAllChecks(docsDir: string) {
     'redundant-sidebar-title': 'RedundantSidebarTitle',
     'bare-url': 'BareUrl',
     'snippet-csf-order': 'SnippetCsfOrder',
+    'snippet-legacy-csf-title': 'SnippetLegacyCsfTitle',
   };
   for (const err of all) {
     const loc = `${err.file}:${err.line}`;

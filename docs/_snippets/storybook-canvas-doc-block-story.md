@@ -1,4 +1,4 @@
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import { ColorItem, ColorPalette } from '@storybook/addon-docs/blocks';
 
 import preview from '../.storybook/preview';
@@ -51,7 +51,7 @@ export const Colors = meta.story({
 });
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
 import { ColorItem, ColorPalette } from '@storybook/addon-docs/blocks';
 
 import preview from '../.storybook/preview';

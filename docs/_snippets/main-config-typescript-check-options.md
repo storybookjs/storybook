@@ -1,4 +1,4 @@
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 4"
 // Replace your-framework with the framework you are using (e.g., react-webpack5, nextjs, nextjs-webpack5)
 import { defineMain } from '@storybook/your-framework/node';
 
@@ -32,7 +32,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import { defineMain } from '@storybook/angular/node';
 
 export default defineMain({

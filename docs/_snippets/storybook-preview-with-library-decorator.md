@@ -27,7 +27,7 @@ export default preview;
 import '@angular/localize/init';
 ```
 
-```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="library (CSF Next 🧪)"
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="library (CSF 4)"
 import { definePreview, setup } from '@storybook/vue3-vite';
 
 import { createPinia } from 'pinia';
@@ -47,7 +47,7 @@ export default definePreview({
 });
 ```
 
-```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="component (CSF Next 🧪)"
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="component (CSF 4)"
 import { definePreview, setup } from '@storybook/vue3-vite';
 
 import { library } from '@fortawesome/fontawesome-svg-core';
@@ -70,7 +70,7 @@ export default definePreview({
 });
 ```
 
-```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="library (CSF Next 🧪)"
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="library (CSF 4)"
 import { definePreview, setup } from '@storybook/vue3-vite';
 
 import { createPinia } from 'pinia';
@@ -90,7 +90,7 @@ export default definePreview({
 });
 ```
 
-```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="component (CSF Next 🧪)"
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="component (CSF 4)"
 import { definePreview, setup } from '@storybook/vue3-vite';
 
 import { library } from '@fortawesome/fontawesome-svg-core';

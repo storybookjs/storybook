@@ -1,4 +1,4 @@
-```ts filename="Showcase.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Showcase.stories.ts" renderer="react" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Route } from './$id';

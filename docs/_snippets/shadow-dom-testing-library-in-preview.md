@@ -1,4 +1,4 @@
-```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import { definePreview } from '@storybook/web-components-vite';
 
 import { within as withinShadow } from 'shadow-dom-testing-library';
@@ -20,7 +20,7 @@ export default definePreview({
 });
 ```
 
-```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import { definePreview } from '@storybook/web-components-vite';
 
 import { within as withinShadow } from 'shadow-dom-testing-library';

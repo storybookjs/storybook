@@ -1,4 +1,4 @@
-```ts filename="ButtonGroup.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="ButtonGroup.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import { CommonModule } from '@angular/common';
 
 import { moduleMetadata } from '@storybook/angular';
@@ -61,7 +61,7 @@ export const Pair: Story = {
 };
 ```
 
-```js filename="ButtonGroup.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="ButtonGroup.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { ButtonGroup } from '../ButtonGroup';
@@ -81,7 +81,7 @@ export const Pair = meta.story({
 });
 ```
 
-```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { ButtonGroup } from '../ButtonGroup';
@@ -142,7 +142,7 @@ export const Pair: Story = {
 };
 ```
 
-```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -165,7 +165,7 @@ export const Pair: Story = {
 />
 ```
 
-```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -189,7 +189,7 @@ export const Pair: Story = {
 />
 ```
 
-```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
 <script module lang="ts">
   import preview from '../.storybook/preview';
 
@@ -212,7 +212,7 @@ export const Pair: Story = {
 />
 ```
 
-```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -236,7 +236,7 @@ export const Pair: Story = {
 />
 ```
 
-```js filename="ButtonGroup.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="ButtonGroup.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import ButtonGroup from './ButtonGroup.vue';
@@ -263,7 +263,7 @@ export const Pair = meta.story({
 });
 ```
 
-```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import ButtonGroup from './ButtonGroup.vue';
@@ -290,7 +290,7 @@ export const Pair = meta.story({
 });
 ```
 
-```js filename="ButtonGroup.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="ButtonGroup.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 // 👇 Imports the Button stories
@@ -308,7 +308,7 @@ export const Pair = meta.story({
 });
 ```
 
-```ts filename="ButtonGroup.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="ButtonGroup.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 // 👇 Imports the Button stories

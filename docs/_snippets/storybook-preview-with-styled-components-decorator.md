@@ -218,7 +218,7 @@ export default preview;
 </BitsConfig>
 ```
 
-```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="Preview (CSF Next 🧪)"
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="Preview (CSF 4)"
 import { html } from 'lit';
 
 import { definePreview } from '@storybook/web-components-vite';
@@ -305,7 +305,7 @@ if (!customElements.get('theme-provider')) {
 }
 ```
 
-```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="Preview (CSF Next 🧪)"
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="Preview (CSF 4)"
 import { html } from 'lit';
 
 import { definePreview } from '@storybook/web-components-vite';
@@ -339,7 +339,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 4"
 import React from 'react';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
@@ -359,7 +359,7 @@ export default definePreview({
 });
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 4"
 import React from 'react';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
@@ -460,7 +460,7 @@ export default {
 };
 ```
 
-```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import { definePreview } from '@storybook/vue3-vite';
 
 import 'vuetify/styles';
@@ -493,7 +493,7 @@ export default definePreview({
 });
 ```
 
-```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF 4"
 import { definePreview } from '@storybook/vue3-vite';
 
 import 'vuetify/styles';

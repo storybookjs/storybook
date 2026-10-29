@@ -1,4 +1,4 @@
-```ts filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 4"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 import addonA11y from '@storybook/addon-a11y';
@@ -12,7 +12,7 @@ export default definePreview({
 });
 ```
 
-```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 4"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 import addonA11y from '@storybook/addon-a11y';
@@ -26,7 +26,7 @@ export default definePreview({
 });
 ```
 
-```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import { definePreview } from '@storybook/vue3-vite';
 import addonA11y from '@storybook/addon-a11y';
 
@@ -39,7 +39,7 @@ export default definePreview({
 });
 ```
 
-```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF 4"
 import { definePreview } from '@storybook/vue3-vite';
 import addonA11y from '@storybook/addon-a11y';
 
@@ -52,7 +52,7 @@ export default definePreview({
 });
 ```
 
-```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import { definePreview } from '@storybook/angular';
 import addonA11y from '@storybook/addon-a11y';
 
@@ -65,7 +65,7 @@ export default definePreview({
 });
 ```
 
-```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import { definePreview } from '@storybook/web-components-vite';
 import addonA11y from '@storybook/addon-a11y';
 
@@ -78,7 +78,7 @@ export default definePreview({
 });
 ```
 
-```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import { definePreview } from '@storybook/web-components-vite';
 import addonA11y from '@storybook/addon-a11y';
 

@@ -1,4 +1,4 @@
-```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Button } from './Button';
@@ -18,7 +18,7 @@ export const Dark = meta.story({
 });
 ```
 
-```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import { Button } from './Button';

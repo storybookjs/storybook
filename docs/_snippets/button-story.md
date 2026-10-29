@@ -1,4 +1,4 @@
-```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import React, { useState } from 'react';
 
 import preview from '../.storybook/preview';
@@ -29,7 +29,7 @@ export const Primary = meta.story({
 });
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
 import React, { useState } from 'react';
 
 import preview from '../.storybook/preview';

@@ -1,4 +1,4 @@
-```js filename="MyServerComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="MyServerComponent.stories.js" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import MyServerComponent from './MyServerComponent';
@@ -11,7 +11,7 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="MyServerComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyServerComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import MyServerComponent from './MyServerComponent';

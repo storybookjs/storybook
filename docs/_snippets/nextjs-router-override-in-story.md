@@ -1,4 +1,4 @@
-```js filename="RouterBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="RouterBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import RouterBasedComponent from './RouterBasedComponent';
@@ -23,7 +23,7 @@ export const Example = meta.story({
 });
 ```
 
-```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import RouterBasedComponent from './RouterBasedComponent';

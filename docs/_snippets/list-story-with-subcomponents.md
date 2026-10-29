@@ -1,4 +1,4 @@
-```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import { CommonModule } from '@angular/common';
 
 import { moduleMetadata } from '@storybook/angular';
@@ -71,7 +71,7 @@ export const OneItem: Story = {
 };
 ```
 
-```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import * as React from 'react';
 
 import preview from '../.storybook/preview';
@@ -95,7 +95,7 @@ export const OneItem = meta.story({
 });
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
 import * as React from 'react';
 
 import preview from '../.storybook/preview';
@@ -175,7 +175,7 @@ export const OneItem: Story = {
 };
 ```
 
-```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -199,7 +199,7 @@ export const OneItem: Story = {
 </Story>
 ```
 
-```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -224,7 +224,7 @@ export const OneItem: Story = {
 </Story>
 ```
 
-```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
 <script module lang="ts">
   import preview from '../.storybook/preview';
 
@@ -248,7 +248,7 @@ export const OneItem: Story = {
 </Story>
 ```
 
-```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -273,7 +273,7 @@ export const OneItem: Story = {
 </Story>
 ```
 
-```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
 import { html } from 'lit';
 
 import preview from '../.storybook/preview';
@@ -294,7 +294,7 @@ export const OneItem = meta.story({
 });
 ```
 
-```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import { html } from 'lit';
 
 import preview from '../.storybook/preview';
@@ -360,7 +360,7 @@ export const OneItem = {
 };
 ```
 
-```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import List from './List.vue';
@@ -389,7 +389,7 @@ export const OneItem = meta.story({
 });
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
 import List from './List.vue';

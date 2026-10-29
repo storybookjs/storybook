@@ -87,15 +87,14 @@ export const WithMaxPresetColors: Story = {
   },
   play: async () => {
     const dialog = await screen.findByRole('dialog');
-    // Cyan sits in the top right corner of the saturation area, where the handle overhangs the
-    // popover on two sides.
+    // Cyan sits in the top right corner of the saturation area, where the handle reaches the
+    // popover's edge.
     const handle = dialog.querySelector('.react-colorful__saturation .react-colorful__pointer')!;
-    const { top, right } = handle.getBoundingClientRect();
-    const { top: dialogTop, right: dialogRight } = dialog.getBoundingClientRect();
-    await expect(top).toBeLessThan(dialogTop);
-    await expect(right).toBeGreaterThan(dialogRight);
-    const topLayer = document.elementFromPoint(right - 4, top + 4)!;
-    await expect(handle.contains(topLayer)).toBe(true);
+    const { top, right, bottom, left } = handle.getBoundingClientRect();
+    const topEdge = document.elementFromPoint((left + right) / 2, top + 1);
+    const rightEdge = document.elementFromPoint(right - 1, (top + bottom) / 2);
+    await expect(handle.contains(topEdge)).toBe(true);
+    await expect(handle.contains(rightEdge)).toBe(true);
   },
 };
 

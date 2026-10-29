@@ -44,8 +44,9 @@ const Wrapper = styled.div<{
   scrollable: boolean;
 }>(
   ({ theme, hasCloseButton, padding, scrollable }) => ({
-    display: 'inline-flex',
-    flexDirection: 'column',
+    display: 'inline-grid',
+    // A sized row lets the scroll area resolve its percentage height against the capped popover.
+    gridTemplateRows: 'minmax(0, 1fr)',
     // Baseline alignment would add the overlay's descender space below the popover.
     verticalAlign: 'top',
     position: 'relative',
@@ -86,16 +87,8 @@ const Wrapper = styled.div<{
     }
 );
 
-// The viewport inherits the wrapper's full max-height, so the padding must sit inside it.
-const Scroller = styled(ScrollArea, {
-  shouldForwardProp: (prop) => prop !== 'padding',
-})<{ padding: NonNullable<PopoverProps['padding']> }>(({ padding }) => ({
-  maxHeight: 'inherit',
-  '& > [data-radix-scroll-area-viewport]': {
-    maxHeight: 'inherit',
-    boxSizing: 'border-box',
-    padding,
-  },
+const Padded = styled.div<{ padding: NonNullable<PopoverProps['padding']> }>(({ padding }) => ({
+  padding,
 }));
 
 const AbsoluteButton = styled(Button)({
@@ -129,9 +122,9 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(
         {...props}
       >
         {scrollable ? (
-          <Scroller vertical padding={padding}>
-            {children}
-          </Scroller>
+          <ScrollArea vertical>
+            <Padded padding={padding}>{children}</Padded>
+          </ScrollArea>
         ) : (
           children
         )}

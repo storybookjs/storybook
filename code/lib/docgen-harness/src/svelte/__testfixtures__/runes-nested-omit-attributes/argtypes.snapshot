@@ -1,0 +1,60 @@
+{
+  "checked": {
+    "control": {
+      "type": "boolean",
+    },
+    "description": "Checked state.",
+    "name": "checked",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+  "id": {
+    "control": {
+      "type": "text",
+    },
+    "description": undefined,
+    "name": "id",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+  "onCheckedChange": {
+    "control": null,
+    "description": "Called when the checked state changes.",
+    "name": "onCheckedChange",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "(checked: boolean) => void",
+      },
+    },
+    "type": {
+      "name": "(checked: boolean) => void",
+      "required": false,
+    },
+  },
+}

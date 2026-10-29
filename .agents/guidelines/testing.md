@@ -10,7 +10,7 @@ This document is canonical for testing practice: which kind of test to write, ho
 
 | Suite                     | Command                                                                                                          |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Story tests (components)  | `yarn storybook:vitest`, or `vitest run --config code/vitest.config.storybook.ts <story-file>`                   |
+| Story tests (components)  | `yarn storybook:vitest`, or `vitest run --config code/vitest.config.ts <story-file>`                             |
 | Unit tests                | `yarn test <pattern>` (e.g. `yarn test csf-tools`); the full suite is large, so run focused patterns while iterating |
 | Unit tests in watch mode  | `yarn test:watch`                                                                                                |
 | Visual validation         | Storybook UI or Chromatic                                                                                        |

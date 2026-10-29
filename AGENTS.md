@@ -1,6 +1,6 @@
 # Storybook Agent Instructions
 
-This file is the canonical instruction source for coding agents; `CLAUDE.md` and other entrypoints point here.
+This file is the canonical instruction source for coding agents; other entrypoints point here.
 Storybook is a TypeScript monorepo: code lives in `code/`, build tooling in `scripts/`, and every PR targets `next`.
 
 ## Always
@@ -34,7 +34,8 @@ Both start long-running dev servers.
 | call a Chromatic tool or debug a Chromatic build          | [Chromatic projects](.agents/guidelines/chromatic-projects.md)                                                  |
 | add or change an automigration                            | [`code/lib/cli-storybook/src/automigrate/README.md`](code/lib/cli-storybook/src/automigrate/README.md)          |
 
-Contributor skills live in `.agents/skills/`; `.claude/skills/` references them.
+Contributor skills live in `.agents/skills/`.
+Claude Code does not read `.agents/`, so each skill has a symlink in `.claude/skills/`; add one when you add a skill.
 
 ## Code Review
 
@@ -44,5 +45,5 @@ Before reviewing a pull request or a diff, read [`.agents/guidelines/code-review
 
 - Keep this file to the always-on rules and pointers. Put detail in the linked document that owns the topic, and update that document when its topic changes.
 - If a topic disappears, remove its document and its pointer together.
-- Keep `CLAUDE.md` and other agent entrypoints as thin references to this file.
+- Do not add a `CLAUDE.md`: Claude Code reads this file only when no `CLAUDE.md` exists. Keep other agent entrypoints as thin references to this file.
 - Turn recurring corrections into enforceable checks with [principle-encode-lessons-in-structure](.agents/skills/principle-encode-lessons-in-structure/SKILL.md).

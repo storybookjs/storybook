@@ -64,17 +64,10 @@ export function action(name: string, options: ActionOptions = {}): HandlerFuncti
       );
 
       if (storyRenderer) {
-        const deprecated = !globalThis?.FEATURES?.disallowImplicitActionsInRenderV8;
-        const error = new ImplicitActionsDuringRendering({
+        throw new ImplicitActionsDuringRendering({
           phase: storyRenderer.phase!,
           name,
-          deprecated,
         });
-        if (deprecated) {
-          console.warn(error);
-        } else {
-          throw error;
-        }
       }
     }
 

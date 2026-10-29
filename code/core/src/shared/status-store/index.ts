@@ -86,7 +86,6 @@ export const NON_AGGREGATED_STATUS_TYPE_IDS: string[] = [
 
 export const UNIVERSAL_STATUS_STORE_OPTIONS: StoreOptions<StatusesByStoryIdAndTypeId> = {
   id: 'storybook/status',
-  leader: true,
   initialState: {},
 } as const;
 

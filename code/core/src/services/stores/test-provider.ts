@@ -1,52 +1,12 @@
-import { createTestProviderStore } from '../../shared/test-provider-store/index.ts';
-import { UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS } from '../../shared/test-provider-store/index.ts';
-import { UniversalStore } from '../../shared/universal-store/index.ts';
-import type { UniversalStoreRealm } from '../../shared/universal-store/realm.ts';
-import { getOrRecreateStore } from './server-store-leadership.ts';
+import { type CoreStores, forwardToInstance, getCoreStores } from './core-stores.ts';
 
-type TestProviderStoreBundle = ReturnType<typeof createServerTestProviderStore>;
-
-const CACHES = new WeakMap<
-  UniversalStoreRealm,
-  { leader?: boolean; store?: TestProviderStoreBundle }
->();
-
-function createServerTestProviderStore(leader: boolean) {
-  return createTestProviderStore({
-    universalTestProviderStore: UniversalStore.create({
-      ...UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS,
-      leader,
-    }),
-  });
-}
-
-function getTestProviderStoreBundle(): TestProviderStoreBundle {
-  return getOrRecreateStore(
-    UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS.id,
-    CACHES,
-    createServerTestProviderStore
-  );
-}
+type TestProviderStoreBundle = CoreStores['testProvider'];
 
 export const getTestProviderStoreById: TestProviderStoreBundle['getTestProviderStoreById'] = (id) =>
-  getTestProviderStoreBundle().getTestProviderStoreById(id);
+  getCoreStores().testProvider.getTestProviderStoreById(id);
 
-export const fullTestProviderStore: TestProviderStoreBundle['fullTestProviderStore'] = new Proxy(
-  {} as TestProviderStoreBundle['fullTestProviderStore'],
-  {
-    get(_target, prop) {
-      const store = getTestProviderStoreBundle().fullTestProviderStore;
-      const value = Reflect.get(store, prop, store);
-      return typeof value === 'function' ? value.bind(store) : value;
-    },
-  }
-);
+export const fullTestProviderStore: TestProviderStoreBundle['fullTestProviderStore'] =
+  forwardToInstance(() => getCoreStores().testProvider.fullTestProviderStore);
 
 export const universalTestProviderStore: TestProviderStoreBundle['universalTestProviderStore'] =
-  new Proxy({} as TestProviderStoreBundle['universalTestProviderStore'], {
-    get(_target, prop) {
-      const store = getTestProviderStoreBundle().universalTestProviderStore;
-      const value = Reflect.get(store, prop, store);
-      return typeof value === 'function' ? value.bind(store) : value;
-    },
-  });
+  forwardToInstance(() => getCoreStores().testProvider.universalTestProviderStore);

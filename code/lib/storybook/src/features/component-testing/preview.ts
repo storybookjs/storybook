@@ -14,10 +14,9 @@ const { step } = instrument(
   { intercept: true }
 );
 
-export default () =>
-  definePreviewAddon({
-    parameters: {
-      throwPlayFunctionExceptions: false,
-    },
-    runStep: step,
-  });
+export default definePreviewAddon({
+  parameters: {
+    throwPlayFunctionExceptions: false,
+  },
+  runStep: step,
+});

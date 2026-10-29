@@ -1,4 +1,4 @@
-import { getProjectRoot, validateFrameworkName } from '@storybook/core/internal/common';
+import { findProjectRoot, validateFrameworkName } from '@storybook/core/internal/common';
 import { LegacyAdapterMissingError } from '@storybook/core/internal/server-errors';
 import { oneWayHash } from '@storybook/core/internal/telemetry';
 import type {
@@ -68,7 +68,8 @@ export async function loadLegacyPresets(
     configDir: storybook.configDir,
     configType: storybook.mode === 'build' ? ('PRODUCTION' as const) : ('DEVELOPMENT' as const),
     cacheKey:
-      input.cliOptions?.cacheKey ?? oneWayHash(relative(getProjectRoot(), storybook.configDir)),
+      input.cliOptions?.cacheKey ??
+      oneWayHash(relative(findProjectRoot(storybook.workingDir), storybook.configDir)),
     channel: storybook.channel,
   };
   const mainBuild =
@@ -167,7 +168,13 @@ export async function loadLegacyPresets(
 }
 
 function virtualPreset(plugin: StorybookPlugin): PresetConfig {
-  return { type: 'virtual', name: plugin.meta.name, [INSTANCE_PLUGIN]: plugin } as PresetConfig;
+  return {
+    type: 'virtual',
+    name: plugin.meta.name,
+    // A static object merges into `features` at this preset's position, before `main.ts`.
+    ...(plugin.features ? { features: plugin.features } : {}),
+    [INSTANCE_PLUGIN]: plugin,
+  } as PresetConfig;
 }
 
 function toLoadedPreset(config: PresetConfig): LoadedPreset {

@@ -1,6 +1,6 @@
 import { withTelemetry } from 'storybook/internal/server';
 import { telemetry } from '@storybook/core/internal/telemetry';
-import type { CLIOptions, Options } from '@storybook/core/internal/types';
+import type { CLIOptions } from '@storybook/core/internal/types';
 
 import { getService } from '@storybook/core/internal/deep/shared/open-service/server';
 import { getRegisteredToolsets } from '@storybook/core/open-service';
@@ -76,9 +76,9 @@ function defaultDeps(): SkillsRunDeps {
   return {
     async loadStorybook({ configDir }) {
       storybook = await createStorybook({ configDir, mode: 'headless' });
-      return storybook.options as unknown as Options;
+      return storybook;
     },
-    resolveSkillInputs: (options) => inStorybook(() => resolveSkillInputs(options)),
+    resolveSkillInputs: (instance) => inStorybook(() => resolveSkillInputs(instance)),
     getProjectInfo,
     getSetupMarkdown: getSetupMarkdownOutput,
     describeToolsets: () =>

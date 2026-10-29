@@ -5,8 +5,6 @@ export * from './build-dev.ts';
 export { exitOnDevServerSignal } from './exit-on-signal.ts';
 export * from './withTelemetry.ts';
 export { default as build } from './standalone.ts';
-export { getBuilders } from '../compat/get-builders.ts';
-export { prepareHeadlessUniversalStores } from './utils/get-server-channel.ts';
 export { isValidHost, type HostValidationOptions } from './utils/getHostValidationMiddleware.ts';
 export { getServerPort } from './utils/server-address.ts';
 export {

@@ -1,12 +1,14 @@
+import { StorybookInstanceUnavailableError } from '@storybook/core/internal/server-errors';
+
 import { getInstanceContext } from '../shared/instance-context.ts';
 
 const DEV_SERVER_SUBSCRIPTIONS = Symbol.for('storybook.instance.dev-server-subscriptions');
-const FALLBACK_DEV_SERVER_SUBSCRIPTIONS: Array<() => void> = [];
 
+/** The running instance's subscriptions that start with its dev server. */
 export function getDevServerSubscriptions(): Array<() => void> {
   const context = getInstanceContext();
   if (!context) {
-    return FALLBACK_DEV_SERVER_SUBSCRIPTIONS;
+    throw new StorybookInstanceUnavailableError({ reason: 'outside-instance' });
   }
   if (!context.state.has(DEV_SERVER_SUBSCRIPTIONS)) {
     const subscriptions: Array<() => void> = [];

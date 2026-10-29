@@ -48,6 +48,7 @@ export {
   combineParameters,
   composeConfigs,
   composeStepRunners,
+  createPortableStories,
   composeStories,
   composeStory,
   decorateStory,
@@ -70,7 +71,7 @@ export {
 /** CSF API */
 export { getCsfFactoryAnnotations } from './modules/store/csf/index.ts';
 
-export type { PropDescriptor } from './store.ts';
+export type { PortableStories, PortableStoriesOptions, PropDescriptor } from './store.ts';
 
 export { Tag } from '../constants/tags.ts';
 

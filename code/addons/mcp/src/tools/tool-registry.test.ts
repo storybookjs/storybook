@@ -5,10 +5,11 @@
  */
 
 import { logger } from '@storybook/core/internal/node-logger';
-import { clearToolsetRegistry, defineToolset, registerToolset } from '@storybook/core/open-service';
+import { defineToolset, registerToolset } from '@storybook/core/open-service';
 import * as v from 'valibot';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useTestInstance } from '../../../../core/src/shared/instance-context.test-helpers.ts';
 import { collectTelemetry } from '../telemetry.ts';
 import { registerCoreToolsetsForTest } from '../test-support/register-core-toolsets.ts';
 import type { ToolAvailability } from 'storybook/internal/server';
@@ -22,6 +23,8 @@ vi.mock('../telemetry.ts', { spy: true });
 vi.mock('@storybook/core/internal/node-logger', { spy: true });
 
 const loggerError = vi.mocked(logger.error);
+
+useTestInstance();
 
 beforeEach(() => {
   vi.mocked(collectTelemetry).mockResolvedValue(undefined);
@@ -146,10 +149,6 @@ describe('test-run over the registry', () => {
   const context: AddonToolRegistryContext = {
     availability: availabilityWith({ testSupported: true }),
   };
-
-  beforeEach(() => {
-    clearToolsetRegistry();
-  });
 
   // One integration probe through the real `test` toolset: a crashed run must reach the MCP
   // client flagged as an error with the report rendered. The per-status tag mapping lives on the

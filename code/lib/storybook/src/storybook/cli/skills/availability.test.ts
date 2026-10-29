@@ -1,11 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getInstanceContext } from '@storybook/core/internal/deep/shared/instance-context';
+import type { Storybook } from '@storybook/core';
 import { getService } from '@storybook/core/internal/deep/shared/open-service/server';
-import type { Options } from '@storybook/core/internal/types';
 
-import { isAddonA11yEnabled } from './addon-a11y.ts';
-import { isAddonVitestEnabled } from './addon-vitest.ts';
 import {
   getEffectiveToolAvailability,
   getToolAvailability,
@@ -14,34 +11,26 @@ import {
 } from './availability.ts';
 import { getManifestStatus } from './manifest-status.ts';
 
-vi.mock('@storybook/core/internal/deep/shared/instance-context', () => ({
-  getInstanceContext: vi.fn(),
-}));
 vi.mock('./manifest-status.ts', () => ({ getManifestStatus: vi.fn() }));
-vi.mock('./addon-vitest.ts', () => ({ isAddonVitestEnabled: vi.fn() }));
-vi.mock('./addon-a11y.ts', () => ({ isAddonA11yEnabled: vi.fn() }));
 vi.mock('@storybook/core/internal/deep/shared/open-service/server', () => ({
   getService: vi.fn(),
 }));
 
-function createOptions(): Options {
+/** An instance whose set-up plugins are `plugins`. */
+function createStorybook(plugins: string[] = []): Pick<Storybook, 'callHook' | 'hasPlugin'> {
   return {
-    presets: {
-      apply: vi.fn(async (_key: string, defaultValue?: unknown) => defaultValue),
-    },
-  } as unknown as Options;
+    callHook: vi.fn(async (_name: string, value?: unknown) => value),
+    hasPlugin: vi.fn((name: string) => plugins.includes(name)),
+  } as unknown as Pick<Storybook, 'callHook' | 'hasPlugin'>;
 }
 
 beforeEach(() => {
-  vi.mocked(getInstanceContext).mockReturnValue(undefined);
   vi.mocked(getManifestStatus).mockResolvedValue({
     available: false,
     hasManifests: false,
     hasFeatureFlag: false,
     docgenServer: false,
   });
-  vi.mocked(isAddonVitestEnabled).mockResolvedValue(false);
-  vi.mocked(isAddonA11yEnabled).mockResolvedValue(false);
   vi.mocked(getService).mockImplementation(() => {
     throw new Error('not registered');
   });
@@ -55,11 +44,11 @@ describe('getToolAvailability', () => {
       hasFeatureFlag: true,
       docgenServer: true,
     });
-    vi.mocked(isAddonVitestEnabled).mockResolvedValue(true);
-    vi.mocked(isAddonA11yEnabled).mockResolvedValue(true);
     vi.mocked(getService).mockReturnValue({} as any);
 
-    const result = await getToolAvailability(createOptions());
+    const result = await getToolAvailability(
+      createStorybook(['@storybook/addon-vitest', '@storybook/addon-a11y'])
+    );
 
     expect(result).toEqual({
       moduleGraphSupported: true,
@@ -73,26 +62,15 @@ describe('getToolAvailability', () => {
     });
   });
 
-  it.each([true, false])(
-    'uses instance plugin presence (%s) instead of legacy markers',
-    async (enabled) => {
-      const hasPlugin = vi.fn((_name: string) => enabled);
-      vi.mocked(getInstanceContext).mockReturnValue({
-        storybook: { hasPlugin },
-      } as unknown as NonNullable<ReturnType<typeof getInstanceContext>>);
-      vi.mocked(isAddonVitestEnabled).mockResolvedValue(!enabled);
-      vi.mocked(isAddonA11yEnabled).mockResolvedValue(!enabled);
+  it.each([
+    { plugins: [], expected: { testSupported: false, a11yEnabled: false } },
+    { plugins: ['@storybook/addon-vitest'], expected: { testSupported: true, a11yEnabled: false } },
+    { plugins: ['@storybook/addon-a11y'], expected: { testSupported: false, a11yEnabled: true } },
+  ])('reads plugin presence from the instance: $plugins', async ({ plugins, expected }) => {
+    const { testSupported, a11yEnabled } = await getToolAvailability(createStorybook(plugins));
 
-      const availability = await getToolAvailability(createOptions());
-
-      expect(availability.testSupported).toBe(enabled);
-      expect(availability.a11yEnabled).toBe(enabled);
-      expect(hasPlugin.mock.calls).toEqual([
-        ['@storybook/addon-vitest'],
-        ['@storybook/addon-a11y'],
-      ]);
-    }
-  );
+    expect({ testSupported, a11yEnabled }).toEqual(expected);
+  });
 
   it('enables the CLI docs gate on manifests alone, without the component-manifest flag', async () => {
     vi.mocked(getManifestStatus).mockResolvedValue({
@@ -102,7 +80,7 @@ describe('getToolAvailability', () => {
       docgenServer: false,
     });
 
-    const result = await getToolAvailability(createOptions());
+    const result = await getToolAvailability(createStorybook());
 
     expect(result.docsEnabled).toBe(false);
     expect(result.docsEnabledForCli).toBe(true);
@@ -116,7 +94,7 @@ describe('getToolAvailability', () => {
       docgenServer: false,
     });
 
-    const result = await getToolAvailability(createOptions());
+    const result = await getToolAvailability(createStorybook());
 
     expect(result.docsEnabledForCli).toBe(false);
   });
@@ -124,7 +102,7 @@ describe('getToolAvailability', () => {
   it('probes the module-graph service', async () => {
     vi.mocked(getService).mockReturnValue({} as any);
 
-    const result = await getToolAvailability(createOptions());
+    const result = await getToolAvailability(createStorybook());
 
     expect(result.moduleGraphSupported).toBe(true);
     expect(getService).toHaveBeenCalledWith('core/module-graph', { internal: true });

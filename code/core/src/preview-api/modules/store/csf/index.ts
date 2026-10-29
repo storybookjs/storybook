@@ -7,7 +7,6 @@ export * from './normalizeComponentAnnotations.ts';
 export * from './normalizeProjectAnnotations.ts';
 export * from './normalizeArrays.ts';
 export * from './composeConfigs.ts';
-export * from './composeProjectAnnotationsWithCore.ts';
 export * from './stepRunners.ts';
 export * from './portable-stories.ts';
 export * from './csf-factory-utils.ts';

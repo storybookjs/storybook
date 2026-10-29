@@ -86,7 +86,11 @@ export function startPreviewHost(
       );
       (await getMiddleware(options.configDir))(app);
       // No `server:app:extend`: it mounts dev-server endpoints and starts dev-only service subscriptions.
-      await useStatics(app, options);
+      await useStatics(app, {
+        configDir: options.configDir,
+        staticDirs: storybook.options.staticDirs,
+        faviconPath: await storybook.callHook('manager:favicon:extend', undefined),
+      });
 
       const preview = await getPreviewSources(storybook, { hmr: builder.hmr ?? 'vite' });
       const result = await builder.dev(storybook, {

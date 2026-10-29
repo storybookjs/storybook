@@ -1,7 +1,5 @@
 import { relative } from 'node:path';
 
-import type { Options } from '@storybook/core/internal/types';
-
 import { resolveStorybookConfigDir } from '@storybook/open-service/internal';
 import type { ToolsetCatalogEntry } from '@storybook/open-service';
 import { renderCommandReference } from './command-reference.ts';
@@ -46,10 +44,9 @@ export type SetupRun = { projectInfo: ProjectInfo; prompt: string };
 export type SkillsRunDeps = {
   /**
    * Loads a headless Storybook, injected so this module stays testable without loading a real
-   * Storybook configuration. Typed to the `Options` surface `resolveSkillInputs` consumes, so no
-   * cast is needed at either call site.
+   * Storybook configuration.
    */
-  loadStorybook: (args: { configDir: string }) => Promise<Options>;
+  loadStorybook: (args: { configDir: string }) => Promise<Parameters<typeof resolveSkillInputs>[0]>;
   resolveSkillInputs: typeof resolveSkillInputs;
   getProjectInfo: typeof getProjectInfo;
   getSetupMarkdown: typeof getSetupMarkdownOutput;

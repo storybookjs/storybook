@@ -57,7 +57,7 @@ export * from './utils/scan-and-transform-files.ts';
 export * from './utils/transform-imports.ts';
 export * from '../utils/module.ts';
 export * from '../constants/config-folder.ts';
-export { getDiff } from '../services/save-story/getDiff.ts';
+export { getDiff } from './utils/get-diff.ts';
 export { getAiSetupRunId } from '../utils/ai-checklist-flags.ts';
 export { getFeatures } from '../shared/features.ts';
 export * from '../utils/paths.ts';

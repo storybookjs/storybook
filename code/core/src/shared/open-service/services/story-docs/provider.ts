@@ -1,5 +1,5 @@
 import '../../../../services/hooks.ts';
-import { getInstanceContext } from '../../../instance-context.ts';
+import { getStorybook } from '../../../../instance/instance-context.ts';
 
 import { logger } from '@storybook/core/internal/node-logger';
 
@@ -7,7 +7,6 @@ import {
   STORY_FILE_TEST_REGEXP,
   getStoryImportPathFromEntry,
 } from '../../../../common/utils/select-component-entry.ts';
-import type { DocgenProviderDescriptor } from '../docgen/types.ts';
 import type {
   StoryDocsPayload,
   StoryDocsProvider,
@@ -38,11 +37,8 @@ export function createWorkerGatedStoryDocsProvider({
   storyFileTest = STORY_FILE_TEST_REGEXP,
   build,
 }: WorkerGatedStoryDocsProviderOptions): StoryDocsProviderPreset {
-  return async (nextStoryDocs, options): Promise<StoryDocsProvider> => {
-    const storybook = getInstanceContext()?.storybook;
-    const descriptors = storybook
-      ? await storybook.callHook('core:docgen-providers:collect', [])
-      : await options.presets.apply<DocgenProviderDescriptor[]>('experimental_docgenProvider', []);
+  return async (nextStoryDocs): Promise<StoryDocsProvider> => {
+    const descriptors = await getStorybook().callHook('core:docgen-providers:collect', []);
     if (!descriptors.some((descriptor) => descriptor.moduleSpecifier === docgenWorker)) {
       return nextStoryDocs;
     }

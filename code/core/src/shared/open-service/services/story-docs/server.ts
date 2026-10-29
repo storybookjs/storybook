@@ -16,10 +16,7 @@ export type RegisterStoryDocsServiceOptions = {
    * pre-resolved generator so each call does not re-await generator initialization.
    */
   getIndex: () => Promise<StoryIndex>;
-  /**
-   * Fully composed story-docs provider chain from
-   * `presets.apply('experimental_storyDocsProvider', ...)`.
-   */
+  /** Fully composed story-docs provider chain from `core:story-docs-provider:extend`. */
   storyDocsProvider: StoryDocsProvider;
 };
 

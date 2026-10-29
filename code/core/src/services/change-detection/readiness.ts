@@ -1,3 +1,5 @@
+import { StorybookInstanceUnavailableError } from '@storybook/core/internal/server-errors';
+
 import { getInstanceContext } from '../../shared/instance-context.ts';
 
 export type ChangeDetectionReadiness =
@@ -20,12 +22,11 @@ type ReadinessState = {
 };
 
 const READINESS = Symbol.for('storybook.instance.change-detection-readiness');
-const FALLBACK: ReadinessState = { deferred: createDeferred() };
 
 function getReadiness(): ReadinessState {
   const context = getInstanceContext();
   if (!context) {
-    return FALLBACK;
+    throw new StorybookInstanceUnavailableError({ reason: 'outside-instance' });
   }
   if (!context.state.has(READINESS)) {
     context.state.set(READINESS, { deferred: createDeferred() });

@@ -8,6 +8,7 @@
 import * as v from 'valibot';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useTestInstance } from '../../../../core/src/shared/instance-context.test-helpers.ts';
 import { collectTelemetry } from '../telemetry.ts';
 import { registerCoreToolsetsForTest } from '../test-support/register-core-toolsets.ts';
 import { getAddonToolMetadata, registerAddonMcpTools } from './tool-registry.ts';
@@ -69,6 +70,8 @@ function makeServer(readable: string[]) {
 const context = { availability, multiSource: true, toolsets: { docs: true } } as never;
 
 describe('docs tools in a composition', () => {
+  useTestInstance();
+
   beforeEach(() => {
     registerCoreToolsetsForTest();
     vi.mocked(collectTelemetry).mockResolvedValue(undefined);

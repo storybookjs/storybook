@@ -12,6 +12,7 @@ import type {
   WithRenderArgs,
 } from 'storybook/internal/csf';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
+import { BUILT_IN_PREVIEW_ANNOTATIONS } from 'storybook/internal/preview/built-in-annotations';
 import type {
   Args,
   ArgsStoryFn,
@@ -47,10 +48,13 @@ import type { SvelteTypes } from './types.ts';
 export function __definePreview<Addons extends PreviewAddonEntry[]>(
   input: { addons: Addons } & ProjectAnnotations<SvelteTypes & InferTypes<Addons>>
 ): SveltePreview<SvelteTypes & InferTypes<Addons>> {
-  const preview = definePreviewBase({
-    ...input,
-    addons: [svelteAnnotations, svelteDocsAnnotations, ...(input.addons ?? [])],
-  });
+  const preview = definePreviewBase(
+    {
+      ...input,
+      addons: [svelteAnnotations, svelteDocsAnnotations, ...(input.addons ?? [])],
+    },
+    BUILT_IN_PREVIEW_ANNOTATIONS
+  );
   const meta = preview.meta.bind(preview);
   // Svelte CSF files render their stories with the `Story` component of the meta.
   preview.meta = ((metaInput: Parameters<typeof meta>[0]) =>

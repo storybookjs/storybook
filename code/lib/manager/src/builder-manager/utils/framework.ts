@@ -2,7 +2,6 @@ import {
   extractFrameworkPackageName,
   frameworkPackages,
   frameworkToRenderer,
-  getFrameworkNameFromConfig,
 } from '@storybook/core/internal/common';
 import {
   type CoreConfig,
@@ -10,21 +9,6 @@ import {
   type SecurityConfig,
   SupportedBuilder,
 } from '@storybook/core/internal/types';
-
-export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
-  const frameworkName = getFrameworkNameFromConfig(
-    await options.presets.apply('framework', '', options)
-  );
-  if (!frameworkName) {
-    throw new Error("You must specify a framework in '.storybook/main.js' config.");
-  }
-  return buildFrameworkGlobals(
-    options,
-    await options.presets.apply('core'),
-    frameworkName,
-    await options.presets.apply<SecurityConfig | undefined>('security')
-  );
-};
 
 export function buildFrameworkGlobals(
   options: Pick<Options, 'configType' | 'host' | 'networkAddress'>,

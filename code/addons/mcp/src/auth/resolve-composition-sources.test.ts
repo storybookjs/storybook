@@ -1,5 +1,4 @@
 import { logger } from 'storybook/internal/node-logger';
-import type { Options } from 'storybook/internal/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveCompositionSources } from './resolve-composition-sources.ts';
@@ -7,8 +6,11 @@ import { resolveCompositionSources } from './resolve-composition-sources.ts';
 const VALID_MANIFEST =
   '{"v":1,"components":{"button":{"id":"button","name":"Button","path":"src/Button.tsx"}}}';
 
-function optionsWithRefs(refs: unknown): Options {
-  return { presets: { apply: vi.fn().mockResolvedValue(refs) } } as unknown as Options;
+/** A Storybook whose `manager:refs:extend` hook resolves to `refs`. */
+function optionsWithRefs(refs: unknown): Parameters<typeof resolveCompositionSources>[0] {
+  return {
+    callHook: vi.fn(async (name: string) => (name === 'manager:refs:extend' ? refs : undefined)),
+  } as unknown as Parameters<typeof resolveCompositionSources>[0];
 }
 
 describe('resolveCompositionSources', () => {

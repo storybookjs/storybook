@@ -115,6 +115,10 @@ const config: BuildEntries = {
         entryPoint: './src/csf-tools/estree/ast.ts',
       },
       {
+        exportEntries: ['./internal/deep/csf-tools/estree/editor'],
+        entryPoint: './src/csf-tools/estree/editor.ts',
+      },
+      {
         exportEntries: ['./internal/deep/instance/instance-context'],
         entryPoint: './src/instance/instance-context.ts',
       },
@@ -123,20 +127,24 @@ const config: BuildEntries = {
         entryPoint: './src/preview/hooks.ts',
       },
       {
-        exportEntries: ['./internal/deep/services/change-detection/change-detection-service'],
-        entryPoint: './src/services/change-detection/change-detection-service.ts',
+        exportEntries: ['./internal/deep/services/change-detection/node'],
+        entryPoint: './src/services/change-detection/node.ts',
       },
       {
-        exportEntries: ['./internal/deep/services/checklist'],
-        entryPoint: './src/services/checklist.ts',
+        exportEntries: ['./internal/deep/services/dev-server-subscriptions'],
+        entryPoint: './src/services/dev-server-subscriptions.ts',
+      },
+      {
+        exportEntries: ['./internal/deep/telemetry/ai-setup-utils'],
+        entryPoint: './src/telemetry/ai-setup-utils.ts',
+      },
+      {
+        exportEntries: ['./internal/deep/telemetry/event-cache'],
+        entryPoint: './src/telemetry/event-cache.ts',
       },
       {
         exportEntries: ['./internal/deep/services/preset'],
         entryPoint: './src/services/preset.ts',
-      },
-      {
-        exportEntries: ['./internal/deep/services/save-story/save-story'],
-        entryPoint: './src/services/save-story/save-story.ts',
       },
       {
         exportEntries: ['./internal/deep/services/stores/status'],

@@ -22,7 +22,7 @@ import {
   type PresetPropertyFn,
 } from '@storybook/core/internal/types';
 
-import { storyIndexGeneratorPromise } from '@storybook/core/internal/deep/services/preset';
+import type { Storybook } from '@storybook/core/internal/instance';
 
 export {
   experimental_devServer,
@@ -30,23 +30,19 @@ export {
   csfIndexer,
 } from '@storybook/core/internal/deep/services/preset';
 
-import * as pathe from 'pathe';
 import { isAbsolute, join } from 'pathe';
 import { dedent } from '@storybook/core/internal/deep/utils/node-libs';
 
 import { resolvePackageDir } from '@storybook/core/internal/deep/utils/module';
-import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
-import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
-import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
-import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
-import { initializeChecklist } from '@storybook/core/internal/deep/services/checklist';
+import {
+  initTelemetryChannel,
+  initTelemetryErrorChannel,
+} from '../server-channel/telemetry-channel.ts';
 import {
   defaultFavicon,
   defaultStaticDirs,
 } from '@storybook/core/internal/deep/common/utils/constants';
-import { initializeSaveStory } from '@storybook/core/internal/deep/services/save-story/save-story';
 import { parseStaticDir } from '@storybook/core/internal/deep/common/utils/server-statics';
-import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new.ts';
 import { getWsToken } from './wsToken.ts';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
@@ -59,13 +55,14 @@ export const staticDirs: PresetPropertyFn<'staticDirs'> = async (values = []) =>
 
 export const favicon = async (
   value: string | undefined,
-  options: Pick<Options, 'presets' | 'configDir'>
+  options: Pick<Options, 'configDir'>,
+  storybook: Pick<Storybook, 'callHook' | 'workingDir'>
 ) => {
   if (value) {
     return value;
   }
 
-  const staticDirsValue = await options.presets.apply('staticDirs');
+  const staticDirsValue = await storybook.callHook('core:static-dirs:collect', []);
 
   const statics = staticDirsValue
     ? staticDirsValue.map((dir) => (typeof dir === 'string' ? dir : `${dir.from}:${dir.to}`))
@@ -78,7 +75,7 @@ export const favicon = async (
         staticDirsValue && !isAbsolute(dir)
           ? getDirectoryFromWorkingDir({
               configDir: options.configDir,
-              workingDir: process.cwd(),
+              workingDir: storybook.workingDir,
               directory: dir,
             })
           : dir;
@@ -110,12 +107,16 @@ export const favicon = async (
   return faviconPaths[0] || defaultFavicon;
 };
 
-export const babel = async (_: unknown, options: Options) => {
-  const { presets } = options;
-  const babelDefault = ((await presets.apply('babelDefault', {}, options)) ?? {}) as Record<
-    string,
-    any
-  >;
+export const babel = async (
+  _: unknown,
+  options: Options,
+  storybook: Pick<Storybook, 'callHook'>
+) => {
+  const babelDefault = ((await storybook.callHook(
+    'builder:babel-default:extend',
+    {},
+    { ...options }
+  )) ?? {}) as Record<string, any>;
 
   const presetConfig: Record<string, unknown> = {
     targets: {
@@ -154,8 +155,12 @@ export const title = (previous: string, options: Options) =>
 
 export const logLevel = (previous: any, options: Options) => previous || options.loglevel || 'info';
 
-export const previewHead = async (base: any, { configDir, presets }: Options) => {
-  const interpolations = await presets.apply<Record<string, string>>('env');
+export const previewHead = async (
+  base: any,
+  { configDir }: Options,
+  storybook: Pick<Storybook, 'callHook'>
+) => {
+  const interpolations = await storybook.callHook('core:env:extend', undefined);
   return getPreviewHeadTemplate(configDir, interpolations);
 };
 
@@ -164,8 +169,12 @@ export const env = async () => {
   return raw;
 };
 
-export const previewBody = async (base: any, { configDir, presets }: Options) => {
-  const interpolations = await presets.apply<Record<string, string>>('env');
+export const previewBody = async (
+  base: any,
+  { configDir }: Options,
+  storybook: Pick<Storybook, 'callHook'>
+) => {
+  const interpolations = await storybook.callHook('core:env:extend', undefined);
   return getPreviewBodyTemplate(configDir, interpolations);
 };
 
@@ -215,9 +224,10 @@ export const core = async (existing: CoreConfig, options: Options): Promise<Core
 
 export const frameworkOptions = async (
   _: never,
-  options: Options
+  _options: Options,
+  storybook: Pick<Storybook, 'callHook'>
 ): Promise<Record<string, any> | null> => {
-  const config = await options.presets.apply('framework');
+  const config = await storybook.callHook('core:framework:extend', undefined);
 
   if (typeof config === 'string') {
     return {};
@@ -230,11 +240,15 @@ export const frameworkOptions = async (
   return config.options;
 };
 
-export const managerHead = async (_: any, options: Options) => {
+export const managerHead = async (
+  _: any,
+  options: Options,
+  storybook: Pick<Storybook, 'callHook'>
+) => {
   const location = join(options.configDir, 'manager-head.html');
   if (existsSync(location)) {
     const contents = readFile(location, { encoding: 'utf8' });
-    const interpolations = options.presets.apply<Record<string, string>>('env');
+    const interpolations = storybook.callHook('core:env:extend', undefined);
 
     return interpolate(await contents, await interpolations);
   }
@@ -242,16 +256,12 @@ export const managerHead = async (_: any, options: Options) => {
   return '';
 };
 
+/** The host's own channel handlers; features register theirs from their built-in addons. */
 export const experimental_serverChannel = async (
   channel: Channel,
-  options: OptionsWithRequiredCache
-) => {
-  initAIAnalyticsChannel(channel, options, () => storyIndexGeneratorPromise);
-  initializeChecklist(channel, () => storyIndexGeneratorPromise, options.configDir);
-  initializeWhatsNew(channel, options);
-  initializeSaveStory(channel, options);
-  initGhostStoriesChannel(channel, options);
-  initOpenInEditorChannel(channel);
+  options: Options
+): Promise<Channel> => {
+  initTelemetryErrorChannel(channel, options);
   initTelemetryChannel(channel);
 
   return channel;
@@ -273,11 +283,4 @@ export const resolvedReact = async (existing: any) => {
   } catch (e) {
     return existing;
   }
-};
-
-export const managerEntries = async (existing: any) => {
-  return [
-    pathe.join(resolvePackageDir('storybook'), 'dist/storybook/server/presets/common-manager.js'),
-    ...(existing || []),
-  ];
 };

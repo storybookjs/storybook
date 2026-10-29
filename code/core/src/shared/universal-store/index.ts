@@ -1,129 +1,54 @@
+import { whenChannelInstalled } from '@storybook/core/internal/channels';
+
 import { dedent } from 'ts-dedent';
 
 import { UniversalStoreFollowerTimeoutError } from '../../manager-errors.ts';
+import { getInstanceContext } from '../instance-context.ts';
 import { isFirstPartyStoreId } from './first-party-store-ids.ts';
-import { createUniversalStoreRealm, getUniversalStoreRealm } from './realm.ts';
 import type {
   Actor,
-  ChannelEvent,
+  BaseEvent,
   ChannelLike,
-  EnvironmentOverrides,
-  EnvironmentType,
   Event,
   EventInfo,
-  ExistingStateResponseEvent,
   Listener,
   SetStateEvent,
   StateUpdater,
   StatusType,
+  StoreMessage,
   StoreOptions,
 } from './types.ts';
 
 const CHANNEL_EVENT_PREFIX = 'UNIVERSAL_STORE:' as const;
+const SYNC_TIMEOUT_MS = 1000;
+const CLIENT_KINDS = new Set(['state-request', 'set-state', 'send']);
 
-const ProgressState = {
-  PENDING: 'PENDING',
-  RESOLVED: 'RESOLVED',
-  REJECTED: 'REJECTED',
-} as const;
+type Deferred = { promise: Promise<void>; resolve: () => void; reject: (error: Error) => void };
 
 /**
- * A universal store implementation that synchronizes state across different environments using a
- * channel-based communication.
+ * State shared between one owner and any number of clients over a channel.
  *
- * The store follows a leader-follower pattern where:
- *
- * - Leader: The main store instance that owns and manages the state
- * - Follower: Store instances that mirror the leader's state
- *
- * Features:
- *
- * - State synchronization across environments
- * - Event-based communication
- * - Type-safe state and custom events
- * - Subscription system for state changes and custom events
- *
- * @remarks
- * - The store must be created using the static `create()` method, not the constructor
- * - Follower stores will automatically sync with their leader's state. If they have initial state, it
- *   will be replaced immediately when it has synced with the leader.
+ * The owner holds the state: on the server it is the Storybook instance, in a static build the
+ * manager. Clients (the manager in dev, an attached tools host, the Vitest child) request the
+ * owner's state, route writes and events through it, and mirror what it broadcasts.
  *
  * @example
  *
- * ```typescript
- * interface MyState {
- *   count: number;
- * }
- * interface MyCustomEvent {
- *   type: 'INCREMENT';
- *   payload: number;
- * }
- *
- * // Create a leader store
- * const leaderStore = UniversalStore.create<MyState, MyCustomEvent>({
- *   id: 'my-store',
- *   leader: true,
- *   initialState: { count: 0 },
- * });
- *
- * // Create a follower store
- * const followerStore = UniversalStore.create<MyState, MyCustomEvent>({
- *   id: 'my-store',
- *   leader: false,
- * });
+ * ```ts
+ * const owner = UniversalStore.create({ id: 'storybook/test', owner: true, channel, initialState });
+ * const client = UniversalStore.create({ id: 'storybook/test', channel });
+ * await client.untilReady();
+ * client.setState((state) => ({ ...state, count: state.count + 1 })); // the owner applies it
  * ```
- *
- * @template State - The type of state managed by the store
- * @template CustomEvent - Custom events that can be sent through the store. Must have a `type`
- *   string and optional `payload`
- * @throws {Error} If constructed directly instead of using `create()`
- * @throws {Error} If created without setting a channel first
- * @throws {Error} If a follower is created with initial state
- * @throws {Error} If a follower cannot find its leader within 1 second
  */
-export class UniversalStore<
-  State,
-  CustomEvent extends { type: string; payload?: any } = { type: string; payload?: any },
-> {
-  /**
-   * Defines the possible actor types in the store system
-   *
-   * @readonly
-   */
+export class UniversalStore<State, CustomEvent extends BaseEvent = BaseEvent> {
   public static readonly ActorType = {
-    LEADER: 'LEADER',
-    FOLLOWER: 'FOLLOWER',
+    OWNER: 'OWNER',
+    CLIENT: 'CLIENT',
   } as const;
 
-  /**
-   * Defines the possible environments the store can run in
-   *
-   * @readonly
-   */
-  public static readonly Environment = {
-    SERVER: 'SERVER',
-    MANAGER: 'MANAGER',
-    PREVIEW: 'PREVIEW',
-    UNKNOWN: 'UNKNOWN',
-    MOCK: 'MOCK',
-  } as const;
-
-  /** The environment this realm was prepared as, or `undefined` before `__prepare`. */
-  public static get preparedEnvironment(): EnvironmentType | undefined {
-    return getUniversalStoreRealm().environment;
-  }
-
-  /**
-   * Internal event types used for store synchronization
-   *
-   * @readonly
-   */
   public static readonly InternalEventType = {
-    EXISTING_STATE_REQUEST: '__EXISTING_STATE_REQUEST',
-    EXISTING_STATE_RESPONSE: '__EXISTING_STATE_RESPONSE',
     SET_STATE: '__SET_STATE',
-    LEADER_CREATED: '__LEADER_CREATED',
-    FOLLOWER_CREATED: '__FOLLOWER_CREATED',
   } as const;
 
   public static readonly Status = {
@@ -133,181 +58,74 @@ export class UniversalStore<
     ERROR: 'ERROR',
   } as const;
 
-  // This is used to check if constructor was called from the static factory create()
-  protected static isInternalConstructing = false;
-
-  private readonly realm = getUniversalStoreRealm();
-
-  private disposed = false;
-
-  private syncingTimeout?: ReturnType<typeof setTimeout>;
-
   /** Enable debug logs for this store */
   public debugging = false;
 
+  public readonly id: string;
+
   /** The actor object representing the store instance with a unique ID and a type */
-  public get actor(): Actor {
-    return Object.freeze({
-      id: this.actorId,
-      type: this.actorType,
-      environment: this.environment ?? UniversalStore.Environment.UNKNOWN,
-    });
-  }
-
-  /**
-   * The current state of the store, that signals both if the store is prepared by Storybook and
-   * also - in the case of a follower - if the state has been synced with the leader's state.
-   */
-  public get status(): StatusType {
-    if (!this.channel || !this.environment) {
-      return UniversalStore.Status.UNPREPARED;
-    }
-
-    switch (this.syncing?.state) {
-      case ProgressState.PENDING:
-      case undefined:
-        return UniversalStore.Status.SYNCING;
-
-      case ProgressState.REJECTED:
-        return UniversalStore.Status.ERROR;
-      case ProgressState.RESOLVED:
-      default:
-        return UniversalStore.Status.READY;
-    }
-  }
-
-  /**
-   * A promise that resolves when the store is fully ready. A leader will be ready when the store
-   * has been prepared by Storybook, which is almost instantly.
-   *
-   * A follower will be ready when the state has been synced with the leader's state, within a few
-   * hundred milliseconds.
-   */
-  public untilReady() {
-    const preparation =
-      this.channel && this.environment ? Promise.resolve() : this.realm.preparation.promise;
-    return Promise.all([preparation, this.syncing?.promise]);
-  }
-
-  /**
-   * The syncing construct is used to keep track of if the instance's state has been synced with the
-   * other instances. A leader will immediately have the promise resolved. A follower will initially
-   * be in a PENDING state, and resolve when the leader has sent the existing state, or reject if no
-   * leader has responded before the timeout.
-   */
-  private syncing?: {
-    state: (typeof ProgressState)[keyof typeof ProgressState];
-    promise?: Promise<void>;
-    resolve?: () => void;
-    reject?: (error: Error) => void;
-  };
-
-  private channelEventName: string;
+  public readonly actor: Actor;
 
   private state: State;
 
   private channel?: ChannelLike;
 
-  private environment?: EnvironmentType;
+  private readonly channelEventName: string;
 
-  // TODO: narrow type of listeners based on event type
-  private listeners: Map<string, Set<Listener<any>>> = new Map([['*', new Set()]]);
+  private readonly listeners: Map<string, Set<Listener<any>>> = new Map([['*', new Set()]]);
 
-  private id: string;
+  private syncStatus: StatusType;
 
-  private actorId: Actor['id'];
+  private sync?: Deferred;
 
-  private actorType: Actor['type'];
+  private syncTimeout?: ReturnType<typeof setTimeout>;
 
-  protected constructor(options: StoreOptions<State>, environmentOverrides?: EnvironmentOverrides) {
+  private disposed = false;
+
+  /** The last write this client sent; its echo carries the same number. */
+  private seq = 0;
+
+  /** Whether another actor's state arrived after this client's last write. */
+  private overwrittenSinceWrite = false;
+
+  protected constructor(
+    options: StoreOptions<State> & { channel: ChannelLike | Promise<ChannelLike> }
+  ) {
     this.debugging = options.debug ?? false;
-    // This constructor is a simulated private constructor
-    // it can only be called from within the static factory method create()
-    // See: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Private_propertiessimulating_private_constructors
-    if (!UniversalStore.isInternalConstructing) {
-      throw new TypeError(
-        'UniversalStore is not constructable - use UniversalStore.create() instead'
-      );
-    }
-    UniversalStore.isInternalConstructing = false;
-
     this.id = options.id;
-    this.actorId = Date.now().toString(36) + Math.random().toString(36).substring(2);
-    this.actorType = options.leader
-      ? UniversalStore.ActorType.LEADER
-      : UniversalStore.ActorType.FOLLOWER;
+    this.actor = Object.freeze({
+      id: Date.now().toString(36) + Math.random().toString(36).substring(2),
+      type: options.owner ? UniversalStore.ActorType.OWNER : UniversalStore.ActorType.CLIENT,
+    });
     this.state = options.initialState as State;
     this.channelEventName = `${CHANNEL_EVENT_PREFIX}${this.id}`;
+    this.syncStatus = UniversalStore.Status.UNPREPARED;
 
-    this.debug('constructor', {
-      options,
-      environmentOverrides,
-      channelEventName: this.channelEventName,
-    });
+    this.setState = this.setState.bind(this);
+    this.onStateChange = this.onStateChange.bind(this);
+    this.untilReady = this.untilReady.bind(this);
+    this.handleMessage = this.handleMessage.bind(this);
 
-    if (this.actor.type === UniversalStore.ActorType.LEADER) {
-      // If this is a leader, resolve the syncing promise immediately
-      // because the state doesn't need to be synced
-      this.syncing = {
-        state: ProgressState.RESOLVED,
-        promise: Promise.resolve(),
-      };
+    if (this.isOwner) {
+      this.sync = deferred();
     } else {
-      // Set up the syncing promise for followers, that will be resolved when the state
-      // is synced with the leader
-      let syncingResolve: () => void;
-      let syncingReject: (error: Error) => void;
-      const syncingPromise = new Promise<void>((resolve, reject) => {
-        syncingResolve = () => {
-          if (this.syncing!.state !== ProgressState.PENDING) {
-            return;
-          }
-          this.syncing!.state = ProgressState.RESOLVED;
-          resolve();
-        };
-        syncingReject = (reason) => {
-          if (this.syncing!.state !== ProgressState.PENDING) {
-            return;
-          }
-          this.syncing!.state = ProgressState.REJECTED;
-          reject(reason);
-        };
-      });
-      this.syncing = {
-        state: ProgressState.PENDING,
-        promise: syncingPromise,
-        resolve: syncingResolve!,
-        reject: syncingReject!,
-      };
+      this.startSync();
     }
 
-    // Bind all methods
-    this.getState = this.getState.bind(this);
-    this.setState = this.setState.bind(this);
-    this.subscribe = this.subscribe.bind(this);
-    this.onStateChange = this.onStateChange.bind(this);
-    this.send = this.send.bind(this);
-    this.emitToChannel = this.emitToChannel.bind(this);
-    this.prepareThis = this.prepareThis.bind(this);
-    this.emitToListeners = this.emitToListeners.bind(this);
-    this.handleChannelEvents = this.handleChannelEvents.bind(this);
-    this.debug = this.debug.bind(this);
-
-    this.channel = environmentOverrides?.channel ?? this.realm.channel;
-    this.environment = environmentOverrides?.environment ?? this.realm.environment;
-
-    if (this.channel && this.environment) {
-      this.prepareThis({ channel: this.channel, environment: this.environment });
+    if ('then' in options.channel) {
+      options.channel.then((channel) => this.connect(channel), this.sync!.reject);
     } else {
-      this.realm.preparation.promise.then(this.prepareThis);
+      this.connect(options.channel);
     }
   }
 
-  /** Creates a new instance of UniversalStore */
-  static create<
-    State = any,
-    CustomEvent extends { type: string; payload?: any } = { type: string; payload?: any },
-  >(options: StoreOptions<State>): UniversalStore<State, CustomEvent> {
+  /**
+   * Creates a store. Without a `channel` it syncs on the current instance's channel on the server
+   * (and is disposed when that instance closes), or on the page's channel in the browser.
+   */
+  static create<State = any, CustomEvent extends BaseEvent = BaseEvent>(
+    options: StoreOptions<State>
+  ): UniversalStore<State, CustomEvent> {
     if (!options || typeof options?.id !== 'string') {
       throw new TypeError('id is required and must be a string, when creating a UniversalStore');
     }
@@ -316,86 +134,53 @@ export class UniversalStore<
         `UniversalStore is internal to Storybook and cannot create a store with id "${options.id}"`
       );
     }
-    if (options.debug) {
-      console.debug(
-        dedent`[UniversalStore]
-        create`,
-        { options }
-      );
-    }
-
-    const realm = getUniversalStoreRealm();
-    const existing = realm.instances.get(options.id);
-    if (existing) {
-      console.warn(dedent`UniversalStore with id "${options.id}" already exists in this environment, re-using existing.
-        You should reuse the existing instance instead of trying to create a new one.`);
-      return existing;
-    }
-
-    UniversalStore.isInternalConstructing = true;
-    const store = new UniversalStore<State, CustomEvent>(options);
-    realm.instances.set(options.id, store);
+    const context = options.channel ? undefined : getInstanceContext();
+    const channel = options.channel ?? context?.channel ?? defaultChannel();
+    const store = new UniversalStore<State, CustomEvent>({ ...options, channel });
+    context?.cleanups.add(() => store.__dispose());
     return store;
   }
 
   /**
-   * Used by Storybook to set the channel for all instances of UniversalStore in the given
-   * environment.
-   *
-   * @internal
+   * The owner's status is `READY` once it has a channel. A client is `SYNCING` until the owner's
+   * state arrives, and `ERROR` when it timed out waiting; a late answer still makes it `READY`.
    */
-  static __prepare(channel: ChannelLike, environment: EnvironmentType) {
-    const realm = getUniversalStoreRealm();
-    realm.channel = channel;
-    realm.environment = environment;
-    realm.preparation.resolve({ channel, environment });
+  public get status(): StatusType {
+    return this.syncStatus;
+  }
+
+  /** Resolves when the store is ready; a client that timed out asks the owner again. */
+  public untilReady(): Promise<void> {
+    if (this.syncStatus === UniversalStore.Status.ERROR && !this.disposed) {
+      this.startSync();
+      this.requestState();
+    }
+    return this.sync!.promise;
   }
 
   /** Gets the current state */
   public getState = (): State => {
-    this.debug('getState', { state: this.state });
     return this.state;
   };
 
-  /**
-   * Updates the store's state
-   *
-   * Either a new state or a state updater function can be passed to the method.
-   */
-  public setState(updater: State | StateUpdater<State>) {
+  /** Updates the state; a client applies it locally and forwards it to the owner. */
+  public setState(updater: State | StateUpdater<State>): void {
     const previousState = this.state;
-    const newState =
+    const state =
       typeof updater === 'function' ? (updater as StateUpdater<State>)(previousState) : updater;
+    this.debug('setState', { state, previousState });
+    this.assertReady('set state', { state });
 
-    this.debug('setState', { newState, previousState, updater });
-
-    if (this.status !== UniversalStore.Status.READY) {
-      throw new TypeError(
-        dedent`Cannot set state before store is ready. You can get the current status with store.status,
-        or await store.readyPromise to wait for the store to be ready before sending events.
-        ${JSON.stringify(
-          {
-            newState,
-            id: this.id,
-            actor: this.actor,
-            environment: this.environment,
-          },
-          null,
-          2
-        )}`
-      );
+    this.state = state;
+    const eventInfo = { actor: this.actor };
+    if (this.isOwner) {
+      this.emitToChannel({ kind: 'state-changed', state, previousState, eventInfo });
+    } else {
+      this.seq++;
+      this.overwrittenSinceWrite = false;
+      this.emitToChannel({ kind: 'set-state', from: this.actor, seq: this.seq, state });
     }
-
-    this.state = newState;
-    const event = {
-      type: UniversalStore.InternalEventType.SET_STATE,
-      payload: {
-        state: newState,
-        previousState,
-      },
-    };
-    this.emitToChannel(event, { actor: this.actor });
-    this.emitToListeners(event, { actor: this.actor });
+    this.emitToListeners(setStateEvent(state, previousState), eventInfo);
   }
 
   /**
@@ -403,7 +188,6 @@ export class UniversalStore<
    *
    * @returns A function to unsubscribe
    */
-
   public subscribe: {
     (listener: Listener<Event<State, CustomEvent>>): () => void;
     <EventType extends Event<State, CustomEvent>['type']>(
@@ -415,11 +199,8 @@ export class UniversalStore<
     maybeListener?: Listener<Extract<Event<State, CustomEvent>, { type: EventType }>>
   ) => {
     const subscribesToAllEvents = typeof eventTypeOrListener === 'function';
-
     const eventType = subscribesToAllEvents ? '*' : eventTypeOrListener;
     const listener = subscribesToAllEvents ? eventTypeOrListener : maybeListener;
-
-    this.debug('subscribe', { eventType, listener });
 
     if (!listener) {
       throw new TypeError(
@@ -433,11 +214,7 @@ export class UniversalStore<
     this.listeners.get(eventType)!.add(listener);
 
     return () => {
-      this.debug('unsubscribe', { eventType, listener });
-      if (!this.listeners.has(eventType)) {
-        return;
-      }
-      this.listeners.get(eventType)!.delete(listener);
+      this.listeners.get(eventType)?.delete(listener);
       if (this.listeners.get(eventType)?.size === 0) {
         this.listeners.delete(eventType);
       }
@@ -451,234 +228,248 @@ export class UniversalStore<
    */
   public onStateChange(
     listener: (state: State, previousState: State, eventInfo: EventInfo) => void
-  ) {
-    this.debug('onStateChange', { listener });
+  ): () => void {
     return this.subscribe(
       UniversalStore.InternalEventType.SET_STATE as any,
-      ({ payload }, eventInfo) => {
+      (({ payload }: SetStateEvent<State>, eventInfo: EventInfo) => {
         listener(payload.state, payload.previousState, eventInfo);
-      }
+      }) as Listener<any>
     );
   }
 
-  /** Sends a custom event to the other stores */
-  public send = (event: CustomEvent) => {
+  /** Sends a custom event to the owner and every client */
+  public send = (event: CustomEvent): void => {
     this.debug('send', { event });
-    if (this.status !== UniversalStore.Status.READY) {
-      throw new TypeError(
-        dedent`Cannot send event before store is ready. You can get the current status with store.status,
-        or await store.readyPromise to wait for the store to be ready before sending events.
-        ${JSON.stringify(
-          {
-            event,
-            id: this.id,
-            actor: this.actor,
-            environment: this.environment,
-          },
-          null,
-          2
-        )}`
-      );
-    }
-    this.emitToListeners(event, { actor: this.actor });
-    this.emitToChannel(event, { actor: this.actor });
+    this.assertReady('send event', { event });
+    const eventInfo = { actor: this.actor };
+    this.emitToListeners(event, eventInfo);
+    this.emitToChannel(
+      this.isOwner ? { kind: 'event', event, eventInfo } : { kind: 'send', from: this.actor, event }
+    );
   };
 
-  private emitToChannel(event: any, eventInfo: EventInfo) {
-    this.debug('emitToChannel', { event, eventInfo, channel: !!this.channel });
-    this.channel?.emit(this.channelEventName, {
-      event,
-      eventInfo,
-    });
+  /**
+   * The owner's broadcast of `event`, as a client receives it on the channel.
+   *
+   * @internal
+   */
+  static eventMessage<TEvent extends BaseEvent>(
+    event: TEvent,
+    eventInfo: EventInfo
+  ): StoreMessage<never, TEvent> {
+    return { kind: 'event', event, eventInfo };
   }
 
-  private prepareThis({
-    channel,
-    environment,
-  }: {
-    channel: ChannelLike;
-    environment: EnvironmentType;
-  }) {
+  /**
+   * Whether a channel message was sent by an owner, so a bridge forwards it to clients.
+   *
+   * @internal
+   */
+  static isOwnerMessage(message: unknown): message is StoreMessage<unknown, BaseEvent> {
+    const kind = (message as { kind?: unknown } | undefined)?.kind;
+    return typeof kind === 'string' && !CLIENT_KINDS.has(kind);
+  }
+
+  /** Stops listening on the channel and drops all listeners. @internal */
+  public __dispose(): void {
+    this.disposed = true;
+    this.channel?.off(this.channelEventName, this.handleMessage);
+    clearTimeout(this.syncTimeout);
+    this.listeners.clear();
+    this.channel = undefined;
+  }
+
+  private get isOwner(): boolean {
+    return this.actor.type === UniversalStore.ActorType.OWNER;
+  }
+
+  private connect(channel: ChannelLike): void {
     if (this.disposed) {
       return;
     }
     this.channel = channel;
-    this.environment = environment;
-
-    this.debug('prepared', { channel: !!channel, environment });
-    this.channel.on(this.channelEventName, this.handleChannelEvents);
-
-    if (this.actor.type === UniversalStore.ActorType.LEADER) {
-      this.emitToChannel(
-        { type: UniversalStore.InternalEventType.LEADER_CREATED },
-        { actor: this.actor }
-      );
+    channel.on(this.channelEventName, this.handleMessage);
+    if (this.isOwner) {
+      this.syncStatus = UniversalStore.Status.READY;
+      this.sync!.resolve();
+      // Clients that timed out before this owner existed pick up its state from this broadcast.
+      this.emitToChannel({
+        kind: 'state-changed',
+        state: this.state,
+        previousState: this.state,
+        eventInfo: { actor: this.actor },
+      });
     } else {
-      this.emitToChannel(
-        { type: UniversalStore.InternalEventType.FOLLOWER_CREATED },
-        { actor: this.actor }
-      );
-      // 1. Emit a request for the existing state
-      this.emitToChannel(
-        { type: UniversalStore.InternalEventType.EXISTING_STATE_REQUEST },
-        { actor: this.actor }
-      );
-      // 2. Wait 1 sec for a response, then reject the syncing promise if not already resolved
-      this.syncingTimeout = setTimeout(() => {
-        this.syncing!.reject!(new UniversalStoreFollowerTimeoutError(this.id));
-      }, 1000);
+      this.requestState();
     }
   }
 
-  private emitToListeners(event: any, eventInfo: EventInfo) {
-    const eventTypeListeners = this.listeners.get(event.type);
-    const everythingListeners = this.listeners.get('*');
-    this.debug('emitToListeners', {
-      event,
-      eventInfo,
-      eventTypeListeners,
-      everythingListeners,
-    });
+  private startSync(): void {
+    this.sync = deferred();
+    this.syncStatus = this.channel ? UniversalStore.Status.SYNCING : this.syncStatus;
+  }
 
-    [...(eventTypeListeners ?? []), ...(everythingListeners ?? [])].forEach(
-      (listener: Listener<CustomEvent>) => listener(event, eventInfo)
+  private requestState(): void {
+    if (!this.channel) {
+      return;
+    }
+    this.syncStatus = UniversalStore.Status.SYNCING;
+    this.emitToChannel({ kind: 'state-request', from: this.actor });
+    clearTimeout(this.syncTimeout);
+    const { reject } = this.sync!;
+    this.syncTimeout = setTimeout(() => {
+      if (this.syncStatus === UniversalStore.Status.SYNCING) {
+        this.syncStatus = UniversalStore.Status.ERROR;
+        reject(new UniversalStoreFollowerTimeoutError(this.id));
+      }
+    }, SYNC_TIMEOUT_MS);
+  }
+
+  private handleMessage(message: StoreMessage<State, CustomEvent>): void {
+    this.debug('handleMessage', { message });
+    if (this.isOwner) {
+      this.handleClientMessage(message);
+    } else {
+      this.handleOwnerMessage(message);
+    }
+  }
+
+  private handleClientMessage(message: StoreMessage<State, CustomEvent>): void {
+    switch (message.kind) {
+      case 'state-request':
+        this.emitToChannel({
+          kind: 'state',
+          to: message.from.id,
+          state: this.state,
+          from: this.actor,
+        });
+        break;
+      case 'set-state': {
+        const previousState = this.state;
+        const eventInfo = { actor: message.from };
+        this.state = message.state;
+        this.emitToChannel({
+          kind: 'state-changed',
+          state: message.state,
+          previousState,
+          eventInfo,
+          seq: message.seq,
+        });
+        this.emitToListeners(setStateEvent(message.state, previousState), eventInfo);
+        break;
+      }
+      case 'send': {
+        const eventInfo = { actor: message.from };
+        this.emitToChannel({ kind: 'event', event: message.event, eventInfo });
+        this.emitToListeners(message.event, eventInfo);
+        break;
+      }
+    }
+  }
+
+  private handleOwnerMessage(message: StoreMessage<State, CustomEvent>): void {
+    switch (message.kind) {
+      case 'state':
+        // A ready client already follows every broadcast, so a late reply would only be stale.
+        if (message.to === this.actor.id && this.syncStatus !== UniversalStore.Status.READY) {
+          this.applyOwnerState(message.state, { actor: message.from });
+        }
+        break;
+      case 'state-changed': {
+        const own = message.eventInfo.actor.id === this.actor.id;
+        if (this.syncStatus === UniversalStore.Status.READY && own) {
+          // An older echo is superseded by a later write, and the latest one matches local state
+          // unless another actor's state arrived in between.
+          if (message.seq !== this.seq || !this.overwrittenSinceWrite) {
+            if (message.seq === this.seq) {
+              this.state = message.state;
+            }
+            break;
+          }
+        }
+        if (!own) {
+          this.overwrittenSinceWrite = true;
+        }
+        this.applyOwnerState(message.state, message.eventInfo);
+        break;
+      }
+      case 'event':
+        if (
+          this.syncStatus === UniversalStore.Status.READY &&
+          message.eventInfo.actor.id !== this.actor.id
+        ) {
+          this.emitToListeners(message.event, message.eventInfo);
+        }
+        break;
+    }
+  }
+
+  private applyOwnerState(state: State, eventInfo: EventInfo): void {
+    const previousState = this.state;
+    this.state = state;
+    if (this.syncStatus !== UniversalStore.Status.READY) {
+      clearTimeout(this.syncTimeout);
+      this.syncStatus = UniversalStore.Status.READY;
+      this.sync!.resolve();
+    }
+    this.emitToListeners(setStateEvent(state, previousState), eventInfo);
+  }
+
+  private assertReady(action: string, data: Record<string, unknown>): void {
+    if (this.syncStatus !== UniversalStore.Status.READY) {
+      throw new TypeError(
+        dedent`Cannot ${action} before store is ready. You can get the current status with store.status,
+        or await store.untilReady() to wait for the store to be ready.
+        ${JSON.stringify({ ...data, id: this.id, actor: this.actor }, null, 2)}`
+      );
+    }
+  }
+
+  private emitToChannel(message: StoreMessage<State, CustomEvent>): void {
+    this.debug('emitToChannel', { message });
+    this.channel?.emit(this.channelEventName, message);
+  }
+
+  private emitToListeners(event: Event<State, CustomEvent>, eventInfo: EventInfo): void {
+    [...(this.listeners.get(event.type) ?? []), ...(this.listeners.get('*') ?? [])].forEach(
+      (listener) => listener(event, eventInfo)
     );
   }
 
-  private handleChannelEvents(channelEvent: ChannelEvent<State, CustomEvent>) {
-    const { event, eventInfo } = channelEvent;
-
-    if ([eventInfo.actor.id, eventInfo.forwardingActor?.id].includes(this.actor.id)) {
-      // Ignore events from self
-      this.debug('handleChannelEvents: Ignoring event from self', { channelEvent });
-      return;
-    } else if (
-      this.syncing?.state === ProgressState.PENDING &&
-      event.type !== UniversalStore.InternalEventType.EXISTING_STATE_RESPONSE
-    ) {
-      // Ignore events while syncing because it can cause sync issues if the state is updated
-      this.debug('handleChannelEvents: Ignoring event while syncing', { channelEvent });
-      return;
-    }
-    this.debug('handleChannelEvents', { channelEvent });
-
-    if (this.actor.type === UniversalStore.ActorType.LEADER) {
-      let shouldForwardEvent = true;
-      switch (event.type) {
-        case UniversalStore.InternalEventType.EXISTING_STATE_REQUEST:
-          // No need to forward request events
-          shouldForwardEvent = false;
-          // Respond by emitting an event with the existing state
-          const responseEvent: ExistingStateResponseEvent<State> = {
-            type: UniversalStore.InternalEventType.EXISTING_STATE_RESPONSE,
-            payload: this.state,
-          };
-          this.debug('handleChannelEvents: responding to existing state request', {
-            responseEvent,
-          });
-          this.emitToChannel(responseEvent, { actor: this.actor });
-          this.emitToListeners(responseEvent, { actor: this.actor });
-          break;
-        case UniversalStore.InternalEventType.LEADER_CREATED:
-          // if a leader receives a LEADER_CREATED event it should not forward it,
-          // as that would lead to infinite forwarding between the two leaders
-          // all instances will go in an error state in this scenario anyway
-          shouldForwardEvent = false;
-          this.syncing!.state = ProgressState.REJECTED;
-          this.debug('handleChannelEvents: erroring due to second leader being created', {
-            event,
-          });
-          console.error(
-            dedent`Detected multiple UniversalStore leaders created with the same id "${this.id}".
-            Only one leader can exists at a time, your stores are now in an invalid state.
-            Leaders detected:
-            this: ${JSON.stringify(this.actor, null, 2)}
-            other: ${JSON.stringify(eventInfo.actor, null, 2)}`
-          );
-
-          break;
-      }
-      if (shouldForwardEvent) {
-        // Forward the event to followers in other environments
-        this.debug('handleChannelEvents: forwarding event', { channelEvent });
-        this.emitToChannel(event, { actor: eventInfo.actor, forwardingActor: this.actor });
-      }
-    }
-    if (this.actor.type === UniversalStore.ActorType.FOLLOWER) {
-      switch (event.type) {
-        case UniversalStore.InternalEventType.EXISTING_STATE_RESPONSE:
-          this.debug("handleChannelEvents: Setting state from leader's existing state response", {
-            event,
-          });
-          if (this.syncing?.state !== ProgressState.PENDING) {
-            // ignore the response if this follower has already synced
-            break;
-          }
-          this.syncing!.resolve?.();
-          // notify internal listeners that the state has changed because of the sync
-          const setStateEvent: SetStateEvent<State> = {
-            type: UniversalStore.InternalEventType.SET_STATE,
-            payload: {
-              state: event.payload,
-              previousState: this.state,
-            },
-          };
-          this.state = event.payload;
-          this.emitToListeners(setStateEvent, eventInfo);
-          break;
-      }
-    }
-
-    switch (event.type) {
-      case UniversalStore.InternalEventType.SET_STATE:
-        this.debug('handleChannelEvents: Setting state', { event });
-        this.state = event.payload.state;
-        break;
-    }
-
-    this.emitToListeners(event, { actor: eventInfo.actor });
-  }
-
-  private debug(message: string, data?: any) {
+  private debug(message: string, data?: unknown): void {
     if (this.debugging) {
       console.debug(
-        dedent`[UniversalStore::${this.id}::${this.environment ?? UniversalStore.Environment.UNKNOWN}]
+        dedent`[UniversalStore::${this.id}::${this.actor.type}]
         ${message}`,
-        JSON.stringify(
-          {
-            data,
-            actor: this.actor,
-            state: this.state,
-            status: this.status,
-          },
-          null,
-          2
-        )
+        JSON.stringify({ data, state: this.state, status: this.status }, null, 2)
       );
     }
   }
+}
 
-  /**
-   * Reset preparation in the current realm when cleaning up tests.
-   *
-   * @internal
-   */
-  static __reset() {
-    const realm = getUniversalStoreRealm();
-    realm.preparation.reject(new Error('reset'));
-    realm.preparation = createUniversalStoreRealm().preparation;
-    realm.channel = undefined;
-    realm.environment = undefined;
-    UniversalStore.isInternalConstructing = false;
-  }
+function setStateEvent<State>(state: State, previousState: State): SetStateEvent<State> {
+  return {
+    type: UniversalStore.InternalEventType.SET_STATE,
+    payload: { state, previousState },
+  };
+}
 
-  /** @internal */
-  public __dispose(): void {
-    this.disposed = true;
-    this.channel?.off(this.channelEventName, this.handleChannelEvents);
-    clearTimeout(this.syncingTimeout);
-    this.listeners.clear();
-    this.channel = undefined;
-    this.environment = undefined;
-  }
+function deferred(): Deferred {
+  let resolve!: () => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<void>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  // Callers that never await the sync must not see an unhandled rejection.
+  promise.catch(() => {});
+  return { promise, resolve, reject };
+}
+
+/**
+ * The page's channel in the browser. Node has no process-wide channel to fall back to, so a store
+ * created there outside an instance (a manager module imported by a Node test) stays unprepared.
+ */
+function defaultChannel(): Promise<ChannelLike> {
+  return typeof window === 'undefined' ? new Promise(() => {}) : whenChannelInstalled();
 }

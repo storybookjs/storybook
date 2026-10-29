@@ -133,14 +133,7 @@ export function createManagerHost(storybook: Storybook): ManagerHost {
     router.use('/sb-addons', serveBuildOutput(addonsDir));
     router.use('/sb-manager', serveBuildOutput(CORE_DIR_ORIGIN));
 
-    const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles);
-
-    if (compilation.metafile && options.outputDir) {
-      await writeFile(
-        join(options.outputDir, 'metafile.json'),
-        JSON.stringify(compilation.metafile, null, 2)
-      );
-    }
+    const files = await readOrderedFiles(addonsDir, compilation, config.entryPoints);
 
     const globals: Record<string, unknown> = await getGlobals();
 
@@ -151,8 +144,7 @@ export function createManagerHost(storybook: Storybook): ManagerHost {
       title,
       favicon,
       customHead,
-      cssFiles,
-      jsFiles,
+      files,
       features,
       refs,
       logLevel,
@@ -232,7 +224,7 @@ export function createManagerHost(storybook: Storybook): ManagerHost {
       },
       recursive: true,
     });
-    const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles);
+    const files = await readOrderedFiles(addonsDir, compilation, config.entryPoints);
 
     const globals: Record<string, unknown> = await getGlobals();
 
@@ -243,8 +235,7 @@ export function createManagerHost(storybook: Storybook): ManagerHost {
       title,
       favicon,
       customHead,
-      cssFiles,
-      jsFiles,
+      files,
       features,
       refs,
       logLevel,

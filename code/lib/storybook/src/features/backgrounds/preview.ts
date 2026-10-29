@@ -1,6 +1,7 @@
 import { definePreviewAddon } from 'storybook/internal/csf';
 
 import { getFeatures } from '@storybook/core/preview-api';
+
 import { PARAM_KEY } from './constants.ts';
 import { withBackgroundAndGrid } from './decorator.ts';
 import type {
@@ -29,9 +30,8 @@ const initialGlobals: Record<string, GlobalState> = {
 
 export type { BackgroundTypes, BackgroundsGlobals };
 
-export default () =>
-  definePreviewAddon<BackgroundTypes>({
-    decorators,
-    parameters,
-    initialGlobals,
-  });
+export default definePreviewAddon<BackgroundTypes>({
+  decorators,
+  parameters,
+  initialGlobals,
+});

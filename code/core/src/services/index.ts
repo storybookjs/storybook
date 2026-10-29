@@ -56,7 +56,6 @@ export type {
   StoryScreenshotRequest,
   StoryScreenshotResult,
 } from '../shared/open-service/toolsets/stories/screenshot-stories.ts';
-export { reviewToolset } from '../shared/open-service/toolsets/review/definition.ts';
 export { UniversalStore as internal_UniversalStore } from '../shared/universal-store/index.ts';
 export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock.ts';
 export {
@@ -64,6 +63,10 @@ export {
   fullStatusStore as internal_fullStatusStore,
   universalStatusStore as internal_universalStatusStore,
 } from './stores/status.ts';
+export {
+  createCoreStores as internal_createCoreStores,
+  type CoreStores,
+} from './stores/core-stores.ts';
 export {
   ChangeDetectionFailureError,
   ChangeDetectionUnavailableError,

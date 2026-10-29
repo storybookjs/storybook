@@ -2,9 +2,10 @@ import { platform } from 'node:os';
 
 import { expect, it } from 'vitest';
 
-import type { OutputFile } from 'esbuild';
+import type { Metafile, OutputFile } from 'esbuild';
+import { resolve } from 'pathe';
 
-import { sanitizePath } from './files.ts';
+import { getEntryOutputs, sanitizePath } from './files.ts';
 
 const os = platform();
 const isWindows = os === 'win32';
@@ -32,4 +33,20 @@ it('sanitizePath', () => {
   expect(url).toMatchInlineSnapshot(
     `"./sb-addons/node_modules/%40storybook/addon-x%2By/dist/manager.js"`
   );
+});
+
+it('getEntryOutputs orders entry scripts like the entry points and skips chunks and styles', () => {
+  const metafile = {
+    inputs: {},
+    outputs: {
+      'out/second.js': { entryPoint: 'cache/second.js' },
+      'out/chunk-ABCDEFGH.js': {},
+      'out/first.css': { entryPoint: 'cache/first.js' },
+      'out/first.js': { entryPoint: 'cache/first.js' },
+    },
+  } as unknown as Metafile;
+
+  expect(
+    getEntryOutputs(metafile, [resolve('/project/cache/first.js'), 'cache/second.js'], '/project')
+  ).toEqual([resolve('/project/out/first.js'), resolve('/project/out/second.js')]);
 });

@@ -19,7 +19,6 @@ import { defineToolset } from '@storybook/core/open-service';
 import { getRegisteredToolsets } from '@storybook/core/open-service';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from '@storybook/core/internal/types';
 import { UniversalStore } from '@storybook/core/internal/deep/shared/universal-store';
-import { getUniversalStoreRealm } from '../../../../core/src/shared/universal-store/realm.ts';
 import {
   createStorybook,
   defineAddon,
@@ -34,9 +33,11 @@ import { createTransportPair } from './__fixtures__/transport-pair.ts';
 import { runWithStorybook } from '@storybook/core/internal/deep/instance/instance-context';
 import { getInstanceContext } from '@storybook/core/internal/deep/shared/instance-context';
 import { logger } from '@storybook/core/internal/node-logger';
+import { initializeChecklist } from '../features/checklist/checklist.ts';
 import * as instance from '../../../../core/src/instance/create-storybook.ts';
 
 vi.mock('./compat/presets.ts', { spy: true });
+vi.mock('../features/checklist/checklist.ts', { spy: true });
 const INSTANCES: Storybook[] = [];
 const LOCAL_ADDONS = ['storybook-internal-vite', 'storybook-internal-services'];
 const DESIGNS_PRESET = fileURLToPath(import.meta.resolve('@storybook/addon-designs/preset'));
@@ -202,6 +203,11 @@ describe('createStorybook', () => {
         "storybook/story-docs",
         "storybook/controls",
         "storybook/toolbar",
+        "storybook/components-manifest",
+        "storybook/change-detection",
+        "storybook/checklist",
+        "storybook/whats-new",
+        "storybook/open-in-editor",
         "user",
       ]
     `);
@@ -245,6 +251,11 @@ describe('createStorybook', () => {
         "storybook/story-docs",
         "storybook/controls",
         "storybook/toolbar",
+        "storybook/components-manifest",
+        "storybook/change-detection",
+        "storybook/checklist",
+        "storybook/whats-new",
+        "storybook/open-in-editor",
         "native-addon",
         "@storybook/addon-a11y",
       ]
@@ -940,15 +951,12 @@ describe('createStorybook', () => {
   );
 
   it('isolates same-id stores and status stores across instances and close', async () => {
-    const defaultRealm = getUniversalStoreRealm();
-    const defaultStores = new Map(defaultRealm.instances);
-    const defaultEnvironment = UniversalStore.preparedEnvironment;
     const stores: UniversalStore<{ count: number }>[] = [];
     const addon = defineAddon(() => ({
       meta: { name: 'stores' },
       setup() {
         stores.push(
-          UniversalStore.create({ id: 'storybook/test', leader: true, initialState: { count: 0 } })
+          UniversalStore.create({ id: 'storybook/test', owner: true, initialState: { count: 0 } })
         );
       },
     }));
@@ -970,16 +978,16 @@ describe('createStorybook', () => {
     INSTANCES.push(second);
     const [firstStore, secondStore] = stores;
     expect(firstStore).not.toBe(secondStore);
-    expect(stores.map((store) => ({ status: store.status, environment: store.actor.environment })))
+    expect(stores.map((store) => ({ status: store.status, type: store.actor.type })))
       .toMatchInlineSnapshot(`
         [
           {
-            "environment": "SERVER",
             "status": "READY",
+            "type": "OWNER",
           },
           {
-            "environment": "SERVER",
             "status": "READY",
+            "type": "OWNER",
           },
         ]
       `);
@@ -1026,10 +1034,8 @@ describe('createStorybook', () => {
         {},
       ]
     `);
-    const firstRealm = runWithStorybook(first, getUniversalStoreRealm);
     const stopListening = vi.spyOn(first.channel, 'off');
     await first.close();
-    expect(firstRealm.instances.size).toBe(0);
     expect(stopListening).toHaveBeenCalledWith(
       'UNIVERSAL_STORE:storybook/test',
       expect.any(Function)
@@ -1040,22 +1046,18 @@ describe('createStorybook', () => {
         "count": 2,
       }
     `);
-    expect(defaultRealm.instances).toEqual(defaultStores);
-    expect(UniversalStore.preparedEnvironment).toBe(defaultEnvironment);
+    // Outside an instance there is no Node channel to share, so the store never connects.
     const outsideStore = UniversalStore.create({
       id: 'storybook/test',
-      leader: true,
+      owner: true,
       initialState: { count: 3 },
     });
-    expect(defaultRealm.instances.get('storybook/test')).toBe(outsideStore);
-    expect(stores).not.toContain(outsideStore);
+    expect(outsideStore.status).toBe('UNPREPARED');
     outsideStore.__dispose();
-    defaultRealm.instances.delete('storybook/test');
   });
 
   it('isolates two configurations, channels, toolsets, and close', async () => {
     const fallbackChannel = getChannel();
-    const fallbackToolsets = getRegisteredToolsets();
     const [first, second] = await Promise.all([
       createStorybook({
         configDir: fileURLToPath(
@@ -1084,7 +1086,7 @@ describe('createStorybook', () => {
     `);
     expect(first.channel).not.toBe(second.channel);
     expect(getChannel()).toBe(fallbackChannel);
-    expect(getRegisteredToolsets()).toEqual(fallbackToolsets);
+    expect(() => getRegisteredToolsets()).toThrow('outside a Storybook instance');
     expect(first.services.get('core/module-graph', { internal: true })).not.toBe(
       second.services.get('core/module-graph', { internal: true })
     );
@@ -1097,9 +1099,27 @@ describe('createStorybook', () => {
     );
     await first.close();
     expect(getChannel()).toBe(fallbackChannel);
-    expect(getRegisteredToolsets()).toEqual(fallbackToolsets);
+    expect(() => getRegisteredToolsets()).toThrow('outside a Storybook instance');
+    expect(second.toolsets.get('docs').id).toBe('docs');
     await expect(second.getIndex()).resolves.toEqual(indexes[1]);
     await expect(first.getIndex()).rejects.toThrow('not ready');
+  });
+
+  it('hands the checklist AI-setup detection the instance story index', async () => {
+    vi.mocked(initializeChecklist).mockResolvedValueOnce(undefined);
+    const storybook = await createStorybook({
+      configDir: fileURLToPath(
+        new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
+      ),
+      mode: 'headless',
+    });
+    INSTANCES.push(storybook);
+    await storybook.callHook('server:channel:ready', storybook.channel);
+
+    // Called outside the instance's async context, as a channel listener would be.
+    const generator = await vi.mocked(initializeChecklist).mock.lastCall?.[2]?.();
+    expect(generator).toBe(await storybook.getStoryIndexGenerator());
+    expect(Object.keys((await generator!.getIndex()).entries)).toEqual(['first--example']);
   });
 
   it('sorts the instance index with the main configuration storySorts', async () => {
@@ -1372,6 +1392,12 @@ describe('createStorybook', () => {
       )
     );
     INSTANCES.push(first, second);
+    const ownToolsets = (storybook: Storybook): string[] =>
+      storybook.toolsets
+        .values()
+        .map((toolset) => toolset.id)
+        .filter((id) => id === 'first' || id === 'second');
+    expect([first, second].map(ownToolsets)).toEqual([['first'], ['second']]);
     first.channel.emit('example:inspect');
     second.channel.receive({ type: 'example:inspect', args: [], from: 'test' });
     expect(channelOwners).toEqual(['first', 'second']);
@@ -1404,5 +1430,7 @@ describe('createStorybook', () => {
     );
     expect(outcome.data).toContain('second');
     expect(outcome.data).not.toContain('first');
+    expect(ownToolsets(second)).toEqual(['second']);
+    expect(() => first.toolsets.values()).toThrow('not ready');
   });
 });

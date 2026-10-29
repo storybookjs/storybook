@@ -88,7 +88,8 @@ It does not apply to the `remote` host.
 2. Otherwise `storybook/internal/instance` is resolved from the project (local mode: `cwd`; attached mode: the record's `storybookPath`).
 3. When it resolves and that `storybook` runs this package's `@storybook/core` (realpath-equal roots), its `createStorybook` is used. Full parity with `storybook dev`, legacy presets included.
 4. When it resolves on another core, two cores never share one process: local mode spawns a child host from the project, or throws `EnvironmentMismatchError` with `autoSpawn: false`.
-5. When it does not resolve, `createStorybook` from `@storybook/core` runs with its defaults (docgen, story-docs, the core common plugin). That serves the `docs`, `stories`, and `review` toolsets.
+5. When it does not resolve, `createStorybook` from `@storybook/core` runs with its defaults (docgen, story-docs, change detection, the core common plugin). That serves the `docs` and `stories` toolsets.
+   `review` ships with `storybook`'s built-ins, so it is absent here: discovery does not list it and calling it fails with `unknown-toolset`.
    A configuration with legacy presets throws `ToolsRuntimeError` (`config-load-failed`) that names the `storybook` version to install.
 
 Core-only installs keep `stories.changed`, but builder headless change detection that needs `storybook` surfaces as a toolset error.

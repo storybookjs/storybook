@@ -80,16 +80,6 @@ export const toTitle = (input: string) => {
   return `${result.substring(0, 1).toUpperCase()}${result.substring(1)}`.trim();
 };
 
-export async function getRefs(options: Options) {
-  if (options.test) {
-    return {};
-  }
-
-  const refs = await options.presets.apply<Record<string, Ref>>('refs', await getAutoRefs(options));
-
-  return resolveRefs(refs);
-}
-
 /** Normalize composition refs and check their public accessibility. */
 export async function resolveRefs(refs: Record<string, Ref>): Promise<Record<string, Ref>> {
   Object.entries(refs).forEach(([key, value]: [string, Ref]) => {

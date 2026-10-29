@@ -34,8 +34,6 @@
   },
   "license": "MIT",
   "sideEffects": [
-    "./dist/core/csf/index.js",
-    "./dist/core/preview-api/index.js",
     "./dist/core/preview/runtime.js",
     "./dist/manager/ui/globals-runtime.js"
   ],
@@ -178,8 +176,8 @@
       "default": "./dist/core/oxc-parser/index.js"
     },
     "./internal/preview-api": {
-      "types": "./dist/shims/preview-api.d.ts",
-      "code": "./src/shims/preview-api.ts",
+      "types": "./dist/shims/internal/preview-api.d.ts",
+      "code": "./src/shims/internal/preview-api.ts",
       "default": "./dist/core/preview-api/index.js"
     },
     "./internal/preview-errors": {
@@ -191,6 +189,11 @@
       "types": "./dist/storybook/preview-page.d.ts",
       "code": "./src/storybook/preview-page.ts",
       "default": "./dist/core/preview-page/index.js"
+    },
+    "./internal/preview/built-in-annotations": {
+      "types": "./dist/storybook/preview/built-in-annotations.d.ts",
+      "code": "./src/storybook/preview/built-in-annotations.ts",
+      "default": "./dist/storybook/preview/built-in-annotations.js"
     },
     "./internal/preview/globals": {
       "types": "./dist/shims/internal/preview/globals.d.ts",
@@ -268,7 +271,7 @@
     "./preview-api": {
       "types": "./dist/shims/preview-api.d.ts",
       "code": "./src/shims/preview-api.ts",
-      "default": "./dist/core/preview-api/index.js"
+      "default": "./dist/shims/preview-api.js"
     },
     "./test": {
       "types": "./dist/shims/test.d.ts",

@@ -96,6 +96,11 @@ await storybook.callHook('preview:annotations:collect', []);
 ## Ordering and overrides
 
 - Native hooks run at their plugin's setup position.
+- Built-in addons (`builtInAddons`) register right after the product's common plugin, before framework, renderer, and `main.ts` addons.
+  - Their preview annotations compose in `builtInAddons` order.
+  - Their manager entries are inserted by `meta.order`; other addons' entries append in `main.ts` order.
+- A plugin's static `features` object merges into `features` at its position, before `main.ts`, and is visible before setup.
+  - Flags can also come from `features` preset functions and setup-time `core:features:extend` handlers, so flag-gated contributions read the features inside their handlers, never during setup.
 - `storybook.hook(name, handler, kind, 'override')` runs a handler after main configuration handlers.
   - Use it for legacy override contributions.
   - The Webpack builder registers its `builder:swc:extend` defaults this way (`builders/builder-webpack5/src/node/index.ts`).
@@ -168,6 +173,13 @@ const poller = defineAddon(() => ({
 - The seed is `undefined`; without a handler the method throws `StoryRenderUnavailableError`.
 - The product's common plugin provides it from `lib/storybook/src/storybook/server/story-screenshot.ts` and closes it in `core:instance:close`.
 
+### `core:preview-builder:ready`
+
+- Notify, declared in `core/src/services/hooks.ts`.
+- The dev server fires it once, after its preview builder started and it handed the module graph the builder's change-detection adapter.
+- Dev-only work that needs the running builder starts here; the change-detection built-in (`core/src/services/change-detection/node.ts`) starts its status scans from it.
+- The preview host, static builds, and headless instances never fire it.
+
 ### `index:invalidated:after`
 
 - Notify, declared in `core/src/story-index/hooks.ts`.
@@ -180,6 +192,13 @@ const poller = defineAddon(() => ({
 - Reduce, declared in `lib/storybook/src/storybook/server`.
 - Supplies the MCP status and endpoint written to the hosted instance registry.
 - The dev server seeds it from `main.ts`.
+
+### `server:static-output:collect`
+
+- Collect, declared in `lib/storybook/src/storybook/server/hooks.ts`.
+- Each handler returns writers `({ outputDir }) => Promise<void>`.
+- `build-static.ts` runs them one after another, after the open-service static files.
+- The components-manifest built-in writes `manifests/` through it.
 
 ### `server:app:extend` and the preview host
 
@@ -198,6 +217,8 @@ Loading:
 - Legacy frameworks keep two preset passes: discover the builder, then load renderer, framework or builder, and main.
 - When the framework's `core.builder` or `core.renderer` names a package with a native factory, the bridge instantiates it.
   - A native builder receives the builder options.
+  - A nested `<renderer>/preset` entry for that native renderer is skipped, like any nested entry whose plugin is already set up.
+- Legacy entries are deduplicated with native plugins before the adapter runs, so a preset listed twice loads once; see [Plugins](./README.md#plugins).
   - A native renderer registers where the renderer preset would have loaded.
 - Any other builder module's `corePresets` and `overridePresets` join the second pass, and its legacy `Builder` is wrapped as `storybook.builder`.
 - Build mode resolves the legacy `build` flags before loading the final preset list; other modes load that list in one pass.
@@ -207,6 +228,8 @@ Loading:
 Calls:
 
 - `storybook.presets.apply` invokes the mapped instance hook.
+  - Only the compat layer calls it: `legacy-hooks.ts`, `legacy-preset.ts`, and `lib/storybook/src/storybook/compat/`.
+  - Everything else calls `storybook.callHook` or another instance API.
 - Mapped keys call the hook in the table.
 - Any other key uses `legacy:<escaped-name>:extend`, always Reduce.
   - Static arrays, objects, and functions keep the existing preset merge behavior.
@@ -268,3 +291,4 @@ These keys exist for one consumer and the plugins that feed it.
 - Official packages have no preset to compare against.
   - [`check-no-preset.ts`](../../../../scripts/check/check-no-preset.ts) fails a plugin package that exports `./preset`, ships a root `preset.js`, or calls `presets.apply`.
   - See [No-preset packages](./README.md#no-preset-packages) for the `<pkg>/node` rule.
+- [`check-no-presets-apply.ts`](../../../../scripts/check/check-no-presets-apply.ts) fails any package, core and `lib` included, that calls `presets.apply` outside the compat layer.

@@ -13,7 +13,7 @@ export type RegisterDocgenServiceOptions = {
    * pre-resolved generator so each call does not re-await generator initialization.
    */
   getIndex: () => Promise<StoryIndex>;
-  /** Fully composed docgen provider chain from `presets.apply('experimental_docgenProvider', ...)`. */
+  /** Extracts docgen through the workers plugins collect with `core:docgen-providers:collect`. */
   docgenProvider: DocgenProvider;
 };
 

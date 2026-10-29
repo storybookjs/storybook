@@ -10,7 +10,6 @@ import { type WebSocket, WebSocketServer } from 'ws';
 import { getChannel } from '@storybook/core/internal/channels';
 import { Channel } from '@storybook/core/internal/channels';
 import { SERVER_CHANNEL_PATH } from '@storybook/core/internal/channels';
-import { UniversalStore } from '@storybook/core/internal/deep/shared/universal-store';
 import { createNodeChannel, type NodeChannelConnection } from './node-channel.ts';
 
 const TOKEN = 'a-dev-server-token';
@@ -168,16 +167,13 @@ describe('createNodeChannel', () => {
     await expect(disconnected).rejects.toThrow('Storybook dev server disconnected');
   });
 
-  it('leaves the process channel and UniversalStore unchanged while open and after close', async () => {
+  it('leaves the process channel unchanged while open and after close', async () => {
     const previousChannel = getChannel();
-    const previousEnvironment = UniversalStore.preparedEnvironment;
     const client = openChannel();
 
     expect(getChannel()).toBe(previousChannel);
-    expect(UniversalStore.preparedEnvironment).toBe(previousEnvironment);
     await firstConnection();
     client.close();
     expect(getChannel()).toBe(previousChannel);
-    expect(UniversalStore.preparedEnvironment).toBe(previousEnvironment);
   });
 });

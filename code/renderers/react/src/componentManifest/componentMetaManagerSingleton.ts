@@ -1,37 +1,45 @@
+import { getInstanceContext } from '@storybook/core/internal/instance';
 import { logger } from '@storybook/core/internal/node-logger';
 
 import { ComponentMetaManager } from './componentMeta/ComponentMetaManager.ts';
 
-let componentMetaManagerPromise: Promise<ComponentMetaManager | undefined> | undefined;
+const COMPONENT_META_MANAGER = Symbol.for('storybook.react.component-meta-manager');
 
 /**
- * Process-wide {@link ComponentMetaManager} for the experimental manifest generator: building a full
- * TypeScript program over every tsconfig project in the workspace is expensive, so the manifest
- * generator keeps a single set of programs (and one file-snapshot cache) hot for the lifetime of the
- * process rather than rebuilding per request.
+ * The running instance's {@link ComponentMetaManager} for the experimental manifest generator, or
+ * `undefined` outside an instance. Building a TypeScript program over every tsconfig project is
+ * expensive, so each instance keeps one set of programs (and one file-snapshot cache) hot across
+ * manifest builds and disposes it when the instance closes.
  *
- * `docgenServer` deliberately does NOT share this manager: its extraction runs in a
- * worker thread ({@link ../docgen/docgen-worker.ts}) with its own manager so the synchronous program
- * build stays off the main event loop. Worker threads have separate V8 heaps but share process RSS,
- * so enabling both the manifest generator and the docgen server keeps two full program sets resident
- * at once — acceptable today, but the reason this singleton is scoped to the manifest path only.
+ * `docgenServer` deliberately does NOT share this manager: its extraction runs in a worker thread
+ * ({@link ../docgen/docgen-worker.ts}) with its own manager so the synchronous program build stays
+ * off the main event loop. Enabling both keeps two full program sets resident at once.
  */
-export function getSharedComponentMetaManager(): Promise<ComponentMetaManager | undefined> {
-  if (!componentMetaManagerPromise) {
-    componentMetaManagerPromise = (async () => {
-      try {
-        const ts = await import('typescript');
-        return new ComponentMetaManager(ts.default ?? ts);
-      } catch (err) {
-        logger.debug(`[reactComponentMeta] Skipping component metadata extraction: ${err}`);
-        return undefined;
-      }
-    })();
+export function getInstanceComponentMetaManager():
+  | Promise<ComponentMetaManager | undefined>
+  | undefined {
+  const context = getInstanceContext();
+  if (!context) {
+    return undefined;
   }
-  return componentMetaManagerPromise;
+  if (!context.state.has(COMPONENT_META_MANAGER)) {
+    const manager = createComponentMetaManager();
+    context.state.set(COMPONENT_META_MANAGER, manager);
+    context.cleanups.add(async () => {
+      context.state.delete(COMPONENT_META_MANAGER);
+      (await manager)?.dispose();
+    });
+  }
+  return context.state.get(COMPONENT_META_MANAGER) as Promise<ComponentMetaManager | undefined>;
 }
 
-export function disposeSharedComponentMetaManager(): void {
-  void componentMetaManagerPromise?.then((manager) => manager?.dispose());
-  componentMetaManagerPromise = undefined;
+/** Creates a manager the caller owns and disposes, or `undefined` without TypeScript. */
+export async function createComponentMetaManager(): Promise<ComponentMetaManager | undefined> {
+  try {
+    const ts = await import('typescript');
+    return new ComponentMetaManager(ts.default ?? ts);
+  } catch (err) {
+    logger.debug(`[reactComponentMeta] Skipping component metadata extraction: ${err}`);
+    return undefined;
+  }
 }

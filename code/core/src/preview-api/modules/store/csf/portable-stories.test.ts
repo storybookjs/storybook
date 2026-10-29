@@ -9,13 +9,16 @@ import type {
   StoryAnnotationsOrFn as Story,
 } from '@storybook/core/internal/types';
 
-import { getCoreAnnotations } from '../../../../csf/index.ts';
-import '../../../../csf/__testfixtures__/register-test-core-annotations.ts';
 import { definePreview } from '../../../../csf/csf-factories.ts';
 import { Tag } from '../../../../constants/tags.ts';
 import * as defaultExportAnnotations from './__mocks__/defaultExportAnnotations.mockfile.ts';
 import * as namedExportAnnotations from './__mocks__/namedExportAnnotations.mockfile.ts';
-import { composeStories, composeStory, setProjectAnnotations } from './portable-stories.ts';
+import {
+  composeStories,
+  composeStory,
+  createPortableStories,
+  setProjectAnnotations,
+} from './portable-stories.ts';
 
 type StoriesModule = Store_CSFExports & Record<string, any>;
 
@@ -70,23 +73,19 @@ describe('composeStory', () => {
     );
   });
 
-  it('injects the core annotations once for plain (CSF3) project annotations', () => {
-    const coreLoaderCount = getCoreAnnotations().flatMap((it) => (it as any).loaders ?? []).length;
-    const finalAnnotations = setProjectAnnotations([{ render: () => {} }]);
+  it.each([
+    { name: 'plain', input: () => [{ loaders: [vi.fn()], render: () => {} }] },
+    {
+      name: 'CSF4 composed',
+      input: () => [definePreview({ loaders: [vi.fn()], renderToCanvas: () => {} }).composed],
+    },
+  ])('adds nothing to $name project annotations', ({ input }) => {
+    const annotations = input();
 
-    expect(coreLoaderCount).toBeGreaterThan(0);
-    expect(finalAnnotations.loaders).toHaveLength(coreLoaderCount);
-  });
-
-  it('does NOT double the core annotations for a CSF4 composed preview (addon-vitest path)', () => {
-    // addon-vitest's setup file calls setProjectAnnotations(getProjectAnnotations()), where the
-    // CSF4 codegen returns the already-core-composed `definePreview().composed`.
-    const composed = definePreview({ renderToCanvas: () => {} }).composed;
-    const coreLoaderCount = getCoreAnnotations().flatMap((it) => (it as any).loaders ?? []).length;
-
-    const finalAnnotations = setProjectAnnotations(composed);
-
-    expect(finalAnnotations.loaders).toHaveLength(coreLoaderCount);
+    // The CSF4 preview infers no renderer.
+    expect(setProjectAnnotations(annotations as ProjectAnnotations[]).loaders).toEqual(
+      annotations[0].loaders
+    );
   });
 
   it('should compose project annotations in all module formats', () => {
@@ -557,6 +556,39 @@ describe('setProjectAnnotations', () => {
 
     expect(() => setProjectAnnotations({})).toThrow(
       'setProjectAnnotations() was called from a Vitest setup file'
+    );
+  });
+});
+
+describe('createPortableStories', () => {
+  const base = () => {};
+  const project = () => {};
+  const portable = createPortableStories({ baseAnnotations: [{ loaders: [base] }] });
+
+  it.each([
+    { name: 'plain annotations', input: () => [{ loaders: [project] }], expected: [base, project] },
+    {
+      name: 'its own setProjectAnnotations result',
+      input: () => [portable.setProjectAnnotations([{ loaders: [project] }])],
+      expected: [base, project],
+    },
+    {
+      name: 'a CSF factories preview with defaults',
+      input: () => [definePreview({ loaders: [project] }, [{ loaders: [base] }]).composed],
+      expected: [base, project],
+    },
+    {
+      name: 'a CSF factories preview without defaults',
+      input: () => [definePreview({ loaders: [project] }).composed],
+      expected: [base, project],
+    },
+  ])('composes the base once before $name', ({ input, expected }) => {
+    onTestFinished(() => {
+      delete (globalThis as Partial<typeof globalThis>).globalProjectAnnotations;
+    });
+
+    expect(portable.setProjectAnnotations(input() as ProjectAnnotations[]).loaders).toEqual(
+      expected
     );
   });
 });

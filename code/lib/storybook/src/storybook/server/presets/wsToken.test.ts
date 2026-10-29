@@ -7,8 +7,6 @@ import {
   registerInstanceContext,
   runWithStorybook,
 } from '@storybook/core/internal/deep/instance/instance-context';
-import { UniversalStore } from '@storybook/core/internal/deep/shared/universal-store';
-import { createUniversalStoreRealm } from '../../../../../../core/src/shared/universal-store/realm.ts';
 import { getWsToken } from './wsToken.ts';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -25,10 +23,6 @@ it('keeps tokens stable within each instance and distinct from the legacy token'
       workingDir: process.cwd(),
       state: new Map(),
       cleanups: new Set(),
-      universalStoreRealm: createUniversalStoreRealm({
-        channel,
-        environment: UniversalStore.Environment.SERVER,
-      }),
       getStoryIndexGenerator: vi.fn(),
     });
   }

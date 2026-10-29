@@ -79,6 +79,10 @@ export interface StorybookHooks extends PreviewHooks, IndexHooks, ServiceHooks, 
       ctx?: HookContext
     ) => NonNullable<StorybookConfigRaw['staticDirs']>
   >;
+  /** Declared in core, as the docs toolset reads composed refs without the manager. */
+  'manager:refs:extend': Reduce<
+    (value: StorybookConfigRaw['refs'], ctx?: HookContext) => StorybookConfigRaw['refs']
+  >;
   'core:instance:ready': Notify<(storybook: Storybook) => void>;
   'core:instance:close': Notify<(storybook: Storybook) => void>;
 }
@@ -112,6 +116,10 @@ export const LEGACY_HOOK_CALL = Symbol('legacy-hook-call');
 const HOOK_ALIASES: Record<string, string> = { 'legacy:core:extend': 'core:config:extend' };
 
 const DECLARATIONS = Symbol.for('storybook.instance.hook-declarations');
+/**
+ * Process-wide on purpose: package-level name → strategy metadata, identical for every instance;
+ * handlers and registration-time strategies stay on each instance's runtime.
+ */
 const DECLARED_KINDS = ((globalThis as Record<symbol, Map<string, Strategy>>)[DECLARATIONS] ??=
   new Map());
 
@@ -143,6 +151,7 @@ declareHooks({
   'core:framework:extend': 'reduce',
   'core:framework-options:extend': 'reduce',
   'core:static-dirs:collect': 'collect',
+  'manager:refs:extend': 'reduce',
   'core:instance:ready': 'notify',
   'core:instance:close': 'notify',
 });

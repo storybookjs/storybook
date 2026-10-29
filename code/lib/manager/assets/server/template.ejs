@@ -77,11 +77,16 @@
     <script type="module">
       import './sb-manager/globals-runtime.js';
 
-      <% files.js.forEach(file => { %>
-        import '<%= file %>';
-      <% }); %>
+      // Imported one by one so a failing manager entry does not stop the others or the manager.
+      for (const file of <%- JSON.stringify(files.entries) %>) {
+        try {
+          await import(file);
+        } catch (e) {
+          console.error('[Storybook] One of your manager-entries failed: ' + file, e);
+        }
+      }
 
-      import './sb-manager/runtime.js';
+      await import('./sb-manager/runtime.js');
     </script>
   </body>
 </html>

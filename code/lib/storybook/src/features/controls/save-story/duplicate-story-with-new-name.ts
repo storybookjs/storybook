@@ -1,0 +1,62 @@
+import type { CsfFile } from '@storybook/core/internal/csf-tools';
+
+import {
+  type E,
+  type Node,
+  staticKey,
+  walk,
+} from '@storybook/core/internal/deep/csf-tools/estree/ast';
+import {
+  SourceEditor,
+  appendStatement,
+  objectList,
+  removeFromList,
+} from '@storybook/core/internal/deep/csf-tools/estree/editor';
+import { SaveStoryError } from './utils.ts';
+
+type In = ReturnType<CsfFile['parse']>;
+
+// Returns the new story's initializer, copied without `args` for the caller to fill in.
+export const duplicateStoryWithNewName = (csfFile: In, storyName: string, newStoryName: string) => {
+  const node = csfFile._storyExports[storyName];
+  if (node?.type !== 'VariableDeclarator' || !node.init) {
+    throw new SaveStoryError(`cannot clone Node`);
+  }
+  const init = node.init as Node;
+
+  const isCsf4Story =
+    init.type === 'CallExpression' &&
+    init.callee.type === 'MemberExpression' &&
+    init.callee.property.type === 'Identifier' &&
+    init.callee.property.name === 'story';
+
+  // detect CSF2 and throw
+  if (!isCsf4Story && (init.type === 'ArrowFunctionExpression' || init.type === 'CallExpression')) {
+    throw new SaveStoryError(`Creating a new story based on a CSF2 story is not supported`);
+  }
+
+  const copy = new SourceEditor(`(${csfFile.editor.source(init)})`, csfFile._options.fileName);
+  walk(copy.program, (child) => {
+    if (child.type !== 'ObjectExpression') {
+      return;
+    }
+    const args = child.properties.filter(
+      (property): property is E.ObjectProperty =>
+        property.type === 'Property' && staticKey(property) === 'args'
+    );
+    if (args.length > 0) {
+      removeFromList(copy, objectList(copy, child), args);
+    }
+  });
+  const initCode = copy.toString().slice(1, -1);
+  const typeAnnotation =
+    node.id.type === 'Identifier' && node.id.typeAnnotation
+      ? csfFile.editor.source(node.id.typeAnnotation)
+      : '';
+
+  appendStatement(csfFile.editor, `export const ${newStoryName}${typeAnnotation} = ${initCode};`);
+  csfFile.editor.commit();
+
+  const duplicated = csfFile._storyExports[newStoryName];
+  return (duplicated?.type === 'VariableDeclarator' ? duplicated.init : duplicated) as Node;
+};

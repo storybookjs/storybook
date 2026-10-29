@@ -2,13 +2,10 @@
 import { afterEach, beforeEach, describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { testType } from 'type-plus';
 
-import { getCoreAnnotations, hasCoreAnnotations } from './index.ts';
-import './__testfixtures__/register-test-core-annotations.ts';
 import * as legacyDefault from './__testfixtures__/legacy-preview-default.ts';
 import * as legacyNamed from './__testfixtures__/legacy-preview-named.ts';
 import { definePreview, definePreviewAddon, getStoryChildren } from './csf-factories.ts';
 import type { Tag } from './story.ts';
-import { composeProjectAnnotationsWithCore } from '../preview-api/modules/store/csf/composeProjectAnnotationsWithCore.ts';
 import { setProjectAnnotations } from '../preview-api/modules/store/csf/portable-stories.ts';
 
 interface Addon1Types {
@@ -209,21 +206,22 @@ describe('definePreview composed', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  test('composes the core annotations exactly once and marks the result', () => {
-    const previewFactory = definePreview({ renderToCanvas: () => {} });
-    const { composed } = previewFactory;
+  test('composes only the preview and its addons until collected entries arrive', () => {
+    const { composed } = definePreview({ renderToCanvas: () => {} });
 
-    // The composed result must be flagged so that the StoryStore / portable setProjectAnnotations
-    // do not prepend the core annotations a second time (which would double decorators/loaders).
-    expect(hasCoreAnnotations(composed)).toBe(true);
-
-    // The core annotations are present (the actions/test addons contribute loaders unconditionally).
-    const coreLoaderCount = getCoreAnnotations().flatMap((it) => (it as any).loaders ?? []).length;
-    expect(coreLoaderCount).toBeGreaterThan(0);
-    expect(composed.loaders).toHaveLength(coreLoaderCount);
+    expect(composed.loaders).toEqual([]);
   });
 
-  test('composes core, collected entries, local addons, and preview annotations in order', () => {
+  test('composes the defaults before the addons until a host composes its own entries', () => {
+    const defaults = { loaders: [vi.fn()] };
+    const addon = { loaders: [vi.fn()] };
+    const preview = definePreview({ addons: [addon] }, [defaults]);
+
+    expect(preview.composed.loaders).toEqual([...defaults.loaders, ...addon.loaders]);
+    expect(preview.composeWith([]).loaders).toEqual(addon.loaders);
+  });
+
+  test('composes collected entries, local addons, and preview annotations in order', () => {
     const entries = ['renderer', 'first addon', 'second addon', 'legacy', 'local', 'preview'].map(
       (name) => ({
         loaders: [vi.fn()],
@@ -231,22 +229,14 @@ describe('definePreview composed', () => {
         parameters: { winner: name },
       })
     );
-    const core = getCoreAnnotations();
     const preview = definePreview({ addons: [entries[4]], ...entries[5] });
     const composed = preview.composeWith(entries.slice(0, 4));
 
-    expect(composed.loaders).toEqual([
-      ...core.flatMap((entry) => entry.loaders ?? []),
-      ...entries.flatMap((entry) => entry.loaders),
-    ]);
-    expect(composed.decorators).toEqual([
-      ...entries.toReversed().flatMap((entry) => entry.decorators),
-      ...core.toReversed().flatMap((entry) => entry.decorators ?? []),
-    ]);
+    expect(composed.loaders).toEqual(entries.flatMap((entry) => entry.loaders));
+    expect(composed.decorators).toEqual(entries.toReversed().flatMap((entry) => entry.decorators));
     expect(composed.parameters).toMatchObject({ winner: 'preview' });
     expect(preview.composed).toBe(composed);
-    expect(hasCoreAnnotations(composed)).toBe(true);
-    expect(composeProjectAnnotationsWithCore([composed]).loaders).toEqual(composed.loaders);
+    expect(setProjectAnnotations([composed]).loaders).toEqual(composed.loaders);
   });
 
   test.each(['namespace', 'default export'])(

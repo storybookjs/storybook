@@ -3,7 +3,6 @@ import './hooks.ts';
 import { normalizeStories } from '@storybook/core/internal/common';
 import { logger } from '@storybook/core/internal/node-logger';
 import { MissingBuilderError } from '@storybook/core/internal/server-errors';
-import { CHANGE_DETECTION_STATUS_TYPE_ID } from '@storybook/core/internal/types';
 import type { Options } from '@storybook/core/internal/types';
 
 import compression from '@polka/compression';
@@ -15,15 +14,12 @@ import { resolveChangeDetectionAdapter } from '@storybook/core/internal/services
 import { runWithStorybook } from '@storybook/core/internal/deep/instance/instance-context';
 
 import type { ChangeDetectionAdapter } from '@storybook/core/internal/services';
-import { ChangeDetectionService } from '@storybook/core/internal/deep/services/change-detection/change-detection-service';
-import { getStatusStoreByTypeId } from '@storybook/core/internal/deep/services/stores/status';
 import { doTelemetry } from './utils/doTelemetry.ts';
 import { createManagerHost } from '@storybook/manager/internal/deep/builder-manager/host';
 import { getCachingMiddleware } from './utils/get-caching-middleware.ts';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware.ts';
 import { getHostValidationMiddleware } from './utils/getHostValidationMiddleware.ts';
 import { registerIndexJsonRoute } from './utils/index-json.ts';
-import { registerManifests } from '@storybook/core/internal/deep/story-index/manifests/manifests';
 import { useStorybookMetadata } from './utils/metadata.ts';
 import { getSecurityHeadersMiddleware } from './utils/getSecurityHeadersMiddleware.ts';
 import { getMiddleware } from './utils/middleware.ts';
@@ -51,7 +47,7 @@ export async function storybookDevServer(
 
     const workingDir = storybook.workingDir;
     const configDir = options.configDir;
-    const { features, stories } = storybook.options;
+    const { stories } = storybook.options;
     // StoryIndexGenerator depends on these normalized stories to be referentially equal
     // So it's important that we only normalize them once here and pass the same reference around
     const normalizedStories = normalizeStories(stories, {
@@ -60,18 +56,6 @@ export async function storybookDevServer(
     });
 
     const storyIndexGeneratorPromise = storybook.getStoryIndexGenerator();
-
-    const changeDetectionService = new ChangeDetectionService({
-      storyIndexGeneratorPromise,
-      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
-      workingDir,
-    });
-
-    const disposeChangeDetectionRuntime = async () => {
-      await changeDetectionService.dispose().catch(() => undefined);
-    };
-
-    getInstanceContext()?.cleanups.add(disposeChangeDetectionRuntime);
 
     app.use(compression({ level: 1 }));
 
@@ -114,7 +98,11 @@ export async function storybookDevServer(
     }
     const manager = createManagerHost(storybook);
     getInstanceContext()?.cleanups.add(() => manager.bail());
-    await useStatics(app, options);
+    await useStatics(app, {
+      configDir,
+      staticDirs: storybook.options.staticDirs,
+      faviconPath: await storybook.callHook('manager:favicon:extend', undefined),
+    });
 
     // Boot up the `/project.json` route handler early to avoid Vite Dev Server
     // serving a NX monorepo `project.json` file instead.
@@ -155,8 +143,7 @@ export async function storybookDevServer(
     }
 
     resolveChangeDetectionAdapter(adapter);
-
-    changeDetectionService.start();
+    await storybook.callHook('core:preview-builder:ready', undefined);
 
     const listening = new Promise<void>((resolve, reject) => {
       server.once('error', reject);
@@ -177,9 +164,6 @@ export async function storybookDevServer(
       });
     }
 
-    if (features?.componentsManifest) {
-      registerManifests({ app, presets: options.presets });
-    }
     // Now the preview has successfully started, we can count this as a 'dev' event.
     doTelemetry(app, core, storyIndexGeneratorPromise, options);
 

@@ -1,7 +1,5 @@
 import path from 'node:path';
 
-import { x as exec } from 'tinyexec';
-
 import type { BuildEntries } from '../../../scripts/build/utils/entry-utils.ts';
 import { copyRuntimes } from './scripts/copy-runtimes.ts';
 
@@ -10,21 +8,27 @@ const CODE_DIR = path.join(import.meta.dirname, '../..');
 // `postbuild` runs once per bundling context; copy once.
 let copiedRuntimes: Promise<void> | undefined;
 
+// Built-in addons hand these to the builders by path, like any addon's `manager` and `preview` files.
+const FEATURE_MANAGERS = [
+  'actions',
+  'backgrounds',
+  'component-testing',
+  'controls',
+  'measure',
+  'outline',
+  'viewport',
+];
+const FEATURE_PREVIEWS = [
+  'actions',
+  'backgrounds',
+  'component-testing',
+  'highlight',
+  'measure',
+  'outline',
+  'viewport',
+];
+
 const config: BuildEntries = {
-  prebuild: async (cwd) => {
-    await exec('jiti', [path.join(import.meta.dirname, 'scripts', 'generate-source-files.ts')], {
-      nodeOptions: {
-        cwd,
-        env: {
-          ...process.env,
-          NODE_ENV: 'production',
-          FORCE_COLOR: '1',
-        },
-        stdio: 'inherit',
-      },
-      throwOnError: true,
-    });
-  },
   postbuild: (cwd) => (copiedRuntimes ??= copyRuntimes(cwd, CODE_DIR)),
   extraOutputs: {
     './internal/mocking-utils/mocker-runtime': './dist/core/test/mocking/mocker-runtime.js',
@@ -166,15 +170,18 @@ const config: BuildEntries = {
         entryPoint: './src/features/viewport/index.ts',
       },
       {
-        // Composes the core annotations; listed in `sideEffects`.
         exportEntries: ['./internal/csf'],
         entryPoint: './src/storybook/preview/csf.ts',
         outputPath: 'core/csf/index',
       },
-      {
-        entryPoint: './src/storybook/server/presets/common-manager.ts',
-        dts: false,
-      },
+      ...FEATURE_MANAGERS.map((feature) => ({
+        entryPoint: `./src/features/${feature}/manager.tsx` as const,
+        dts: false as const,
+      })),
+      ...FEATURE_PREVIEWS.map((feature) => ({
+        entryPoint: `./src/features/${feature}/preview.ts` as const,
+        dts: false as const,
+      })),
       {
         // Pure skill-content builders shared by the skills CLI and addon-mcp so both consumers render
         // the same instruction documents. Not portable: consumers resolve core normally.
@@ -196,11 +203,20 @@ const config: BuildEntries = {
         entryPoint: './src/shims/test.ts',
         outputPath: 'core/test/index',
       },
-      // Composes the core annotations; listed in `sideEffects`.
       {
-        exportEntries: ['./preview-api', './internal/preview-api'],
+        // Portable stories from this entry apply the built-in annotations.
+        exportEntries: ['./preview-api'],
         entryPoint: './src/shims/preview-api.ts',
+      },
+      {
+        // Hosts that compose the collected annotations themselves, such as addon-vitest.
+        exportEntries: ['./internal/preview-api'],
+        entryPoint: './src/shims/internal/preview-api.ts',
         outputPath: 'core/preview-api/index',
+      },
+      {
+        exportEntries: ['./internal/preview/built-in-annotations'],
+        entryPoint: './src/storybook/preview/built-in-annotations.ts',
       },
       {
         exportEntries: ['./internal/preview/globals'],
@@ -302,7 +318,7 @@ const config: BuildEntries = {
     ],
     runtime: [
       {
-        // Composes the core annotations in `setup`; listed in `sideEffects`.
+        // Sets the preview globals on import; listed in `sideEffects`.
         exportEntries: ['./internal/preview/runtime'],
         entryPoint: './src/storybook/preview/runtime.ts',
         outputPath: 'core/preview/runtime',

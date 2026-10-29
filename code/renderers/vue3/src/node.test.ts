@@ -42,7 +42,6 @@ describe('vue3 node plugin', () => {
       .toMatchInlineSnapshot(`
         [
           "preview:annotations:collect",
-          "core:features:extend",
           "core:docgen-enabled:extend",
           "core:docgen-providers:collect",
           "core:story-docs-provider:extend",
@@ -69,12 +68,6 @@ describe('vue3 node plugin', () => {
       expected: ['<pkg>/dist/entry-preview.js', '<pkg>/dist/entry-preview-docs.js'],
     },
     {
-      name: 'turns component manifests on and keeps earlier features',
-      hook: 'core:features:extend',
-      input: { controls: true },
-      expected: { controls: true, componentsManifest: true },
-    },
-    {
       name: 'docgen enabled with typescript installed',
       hook: 'core:docgen-enabled:extend',
       input: undefined,
@@ -88,6 +81,10 @@ describe('vue3 node plugin', () => {
     },
   ])('$name', async ({ hook, input, seeds, expected }) => {
     expect(await call(hook, input, seeds as Record<string, unknown>)).toEqual(expected);
+  });
+
+  it('turns component manifests on before setup', () => {
+    expect(vue().features).toEqual({ componentsManifest: true });
   });
 
   it('declares component manifests only with the docgen server', async () => {

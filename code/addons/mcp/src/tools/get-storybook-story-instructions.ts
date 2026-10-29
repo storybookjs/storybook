@@ -1,6 +1,5 @@
 import { resolveSkillInputs } from 'storybook/internal/server';
 import { buildStoryInstructions } from 'storybook/internal/skills';
-import type { Options } from '@storybook/core/internal/types';
 import type { McpServer } from 'tmcp';
 import { collectTelemetry } from '../telemetry.ts';
 import type { AddonContext } from '../types.ts';
@@ -41,9 +40,9 @@ export async function addGetUIBuildingInstructionsTool(
     },
     async () => {
       try {
-        const { options, disableTelemetry } = server.ctx.custom ?? {};
-        if (!options) {
-          throw new Error('Options are required in addon context');
+        const { storybook, disableTelemetry } = server.ctx.custom ?? {};
+        if (!storybook) {
+          throw new Error('The Storybook instance is required in addon context');
         }
 
         if (!disableTelemetry) {
@@ -54,7 +53,7 @@ export async function addGetUIBuildingInstructionsTool(
           });
         }
 
-        const uiInstructions = await buildStorybookStoryInstructions(options, {
+        const uiInstructions = await buildStorybookStoryInstructions(storybook, {
           toolsets: server.ctx.custom?.toolsets,
           a11yEnabled: server.ctx.custom?.a11yEnabled,
           addonVitestAvailable,
@@ -134,7 +133,7 @@ export function getStorybookStoryInstructionsToolMetadata(options: {
  * the wrong prose by leaving a field off.
  */
 export async function buildStorybookStoryInstructions(
-  options: Options,
+  storybook: Parameters<typeof resolveSkillInputs>[0],
   {
     toolsets,
     a11yEnabled,
@@ -142,7 +141,7 @@ export async function buildStorybookStoryInstructions(
     docsEnabled,
   }: BuildStorybookStoryInstructionsOptions = {}
 ): Promise<string> {
-  const inputs = await resolveSkillInputs(options);
+  const inputs = await resolveSkillInputs(storybook);
 
   return buildStoryInstructions({
     transport: 'mcp',

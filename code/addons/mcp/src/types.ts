@@ -1,5 +1,6 @@
 import * as v from 'valibot';
-import type { CoreConfig, Options, StoryIndex } from '@storybook/core/internal/types';
+import type { Storybook } from '@storybook/core';
+import type { CoreConfig } from '@storybook/core/internal/types';
 import type { DocsAccess, ManifestProvider, Source } from '@storybook/core/internal/toolsets-docs';
 
 const isLiteralEndpointPathname = (endpoint: string) => {
@@ -53,12 +54,17 @@ export type DocsServingContext = {
   localAccess?: DocsAccess;
 };
 
-/** Storybook options plus the instance state the MCP server reads. */
-export type McpServerOptions = Options & {
+/** The instance pieces the MCP server reads. */
+export type McpStorybook = Pick<
+  Storybook,
+  'options' | 'configDir' | 'callHook' | 'hasPlugin' | 'getIndex' | 'getStoryIndexGenerator'
+>;
+
+/** The running Storybook the MCP request handler serves. */
+export type McpServerOptions = {
+  storybook: McpStorybook;
   /** The resolved `core` config. */
   core?: CoreConfig;
-  /** Read the live story index in-process. */
-  getIndex: () => Promise<StoryIndex>;
 };
 
 /**
@@ -66,11 +72,8 @@ export type McpServerOptions = Options & {
  * Contains Storybook-specific configuration and runtime information.
  */
 export type AddonContext = DocsServingContext & {
-  /**
-   * The Storybook options object containing configuration,
-   * port, presets, and other runtime information.
-   */
-  options: Options;
+  /** The Storybook instance this MCP server serves. */
+  storybook: McpStorybook;
 
   /**
    * The resolved MCP endpoint pathname for this Storybook instance.

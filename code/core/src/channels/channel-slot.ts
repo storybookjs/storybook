@@ -12,6 +12,7 @@ import { Channel } from './main.ts';
 import type { ChannelLike } from './types.ts';
 
 let channel: ChannelLike | undefined;
+const CHANNEL_WAITERS = new Set<(installed: ChannelLike) => void>();
 
 function syncGlobalSlot(next: ChannelLike | undefined): void {
   globalThis.__STORYBOOK_ADDONS_CHANNEL__ = next;
@@ -66,6 +67,20 @@ export function setChannel(next: ChannelLike | null): void {
 
   channel = next ?? undefined;
   syncGlobalSlot(channel);
+  if (next) {
+    for (const resolve of CHANNEL_WAITERS) {
+      resolve(next);
+    }
+    CHANNEL_WAITERS.clear();
+  }
+}
+
+/** Resolves with the page's channel, now or once a runtime entry installs it. */
+export function whenChannelInstalled(): Promise<ChannelLike> {
+  const installed = getChannel();
+  return installed
+    ? Promise.resolve(installed)
+    : new Promise((resolve) => CHANNEL_WAITERS.add(resolve));
 }
 
 /** Clears the shared channel slot. Alias for `setChannel(null)`. */

@@ -20,7 +20,6 @@ import { buildOrThrow } from './utils/build-or-throw.ts';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files.ts';
 import { createManagerHost } from '@storybook/manager/internal/deep/builder-manager/host';
 import { writeIndexJson } from './utils/index-json.ts';
-import { writeManifests } from '@storybook/core/internal/deep/story-index/manifests/manifests';
 import { extractStorybookMetadata } from './utils/metadata.ts';
 import { outputStats } from './utils/output-stats.ts';
 import { summarizeIndex } from '@storybook/core/internal/deep/story-index/summarizeIndex';
@@ -56,11 +55,11 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   });
   try {
     await runWithStorybook(storybook, async () => {
-      const { presets, builder: previewBuilder } = storybook;
+      const { builder: previewBuilder } = storybook;
       if (!previewBuilder) {
         throw new MissingBuilderError();
       }
-      const { features, staticDirs } = storybook.options;
+      const { staticDirs } = storybook.options;
       const core = await storybook.callHook('core:config:extend', undefined);
 
       const invokedBy = process.env.STORYBOOK_INVOKED_BY;
@@ -95,9 +94,9 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true, force: true }));
 
       const hasRegisteredServices = getRegisteredServices().length > 0;
-      const shouldWriteManifests = features?.componentsManifest;
+      const staticOutputWriters = await storybook.callHook('server:static-output:collect', []);
 
-      if (hasRegisteredServices || shouldWriteManifests) {
+      if (hasRegisteredServices || staticOutputWriters.length > 0) {
         effects.push(
           (async () => {
             if (hasRegisteredServices) {
@@ -105,10 +104,9 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
               await writeOpenServiceStaticFiles(options.outputDir);
             }
 
-            if (shouldWriteManifests) {
-              // Ref-based components.json reads docgen snapshots from outputDir/services/ — manifests
-              // must run after open-service static files are written.
-              await writeManifests(options.outputDir, presets);
+            // Writers may read the open-service snapshots, so they run after those, in order.
+            for (const write of staticOutputWriters) {
+              await write({ outputDir: options.outputDir });
             }
           })()
         );

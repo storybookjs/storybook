@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { getManifestStatus } from './manifest-status.ts';
-import type { Options } from '@storybook/core/internal/types';
+import type { Storybook } from '@storybook/core';
 
 function createMockOptions({
   featureFlag = false,
@@ -16,28 +16,26 @@ function createMockOptions({
   hasLegacyComponentManifestGenerator?: boolean;
   hasFeaturesObject?: boolean;
   docgenServer?: boolean;
-} = {}): Options {
+} = {}): Pick<Storybook, 'callHook'> {
   return {
-    presets: {
-      apply: vi.fn(async (key: string) => {
-        if (key === 'features') {
-          return hasFeaturesObject
-            ? {
-                [featureFlagName]: featureFlag,
-                ...(docgenServer ? { docgenServer: true } : {}),
-              }
-            : {};
-        }
-        if (key === 'experimental_manifests') {
-          return hasManifests ? { components: { v: 1, components: {} } } : undefined;
-        }
-        if (key === 'experimental_componentManifestGenerator') {
-          return hasLegacyComponentManifestGenerator ? vi.fn() : undefined;
-        }
-        return undefined;
-      }),
-    },
-  } as unknown as Options;
+    callHook: vi.fn(async (name: string) => {
+      if (name === 'core:features:extend') {
+        return hasFeaturesObject
+          ? {
+              [featureFlagName]: featureFlag,
+              ...(docgenServer ? { docgenServer: true } : {}),
+            }
+          : {};
+      }
+      if (name === 'index:manifests:extend') {
+        return hasManifests ? { components: { v: 1, components: {} } } : undefined;
+      }
+      if (name === 'index:component-manifest-generator:extend') {
+        return hasLegacyComponentManifestGenerator ? vi.fn() : undefined;
+      }
+      return undefined;
+    }),
+  } as unknown as Pick<Storybook, 'callHook'>;
 }
 
 describe('getManifestStatus', () => {
@@ -126,22 +124,20 @@ describe('getManifestStatus', () => {
     expect(result).toEqual(expected);
   });
 
-  it('should correctly detect no manifests when components are not present in experimental_manifests', async () => {
+  it('should correctly detect no manifests when components are not present in the manifests hook', async () => {
     // the `manifests` preset can be present but without manifests.components, because `addon-docs` sets manifests.docs
     const result = await getManifestStatus({
-      presets: {
-        apply: vi.fn(async (key: string) => {
-          if (key === 'features') {
-            return { componentsManifest: true };
-          }
-          if (key === 'experimental_manifests') {
-            // addon-docs has set manifests.docs, but there are no actual component manifests
-            return { docs: { v: 1, docs: {} } };
-          }
-          return undefined;
-        }),
-      },
-    } as unknown as Options);
+      callHook: vi.fn(async (name: string) => {
+        if (name === 'core:features:extend') {
+          return { componentsManifest: true };
+        }
+        if (name === 'index:manifests:extend') {
+          // addon-docs has set manifests.docs, but there are no actual component manifests
+          return { docs: { v: 1, docs: {} } };
+        }
+        return undefined;
+      }),
+    } as unknown as Pick<Storybook, 'callHook'>);
     expect(result).toEqual({
       available: false,
       hasManifests: false,

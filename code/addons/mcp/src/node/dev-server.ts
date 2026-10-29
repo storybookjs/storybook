@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
+import { bindToInstance } from '@storybook/core';
 import { isWebContainer } from '@storybook/core/internal/common';
 import { logger } from '@storybook/core/internal/node-logger';
 import { createLocalDocsAccess } from '@storybook/core/internal/services';
@@ -16,29 +17,39 @@ import * as v from 'valibot';
 import { extractBearerToken, type ManifestProvider } from '../auth/index.ts';
 import { resolveCompositionSources } from '../auth/resolve-composition-sources.ts';
 import { DEFAULT_MCP_ENDPOINT } from '../constants.ts';
-import { mcpServerHandler } from '../mcp-handler.ts';
+import { createMcpServerState, mcpServerHandler } from '../mcp-handler.ts';
 import htmlTemplate from '../template.html';
-import { AddonOptions, type AddonOptionsInput, type McpServerOptions } from '../types.ts';
+import {
+  AddonOptions,
+  type AddonOptionsInput,
+  type McpServerOptions,
+  type McpStorybook,
+} from '../types.ts';
 
 /** Serve the MCP endpoint, its landing page, and OAuth metadata on the dev server. */
 export async function mountMcpServer(
   app: ServerApp,
-  options: McpServerOptions & AddonOptionsInput
+  storybook: McpStorybook,
+  input: AddonOptionsInput = {}
 ): Promise<ServerApp> {
   // Unhandled on purpose: invalid addon options must fail startup.
   const addonOptions = v.parse(AddonOptions, {
-    endpoint: options.endpoint,
-    toolsets: options.toolsets ?? {},
+    endpoint: input.endpoint,
+    toolsets: input.toolsets ?? {},
   });
+  const { port, host, localAddress, networkAddress } = storybook.options;
+  const core = await storybook.callHook('core:config:extend', {});
+  const options: McpServerOptions = { storybook, core };
 
-  const origin = `http://localhost:${options.port}`;
+  const origin = `http://localhost:${port}`;
+  const server = createMcpServerState();
   const endpoint = addonOptions.endpoint ?? DEFAULT_MCP_ENDPOINT;
 
   const hostValidation = {
-    host: options.host,
-    allowedHosts: options.core?.allowedHosts,
-    localAddress: options.localAddress,
-    networkAddress: options.networkAddress,
+    host,
+    allowedHosts: core?.allowedHosts,
+    localAddress,
+    networkAddress,
   };
 
   // Web containers such as StackBlitz never run on a developer machine.
@@ -79,15 +90,16 @@ export async function mountMcpServer(
     return true;
   };
 
-  const { refs, compositionAuth, sources, multiSource } = await resolveCompositionSources(options);
+  const { refs, compositionAuth, sources, multiSource } =
+    await resolveCompositionSources(storybook);
 
   // Composed docgen-server Storybooks 404 the local manifests, so read this one in-process.
-  const rawAvailability = await getToolAvailability(options);
+  const rawAvailability = await getToolAvailability(storybook);
   const localAccess =
     rawAvailability.docgenServer && refs.length > 0
       ? createLocalDocsAccess({
-          storyIndex: { getIndex: options.getIndex },
-          getManifests: () => loadManifests(options.presets),
+          storyIndex: { getIndex: () => storybook.getIndex() },
+          getManifests: () => loadManifests(storybook),
         })
       : undefined;
 
@@ -134,21 +146,28 @@ export async function mountMcpServer(
     return false;
   };
 
+  // HTTP callbacks can run outside this instance's async context, so requests re-enter it.
+  const handleMcpRequest = bindToInstance(
+    (req: IncomingMessage, res: ServerResponse): Promise<void> =>
+      mcpServerHandler({
+        req,
+        res,
+        options,
+        addonOptions,
+        endpoint,
+        sources,
+        ...manifestAccessFor(req),
+        compositionAuth,
+        server,
+      })
+  );
+
   app.post(endpoint, (req, res) => {
     if (rejectDisallowedOrigin(req, res)) return;
     if (requireAuth(req, res)) return;
     if (rejectNonJsonBody(req, res)) return;
 
-    return mcpServerHandler({
-      req,
-      res,
-      options,
-      addonOptions,
-      endpoint,
-      sources,
-      ...manifestAccessFor(req),
-      compositionAuth,
-    });
+    return handleMcpRequest(req, res);
   });
 
   // The MCP server registers tools behind the same gates, so the page cannot drift from them.
@@ -170,16 +189,7 @@ export async function mountMcpServer(
     if (!req.headers['accept']?.includes('text/html')) {
       if (requireAuth(req, res)) return;
 
-      return mcpServerHandler({
-        req,
-        res,
-        options,
-        addonOptions,
-        endpoint,
-        sources,
-        ...manifestAccessFor(req),
-        compositionAuth,
-      });
+      return handleMcpRequest(req, res);
     }
 
     res.writeHead(200, { 'Content-Type': 'text/html' });

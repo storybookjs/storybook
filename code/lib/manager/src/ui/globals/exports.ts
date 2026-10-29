@@ -503,6 +503,7 @@ export default {
     'requireChannel',
     'setChannel',
     'stringifyChannelMessage',
+    'whenChannelInstalled',
   ],
   'storybook/internal/client-logger': ['deprecate', 'logger', 'once', 'pretty'],
   'storybook/internal/components': [

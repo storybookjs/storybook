@@ -1,9 +1,8 @@
 import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 
-import type { ChannelHandler } from '@storybook/core/internal/channels';
+import type { Channel, ChannelHandler } from '@storybook/core/internal/channels';
 import {
-  Channel,
   HEARTBEAT_INTERVAL,
   SERVER_CHANNEL_PATH,
   parseChannelMessage,
@@ -14,7 +13,6 @@ import { WebSocket, WebSocketServer } from 'ws';
 
 import type events from '@storybook/core/internal/core-events';
 import { logger } from '@storybook/core/internal/node-logger';
-import { UniversalStore } from '@storybook/core/internal/deep/shared/universal-store';
 import { TOOLSET_RPC_REQUEST_EVENTS } from '@storybook/core/internal/deep/shared/open-service/toolset-rpc';
 import { CORE_EVENT_SENDERS } from './event-senders.ts';
 import { type HostValidationOptions, isValidHost } from './getHostValidationMiddleware.ts';
@@ -180,13 +178,6 @@ export function attachServerTransport(
   const transport = new ServerChannelTransport(server, options);
   channel.addTransport(transport);
   return transport;
-}
-
-/** Prepare stores on a transportless channel in the fallback server realm. */
-export function prepareHeadlessUniversalStores(): Channel {
-  const channel = new Channel({});
-  UniversalStore.__prepare(channel, UniversalStore.Environment.SERVER);
-  return channel;
 }
 
 // for backwards compatibility

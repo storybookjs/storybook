@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel, type ChannelTransport } from '@storybook/core/internal/channels';
 import { executeNodeCommand } from '@storybook/core/internal/common';
+import { internal_UniversalStore } from '@storybook/core/internal/services';
 import type { StoryIndex } from '@storybook/core/internal/types';
 
 import {
@@ -16,7 +17,7 @@ import {
 import { log } from '../logger.ts';
 import type { StoreEvent } from '../types.ts';
 import type { StoreState } from '../types.ts';
-import { killTestRunner, runTestRunner, sendStoryIndexToTestRunner } from './boot-test-runner.ts';
+import { createTestRunner, type TestRunner } from './boot-test-runner.ts';
 import type { TestRunnerHost } from './host.ts';
 
 let stdout: (chunk: Buffer | string) => void;
@@ -73,26 +74,22 @@ vi.mock('../logger', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('@storybook/core/internal/services', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@storybook/core/internal/services')>();
-  return {
-    ...actual,
-    internal_universalStatusStore: {
-      subscribe: vi.fn(() => () => {}),
-    },
-    internal_universalTestProviderStore: {
-      subscribe: vi.fn(() => () => {}),
-    },
-  };
-});
+// Each test gets the runner of a fresh instance.
+let runner: TestRunner | undefined;
+const runTestRunner: TestRunner['run'] = (input) => runner!.run(input);
+const sendStoryIndexToTestRunner: TestRunner['sendStoryIndex'] = (generator) =>
+  runner!.sendStoryIndex(generator);
+const killTestRunner = () => runner!.kill();
 
 beforeEach(() => {
   vi.useFakeTimers();
-  killTestRunner();
+  runner?.kill();
+  runner = createTestRunner();
 });
 
 afterEach(() => {
   vi.useRealTimers();
+  mockChannel.removeAllListeners();
 });
 
 const storyIndex: StoryIndex = { v: 5, entries: {} };
@@ -103,25 +100,28 @@ const childSpawned = () => vi.waitFor(() => expect(executeNodeCommand).toHaveBee
 const transport = { setHandler: vi.fn(), send: vi.fn() } satisfies ChannelTransport;
 const mockChannel = new Channel({ transport });
 
+/** Store state broadcasts the owner sends the child, which the run-order assertions skip. */
+const isStoreStateMessage = (event: { type: string; args?: any[] }) =>
+  event.type === STORE_CHANNEL_EVENT_NAME && event.args?.[0]?.kind !== 'event';
+
 describe('bootTestRunner', () => {
-  let mockStore: InstanceType<
-    typeof import('@storybook/core/internal/services').experimental_MockUniversalStore<
-      StoreState,
-      StoreEvent
-    >
-  >;
+  let mockStore: internal_UniversalStore<StoreState, StoreEvent>;
   const mockStorybook = {
     configDir: '.storybook',
+    workingDir: '/project',
     getStoryIndexGenerator: vi.fn(async () => storyIndexGenerator),
     callHook: vi.fn(async (name: string, value?: unknown) =>
       name === 'preview:annotations:collect' ? ['/project/.storybook/preview.ts'] : value
     ),
   } as unknown as TestRunnerHost;
 
-  beforeEach(async () => {
-    const { experimental_MockUniversalStore: MockUniversalStore } =
-      await import('@storybook/core/internal/services');
-    mockStore = new MockUniversalStore<StoreState, StoreEvent>(storeOptions);
+  beforeEach(() => {
+    // The instance owns the store on the channel the runner bridges to the child.
+    mockStore = internal_UniversalStore.create<StoreState, StoreEvent>({
+      ...storeOptions,
+      owner: true,
+      channel: mockChannel,
+    });
     vi.mocked(executeNodeCommand).mockClear();
     vi.mocked(log).mockClear();
     child.send.mockClear();
@@ -139,6 +139,7 @@ describe('bootTestRunner', () => {
     expect(vi.mocked(executeNodeCommand)).toHaveBeenCalledWith({
       scriptPath: expect.stringMatching(/vitest\.js$/),
       options: {
+        cwd: '/project',
         env: {
           NODE_ENV: 'test',
           TEST: 'true',
@@ -196,7 +197,7 @@ describe('bootTestRunner', () => {
     await expect(promise).rejects.toThrow();
   });
 
-  it('should forward universal store events', async () => {
+  it('should forward the owner store messages to the child, and not client messages', async () => {
     const promise = runTestRunner({
       channel: mockChannel,
       store: mockStore,
@@ -205,33 +206,38 @@ describe('bootTestRunner', () => {
     await childSpawned();
     message({ type: 'ready' });
     await promise;
+    child.send.mockClear();
 
     mockStore.send({ type: 'TRIGGER_RUN', payload: { triggeredBy: 'global', storyIds: ['foo'] } });
-    expect(child.send).toHaveBeenCalledWith({
-      args: [
+    mockChannel.emit(STATUS_STORE_CHANNEL_EVENT_NAME, {
+      kind: 'state-request',
+      from: { id: 'manager', type: 'CLIENT' },
+    });
+
+    expect(child.send.mock.calls).toEqual([
+      [
         {
-          event: {
-            payload: { storyIds: ['foo'], triggeredBy: 'global' },
-            type: 'TRIGGER_RUN',
-          },
-          eventInfo: {
-            actor: {
-              environment: 'MOCK',
-              id: expect.any(String),
-              type: 'LEADER',
+          args: [
+            {
+              kind: 'event',
+              event: {
+                payload: { storyIds: ['foo'], triggeredBy: 'global' },
+                type: 'TRIGGER_RUN',
+              },
+              eventInfo: { actor: mockStore.actor },
             },
-          },
+          ],
+          from: 'server',
+          type: 'UNIVERSAL_STORE:storybook/test',
         },
       ],
-      from: 'server',
-      type: 'UNIVERSAL_STORE:storybook/test',
-    });
+    ]);
 
     message({ type: 'some-event', args: ['foo'] });
     expect(mockChannel.last('some-event')).toEqual(['foo']);
   });
 
-  it('should deliver universal store events from the child without re-broadcasting them', async () => {
+  it('should deliver store messages from the child without re-broadcasting them', async () => {
     const promise = runTestRunner({
       channel: mockChannel,
       store: mockStore,
@@ -240,17 +246,14 @@ describe('bootTestRunner', () => {
     await childSpawned();
     message({ type: 'ready' });
     await promise;
-    for (const type of [
-      STORE_CHANNEL_EVENT_NAME,
-      STATUS_STORE_CHANNEL_EVENT_NAME,
-      TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME,
-    ]) {
+    // No owner of these stores listens on this channel, so nothing answers.
+    for (const type of [STATUS_STORE_CHANNEL_EVENT_NAME, TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME]) {
       transport.send.mockClear();
       const bridgedListener = vi.fn();
       mockChannel.on(type, bridgedListener);
       const bridgedEvent = {
         type,
-        args: [{ event: { type: '__SET_STATE', payload: {} }, eventInfo: { actor: { id: 'x' } } }],
+        args: [{ kind: 'set-state', from: { id: 'child', type: 'CLIENT' }, seq: 1, state: {} }],
       };
       message(bridgedEvent);
       expect(bridgedListener).toHaveBeenCalledWith(bridgedEvent.args[0]);
@@ -265,7 +268,7 @@ describe('bootTestRunner', () => {
     );
   });
 
-  it('should broadcast child store events to clients exactly once, via the leader forward', async () => {
+  it('should broadcast child store writes to clients exactly once, via the owner', async () => {
     const promise = runTestRunner({
       channel: mockChannel,
       store: mockStore,
@@ -274,41 +277,26 @@ describe('bootTestRunner', () => {
     await childSpawned();
     message({ type: 'ready' });
     await promise;
+    transport.send.mockClear();
+    const childActor = { id: 'child-client', type: 'CLIENT' };
 
-    const { internal_UniversalStore } = await import('@storybook/core/internal/services');
-    (internal_UniversalStore as any).__prepare(
-      mockChannel,
-      internal_UniversalStore.Environment.SERVER
-    );
-    const leader = internal_UniversalStore.create({ ...storeOptions, leader: true });
-    try {
-      await leader.untilReady();
-      transport.send.mockClear();
+    message({
+      type: STORE_CHANNEL_EVENT_NAME,
+      args: [
+        {
+          kind: 'set-state',
+          from: childActor,
+          seq: 1,
+          state: { ...mockStore.getState(), watching: true },
+        },
+      ],
+    });
 
-      message({
-        type: 'UNIVERSAL_STORE:storybook/test',
-        args: [
-          {
-            event: { type: '__SET_STATE', payload: { state: leader.getState() } },
-            eventInfo: {
-              actor: {
-                id: 'child-follower',
-                type: internal_UniversalStore.ActorType.FOLLOWER,
-                environment: internal_UniversalStore.Environment.SERVER,
-              },
-            },
-          },
-        ],
-      });
-
-      expect(transport.send).toHaveBeenCalledTimes(1);
-      const [forwarded] = transport.send.mock.calls[0];
-      expect(forwarded.type).toBe('UNIVERSAL_STORE:storybook/test');
-      expect(forwarded.args[0].eventInfo.actor.id).toBe('child-follower');
-      expect(forwarded.args[0].eventInfo.forwardingActor).toBeDefined();
-    } finally {
-      mockChannel.removeAllListeners('UNIVERSAL_STORE:storybook/test');
-    }
+    expect(mockStore.getState().watching).toBe(true);
+    expect(transport.send.mock.calls.map(([event]) => [event.type, event.args[0].kind])).toEqual([
+      [STORE_CHANNEL_EVENT_NAME, 'state-changed'],
+    ]);
+    expect(transport.send.mock.calls[0][0].args[0].eventInfo.actor).toEqual(childActor);
   });
 
   it('should resend init event', async () => {
@@ -406,13 +394,15 @@ describe('bootTestRunner', () => {
   const indexV1: StoryIndex = { v: 5, entries: { v1: {} as never } };
   const indexV2: StoryIndex = { v: 5, entries: { v2: {} as never } };
   const sentTypes = () =>
-    child.send.mock.calls.map(([event]) =>
-      event.type === STORY_INDEX_CHANNEL_EVENT_NAME
-        ? `index:${Object.keys(event.args[0].entries).join()}`
-        : event.type === STORE_CHANNEL_EVENT_NAME
-          ? `${event.args[0].event.type}:${event.args[0].event.payload.storyIds}`
-          : event.type
-    );
+    child.send.mock.calls
+      .filter(([event]) => !isStoreStateMessage(event))
+      .map(([event]) =>
+        event.type === STORY_INDEX_CHANNEL_EVENT_NAME
+          ? `index:${Object.keys(event.args[0].entries).join()}`
+          : event.type === STORE_CHANNEL_EVENT_NAME
+            ? `${event.args[0].event.type}:${event.args[0].event.payload.storyIds}`
+            : event.type
+      );
   const bootOnTrigger = () =>
     mockStore.subscribe('TRIGGER_RUN', (event, eventInfo) => {
       runTestRunner({
@@ -420,7 +410,7 @@ describe('bootTestRunner', () => {
         store: mockStore,
         storybook: mockStorybook,
         initEvent: STORE_CHANNEL_EVENT_NAME,
-        initArgs: [{ event, eventInfo }],
+        initArgs: [internal_UniversalStore.eventMessage(event, eventInfo)],
       }).catch(() => {});
     });
 
@@ -797,13 +787,15 @@ describe('bootTestRunner', () => {
     };
     let spawned: FakeChild[];
     const typesSentTo = (target: FakeChild) =>
-      target.send.mock.calls.map(([event]) =>
-        event.type === STORE_CHANNEL_EVENT_NAME
-          ? `${event.args[0].event.type}:${event.args[0].event.payload.storyIds}`
-          : event.type === STORY_INDEX_CHANNEL_EVENT_NAME
-            ? 'index'
-            : event.type
-      );
+      target.send.mock.calls
+        .filter(([event]) => !isStoreStateMessage(event))
+        .map(([event]) =>
+          event.type === STORE_CHANNEL_EVENT_NAME
+            ? `${event.args[0].event.type}:${event.args[0].event.payload.storyIds}`
+            : event.type === STORY_INDEX_CHANNEL_EVENT_NAME
+              ? 'index'
+              : event.type
+        );
     const trigger = (id: string) =>
       mockStore.send({ type: 'TRIGGER_RUN', payload: { triggeredBy: 'global', storyIds: [id] } });
     const fatalError = {
@@ -822,6 +814,41 @@ describe('bootTestRunner', () => {
 
     afterEach(() => {
       vi.mocked(executeNodeCommand).mockReturnValue(child as never);
+    });
+
+    it('keeps one child per instance, so killing one leaves the other running', async () => {
+      const { experimental_MockUniversalStore: MockUniversalStore } =
+        await import('@storybook/core/internal/services');
+      const other = createTestRunner();
+      const otherStore = new MockUniversalStore<StoreState, StoreEvent>(storeOptions);
+      const otherStorybook = { ...mockStorybook, workingDir: '/other' } as TestRunnerHost;
+      try {
+        const first = runTestRunner({
+          channel: mockChannel,
+          store: mockStore,
+          storybook: mockStorybook,
+        });
+        await vi.waitFor(() => expect(spawned).toHaveLength(1));
+        const second = other.run({
+          channel: mockChannel,
+          store: otherStore,
+          storybook: otherStorybook,
+        });
+        await vi.waitFor(() => expect(spawned).toHaveLength(2));
+        spawned[0].message({ type: 'ready' });
+        spawned[1].message({ type: 'ready' });
+        await Promise.all([first, second]);
+
+        killTestRunner();
+        await other.run({ channel: mockChannel, store: otherStore, storybook: otherStorybook });
+
+        expect(spawned.map((target) => target.kill.mock.calls.length)).toEqual([1, 0]);
+        expect(vi.mocked(executeNodeCommand).mock.calls.map(([call]) => call.options?.cwd)).toEqual(
+          ['/project', '/other']
+        );
+      } finally {
+        other.kill();
+      }
     });
 
     it('should boot one child when two runs are triggered before it spawns', async () => {

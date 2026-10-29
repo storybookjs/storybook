@@ -1,0 +1,153 @@
+import { writeFile } from 'node:fs/promises';
+import { basename, isAbsolute, join, relative } from 'node:path';
+
+import type { Channel } from '@storybook/core/internal/channels';
+import { formatFileContent } from '@storybook/core/internal/common';
+import type {
+  RequestData,
+  ResponseData,
+  SaveStoryRequestPayload,
+  SaveStoryResponsePayload,
+} from '@storybook/core/internal/core-events';
+import {
+  SAVE_STORY_REQUEST,
+  SAVE_STORY_RESPONSE,
+  STORY_RENDERED,
+} from '@storybook/core/internal/core-events';
+import { storyNameFromExport, toId } from '@storybook/core/internal/csf/csf-utils';
+import { printCsf, readCsf } from '@storybook/core/internal/csf-tools';
+import { logger } from '@storybook/core/internal/node-logger';
+import { isExampleStoryId, telemetry } from '@storybook/core/internal/telemetry';
+
+import { isValidIdentifier } from '@storybook/core/internal/deep/csf-tools/estree/ast';
+import { duplicateStoryWithNewName } from './duplicate-story-with-new-name.ts';
+import { updateArgsInCsfFile } from './update-args-in-csf-file.ts';
+import { SaveStoryError } from './utils.ts';
+import { emptyFunction } from './valueToSource.ts';
+
+const parseArgs = (args: string): Record<string, any> =>
+  JSON.parse(args, (_, value) => (value === '__sb_empty_function_arg__' ? emptyFunction : value));
+
+/** The project a save-story handler writes into. */
+export interface SaveStoryProject {
+  /** Directory that story import paths are relative to. */
+  workingDir: string;
+  /** Saves outside this directory are rejected. */
+  projectRoot: string;
+}
+
+/** Answer save-story requests by rewriting story files of this project only. */
+export function initializeSaveStory(
+  channel: Channel,
+  { workingDir, projectRoot }: SaveStoryProject
+): void {
+  channel.on(SAVE_STORY_REQUEST, async ({ id, payload }: RequestData<SaveStoryRequestPayload>) => {
+    const { csfId, importPath, args, name } = payload;
+
+    let newStoryId: string | undefined;
+    let newStoryName: string | undefined;
+    let sourceFileName: string | undefined;
+    let sourceFilePath: string | undefined;
+    let sourceStoryName: string | undefined;
+
+    try {
+      if (name && !isValidIdentifier(name)) {
+        throw new SaveStoryError(`Invalid story name: ${JSON.stringify(name)}`);
+      }
+
+      sourceFileName = basename(importPath);
+      sourceFilePath = join(workingDir, importPath);
+
+      const pathFromProjectRoot = relative(projectRoot, sourceFilePath);
+      if (
+        isAbsolute(pathFromProjectRoot) ||
+        // Windows strips trailing dots from path segments, so `...` is not a plain name there.
+        pathFromProjectRoot.split(/[\\/]/).some((segment) => /^\.{2,}$/.test(segment))
+      ) {
+        throw new SaveStoryError(`Invalid importPath: must resolve within the project root.`);
+      }
+
+      const csf = await readCsf(sourceFilePath, {
+        makeTitle: (userTitle: string) => userTitle || 'myTitle',
+      });
+
+      const parsed = csf.parse();
+      const stories = Object.entries(parsed._stories);
+
+      const [componentId, storyId] = csfId.split('--');
+      newStoryName = name && storyNameFromExport(name);
+      newStoryId = newStoryName && toId(componentId, newStoryName);
+
+      const [storyName] = stories.find(([key, value]) => value.id.endsWith(`--${storyId}`)) || [];
+      if (!storyName) {
+        throw new SaveStoryError(`Source story not found.`);
+      }
+      if (name && csf.getStoryExport(name)) {
+        throw new SaveStoryError(`Story already exists.`);
+      }
+
+      sourceStoryName = storyNameFromExport(storyName);
+
+      await updateArgsInCsfFile(
+        parsed,
+        name ? duplicateStoryWithNewName(parsed, storyName, name) : csf.getStoryExport(storyName),
+        args ? parseArgs(args) : {}
+      );
+
+      const code = await formatFileContent(sourceFilePath, printCsf(csf).code);
+
+      // Writing the CSF file should trigger HMR, which causes the story to rerender. Delay the
+      // response until that happens, but don't wait too long.
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          channel.on(STORY_RENDERED, resolve);
+          setTimeout(() => resolve(channel.off(STORY_RENDERED, resolve)), 3000);
+        }),
+        writeFile(sourceFilePath, code),
+      ]);
+
+      channel.emit(SAVE_STORY_RESPONSE, {
+        id,
+        success: true,
+        payload: {
+          csfId,
+          newStoryId,
+          newStoryName,
+          newStoryExportName: name,
+          sourceFileContent: code,
+          sourceFileName,
+          sourceStoryName,
+          sourceStoryExportName: storyName,
+        },
+        error: null,
+      } satisfies ResponseData<SaveStoryResponsePayload>);
+
+      // don't take credit for save-from-controls actions against CLI example stories
+      const isCLIExample = isExampleStoryId(newStoryId ?? csfId);
+      if (!isCLIExample) {
+        await telemetry('save-story', {
+          action: name ? 'createStory' : 'updateStory',
+          success: true,
+        });
+      }
+    } catch (error: any) {
+      channel.emit(SAVE_STORY_RESPONSE, {
+        id,
+        success: false,
+        error: error instanceof SaveStoryError ? error.message : 'Unknown error',
+      } satisfies ResponseData<SaveStoryResponsePayload>);
+
+      logger.error(
+        `Error writing to ${sourceFilePath}:\n${error.stack || error.message || error.toString()}`
+      );
+
+      if (!(error instanceof SaveStoryError)) {
+        await telemetry('save-story', {
+          action: name ? 'createStory' : 'updateStory',
+          success: false,
+          error,
+        });
+      }
+    }
+  });
+}

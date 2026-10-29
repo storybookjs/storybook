@@ -5,7 +5,7 @@ import type { OmitIndexSignature, Simplify, UnionToIntersection } from 'type-fes
 
 import type { ToolbarArgType } from '../types/toolbar.ts';
 import type { SBScalarType, SBType } from './SBType.ts';
-import type { CoreTypes } from './core-annotations.ts';
+import type { CoreGlobals, CoreTypes } from './core-annotations.ts';
 
 export * from './SBType.ts';
 export type StoryId = string;
@@ -462,7 +462,7 @@ export interface ProjectAnnotations<
   beforeAll?: BeforeAll;
 
   initialGlobals?: Globals &
-    (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown);
+    (TRenderer['csf4'] extends true ? CoreGlobals & TRenderer['globals'] : unknown);
   globalTypes?: GlobalTypes;
   applyDecorators?: DecoratorApplicator<TRenderer, Args>;
   runStep?: StepRunner<TRenderer, TArgs>;
@@ -557,8 +557,7 @@ export interface ComponentAnnotations<
 
   /** Override the globals values for all stories in this component */
   globals?: Partial<
-    Globals &
-      (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown)
+    Globals & (TRenderer['csf4'] extends true ? CoreGlobals & TRenderer['globals'] : unknown)
   >;
 }
 
@@ -578,8 +577,7 @@ export type StoryAnnotations<
 
   /** Override the globals values for this story */
   globals?: Partial<
-    Globals &
-      (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown)
+    Globals & (TRenderer['csf4'] extends true ? CoreGlobals & TRenderer['globals'] : unknown)
   >;
 } & ({} extends TRequiredArgs ? { args?: TRequiredArgs } : { args: TRequiredArgs });
 

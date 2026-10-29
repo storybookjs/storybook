@@ -1,13 +1,9 @@
-import '../../../../../services/hooks.ts';
-import { getInstanceContext } from '../../../../instance-context.ts';
-
 import { stat, writeFile } from 'node:fs/promises';
 
 import { join, normalize } from 'pathe';
 
 import { getProjectRoot } from '@storybook/core/internal/common';
 import { logger } from '@storybook/core/internal/node-logger';
-import type { Presets } from '@storybook/core/internal/types';
 
 import type { StoryIndex } from '../../../../../types/modules/indexer.ts';
 import { ModuleGraphFailureError } from '../errors.ts';
@@ -27,8 +23,8 @@ import type { ImportParser } from './parser-registry/types.ts';
 export interface ModuleGraphEngineOptions {
   getIndex: () => Promise<StoryIndex>;
   workingDir?: string;
-  /** Presets instance used to resolve `experimental_importParsers` contributions from plugins. */
-  presets?: Presets;
+  /** Import parsers contributed by plugins, read when the engine starts. */
+  getImportParsers?: () => Promise<ImportParser[]>;
   /** Fired when the eager build (or start pipeline) fails irrecoverably. */
   onError?: (error: Error) => void;
   /** Fired when the builder adapter reports a startup failure. */
@@ -221,12 +217,7 @@ export class ModuleGraphEngine {
     const resolveConfig = await adapter.getResolveConfig();
     const projectRoot = normalize(resolveConfig.projectRoot ?? this.workingDir);
 
-    const storybook = getInstanceContext()?.storybook;
-    const pluginParsers = storybook
-      ? await storybook.callHook('core:import-parsers:collect', [])
-      : this.options.presets
-        ? await this.options.presets.apply<ImportParser[]>('experimental_importParsers', [])
-        : [];
+    const pluginParsers = (await this.options.getImportParsers?.()) ?? [];
     const registry = new ParserRegistry({
       defaultParsers: builtinImportParsers,
       pluginParsers,

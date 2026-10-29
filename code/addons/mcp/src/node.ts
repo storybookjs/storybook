@@ -1,7 +1,6 @@
 import { fileURLToPath } from 'node:url';
 
 import { defineAddon } from '@storybook/core';
-import type { Options } from '@storybook/core/internal/types';
 // Types only: the product declares the `server:*` hooks this addon handles.
 import type {} from 'storybook/internal/instance';
 
@@ -15,6 +14,8 @@ export default defineAddon<AddonOptionsInput | void>((input) => {
   const options = input || {};
   return {
     meta: { name: '@storybook/addon-mcp' },
+    // Before setup, so the product keeps its components-manifest addon.
+    features: { componentsManifest: true },
     setup(storybook): void {
       storybook.hook('server:mcp:extend', () => ({
         status: 'ready',
@@ -26,19 +27,7 @@ export default defineAddon<AddonOptionsInput | void>((input) => {
           new URL('./dist/preview.js', import.meta.resolve('@storybook/addon-mcp/package.json'))
         ),
       ]);
-      storybook.hook('core:features:extend', (value) => ({
-        ...value,
-        componentsManifest: true,
-      }));
-      storybook.hook('server:app:extend', async (app) =>
-        mountMcpServer(app, {
-          // Core availability and composition helpers still read the options shape.
-          ...(storybook.options as unknown as Options),
-          ...options,
-          core: await storybook.callHook('core:config:extend', {}),
-          getIndex: () => storybook.getIndex(),
-        })
-      );
+      storybook.hook('server:app:extend', (app) => mountMcpServer(app, storybook, options));
     },
   };
 });

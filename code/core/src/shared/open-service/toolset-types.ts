@@ -1,5 +1,4 @@
 import type { DocsToolset } from './toolsets/docs/definition.ts';
-import type { ReviewToolset } from './toolsets/review/definition.ts';
 import type { StoriesToolset } from './toolsets/stories/definition.ts';
 
 /**
@@ -12,5 +11,4 @@ import type { StoriesToolset } from './toolsets/stories/definition.ts';
 export type KnownToolsets = {
   docs: DocsToolset;
   stories: StoriesToolset;
-  review: ReviewToolset;
 };

@@ -4,7 +4,8 @@
  * Test support: in a real Storybook the `services` preset hook registers these before the MCP
  * server boots, so a test that exercises tool registration has to stand that step up too. The real
  * toolsets are used (with stub runtime dependencies) rather than fakes, so the adapter is tested
- * against the definitions it ships with.
+ * against the definitions it ships with. Toolsets register per instance, so call it inside a test
+ * instance (`useTestInstance()`).
  *
  * The `test` toolset is owned by `@storybook/addon-vitest` and is intentionally not registered
  * here. Cover it in the addon's own unit tests; MCP tests that need a `test` toolset register one
@@ -12,7 +13,6 @@
  */
 
 import type { StoryIndex } from 'storybook/internal/types';
-import { clearToolsetRegistry } from 'storybook/open-service';
 import {
   createDocsToolset,
   createStoriesToolset,
@@ -24,8 +24,6 @@ import {
 const EMPTY_INDEX: StoryIndex = { v: 5, entries: {} };
 
 export function registerCoreToolsetsForTest({ index = EMPTY_INDEX }: { index?: StoryIndex } = {}) {
-  clearToolsetRegistry();
-
   const storyIndex = { getIndex: async () => index };
 
   registerToolset(

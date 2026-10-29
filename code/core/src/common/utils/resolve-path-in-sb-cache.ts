@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import * as pkg from 'empathic/package';
 
 import versions from '../versions.ts';
+import { getCurrentWorkingDir } from './paths.ts';
 
 /**
  * Get the path of the file or directory with input name inside the Storybook cache directory:
@@ -15,11 +16,16 @@ import versions from '../versions.ts';
  *
  * @param fileOrDirectoryName {string} Name of the file or directory
  * @param sub {string} Optional subdirectory name (defaults to 'default')
+ * @param cwd {string} Project directory (defaults to the running instance's working directory)
  * @returns {string} Absolute path to the file or directory
  */
-export function resolvePathInStorybookCache(fileOrDirectoryName: string, sub = 'default'): string {
-  let cacheDirectory = pkg.cache('storybook');
-  cacheDirectory ||= join(process.cwd(), 'node_modules', '.cache', 'storybook');
+export function resolvePathInStorybookCache(
+  fileOrDirectoryName: string,
+  sub = 'default',
+  cwd: string = getCurrentWorkingDir()
+): string {
+  let cacheDirectory = pkg.cache('storybook', { cwd });
+  cacheDirectory ||= join(cwd, 'node_modules', '.cache', 'storybook');
 
   // Include the storybook version in the cache path to automatically invalidate
   // cache when upgrading to a new version

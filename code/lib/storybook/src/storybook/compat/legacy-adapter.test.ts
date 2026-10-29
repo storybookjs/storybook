@@ -42,6 +42,8 @@ const THIRD_PARTY_BUILDER = join(LEGACY_FRAMEWORK_DIR, 'third-party-builder/inde
 const CONFIG_DIR = join(INSTANCE_FIXTURES, 'first');
 const ANNOTATION_DIR = join(INSTANCE_FIXTURES, 'annotation-order');
 const FRAMEWORK_DIR = join(ANNOTATION_DIR, 'framework');
+const NESTED_RENDERER_FRAMEWORK_DIR = join(ANNOTATION_DIR, 'nested-renderer-framework');
+const LEGACY_ADDON_DIR = join(INSTANCE_FIXTURES, 'legacy-addon');
 const INSTANCES: Storybook[] = [];
 
 afterEach(async () => {
@@ -149,4 +151,53 @@ it.each([
     ),
     previewAnnotations: storybook.options.previewAnnotations,
   }).toEqual(input.expected);
+});
+
+it.each([
+  {
+    name: 'a legacy addon listed twice',
+    main: { stories: [], addons: [LEGACY_ADDON_DIR, LEGACY_ADDON_DIR] },
+    expected: {
+      plugins: ['addon:legacy-addon'],
+      previewAnnotations: ['/legacy-addon-preview.ts'],
+    },
+  },
+  {
+    name: 'a legacy addon listed bare, then with options',
+    main: {
+      stories: [],
+      addons: [LEGACY_ADDON_DIR, { name: LEGACY_ADDON_DIR, options: { flag: true } }],
+    },
+    expected: {
+      plugins: ['addon:legacy-addon'],
+      previewAnnotations: ['/legacy-addon-preview.ts'],
+    },
+  },
+  {
+    name: 'a legacy framework nesting the native renderer it names in core',
+    main: {
+      stories: [],
+      framework: legacyPreset(NESTED_RENDERER_FRAMEWORK_DIR, 'framework'),
+    },
+    expected: {
+      plugins: [
+        'renderer:fixture-annotation-renderer',
+        'framework:annotation-order/nested-renderer-framework',
+      ],
+      previewAnnotations: ['/renderer-preview.ts', '/framework-preview.ts'],
+    },
+  },
+])('sets a plugin up once for $name', async ({ main, expected }) => {
+  const storybook = await createStorybook(
+    { configDir: CONFIG_DIR, mode: 'headless', main },
+    { builtInAddons: [], legacy: legacyAdapter }
+  );
+  INSTANCES.push(storybook);
+  expect({
+    plugins: storybook.plugins.map(
+      ({ kind, name }) =>
+        `${kind}:${name.startsWith('/') ? relative(INSTANCE_FIXTURES, name) : name}`
+    ),
+    previewAnnotations: storybook.options.previewAnnotations,
+  }).toEqual(expected);
 });

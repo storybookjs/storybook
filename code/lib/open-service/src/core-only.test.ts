@@ -52,10 +52,23 @@ describe('core-only local tools', () => {
           "toolsets": [
             "docs",
             "stories",
-            "review",
           ],
         }
       `);
+    } finally {
+      await tools.close();
+    }
+  });
+
+  it('reports review as an unknown toolset, since review ships with storybook', async () => {
+    const tools = await createTools(
+      { cwd: FIXTURE, mode: 'local' },
+      { instanceFactory: { resolveInstanceEntry: () => undefined } }
+    );
+    try {
+      await expect(tools.call('review.create')).rejects.toMatchObject({
+        data: { reason: 'unknown-toolset' },
+      });
     } finally {
       await tools.close();
     }

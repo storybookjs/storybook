@@ -29,7 +29,7 @@ import { ArgsStore } from './ArgsStore.ts';
 import { GlobalsStore } from './GlobalsStore.ts';
 import { StoryIndexStore } from './StoryIndexStore.ts';
 import {
-  composeProjectAnnotationsWithCore,
+  composeConfigs,
   normalizeProjectAnnotations,
   prepareContext,
   prepareMeta,
@@ -45,14 +45,11 @@ export function picky<T extends Record<string, any>, K extends keyof T>(
   return omitBy(pick(obj, keys), (v) => v === undefined);
 }
 
-/**
- * Compose and normalize the project annotations for the store, prepending the core annotations via
- * {@link composeProjectAnnotationsWithCore} (CSF4 previews are detected and not double-composed).
- */
+/** Compose and normalize the project annotations for the store. */
 function composeProjectAnnotations<TRenderer extends Renderer>(
   projectAnnotations: ProjectAnnotations<TRenderer>
 ): NormalizedProjectAnnotations<TRenderer> {
-  return normalizeProjectAnnotations(composeProjectAnnotationsWithCore([projectAnnotations]));
+  return normalizeProjectAnnotations(composeConfigs([projectAnnotations]));
 }
 
 // TODO -- what are reasonable values for these?

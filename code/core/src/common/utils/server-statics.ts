@@ -4,12 +4,13 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { basename, dirname, isAbsolute, join, posix, resolve, sep, win32 } from 'node:path';
 
 import {
+  getCurrentWorkingDir,
   getDirectoryFromWorkingDir,
   getProjectRoot,
   resolvePathInStorybookCache,
 } from '@storybook/core/internal/common';
 import { CLI_COLORS, logger, once } from '@storybook/core/internal/node-logger';
-import type { Options, StorybookConfigRaw } from '@storybook/core/internal/types';
+import type { StorybookConfigRaw } from '@storybook/core/internal/types';
 
 import { relative } from 'pathe';
 import picocolors from 'picocolors';
@@ -30,8 +31,6 @@ export type StaticDirHandler = (
 export function serveBuildOutput(dir: string): StaticDirHandler {
   return sirv(dir, { maxAge: 300000, dev: true, immutable: true });
 }
-
-const cacheDir = resolvePathInStorybookCache('', 'ignored-sub').split('ignored-sub')[0];
 
 const files = new Map<string, { data: string; mtime: number }>();
 const readFileOnce = async (path: string) => {
@@ -81,10 +80,19 @@ export const prepareNestedSvg = (svg: string) => {
   return modifiedTag + contents + closingTag;
 };
 
-export async function useStatics(app: Polka, options: Options): Promise<void> {
-  const staticDirs = (await options.presets.apply('staticDirs')) ?? [];
-  const faviconPath = await options.presets.apply<string>('favicon');
-
+/** Serve the favicon and the static directories the host resolved from its instance. */
+export async function useStatics(
+  app: Polka,
+  {
+    configDir,
+    staticDirs,
+    faviconPath,
+  }: {
+    configDir: string;
+    staticDirs: NonNullable<StorybookConfigRaw['staticDirs']>;
+    faviconPath: string;
+  }
+): Promise<void> {
   // Fix for serving favicon in dev mode - use the directory containing the favicon
   // rather than trying to serve the file directly
   const faviconDir = resolve(faviconPath, '..');
@@ -122,9 +130,10 @@ export async function useStatics(app: Polka, options: Options): Promise<void> {
     return sirvWorkaround(faviconDir)(req, res, next);
   });
 
+  const cacheDir = resolvePathInStorybookCache('', 'ignored-sub').split('ignored-sub')[0];
   staticDirs.map((dir) => {
     try {
-      const { staticDir, staticPath, targetEndpoint } = mapStaticDir(dir, options.configDir);
+      const { staticDir, staticPath, targetEndpoint } = mapStaticDir(dir, configDir);
 
       // Don't log for internal static dirs
       if (!targetEndpoint.startsWith('/sb-') && !staticDir.startsWith(cacheDir)) {
@@ -207,12 +216,13 @@ export const parseStaticDir = (arg: string) => {
 
 export const mapStaticDir = (
   staticDir: NonNullable<StorybookConfigRaw['staticDirs']>[number],
-  configDir: string
+  configDir: string,
+  workingDir: string = getCurrentWorkingDir()
 ) => {
   const specifier = typeof staticDir === 'string' ? staticDir : `${staticDir.from}:${staticDir.to}`;
   const normalizedDir = isAbsolute(specifier)
     ? specifier
-    : getDirectoryFromWorkingDir({ configDir, workingDir: process.cwd(), directory: specifier });
+    : getDirectoryFromWorkingDir({ configDir, workingDir, directory: specifier });
 
   return parseStaticDir(normalizedDir);
 };

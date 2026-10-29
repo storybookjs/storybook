@@ -4,6 +4,7 @@ import {
   PREVIEW_INITIALIZED,
   SHARE_ISOLATE_MODE,
   SIDEBAR_FILTER_CHANGED,
+  TELEMETRY_ERROR,
 } from '@storybook/core/internal/core-events';
 import {
   type CacheEntry,
@@ -13,10 +14,9 @@ import {
   telemetry,
 } from '@storybook/core/internal/telemetry';
 
-import {
-  REVIEW_EVENTS,
-  type ReviewPageviewPayload,
-} from '@storybook/core/internal/deep/shared/review/events';
+import type { Options } from '@storybook/core/internal/types';
+
+import { sendTelemetryError } from '../withTelemetry.ts';
 
 export const makePayload = (
   userAgent: string,
@@ -59,9 +59,19 @@ export function initTelemetryChannel(channel: Channel) {
   channel.on(AI_PROMPT_NUDGE, async ({ id, origin }: { id: string; origin: string }) => {
     telemetry('ai-prompt-nudge', { id, origin });
   });
-  channel.on(REVIEW_EVENTS.PAGEVIEW, ({ page, reviewCreatedAt }: ReviewPageviewPayload) => {
-    // Reviews are only produced by the MCP review-create tool today; other
-    // producers should report their own `source` under the same event.
-    telemetry('review', { action: 'pageview', source: 'mcp-review', page, reviewCreatedAt });
+}
+
+/** Report errors the browser sends over the channel. */
+export function initTelemetryErrorChannel(channel: Channel, options: Options): void {
+  channel.on(TELEMETRY_ERROR, async (error) => {
+    await sendTelemetryError(error, 'browser', {
+      cliOptions: options,
+      presetOptions: {
+        ...options,
+        corePresets: [],
+        overridePresets: [],
+      },
+      skipPrompt: true,
+    });
   });
 }

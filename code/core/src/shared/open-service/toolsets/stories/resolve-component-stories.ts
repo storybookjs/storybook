@@ -1,5 +1,6 @@
 import { existsSync, realpathSync } from 'node:fs';
 
+import { getCurrentWorkingDir } from '@storybook/core/internal/common';
 import type { StoryIndex } from '@storybook/core/internal/types';
 
 import { basename, dirname, extname, join, normalize, resolve } from 'pathe';
@@ -179,7 +180,7 @@ export interface ResolveComponentStoriesDeps {
    * a builder without change detection, or an older Storybook without the open-service API).
    */
   moduleGraph: ModuleGraphAccess | undefined;
-  /** Defaults to `process.cwd()`, matching the dev server. */
+  /** Defaults to the running instance's working directory. */
   workingDir?: string;
 }
 
@@ -220,7 +221,7 @@ export async function resolveComponentStories(
     return { available: false, reason: reasonForStatus(status) };
   }
 
-  const workingDir = deps.workingDir ?? process.cwd();
+  const workingDir = deps.workingDir ?? getCurrentWorkingDir();
   const storyIndex = await deps.getStoryIndex();
   const storyIdsByFile = buildStoryIdsByFile(storyIndex);
 

@@ -33,7 +33,9 @@ export async function getManagerConfig(
   return {
     entryPoints: await wrapManagerEntries(entryPoints, options.cacheKey),
     outdir: join(options.outputDir || './', 'sb-addons'),
-    format: 'iife',
+    // One build for every entry so code they share lands in shared chunks instead of in each entry.
+    format: 'esm',
+    splitting: true,
     write: false,
     ignoreAnnotations: true,
     resolveExtensions: ['.ts', '.tsx', '.mjs', '.js', '.jsx'],
@@ -61,7 +63,7 @@ export async function getManagerConfig(
     minifyWhitespace: false,
     minifyIdentifiers: false,
     minifySyntax: true,
-    metafile: false,
+    metafile: true,
 
     sourcemap: false,
     conditions: ['browser', 'module', 'default'],
@@ -75,13 +77,6 @@ export async function getManagerConfig(
 
     legalComments: 'external',
     plugins: [globalExternals(globalsModuleInfoMap)],
-
-    banner: {
-      js: 'try{',
-    },
-    footer: {
-      js: '}catch(e){ console.error("[Storybook] One of your manager-entries failed: " + import.meta.url, e); }',
-    },
 
     define: {
       'process.env': JSON.stringify(envs),

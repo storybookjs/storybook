@@ -183,7 +183,6 @@ export interface TestTypes {
   parameters: TestParameters;
 }
 
-export default () =>
-  definePreviewAddon<TestTypes>({
-    loaders: [resetAllMocksLoader, nameSpiesAndWrapActionsInSpies, enhanceContext],
-  });
+export default definePreviewAddon<TestTypes>({
+  loaders: [resetAllMocksLoader, nameSpiesAndWrapActionsInSpies, enhanceContext],
+});

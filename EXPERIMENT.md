@@ -39,12 +39,38 @@ Tools, agents and tests talk to a running instance instead of loading the projec
 - Renderers keep `./preset` as an exact alias of `./node` for third-party frameworks.
 - Old preset specifiers map to native entries with a deprecation warning.
 - `scripts/check/check-no-preset.ts` enforces it.
+- First-party code calls `storybook.callHook` instead of `presets.apply`.
+  - Before: 52 `presets.apply` calls across core, lib, and addons (49 once plugins registered built-ins through hooks).
+  - After: 4, all in the compat layer (`compat/options.ts`, kept for third-party frameworks and builders).
+  - `scripts/check/check-no-presets-apply.ts` enforces it for every package.
 
 ### Plugins on core
 
 - Frameworks, renderers, builders and addons import `@storybook/core/*` on the Node side.
 - Postinstall code stays on `storybook/*`: it runs inside the end-user CLIs.
 - `storybook` is an optional peer of plugins (required for Angular).
+
+### Every feature is an addon
+
+- Built-ins (actions, backgrounds, controls, highlight, measure, outline, viewport, component testing, components manifest, review, checklist, what's new, open in editor, plus core's test, ghost stories, docgen, story docs and change detection) are addons in `storybook`'s `builtInAddons`.
+- Review lives in `storybook` (`features/review/`): service handlers, toolset, staleness subscription, page-view telemetry and manager entry.
+  - Core keeps the `core/review` service definition, its state transitions, events and routes: the manager UI registers the same service and can't import `storybook`.
+  - Without `storybook`, tools have no `review` toolset; with it, the product's built-ins load as before.
+- They contribute through the same hooks as any addon: `manager`, `preview:annotations:collect`, `server:app:extend`, `server:static-output:collect`.
+- Presence is the switch: a built-in left out of the list ships nothing. Flags keep their old meaning: every built-in sets up, and its flag-gated parts (manager entry, components-manifest route and output) check the flags when collected, so any flag source works.
+- The flag defaults moved from core to `storybook`.
+- Gone: the generated `common-manager` bundle, the built-in exclusion in the product's manager collection, and core's `setCoreAnnotations` registry.
+
+### Stores owned by the instance
+
+- `UniversalStore` lost its static realm, `__prepare`, store inventory, and leader election.
+- A store is an owner or a client, set where it is created, on an explicit channel.
+- The instance creates and owns the status and test-provider stores and disposes them on close; an attached instance holds clients.
+- Addon-vitest's runtime owns `storybook/test`; the Vitest child is a client over IPC.
+- The manager's stores are clients on the page channel, or owners in a static build.
+- The old adapters still work: `experimental_getStatusStore`, `experimental_getTestProviderStore`, `useUniversalStore`, `experimental_MockUniversalStore`.
+- The checklist built-in owns `storybook/checklist` on the instance channel and disposes it on close.
+- Not open-service: its state sync is multi-writer and has no fire-and-forget events, which these stores need (`TRIGGER_RUN`, `select`, `run-all`).
 
 ### Tools against a running instance
 
@@ -97,6 +123,24 @@ Base is `storybook@11.0.0-alpha.7` from npm with its README images (`assets/docs
 - The local path (`--no-attach`) still loads the project: +0.3 s over base.
 - Headless `createStorybook` + `getIndex()`: 0.56 s → 0.60 s.
 
+### Manager bundle
+
+Measured on a react-vite fixture with esbuild, built-ins only.
+
+| What | Base | One bundle per entry | Shared chunks |
+| --- | --- | --- | --- |
+| Manager files | 1 (`common-manager`) | 9 | 23 (9 entries, 14 chunks) |
+| Bytes | 287,666 | 409,772 (+42%) | 290,724 (+1%) |
+| Modules in more than one file | 0 | 28 (123 KB) | 0 |
+| React copies | 1 (react-is) | 1 (react-is) | 1 (react-is) |
+| `manager-api` copies | 0 | 0 | 0 |
+
+- One bundle per entry repeated shared code: the open-service client and valibot (docgen, review), es-toolkit, and the global-externals shims (icons, components, `manager-api`) in every entry.
+- Fix: the manager builder compiles all collected entries in one ESM build with code splitting, so any addon's shared code lands in a shared chunk.
+- The HTML preloads every file and imports entries one by one in collection order; a failing entry is logged and skipped, as the old per-bundle `try`/`catch` did.
+- A removed built-in contributes no entry, so its code is not built.
+- React and `manager-api` stay external globals.
+
 ### Screenshot transports
 
 - Port is the default.
@@ -115,6 +159,17 @@ Base is `storybook@11.0.0-alpha.7` from npm with its README images (`assets/docs
 - Symlinked template stories escape webpack's transpile rule.
 - `storybook tools` evaluated `main.ts` for telemetry before every command, which hid the thin client's gain.
 - Without a project config, the RPC path can't send the sanitized crash report; the error outcome still reaches the host.
+- Portable stories composed the built-in annotations from a core registry; without it, runners other than addon-vitest lost them. `storybook` now exports one static list (`storybook/internal/preview/built-in-annotations`) that `storybook/preview-api` and the renderers' `definePreview` apply, while addon-vitest composes through `storybook/internal/preview-api`, which adds nothing.
+- Filtering built-ins by flag before setup dropped their preview annotations (base only hid the manager UI) and ignored flags set from preset functions or setup hooks; flags are now read lazily in the collect handlers, matching base per flag.
+- Deduplicating by name alone dropped Angular Vite's renderer, which shares the framework's name.
+- Core services read `channel` and `configDir` from the preset options; called as a hook they got neither, so they now read the instance.
+- Nothing deduplicated plugins, so an addon listed twice (or as a string and a native plugin) set up twice, and the checklist read a module-level story index promise instances never set; plugins now dedupe by name and the checklist reads the instance's generator.
+- Node state lived in modules, so two instances in one process shared it: the MCP transport and origin, the Vitest child process and store, the project root (cached from the first `process.cwd()`), React's component-meta manager, and fallback readiness, dev-server subscriptions, module graph, and toolset registry.
+  The second MCP endpoint answered with the first project's origin, and closing one instance killed the other's Vitest child.
+  They now live on the instance, the fallbacks throw outside one, and `check-no-node-globals` blocks new module-level `let`/`var` in that code.
+  The stores elected a leader per process realm from `VITEST_CHILD_PROCESS` and `attached`, and a timed-out follower had to be recreated; the instance now owns them and a client that timed out asks again.
+  A toolset registered outside any instance landed in every instance's view; `registerToolset` and its readers now throw there, and tests run in a test instance.
+- Server code read `process.cwd()` for save-story paths, the favicon, story lookups, and the Storybook cache; a host serving another directory resolved files in its own. It now reads the instance's `workingDir`.
 
 ## Open questions
 

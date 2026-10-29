@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { normalizeStoryPath } from '@storybook/core/internal/common';
+import { getCurrentWorkingDir, normalizeStoryPath } from '@storybook/core/internal/common';
 import { sanitize, storyNameFromExport } from '@storybook/core/internal/csf/csf-utils';
 import type { IndexEntry, StoryIndex, StoryIndexEntry } from '@storybook/core/internal/types';
 
@@ -163,7 +163,7 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
     }
 
     const { exportName, explicitStoryName, absoluteStoryPath } = storyInput;
-    const normalizedCwd = toPosixPath(process.cwd());
+    const normalizedCwd = toPosixPath(getCurrentWorkingDir());
     const normalizedAbsolutePath = toPosixPath(absoluteStoryPath);
     const relativePath = normalizeImportPath(
       path.posix.relative(normalizedCwd, normalizedAbsolutePath)

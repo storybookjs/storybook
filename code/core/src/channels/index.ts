@@ -1,6 +1,5 @@
 /// <reference path="../typings.d.ts" />
 
-import { UniversalStore } from '../shared/universal-store/index.ts';
 import { Channel } from './main.ts';
 import { PostMessageTransport } from './postmessage/index.ts';
 import type { ChannelTransport, Config } from './types.ts';
@@ -14,6 +13,7 @@ export {
   installNoopChannel,
   requireChannel,
   setChannel,
+  whenChannelInstalled,
 } from './channel-slot.ts';
 
 export default Channel;
@@ -48,13 +48,7 @@ export function createBrowserChannel({ page, extraTransports = [] }: Options): C
     transports.push(new WebsocketTransport({ url: channelUrl, onError: () => {}, page }));
   }
 
-  const channel = new Channel({ transports });
-  UniversalStore.__prepare(
-    channel,
-    page === 'manager' ? UniversalStore.Environment.MANAGER : UniversalStore.Environment.PREVIEW
-  );
-
-  return channel;
+  return new Channel({ transports });
 }
 
 export type {

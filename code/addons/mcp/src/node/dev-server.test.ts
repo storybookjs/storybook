@@ -1,19 +1,52 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { Options } from 'storybook/internal/types';
 import { getToolAvailability } from 'storybook/internal/server';
 import { mountMcpServer as mount } from './dev-server.ts';
 import * as mcpHandlerModule from '../mcp-handler.ts';
+import { useTestInstance } from '../../../../core/src/shared/instance-context.test-helpers.ts';
 import { registerCoreToolsetsForTest } from '../test-support/register-core-toolsets.ts';
+import type { AddonOptionsInput, McpStorybook } from '../types.ts';
 
 // Tests force one availability gate at this core seam.
 vi.mock('storybook/internal/server', { spy: true });
 
-const mountMcpServer = (app: unknown, options: unknown) => mount(app as never, options as never);
+/** The Storybook a test mounts the MCP server on, plus the addon options. */
+type MountSetup = AddonOptionsInput & {
+  /** Hook results by hook name; a function is called for its result. */
+  hooks?: Record<string, unknown>;
+  /** The resolved `core` config. */
+  core?: Record<string, unknown>;
+};
+
+/** A Storybook whose hooks resolve to `hooks[name]`, falling back to the passed value. */
+function createStorybook({ hooks = {}, core }: MountSetup = {}) {
+  return {
+    options: { port: 6006 },
+    configDir: '/project/.storybook',
+    callHook: vi.fn(async (name: string, value?: unknown) => {
+      if (name === 'core:config:extend') {
+        return core ?? value;
+      }
+      const result = name in hooks ? hooks[name] : value;
+      return typeof result === 'function' ? result() : result;
+    }),
+    hasPlugin: () => false,
+    getIndex: vi.fn(),
+    getStoryIndexGenerator: vi.fn(),
+  } satisfies Record<keyof McpStorybook, unknown>;
+}
+
+const mountMcpServer = (app: unknown, setup: MountSetup) =>
+  mount(app as never, createStorybook(setup) as unknown as McpStorybook, {
+    endpoint: setup.endpoint,
+    toolsets: setup.toolsets,
+  });
 
 describe('mountMcpServer', () => {
   let mockApp: any;
-  let mockOptions: Options;
+  let mockOptions: MountSetup;
   let mcpHandler: any;
+
+  useTestInstance();
 
   beforeEach(() => {
     // The `services` preset hook does this in a real Storybook before the dev server mounts /mcp.
@@ -27,16 +60,7 @@ describe('mountMcpServer', () => {
       get: vi.fn(),
     };
 
-    mockOptions = {
-      presets: {
-        apply: vi.fn((key: string) => {
-          if (key === 'features') {
-            return Promise.resolve({ componentsManifest: false });
-          }
-          return Promise.resolve(undefined);
-        }),
-      },
-    } as unknown as Options;
+    mockOptions = { hooks: { 'core:features:extend': { componentsManifest: false } } };
   });
 
   afterEach(() => {
@@ -76,24 +100,12 @@ describe('mountMcpServer', () => {
     );
   };
 
-  const createOptionsWithPrivateRef = () =>
-    ({
-      ...mockOptions,
-      port: 6006,
-      presets: {
-        apply: vi.fn((key: string) => {
-          if (key === 'refs') {
-            return Promise.resolve({
-              private: { title: 'Private', url: 'https://private.example.com' },
-            });
-          }
-          if (key === 'features') {
-            return Promise.resolve({ componentsManifest: false });
-          }
-          return Promise.resolve(undefined);
-        }),
-      },
-    }) as unknown as Options;
+  const createOptionsWithPrivateRef = (): MountSetup => ({
+    hooks: {
+      'manager:refs:extend': { private: { title: 'Private', url: 'https://private.example.com' } },
+      'core:features:extend': { componentsManifest: false },
+    },
+  });
 
   it('should register /mcp POST endpoint', async () => {
     await mountMcpServer(mockApp, mockOptions);
@@ -104,15 +116,9 @@ describe('mountMcpServer', () => {
 
   it('does not register any review-related channel listeners (handled by addon-review preset)', async () => {
     const channel = { on: vi.fn(), emit: vi.fn() };
-    const optionsWithReview = {
-      ...mockOptions,
-      channel,
-      presets: {
-        apply: vi.fn(() => Promise.resolve(undefined)),
-      },
-    } as unknown as Options;
+    const storybookWithChannel = { ...createStorybook(), channel };
 
-    await mountMcpServer(mockApp, optionsWithReview);
+    await mount(mockApp, storybookWithChannel as unknown as McpStorybook);
 
     expect(channel.on).not.toHaveBeenCalled();
   });
@@ -124,10 +130,7 @@ describe('mountMcpServer', () => {
   });
 
   it('should use a configured MCP endpoint for the dev server route', async () => {
-    const customOptions = {
-      ...mockOptions,
-      endpoint: '/custom-mcp',
-    } as unknown as Options;
+    const customOptions = { ...mockOptions, endpoint: '/custom-mcp' };
 
     await mountMcpServer(mockApp, customOptions);
 
@@ -145,12 +148,7 @@ describe('mountMcpServer', () => {
       .spyOn(mcpHandlerModule, 'mcpServerHandler')
       .mockResolvedValue(undefined);
 
-    const options = {
-      ...mockOptions,
-      port: 6006,
-    } as unknown as Options;
-
-    await mountMcpServer(mockApp, options);
+    await mountMcpServer(mockApp, mockOptions);
     await handlers['/mcp'](
       {
         headers: { accept: 'application/json' },
@@ -176,11 +174,7 @@ describe('mountMcpServer', () => {
       .spyOn(mcpHandlerModule, 'mcpServerHandler')
       .mockResolvedValue(undefined);
 
-    const customOptions = {
-      ...mockOptions,
-      port: 6006,
-      endpoint: '/custom-mcp',
-    } as unknown as Options;
+    const customOptions = { ...mockOptions, endpoint: '/custom-mcp' };
 
     await mountMcpServer(mockApp, customOptions);
     await handlers['/custom-mcp'](
@@ -216,27 +210,15 @@ describe('mountMcpServer', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const optionsWithRefs = {
-      ...mockOptions,
-      port: 6006,
+    const optionsWithRefs: MountSetup = {
       endpoint: '/custom-mcp',
-      presets: {
-        apply: vi.fn((key: string) => {
-          if (key === 'refs') {
-            return Promise.resolve({
-              'design-system': {
-                title: 'Design System',
-                url: 'https://ds.example.com/storybook',
-              },
-            });
-          }
-          if (key === 'features') {
-            return Promise.resolve({ componentsManifest: false });
-          }
-          return Promise.resolve(undefined);
-        }),
+      hooks: {
+        'manager:refs:extend': {
+          'design-system': { title: 'Design System', url: 'https://ds.example.com/storybook' },
+        },
+        'core:features:extend': { componentsManifest: false },
       },
-    } as unknown as Options;
+    };
 
     await mountMcpServer(mockApp, optionsWithRefs);
     await handlers['/custom-mcp'](
@@ -352,7 +334,7 @@ describe('mountMcpServer', () => {
     // Module graph IS supported, so `stories-find-by-component` would otherwise badge
     // as enabled — proving the badge now also honors the `dev` toolset being disabled.
     // Everything else here matches what `mockOptions`'s fixture (features: { componentsManifest:
-    // false }, no other presets) would resolve for real; only `moduleGraphSupported` is forced.
+    // false }, no other hooks) would resolve for real; only `moduleGraphSupported` is forced.
     vi.mocked(getToolAvailability).mockResolvedValueOnce({
       moduleGraphSupported: true,
       docsEnabled: false,
@@ -369,10 +351,7 @@ describe('mountMcpServer', () => {
       getHandler = handler;
     });
 
-    const devOffOptions = {
-      ...mockOptions,
-      toolsets: { dev: false },
-    } as unknown as Options;
+    const devOffOptions = { ...mockOptions, toolsets: { dev: false } };
 
     await mountMcpServer(mockApp, devOffOptions);
 
@@ -410,17 +389,9 @@ describe('mountMcpServer', () => {
   });
 
   it('blames the framework, not the config, when the feature is on and there is still no manifest', async () => {
-    const featureOnNoManifestOptions = {
-      ...mockOptions,
-      presets: {
-        apply: vi.fn(async (key: string) => {
-          if (key === 'features') {
-            return { componentsManifest: true };
-          }
-          return undefined;
-        }),
-      },
-    } as unknown as Options;
+    const featureOnNoManifestOptions: MountSetup = {
+      hooks: { 'core:features:extend': { componentsManifest: true } },
+    };
 
     let getHandler: any;
     mockApp.get = vi.fn((_path, handler) => {
@@ -442,20 +413,12 @@ describe('mountMcpServer', () => {
     // Manifests are present on disk, but `componentsManifest` is not enabled — the docs
     // toolset is unavailable for a different reason than "no manifests", so the page shows
     // the "enable the feature" notice rather than the missing-manifest one.
-    const manifestsNoFlagOptions = {
-      ...mockOptions,
-      presets: {
-        apply: vi.fn(async (key: string) => {
-          if (key === 'features') {
-            return { componentsManifest: false };
-          }
-          if (key === 'experimental_manifests') {
-            return { components: { v: 1, components: {} } };
-          }
-          return undefined;
-        }),
+    const manifestsNoFlagOptions: MountSetup = {
+      hooks: {
+        'core:features:extend': { componentsManifest: false },
+        'index:manifests:extend': { components: { v: 1, components: {} } },
       },
-    } as unknown as Options;
+    };
 
     let getHandler: any;
     mockApp.get = vi.fn((_path, handler) => {
@@ -474,21 +437,13 @@ describe('mountMcpServer', () => {
   });
 
   it('should show Storybook version requirement for addon-vitest and a manual manifest link', async () => {
-    // No addon-vitest preset key is registered by this fixture's `apply` mock, so the real
-    // (now core-internal) `isAddonVitestEnabled` probe resolves falsy on its own — nothing to mock.
-    const manifestEnabledOptions = {
-      presets: {
-        apply: vi.fn((key: string) => {
-          if (key === 'features') {
-            return Promise.resolve({ experimentalComponentsManifest: true });
-          }
-          if (key === 'experimental_manifests') {
-            return Promise.resolve({ components: { v: 1, components: {} } });
-          }
-          return Promise.resolve(undefined);
-        }),
+    // The mock Storybook has no plugins, so addon-vitest reads as disabled.
+    const manifestEnabledOptions: MountSetup = {
+      hooks: {
+        'core:features:extend': { experimentalComponentsManifest: true },
+        'index:manifests:extend': { components: { v: 1, components: {} } },
       },
-    } as unknown as Options;
+    };
 
     const handlers: Record<string, any> = {};
     mockApp.get = vi.fn((path: string, handler: any) => {
@@ -534,23 +489,14 @@ describe('mountMcpServer', () => {
       })
     );
 
-    const remoteDocsOptions = {
-      ...mockOptions,
-      port: 6006,
-      presets: {
-        apply: vi.fn((key: string) => {
-          if (key === 'refs') {
-            return Promise.resolve({
-              remote: { title: 'Remote', url: 'https://example.com/storybook' },
-            });
-          }
-          if (key === 'features') {
-            return Promise.resolve({ componentsManifest: true });
-          }
-          return Promise.resolve(undefined);
-        }),
+    const remoteDocsOptions: MountSetup = {
+      hooks: {
+        'manager:refs:extend': {
+          remote: { title: 'Remote', url: 'https://example.com/storybook' },
+        },
+        'core:features:extend': { componentsManifest: true },
       },
-    } as unknown as Options;
+    };
 
     await mountMcpServer(mockApp, remoteDocsOptions);
     const getMcpHandler = handlers['/mcp'];
@@ -658,8 +604,10 @@ describe('mountMcpServer', () => {
         statusCode: 0,
       }) as any;
 
-    const createOptionsWithCore = (core: Record<string, unknown>) =>
-      ({ ...mockOptions, core }) as unknown as Options;
+    const createOptionsWithCore = (core: Record<string, unknown>): MountSetup => ({
+      ...mockOptions,
+      core,
+    });
 
     it('rejects a POST whose Origin is not an allowed host', async () => {
       const handler = vi.spyOn(mcpHandlerModule, 'mcpServerHandler').mockResolvedValue(undefined);
@@ -815,19 +763,7 @@ describe('mountMcpServer', () => {
   });
 
   it('should handle partial toolsets configuration', async () => {
-    const partialOptions = {
-      presets: {
-        apply: vi.fn((key: string) => {
-          if (key === 'features') {
-            return Promise.resolve({ componentsManifest: false });
-          }
-          return Promise.resolve(undefined);
-        }),
-      },
-      toolsets: {
-        dev: false,
-      },
-    } as unknown as Options;
+    const partialOptions: MountSetup = { ...mockOptions, toolsets: { dev: false } };
 
     await mountMcpServer(mockApp, partialOptions);
 
@@ -911,41 +847,28 @@ describe('mountMcpServer', () => {
       })
     );
 
-    const apply = vi.fn((key: string) => {
-      if (key === 'refs') {
-        return Promise.resolve({
+    const storybook = createStorybook({
+      hooks: {
+        'manager:refs:extend': {
           'my-lib': { title: 'My Library', url: 'https://my-lib.example.com' },
           'design-system': { url: 'https://ds.example.com' },
-        });
-      }
-      if (key === 'features') {
-        return Promise.resolve({ componentsManifest: false });
-      }
-      return Promise.resolve(undefined);
+        },
+        'core:features:extend': { componentsManifest: false },
+      },
     });
-    const optionsWithRefs = {
-      port: 6006,
-      presets: { apply },
-    } as unknown as Options;
 
-    await mountMcpServer(mockApp, optionsWithRefs);
+    await mount(mockApp, storybook as unknown as McpStorybook);
 
-    expect(apply).toHaveBeenCalledWith('refs', {});
+    expect(storybook.callHook).toHaveBeenCalledWith('manager:refs:extend', {});
   });
 
   it('should handle refs config returning non-object gracefully', async () => {
-    const optionsWithBadRefs = {
-      port: 6006,
-      presets: {
-        apply: vi.fn((key: string) => {
-          if (key === 'refs') return Promise.resolve(null);
-          if (key === 'features') {
-            return Promise.resolve({ componentsManifest: false });
-          }
-          return Promise.resolve(undefined);
-        }),
+    const optionsWithBadRefs: MountSetup = {
+      hooks: {
+        'manager:refs:extend': null,
+        'core:features:extend': { componentsManifest: false },
       },
-    } as unknown as Options;
+    };
 
     // Should not throw
     const result = await mountMcpServer(mockApp, optionsWithBadRefs);
@@ -953,18 +876,12 @@ describe('mountMcpServer', () => {
   });
 
   it('should handle refs config throwing gracefully', async () => {
-    const optionsWithThrowingRefs = {
-      port: 6006,
-      presets: {
-        apply: vi.fn((key: string) => {
-          if (key === 'refs') return Promise.reject(new Error('Config error'));
-          if (key === 'features') {
-            return Promise.resolve({ componentsManifest: false });
-          }
-          return Promise.resolve(undefined);
-        }),
+    const optionsWithThrowingRefs: MountSetup = {
+      hooks: {
+        'manager:refs:extend': () => Promise.reject(new Error('Config error')),
+        'core:features:extend': { componentsManifest: false },
       },
-    } as unknown as Options;
+    };
 
     const result = await mountMcpServer(mockApp, optionsWithThrowingRefs);
     expect(result).toBe(mockApp);

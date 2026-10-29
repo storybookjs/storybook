@@ -1,6 +1,6 @@
 import { relative } from 'node:path';
 
-import type { Options } from '@storybook/core/internal/types';
+import type { Storybook } from '@storybook/core';
 import {
   extractFrameworkPackageName,
   getFrameworkNameFromConfig,
@@ -43,14 +43,16 @@ async function resolvePreview(configDir = '.storybook') {
 
 /**
  * The one probing path for skill-content assembly: everything the pure builders need, resolved
- * from the target Storybook's presets. Both the skills CLI and addon-mcp fill builder inputs from
+ * from the target Storybook instance. Both the skills CLI and addon-mcp fill builder inputs from
  * this, so the two channels cannot drift.
  */
-export async function resolveSkillInputs(options: Options): Promise<SkillInputs> {
+export async function resolveSkillInputs(
+  storybook: Pick<Storybook, 'callHook' | 'hasPlugin' | 'configDir'>
+): Promise<SkillInputs> {
   const [availability, frameworkPreset, preview] = await Promise.all([
-    getToolAvailability(options),
-    options.presets.apply('framework'),
-    resolvePreview(options.configDir),
+    getToolAvailability(storybook),
+    storybook.callHook('core:framework:extend', undefined),
+    resolvePreview(storybook.configDir),
   ]);
   const framework = extractFrameworkPackageName(getFrameworkNameFromConfig(frameworkPreset) ?? '');
   return { ...availability, ...preview, framework, renderer: frameworkToRendererMap[framework] };

@@ -11,7 +11,7 @@ import {
   clearRegistry,
   getService,
 } from '@storybook/core/internal/deep/shared/open-service/server';
-import { registerReviewService } from '../../../../../../core/src/shared/open-service/services/review/server.ts';
+import { registerReviewService } from '../../../../../storybook/src/features/review/server.ts';
 import {
   NOTIFIED_REVIEW_CREATED_AT_KEY,
   VISITED_REVIEW_CREATED_AT_KEY,

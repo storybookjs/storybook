@@ -7,6 +7,8 @@ import { parseArgs } from 'node:util';
 
 import { checkDeepImports } from './check-deep-imports.ts';
 import { checkNoPresetShape } from './check-no-preset.ts';
+import { checkNoNodeGlobals } from './check-no-node-globals.ts';
+import { checkNoPresetsApply } from './check-no-presets-apply.ts';
 import { checkNoLowerPackageImports, checkRuntimeDeps } from './check-runtime-deps.ts';
 import { filterToPackageDiagnostics } from './utils/diagnostics.ts';
 import { getTSFilesAndConfig } from './utils/typescript.ts';
@@ -134,6 +136,14 @@ if (!(await checkDeepImports(normalizedCwd))) {
 }
 
 if (!(await checkNoPresetShape(normalizedCwd))) {
+  process.exit(1);
+}
+
+if (!(await checkNoPresetsApply(normalizedCwd))) {
+  process.exit(1);
+}
+
+if (!(await checkNoNodeGlobals(normalizedCwd))) {
   process.exit(1);
 }
 

@@ -3,8 +3,7 @@ import process from 'node:process';
 import { Channel } from '@storybook/core/internal/channels';
 import {
   internal_UniversalStore,
-  experimental_getStatusStore,
-  experimental_getTestProviderStore,
+  internal_createCoreStores,
 } from '@storybook/core/internal/services';
 
 import type { PreviewAnnotation, StoryIndex } from '@storybook/core/internal/types';
@@ -21,11 +20,6 @@ import {
 import type { ErrorLike, FatalErrorEvent, StoreEvent, StoreState } from '../types.ts';
 import { TestManager } from './test-manager.ts';
 
-// Destructure the imported functions for easier access
-const UniversalStore = internal_UniversalStore;
-const getStatusStore = experimental_getStatusStore;
-const getTestProviderStore = experimental_getTestProviderStore;
-
 const channel: Channel = new Channel({
   async: true,
   transport: {
@@ -38,15 +32,15 @@ const channel: Channel = new Channel({
   },
 });
 
-(UniversalStore as any).__prepare(channel, UniversalStore.Environment.SERVER);
-
-const store = UniversalStore.create<StoreState, StoreEvent>(storeOptions);
+// The Storybook process owns every store; this child is a client over its IPC channel.
+const store = internal_UniversalStore.create<StoreState, StoreEvent>({ ...storeOptions, channel });
+const coreStores = internal_createCoreStores({ channel, owner: false });
 
 const testManager = new TestManager({
   store,
-  componentTestStatusStore: getStatusStore(STATUS_TYPE_ID_COMPONENT_TEST),
-  a11yStatusStore: getStatusStore(STATUS_TYPE_ID_A11Y),
-  testProviderStore: getTestProviderStore(ADDON_ID),
+  componentTestStatusStore: coreStores.status.getStatusStoreByTypeId(STATUS_TYPE_ID_COMPONENT_TEST),
+  a11yStatusStore: coreStores.status.getStatusStoreByTypeId(STATUS_TYPE_ID_A11Y),
+  testProviderStore: coreStores.testProvider.getTestProviderStoreById(ADDON_ID),
   onReady: () => {
     process.send?.({ type: 'ready' });
   },

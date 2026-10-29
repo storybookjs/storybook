@@ -4,10 +4,15 @@ import type {
   IndexEntry,
   Options,
   StoryDocsPayload,
+  StoryDocsProvider,
 } from '@storybook/core/internal/types';
 
 import { describe, expect, it, vi } from 'vitest';
 
+import {
+  createTestInstanceContext,
+  runInTestInstance,
+} from '../../../../core/src/shared/instance-context.test-helpers.ts';
 import { getDocgenProvider } from './provider.ts';
 import { buildStoryDocsPayload } from './story-docs/build-story-docs.ts';
 import { experimental_storyDocsProvider } from './story-docs-provider.ts';
@@ -22,12 +27,17 @@ const DOWNSTREAM: StoryDocsPayload = {
   stories: {},
 };
 
-const optionsWith = (apply: (key: string) => Promise<object | undefined>): Options =>
-  ({ presets: { apply } }) as Options;
-
 const SVELTE_DESCRIPTORS = [getDocgenProvider()];
 
-const svelteWorkerOptions = optionsWith(async () => SVELTE_DESCRIPTORS);
+/** Resolve the provider in an instance whose plugins registered `descriptors`. */
+const providerWith = (
+  descriptors: DocgenProviderDescriptor[],
+  next: StoryDocsProvider
+): Promise<StoryDocsProvider> =>
+  runInTestInstance(() => experimental_storyDocsProvider(next, {} as Options), {
+    ...createTestInstanceContext(),
+    storybook: { callHook: async () => descriptors } as never,
+  });
 
 const entryFor = (importPath: string): IndexEntry => ({
   id: 'button--primary',
@@ -43,12 +53,7 @@ describe('experimental_storyDocsProvider', () => {
     const next = vi.fn(async () => DOWNSTREAM);
     const others: DocgenProviderDescriptor[] = [{ moduleSpecifier: '/addon/docgen-worker.js' }];
 
-    await expect(
-      experimental_storyDocsProvider(
-        next,
-        optionsWith(async () => others)
-      )
-    ).resolves.toBe(next);
+    await expect(providerWith(others, next)).resolves.toBe(next);
   });
 
   it.each([
@@ -56,10 +61,7 @@ describe('experimental_storyDocsProvider', () => {
     { importPath: './Button.svelte', builds: false },
     { importPath: './Button.stories.ts', builds: false },
   ])('$importPath is built: $builds', async ({ importPath, builds }) => {
-    const provider = await experimental_storyDocsProvider(
-      async () => DOWNSTREAM,
-      svelteWorkerOptions
-    );
+    const provider = await providerWith(SVELTE_DESCRIPTORS, async () => DOWNSTREAM);
 
     await expect(provider({ entry: entryFor(importPath) })).resolves.toBe(DOWNSTREAM);
     expect(buildStoryDocsPayload).toHaveBeenCalledTimes(builds ? 1 : 0);
@@ -74,10 +76,7 @@ describe('experimental_storyDocsProvider', () => {
         'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
       },
     });
-    const provider = await experimental_storyDocsProvider(
-      async () => DOWNSTREAM,
-      svelteWorkerOptions
-    );
+    const provider = await providerWith(SVELTE_DESCRIPTORS, async () => DOWNSTREAM);
 
     await expect(provider({ entry: entryFor('./Button.stories.svelte') })).resolves.toEqual({
       id: 'button',

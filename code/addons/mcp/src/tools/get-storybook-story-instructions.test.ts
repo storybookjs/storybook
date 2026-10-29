@@ -14,8 +14,20 @@ import {
 
 // Review/addon-vitest availability resolve through core's `resolveSkillInputs` (inside
 // `buildStorybookStoryInstructions`'s adapter), so tests below drive them through the
-// `options.presets` fixture or the `addonVitestAvailable` override instead of mocking an
+// `mockStorybook` hooks or the `addonVitestAvailable` override instead of mocking an
 // addon-local probe.
+
+/** A Storybook whose `core:framework:extend` hook resolves to `framework` and has no plugins. */
+function mockStorybook(framework: unknown): AddonContext['storybook'] {
+  return {
+    configDir: '/project/.storybook',
+    callHook: vi.fn(async (name: string) =>
+      name === 'core:framework:extend' ? framework : undefined
+    ),
+    hasPlugin: () => false,
+  } as unknown as AddonContext['storybook'];
+}
+
 describe('getUIBuildingInstructionsTool', () => {
   let server: McpServer<any, AddonContext>;
 
@@ -77,15 +89,11 @@ describe('getUIBuildingInstructionsTool', () => {
   }
 
   it('should include testing and a11y description when available', async () => {
-    const mockOptions = {
-      presets: {
-        apply: vi.fn().mockResolvedValue('@storybook/react-vite'),
-      },
-    };
+    const mockOptions = mockStorybook('@storybook/react-vite');
 
     const description = await getToolDescription({
       origin: 'http://localhost:6006',
-      options: mockOptions as any,
+      storybook: mockOptions,
       disableTelemetry: true,
       a11yEnabled: true,
       toolsets: {
@@ -103,15 +111,11 @@ describe('getUIBuildingInstructionsTool', () => {
   });
 
   it('should exclude testing and a11y description when test toolset is disabled', async () => {
-    const mockOptions = {
-      presets: {
-        apply: vi.fn().mockResolvedValue('@storybook/react-vite'),
-      },
-    };
+    const mockOptions = mockStorybook('@storybook/react-vite');
 
     const description = await getToolDescription({
       origin: 'http://localhost:6006',
-      options: mockOptions as any,
+      storybook: mockOptions,
       disableTelemetry: true,
       a11yEnabled: true,
       toolsets: {
@@ -129,15 +133,11 @@ describe('getUIBuildingInstructionsTool', () => {
   });
 
   it('should include testing but exclude a11y description when a11y is disabled', async () => {
-    const mockOptions = {
-      presets: {
-        apply: vi.fn().mockResolvedValue('@storybook/react-vite'),
-      },
-    };
+    const mockOptions = mockStorybook('@storybook/react-vite');
 
     const description = await getToolDescription({
       origin: 'http://localhost:6006',
-      options: mockOptions as any,
+      storybook: mockOptions,
       disableTelemetry: true,
       a11yEnabled: false,
       toolsets: {
@@ -156,18 +156,11 @@ describe('getUIBuildingInstructionsTool', () => {
   });
 
   it('should return UI building instructions with framework placeholders replaced', async () => {
-    const mockOptions = {
-      presets: {
-        apply: vi.fn(async (presetName: string) => {
-          if (presetName === 'framework') return '@storybook/react-vite';
-          return undefined;
-        }),
-      },
-    };
+    const mockOptions = mockStorybook('@storybook/react-vite');
 
     const testContext: AddonContext = {
       origin: 'http://localhost:6006',
-      options: mockOptions as any,
+      storybook: mockOptions,
       disableTelemetry: true,
     };
 
@@ -208,16 +201,9 @@ describe('getUIBuildingInstructionsTool', () => {
   // writing UI and is never truncated by MCP clients, so it must carry the
   // docs-workflow trigger whenever the documentation tools are registered.
   it('includes the docs workflow guidance when the docs tools are available', async () => {
-    const mockOptions = {
-      presets: {
-        apply: vi.fn(async (presetName: string) => {
-          if (presetName === 'framework') return '@storybook/react-vite';
-          return undefined;
-        }),
-      },
-    };
+    const mockOptions = mockStorybook('@storybook/react-vite');
 
-    const instructions = await buildStorybookStoryInstructions(mockOptions as any, {
+    const instructions = await buildStorybookStoryInstructions(mockOptions, {
       docsEnabled: true,
     });
 
@@ -229,16 +215,9 @@ describe('getUIBuildingInstructionsTool', () => {
   });
 
   it('omits the docs workflow guidance when the docs toolset is disabled', async () => {
-    const mockOptions = {
-      presets: {
-        apply: vi.fn(async (presetName: string) => {
-          if (presetName === 'framework') return '@storybook/react-vite';
-          return undefined;
-        }),
-      },
-    };
+    const mockOptions = mockStorybook('@storybook/react-vite');
 
-    const instructions = await buildStorybookStoryInstructions(mockOptions as any, {
+    const instructions = await buildStorybookStoryInstructions(mockOptions, {
       docsEnabled: true,
       toolsets: { dev: true, docs: false, test: true },
     });
@@ -252,14 +231,7 @@ describe('getUIBuildingInstructionsTool', () => {
   // list the review page AND the preview URLs together, contradicting the
   // "show one set of links — never both" server rule.
   it('tells the agent to show only the review section', async () => {
-    const mockOptions = {
-      presets: {
-        apply: vi.fn(async (presetName: string) => {
-          if (presetName === 'framework') return '@storybook/react-vite';
-          return undefined;
-        }),
-      },
-    };
+    const mockOptions = mockStorybook('@storybook/react-vite');
 
     const response = await server.receive(
       {
@@ -272,7 +244,7 @@ describe('getUIBuildingInstructionsTool', () => {
         sessionId: 'test-session',
         custom: {
           origin: 'http://localhost:6006',
-          options: mockOptions as any,
+          storybook: mockOptions,
           disableTelemetry: true,
         },
       }
@@ -298,15 +270,11 @@ describe('getUIBuildingInstructionsTool', () => {
   });
 
   it('should handle Vue framework', async () => {
-    const mockOptions = {
-      presets: {
-        apply: vi.fn().mockResolvedValue('@storybook/vue3-vite'),
-      },
-    };
+    const mockOptions = mockStorybook('@storybook/vue3-vite');
 
     const testContext: AddonContext = {
       origin: 'http://localhost:6006',
-      options: mockOptions as any,
+      storybook: mockOptions,
       disableTelemetry: true,
     };
 
@@ -332,18 +300,14 @@ describe('getUIBuildingInstructionsTool', () => {
   });
 
   it('should handle framework as object with name property', async () => {
-    const mockOptions = {
-      presets: {
-        apply: vi.fn().mockResolvedValue({
-          name: '@storybook/nextjs',
-          options: {},
-        }),
-      },
-    };
+    const mockOptions = mockStorybook({
+      name: '@storybook/nextjs',
+      options: {},
+    });
 
     const testContext: AddonContext = {
       origin: 'http://localhost:6006',
-      options: mockOptions as any,
+      storybook: mockOptions,
       disableTelemetry: true,
     };
 
@@ -371,15 +335,11 @@ describe('getUIBuildingInstructionsTool', () => {
   it('should collect telemetry when enabled', async () => {
     const { telemetry } = await import('storybook/internal/telemetry');
 
-    const mockOptions = {
-      presets: {
-        apply: vi.fn().mockResolvedValue('@storybook/react-vite'),
-      },
-    };
+    const mockOptions = mockStorybook('@storybook/react-vite');
 
     const testContext: AddonContext = {
       origin: 'http://localhost:6006',
-      options: mockOptions as any,
+      storybook: mockOptions,
       disableTelemetry: false,
     };
 
@@ -408,7 +368,7 @@ describe('getUIBuildingInstructionsTool', () => {
     );
   });
 
-  it('should handle missing options in context', async () => {
+  it('should handle a missing Storybook in context', async () => {
     const testContext = {
       origin: 'http://localhost:6006',
       disableTelemetry: true,
@@ -433,7 +393,7 @@ describe('getUIBuildingInstructionsTool', () => {
       content: [
         {
           type: 'text',
-          text: 'Error: Options are required in addon context',
+          text: 'Error: The Storybook instance is required in addon context',
         },
       ],
       isError: true,
@@ -441,13 +401,7 @@ describe('getUIBuildingInstructionsTool', () => {
   });
 
   it('carries the docs steering exactly when the docs tools are available', async () => {
-    const mockOptions = {
-      presets: {
-        apply: vi.fn(async (presetName: string) =>
-          presetName === 'framework' ? '@storybook/react-vite' : undefined
-        ),
-      },
-    } as any;
+    const mockOptions = mockStorybook('@storybook/react-vite');
 
     const withDocs = await buildStorybookStoryInstructions(mockOptions, { docsEnabled: true });
     expect(withDocs).toContain('## Using library components');

@@ -1,8 +1,10 @@
-import { setCoreAnnotations } from '@storybook/core/internal/csf';
+import { createPortableStories } from '@storybook/core/preview-api';
 
-import { getCoreAnnotations } from '../features/annotations.ts';
+import { BUILT_IN_PREVIEW_ANNOTATIONS } from '../storybook/preview/built-in-annotations.ts';
 
 export * from '@storybook/core/preview-api';
 
-// Runs in this entry's own file, which `sideEffects` lists, so bundlers keep the registration.
-setCoreAnnotations(getCoreAnnotations);
+/** Portable stories with the built-in annotations composed before the renderer defaults. */
+export const { setProjectAnnotations, composeStory, composeStories } = createPortableStories({
+  baseAnnotations: BUILT_IN_PREVIEW_ANNOTATIONS,
+});

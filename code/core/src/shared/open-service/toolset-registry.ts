@@ -5,40 +5,93 @@ import {
   OpenServiceDuplicateToolsetError,
   OpenServiceInvalidToolsetMethodIdError,
   OpenServiceMissingToolsetError,
+  StorybookInstanceUnavailableError,
 } from '../../server-errors.ts';
 import type { AnyToolsetDefinition } from './toolset-definition.ts';
 import type { KnownToolsets } from './toolset-types.ts';
 import { toCliMethodName, toMcpToolName } from './toolset-names.ts';
 
-const TOOLSET_REGISTRY_SYMBOL = Symbol.for('storybook.open-service.toolset-registry');
+// A symbol, not a module value, so every core bundle in the process finds the same slot on the context.
+const TOOLSET_REGISTRY_KEY = Symbol.for('storybook.open-service.toolset-registry');
 
 /**
- * Returns the realm-global registry backing toolset registration.
+ * Registers one public toolset on the current Storybook instance.
  *
- * Anchored on a `globalThis` symbol for the same reason as the service registry: every module in one
- * realm shares a single toolset inventory even when this file is reached through different import
- * paths. Toolsets are plain definitions (no channel wiring), so one map is the whole registry.
+ * Call it from the same place the paired OSA service registers (for core, the `services` preset
+ * hook). Throws outside an instance.
+ *
+ * Unlike `registerService`, a repeated id throws instead of being ignored: services re-register
+ * legitimately (HMR, repeated composition), while every toolset registration site is a one-shot
+ * preset hook, so a duplicate id can only mean two hosts claimed the same public surface.
  */
-function getToolsetRegistry(): Map<string, AnyToolsetDefinition> {
-  const context = getInstanceContext();
-  if (context) {
-    if (!context.state.has(TOOLSET_REGISTRY_SYMBOL)) {
-      context.state.set(TOOLSET_REGISTRY_SYMBOL, new Map());
-    }
-    return context.state.get(TOOLSET_REGISTRY_SYMBOL) as Map<string, AnyToolsetDefinition>;
+export function registerToolset(toolset: AnyToolsetDefinition): void {
+  const registry = getToolsetRegistry('registerToolset()');
+
+  if (registry.has(toolset.id)) {
+    throw new OpenServiceDuplicateToolsetError({ toolsetId: toolset.id });
   }
 
-  const registryGlobal = globalThis as {
-    [key: symbol]: Map<string, AnyToolsetDefinition> | undefined;
-  };
+  assertNoDerivedNameCollisions(registry, toolset);
 
-  registryGlobal[TOOLSET_REGISTRY_SYMBOL] ??= new Map<string, AnyToolsetDefinition>();
-
-  return registryGlobal[TOOLSET_REGISTRY_SYMBOL];
+  registry.set(toolset.id, {
+    ...toolset,
+    methods: Object.fromEntries(
+      Object.entries(toolset.methods).map(([name, method]) => [
+        name,
+        { ...method, handler: bindToInstance(method.handler) },
+      ])
+    ),
+  });
 }
 
-function assertNoDerivedNameCollisions(toolset: AnyToolsetDefinition): void {
-  const registry = getToolsetRegistry();
+/**
+ * Returns one toolset registered on the current instance by id, typed for the core toolsets.
+ *
+ * Throws when the id is not registered — an adapter asking for a toolset that no host wired up is
+ * a configuration error, not an empty result.
+ */
+export function getToolset<TId extends keyof KnownToolsets>(toolsetId: TId): KnownToolsets[TId];
+export function getToolset(toolsetId: string): AnyToolsetDefinition;
+export function getToolset(toolsetId: string): AnyToolsetDefinition {
+  const toolset = getToolsetRegistry('getToolset()').get(toolsetId);
+
+  if (!toolset) {
+    throw new OpenServiceMissingToolsetError({ toolsetId });
+  }
+
+  return toolset;
+}
+
+/** All toolsets registered on the current instance. */
+export function getRegisteredToolsets(): AnyToolsetDefinition[] {
+  return [...getToolsetRegistry('getRegisteredToolsets()').values()];
+}
+
+/** Clears the current instance's toolsets. Intended for tests. */
+export function clearToolsetRegistry(): void {
+  getToolsetRegistry('clearToolsetRegistry()').clear();
+}
+
+/** Returns the current instance's toolsets; throws outside an instance. */
+function getToolsetRegistry(api: string): Map<string, AnyToolsetDefinition> {
+  const context = getInstanceContext();
+  if (!context) {
+    throw new StorybookInstanceUnavailableError({ reason: 'outside-instance', api });
+  }
+  let registry = context.state.get(TOOLSET_REGISTRY_KEY) as
+    | Map<string, AnyToolsetDefinition>
+    | undefined;
+  if (!registry) {
+    registry = new Map();
+    context.state.set(TOOLSET_REGISTRY_KEY, registry);
+  }
+  return registry;
+}
+
+function assertNoDerivedNameCollisions(
+  registry: Map<string, AnyToolsetDefinition>,
+  toolset: AnyToolsetDefinition
+): void {
   const cliNames = new Map<string, string>();
 
   for (const methodName of Object.keys(toolset.methods)) {
@@ -82,71 +135,4 @@ function assertNoDerivedNameCollisions(toolset: AnyToolsetDefinition): void {
       }
     }
   }
-}
-
-/**
- * Registers one public toolset in the realm-global registry.
- *
- * Call it from the same place the paired OSA service registers (for core, the `services` preset
- * hook). Registration is deliberately independent of the Node preset system so manager- or
- * preview-realm toolsets can use the same API later.
- *
- * Unlike `registerService`, a repeated id throws instead of being ignored: services re-register
- * legitimately (HMR, repeated composition), while every toolset registration site is a one-shot
- * preset hook, so a duplicate id can only mean two hosts claimed the same public surface.
- */
-export function registerToolset(toolset: AnyToolsetDefinition): void {
-  const registry = getToolsetRegistry();
-
-  if (registry.has(toolset.id)) {
-    throw new OpenServiceDuplicateToolsetError({ toolsetId: toolset.id });
-  }
-
-  assertNoDerivedNameCollisions(toolset);
-
-  registry.set(
-    toolset.id,
-    getInstanceContext()
-      ? {
-          ...toolset,
-          methods: Object.fromEntries(
-            Object.entries(toolset.methods).map(([name, method]) => [
-              name,
-              {
-                ...method,
-                handler: bindToInstance(method.handler),
-              },
-            ])
-          ),
-        }
-      : toolset
-  );
-}
-
-/**
- * Returns one registered toolset by id, typed for the core toolsets.
- *
- * Throws when the id is not registered — an adapter asking for a toolset that no host wired up is
- * a configuration error, not an empty result.
- */
-export function getToolset<TId extends keyof KnownToolsets>(toolsetId: TId): KnownToolsets[TId];
-export function getToolset(toolsetId: string): AnyToolsetDefinition;
-export function getToolset(toolsetId: string): AnyToolsetDefinition {
-  const toolset = getToolsetRegistry().get(toolsetId);
-
-  if (!toolset) {
-    throw new OpenServiceMissingToolsetError({ toolsetId });
-  }
-
-  return toolset;
-}
-
-/** All toolsets currently registered in this realm. */
-export function getRegisteredToolsets(): AnyToolsetDefinition[] {
-  return [...getToolsetRegistry().values()];
-}
-
-/** Clears the realm-global toolset registry. Intended for tests. */
-export function clearToolsetRegistry(): void {
-  getToolsetRegistry().clear();
 }

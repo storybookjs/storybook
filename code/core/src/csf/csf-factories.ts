@@ -20,11 +20,8 @@ import {
   normalizeProjectAnnotations,
 } from '../preview-api/index.ts';
 import { mountDestructured } from '../preview-api/modules/preview-web/render/mount-utils.ts';
-import {
-  type CoreTypes,
-  getCoreAnnotations,
-  markAsComposedWithCoreAnnotations,
-} from './core-annotations.ts';
+import { markBaseAnnotationsApplied } from '../preview-api/modules/store/csf/portable-stories.ts';
+import type { CoreTypes } from './core-annotations.ts';
 import { combineTags } from './csf-utils.ts';
 import type { AddonTypes, StoryContext } from './story.ts';
 import { Tag } from '../constants/tags.ts';
@@ -60,11 +57,13 @@ export type InferTypes<T extends PreviewAddonEntry[]> = [
     ? C & { csf4: true }
     : never;
 
+/** `defaults` compose before the addons until a host passes its own annotations to `composeWith`. */
 export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddonEntry[]>(
-  input: ProjectAnnotations<TRenderer> & { addons?: Addons }
+  input: ProjectAnnotations<TRenderer> & { addons?: Addons },
+  defaults: PreviewAddonEntry[] = []
 ): Preview<TRenderer & InferTypes<Addons>> {
   type TPreviewRenderer = TRenderer & InferTypes<Addons>;
-  let annotations: PreviewAddonEntry[] = [];
+  let annotations: PreviewAddonEntry[] = defaults;
   let composed: NormalizedProjectAnnotations<TPreviewRenderer> | undefined;
   const preview = {
     _tag: 'Preview',
@@ -75,20 +74,18 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
       }
       const { addons, ...rest } = input;
       const seen = new Set<unknown>();
-      const uniqueAnnotations = [...getCoreAnnotations(), ...annotations, ...(addons ?? [])].filter(
-        (entry) => {
-          const identity = 'default' in entry ? (entry.default ?? entry) : entry;
-          if (seen.has(identity)) {
-            return false;
-          }
-          seen.add(identity);
-          return true;
+      const uniqueAnnotations = [...annotations, ...(addons ?? [])].filter((entry) => {
+        const identity = 'default' in entry ? (entry.default ?? entry) : entry;
+        if (seen.has(identity)) {
+          return false;
         }
+        seen.add(identity);
+        return true;
+      });
+      composed = normalizeProjectAnnotations<TPreviewRenderer>(
+        composeConfigs([...uniqueAnnotations, rest])
       );
-      composed = markAsComposedWithCoreAnnotations(
-        normalizeProjectAnnotations<TPreviewRenderer>(composeConfigs([...uniqueAnnotations, rest]))
-      );
-      return composed;
+      return annotations.length > 0 ? markBaseAnnotationsApplied(composed) : composed;
     },
     composeWith(entries: PreviewAddonEntry[]): NormalizedProjectAnnotations<TPreviewRenderer> {
       annotations = entries;

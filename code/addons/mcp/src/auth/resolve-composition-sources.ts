@@ -1,6 +1,6 @@
 import { getRefsFromConfig } from '@storybook/core/internal/story-index';
 import type { Source } from '@storybook/core/internal/toolsets-docs';
-import type { Options } from '@storybook/core/internal/types';
+import type { Storybook } from '@storybook/core';
 import { CompositionAuth, type ComposedRef } from './composition-auth.ts';
 
 export type ResolvedCompositionSources = {
@@ -11,9 +11,9 @@ export type ResolvedCompositionSources = {
 };
 
 export async function resolveCompositionSources(
-  options: Options
+  storybook: Pick<Storybook, 'callHook'>
 ): Promise<ResolvedCompositionSources> {
-  const refs = await getRefsFromConfig(options);
+  const refs = await getRefsFromConfig(storybook);
   const compositionAuth = new CompositionAuth();
 
   if (refs.length === 0) {

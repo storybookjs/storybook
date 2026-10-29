@@ -6,7 +6,8 @@ import { useUniversalStore } from '@storybook/core/internal/deep/shared/universa
 const testProviderStore = createTestProviderStore({
   universalTestProviderStore: UniversalStore.create({
     ...UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS,
-    leader: globalThis.CONFIG_TYPE === 'PRODUCTION',
+    // A static build has no server, so the manager owns the state.
+    owner: globalThis.CONFIG_TYPE === 'PRODUCTION',
   }),
   useUniversalStore,
 });

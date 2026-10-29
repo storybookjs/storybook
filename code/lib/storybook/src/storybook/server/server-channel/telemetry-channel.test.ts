@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SIDEBAR_FILTER_CHANGED } from '@storybook/core/internal/core-events';
 
-import { REVIEW_EVENTS } from '@storybook/core/internal/types';
 import { initTelemetryChannel, makePayload } from './telemetry-channel.ts';
 
 vi.mock('@storybook/core/internal/telemetry', () => ({
@@ -41,46 +40,6 @@ describe('telemetry-channel', () => {
 
       listeners[SIDEBAR_FILTER_CHANGED](payload);
       expect(telemetry).toHaveBeenCalledWith('sidebar-filter', payload);
-    });
-  });
-
-  describe('REVIEW_EVENTS.PAGEVIEW', () => {
-    it('forwards review summary pageview to telemetry', () => {
-      const listeners: Record<string, Function> = {};
-      const channel = {
-        on: (event: string, listener: Function) => {
-          listeners[event] = listener;
-        },
-      } as any;
-
-      initTelemetryChannel(channel);
-
-      listeners[REVIEW_EVENTS.PAGEVIEW]({ page: 'summary', reviewCreatedAt: 1700000000000 });
-      expect(telemetry).toHaveBeenCalledWith('review', {
-        action: 'pageview',
-        source: 'mcp-review',
-        page: 'summary',
-        reviewCreatedAt: 1700000000000,
-      });
-    });
-
-    it('forwards review detail pageview to telemetry', () => {
-      const listeners: Record<string, Function> = {};
-      const channel = {
-        on: (event: string, listener: Function) => {
-          listeners[event] = listener;
-        },
-      } as any;
-
-      initTelemetryChannel(channel);
-
-      listeners[REVIEW_EVENTS.PAGEVIEW]({ page: 'detail', reviewCreatedAt: 1700000000000 });
-      expect(telemetry).toHaveBeenCalledWith('review', {
-        action: 'pageview',
-        source: 'mcp-review',
-        page: 'detail',
-        reviewCreatedAt: 1700000000000,
-      });
     });
   });
 });

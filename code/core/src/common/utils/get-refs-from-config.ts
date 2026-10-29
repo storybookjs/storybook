@@ -1,7 +1,8 @@
 import { toTitle } from '@storybook/core/internal/common';
 import { logger } from '@storybook/core/internal/node-logger';
-import type { Options, Ref } from '@storybook/core/internal/types';
+import type { Ref } from '@storybook/core/internal/types';
 
+import type { Storybook } from '../../instance/types.ts';
 import type { SourceWithUrl } from '../../shared/open-service/toolsets/docs/sources.ts';
 
 /**
@@ -17,11 +18,11 @@ import type { SourceWithUrl } from '../../shared/open-service/toolsets/docs/sour
  * that load the config without the manager, such as the Vitest plugin and the tools CLI.
  */
 export async function getRefsFromConfig(
-  options: Pick<Options, 'presets'>
+  storybook: Pick<Storybook, 'callHook'>
 ): Promise<SourceWithUrl[]> {
   let refs: Record<string, Ref>;
   try {
-    refs = (await options.presets.apply<Record<string, Ref>>('refs', {})) ?? {};
+    refs = ((await storybook.callHook('manager:refs:extend', {})) ?? {}) as Record<string, Ref>;
   } catch (error) {
     logger.warn(
       `Composed Storybooks are left out of the docs toolset: reading "refs" failed. ${error instanceof Error ? error.message : String(error)}`

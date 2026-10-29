@@ -1,9 +1,16 @@
-import { setCoreAnnotations } from '@storybook/core/internal/csf';
-import { getCoreAnnotations } from '../../features/annotations.ts';
-
 export * from '@storybook/core/internal/csf';
-export * from '../../features/index.ts';
-export { getCoreAnnotations } from '@storybook/core/internal/csf';
-export type { CoreTypes } from '../../features/index.ts';
-
-setCoreAnnotations(getCoreAnnotations);
+// Types only: the built-in list is Node code, while this entry runs in the browser.
+export type {
+  ActionsTypes,
+  BackgroundsGlobals,
+  BackgroundTypes,
+  ControlsTypes,
+  CoreTypes,
+  FeatureTypes,
+  HighlightTypes,
+  MeasureTypes,
+  OutlineTypes,
+  TestTypes,
+  ViewportGlobals,
+  ViewportTypes,
+} from '../../features/types.ts';

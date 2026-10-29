@@ -2,10 +2,11 @@ import { relative } from 'node:path';
 
 import { normalizeStories, normalizeStoryPath } from '@storybook/core/internal/common';
 import { sanitize, storyNameFromExport, toId } from '@storybook/core/internal/csf/csf-utils';
-import type { Options, StoriesEntry } from '@storybook/core/internal/types';
+import type { StoriesEntry } from '@storybook/core/internal/types';
 
 import { dedent } from 'ts-dedent';
 
+import type { Storybook } from '../../instance/types.ts';
 import { userOrAutoTitleFromSpecifier } from '../../shared/story-index/autoTitle.ts';
 import { posix } from './posix.ts';
 
@@ -22,13 +23,16 @@ type GetStoryIdOptions = StoryIdData & {
   storyFilePath: string;
 };
 
-export async function getStoryId(data: StoryIdData, options: Options) {
-  const stories = await options.presets.apply('stories', [], options);
+export async function getStoryId(
+  data: StoryIdData,
+  storybook: Pick<Storybook, 'callHook' | 'configDir'>
+): Promise<{ storyId: string; kind: string }> {
+  const stories = await storybook.callHook('core:stories:collect', []);
 
   const autoTitle = getStoryTitle({
     ...data,
     stories,
-    configDir: options.configDir,
+    configDir: storybook.configDir,
   });
 
   if (autoTitle === undefined) {

@@ -32,7 +32,7 @@ import type { BuilderPlugin, PluginMeta, StorybookConfig, StorybookPlugin } from
 
 /** Host pieces `createStorybook` sets up around `main.ts`. */
 export interface CreateStorybookOptions {
-  /** Defaults to core's docgen and story-docs addons. */
+  /** Defaults to core's docgen, story-docs and change-detection addons; their hooks run before the other plugins'. */
   builtInAddons?: readonly StorybookPlugin[];
   setupPlugin?: (plugin: StorybookPlugin, storybook: Storybook) => void | Promise<void>;
   /** The host's defaults, set up before every other plugin and left out of `plugins`; defaults to core's. */

@@ -15,24 +15,37 @@ import type { CompositionAuth } from './auth/index.ts';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 import { registerAddonMcpTools } from './tools/tool-registry.ts';
 
-type McpHandlerOptions = Omit<McpServerOptions, 'getIndex'>;
+/** One Storybook's MCP server, created on its first request. */
+export interface McpServerState {
+  /** Shared by concurrent first requests, so the server initializes once. */
+  initialize?: Promise<InitializedMcpServer>;
+}
 
-let transport: HttpTransport<AddonContext> | undefined;
-let origin: string | undefined;
-// Promise that ensures single initialization, even with concurrent requests
-let initialize: Promise<McpServer<any, AddonContext>> | undefined;
-let disableTelemetry: boolean | undefined;
-let a11yEnabled: boolean | undefined;
+type McpHandlerOptions = McpServerOptions;
 
-const initializeMCPServer = async (options: McpHandlerOptions, multiSource?: boolean) => {
-  disableTelemetry = options.core?.disableTelemetry ?? false;
+type InitializedMcpServer = {
+  transport: HttpTransport<AddonContext>;
+  origin: string;
+  disableTelemetry: boolean;
+  a11yEnabled: boolean | undefined;
+};
+
+/** Creates the MCP server state of one Storybook; each mounted endpoint owns one. */
+export function createMcpServerState(): McpServerState {
+  return {};
+}
+
+const initializeMCPServer = async (
+  options: McpHandlerOptions,
+  multiSource?: boolean
+): Promise<InitializedMcpServer> => {
+  const disableTelemetry = options.core?.disableTelemetry ?? false;
 
   // Determine tool availability before creating server so instructions can be tailored.
   // Shares one source of truth with the browser landing page (core's `getToolAvailability`)
   // so the registered tools and the page's enabled/disabled badges can't drift.
-  const rawAvailability = await getToolAvailability(options);
+  const rawAvailability = await getToolAvailability(options.storybook);
   const availability = getEffectiveToolAvailability(rawAvailability, { multiSource });
-  a11yEnabled = availability.a11yEnabled;
 
   // oxlint-disable-next-line prefer-const -- the instructions getter below may run before this is assigned
   let server: McpServer<any, AddonContext>;
@@ -71,11 +84,11 @@ const initializeMCPServer = async (options: McpHandlerOptions, multiSource?: boo
 
   await registerAddonMcpTools(server, { availability, multiSource });
 
-  transport = new HttpTransport(server, { path: null });
+  const transport = new HttpTransport(server, { path: null });
 
-  origin = `http://localhost:${options.port}`;
+  const origin = `http://localhost:${options.storybook.options.port}`;
   logger.debug(`MCP server origin: ${origin}`);
-  return server;
+  return { transport, origin, disableTelemetry, a11yEnabled: availability.a11yEnabled };
 };
 
 /**
@@ -110,6 +123,8 @@ type McpServerHandlerParams = {
   localAccess?: DocsAccess;
   /** Composition auth handler for multi-source mode */
   compositionAuth: CompositionAuth;
+  /** The MCP server of the Storybook serving this endpoint. */
+  server: McpServerState;
 };
 
 export const mcpServerHandler = async ({
@@ -122,25 +137,23 @@ export const mcpServerHandler = async ({
   manifestProvider,
   localAccess,
   compositionAuth,
-}: McpServerHandlerParams) => {
-  // Initialize MCP server and transport on first request, with concurrency safety
-  if (!initialize) {
-    initialize = initializeMCPServer(
-      options,
-      sources?.some((s) => s.url)
-    );
-  }
-  await initialize;
+  server,
+}: McpServerHandlerParams): Promise<void> => {
+  server.initialize ??= initializeMCPServer(
+    options,
+    sources?.some((s) => s.url)
+  );
+  const { transport, origin, disableTelemetry, a11yEnabled } = await server.initialize;
 
   // Convert Node.js request to Web API Request
   const webRequest = await incomingMessageToWebRequest(req);
 
   const addonContext: AddonContext = {
-    options,
+    storybook: options.storybook,
     endpoint,
     toolsets: getToolsets(webRequest, addonOptions),
-    origin: origin!,
-    disableTelemetry: disableTelemetry!,
+    origin,
+    disableTelemetry,
     a11yEnabled,
     request: webRequest,
     sources,
@@ -148,7 +161,7 @@ export const mcpServerHandler = async ({
     localAccess,
   };
 
-  const response = await transport!.respond(webRequest, addonContext);
+  const response = await transport.respond(webRequest, addonContext);
   if (response) {
     // Buffer body first — tool execution happens lazily during stream consumption
     // (tmcp's transport fires handle() without awaiting it). Only after the body
@@ -160,7 +173,7 @@ export const mcpServerHandler = async ({
           status: 401,
           headers: {
             'Content-Type': 'text/plain',
-            'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(origin!),
+            'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(origin),
           },
         })
       : new Response(body, { status: response.status, headers: response.headers });

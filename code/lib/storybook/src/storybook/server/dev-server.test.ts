@@ -9,9 +9,6 @@ import {
   runWithStorybook,
 } from '@storybook/core/internal/deep/instance/instance-context';
 import { getInstanceContext } from '@storybook/core/internal/deep/shared/instance-context';
-import { UniversalStore } from '@storybook/core/internal/deep/shared/universal-store';
-import { createUniversalStoreRealm } from '../../../../../core/src/shared/universal-store/realm.ts';
-import { ChangeDetectionService } from '@storybook/core/internal/deep/services/change-detection/change-detection-service';
 import { createManagerHost } from '@storybook/manager/internal/deep/builder-manager/host';
 import { storybookDevServer } from './dev-server.ts';
 import { registerIndexJsonRoute } from './utils/index-json.ts';
@@ -20,14 +17,6 @@ vi.mock('polka', () => ({ default: vi.fn() }));
 vi.mock('@polka/compression', () => ({ default: vi.fn() }));
 vi.mock('@storybook/manager/internal/deep/builder-manager/host', () => ({
   createManagerHost: vi.fn(),
-}));
-vi.mock('@storybook/core/internal/deep/services/change-detection/change-detection-service', () => ({
-  ChangeDetectionService: vi.fn(
-    class {
-      start = vi.fn();
-      dispose = vi.fn().mockResolvedValue(undefined);
-    }
-  ),
 }));
 vi.mock('./utils/index-json.ts', () => ({ registerIndexJsonRoute: vi.fn() }));
 vi.mock('./utils/middleware.ts', () => ({ getMiddleware: vi.fn().mockResolvedValue(vi.fn()) }));
@@ -85,10 +74,6 @@ beforeEach(() => {
     storybook,
     channel,
     workingDir: storybook.workingDir,
-    universalStoreRealm: createUniversalStoreRealm({
-      channel,
-      environment: UniversalStore.Environment.SERVER,
-    }),
     state: new Map(),
     cleanups: new Set(),
     getStoryIndexGenerator: storybook.getStoryIndexGenerator,
@@ -119,8 +104,13 @@ it('starts the instance preview and the host manager inside the owning context',
   expect(PREVIEW.changeDetectionAdapter).toHaveBeenCalledWith(storybook);
   expect(createManagerHost).toHaveBeenCalledWith(storybook);
   expect(MANAGER.dev).toHaveBeenCalledWith({ router: APP, server, startTime: expect.any(Array) });
-  expect(ChangeDetectionService).toHaveBeenCalledWith(
-    expect.objectContaining({ workingDir: '/instance-project' })
+  expect(storybook.callHook).toHaveBeenCalledWith('core:preview-builder:ready', undefined);
+  expect(
+    vi
+      .mocked(storybook.callHook)
+      .mock.calls.findIndex(([name]) => name === 'core:preview-builder:ready')
+  ).toBeGreaterThan(
+    vi.mocked(storybook.callHook).mock.calls.findIndex(([name]) => name === 'server:app:extend')
   );
   expect(storybook.callHook).toHaveBeenCalledWith('server:app:extend', APP);
   expect(result.previewResult.totalTime).toEqual([1, 0]);

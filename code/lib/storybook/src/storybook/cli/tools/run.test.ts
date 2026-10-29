@@ -38,6 +38,7 @@ import {
   type ToolsRuntime,
 } from '@storybook/open-service';
 import { toCatalogEntry, type StorybookInstanceRecord } from '@storybook/open-service/internal';
+import { useTestInstance } from '../../../../../../core/src/shared/instance-context.test-helpers.ts';
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
 
 // The shared setup stubs the logger; these tests assert what the real one prints.
@@ -218,6 +219,8 @@ function run(argv: string[], deps: ToolsRunDeps, extra: Partial<ToolsInvocation>
   const [toolset, tool, ...tokens] = argv;
   return runToolsCommand({ toolset, tool, tokens, target: {}, ...extra }, deps);
 }
+
+useTestInstance();
 
 beforeEach(() => {
   registerCoreToolsetsForTest({ index: STORY_INDEX, docsAccess: DOCS_ACCESS });

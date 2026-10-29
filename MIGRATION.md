@@ -50,6 +50,7 @@
   - [The tools SDK moved to `@storybook/open-service`](#the-tools-sdk-moved-to-storybookopen-service)
   - [Internal `satisfies` helper removed](#internal-satisfies-helper-removed)
   - [Experimental `UniversalStore` API is now internal](#experimental-universalstore-api-is-now-internal)
+  - [Status and test-provider stores belong to the Storybook instance](#status-and-test-provider-stores-belong-to-the-storybook-instance)
   - [`mockChannel` removed from `storybook/preview-api` and `storybook/manager-api`](#mockchannel-removed-from-storybookpreview-api-and-storybookmanager-api)
   - [React: Require v18 and up](#react-require-v18-and-up)
   - [`@storybook/react-dom-shim` removed](#storybookreact-dom-shim-removed)
@@ -85,6 +86,8 @@
   - [`@storybook/core-webpack` is deprecated](#storybookcore-webpack-is-deprecated)
   - [`storybook/internal/manager/globals-runtime` moved to `@storybook/manager`](#storybookinternalmanagerglobals-runtime-moved-to-storybookmanager)
   - [`storybook/internal/core-server` is deprecated](#storybookinternalcore-server-is-deprecated)
+  - [Portable stories apply every built-in annotation](#portable-stories-apply-every-built-in-annotation)
+  - [Internal server helpers read the Storybook instance](#internal-server-helpers-read-the-storybook-instance)
 - [From version 10.6.1 to 10.6.2](#from-version-1061-to-1062)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-1)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-1)
@@ -1511,6 +1514,19 @@ Replace calls with the native operator:
 
 `experimental_UniversalStore` and `experimental_useUniversalStore` are no longer exported from `storybook/manager-api` and `storybook/internal/core-server`. The store is internal to Storybook, and `UniversalStore.create()` now throws for store ids that Storybook does not own. We are working on a replacement called Open Services, but it is not ready for third-party addons yet.
 
+### Status and test-provider stores belong to the Storybook instance
+
+The server-side status and test-provider stores are now created and owned by the Storybook instance, and closed with it.
+
+- `experimental_getStatusStore` and `experimental_getTestProviderStore` from `storybook/internal/core-server` keep their signatures, but throw when called outside a running Storybook instance (for example at module load, before `setup`).
+- `prepareHeadlessUniversalStores` is removed from `storybook/internal/core-server`; the instance prepares its stores itself.
+- The internal `UniversalStore` no longer elects a leader: a store is an owner or a client, chosen where it is created.
+  - The `leader` option is removed; pass `owner` instead.
+  - `UniversalStore.ActorType` is `OWNER` / `CLIENT` instead of `LEADER` / `FOLLOWER`.
+  - `__prepare`, `__reset`, `preparedEnvironment` and `Environment` are removed; pass a `channel` instead.
+  - `untilReady()` resolves with `undefined` instead of a tuple, and asks the owner again after a timeout.
+- `experimental_MockUniversalStore` is unchanged for tests.
+
 ### `mockChannel` removed from `storybook/preview-api` and `storybook/manager-api`
 
 The deprecated `mockChannel` helper is no longer exported from `storybook/preview-api` (also available under `storybook/internal/preview-api`) or `storybook/manager-api`. It built a `Channel` with a no-op transport, which spans no runtime boundary — events sent through it never leave the current process.
@@ -2249,6 +2265,50 @@ The same functions from `storybook/internal/server` never exit the process; call
 -import { buildDevStandalone, experimental_getStatusStore } from 'storybook/internal/core-server';
 +import { buildDevStandalone } from 'storybook/internal/server';
 +import { experimental_getStatusStore } from 'storybook/internal/services';
+```
+
+### Portable stories apply every built-in annotation
+
+Portable stories and CSF factories outside Storybook still apply every default built-in annotation, whatever the flags in `main.ts` say.
+`setProjectAnnotations`, `composeStory`, and `composeStories` from `storybook/preview-api` (and the renderers' versions, built on them) compose them first, then the renderer's defaults, then the project annotations, so Jest, plain Vitest, and Playwright CT keep `canvas`, `userEvent`, mock resets, and action handlers without extra setup.
+A renderer's `definePreview` composes the same list and marks the result, so composing its stories does not add the built-ins a second time.
+As before, backgrounds, measure, outline, and highlight stay inert there: they only turn on when the page sets their flag.
+`@storybook/addon-vitest` composes the project's collected annotations through `storybook/internal/preview-api`, which adds no built-ins, and applies its feature flags, as Storybook does.
+
+### Internal server helpers read the Storybook instance
+
+Storybook's own code no longer reads configuration through `options.presets.apply`; it calls instance hooks.
+Legacy presets still work: `presets.apply` from a preset maps to the same hooks.
+
+Removed:
+
+- `getBuilders` from `storybook/internal/server` and `storybook/internal/core-server`. Read the builder from `storybook.builder` on the instance.
+- `getRefs` from `storybook/internal/common`. Call `storybook.callHook('manager:refs:extend', {})`.
+- The legacy manager builder object (`start`, `build`, `bail`, `corePresets`, `overridePresets`) from `@storybook/manager`. Use `createManagerHost`.
+
+These helpers take the Storybook instance instead of `Options` or `Presets`:
+
+- `getStoryId(data, storybook)` from `storybook/internal/common`.
+- `getToolAvailability(storybook)`, `getManifestStatus(storybook)`, and `resolveSkillInputs(storybook)` from `storybook/internal/server`.
+- `loadManifests(storybook)` from `storybook/internal/story-index`.
+
+```diff
+-const status = await getManifestStatus(options);
++const status = await getManifestStatus(getStorybook());
+```
+
+`getBuilderOptions`, `getFrameworkName`, and `getRendererName` from `storybook/internal/common` still take `Options`, for third-party frameworks and builders.
+
+`getProjectRoot()` from `storybook/internal/common` no longer caches the first `process.cwd()` for the whole process.
+Inside a Storybook instance it resolves from the instance's `workingDir`; outside one it searches again on every call.
+CLI code that needs a root for another directory calls `findProjectRoot(cwd)`.
+
+`registerToolset`, `getToolset`, `getRegisteredToolsets`, and `clearToolsetRegistry` from `storybook/open-service` keep their signatures but act on the current Storybook instance and throw `StorybookInstanceUnavailableError` outside one.
+Register toolsets from a plugin's `setup(storybook)` (`storybook.registerToolset`) or a `core:services:register` hook, and read them with `storybook.toolsets.get(id)` and `storybook.toolsets.values()`, or inside `runWithStorybook(storybook, fn)`.
+
+```diff
+-const ids = getRegisteredToolsets().map((toolset) => toolset.id);
++const ids = storybook.toolsets.values().map((toolset) => toolset.id);
 ```
 
 ## From version 10.6.1 to 10.6.2

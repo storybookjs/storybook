@@ -6,6 +6,7 @@ import {
 } from '@storybook/core/internal/instance';
 import type { Options } from '@storybook/core/internal/types';
 
+import { FEATURE_DEFAULTS } from '../../features/index.ts';
 import * as common from './presets/common-defaults.ts';
 import { createStoryScreenshotAccess } from './story-screenshot.ts';
 
@@ -14,6 +15,7 @@ export const commonPlugin = defineAddon(() => ({
   meta: { name: 'storybook/common' },
   async setup(storybook: Storybook): Promise<void> {
     await coreCommonPlugin.setup(storybook);
+    storybook.hook('core:features:extend', (value) => ({ ...value, ...FEATURE_DEFAULTS }));
     const storyScreenshots = createStoryScreenshotAccess(storybook);
     storybook.hook('core:story-render:extend', () => storyScreenshots);
     storybook.hook('core:instance:close', () => storyScreenshots.close());
@@ -22,10 +24,11 @@ export const commonPlugin = defineAddon(() => ({
       fn: (value: never, ctx?: HookContext) => unknown,
       kind: 'reduce' | 'notify'
     ) => void;
-    const options = (ctx?: HookContext): Options =>
-      ({ ...ctx, presets: storybook.presets }) as Options;
-    const reduce = (name: string, fn: (value: never, options: Options) => unknown): void =>
-      hook(name, (value, ctx) => fn(value, options(ctx)), 'reduce');
+    // Configuration hooks receive the instance's options as their context.
+    const reduce = (
+      name: string,
+      fn: (value: never, options: Options, storybook: Storybook) => unknown
+    ): void => hook(name, (value, ctx) => fn(value, { ...ctx } as Options, storybook), 'reduce');
 
     reduce('core:static-dirs:collect', common.staticDirs);
     reduce('manager:favicon:extend', common.favicon);
@@ -42,13 +45,14 @@ export const commonPlugin = defineAddon(() => ({
     reduce('manager:head:extend', common.managerHead);
     hook(
       'server:channel:ready',
-      (channel, ctx) => common.experimental_serverChannel(channel, options(ctx) as never),
+      (channel, ctx) => common.experimental_serverChannel(channel, { ...ctx } as never),
       'notify'
     );
     reduce('legacy:resolvedReact:extend', common.resolvedReact);
-    reduce('manager:entries:collect', common.managerEntries);
 
-    reduce('server:app:extend', common.experimental_devServer);
+    reduce('server:app:extend', (app, _options, storybook) =>
+      common.experimental_devServer(app, storybook)
+    );
     reduce('index:generator:extend', common.storyIndexGenerator);
   },
 }))();

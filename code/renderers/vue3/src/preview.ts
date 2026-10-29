@@ -12,6 +12,7 @@ import type {
   Story,
 } from 'storybook/internal/csf';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
+import { BUILT_IN_PREVIEW_ANNOTATIONS } from 'storybook/internal/preview/built-in-annotations';
 import type {
   ArgsStoryFn,
   DecoratorFunction,
@@ -48,10 +49,13 @@ import { type VueTypes } from './types.ts';
 export function __definePreview<Addons extends PreviewAddonEntry[]>(
   input: { addons: Addons } & ProjectAnnotations<VueTypes & InferTypes<Addons>>
 ): VuePreview<VueTypes & InferTypes<Addons>> {
-  const preview = definePreviewBase({
-    ...input,
-    addons: [vueAnnotations, vueDocsAnnotations, ...(input.addons ?? [])],
-  }) as VuePreview<VueTypes & InferTypes<Addons>>;
+  const preview = definePreviewBase(
+    {
+      ...input,
+      addons: [vueAnnotations, vueDocsAnnotations, ...(input.addons ?? [])],
+    },
+    BUILT_IN_PREVIEW_ANNOTATIONS
+  ) as VuePreview<VueTypes & InferTypes<Addons>>;
 
   return preview;
 }

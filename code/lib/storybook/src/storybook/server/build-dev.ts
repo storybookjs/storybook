@@ -7,7 +7,7 @@ import {
   cache,
   getConfigInfo,
   getInterpretedFile,
-  getProjectRoot,
+  findProjectRoot,
   isWebContainer,
   resolvePathInStorybookCache,
   versions,
@@ -138,7 +138,7 @@ export async function buildDevStandalone(
     }
   }
 
-  const cacheKey = oneWayHash(relative(getProjectRoot(), configDir));
+  const cacheKey = oneWayHash(relative(findProjectRoot(workingDir), configDir));
 
   // Resolve initialPath: CLI flag takes precedence; fall back to onboarding-pending cache entry.
   invariant(port, 'expected options to have a port');
@@ -151,7 +151,7 @@ export async function buildDevStandalone(
     options.initialPath
   );
 
-  const cacheOutputDir = resolvePathInStorybookCache('public', cacheKey);
+  const cacheOutputDir = resolvePathInStorybookCache('public', cacheKey, workingDir);
   let outputDir = resolve(options.outputDir || cacheOutputDir);
   if (options.smokeTest) {
     outputDir = cacheOutputDir;

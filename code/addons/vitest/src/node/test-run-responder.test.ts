@@ -7,8 +7,9 @@ import { internal_UniversalStore } from '@storybook/core/internal/services';
 import { createStorybook } from 'storybook/internal/instance';
 
 import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from '../constants.ts';
-import { runTestRunner } from './boot-test-runner.ts';
 import type { TestRunnerHost } from './host.ts';
+
+const runTestRunner = vi.hoisted(() => vi.fn());
 
 const testProviderStore = vi.hoisted(() => ({
   setState: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock('@storybook/core/internal/services', async (importOriginal) => {
       create: vi.fn(
         (storeOptions: never) => new actual.experimental_MockUniversalStore(storeOptions)
       ),
+      eventMessage: actual.internal_UniversalStore.eventMessage,
     },
     experimental_getTestProviderStore: vi.fn(() => testProviderStore),
   };
@@ -40,7 +42,7 @@ vi.mock('@storybook/core/internal/common', async (importOriginal) => {
 });
 
 vi.mock('./boot-test-runner.ts', () => ({
-  runTestRunner: vi.fn(),
+  createTestRunner: vi.fn(() => ({ run: runTestRunner, sendStoryIndex: vi.fn(), kill: vi.fn() })),
 }));
 
 vi.mock('../logger.ts', () => ({
@@ -59,11 +61,20 @@ function makeStorybook({
   } as unknown as TestRunnerHost;
 }
 
-/** The responder memoizes its store at module level, so each test needs a fresh module. */
+/** The responder with a fresh runtime for each Storybook it is wired to. */
 async function loadResponder() {
-  vi.resetModules();
-  return import('./test-run-responder.ts');
+  const responder = await import('./test-run-responder.ts');
+  return {
+    ...responder,
+    wireTestRunResponder: (options: Omit<WireOptions, 'runtime'>) =>
+      responder.wireTestRunResponder({
+        ...options,
+        runtime: responder.createTestRunnerRuntime(options.storybook),
+      }),
+  };
 }
+
+type WireOptions = Parameters<typeof import('./test-run-responder.ts').wireTestRunResponder>[0];
 
 function emitRequest(channel: Channel, requestId: string) {
   channel.emit(TRIGGER_TEST_RUN_REQUEST, { requestId, actor: 'test-actor' });
@@ -110,18 +121,20 @@ describe('wireTestRunResponder', () => {
   });
 
   it('creates the runner machinery lazily, once, shared with the eager dev-server path', async () => {
-    const { wireTestRunResponder, ensureTestRunnerStore } = await loadResponder();
+    const { createTestRunnerRuntime, wireTestRunResponder } =
+      await import('./test-run-responder.ts');
     const channel = new Channel({});
     const host = makeStorybook();
+    const runtime = createTestRunnerRuntime(host);
 
-    await wireTestRunResponder({ channel, storybook: host });
+    await wireTestRunResponder({ channel, storybook: host, runtime });
     expect(internal_UniversalStore.create).not.toHaveBeenCalled();
 
     emitRequest(channel, 'req-1');
     await vi.waitFor(() => expect(internal_UniversalStore.create).toHaveBeenCalledOnce());
 
     // The dev server's eager path reuses the memoized store...
-    const store = await ensureTestRunnerStore({ channel, storybook: host });
+    const store = await runtime.ensureStore(channel);
     store.send({ type: 'TEST_RUN_COMPLETED', payload: {} as never });
     await vi.waitFor(() =>
       expect(channel.last(TRIGGER_TEST_RUN_RESPONSE)).toEqual([
@@ -183,7 +196,7 @@ describe('wireTestRunResponder', () => {
     expect(host.callHook).not.toHaveBeenCalled();
   });
 
-  it('wires nothing on an attached tools host, so the instance remains the only leader', async () => {
+  it('wires nothing on an attached tools host, so the dev server remains the only owner', async () => {
     const { wireTestRunResponder } = await loadResponder();
     const channel = new Channel({});
     const responses = vi.fn();
@@ -209,24 +222,20 @@ describe('wireTestRunResponder', () => {
     }
   });
 
-  it('creates a follower store in an attached instance context', async () => {
-    const { ensureTestRunnerStore } = await loadResponder();
-    const storybook = await createStorybook({
-      configDir: fileURLToPath(new URL('./__fixtures__/first', import.meta.url)),
-      mode: 'headless',
-      main: { stories: [] },
-      attach: { transport: { send() {}, setHandler() {} } },
-    });
-    try {
-      await runWithStorybook(storybook, () =>
-        ensureTestRunnerStore({ channel: storybook.channel, storybook: makeStorybook() })
-      );
-      expect(internal_UniversalStore.create).toHaveBeenCalledWith(
-        expect.objectContaining({ leader: false })
-      );
-    } finally {
-      await storybook.close();
-    }
+  it('creates the store as its owner on the given channel, and disposes it on close', async () => {
+    const { createTestRunnerRuntime } = await loadResponder();
+    const channel = new Channel({});
+    const runtime = createTestRunnerRuntime(makeStorybook());
+
+    const store = await runtime.ensureStore(channel);
+    const dispose = vi.spyOn(store, '__dispose');
+    runtime.close();
+    await Promise.resolve();
+
+    expect(internal_UniversalStore.create).toHaveBeenCalledWith(
+      expect.objectContaining({ owner: true, channel })
+    );
+    expect(dispose).toHaveBeenCalledOnce();
   });
 
   it('wires nothing inside the vitest child process', async () => {

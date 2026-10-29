@@ -14,7 +14,8 @@ import type { StoreEvent, StoreState } from './types.ts';
 
 export const store = internal_UniversalStore.create<StoreState, StoreEvent>({
   ...storeOptions,
-  leader: (globalThis as any).CONFIG_TYPE === 'PRODUCTION',
+  // A static build has no server, so the manager owns the state.
+  owner: (globalThis as any).CONFIG_TYPE === 'PRODUCTION',
 });
 
 export const componentTestStatusStore = experimental_getStatusStore(STATUS_TYPE_ID_COMPONENT_TEST);

@@ -12,6 +12,8 @@ import type { ServerApp } from '@storybook/core/internal/types';
 import { createStorybook, defineAddon, type Storybook } from 'storybook/internal/instance';
 import { createManagerHost } from '@storybook/manager/internal/deep/builder-manager/host';
 
+import { builtInAddons } from '../../features/index.ts';
+
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('esbuild', { spy: true });
 vi.mock('sirv', () => ({ default: vi.fn(() => vi.fn()) }));
@@ -38,16 +40,22 @@ it('isolates two dev managers, including their entries, output files, hooks, and
   const compile = (config: BuildOptions): BuildResult => ({
     errors: [],
     warnings: [],
-    metafile: undefined,
+    metafile: {
+      inputs: {},
+      outputs: Object.fromEntries(
+        (config.entryPoints as string[]).map((entry, index) => [
+          join(config.outdir!, index === 0 ? 'manager.js' : `entry-${index}.js`),
+          { bytes: 0, inputs: {}, imports: [], exports: [], entryPoint: entry },
+        ])
+      ),
+    },
     mangleCache: undefined,
-    outputFiles: [
-      {
-        path: join(config.outdir!, 'manager.js'),
-        contents: new TextEncoder().encode(config.outdir!),
-        hash: '',
-        text: config.outdir!,
-      },
-    ],
+    outputFiles: (config.entryPoints as string[]).map((_, index) => ({
+      path: join(config.outdir!, index === 0 ? 'manager.js' : `entry-${index}.js`),
+      contents: new TextEncoder().encode(config.outdir!),
+      hash: '',
+      text: config.outdir!,
+    })),
   });
   let finishSecond: () => void = () => {};
   vi.mocked(build).mockImplementation(async (config) => {
@@ -116,7 +124,8 @@ it('isolates two dev managers, including their entries, output files, hooks, and
       entries.map((entry) => memoryFs.promises.readFile(entry, 'utf8'))
     );
     expect(sourceEntries.at(-1)).toBe(`import '${join(instance.configDir, 'addon-manager.ts')}';`);
-    expect(sourceEntries).toHaveLength(2);
+    // One entry per built-in manager, then the configured addon's.
+    expect(sourceEntries).toHaveLength(builtInAddons.filter((addon) => addon.manager).length + 1);
     expect(config.outdir).toBe(join(instance.options.outputDir!, 'sb-addons'));
     expect(config.define?.['process.env']).toContain(
       `"MANAGER_OWNER":"${index === 0 ? 'first' : 'second'}"`

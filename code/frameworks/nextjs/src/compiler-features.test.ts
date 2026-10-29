@@ -37,7 +37,11 @@ it.each([
     vi.stubGlobal(INSTANCE_STORAGE, {
       getStore: () =>
         instance
-          ? { features: flag === undefined ? undefined : { babelRemoveBugfixes: flag } }
+          ? {
+              features: flag === undefined ? undefined : { babelRemoveBugfixes: flag },
+              state: new Map(),
+              workingDir: process.cwd(),
+            }
           : undefined,
     });
     const config = await configureNextBabel({});

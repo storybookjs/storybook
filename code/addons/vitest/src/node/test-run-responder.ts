@@ -25,12 +25,26 @@ import {
 import { log } from '../logger.ts';
 import type { CachedState, ErrorLike, Store, StoreEvent, StoreState } from '../types.ts';
 import { errorToErrorLike } from '../utils.ts';
-import { runTestRunner } from './boot-test-runner.ts';
+import { createTestRunner, type TestRunner } from './boot-test-runner.ts';
 import type { TestRunnerHost } from './host.ts';
+
+/** One instance's test runner: its Vitest child and the store that drives it. */
+export interface TestRunnerRuntime {
+  /** The instance's Vitest child process. */
+  readonly runner: TestRunner;
+  /**
+   * The instance's `storybook/test` store, seeded with the cached config and created once so the
+   * request listener and the dev server share it; a failed setup is retried by the next caller.
+   */
+  ensureStore(channel: Channel): Promise<Store>;
+  /** Kill the instance's Vitest child and stop syncing its store. */
+  close(): void;
+}
 
 type ResponderOptions = {
   channel: Channel;
   storybook: TestRunnerHost;
+  runner: TestRunner;
 };
 
 /** The preview builder name from the `core` preset value, however the builder was declared. */
@@ -38,24 +52,32 @@ export const resolvePreviewBuilderName = (
   core: { builder?: string | { name?: string } } | undefined
 ): string | undefined => (typeof core?.builder === 'string' ? core.builder : core?.builder?.name);
 
-let storePromise: Promise<Store> | undefined;
+/** Creates the test runner state of one instance; nothing in it is shared with another instance. */
+export function createTestRunnerRuntime(storybook: TestRunnerHost): TestRunnerRuntime {
+  const runner = createTestRunner();
+  let storePromise: Promise<Store> | undefined;
+  return {
+    runner,
+    ensureStore: (channel) =>
+      (storePromise ??= createTestRunnerStore({ channel, storybook, runner }).catch((error) => {
+        storePromise = undefined;
+        throw error;
+      })),
+    close: () => {
+      runner.kill();
+      storePromise?.then(
+        (store) => store.__dispose(),
+        () => {}
+      );
+    },
+  };
+}
 
-/**
- * The machinery that answers a test-run request: the leader UniversalStore seeded with the cached
- * config, and the subscriptions that boot the vitest child process and record
- * fatal errors. Memoized so the request listener (which runs it on first request) and the dev
- * server (which additionally runs it eagerly, because the manager UI needs the store immediately)
- * share one store.
- */
-export const ensureTestRunnerStore = ({ channel, storybook }: ResponderOptions): Promise<Store> =>
-  (storePromise ??= createTestRunnerStore({ channel, storybook }).catch((error) => {
-    // A rejected setup must not be memoized: the next request retries instead of replaying the
-    // cached rejection for the lifetime of the process.
-    storePromise = undefined;
-    throw error;
-  }));
-
-const createTestRunnerStore = async ({ channel, storybook }: ResponderOptions): Promise<Store> => {
+const createTestRunnerStore = async ({
+  channel,
+  storybook,
+  runner,
+}: ResponderOptions): Promise<Store> => {
   const core = await storybook.callHook('core:config:extend', undefined);
   const configLoader =
     (typeof core?.builder !== 'string' &&
@@ -80,8 +102,8 @@ const createTestRunnerStore = async ({ channel, storybook }: ResponderOptions): 
       ...storeOptions.initialState,
       ...selectCachedState(cachedState),
     },
-    leader:
-      process.env.VITEST_CHILD_PROCESS !== 'true' && !getInstanceContext()?.storybook?.attached,
+    owner: true,
+    channel,
   });
   store.onStateChange((state, previousState) => {
     if (!isEqual(selectCachedState(state), selectCachedState(previousState))) {
@@ -96,17 +118,19 @@ const createTestRunnerStore = async ({ channel, storybook }: ResponderOptions): 
       ...s,
       fatalError: undefined,
     }));
-    runTestRunner({
-      channel,
-      store,
-      initEvent: STORE_CHANNEL_EVENT_NAME,
-      initArgs: [{ event, eventInfo }],
-      storybook,
-      configLoader,
-    }).catch(() => {
-      // A boot failure already reported itself: bootTestRunner sends FATAL_ERROR before
-      // rethrowing. Consuming the rejection just keeps it from becoming an unhandled rejection.
-    });
+    runner
+      .run({
+        channel,
+        store,
+        initEvent: STORE_CHANNEL_EVENT_NAME,
+        initArgs: [internal_UniversalStore.eventMessage(event, eventInfo)],
+        storybook,
+        configLoader,
+      })
+      .catch(() => {
+        // A boot failure already reported itself: bootTestRunner sends FATAL_ERROR before
+        // rethrowing. Consuming the rejection just keeps it from becoming an unhandled rejection.
+      });
   });
   store.subscribe('FATAL_ERROR', (event) => {
     const { message, error } = event.payload;
@@ -164,17 +188,19 @@ const createTestRunnerStore = async ({ channel, storybook }: ResponderOptions): 
 export const wireTestRunResponder = async ({
   channel,
   storybook,
+  runtime,
 }: {
   channel: Channel | undefined;
   storybook: TestRunnerHost;
+  runtime: TestRunnerRuntime;
 }): Promise<void> => {
   // The vitest child process loads this same Storybook configuration in-process; answering
   // requests from inside it could recursively boot another child.
   if (process.env.VITEST_CHILD_PROCESS === 'true') {
     return;
   }
-  // An attached tools host shares the instance's channel. Answering here would create a second
-  // UniversalStore leader for `storybook/test` and crash the running Storybook.
+  // An attached tools host shares the dev server's channel; the dev server owns `storybook/test`
+  // and answers the requests itself.
   if (getInstanceContext()?.storybook?.attached) {
     return;
   }
@@ -218,7 +244,7 @@ export const wireTestRunResponder = async ({
 
     let store: Store;
     try {
-      store = await ensureTestRunnerStore({ channel, storybook });
+      store = await runtime.ensureStore(channel);
     } catch (error) {
       // Without a response the requester would wait out its full timeout; the dev server sets the
       // machinery up at startup and crashes visibly there, but a lazy consumer only learns of a

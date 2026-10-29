@@ -36,12 +36,15 @@ async function call(name: string, value: unknown, seeds?: Record<string, unknown
 }
 
 describe('react node plugin', () => {
+  it('turns component manifests on before setup', () => {
+    expect(react().features).toEqual({ componentsManifest: true });
+  });
+
   it('registers its hooks in order', () => {
     expect(setup().map(({ name, kind }) => (kind ? `${name} (${kind})` : name)))
       .toMatchInlineSnapshot(`
         [
           "preview:annotations:collect",
-          "core:features:extend",
           "core:docgen-enabled:extend",
           "core:docgen-providers:collect",
           "core:story-docs-provider:extend",
@@ -50,6 +53,7 @@ describe('react node plugin', () => {
           "legacy:resolvedReact:extend (reduce)",
           "legacy:internal_getArgTypesData:extend (reduce)",
           "builder:vite-deps:collect (collect)",
+          "core:instance:close",
         ]
       `);
   });
@@ -76,12 +80,6 @@ describe('react node plugin', () => {
         '<pkg>/dist/entry-preview-docs.js',
         '<pkg>/dist/entry-preview-rsc.js',
       ],
-    },
-    {
-      name: 'features keep earlier values',
-      hook: 'core:features:extend',
-      input: { controls: true },
-      expected: { controls: true, componentsManifest: true },
     },
     {
       name: 'docgen enabled with typescript installed',

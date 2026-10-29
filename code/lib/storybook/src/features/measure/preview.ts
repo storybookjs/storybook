@@ -1,6 +1,7 @@
 import { definePreviewAddon } from 'storybook/internal/csf';
 
 import { getFeatures } from '@storybook/core/preview-api';
+
 import { PARAM_KEY } from './constants.ts';
 import type { MeasureTypes } from './types.ts';
 import { withMeasure } from './withMeasure.ts';
@@ -13,8 +14,7 @@ export const initialGlobals = {
 
 export type { MeasureTypes };
 
-export default () =>
-  definePreviewAddon<MeasureTypes>({
-    decorators,
-    initialGlobals,
-  });
+export default definePreviewAddon<MeasureTypes>({
+  decorators,
+  initialGlobals,
+});

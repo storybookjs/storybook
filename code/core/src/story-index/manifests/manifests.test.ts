@@ -3,12 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from '@storybook/core/internal/node-logger';
-import type {
-  ComponentsManifest,
-  Manifests,
-  Presets,
-  StoryIndex,
-} from '@storybook/core/internal/types';
+import type { ComponentsManifest, Manifests, StoryIndex } from '@storybook/core/internal/types';
 
 import * as v from 'valibot';
 import { vol } from 'memfs';
@@ -21,7 +16,7 @@ import { registerStoryDocsService } from '../../shared/open-service/services/sto
 import type { DocgenProvider } from '../../shared/open-service/services/docgen/types.ts';
 import type { StoryDocsProvider } from '../../shared/open-service/services/story-docs/types.ts';
 import { Tag } from '../../constants/tags.ts';
-import { registerManifests, writeManifests } from './manifests.ts';
+import { type ManifestsStorybook, registerManifests, writeManifests } from './manifests.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('@storybook/core/internal/node-logger');
@@ -62,7 +57,10 @@ describe('manifests', () => {
     return registerService(testMdxServiceDef);
   };
 
-  const setupMockPresets = (options?: { componentsManifest?: boolean; docgenServer?: boolean }) => {
+  const setupMockStorybook = (options?: {
+    componentsManifest?: boolean;
+    docgenServer?: boolean;
+  }) => {
     mockGetIndex = vi.fn<() => Promise<StoryIndex>>().mockResolvedValue({
       entries: {},
     } as StoryIndex);
@@ -70,13 +68,12 @@ describe('manifests', () => {
     mockManifests = {};
 
     return {
-      apply: vi.fn().mockImplementation((key: string) => {
-        switch (key) {
-          case 'storyIndexGenerator':
-            return Promise.resolve(mockGenerator);
-          case 'experimental_manifests':
+      getStoryIndexGenerator: vi.fn().mockImplementation(() => Promise.resolve(mockGenerator)),
+      callHook: vi.fn().mockImplementation((name: string) => {
+        switch (name) {
+          case 'index:manifests:extend':
             return Promise.resolve(mockManifests ?? undefined);
-          case 'features':
+          case 'core:features:extend':
             return Promise.resolve({
               componentsManifest: options?.componentsManifest ?? true,
               docgenServer: options?.docgenServer ?? false,
@@ -85,7 +82,7 @@ describe('manifests', () => {
             return Promise.resolve(undefined);
         }
       }),
-    } satisfies Presets;
+    } as unknown as ManifestsStorybook;
   };
 
   beforeEach(async () => {
@@ -110,16 +107,16 @@ describe('manifests', () => {
   });
 
   describe('writeManifests', () => {
-    let mockPresets: Presets;
+    let mockStorybook: ManifestsStorybook;
 
     beforeEach(() => {
-      mockPresets = setupMockPresets();
+      mockStorybook = setupMockStorybook();
     });
 
     it('should do nothing when manifests are empty', async () => {
       mockManifests = {};
 
-      await writeManifests('/output', mockPresets);
+      await writeManifests('/output', mockStorybook);
 
       expect(vol.toJSON()).toEqual({});
     });
@@ -130,7 +127,7 @@ describe('manifests', () => {
         another: { items: [1, 2, 3] },
       };
 
-      await writeManifests('/output', mockPresets);
+      await writeManifests('/output', mockStorybook);
 
       const files = vol.toJSON();
       expect(files['/output/manifests/custom.json']).toBe(
@@ -157,7 +154,7 @@ describe('manifests', () => {
         },
       };
 
-      await writeManifests('/output', mockPresets);
+      await writeManifests('/output', mockStorybook);
 
       const files = vol.toJSON();
       const componentsJson = JSON.parse(files['/output/manifests/components.json'] as string);
@@ -184,7 +181,7 @@ describe('manifests', () => {
         components: componentsManifest,
       };
 
-      await writeManifests('/output', mockPresets);
+      await writeManifests('/output', mockStorybook);
 
       const files = vol.toJSON();
       expect(files['/output/manifests/components.html']).toBeDefined();
@@ -214,7 +211,7 @@ describe('manifests', () => {
         } as ComponentsManifest,
       };
 
-      await writeManifests('/output', mockPresets);
+      await writeManifests('/output', mockStorybook);
 
       const files = vol.toJSON();
       expect(files['/output/manifests/components.html']).toContain('ButtonIcon');
@@ -237,7 +234,7 @@ describe('manifests', () => {
         },
       };
 
-      await writeManifests('/output', mockPresets);
+      await writeManifests('/output', mockStorybook);
 
       const files = vol.toJSON();
       expect(files['/output/manifests/components.html']).toBeDefined();
@@ -245,11 +242,12 @@ describe('manifests', () => {
       expect(files['/output/manifests/components.html']).toContain('Unattached Docs');
     });
 
-    it('should handle errors when presets.apply fails', async () => {
+    it('should handle errors when the instance fails', async () => {
       const error = new Error('Preset application failed');
-      vi.mocked(mockPresets.apply).mockRejectedValue(error);
+      vi.mocked(mockStorybook.callHook).mockRejectedValue(error);
+      vi.mocked(mockStorybook.getStoryIndexGenerator).mockRejectedValue(error);
 
-      await writeManifests('/output', mockPresets);
+      await writeManifests('/output', mockStorybook);
 
       expect(vi.mocked(logger).error).toHaveBeenCalledWith('Failed to generate manifests');
       expect(vi.mocked(logger).error).toHaveBeenCalledWith(error);
@@ -258,9 +256,10 @@ describe('manifests', () => {
 
     it('should handle non-Error objects in catch block', async () => {
       const errorString = 'Something went wrong';
-      vi.mocked(mockPresets.apply).mockRejectedValue(errorString);
+      vi.mocked(mockStorybook.callHook).mockRejectedValue(errorString);
+      vi.mocked(mockStorybook.getStoryIndexGenerator).mockRejectedValue(errorString);
 
-      await writeManifests('/output', mockPresets);
+      await writeManifests('/output', mockStorybook);
 
       expect(vi.mocked(logger).error).toHaveBeenCalledWith('Failed to generate manifests');
       expect(vi.mocked(logger).error).toHaveBeenCalledWith(errorString);
@@ -302,10 +301,10 @@ describe('manifests', () => {
 
       mockManifests = { custom: { data: 'value' } };
 
-      await writeManifests('/output', mockPresets);
+      await writeManifests('/output', mockStorybook);
 
-      expect(mockPresets.apply).toHaveBeenCalledWith(
-        'experimental_manifests',
+      expect(mockStorybook.callHook).toHaveBeenCalledWith(
+        'index:manifests:extend',
         undefined,
         expect.objectContaining({
           manifestEntries: expect.arrayContaining([
@@ -314,15 +313,15 @@ describe('manifests', () => {
         })
       );
 
-      // Get the specific apply call to the experimental_manifests preset
-      const manifestsPresetCall = vi
-        .mocked(mockPresets.apply)
-        .mock.calls.find((call) => call[0] === 'experimental_manifests');
+      // Get the specific apply call to the manifests hook
+      const manifestsHookCall = vi
+        .mocked(mockStorybook.callHook)
+        .mock.calls.find((call) => call[0] === 'index:manifests:extend');
 
-      expect(manifestsPresetCall).toBeDefined();
+      expect(manifestsHookCall).toBeDefined();
       const manifestEntriesArg =
-        (manifestsPresetCall?.[2] as { manifestEntries?: Array<{ id: string }> })
-          ?.manifestEntries ?? [];
+        (manifestsHookCall?.[2] as { manifestEntries?: Array<{ id: string }> })?.manifestEntries ??
+        [];
 
       // Should include both story and docs entries with manifest tag
       expect(manifestEntriesArg).toHaveLength(2);
@@ -334,7 +333,7 @@ describe('manifests', () => {
     });
 
     it('writes ref-based components.json when docgenServer is enabled', async () => {
-      mockPresets = setupMockPresets({
+      mockStorybook = setupMockStorybook({
         componentsManifest: true,
         docgenServer: true,
       });
@@ -428,7 +427,7 @@ describe('manifests', () => {
         }),
       });
 
-      await writeManifests('/output', mockPresets);
+      await writeManifests('/output', mockStorybook);
 
       const files = vol.toJSON();
       const componentsJson = JSON.parse(files['/output/manifests/components.json'] as string);
@@ -461,7 +460,7 @@ describe('manifests', () => {
     });
 
     it('includes a componentless component in components.html, matching components.json', async () => {
-      mockPresets = setupMockPresets({
+      mockStorybook = setupMockStorybook({
         componentsManifest: true,
         docgenServer: true,
       });
@@ -520,7 +519,7 @@ describe('manifests', () => {
         // nothing, because the story file names no component.
       });
 
-      await writeManifests('/output', mockPresets);
+      await writeManifests('/output', mockStorybook);
 
       const files = vol.toJSON();
       const componentsJson = JSON.parse(files['/output/manifests/components.json'] as string);
@@ -539,7 +538,7 @@ describe('manifests', () => {
     });
 
     it('writes shallow MDX refs and renders HTML from MDX service snapshots', async () => {
-      mockPresets = setupMockPresets({
+      mockStorybook = setupMockStorybook({
         componentsManifest: true,
         docgenServer: true,
       });
@@ -649,7 +648,7 @@ describe('manifests', () => {
         }),
       });
 
-      await writeManifests('/output', mockPresets);
+      await writeManifests('/output', mockStorybook);
 
       const files = vol.toJSON();
       const componentsJson = JSON.parse(files['/output/manifests/components.json'] as string);
@@ -679,17 +678,17 @@ describe('manifests', () => {
   describe('registerManifests', () => {
     let mockApp: Polka;
     let mockGet: ReturnType<typeof vi.fn>;
-    let mockPresets: Presets;
+    let mockStorybook: ManifestsStorybook;
 
     beforeEach(() => {
       mockGet = vi.fn();
       mockApp = { get: mockGet } as unknown as Polka;
-      mockPresets = setupMockPresets();
+      mockStorybook = setupMockStorybook();
     });
 
     describe('route registration', () => {
       it('should register two routes', () => {
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp, storybook: mockStorybook });
 
         expect(mockGet).toHaveBeenCalledTimes(2);
         expect(mockGet).toHaveBeenCalledWith('/manifests/:name.json', expect.any(Function));
@@ -703,7 +702,7 @@ describe('manifests', () => {
           custom: { data: 'value' },
         };
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp, storybook: mockStorybook });
 
         const handler = mockGet.mock.calls[0][1] as RouteHandler;
         const req = { params: { name: 'custom' } };
@@ -721,7 +720,7 @@ describe('manifests', () => {
           existing: { data: 'value' },
         };
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp, storybook: mockStorybook });
 
         const handler = mockGet.mock.calls[0][1] as RouteHandler;
         const req = { params: { name: 'nonexistent' } };
@@ -736,7 +735,7 @@ describe('manifests', () => {
       it('should return 404 when manifests object is empty', async () => {
         mockManifests = {};
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp, storybook: mockStorybook });
 
         const handler = mockGet.mock.calls[0][1] as RouteHandler;
         const req = { params: { name: 'any' } };
@@ -749,12 +748,12 @@ describe('manifests', () => {
       });
 
       it('returns 404 for components.json when docgenServer is enabled', async () => {
-        mockPresets = setupMockPresets({
+        mockStorybook = setupMockStorybook({
           componentsManifest: true,
           docgenServer: true,
         });
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp, storybook: mockStorybook });
 
         const handler = mockGet.mock.calls[0][1] as RouteHandler;
         const req = { params: { name: 'components' } };
@@ -769,12 +768,12 @@ describe('manifests', () => {
       });
 
       it('returns 404 for docs.json when docgenServer is enabled', async () => {
-        mockPresets = setupMockPresets({
+        mockStorybook = setupMockStorybook({
           componentsManifest: true,
           docgenServer: true,
         });
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp, storybook: mockStorybook });
 
         const handler = mockGet.mock.calls[0][1] as RouteHandler;
         const req = { params: { name: 'docs' } };
@@ -790,9 +789,10 @@ describe('manifests', () => {
 
       it('should handle errors with 500 status and log the error', async () => {
         const error = new Error('Preset failed');
-        vi.mocked(mockPresets.apply).mockRejectedValue(error);
+        vi.mocked(mockStorybook.callHook).mockRejectedValue(error);
+        vi.mocked(mockStorybook.getStoryIndexGenerator).mockRejectedValue(error);
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp, storybook: mockStorybook });
 
         const handler = mockGet.mock.calls[0][1] as RouteHandler;
         const req = { params: { name: 'custom' } };
@@ -807,9 +807,10 @@ describe('manifests', () => {
 
       it('should handle non-Error objects in error handler', async () => {
         const errorString = 'Something went wrong';
-        vi.mocked(mockPresets.apply).mockRejectedValue(errorString);
+        vi.mocked(mockStorybook.callHook).mockRejectedValue(errorString);
+        vi.mocked(mockStorybook.getStoryIndexGenerator).mockRejectedValue(errorString);
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp, storybook: mockStorybook });
 
         const handler = mockGet.mock.calls[0][1] as RouteHandler;
         const req = { params: { name: 'custom' } };
@@ -822,10 +823,10 @@ describe('manifests', () => {
         expect(res.end).toHaveBeenCalledWith(errorString);
       });
 
-      it('should handle when presets.apply returns null/undefined', async () => {
+      it('should handle when the manifests hook returns null/undefined', async () => {
         mockManifests = null;
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp, storybook: mockStorybook });
 
         const handler = mockGet.mock.calls[0][1] as RouteHandler;
         const req = { params: { name: 'custom' } };
@@ -856,7 +857,7 @@ describe('manifests', () => {
           components: componentsManifest,
         };
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp, storybook: mockStorybook });
 
         const handler = mockGet.mock.calls[1][1] as RouteHandler;
         const req = {};
@@ -877,7 +878,7 @@ describe('manifests', () => {
           other: { data: 'value' },
         };
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp, storybook: mockStorybook });
 
         const handler = mockGet.mock.calls[1][1] as RouteHandler;
         const req = {};
@@ -895,7 +896,7 @@ describe('manifests', () => {
       it('should return 404 when manifests is empty', async () => {
         mockManifests = {};
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp, storybook: mockStorybook });
 
         const handler = mockGet.mock.calls[1][1] as RouteHandler;
         const req = {};
@@ -912,9 +913,10 @@ describe('manifests', () => {
       it('should handle errors with 500 status and return error HTML', async () => {
         const error = new Error('Rendering failed');
         error.stack = 'Error: Rendering failed\n  at test.ts:123';
-        vi.mocked(mockPresets.apply).mockRejectedValue(error);
+        vi.mocked(mockStorybook.callHook).mockRejectedValue(error);
+        vi.mocked(mockStorybook.getStoryIndexGenerator).mockRejectedValue(error);
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp, storybook: mockStorybook });
 
         const handler = mockGet.mock.calls[1][1] as RouteHandler;
         const req = {};
@@ -931,9 +933,10 @@ describe('manifests', () => {
 
       it('should handle non-Error objects in error handler', async () => {
         const errorString = 'Something went wrong';
-        vi.mocked(mockPresets.apply).mockRejectedValue(errorString);
+        vi.mocked(mockStorybook.callHook).mockRejectedValue(errorString);
+        vi.mocked(mockStorybook.getStoryIndexGenerator).mockRejectedValue(errorString);
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp, storybook: mockStorybook });
 
         const handler = mockGet.mock.calls[1][1] as RouteHandler;
         const req = {};
@@ -947,7 +950,7 @@ describe('manifests', () => {
       });
 
       it('renders docgen-server HTML with MDX from the live service', async () => {
-        mockPresets = setupMockPresets({
+        mockStorybook = setupMockStorybook({
           componentsManifest: true,
           docgenServer: true,
         });
@@ -1047,7 +1050,7 @@ describe('manifests', () => {
           },
         });
 
-        registerManifests({ app: mockApp, presets: mockPresets });
+        registerManifests({ app: mockApp, storybook: mockStorybook });
 
         const handler = mockGet.mock.calls[1][1] as RouteHandler;
         const res = createResponse();

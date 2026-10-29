@@ -8,11 +8,10 @@ import { docgenServiceDef } from './definition.ts';
 
 export type DocgenService = ServiceInstanceOf<typeof docgenServiceDef>;
 
-export default () =>
-  definePreviewAddon({
-    beforeAll: () => {
-      if (getFeatures().docgenServer) {
-        registerService(docgenServiceDef);
-      }
-    },
-  });
+export default definePreviewAddon({
+  beforeAll: () => {
+    if (getFeatures().docgenServer) {
+      registerService(docgenServiceDef);
+    }
+  },
+});

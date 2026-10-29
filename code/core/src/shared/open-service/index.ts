@@ -46,6 +46,7 @@ export {
   OpenServiceDuplicateToolsetError,
   OpenServiceInvalidToolsetMethodIdError,
   OpenServiceMissingToolsetError,
+  StorybookInstanceUnavailableError,
 } from '../../server-errors.ts';
 export type { KnownToolsets } from './toolset-types.ts';
 

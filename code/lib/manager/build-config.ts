@@ -61,10 +61,6 @@ const config: BuildEntries = {
         entryPoint: './src/shared/open-service/services/review/manager.tsx',
       },
       {
-        exportEntries: ['./internal/deep/shared/open-service/services/review/node'],
-        entryPoint: './src/shared/open-service/services/review/node.ts',
-      },
-      {
         exportEntries: ['./internal/deep/shared/viewport/useViewport'],
         entryPoint: './src/shared/viewport/useViewport.ts',
       },

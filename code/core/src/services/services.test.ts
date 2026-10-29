@@ -1,8 +1,9 @@
 import * as v from 'valibot';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useTestInstance } from '../shared/instance-context.test-helpers.ts';
 import type { ToolsetCtx } from '../shared/open-service/toolset-definition.ts';
-import { clearToolsetRegistry, getToolset } from '../shared/open-service/toolset-registry.ts';
+import { getToolset } from '../shared/open-service/toolset-registry.ts';
 import { loadManifests } from '../story-index/manifests/manifests.ts';
 import setupStoryDocs from '../shared/open-service/services/story-docs/setup.ts';
 
@@ -23,17 +24,15 @@ function optionsWithRefs(refs: unknown): Parameters<typeof setupStoryDocs>[0] {
   return {
     workingDir: process.cwd(),
     getIndex: () => Promise.reject(new Error('No story index in this test.')),
-    presets: {
-      apply: async (extension: string, config?: unknown) => {
-        switch (extension) {
-          case 'refs':
-            return refs;
-          case 'features':
-            return {};
-          default:
-            return config;
-        }
-      },
+    callHook: async (name: string, value?: unknown) => {
+      switch (name) {
+        case 'manager:refs:extend':
+          return refs;
+        case 'core:features:extend':
+          return {};
+        default:
+          return value;
+      }
     },
   } as unknown as Parameters<typeof setupStoryDocs>[0];
 }
@@ -52,8 +51,9 @@ const RESHAPED = { reshaped: { title: 'Reshaped', url: 'https://reshaped.example
 const RESHAPED_MANIFEST_URL = 'https://reshaped.example.com/manifests/components.json';
 
 describe('story docs setup: docs toolset', () => {
+  useTestInstance();
+
   beforeEach(() => {
-    clearToolsetRegistry();
     // Serves only the Reshaped components manifest; anything else is a 404, like a static host.
     vi.stubGlobal(
       'fetch',

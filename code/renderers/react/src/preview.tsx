@@ -23,6 +23,7 @@ import type {
   ProjectAnnotations,
   StoryAnnotations,
 } from 'storybook/internal/types';
+import { BUILT_IN_PREVIEW_ANNOTATIONS } from 'storybook/internal/preview/built-in-annotations';
 
 import type { Simplify } from 'type-fest';
 
@@ -53,15 +54,18 @@ import type { ReactTypes } from './types.ts';
 export function __definePreview<Addons extends PreviewAddonEntry[]>(
   input: { addons: Addons } & ProjectAnnotations<ReactTypes & InferTypes<Addons>>
 ): ReactPreview<ReactTypes & InferTypes<Addons>> {
-  const preview = definePreviewBase({
-    ...input,
-    addons: [
-      reactAnnotations,
-      reactArgTypesAnnotations,
-      reactDocsAnnotations,
-      ...(input.addons ?? []),
-    ] as PreviewAddon<InferTypes<Addons>>[],
-  }) as ReactPreview<ReactTypes & InferTypes<Addons>>;
+  const preview = definePreviewBase(
+    {
+      ...input,
+      addons: [
+        reactAnnotations,
+        reactArgTypesAnnotations,
+        reactDocsAnnotations,
+        ...(input.addons ?? []),
+      ] as PreviewAddon<InferTypes<Addons>>[],
+    },
+    BUILT_IN_PREVIEW_ANNOTATIONS
+  ) as ReactPreview<ReactTypes & InferTypes<Addons>>;
 
   const defineMeta = preview.meta.bind(preview);
   preview.meta = (_input) => {

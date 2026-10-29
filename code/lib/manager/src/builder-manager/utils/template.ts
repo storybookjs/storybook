@@ -6,6 +6,7 @@ import { render } from 'ejs';
 import { join } from 'pathe';
 
 import { resolvePackageDir } from '@storybook/core/internal/deep/utils/module';
+import type { ManagerFiles } from './files.ts';
 
 export const getTemplatePath = (template: string) => {
   return join(resolvePackageDir('@storybook/manager', import.meta.url), 'assets/server', template);
@@ -37,8 +38,7 @@ export const renderHTML = async (
   title: Promise<string | false>,
   favicon: Promise<string>,
   customHead: Promise<string | false>,
-  cssFiles: string[],
-  jsFiles: string[],
+  { cssFiles, jsFiles, entryFiles }: ManagerFiles,
   features: Promise<Record<string, any>>,
   refs: Promise<Record<string, Ref>>,
   logLevel: Promise<string>,
@@ -57,7 +57,7 @@ export const renderHTML = async (
 
   return render(templateRef, {
     title: titleRef ? `${titleRef} - Storybook` : 'Storybook',
-    files: { js: jsFiles, css: cssFiles },
+    files: { js: jsFiles, css: cssFiles, entries: entryFiles },
     favicon: customHeadHasFavicon(headRef) ? '' : await favicon,
     globals: {
       FEATURES: JSON.stringify(await features, null, 2),

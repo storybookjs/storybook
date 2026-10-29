@@ -33,7 +33,6 @@ import {
 } from '../../preview-web/render/animation-utils.ts';
 import { ReporterAPI } from '../reporter-api.ts';
 import { composeConfigs } from './composeConfigs.ts';
-import { composeProjectAnnotationsWithCore } from './composeProjectAnnotationsWithCore.ts';
 import { getCsfFactoryAnnotations } from './csf-factory-utils.ts';
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations.ts';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations.ts';
@@ -50,42 +49,133 @@ declare global {
   var __STORYBOOK_SET_PROJECT_ANNOTATIONS_CALLED__: boolean | undefined;
 }
 
+/** Options of {@link createPortableStories}. */
+export interface PortableStoriesOptions {
+  /** Composed before the renderer defaults and the project annotations. */
+  baseAnnotations?: NamedOrDefaultProjectAnnotations<any>[];
+}
+
+/** The portable stories API, bound to its base annotations. */
+export interface PortableStories {
+  setProjectAnnotations<TRenderer extends Renderer = Renderer>(
+    projectAnnotations:
+      | NamedOrDefaultProjectAnnotations<TRenderer>
+      | NamedOrDefaultProjectAnnotations<TRenderer>[]
+  ): NormalizedProjectAnnotations<TRenderer>;
+  composeStory<TRenderer extends Renderer = Renderer, TArgs extends Args = Args>(
+    storyAnnotations: LegacyStoryAnnotationsOrFn<TRenderer>,
+    componentAnnotations: ComponentAnnotations<TRenderer, TArgs>,
+    projectAnnotations?: ProjectAnnotations<TRenderer>,
+    defaultConfig?: ProjectAnnotations<TRenderer>,
+    exportsName?: string
+  ): ComposedStoryFn<TRenderer, Partial<TArgs>>;
+  composeStories<TModule extends Store_CSFExports>(
+    storiesImport: TModule,
+    globalConfig: ProjectAnnotations<Renderer>,
+    composeStoryFn?: ComposeStoryFn
+  ): Record<string, ComposedStoryFn>;
+}
+
+// `Symbol.for` so the marker survives the core entry points being bundled separately.
+const BASE_ANNOTATIONS_APPLIED = Symbol.for('storybook.portable-stories.base-annotations-applied');
+const DEFAULT_STORY_TITLE = 'ComposedStory';
+const DEFAULT_STORY_NAME = 'Unnamed Story';
+
+const cleanups: CleanupCallback[] = [];
+
 export function setDefaultProjectAnnotations<TRenderer extends Renderer = Renderer>(
   _defaultProjectAnnotations: ProjectAnnotations<TRenderer>
-) {
+): void {
   // Use a variable once we figure out the ESM/CJS issues
   globalThis.defaultProjectAnnotations = _defaultProjectAnnotations;
 }
 
-const DEFAULT_STORY_TITLE = 'ComposedStory';
-const DEFAULT_STORY_NAME = 'Unnamed Story';
-
-export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
-  projectAnnotations:
-    | NamedOrDefaultProjectAnnotations<TRenderer>
-    | NamedOrDefaultProjectAnnotations<TRenderer>[]
-): NormalizedProjectAnnotations<TRenderer> {
-  if (globalThis.__STORYBOOK_ADDON_VITEST_PROJECT_ANNOTATIONS_APPLIED__) {
-    throw new ProjectAnnotationsAlreadyAppliedError();
-  }
-  globalThis.__STORYBOOK_SET_PROJECT_ANNOTATIONS_CALLED__ = true;
-
-  const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
-  // Pass the raw annotation modules (which may use `default` and/or named exports, e.g. from
-  // `import * as annotations from '.storybook/preview'`) straight through: `composeConfigs` unwraps
-  // those, and `composeProjectAnnotationsWithCore` detects the CSF4 marker (set by `definePreview`,
-  // which is what e.g. addon-vitest passes here) so core annotations are never applied twice.
-  globalThis.globalProjectAnnotations = composeProjectAnnotationsWithCore<TRenderer>([
-    globalThis.defaultProjectAnnotations ?? {},
-    ...annotations,
-  ]);
-
-  return globalThis.globalProjectAnnotations ?? {};
+/** Marks project annotations that already include their base, so portable stories add none. */
+export function markBaseAnnotationsApplied<T extends object>(annotations: T): T {
+  Object.defineProperty(annotations, BASE_ANNOTATIONS_APPLIED, { value: true, configurable: true });
+  return annotations;
 }
 
-const cleanups: CleanupCallback[] = [];
+/**
+ * Creates the portable stories API with `baseAnnotations` composed first: base, renderer defaults,
+ * project, meta, story. Annotations marked by {@link markBaseAnnotationsApplied} get no base.
+ */
+export function createPortableStories({
+  baseAnnotations = [],
+}: PortableStoriesOptions = {}): PortableStories {
+  const composeStoryWithBase: PortableStories['composeStory'] = (
+    storyAnnotations,
+    componentAnnotations,
+    projectAnnotations,
+    defaultConfig,
+    exportsName
+  ) => {
+    const needsBase =
+      baseAnnotations.length > 0 &&
+      !globalThis.globalProjectAnnotations &&
+      ![defaultConfig, projectAnnotations].some(hasBaseAnnotationsApplied);
+    return composeStoryWithDefaults(
+      storyAnnotations,
+      componentAnnotations,
+      projectAnnotations,
+      needsBase ? composeConfigs([...baseAnnotations, defaultConfig ?? {}]) : defaultConfig,
+      exportsName
+    );
+  };
 
-export function composeStory<TRenderer extends Renderer = Renderer, TArgs extends Args = Args>(
+  return {
+    setProjectAnnotations<TRenderer extends Renderer = Renderer>(
+      projectAnnotations:
+        | NamedOrDefaultProjectAnnotations<TRenderer>
+        | NamedOrDefaultProjectAnnotations<TRenderer>[]
+    ): NormalizedProjectAnnotations<TRenderer> {
+      if (globalThis.__STORYBOOK_ADDON_VITEST_PROJECT_ANNOTATIONS_APPLIED__) {
+        throw new ProjectAnnotationsAlreadyAppliedError();
+      }
+      globalThis.__STORYBOOK_SET_PROJECT_ANNOTATIONS_CALLED__ = true;
+
+      // `composeConfigs` reads `.default` off each entry, so falsy entries are dropped first.
+      const annotations = (
+        Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations]
+      ).filter(Boolean);
+      const baseApplied = annotations.some(hasBaseAnnotationsApplied);
+      const base = baseApplied ? [] : baseAnnotations;
+      const composed = composeConfigs<TRenderer>([
+        ...base,
+        globalThis.defaultProjectAnnotations ?? {},
+        ...annotations,
+      ]);
+      globalThis.globalProjectAnnotations =
+        baseApplied || base.length > 0 ? markBaseAnnotationsApplied(composed) : composed;
+      return composed;
+    },
+    composeStory: composeStoryWithBase,
+    composeStories(storiesImport, globalConfig, composeStoryFn) {
+      return composeStoriesWith(
+        storiesImport,
+        globalConfig,
+        composeStoryFn ??
+          ((story, component, project, exportsName) =>
+            composeStoryWithBase(story, component, project, {}, exportsName))
+      );
+    },
+  };
+}
+
+/** The portable stories API without base annotations. */
+export const { setProjectAnnotations, composeStory, composeStories } = createPortableStories();
+
+function hasBaseAnnotationsApplied(entry: unknown): boolean {
+  if (!entry || typeof entry !== 'object') {
+    return false;
+  }
+  return (
+    BASE_ANNOTATIONS_APPLIED in entry ||
+    ('default' in entry && hasBaseAnnotationsApplied(entry.default))
+  );
+}
+
+function composeStoryWithDefaults<TRenderer extends Renderer = Renderer, TArgs extends Args = Args>(
   storyAnnotations: LegacyStoryAnnotationsOrFn<TRenderer>,
   componentAnnotations: ComponentAnnotations<TRenderer, TArgs>,
   projectAnnotations?: ProjectAnnotations<TRenderer>,
@@ -275,18 +365,15 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
   return composedStory;
 }
 
-const defaultComposeStory: ComposeStoryFn = (story, component, project, exportsName) =>
-  composeStory(story, component, project, {}, exportsName);
-
-export function composeStories<TModule extends Store_CSFExports>(
+function composeStoriesWith<TModule extends Store_CSFExports>(
   storiesImport: TModule,
   globalConfig: ProjectAnnotations<Renderer>,
-  composeStoryFn: ComposeStoryFn = defaultComposeStory
-) {
+  composeStoryFn: ComposeStoryFn
+): Record<string, ComposedStoryFn> {
   const { default: metaExport, __esModule, __namedExportsOrder, ...stories } = storiesImport;
   let meta = metaExport;
 
-  const composedStories = Object.entries(stories).reduce(
+  const composedStories = Object.entries(stories).reduce<Record<string, ComposedStoryFn>>(
     (storiesMap, [exportsName, story]: [string, any]) => {
       const { story: storyAnnotations, meta: componentAnnotations } =
         getCsfFactoryAnnotations(story);

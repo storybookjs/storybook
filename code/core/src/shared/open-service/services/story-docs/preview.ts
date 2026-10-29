@@ -9,17 +9,11 @@ import { storyDocsSourceBeforeEach } from './story-docs-source-before-each.ts';
 
 export type StoryDocsService = ServiceInstanceOf<typeof storyDocsServiceDef>;
 
-export default () => {
-  const useStaticServiceSnippets = getFeatures().docgenServer;
-
-  if (!useStaticServiceSnippets) {
-    return definePreviewAddon({});
-  }
-
-  return definePreviewAddon({
-    beforeAll: () => {
+export default definePreviewAddon({
+  beforeAll: () => {
+    if (getFeatures().docgenServer) {
       registerService(storyDocsServiceDef);
-    },
-    beforeEach: storyDocsSourceBeforeEach,
-  });
-};
+    }
+  },
+  beforeEach: storyDocsSourceBeforeEach,
+});

@@ -1,6 +1,6 @@
 import type { ChannelLike } from '@storybook/core/internal/channels';
 import { STORY_INDEX_INVALIDATED } from '@storybook/core/internal/core-events';
-import type { Presets } from '@storybook/core/internal/types';
+import { StorybookInstanceUnavailableError } from '@storybook/core/internal/server-errors';
 
 import { getInstanceContext, bindToInstance } from '../../../instance-context.ts';
 import { registerService } from '../../server.ts';
@@ -16,7 +16,7 @@ export type RegisterModuleGraphServiceOptions = {
   channel: ChannelLike;
   getIndex: ModuleGraphEngineOptions['getIndex'];
   workingDir?: string;
-  presets?: Presets;
+  getImportParsers?: ModuleGraphEngineOptions['getImportParsers'];
   getAdapter?: () => Promise<ChangeDetectionAdapter | null | undefined>;
   getChangeDetectionReadiness?: () => Promise<
     Exclude<ChangeDetectionReadinessResult, { status: 'pending' }>
@@ -39,36 +39,22 @@ function createAdapterDeferred(): AdapterDeferred {
 }
 
 /**
- * Deferred builder adapter. Open-service registration runs early in the dev-server boot, but the
- * preview builder that produces the {@link ChangeDetectionAdapter} is only ready later. The
- * dev-server resolves this once the adapter exists; the engine awaits it before building the graph.
- *
- * `resolveChangeDetectionAdapter` is exported directly (rather than wrapped in a helper) so the
- * dev-server can resolve the promise with one import.
+ * Hands the running instance's module graph its builder adapter. Open-service registration runs
+ * early in the dev-server boot, but the preview builder that produces the adapter is only ready
+ * later; the engine awaits it before building the graph.
  */
-let adapterDeferred = createAdapterDeferred();
-let adapterResolved = false;
-
 export function resolveChangeDetectionAdapter(
   adapter: ChangeDetectionAdapter | null | undefined
 ): void {
-  const resolve = getInstanceContext()?.state.get(INSTANCE_ADAPTER) as
+  const context = getInstanceContext();
+  if (!context) {
+    throw new StorybookInstanceUnavailableError({ reason: 'outside-instance' });
+  }
+  // Without a registered module graph there is nothing waiting for the adapter.
+  const resolve = context.state.get(INSTANCE_ADAPTER) as
     | ((adapter: ChangeDetectionAdapter | null | undefined) => void)
     | undefined;
-  if (resolve) {
-    resolve(adapter);
-    return;
-  }
-  if (adapterResolved) {
-    return;
-  }
-  adapterResolved = true;
-  adapterDeferred.resolve(adapter);
-}
-
-export function resetChangeDetectionAdapterForTests(): void {
-  adapterDeferred = createAdapterDeferred();
-  adapterResolved = false;
+  resolve?.(adapter);
 }
 
 /**
@@ -78,27 +64,25 @@ export function resetChangeDetectionAdapterForTests(): void {
  * or once the first `_waitForSettledEngine` call obtains one through
  * {@link RegisterModuleGraphServiceOptions.getAdapter}.
  *
- * The engine lives for the entire dev-server process, so there is no teardown path: the OS reclaims
- * everything when the process exits.
+ * Must run inside an instance; the engine closes with it.
  */
 export function registerModuleGraphService(options: RegisterModuleGraphServiceOptions) {
-  const workingDir = options.workingDir ?? process.cwd();
   const context = getInstanceContext();
-  const localAdapter = context ? createAdapterDeferred() : undefined;
+  if (!context) {
+    throw new StorybookInstanceUnavailableError({ reason: 'outside-instance' });
+  }
+  const workingDir = options.workingDir ?? context.workingDir;
+  const localAdapter = createAdapterDeferred();
   let localResolved = false;
   let closed = false;
-  const adapterPromise = localAdapter?.promise ?? adapterDeferred.promise;
+  const adapterPromise = localAdapter.promise;
   const resolveAdapter = (adapter: ChangeDetectionAdapter | null | undefined): void => {
-    if (localAdapter) {
-      if (!localResolved) {
-        localResolved = true;
-        localAdapter.resolve(adapter);
-      }
-    } else {
-      resolveChangeDetectionAdapter(adapter);
+    if (!localResolved) {
+      localResolved = true;
+      localAdapter.resolve(adapter);
     }
   };
-  context?.state.set(INSTANCE_ADAPTER, resolveAdapter);
+  context.state.set(INSTANCE_ADAPTER, resolveAdapter);
   let engine: ModuleGraphEngine | undefined = undefined;
   let engineStarted = false;
   let obtainAdapter: Promise<void> | undefined;
@@ -163,7 +147,7 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
   engine = new ModuleGraphEngine({
     getIndex: options.getIndex,
     workingDir,
-    presets: options.presets,
+    getImportParsers: options.getImportParsers,
     onSnapshot: (storiesByFile) => {
       void runtime.commands._applyGraphSnapshot({ storiesByFile });
     },
@@ -198,7 +182,7 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
   }
 
   async function ensureAdapter() {
-    if (localAdapter ? localResolved : adapterResolved) {
+    if (localResolved) {
       return;
     }
     const getAdapter = options.getAdapter;
@@ -221,7 +205,7 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
 
   const onInvalidated = bindToInstance(() => engine!.onStoryIndexInvalidated());
   options.channel.on(STORY_INDEX_INVALIDATED, onInvalidated);
-  context?.cleanups.add(async () => {
+  context.cleanups.add(async () => {
     closed = true;
     resolveAdapter(undefined);
     options.channel.off(STORY_INDEX_INVALIDATED, onInvalidated);

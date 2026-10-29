@@ -121,7 +121,6 @@ export {
 } from 'storybook/internal/services';
 export {
   buildStaticStandalone,
-  getBuilders,
   getEffectiveToolAvailability,
   getErrorLevel,
   getManifestStatus,
@@ -133,7 +132,6 @@ export {
   isAddonVitestEnabled,
   isModuleGraphSupported,
   isValidHost,
-  prepareHeadlessUniversalStores,
   resolveOnboardingInitialPath,
   resolveSkillInputs,
   sendTelemetryError,

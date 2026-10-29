@@ -1,7 +1,11 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
-import { getComponentIdFromEntry, groupBy } from '@storybook/core/internal/common';
+import {
+  getComponentIdFromEntry,
+  getCurrentWorkingDir,
+  groupBy,
+} from '@storybook/core/internal/common';
 import {
   type DocsManifestEntry,
   type DocsManifestRefEntry,
@@ -70,7 +74,7 @@ type DocBuilder = (
  * share one summary. It is omitted (like `content`) when the file cannot be read.
  */
 export async function createDocsManifestEntry(entry: DocsIndexEntry): Promise<MdxDocPayload> {
-  const absolutePath = path.join(process.cwd(), entry.importPath);
+  const absolutePath = path.join(getCurrentWorkingDir(), entry.importPath);
   try {
     const content = await fs.readFile(absolutePath, 'utf-8');
 

@@ -34,7 +34,6 @@ export const serverCoreServiceDefs = [
   storyDocsServiceDef,
   moduleGraphIndexServiceDef,
   moduleGraphServiceDef,
-  reviewServiceDef,
 ];
 /** Maps a list of service definitions to `{ [id]: instance }`, keyed by each definition's id. */
 type CoreServices<TDefs extends readonly AnyServiceDefinition[]> = {

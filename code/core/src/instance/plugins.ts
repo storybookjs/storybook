@@ -10,6 +10,7 @@ import type {
   Preset,
   ServerApp,
   StorybookConfig as LegacyConfig,
+  StorybookFeatures,
 } from '@storybook/core/internal/types';
 
 import type { ChangeDetectionAdapter } from '../shared/open-service/services/module-graph/engine/adapters/types.ts';
@@ -19,6 +20,9 @@ import type { Storybook } from './types.ts';
 
 /** Brand a plugin factory with its kind so `<pkg>/node` default exports load natively. */
 export const PLUGIN_FACTORY = Symbol.for('storybook.plugin-factory');
+
+/** Hold the options a branded factory was called with, so duplicate entries can be compared. */
+export const PLUGIN_OPTIONS = Symbol.for('storybook.plugin-options');
 
 /** Describe the metadata supplied by a plugin factory. */
 export interface PluginMetaInput {
@@ -37,8 +41,10 @@ export interface StorybookPlugin<TTypes = unknown> {
   /** Carry preview-facing types for inference; never assign at runtime. */
   readonly types?: TTypes;
   meta: PluginMeta;
-  /** Locate the manager entry, relative to the package root for built-in addons. */
+  /** Locate the manager entry as an absolute path. */
   manager?: string;
+  /** Feature defaults applied before setup, at this plugin's position and before `main.ts`. */
+  features?: Partial<StorybookFeatures>;
   setup(storybook: Storybook): void | Promise<void>;
 }
 
@@ -263,5 +269,7 @@ function brand<T extends (options: never) => StorybookPlugin<unknown>>(
   kind: PluginMeta['kind'],
   factory: T
 ): T {
-  return Object.assign(factory, { [PLUGIN_FACTORY]: kind });
+  const branded = ((options: never) =>
+    Object.defineProperty(factory(options), PLUGIN_OPTIONS, { value: options })) as T;
+  return Object.assign(branded, { [PLUGIN_FACTORY]: kind });
 }

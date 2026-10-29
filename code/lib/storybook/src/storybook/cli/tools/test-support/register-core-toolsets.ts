@@ -16,8 +16,9 @@ import type { StoryIndex } from '@storybook/core/internal/types';
 import { clearToolsetRegistry, registerToolset } from '@storybook/core/open-service';
 import { emptyManifests, type DocsAccess } from '@storybook/core/internal/services';
 import { createDocsToolset } from '@storybook/core/internal/services';
-import { reviewToolset } from '@storybook/core/internal/services';
 import { createStoriesToolset } from '@storybook/core/internal/services';
+
+import { reviewToolset } from '../../../../features/review/toolset.ts';
 
 const EMPTY_INDEX: StoryIndex = { v: 5, entries: {} };
 

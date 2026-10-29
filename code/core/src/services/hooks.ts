@@ -25,6 +25,8 @@ export interface ServiceHooks {
   'core:story-render:extend': Reduce<
     (value: StoryRenderAccess | undefined, ctx?: HookContext) => StoryRenderAccess | undefined
   >;
+  /** The dev server's preview builder started and handed the module graph its adapter. */
+  'core:preview-builder:ready': Notify<(value: void, ctx?: HookContext) => void>;
 }
 
 declareHooks({
@@ -34,4 +36,5 @@ declareHooks({
   'core:import-parsers:collect': 'collect',
   'core:docgen-enabled:extend': 'reduce',
   'core:story-render:extend': 'reduce',
+  'core:preview-builder:ready': 'notify',
 });

@@ -1,4 +1,5 @@
 import {
+  getCurrentWorkingDir,
   getStoryImportPathFromEntry,
   selectComponentEntriesByComponentId,
 } from '@storybook/core/internal/common';
@@ -10,7 +11,10 @@ import {
   type DocgenEngine,
   buildReactComponentDocgenFromResolved,
 } from './buildReactComponentDocgen.ts';
-import { getSharedComponentMetaManager } from './componentMetaManagerSingleton.ts';
+import {
+  createComponentMetaManager,
+  getInstanceComponentMetaManager,
+} from './componentMetaManagerSingleton.ts';
 import { type ComponentRef, type TypescriptOptions } from './getComponentImports.ts';
 import { invalidateParser } from './reactDocgenTypescript.ts';
 import { resolveStoryFileComponents } from './resolveComponents.ts';
@@ -56,8 +60,6 @@ export async function buildManifests(
   invalidateParser();
 
   const startTime = performance.now();
-  const manager =
-    docgenEngine === 'react-component-meta' ? await getSharedComponentMetaManager() : undefined;
 
   const entriesByUniqueComponent = [
     ...selectComponentEntriesByComponentId(manifestEntries).values(),
@@ -70,7 +72,7 @@ export async function buildManifests(
       if (!storyFilePath) {
         throw new Error(`No story file path for index entry ${entry.id}`);
       }
-      const storyPath = path.join(process.cwd(), storyFilePath);
+      const storyPath = path.join(getCurrentWorkingDir(), storyFilePath);
       const resolved = await resolveStoryFileComponents({
         storyPath,
         title: entry.title,
@@ -82,8 +84,13 @@ export async function buildManifests(
   );
 
   // Step 2: Batch extract rcm props (one TS program build per tsconfig project)
-  if (docgenEngine === 'react-component-meta' && manager) {
-    manager.batchExtract(
+  const instanceManager =
+    docgenEngine === 'react-component-meta' ? getInstanceComponentMetaManager() : undefined;
+  // Without an instance there is no owner to keep the programs hot, so this build disposes its own.
+  const ownsManager = docgenEngine === 'react-component-meta' && !instanceManager;
+  const manager = ownsManager ? await createComponentMetaManager() : await instanceManager;
+  try {
+    manager?.batchExtract(
       resolvedEntries.flatMap(({ storyPath, component, subcomponents }) => [
         ...(component ? [{ storyPath, component }] : []),
         ...subcomponents
@@ -97,6 +104,10 @@ export async function buildManifests(
           })),
       ])
     );
+  } finally {
+    if (ownsManager) {
+      manager?.dispose();
+    }
   }
 
   // Step 3: Build manifests
@@ -132,7 +143,7 @@ export async function buildManifests(
 
   // Start watching AFTER extraction — projects and TS programs are now populated,
   // so watchProgramSourceDirs() can discover all source file directories.
-  if (manager && watch) {
+  if (manager && watch && !ownsManager) {
     manager.startWatching();
   }
 

@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from '@storybook/core/internal/node-logger';
 
+import { instanceContext } from '../../../../instance/instance-context.ts';
+import type { InstanceContext } from '../../../instance-context.ts';
 import type { Options } from '../../../../types/modules/core-common.ts';
 import type { IndexEntry } from '../../../../types/modules/indexer.ts';
 import { createWorkerGatedStoryDocsProvider } from './provider.ts';
@@ -35,15 +37,16 @@ const entryFor = (importPath: string): IndexEntry => ({
   importPath,
 });
 
-const optionsWith = (workers: string[]): Options =>
-  ({
-    presets: {
-      apply: async <T>(key: string, fallback: T): Promise<T> =>
-        key === 'experimental_docgenProvider'
-          ? (workers.map((moduleSpecifier) => ({ moduleSpecifier })) as T)
-          : fallback,
-    },
-  }) as Options;
+/** Run inside an instance whose plugins registered these docgen workers. */
+const withWorkers = <T>(workers: string[], run: () => T): T =>
+  instanceContext.run(
+    {
+      storybook: {
+        callHook: async () => workers.map((moduleSpecifier) => ({ moduleSpecifier })),
+      },
+    } as unknown as InstanceContext,
+    run
+  );
 
 beforeEach(() => {
   vi.mocked(logger.debug).mockImplementation(() => {});
@@ -58,7 +61,9 @@ describe('createWorkerGatedStoryDocsProvider', () => {
       build: async () => OURS,
     });
 
-    await expect(preset(next, optionsWith(['/other/docgen-worker.js']))).resolves.toBe(next);
+    await expect(
+      withWorkers(['/other/docgen-worker.js'], () => preset(next, {} as Options))
+    ).resolves.toBe(next);
   });
 
   it.each<{
@@ -100,7 +105,9 @@ describe('createWorkerGatedStoryDocsProvider', () => {
       storyFileTest,
       build,
     });
-    const provider = await preset(async () => DOWNSTREAM, optionsWith([WORKER]));
+    const provider = await withWorkers([WORKER], () =>
+      preset(async () => DOWNSTREAM, {} as Options)
+    );
 
     await expect(provider({ entry: entryFor(importPath) })).resolves.toEqual(expected);
   });
@@ -113,7 +120,9 @@ describe('createWorkerGatedStoryDocsProvider', () => {
         throw new Error('parse failed');
       },
     });
-    const provider = await preset(async () => DOWNSTREAM, optionsWith([WORKER]));
+    const provider = await withWorkers([WORKER], () =>
+      preset(async () => DOWNSTREAM, {} as Options)
+    );
 
     await expect(provider({ entry: entryFor('./Button.stories.ts') })).resolves.toBe(DOWNSTREAM);
     expect(logger.debug).toHaveBeenCalledWith(

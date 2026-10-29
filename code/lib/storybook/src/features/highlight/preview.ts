@@ -1,16 +1,19 @@
 /* eslint-env browser */
 import { definePreviewAddon } from 'storybook/internal/csf';
 
-import { addons } from '@storybook/core/preview-api';
+import { addons, getFeatures } from '@storybook/core/preview-api';
 
-import { getFeatures } from '@storybook/core/preview-api';
 import type { HighlightTypes } from './types.ts';
 import { useHighlights } from './useHighlights.ts';
 
-if (getFeatures().highlight && addons?.ready) {
-  addons.ready().then(useHighlights);
-}
-
 export type { HighlightTypes };
 
-export default () => definePreviewAddon<HighlightTypes>({});
+export default definePreviewAddon<HighlightTypes>({
+  beforeAll: () => {
+    if (!getFeatures().highlight) {
+      return;
+    }
+    // Not awaited: the channel is only ready in a browser preview, never in portable stories.
+    void addons?.ready?.().then(useHighlights);
+  },
+});

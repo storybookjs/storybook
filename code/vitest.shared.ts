@@ -44,7 +44,7 @@ export const splitPackagesSourceAliases: Alias[] = [
 /**
  * `storybook/*` keys that `storybook` only re-exports, resolved straight to the owning package in
  * tests, so a mock of `storybook/internal/node-logger` is also the module core's own code imports,
- * as before the split. Keys whose product file adds behavior (annotation composition, the
+ * as before the split. Keys whose product file adds behavior (annotation composition, the review toolset, the
  * `experimental_loadStorybook` wrapper) or that the product owns keep resolving to `storybook`.
  */
 const PRODUCT_BEHAVIOR_KEYS = new Set([
@@ -54,6 +54,7 @@ const PRODUCT_BEHAVIOR_KEYS = new Set([
   './internal/csf',
   './internal/instance',
   './internal/preview-page',
+  './internal/services',
 ]);
 const storybookReExportAliases: Alias[] = SPLIT_PACKAGES.flatMap(([name, , config]) =>
   Object.values(config.entries).flatMap((entries) =>

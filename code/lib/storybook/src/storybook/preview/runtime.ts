@@ -8,9 +8,7 @@ import { global } from '@storybook/global';
 import { globalPackages, globalsNameReferenceMap } from '@storybook/core/internal/preview/globals';
 import { maybeSetupPreviewNavigator } from '@storybook/core/internal/deep/preview/preview-navigator';
 import { prepareForTelemetry } from '@storybook/core/internal/deep/preview/utils';
-import { setCoreAnnotations } from '@storybook/core/internal/csf';
 
-import { getCoreAnnotations } from '../../features/annotations.ts';
 import { globalsNameValueMap } from './preview-globals-runtime.ts';
 
 function setInert(inert: boolean) {
@@ -35,9 +33,6 @@ function unhandledRejectionListener({ reason }: any) {
 }
 
 export function setup() {
-  // In `setup`, which builders call, so tree-shaking cannot drop the registration.
-  setCoreAnnotations(getCoreAnnotations);
-
   // Apply all the globals
   globalPackages.forEach((key) => {
     (global as any)[globalsNameReferenceMap[key]] = globalsNameValueMap[key];

@@ -42,6 +42,7 @@ String addons in `main.ts` load `<pkg>/node` the same way when the package has o
 Official packages ship no preset; `resolveNativeFactory` maps their old `<pkg>/preset*` and `<pkg>/server/framework-preset-*` specifiers to `<pkg>/node` with a deprecation warning, and the compat preset loader does the same for entries nested in third-party presets.
 Renderers keep `./preset` as an exact alias of `./node`, because third-party frameworks still resolve `<renderer>/preset`.
 `scripts/check/check-no-preset.ts` (run by `scripts/check/check-package.ts`) fails when an official package ships any other preset.
+`scripts/check/check-no-presets-apply.ts`, run the same way, fails on `presets.apply` outside the compat layer; call `storybook.callHook` instead.
 Legacy presets (`<pkg>/preset`) remain for third-party packages that have no native entry; core bridges them with `legacyPreset`.
 
 ## Core packages
@@ -71,7 +72,7 @@ Each package README owns that package's contents, import rules, and entries.
 - Addon postinstall scripts stay on `storybook/*`, because they run inside end-user CLIs.
 - Frameworks, renderers, builders, and presets import their Node side (`node`, builder server code, docgen and indexers) from `@storybook/core/*`.
   They depend on `@storybook/core` at `workspace:*` and peer `storybook` as optional, so a project can run them with `@storybook/core` alone.
-  Their browser side stays on `storybook/*`: the product's `preview-api` and `internal/csf` add the built-in feature annotations.
+  Their browser side stays on `storybook/*`: the product's `preview-api` composes the built-in feature annotations, and their `definePreview` adds `storybook/internal/preview/built-in-annotations`.
 - Product-owned entries stay on `storybook/*`: `storybook/internal/{server,skills,cli}`, `getPreviewSources` from `storybook/internal/preview-page`, and `createStorybook` from `storybook/internal/instance`.
   A package that needs one to run keeps `storybook` required (the Angular frameworks).
   Otherwise it imports the entry lazily and throws `StorybookPackageRequiredError` when `storybook` is missing (the builders' headless change detection).

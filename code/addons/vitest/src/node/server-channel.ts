@@ -1,6 +1,7 @@
 import type { Channel } from '@storybook/core/internal/channels';
 import { getFrameworkNameFromConfig } from '@storybook/core/internal/common';
 import { logger } from '@storybook/core/internal/node-logger';
+import { internal_UniversalStore } from '@storybook/core/internal/services';
 import {
   cleanPaths,
   oneWayHash,
@@ -17,9 +18,8 @@ import { dedent } from 'ts-dedent';
 import { STORE_CHANNEL_EVENT_NAME, STORYBOOK_ADDON_TEST_CHANNEL } from '../constants.ts';
 import { log } from '../logger.ts';
 import type { StoreState } from '../types.ts';
-import { runTestRunner, sendStoryIndexToTestRunner } from './boot-test-runner.ts';
 import type { TestRunnerHost } from './host.ts';
-import { ensureTestRunnerStore, resolvePreviewBuilderName } from './test-run-responder.ts';
+import { resolvePreviewBuilderName, type TestRunnerRuntime } from './test-run-responder.ts';
 
 type Event =
   | {
@@ -40,7 +40,8 @@ type Event =
 export async function wireTestServerChannel(
   storybook: TestRunnerHost,
   channel: Channel,
-  { enableCrashReports: enableCrashReportsOption }: { enableCrashReports?: boolean }
+  { enableCrashReports: enableCrashReportsOption }: { enableCrashReports?: boolean },
+  runtime: TestRunnerRuntime
 ): Promise<void> {
   const core = await storybook.callHook('core:config:extend', undefined);
 
@@ -65,11 +66,11 @@ export async function wireTestServerChannel(
     (core.builder?.options?.configLoader as BuilderOptions['configLoader']);
 
   // The services hook answers run requests lazily; the manager needs the store right away.
-  const store = await ensureTestRunnerStore({ channel, storybook });
+  const store = await runtime.ensureStore(channel);
 
   const storyIndexGenerator = await storybook.getStoryIndexGenerator();
   const refreshTestRunnerStoryIndex = () =>
-    sendStoryIndexToTestRunner(storyIndexGenerator).catch((error) => {
+    runtime.runner.sendStoryIndex(storyIndexGenerator).catch((error) => {
       logger.debug('Failed to send the story index to the test runner, Error:');
       logger.debug(error);
     });
@@ -89,11 +90,11 @@ export async function wireTestServerChannel(
       },
     }));
     if (event.payload.to) {
-      runTestRunner({
+      runtime.runner.run({
         channel,
         store,
         initEvent: STORE_CHANNEL_EVENT_NAME,
-        initArgs: [{ event, eventInfo }],
+        initArgs: [internal_UniversalStore.eventMessage(event, eventInfo)],
         storybook,
         configLoader: configLoader || undefined,
       });

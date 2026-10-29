@@ -4,35 +4,34 @@ import * as find from 'empathic/find';
 import * as walk from 'empathic/walk';
 import { globSync } from 'tinyglobby';
 
+import { getInstanceContext } from '../../shared/instance-context.ts';
 import { LOCK_FILES } from '../js-package-manager/constants.ts';
 
-let projectRoot: string | undefined;
+const PROJECT_ROOT = Symbol.for('storybook.instance.project-root');
 
-export const getProjectRoot = () => {
-  if (projectRoot) {
-    return projectRoot;
-  }
+/** The running instance's working directory, or `process.cwd()` outside an instance. */
+export const getCurrentWorkingDir = (): string => getInstanceContext()?.workingDir ?? process.cwd();
 
+/** Finds the project root above `cwd` without caching, for code that has no instance. */
+export const findProjectRoot = (cwd: string = process.cwd()): string => {
   // Allow manual override in cases where auto-detect doesn't work
   if (process.env.STORYBOOK_PROJECT_ROOT) {
     return process.env.STORYBOOK_PROJECT_ROOT;
   }
 
   try {
-    const found = find.up('.git') || find.up('.svn') || find.up('.hg');
+    const found = find.up('.git', { cwd }) || find.up('.svn', { cwd }) || find.up('.hg', { cwd });
     if (found) {
-      projectRoot = join(found, '..');
-      return projectRoot;
+      return join(found, '..');
     }
   } catch (e) {
     process.stdout.write(`\nerror searching for repository root: ${e}\n`);
   }
 
   try {
-    const found = find.any(LOCK_FILES);
+    const found = find.any(LOCK_FILES, { cwd });
     if (found) {
-      projectRoot = join(found, '..');
-      return projectRoot;
+      return join(found, '..');
     }
   } catch (e) {
     process.stdout.write(`\nerror searching for lock file: ${e}\n`);
@@ -43,25 +42,39 @@ export const getProjectRoot = () => {
     if (
       rest &&
       !basePath.includes(`${sep}npm-cache${sep}`) &&
-      !relative(basePath, process.cwd()).startsWith('..')
+      !relative(basePath, cwd).startsWith('..')
     ) {
-      projectRoot = basePath;
-      return projectRoot;
+      return basePath;
     }
   } catch (e) {
     process.stdout.write(`\nerror searching for splitDirname: ${e}\n`);
   }
 
-  projectRoot = process.cwd();
-  return projectRoot;
+  return cwd;
 };
 
-export const invalidateProjectRootCache = () => {
-  projectRoot = undefined;
+/** The running instance's project root, cached on the instance; found from `process.cwd()` outside one. */
+export const getProjectRoot = (): string => {
+  const context = getInstanceContext();
+  if (!context) {
+    return findProjectRoot();
+  }
+  if (!context.state.has(PROJECT_ROOT)) {
+    context.state.set(PROJECT_ROOT, findProjectRoot(context.workingDir));
+  }
+  return context.state.get(PROJECT_ROOT) as string;
+};
+
+/** Forgets the running instance's cached project root. */
+export const invalidateProjectRootCache = (): void => {
+  getInstanceContext()?.state.delete(PROJECT_ROOT);
 };
 
 /** Finds files in the directory tree up to the project root */
-export const findFilesUp = (matchers: string[], baseDir = process.cwd()) => {
+export const findFilesUp = (
+  matchers: string[],
+  baseDir: string = getCurrentWorkingDir()
+): string[] => {
   const matchingFiles: string[] = [];
   for (const directory of walk.up(baseDir, { last: getProjectRoot() })) {
     matchingFiles.push(...globSync(matchers, { cwd: directory, absolute: true }));

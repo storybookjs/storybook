@@ -1,0 +1,9 @@
+{
+  "name": "fixture-legacy-addon",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json",
+    "./preset": "./preset.js"
+  }
+}

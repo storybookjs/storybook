@@ -9,8 +9,8 @@ import type { StoreOptions } from './types.ts';
  * A mock universal store that can be used when testing code that relies on a universal store. It
  * functions exactly like a normal universal store, with a few exceptions:
  *
- * - It is fully isolated, meaning that it doesn't interact with any channel, and it is always a
- *   leader.
+ * - It is fully isolated, meaning that it doesn't interact with any shared channel, and it is always
+ *   the owner of its state.
  *
  * If the second testUtils argument is provided, all the public methods are spied on, so they can be
  * asserted.
@@ -44,12 +44,7 @@ export class MockUniversalStore<
   private testUtils;
 
   public constructor(options: StoreOptions<State>, testUtils?: any) {
-    UniversalStore.isInternalConstructing = true;
-    super(
-      { ...options, leader: true },
-      { channel: new Channel({}), environment: UniversalStore.Environment.MOCK }
-    );
-    UniversalStore.isInternalConstructing = false;
+    super({ ...options, owner: true, channel: new Channel({}) });
 
     if (typeof testUtils?.fn !== 'function') {
       return;

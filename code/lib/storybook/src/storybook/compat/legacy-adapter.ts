@@ -36,6 +36,8 @@ export const legacyAdapter: LegacyAdapter = {
       (plugin) => plugin.meta.kind === 'framework' && 'builder' in plugin
     );
     const rendererPresets: PresetConfig[] = [];
+    // Plugins set up outside `plugins`, which nested preset entries must not set up again.
+    const setUp: StorybookPlugin[] = [];
     let builder: BuilderPlugin | undefined;
     let discovery: Awaited<ReturnType<typeof loadAllPresets>> | undefined;
     if (!nativeFramework || storybook.mode === 'build') {
@@ -66,8 +68,10 @@ export const legacyAdapter: LegacyAdapter = {
         core.renderer &&
         (await registrar.resolveNativeFactory(core.renderer, 'renderer', options.configDir));
       if (nativeRenderer) {
+        const renderer = nativeRenderer(undefined);
         // Registers where the renderer preset would load, before the framework preset.
-        rendererPresets.push(registrar.virtualPreset(nativeRenderer(undefined)));
+        rendererPresets.push(registrar.virtualPreset(renderer));
+        setUp.push(renderer);
       } else if (core.renderer) {
         const resolvedRenderer = resolveAddonName(options.configDir, core.renderer, options);
         if (resolvedRenderer) {
@@ -133,7 +137,7 @@ export const legacyAdapter: LegacyAdapter = {
         presetsList = loaded;
         presetOptions = context;
       },
-      createNativePresetResolver(registrar, options.configDir, plugins)
+      createNativePresetResolver(registrar, options.configDir, [...plugins, ...setUp])
     );
     return { presets: presetsList, options: presetOptions, builder };
   },

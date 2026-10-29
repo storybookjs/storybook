@@ -1,4 +1,4 @@
-import type { Options } from '@storybook/core/internal/types';
+import type { Storybook } from '@storybook/core';
 
 export type ManifestFeatures = {
   componentsManifest?: boolean;
@@ -24,7 +24,9 @@ export type ManifestStatus = {
   docgenServer: boolean;
 };
 
-export const getManifestStatus = async (options: Options): Promise<ManifestStatus> => {
+export const getManifestStatus = async (
+  storybook: Pick<Storybook, 'callHook'>
+): Promise<ManifestStatus> => {
   const [
     features,
     manifests,
@@ -32,11 +34,9 @@ export const getManifestStatus = async (options: Options): Promise<ManifestStatu
     // Should be removed once support for Storybook version < 10.2.0 is dropped
     legacyComponentManifestGenerator,
   ] = await Promise.all([
-    options.presets.apply('features') as any,
-    options.presets.apply('experimental_manifests', undefined, {
-      manifestEntries: [],
-    }),
-    options.presets.apply('experimental_componentManifestGenerator'),
+    storybook.callHook('core:features:extend', undefined),
+    storybook.callHook('index:manifests:extend', undefined, { manifestEntries: [] }),
+    storybook.callHook('index:component-manifest-generator:extend', undefined),
   ]);
 
   const hasFeatureFlag = hasComponentManifestFeature(features);

@@ -78,16 +78,23 @@ interface Storybook {
 
 - `CreateStorybookInput` accepts `attach?: { transport: ChannelTransport }` in `mode: 'headless'`.
 - The transport joins the instance's own channel.
-- `storybook.attached` is `true`, commands delegate to the running Storybook, and UniversalStores are followers.
+- `storybook.attached` is `true`, commands delegate to the running Storybook, and its stores are clients of the dev server's.
 - Other instances have `attached: false`.
 - Attachment with `mode: 'dev'` or `'build'` throws.
 
-### UniversalStore realm
+### Stores
 
-- Each instance owns a UniversalStore realm with its channel, environment, and store inventory.
-- Stores capture that realm when created, so later calls keep using their owning channel.
-- Close disconnects every store in the realm and clears its inventory.
-- Calls outside an instance keep using the default realm.
+- A store (`storybook/status`, `storybook/test-provider`, `storybook/test`, `storybook/checklist`) has one owner and any number of clients on one channel event, `UNIVERSAL_STORE:<id>`.
+- The owner holds the state and answers state requests; clients route writes and events through it and apply what it broadcasts.
+- The instance creates the status and test-provider stores on its channel when it is created, and disposes them on close (`services/stores/core-stores.ts`).
+  - A dev, build, or headless instance owns them; an attached instance is a client of the dev server's.
+  - `experimental_getStatusStore` and `experimental_getTestProviderStore` from `storybook/internal/services` read the current instance's stores and throw outside one.
+- The `storybook/checklist` built-in owns its store on the instance channel and disposes it on close; an attached instance creates none.
+- Addon-vitest's `storybook/test` store is owned by the instance's test runner runtime and disposed with it.
+- The Vitest child creates clients of all three over its IPC channel; the runner bridges owner messages to it and its messages to the owner.
+- In the browser, the manager's stores are clients on the page channel, or owners in a static build, which has no server.
+- A store created without a channel uses the current instance's channel and is disposed on close; outside an instance in Node it stays unprepared.
+- No realm, inventory, or election: who owns a store is decided where it is created.
 
 ## Plugins
 
@@ -122,6 +129,11 @@ const storybook = await createStorybook({
   - builder, renderer, framework defaults, framework, built-in addons, then user addons;
   - renderer contributions precede framework contributions;
   - a framework's addons load before the framework, as a legacy framework preset's `addons` did.
+- Each plugin sets up once per `meta.name` (`dedupe-plugins.ts`), across built-ins, framework addons, and `main.addons`:
+  - the first occurrence keeps its position;
+  - a later entry with options replaces an earlier one without, so `'pkg'` plus `pkg({ ... })` keeps the configured one;
+  - entries with different options keep the first and log a warning.
+  - Options come from branded factories, which record them on the plugin, or from a legacy `{ name, options }` entry.
 - A framework string or `{ name, options }` entry loads natively when its package has a native factory, called with `options`.
   - `storybook.options.framework` keeps the user's value.
   - `resolveNativeFactory` resolves `<name>/node` from the config directory.
@@ -253,6 +265,10 @@ Official plugin packages ship a native `<pkg>/node` entry and no preset.
 - The adapter returns the loaded preset list for core to bridge; without an adapter, core throws `LegacyAdapterMissingError`.
 - The product's adapter lives in `lib/storybook/src/storybook/compat/`, which only `storybook/instance.ts`, the shims, and tests may import.
 - `storybook.presets.apply` invokes the mapped instance hook.
+- Only the compat layer may call `presets.apply`: `legacy-hooks.ts`, `legacy-preset.ts`, and `lib/storybook/src/storybook/compat/`.
+  - Other code reads through `storybook.callHook` or the instance API; outside an instance it throws instead of falling back to presets.
+  - [`check-no-presets-apply.ts`](../../../../scripts/check/check-no-presets-apply.ts) enforces it for every package, run by `check-package.ts`.
+  - `compat/options.ts` keeps `getBuilderOptions`, `getFrameworkName`, and `getRendererName`, which third-party frameworks and builders import from `storybook/internal/common`.
 - See [Legacy bridge](./HOOKS.md#legacy-bridge) for loading passes and merge rules.
 
 ## Common plugin and features
@@ -261,10 +277,22 @@ Official plugin packages ship a native `<pkg>/node` entry and no preset.
 - Without one, core sets up its own (`common-plugin.ts`: CSF indexer, `features`, services), which the product's common plugin extends.
 - Core registers its own final adjustments to `features`, `framework`, `stories`, `typescript`, and `build` as `'override'` hooks (`common-overrides.ts`).
 - Core applies `main.ts` itself and does not resolve product files by path.
-- `features/index.ts` in `storybook` owns the ordered built-in addon list and preview composition.
-  - The public instance entry injects that list into the core constructor.
-  - A headless host without `storybook` passes no options: core uses only its own addons (docgen, story-docs) and its common plugin, which is enough for the index and the docs toolset.
-- The CSF runtime entry under `storybook/preview/` injects the annotation factory into core; feature types augment the core annotation contract.
+- `features/index.ts` in `storybook` owns the ordered built-in addon list, the product flag defaults (`FEATURE_DEFAULTS`), and the flag of each switchable built-in.
+  - The public instance entry injects the list into the core constructor.
+  - A headless host without `storybook` passes no options: core uses only its own addons (docgen, story-docs, change detection) and its common plugin, which is enough for the index, the docs toolset, and change-detection statuses.
+- Presence is the switch: a built-in left out of the list contributes nothing.
+- Every listed built-in sets up; flags keep their pre-addon meaning and are read when a contribution is collected, so any flag source works.
+  - A `false` UI flag drops only the built-in's manager entry; its preview annotations and server hooks stay.
+  - Backgrounds, measure, outline, and highlight also skip their decorator or listener in the preview unless their flag is on, so portable stories (no `FEATURES`) run without them, as in base.
+  - The components-manifest built-in serves `/manifests/*` and writes `manifests/` only while `componentsManifest` is on.
+- Built-ins contribute like any addon: `manager` for the manager entry, `preview:annotations:collect` for preview annotations, `server:*` hooks for routes and static output.
+  - Their hooks register before the framework, renderer, and `main.ts` addons, where core's presets used to run.
+  - Core's built-ins (test, ghost stories, docgen, story-docs) take their entry paths as options, so core never resolves product files.
+  - Review is a `storybook` built-in (`features/review/`); core keeps only the cross-realm contract the manager UI shares with it: the `core/review` service definition, its state transitions, events, and routes.
+- `components-manifest` is a built-in: it serves `/manifests/*` through `server:app:extend` and writes `manifests/` through `server:static-output:collect`.
+  - Renderers and `@storybook/addon-mcp` turn it on with a static `features: { componentsManifest: true }`.
+  - `loadManifests` stays in core for the docs toolset.
+- Preview annotations reach the page and addon-vitest only through `preview:annotations:collect`; core has no annotation registry.
 - Core never imports the feature implementations.
 - Node setup implementations use conditional package imports so browser annotation composition does not load server services.
 - Resolved features:
@@ -277,14 +305,22 @@ Official plugin packages ship a native `<pkg>/node` entry and no preset.
 Per-instance state is isolated; these remain shared:
 
 - Core's own services are registered with ids under `core/` and require `internal: true`.
-- Outside an instance, channel and registry globals keep their old role for preview, manager, and legacy consumers, as do the legacy services guards and the generator singleton.
+- Outside an instance, channel and registry globals keep their old role for preview, manager, and legacy consumers, as do the legacy services guards.
+  - The service registry fallback is the browser realm registry; Node code registers on its instance.
+  - No fallback for the toolset registry, the story index generator, readiness, dev-server subscriptions, the module graph, or the server's status and test-provider stores: they throw `StorybookInstanceUnavailableError` outside an instance.
+  - The browser's stores wait for the page channel (`whenChannelInstalled`); there is no store realm on either side.
+  - Toolset callers outside an instance go through one: `storybook.toolsets`, `runWithStorybook`, or the instance a `createTools` host owns. Tests use `useTestInstance()`.
+- Node state lives on the instance: the project root, the MCP server, the status and test-provider stores, the Vitest child and its store, and the React component-meta manager.
+  - `getProjectRoot()` caches per instance from its `workingDir`; outside an instance `findProjectRoot(cwd)` is uncached.
+  - `scripts/check/check-no-node-globals.ts` rejects module-level `let`/`var` and `FALLBACK_*` in instance, services, toolset, store, open-service SDK, and addon Node code.
+- Hook strategy declarations are process-wide static metadata; handlers stay on each instance.
 - Open-service load bookkeeping and runtime IDs are module-wide.
   - Loads have distinct runtime keys; the synchronous dependency-discovery session is restored after each handler call.
-- Module imports, the TypeScript loader, common path and config caches, and legacy plugin singletons are process-wide.
+- Module imports, the TypeScript loader, common config caches, and legacy plugin singletons are process-wide.
   - Node lets concurrent setups import the same preset or plugin entry safely.
   - Vitest's module runner can hand one instance the unfinished exports of a module another instance is still evaluating, so the shared Vitest config loads built presets and native plugin entries through Node.
 - Legacy presets can own resources or globals with no teardown contract; the instance cannot dispose those safely.
-  - React component-meta providers, for example, can start shared filesystem watchers.
+  - React docgen parser and manifest caches are module-wide, reset per build and on close.
   - The bridge does not make arbitrary old addon implementations safe for concurrent projects.
   - Legacy presets that read `process.cwd()` see the host process's directory.
 - Telemetry enablement, queued events, metadata, and error handlers are process-wide.
@@ -294,8 +330,8 @@ Per-instance state is isolated; these remain shared:
 ## Close
 
 - Close first notifies `core:instance:close`.
-- It then disconnects owned services, clears toolsets, hooks, and channel listeners, stops owned graph subscriptions and docgen workers, and disposes a local change-detection host if one was started.
-- It does not reset the fallback registries or the default realm.
+- It then disconnects owned services and stores, clears toolsets, hooks, and channel listeners, stops owned graph subscriptions and docgen workers, and disposes a local change-detection host if one was started.
+- Plugins close what they own: the MCP server state, the Vitest child process, and the React component-meta manager.
 - Hosts dispose their preview compiler and transport.
 - The Vitest plugin owns a headless instance and closes it in `closeBundle`.
 
@@ -318,7 +354,7 @@ code/lib/open-service/src/      @storybook/open-service: the open-service client
 code/lib/storybook/src/         storybook
   storybook/   server, cli (including tools), bin, compat, and preview runtime
   features/    actions, backgrounds, controls, highlight, measure, outline, toolbar, viewport,
-               and component-testing
+               component-testing, and components-manifest
   shims/       one file per public `storybook/*` entry
 ```
 

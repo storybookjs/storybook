@@ -53,11 +53,6 @@
       "code": "./src/shared/open-service/services/review/manager.tsx",
       "default": "./dist/shared/open-service/services/review/manager.js"
     },
-    "./internal/deep/shared/open-service/services/review/node": {
-      "types": "./dist/shared/open-service/services/review/node.d.ts",
-      "code": "./src/shared/open-service/services/review/node.ts",
-      "default": "./dist/shared/open-service/services/review/node.js"
-    },
     "./internal/deep/shared/viewport/useViewport": {
       "types": "./dist/shared/viewport/useViewport.d.ts",
       "code": "./src/shared/viewport/useViewport.ts",

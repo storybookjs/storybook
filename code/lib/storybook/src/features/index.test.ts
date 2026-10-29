@@ -1,44 +1,25 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import {
-  getCoreAnnotations,
-  hasCoreAnnotations,
-  markAsComposedWithCoreAnnotations,
-} from './annotations.ts';
-import { builtInAddons } from './index.ts';
+import type { StorybookFeatures } from '@storybook/core/internal/types';
 
-afterEach(() => vi.restoreAllMocks());
+import { FEATURE_DEFAULTS, builtInAddons, isManagerEnabled } from './index.ts';
 
-describe('core annotations marker', () => {
-  it('marks an object as composed with core annotations', () => {
-    const annotations = { decorators: [] };
-    expect(hasCoreAnnotations(annotations)).toBe(false);
+const MANAGERS_ON_BY_DEFAULT = [
+  'storybook/measure',
+  'storybook/backgrounds',
+  'storybook/outline',
+  'storybook/viewport',
+  'storybook/actions',
+  'storybook/component-testing',
+  'storybook/docgen',
+  'storybook/review',
+  'storybook/controls',
+];
 
-    const marked = markAsComposedWithCoreAnnotations(annotations);
-    expect(marked).toBe(annotations);
-    expect(hasCoreAnnotations(annotations)).toBe(true);
-  });
-
-  it('uses a non-enumerable marker so it is not copied by object spread', () => {
-    const marked = markAsComposedWithCoreAnnotations({ decorators: [] });
-
-    expect(Object.keys(marked)).toEqual(['decorators']);
-    expect(hasCoreAnnotations({ ...marked })).toBe(false);
-  });
-
-  it('returns false for non-objects', () => {
-    expect(hasCoreAnnotations(undefined)).toBe(false);
-    expect(hasCoreAnnotations(null)).toBe(false);
-    expect(hasCoreAnnotations('preview')).toBe(false);
-    expect(hasCoreAnnotations(42)).toBe(false);
-  });
-
-  it('exposes the core annotations as an array', () => {
-    const core = getCoreAnnotations();
-    expect(Array.isArray(core)).toBe(true);
-    expect(core.length).toBeGreaterThan(0);
-  });
-});
+const managers = (features: StorybookFeatures): string[] =>
+  builtInAddons
+    .filter((addon) => addon.manager && isManagerEnabled(addon, features))
+    .map((addon) => addon.meta.name);
 
 describe('built-in addons', () => {
   it.each(builtInAddons.map((addon) => [addon.meta.name, addon] as const))(
@@ -53,50 +34,41 @@ describe('built-in addons', () => {
     }
   );
 
-  it('creates the core preview annotations in registration order', () => {
-    expect(getCoreAnnotations().map((annotations) => Object.keys(annotations).sort()))
-      .toMatchInlineSnapshot(`
-      [
-        [
-          "decorators",
-          "initialGlobals",
-        ],
-        [
-          "decorators",
-          "initialGlobals",
-          "parameters",
-        ],
-        [],
-        [
-          "decorators",
-          "initialGlobals",
-        ],
-        [
-          "initialGlobals",
-        ],
-        [
-          "argsEnhancers",
-          "loaders",
-        ],
-        [
-          "parameters",
-          "runStep",
-        ],
-        [
-          "loaders",
-        ],
-        [
-          "afterEach",
-        ],
-        [
-          "beforeAll",
-        ],
-        [],
-      ]
-    `);
-  });
-
-  it('keeps the preview runtime out of the plugins', () => {
-    expect(builtInAddons.filter((addon) => 'preview' in addon)).toEqual([]);
+  it.each([
+    { name: 'the defaults', input: FEATURE_DEFAULTS, expected: MANAGERS_ON_BY_DEFAULT },
+    {
+      name: 'the manifest flag',
+      input: { ...FEATURE_DEFAULTS, componentsManifest: true },
+      expected: MANAGERS_ON_BY_DEFAULT,
+    },
+    {
+      name: 'no flags',
+      input: {},
+      expected: ['storybook/docgen', 'storybook/review'],
+    },
+    {
+      name: 'every UI flag off',
+      input: {
+        ...FEATURE_DEFAULTS,
+        actions: false,
+        backgrounds: false,
+        controls: false,
+        highlight: false,
+        interactions: false,
+        measure: false,
+        outline: false,
+        viewport: false,
+      },
+      expected: ['storybook/docgen', 'storybook/review'],
+    },
+    {
+      name: 'actions and controls off',
+      input: { ...FEATURE_DEFAULTS, actions: false, controls: false },
+      expected: MANAGERS_ON_BY_DEFAULT.filter(
+        (name) => name !== 'storybook/actions' && name !== 'storybook/controls'
+      ),
+    },
+  ])('ships the built-in managers for $name', ({ input, expected }) => {
+    expect(managers(input)).toEqual(expected);
   });
 });

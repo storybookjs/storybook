@@ -1129,7 +1129,14 @@ export class StorybookPackageRequiredError extends StorybookError {
 }
 
 export class StorybookInstanceUnavailableError extends StorybookError {
-  constructor(public data: { reason: 'outside-instance' | 'loading-main' }) {
+  constructor(
+    public data: {
+      reason: 'outside-instance' | 'loading-main';
+      /** The instance-scoped API that was called; defaults to `getStorybook()`. */
+      api?: string;
+    }
+  ) {
+    const api = data.api ?? 'getStorybook()';
     super({
       name: 'StorybookInstanceUnavailableError',
       category: Category.CORE_SERVER,
@@ -1137,11 +1144,11 @@ export class StorybookInstanceUnavailableError extends StorybookError {
       message:
         data.reason === 'loading-main'
           ? dedent`
-            getStorybook() was called while main.ts was being evaluated, before the Storybook instance exists.
+            ${api} was called while main.ts was being evaluated, before the Storybook instance exists.
 
             Call it from a plugin's setup(storybook) or from a hook handler instead.`
           : dedent`
-            getStorybook() was called outside a Storybook instance.
+            ${api} was called outside a Storybook instance.
 
             Use the storybook passed to setup(storybook). Wrap callbacks that run outside the instance, such as worker or library callbacks, with bindToInstance() where they are registered.`,
     });

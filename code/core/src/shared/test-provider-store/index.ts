@@ -4,7 +4,6 @@ import type { useUniversalStore as managerUseUniversalStore } from '../universal
 
 export const UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS: StoreOptions<TestProviderStateByProviderId> = {
   id: 'storybook/test-provider',
-  leader: true,
   initialState: {},
 };
 

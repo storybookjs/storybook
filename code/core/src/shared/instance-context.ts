@@ -3,13 +3,11 @@ import type { Options } from '@storybook/core/internal/types';
 
 import type { ChannelLike } from '../channels/types.ts';
 import type { StoryIndexGenerator } from '../story-index/StoryIndexGenerator.ts';
-import type { UniversalStoreRealm } from './universal-store/realm.ts';
 
 export interface InstanceContext {
   storybook?: Storybook;
   features?: Options['features'];
   channel: ChannelLike | null;
-  universalStoreRealm: UniversalStoreRealm;
   workingDir: string;
   state: Map<symbol, unknown>;
   cleanups: Set<() => void | Promise<void>>;

@@ -12,6 +12,7 @@ import type {
   Story,
 } from 'storybook/internal/csf';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
+import { BUILT_IN_PREVIEW_ANNOTATIONS } from 'storybook/internal/preview/built-in-annotations';
 import type {
   Args,
   ArgsStoryFn,
@@ -49,10 +50,13 @@ import { type AngularRenderer } from './types.ts';
 export function __definePreview<Addons extends PreviewAddonEntry[]>(
   input: { addons: Addons } & ProjectAnnotations<AngularRenderer & InferTypes<Addons>>
 ): AngularPreview<AngularRenderer & InferTypes<Addons>> {
-  const preview = definePreviewBase({
-    ...input,
-    addons: [angularAnnotations, angularDocsAnnotations, ...(input.addons ?? [])],
-  }) as AngularPreview<AngularRenderer & InferTypes<Addons>>;
+  const preview = definePreviewBase(
+    {
+      ...input,
+      addons: [angularAnnotations, angularDocsAnnotations, ...(input.addons ?? [])],
+    },
+    BUILT_IN_PREVIEW_ANNOTATIONS
+  ) as AngularPreview<AngularRenderer & InferTypes<Addons>>;
 
   return preview;
 }

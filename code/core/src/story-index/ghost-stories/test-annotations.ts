@@ -37,4 +37,4 @@ const afterEach: AfterEach = async ({ reporting, canvasElement, globals }) => {
   } catch {}
 };
 
-export default () => definePreviewAddon({ afterEach });
+export default definePreviewAddon({ afterEach });

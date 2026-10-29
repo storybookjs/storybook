@@ -1,7 +1,8 @@
 import type { ToolAvailability } from 'storybook/internal/server';
-import { registerToolset } from 'storybook/open-service';
+import { clearToolsetRegistry, registerToolset } from 'storybook/open-service';
 import { describe, expect, it } from 'vitest';
 
+import { useTestInstance } from '../../../../core/src/shared/instance-context.test-helpers.ts';
 import { createTestToolset } from '../../../vitest/src/node/toolset/definition.ts';
 import { registerCoreToolsetsForTest } from '../test-support/register-core-toolsets.ts';
 import { getAddonToolMetadata } from './tool-registry.ts';
@@ -34,6 +35,7 @@ function toolMetadataFor(options: {
   a11yEnabled: boolean;
 }) {
   const { multiSource, testSupported, a11yEnabled } = options;
+  clearToolsetRegistry();
   registerCoreToolsetsForTest();
   registerToolset(
     createTestToolset({
@@ -62,6 +64,8 @@ const TOOL_NAMES = [
 ];
 
 describe('MCP tool descriptions', () => {
+  useTestInstance();
+
   it('stay plain text within the MCP client truncation limit for every tool in every configuration', () => {
     for (const multiSource of bools)
       for (const testSupported of bools)

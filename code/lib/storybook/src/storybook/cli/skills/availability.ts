@@ -1,9 +1,6 @@
-import { getInstanceContext } from '@storybook/core/internal/deep/shared/instance-context';
+import type { Storybook } from '@storybook/core';
 import { getService } from '@storybook/core/internal/deep/shared/open-service/server';
-import type { Options } from '@storybook/core/internal/types';
 
-import { isAddonA11yEnabled } from './addon-a11y.ts';
-import { isAddonVitestEnabled } from './addon-vitest.ts';
 import { getManifestStatus } from './manifest-status.ts';
 
 export interface ToolAvailability {
@@ -78,16 +75,15 @@ export async function isModuleGraphSupported(): Promise<boolean> {
  * enabled/disabled badges) can never drift apart. Add new gates here rather
  * than computing them ad-hoc at a call site.
  */
-export async function getToolAvailability(options: Options): Promise<ToolAvailability> {
-  const storybook = getInstanceContext()?.storybook;
-  const [moduleGraphSupported, manifestStatus, addonVitestEnabled, a11yEnabled] = await Promise.all(
-    [
-      isModuleGraphSupported(),
-      getManifestStatus(options),
-      storybook ? storybook.hasPlugin('@storybook/addon-vitest') : isAddonVitestEnabled(options),
-      storybook ? storybook.hasPlugin('@storybook/addon-a11y') : isAddonA11yEnabled(options),
-    ]
-  );
+export async function getToolAvailability(
+  storybook: Pick<Storybook, 'callHook' | 'hasPlugin'>
+): Promise<ToolAvailability> {
+  const [moduleGraphSupported, manifestStatus] = await Promise.all([
+    isModuleGraphSupported(),
+    getManifestStatus(storybook),
+  ]);
+  const addonVitestEnabled = storybook.hasPlugin('@storybook/addon-vitest');
+  const a11yEnabled = storybook.hasPlugin('@storybook/addon-a11y');
 
   return {
     moduleGraphSupported,

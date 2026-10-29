@@ -13,6 +13,7 @@ import type {
   Story,
 } from 'storybook/internal/csf';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
+import { BUILT_IN_PREVIEW_ANNOTATIONS } from 'storybook/internal/preview/built-in-annotations';
 import type {
   Args,
   ArgsStoryFn,
@@ -49,14 +50,17 @@ import { type WebComponentsTypes } from './types.ts';
 export function __definePreview<Addons extends PreviewAddonEntry[]>(
   input: { addons: Addons } & ProjectAnnotations<WebComponentsTypes & InferTypes<Addons>>
 ): WebComponentsPreview<WebComponentsTypes & InferTypes<Addons>> {
-  const preview = definePreviewBase({
-    ...input,
-    addons: [
-      webComponentsAnnotations,
-      webComponentsDocsAnnotations,
-      ...(input.addons ?? []),
-    ] as PreviewAddon<InferTypes<Addons>>[],
-  }) as WebComponentsPreview<WebComponentsTypes & InferTypes<Addons>>;
+  const preview = definePreviewBase(
+    {
+      ...input,
+      addons: [
+        webComponentsAnnotations,
+        webComponentsDocsAnnotations,
+        ...(input.addons ?? []),
+      ] as PreviewAddon<InferTypes<Addons>>[],
+    },
+    BUILT_IN_PREVIEW_ANNOTATIONS
+  ) as WebComponentsPreview<WebComponentsTypes & InferTypes<Addons>>;
 
   return preview;
 }

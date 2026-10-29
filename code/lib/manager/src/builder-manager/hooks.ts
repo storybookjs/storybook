@@ -1,6 +1,6 @@
 import { declareHooks, type Collect, type HookContext, type Reduce } from '@storybook/core';
-import type { StorybookConfigRaw } from '@storybook/core/internal/types';
 
+// `manager:refs:extend` is declared in core, which reads refs for the docs toolset.
 declare module '@storybook/core' {
   interface StorybookHooks {
     'manager:favicon:extend': Reduce<(value: string | undefined, ctx?: HookContext) => string>;
@@ -9,9 +9,6 @@ declare module '@storybook/core' {
     >;
     'manager:entries:collect': Collect<(value: string[], ctx?: HookContext) => string[]>;
     'manager:head:extend': Reduce<(value: string | undefined, ctx?: HookContext) => string>;
-    'manager:refs:extend': Reduce<
-      (value: StorybookConfigRaw['refs'], ctx?: HookContext) => StorybookConfigRaw['refs']
-    >;
   }
 }
 
@@ -20,5 +17,4 @@ declareHooks({
   'manager:title:extend': 'reduce',
   'manager:entries:collect': 'collect',
   'manager:head:extend': 'reduce',
-  'manager:refs:extend': 'reduce',
 });

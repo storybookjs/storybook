@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { groupBy } from '@storybook/core/internal/common';
+import { getCurrentWorkingDir, groupBy } from '@storybook/core/internal/common';
 
 import type { ComponentDoc, PropItem } from 'react-docgen-typescript';
 
@@ -1054,7 +1054,7 @@ function renderComponentCard(
               <span class="ex-name">Prop types <small>(${api.engine})</small></span>
               <span class="badge ok">${api.entries.length} ${plural(api.entries.length, 'prop type')}</span>
             </div>
-            <pre><code>Component: ${api.filePath ? esc(path.relative(process.cwd(), api.filePath)) : ''}${api.exportName ? '::' + esc(api.exportName) : ''}</code></pre>
+            <pre><code>Component: ${api.filePath ? esc(path.relative(getCurrentWorkingDir(), api.filePath)) : ''}${api.exportName ? '::' + esc(api.exportName) : ''}</code></pre>
             <pre><code>Props:</code></pre>
             <pre><code>${esc(renderPropsCode(api.entries))}</code></pre>
           </div>
@@ -1365,7 +1365,7 @@ function renderSubcomponentNote(
       ${
         api.kind === 'props'
           ? `
-          <pre><code>Component: ${api.filePath ? esc(path.relative(process.cwd(), api.filePath)) : ''}${api.exportName ? '::' + esc(api.exportName) : ''}${api.engine ? ` (${esc(api.engine)})` : ''}</code></pre>
+          <pre><code>Component: ${api.filePath ? esc(path.relative(getCurrentWorkingDir(), api.filePath)) : ''}${api.exportName ? '::' + esc(api.exportName) : ''}${api.engine ? ` (${esc(api.engine)})` : ''}</code></pre>
           <pre><code>${esc(renderPropsCode(api.entries))}</code></pre>`
           : ''
       }

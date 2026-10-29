@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { useTestInstance } from '../../../core/src/shared/instance-context.test-helpers.ts';
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
 import {
   incomingMessageToWebRequest,
@@ -7,7 +8,6 @@ import {
 } from './mcp-handler.ts';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { PassThrough } from 'node:stream';
-import { fileURLToPath } from 'node:url';
 import { CompositionAuth } from './auth/index.ts';
 
 // Test helpers to reduce boilerplate
@@ -204,22 +204,41 @@ describe('mcp-handler conversion utilities', () => {
 describe('mcpServerHandler', () => {
   let mcpServerHandler: any;
 
+  useTestInstance();
+
   beforeEach(async () => {
     // Reset modules and get fresh handler for each test to avoid state pollution
     vi.resetModules();
     // The `services` preset hook does this in a real Storybook, before the MCP server boots.
     registerCoreToolsetsForTest();
     const handler = await import('./mcp-handler.ts');
-    mcpServerHandler = handler.mcpServerHandler;
+    const server = handler.createMcpServerState();
+    mcpServerHandler = (params: object) => handler.mcpServerHandler({ server, ...params } as never);
   });
 
-  function createMockOptions(overrides = {}) {
+  /** Handler options for a Storybook whose hooks resolve to `hooks[name]` and which has `plugins`. */
+  function createMockOptions({
+    port = 6006,
+    core = { disableTelemetry: false },
+    hooks = {},
+    plugins = [],
+  }: {
+    port?: number;
+    core?: { disableTelemetry?: boolean };
+    hooks?: Record<string, unknown>;
+    plugins?: string[];
+  } = {}) {
     return {
-      port: 6006,
-      presets: {
-        apply: vi.fn().mockResolvedValue({ disableTelemetry: false }),
+      core,
+      storybook: {
+        options: { port },
+        callHook: vi.fn(async (name: string, value?: unknown) =>
+          name in hooks ? hooks[name] : value
+        ),
+        hasPlugin: (name: string) => plugins.includes(name),
+        getIndex: vi.fn(),
+        getStoryIndexGenerator: vi.fn(),
       },
-      ...overrides,
     };
   }
 
@@ -282,9 +301,7 @@ describe('mcpServerHandler', () => {
   }
 
   it('should initialize MCP server and handle requests', async () => {
-    const mockOptions = createMockOptions({
-      configDir: fileURLToPath(new URL('./test-support/with-addon-vitest', import.meta.url)),
-    });
+    const mockOptions = createMockOptions({ plugins: ['@storybook/addon-vitest'] });
     const mockReq = createMockIncomingMessage({
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -340,22 +357,12 @@ describe('mcpServerHandler', () => {
   });
 
   it('should include docs-style instructions when docs toolset is selected and manifest is available', async () => {
-    const applyMock = vi.fn(async (key: string, defaultValue?: any) => {
-      if (key === 'core') {
-        return { disableTelemetry: false };
-      }
-      if (key === 'features') {
-        return { experimentalComponentsManifest: true };
-      }
-      if (key === 'experimental_manifests') {
-        return { components: { v: 1, components: {} } };
-      }
-      return defaultValue;
-    });
-
     const mockOptions = createMockOptions({
       port: 6011,
-      presets: { apply: applyMock },
+      hooks: {
+        'core:features:extend': { experimentalComponentsManifest: true },
+        'index:manifests:extend': { components: { v: 1, components: {} } },
+      },
     });
     const mockReq = createMockIncomingMessage({
       method: 'POST',
@@ -410,9 +417,6 @@ describe('mcpServerHandler', () => {
     const mockOptions = createMockOptions({
       port: 6007,
       core: { disableTelemetry: true },
-      presets: {
-        apply: vi.fn(async () => ({})),
-      },
     });
     const mockReq = createMockIncomingMessage({
       method: 'POST',
@@ -443,22 +447,12 @@ describe('mcpServerHandler', () => {
   });
 
   it('should register the docs tools when feature flag and generator are enabled', async () => {
-    const applyMock = vi.fn(async (key: string, defaultValue?: any) => {
-      if (key === 'core') {
-        return { disableTelemetry: false };
-      }
-      if (key === 'features') {
-        return { componentsManifest: true };
-      }
-      if (key === 'experimental_manifests') {
-        return { components: { v: 1, components: {} } };
-      }
-      return defaultValue;
-    });
-
     const mockOptions = createMockOptions({
       port: 6008,
-      presets: { apply: applyMock },
+      hooks: {
+        'core:features:extend': { componentsManifest: true },
+        'index:manifests:extend': { components: { v: 1, components: {} } },
+      },
     });
 
     // First, initialize the MCP server
@@ -518,13 +512,7 @@ describe('mcpServerHandler', () => {
   it('registers docs tools for composed sources when local manifests are unavailable', async () => {
     const mockOptions = createMockOptions({
       port: 6012,
-      presets: {
-        apply: vi.fn(async (key: string, defaultValue?: any) => {
-          if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { componentsManifest: true };
-          return defaultValue;
-        }),
-      },
+      hooks: { 'core:features:extend': { componentsManifest: true } },
     });
 
     const toolNames = await getRegisteredToolNames(mockOptions, 6012, {
@@ -537,6 +525,56 @@ describe('mcpServerHandler', () => {
     expect(toolNames).toContain('docs-list');
     expect(toolNames).toContain('docs-show');
     expect(toolNames).toContain('docs-show-story');
+  });
+
+  it('serves each Storybook from its own MCP server', async () => {
+    const { createMcpServerState } = await import('./mcp-handler.ts');
+    const storybooks = [
+      {
+        port: 6014,
+        hooks: {
+          'core:features:extend': { experimentalComponentsManifest: true },
+          'index:manifests:extend': { components: { v: 1, components: {} } },
+        },
+        documentation: true,
+      },
+      { port: 6015, hooks: {}, documentation: false },
+    ].map(({ port, hooks, documentation }) => ({
+      port,
+      documentation,
+      options: createMockOptions({ port, hooks }),
+      server: createMcpServerState(),
+    }));
+
+    const instructions = await Promise.all(
+      storybooks.map(async ({ port, options, server }) => {
+        const { response, getResponseData } = createMockServerResponse();
+        await mcpServerHandler({
+          req: createMockIncomingMessage({
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              host: `localhost:${port}`,
+              'X-MCP-Toolsets': 'docs',
+            },
+            body: createMCPInitializeRequest(),
+          }),
+          res: response,
+          options,
+          addonOptions: { toolsets: { dev: true, docs: true } },
+          compositionAuth: new CompositionAuth(),
+          server,
+        });
+        const dataLine = getResponseData()
+          .body.split('\n')
+          .find((line) => line.startsWith('data: '));
+        return JSON.parse(dataLine!.replace(/^data: /, '').trim()).result.instructions as string;
+      })
+    );
+
+    expect(instructions.map((text) => text.includes('## Documentation Workflow'))).toEqual(
+      storybooks.map(({ documentation }) => documentation)
+    );
   });
 
   it('registers stories-changed and review-create', async () => {

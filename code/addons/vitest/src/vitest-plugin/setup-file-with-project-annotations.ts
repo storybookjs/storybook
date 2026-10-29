@@ -1,3 +1,4 @@
+// Not `storybook/preview-api`: the collected annotations already hold the enabled built-ins.
 import { setProjectAnnotations } from 'storybook/internal/preview-api';
 import { ProjectAnnotationsAlreadyAppliedError } from 'storybook/internal/preview-errors';
 

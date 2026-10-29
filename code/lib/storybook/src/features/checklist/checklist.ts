@@ -1,0 +1,324 @@
+import type { Channel } from '@storybook/core/internal/channels';
+import {
+  createFileSystemCache,
+  resolvePathInStorybookCache,
+} from '@storybook/core/internal/common';
+import { UniversalStore as internal_UniversalStore } from '@storybook/core/internal/deep/shared/universal-store';
+import {
+  AI_SETUP_ANALYTICS_REQUEST,
+  GHOST_STORIES_REQUEST,
+  STORY_INDEX_INVALIDATED,
+} from '@storybook/core/internal/core-events';
+import { logger } from '@storybook/core/internal/node-logger';
+import { telemetry } from '@storybook/core/internal/telemetry';
+import { isStoryCreatedByAISetup } from '@storybook/core/internal/deep/telemetry/ai-setup-utils';
+
+import { throttle } from 'es-toolkit/function';
+import { toMerged } from 'es-toolkit/object';
+
+import { globalSettings } from '@storybook/core/internal/deep/common/globalSettings';
+import { getInstanceContext } from '@storybook/core/internal/deep/shared/instance-context';
+import { universalTestProviderStore } from '@storybook/core/internal/deep/services/stores/test-provider';
+import { get as getEventCacheEntry } from '@storybook/core/internal/deep/telemetry/event-cache';
+import {
+  hasAiInitOptIn,
+  hasAiSetupRun,
+} from '@storybook/core/internal/deep/utils/ai-checklist-flags';
+import {
+  type ChecklistState,
+  type StoreEvent,
+  type StoreState,
+  UNIVERSAL_CHECKLIST_STORE_OPTIONS,
+} from '@storybook/core/internal/deep/shared/checklist-store';
+import type { StoryIndexGenerator } from '@storybook/core/internal/story-index';
+
+/** The server's checklist store, owning the state on `channel`. */
+export function createChecklistServerStore(
+  channel: Channel
+): internal_UniversalStore<StoreState, StoreEvent> {
+  return internal_UniversalStore.create<StoreState, StoreEvent>({
+    ...UNIVERSAL_CHECKLIST_STORE_OPTIONS,
+    owner: true,
+    channel,
+  });
+}
+
+/** Load the persisted checklist into `store` and keep it saved, with telemetry and AI-setup detection. */
+export async function initializeChecklist(
+  store: internal_UniversalStore<StoreState, StoreEvent>,
+  channel?: Channel,
+  getStoryIndexGeneratorPromise?: () => Promise<StoryIndexGenerator> | undefined,
+  configDir?: string
+): Promise<void> {
+  try {
+    const cache = createFileSystemCache({
+      basePath: resolvePathInStorybookCache('checklist'),
+      ns: 'storybook',
+    });
+
+    const [[userState, saveUserState], [projectState, saveProjectState]] = await Promise.all([
+      globalSettings().then((settings) => {
+        const save = throttle(() => settings.save(), 1000);
+        const state = {
+          items: settings.value.checklist?.items ?? {},
+          widget: settings.value.checklist?.widget ?? {},
+        };
+        const setState = ({
+          items = state.items,
+          widget = state.widget,
+        }: {
+          items?: typeof state.items;
+          widget?: typeof state.widget;
+        }) => {
+          settings.value.checklist = { items, widget };
+          save();
+        };
+        return [state, setState] as const;
+      }),
+
+      cache.get<Pick<ChecklistState, 'items'>>('state').then((cachedState) => {
+        const state = { items: cachedState?.items ?? {} };
+        const setState = ({ items }: Pick<ChecklistState, 'items'>) =>
+          cache.set('state', { items });
+        return [state, setState] as const;
+      }),
+    ]);
+
+    // Load the checklist immediately so the UI is never blocked.
+    store.setState(
+      (value) =>
+        ({
+          ...toMerged(value, toMerged(userState, projectState)),
+          loaded: true,
+        }) satisfies StoreState
+    );
+
+    // AI setup run and AI optin flags (set in `skills setup` and `init` respectively).
+    // Read from the regular fs cache — NOT from the telemetry event cache
+    // so the copy-prompt button appears for users who disabled telemetry.
+    // Fire-and-forget so the store is never blocked waiting for this check.
+    hasAiSetupRun(configDir!)
+      .then((hasSetupRun) => {
+        if (hasSetupRun) {
+          store.setState((state) => ({ ...state, aiSetupRun: true }));
+        }
+      })
+      .catch(() => {});
+
+    hasAiInitOptIn(configDir!)
+      .then((hasOptedIn) => {
+        store.setState((state) => ({ ...state, aiOptIn: hasOptedIn }));
+      })
+      .catch(() => {});
+
+    /**
+     * "Has the agent actually produced something?" Running `storybook skills setup`
+     * only generates the prompt; it doesn't mean the agent that received the
+     * prompt did any work. We therefore require BOTH:
+     *
+     *   1. A record that `skills setup` ran in this project (cache key `ai-setup-ran`,
+     *      written by the CLI regardless of telemetry state).
+     *   2. At least one story carrying the `ai-generated` tag in the story index.
+     *
+     * Without step 2 the copy-prompt button stays visible — so a user who ran
+     * `skills setup` but whose agent stalled, hit a rate limit, or outright refused
+     * still has a way to retry.
+     */
+    const isAiSetupCompleted = async (): Promise<boolean> => {
+      try {
+        // Skip if `skills setup` was not run.
+        if (!(await hasAiSetupRun(configDir!))) {
+          return false;
+        }
+
+        // Get index entries
+        const generatorPromise = getStoryIndexGeneratorPromise?.();
+        if (!generatorPromise) {
+          return false;
+        }
+        const generator = await generatorPromise;
+        const indexAndStats = await generator?.getIndexAndStats?.();
+        const entries = indexAndStats?.storyIndex?.entries;
+
+        // Find at least one entry generated by AI.
+        return Object.values(entries || []).some(isStoryCreatedByAISetup);
+      } catch {
+        return false;
+      }
+    };
+
+    // Reflect "agent did real work" into the checklist store. Returns true
+    // when the aiSetup item was (now or already) in the done state, so the
+    // analytics scheduler can decide whether to run.
+    const markAiSetupDone = async (): Promise<boolean> => {
+      const completed = await isAiSetupCompleted();
+      if (!completed) {
+        return false;
+      }
+      if (store.getState().items.aiSetup?.status !== 'done') {
+        store.setState((state) => ({
+          ...state,
+          items: {
+            ...state.items,
+            aiSetup: { ...state.items.aiSetup, status: 'done' },
+          },
+        }));
+      }
+      return true;
+    };
+
+    // Debounced analytics + ghost stories: emit exactly once, 4 minutes after
+    // activity stops. The timer resets on story-index changes, test-provider
+    // state changes, and detected external vitest runs (`npx vitest`). The
+    // completion check is done at idle time (not eagerly) because both the
+    // `ai-setup-ran` cache and the AI-generated stories appear *after* the
+    // agent does its work, not when the CLI command exits.
+    const AI_IDLE_DELAY_MS = 4 * 60 * 1000;
+    let analyticsTimer: ReturnType<typeof setTimeout> | undefined;
+    let analyticsEmitted = false;
+
+    // Story-index invalidations can arrive in flurries. Throttle the
+    // completion check so we don't read the index on every tick.
+    const throttledSyncAiSetupStatus = throttle(() => markAiSetupDone().catch(() => {}), 1000);
+
+    const scheduleIdleCheck = () => {
+      if (!channel || analyticsEmitted) {
+        return;
+      }
+      // Sync aiSetup UI as soon as we observe AI-generated stories in the
+      // index, so the copy-prompt button disappears the moment there is real
+      // evidence of agent work — not the moment `storybook skills setup` ran.
+      throttledSyncAiSetupStatus();
+      clearTimeout(analyticsTimer);
+      analyticsTimer = setTimeout(async () => {
+        // If the CLI command never ran, don't emit analytics or ghost stories.
+        if (!store.getState().aiSetupRun) {
+          return;
+        }
+        // Agents often run `npx vitest` for many minutes. If a recent
+        // `test-run` or `ai-setup-self-healing-scoring` event is in the cache,
+        // the agent is still active — reschedule. `CacheEntry.timestamp` is
+        // the cache-write time (= event-firing time, writes are synchronous).
+        const now = Date.now();
+        const [lastTestRun, lastSelfHealing] = await Promise.all([
+          getEventCacheEntry('test-run').catch(() => undefined),
+          getEventCacheEntry('ai-setup-self-healing-scoring').catch(() => undefined),
+        ]);
+        const hasRecentTestActivity = [lastTestRun, lastSelfHealing].some(
+          (e) => e && now - e.timestamp < AI_IDLE_DELAY_MS
+        );
+        if (hasRecentTestActivity) {
+          scheduleIdleCheck();
+          return;
+        }
+        // Final re-check: ai-setup may have been cached after the last trigger.
+        await markAiSetupDone();
+        if (store.getState().items.aiSetup?.status !== 'done') {
+          return;
+        }
+        analyticsEmitted = true;
+        channel.off(STORY_INDEX_INVALIDATED, onIndexInvalidated);
+        unsubscribeTestProvider();
+        channel.emit(GHOST_STORIES_REQUEST);
+        channel.emit(AI_SETUP_ANALYTICS_REQUEST);
+      }, AI_IDLE_DELAY_MS);
+    };
+
+    // Startup check: covers the case where the dev server was restarted
+    // mid-agentic-session and `ai-setup` was already cached.
+    markAiSetupDone().then((detected) => {
+      if (detected) {
+        scheduleIdleCheck();
+      }
+    });
+
+    const onIndexInvalidated = () => {
+      if (analyticsEmitted) {
+        return;
+      }
+      scheduleIdleCheck();
+    };
+    if (channel) {
+      channel.on(STORY_INDEX_INVALIDATED, onIndexInvalidated);
+    }
+
+    // Test-provider state changes also reset the timer — an agent can spend
+    // long stretches running tests without touching story files. Captured so
+    // we can unsubscribe symmetrically when analytics fires.
+    const unsubscribeTestProvider = universalTestProviderStore.onStateChange(() => {
+      if (analyticsEmitted) {
+        return;
+      }
+      scheduleIdleCheck();
+    });
+
+    // The idle timer is ref'd for minutes, so it must stop with the instance or Node cannot exit.
+    getInstanceContext()?.cleanups.add(() => {
+      analyticsEmitted = true;
+      clearTimeout(analyticsTimer);
+      channel?.off(STORY_INDEX_INVALIDATED, onIndexInvalidated);
+      unsubscribeTestProvider();
+    });
+
+    store.onStateChange((state: StoreState, previousState: StoreState) => {
+      const entries = Object.entries(state.items);
+
+      // Split values into project-local (done) and user-local (accepted, skipped) persistence
+      const projectValues: Partial<StoreState['items']> = {};
+      const userValues: Partial<StoreState['items']> = {};
+      entries.forEach(([id, { status, mutedAt }]) => {
+        if (status === 'done') {
+          projectValues[id as keyof StoreState['items']] = { status };
+        } else if (status === 'accepted' || status === 'skipped') {
+          userValues[id as keyof StoreState['items']] = { status };
+        }
+        if (mutedAt) {
+          userValues[id as keyof StoreState['items']] = {
+            ...userValues[id as keyof StoreState['items']],
+            mutedAt,
+          };
+        }
+      });
+      saveProjectState({ items: projectValues as StoreState['items'] });
+      saveUserState({ items: userValues, widget: state.widget });
+
+      // Skip telemetry when loading from persistence (first transition to loaded: true)
+      if (!previousState.loaded) {
+        return;
+      }
+
+      // Gather items that have changed state
+      const { mutedItems, statusItems } = entries.reduce(
+        (acc, [item, { mutedAt, status }]) => {
+          const prev = previousState.items[item as keyof typeof state.items];
+          if (mutedAt !== prev?.mutedAt) {
+            acc.mutedItems.push(item);
+          }
+          if (status !== prev?.status) {
+            acc.statusItems.push(item);
+          }
+          return acc;
+        },
+        { mutedItems: [] as string[], statusItems: [] as string[] }
+      );
+      if (mutedItems.length > 0) {
+        telemetry('onboarding-checklist-muted', {
+          items: mutedItems,
+          completedItems: entries.reduce<string[]>((acc, [id, { status }]) => {
+            return status === 'done' || status === 'accepted' ? acc.concat([id]) : acc;
+          }, []),
+          skippedItems: entries.reduce<string[]>((acc, [id, { status }]) => {
+            return status === 'skipped' ? acc.concat([id]) : acc;
+          }, []),
+        });
+      }
+      statusItems.forEach((item) => {
+        const { status } = state.items[item as keyof typeof state.items];
+        telemetry('onboarding-checklist-status', { item, status });
+      });
+    });
+  } catch (err) {
+    logger.error('Failed to initialize checklist');
+    logger.error(err);
+  }
+}

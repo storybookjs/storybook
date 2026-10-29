@@ -21,19 +21,19 @@ import type {
 import { applyServicesPresetOnce } from '../services/apply-services-preset-once.ts';
 import docgen from '../shared/open-service/services/docgen/node.ts';
 import storyDocs from '../shared/open-service/services/story-docs/node.ts';
+import changeDetection from '../services/change-detection/node.ts';
 import { StoryIndexGenerator } from '../story-index/StoryIndexGenerator.ts';
 import type { InstanceContext } from '../shared/instance-context.ts';
 import { clearRegistry } from '../shared/open-service/service-registry.ts';
 import { getService, registerService } from '../shared/open-service/server.ts';
 import {
-  clearToolsetRegistry,
   getRegisteredToolsets,
   getToolset,
   registerToolset,
 } from '../shared/open-service/toolset-registry.ts';
-import { UniversalStore } from '../shared/universal-store/index.ts';
-import { createUniversalStoreRealm } from '../shared/universal-store/realm.ts';
+import { setupCoreStores } from '../services/stores/core-stores.ts';
 import { commonPlugin } from './common-plugin.ts';
+import { dedupePlugins } from './dedupe-plugins.ts';
 import { createHookRuntime } from './hooks.ts';
 import { instanceContext, registerInstanceContext } from './instance-context.ts';
 import { loadLegacyPresets } from './legacy-preset.ts';
@@ -64,7 +64,7 @@ export async function createStorybook(
   input: CreateStorybookInput,
   {
     // Core-owned addons headless hosts need for the index and docs toolsets.
-    builtInAddons = [docgen(), storyDocs()],
+    builtInAddons = [docgen(), storyDocs(), changeDetection()],
     setupPlugin = (plugin, storybook) => plugin.setup(storybook),
     common = commonPlugin,
     legacy,
@@ -88,12 +88,6 @@ export async function createStorybook(
 
   const context: InstanceContext = {
     channel,
-    universalStoreRealm: createUniversalStoreRealm({
-      channel,
-      environment: input.attach
-        ? UniversalStore.Environment.UNKNOWN
-        : UniversalStore.Environment.SERVER,
-    }),
     workingDir,
     state: new Map(),
     cleanups: new Set(),
@@ -106,6 +100,8 @@ export async function createStorybook(
   if (input.attach) {
     channel.addTransport(input.attach.transport);
   }
+  // An attached host is a client of the dev server's stores.
+  setupCoreStores(context, { owner: !input.attach });
 
   function requireSetup(): void {
     if (phase !== 'setup') {
@@ -245,12 +241,7 @@ export async function createStorybook(
             }
           } finally {
             clearRegistry();
-            clearToolsetRegistry();
             hooks.removeAllHooks();
-            for (const store of context.universalStoreRealm.instances.values()) {
-              store.__dispose();
-            }
-            context.universalStoreRealm.instances.clear();
             channel.removeAllListeners();
             context.cleanups.clear();
             context.state.clear();
@@ -298,10 +289,12 @@ export async function createStorybook(
           throw new Error('Every plugin must declare meta.name, meta.kind, and setup(storybook).');
         }
       }
-      const bundled = new Set<StorybookPlugin>(nativeFramework?.addons);
+      plugins.splice(0, plugins.length, ...dedupePlugins(plugins));
+      // Matched by name, since deduplication may keep a user entry in place of a framework addon.
+      const bundled = new Set(nativeFramework?.addons?.map((addon) => addon.meta.name));
       // A framework's addons set up right before it, where a legacy framework preset loads its addons.
       const rank = (plugin: StorybookPlugin): number =>
-        bundled.has(plugin)
+        bundled.has(plugin.meta.name)
           ? PLUGIN_ORDER.indexOf('framework') - 0.5
           : PLUGIN_ORDER.indexOf(plugin.meta.kind);
       plugins.sort((a, b) => rank(a) - rank(b));
@@ -333,6 +326,11 @@ export async function createStorybook(
       phase = 'setup';
       const metas: PluginMeta[] = [];
       await loaded.setup(async (plugin, storybook) => {
+        const builtInIndex = builtInAddons.indexOf(plugin);
+        if (builtInIndex >= 0) {
+          // Built-ins contribute first, right after the common plugin, where core's presets ran.
+          hooks.setRegistrationOrder(-1 + (builtInIndex + 1) / (builtInAddons.length + 1));
+        }
         if (plugin.meta.kind === 'renderer') {
           for (const entry of (plugin as RendererPlugin).previewAnnotations ?? []) {
             storybook.hook('preview:annotations:collect', () => [entry]);
@@ -342,7 +340,7 @@ export async function createStorybook(
         metas.push(Object.freeze({ ...plugin.meta }));
       });
       pluginMetas = Object.freeze(metas);
-      await applyServicesPresetOnce(presets);
+      await applyServicesPresetOnce(storybook);
       const [stories, indexers, docs, staticDirs, previewAnnotations, features] = await Promise.all(
         [
           storybook.callHook('core:stories:collect', []),

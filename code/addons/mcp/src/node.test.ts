@@ -29,7 +29,6 @@ it('registers hooks in the order the preset applied them', () => {
     [
       "server:mcp:extend",
       "preview:annotations:collect",
-      "core:features:extend",
       "server:app:extend",
     ]
   `);
@@ -50,34 +49,22 @@ it('adds the preview resolved from the package', () => {
   ]);
 });
 
-it('enables the components manifest', () => {
-  expect(setUp().handler('core:features:extend')({ docgenServer: true })).toMatchInlineSnapshot(`
-    {
-      "componentsManifest": true,
-      "docgenServer": true,
-    }
-  `);
+it('enables the components manifest before setup', () => {
+  expect(mcp().features).toEqual({ componentsManifest: true });
 });
 
-it('mounts the server with instance options, core config, and the live index', async () => {
+it('mounts the server with the instance and the addon options', async () => {
   const { handler, storybook } = setUp({ endpoint: '/custom' });
   const app = { get: vi.fn(), post: vi.fn() };
 
   expect(await handler('server:app:extend')(app)).toBe(app);
 
-  const [, options] = vi.mocked(mountMcpServer).mock.calls[0];
-  await options.getIndex();
-  expect(storybook.getIndex).toHaveBeenCalledOnce();
-  expect({ ...options, getIndex: typeof options.getIndex }).toMatchInlineSnapshot(`
+  const [mountedApp, mountedStorybook, input] = vi.mocked(mountMcpServer).mock.calls[0];
+  expect(mountedApp).toBe(app);
+  expect(mountedStorybook).toBe(storybook);
+  expect(input).toMatchInlineSnapshot(`
     {
-      "configDir": "/project/.storybook",
-      "core": {
-        "allowedHosts": true,
-      },
       "endpoint": "/custom",
-      "getIndex": "function",
-      "host": "localhost",
-      "port": 6006,
     }
   `);
 });

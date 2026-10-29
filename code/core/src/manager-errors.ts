@@ -75,7 +75,7 @@ export class UniversalStoreFollowerTimeoutError extends StorybookError {
       name: 'UniversalStoreFollowerTimeoutError',
       category: Category.MANAGER_UNIVERSAL_STORE,
       code: 1,
-      message: `Timed out waiting for leader state for UniversalStore follower with id: '${followerId}'. Ensure a leader with the same id exists and is reachable before creating a follower.`,
+      message: `Timed out waiting for the owner's state for the UniversalStore with id: '${followerId}'. Ensure the Storybook instance that owns it is running and reachable.`,
     });
   }
 }

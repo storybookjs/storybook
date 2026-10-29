@@ -3,9 +3,10 @@ import { readFile } from 'node:fs/promises';
 import { logger } from '@storybook/core/internal/node-logger';
 import { OpenServiceModuleGraphUnavailableError } from '@storybook/core/internal/server-errors';
 import { getService } from '@storybook/core/internal/services';
-import { clearToolsetRegistry, defineToolset, registerToolset } from '@storybook/core/open-service';
+import { useTestInstance } from '../../../../core/src/shared/instance-context.test-helpers.ts';
+import { defineToolset, registerToolset } from '@storybook/core/open-service';
 import * as v from 'valibot';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { collectTelemetry } from '../telemetry.ts';
 import { callToolsetMethod, getToolsetToolMetadata } from './toolset-tools.ts';
@@ -59,16 +60,13 @@ function makeServer(custom: Record<string, unknown> = {}) {
 const previewOptions = { method: 'stories.preview', mcpEventName: 'tool:previewStories' } as const;
 
 describe('toolset-backed MCP tools', () => {
+  useTestInstance();
+
   beforeEach(() => {
-    clearToolsetRegistry();
     vi.mocked(getService).mockImplementation(() => undefined as never);
     vi.mocked(collectTelemetry).mockResolvedValue(undefined);
     vi.mocked(collectTelemetry).mockClear();
     vi.mocked(logger.error).mockClear();
-  });
-
-  afterEach(() => {
-    clearToolsetRegistry();
   });
 
   it('publishes the derived tool name and title with the MCP-resolved description', () => {

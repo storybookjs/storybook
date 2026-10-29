@@ -6,8 +6,7 @@ import type { ActionsTypes } from './types.ts';
 
 export type { ActionsTypes };
 
-export default () =>
-  definePreviewAddon<ActionsTypes>({
-    ...addArgs,
-    ...loaders,
-  });
+export default definePreviewAddon<ActionsTypes>({
+  ...addArgs,
+  ...loaders,
+});

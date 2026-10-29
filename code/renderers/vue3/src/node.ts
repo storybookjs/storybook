@@ -27,11 +27,12 @@ declare module '@storybook/core' {
 /** Configure Vue rendering, annotations, and docgen. */
 export const vue = defineRenderer<void, VueTypes>(() => ({
   meta: { name: '@storybook/vue3' },
+  // Before setup, so the product keeps its components-manifest addon.
+  features: { componentsManifest: true },
   setup(storybook): void {
     storybook.hook('preview:annotations:collect', async () =>
       getPreviewAnnotations(await storybook.callHook('core:docs:extend', {}))
     );
-    storybook.hook('core:features:extend', (value) => ({ ...value, componentsManifest: true }));
     storybook.hook('core:docgen-enabled:extend', () => isTypescriptInstalled());
     storybook.hook('core:docgen-providers:collect', () => [getDocgenProvider()]);
     storybook.hook('core:story-docs-provider:extend', (value, ctx) =>

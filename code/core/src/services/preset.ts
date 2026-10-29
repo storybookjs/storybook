@@ -1,34 +1,24 @@
 import { realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
-import {
-  getBabelPresetEnvMajor,
-  normalizeStories,
-  STORY_FILE_TEST_REGEXP,
-} from '@storybook/core/internal/common';
+import { getBabelPresetEnvMajor, STORY_FILE_TEST_REGEXP } from '@storybook/core/internal/common';
 import { loadCsf } from '@storybook/core/internal/csf-tools';
 import { logger } from '@storybook/core/internal/node-logger';
 import type {
   Indexer,
-  Options,
-  PresetProperty,
   PresetPropertyFn,
+  ServerApp,
   StorybookConfigRaw,
 } from '@storybook/core/internal/types';
 
 import * as pathe from 'pathe';
 
 import { mapStaticDir } from '../common/utils/server-statics.ts';
-import { StoryIndexGenerator } from '../story-index/StoryIndexGenerator.ts';
+import type { Storybook } from '../instance/types.ts';
 import { OpenServiceServicesAppliedTwiceError } from '../server-errors.ts';
 import { getInstanceContext } from '../shared/instance-context.ts';
 import { registerModuleGraphService } from '../shared/open-service/services/module-graph/server.ts';
-import {
-  registerReviewService,
-  subscribeReviewToModuleGraphChanges,
-} from '../shared/open-service/services/review/server.ts';
 import { registerToolset } from '../shared/open-service/toolset-registry.ts';
-import { reviewToolset } from '../shared/open-service/toolsets/review/definition.ts';
 import { createStoriesToolset } from '../shared/open-service/toolsets/stories/definition.ts';
 import { getDevServerSubscriptions } from './dev-server-subscriptions.ts';
 import { GitDiffProvider } from './change-detection/GitDiffProvider.ts';
@@ -40,30 +30,19 @@ const SERVICES_LOADED = Symbol.for('storybook.instance.services-loaded');
 
 const babelPresetEnvMajor = getBabelPresetEnvMajor();
 
-export const features: PresetProperty<'features'> = async (existing, options) => {
-  const storybook = getInstanceContext()?.storybook;
+/** Core's feature defaults; `docgenServer` follows whether a plugin can run a docgen provider. */
+export async function features(
+  existing: StorybookConfigRaw['features'],
+  storybook: Pick<Storybook, 'callHook'>
+): Promise<NonNullable<StorybookConfigRaw['features']> & { babelRemoveBugfixes: boolean }> {
   return {
     ...existing,
-    actions: true,
     argTypeTargetsV7: true,
     babelRemoveBugfixes: babelPresetEnvMajor ? babelPresetEnvMajor >= 8 : false,
-    backgrounds: true,
-    componentsManifest: false,
     experimentalChunkedPreviewRuntime: false,
-    controls: true,
-    disallowImplicitActionsInRenderV8: true,
-    docgenServer: storybook
-      ? await storybook.callHook('core:docgen-enabled:extend', false)
-      : await options.presets.apply('isDocgenProviderEnabled', false),
-    highlight: true,
-    interactions: true,
-    measure: true,
-    outline: true,
-    menuOnboardingChecklist: true,
-    sidebarOnboardingChecklist: true,
-    viewport: true,
+    docgenServer: await storybook.callHook('core:docgen-enabled:extend', false),
   };
-};
+}
 
 export const csfIndexer: Indexer = {
   test: STORY_FILE_TEST_REGEXP,
@@ -77,13 +56,14 @@ export const csfIndexer: Indexer = {
   },
 };
 
-export const experimental_indexers: PresetProperty<'experimental_indexers'> = (existingIndexers) =>
-  [csfIndexer].concat(existingIndexers || []);
+/** Put the CSF indexer ahead of the indexers plugins collected. */
+export function experimental_indexers(existingIndexers: Indexer[] | undefined): Indexer[] {
+  return [csfIndexer].concat(existingIndexers || []);
+}
 
-async function getHeadlessChangeDetectionAdapter() {
+async function getHeadlessChangeDetectionAdapter(storybook: Storybook) {
   try {
-    const storybook = getInstanceContext()?.storybook;
-    return storybook?.builder?.changeDetectionAdapter(storybook);
+    return storybook.builder?.changeDetectionAdapter(storybook);
   } catch (error) {
     logger.warn('Change detection: adapter initialisation failed');
     logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
@@ -92,30 +72,25 @@ async function getHeadlessChangeDetectionAdapter() {
 }
 
 /** Registers core services on the current instance; services only exist inside one. */
-export const services = async (_value: void, options: Options): Promise<void> => {
+export async function services(storybook: Storybook): Promise<void> {
   const context = getInstanceContext();
   if (!context) {
     throw new Error('The services preset can only be applied inside a Storybook instance.');
   }
-  const devServerSubscriptions = getDevServerSubscriptions();
   if (context.state.has(SERVICES_LOADED)) {
     throw new OpenServiceServicesAppliedTwiceError();
   }
   context.state.set(SERVICES_LOADED, true);
 
-  const getIndex = async () => {
-    const generator = context.storybook
-      ? await context.storybook.getStoryIndexGenerator()
-      : await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
-    return generator.getIndex();
-  };
+  const getIndex = () => storybook.getIndex();
+  const { configDir } = storybook;
 
   registerModuleGraphService({
-    channel: options.channel,
+    channel: storybook.channel,
     getIndex,
     workingDir: context.workingDir,
-    presets: options.presets,
-    getAdapter: () => getHeadlessChangeDetectionAdapter(),
+    getImportParsers: () => storybook.callHook('core:import-parsers:collect', []),
+    getAdapter: () => getHeadlessChangeDetectionAdapter(storybook),
     getChangeDetectionReadiness,
   });
 
@@ -134,89 +109,49 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       },
       changeStatuses: { getAll: getSyncedStatuses },
       storyRender: {
-        get: async () => context.storybook?.callHook('core:story-render:extend', undefined),
+        get: async () => storybook.callHook('core:story-render:extend', undefined),
       },
       // Real paths, because git reports the repo root as one; on Windows the cwd can differ in case.
       storybookDirs: {
-        configDir: realpathSync.native(pathe.resolve(options.configDir)),
+        configDir: realpathSync.native(pathe.resolve(configDir)),
         getStaticDirs: async () =>
-          (
-            (context.storybook
-              ? await context.storybook.callHook('core:static-dirs:collect', [])
-              : await options.presets.apply('staticDirs')) ?? []
-          ).flatMap((staticDir) => {
-            try {
-              return [realpathSync.native(mapStaticDir(staticDir, options.configDir).staticPath)];
-            } catch {
-              // A missing directory throws here, and holds no changed files anyway.
-              return [];
+          ((await storybook.callHook('core:static-dirs:collect', [])) ?? []).flatMap(
+            (staticDir) => {
+              try {
+                return [realpathSync.native(mapStaticDir(staticDir, configDir).staticPath)];
+              } catch {
+                // A missing directory throws here, and holds no changed files anyway.
+                return [];
+              }
             }
-          }),
+          ),
       },
     })
   );
+}
 
-  registerReviewService({
-    getIndex,
-  });
-  devServerSubscriptions.push(subscribeReviewToModuleGraphChanges);
-  registerToolset(reviewToolset);
-};
-
-export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> = async (
-  app,
-  options
-) => {
-  await applyServicesPresetOnce(options.presets);
+/** Registers services if setup did not, then starts the dev-only service subscriptions. */
+export async function experimental_devServer(
+  app: ServerApp,
+  storybook: Pick<Storybook, 'callHook'>
+): Promise<ServerApp> {
+  await applyServicesPresetOnce(storybook);
   for (const subscribe of getDevServerSubscriptions().splice(0)) {
     subscribe();
   }
 
   return app;
-};
+}
 
-// Store the promise (not the result) to prevent race conditions.
-// The promise is assigned synchronously, so concurrent calls will share the same initialization.
-// This is essentially an async singleton pattern.
-export let storyIndexGeneratorPromise: Promise<StoryIndexGenerator> | undefined;
 export const storyIndexGenerator: PresetPropertyFn<
   'storyIndexGenerator',
   StorybookConfigRaw
-> = async (_, options) => {
+> = async () => {
   const context = getInstanceContext();
-  if (context) {
-    return context.getStoryIndexGenerator();
+  if (!context) {
+    throw new Error(
+      'The storyIndexGenerator preset can only be applied inside a Storybook instance.'
+    );
   }
-  if (storyIndexGeneratorPromise) {
-    return storyIndexGeneratorPromise;
-  }
-
-  storyIndexGeneratorPromise = (async () => {
-    const workingDir = process.cwd();
-    const configDir = options.configDir;
-    const stories = await options.presets.apply('stories');
-    const normalizedStories = normalizeStories(stories, {
-      configDir,
-      workingDir,
-    });
-
-    const [indexers, docs, features] = await Promise.all([
-      options.presets.apply('experimental_indexers', []),
-      options.presets.apply('docs'),
-      options.presets.apply('features'),
-    ]);
-
-    const generator = new StoryIndexGenerator(normalizedStories, {
-      workingDir,
-      configDir,
-      indexers,
-      docs,
-      features,
-      storySorts: await options.presets.apply('storySorts', []),
-    });
-    await generator.initialize();
-    return generator;
-  })();
-
-  return storyIndexGeneratorPromise;
+  return context.getStoryIndexGenerator();
 };

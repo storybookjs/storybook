@@ -1,3 +1,4 @@
+import { whenChannelInstalled } from '@storybook/core/internal/channels';
 import {
   type StoreEvent,
   type StoreState,
@@ -8,7 +9,9 @@ import { UniversalStore } from '@storybook/core/internal/deep/shared/universal-s
 
 export const universalChecklistStore = UniversalStore.create<StoreState, StoreEvent>({
   ...UNIVERSAL_CHECKLIST_STORE_OPTIONS,
-  leader: globalThis.CONFIG_TYPE === 'PRODUCTION',
+  // A static build has no server, so the manager owns the state.
+  owner: globalThis.CONFIG_TYPE === 'PRODUCTION',
+  channel: whenChannelInstalled(),
 });
 
 export const checklistStore = createChecklistStore(universalChecklistStore);

@@ -29,11 +29,12 @@ export type AngularViteOptions = FrameworkOptions;
 /** Contribute Angular's preview annotations and server docgen. */
 export const angularViteRenderer = defineRenderer<void, AngularRenderer>(() => ({
   meta: { name: '@storybook/angular-vite' },
+  // Before setup, so the product keeps its components-manifest addon.
+  features: { componentsManifest: true },
   setup(storybook): void {
     storybook.hook('preview:annotations:collect', async () =>
       getPreviewAnnotations(await storybook.callHook('core:docs:extend', {}))
     );
-    storybook.hook('core:features:extend', (value) => ({ ...value, componentsManifest: true }));
     storybook.hook('core:docgen-enabled:extend', () => true);
     storybook.hook('core:docgen-providers:collect', async () => [
       getDocgenProvider(

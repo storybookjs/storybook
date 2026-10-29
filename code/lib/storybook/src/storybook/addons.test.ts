@@ -1,4 +1,3 @@
-import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import { relative, resolve } from 'pathe';
@@ -10,19 +9,46 @@ import {
   type StorybookConfig,
   type StorybookHooks,
 } from 'storybook/internal/instance';
-import type { CoreConfig, ServerApp } from '@storybook/core/internal/types';
+import type { CoreConfig, PreviewAnnotation, ServerApp } from '@storybook/core/internal/types';
 import mcp from '@storybook/addon-mcp/node';
 
 import main from '../../../../.storybook/main.ts';
 import { getRegisteredServices } from '../../../../core/src/shared/open-service/service-registry.ts';
 import { getRegisteredToolsets } from '@storybook/core/open-service';
-import { getBuiltInManagerEntries } from './server/presets/manager-entries.ts';
 import { getMcpMetadataFromMainConfig } from './server/utils/runtime-instance-registry.ts';
 
 const CODE_DIR = fileURLToPath(new URL('../../../../', import.meta.url));
 const CONFIG_DIR = resolve(CODE_DIR, '.storybook');
 const INSTANCES: Storybook[] = [];
+const BUILT_IN_DIST = ['lib/storybook/dist/features/', 'core/dist/', 'lib/manager/dist/'];
 const LOCAL_ADDONS = ['storybook-internal-vite', 'storybook-internal-services'];
+const FEATURES_PRESET = fileURLToPath(
+  new URL('./__fixtures__/features-preset.ts', import.meta.url)
+);
+const FLAGS = {
+  componentsManifest: true,
+  actions: false,
+  backgrounds: false,
+  controls: false,
+  highlight: false,
+  interactions: false,
+  measure: false,
+  outline: false,
+  viewport: false,
+};
+const BUILT_IN_PREVIEWS = [
+  'lib/storybook/dist/features/measure/preview.js',
+  'lib/storybook/dist/features/backgrounds/preview.js',
+  'lib/storybook/dist/features/highlight/preview.js',
+  'lib/storybook/dist/features/outline/preview.js',
+  'lib/storybook/dist/features/viewport/preview.js',
+  'lib/storybook/dist/features/actions/preview.js',
+  'lib/storybook/dist/features/component-testing/preview.js',
+  'core/dist/test/preview.js',
+  'core/dist/story-index/ghost-stories/test-annotations.js',
+  'core/dist/shared/open-service/services/docgen/preview.js',
+  'core/dist/shared/open-service/services/story-docs/preview.js',
+];
 // The internal config's local addons have no package preset to map to.
 const LEGACY_ADDONS = main
   .addons!.map((addon) => (typeof addon === 'object' && 'meta' in addon ? addon.meta.name : addon))
@@ -52,6 +78,13 @@ function shape(value: unknown): unknown {
     return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, shape(entry)]));
   }
   return value;
+}
+
+/** Keep the built-in entries, relative to `code/`. */
+function builtIn(entries: PreviewAnnotation[]): string[] {
+  return entries
+    .map((entry) => relative(CODE_DIR, typeof entry === 'string' ? entry : entry.absolute))
+    .filter((entry) => BUILT_IN_DIST.some((dir) => entry.startsWith(dir)));
 }
 
 async function load(addons: StorybookConfig['addons']): Promise<Storybook> {
@@ -188,37 +221,87 @@ describe('official native addons', () => {
 });
 
 describe('manager entries', () => {
-  it('bundles built-in managers in addon metadata order', async () => {
-    const entries = getBuiltInManagerEntries();
-    // Product entries are package-relative paths; other packages' entries are module specifiers.
-    const fromCode = (entry: string) =>
-      entry.startsWith('src/') ? `lib/storybook/${entry}` : entry;
-    expect(entries.map(fromCode)).toMatchInlineSnapshot(`
-      [
-        "@storybook/manager/internal/deep/shared/open-service/services/docgen/manager",
-        "@storybook/manager/internal/deep/shared/open-service/services/review/manager",
-        "lib/storybook/src/features/measure/manager.tsx",
-        "lib/storybook/src/features/actions/manager.tsx",
-        "lib/storybook/src/features/backgrounds/manager.tsx",
-        "lib/storybook/src/features/component-testing/manager.tsx",
-        "lib/storybook/src/features/controls/manager.tsx",
-        "lib/storybook/src/features/viewport/manager.tsx",
-        "lib/storybook/src/features/outline/manager.tsx",
-      ]
+  it('collects built-in managers in metadata order and their previews in setup order', async () => {
+    const instance = await load([]);
+
+    expect({
+      manager: builtIn(await instance.callHook('manager:entries:collect', [])),
+      preview: builtIn(await instance.callHook('preview:annotations:collect', [])),
+    }).toMatchInlineSnapshot(`
+      {
+        "manager": [
+          "lib/manager/dist/shared/open-service/services/docgen/manager.js",
+          "lib/manager/dist/shared/open-service/services/review/manager.js",
+          "lib/storybook/dist/features/measure/manager.js",
+          "lib/storybook/dist/features/actions/manager.js",
+          "lib/storybook/dist/features/backgrounds/manager.js",
+          "lib/storybook/dist/features/component-testing/manager.js",
+          "lib/storybook/dist/features/controls/manager.js",
+          "lib/storybook/dist/features/viewport/manager.js",
+          "lib/storybook/dist/features/outline/manager.js",
+        ],
+        "preview": [
+          "lib/storybook/dist/features/measure/preview.js",
+          "lib/storybook/dist/features/backgrounds/preview.js",
+          "lib/storybook/dist/features/highlight/preview.js",
+          "lib/storybook/dist/features/outline/preview.js",
+          "lib/storybook/dist/features/viewport/preview.js",
+          "lib/storybook/dist/features/actions/preview.js",
+          "lib/storybook/dist/features/component-testing/preview.js",
+          "core/dist/test/preview.js",
+          "core/dist/story-index/ghost-stories/test-annotations.js",
+          "core/dist/shared/open-service/services/docgen/preview.js",
+          "core/dist/shared/open-service/services/story-docs/preview.js",
+        ],
+      }
     `);
-    const source = await readFile(
-      new URL('./server/presets/common-manager.ts', import.meta.url),
-      'utf8'
-    );
-    const imports = [...source.matchAll(/import manager\d+ from '([^']+)'/g)].map((match) =>
-      match[1].startsWith('.')
-        ? relative(
-            resolve(CODE_DIR, 'lib/storybook'),
-            resolve(CODE_DIR, 'lib/storybook/src/storybook/server/presets', match[1])
-          )
-        : match[1]
-    );
-    expect(imports).toEqual(entries);
+  });
+
+  it.each([
+    {
+      source: 'main.ts `features`',
+      config: { features: { ...main.features, ...FLAGS }, addons: [] },
+    },
+    {
+      source: 'a `features` preset function',
+      config: { addons: [{ name: FEATURES_PRESET, options: { flags: FLAGS } }] },
+    },
+    {
+      source: 'a setup-time `core:features:extend` handler',
+      config: {
+        addons: [
+          defineAddon(() => ({
+            meta: { name: 'flags' },
+            setup(storybook): void {
+              storybook.hook('core:features:extend', (value) => ({ ...value, ...FLAGS }));
+            },
+          }))(),
+        ],
+      },
+    },
+  ])('flags from $source hide only the built-in managers', async ({ config }) => {
+    const instance = await createStorybook({
+      configDir: CONFIG_DIR,
+      workingDir: CODE_DIR,
+      mode: 'headless',
+      main: { ...main, ...config },
+    });
+    INSTANCES.push(instance);
+    const app = { get: vi.fn(), post: vi.fn(), use: vi.fn() };
+    await instance.callHook('server:app:extend', app as unknown as ServerApp);
+
+    expect({
+      manager: builtIn(await instance.callHook('manager:entries:collect', [])),
+      preview: builtIn(await instance.callHook('preview:annotations:collect', [])),
+      manifestRoute: app.get.mock.calls.some(([path]) => String(path).startsWith('/manifests/')),
+    }).toEqual({
+      manager: [
+        'lib/manager/dist/shared/open-service/services/docgen/manager.js',
+        'lib/manager/dist/shared/open-service/services/review/manager.js',
+      ],
+      preview: BUILT_IN_PREVIEWS,
+      manifestRoute: true,
+    });
   });
 
   it('collects native managers in main order before main managerEntries', async () => {
@@ -240,8 +323,7 @@ describe('manager entries', () => {
       main: config,
     });
     INSTANCES.push(instance);
-    expect(await instance.callHook('manager:entries:collect', [])).toEqual([
-      resolve(CODE_DIR, 'lib/storybook/dist/storybook/server/presets/common-manager.js'),
+    expect((await instance.callHook('manager:entries:collect', [])).slice(-3)).toEqual([
       'first-manager.js',
       'second-manager.js',
       'legacy-manager.js',
@@ -259,7 +341,15 @@ describe('manager entries', () => {
     expect({ before: baseline, after: await entries(after) }).toMatchInlineSnapshot(`
       {
         "after": [
-          "lib/storybook/dist/storybook/server/presets/common-manager.js",
+          "lib/manager/dist/shared/open-service/services/docgen/manager.js",
+          "lib/manager/dist/shared/open-service/services/review/manager.js",
+          "lib/storybook/dist/features/measure/manager.js",
+          "lib/storybook/dist/features/actions/manager.js",
+          "lib/storybook/dist/features/backgrounds/manager.js",
+          "lib/storybook/dist/features/component-testing/manager.js",
+          "lib/storybook/dist/features/controls/manager.js",
+          "lib/storybook/dist/features/viewport/manager.js",
+          "lib/storybook/dist/features/outline/manager.js",
           "addons/onboarding/dist/manager.js",
           "addons/themes/dist/manager.js",
           "addons/docs/dist/manager.js",
@@ -270,7 +360,15 @@ describe('manager entries', () => {
           "../node_modules/@chromatic-com/storybook/dist/manager.mjs",
         ],
         "before": [
-          "lib/storybook/dist/storybook/server/presets/common-manager.js",
+          "lib/manager/dist/shared/open-service/services/docgen/manager.js",
+          "lib/manager/dist/shared/open-service/services/review/manager.js",
+          "lib/storybook/dist/features/measure/manager.js",
+          "lib/storybook/dist/features/actions/manager.js",
+          "lib/storybook/dist/features/backgrounds/manager.js",
+          "lib/storybook/dist/features/component-testing/manager.js",
+          "lib/storybook/dist/features/controls/manager.js",
+          "lib/storybook/dist/features/viewport/manager.js",
+          "lib/storybook/dist/features/outline/manager.js",
           "addons/onboarding/dist/manager.js",
           "addons/themes/dist/manager.js",
           "addons/docs/dist/manager.js",

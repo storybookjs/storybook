@@ -1,6 +1,4 @@
-import { getInstanceContext } from '../../../instance-context.ts';
-
-import type { StoryDocsProvider } from '@storybook/core/internal/types';
+import '../../../../services/hooks.ts';
 
 import type { Storybook } from '../../../../instance/types.ts';
 import { getRefsFromConfig } from '../../../../common/utils/get-refs-from-config.ts';
@@ -14,20 +12,15 @@ import { registerToolset } from '../../toolset-registry.ts';
 import { registerStoryDocsService, subscribeStoryDocsToModuleGraphChanges } from './server.ts';
 
 export default async function setup(
-  storybook: Pick<Storybook, 'presets' | 'getIndex' | 'workingDir'>
+  storybook: Pick<Storybook, 'callHook' | 'getIndex' | 'getStoryIndexGenerator' | 'workingDir'>
 ): Promise<void> {
   const getIndex = () => storybook.getIndex();
-  const instance = getInstanceContext()?.storybook;
-  const features = instance
-    ? await instance.callHook('core:features:extend', undefined)
-    : await storybook.presets.apply('features');
+  const features = await storybook.callHook('core:features:extend', undefined);
   if (features?.docgenServer) {
-    const storyDocsProvider = instance
-      ? await instance.callHook('core:story-docs-provider:extend', async () => undefined)
-      : await storybook.presets.apply<StoryDocsProvider>(
-          'experimental_storyDocsProvider',
-          async () => undefined
-        );
+    const storyDocsProvider = await storybook.callHook(
+      'core:story-docs-provider:extend',
+      async () => undefined
+    );
     registerStoryDocsService({ getIndex, storyDocsProvider });
     getDevServerSubscriptions().push(() =>
       subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: storybook.workingDir })
@@ -35,7 +28,7 @@ export default async function setup(
   }
   const localDocsAccess = createLocalDocsAccess({
     storyIndex: { getIndex },
-    getManifests: () => loadManifests(storybook.presets),
+    getManifests: () => loadManifests(storybook),
   });
   const refs = await getRefsFromConfig(storybook);
   registerToolset(

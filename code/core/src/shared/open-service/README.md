@@ -64,11 +64,11 @@ Internal tests and implementation code may import from the individual modules di
 - [types.ts](./types.ts): core type model for definitions, contexts, runtime instances, and static build data
 - [service-definition.ts](./service-definition.ts): `defineService()` typing that preserves inline inference when declaring services
 - [toolset-definition.ts](./toolset-definition.ts): `defineToolset()` typing for public toolsets and their handler context
-- [toolset-registry.ts](./toolset-registry.ts): `registerToolset` / `getToolset` / `getRegisteredToolsets` — the realm-global toolset inventory adapters read
+- [toolset-registry.ts](./toolset-registry.ts): `registerToolset` / `getToolset` / `getRegisteredToolsets` — the per-instance toolset inventory adapters read
 - [toolset-names.ts](./toolset-names.ts): derived MCP/CLI method names and `getToolName` for transport-aware cross-references
 - [toolset-rpc.ts](./toolset-rpc.ts): message names, schemas, and error helpers for the toolset RPC an attached client uses to run a dev server's toolsets
 - `services/`: core OSA service definitions and per-runtime registration helpers
-- `toolsets/`: core-owned public toolsets (docs, stories, review), mirroring the services tree; addons may own additional toolsets
+- `toolsets/`: core-owned public toolsets (docs, stories), mirroring the services tree; addons and `storybook` built-ins own the others
 - [service-validation.ts](./service-validation.ts): sync + async schema validation helpers and error wrapping
 - [errors.ts](./errors.ts): validation metadata formatting helpers
 - [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction (state, commands, static loader) that assembles one service instance
@@ -155,8 +155,9 @@ Facts that are fixed at boot (whether review or a11y is enabled) are factory opt
 toolset, not `ctx` fields.
 
 Toolsets register imperatively via `registerToolset`, called from the same place the paired service
-registers (for core and addons, a `core:services:register` handler — the mechanism itself is
-hook-independent so manager- or preview-realm toolsets can use it later). A toolset must be
+registers (for core and addons, a `core:services:register` handler). The registry lives on the
+current Storybook instance; every registry function throws `StorybookInstanceUnavailableError`
+outside one. A toolset must be
 registered wherever a consumer resolves it, including consumers that only read its descriptions and
 schemas: `getToolset(id)` throws on an unregistered id rather than silently dropping a tool.
 Adapters resolve one toolset with `getToolset(id)` or take the whole set via
@@ -173,7 +174,9 @@ the addon keeps per tool (`tool:getStoriesByComponent`), so MCP usage data stays
 versions. Toolsets never name events themselves. Third-party toolsets do not need to participate in
 Storybook's telemetry taxonomy.
 
-Core owns `docs`, `stories`, and `review`. Addon-vitest owns the complete `test` toolset—its schemas,
+Core owns `docs` and `stories`. The `storybook` review built-in (`lib/storybook/src/features/review/`)
+owns `review`, its server registration, and its staleness subscription; core keeps the `core/review`
+service definition because the manager UI registers it too. Addon-vitest owns the complete `test` toolset—its schemas,
 channel protocol, formatting, telemetry, and tests—and registers it beside its responder from the
 same `core:services:register` handler. Core exports only the generic story-selector primitives the addon needs.
 

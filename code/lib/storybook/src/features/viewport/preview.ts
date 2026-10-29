@@ -13,7 +13,6 @@ export const initialGlobals: Record<string, GlobalState> = {
 
 export type { ViewportGlobals, ViewportTypes };
 
-export default () =>
-  definePreviewAddon<ViewportTypes>({
-    initialGlobals,
-  });
+export default definePreviewAddon<ViewportTypes>({
+  initialGlobals,
+});

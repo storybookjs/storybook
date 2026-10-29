@@ -4,6 +4,8 @@ import { defineRenderer } from '@storybook/core';
 import { buildManifests } from './componentManifest/generator.ts';
 import type { TypescriptOptions } from './componentManifest/getComponentImports.ts';
 import { getArgTypesData } from './componentManifest/reactDocgen/getArgTypesData.ts';
+import { invalidateParser } from './componentManifest/reactDocgenTypescript.ts';
+import { invalidateCache } from './componentManifest/utils.ts';
 import { getDocgenProvider } from './docgen/provider.ts';
 import { createStoryDocsProvider } from './docgen/story-docs-provider.ts';
 import { createCsfEnricher } from './enrichCsf.ts';
@@ -27,6 +29,8 @@ const OPTIMIZE_VITE_DEPS = [
 /** Configure React rendering, annotations, and docgen. */
 export const react = defineRenderer<void, ReactTypes>(() => ({
   meta: { name: '@storybook/react' },
+  // Before setup, so the product keeps its components-manifest addon.
+  features: { componentsManifest: true },
   setup(storybook): void {
     const typescriptOptions = (): Promise<Partial<TypescriptOptions>> =>
       storybook.callHook('core:typescript:extend', {}) as Promise<Partial<TypescriptOptions>>;
@@ -36,7 +40,6 @@ export const react = defineRenderer<void, ReactTypes>(() => ({
         await storybook.callHook('core:features:extend', {})
       )
     );
-    storybook.hook('core:features:extend', (value) => ({ ...value, componentsManifest: true }));
     storybook.hook('core:docgen-enabled:extend', () => isTypescriptInstalled());
     storybook.hook('core:docgen-providers:collect', () => [getDocgenProvider()]);
     storybook.hook('core:story-docs-provider:extend', (value) =>
@@ -72,6 +75,11 @@ export const react = defineRenderer<void, ReactTypes>(() => ({
       'reduce'
     );
     storybook.hook('builder:vite-deps:collect', () => OPTIMIZE_VITE_DEPS, 'collect');
+    // The manifest caches hold TypeScript programs; another instance only rebuilds them.
+    storybook.hook('core:instance:close', () => {
+      invalidateCache();
+      invalidateParser();
+    });
   },
 }));
 

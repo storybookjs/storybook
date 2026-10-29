@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import * as v from 'valibot';
 
@@ -6,7 +6,14 @@ import {
   OpenServiceDuplicateToolNameError,
   OpenServiceDuplicateToolsetError,
   OpenServiceMissingToolsetError,
+  StorybookInstanceUnavailableError,
 } from '../../server-errors.ts';
+import {
+  createTestInstanceContext,
+  runInTestInstance,
+  useTestInstance,
+} from '../instance-context.test-helpers.ts';
+import { getInstanceContext } from '../instance-context.ts';
 import { defineToolset } from './toolset-definition.ts';
 import {
   clearToolsetRegistry,
@@ -24,24 +31,22 @@ const makeToolset = (id: string, description = `${id} toolset`) =>
         title: 'No-op',
         description: 'No-op method.',
         input: v.strictObject({}),
-        handler: () => ({ ok: true, data: undefined, markdown: '' }) as const,
+        handler: () =>
+          ({ ok: true, data: getInstanceContext()?.workingDir, markdown: '' }) as const,
       },
     },
   });
 
-beforeEach(() => {
-  clearToolsetRegistry();
-});
+const ids = (): string[] => getRegisteredToolsets().map((toolset) => toolset.id);
 
 describe('registerToolset', () => {
+  useTestInstance();
+
   it('registers toolsets and returns them in registration order', () => {
-    const docs = makeToolset('docs');
-    const review = makeToolset('review');
+    registerToolset(makeToolset('docs'));
+    registerToolset(makeToolset('review'));
 
-    registerToolset(docs);
-    registerToolset(review);
-
-    expect(getRegisteredToolsets()).toEqual([docs, review]);
+    expect(ids()).toEqual(['docs', 'review']);
   });
 
   it('throws on a duplicate id: two hosts claiming one public surface is mis-wiring', () => {
@@ -112,17 +117,59 @@ describe('registerToolset', () => {
   it('returns an empty list before any registration', () => {
     expect(getRegisteredToolsets()).toEqual([]);
   });
+
+  it('clears the current instance toolsets', () => {
+    registerToolset(makeToolset('docs'));
+    clearToolsetRegistry();
+
+    expect(getRegisteredToolsets()).toEqual([]);
+  });
 });
 
 describe('getToolset', () => {
-  it('returns a registered toolset by id', () => {
-    const docs = makeToolset('docs');
-    registerToolset(docs);
+  useTestInstance();
 
-    expect(getToolset('docs')).toBe(docs);
+  it('returns a registered toolset by id', () => {
+    registerToolset(makeToolset('docs'));
+
+    expect(getToolset('docs')).toMatchObject({ id: 'docs', description: 'docs toolset' });
   });
 
   it('throws for an unregistered id instead of returning an empty result', () => {
     expect(() => getToolset('stories')).toThrow(OpenServiceMissingToolsetError);
+  });
+});
+
+describe('instance scope', () => {
+  it.each([
+    { name: 'registerToolset', call: () => registerToolset(makeToolset('docs')) },
+    { name: 'getToolset', call: () => getToolset('docs') },
+    { name: 'getRegisteredToolsets', call: () => getRegisteredToolsets() },
+    { name: 'clearToolsetRegistry', call: () => clearToolsetRegistry() },
+  ])('$name throws outside an instance', ({ name, call }) => {
+    expect(call).toThrow(StorybookInstanceUnavailableError);
+    expect(call).toThrow(`${name}() was called outside a Storybook instance.`);
+  });
+
+  it('keeps each instance toolsets apart', async () => {
+    const first = createTestInstanceContext('/first');
+    const second = createTestInstanceContext('/second');
+
+    await runInTestInstance(() => registerToolset(makeToolset('docs')), first);
+    await runInTestInstance(() => registerToolset(makeToolset('review')), second);
+
+    await expect(runInTestInstance(ids, first)).resolves.toEqual(['docs']);
+    await expect(runInTestInstance(ids, second)).resolves.toEqual(['review']);
+  });
+
+  it('runs handlers in the registering instance even when called outside it', async () => {
+    const toolset = await runInTestInstance(() => {
+      registerToolset(makeToolset('widgets'));
+      return getToolset('widgets');
+    }, createTestInstanceContext('/owner'));
+
+    const outcome = await toolset.methods.noop.handler({}, { transport: 'sdk' } as never);
+
+    expect(outcome.data).toBe('/owner');
   });
 });

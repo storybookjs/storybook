@@ -15,8 +15,6 @@ import { StoryIndexGenerator } from '../../../../../core/src/story-index/StoryIn
 import type { InstanceContext } from '@storybook/core/internal/deep/shared/instance-context';
 import { clearRegistry } from '../../../../../core/src/shared/open-service/service-registry.ts';
 import { clearToolsetRegistry } from '../../../../../core/src/shared/open-service/toolset-registry.ts';
-import { UniversalStore } from '@storybook/core/internal/deep/shared/universal-store';
-import { createUniversalStoreRealm } from '../../../../../core/src/shared/universal-store/realm.ts';
 import { createHookRuntime } from '../../../../../core/src/instance/hooks.ts';
 import { instanceContext } from '@storybook/core/internal/deep/instance/instance-context';
 import {
@@ -51,10 +49,6 @@ async function apply(extension: string, bridged: boolean): Promise<unknown> {
   const context: InstanceContext = {
     channel,
     workingDir: WORKING_DIR,
-    universalStoreRealm: createUniversalStoreRealm({
-      channel,
-      environment: UniversalStore.Environment.SERVER,
-    }),
     state: new Map(),
     cleanups: new Set(),
     getStoryIndexGenerator: () => (initialized ??= generator.initialize().then(() => generator)),
@@ -106,10 +100,6 @@ async function apply(extension: string, bridged: boolean): Promise<unknown> {
       await Promise.all([...context.cleanups].map((cleanup) => cleanup()));
       clearRegistry();
       clearToolsetRegistry();
-      for (const store of context.universalStoreRealm.instances.values()) {
-        store.__dispose();
-      }
-      context.universalStoreRealm.instances.clear();
       channel.removeAllListeners();
     }
   });
@@ -148,20 +138,6 @@ describe('internal Storybook preset equivalence', () => {
       'fetch',
       vi.fn().mockRejectedValue(new Error('Network disabled in preset equivalence test.'))
     );
-    const warn = console.warn;
-    const warning = vi.spyOn(console, 'warn').mockImplementation((message, ...args) => {
-      if (
-        typeof message === 'string' &&
-        message.startsWith('UniversalStore with id "storybook/test-provider" already exists')
-      ) {
-        return;
-      }
-      warn(message, ...args);
-    });
-    try {
-      expect(await apply(extension, true)).toEqual(await apply(extension, false));
-    } finally {
-      warning.mockRestore();
-    }
+    expect(await apply(extension, true)).toEqual(await apply(extension, false));
   });
 });

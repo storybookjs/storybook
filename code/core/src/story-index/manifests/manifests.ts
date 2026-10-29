@@ -1,16 +1,16 @@
 import '../hooks.ts';
-import { getInstanceContext } from '../../shared/instance-context.ts';
 
 import { mkdir, writeFile } from 'node:fs/promises';
 
 import { selectComponentEntriesByComponentId } from '@storybook/core/internal/common';
 import { logger } from '@storybook/core/internal/node-logger';
-import type { Manifests, Presets } from '@storybook/core/internal/types';
+import type { Manifests } from '@storybook/core/internal/types';
 
 import { join } from 'pathe';
 import type { Polka } from 'polka';
 import invariant from 'tiny-invariant';
 
+import type { Storybook } from '../../instance/types.ts';
 import { getService } from '../../shared/open-service/server.ts';
 import { Tag } from '../../constants/tags.ts';
 import type { ComponentsManifest } from '../../types/modules/core-common.ts';
@@ -41,6 +41,9 @@ import {
   type DocsManifest,
   renderComponentsManifest,
 } from './render-components-manifest.ts';
+
+/** The instance pieces manifests read: the story index and the manifest and feature hooks. */
+export type ManifestsStorybook = Pick<Storybook, 'callHook' | 'getStoryIndexGenerator'>;
 
 /**
  * Wraps merged docgen + story-docs payloads in a {@link ComponentsManifest} shell for the HTML
@@ -110,11 +113,8 @@ function isDocsManifest(manifest: unknown): manifest is DocsManifest {
  * Computed once per operation and threaded into {@link getManifests} and
  * {@link getManifestComponentIds} so a single write/render does not re-walk the index.
  */
-async function getManifestEntries(presets: Presets) {
-  const storybook = getInstanceContext()?.storybook;
-  const generator = storybook
-    ? await storybook.getStoryIndexGenerator()
-    : await presets.apply('storyIndexGenerator');
+async function getManifestEntries(storybook: ManifestsStorybook) {
+  const generator = await storybook.getStoryIndexGenerator();
   invariant(generator, 'storyIndexGenerator must be configured');
   const index = await generator.getIndex();
   return Object.values(index.entries).filter(
@@ -136,18 +136,13 @@ function getManifestComponentIds(manifestEntries: ManifestEntries) {
 
 /** Loads all manifests from the `experimental_manifests` preset for the given manifest entries. */
 async function getManifests(
-  presets: Presets,
+  storybook: ManifestsStorybook,
   manifestEntries: ManifestEntries,
   { watch }: { watch?: boolean } = {}
 ) {
-  const storybook = getInstanceContext()?.storybook;
   return (
-    (await (storybook
-      ? storybook.callHook('index:manifests:extend', undefined, { manifestEntries, watch })
-      : presets.apply<Manifests>('experimental_manifests', undefined, {
-          manifestEntries,
-          watch,
-        }))) ?? {}
+    (await storybook.callHook('index:manifests:extend', undefined, { manifestEntries, watch })) ??
+    {}
   );
 }
 
@@ -157,8 +152,8 @@ async function getManifests(
  * Exposed for the docs toolset, which reads manifest data in-process instead of fetching its own
  * server over loopback HTTP.
  */
-export async function loadManifests(presets: Presets) {
-  return getManifests(presets, await getManifestEntries(presets), { watch: true });
+export async function loadManifests(storybook: ManifestsStorybook): Promise<Manifests> {
+  return getManifests(storybook, await getManifestEntries(storybook), { watch: true });
 }
 
 /**
@@ -356,14 +351,14 @@ async function writeLegacyManifests(
 }
 
 /** Writes manifest JSON (and HTML when applicable) to `outputDir/manifests/`. */
-export async function writeManifests(outputDir: string, presets: Presets) {
+export async function writeManifests(
+  outputDir: string,
+  storybook: ManifestsStorybook
+): Promise<void> {
   try {
-    const storybook = getInstanceContext()?.storybook;
-    const features = storybook
-      ? await storybook.callHook('core:features:extend', undefined)
-      : await presets.apply('features');
-    const manifestEntries = await getManifestEntries(presets);
-    const manifests = await getManifests(presets, manifestEntries);
+    const features = await storybook.callHook('core:features:extend', undefined);
+    const manifestEntries = await getManifestEntries(storybook);
+    const manifests = await getManifests(storybook, manifestEntries);
     const docsManifest = isDocsManifest(manifests.docs) ? manifests.docs : undefined;
 
     if (isDocgenServerManifestMode(features)) {
@@ -389,12 +384,18 @@ export async function writeManifests(outputDir: string, presets: Presets) {
  * When `docgenServer` is enabled, `components.json` is not served (404) and
  * `components.html` is rendered from the docgen service instead of the inline manifest.
  */
-export function registerManifests({ app, presets }: { app: Polka; presets: Presets }) {
+export function registerManifests({
+  app,
+  storybook,
+}: {
+  app: Polka;
+  storybook: ManifestsStorybook;
+}): void {
   let useDocgenServerPromise: Promise<boolean> | undefined;
 
   const isDocgenServerEnabled = () => {
-    useDocgenServerPromise ??= presets
-      .apply('features')
+    useDocgenServerPromise ??= storybook
+      .callHook('core:features:extend', undefined)
       .then((features) => isDocgenServerManifestMode(features ?? {}));
     return useDocgenServerPromise;
   };
@@ -412,8 +413,8 @@ export function registerManifests({ app, presets }: { app: Polka; presets: Prese
         return;
       }
 
-      const manifestEntries = await getManifestEntries(presets);
-      const manifests = await getManifests(presets, manifestEntries, { watch: true });
+      const manifestEntries = await getManifestEntries(storybook);
+      const manifests = await getManifests(storybook, manifestEntries, { watch: true });
       const manifest = manifests[req.params.name];
 
       if (manifest) {
@@ -432,8 +433,8 @@ export function registerManifests({ app, presets }: { app: Polka; presets: Prese
 
   app.get('/manifests/components.html', async (req, res) => {
     try {
-      const manifestEntries = await getManifestEntries(presets);
-      const manifests = await getManifests(presets, manifestEntries, { watch: true });
+      const manifestEntries = await getManifestEntries(storybook);
+      const manifests = await getManifests(storybook, manifestEntries, { watch: true });
       const docsManifest = isDocsManifest(manifests.docs) ? manifests.docs : undefined;
 
       if (await isDocgenServerEnabled()) {

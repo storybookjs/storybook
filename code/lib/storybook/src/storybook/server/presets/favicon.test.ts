@@ -3,7 +3,6 @@ import * as fs from 'node:fs';
 import { expect, it, vi } from 'vitest';
 
 import { logger } from '@storybook/core/internal/node-logger';
-import { type Presets } from '@storybook/core/internal/types';
 
 import { dirname, join, normalize } from 'pathe';
 
@@ -30,21 +29,15 @@ const defaultFavicon = join(
 );
 
 const createPath = (...p: string[]) => join(process.cwd(), ...p);
-const createOptions = (locations: string[]): Parameters<typeof m.favicon>[1] => ({
-  configDir: '',
-  presets: {
-    apply: async (extension: string, config: any) => {
-      switch (extension) {
-        case 'staticDirs': {
-          return locations.map((location) => ({ from: location, to: '/' }));
-        }
-        default: {
-          return config as any;
-        }
-      }
-    },
-  } as Presets,
-});
+/** Options and instance in one object: the instance's static dirs serve these locations. */
+const createOptions = (
+  locations: string[]
+): Parameters<typeof m.favicon>[1] & Parameters<typeof m.favicon>[2] =>
+  ({
+    configDir: '',
+    workingDir: process.cwd(),
+    callHook: async () => locations.map((location) => ({ from: location, to: '/' })),
+  }) as unknown as Parameters<typeof m.favicon>[1] & Parameters<typeof m.favicon>[2];
 
 vi.mock('@storybook/core/internal/node-logger', () => {
   return {
@@ -71,7 +64,7 @@ const statSyncMock = vi.mocked(fs.statSync);
 it('with no staticDirs favicon should return default', async () => {
   const options = createOptions([]);
 
-  expect(await m.favicon(undefined, options)).toBe(defaultFavicon);
+  expect(await m.favicon(undefined, options, options)).toBe(defaultFavicon);
 });
 
 it('with staticDirs referencing a favicon.ico directly should return the found favicon', async () => {
@@ -86,7 +79,9 @@ it('with staticDirs referencing a favicon.ico directly should return the found f
   });
   const options = createOptions([location]);
 
-  expect(normalize(await m.favicon(undefined, options))).toBe(normalize(createPath('favicon.ico')));
+  expect(normalize(await m.favicon(undefined, options, options))).toBe(
+    normalize(createPath('favicon.ico'))
+  );
 });
 
 it('with staticDirs containing a single favicon.ico should return the found favicon', async () => {
@@ -102,7 +97,7 @@ it('with staticDirs containing a single favicon.ico should return the found favi
   });
   const options = createOptions([location]);
 
-  expect(normalize(await m.favicon(undefined, options))).toBe(
+  expect(normalize(await m.favicon(undefined, options, options))).toBe(
     normalize(createPath(location, 'favicon.ico'))
   );
 });
@@ -120,7 +115,7 @@ it('with staticDirs containing a single favicon.svg should return the found favi
   });
   const options = createOptions([location]);
 
-  expect(normalize(await m.favicon(undefined, options))).toBe(
+  expect(normalize(await m.favicon(undefined, options, options))).toBe(
     normalize(createPath(location, 'favicon.svg'))
   );
 });
@@ -141,7 +136,7 @@ it('with staticDirs containing a multiple favicons should return the first favic
   });
   const options = createOptions([location]);
 
-  expect(normalize(await m.favicon(undefined, options))).toBe(
+  expect(normalize(await m.favicon(undefined, options, options))).toBe(
     normalize(createPath(location, 'favicon.svg'))
   );
 
@@ -168,7 +163,7 @@ it('with multiple staticDirs containing a multiple favicons should return the fi
   });
   const options = createOptions([locationA, locationB]);
 
-  expect(normalize(await m.favicon(undefined, options))).toBe(
+  expect(normalize(await m.favicon(undefined, options, options))).toBe(
     normalize(createPath(locationA, 'favicon.ico'))
   );
 

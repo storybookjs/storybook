@@ -1,74 +1,15 @@
 // @vitest-environment happy-dom
 import { act, renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { UniversalStore } from './index.ts';
-import { instances as mockedInstances } from './__mocks__/instances.ts';
-import type { ChannelEvent } from './types.ts';
+import { MockUniversalStore } from './mock.ts';
 import { useUniversalStore as useUniversalStoreManager } from './use-universal-store-manager.ts';
 
-vi.mock('./instances.ts');
-vi.mock('./first-party-store-ids.ts');
-
-const mockChannelListeners = new Map<string, Set<(...args: any[]) => void>>();
-
-const mockChannel = {
-  on: vi.fn((eventType: string, listener: (...args: any[]) => void) => {
-    const [universalStorePrefix, environmentId, universalStoreId] = eventType.split(':');
-    if (!mockChannelListeners.has(universalStoreId)) {
-      mockChannelListeners.set(universalStoreId, new Set());
-    }
-    const listeners = mockChannelListeners.get(universalStoreId)!;
-    listeners.add(listener);
-  }),
-  off: vi.fn((eventType: string, listener: (...args: any[]) => void) => {
-    const universalStoreId = eventType.split(':')[2];
-    if (!mockChannelListeners.has(universalStoreId)) {
-      return;
-    }
-    const listeners = mockChannelListeners.get(universalStoreId)!;
-    listeners.delete(listener);
-  }),
-  emit: vi.fn((eventType: string, channelEvent: ChannelEvent<any, any>) => {
-    const [universalStorePrefix, environmentId, universalStoreId] = eventType.split(':');
-    if (!mockChannelListeners.has(universalStoreId)) {
-      return;
-    }
-    const listeners = mockChannelListeners.get(universalStoreId)!;
-    setTimeout(() => {
-      // this is a simplification, emulating that the event is emitted asynchronously
-      // in reality, it would be synchronous within the same environment, but async across environments
-      listeners.forEach((listener) => listener(channelEvent));
-    }, 0);
-  }),
-};
-
 describe('useUniversalStore - Manager', () => {
-  beforeEach((context) => {
-    vi.useRealTimers();
-    let randomUUIDCounter = 0;
-    vi.spyOn(globalThis.crypto, 'randomUUID').mockImplementation(() => {
-      return `mocked-random-uuid-v4-${randomUUIDCounter++}`;
-    });
-
-    // Always prepare the store, unless the test is specifically for unprepared state
-    if (!context.task.name.toLowerCase().includes('unprepared')) {
-      UniversalStore.__prepare(mockChannel, UniversalStore.Environment.MANAGER);
-    }
-
-    return () => {
-      randomUUIDCounter = 0;
-      mockedInstances.clearAllEnvironments();
-      mockChannelListeners.clear();
-      UniversalStore.__reset();
-    };
-  });
-
   it('should re-render when the state changes', async () => {
     // Arrange - create a store
-    const store = UniversalStore.create({
+    const store = new MockUniversalStore({
       id: 'env1:test',
-      leader: true,
       initialState: { count: 0 },
     });
     const renderCounter = vi.fn();
@@ -95,9 +36,8 @@ describe('useUniversalStore - Manager', () => {
 
   it('should not re-render when the state is replaced with a deeply equal state', async () => {
     // Arrange - create a store
-    const store = UniversalStore.create({
+    const store = new MockUniversalStore({
       id: 'env1:test',
-      leader: true,
       initialState: { count: 0 },
     });
     const renderCounter = vi.fn();
@@ -119,9 +59,8 @@ describe('useUniversalStore - Manager', () => {
 
   it('should only re-render when the selected state changes', async () => {
     // Arrange - create a store
-    const store = UniversalStore.create({
+    const store = new MockUniversalStore({
       id: 'env1:test',
-      leader: true,
       initialState: { count: 0, selectedCount: 10 },
     });
     const renderCounter = vi.fn();
@@ -156,9 +95,8 @@ describe('useUniversalStore - Manager', () => {
 
   it('should re-render when the selector changes', () => {
     // Arrange - create a store
-    const store = UniversalStore.create({
+    const store = new MockUniversalStore({
       id: 'env1:test',
-      leader: true,
       initialState: { count: 0, selectedCount: 10, otherValue: 5 },
     });
     const renderCounter = vi.fn();
@@ -196,9 +134,8 @@ describe('useUniversalStore - Manager', () => {
 
   it('should re-render when the universalStore changes', () => {
     // Arrange - create initial store
-    const initialStore = UniversalStore.create({
+    const initialStore = new MockUniversalStore({
       id: 'env1:test1',
-      leader: true,
       initialState: { count: 0, selectedCount: 10 },
     });
     const renderCounter = vi.fn();
@@ -218,9 +155,8 @@ describe('useUniversalStore - Manager', () => {
     expect(firstState).toEqual({ count: 0, selectedCount: 10 });
 
     // Act - create a new store and rerender with it
-    const newStore = UniversalStore.create({
+    const newStore = new MockUniversalStore({
       id: 'env1:test2',
-      leader: true,
       initialState: { count: 5, selectedCount: 20 },
     });
     rerender({ store: newStore });
@@ -249,9 +185,8 @@ describe('useUniversalStore - Manager', () => {
 
   it('should set the state when the setter is called', () => {
     // Arrange - create a store and render the hook
-    const store = UniversalStore.create({
+    const store = new MockUniversalStore({
       id: 'env1:test',
-      leader: true,
       initialState: { count: 0 },
     });
     const renderCounter = vi.fn();

@@ -1,13 +1,18 @@
 import { fileURLToPath } from 'node:url';
 
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
+
+import { logger } from '@storybook/core/internal/node-logger';
 
 import { invokeToolsetMethod } from '../shared/open-service/toolset-definition.ts';
+import fixtureFramework from './__fixtures__/annotation-order/framework/node.ts';
+import dedupeAddon from './__fixtures__/dedupe-addon/node.ts';
 import { createStorybook } from './create-storybook.ts';
-import { defineAddon } from './plugins.ts';
+import { defineAddon, PLUGIN_OPTIONS } from './plugins.ts';
 import type { CreateStorybookOptions } from './types.ts';
 
 const CONFIG_DIR = fileURLToPath(new URL('./__fixtures__/first', import.meta.url));
+const DEDUPE_ADDON = fileURLToPath(new URL('./__fixtures__/dedupe-addon', import.meta.url));
 const HOST_COMMON = defineAddon(() => ({ meta: { name: 'host/common' }, setup(): void {} }))();
 const HOST_ADDON = defineAddon(() => ({ meta: { name: 'host/addon' }, setup(): void {} }))();
 
@@ -88,7 +93,6 @@ it('fills omitted options with core defaults', async () => {
         ],
         "toolsets": [
           "stories",
-          "review",
         ],
       },
       "common only": {
@@ -100,6 +104,7 @@ it('fills omitted options with core defaults', async () => {
           "@storybook/react-vite",
           "storybook/docgen",
           "storybook/story-docs",
+          "storybook/change-detection",
         ],
         "toolsets": [
           "docs",
@@ -118,11 +123,11 @@ it('fills omitted options with core defaults', async () => {
           "@storybook/react-vite",
           "storybook/docgen",
           "storybook/story-docs",
+          "storybook/change-detection",
         ],
         "toolsets": [
           "docs",
           "stories",
-          "review",
         ],
       },
     }
@@ -176,5 +181,98 @@ it('keeps each instance index isolated within one process', async () => {
     `);
   } finally {
     await Promise.all([indexed.close(), unindexed.close()]);
+  }
+});
+
+it.each([
+  {
+    name: 'the same string twice',
+    input: { addons: [DEDUPE_ADDON, DEDUPE_ADDON] },
+    expected: { setups: ['addon:fixture-dedupe-addon'], warnings: [] },
+  },
+  {
+    name: 'a string, then a native plugin with options',
+    input: { addons: [DEDUPE_ADDON, dedupeAddon({ color: 'red' })] },
+    expected: { setups: ['addon:fixture-dedupe-addon {"color":"red"}'], warnings: [] },
+  },
+  {
+    name: 'a native plugin with options, then a string',
+    input: { addons: [dedupeAddon({ color: 'red' }), DEDUPE_ADDON] },
+    expected: { setups: ['addon:fixture-dedupe-addon {"color":"red"}'], warnings: [] },
+  },
+  {
+    name: 'an entry with options, then a string',
+    input: { addons: [{ name: DEDUPE_ADDON, options: { color: 'red' } }, DEDUPE_ADDON] },
+    expected: { setups: ['addon:fixture-dedupe-addon {"color":"red"}'], warnings: [] },
+  },
+  {
+    name: 'two native plugins with equal options',
+    input: { addons: [dedupeAddon({ color: 'red' }), dedupeAddon({ color: 'red' })] },
+    expected: { setups: ['addon:fixture-dedupe-addon {"color":"red"}'], warnings: [] },
+  },
+  {
+    name: 'two native plugins with different options',
+    input: { addons: [dedupeAddon({ color: 'red' }), dedupeAddon({ color: 'blue' })] },
+    expected: {
+      setups: ['addon:fixture-dedupe-addon {"color":"red"}'],
+      warnings: [
+        '"fixture-dedupe-addon" is configured more than once with different options; using the first.',
+      ],
+    },
+  },
+  {
+    name: 'a deprecated preset specifier and its package',
+    input: { addons: ['@storybook/addon-themes/preset', '@storybook/addon-themes'] },
+    expected: { setups: ['addon:@storybook/addon-themes'], warnings: [] },
+  },
+  {
+    name: 'a built-in addon listed in main',
+    input: { builtInAddons: [dedupeAddon()], addons: [DEDUPE_ADDON] },
+    expected: { setups: ['addon:fixture-dedupe-addon'], warnings: [] },
+  },
+  {
+    name: 'a framework addon listed in main with options',
+    input: {
+      framework: { ...fixtureFramework(), addons: [dedupeAddon()] },
+      addons: [dedupeAddon({ color: 'red' })],
+    },
+    expected: {
+      setups: [
+        'builder:fixture-annotation-builder',
+        'renderer:fixture-annotation-renderer',
+        'addon:fixture-dedupe-addon {"color":"red"}',
+        'framework:fixture-annotation-framework',
+      ],
+      warnings: [],
+    },
+  },
+])('sets a plugin up once for $name', async ({ input, expected }) => {
+  const warn = vi.spyOn(logger, 'warn');
+  const setups: string[] = [];
+  const { builtInAddons = [], ...main } = input as typeof input & {
+    builtInAddons?: CreateStorybookOptions['builtInAddons'];
+  };
+  const storybook = await createStorybook(
+    { configDir: CONFIG_DIR, mode: 'headless', main: { stories: [], ...main } },
+    {
+      builtInAddons,
+      setupPlugin(plugin): void {
+        const options = (plugin as { [PLUGIN_OPTIONS]?: unknown })[PLUGIN_OPTIONS];
+        setups.push(
+          `${plugin.meta.kind}:${plugin.meta.name}${options ? ` ${JSON.stringify(options)}` : ''}`
+        );
+      },
+    }
+  );
+  try {
+    expect({
+      setups,
+      warnings: warn.mock.calls
+        .map(([message]) => String(message))
+        .filter((message) => message.includes('configured more than once')),
+    }).toEqual(expected);
+  } finally {
+    warn.mockRestore();
+    await storybook.close();
   }
 });

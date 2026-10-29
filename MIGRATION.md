@@ -18,7 +18,6 @@
   - [Deprecated CSF and manager type aliases removed](#deprecated-csf-and-manager-type-aliases-removed)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
-    - [Svelte](#svelte)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or newer](#typescript-59-or-newer)
   - [CSF Next: meta args no longer need `as const`](#csf-next-meta-args-no-longer-need-as-const)
@@ -44,11 +43,8 @@
   - [`storySort` in the preview replaced by `storySorts` in main](#storysort-in-the-preview-replaced-by-storysorts-in-main)
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
   - [Next.js: `@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
-  - [`storybook/internal/babel` removed; `csf-tools` uses ESTree](#storybookinternalbabel-removed-csf-tools-uses-estree)
-    - [Behavior that changes for every project](#behavior-that-changes-for-every-project)
-    - [Community packages that need a release](#community-packages-that-need-a-release)
-    - [Changes for tooling that imports Storybook's internal entry points](#changes-for-tooling-that-imports-storybooks-internal-entry-points)
   - [Create React App support removed](#create-react-app-support-removed)
+  - [`storybook/internal/babel` removed; `csf-tools` uses ESTree](#storybookinternalbabel-removed-csf-tools-uses-estree)
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
   - [`storybook add` and `storybook remove` leave an `addons` they cannot edit safely](#storybook-add-and-storybook-remove-leave-an-addons-they-cannot-edit-safely)
   - [Internal CSF tools use the unified mutation API](#internal-csf-tools-use-the-unified-mutation-api)
@@ -86,6 +82,8 @@
   - [`core/module-graph` query aliases removed](#coremodule-graph-query-aliases-removed)
   - [ExternalDocs and ExternalDocsContainer are removed](#externaldocs-and-externaldocscontainer-are-removed)
   - [CSF `.story` annotations removed](#csf-story-annotations-removed)
+  - [`argTypeTargetsV7` feature flag removed](#argtypetargetsv7-feature-flag-removed)
+  - [`disallowImplicitActionsInRenderV8` feature flag removed](#disallowimplicitactionsinrenderv8-feature-flag-removed)
   - [JavaScript init templates use JSDoc types instead of `propTypes`](#javascript-init-templates-use-jsdoc-types-instead-of-proptypes)
 - [From version 10.6.1 to 10.6.2](#from-version-1061-to-1062)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-1)
@@ -280,7 +278,7 @@
       - [Require Vue 3 and up](#require-vue-3-and-up)
     - [Angular](#angular)
       - [Require Angular 15 and up](#require-angular-15-and-up)
-    - [Svelte](#svelte-1)
+    - [Svelte](#svelte)
       - [Require Svelte 4 and up](#require-svelte-4-and-up)
     - [Preact](#preact)
       - [Require Preact 10 and up](#require-preact-10-and-up)
@@ -1225,12 +1223,12 @@ More generally, the manager index (`useStorybookState().index` and `filteredInde
 
 Each title is now typed by everything the story index puts under it:
 
-| Under the title                      | Entry in the manager index                                                                            |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| Other titles                         | `group` (or `root`)                                                                                   |
-| At least one story                   | `component`                                                                                           |
+| Under the title | Entry in the manager index |
+| --- | --- |
+| Other titles | `group` (or `root`) |
+| At least one story | `component` |
 | Exactly one docs page and no stories | the `docs` entry itself, with the title's `name`, `depth` and `parent` (`undefined` at the top level) |
-| Several docs pages and no stories    | `group`                                                                                               |
+| Several docs pages and no stories | `group` |
 
 The type comes from the full index, so `index` and `filteredIndex` always agree on it.
 Filters only remove entries: a component whose stories are all filtered out stays a `component` with its docs child in `filteredIndex`.
@@ -1534,15 +1532,15 @@ Add or remove the addon in `addons` by hand in that case.
 
 If your custom migration tooling imports `ConfigFile` from `storybook/internal/csf-tools`, update its legacy field and call-expression helpers to the unified `CsfObject` mutation API:
 
-| Storybook 10 API                          | Storybook 11 replacement                                                                                                                                                                                                                                                                   |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `getFieldValue`, `getSafeFieldValue`      | `getValue`                                                                                                                                                                                                                                                                                 |
-| `setFieldNode`, `setFieldValue`           | `set`                                                                                                                                                                                                                                                                                      |
-| `removeField`                             | `remove`, which also removes a parent it leaves empty: `export const core = { builder: 'webpack4' }` loses the export instead of becoming `export const core = {}`                                                                                                                         |
+| Storybook 10 API                     | Storybook 11 replacement |
+| ------------------------------------ | ------------------------ |
+| `getFieldValue`, `getSafeFieldValue` | `getValue`               |
+| `setFieldNode`, `setFieldValue`      | `set`                    |
+| `removeField`                        | `remove`, which also removes a parent it leaves empty: `export const core = { builder: 'webpack4' }` loses the export instead of becoming `export const core = {}` |
 | `appendValueToArray`, `appendNodeToArray` | `append`, which takes a plain value or an expression. Like these, it refuses a field that holds a call, such as `addons: getAddons()`; it adds an argument only to a call that is an item, such as `['loaders', 0]` for `loaders: [mswLoader()]`. Both are deprecated and still available. |
-| `removeEntryFromArray`                    | `remove([...path, index])`, with the entry's `index` in the list `inspectList(path)` returns, which resolves a constant only the config refers to, as `remove` does. It is deprecated and still available.                                                                                 |
-| `findNamedImportMethodCalls`              | `callArguments`                                                                                                                                                                                                                                                                            |
-| `FindNamedImportMethodCallsOptions`       | `CallArgumentsOptions`                                                                                                                                                                                                                                                                     |
+| `removeEntryFromArray`               | `remove([...path, index])`, with the entry's `index` in the list `inspectList(path)` returns, which resolves a constant only the config refers to, as `remove` does. It is deprecated and still available. |
+| `findNamedImportMethodCalls`         | `callArguments`          |
+| `FindNamedImportMethodCallsOptions`  | `CallArgumentsOptions`   |
 
 `getValue` reads static values without executing source code, following any local constant. When it cannot resolve a value, it returns `undefined`; reads add no diagnostics, so they never stop a later write. Use `inspect` to tell a missing field from one that cannot be read statically. Mutation methods return a result that reports whether the edit succeeded and changed the file. `callArguments` returns `CsfObject` editors instead of Babel call expressions, so apply the same `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, `group`, `append`, and `prepend` methods you use for story and config objects. A path addresses an element of an array or an argument of a call by its index in the source, such as `['addons', 0]` or `['framework', 0]`.
 
@@ -2244,6 +2242,44 @@ If the value is not a static object, move the fields yourself. This includes a v
 ```
 
 `storybook migrate csf-2-to-3` still lifts a static `Story.story = { ... }` into a CSF 3 story object. It does not rewrite the dynamic cases above. The old `csf-hoist-story-annotations` codemod no longer ships.
+
+### `argTypeTargetsV7` feature flag removed
+
+The `features.argTypeTargetsV7` flag is removed, and Storybook no longer reads it. Args whose argType declares a `target` are always grouped by target: the render function receives only the untargeted `args`, and the rendering context carries the full `allArgs` plus the grouped `argsByTarget`. This has been the default behavior since Storybook 8. In portable-story runtimes without a `FEATURES` global, such as `composeStories` in Jest or Playwright component tests without the Vitest plugin, the grouping now applies there too; those runtimes previously skipped it.
+
+Delete the `argTypeTargetsV7` key from the `features` object in your `.storybook/main.js` / `main.ts` file:
+
+```diff
+// .storybook/main.ts
+export default {
+  features: {
+-   argTypeTargetsV7: false,
+  },
+};
+```
+
+The `remove-legacy-feature-flags` automigration deletes both it and the `disallowImplicitActionsInRenderV8` flag from your main config, whether they are `true` or `false`. You can also run it with `storybook automigrate remove-legacy-feature-flags`. If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand. A typed main config that still sets the flag fails type-checking until it is removed.
+
+If you had set the flag to `false` to pass targeted args through to the render function unfiltered, that pass-through is gone. Read the targeted values from `argsByTarget` in the rendering context instead of `args`. Args without a `target` on their argType are grouped under the `UNTARGETED` key.
+
+### `disallowImplicitActionsInRenderV8` feature flag removed
+
+The `features.disallowImplicitActionsInRenderV8` flag is removed, and Storybook no longer reads it. An implicit action—one of the handlers Storybook infers from `actions.argTypesRegex`—that gets called while the story is rendering or playing throws `ImplicitActionsDuringRendering`. Handlers created explicitly with `action()` (including through `argTypes.action`) or `fn()` are not affected.
+
+The flag was the opt-out that downgraded that throw to a warning. Delete the `disallowImplicitActionsInRenderV8` key from the `features` object in your `.storybook/main.js` / `main.ts` file:
+
+```diff
+// .storybook/main.ts
+export default {
+  features: {
+-   disallowImplicitActionsInRenderV8: false,
+  },
+};
+```
+
+The `remove-legacy-feature-flags` automigration deletes both it and the `argTypeTargetsV7` flag from your main config, whether they are `true` or `false`. You can also run it with `storybook automigrate remove-legacy-feature-flags`. If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand. A typed main config that still sets the flag fails type-checking until it is removed.
+
+`ImplicitActionsDuringRendering.data` no longer carries a `deprecated` field, so third-party code that inspects the error should read `phase` and `name` instead.
 
 ### JavaScript init templates use JSDoc types instead of `propTypes`
 
@@ -4986,6 +5022,8 @@ export const ButtonClick = {
 
 For more context, see this RFC:
 https://github.com/storybookjs/storybook/discussions/23649
+
+Removed in Storybook 11, see [`disallowImplicitActionsInRenderV8` feature flag removed](#disallowimplicitactionsinrenderv8-feature-flag-removed).
 
 To summarize:
 

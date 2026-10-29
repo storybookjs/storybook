@@ -1514,18 +1514,66 @@ function extractPropItem(
 }
 
 /**
- * True when the prop is untyped JavaScript — the component is a .js/.jsx source and the prop
- * carries no JSDoc type — so the checker's type is inference noise rather than stated intent. The
- * component's own source file is the origin signal because the checker often synthesizes these
- * prop symbols without any declaration. TS components and JSDoc-typed props keep checker
- * precedence over propTypes.
+ * The implementation function behind a component declaration node, when the component is declared
+ * as a function: `const Button = (props) => …` (arrow or function expression) or
+ * `function Button(props) {}`. Re-bindings (`const Button = Inner`) have no function to read.
+ */
+function getComponentFunction(
+  typescript: typeof ts,
+  contextNode: ts.Node
+): ts.SignatureDeclaration | undefined {
+  if (typescript.isVariableDeclaration(contextNode)) {
+    const initializer = contextNode.initializer;
+    if (
+      initializer &&
+      (typescript.isArrowFunction(initializer) || typescript.isFunctionExpression(initializer))
+    ) {
+      return initializer;
+    }
+    return undefined;
+  }
+  if (
+    typescript.isFunctionDeclaration(contextNode) ||
+    typescript.isMethodDeclaration(contextNode)
+  ) {
+    return contextNode;
+  }
+  return undefined;
+}
+
+const JS_SOURCE_PATTERN = /\.[cm]?jsx?$/i;
+
+/**
+ * True when the prop is untyped JavaScript — so the checker's type is inference noise rather
+ * than stated intent, and the component's propTypes block is the real type source. The checker
+ * often synthesizes these prop symbols without any declaration, so the component's own source
+ * file (via the context node) is the origin signal. Every signal of *stated* intent keeps
+ * checker precedence over propTypes:
+ * - a typed props parameter (syntactic annotation or `@param {…}`/`@param {Props}` JSDoc),
+ * - a JSDoc-sourced prop declaration (`NodeFlags.JSDoc` property signatures from `@param {{…}}`),
+ * - a declaration outside .js/.jsx (a `.jsx` re-binding of a `.tsx` component),
+ * - a `@type`-style JSDoc annotation on the declaration itself.
  */
 function isUntypedJsProp(typescript: typeof ts, prop: ts.Symbol, contextNode: ts.Node): boolean {
-  if (!/\.[cm]?jsx?$/i.test(contextNode.getSourceFile().fileName)) {
+  if (!JS_SOURCE_PATTERN.test(contextNode.getSourceFile().fileName)) {
+    return false;
+  }
+  const componentFn = getComponentFunction(typescript, contextNode);
+  const propsParam = componentFn?.parameters[0];
+  if (propsParam && (propsParam.type || typescript.getJSDocType(propsParam))) {
     return false;
   }
   const decl = prop.valueDeclaration ?? prop.getDeclarations()?.[0];
-  return !decl || typescript.getJSDocType(decl) === undefined;
+  if (!decl) {
+    return true;
+  }
+  if (decl.flags & typescript.NodeFlags.JSDoc) {
+    return false;
+  }
+  if (!JS_SOURCE_PATTERN.test(decl.getSourceFile().fileName)) {
+    return false;
+  }
+  return typescript.getJSDocType(decl) === undefined;
 }
 
 // ---------------------------------------------------------------------------

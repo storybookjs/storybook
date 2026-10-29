@@ -981,4 +981,85 @@ describe('PropTypes fallback for JS components', () => {
       },
     });
   });
+
+  it('keeps JSDoc types over propTypes on a typed .jsx component', async () => {
+    const entry = await extractFromStoryWithConfig(
+      {
+        'test/JsDocButton.jsx': dedent`
+          import React from 'react';
+          import PropTypes from 'prop-types';
+
+          /**
+           * @param {{ size?: 'small' | 'medium', label: string }} props
+           */
+          export const Button = (props) => <button />;
+
+          Button.propTypes = {
+            size: PropTypes.oneOf(['small', 'large']),
+            label: PropTypes.string.isRequired,
+          };
+        `,
+        'test/JsDocButton.stories.jsx': dedent`
+          import { Button } from './JsDocButton';
+
+          export default { component: Button };
+        `,
+      },
+      'test/JsDocButton.stories.jsx',
+      JS_TSCONFIG
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        // The JSDoc union wins over the oneOf enum — 'large' must not leak in.
+        size: {
+          required: false,
+          type: {
+            name: 'enum',
+            value: [{ value: '"small"' }, { value: '"medium"' }],
+          },
+        },
+        label: { type: { name: 'string' }, required: true },
+      },
+    });
+  });
+
+  it('keeps TS types over propTypes when a .jsx re-binds a .tsx component', async () => {
+    const entry = await extractFromStoryWithConfig(
+      {
+        'test/InnerButton.tsx': dedent`
+          import React from 'react';
+
+          interface Props { label: string }
+
+          export const InnerButton = (props: Props) => <button />;
+        `,
+        'test/ReboundButton.jsx': dedent`
+          import React from 'react';
+          import PropTypes from 'prop-types';
+          import { InnerButton } from './InnerButton';
+
+          export const Button = InnerButton;
+
+          Button.propTypes = {
+            label: PropTypes.oneOf(['a', 'b']),
+          };
+        `,
+        'test/ReboundButton.stories.jsx': dedent`
+          import { Button } from './ReboundButton';
+
+          export default { component: Button };
+        `,
+      },
+      'test/ReboundButton.stories.jsx',
+      JS_TSCONFIG
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        // The prop declarations live in the .tsx file, so the TS type wins over the oneOf enum.
+        label: { type: { name: 'string' }, required: true },
+      },
+    });
+  });
 });

@@ -17,18 +17,27 @@ import { createTempProject, cleanup, writeFiles } from './test-helpers.ts';
  */
 const { projectDir, configPath } = createTempProject({});
 const fsFileSnapshots = new Map<string, [number | undefined, ts.IScriptSnapshot | undefined]>();
-const sharedProject = new ComponentMetaProject(
-  ts,
-  ts.parseJsonSourceFileConfigFileContent(
-    ts.readJsonConfigFile(configPath, ts.sys.readFile),
-    ts.sys,
-    projectDir,
-    {},
-    configPath
-  ),
-  configPath,
-  fsFileSnapshots
-);
+const sharedProject = createProject(projectDir, configPath, fsFileSnapshots);
+
+/** Builds the LanguageService-backed project over a parsed tsconfig on disk. */
+function createProject(
+  projectDir: string,
+  configPath: string,
+  fsFileSnapshots: Map<string, [number | undefined, ts.IScriptSnapshot | undefined]>
+): ComponentMetaProject {
+  return new ComponentMetaProject(
+    ts,
+    ts.parseJsonSourceFileConfigFileContent(
+      ts.readJsonConfigFile(configPath, ts.sys.readFile),
+      ts.sys,
+      projectDir,
+      {},
+      configPath
+    ),
+    configPath,
+    fsFileSnapshots
+  );
+}
 
 /** Reads a project file from the in-memory mirror populated by {@link withProject}. */
 export function readProjectFile(filePath: string): string {
@@ -143,18 +152,7 @@ export async function extractFromStoryWithConfig(
   vol.fromNestedJSON(
     Object.fromEntries(Object.entries(filePaths).map(([name, filePath]) => [filePath, files[name]]))
   );
-  const project = new ComponentMetaProject(
-    ts,
-    ts.parseJsonSourceFileConfigFileContent(
-      ts.readJsonConfigFile(configPath, ts.sys.readFile),
-      ts.sys,
-      projectDir,
-      {},
-      configPath
-    ),
-    configPath,
-    new Map()
-  );
+  const project = createProject(projectDir, configPath, new Map());
 
   try {
     return await extractFromProject(project, filePaths, storyFileName);

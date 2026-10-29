@@ -7,19 +7,13 @@ import {
   extractFromStory,
   extractFromStoryWithConfig,
 } from './componentMetaExtractor.test-helpers.ts';
+import { DEFAULT_TSCONFIG } from './test-helpers.ts';
 
-/** Same as the shared default tsconfig, but with allowJs so untyped .jsx components join the program. */
+/** The shared default tsconfig plus allowJs, so untyped .jsx components join the program. */
 const JS_TSCONFIG = {
-  compilerOptions: {
-    target: 'ES2020',
-    module: 'ESNext',
-    jsx: 'react-jsx',
-    strict: true,
-    esModuleInterop: true,
-    moduleResolution: 'bundler',
-    allowJs: true,
-  },
-  include: ['./**/*.ts', './**/*.tsx', './**/*.js', './**/*.jsx'],
+  ...DEFAULT_TSCONFIG,
+  compilerOptions: { ...DEFAULT_TSCONFIG.compilerOptions, allowJs: true },
+  include: [...DEFAULT_TSCONFIG.include, './**/*.js', './**/*.jsx'],
 };
 
 describe('prop extraction', () => {
@@ -893,15 +887,15 @@ describe('PropTypes fallback for JS components', () => {
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
         label: { type: { name: 'string' }, required: true },
-        // `= false` gives the checker a real boolean; the fallback only covers checker-`any` props.
-        primary: { type: { name: 'boolean' } },
+        primary: { type: { name: 'bool' }, required: false },
         size: {
           type: {
             name: 'enum',
             value: [{ value: '"small"' }, { value: '"medium"' }, { value: '"large"' }],
           },
+          required: false,
         },
-        onClick: { type: { name: 'func' } },
+        onClick: { type: { name: 'func' }, required: false },
       },
     });
   });
@@ -944,17 +938,21 @@ describe('PropTypes fallback for JS components', () => {
     });
   });
 
-  it('keeps the checker type when it is informative', async () => {
+  it('prefers propTypes for untyped JS props with destructuring defaults, like the sandbox template', async () => {
     const entry = await extractFromStoryWithConfig(
       {
         'test/DefaultSizeButton.jsx': dedent`
           import React from 'react';
           import PropTypes from 'prop-types';
 
-          export const Button = ({ size = 'medium' }) => <button />;
+          export const Button = ({ primary = false, size = 'medium', label = 'Hello world' }) => (
+            <button>{label}</button>
+          );
 
           Button.propTypes = {
+            primary: PropTypes.bool,
             size: PropTypes.oneOf(['small', 'medium', 'large']),
+            label: PropTypes.string,
           };
         `,
         'test/DefaultSizeButton.stories.jsx': dedent`
@@ -969,8 +967,17 @@ describe('PropTypes fallback for JS components', () => {
 
     expect(entry.component?.reactComponentMeta).toMatchObject({
       props: {
-        // The destructuring default gives the checker a real type, which wins over oneOf's enum.
-        size: { type: { name: 'string' } },
+        // A destructuring default gives the checker a real type, but on an untyped JS binding the
+        // propTypes annotation still wins — this is what restores the sandbox size control.
+        primary: { type: { name: 'bool' }, required: false },
+        size: {
+          type: {
+            name: 'enum',
+            value: [{ value: '"small"' }, { value: '"medium"' }, { value: '"large"' }],
+          },
+          required: false,
+        },
+        label: { type: { name: 'string' }, required: false },
       },
     });
   });

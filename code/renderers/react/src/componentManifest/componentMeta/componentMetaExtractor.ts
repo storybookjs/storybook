@@ -1307,37 +1307,39 @@ const PROPTYPES_SCALAR_MEMBERS = new Set([
   'symbol',
 ]);
 
+/** A PropTypes annotation read into converter vocabulary, with the `.isRequired` signal kept. */
+type PropTypeEntry = { type: PropItemType; required?: boolean };
+
 /**
- * Reads one PropTypes annotation into the RDT-compatible {@link PropItemType}.
+ * Reads one PropTypes annotation into the RDT-compatible {@link PropItemType}, plus the
+ * `.isRequired` signal the checker cannot supply for untyped JS props.
  *
  * Purely syntactic — `prop-types` may not even resolve in the project — so only the member names
- * of the access/call chain are interpreted. Returns `undefined` for anything unrecognized, which
- * keeps the checker's type.
+ * of the access/call chain are interpreted and the root object is not resolved: `myValidators.string`
+ * also reads as `string`, and destructured `import { string } from 'prop-types'` stays unrecognized.
+ * Returns `undefined` for anything unrecognized, which keeps the checker's type.
  *
- * # ponytail: only scalars and `oneOf` are covered. The composite members need `PropItemType.value`
- * shapes (`value` as a single type, a record, or full type arrays) that the interface — and both
- * manifest consumers, which `.map` over `value` expecting `{ value }` members — do not model.
- * Widen `PropItemType.value` first, then add them here.
+ * Only scalars and `oneOf` are covered. The composite members need `PropItemType.value` shapes
+ * (`value` as a single type, a record, or full type arrays) that the interface — and both manifest
+ * consumers, which `.map` over `value` expecting `{ value }` members — do not model. Widen
+ * `PropItemType.value` first, then add them here.
  */
 function serializePropTypeExpression(
   typescript: typeof ts,
-  expression: ts.Expression,
-  depth = 0
-): PropItemType | undefined {
-  if (depth > MAX_SERIALIZATION_DEPTH) {
-    return undefined;
-  }
-
-  // Unwrap a trailing `.isRequired` (the required flag already comes from the checker's symbol).
+  expression: ts.Expression
+): PropTypeEntry | undefined {
+  // Unwrap a trailing `.isRequired` — for an untyped JS prop it is the only requiredness signal.
   let node: ts.Expression = expression;
+  let required: boolean | undefined;
   if (typescript.isPropertyAccessExpression(node) && node.name.text === 'isRequired') {
     node = node.expression;
+    required = true;
   }
 
   // Scalar members: PropTypes.string → { name: 'string' }
   if (typescript.isPropertyAccessExpression(node)) {
     const member = node.name.text;
-    return PROPTYPES_SCALAR_MEMBERS.has(member) ? { name: member } : undefined;
+    return PROPTYPES_SCALAR_MEMBERS.has(member) ? { type: { name: member }, required } : undefined;
   }
 
   if (typescript.isCallExpression(node)) {
@@ -1349,7 +1351,9 @@ function serializePropTypeExpression(
     }
     const arg = node.arguments[0];
 
-    // oneOf(['small', 'medium']) → enum, mirroring serializeType's literal-union output
+    // oneOf(['small', 'medium']) → enum. Unlike serializeType's literal unions, an all-boolean
+    // oneOf stays an enum: there is no checker union to collapse, and the choices feed the
+    // Controls select.
     if (callee.name.text === 'oneOf') {
       if (!arg || !typescript.isArrayLiteralExpression(arg)) {
         return undefined;
@@ -1359,9 +1363,12 @@ function serializePropTypeExpression(
         return undefined;
       }
       return {
-        name: 'enum',
-        raw: values.map((value) => JSON.stringify(value)).join(' | '),
-        value: values.map((value) => ({ value: JSON.stringify(value) })),
+        type: {
+          name: 'enum',
+          raw: values.map((value) => JSON.stringify(value)).join(' | '),
+          value: values.map((value) => ({ value: JSON.stringify(value) })),
+        },
+        required,
       };
     }
 
@@ -1405,7 +1412,7 @@ function readOneOfElementValue(
 function collectPropTypeEntries(
   typescript: typeof ts,
   objectLiteral: ts.ObjectLiteralExpression,
-  propTypes: Map<string, PropItemType>
+  propTypes: Map<string, PropTypeEntry>
 ): void {
   for (const property of objectLiteral.properties) {
     if (!typescript.isPropertyAssignment(property)) {
@@ -1419,9 +1426,9 @@ function collectPropTypeEntries(
     if (!propName) {
       continue;
     }
-    const itemType = serializePropTypeExpression(typescript, property.initializer);
-    if (itemType) {
-      propTypes.set(propName, itemType);
+    const entry = serializePropTypeExpression(typescript, property.initializer);
+    if (entry) {
+      propTypes.set(propName, entry);
     }
   }
 }
@@ -1438,8 +1445,8 @@ function extractPropTypes(
   typescript: typeof ts,
   checker: ts.TypeChecker,
   resolved: ts.Symbol
-): Map<string, PropItemType> {
-  const propTypes = new Map<string, PropItemType>();
+): Map<string, PropTypeEntry> {
+  const propTypes = new Map<string, PropTypeEntry>();
   for (const initializer of findComponentAnnotationInitializers(
     typescript,
     checker,
@@ -1462,7 +1469,7 @@ function extractPropItem(
   contextNode: ts.Node,
   defaultsMap?: Map<string, string>,
   typeOverride?: ts.Type,
-  propTypesMap?: Map<string, PropItemType>
+  propTypesMap?: Map<string, PropTypeEntry>
 ): PropItem {
   const isOptional = !!(prop.flags & typescript.SymbolFlags.Optional);
   const isRequired = !isOptional;
@@ -1470,10 +1477,18 @@ function extractPropItem(
   // Union props keep one member's metadata but need the merged type.
   const propType = typeOverride ?? checker.getTypeOfSymbolAtLocation(prop, contextNode);
   let type = serializeType(typescript, checker, propType, isRequired);
-  // A JS component's unannotated props resolve to `any`; its propTypes block carries the real type.
-  const propTypesType = propTypesMap?.get(prop.getName());
-  if (type.name === 'any' && propTypesType) {
-    type = propTypesType;
+  let required = isRequired;
+
+  // Untyped JS components carry their real types in the propTypes block. Precedence is decided by
+  // declaration origin, not by the checker type's name: a destructuring default gives
+  // `size = 'medium'` a perfectly valid `string` that still loses to the `oneOf` annotation, while
+  // TS declarations and JSDoc-typed props keep the checker's type.
+  const propTypesEntry = propTypesMap?.get(prop.getName());
+  if (propTypesEntry && isUntypedJsProp(typescript, prop, contextNode)) {
+    type = propTypesEntry.type;
+    // The checker marks untyped JS props non-optional, so `.isRequired` is the only requiredness
+    // signal for them.
+    required = propTypesEntry.required ?? false;
   }
 
   const description = typescript.displayPartsToString(prop.getDocumentationComment(checker));
@@ -1489,13 +1504,28 @@ function extractPropItem(
 
   return {
     name: propName,
-    required: isRequired,
+    required,
     type,
     description,
     defaultValue: defaultStr !== undefined ? { value: defaultStr } : null,
     parent,
     declarations,
   };
+}
+
+/**
+ * True when the prop is untyped JavaScript — the component is a .js/.jsx source and the prop
+ * carries no JSDoc type — so the checker's type is inference noise rather than stated intent. The
+ * component's own source file is the origin signal because the checker often synthesizes these
+ * prop symbols without any declaration. TS components and JSDoc-typed props keep checker
+ * precedence over propTypes.
+ */
+function isUntypedJsProp(typescript: typeof ts, prop: ts.Symbol, contextNode: ts.Node): boolean {
+  if (!/\.[cm]?jsx?$/i.test(contextNode.getSourceFile().fileName)) {
+    return false;
+  }
+  const decl = prop.valueDeclaration ?? prop.getDeclarations()?.[0];
+  return !decl || typescript.getJSDocType(decl) === undefined;
 }
 
 // ---------------------------------------------------------------------------

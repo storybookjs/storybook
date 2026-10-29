@@ -59,6 +59,7 @@ export default definePreview({
       },
     },
   },
+  addons: [/* ... */],
   initialGlobals: {
     // 👇 Set the initial background color
     backgrounds: { value: 'light' },
@@ -84,6 +85,7 @@ export default definePreview({
       },
     },
   },
+  addons: [/* ... */],
   initialGlobals: {
     // 👇 Set the initial background color
     backgrounds: { value: 'light' },
@@ -106,6 +108,7 @@ export default definePreview({
       },
     },
   },
+  addons: [/* ... */],
   initialGlobals: {
     // 👇 Set the initial background color
     backgrounds: { value: 'light' },
@@ -130,6 +133,7 @@ export default definePreview({
       },
     },
   },
+  addons: [/* ... */],
   initialGlobals: {
     // 👇 Set the initial background color
     backgrounds: { value: 'light' },
@@ -152,6 +156,7 @@ export default definePreview({
       },
     },
   },
+  addons: [/* ... */],
   initialGlobals: {
     // 👇 Set the initial background color
     backgrounds: { value: 'light' },
@@ -174,6 +179,7 @@ export default definePreview({
       },
     },
   },
+  addons: [/* ... */],
   initialGlobals: {
     // 👇 Set the initial background color
     backgrounds: { value: 'light' },
@@ -198,6 +204,7 @@ export default definePreview({
       },
     },
   },
+  addons: [/* ... */],
   initialGlobals: {
     // 👇 Set the initial background color
     backgrounds: { value: 'light' },

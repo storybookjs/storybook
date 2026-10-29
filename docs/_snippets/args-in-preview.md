@@ -24,6 +24,7 @@ import { definePreview } from '@storybook/your-framework';
 export default definePreview({
   // The default value of the theme arg for all stories
   args: { theme: 'light' },
+  addons: [/* ... */],
 });
 ```
 
@@ -36,6 +37,7 @@ import { definePreview } from '@storybook/your-framework';
 export default definePreview({
   // The default value of the theme arg for all stories
   args: { theme: 'light' },
+  addons: [/* ... */],
 });
 ```
 
@@ -45,6 +47,7 @@ import { definePreview } from '@storybook/vue3-vite';
 export default definePreview({
   // The default value of the theme arg for all stories
   args: { theme: 'light' },
+  addons: [/* ... */],
 });
 ```
 
@@ -56,6 +59,7 @@ import { definePreview } from '@storybook/vue3-vite';
 export default definePreview({
   // The default value of the theme arg for all stories
   args: { theme: 'light' },
+  addons: [/* ... */],
 });
 ```
 
@@ -65,6 +69,7 @@ import { definePreview } from '@storybook/angular';
 export default definePreview({
   // The default value of the theme arg for all stories
   args: { theme: 'light' },
+  addons: [/* ... */],
 });
 ```
 
@@ -74,6 +79,7 @@ import { definePreview } from '@storybook/web-components-vite';
 export default definePreview({
   // The default value of the theme arg for all stories
   args: { theme: 'light' },
+  addons: [/* ... */],
 });
 ```
 
@@ -85,5 +91,6 @@ import { definePreview } from '@storybook/web-components-vite';
 export default definePreview({
   // The default value of the theme arg for all stories
   args: { theme: 'light' },
+  addons: [/* ... */],
 });
 ```

@@ -33,6 +33,7 @@ export default definePreview({
       presetColors: [{ color: '#ff4785', title: 'Coral' }, 'rgba(0, 159, 183, 1)', '#fe4a49'],
     },
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -48,6 +49,7 @@ export default definePreview({
       presetColors: [{ color: '#ff4785', title: 'Coral' }, 'rgba(0, 159, 183, 1)', '#fe4a49'],
     },
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -60,6 +62,7 @@ export default definePreview({
       presetColors: [{ color: '#ff4785', title: 'Coral' }, 'rgba(0, 159, 183, 1)', '#fe4a49'],
     },
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -74,6 +77,7 @@ export default definePreview({
       presetColors: [{ color: '#ff4785', title: 'Coral' }, 'rgba(0, 159, 183, 1)', '#fe4a49'],
     },
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -86,6 +90,7 @@ export default definePreview({
       presetColors: [{ color: '#ff4785', title: 'Coral' }, 'rgba(0, 159, 183, 1)', '#fe4a49'],
     },
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -98,6 +103,7 @@ export default definePreview({
       presetColors: [{ color: '#ff4785', title: 'Coral' }, 'rgba(0, 159, 183, 1)', '#fe4a49'],
     },
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -112,5 +118,6 @@ export default definePreview({
       presetColors: [{ color: '#ff4785', title: 'Coral' }, 'rgba(0, 159, 183, 1)', '#fe4a49'],
     },
   },
+  addons: [/* ... */],
 });
 ```

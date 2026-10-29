@@ -63,6 +63,7 @@ const preview = definePreview({
       },
     },
   },
+  addons: [/* ... */],
   async beforeEach() {
     // 👇 Manipulate the default navigation method mocks
     getRouter().push.mockImplementation(() => {
@@ -92,6 +93,7 @@ const preview = definePreview({
       },
     },
   },
+  addons: [/* ... */],
   async beforeEach() {
     // 👇 Manipulate the default navigation method mocks
     getRouter().push.mockImplementation(() => {

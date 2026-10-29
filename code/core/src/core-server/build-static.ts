@@ -191,6 +191,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   logger.info('Building preview..');
 
   const startTime = process.hrtime();
+  // Check versions only after Promise.all settles, so a slower effect failure cannot replace the preview error
   let previewFailure: { error: unknown } | undefined;
   await Promise.all([
     previewBuilder

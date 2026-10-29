@@ -1,0 +1,23 @@
+diff --git a/dist/index.js b/dist/index.js
+index f9cfa1750d4330f60d6c55ee8e2901ec1986a56b..8f0457391b25ed13414564efc24d9f357b2ee758 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -89,10 +89,17 @@ function enhanceSpy(spy) {
+ 		}
+ 	};
+ 	function mockCall(...args) {
+-		instances.push(this);
++		const index = instances.push(this) - 1;
+ 		contexts.push(this);
+ 		invocations.push(++callOrder);
+ 		const impl = implementationChangedTemporarily ? implementation : onceImplementations.shift() || implementation || state.getOriginal() || (() => {});
++		// Patched for storybook: classes and built-in constructors throw unless called with `new`.
++		if (new.target && Object.getOwnPropertyDescriptor(impl, "prototype")?.writable === false) {
++			const instance = Reflect.construct(impl, args, new.target);
++			instances[index] = instance;
++			contexts[index] = instance;
++			return instance;
++		}
+ 		return impl.apply(this, args);
+ 	}
+ 	let name = stub.name;

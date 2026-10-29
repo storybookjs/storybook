@@ -14420,6 +14420,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vitest/mocker@patch:@vitest/mocker@npm%3A3.2.4#~/.yarn/patches/@vitest-mocker-npm-3.2.4-48badb1f19.patch":
+  version: 3.2.4
+  resolution: "@vitest/mocker@patch:@vitest/mocker@npm%3A3.2.4#~/.yarn/patches/@vitest-mocker-npm-3.2.4-48badb1f19.patch::version=3.2.4&hash=2624ed"
+  dependencies:
+    "@vitest/spy": "npm:3.2.4"
+    estree-walker: "npm:^3.0.3"
+    magic-string: "npm:^0.30.17"
+  peerDependencies:
+    msw: ^2.4.9
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0-0
+  peerDependenciesMeta:
+    msw:
+      optional: true
+    vite:
+      optional: true
+  checksum: 10c0/6961b5a24847d704253effb3a91160d7ca208428251cb0b72f9686d34f59239e3c842bcc5f6442e776829c96e535b7d13399cbeb3d55a8fb32785e8157a5141d
+  languageName: node
+  linkType: hard
+
 "@vitest/pretty-format@npm:3.2.4":
   version: 3.2.4
   resolution: "@vitest/pretty-format@npm:3.2.4"
@@ -14451,6 +14470,15 @@ __metadata:
   version: 5.0.3
   resolution: "@vitest/spy@npm:5.0.3"
   checksum: 10c0/4ab0efc522b370a553682b5dce2730e0d5b8959313d62485f580851cb25bdec3c14f8f624ba621cdec92d3af8767ac2bc7fbc9e360c1b38025f527cceac676c4
+  languageName: node
+  linkType: hard
+
+"@vitest/spy@patch:@vitest/spy@npm%3A3.2.4#~/.yarn/patches/@vitest-spy-npm-3.2.4-ed1c68e965.patch":
+  version: 3.2.4
+  resolution: "@vitest/spy@patch:@vitest/spy@npm%3A3.2.4#~/.yarn/patches/@vitest-spy-npm-3.2.4-ed1c68e965.patch::version=3.2.4&hash=030068"
+  dependencies:
+    tinyspy: "npm:^4.0.3"
+  checksum: 10c0/8b1f89417f0905a18b92fff4abb289cd5b24d6347619d711b01dbd1d94de9a0fbfd05f8181f8b1b4e3e614da25916ce691cf7b12055701f76e882037922f3074
   languageName: node
   linkType: hard
 

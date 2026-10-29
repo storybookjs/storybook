@@ -67,6 +67,9 @@ function listenWhenCalled<T extends VitestMockInstance>(mock: T): T {
   const impl = state.impl;
   state.willCall(function (this: unknown, ...args) {
     listeners.forEach((listener) => listener(mock as MockInstance, args));
+    if (new.target && impl) {
+      return Reflect.construct(impl, args, new.target);
+    }
     return impl?.apply(this, args);
   });
   return mock;

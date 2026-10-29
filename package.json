@@ -58,6 +58,8 @@
     "@vercel/agent-eval-playground/react-dom": "^19.2.0",
     "@vercel/agent-eval@npm:1.2.0": "patch:@vercel/agent-eval@npm%3A1.2.0#~/.yarn/patches/@vercel-agent-eval-npm-1.2.0-861deb21a0.patch",
     "@vitest/expect@npm:3.2.4": "patch:@vitest/expect@npm%3A3.2.4#~/.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch",
+    "@vitest/mocker@npm:3.2.4": "patch:@vitest/mocker@npm%3A3.2.4#~/.yarn/patches/@vitest-mocker-npm-3.2.4-48badb1f19.patch",
+    "@vitest/spy@npm:3.2.4": "patch:@vitest/spy@npm%3A3.2.4#~/.yarn/patches/@vitest-spy-npm-3.2.4-ed1c68e965.patch",
     "aria-query@5.3.0": "^5.3.0",
     "buffer-equal-constant-time@npm:1.0.1": "patch:buffer-equal-constant-time@npm%3A1.0.1#~/.yarn/patches/buffer-equal-constant-time-npm-1.0.1-41826f3419.patch",
     "caniuse-lite": "1.0.30001810",

@@ -170,8 +170,7 @@ export const ContextMenu: FC<{
           id: isFullyExpanded ? 'collapse-all' : 'expand-all',
           title: isFullyExpanded ? 'Collapse all' : 'Expand all',
           icon: isFullyExpanded ? <CollapseIcon /> : <ExpandAltIcon />,
-          onClick: (e: SyntheticEvent) => {
-            e.preventDefault();
+          onClick: () => {
             onExpandCollapseAll();
             setIsOpen(false);
           },

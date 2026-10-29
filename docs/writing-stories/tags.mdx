@@ -21,6 +21,8 @@ The following tags are available in every Storybook project:
 
 The `dev`, `manifest`, and `test` tags are automatically, implicitly applied to every story in your Storybook project.
 
+MDX docs pages stay in the sidebar when `dev` is removed in `.storybook/preview.*` or in the CSF file they are attached to. To hide an MDX docs page from the sidebar, remove `dev` in its own `Meta` block, for example `<Meta tags={['!dev']} />`.
+
 ## Custom tags
 
 You're not limited to the built-in tags. Custom tags enable a flexible layer of categorization on top of Storybook's sidebar hierarchy. Sample uses might include:

@@ -619,6 +619,8 @@ export class StoryIndexGenerator {
       const tags = combineTags(
         ...projectTags,
         ...(csfEntry?.tags ?? []),
+        // An inherited `!dev` hides stories, so only the MDX file's own <Meta> can drop `dev`.
+        Tag.DEV,
         ...(result.metaTags ?? []),
         csfEntry ? Tag.ATTACHED_MDX : Tag.UNATTACHED_MDX
       );

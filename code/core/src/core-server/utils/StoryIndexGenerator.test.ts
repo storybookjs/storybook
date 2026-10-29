@@ -2105,6 +2105,56 @@ describe('StoryIndexGenerator', () => {
           storiesImports: ['./src/A.stories.js', './src/B.stories.ts'],
         });
       });
+
+      it('keeps dev on mdx docs when project tags remove it, unless their own Meta removes it', async () => {
+        const csfSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './dev-tag/*.stories.js',
+          options
+        );
+        const devTagDocsSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './dev-tag/*.mdx',
+          options
+        );
+
+        const generator = new StoryIndexGenerator([csfSpecifier, devTagDocsSpecifier], options);
+        generator.getProjectTags = () => [Tag.DEV, Tag.TEST, Tag.MANIFEST, '!dev'];
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        const tagsById = Object.fromEntries(
+          Object.values(storyIndex.entries).map((entry) => [entry.id, entry.tags])
+        );
+        expect(tagsById).toMatchInlineSnapshot(`
+          {
+            "button--docs": [
+              "test",
+              "manifest",
+              "dev",
+              "attached-mdx",
+            ],
+            "button--hiddenbutton": [
+              "test",
+              "manifest",
+              "attached-mdx",
+            ],
+            "button--story-one": [
+              "test",
+              "manifest",
+            ],
+            "guide--docs": [
+              "test",
+              "manifest",
+              "dev",
+              "unattached-mdx",
+            ],
+            "hiddenguide--docs": [
+              "test",
+              "manifest",
+              "unattached-mdx",
+            ],
+          }
+        `);
+      });
     });
 
     describe('errors', () => {

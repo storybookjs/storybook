@@ -326,19 +326,12 @@ export function getLegacyCsfTitleSegments(lines: string[]): SnippetSegment[] {
 const CSF3_DEPRECATION_MESSAGE =
   '⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4';
 
-/**
- * Returns the deprecation comment a CSF 3 segment must start with, in the comment syntax of the
- * segment's language.
- */
 export function getCsf3DeprecationComment(syntax: string): string {
   if (['svelte', 'html', 'vue'].includes(syntax)) return `<!-- ${CSF3_DEPRECATION_MESSAGE} -->`;
   if (syntax === 'mdx') return `{/* ${CSF3_DEPRECATION_MESSAGE} */}`;
   return `// ${CSF3_DEPRECATION_MESSAGE}`;
 }
 
-/**
- * Returns the CSF 3 segments whose first line is not the deprecation comment.
- */
 export function getCsf3SegmentsWithoutDeprecation(lines: string[]): SnippetSegment[] {
   return getCsfSegments(getSnippetSegments(lines))
     .filter(({ version }) => version === 'csf3')
@@ -348,10 +341,7 @@ export function getCsf3SegmentsWithoutDeprecation(lines: string[]): SnippetSegme
     );
 }
 
-/**
- * Adds the deprecation comment as the first line of each CSF 3 segment that lacks it.
- * Returns the updated lines, or `undefined` if nothing changed.
- */
+// Returns `undefined` when every CSF 3 segment already has the comment
 export function addCsf3Deprecation(lines: string[]): string[] | undefined {
   const segments = getCsf3SegmentsWithoutDeprecation(lines);
   if (segments.length === 0) return undefined;

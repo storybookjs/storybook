@@ -57,7 +57,6 @@ const skippedTests = [
   'ts-function-component',
   'ts-function-component-inline-defaults',
   'js-proptypes',
-  // Fixture uses JSDoc rather than propTypes, so babel-plugin-react-docgen has nothing to extract.
   '9586-js-react-memo',
 ];
 

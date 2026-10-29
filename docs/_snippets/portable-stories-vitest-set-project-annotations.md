@@ -8,6 +8,7 @@ beforeAll(preview.composed.beforeAll);
 ```
 
 ```tsx filename="setupTest.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { beforeAll } from 'vitest';
 // Replace your-framework with the framework you are using, e.g. nextjs-vite, vue3-vite etc.
 import { setProjectAnnotations } from '@storybook/your-framework';

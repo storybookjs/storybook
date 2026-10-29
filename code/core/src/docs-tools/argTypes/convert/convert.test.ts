@@ -654,8 +654,8 @@ describe('storybook type system', () => {
           "oneOfMiscellaneous": {
             "name": "enum",
             "value": [
-              "false",
-              "true",
+              false,
+              true,
               "undefined"
             ]
           },

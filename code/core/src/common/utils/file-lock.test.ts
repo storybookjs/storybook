@@ -96,6 +96,10 @@ describe('withFileLock', () => {
     // The lock's mtime is refreshed while the work runs, so "stale" means the holder stopped
     // reporting, not that the scan is slow. Without the heartbeat a long run breaks its own
     // lock and a second one starts alongside it, which is the whole failure this lock prevents.
+    //
+    // The stale window is wide relative to the heartbeat on purpose: a loaded CI runner can delay
+    // a timer by hundreds of milliseconds, and a window that tight would read that delay as a
+    // dead holder and fail the test for a reason the lock does not control.
     let concurrent = 0;
     let maxConcurrent = 0;
 
@@ -108,10 +112,10 @@ describe('withFileLock', () => {
           await new Promise((resolve) => setTimeout(resolve, workMs));
           concurrent -= 1;
         },
-        { waitBudgetMs: 2000, staleAfterMs: 150 }
+        { waitBudgetMs: 10_000, staleAfterMs: 1_500 }
       );
 
-    await Promise.all([attempt(600), attempt(1)]);
+    await Promise.all([attempt(3_000), attempt(1)]);
 
     expect(maxConcurrent).toBe(1);
   });

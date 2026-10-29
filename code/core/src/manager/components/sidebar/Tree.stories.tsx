@@ -684,6 +684,34 @@ export const ContextMenuOutsideDismiss: Story = {
 };
 
 /**
+ * Keyboard focus on a row shows the shortcut tooltip that advertises the row's context-menu
+ * key binding. The pill is anchored to the focused row via CSS anchor positioning, so it
+ * stays with the row that holds keyboard focus.
+ */
+export const FocusTooltipShowsShortcut: Story = {
+  args: { refId: DEFAULT_REF_ID },
+  render: (args) => {
+    const [selectedId, setSelectedId] = useState(storyId);
+    return (
+      <Tree {...args} data={index} selectedStoryId={selectedId} onSelectStoryId={setSelectedId} />
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const row = (id: string) => canvasElement.querySelector<HTMLElement>(`[data-item-id="${id}"]`);
+    const first = await canvas.findByText('marketing hero');
+    await userEvent.click(first);
+    // Make the focus a keyboard one; ArrowRight on a leaf row moves nothing.
+    await userEvent.keyboard('{ArrowRight}');
+    await waitFor(() =>
+      expect(row('images--marketing-hero')).toHaveAttribute('data-focus-visible', 'true')
+    );
+    const note = canvas.getByText('Actions');
+    await expect(note).toBeVisible();
+  },
+};
+
+/**
  * A pointer press leaves DOM focus on the row, so the ⋯ button follows the pointer and keyboard
  * focus only: it must not stay on after every click.
  */

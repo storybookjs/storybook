@@ -86,14 +86,13 @@ const TreeWrapper = styled.div({
   },
 });
 
-// Without CSS anchor positioning the note cannot follow the focused row, and without
-// `position-visibility` (not yet in Chrome) nothing hides it while no row holds the anchor
-// (mouse focus is not :focus-visible) — either way it would sit as a stray pill over the
-// sidebar, so it only renders where both work.
+// Without CSS anchor positioning the note cannot follow the focused row, so it only renders
+// where that works. `anchors-visible` keeps it off screen while the row is scrolled past the
+// visible band; the render gate on keyboard focus hides it the rest of the time.
 const supportsAnchorPositioning =
   typeof CSS !== 'undefined' &&
   !!CSS.supports?.('anchor-name: --sb-probe') &&
-  !!CSS.supports?.('position-visibility: anchors-valid');
+  !!CSS.supports?.('position-visibility: anchors-visible');
 
 const FocusTooltipNote = styled(TooltipNote)({
   marginBlockStart: 8,
@@ -102,7 +101,7 @@ const FocusTooltipNote = styled(TooltipNote)({
   zIndex: 2,
   positionAnchor: '--focused-treenode',
   positionArea: 'span-x-start y-end',
-  positionVisibility: 'anchors-valid',
+  positionVisibility: 'anchors-visible',
 });
 
 interface TreeProps {
@@ -229,13 +228,14 @@ export const Tree = React.memo<TreeProps>(function Tree({
   );
 
   // The note that tells the user which shortcut opens the actions of the focused row. Rows compute
-  // the same availability for their own ⋯ button (see TreeNode).
+  // the same availability for their own ⋯ button (see TreeNode). Gated on keyboard focus so a
+  // pointer-focused row never renders an anchorless note at the viewport origin.
   const focusedItemShortcutLabel = useMemo(() => {
-    if (!supportsAnchorPositioning || !focusedItemId || !contextMenuShortcut) {
+    if (!supportsAnchorPositioning || !keyboardFocusedItemId || !contextMenuShortcut) {
       return null;
     }
 
-    const item = hoistedData[focusedItemId];
+    const item = hoistedData[keyboardFocusedItemId];
     if (!item) {
       return null;
     }
@@ -244,14 +244,21 @@ export const Tree = React.memo<TreeProps>(function Tree({
       return null;
     }
 
-    const itemStatus = groupDualStatus?.[focusedItemId];
+    const itemStatus = groupDualStatus?.[keyboardFocusedItemId];
     const changeStatus = itemStatus?.change.value ?? 'status-value:unknown';
     const testStatus = itemStatus?.test.value ?? 'status-value:unknown';
 
     return changeStatus !== 'status-value:unknown' || testStatus !== 'status-value:unknown'
       ? 'Status and actions'
       : 'Actions';
-  }, [focusedItemId, contextMenuShortcut, hoistedData, groupDualStatus, hasTestProviders, api]);
+  }, [
+    keyboardFocusedItemId,
+    contextMenuShortcut,
+    hoistedData,
+    groupDualStatus,
+    hasTestProviders,
+    api,
+  ]);
 
   // React-aria expects a Set for selectedKeys. Memoize so Tree's children see a stable ref.
   const selectedKeys = useMemo(

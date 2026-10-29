@@ -594,22 +594,6 @@ export interface StorybookFeatures {
   /**
    * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
    *
-   * Filter args with a "target" on the type from the render function (EXPERIMENTAL)
-   */
-  argTypeTargetsV7?: boolean;
-
-  /**
-   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-   *
-   * Disallow implicit actions during rendering. This will be the default in Storybook 8.
-   *
-   * This will make sure that your story renders the same no matter if docgen is enabled or not.
-   */
-  disallowImplicitActionsInRenderV8?: boolean;
-
-  /**
-   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-   *
    * Enable asynchronous component rendering in React renderer
    */
   experimentalRSC?: boolean;

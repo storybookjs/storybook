@@ -235,13 +235,17 @@ const runComponentMetaFixture = async (
   expect(snippetFilesOnDisk).toEqual(expectedSnippetFiles);
 };
 
+// The first extraction per fixture can outrun the 10s default on a loaded CI runner,
+// mirroring the explicit limits the angular baselines already carry.
+const fixtureTimeoutMs = 30_000;
+
 describe('vue3 vue-component-meta baselines', () => {
   it.each(fixtureCases)(
     '%s',
     async (fixtureCase) => {
       await runComponentMetaFixture(fixtureCase, '__testfixtures__', checker);
     },
-    30_000
+    fixtureTimeoutMs
   );
 });
 
@@ -251,6 +255,6 @@ describe('vue3 vue-component-meta baselines — tsx components', () => {
     async (fixtureCase) => {
       await runComponentMetaFixture(fixtureCase, '__tsx-testfixtures__', tsxChecker);
     },
-    30_000
+    fixtureTimeoutMs
   );
 });

@@ -1,13 +1,14 @@
 diff --git a/dist/index.js b/dist/index.js
-index 994ea213b5d18abcf6e7ff0197a140d939eb53f9..d712e73a28479bbe5b34f1feb2cb15c4aa300f5b 100644
+index 994ea213b5d18abcf6e7ff0197a140d939eb53f9..b0a453a2ac42b56e7cc72b025f47dc77cffbacbc 100644
 --- a/dist/index.js
 +++ b/dist/index.js
-@@ -36,7 +36,8 @@ function mockObject(options, object, mockExports = {}) {
+@@ -36,7 +36,9 @@ function mockObject(options, object, mockExports = {}) {
  			}
  			const type = getType(value);
  			if (Array.isArray(value)) {
 -				define(newContainer, property, []);
-+				// Patched for storybook: only empty arrays when automocking, keep a copy when spying.
++				// Patched for storybook: backports Vitest 4's spy-mode arrays, but elements are copied, not spied.
++				// Remove once the bundled @vitest/mocker is on Vitest 4 or later.
 +				define(newContainer, property, options.type === "automock" ? [] : [...value]);
  				continue;
  			}

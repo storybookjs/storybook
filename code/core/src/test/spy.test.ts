@@ -51,7 +51,70 @@ it('spied classes can be constructed with new', () => {
   expect(thing.value).toBe(1);
   expect(thing).toBeInstanceOf(Thing);
   expect(storybookSpy.mock.instances[0]).toBe(thing);
+  expect(storybookSpy.mock.contexts[0]).toBe(thing);
   expect(vitestSpy).toHaveBeenCalledWith(storybookSpy, [1]);
+});
+
+it('spied classes can be subclassed', () => {
+  class Thing {
+    constructor(public value: number) {}
+  }
+  const container = { Thing };
+  spyOn(container, 'Thing');
+  class SubThing extends container.Thing {}
+
+  const thing = new SubThing(1);
+
+  expect(thing).toBeInstanceOf(SubThing);
+  expect(thing.value).toBe(1);
+});
+
+it('spied classes construct the class passed to mockImplementation', () => {
+  class Thing {
+    original() {}
+  }
+  class Fake {
+    fake() {}
+  }
+  const container = { Thing };
+  const storybookSpy = spyOn(container, 'Thing').mockImplementation(Fake as unknown as () => Thing);
+
+  const thing = new container.Thing() as unknown as Fake;
+
+  expect(thing).toBeInstanceOf(Fake);
+  expect(thing.fake).toBeTypeOf('function');
+  expect(storybookSpy.mock.instances[0]).toBe(thing);
+});
+
+it('spied bound classes can be constructed with new', () => {
+  class Thing {
+    constructor(public value: number) {}
+  }
+  const container = { Thing: Thing.bind(null) };
+  spyOn(container, 'Thing');
+
+  const thing = new container.Thing(1);
+
+  expect(thing).toBeInstanceOf(Thing);
+  expect(thing.value).toBe(1);
+});
+
+it('spied built-in constructors can be constructed with new', () => {
+  const container = { Date };
+  const storybookSpy = spyOn(container, 'Date');
+
+  const date = new container.Date(0);
+
+  expect(date).toBeInstanceOf(Date);
+  expect(date.getTime()).toBe(0);
+  expect(storybookSpy.mock.contexts[0]).toBe(date);
+});
+
+it('arrow implementations keep their return value when called with new', () => {
+  const storybookSpy = fn(() => ({ ok: true }));
+  const SpyConstructor = storybookSpy as unknown as new () => { ok: boolean };
+
+  expect(new SpyConstructor()).toEqual({ ok: true });
 });
 
 it('spied function constructors keep their instance when called with new', () => {

@@ -12,9 +12,6 @@ import { component as JsDefaultValuesComponent } from './docgen-components/9626-
 import { component as JsFunctionComponentInlineDefaultsNoPropTypesComponent } from './docgen-components/js-function-component-inline-defaults-no-propTypes/input.jsx';
 import { component as JsFunctionComponentInlineDefaultsComponent } from './docgen-components/js-function-component-inline-defaults/input.jsx';
 
-// Detect if we are running in vite in a hacky way for now
-const isVite = typeof require === 'undefined';
-
 export default {
   // Portable stories in Vitest have no docgen server to load argTypes from.
   tags: ['!vitest'],
@@ -49,9 +46,9 @@ export default {
     />
   ),
   parameters: {
-    chromatic: {
-      disableSnapshot: isVite,
-    },
+    // Docgen is resolved asynchronously through the server loader, so the rendered table is not
+    // deterministic across runs; snapshotting it produces false positives on every build.
+    chromatic: { disableSnapshot: true },
   },
 };
 

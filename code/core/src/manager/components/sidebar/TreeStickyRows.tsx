@@ -112,6 +112,10 @@ const StickyMenuButton = styled.span(({ theme }) => ({
   cursor: 'pointer',
   position: 'relative',
   '&:hover': { background: theme.background.hoverable },
+  '&:focus-visible': {
+    outline: `2px solid ${theme.color.secondary}`,
+    outlineOffset: -2,
+  },
   svg: { width: 14, height: 14 },
 }));
 

@@ -20,7 +20,7 @@ const Wrapper = styled.div({
 
 const TooltipContent = styled.div({
   width: 200,
-  margin: 8,
+  margin: 5,
 
   '.react-colorful__saturation': {
     borderRadius: '4px 4px 0 0',

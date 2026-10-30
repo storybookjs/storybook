@@ -4,7 +4,7 @@ import { extractMockCalls, findMockRedirect } from 'storybook/internal/mocking-u
 import type { MockCall } from 'storybook/internal/mocking-utils';
 import { logger } from 'storybook/internal/node-logger';
 
-import { dirname, normalize } from 'pathe';
+import { dirname, isAbsolute, normalize } from 'pathe';
 import type { Compiler, ResolveData, Resolver } from 'webpack';
 
 export interface WebpackMockPluginOptions {
@@ -13,8 +13,11 @@ export interface WebpackMockPluginOptions {
 
 const PLUGIN_NAME = 'storybook-mock-plugin';
 
+const isBareSpecifier = (specifier: string) => !specifier.startsWith('.') && !isAbsolute(specifier);
+
 export class WebpackMockPlugin {
   private mocksByPath = new Map<string, MockCall>();
+  private redirectsBySpecifier = new Map<string, string>();
   private lastPreviewMtime: number | undefined;
   private readonly options: WebpackMockPluginOptions;
 
@@ -49,12 +52,16 @@ export class WebpackMockPlugin {
         compiler.resolverFactory.get('normal', { dependencyType })
       );
       this.mocksByPath = new Map();
+      this.redirectsBySpecifier = new Map();
       for (const mock of mocks) {
+        if (mock.redirectPath && isBareSpecifier(mock.specifier)) {
+          this.redirectsBySpecifier.set(mock.specifier, mock.redirectPath);
+        }
         const paths = await Promise.all(
           resolvers.map((resolver) => resolveWithWebpack(resolver, previewDir, mock.specifier))
         );
         const resolved = paths.filter((path): path is string => path !== undefined);
-        if (resolved.length === 0) {
+        if (resolved.length === 0 && !this.redirectsBySpecifier.has(mock.specifier)) {
           logger.warn(
             `Could not resolve "${mock.specifier}" from ${previewDir}, so its sb.mock() call is ignored.`
           );
@@ -74,6 +81,16 @@ export class WebpackMockPlugin {
     compiler.hooks.watchRun.tapPromise(PLUGIN_NAME, updateMocks);
 
     compiler.hooks.normalModuleFactory.tap(PLUGIN_NAME, (factory) => {
+      // A package the browser build cannot resolve, such as one with a server-only `exports` map,
+      // still needs its manual mock, so a bare request is redirected before resolution.
+      factory.hooks.beforeResolve.tap(PLUGIN_NAME, (resolveData) => {
+        const redirectPath = this.redirectsBySpecifier.get(resolveData.request);
+        if (redirectPath) {
+          resolveData.request = redirectPath;
+          resolveData.context = dirname(redirectPath);
+        }
+      });
+
       factory.hooks.afterResolve.tapAsync(PLUGIN_NAME, (resolveData, callback) => {
         const mock = this.findMock(resolveData.createData);
         if (!mock) {

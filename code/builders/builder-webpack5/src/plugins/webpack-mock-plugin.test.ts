@@ -36,6 +36,7 @@ const files: Record<string, string> = {
     "sb.mock('../src/utils/format.js');",
     "sb.mock('../src/components/Icon.tsx', { spy: true });",
     "sb.mock('ext-pkg');",
+    "sb.mock('server-pkg');",
   ].join('\n'),
   '.storybook/preview-without-mocks.js': 'export default {};',
   '.storybook/preview-with-unresolvable-mock.js': [
@@ -48,8 +49,14 @@ const files: Record<string, string> = {
     "import { format } from '@/utils/format';",
     "import { Button } from './components/Button';",
     "import { ext } from 'ext-pkg';",
+    "import { server } from 'server-pkg';",
     "import { other } from './other.js';",
-    'export default [api, format, Button, ext, other];',
+    'export default [api, format, Button, ext, server, other];',
+  ].join('\n'),
+  'src/index-without-server-pkg.js': [
+    "import { api } from './api.js';",
+    "import { ext } from 'ext-pkg';",
+    'export default [api, ext];',
   ].join('\n'),
   'src/api.js': "export const api = 'REAL_API';",
   'src/data.json': '{}',
@@ -64,6 +71,13 @@ const files: Record<string, string> = {
   'node_modules/ext-pkg/package.json': JSON.stringify({ name: 'ext-pkg', main: 'index.js' }),
   'node_modules/ext-pkg/index.js': "export const ext = 'REAL_EXT';",
   '__mocks__/ext-pkg.js': "export const ext = 'MOCKED_EXT_' + 'NEEDS_PROJECT_LOADER';",
+  // Only Node's resolver can reach this package; webpack's browser conditions cannot.
+  'node_modules/server-pkg/package.json': JSON.stringify({
+    name: 'server-pkg',
+    exports: { '.': { node: './index.js' } },
+  }),
+  'node_modules/server-pkg/index.js': "export const server = 'REAL_SERVER';",
+  '__mocks__/server-pkg.js': "export const server = 'MOCKED_SERVER';",
   'project-loader.cjs':
     "module.exports = (source) => source.replace('NEEDS_PROJECT_LOADER', 'PROJECT_LOADER_RAN');",
   'automock-loader-stub.cjs': [
@@ -190,6 +204,12 @@ describe('WebpackMockPlugin', () => {
     expect(build.sourceOf('__mocks__/ext-pkg.js')).toContain('MOCKED_EXT_');
   });
 
+  it('replaces a package that webpack cannot resolve with its __mocks__ file', () => {
+    expect(build.bundle).toContain('MOCKED_SERVER');
+    expect(build.bundle).not.toContain('REAL_SERVER');
+    expect(logger.warn).not.toHaveBeenCalledWith(expect.stringContaining('server-pkg'));
+  });
+
   it('leaves unmocked modules alone', () => {
     expect(build.bundle).toContain('OTHER');
     expect(build.sourceOf('src/other.js')).not.toContain('automocked');
@@ -209,6 +229,7 @@ describe('WebpackMockPlugin', () => {
   it('warns about a mock that webpack cannot resolve and keeps the others', async () => {
     const { bundle } = await compile({
       previewFile: '.storybook/preview-with-unresolvable-mock.js',
+      config: { entry: './src/index-without-server-pkg.js' },
     });
 
     expect(bundle).toContain('MOCKED_API_');
@@ -218,7 +239,10 @@ describe('WebpackMockPlugin', () => {
   });
 
   it('changes nothing when the preview file has no mocks', async () => {
-    const { bundle } = await compile({ previewFile: '.storybook/preview-without-mocks.js' });
+    const { bundle } = await compile({
+      previewFile: '.storybook/preview-without-mocks.js',
+      config: { entry: './src/index-without-server-pkg.js' },
+    });
 
     expect(bundle).toContain('REAL_API');
     expect(bundle).toContain('REAL_EXT');

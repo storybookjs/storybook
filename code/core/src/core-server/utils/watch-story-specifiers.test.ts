@@ -113,6 +113,29 @@ describe('watchStorySpecifiers', () => {
     });
   });
 
+  it('watches a working dir nested in the specifier directory', async () => {
+    vi.useRealTimers();
+
+    const nestedWorkingDir = join(workingDir, 'src');
+    const specifier = normalizeStoriesEntry('../@(src|complex)/**/*.stories.ts', {
+      ...options,
+      workingDir: nestedWorkingDir,
+    });
+
+    const onInvalidate = vi.fn();
+    close = watchStorySpecifiers([specifier], { workingDir: nestedWorkingDir }, onInvalidate);
+
+    const watcher = Watchpack.mock.instances[0];
+    const onChange = watcher.on.mock.calls[0][1];
+
+    onChange(join(nestedWorkingDir, 'B.stories.ts'), 1234);
+    onChange(join(nestedWorkingDir, 'second-nested'), 1234);
+    await vi.waitFor(() => {
+      expect(onInvalidate).toHaveBeenCalledWith('./B.stories.ts', false);
+      expect(onInvalidate).toHaveBeenCalledWith('./second-nested/G.stories.ts', false);
+    });
+  });
+
   it('watches single file globs', async () => {
     const specifier = normalizeStoriesEntry('../src/nested/Button.mdx', options);
 

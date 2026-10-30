@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { getStoryId } from './get-story-id.ts';
+import { getStoryId, getStoryTitle } from './get-story-id.ts';
 
 describe('getStoryId', () => {
   it('should return the storyId', async () => {
@@ -44,5 +44,20 @@ describe('getStoryId', () => {
     await expect(() =>
       getStoryId({ storyFilePath, exportedStoryName }, options)
     ).rejects.toThrowError();
+  });
+});
+
+describe('getStoryTitle', () => {
+  it('titles a story in a working dir nested in the stories directory', () => {
+    const root = join(process.cwd(), 'monorepo');
+
+    const title = getStoryTitle({
+      storyFilePath: join(root, 'packages', 'core', 'src', 'Button.stories.ts'),
+      configDir: join(root, '.storybook'),
+      workingDir: join(root, 'packages', 'core'),
+      stories: ['../packages/@(core|other)/src/**/*.stories.ts'],
+    });
+
+    expect(title).toBe('core/src/Button');
   });
 });

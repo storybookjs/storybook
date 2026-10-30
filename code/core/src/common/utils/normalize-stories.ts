@@ -4,6 +4,7 @@ import { basename, dirname, relative, resolve } from 'node:path';
 import { InvalidStoriesEntryError } from 'storybook/internal/server-errors';
 import type { NormalizedStoriesSpecifier, StoriesEntry } from 'storybook/internal/types';
 
+import * as pathe from 'pathe';
 import * as pico from 'picomatch';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
@@ -34,6 +35,14 @@ export const getDirectoryFromWorkingDir = ({
   // but we want `./src` to match importPaths
   return normalizeStoryPath(directoryFromWorking);
 };
+
+// `./Button.stories.ts` becomes `../core/Button.stories.ts` when the working dir `core` is inside
+// the directory `..`, the form `importPathMatcher` and auto-titles expect.
+export const getSpecifierImportPath = (
+  { directory }: NormalizedStoriesSpecifier,
+  absolutePath: string,
+  workingDir: string
+) => `${directory}/${pathe.relative(pathe.resolve(workingDir, directory), absolutePath)}`;
 
 export const normalizeStoriesEntry = (
   entry: StoriesEntry,

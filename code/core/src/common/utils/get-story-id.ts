@@ -1,13 +1,10 @@
-import { relative } from 'node:path';
-
-import { normalizeStories, normalizeStoryPath } from 'storybook/internal/common';
+import { getSpecifierImportPath, normalizeStories } from 'storybook/internal/common';
 import { sanitize, storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
 import type { Options, StoriesEntry } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
 import { userOrAutoTitleFromSpecifier } from '../../shared/story-index/autoTitle.ts';
-import { posix } from './posix.ts';
 
 interface StoryIdData {
   storyFilePath: string;
@@ -58,10 +55,13 @@ export function getStoryTitle({
     workingDir,
   });
 
-  const relativePath = relative(workingDir, storyFilePath);
-  const importPath = posix(normalizeStoryPath(relativePath));
-
   return normalizedStories
-    .map((normalizeStory) => userOrAutoTitleFromSpecifier(importPath, normalizeStory, userTitle))
+    .map((normalizeStory) =>
+      userOrAutoTitleFromSpecifier(
+        getSpecifierImportPath(normalizeStory, storyFilePath, workingDir),
+        normalizeStory,
+        userTitle
+      )
+    )
     .filter(Boolean)[0];
 }

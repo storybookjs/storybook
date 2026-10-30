@@ -1,7 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-
-import { join } from 'pathe';
+import { join } from 'node:path';
 
 import {
   allTemplates,
@@ -110,16 +109,22 @@ export function selectFocusSandboxes(changedFiles: readonly string[]): TemplateK
   return [DEFAULT_FOCUS_SANDBOX];
 }
 
-/** Select the other templates that run Chromatic and load a changed package. */
+/** Every sandbox that runs Chromatic links the core and addon template stories. */
+const isSharedTemplateFile = (file: string) => /^code\/(core|addons\/[^/]+)\/template\//.test(file);
+
+/** Select the other templates that run Chromatic and load a changed package or shared story. */
 export function selectChromaticSiblings(
   focused: readonly TemplateKey[],
   changedFiles: readonly string[]
 ): TemplateKey[] {
+  const sharedTemplateChanged = changedFiles.some(isSharedTemplateFile);
+
   return FOCUS_TEMPLATES.filter(
     (sibling) =>
       !focused.includes(sibling) &&
       !allTemplates[sibling].skipTasks?.includes('chromatic') &&
-      isChanged(Object.values(templateDirs(sibling)).flat(), changedFiles)
+      (sharedTemplateChanged ||
+        isChanged(Object.values(templateDirs(sibling)).flat(), changedFiles))
   );
 }
 
@@ -167,7 +172,6 @@ export const PATH_TRIGGERED_JOBS: readonly { job: JobOrNoOpJob; paths: readonly 
   { job: internalStorybookE2e, paths: INTERNAL_STORYBOOK_PATHS },
   { job: internalStorybookBuildE2e, paths: INTERNAL_STORYBOOK_PATHS },
   { job: testsStories_linux, paths: INTERNAL_STORYBOOK_PATHS },
-  { job: storybookChromatic, paths: INTERNAL_STORYBOOK_PATHS },
 ];
 
 export const selectPathTriggeredJobs = (changedFiles: readonly string[]): JobOrNoOpJob[] =>
@@ -195,6 +199,8 @@ export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
       ? testsUnit_linux
       : defineAffectedUnitTests(changedFiles),
     defineAffectedLintAndFormat(changedFiles),
+    // The internal Storybook loads stories from across `code`, and TurboSnap snapshots only those the diff affects.
+    storybookChromatic,
     ...selectPathTriggeredJobs(changedFiles),
     sandboxesNoOpJob,
     ...focused.flatMap((template) => defineSandboxFlow(template).jobs),

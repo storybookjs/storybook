@@ -111,8 +111,14 @@ export function subscribeExtractionServiceToModuleGraphChanges<
       return;
     }
 
+    // An unindexable story (e.g. a syntax error mid-edit) must not become an unhandled rejection.
+    const index = await options.getIndex().catch(() => undefined);
+    if (!index) {
+      return;
+    }
+
     const changedStoryFiles = new Set(data.storyFiles);
-    const entries = Object.values((await options.getIndex()).entries);
+    const entries = Object.values(index.entries);
     const affectedEntries =
       changedStoryFiles.size === 0
         ? entries

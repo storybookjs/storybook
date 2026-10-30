@@ -174,7 +174,7 @@ it('keeps explicit spread overrides and preserves later args without duplicate a
   });
   const story = result?.stories['spreads--overrides'];
   expect(story?.snippet).toContain('<Metadata disabled label="Explicit" />');
-  expect(story?.snippet).toContain("<Metadata label={'From args'} disabled />");
+  expect(story?.snippet).toContain('<Metadata label="From args" disabled />');
   expect(story?.warning).toBeUndefined();
 });
 

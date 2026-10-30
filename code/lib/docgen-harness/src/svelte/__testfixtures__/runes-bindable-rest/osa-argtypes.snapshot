@@ -8,7 +8,7 @@
     "table": {
       "category": "properties",
       "defaultValue": {
-        "summary": "...",
+        "summary": "false",
       },
       "jsDocTags": {
         "bindable": [
@@ -33,7 +33,7 @@
     "table": {
       "category": "properties",
       "defaultValue": {
-        "summary": "...",
+        "summary": """",
       },
       "jsDocTags": {
         "bindable": [

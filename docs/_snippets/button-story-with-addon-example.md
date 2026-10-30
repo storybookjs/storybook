@@ -1,4 +1,37 @@
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Button',
+  component: Button,
+  //👇 Creates specific parameters for the story
+  parameters: {
+    myAddon: {
+      data: 'this data is passed to the addon',
+    },
+  },
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Basic = meta.story({
+  render: () => ({
+    template: `<app-button>hello</<app-button>`,
+  }),
+});
+```
+
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -33,10 +66,12 @@ export const Basic: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
+import * as React from 'react';
+
 import preview from '../.storybook/preview';
 
-import { Button } from './button.component';
+import { Button } from './Button';
 
 const meta = preview.meta({
   /* 👇 The title prop is optional.
@@ -48,7 +83,34 @@ const meta = preview.meta({
   //👇 Creates specific parameters for the story
   parameters: {
     myAddon: {
-      data: 'this data is passed to the addon',
+      data: 'This data is passed to the addon',
+    },
+  },
+});
+
+export const Basic = meta.story({
+  render: () => <Button>Hello</Button>,
+});
+```
+
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import * as React from 'react';
+
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Button',
+  component: Button,
+  //👇 Creates specific parameters for the story
+  parameters: {
+    myAddon: {
+      data: 'This data is passed to the addon',
     },
   },
 });
@@ -59,71 +121,8 @@ const meta = preview.meta({
  * to learn how to use render functions.
  */
 export const Basic = meta.story({
-  render: () => ({
-    template: `<app-button>hello</<app-button>`,
-  }),
+  render: () => <Button>Hello</Button>,
 });
-```
-
-```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
-import * as React from 'react';
-
-import { Button } from './Button';
-
-export default {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'Button',
-  component: Button,
-  //👇 Creates specific parameters for the story
-  parameters: {
-    myAddon: {
-      data: 'This data is passed to the addon',
-    },
-  },
-};
-
-export const Basic = {
-  render: () => <Button>Hello</Button>,
-};
-```
-
-```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
-import * as React from 'react';
-
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { Button } from './Button';
-
-const meta = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'Button',
-  component: Button,
-  //👇 Creates specific parameters for the story
-  parameters: {
-    myAddon: {
-      data: 'This data is passed to the addon',
-    },
-  },
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Basic: Story = {
-  render: () => <Button>Hello</Button>,
-};
 ```
 
 ```jsx filename="Button.stories.js|jsx" renderer="solid" language="js"
@@ -182,32 +181,7 @@ export const Basic: Story = {
 };
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    /* 👇 The title prop is optional.
-     * See https://storybook.js.org/docs/configure/#configure-story-loading
-     * to learn how to generate automatic titles
-    */
-    title: 'Button',
-    component: Button,
-    parameters: {
-      myAddon: {
-        data: 'This data is passed to the addon',
-      },
-    },
-  });
-</script>
-
-<Story name="Basic" />
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -231,7 +205,8 @@ export const Basic: Story = {
 <Story name="Basic" />
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -256,7 +231,7 @@ export const Basic: Story = {
 <Story name="Basic" />
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
 <script module lang="ts">
   import preview from '../.storybook/preview';
 
@@ -280,10 +255,38 @@ export const Basic: Story = {
 <Story name="Basic" />
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    /* 👇 The title prop is optional.
+     * See https://storybook.js.org/docs/configure/#configure-story-loading
+     * to learn how to generate automatic titles
+    */
+    title: 'Button',
+    component: Button,
+    parameters: {
+      myAddon: {
+        data: 'This data is passed to the addon',
+      },
+    },
+  });
+</script>
+
+<Story name="Basic" />
+```
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import Button from './Button.vue';
 
-export default {
+const meta = preview.meta({
   /* 👇 The title prop is optional.
    * See https://storybook.js.org/docs/configure/#configure-story-loading
    * to learn how to generate automatic titles
@@ -296,17 +299,163 @@ export default {
       data: 'This data is passed to the addon',
     },
   },
-};
+});
 
-export const Basic = {
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Basic = meta.story({
   render: () => ({
     components: { Button },
     template: '<Button label="Hello" />',
   }),
+});
+```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Button',
+  component: Button,
+  //👇 Creates specific parameters for the story
+  parameters: {
+    myAddon: {
+      data: 'This data is passed to the addon',
+    },
+  },
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Basic = meta.story({
+  render: () => ({
+    components: { Button },
+    template: '<Button label="Hello" />',
+  }),
+});
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  title: 'Button',
+  component: 'custom-button',
+  //👇 Creates specific parameters for the story
+  parameters: {
+    myAddon: {
+      data: 'This data is passed to the addon',
+    },
+  },
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Basic = meta.story({
+  render: () => html`<custom-button label="Hello"></custom-button>`,
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  title: 'Button',
+  component: 'custom-button',
+  //👇 Creates specific parameters for the story
+  parameters: {
+    myAddon: {
+      data: 'This data is passed to the addon',
+    },
+  },
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Basic = meta.story({
+  render: () => html`<custom-button label="Hello"></custom-button>`,
+});
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import { html } from 'lit';
+
+export default {
+  title: 'Button',
+  component: 'custom-button',
+  //👇 Creates specific parameters for the story
+  parameters: {
+    myAddon: {
+      data: 'This data is passed to the addon',
+    },
+  },
+};
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Basic = {
+  render: () => html`<custom-button label="Hello"></custom-button>`,
+};
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
+
+import { html } from 'lit';
+
+const meta: Meta = {
+  title: 'Button',
+  component: 'custom-button',
+  //👇 Creates specific parameters for the story
+  parameters: {
+    myAddon: {
+      data: 'This data is passed to the addon',
+    },
+  },
+};
+
+export default meta;
+type Story = StoryObj;
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Basic: Story = {
+  render: () => html`<custom-button label="Hello"></custom-button>`,
 };
 ```
 
 ```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
@@ -342,12 +491,17 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
-import { html } from 'lit';
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import Button from './Button.vue';
 
 export default {
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
   title: 'Button',
-  component: 'custom-button',
+  component: Button,
   //👇 Creates specific parameters for the story
   parameters: {
     myAddon: {
@@ -356,34 +510,40 @@ export default {
   },
 };
 
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
 export const Basic = {
-  render: () => html`<custom-button label="Hello"></custom-button>`,
+  render: () => ({
+    components: { Button },
+    template: '<Button label="Hello" />',
+  }),
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/web-components-vite';
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import * as React from 'react';
 
-import { html } from 'lit';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
-const meta: Meta = {
+import { Button } from './Button';
+
+const meta = {
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
   title: 'Button',
-  component: 'custom-button',
+  component: Button,
   //👇 Creates specific parameters for the story
   parameters: {
     myAddon: {
       data: 'This data is passed to the addon',
     },
   },
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
-type Story = StoryObj;
+type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
@@ -391,138 +551,17 @@ type Story = StoryObj;
  * to learn how to use render functions.
  */
 export const Basic: Story = {
-  render: () => html`<custom-button label="Hello"></custom-button>`,
+  render: () => <Button>Hello</Button>,
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import { html } from 'lit';
-
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  title: 'Button',
-  component: 'custom-button',
-  //👇 Creates specific parameters for the story
-  parameters: {
-    myAddon: {
-      data: 'This data is passed to the addon',
-    },
-  },
-});
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Basic = meta.story({
-  render: () => html`<custom-button label="Hello"></custom-button>`,
-});
-```
-
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import { html } from 'lit';
-
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  title: 'Button',
-  component: 'custom-button',
-  //👇 Creates specific parameters for the story
-  parameters: {
-    myAddon: {
-      data: 'This data is passed to the addon',
-    },
-  },
-});
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Basic = meta.story({
-  render: () => html`<custom-button label="Hello"></custom-button>`,
-});
-```
-
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import Button from './Button.vue';
-
-const meta = preview.meta({
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'Button',
-  component: Button,
-  //👇 Creates specific parameters for the story
-  parameters: {
-    myAddon: {
-      data: 'This data is passed to the addon',
-    },
-  },
-});
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Basic = meta.story({
-  render: () => ({
-    components: { Button },
-    template: '<Button label="Hello" />',
-  }),
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import Button from './Button.vue';
-
-const meta = preview.meta({
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'Button',
-  component: Button,
-  //👇 Creates specific parameters for the story
-  parameters: {
-    myAddon: {
-      data: 'This data is passed to the addon',
-    },
-  },
-});
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Basic = meta.story({
-  render: () => ({
-    components: { Button },
-    template: '<Button label="Hello" />',
-  }),
-});
-```
-
-```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import * as React from 'react';
-
-import preview from '../.storybook/preview';
 
 import { Button } from './Button';
 
-const meta = preview.meta({
+export default {
   /* 👇 The title prop is optional.
    * See https://storybook.js.org/docs/configure/#configure-story-loading
    * to learn how to generate automatic titles
@@ -535,43 +574,9 @@ const meta = preview.meta({
       data: 'This data is passed to the addon',
     },
   },
-});
+};
 
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Basic = meta.story({
+export const Basic = {
   render: () => <Button>Hello</Button>,
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import * as React from 'react';
-
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'Button',
-  component: Button,
-  //👇 Creates specific parameters for the story
-  parameters: {
-    myAddon: {
-      data: 'This data is passed to the addon',
-    },
-  },
-});
-
-export const Basic = meta.story({
-  render: () => <Button>Hello</Button>,
-});
+};
 ```

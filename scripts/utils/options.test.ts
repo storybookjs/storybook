@@ -1,8 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { createCommand } from 'commander';
+import prompts from 'prompts';
 
-import { areOptionsSatisfied, createOptions, getCommand, getOptions } from './options.ts';
+import {
+  areOptionsSatisfied,
+  createOptions,
+  getCommand,
+  getOptions,
+  promptOptions,
+} from './options.ts';
 
 const allOptions = createOptions({
   first: {
@@ -175,5 +182,42 @@ describe('getCommand', () => {
         fifth: ['a', 'b'],
       })
     ).toBe(`node foo --first --no-second --third "one" --fifth a --fifth b`);
+  });
+});
+
+describe('promptOptions', () => {
+  const conditionalOptions = createOptions({
+    task: {
+      type: 'string',
+      description: 'task',
+      values: ['sandbox', 'compile'] as const,
+    },
+    template: {
+      type: 'string',
+      description: 'template',
+      values: ['react', 'vue'] as const,
+      promptType: (_, { task }) => task === 'sandbox',
+    },
+  });
+
+  afterEach(() => {
+    prompts.inject([]);
+  });
+
+  it('exposes values passed on the command line to promptType callbacks', async () => {
+    prompts.inject(['react']);
+    expect(
+      await promptOptions(conditionalOptions, { task: 'sandbox', template: undefined })
+    ).toMatchObject({
+      task: 'sandbox',
+      template: 'react',
+    });
+  });
+
+  it('skips prompts whose promptType callback returns false', async () => {
+    prompts.inject(['react']);
+    expect(
+      await promptOptions(conditionalOptions, { task: 'compile', template: undefined })
+    ).toEqual({ task: 'compile', template: undefined });
   });
 });

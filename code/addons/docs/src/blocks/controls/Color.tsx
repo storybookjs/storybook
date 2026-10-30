@@ -408,6 +408,7 @@ export const ColorControl: FC<ColorControlProps> = ({
         defaultVisible={startOpen}
         visible={readOnly ? false : undefined}
         onVisibleChange={() => color && addPreset(color)}
+        scrollable={false}
         popover={
           <TooltipContent>
             <Picker

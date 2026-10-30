@@ -1,3 +1,5 @@
+import { unwrapExpression } from 'storybook/internal/csf-tools';
+
 import type { ESTreeAST } from '../../ast.ts';
 import type { SvelteASTNodes } from './nodes.ts';
 import { isOneOf } from '../../../utils/is-one-of.ts';
@@ -54,13 +56,13 @@ export function getDefineMetaFirstArgumentObjectExpression(
   const { declarations } = defineMetaVariableDeclaration;
   const declaration = declarations[0];
   const init = declaration.init && skipTypeCalls(declaration.init);
+  const argument =
+    init?.type === 'CallExpression' && init.arguments.length === 1
+      ? unwrapExpression(init.arguments[0])
+      : undefined;
 
-  if (
-    init?.type === 'CallExpression' &&
-    init.arguments.length === 1 &&
-    init.arguments[0].type === 'ObjectExpression'
-  ) {
-    return init.arguments[0];
+  if (argument?.type === 'ObjectExpression') {
+    return argument;
   }
 
   throw new GetDefineMetaFirstArgumentError({

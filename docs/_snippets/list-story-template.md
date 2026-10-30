@@ -1,4 +1,58 @@
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
+import { CommonModule } from '@angular/common';
+
+import { moduleMetadata } from '@storybook/angular';
+
+import preview from '../.storybook/preview';
+
+import { List } from './list.component';
+import { ListItem } from './list-item.component';
+
+//👇 Imports a specific story from ListItem stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+  decorators: [
+    moduleMetadata({
+      declarations: [List, ListItem],
+      imports: [CommonModule],
+    }),
+  ],
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+const ListTemplate = {
+  render: (args) => ({
+    props: args,
+    template: `
+      <app-list>
+        <div *ngFor="let item of items">
+          <app-list-item [item]="item"></app-list-item>
+        </div>
+      </app-list>
+    `,
+  }),
+};
+
+export const Empty = meta.story({
+  ...ListTemplate,
+  args: { items: [] },
+});
+
+export const OneItem = Empty.extend({
+  args: {
+    items: [{ ...Unchecked.input.args }],
+  },
+});
+```
+
 ```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { type Meta, type StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
@@ -53,50 +107,32 @@ export const OneItem: Story = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import { CommonModule } from '@angular/common';
-
-import { moduleMetadata } from '@storybook/angular';
-
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
-import { List } from './list.component';
-import { ListItem } from './list-item.component';
+import { List } from './List';
+import { ListItem } from './ListItem';
 
 //👇 Imports a specific story from ListItem stories
 import { Unchecked } from './ListItem.stories';
 
 const meta = preview.meta({
   component: List,
-  decorators: [
-    moduleMetadata({
-      declarations: [List, ListItem],
-      imports: [CommonModule],
-    }),
-  ],
 });
 
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-const ListTemplate = {
-  render: (args) => ({
-    props: args,
-    template: `
-      <app-list>
-        <div *ngFor="let item of items">
-          <app-list-item [item]="item"></app-list-item>
-        </div>
-      </app-list>
-    `,
-  }),
-};
-
 export const Empty = meta.story({
-  ...ListTemplate,
-  args: { items: [] },
+  render: ({ items, ...args }) => {
+    return (
+      <List>
+        {items.map((item) => (
+          <ListItem {...item} />
+        ))}
+      </List>
+    );
+  },
+  args: {
+    items: [],
+  },
 });
 
 export const OneItem = Empty.extend({
@@ -106,19 +142,20 @@ export const OneItem = Empty.extend({
 });
 ```
 
-```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import { List } from './List';
 import { ListItem } from './ListItem';
 
 //👇 Imports a specific story from ListItem stories
 import { Unchecked } from './ListItem.stories';
 
-export default {
+const meta = preview.meta({
   component: List,
-};
+});
 
-//👇 The ListTemplate construct will be spread to the existing stories.
-const ListTemplate = {
+export const Empty = meta.story({
   render: ({ items, ...args }) => {
     return (
       <List>
@@ -128,66 +165,16 @@ const ListTemplate = {
       </List>
     );
   },
-};
-
-export const Empty = {
-  ...ListTemplate,
   args: {
     items: [],
   },
-};
+});
 
-export const OneItem = {
-  ...ListTemplate,
+export const OneItem = Empty.extend({
   args: {
-    items: [{ ...Unchecked.args }],
+    items: [{ ...Unchecked.input.args }],
   },
-};
-```
-
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { List } from './List';
-import { ListItem } from './ListItem';
-
-//👇 Imports a specific story from ListItem stories
-import { Unchecked } from './ListItem.stories';
-
-const meta = {
-  component: List,
-} satisfies Meta<typeof List>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-//👇 The ListTemplate construct will be spread to the existing stories.
-const ListTemplate: Story = {
-  render: ({ items, ...args }) => {
-    return (
-      <List>
-        {items.map((item) => (
-          <ListItem {...item} />
-        ))}
-      </List>
-    );
-  },
-};
-
-export const Empty = {
-  ...ListTemplate,
-  args: {
-    items: [],
-  },
-};
-
-export const OneItem = {
-  ...ListTemplate,
-  args: {
-    items: [{ ...Unchecked.args }],
-  },
-};
+});
 ```
 
 ```jsx filename="List.stories.js|jsx" renderer="solid" language="js"
@@ -273,46 +260,7 @@ export const OneItem = {
 };
 ```
 
-```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import List from './List.svelte';
-  import ListItem from './ListItem.svelte';
-
-  //👇 Imports a specific story from ListItem stories
-  import { Unchecked } from './ListItem.stories.svelte';
-
-  const { Story } = defineMeta({
-    component: List,
-  });
-</script>
-
-<!--
-  The template construct will be spread to the existing stories.
-  It's based on Svelte's snippet syntax allowing you share the same UI with small variations.
--->
-{#snippet template(args)}
-  <List {...args}>
-    {#each args.items as item}
-      <ListItem {...item} />
-    {/each}
-  </List>
-{/snippet}
-
-<Story name="Empty" args={{ items: [] }} {template} />
-
-<Story
-  name="One Item"
-  args={{
-    items: [{ ...Unchecked.args }],
-  }}
-  {template}
-/>
-```
-
-```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -350,7 +298,8 @@ export const OneItem = {
 />
 ```
 
-```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -389,7 +338,7 @@ export const OneItem = {
 />
 ```
 
-```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
 <script module lang="ts">
   import preview from '../.storybook/preview';
 
@@ -427,19 +376,60 @@ export const OneItem = {
 />
 ```
 
-```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  //👇 Imports a specific story from ListItem stories
+  import { Unchecked } from './ListItem.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: List,
+  });
+</script>
+
+<!--
+  The template construct will be spread to the existing stories.
+  It's based on Svelte's snippet syntax allowing you share the same UI with small variations.
+-->
+{#snippet template(args)}
+  <List {...args}>
+    {#each args.items as item}
+      <ListItem {...item} />
+    {/each}
+  </List>
+{/snippet}
+
+<Story name="Empty" args={{ items: [] }} {template} />
+
+<Story
+  name="One Item"
+  args={{
+    items: [{ ...Unchecked.args }],
+  }}
+  {template}
+/>
+```
+
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import List from './List.vue';
 import ListItem from './ListItem.vue';
 
 //👇 Imports a specific story from ListItem stories
 import { Unchecked } from './ListItem.stories';
 
-export default {
+const meta = preview.meta({
   component: List,
-};
+});
 
-//👇 The ListTemplate construct will be spread to the existing stories.
-const ListTemplate = {
+export const Empty = meta.story({
   render: (args) => ({
     components: { List, ListItem },
     setup() {
@@ -453,23 +443,59 @@ const ListTemplate = {
       </List>
     `,
   }),
-};
-
-export const Empty = {
-  ...ListTemplate,
   args: {
     items: [],
   },
-};
-export const OneItem = {
-  ...ListTemplate,
+});
+
+export const OneItem = Empty.extend({
   args: {
-    items: [{ ...Unchecked.args }],
+    items: [{ ...Unchecked.input.args }],
   },
-};
+});
+```
+
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import List from './List.vue';
+import ListItem from './ListItem.vue';
+
+//👇 Imports a specific story from ListItem stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const Empty = meta.story({
+  render: (args) => ({
+    components: { List, ListItem },
+    setup() {
+      return { ...args };
+    },
+    template: `
+      <List v-bind="args">
+        <div v-for="item in items" :key="item.title">
+          <ListItem :item="item" />
+        </div>
+      </List>
+    `,
+  }),
+  args: {
+    items: [],
+  },
+});
+
+export const OneItem = Empty.extend({
+  args: {
+    items: [{ ...Unchecked.input.args }],
+  },
+});
 ```
 
 ```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import List from './List.vue';
@@ -516,20 +542,20 @@ export const OneItem: Story = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import List from './List.vue';
 import ListItem from './ListItem.vue';
 
 //👇 Imports a specific story from ListItem stories
 import { Unchecked } from './ListItem.stories';
 
-const meta = preview.meta({
+export default {
   component: List,
-});
+};
 
-export const Empty = meta.story({
+//👇 The ListTemplate construct will be spread to the existing stories.
+const ListTemplate = {
   render: (args) => ({
     components: { List, ListItem },
     setup() {
@@ -543,6 +569,42 @@ export const Empty = meta.story({
       </List>
     `,
   }),
+};
+
+export const Empty = {
+  ...ListTemplate,
+  args: {
+    items: [],
+  },
+};
+export const OneItem = {
+  ...ListTemplate,
+  args: {
+    items: [{ ...Unchecked.args }],
+  },
+};
+```
+
+```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
+import { html } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
+
+import preview from '../.storybook/preview';
+
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: 'demo-list',
+});
+
+export const Empty = meta.story({
+  render: ({ items, ...args }) => {
+    return html`
+      <demo-list>
+        ${repeat(items, (item) => html`<demo-list-item>${item}</demo-list-item>`)}
+      </demo-list>
+    `;
+  },
   args: {
     items: [],
   },
@@ -555,35 +617,26 @@ export const OneItem = Empty.extend({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
+```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
+import { html } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
 
-```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import List from './List.vue';
-import ListItem from './ListItem.vue';
-
-//👇 Imports a specific story from ListItem stories
 import { Unchecked } from './ListItem.stories';
 
 const meta = preview.meta({
-  component: List,
+  component: 'demo-list',
 });
 
 export const Empty = meta.story({
-  render: (args) => ({
-    components: { List, ListItem },
-    setup() {
-      return { ...args };
-    },
-    template: `
-      <List v-bind="args">
-        <div v-for="item in items" :key="item.title">
-          <ListItem :item="item" />
-        </div>
-      </List>
-    `,
-  }),
+  render: ({ items, ...args }) => {
+    return html`
+      <demo-list>
+        ${repeat(items, (item) => html`<demo-list-item>${item}</demo-list-item>`)}
+      </demo-list>
+    `;
+  },
   args: {
     items: [],
   },
@@ -597,6 +650,7 @@ export const OneItem = Empty.extend({
 ```
 
 ```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 
@@ -632,6 +686,7 @@ export const OneItem = {
 ```
 
 ```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -670,72 +725,10 @@ export const OneItem: Story = {
 };
 ```
 
-```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import { html } from 'lit';
-import { repeat } from 'lit/directives/repeat.js';
-
-import preview from '../.storybook/preview';
-
-import { Unchecked } from './ListItem.stories';
-
-const meta = preview.meta({
-  component: 'demo-list',
-});
-
-export const Empty = meta.story({
-  render: ({ items, ...args }) => {
-    return html`
-      <demo-list>
-        ${repeat(items, (item) => html`<demo-list-item>${item}</demo-list-item>`)}
-      </demo-list>
-    `;
-  },
-  args: {
-    items: [],
-  },
-});
-
-export const OneItem = Empty.extend({
-  args: {
-    items: [{ ...Unchecked.input.args }],
-  },
-});
-```
-
-```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import { html } from 'lit';
-import { repeat } from 'lit/directives/repeat.js';
-
-import preview from '../.storybook/preview';
-
-import { Unchecked } from './ListItem.stories';
-
-const meta = preview.meta({
-  component: 'demo-list',
-});
-
-export const Empty = meta.story({
-  render: ({ items, ...args }) => {
-    return html`
-      <demo-list>
-        ${repeat(items, (item) => html`<demo-list-item>${item}</demo-list-item>`)}
-      </demo-list>
-    `;
-  },
-  args: {
-    items: [],
-  },
-});
-
-export const OneItem = Empty.extend({
-  args: {
-    items: [{ ...Unchecked.input.args }],
-  },
-});
-```
-
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -743,11 +736,15 @@ import { ListItem } from './ListItem';
 //👇 Imports a specific story from ListItem stories
 import { Unchecked } from './ListItem.stories';
 
-const meta = preview.meta({
+const meta = {
   component: List,
-});
+} satisfies Meta<typeof List>;
 
-export const Empty = meta.story({
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+//👇 The ListTemplate construct will be spread to the existing stories.
+const ListTemplate: Story = {
   render: ({ items, ...args }) => {
     return (
       <List>
@@ -757,34 +754,37 @@ export const Empty = meta.story({
       </List>
     );
   },
+};
+
+export const Empty = {
+  ...ListTemplate,
   args: {
     items: [],
   },
-});
+};
 
-export const OneItem = Empty.extend({
+export const OneItem = {
+  ...ListTemplate,
   args: {
-    items: [{ ...Unchecked.input.args }],
+    items: [{ ...Unchecked.args }],
   },
-});
+};
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { List } from './List';
 import { ListItem } from './ListItem';
 
 //👇 Imports a specific story from ListItem stories
 import { Unchecked } from './ListItem.stories';
 
-const meta = preview.meta({
+export default {
   component: List,
-});
+};
 
-export const Empty = meta.story({
+//👇 The ListTemplate construct will be spread to the existing stories.
+const ListTemplate = {
   render: ({ items, ...args }) => {
     return (
       <List>
@@ -794,14 +794,19 @@ export const Empty = meta.story({
       </List>
     );
   },
+};
+
+export const Empty = {
+  ...ListTemplate,
   args: {
     items: [],
   },
-});
+};
 
-export const OneItem = Empty.extend({
+export const OneItem = {
+  ...ListTemplate,
   args: {
-    items: [{ ...Unchecked.input.args }],
+    items: [{ ...Unchecked.args }],
   },
-});
+};
 ```

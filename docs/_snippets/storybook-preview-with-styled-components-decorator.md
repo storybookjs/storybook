@@ -218,12 +218,12 @@ export default preview;
 </BitsConfig>
 ```
 
-```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="Preview (CSF 3)"
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="Preview (CSF 4)"
 import { html } from 'lit';
 
-import type { Preview } from '@storybook/web-components-vite';
+import { definePreview } from '@storybook/web-components-vite';
 
-const preview: Preview = {
+export default definePreview({
   decorators: [
     // The theme can be accessed via the story context's globals
     (story, { globals }) => {
@@ -231,9 +231,7 @@ const preview: Preview = {
       return html`<theme-provider theme=${theme}>${story()}</theme-provider>`;
     },
   ],
-};
-
-export default preview;
+});
 ```
 
 ```ts filename=".storybook/ThemeProvider.ts" renderer="web-components" language="ts" tabTitle="Theme Provider"
@@ -261,6 +259,7 @@ export class ThemeProvider extends LitElement {
 ```
 
 ```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="Preview (CSF 3)"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { html } from 'lit';
 
 const preview = {
@@ -307,7 +306,7 @@ if (!customElements.get('theme-provider')) {
 }
 ```
 
-```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="Preview (CSF Next 🧪)"
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="Preview (CSF 4)"
 import { html } from 'lit';
 
 import { definePreview } from '@storybook/web-components-vite';
@@ -323,59 +322,63 @@ export default definePreview({
 });
 ```
 
-```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="Preview (CSF Next 🧪)"
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="Preview (CSF 3)"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { html } from 'lit';
 
-import { definePreview } from '@storybook/web-components-vite';
-
-export default definePreview({
-  decorators: [
-    // The theme can be accessed via the story context's globals
-    (story, { globals }) => {
-      const theme = globals.theme || 'light';
-      return html`<theme-provider theme=${theme}>${story()}</theme-provider>`;
-    },
-  ],
-});
-```
-
-```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 3"
-import React from 'react';
-
-import { ThemeProvider } from 'styled-components';
-
-export default {
-  decorators: [
-    (Story) => (
-      <ThemeProvider theme="default">
-        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
-        <Story />
-      </ThemeProvider>
-    ),
-  ],
-};
-```
-
-```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 3"
-import React from 'react';
-
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
-import type { Preview } from '@storybook/your-framework';
-
-import { ThemeProvider } from 'styled-components';
+import type { Preview } from '@storybook/web-components-vite';
 
 const preview: Preview = {
   decorators: [
-    (Story) => (
-      <ThemeProvider theme="default">
-        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
-        <Story />
-      </ThemeProvider>
-    ),
+    // The theme can be accessed via the story context's globals
+    (story, { globals }) => {
+      const theme = globals.theme || 'light';
+      return html`<theme-provider theme=${theme}>${story()}</theme-provider>`;
+    },
   ],
 };
 
 export default preview;
+```
+
+```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 4"
+import React from 'react';
+
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+import { ThemeProvider } from 'styled-components';
+
+export default definePreview({
+  decorators: [
+    (Story) => (
+      <ThemeProvider theme="default">
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
+});
+```
+
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import React from 'react';
+
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+import { ThemeProvider } from 'styled-components';
+
+export default definePreview({
+  decorators: [
+    (Story) => (
+      <ThemeProvider theme="default">
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
+});
 ```
 
 ```jsx filename=".storybook/preview.jsx" renderer="solid" language="js"
@@ -420,15 +423,16 @@ const preview: Preview = {
 export default preview;
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import React from 'react';
 
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { definePreview } from '@storybook/your-framework';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Preview } from '@storybook/your-framework';
 
 import { ThemeProvider } from 'styled-components';
 
-export default definePreview({
+const preview: Preview = {
   decorators: [
     (Story) => (
       <ThemeProvider theme="default">
@@ -437,20 +441,18 @@ export default definePreview({
       </ThemeProvider>
     ),
   ],
-});
+};
+
+export default preview;
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import React from 'react';
-
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { definePreview } from '@storybook/your-framework';
 
 import { ThemeProvider } from 'styled-components';
 
-export default definePreview({
+export default {
   decorators: [
     (Story) => (
       <ThemeProvider theme="default">
@@ -459,10 +461,10 @@ export default definePreview({
       </ThemeProvider>
     ),
   ],
-});
+};
 ```
 
-```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import { definePreview } from '@storybook/vue3-vite';
 
 import 'vuetify/styles';
@@ -495,9 +497,7 @@ export default definePreview({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF 4"
 import { definePreview } from '@storybook/vue3-vite';
 
 import 'vuetify/styles';

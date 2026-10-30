@@ -10,6 +10,10 @@ import ts from 'typescript';
 export type Docgen = {
   name?: string;
   description?: string;
+  /** The `generics` attribute of the instance script, such as `Value extends string`. */
+  typeParams?: string;
+  /** The library types the props extend whose members `props` leaves out, such as `HTMLInputAttributes`. */
+  omittedTypes?: string[];
   jsDocTags?: Record<string, string[]>;
   props: PropInfo[];
   events?: PropInfo[];
@@ -69,6 +73,9 @@ export type Type =
 type DefaultValue = {
   text: string;
 };
+
+/** The default text for an initializer the extractor cannot print, such as `id = slugify()`. */
+export const UNPRINTABLE_DEFAULT = '...';
 
 function convertType(type: ts.Type, checker: ts.TypeChecker): Type | undefined {
   // TypeScript compiler uses bit flags to represent type information.
@@ -195,7 +202,7 @@ function initializerToDefaultValue(
     case ts.SyntaxKind.NullKeyword:
       return { text: 'null' };
   }
-  return { text: '...' };
+  return { text: UNPRINTABLE_DEFAULT };
 }
 
 const FORCED_OPTIONS: ts.CompilerOptions = {
@@ -305,34 +312,126 @@ export function createDocgenCache(): DocgenCache {
 const LARGE_DECLARATION_FILE_THRESHOLD = 30;
 
 function declarationFile(prop: ts.Symbol): string | undefined {
-  const declaration =
-    prop.valueDeclaration ?? (prop as any)?.links?.syntheticOrigin?.valueDeclaration;
-  return declaration?.getSourceFile().fileName;
+  return declaration(prop)?.getSourceFile().fileName;
 }
 
-// The props a mapped type such as `Pick<HTMLButtonAttributes, 'type'>` selects count apart from the
-// props the declaration file brings by inheritance, so a few picked props stay.
-function declarationSource(prop: ts.Symbol): object | string | undefined {
-  return (prop as any)?.links?.mappedType ?? declarationFile(prop);
+// A prop that went through `Omit` points back to the prop it copies. Through `Omit<Omit<...>>`, as in
+// bits-ui's props, that prop is a copy too.
+function declaration(prop: ts.Symbol | undefined): ts.Declaration | undefined {
+  return (
+    prop &&
+    (prop.valueDeclaration ??
+      declaration((prop as any).links?.syntheticOrigin) ??
+      unionDeclaration(prop))
+  );
 }
 
-function isLibraryProp(prop: ts.Symbol): boolean {
-  const file = declarationFile(prop);
+// A prop of a union of `Omit`s, as `WithoutChild<CalendarRootProps>` gives for bits-ui's single and
+// multiple calendar, has one declaration per member and no value declaration. It counts as a library
+// prop only when every member declares it in the same library file.
+function unionDeclaration(prop: ts.Symbol): ts.Declaration | undefined {
+  if (!(prop as any).links?.containingType?.isUnion()) {
+    return undefined;
+  }
+  const [first, ...rest] = prop.declarations ?? [];
+  const file = first?.getSourceFile().fileName;
+  return first && rest.every((other) => other.getSourceFile().fileName === file)
+    ? first
+    : undefined;
+}
+
+function isLibraryFile(file: string | undefined): boolean {
   return !!file && (file.endsWith('.d.ts') || file.includes('/node_modules/'));
 }
 
-function largeDeclarationSources(props: ts.Symbol[]): Set<object | string> {
-  const counts = new Map<object | string, number>();
+// Walks the props type down to the library types it extends, such as `HTMLInputAttributes` in
+// `interface Props extends HTMLInputAttributes` or `Omit<HTMLInputAttributes, 'type'>` in an
+// intersection, and keeps those that brought a left-out prop.
+function libraryTypesWithOmittedProps(
+  type: ts.Type,
+  omitted: Set<string>,
+  checker: ts.TypeChecker
+): string[] {
+  const alias = type.aliasSymbol?.declarations?.[0];
+  // `type Props = Omit<HTMLLabelAttributes, 'id'>` gives the library's `Omit` the local alias.
+  const localAlias =
+    alias && ts.isTypeAliasDeclaration(alias) && !isLibraryFile(alias.getSourceFile().fileName)
+      ? alias
+      : undefined;
+  const symbol = localAlias ? type.getSymbol() : (type.aliasSymbol ?? type.getSymbol());
+  if (isLibraryFile(symbol?.declarations?.[0]?.getSourceFile().fileName)) {
+    if (!type.getProperties().some((prop) => omitted.has(prop.getName()))) {
+      return [];
+    }
+    // The alias name means nothing outside the component, so print what it stands for.
+    return [
+      localAlias && !type.aliasTypeArguments
+        ? localAlias.type.getText()
+        : checker.typeToString(type, undefined, ts.TypeFormatFlags.NoTruncation),
+    ];
+  }
+  // In a union, such as bits-ui's single and multiple calendar, each variant can extend its own library
+  // type. Joined with `&`, they would ask for the props of both variants at once.
+  if (type.isUnion()) {
+    const variants = [
+      ...new Set(
+        type.types
+          .map((member) => libraryTypesWithOmittedProps(member, omitted, checker).join(' & '))
+          .filter(Boolean)
+      ),
+    ];
+    return variants.length > 1 ? [`(${variants.join(' | ')})`] : variants;
+  }
+  if (type.isIntersection()) {
+    return type.types.flatMap((member) => libraryTypesWithOmittedProps(member, omitted, checker));
+  }
+  if (type.isClassOrInterface()) {
+    return (checker.getBaseTypes(type) ?? []).flatMap((base) =>
+      libraryTypesWithOmittedProps(base, omitted, checker)
+    );
+  }
+  return [];
+}
+
+// The props a mapped type such as `Pick<HTMLButtonAttributes, 'type'>` selects count apart from the
+// props the declaration file brings by inheritance, so a few picked props stay. Within a mapped type
+// each file counts apart, so `Omit<CheckboxRootProps, 'child'>` keeps bits-ui's own props.
+function bulkLibraryProps(props: ts.Symbol[]): Set<ts.Symbol> {
+  const groups = new Map<string, Map<object | string, ts.Symbol[]>>();
   for (const prop of props) {
-    const source = declarationSource(prop);
-    if (source && isLibraryProp(prop)) {
-      counts.set(source, (counts.get(source) ?? 0) + 1);
+    const file = declarationFile(prop);
+    if (file && isLibraryFile(file)) {
+      const mappedType = (prop as any).links?.mappedType ?? file;
+      const byMappedType = groups.get(file) ?? new Map<object | string, ts.Symbol[]>();
+      groups.set(file, byMappedType);
+      const group = byMappedType.get(mappedType) ?? [];
+      byMappedType.set(mappedType, group);
+      group.push(prop);
     }
   }
   return new Set(
-    [...counts]
-      .filter(([, count]) => count > LARGE_DECLARATION_FILE_THRESHOLD)
-      .map(([source]) => source)
+    [...groups.values()]
+      .flatMap((byMappedType) => [...byMappedType.values()])
+      .filter((group) => group.length > LARGE_DECLARATION_FILE_THRESHOLD)
+      .flat()
+  );
+}
+
+// svelte2tsx returns `bindings: __sveltets_$$bindings('ref', 'value')` for the `$bindable()` props.
+// The builder program has no svelte2tsx shims to type it, so the names are read from the call.
+function bindableNames(renderFunction: ts.FunctionDeclaration): Set<string> {
+  const returned = renderFunction.body?.statements.find(ts.isReturnStatement)?.expression;
+  const bindings =
+    returned && ts.isObjectLiteralExpression(returned)
+      ? returned.properties.find(
+          (property): property is ts.PropertyAssignment =>
+            ts.isPropertyAssignment(property) && property.name.getText() === 'bindings'
+        )?.initializer
+      : undefined;
+  return new Set(
+    bindings && ts.isCallExpression(bindings)
+      ? bindings.arguments.filter(ts.isStringLiteral).map((argument) => argument.text)
+      : []
   );
 }
 
@@ -521,6 +620,7 @@ export function extractDocgen(
   }
 
   const propMap: Map<string, PropInfo> = new Map();
+  const omitted = new Set<string>();
   const events: PropInfo[] = [];
   const slots: PropInfo[] = [];
 
@@ -574,7 +674,9 @@ export function extractDocgen(
         const decl = signature.getDeclaration();
         propsType = checker.getTypeOfSymbolAtLocation(retObjProp, decl);
         const props = propsType.getProperties();
-        const bulkSources = largeDeclarationSources(props);
+        const bulkProps = bulkLibraryProps(props);
+        // `value = $bindable()` makes the `value` of `HTMLInputAttributes` part of the component's API.
+        const bindable = bindableNames(renderFunction);
         props.forEach((prop) => {
           const name = prop.getName();
           let description =
@@ -593,12 +695,13 @@ export function extractDocgen(
 
           // Ignore props from svelte/elements.d.ts (HTMLAttributes, AriaAttributes and DOMAttributes).
           // Some libraries use these for {...$$restProps}
-          const source = declarationSource(prop);
           if (
-            options.server
-              ? source !== undefined && bulkSources.has(source) && isLibraryProp(prop)
-              : declarationFile(prop)?.includes('node_modules/svelte/elements.d.ts')
+            !bindable.has(name) &&
+            (options.server
+              ? bulkProps.has(prop)
+              : declarationFile(prop)?.includes('node_modules/svelte/elements.d.ts'))
           ) {
+            omitted.add(name);
             return;
           }
 
@@ -638,17 +741,24 @@ export function extractDocgen(
 
           if (isPropsRune || isPropsType) {
             declaration.name.elements.forEach((element) => {
-              const name = element.name.getText();
+              // `class: className = ''` declares the prop `class`.
+              const key = element.propertyName ?? element.name;
+              const name =
+                ts.isIdentifier(key) || ts.isStringLiteral(key) ? key.text : key.getText();
               const prop = propMap.get(name);
               if (prop && element.initializer) {
-                if (
+                const bindable =
                   ts.isCallExpression(element.initializer) &&
                   ts.isIdentifier(element.initializer.expression) &&
                   element.initializer.expression.text === '$bindable'
-                ) {
+                    ? element.initializer
+                    : undefined;
+                if (bindable) {
                   prop.jsDocTags = [...(prop.jsDocTags ?? []), { name: 'bindable', text: '' }];
                 }
-                const defaultValue = initializerToDefaultValue(element.initializer, checker);
+                // `$bindable('')` defaults to its argument, and `$bindable()` has no default.
+                const initializer = bindable ? bindable.arguments[0] : element.initializer;
+                const defaultValue = initializer && initializerToDefaultValue(initializer, checker);
                 if (defaultValue) {
                   prop.defaultValue = defaultValue;
                 }
@@ -678,11 +788,13 @@ export function extractDocgen(
   });
 
   const source = options.documentationSource;
-  const comment =
-    source &&
-    parse(source, { modern: true }).fragment.nodes.find(
-      (node) => node.type === 'Comment' && /@component\b/.test(node.data)
-    );
+  const ast = source ? parse(source, { modern: true }) : undefined;
+  const comment = ast?.fragment.nodes.find(
+    (node) => node.type === 'Comment' && /@component\b/.test(node.data)
+  );
+  // svelte2tsx gives the render function the type params of both the `generics` attribute and
+  // Svelte 4's `type T = $$Generic<string>`.
+  const typeParams = renderFunction.typeParameters?.map((param) => param.getText()).join(', ');
   const docs =
     comment && comment.type === 'Comment'
       ? extractJSDocInfo(
@@ -692,10 +804,16 @@ export function extractDocgen(
             .trim()
         )
       : undefined;
+  const omittedTypes =
+    propsType && omitted.size
+      ? [...new Set(libraryTypesWithOmittedProps(propsType, omitted, checker))]
+      : [];
   return {
     props: Array.from(propMap.values()),
     events,
     slots,
+    ...(typeParams ? { typeParams } : {}),
+    ...(omittedTypes.length ? { omittedTypes } : {}),
     ...(docs ? { description: docs.description.trim(), jsDocTags: docs.tags } : {}),
   };
 }

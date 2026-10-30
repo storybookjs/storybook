@@ -10606,13 +10606,12 @@ __metadata:
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     "@types/react":
       optional: true
     "@types/react-dom":
-      optional: true
-    typescript:
       optional: true
   languageName: unknown
   linkType: soft
@@ -10677,13 +10676,12 @@ __metadata:
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     webpack: ^5.0.0
   peerDependenciesMeta:
     "@types/react":
       optional: true
     "@types/react-dom":
-      optional: true
-    typescript:
       optional: true
     webpack:
       optional: true
@@ -10738,9 +10736,7 @@ __metadata:
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
-  peerDependenciesMeta:
-    typescript:
-      optional: true
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
   languageName: unknown
   linkType: soft
 
@@ -10795,11 +10791,8 @@ __metadata:
     react-native: ">=0.74.5"
     react-native-web: ^0.19.12 || ^0.20.0 || ^0.21.0
     storybook: "workspace:^"
-    typescript: ">= 5.9.x"
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
-  peerDependenciesMeta:
-    typescript:
-      optional: true
   languageName: unknown
   linkType: soft
 
@@ -10825,9 +10818,6 @@ __metadata:
     storybook: "workspace:^"
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
-  peerDependenciesMeta:
-    typescript:
-      optional: true
   languageName: unknown
   linkType: soft
 
@@ -10844,9 +10834,6 @@ __metadata:
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
-  peerDependenciesMeta:
-    typescript:
-      optional: true
   languageName: unknown
   linkType: soft
 
@@ -10890,8 +10877,6 @@ __metadata:
     "@types/react":
       optional: true
     "@types/react-dom":
-      optional: true
-    typescript:
       optional: true
   languageName: unknown
   linkType: soft
@@ -10984,6 +10969,7 @@ __metadata:
     json5: "npm:^2.2.3"
     junit-xml: "npm:^1.2.0"
     knip: "npm:^6.38.0"
+    memfs: "npm:^4.68.2"
     memoizerific: "npm:^1.11.3"
     minimatch: "npm:^10.0.1"
     node-gyp: "npm:^12.1.0"
@@ -11110,12 +11096,13 @@ __metadata:
     sveltedoc-parser: "npm:^4.2.1"
     ts-dedent: "npm:^2.2.0"
     type-fest: "npm:^5.6.0"
-    typescript: "npm:^5.9.0 || ^6.0.0"
+    typescript: "npm:^6.0.3"
     vite: "npm:^7.0.4"
     zimmerframe: "npm:^1.1.2"
   peerDependencies:
     storybook: "workspace:^"
     svelte: ^5.0.0
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     vite:
@@ -11138,6 +11125,7 @@ __metadata:
     "@sveltejs/kit": ^3.0.0
     storybook: "workspace:^"
     svelte: ^5.0.0
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^8.0.0
   languageName: unknown
   linkType: soft
@@ -11164,6 +11152,7 @@ __metadata:
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     "@tanstack/react-start":
@@ -11189,9 +11178,6 @@ __metadata:
     storybook: "workspace:^"
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
-  peerDependenciesMeta:
-    typescript:
-      optional: true
   languageName: unknown
   linkType: soft
 
@@ -11216,9 +11202,6 @@ __metadata:
     storybook: "workspace:^"
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vue: ^3.0.0
-  peerDependenciesMeta:
-    typescript:
-      optional: true
   languageName: unknown
   linkType: soft
 
@@ -11232,6 +11215,7 @@ __metadata:
     typescript: "npm:^6.0.3"
   peerDependencies:
     storybook: "workspace:^"
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
@@ -11259,6 +11243,7 @@ __metadata:
   peerDependencies:
     lit: ^2.0.0 || ^3.0.0
     storybook: "workspace:^"
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
   languageName: unknown
   linkType: soft
 

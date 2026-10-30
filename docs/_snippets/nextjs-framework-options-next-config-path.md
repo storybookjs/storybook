@@ -1,7 +1,10 @@
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 3"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 4"
 import path from 'node:path';
 
-export default {
+// Replace your-framework with nextjs or nextjs-vite
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
   // ...
   framework: {
     name: '@storybook/your-framework',
@@ -9,10 +12,28 @@ export default {
       nextConfigPath: path.resolve(process.cwd(), 'next.config.js'),
     },
   },
-};
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 4"
+import path from 'node:path';
+
+// Replace your-framework with nextjs or nextjs-vite
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
+  // ...
+  framework: {
+    name: '@storybook/your-framework',
+    options: {
+      nextConfigPath: path.resolve(process.cwd(), 'next.config.js'),
+    },
+  },
+});
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import path from 'node:path';
 
 // Replace your-framework with nextjs or nextjs-vite
@@ -31,13 +52,11 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import path from 'node:path';
 
-// Replace your-framework with nextjs or nextjs-vite
-import { defineMain } from '@storybook/your-framework/node';
-
-export default defineMain({
+export default {
   // ...
   framework: {
     name: '@storybook/your-framework',
@@ -45,24 +64,5 @@ export default defineMain({
       nextConfigPath: path.resolve(process.cwd(), 'next.config.js'),
     },
   },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import path from 'node:path';
-
-// Replace your-framework with nextjs or nextjs-vite
-import { defineMain } from '@storybook/your-framework/node';
-
-export default defineMain({
-  // ...
-  framework: {
-    name: '@storybook/your-framework',
-    options: {
-      nextConfigPath: path.resolve(process.cwd(), 'next.config.js'),
-    },
-  },
-});
+};
 ```

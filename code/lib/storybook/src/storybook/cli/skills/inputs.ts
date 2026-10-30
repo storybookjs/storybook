@@ -47,7 +47,7 @@ async function resolvePreview(configDir = '.storybook') {
  * this, so the two channels cannot drift.
  */
 export async function resolveSkillInputs(
-  storybook: Pick<Storybook, 'callHook' | 'hasPlugin' | 'configDir'>
+  storybook: Pick<Storybook, 'callHook' | 'hasAddon' | 'configDir'>
 ): Promise<SkillInputs> {
   const [availability, frameworkPreset, preview] = await Promise.all([
     getToolAvailability(storybook),

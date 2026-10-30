@@ -15,16 +15,17 @@ const CASES: Record<string, StorybookConfig['framework']> = {
 it('registers the framework hooks for each main.ts entry', async () => {
   const results: Record<string, unknown> = {};
   for (const [name, framework] of Object.entries(CASES)) {
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: CONFIG_DIR,
       mode: 'headless',
       main: { framework, stories: [] },
     });
+    await storybook.ready();
     try {
       results[name] = {
-        plugins: storybook.plugins
-          .filter((plugin) => plugin.kind !== 'addon')
-          .map((plugin) => `${plugin.kind} ${plugin.name}`),
+        addons: storybook.addons
+          .filter((addon) => addon.kind !== 'addon')
+          .map((addon) => `${addon.kind} ${addon.name}`),
         renderer: (await storybook.callHook('core:config:extend', {})).renderer,
         framework: await storybook.callHook('core:framework:extend', undefined),
         frameworkOptions: await storybook.callHook('core:framework-options:extend', undefined),
@@ -39,6 +40,11 @@ it('registers the framework hooks for each main.ts entry', async () => {
   expect(normalize(results)).toMatchInlineSnapshot(`
     {
       "docgen disabled": {
+        "addons": [
+          "builder @storybook/builder-vite",
+          "renderer @storybook/svelte",
+          "framework @storybook/svelte-vite",
+        ],
         "framework": {
           "name": "@storybook/svelte-vite",
           "options": {
@@ -48,27 +54,22 @@ it('registers the framework hooks for each main.ts entry', async () => {
         "frameworkOptions": {
           "docgen": false,
         },
-        "plugins": [
-          "builder @storybook/builder-vite",
-          "renderer @storybook/svelte",
-          "framework @storybook/svelte-vite",
-        ],
         "renderer": "file://<code>/renderers/svelte/dist/node.js",
         "vitePlugins": [
           "storybook:svelte-csf",
         ],
       },
       "string entry": {
+        "addons": [
+          "builder @storybook/builder-vite",
+          "renderer @storybook/svelte",
+          "framework @storybook/svelte-vite",
+        ],
         "framework": {
           "name": "@storybook/svelte-vite",
           "options": {},
         },
         "frameworkOptions": {},
-        "plugins": [
-          "builder @storybook/builder-vite",
-          "renderer @storybook/svelte",
-          "framework @storybook/svelte-vite",
-        ],
         "renderer": "file://<code>/renderers/svelte/dist/node.js",
         "vitePlugins": [
           "storybook:svelte-docgen-plugin",
@@ -77,6 +78,23 @@ it('registers the framework hooks for each main.ts entry', async () => {
       },
     }
   `);
+});
+
+it('skips builder docgen when overrides set docs.builderDocgen to false', async () => {
+  const storybook = createStorybook({
+    configDir: CONFIG_DIR,
+    mode: 'headless',
+    main: { framework: '@storybook/svelte-vite', stories: [] },
+    overrides: { docs: { builderDocgen: false } },
+  });
+  await storybook.ready();
+  try {
+    expect(
+      await pluginNames((await storybook.callHook('builder:vite:extend', {})).plugins)
+    ).toEqual(['storybook:svelte-csf']);
+  } finally {
+    await storybook.close();
+  }
 });
 
 async function pluginNames(options: PluginOption[] = []): Promise<string[]> {

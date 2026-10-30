@@ -35,16 +35,17 @@ const CASES: Record<string, Partial<StorybookConfig>> = {
 it('registers the framework hooks', async () => {
   const results: Record<string, unknown> = {};
   for (const [name, main] of Object.entries(CASES)) {
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: CONFIG_DIR,
       mode: 'headless',
       main: { ...main, stories: [] },
     });
+    await storybook.ready();
     try {
       const ctx = { webpackInstance: webpack, configType: 'DEVELOPMENT' as const };
       const seed = () => ({ module: { rules: [] }, plugins: [], resolve: { alias: {} } });
       results[name] = summarize({
-        plugins: storybook.plugins
+        addons: storybook.addons
           .filter(({ name }) => !name.startsWith('storybook/'))
           .map(({ kind, name }) => `${kind} ${name}`),
         core: (({ builder, renderer }) => ({ builder, renderer }))(
@@ -65,6 +66,12 @@ it('registers the framework hooks', async () => {
   expect(results).toMatchInlineSnapshot(`
         {
           "RSC": {
+            "addons": [
+              "builder @storybook/builder-webpack5",
+              "renderer @storybook/react",
+              "addon @storybook/preset-react-webpack",
+              "framework @storybook/nextjs",
+            ],
             "babelPresets": 1,
             "core": {
               "builder": {
@@ -77,12 +84,6 @@ it('registers the framework hooks', async () => {
               "name": "@storybook/nextjs",
               "options": {},
             },
-            "plugins": [
-              "builder @storybook/builder-webpack5",
-              "renderer @storybook/react",
-              "addon @storybook/preset-react-webpack",
-              "framework @storybook/nextjs",
-            ],
             "previewAnnotations": [
               "<code>/lib/storybook/dist/features/measure/preview.js",
               "<code>/lib/storybook/dist/features/backgrounds/preview.js",
@@ -140,6 +141,12 @@ it('registers the framework hooks', async () => {
             },
           },
           "builder docgen": {
+            "addons": [
+              "builder @storybook/builder-webpack5",
+              "renderer @storybook/react",
+              "addon @storybook/preset-react-webpack",
+              "framework @storybook/nextjs",
+            ],
             "babelPresets": 1,
             "core": {
               "builder": {
@@ -152,12 +159,6 @@ it('registers the framework hooks', async () => {
               "name": "@storybook/nextjs",
               "options": {},
             },
-            "plugins": [
-              "builder @storybook/builder-webpack5",
-              "renderer @storybook/react",
-              "addon @storybook/preset-react-webpack",
-              "framework @storybook/nextjs",
-            ],
             "previewAnnotations": [
               "<code>/lib/storybook/dist/features/measure/preview.js",
               "<code>/lib/storybook/dist/features/backgrounds/preview.js",
@@ -214,6 +215,12 @@ it('registers the framework hooks', async () => {
             },
           },
           "framework options": {
+            "addons": [
+              "builder @storybook/builder-webpack5",
+              "renderer @storybook/react",
+              "addon @storybook/preset-react-webpack",
+              "framework @storybook/nextjs",
+            ],
             "babelPresets": 1,
             "core": {
               "builder": {
@@ -232,12 +239,6 @@ it('registers the framework hooks', async () => {
                 },
               },
             },
-            "plugins": [
-              "builder @storybook/builder-webpack5",
-              "renderer @storybook/react",
-              "addon @storybook/preset-react-webpack",
-              "framework @storybook/nextjs",
-            ],
             "previewAnnotations": [
               "<code>/lib/storybook/dist/features/measure/preview.js",
               "<code>/lib/storybook/dist/features/backgrounds/preview.js",
@@ -293,6 +294,12 @@ it('registers the framework hooks', async () => {
             },
           },
           "server docgen": {
+            "addons": [
+              "builder @storybook/builder-webpack5",
+              "renderer @storybook/react",
+              "addon @storybook/preset-react-webpack",
+              "framework @storybook/nextjs",
+            ],
             "babelPresets": 1,
             "core": {
               "builder": {
@@ -305,12 +312,6 @@ it('registers the framework hooks', async () => {
               "name": "@storybook/nextjs",
               "options": {},
             },
-            "plugins": [
-              "builder @storybook/builder-webpack5",
-              "renderer @storybook/react",
-              "addon @storybook/preset-react-webpack",
-              "framework @storybook/nextjs",
-            ],
             "previewAnnotations": [
               "<code>/lib/storybook/dist/features/measure/preview.js",
               "<code>/lib/storybook/dist/features/backgrounds/preview.js",

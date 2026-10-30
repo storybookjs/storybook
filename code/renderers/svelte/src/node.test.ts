@@ -12,7 +12,7 @@ const PACKAGE_DIR = new URL('..', import.meta.url).pathname;
 
 type Registered = { name: string; kind?: string; fn: (value: unknown) => unknown };
 
-/** Run the plugin's setup against a recorder whose `callHook` answers from `seeds`. */
+/** Run the addon's setup against a recorder whose `callHook` answers from `seeds`. */
 function setup(seeds: Record<string, unknown> = {}, features = {}): Registered[] {
   const hooks: Registered[] = [];
   svelte().setup({
@@ -26,7 +26,7 @@ function setup(seeds: Record<string, unknown> = {}, features = {}): Registered[]
 
 const find = (hooks: Registered[], name: string) => hooks.find((hook) => hook.name === name)!;
 
-describe('svelte node plugin', () => {
+describe('svelte node addon', () => {
   it('registers its hooks in order', () => {
     expect(setup().map(({ name, kind }) => (kind ? `${name} (${kind})` : name)))
       .toMatchInlineSnapshot(`

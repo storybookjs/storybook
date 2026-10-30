@@ -42,12 +42,13 @@ beforeAll(async () => {
   outDir = await mkdtemp(join(tmpdir(), 'storybook-screenshot-test-'));
   // The Vite builder resolves story import paths against the process directory.
   vi.spyOn(process, 'cwd').mockReturnValue(WORKING_DIR);
-  storybook = await createStorybook({
+  storybook = createStorybook({
     workingDir: WORKING_DIR,
     configDir: '.storybook',
     mode: 'headless',
     main: { ...fixtureMain, addons: [renderAccessOverride] },
   });
+  await storybook.ready();
 }, 60_000);
 
 afterAll(async () => {

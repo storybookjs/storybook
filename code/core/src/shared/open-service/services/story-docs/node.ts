@@ -1,4 +1,4 @@
-import { defineAddon } from '../../../../instance/plugins.ts';
+import { defineAddon } from '../../../../instance/addons.ts';
 import type { Storybook } from '../../../../instance/types.ts';
 
 import setup from '#story-docs-addon-setup';

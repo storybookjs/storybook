@@ -1,4 +1,4 @@
-import type { StorybookConfig } from '../../instance/plugins.ts';
+import type { StorybookConfig } from '../../instance/addons.ts';
 
 import { frameworkPackages } from './get-storybook-info.ts';
 import { normalizePath } from './normalize-path.ts';

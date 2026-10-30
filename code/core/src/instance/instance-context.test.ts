@@ -10,7 +10,7 @@ import {
   runWithStorybook,
   tryGetStorybook,
 } from './instance-context.ts';
-import { defineAddon } from './plugins.ts';
+import { defineAddon } from './addons.ts';
 import type { Storybook } from './types.ts';
 
 type Probe = (label: string) => void;
@@ -48,10 +48,11 @@ async function open(configDir: string, record: Probe): Promise<Storybook> {
       });
     },
   }))();
-  const storybook = await createStorybook(
+  const storybook = createStorybook(
     { configDir, mode: 'headless', main: { stories: [], addons: [probe] } },
     { common: NO_COMMON, builtInAddons: [] }
   );
+  await storybook.ready();
   opened.push(storybook);
   return storybook;
 }
@@ -123,12 +124,12 @@ it('throws while main.ts is being evaluated', async () => {
     duringMain = seen();
   };
   try {
-    opened.push(
-      await createStorybook(
-        { configDir: MAIN_ACCESSOR, mode: 'headless' },
-        { common: NO_COMMON, builtInAddons: [] }
-      )
+    const storybook = createStorybook(
+      { configDir: MAIN_ACCESSOR, mode: 'headless' },
+      { common: NO_COMMON, builtInAddons: [] }
     );
+    opened.push(storybook);
+    await storybook.ready();
   } finally {
     delete globals.__mainAccessorProbe;
   }
@@ -136,6 +137,6 @@ it('throws while main.ts is being evaluated', async () => {
   expect(duringMain).toMatchInlineSnapshot(`
     "getStorybook() was called while main.ts was being evaluated, before the Storybook instance exists.
 
-    Call it from a plugin's setup(storybook) or from a hook handler instead."
+    Call it from an addon's setup(storybook) or from a hook handler instead."
   `);
 });

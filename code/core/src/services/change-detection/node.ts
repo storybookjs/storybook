@@ -2,7 +2,7 @@ import '../hooks.ts';
 
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from '@storybook/core/internal/types';
 
-import { defineAddon } from '../../instance/plugins.ts';
+import { defineAddon } from '../../instance/addons.ts';
 import type { Storybook } from '../../instance/types.ts';
 import { bindToInstance } from '../../shared/instance-context.ts';
 import { getStatusStoreByTypeId } from '../stores/status.ts';

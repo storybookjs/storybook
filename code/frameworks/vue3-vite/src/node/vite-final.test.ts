@@ -30,11 +30,12 @@ beforeEach(() => {
 async function pluginNames(
   docgen: FrameworkOptions['docgen'],
   features: Record<string, boolean> = {},
-  build?: { test: { disableDocgen: boolean } }
+  build?: { test: { disableDocgen: boolean } },
+  docs?: { builderDocgen: boolean }
 ): Promise<string[]> {
   const hooks = new Map<string, (config: InlineConfig) => Promise<InlineConfig>>();
   const storybook = {
-    options: { features, build },
+    options: { features, build, docs },
     hook: (name: string, fn: (config: InlineConfig) => Promise<InlineConfig>) => {
       hooks.set(name, fn);
     },
@@ -61,6 +62,12 @@ describe('builder:vite:extend', () => {
 
   it('keeps template compilation when docgen is disabled', async () => {
     expect(await pluginNames(false)).toEqual(['template']);
+  });
+
+  it('runs no builder docgen when docs.builderDocgen is false', async () => {
+    expect(
+      await pluginNames(undefined, { docgenServer: false }, undefined, { builderDocgen: false })
+    ).toEqual(['template']);
   });
 
   it('runs no builder docgen and stays quiet in a test build, which turns the server off', async () => {

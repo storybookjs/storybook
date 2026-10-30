@@ -11,14 +11,14 @@ vi.mock('./ghost-stories-channel.ts', () => ({ initGhostStoriesChannel: vi.fn() 
 
 describe('wireAiScoringChannels', () => {
   it.each([
-    { name: 'a React Storybook', plugins: ['@storybook/react'], expected: true },
-    { name: 'a Vue Storybook', plugins: ['@storybook/vue3'], expected: false },
-  ])('gates scoring by the renderer plugin for $name', ({ plugins, expected }) => {
+    { name: 'a React Storybook', addons: ['@storybook/react'], expected: true },
+    { name: 'a Vue Storybook', addons: ['@storybook/vue3'], expected: false },
+  ])('gates scoring by the renderer addon for $name', ({ addons, expected }) => {
     const channel = new Channel({});
     const generator = Promise.resolve({});
     const storybook = {
       configDir: '/project/.storybook',
-      hasPlugin: (name: string) => plugins.includes(name),
+      hasAddon: (name: string) => addons.includes(name),
       getStoryIndexGenerator: () => generator,
     };
 

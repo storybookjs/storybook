@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { logConfig } from '@storybook/core/internal/common';
 import { PREVIEW_BUILDER_PROGRESS } from '@storybook/core/internal/core-events';
-import type { BuilderPlugin, Storybook } from '@storybook/core';
+import type { BuilderAddon, Storybook } from '@storybook/core';
 import { logger } from '@storybook/core/internal/node-logger';
 import type { PreviewSources } from '@storybook/core/internal/preview-page';
 import {
@@ -111,7 +111,7 @@ export async function getWebpackConfig(
   const withDefaults = core?.disableWebpackDefaults
     ? extended
     : createDefaultWebpackConfig(extended, {
-        hasPostcssAddon: storybook.plugins.some((plugin) => POSTCSS_ADDON.test(plugin.name)),
+        hasPostcssAddon: storybook.addons.some((addon) => POSTCSS_ADDON.test(addon.name)),
       });
   const final = withMocking(
     await storybook.callHook('builder:webpack:extend', withDefaults, ctx),
@@ -130,7 +130,7 @@ export async function getWebpackConfig(
 /** Create one builder's compiler state: dev server, static build, and change detection. */
 export function createWebpackBuilder(
   factoryOptions: BuilderOptions | void
-): Pick<BuilderPlugin, 'dev' | 'build' | 'changeDetectionAdapter'> {
+): Pick<BuilderAddon, 'dev' | 'build' | 'changeDetectionAdapter'> {
   let compilation: ReturnType<typeof webpackDevMiddleware> | undefined;
   let activeCompiler: Compiler | undefined;
   let rejectPending: ((reason?: unknown) => void) | undefined;

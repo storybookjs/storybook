@@ -1,7 +1,7 @@
 import {
   defineFramework,
   defineMain as coreDefineMain,
-  type RendererPlugin,
+  type RendererAddon,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
 
@@ -21,7 +21,7 @@ export type HtmlViteOptions = FrameworkOptions;
 export const htmlVite = defineFramework<
   '@storybook/html-vite',
   HtmlViteOptions | void,
-  RendererPlugin<HtmlRenderer>
+  RendererAddon<HtmlRenderer>
 >((input) => {
   const options = input || {};
   return {

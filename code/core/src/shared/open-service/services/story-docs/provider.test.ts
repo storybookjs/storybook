@@ -37,7 +37,7 @@ const entryFor = (importPath: string): IndexEntry => ({
   importPath,
 });
 
-/** Run inside an instance whose plugins registered these docgen workers. */
+/** Run inside an instance whose addons registered these docgen workers. */
 const withWorkers = <T>(workers: string[], run: () => T): T =>
   instanceContext.run(
     {

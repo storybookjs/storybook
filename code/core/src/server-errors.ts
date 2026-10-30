@@ -1146,7 +1146,7 @@ export class StorybookInstanceUnavailableError extends StorybookError {
           ? dedent`
             ${api} was called while main.ts was being evaluated, before the Storybook instance exists.
 
-            Call it from a plugin's setup(storybook) or from a hook handler instead.`
+            Call it from an addon's setup(storybook) or from a hook handler instead.`
           : dedent`
             ${api} was called outside a Storybook instance.
 

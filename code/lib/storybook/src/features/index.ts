@@ -1,4 +1,4 @@
-import type { StorybookPlugin } from '@storybook/core';
+import type { StorybookAddon } from '@storybook/core';
 import type { StorybookFeatures } from '@storybook/core/internal/types';
 
 import measure from './measure/node.ts';
@@ -79,8 +79,8 @@ export const builtInAddons = [
   openInEditor(),
 ] as const;
 
-/** Ship a plugin's manager entry unless it is a built-in whose resolved flag is not `true`. */
-export function isManagerEnabled(plugin: StorybookPlugin, features: StorybookFeatures): boolean {
-  const flag = MANAGER_FLAGS[plugin.meta.name];
+/** Ship an addon's manager entry unless it is a built-in whose resolved flag is not `true`. */
+export function isManagerEnabled(addon: StorybookAddon, features: StorybookFeatures): boolean {
+  const flag = MANAGER_FLAGS[addon.meta.name];
   return !flag || features[flag] === true;
 }

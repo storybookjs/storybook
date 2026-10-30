@@ -28,11 +28,11 @@ function createMockStorybook({
 } = {}): Parameters<typeof resolveSkillInputs>[0] {
   return {
     configDir,
-    hasPlugin: () => false,
+    hasAddon: () => false,
     callHook: vi.fn(async (name: string, value?: unknown) =>
       name === 'core:framework:extend' ? framework : value
     ),
-  } as unknown as Pick<Storybook, 'callHook' | 'hasPlugin' | 'configDir'>;
+  } as unknown as Pick<Storybook, 'callHook' | 'hasAddon' | 'configDir'>;
 }
 
 describe('resolveSkillInputs', () => {

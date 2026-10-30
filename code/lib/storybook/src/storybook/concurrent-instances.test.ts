@@ -35,7 +35,7 @@ const CONFIGS: Record<string, Partial<StorybookConfig>> = {
 };
 
 describe('concurrent createStorybook', () => {
-  // Plugin and preset modules load only during the first setup in a worker, so the widest case runs first.
+  // Addon and preset modules load only during the first setup in a worker, so the widest case runs first.
   it.each([
     { names: ['legacy', 'native', 'options'] },
     { names: ['legacy', 'native'] },
@@ -52,16 +52,15 @@ describe('concurrent createStorybook', () => {
 });
 
 async function resolve(names: string[]): Promise<unknown[]> {
-  const instances = await Promise.all(
-    names.map((name) =>
-      createStorybook({
-        configDir: CONFIG_DIR,
-        mode: 'headless',
-        main: { ...CONFIGS[name], stories: [] },
-      })
-    )
+  const instances = names.map((name) =>
+    createStorybook({
+      configDir: CONFIG_DIR,
+      mode: 'headless',
+      main: { ...CONFIGS[name], stories: [] },
+    })
   );
   try {
+    await Promise.all(instances.map((storybook) => storybook.ready()));
     return await Promise.all(instances.map(read));
   } finally {
     await Promise.all(instances.map((storybook) => storybook.close()));

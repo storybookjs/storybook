@@ -1,0 +1,15 @@
+{
+  "name": "storybook-addon-grid-overlay",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Toggle a layout grid over your stories",
+  "type": "module",
+  "exports": {
+    "./node": "./src/node.ts",
+    "./manager": "./src/manager.tsx",
+    "./preview": "./src/preview.ts"
+  },
+  "peerDependencies": {
+    "storybook": "^11.0.0-0"
+  }
+}

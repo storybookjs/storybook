@@ -46,8 +46,8 @@ describe(assertSvelteCsfAddonNotInstalledOnInstance.name, () => {
     },
   ])('$name', ({ addons, framework, expected }) => {
     const storybook = {
-      // Like `storybook.hasPlugin`, match a resolved preset path by its package name.
-      hasPlugin: (name: string) =>
+      // Like `storybook.hasAddon`, match a resolved preset path by its package name.
+      hasAddon: (name: string) =>
         addons.some((addon) => (typeof addon === 'string' ? addon : addon.name).includes(name)),
       options: { main: { addons } },
     } as unknown as Parameters<typeof assertSvelteCsfAddonNotInstalledOnInstance>[0]['storybook'];

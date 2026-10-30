@@ -1,7 +1,7 @@
 export * from './public.ts';
 
-export { legacyPreset } from './plugins.ts';
-export type { LegacyPreset } from './plugins.ts';
+export { legacyPreset } from './addons.ts';
+export type { LegacyPreset } from './addons.ts';
 export type {
   LegacyAdapter,
   LegacyAdapterInput,
@@ -10,5 +10,5 @@ export type {
 } from './types.ts';
 
 export { getInstanceContext } from '../shared/instance-context.ts';
-export { commonPlugin as internal_commonPlugin } from './common-plugin.ts';
+export { commonAddon as internal_commonAddon } from './common-addon.ts';
 export { defineLegacyFieldOptions as internal_defineLegacyFieldOptions } from './legacy-hooks.ts';

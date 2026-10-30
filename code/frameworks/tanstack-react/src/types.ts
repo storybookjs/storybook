@@ -1,4 +1,4 @@
-import type { FrameworkPlugin } from 'storybook/internal/instance';
+import type { FrameworkAddon } from 'storybook/internal/instance';
 import type { CompatibleString } from 'storybook/internal/types';
 
 import type { AnyRoute } from '@tanstack/react-router';
@@ -25,7 +25,7 @@ export interface TanStackReactOptions extends FrameworkOptions, Pick<ReactViteOp
 
 type StorybookConfigFramework = {
   framework:
-    | FrameworkPlugin
+    | FrameworkAddon
     | FrameworkName
     | {
         name: FrameworkName;

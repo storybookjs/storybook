@@ -1,7 +1,7 @@
 import {
   defineFramework,
   defineMain as coreDefineMain,
-  type RendererPlugin,
+  type RendererAddon,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
 
@@ -18,7 +18,7 @@ export type StorybookConfig = Omit<WebComponentsViteConfig, 'addons'> &
 export const webComponentsVite = defineFramework<
   '@storybook/web-components-vite',
   FrameworkOptions | void,
-  RendererPlugin<WebComponentsTypes>
+  RendererAddon<WebComponentsTypes>
 >((input) => {
   const options = input || {};
   return {

@@ -362,8 +362,8 @@ const config: BuildEntries = {
         entryPoint: './src/utils/ansi-converter.ts',
       },
       {
-        exportEntries: ['./internal/deep/instance/plugins'],
-        entryPoint: './src/instance/plugins.ts',
+        exportEntries: ['./internal/deep/instance/addons'],
+        entryPoint: './src/instance/addons.ts',
       },
       {
         exportEntries: ['./internal/deep/preview-api/modules/preview-web/render/animation-utils'],

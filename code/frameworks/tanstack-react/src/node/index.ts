@@ -1,7 +1,7 @@
 import {
   defineFramework,
   defineMain as coreDefineMain,
-  type RendererPlugin,
+  type RendererAddon,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
 
@@ -21,7 +21,7 @@ export type StorybookConfig = Omit<TanStackReactConfig, 'addons'> & Pick<Instanc
 export const tanstackReact = defineFramework<
   '@storybook/tanstack-react',
   TanStackReactOptions | void,
-  RendererPlugin<ReactTypes>
+  RendererAddon<ReactTypes>
 >((input) => {
   const options = input || {};
   return {

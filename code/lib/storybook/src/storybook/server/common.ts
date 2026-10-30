@@ -1,6 +1,6 @@
 import {
   defineAddon,
-  internal_commonPlugin as coreCommonPlugin,
+  internal_commonAddon as coreCommonAddon,
   type HookContext,
   type Storybook,
 } from '@storybook/core/internal/instance';
@@ -10,11 +10,11 @@ import { FEATURE_DEFAULTS } from '../../features/index.ts';
 import * as common from './presets/common-defaults.ts';
 import { createStoryScreenshotAccess } from './story-screenshot.ts';
 
-/** Register the product's defaults on top of core's; core sets this up before every other plugin. */
-export const commonPlugin = defineAddon(() => ({
+/** Register the product's defaults on top of core's; core sets this up before every other addon. */
+export const commonAddon = defineAddon(() => ({
   meta: { name: 'storybook/common' },
   async setup(storybook: Storybook): Promise<void> {
-    await coreCommonPlugin.setup(storybook);
+    await coreCommonAddon.setup(storybook);
     storybook.hook('core:features:extend', (value) => ({ ...value, ...FEATURE_DEFAULTS }));
     const storyScreenshots = createStoryScreenshotAccess(storybook);
     storybook.hook('core:story-render:extend', () => storyScreenshots);

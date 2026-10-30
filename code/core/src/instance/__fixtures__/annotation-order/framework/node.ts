@@ -1,4 +1,4 @@
-import { defineBuilder, defineFramework } from '../../../plugins.ts';
+import { defineBuilder, defineFramework } from '../../../addons.ts';
 import renderer from '../native-renderer/node.ts';
 
 const builder = defineBuilder(() => ({

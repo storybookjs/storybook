@@ -15,7 +15,7 @@ import {
 import { detect } from 'package-manager-detector';
 
 import { type Settings, globalSettings } from '../common/globalSettings.ts';
-import { defineAddon } from '../instance/plugins.ts';
+import { defineAddon } from '../instance/addons.ts';
 import { detectAgent } from './detect-agent.ts';
 import { getApplicationFileCount } from './get-application-file-count.ts';
 import { analyzeEcosystemPackages } from './get-known-packages.ts';

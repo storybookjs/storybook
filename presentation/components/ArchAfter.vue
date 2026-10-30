@@ -21,7 +21,7 @@ import ArchBlock from './arch/ArchBlock.vue'
     <div class="arch__imports arch__main">↓ imports</div>
     <ArchBlock kind="core" title="@storybook/core" tag="code/core" class="arch__main">
       <div class="arch__lines">
-        <span><code>createStorybook</code> instance · hooks · plugin dedupe</span>
+        <span><code>createStorybook</code> instance · hooks · addon dedupe</span>
         <span>services and stores · toolsets · story index</span>
         <span>preview-api · csf · channels · test</span>
         <span>built-ins: docgen · story docs · change detection · ghost stories</span>
@@ -33,7 +33,7 @@ import ArchBlock from './arch/ArchBlock.vue'
         createTools · attached client · child host
       </ArchBlock>
     </div>
-    <ArchBlock kind="addon" dashed title="Plugins" class="arch__plugins">
+    <ArchBlock kind="addon" dashed title="Addons" class="arch__plugins">
       frameworks · renderers · builders · addons — Node side imports <code>@storybook/core/*</code>; storybook is an optional peer
     </ArchBlock>
   </div>

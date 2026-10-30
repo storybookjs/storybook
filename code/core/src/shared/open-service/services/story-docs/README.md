@@ -10,7 +10,7 @@ preserving `parameters.docs.source.transform` handling in preview.
 
 ## Providers
 
-Renderers contribute payloads through the `core:story-docs-provider:extend` Reduce hook, registered from their `<pkg>/node` plugin.
+Renderers contribute payloads through the `core:story-docs-provider:extend` Reduce hook, registered from their `<pkg>/node` addon.
 
 - React, Vue, Svelte and Web Components register it in `renderers/<name>/src/node.ts`.
 - Angular registers it from the `@storybook/angular-vite` framework in `frameworks/angular-vite/src/node/index.ts`.

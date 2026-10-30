@@ -25,7 +25,7 @@ import ArchLegend from './arch/ArchLegend.vue'
       </div>
     </div>
     <div class="arch__arrow">↑</div>
-    <ArchBlock kind="addon" dashed title="Plugins">
+    <ArchBlock kind="addon" dashed title="Addons">
       frameworks · renderers · builders · addons — load through presets and import <code>storybook/internal/*</code>
     </ArchBlock>
     <ArchLegend class="arch__legend" />

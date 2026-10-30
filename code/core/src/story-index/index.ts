@@ -1,6 +1,6 @@
 import './hooks.ts';
 
-export { mapStaticDir } from '../common/utils/server-statics.ts';
+export { mapStaticDir, serveStaticDirs } from '../common/utils/server-statics.ts';
 export { StoryIndexGenerator } from './StoryIndexGenerator.ts';
 export { getStoriesPathsFromConfig } from './get-stories-paths-from-config.ts';
 export type { ComponentArgTypesData } from './get-dummy-args-from-argtypes.ts';

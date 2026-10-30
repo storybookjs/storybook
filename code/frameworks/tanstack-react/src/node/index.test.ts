@@ -27,17 +27,18 @@ const CASES: Record<string, Partial<StorybookConfig>> = {
 it('registers the framework hooks for each main.ts entry', async () => {
   const results: Record<string, unknown> = {};
   for (const [name, main] of Object.entries(CASES)) {
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: CONFIG_DIR,
       mode: 'headless',
       main: { ...main, stories: [] },
     });
+    await storybook.ready();
     try {
       const core = await storybook.callHook('core:config:extend', {});
       results[name] = {
-        plugins: storybook.plugins
-          .filter((plugin) => plugin.kind !== 'addon')
-          .map((plugin) => `${plugin.kind} ${plugin.name}`),
+        addons: storybook.addons
+          .filter((addon) => addon.kind !== 'addon')
+          .map((addon) => `${addon.kind} ${addon.name}`),
         builder: core.builder,
         renderer: core.renderer,
         framework: await storybook.callHook('core:framework:extend', undefined),
@@ -58,6 +59,11 @@ it('registers the framework hooks for each main.ts entry', async () => {
   expect(normalize(results)).toMatchInlineSnapshot(`
     {
       "builder docgen": {
+        "addons": [
+          "builder @storybook/builder-vite",
+          "renderer @storybook/react",
+          "framework @storybook/tanstack-react",
+        ],
         "builder": {
           "name": "file://<code>/builders/builder-vite/dist/index.js",
           "options": {},
@@ -74,11 +80,6 @@ it('registers the framework hooks for each main.ts entry', async () => {
           "react/jsx-runtime",
           "@tanstack/react-router > @tanstack/react-store",
           "@tanstack/react-router > @tanstack/react-store > use-sync-external-store/shim/with-selector",
-        ],
-        "plugins": [
-          "builder @storybook/builder-vite",
-          "renderer @storybook/react",
-          "framework @storybook/tanstack-react",
         ],
         "previewAnnotations": [
           "<code>/lib/storybook/dist/features/measure/preview.js",
@@ -106,6 +107,11 @@ it('registers the framework hooks for each main.ts entry', async () => {
         ],
       },
       "framework options": {
+        "addons": [
+          "builder @storybook/builder-vite",
+          "renderer @storybook/react",
+          "framework @storybook/tanstack-react",
+        ],
         "builder": {
           "name": "file://<code>/builders/builder-vite/dist/index.js",
           "options": {
@@ -135,11 +141,6 @@ it('registers the framework hooks for each main.ts entry', async () => {
           "@tanstack/react-router > @tanstack/react-store",
           "@tanstack/react-router > @tanstack/react-store > use-sync-external-store/shim/with-selector",
         ],
-        "plugins": [
-          "builder @storybook/builder-vite",
-          "renderer @storybook/react",
-          "framework @storybook/tanstack-react",
-        ],
         "previewAnnotations": [
           "<code>/lib/storybook/dist/features/measure/preview.js",
           "<code>/lib/storybook/dist/features/backgrounds/preview.js",
@@ -165,6 +166,11 @@ it('registers the framework hooks for each main.ts entry', async () => {
         ],
       },
       "string entry": {
+        "addons": [
+          "builder @storybook/builder-vite",
+          "renderer @storybook/react",
+          "framework @storybook/tanstack-react",
+        ],
         "builder": {
           "name": "file://<code>/builders/builder-vite/dist/index.js",
           "options": {},
@@ -181,11 +187,6 @@ it('registers the framework hooks for each main.ts entry', async () => {
           "react/jsx-runtime",
           "@tanstack/react-router > @tanstack/react-store",
           "@tanstack/react-router > @tanstack/react-store > use-sync-external-store/shim/with-selector",
-        ],
-        "plugins": [
-          "builder @storybook/builder-vite",
-          "renderer @storybook/react",
-          "framework @storybook/tanstack-react",
         ],
         "previewAnnotations": [
           "<code>/lib/storybook/dist/features/measure/preview.js",

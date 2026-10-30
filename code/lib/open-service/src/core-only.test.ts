@@ -74,7 +74,7 @@ describe('core-only local tools', () => {
     }
   });
 
-  it('runs change detection without the storybook common plugin', async () => {
+  it('runs change detection without the storybook common addon', async () => {
     const tools = await createTools(
       { cwd: FIXTURE, mode: 'local' },
       { instanceFactory: { resolveInstanceEntry: () => undefined } }

@@ -4,7 +4,7 @@ import { legacyPreset } from 'storybook/internal/instance';
 import { getFrameworkPackageName, getRendererName } from './mainConfigFile.ts';
 
 describe('getFrameworkPackageName', () => {
-  it('reads plugin metadata for framework and renderer lookups', () => {
+  it('reads addon metadata for framework and renderer lookups', () => {
     const mainConfig = { framework: legacyPreset('@storybook/react-vite', 'framework') };
     expect(getFrameworkPackageName(mainConfig)).toBe('@storybook/react-vite');
     expect(getRendererName(mainConfig)).toBe('react');

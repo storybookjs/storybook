@@ -7,5 +7,7 @@ export type {
   StorybookConfig,
   StorybookFrameworks,
   StorybookHooks,
-  StorybookPlugin,
+  StorybookAddon,
 } from '@storybook/core';
+// Pulls the server hook declarations into this entry's types; addons hook them by name.
+export type { StaticOutputWriter } from './storybook/server/hooks.ts';

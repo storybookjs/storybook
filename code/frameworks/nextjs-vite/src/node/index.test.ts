@@ -30,16 +30,17 @@ const CASES: Record<string, Partial<StorybookConfig>> = {
 it('registers the framework hooks for each main.ts entry', async () => {
   const results: Record<string, unknown> = {};
   for (const [name, main] of Object.entries(CASES)) {
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: CONFIG_DIR,
       mode: 'headless',
       main: { ...main, stories: [] },
     });
+    await storybook.ready();
     try {
       results[name] = {
-        plugins: storybook.plugins
-          .filter((plugin) => plugin.kind !== 'addon')
-          .map((plugin) => `${plugin.kind} ${plugin.name}`),
+        addons: storybook.addons
+          .filter((addon) => addon.kind !== 'addon')
+          .map((addon) => `${addon.kind} ${addon.name}`),
         renderer: (await storybook.callHook('core:config:extend', {})).renderer,
         framework: await storybook.callHook('core:framework:extend', undefined),
         frameworkOptions: await storybook.callHook('core:framework-options:extend', undefined),
@@ -59,6 +60,11 @@ it('registers the framework hooks for each main.ts entry', async () => {
   expect(normalize(results)).toMatchInlineSnapshot(`
             {
               "builder docgen": {
+                "addons": [
+                  "builder @storybook/builder-vite",
+                  "renderer @storybook/react",
+                  "framework @storybook/nextjs-vite",
+                ],
                 "framework": {
                   "name": "@storybook/nextjs-vite",
                   "options": {},
@@ -75,11 +81,6 @@ it('registers the framework hooks for each main.ts entry', async () => {
                   "@storybook/nextjs-vite > styled-jsx",
                   "@storybook/nextjs-vite > styled-jsx/style",
                   "@opentelemetry/api",
-                ],
-                "plugins": [
-                  "builder @storybook/builder-vite",
-                  "renderer @storybook/react",
-                  "framework @storybook/nextjs-vite",
                 ],
                 "previewAnnotations": [
                   "<code>/lib/storybook/dist/features/measure/preview.js",
@@ -113,6 +114,11 @@ it('registers the framework hooks for each main.ts entry', async () => {
                 ],
               },
               "framework options": {
+                "addons": [
+                  "builder @storybook/builder-vite",
+                  "renderer @storybook/react",
+                  "framework @storybook/nextjs-vite",
+                ],
                 "framework": {
                   "name": "@storybook/nextjs-vite",
                   "options": {
@@ -148,11 +154,6 @@ it('registers the framework hooks for each main.ts entry', async () => {
                   "@storybook/nextjs-vite > styled-jsx/style",
                   "@opentelemetry/api",
                 ],
-                "plugins": [
-                  "builder @storybook/builder-vite",
-                  "renderer @storybook/react",
-                  "framework @storybook/nextjs-vite",
-                ],
                 "previewAnnotations": [
                   "<code>/lib/storybook/dist/features/measure/preview.js",
                   "<code>/lib/storybook/dist/features/backgrounds/preview.js",
@@ -184,6 +185,11 @@ it('registers the framework hooks for each main.ts entry', async () => {
                 ],
               },
               "string entry": {
+                "addons": [
+                  "builder @storybook/builder-vite",
+                  "renderer @storybook/react",
+                  "framework @storybook/nextjs-vite",
+                ],
                 "framework": {
                   "name": "@storybook/nextjs-vite",
                   "options": {},
@@ -200,11 +206,6 @@ it('registers the framework hooks for each main.ts entry', async () => {
                   "@storybook/nextjs-vite > styled-jsx",
                   "@storybook/nextjs-vite > styled-jsx/style",
                   "@opentelemetry/api",
-                ],
-                "plugins": [
-                  "builder @storybook/builder-vite",
-                  "renderer @storybook/react",
-                  "framework @storybook/nextjs-vite",
                 ],
                 "previewAnnotations": [
                   "<code>/lib/storybook/dist/features/measure/preview.js",

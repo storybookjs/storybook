@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { extractFrameworkPackageName, getFrameworkNameFromConfig } from './get-framework-name.ts';
-import { legacyPreset } from '../../instance/plugins.ts';
+import { legacyPreset } from '../../instance/addons.ts';
 
 describe('get-framework-name', () => {
   it('reads native metadata and legacy framework entries', () => {

@@ -31,7 +31,7 @@ export const COMMON_OVERRIDES = {
   })) as PresetPropertyFn<'build'>,
 };
 
-/** Give core the last word on `main.ts` values, after every preset, plugin and `main.ts` itself. */
+/** Give core the last word on `main.ts` values, after every preset, addon and `main.ts` itself. */
 export function registerCommonOverrides(
   hooks: ReturnType<typeof createHookRuntime>,
   options: Partial<Options>

@@ -1,7 +1,7 @@
 import {
   defineFramework,
   defineMain as coreDefineMain,
-  type RendererPlugin,
+  type RendererAddon,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
 import { getPreviewModuleIds } from '@storybook/core/internal/preview-page';
@@ -21,7 +21,7 @@ export type StorybookConfig = Omit<EmberConfig, 'addons'> & Pick<InstanceConfig,
 export const ember = defineFramework<
   '@storybook/ember',
   EmberFrameworkOptions | void,
-  RendererPlugin
+  RendererAddon
 >((input) => {
   const options = input || {};
   return {

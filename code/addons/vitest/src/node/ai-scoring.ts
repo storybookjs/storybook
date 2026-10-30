@@ -6,12 +6,12 @@ import { initGhostStoriesChannel } from './ghost-stories-channel.ts';
 
 /** Answer the checklist's ghost-stories and AI-setup scoring requests with this addon's Vitest. */
 export function wireAiScoringChannels(
-  storybook: Pick<Storybook, 'configDir' | 'hasPlugin' | 'getStoryIndexGenerator'>,
+  storybook: Pick<Storybook, 'configDir' | 'hasAddon' | 'getStoryIndexGenerator'>,
   channel: Channel
 ): void {
   const options = {
     configDir: storybook.configDir,
-    isReactStorybook: () => storybook.hasPlugin('@storybook/react'),
+    isReactStorybook: () => storybook.hasAddon('@storybook/react'),
   };
   initGhostStoriesChannel(channel, options);
   initAIAnalyticsChannel(channel, options, () => storybook.getStoryIndexGenerator());

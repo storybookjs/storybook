@@ -67,6 +67,7 @@ function makeRuntimeDeps(records: StorybookInstanceRecord[], extras: Record<stri
     configDir: records[0]?.configDir,
     toolsets: { values: vi.fn(() => []) },
     services: { get: vi.fn() },
+    ready: vi.fn(async () => {}),
     close: vi.fn(async () => {}),
   } as unknown as Storybook;
   const createStorybook = vi.fn(async (input: CreateStorybookInput) => ({

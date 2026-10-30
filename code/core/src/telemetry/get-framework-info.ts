@@ -1,5 +1,5 @@
 import { getStorybookInfo } from '@storybook/core/internal/common';
-import type { StorybookConfig } from '../instance/plugins.ts';
+import type { StorybookConfig } from '../instance/addons.ts';
 import { getInstanceContext } from '../shared/instance-context.ts';
 
 import { cleanPaths } from './sanitize.ts';

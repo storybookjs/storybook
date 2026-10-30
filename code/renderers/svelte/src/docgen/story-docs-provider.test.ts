@@ -29,7 +29,7 @@ const DOWNSTREAM: StoryDocsPayload = {
 
 const SVELTE_DESCRIPTORS = [getDocgenProvider()];
 
-/** Resolve the provider in an instance whose plugins registered `descriptors`. */
+/** Resolve the provider in an instance whose addons registered `descriptors`. */
 const providerWith = (
   descriptors: DocgenProviderDescriptor[],
   next: StoryDocsProvider

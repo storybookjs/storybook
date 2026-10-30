@@ -15,7 +15,7 @@ import { WebSocket } from 'ws';
 import { runWithStorybook } from '@storybook/core/internal/deep/instance/instance-context';
 import { createManagerHost } from '@storybook/manager/internal/deep/builder-manager/host';
 import { createStorybook, type Storybook } from 'storybook/internal/instance';
-import { projectService } from './__fixtures__/two-dev-servers/plugins.ts';
+import { projectService } from './__fixtures__/two-dev-servers/addons.ts';
 import { buildDevStandalone } from './build-dev.ts';
 import type { RuntimeInstanceRecord } from './utils/runtime-instance-registry.ts';
 
@@ -61,13 +61,14 @@ describe('two real Storybook projects in one process', () => {
     DIRECTORIES.push(outputDir);
     const managersCompiled: boolean[] = [];
     for (const workingDir of WORKING_DIRS) {
-      const storybook = await createStorybook({
+      const storybook = createStorybook({
         workingDir,
         configDir: '.storybook',
         mode: 'dev',
         cliOptions: { disableTelemetry: true, test: true, quiet: true, outputDir },
       });
       INSTANCES.push(storybook);
+      await storybook.ready();
       const manager = createManagerHost(storybook);
       try {
         const server = createServer();

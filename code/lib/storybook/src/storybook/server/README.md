@@ -2,33 +2,35 @@
 
 The Node side of `storybook dev` and `storybook build`, exported as `storybook/internal/server`.
 It hosts a Storybook instance: the dev server, the preview-only host, story screenshots, the toolset RPC host and the instance registry.
-The instance itself, its plugins and its hooks live in core: see the [instance README](../../../../../core/src/instance/README.md) and [HOOKS.md](../../../../../core/src/instance/HOOKS.md).
+The instance itself, its addons and its hooks live in core: see the [instance README](../../../../../core/src/instance/README.md) and [HOOKS.md](../../../../../core/src/instance/HOOKS.md).
 
 ## Layout
 
-- `build-dev.ts`: `storybook dev`; creates the instance and wires the dev server.
+- `build-dev.ts`: `storybook dev`; resolves the port and addresses, creates the instance and calls `storybook.dev()`.
+- `start-dev-server.ts`: the `dev` host `../instance.ts` injects; wires the dev server for one instance.
 - `dev-server.ts`: mounts the manager and the preview builder on the dev server app.
-- `build-static.ts`: `storybook build`.
+- `build-static.ts`: `storybook build`; checks and cleans the output dir, creates the instance and calls `storybook.build()`.
+- `run-static-build.ts`: the `build` host `../instance.ts` injects; writes the manager, preview, index and static files of one instance.
 - `preview-host.ts`: serves the preview of an instance on its own, with no manager.
 - `story-screenshot.ts`: screenshots stories in a headless Chromium.
 - `in-process-transport.ts`: answers HTTP requests inside the process, with no socket.
-- `common.ts`: the product common plugin.
+- `common.ts`: the product common addon.
 - `hooks.ts`: declares the `server:*` hooks.
 - `utils/toolset-rpc-host.ts`: serves the toolset RPC on the dev server channel.
 - `utils/runtime-instance-registry.ts`: writes and cleans the instance records.
 - `presets/`: the defaults `common.ts` registers.
 - `server-channel/`: server-side channel handlers.
 
-## Common plugin
+## Common addon
 
-`common.ts` exports `commonPlugin`, which `createStorybook` in `../instance.ts` installs as the `common` plugin.
-It runs core's common plugin first, then registers the product defaults from `presets/common-defaults.ts`.
+`common.ts` exports `commonAddon`, which `createStorybook` in `../instance.ts` installs as the `common` addon.
+It runs core's common addon first, then registers the product defaults from `presets/common-defaults.ts`.
 It provides `core:story-render:extend` with a `createStoryScreenshotAccess` for the instance, and closes it on `core:instance:close`.
-Core alone has no story renderer, so `stories.screenshot` needs this plugin.
+Core alone has no story renderer, so `stories.screenshot` needs this addon.
 
 ## Dev server wiring
 
-`buildDevStandalone` in `build-dev.ts` creates the instance with `mode: 'dev'`, then wires it in this order:
+`storybook.dev()` runs `startDevServer` in `start-dev-server.ts`, which wires a ready `mode: 'dev'` instance in this order:
 
 - Channel transport: `attachServerTransport` attaches the instance channel to the HTTP server, guarded by the channel token.
 - Toolset RPC host: `serveToolsetRpc` listens on that channel.
@@ -37,7 +39,8 @@ Core alone has no story renderer, so `stories.screenshot` needs this plugin.
 - Instance record: `writeStorybookRuntimeInstanceRecord` writes the record with `toolsetRpc`.
 
 The record comes last, so a client that finds it can already connect and call.
-`close()` disposes the RPC host and the transport first, then closes the HTTP server, the instance and the record together.
+Its `close()` disposes the RPC host and the transport first, then closes the HTTP server and the record together.
+`storybook.close()` starts it before the instance teardown and settles both together.
 
 ## Toolset RPC host
 
@@ -94,7 +97,7 @@ It runs the app's request listener against an in-memory `IncomingMessage` and `S
 
 ### Builders without a host server
 
-`BuilderDevHost.server` is optional (`core/src/instance/plugins.ts`).
+`BuilderDevHost.server` is optional (`core/src/instance/addons.ts`).
 It is absent with the `'in-process'` transport.
 builder-vite then sets `hmr: false, ws: false` (`builders/builder-vite/src/vite-server.ts`).
 

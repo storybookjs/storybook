@@ -1,6 +1,6 @@
 import '../../storybook/server/hooks.ts';
 
-import { defineAddon } from '@storybook/core/internal/deep/instance/plugins';
+import { defineAddon } from '@storybook/core/internal/deep/instance/addons';
 import {
   registerManifests,
   writeManifests,
@@ -12,7 +12,7 @@ type ManifestApp = Parameters<typeof registerManifests>[0]['app'];
 export default defineAddon(() => ({
   meta: { name: 'storybook/components-manifest' },
   setup(storybook): void {
-    // Flags resolve at call time, after every plugin and preset could set them.
+    // Flags resolve at call time, after every addon and preset could set them.
     const isEnabled = async (): Promise<boolean> =>
       (await storybook.callHook('core:features:extend', undefined)).componentsManifest === true;
     storybook.hook('server:app:extend', async (app) => {

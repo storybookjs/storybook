@@ -25,7 +25,7 @@ function setUp({ mode = 'dev', a11y = false }: { mode?: string; a11y?: boolean }
     mode,
     hook: (name: string, handler: (...args: any[]) => any, kind?: string) =>
       hooks.push([name, handler, kind]),
-    hasPlugin: (name: string) => a11y && name === '@storybook/addon-a11y',
+    hasAddon: (name: string) => a11y && name === '@storybook/addon-a11y',
   } as unknown as Storybook;
   vitest({ enableCrashReports: true }).setup(storybook);
   const handler = (name: string) => hooks.find(([hook]) => hook === name)![1];

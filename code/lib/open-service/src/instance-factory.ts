@@ -13,7 +13,8 @@ import { dirname, join } from 'pathe';
 import { findCorePackageRoot, findStorybookCoreRoot } from './installation.ts';
 import { projectPathsEqual } from './instances/project-path.ts';
 
-export type StorybookFactory = (input: CreateStorybookInput) => Promise<Storybook>;
+/** Create an instance; the caller awaits its `ready()`. */
+export type StorybookFactory = (input: CreateStorybookInput) => Storybook | Promise<Storybook>;
 
 export type InstanceFactoryResolution =
   | { kind: 'factory'; createStorybook: StorybookFactory }

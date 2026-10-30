@@ -29,8 +29,8 @@ import { dedent } from '@storybook/core/internal/deep/utils/node-libs';
 import { stripAbsNodeModulesPath } from './strip-abs-node-modules-path.ts';
 
 /**
- * Turn a preset or addon entry nested in another preset into an instance plugin's virtual preset.
- * `undefined` keeps loading it as a preset; `null` drops it because that plugin is already set up.
+ * Turn a preset or addon entry nested in another preset into an instance addon's virtual preset.
+ * `undefined` keeps loading it as a preset; `null` drops it because that addon is already set up.
  */
 export type NativePresetResolver = (
   entry: PresetConfig
@@ -81,7 +81,7 @@ function readAddonManifest(dir: string): { name?: string; exports?: unknown } | 
  * - `{ name: 'storybook-addon-designs(/preset)?', options: { } } => { type: 'presets', item: { name:
  *   'storybook-addon-designs/preset', options } }`
  *
- * Official packages have no preset entry; the instance loads their `<pkg>/node` plugin instead.
+ * Official packages have no preset entry; the instance loads their `<pkg>/node` addon instead.
  */
 export const resolveAddonName = (
   configDir: string,
@@ -307,7 +307,7 @@ async function loadPresets(
   return loaded;
 }
 
-/** Swap nested entries with a native plugin for its virtual preset; map the rest with `fallback`. */
+/** Swap nested entries with a native addon for its virtual preset; map the rest with `fallback`. */
 async function toNativePresets(
   entries: PresetConfig[],
   resolveNative: NativePresetResolver | undefined,

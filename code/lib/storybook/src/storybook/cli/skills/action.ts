@@ -75,8 +75,10 @@ function defaultDeps(): SkillsRunDeps {
   const inStorybook = <T>(fn: () => T): T => (storybook ? runWithStorybook(storybook, fn) : fn());
   return {
     async loadStorybook({ configDir }) {
-      storybook = await createStorybook({ configDir, mode: 'headless' });
-      return storybook;
+      const instance = createStorybook({ configDir, mode: 'headless' });
+      await instance.ready();
+      storybook = instance;
+      return instance;
     },
     resolveSkillInputs: (instance) => inStorybook(() => resolveSkillInputs(instance)),
     getProjectInfo,

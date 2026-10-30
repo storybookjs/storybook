@@ -23,7 +23,7 @@ export const mdxImportParser: ImportParser = {
 /**
  * Built-in parsers shipped with core change-detection. These cover the extensions the
  * previous {@link ImportExtractor} handled directly; additional extensions (e.g. `.vue`,
- * `.svelte`) are contributed by framework/renderer plugins via the
+ * `.svelte`) are contributed by framework/renderer addons via the
  * `experimental_importParsers` preset key.
  */
 export const builtinImportParsers: readonly ImportParser[] = [oxcImportParser, mdxImportParser];

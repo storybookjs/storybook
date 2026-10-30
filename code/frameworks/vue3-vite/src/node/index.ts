@@ -1,7 +1,7 @@
 import {
   defineFramework,
   defineMain as coreDefineMain,
-  type RendererPlugin,
+  type RendererAddon,
   type Storybook,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
@@ -23,7 +23,7 @@ export type VueViteOptions = FrameworkOptions;
 export const vue3Vite = defineFramework<
   '@storybook/vue3-vite',
   VueViteOptions | void,
-  RendererPlugin<VueTypes>
+  RendererAddon<VueTypes>
 >((input) => {
   const options = input || {};
   return {
@@ -50,7 +50,9 @@ export function vue3ViteHooks(storybook: Storybook, options: VueViteOptions): vo
     withVueDocgen(config, {
       docgen: resolveDocgenOptions(options.docgen),
       docgenServerActive: storybook.options.features?.docgenServer === true,
-      disableDocgen: storybook.options.build?.test?.disableDocgen,
+      disableDocgen:
+        storybook.options.build?.test?.disableDocgen ||
+        storybook.options.docs?.builderDocgen === false,
       getEngine: vueDocgenEngine,
     })
   );

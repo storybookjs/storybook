@@ -23,16 +23,17 @@ const CASES: Record<
 it('registers the framework hooks for each main.ts entry', async () => {
   const results: Record<string, unknown> = {};
   for (const [name, { mode, framework }] of Object.entries(CASES)) {
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: CONFIG_DIR,
       mode,
       main: { framework, stories: [] },
     });
+    await storybook.ready();
     try {
       results[name] = {
-        plugins: storybook.plugins
-          .filter((plugin) => plugin.kind !== 'addon')
-          .map((plugin) => `${plugin.kind} ${plugin.name}`),
+        addons: storybook.addons
+          .filter((addon) => addon.kind !== 'addon')
+          .map((addon) => `${addon.kind} ${addon.name}`),
         renderer: (await storybook.callHook('core:config:extend', {})).renderer,
         framework: await storybook.callHook('core:framework:extend', undefined),
         frameworkOptions: await storybook.callHook('core:framework-options:extend', undefined),
@@ -50,6 +51,11 @@ it('registers the framework hooks for each main.ts entry', async () => {
   expect(normalize(results)).toMatchInlineSnapshot(`
     {
       "development": {
+        "addons": [
+          "builder @storybook/builder-vite",
+          "renderer @storybook/svelte",
+          "framework @storybook/sveltekit",
+        ],
         "framework": {
           "name": "@storybook/sveltekit",
           "options": {},
@@ -59,11 +65,6 @@ it('registers the framework hooks for each main.ts entry', async () => {
           "@storybook/sveltekit/internal/mocks/app/forms",
           "@storybook/sveltekit/internal/mocks/app/navigation",
           "@storybook/sveltekit/internal/mocks/app/state.svelte.js",
-        ],
-        "plugins": [
-          "builder @storybook/builder-vite",
-          "renderer @storybook/svelte",
-          "framework @storybook/sveltekit",
         ],
         "previewAnnotations": [
           "<code>/lib/storybook/dist/features/measure/preview.js",
@@ -98,6 +99,11 @@ it('registers the framework hooks for each main.ts entry', async () => {
         ],
       },
       "docgen disabled": {
+        "addons": [
+          "builder @storybook/builder-vite",
+          "renderer @storybook/svelte",
+          "framework @storybook/sveltekit",
+        ],
         "framework": {
           "name": "@storybook/sveltekit",
           "options": {
@@ -111,11 +117,6 @@ it('registers the framework hooks for each main.ts entry', async () => {
           "@storybook/sveltekit/internal/mocks/app/forms",
           "@storybook/sveltekit/internal/mocks/app/navigation",
           "@storybook/sveltekit/internal/mocks/app/state.svelte.js",
-        ],
-        "plugins": [
-          "builder @storybook/builder-vite",
-          "renderer @storybook/svelte",
-          "framework @storybook/sveltekit",
         ],
         "previewAnnotations": [
           "<code>/lib/storybook/dist/features/measure/preview.js",
@@ -149,6 +150,11 @@ it('registers the framework hooks for each main.ts entry', async () => {
         ],
       },
       "production": {
+        "addons": [
+          "builder @storybook/builder-vite",
+          "renderer @storybook/svelte",
+          "framework @storybook/sveltekit",
+        ],
         "framework": {
           "name": "@storybook/sveltekit",
           "options": {},
@@ -158,11 +164,6 @@ it('registers the framework hooks for each main.ts entry', async () => {
           "@storybook/sveltekit/internal/mocks/app/forms",
           "@storybook/sveltekit/internal/mocks/app/navigation",
           "@storybook/sveltekit/internal/mocks/app/state.svelte.js",
-        ],
-        "plugins": [
-          "builder @storybook/builder-vite",
-          "renderer @storybook/svelte",
-          "framework @storybook/sveltekit",
         ],
         "previewAnnotations": [
           "<code>/lib/storybook/dist/features/measure/preview.js",

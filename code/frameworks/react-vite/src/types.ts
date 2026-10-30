@@ -1,4 +1,4 @@
-import type { FrameworkPlugin } from 'storybook/internal/instance';
+import type { FrameworkAddon } from 'storybook/internal/instance';
 import type {
   CompatibleString,
   StorybookConfig as StorybookConfigBase,
@@ -25,7 +25,7 @@ export interface ReactViteOptions extends FrameworkOptions {
 
 type StorybookConfigFramework = {
   framework:
-    | FrameworkPlugin
+    | FrameworkAddon
     | FrameworkName
     | {
         name: FrameworkName;

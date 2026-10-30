@@ -1,9 +1,9 @@
 import { csfIndexer, experimental_indexers, features, services } from '../services/preset.ts';
-import { defineAddon } from './plugins.ts';
+import { defineAddon } from './addons.ts';
 import type { Storybook } from './types.ts';
 
-/** Core's defaults (CSF indexer, features, services); a host's own common plugin extends them. */
-export const commonPlugin = defineAddon(() => ({
+/** Core's defaults (CSF indexer, features, services); a host's own common addon extends them. */
+export const commonAddon = defineAddon(() => ({
   meta: { name: 'storybook/core-common' },
   setup(storybook: Storybook): void {
     storybook.hook('core:services:register', () => services(storybook));

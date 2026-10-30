@@ -51,12 +51,13 @@ const CASES: Record<
 it('registers the framework hooks', async () => {
   const results: Record<string, unknown> = {};
   for (const [name, { main, cliOptions }] of Object.entries(CASES)) {
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: CONFIG_DIR,
       mode: 'headless',
       main: { ...main, stories: [] },
       cliOptions: cliOptions as CreateStorybookInput['cliOptions'],
     });
+    await storybook.ready();
     try {
       const { componentsManifest, docgenServer } = storybook.options.features ?? {};
       const vite = (await storybook.callHook('builder:vite:extend', {}, {
@@ -64,7 +65,7 @@ it('registers the framework hooks', async () => {
         configDir: CONFIG_DIR,
       } as never)) as UserConfig;
       results[name] = summarize({
-        plugins: storybook.plugins
+        addons: storybook.addons
           .filter(({ name }) => !name.startsWith('storybook/'))
           .map(({ kind, name }) => `${kind} ${name}`),
         core: (({ builder }) => ({ builder }))(await storybook.callHook('core:config:extend', {})),

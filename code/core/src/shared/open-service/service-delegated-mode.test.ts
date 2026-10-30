@@ -87,7 +87,7 @@ async function withAttachedChannel(
   channel: ReturnType<typeof createTestChannel>,
   fn: () => Promise<void>
 ): Promise<void> {
-  const storybook = await createStorybook(
+  const storybook = createStorybook(
     {
       configDir: fileURLToPath(new URL('../../instance/__fixtures__/first', import.meta.url)),
       main: { stories: [] },
@@ -96,6 +96,7 @@ async function withAttachedChannel(
     },
     { builtInAddons: [] }
   );
+  await storybook.ready();
   try {
     await runWithStorybook(storybook, async () => {
       installTestChannel(channel);

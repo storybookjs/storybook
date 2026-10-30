@@ -40,7 +40,7 @@ export async function getFrameworkName(options: Options): Promise<string> {
   return getFrameworkNameFromConfig(framework)!;
 }
 
-/** @deprecated Read the renderer plugin from `storybook.plugins` (`kind: 'renderer'`). */
+/** @deprecated Read the renderer addon from `storybook.addons` (`kind: 'renderer'`). */
 export async function getRendererName(options: Options): Promise<string> {
   const core = await options.presets.apply('core', {}, options);
 

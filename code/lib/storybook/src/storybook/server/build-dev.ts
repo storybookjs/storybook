@@ -8,7 +8,6 @@ import {
   getConfigInfo,
   getInterpretedFile,
   findProjectRoot,
-  isWebContainer,
   resolvePathInStorybookCache,
   versions,
 } from '@storybook/core/internal/common';
@@ -21,25 +20,10 @@ import { relative, resolve } from 'pathe';
 import { dedent, invariant } from '@storybook/core/internal/deep/utils/node-libs';
 
 import { createStorybook, type Storybook } from 'storybook/internal/instance';
-import { runWithStorybook } from '@storybook/core/internal/deep/instance/instance-context';
-import { storybookDevServer } from './dev-server.ts';
-import { getWsToken } from './presets/wsToken.ts';
-import { buildOrThrow } from './utils/build-or-throw.ts';
-import { attachServerTransport } from './utils/get-server-channel.ts';
-import { serveToolsetRpc } from './utils/toolset-rpc-host.ts';
-import { TOOLSET_RPC_PROTOCOL_VERSION } from '@storybook/core/internal/deep/shared/open-service/toolset-rpc';
 import { warnOnDisabledHostValidation } from './utils/host-validation-warning.ts';
 import { outputStartupInformation } from './utils/output-startup-information.ts';
 import { outputStats } from './utils/output-stats.ts';
-import {
-  getMcpMetadataFromMainConfig,
-  getStorybookBaseUrl,
-  type RuntimeInstanceRecord,
-  type RuntimeInstanceRegistration,
-  writeStorybookRuntimeInstanceRecord,
-} from './utils/runtime-instance-registry.ts';
 import { getServerAddresses, getServerChannelUrl, getServerPort } from './utils/server-address.ts';
-import { getServer } from './utils/server-init.ts';
 import { stripCommentsAndStrings } from '@storybook/core/internal/deep/story-index/strip-comments-and-strings';
 import { updateCheck } from './utils/update-check.ts';
 import { warnOnIncompatibleAddons } from './utils/warnOnIncompatibleAddons.ts';
@@ -72,9 +56,9 @@ export async function resolveOnboardingInitialPath(
 }
 
 /**
- * Start a Storybook dev server and resolve once it is listening.
+ * Start a Storybook dev server through `storybook.dev()` and resolve once it is listening.
  *
- * It never exits the process or installs signal handlers: in smoke-test mode it closes the server
+ * It never exits the process or installs signal handlers: in smoke-test mode it closes the instance
  * and resolves with `exitCode`, otherwise the caller owns `close()` (see `exitOnDevServerSignal`).
  */
 export async function buildDevStandalone(
@@ -166,51 +150,18 @@ export async function buildDevStandalone(
   options.serverChannelUrl = getServerChannelUrl(port, options);
   options.localAddress = localAddress;
   options.networkAddress = networkAddress;
+  options.storybookVersion = storybookVersion;
 
-  const server = await getServer(options);
-  let storybook: Storybook | undefined;
-  let registration: RuntimeInstanceRegistration | undefined;
-  let transport: ReturnType<typeof attachServerTransport> | undefined;
-  let disposeToolsetRpc: (() => void) | undefined;
-  let closePromise: Promise<void> | undefined;
-
-  function close(): Promise<void> {
-    closePromise ??= (async () => {
-      disposeToolsetRpc?.();
-      transport?.close();
-      const results = await Promise.allSettled([
-        new Promise<void>((resolveClose, rejectClose) => {
-          server.close((error) => {
-            if (error && (error as NodeJS.ErrnoException).code !== 'ERR_SERVER_NOT_RUNNING') {
-              rejectClose(error);
-            } else {
-              resolveClose();
-            }
-          });
-          server.closeAllConnections();
-        }),
-        storybook?.close(),
-        registration?.cleanup(),
-      ]);
-      const errors = results.filter((result) => result.status === 'rejected');
-      if (errors.length) {
-        throw new AggregateError(
-          errors.map((result) => result.reason),
-          'Dev server cleanup failed.'
-        );
-      }
-    })();
-    return closePromise;
-  }
+  const storybook = createStorybook({
+    configDir,
+    workingDir,
+    mode: 'dev',
+    cliOptions: options,
+  });
+  const close = (): Promise<void> => storybook.close();
 
   try {
-    storybook = await createStorybook({
-      configDir,
-      workingDir,
-      mode: 'dev',
-      cliOptions: options,
-    });
-    const token = runWithStorybook(storybook, getWsToken);
+    await storybook.ready();
     const { framework, main } = storybook.options;
     const config = {
       ...main,
@@ -282,49 +233,7 @@ export async function buildDevStandalone(
       }
     }
 
-    transport = attachServerTransport(storybook.channel, server, {
-      token,
-      host: options.host,
-      allowedHosts,
-      skipValidation: isWebContainer(),
-      localAddress,
-      networkAddress,
-    });
-    const host = storybook;
-    disposeToolsetRpc = serveToolsetRpc({
-      channel: host.channel,
-      toolsets: () => host.toolsets.values(),
-      getService: (serviceId, serviceOptions) =>
-        host.services.get(serviceId as never, serviceOptions),
-      origin: getStorybookBaseUrl(localAddress),
-      configDir: host.configDir,
-    });
-    await storybook.callHook('server:channel:ready', storybook.channel);
-
-    const { managerResult, previewResult } = await buildOrThrow(() =>
-      storybookDevServer(storybook!, server)
-    );
-
-    const mcp: RuntimeInstanceRecord['mcp'] = await storybook.callHook(
-      'server:mcp:extend',
-      getMcpMetadataFromMainConfig(main)
-    );
-
-    registration = await writeStorybookRuntimeInstanceRecord({
-      address: localAddress,
-      configDir: options.configDir,
-      cwd: workingDir,
-      registryDir: options.runtimeRegistryDir,
-      mcp,
-      port,
-      storybookVersion,
-      token,
-      toolsetRpc: TOOLSET_RPC_PROTOCOL_VERSION,
-    }).catch((error: unknown) => {
-      logger.warn('Storybook failed to write its runtime instance registry record.');
-      logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
-      return undefined;
-    });
+    const { managerResult, previewResult } = await storybook.dev();
 
     const previewTotalTime = previewResult?.totalTime;
     const managerTotalTime = managerResult?.totalTime;

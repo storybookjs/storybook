@@ -1,4 +1,4 @@
-import { defineAddon } from '../../plugins.ts';
+import { defineAddon } from '../../addons.ts';
 
 export default defineAddon<{ color?: string } | void>(() => ({
   meta: { name: 'fixture-dedupe-addon' },

@@ -36,7 +36,7 @@ storybook/
 | Builder   | Bundles and serves Storybook          | `@storybook/builder-vite` |
 | Framework | Renderer + builder + framework config | `@storybook/react-vite`   |
 
-Frameworks, renderers, and builders are native `defineFramework`, `defineRenderer`, and `defineBuilder` plugins exported as the default export of `<pkg>/node`.
+Frameworks, renderers, and builders are native `defineFramework`, `defineRenderer`, and `defineBuilder` addons exported as the default export of `<pkg>/node`.
 Core resolves them from the `main.ts` strings (`framework: '@storybook/react-vite'` or `{ name, options }`) through `resolveNativeFactory`.
 String addons in `main.ts` load `<pkg>/node` the same way when the package has one.
 Official packages ship no preset; `resolveNativeFactory` maps their old `<pkg>/preset*` and `<pkg>/server/framework-preset-*` specifiers to `<pkg>/node` with a deprecation warning, and the compat preset loader does the same for entries nested in third-party presets.
@@ -87,14 +87,14 @@ Each package README owns that package's contents, import rules, and entries.
 
 ### Instance, hooks, and server
 
-- [Instance](../../code/core/src/instance/README.md): the instance API, the accessor, modes (`dev`, `build`, `headless`), the plugin model, and how official packages run without presets.
+- [Instance](../../code/core/src/instance/README.md): the instance API, the accessor, modes (`dev`, `build`, `headless`), the addon model, and how official packages run without presets.
 - [Hooks](../../code/core/src/instance/HOOKS.md): every hook needs a `declareHooks` strategy or an explicit kind; also the hook-interface pattern and its d.ts guard.
 - [Server](../../code/lib/storybook/src/storybook/server/README.md): the preview host, screenshot transports, the toolset RPC host, the instance registry, and dev-server wiring.
 
 ### Where things live
 
 - Instance, presets, and hooks: `code/core/src/instance/` and `code/core/src/common/presets.ts`; the built-in addon list and public instance entry are in `code/lib/storybook/src/features/index.ts` and `code/lib/storybook/src/storybook/instance.ts`.
-  Called without options, core's `createStorybook` uses its own common plugin (`common-plugin.ts`) and only core-owned addons (docgen, story-docs), so a headless host needs no `storybook`; legacy presets still need the product's adapter and throw `LegacyAdapterMissingError` without it.
+  Called without options, core's `createStorybook` uses its own common addon (`common-addon.ts`) and only core-owned addons (docgen, story-docs), so a headless host needs no `storybook`; legacy presets still need the product's adapter and throw `LegacyAdapterMissingError` without it.
 - Dev server, static build, and server presets: `code/lib/storybook/src/storybook/server/`.
 - Preview page shared by the builders (`iframe.html`, generated preview modules, externals, defines, export order): `code/core/src/preview-page/`; the product's `getPreviewSources` adds its preview runtime path in `code/lib/storybook/src/storybook/preview-page.ts`.
 - CLI and `storybook tools`: `code/lib/storybook/src/storybook/cli/` (tools CLI in `cli/tools/`; the SDK it drives in `code/lib/open-service/src/`).

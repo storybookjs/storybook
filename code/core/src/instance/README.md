@@ -11,11 +11,16 @@ An instance owns one Storybook project in a Node process.
 import { createStorybook, defineAddon } from 'storybook/internal/instance';
 import { reactVite } from '@storybook/react-vite/node';
 
-const storybook = await createStorybook({ configDir: '.storybook', mode: 'headless' });
-const index = await storybook.getIndex();
-const docs = storybook.toolsets.get('docs');
-const service = storybook.services.get('core/module-graph', { internal: true });
-await storybook.close();
+const storybook = createStorybook({ configDir: '.storybook', mode: 'headless' });
+storybook.addAddon(myAddon());
+await storybook.ready();
+try {
+  const index = await storybook.getIndex();
+  const docs = storybook.toolsets.get('docs');
+  const service = storybook.services.get('core/module-graph', { internal: true });
+} finally {
+  await storybook.close();
+}
 ```
 
 - `@storybook/core` is the public instance API: `createStorybook`, the `define*` factories, `declareHooks`, the instance accessors, `getFeatures`, and their types.
@@ -25,9 +30,10 @@ await storybook.close();
 
 ## Lifecycle
 
-The lifecycle runs once:
+`createStorybook` returns the instance synchronously; `ready()` runs the lifecycle once and memoizes it:
 
-- Load `main.ts` and validate plugin metadata.
+- Load `main.ts` (or take `input.main`), merge `input.overrides` over it, and validate addon metadata.
+  - Plain-object fields merge one level deep (`docs: { mdx: false }` keeps the other `docs` keys); arrays, functions and addons replace.
 - Set up the builder, renderer, framework defaults, framework, built-in addons, then user addons.
 - Freeze options and notify `core:instance:ready`.
 - Answer queries, or run the preview builder.
@@ -35,13 +41,17 @@ The lifecycle runs once:
 
 Rules:
 
-- Reading `storybook.options` during setup throws.
-- Registration is limited to setup.
+- A failed `ready()` closes the instance and rejects.
+- Reading `storybook.options` or `storybook.builder` before `ready()` resolves throws.
+- `addAddon(addon)` works before `ready()`, where the addon joins the `main.ts` addons, and during setup, where it sets up right after the addon that added it; afterwards it throws.
+- `hook`, `callHook`, `registerService`, and `registerToolset` work until close; only `options` freezes at ready.
 - The index generator initializes lazily on the first index request.
 - Dev and headless modes use development configuration; build uses production configuration.
-- Hosts pass CLI settings through `cliOptions`, attach the dev transport, and create a manager host with `createManagerHost(storybook)`.
+- Hosts pass CLI settings through `cliOptions` and create a manager host with `createManagerHost(storybook)`.
 - Each manager host owns its compiler state.
-- The instance owns neither the server nor the manager.
+- `storybook.dev()` awaits `ready()`, starts the dev server once, and `close()` stops it before the rest of the teardown settles.
+  - It needs `mode: 'dev'` and the `dev` host that `storybook`'s `createStorybook` injects; core alone owns neither the server nor the manager.
+- `storybook.build()` awaits `ready()` and writes the static Storybook once; it needs `mode: 'build'` and the injected `build` host.
 
 ## API
 
@@ -52,9 +62,13 @@ interface Storybook {
   readonly configDir: string;
   readonly workingDir: string;
   readonly options: ResolvedStorybookConfig;
-  readonly builder: BuilderPlugin | undefined;
-  readonly plugins: readonly PluginMeta[];
-  hasPlugin(name: string): boolean;
+  readonly builder: BuilderAddon | undefined;
+  readonly addons: readonly AddonMeta[];
+  hasAddon(name: string): boolean;
+  addAddon(addon: StorybookAddon): void;
+  ready(): Promise<void>;
+  dev(): Promise<StorybookDevServer>;
+  build(): Promise<StorybookBuildResult>;
   hook<K extends keyof StorybookHooks>(
     name: K,
     fn: HookHandler<K>,
@@ -96,7 +110,7 @@ interface Storybook {
 - A store created without a channel uses the current instance's channel and is disposed on close; outside an instance in Node it stays unprepared.
 - No realm, inventory, or election: who owns a store is decided where it is created.
 
-## Plugins
+## Addons
 
 ```ts
 import { fileURLToPath } from 'node:url';
@@ -110,7 +124,7 @@ const addon = defineAddon<{ verbose?: boolean }>((options) => ({
   },
 }));
 
-const storybook = await createStorybook({
+const storybook = createStorybook({
   configDir: '.storybook',
   mode: 'headless',
   main: {
@@ -119,21 +133,22 @@ const storybook = await createStorybook({
     addons: ['@storybook/addon-docs', addon({ verbose: true })],
   },
 });
+await storybook.ready();
 ```
 
 - `defineAddon`, `defineBuilder`, `defineRenderer`, and `defineFramework` set `meta.kind` on the factory result.
-- They also brand the factory itself with `Symbol.for('storybook.plugin-factory')` set to that kind.
+- They also brand the factory itself with `Symbol.for('storybook.addon-factory')` set to that kind.
 - A package becomes native by default-exporting a branded factory from `<pkg>/node`.
 - A framework carries its `builder`, `renderer`, and optional default `addons`.
 - Setup order keeps the legacy preset order:
   - builder, renderer, framework defaults, framework, built-in addons, then user addons;
   - renderer contributions precede framework contributions;
   - a framework's addons load before the framework, as a legacy framework preset's `addons` did.
-- Each plugin sets up once per `meta.name` (`dedupe-plugins.ts`), across built-ins, framework addons, and `main.addons`:
+- Each addon sets up once per `meta.name` (`dedupe-addons.ts`), across built-ins, framework addons, and `main.addons`:
   - the first occurrence keeps its position;
   - a later entry with options replaces an earlier one without, so `'pkg'` plus `pkg({ ... })` keeps the configured one;
   - entries with different options keep the first and log a warning.
-  - Options come from branded factories, which record them on the plugin, or from a legacy `{ name, options }` entry.
+  - Options come from branded factories, which record them on the addon, or from a legacy `{ name, options }` entry.
 - A framework string or `{ name, options }` entry loads natively when its package has a native factory, called with `options`.
   - `storybook.options.framework` keeps the user's value.
   - `resolveNativeFactory` resolves `<name>/node` from the config directory.
@@ -150,19 +165,19 @@ const storybook = await createStorybook({
   - It holds the `iframe.html` page, the generated entry and project-annotations modules, their module ids, the externals map, and defines.
 - The builder's optional `hmr` (`'vite'` or `'webpack'`) selects the HMR API of the generated modules.
 - The builder supplies the story `importFn` module and the page's entry scripts.
-- `storybook.builder` is readable from ready and always has the `BuilderPlugin` shape when configured.
+- `storybook.builder` is readable from ready and always has the `BuilderAddon` shape when configured.
 - Each native builder factory owns its compiler state.
 
 ### Types
 
-- `RendererPlugin<TTypes>` contributes optional `previewAnnotations` entries before its setup hooks.
+- `RendererAddon<TTypes>` contributes optional `previewAnnotations` entries before its setup hooks.
 - Its optional readonly `types` field carries story types for inference and is never assigned at runtime.
 - Addon factories carry their preview-facing types on the same phantom field.
 - Framework and main factories preserve these declarations for preview and story inference through `MainTypes`.
 
 ### Resources
 
-- Long-lived resources a plugin starts (timers, pollers, watchers, child processes) must stop in `core:instance:close`, or be `unref()`ed.
+- Long-lived resources an addon starts (timers, pollers, watchers, child processes) must stop in `core:instance:close`, or be `unref()`ed.
 - Otherwise they keep Node alive after the host closes.
 - Legacy presets have no close hook; addons that own such resources move to `defineAddon`.
 - See [`core:instance:close`](./HOOKS.md#coreinstanceclose) for an example.
@@ -177,7 +192,7 @@ const storybook = await createStorybook({
   - `register` performs setup;
   - `before`, `after`, `ready`, and `close` notify handlers at a lifecycle boundary.
 - Handlers may be async.
-- Addon presence is read from `storybook.plugins`, not from hooks.
+- Addon presence is read from `storybook.addons`, not from hooks.
 
 A third-party hook augments the public module and supplies its strategy on its first registration:
 
@@ -210,7 +225,7 @@ await storybook.callHook('my-addon:label:extend', 'button');
 
 ## Reaching the instance
 
-A plugin receives its instance as the `setup(storybook)` parameter; pass it on explicitly wherever you can.
+An addon receives its instance as the `setup(storybook)` parameter; pass it on explicitly wherever you can.
 For code that cannot receive it, such as a helper deep inside a hook handler, read the running instance:
 
 ```ts
@@ -245,7 +260,7 @@ The context is lost wherever work leaves the async chain:
 
 ## No-preset packages
 
-Official plugin packages ship a native `<pkg>/node` entry and no preset.
+Official addon packages ship a native `<pkg>/node` entry and no preset.
 
 - Addons, builders, frameworks, and presets under `code/` export `./node` only.
 - Renderers keep `./preset` as an exact alias of `./node`, because third-party framework presets still resolve `<renderer>/preset`.
@@ -261,7 +276,7 @@ Official plugin packages ship a native `<pkg>/node` entry and no preset.
 
 ## Legacy entries
 
-- When a framework or addon has no native `<pkg>/node` entry, or `main.ts` lists `presets`, core hands the plugins to the host's `legacy` adapter (`LegacyAdapter`).
+- When a framework or addon has no native `<pkg>/node` entry, or `main.ts` lists `presets`, core hands the addons to the host's `legacy` adapter (`LegacyAdapter`).
 - The adapter returns the loaded preset list for core to bridge; without an adapter, core throws `LegacyAdapterMissingError`.
 - The product's adapter lives in `lib/storybook/src/storybook/compat/`, which only `storybook/instance.ts`, the shims, and tests may import.
 - `storybook.presets.apply` invokes the mapped instance hook.
@@ -271,15 +286,15 @@ Official plugin packages ship a native `<pkg>/node` entry and no preset.
   - `compat/options.ts` keeps `getBuilderOptions`, `getFrameworkName`, and `getRendererName`, which third-party frameworks and builders import from `storybook/internal/common`.
 - See [Legacy bridge](./HOOKS.md#legacy-bridge) for loading passes and merge rules.
 
-## Common plugin and features
+## Common addon and features
 
-- The product passes its common plugin into core, which sets it up before any preset or plugin and leaves it out of `storybook.plugins`.
-- Without one, core sets up its own (`common-plugin.ts`: CSF indexer, `features`, services), which the product's common plugin extends.
+- The product passes its common addon into core, which sets it up before any preset or addon and leaves it out of `storybook.addons`.
+- Without one, core sets up its own (`common-addon.ts`: CSF indexer, `features`, services), which the product's common addon extends.
 - Core registers its own final adjustments to `features`, `framework`, `stories`, `typescript`, and `build` as `'override'` hooks (`common-overrides.ts`).
 - Core applies `main.ts` itself and does not resolve product files by path.
 - `features/index.ts` in `storybook` owns the ordered built-in addon list, the product flag defaults (`FEATURE_DEFAULTS`), and the flag of each switchable built-in.
   - The public instance entry injects the list into the core constructor.
-  - A headless host without `storybook` passes no options: core uses only its own addons (docgen, story-docs, change detection) and its common plugin, which is enough for the index, the docs toolset, and change-detection statuses.
+  - A headless host without `storybook` passes no options: core uses only its own addons (docgen, story-docs, change detection) and its common addon, which is enough for the index, the docs toolset, and change-detection statuses.
 - Presence is the switch: a built-in left out of the list contributes nothing.
 - Every listed built-in sets up; flags keep their pre-addon meaning and are read when a contribution is collected, so any flag source works.
   - A `false` UI flag drops only the built-in's manager entry; its preview annotations and server hooks stay.
@@ -316,9 +331,9 @@ Per-instance state is isolated; these remain shared:
 - Hook strategy declarations are process-wide static metadata; handlers stay on each instance.
 - Open-service load bookkeeping and runtime IDs are module-wide.
   - Loads have distinct runtime keys; the synchronous dependency-discovery session is restored after each handler call.
-- Module imports, the TypeScript loader, common config caches, and legacy plugin singletons are process-wide.
-  - Node lets concurrent setups import the same preset or plugin entry safely.
-  - Vitest's module runner can hand one instance the unfinished exports of a module another instance is still evaluating, so the shared Vitest config loads built presets and native plugin entries through Node.
+- Module imports, the TypeScript loader, common config caches, and legacy addon singletons are process-wide.
+  - Node lets concurrent setups import the same preset or addon entry safely.
+  - Vitest's module runner can hand one instance the unfinished exports of a module another instance is still evaluating, so the shared Vitest config loads built presets and native addon entries through Node.
 - Legacy presets can own resources or globals with no teardown contract; the instance cannot dispose those safely.
   - React docgen parser and manifest caches are module-wide, reset per build and on close.
   - The bridge does not make arbitrary old addon implementations safe for concurrent projects.
@@ -331,7 +346,7 @@ Per-instance state is isolated; these remain shared:
 
 - Close first notifies `core:instance:close`.
 - It then disconnects owned services and stores, clears toolsets, hooks, and channel listeners, stops owned graph subscriptions and docgen workers, and disposes a local change-detection host if one was started.
-- Plugins close what they own: the MCP server state, the Vitest child process, and the React component-meta manager.
+- Addons close what they own: the MCP server state, the Vitest child process, and the React component-meta manager.
 - Hosts dispose their preview compiler and transport.
 - The Vitest plugin owns a headless instance and closes it in `closeBundle`.
 

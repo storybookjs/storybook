@@ -807,11 +807,12 @@ export const getEvaluatedStoryPaths = async (
   configDir: string,
   workingDir: string
 ): Promise<string[]> => {
-  const storybook = await createStorybook({
+  const storybook = createStorybook({
     configDir,
     mode: 'headless',
     cliOptions: { packageJson: {} },
   });
+  await storybook.ready();
   const { stories } = storybook.options;
   await storybook.close();
 

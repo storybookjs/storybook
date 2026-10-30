@@ -9,7 +9,7 @@ import themes from '@storybook/addon-themes/node';
 import vitest from '@storybook/addon-vitest/node';
 import pseudoStates from 'storybook-addon-pseudo-states/node';
 import { defineMain } from '@storybook/react-vite/node';
-import type { StorybookPlugin, HookRegistrationKind, Collect } from 'storybook/internal/instance';
+import type { StorybookAddon, HookRegistrationKind, Collect } from 'storybook/internal/instance';
 
 declare module '@storybook/core' {
   interface StorybookHooks {
@@ -18,7 +18,7 @@ declare module '@storybook/core' {
 }
 
 test('official addon factories accept only their supported options', () => {
-  expectTypeOf(docs()).toMatchTypeOf<StorybookPlugin>();
+  expectTypeOf(docs()).toMatchTypeOf<StorybookAddon>();
   expectTypeOf(docs().meta.kind).toEqualTypeOf<'addon'>();
   docs({ defaultName: 'Reference', csfPluginOptions: null, mdxPluginOptions: {} });
   vitest({ enableCrashReports: false });

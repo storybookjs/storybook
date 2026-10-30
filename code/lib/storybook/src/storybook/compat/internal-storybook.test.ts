@@ -14,10 +14,11 @@ let storybook: Storybook;
 
 beforeAll(async () => {
   vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Offline internal config test.')));
-  storybook = await createStorybook(
+  storybook = createStorybook(
     { configDir: CONFIG_DIR, mode: 'headless' },
     { builtInAddons: [], legacy: legacyAdapter }
   );
+  await storybook.ready();
 });
 
 afterAll(async () => {
@@ -33,7 +34,7 @@ it('routes only the third-party addons through the legacy bridge', async () => {
     .map((entry) => (typeof entry === 'string' ? entry : entry?.name));
 
   expect(legacy).toEqual(LEGACY_ADDONS);
-  expect(storybook.plugins.map(({ name }) => name)).toEqual(
+  expect(storybook.addons.map(({ name }) => name)).toEqual(
     expect.arrayContaining([
       ...LEGACY_ADDONS,
       'storybook-internal-vite',

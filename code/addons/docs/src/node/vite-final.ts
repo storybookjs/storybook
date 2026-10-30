@@ -10,15 +10,28 @@ import { getResolvedReact } from './resolved-react.ts';
 
 /** Add MDX compilation, CSF enrichment, and react deduplication to the Vite config. */
 export async function extendViteConfig(
-  storybook: Pick<Storybook, 'callHook'>,
+  storybook: Pick<Storybook, 'callHook' | 'options'>,
   config: any,
   { csfPluginOptions = {} }: DocsOptions
 ): Promise<any> {
   const { plugins = [] } = config;
 
-  const { mdxPlugin } = await import('../mdx-plugin.ts');
   const enrichCsf = await storybook.callHook('legacy:experimental_enrichCsf:extend', undefined);
 
+  if (csfPluginOptions) {
+    plugins.unshift(
+      csfPluginVite({
+        ...csfPluginOptions,
+        enrichCsf,
+      })
+    );
+  }
+
+  if (storybook.options.docs?.mdx === false) {
+    return { ...config, plugins };
+  }
+
+  const { mdxPlugin } = await import('../mdx-plugin.ts');
   const { react, reactDom, mdx } = await getResolvedReact(storybook);
 
   const packageDeduplicationPlugin = {
@@ -36,15 +49,6 @@ export async function extendViteConfig(
       },
     }),
   };
-
-  if (csfPluginOptions) {
-    plugins.unshift(
-      csfPluginVite({
-        ...csfPluginOptions,
-        enrichCsf,
-      })
-    );
-  }
 
   // First, so aliases from later plugins (e.g. preact's) override these.
   plugins.unshift(packageDeduplicationPlugin);

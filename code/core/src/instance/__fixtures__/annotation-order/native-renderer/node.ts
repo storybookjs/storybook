@@ -1,4 +1,4 @@
-import { defineRenderer } from '../../../plugins.ts';
+import { defineRenderer } from '../../../addons.ts';
 
 export default defineRenderer(() => ({
   meta: { name: 'fixture-annotation-renderer' },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { defineAddon } from '../../instance/plugins.ts';
+import { defineAddon } from '../../instance/addons.ts';
 import { getAddonNames, normalizeAddonName } from './get-addon-names.ts';
 
 describe('getAddonNames', () => {

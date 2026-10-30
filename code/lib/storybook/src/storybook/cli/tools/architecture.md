@@ -89,7 +89,7 @@ Files stay on the host:
 
 The delegated path serves instances without the toolset RPC.
 
-- The caller creates a headless instance with `createStorybook({ configDir: record.configDir, workingDir: record.cwd, mode: 'headless', attach: { transport } })`.
+- The caller creates a headless instance with `createStorybook({ configDir: record.configDir, workingDir: record.cwd, mode: 'headless', attach: { transport } })` and awaits `storybook.ready()`.
 - It loads the instance's config and presets and registers every service, like the server does.
 - `storybook.attached` is `true`, so its inventory runs in delegated mode: every service command goes over the channel, none runs locally.
 - `services:sync-request` pulls a snapshot; later writes arrive as `services:entry` patches.

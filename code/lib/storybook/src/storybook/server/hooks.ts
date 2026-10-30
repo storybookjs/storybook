@@ -9,7 +9,7 @@ import type { Channel } from '@storybook/core/internal/channels';
 import type { StorybookConfigRaw, ServerApp } from '@storybook/core/internal/types';
 import type { RuntimeInstanceRecord } from './utils/runtime-instance-registry.ts';
 
-/** Write a plugin's files into a static build's output directory. */
+/** Write an addon's files into a static build's output directory. */
 export type StaticOutputWriter = (output: {
   /** Absolute output directory of the static build. */
   outputDir: string;

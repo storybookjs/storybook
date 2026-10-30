@@ -25,7 +25,7 @@ const describedTools = (output: string) =>
   );
 
 const deps = () => ({
-  loadStorybook: vi.fn().mockResolvedValue({ callHook: vi.fn(), hasPlugin: vi.fn() }),
+  loadStorybook: vi.fn().mockResolvedValue({ callHook: vi.fn(), hasAddon: vi.fn() }),
   resolveSkillInputs: vi.fn().mockResolvedValue({
     framework: '@storybook/react-vite',
     renderer: '@storybook/react',

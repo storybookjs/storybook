@@ -4,7 +4,7 @@ import type { Storybook } from '@storybook/core';
 import { SvelteCsfAddonInstalledError } from './errors.ts';
 
 interface InstanceParams {
-  storybook: Pick<Storybook, 'hasPlugin' | 'options'>;
+  storybook: Pick<Storybook, 'hasAddon' | 'options'>;
   // The `framework` entry of the main config
   framework: string | { name: string } | undefined;
 }
@@ -16,7 +16,7 @@ export function assertSvelteCsfAddonNotInstalledOnInstance({
   storybook,
   framework,
 }: InstanceParams): void {
-  if (!storybook.hasPlugin(ADDON_NAME)) {
+  if (!storybook.hasAddon(ADDON_NAME)) {
     return;
   }
 

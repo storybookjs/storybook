@@ -13,7 +13,7 @@ import {
 import { getInterpretedFile } from '@storybook/core/internal/common';
 import { readConfig } from '@storybook/core/internal/csf-tools';
 import type { PackageJson, StorybookConfig } from '@storybook/core/internal/types';
-import type { StorybookConfig as InstanceConfig } from '../instance/plugins.ts';
+import type { StorybookConfig as InstanceConfig } from '../instance/addons.ts';
 
 import { RN_STORYBOOK_DIR } from '../constants/config-folder.ts';
 

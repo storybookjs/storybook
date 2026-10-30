@@ -23,14 +23,15 @@ const CASES: Record<string, Partial<StorybookConfig>> = {
 it('registers the framework hooks', async () => {
   const results: Record<string, unknown> = {};
   for (const [name, main] of Object.entries(CASES)) {
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: CONFIG_DIR,
       mode: 'headless',
       main: { ...main, stories: [] },
     });
+    await storybook.ready();
     try {
       results[name] = summarize({
-        plugins: storybook.plugins
+        addons: storybook.addons
           .filter(({ name }) => !name.startsWith('storybook/'))
           .map(({ kind, name }) => `${kind} ${name}`),
         renderer: (await storybook.callHook('core:config:extend', {})).renderer,
@@ -47,17 +48,17 @@ it('registers the framework hooks', async () => {
   expect(results).toMatchInlineSnapshot(`
     {
       "a framework factory": {
-        "framework": {
-          "name": "@storybook/server-webpack5",
-          "options": {},
-        },
-        "frameworkOptions": {},
-        "plugins": [
+        "addons": [
           "builder @storybook/builder-webpack5",
           "renderer @storybook/server",
           "addon @storybook/preset-server-webpack",
           "framework @storybook/server-webpack5",
         ],
+        "framework": {
+          "name": "@storybook/server-webpack5",
+          "options": {},
+        },
+        "frameworkOptions": {},
         "renderer": "<code>/renderers/server/dist/node.js",
         "webpackConfig": {
           "module": {
@@ -85,17 +86,17 @@ it('registers the framework hooks', async () => {
         },
       },
       "a framework name": {
-        "framework": {
-          "name": "@storybook/server-webpack5",
-          "options": {},
-        },
-        "frameworkOptions": {},
-        "plugins": [
+        "addons": [
           "builder @storybook/builder-webpack5",
           "renderer @storybook/server",
           "addon @storybook/preset-server-webpack",
           "framework @storybook/server-webpack5",
         ],
+        "framework": {
+          "name": "@storybook/server-webpack5",
+          "options": {},
+        },
+        "frameworkOptions": {},
         "renderer": "<code>/renderers/server/dist/node.js",
         "webpackConfig": {
           "module": {
@@ -123,6 +124,12 @@ it('registers the framework hooks', async () => {
         },
       },
       "framework options": {
+        "addons": [
+          "builder @storybook/builder-webpack5",
+          "renderer @storybook/server",
+          "addon @storybook/preset-server-webpack",
+          "framework @storybook/server-webpack5",
+        ],
         "framework": {
           "name": "@storybook/server-webpack5",
           "options": {
@@ -136,12 +143,6 @@ it('registers the framework hooks', async () => {
             "fsCache": true,
           },
         },
-        "plugins": [
-          "builder @storybook/builder-webpack5",
-          "renderer @storybook/server",
-          "addon @storybook/preset-server-webpack",
-          "framework @storybook/server-webpack5",
-        ],
         "renderer": "<code>/renderers/server/dist/node.js",
         "webpackConfig": {
           "module": {

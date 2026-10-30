@@ -105,7 +105,7 @@ describe('createStorybook', () => {
           missing: { input: v.void(), output: v.string() },
         },
       });
-      const plugin = defineAddon(() => ({
+      const addon = defineAddon(() => ({
         meta: { name: 'instance-attachment' },
         setup(storybook): void {
           storybook.registerService(definition);
@@ -116,19 +116,21 @@ describe('createStorybook', () => {
           new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
         ),
         mode: 'headless' as const,
-        main: { stories: [], addons: [plugin()] },
+        main: { stories: [], addons: [addon()] },
       };
-      const A = await instance.createStorybook(input, { builtInAddons: [] });
+      const A = instance.createStorybook(input, { builtInAddons: [] });
       INSTANCES.push(A);
+      await A.ready();
       A.channel.addTransport(serverTransport);
       const localService = A.services.get(definition.id);
       const invokes = vi.fn();
       A.channel.on(SERVICE_COMMAND_INVOKE, invokes);
-      const B = await instance.createStorybook(
+      const B = instance.createStorybook(
         { ...input, attach: { transport: clientTransport } },
         { builtInAddons: [] }
       );
       INSTANCES.push(B);
+      await B.ready();
       const client = caller === 'A' ? A : B;
       const result = await client.services
         .get(definition.id)
@@ -149,9 +151,9 @@ describe('createStorybook', () => {
 
   it.each(['dev', 'build'] as const)('rejects attachment in %s mode', async (mode) => {
     const [transport] = createTransportPair();
-    await expect(
+    expect(() =>
       createStorybook({ configDir: '.storybook', mode, attach: { transport } })
-    ).rejects.toThrowErrorMatchingInlineSnapshot(
+    ).toThrowErrorMatchingInlineSnapshot(
       `[Error: Attaching to Storybook requires mode: "headless".]`
     );
   });
@@ -169,7 +171,7 @@ describe('createStorybook', () => {
       }
       return createInstance(input, options);
     });
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -187,6 +189,7 @@ describe('createStorybook', () => {
       },
     });
     INSTANCES.push(storybook);
+    await storybook.ready();
     expect(order).toMatchInlineSnapshot(`
       [
         "storybook/measure",
@@ -213,18 +216,18 @@ describe('createStorybook', () => {
     `);
   });
 
-  it('lists completed plugins by package name, including native and legacy addons', async () => {
+  it('lists completed addons by package name, including native and legacy addons', async () => {
     const framework = reactVite();
     const addon = defineAddon(() => ({
       meta: { name: 'native-addon' },
       setup(storybook): void {
-        expect(() => storybook.plugins).toThrow('until all plugins have completed setup');
+        expect(() => storybook.addons).toThrow('until all addons have completed setup');
         storybook.hook('core:services:register', () => {
-          expect(storybook.hasPlugin('@storybook/addon-a11y')).toBe(true);
+          expect(storybook.hasAddon('@storybook/addon-a11y')).toBe(true);
         });
       },
     }));
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -232,7 +235,8 @@ describe('createStorybook', () => {
       main: { framework, stories: [], addons: [addon(), '@storybook/addon-a11y'] },
     });
     INSTANCES.push(storybook);
-    expect(storybook.plugins.map(({ name }) => name)).toMatchInlineSnapshot(`
+    await storybook.ready();
+    expect(storybook.addons.map(({ name }) => name)).toMatchInlineSnapshot(`
       [
         "@storybook/builder-vite",
         "@storybook/react",
@@ -260,10 +264,10 @@ describe('createStorybook', () => {
         "@storybook/addon-a11y",
       ]
     `);
-    expect(storybook.hasPlugin('native-addon')).toBe(true);
-    expect(storybook.hasPlugin('@storybook/addon-a11y')).toBe(true);
-    expect(storybook.hasPlugin('absent-addon')).toBe(false);
-    expect(Object.isFrozen(storybook.plugins)).toBe(true);
+    expect(storybook.hasAddon('native-addon')).toBe(true);
+    expect(storybook.hasAddon('@storybook/addon-a11y')).toBe(true);
+    expect(storybook.hasAddon('absent-addon')).toBe(false);
+    expect(Object.isFrozen(storybook.addons)).toBe(true);
   });
 
   it.each([
@@ -291,7 +295,7 @@ describe('createStorybook', () => {
       expected: { name: LEGACY_FRAMEWORK, options: { strictMode: true } },
     },
   ])('applies the framework as a name and options for $name', async ({ framework, expected }) => {
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -299,6 +303,7 @@ describe('createStorybook', () => {
       main: { framework, stories: [] },
     });
     INSTANCES.push(storybook);
+    await storybook.ready();
     expect(await storybook.presets.apply('framework')).toEqual(expected);
     expect(storybook.options.framework).toBe(framework);
   });
@@ -329,8 +334,8 @@ describe('createStorybook', () => {
       expected: false,
     },
   ])('checks for a legacy addon written as $case', async ({ addon, name, expected }) => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Offline plugin name test.')));
-    const storybook = await createStorybook({
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Offline addon name test.')));
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -338,7 +343,8 @@ describe('createStorybook', () => {
       main: { stories: [], addons: [addon] },
     });
     INSTANCES.push(storybook);
-    expect(storybook.hasPlugin(name)).toBe(expected);
+    await storybook.ready();
+    expect(storybook.hasAddon(name)).toBe(expected);
   });
 
   it('loads a composed React Vite framework without the preset loader and indexes its stories', async () => {
@@ -346,8 +352,9 @@ describe('createStorybook', () => {
       new URL('./__fixtures__/react-vite-framework', import.meta.url)
     );
     const load = vi.spyOn(presets, 'loadAllPresets');
-    const storybook = await createStorybook({ configDir, mode: 'headless' });
+    const storybook = createStorybook({ configDir, mode: 'headless' });
     INSTANCES.push(storybook);
+    await storybook.ready();
     expect(load).not.toHaveBeenCalled();
     expect(storybook.builder?.meta).toEqual({ name: '@storybook/builder-vite', kind: 'builder' });
     expect(Object.keys((await storybook.getIndex()).entries)).toEqual(['composed--example']);
@@ -356,11 +363,11 @@ describe('createStorybook', () => {
   it('sets up builder, renderer, default addons, framework, then user addons', async () => {
     const order: string[] = [];
     const framework = reactVite();
-    for (const plugin of [framework, framework.builder, framework.renderer]) {
-      const setup = plugin.setup;
-      vi.spyOn(plugin, 'setup').mockImplementation(async (storybook) => {
-        order.push(plugin.meta.kind);
-        storybook.hook('core:static-dirs:collect', () => [plugin.meta.kind]);
+    for (const addon of [framework, framework.builder, framework.renderer]) {
+      const setup = addon.setup;
+      vi.spyOn(addon, 'setup').mockImplementation(async (storybook) => {
+        order.push(addon.meta.kind);
+        storybook.hook('core:static-dirs:collect', () => [addon.meta.kind]);
         await setup(storybook);
       });
     }
@@ -373,7 +380,7 @@ describe('createStorybook', () => {
       },
     }));
     framework.addons = [probe({ name: 'default-addon' })];
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -381,6 +388,7 @@ describe('createStorybook', () => {
       main: { framework, stories: ['./*.stories.ts'], addons: [probe({ name: 'user-addon' })] },
     });
     INSTANCES.push(storybook);
+    await storybook.ready();
     expect(order).toMatchInlineSnapshot(`
       [
         "builder",
@@ -410,11 +418,11 @@ describe('createStorybook', () => {
       setup(storybook): void {
         storybook.hook('core:instance:ready', (instance) => {
           expect(instance).toBe(storybook);
-          calls.push(`ready ${instance.options.stories.length} ${instance.plugins.length > 0}`);
+          calls.push(`ready ${instance.options.stories.length} ${instance.addons.length > 0}`);
         });
       },
     }));
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -422,6 +430,7 @@ describe('createStorybook', () => {
       main: { stories: ['./*.stories.ts'], addons: [addon()] },
     });
     INSTANCES.push(storybook);
+    await storybook.ready();
     await storybook.getIndex();
     expect(calls).toEqual(['ready 1 true']);
   });
@@ -447,13 +456,14 @@ describe('createStorybook', () => {
           }
         },
       }));
-      const storybook = await createStorybook({
+      const storybook = createStorybook({
         configDir: fileURLToPath(
           new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
         ),
         mode,
         main: { framework: reactVite(), stories: [], addons: [addon()] },
       });
+      await storybook.ready();
       await Promise.all([storybook.close(), storybook.close()]);
       await storybook.close();
       expect(calls).toEqual(expected);
@@ -475,7 +485,7 @@ describe('createStorybook', () => {
           });
         },
       }));
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -485,6 +495,7 @@ describe('createStorybook', () => {
         addons: [listener('first')(), listener('failing', true)(), listener('last')()],
       },
     });
+    await storybook.ready();
     runWithStorybook(storybook, () =>
       getInstanceContext()!.cleanups.add(() => {
         calls.push('cleanup');
@@ -501,7 +512,7 @@ describe('createStorybook', () => {
     `);
   });
 
-  it('notifies the close hook of plugins set up before startup failed', async () => {
+  it('notifies the close hook of addons set up before startup failed', async () => {
     const calls: string[] = [];
     const registered = defineAddon(() => ({
       meta: { name: 'registered-addon' },
@@ -524,7 +535,7 @@ describe('createStorybook', () => {
         ),
         mode: 'headless',
         main: { stories: [], addons: [registered(), broken()] },
-      })
+      }).ready()
     ).rejects.toThrow('setup failed');
     expect(calls).toEqual(['close']);
   });
@@ -543,7 +554,7 @@ describe('createStorybook', () => {
         storybook.hook('preview:annotations:collect', () => ['/addon-entry.ts']);
       },
     }));
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -551,6 +562,7 @@ describe('createStorybook', () => {
       main: { framework, stories: [], addons: [addon()] },
     });
     INSTANCES.push(storybook);
+    await storybook.ready();
     expect(
       storybook.options.previewAnnotations.filter(
         (entry) =>
@@ -611,21 +623,19 @@ describe('createStorybook', () => {
         `);
       },
     },
-  ])(
-    'collects $hook contributions from a native plugin into options',
-    async ({ setup, assert }) => {
-      const addon = defineAddon(() => ({ meta: { name: 'native-contributions' }, setup }));
-      const storybook = await createStorybook({
-        configDir: fileURLToPath(
-          new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
-        ),
-        mode: 'headless',
-        main: { stories: [], addons: [addon()] },
-      });
-      INSTANCES.push(storybook);
-      assert(storybook);
-    }
-  );
+  ])('collects $hook contributions from a native addon into options', async ({ setup, assert }) => {
+    const addon = defineAddon(() => ({ meta: { name: 'native-contributions' }, setup }));
+    const storybook = createStorybook({
+      configDir: fileURLToPath(
+        new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
+      ),
+      mode: 'headless',
+      main: { stories: [], addons: [addon()] },
+    });
+    INSTANCES.push(storybook);
+    await storybook.ready();
+    assert(storybook);
+  });
 
   it('collects legacy, native, and main static directories in preset order', async () => {
     const addon = defineAddon(() => ({
@@ -636,7 +646,7 @@ describe('createStorybook', () => {
         ]);
       },
     }));
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -651,6 +661,7 @@ describe('createStorybook', () => {
       },
     });
     INSTANCES.push(storybook);
+    await storybook.ready();
     expect(
       storybook.options.staticDirs.map((entry) => (typeof entry === 'string' ? entry : entry.to))
     ).toMatchInlineSnapshot(`
@@ -689,7 +700,7 @@ describe('createStorybook', () => {
       expected: ['static-dirs-preset.ts', 'native-addon'],
     },
   ])('build.test.disabledAddons: $name', async ({ input, expected }) => {
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -705,8 +716,9 @@ describe('createStorybook', () => {
       },
     });
     INSTANCES.push(storybook);
+    await storybook.ready();
     expect(
-      storybook.plugins
+      storybook.addons
         .map(({ name }) => basename(name))
         .filter((name) => /static-dirs-preset|native-addon/.test(name))
     ).toEqual(expected);
@@ -718,7 +730,7 @@ describe('createStorybook', () => {
     [false, true],
     [true, true],
   ])('resolves React annotations with docs=%s and RSC=%s', async (docs, experimentalRSC) => {
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -731,6 +743,7 @@ describe('createStorybook', () => {
       },
     });
     INSTANCES.push(storybook);
+    await storybook.ready();
     const entries = storybook.options.previewAnnotations.filter(
       (entry) => typeof entry === 'string' && /react[\\/]dist[\\/]entry-preview/.test(entry)
     );
@@ -747,7 +760,7 @@ describe('createStorybook', () => {
 
   it('wraps the legacy framework builder after its two preset passes', async () => {
     const load = vi.spyOn(presets, 'loadAllPresets');
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -758,9 +771,10 @@ describe('createStorybook', () => {
       },
     });
     INSTANCES.push(storybook);
+    await storybook.ready();
     expect(load).toHaveBeenCalledTimes(2);
     // The old `@storybook/react/preset` renderer specifier loads the native React renderer.
-    expect(storybook.plugins).toEqual(
+    expect(storybook.addons).toEqual(
       expect.arrayContaining([
         { name: LEGACY_FRAMEWORK, kind: 'framework' },
         expect.objectContaining({ kind: 'builder' }),
@@ -785,7 +799,7 @@ describe('createStorybook', () => {
       framework: '@storybook/react-vite',
       expected: {
         presetPasses: 0,
-        plugins: [
+        addons: [
           'builder:@storybook/builder-vite',
           'renderer:@storybook/react',
           'framework:@storybook/react-vite',
@@ -801,7 +815,7 @@ describe('createStorybook', () => {
       },
       expected: {
         presetPasses: 0,
-        plugins: [
+        addons: [
           'builder:@storybook/builder-vite',
           'renderer:@storybook/react',
           'framework:@storybook/react-vite',
@@ -816,7 +830,7 @@ describe('createStorybook', () => {
       ),
       expected: {
         presetPasses: 2,
-        plugins: [
+        addons: [
           'framework:<code>/core/src/instance/__fixtures__/legacy-vite-framework',
           'builder:@storybook/builder-vite',
         ],
@@ -828,7 +842,7 @@ describe('createStorybook', () => {
       framework: dirname(fileURLToPath(import.meta.resolve('@storybook/react-vite/package.json'))),
       expected: {
         presetPasses: 0,
-        plugins: [
+        addons: [
           'builder:@storybook/builder-vite',
           'renderer:@storybook/react',
           'framework:@storybook/react-vite',
@@ -843,13 +857,17 @@ describe('createStorybook', () => {
     },
   ])('loads $name natively or through the legacy bridge', async ({ framework, expected }) => {
     const load = vi.spyOn(presets, 'loadAllPresets');
-    const result = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
       mode: 'headless',
       main: { framework, stories: [] },
-    }).catch((error: Error) => error);
+    });
+    const result = await storybook.ready().then(
+      () => storybook,
+      (error: Error) => error
+    );
     if (result instanceof Error) {
       expect(result.name).toEqual(expected);
       return;
@@ -859,7 +877,7 @@ describe('createStorybook', () => {
     expect(result.options.framework).toBe(framework);
     expect({
       presetPasses: load.mock.calls.length,
-      plugins: result.plugins
+      addons: result.addons
         .filter(({ kind }) => kind !== 'addon')
         .map(({ kind, name }) => `${kind}:${name.replace(codeDir, '<code>/')}`),
       frameworkOptions: await result.callHook('core:framework-options:extend', undefined),
@@ -886,7 +904,7 @@ describe('createStorybook', () => {
         return { ...config, logLevel: 'silent' };
       },
     };
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -894,6 +912,7 @@ describe('createStorybook', () => {
       main,
     });
     INSTANCES.push(storybook);
+    await storybook.ready();
     expect(await storybook.presets.apply('frameworkOptions')).toEqual({
       strictMode: true,
       docgen: false,
@@ -919,22 +938,21 @@ describe('createStorybook', () => {
           observed.push(getFeatures().argTypeTargetsV7);
         },
       }));
-      const [first, second] = await Promise.all(
-        [true, false].map((argTypeTargetsV7) =>
-          createStorybook({
-            configDir: fileURLToPath(
-              new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
-            ),
-            mode: 'headless',
-            main: {
-              stories: [],
-              features: { argTypeTargetsV7, docgenServer: argTypeTargetsV7 },
-              addons: [addon()],
-            },
-          })
-        )
+      const [first, second] = [true, false].map((argTypeTargetsV7) =>
+        createStorybook({
+          configDir: fileURLToPath(
+            new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
+          ),
+          mode: 'headless',
+          main: {
+            stories: [],
+            features: { argTypeTargetsV7, docgenServer: argTypeTargetsV7 },
+            addons: [addon()],
+          },
+        })
       );
       INSTANCES.push(first, second);
+      await Promise.all([first.ready(), second.ready()]);
       expect(getFeatures()).toEqual(fallback ?? {});
       expect(runWithStorybook(first, () => shouldWaitForServiceSnippet(undefined, false))).toBe(
         true
@@ -960,7 +978,7 @@ describe('createStorybook', () => {
         );
       },
     }));
-    const first = await createStorybook({
+    const first = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -968,7 +986,8 @@ describe('createStorybook', () => {
       main: { stories: ['./*.stories.ts'], addons: [addon()] },
     });
     INSTANCES.push(first);
-    const second = await createStorybook({
+    await first.ready();
+    const second = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/second', import.meta.url)
       ),
@@ -976,6 +995,7 @@ describe('createStorybook', () => {
       main: { stories: ['./*.stories.ts'], addons: [addon()] },
     });
     INSTANCES.push(second);
+    await second.ready();
     const [firstStore, secondStore] = stores;
     expect(firstStore).not.toBe(secondStore);
     expect(stores.map((store) => ({ status: store.status, type: store.actor.type })))
@@ -1058,21 +1078,20 @@ describe('createStorybook', () => {
 
   it('isolates two configurations, channels, toolsets, and close', async () => {
     const fallbackChannel = getChannel();
-    const [first, second] = await Promise.all([
-      createStorybook({
-        configDir: fileURLToPath(
-          new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
-        ),
-        mode: 'headless',
-      }),
-      createStorybook({
-        configDir: fileURLToPath(
-          new URL('../../../../core/src/instance/__fixtures__/second', import.meta.url)
-        ),
-        mode: 'headless',
-      }),
-    ]);
+    const first = createStorybook({
+      configDir: fileURLToPath(
+        new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
+      ),
+      mode: 'headless',
+    });
+    const second = createStorybook({
+      configDir: fileURLToPath(
+        new URL('../../../../core/src/instance/__fixtures__/second', import.meta.url)
+      ),
+      mode: 'headless',
+    });
     INSTANCES.push(first, second);
+    await Promise.all([first.ready(), second.ready()]);
     const indexes = await Promise.all([first.getIndex(), second.getIndex()]);
     expect(indexes.map((index) => Object.keys(index.entries))).toMatchInlineSnapshot(`
       [
@@ -1107,13 +1126,14 @@ describe('createStorybook', () => {
 
   it('hands the checklist AI-setup detection the instance story index', async () => {
     vi.mocked(initializeChecklist).mockResolvedValueOnce(undefined);
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
       mode: 'headless',
     });
     INSTANCES.push(storybook);
+    await storybook.ready();
     await storybook.callHook('server:channel:ready', storybook.channel);
 
     // Called outside the instance's async context, as a channel listener would be.
@@ -1123,7 +1143,7 @@ describe('createStorybook', () => {
   });
 
   it('sorts the instance index with the main configuration storySorts', async () => {
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -1135,6 +1155,7 @@ describe('createStorybook', () => {
       },
     });
     INSTANCES.push(storybook);
+    await storybook.ready();
 
     expect(Object.keys((await storybook.getIndex()).entries)).toEqual([
       'second--example',
@@ -1142,7 +1163,7 @@ describe('createStorybook', () => {
     ]);
   });
 
-  it('runs mixed plugins during setup and prevents premature options reads', async () => {
+  it('runs mixed addons during setup and prevents premature options reads', async () => {
     const setupReads: string[] = [];
     const addon = defineAddon<{ verbose?: boolean }>((options) => ({
       meta: { name: 'example-addon' },
@@ -1160,7 +1181,7 @@ describe('createStorybook', () => {
         }
       },
     }));
-    const first = await createStorybook({
+    const first = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -1171,13 +1192,15 @@ describe('createStorybook', () => {
         addons: [addon({ verbose: true })],
       },
     });
-    const second = await createStorybook({
+    const second = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/second', import.meta.url)
       ),
       mode: 'headless',
     });
     INSTANCES.push(first, second);
+    await first.ready();
+    await second.ready();
     expect(setupReads).toMatchInlineSnapshot(`
       [
         "Storybook is not ready (current phase: setup).",
@@ -1193,9 +1216,9 @@ describe('createStorybook', () => {
       first.options.previewAnnotations
     );
     expect(first.options.previewAnnotations).toContain('example-preview.ts');
-    expect(() => first.hook('preview:annotations:collect', () => ['late.ts'])).toThrow(
-      'only available during setup'
-    );
+    first.hook('preview:annotations:collect', () => ['late.ts']);
+    expect(await first.callHook('preview:annotations:collect', [])).toContain('late.ts');
+    expect(first.options.previewAnnotations).not.toContain('late.ts');
   });
 
   it('provides host configuration context before ready and preserves call overrides', async () => {
@@ -1209,7 +1232,7 @@ describe('createStorybook', () => {
         storybook.hook('manager:title:extend', (_value, ctx) => String(ctx?.port));
       },
     }));
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -1218,6 +1241,7 @@ describe('createStorybook', () => {
       cliOptions: { port: 6007, disableTelemetry: true },
     });
     INSTANCES.push(storybook);
+    await storybook.ready();
     expect(setupContext).toMatchObject({
       port: 6007,
       disableTelemetry: true,
@@ -1233,7 +1257,7 @@ describe('createStorybook', () => {
     ['build', 'PRODUCTION'],
   ] as const)('resolves %s mode and freezes host CLI options', async (mode, configType) => {
     const framework = reactVite();
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -1247,6 +1271,7 @@ describe('createStorybook', () => {
       },
     });
     INSTANCES.push(storybook);
+    await storybook.ready();
     expect(storybook.options).toMatchObject({
       configType,
       port: 6007,
@@ -1260,7 +1285,7 @@ describe('createStorybook', () => {
   it('resolves the dev host adapter in the instance module graph', async () => {
     const framework = reactVite();
     const getAdapter = vi.spyOn(framework.builder, 'changeDetectionAdapter');
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(
         new URL('../../../../core/src/instance/__fixtures__/first', import.meta.url)
       ),
@@ -1268,6 +1293,7 @@ describe('createStorybook', () => {
       main: { framework, stories: ['./*.stories.ts'] },
     });
     INSTANCES.push(storybook);
+    await storybook.ready();
     runWithStorybook(storybook, () => resolveChangeDetectionAdapter(undefined));
     const graph = storybook.services.get('core/module-graph', { internal: true });
     await graph.commands._waitForSettledEngine(undefined);
@@ -1296,7 +1322,7 @@ describe('createStorybook', () => {
         onLoad?.(presets, context);
       })
     );
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir,
       workingDir,
       mode: 'dev',
@@ -1310,6 +1336,7 @@ describe('createStorybook', () => {
       },
     });
     INSTANCES.push(storybook);
+    await storybook.ready();
     expect(storybook.builder?.hmr).toBe('vite');
     expect(names).toMatchInlineSnapshot(`
       [
@@ -1380,18 +1407,17 @@ describe('createStorybook', () => {
         );
       },
     }));
-    const [first, second] = await Promise.all(
-      ['first', 'second'].map((owner) =>
-        createStorybook({
-          configDir: fileURLToPath(
-            new URL(`../../../../core/src/instance/__fixtures__/${owner}`, import.meta.url)
-          ),
-          mode: 'headless',
-          main: { stories: ['./*.stories.ts'], addons: [addon({ owner })] },
-        })
-      )
+    const [first, second] = ['first', 'second'].map((owner) =>
+      createStorybook({
+        configDir: fileURLToPath(
+          new URL(`../../../../core/src/instance/__fixtures__/${owner}`, import.meta.url)
+        ),
+        mode: 'headless',
+        main: { stories: ['./*.stories.ts'], addons: [addon({ owner })] },
+      })
     );
     INSTANCES.push(first, second);
+    await Promise.all([first.ready(), second.ready()]);
     const ownToolsets = (storybook: Storybook): string[] =>
       storybook.toolsets
         .values()

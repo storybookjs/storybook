@@ -30,6 +30,7 @@ export async function bootstrapToolsRuntime(
   }
   const configDir = resolveStorybookConfigDir({ cwd, configDir: target.configDir });
   const storybook = await target.createStorybook({ configDir, workingDir: cwd, mode: 'headless' });
+  await storybook.ready();
 
   return {
     storybook,

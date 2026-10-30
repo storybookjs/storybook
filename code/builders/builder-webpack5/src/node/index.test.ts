@@ -46,7 +46,7 @@ function fakeStorybook(mode: Storybook['mode']): Storybook {
     configDir: '/project/.storybook',
     workingDir: '/project',
     options: { quiet: true },
-    plugins: [],
+    addons: [],
     channel: new Channel({}),
     callHook: vi.fn(async (name: string, value: unknown) => hooks[name]?.(value as never) ?? value),
   } as unknown as Storybook;
@@ -177,11 +177,12 @@ it('keeps custom Webpack overrides after user config hooks', async () => {
       context: `${config.context}/user-final`,
     }),
   };
-  const storybook = await createStorybook({
+  const storybook = createStorybook({
     configDir: fileURLToPath(new URL('./__fixtures__/first', import.meta.url)),
     mode: 'headless',
     main,
   });
+  await storybook.ready();
   try {
     const adapter = storybook.builder!.changeDetectionAdapter(storybook);
     await expect(adapter.getResolveConfig()).resolves.toMatchObject({

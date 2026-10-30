@@ -16,12 +16,12 @@ vi.mock('@storybook/core/internal/deep/shared/open-service/server', () => ({
   getService: vi.fn(),
 }));
 
-/** An instance whose set-up plugins are `plugins`. */
-function createStorybook(plugins: string[] = []): Pick<Storybook, 'callHook' | 'hasPlugin'> {
+/** An instance whose set-up addons are `addons`. */
+function createStorybook(addons: string[] = []): Pick<Storybook, 'callHook' | 'hasAddon'> {
   return {
     callHook: vi.fn(async (_name: string, value?: unknown) => value),
-    hasPlugin: vi.fn((name: string) => plugins.includes(name)),
-  } as unknown as Pick<Storybook, 'callHook' | 'hasPlugin'>;
+    hasAddon: vi.fn((name: string) => addons.includes(name)),
+  } as unknown as Pick<Storybook, 'callHook' | 'hasAddon'>;
 }
 
 beforeEach(() => {
@@ -63,11 +63,11 @@ describe('getToolAvailability', () => {
   });
 
   it.each([
-    { plugins: [], expected: { testSupported: false, a11yEnabled: false } },
-    { plugins: ['@storybook/addon-vitest'], expected: { testSupported: true, a11yEnabled: false } },
-    { plugins: ['@storybook/addon-a11y'], expected: { testSupported: false, a11yEnabled: true } },
-  ])('reads plugin presence from the instance: $plugins', async ({ plugins, expected }) => {
-    const { testSupported, a11yEnabled } = await getToolAvailability(createStorybook(plugins));
+    { addons: [], expected: { testSupported: false, a11yEnabled: false } },
+    { addons: ['@storybook/addon-vitest'], expected: { testSupported: true, a11yEnabled: false } },
+    { addons: ['@storybook/addon-a11y'], expected: { testSupported: false, a11yEnabled: true } },
+  ])('reads addon presence from the instance: $addons', async ({ addons, expected }) => {
+    const { testSupported, a11yEnabled } = await getToolAvailability(createStorybook(addons));
 
     expect({ testSupported, a11yEnabled }).toEqual(expected);
   });

@@ -1,7 +1,7 @@
 import {
   defineFramework,
   defineMain as coreDefineMain,
-  type RendererPlugin,
+  type RendererAddon,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
 
@@ -25,7 +25,7 @@ export type StorybookConfig = Omit<ReactNativeWebViteConfig, 'addons'> &
 export const reactNativeWebVite = defineFramework<
   '@storybook/react-native-web-vite',
   ReactNativeWebViteOptions | void,
-  RendererPlugin<ReactTypes>
+  RendererAddon<ReactTypes>
 >((input) => {
   const options = input || {};
   return {

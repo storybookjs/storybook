@@ -107,14 +107,14 @@ export function legacyHookName(name: string): string {
 }
 
 /**
- * Add the deprecated `presetsList` and its replacement `plugins` to a legacy function field's
+ * Add the deprecated `presetsList` and its replacement `addons` to a legacy function field's
  * options. Both are non-enumerable so spreading options down a `presets.apply` chain neither warns
- * nor reads plugins before setup.
+ * nor reads addons before setup.
  */
 export function defineLegacyFieldOptions<T extends object>(
   options: T,
   presetsList: LoadedPreset[]
-): T & Pick<Options, 'presetsList' | 'plugins'> {
+): T & Pick<Options, 'presetsList' | 'addons'> {
   return Object.defineProperties(options, {
     presetsList: {
       configurable: true,
@@ -123,16 +123,16 @@ export function defineLegacyFieldOptions<T extends object>(
         if (!state?.has(PRESETS_LIST_WARNED)) {
           state?.set(PRESETS_LIST_WARNED, true);
           logger.warn(
-            '`options.presetsList` is deprecated and will be removed in Storybook 12. Use `options.plugins` in main.ts function fields, or `storybook.plugins` / `storybook.hasPlugin()` in define* plugins.'
+            '`options.presetsList` is deprecated and will be removed in Storybook 12. Use `options.addons` in main.ts function fields, or `storybook.addons` / `storybook.hasAddon()` in define* addons.'
           );
         }
         return presetsList;
       },
     },
-    plugins: {
+    addons: {
       configurable: true,
-      get(): Options['plugins'] {
-        return (getInstanceContext()?.storybook?.plugins ?? []).map(({ name, kind }) => ({
+      get(): Options['addons'] {
+        return (getInstanceContext()?.storybook?.addons ?? []).map(({ name, kind }) => ({
           name,
           kind,
         }));

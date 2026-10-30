@@ -43,8 +43,9 @@ export type CreateToolsOptions = {
   /**
    * Creates the Storybook instance tools load. Defaults to the project's `storybook` when it runs
    * this package's `@storybook/core`, and to core's own defaults when `storybook` is not installed.
+   * Tools await the returned instance's `ready()`.
    */
-  createStorybook?: (input: CreateStorybookInput) => Promise<Storybook>;
+  createStorybook?: (input: CreateStorybookInput) => Storybook | Promise<Storybook>;
 };
 
 /** A running instance that also matched the target project but was not attached to. */

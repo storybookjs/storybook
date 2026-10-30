@@ -425,7 +425,7 @@ Handling of extra object fields depends on the schema implementation you choose.
 
 Server-side registration happens in `core:services:register` handlers.
 
-- Core's handler is registered by the instance's common plugin (`core/src/instance/common-plugin.ts`); addons register their own from `<pkg>/node`.
+- Core's handler is registered by the instance's common addon (`core/src/instance/common-addon.ts`); addons register their own from `<pkg>/node`.
 - Each handler calls `registerService(...)` and `registerToolset(...)` directly.
 - Hosts call the hook through `applyServicesPresetOnce` (`core/src/services/apply-services-preset-once.ts`), which runs it once per instance.
 - Dev startup, static builds, and the `storybook tools` local host all register this way.
@@ -951,7 +951,7 @@ A runtime that attaches to an already-running Storybook (rather than starting it
 dispatch commands locally: the Storybook it attached to owns the story index, the module graph, and
 the providers, so it is the implementer for every command. Loads, toolset methods, and query handlers
 still run in this process. A client creates that role with
-`createStorybook({ configDir, mode: 'headless', attach: { transport } })`.
+`createStorybook({ configDir, mode: 'headless', attach: { transport } })` and awaits its `ready()`.
 The instance has `attached: true`; [service-registry.ts](./service-registry.ts) initializes its
 inventory's `delegatedMode` from the current instance's `attached` property. Two instances in one
 process can have different roles. Instances without `attach`, and the fallback global inventory,

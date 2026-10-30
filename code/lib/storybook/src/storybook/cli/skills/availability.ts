@@ -76,14 +76,14 @@ export async function isModuleGraphSupported(): Promise<boolean> {
  * than computing them ad-hoc at a call site.
  */
 export async function getToolAvailability(
-  storybook: Pick<Storybook, 'callHook' | 'hasPlugin'>
+  storybook: Pick<Storybook, 'callHook' | 'hasAddon'>
 ): Promise<ToolAvailability> {
   const [moduleGraphSupported, manifestStatus] = await Promise.all([
     isModuleGraphSupported(),
     getManifestStatus(storybook),
   ]);
-  const addonVitestEnabled = storybook.hasPlugin('@storybook/addon-vitest');
-  const a11yEnabled = storybook.hasPlugin('@storybook/addon-a11y');
+  const addonVitestEnabled = storybook.hasAddon('@storybook/addon-vitest');
+  const a11yEnabled = storybook.hasAddon('@storybook/addon-a11y');
 
   return {
     moduleGraphSupported,

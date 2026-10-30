@@ -1,7 +1,7 @@
 import {
   defineFramework,
   defineMain as coreDefineMain,
-  type RendererPlugin,
+  type RendererAddon,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
 
@@ -19,7 +19,7 @@ export type StorybookConfig = Omit<ReactWebpack5Config, 'addons'> & Pick<Instanc
 export const reactWebpack5 = defineFramework<
   '@storybook/react-webpack5',
   FrameworkOptions | void,
-  RendererPlugin<ReactTypes>
+  RendererAddon<ReactTypes>
 >((input) => {
   const options = input || {};
   return {

@@ -17,11 +17,12 @@ export async function buildIndex(options: BuildIndexOptions): Promise<StoryIndex
   if (current) {
     return current.getIndex();
   }
-  const storybook = await createStorybook({
+  const storybook = createStorybook({
     configDir: options.configDir,
     mode: 'headless',
     cliOptions: options,
   });
+  await storybook.ready();
   try {
     return await storybook.getIndex();
   } finally {

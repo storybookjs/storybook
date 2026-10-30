@@ -5,22 +5,22 @@ export {
   defineFramework,
   defineMain,
   defineRenderer,
-} from './plugins.ts';
+} from './addons.ts';
 export type {
   BuilderBuildHost,
   BuilderDevHost,
-  BuilderPlugin,
-  FrameworkPlugin,
+  BuilderAddon,
+  FrameworkAddon,
   FrameworkTypes,
   MainConfig,
   MainTypes,
-  PluginMeta,
-  PluginMetaInput,
-  RendererPlugin,
+  AddonMeta,
+  AddonMetaInput,
+  RendererAddon,
   StorybookConfig,
   StorybookFrameworks,
-  StorybookPlugin,
-} from './plugins.ts';
+  StorybookAddon,
+} from './addons.ts';
 export { declareHooks } from './hooks.ts';
 export type {
   Collect,
@@ -41,6 +41,8 @@ export type {
   ResolvedStorybookConfig,
   ServiceRegistry,
   Storybook,
+  StorybookBuildResult,
+  StorybookDevServer,
   ToolsetRegistry,
 } from './types.ts';
 

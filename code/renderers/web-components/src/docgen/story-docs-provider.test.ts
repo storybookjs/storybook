@@ -31,7 +31,7 @@ const entry: IndexEntry = {
   importPath: './input.stories.ts',
 };
 
-/** An instance whose plugins registered the Web Components docgen worker. */
+/** An instance whose addons registered the Web Components docgen worker. */
 const withWorkerInstance = () => ({
   ...createTestInstanceContext(),
   storybook: {

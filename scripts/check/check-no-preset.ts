@@ -18,7 +18,7 @@ export interface PackageShape {
 }
 
 const CODE_DIRECTORY = fileURLToPath(new URL('../../code/', import.meta.url));
-/** Directories, relative to `code/`, whose packages are plugins with a single `<pkg>/node` entry. */
+/** Directories, relative to `code/`, whose packages are addons with a single `<pkg>/node` entry. */
 const PLUGIN_PACKAGE_GROUPS = ['addons', 'builders', 'frameworks', 'presets', 'renderers'];
 const PRESET_EXPORT = /^\.\/(?:preset|server\/framework-preset)/;
 const ROOT_PRESET_FILE = /^preset\.(?:c|m)?js$/;
@@ -26,7 +26,7 @@ const PRESETS_APPLY = /\bpresets\??\.apply\b/;
 const SOURCE_GLOB = 'src/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}';
 const TEST_SOURCES = ['**/*.test.*', '**/*.test-d.*', '**/*.stories.*', '**/__tests__/**'];
 
-/** List why a plugin package still has the legacy preset shape; empty when it has none. */
+/** List why an addon package still has the legacy preset shape; empty when it has none. */
 export function findPresetShape({ exports, rootFiles, sources }: PackageShape): string[] {
   return [
     ...Object.keys(exports)
@@ -39,13 +39,13 @@ export function findPresetShape({ exports, rootFiles, sources }: PackageShape): 
   ];
 }
 
-/** Whether `packageDir` holds an official plugin package that must not ship a preset. */
+/** Whether `packageDir` holds an official addon package that must not ship a preset. */
 export function isPluginPackage(packageDir: string): boolean {
   const [group] = relative(CODE_DIRECTORY, packageDir).split(/[\\/]/);
   return PLUGIN_PACKAGE_GROUPS.includes(group);
 }
 
-/** Prints the preset shape a plugin package still has; returns `false` when there is any. */
+/** Prints the preset shape an addon package still has; returns `false` when there is any. */
 export async function checkNoPresetShape(packageDir: string): Promise<boolean> {
   if (!isPluginPackage(packageDir)) {
     return true;
@@ -69,7 +69,7 @@ export async function checkNoPresetShape(packageDir: string): Promise<boolean> {
     return true;
   }
   console.log(
-    `${packageDir}: official packages register through their <pkg>/node plugin only; move this into node.ts modules and use storybook.callHook instead of presets.apply:`
+    `${packageDir}: official packages register through their <pkg>/node addon only; move this into node.ts modules and use storybook.callHook instead of presets.apply:`
   );
   for (const reason of found) {
     console.log(`  ${reason}`);

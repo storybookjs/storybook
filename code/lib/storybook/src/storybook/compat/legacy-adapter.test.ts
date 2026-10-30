@@ -11,7 +11,7 @@ import { join, relative } from 'pathe';
 import { afterEach, expect, it, vi } from 'vitest';
 
 import { resolveNativeFactory } from '../../../../../core/src/instance/native-entry.ts';
-import { PLUGIN_FACTORY } from '@storybook/core/internal/deep/instance/plugins';
+import { ADDON_FACTORY } from '@storybook/core/internal/deep/instance/addons';
 import { legacyAdapter } from './legacy-adapter.ts';
 
 vi.mock('@storybook/core/internal/deep/utils/module', async (importOriginal) => {
@@ -28,7 +28,7 @@ vi.mock('@storybook/core/internal/deep/utils/module', async (importOriginal) => 
               meta: { name: path, kind: 'builder' },
               builderOptions,
             }),
-            { [PLUGIN_FACTORY]: 'builder' }
+            { [ADDON_FACTORY]: 'builder' }
           )
         : actual.importModule(path, options)
     ),
@@ -85,24 +85,22 @@ it.each([
   const channel = new Channel({});
   const main = { framework: LEGACY_FRAMEWORK_DIR, stories: [] };
   const registrar: LegacyRegistrar = {
-    virtualPreset: (plugin) => ({ type: 'virtual', name: plugin.meta.name }) as never,
+    virtualPreset: (addon) => ({ type: 'virtual', name: addon.meta.name }) as never,
     resolveBuild: async () => ({}),
     resolveNativeFactory,
   };
   const loaded = await legacyAdapter.load({
     storybook: { configDir, channel, mode: 'dev' } as Storybook,
     main,
-    plugins: [],
+    addons: [],
     baseOptions: { configDir, configType: 'DEVELOPMENT', cacheKey: 'test', channel, main },
     registrar,
   });
-  const plugin = loaded.builder as unknown as Record<string, unknown> & { meta: { name: string } };
+  const addon = loaded.builder as unknown as Record<string, unknown> & { meta: { name: string } };
   expect({
-    name: plugin.meta.name.startsWith('/')
-      ? relative(CODE_DIR, plugin.meta.name)
-      : plugin.meta.name,
-    options: plugin.builderOptions,
-    wrapped: typeof plugin.dev === 'function',
+    name: addon.meta.name.startsWith('/') ? relative(CODE_DIR, addon.meta.name) : addon.meta.name,
+    options: addon.builderOptions,
+    wrapped: typeof addon.dev === 'function',
   }).toEqual(expected);
 });
 
@@ -112,7 +110,7 @@ it.each([
     framework: legacyPreset(FRAMEWORK_DIR, 'framework'),
     renderer: 'legacy',
     expected: {
-      plugins: ['framework:framework', 'renderer:legacy-renderer/preset.js'],
+      addons: ['framework:framework', 'renderer:legacy-renderer/preset.js'],
       previewAnnotations: ['/renderer-preview.ts', '/framework-preview.ts'],
     },
   },
@@ -121,7 +119,7 @@ it.each([
     framework: legacyPreset(FRAMEWORK_DIR, 'framework'),
     renderer: 'native',
     expected: {
-      plugins: ['renderer:fixture-annotation-renderer', 'framework:framework'],
+      addons: ['renderer:fixture-annotation-renderer', 'framework:framework'],
       previewAnnotations: ['/renderer-preview.ts', '/framework-preview.ts'],
     },
   },
@@ -130,7 +128,7 @@ it.each([
     framework: FRAMEWORK_DIR,
     renderer: 'native',
     expected: {
-      plugins: [
+      addons: [
         'builder:fixture-annotation-builder',
         'renderer:fixture-annotation-renderer',
         'framework:fixture-annotation-framework',
@@ -140,13 +138,14 @@ it.each([
   },
 ])('collects renderer annotations before framework annotations for $name', async (input) => {
   vi.stubEnv('STORYBOOK_FIXTURE_RENDERER', input.renderer);
-  const storybook = await createStorybook(
+  const storybook = createStorybook(
     { configDir: CONFIG_DIR, mode: 'headless', main: { framework: input.framework, stories: [] } },
     { builtInAddons: [], legacy: legacyAdapter }
   );
   INSTANCES.push(storybook);
+  await storybook.ready();
   expect({
-    plugins: storybook.plugins.map(
+    addons: storybook.addons.map(
       ({ kind, name }) => `${kind}:${name.startsWith('/') ? relative(ANNOTATION_DIR, name) : name}`
     ),
     previewAnnotations: storybook.options.previewAnnotations,
@@ -158,7 +157,7 @@ it.each([
     name: 'a legacy addon listed twice',
     main: { stories: [], addons: [LEGACY_ADDON_DIR, LEGACY_ADDON_DIR] },
     expected: {
-      plugins: ['addon:legacy-addon'],
+      addons: ['addon:legacy-addon'],
       previewAnnotations: ['/legacy-addon-preview.ts'],
     },
   },
@@ -169,7 +168,7 @@ it.each([
       addons: [LEGACY_ADDON_DIR, { name: LEGACY_ADDON_DIR, options: { flag: true } }],
     },
     expected: {
-      plugins: ['addon:legacy-addon'],
+      addons: ['addon:legacy-addon'],
       previewAnnotations: ['/legacy-addon-preview.ts'],
     },
   },
@@ -180,21 +179,22 @@ it.each([
       framework: legacyPreset(NESTED_RENDERER_FRAMEWORK_DIR, 'framework'),
     },
     expected: {
-      plugins: [
+      addons: [
         'renderer:fixture-annotation-renderer',
         'framework:annotation-order/nested-renderer-framework',
       ],
       previewAnnotations: ['/renderer-preview.ts', '/framework-preview.ts'],
     },
   },
-])('sets a plugin up once for $name', async ({ main, expected }) => {
-  const storybook = await createStorybook(
+])('sets an addon up once for $name', async ({ main, expected }) => {
+  const storybook = createStorybook(
     { configDir: CONFIG_DIR, mode: 'headless', main },
     { builtInAddons: [], legacy: legacyAdapter }
   );
   INSTANCES.push(storybook);
+  await storybook.ready();
   expect({
-    plugins: storybook.plugins.map(
+    addons: storybook.addons.map(
       ({ kind, name }) =>
         `${kind}:${name.startsWith('/') ? relative(INSTANCE_FIXTURES, name) : name}`
     ),

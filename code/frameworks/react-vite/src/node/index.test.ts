@@ -16,6 +16,13 @@ const CASES: Record<string, Partial<StorybookConfig>> = {
     features: { docgenServer: false },
     typescript: { reactDocgen: 'react-docgen' } as StorybookConfig['typescript'],
   },
+  // Builder plugins go, the typescript options component tests extract argTypes with stay.
+  'builder docgen off': {
+    framework: '@storybook/react-vite',
+    features: { docgenServer: false },
+    typescript: { reactDocgen: 'react-docgen' } as StorybookConfig['typescript'],
+    docs: { builderDocgen: false },
+  },
   'docgen option': {
     framework: { name: '@storybook/react-vite', options: { docgen: 'react-docgen-typescript' } },
     features: { docgenServer: false },
@@ -25,16 +32,17 @@ const CASES: Record<string, Partial<StorybookConfig>> = {
 it('registers the framework hooks for each main.ts entry', async () => {
   const results: Record<string, unknown> = {};
   for (const [name, main] of Object.entries(CASES)) {
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: CONFIG_DIR,
       mode: 'headless',
       main: { ...main, stories: [] },
     });
+    await storybook.ready();
     try {
       results[name] = {
-        plugins: storybook.plugins
-          .filter((plugin) => plugin.kind !== 'addon')
-          .map((plugin) => `${plugin.kind} ${plugin.name}`),
+        addons: storybook.addons
+          .filter((addon) => addon.kind !== 'addon')
+          .map((addon) => `${addon.kind} ${addon.name}`),
         renderer: (await storybook.callHook('core:config:extend', {})).renderer,
         framework: await storybook.callHook('core:framework:extend', undefined),
         frameworkOptions: await storybook.callHook('core:framework-options:extend', undefined),
@@ -52,23 +60,43 @@ it('registers the framework hooks for each main.ts entry', async () => {
   expect(normalize(results)).toMatchInlineSnapshot(`
     {
       "builder docgen": {
+        "addons": [
+          "builder @storybook/builder-vite",
+          "renderer @storybook/react",
+          "framework @storybook/react-vite",
+        ],
         "framework": {
           "name": "@storybook/react-vite",
           "options": {},
         },
         "frameworkOptions": {},
-        "plugins": [
-          "builder @storybook/builder-vite",
-          "renderer @storybook/react",
-          "framework @storybook/react-vite",
-        ],
         "reactDocgen": "react-docgen",
         "renderer": "file://<code>/renderers/react/dist/node.js",
         "vitePlugins": [
           "storybook:react-docgen-plugin",
         ],
       },
+      "builder docgen off": {
+        "addons": [
+          "builder @storybook/builder-vite",
+          "renderer @storybook/react",
+          "framework @storybook/react-vite",
+        ],
+        "framework": {
+          "name": "@storybook/react-vite",
+          "options": {},
+        },
+        "frameworkOptions": {},
+        "reactDocgen": "react-docgen",
+        "renderer": "file://<code>/renderers/react/dist/node.js",
+        "vitePlugins": [],
+      },
       "docgen option": {
+        "addons": [
+          "builder @storybook/builder-vite",
+          "renderer @storybook/react",
+          "framework @storybook/react-vite",
+        ],
         "framework": {
           "name": "@storybook/react-vite",
           "options": {
@@ -78,11 +106,6 @@ it('registers the framework hooks for each main.ts entry', async () => {
         "frameworkOptions": {
           "docgen": "react-docgen-typescript",
         },
-        "plugins": [
-          "builder @storybook/builder-vite",
-          "renderer @storybook/react",
-          "framework @storybook/react-vite",
-        ],
         "reactDocgen": "react-docgen-typescript",
         "renderer": "file://<code>/renderers/react/dist/node.js",
         "vitePlugins": [
@@ -91,16 +114,16 @@ it('registers the framework hooks for each main.ts entry', async () => {
         ],
       },
       "server docgen": {
+        "addons": [
+          "builder @storybook/builder-vite",
+          "renderer @storybook/react",
+          "framework @storybook/react-vite",
+        ],
         "framework": {
           "name": "@storybook/react-vite",
           "options": {},
         },
         "frameworkOptions": {},
-        "plugins": [
-          "builder @storybook/builder-vite",
-          "renderer @storybook/react",
-          "framework @storybook/react-vite",
-        ],
         "reactDocgen": "react-docgen",
         "renderer": "file://<code>/renderers/react/dist/node.js",
         "vitePlugins": [],

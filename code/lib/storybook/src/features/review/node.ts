@@ -4,7 +4,7 @@ import type { Storybook } from '@storybook/core';
 import type { Channel } from '@storybook/core/internal/channels';
 import { registerToolset } from '@storybook/core/open-service';
 import { telemetry } from '@storybook/core/internal/telemetry';
-import { defineAddon } from '@storybook/core/internal/deep/instance/plugins';
+import { defineAddon } from '@storybook/core/internal/deep/instance/addons';
 import { getDevServerSubscriptions } from '@storybook/core/internal/deep/services/dev-server-subscriptions';
 import {
   REVIEW_EVENTS,

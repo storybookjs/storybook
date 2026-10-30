@@ -4,14 +4,14 @@ import { join } from 'pathe';
 import { expect, it } from 'vitest';
 
 import { resolveNativeFactory, toNativeEntryName } from './native-entry.ts';
-import type { PluginMeta } from './plugins.ts';
+import type { AddonMeta } from './addons.ts';
 
 const CODE_DIR = fileURLToPath(new URL('../../../', import.meta.url));
 const CONFIG_DIR = fileURLToPath(new URL('./__fixtures__/first', import.meta.url));
 const FIXTURE_DIR = fileURLToPath(new URL('./__fixtures__/annotation-order', import.meta.url));
 const FRAMEWORK_DIR = join(FIXTURE_DIR, 'framework');
 
-it.each<{ name: string; kind: PluginMeta['kind']; expected: string | undefined }>([
+it.each<{ name: string; kind: AddonMeta['kind']; expected: string | undefined }>([
   { name: '@storybook/builder-vite', kind: 'builder', expected: 'builder:@storybook/builder-vite' },
   {
     name: '@storybook/react-vite',
@@ -73,8 +73,8 @@ it.each<{ name: string; kind: PluginMeta['kind']; expected: string | undefined }
   },
 ])('resolves the native $kind factory of $name', async ({ name, kind, expected }) => {
   const factory = await resolveNativeFactory(name, kind, CONFIG_DIR);
-  const plugin = factory?.(undefined);
-  expect(plugin && `${plugin.meta.kind}:${plugin.meta.name}`).toBe(expected);
+  const addon = factory?.(undefined);
+  expect(addon && `${addon.meta.kind}:${addon.meta.name}`).toBe(expected);
 });
 
 it('maps official preset specifiers to their package', () => {

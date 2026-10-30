@@ -1,0 +1,10 @@
+{
+  "name": "grid-overlay-demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "agent-tool": "node scripts/agent-tool.ts",
+    "ci-check": "node scripts/ci-check.ts"
+  }
+}

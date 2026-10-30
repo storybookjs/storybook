@@ -17,28 +17,28 @@ import { bridgeLegacyPresets } from './legacy-hooks.ts';
 import { createHookRuntime } from './hooks.ts';
 import { resolveNativeFactory } from './native-entry.ts';
 import type { CreateStorybookInput, LegacyAdapter, LegacyRegistrar, Storybook } from './types.ts';
-import type { BuilderPlugin, LegacyPreset, StorybookPlugin } from './plugins.ts';
+import type { BuilderAddon, LegacyPreset, StorybookAddon } from './addons.ts';
 
 /** Host inputs for applying `main.ts` and loading legacy presets. */
 export type LegacyPresetInput = Pick<CreateStorybookInput, 'cliOptions'> & {
-  /** Set up the host's defaults before any preset or plugin, so features resolve with them. */
+  /** Set up the host's defaults before any preset or addon, so features resolve with them. */
   setupCommon?: () => Promise<void>;
   legacy?: LegacyAdapter;
 };
 
-const INSTANCE_PLUGIN = Symbol('instance-plugin');
+const INSTANCE_ADDON = Symbol('instance-addon');
 
 export async function loadLegacyPresets(
   storybook: Storybook,
   inputMain: LegacyConfig,
   hooks: ReturnType<typeof createHookRuntime>,
-  inputPlugins: StorybookPlugin[],
+  inputAddons: StorybookAddon[],
   input: LegacyPresetInput = {}
 ): Promise<{
   options: Options;
-  builder?: BuilderPlugin;
+  builder?: BuilderAddon;
   setup(
-    setupPlugin: (plugin: StorybookPlugin, storybook: Storybook) => void | Promise<void>
+    setupAddon: (addon: StorybookAddon, storybook: Storybook) => void | Promise<void>
   ): Promise<void>;
 }> {
   const {
@@ -80,8 +80,8 @@ export async function loadLegacyPresets(
   const disabledAddons = mainBuild?.test?.disabledAddons ?? [];
   const isDisabled = (name: string): boolean =>
     disabledAddons.some((entry) => name.includes(entry));
-  const plugins = inputPlugins.filter(
-    (plugin) => plugin.meta.kind !== 'addon' || !isDisabled(plugin.meta.name)
+  const addons = inputAddons.filter(
+    (addon) => addon.meta.kind !== 'addon' || !isDisabled(addon.meta.name)
   );
   const main = disabledAddons.length
     ? {
@@ -96,9 +96,9 @@ export async function loadLegacyPresets(
   if (typeof main.framework === 'string' || (main.framework && 'name' in main.framework)) {
     validateFrameworkName(frameworkName);
   }
-  const legacyPlugin = plugins.find((plugin) => 'legacy' in plugin) as LegacyPreset | undefined;
-  const nativeFramework = plugins.some(
-    (plugin) => plugin.meta.kind === 'framework' && 'builder' in plugin
+  const legacyAddon = addons.find((addon) => 'legacy' in addon) as LegacyPreset | undefined;
+  const nativeFramework = addons.some(
+    (addon) => addon.meta.kind === 'framework' && 'builder' in addon
   );
   const mainPresets = (main as { presets?: unknown }).presets;
   const hasPresets =
@@ -108,23 +108,23 @@ export async function loadLegacyPresets(
   const discovers =
     typeof core === 'function' ||
     (!!core && typeof core === 'object' && ('renderer' in core || 'builder' in core));
-  const needsAdapter = !!legacyPlugin || hasPresets || (!nativeFramework && discovers);
-  let loaded: { presets: LoadedPreset[]; options: InterPresetOptions; builder?: BuilderPlugin };
+  const needsAdapter = !!legacyAddon || hasPresets || (!nativeFramework && discovers);
+  let loaded: { presets: LoadedPreset[]; options: InterPresetOptions; builder?: BuilderAddon };
   if (needsAdapter) {
     if (!input.legacy) {
-      const legacy = legacyPlugin?.legacy;
+      const legacy = legacyAddon?.legacy;
       throw new LegacyAdapterMissingError({
         name:
           (typeof legacy === 'string' ? legacy : legacy?.name) ??
           (hasPresets ? 'main.presets' : 'main.core'),
       });
     }
-    loaded = await input.legacy.load({ storybook, main, plugins, baseOptions, registrar });
+    loaded = await input.legacy.load({ storybook, main, addons, baseOptions, registrar });
   } else {
-    // Mirrors the preset loader for virtual entries: `main.ts` loads after every plugin.
+    // Mirrors the preset loader for virtual entries: `main.ts` loads after every addon.
     const options: InterPresetOptions = { ...mainOptions, isCritical: true };
     const presets: LoadedPreset[] = [
-      ...plugins.map((plugin) => toLoadedPreset(virtualPreset(plugin))),
+      ...addons.map((addon) => toLoadedPreset(virtualPreset(addon))),
       mainPreset,
     ];
     if (storybook.mode === 'build') {
@@ -154,12 +154,12 @@ export async function loadLegacyPresets(
   return {
     options: { ...loaded.options, presets, features } as Options,
     builder: loaded.builder,
-    async setup(setupPlugin): Promise<void> {
+    async setup(setupAddon): Promise<void> {
       for (const loadedPreset of presetsList) {
-        const plugin = (loadedPreset.preset as Record<symbol, StorybookPlugin>)[INSTANCE_PLUGIN];
-        if (plugin) {
+        const addon = (loadedPreset.preset as Record<symbol, StorybookAddon>)[INSTANCE_ADDON];
+        if (addon) {
           hooks.setRegistrationOrder(orders.get(loadedPreset)!);
-          await setupPlugin(plugin, storybook);
+          await setupAddon(addon, storybook);
         }
       }
       hooks.setRegistrationOrder(presetsList.length);
@@ -167,13 +167,13 @@ export async function loadLegacyPresets(
   };
 }
 
-function virtualPreset(plugin: StorybookPlugin): PresetConfig {
+function virtualPreset(addon: StorybookAddon): PresetConfig {
   return {
     type: 'virtual',
-    name: plugin.meta.name,
+    name: addon.meta.name,
     // A static object merges into `features` at this preset's position, before `main.ts`.
-    ...(plugin.features ? { features: plugin.features } : {}),
-    [INSTANCE_PLUGIN]: plugin,
+    ...(addon.features ? { features: addon.features } : {}),
+    [INSTANCE_ADDON]: addon,
   } as PresetConfig;
 }
 

@@ -175,6 +175,7 @@ export async function bootstrapAttachedRuntime(
       mode: 'headless',
       attach: { transport: connection.transport },
     });
+    await storybook.ready();
   } catch (error) {
     connection.close();
     throw configLoadFailed(error);

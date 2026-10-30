@@ -10,7 +10,7 @@ const PACKAGE_DIR = new URL('..', import.meta.url).pathname;
 
 type Registered = { name: string; kind?: string; fn: (value: unknown) => unknown };
 
-/** Run the plugin's setup against a recorder whose `callHook` answers from `seeds`. */
+/** Run the addon's setup against a recorder whose `callHook` answers from `seeds`. */
 function setup(seeds: Record<string, unknown> = {}): Registered[] {
   const hooks: Registered[] = [];
   react().setup({
@@ -35,7 +35,7 @@ async function call(name: string, value: unknown, seeds?: Record<string, unknown
   );
 }
 
-describe('react node plugin', () => {
+describe('react node addon', () => {
   it('turns component manifests on before setup', () => {
     expect(react().features).toEqual({ componentsManifest: true });
   });

@@ -1,7 +1,7 @@
 import {
   defineFramework,
   defineMain as coreDefineMain,
-  type RendererPlugin,
+  type RendererAddon,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
 
@@ -18,7 +18,7 @@ export type StorybookConfig = Omit<ServerWebpackConfig, 'addons'> & Pick<Instanc
 export const serverWebpack5 = defineFramework<
   '@storybook/server-webpack5',
   FrameworkOptions | void,
-  RendererPlugin,
+  RendererAddon,
   readonly [ReturnType<typeof serverWebpack>]
 >((input) => {
   const options = input || {};

@@ -11,7 +11,7 @@ const PRESETS_LIST = [{ name: 'example', preset: {}, options: {} }];
 function createContext(): InstanceContext {
   return {
     storybook: {
-      plugins: [{ name: '@storybook/addon-docs', kind: 'addon', order: 1 }],
+      addons: [{ name: '@storybook/addon-docs', kind: 'addon', order: 1 }],
     } as unknown as Storybook,
     state: new Map(),
   } as unknown as InstanceContext;
@@ -22,16 +22,16 @@ describe('defineLegacyFieldOptions', () => {
     vi.restoreAllMocks();
   });
 
-  it('exposes plugins as { name, kind } and hides both keys from spreads', () => {
+  it('exposes addons as { name, kind } and hides both keys from spreads', () => {
     const options = instanceContext.run(createContext(), () =>
       defineLegacyFieldOptions({ configDir: '/config' }, PRESETS_LIST)
     );
     expect({
       spread: { ...options },
-      plugins: instanceContext.run(createContext(), () => options.plugins),
+      addons: instanceContext.run(createContext(), () => options.addons),
     }).toMatchInlineSnapshot(`
       {
-        "plugins": [
+        "addons": [
           {
             "kind": "addon",
             "name": "@storybook/addon-docs",

@@ -10,7 +10,7 @@ const config: BuildEntries = {
     ],
     browser: [
       {
-        // Not exported: the node plugin references dist/preview.js by path
+        // Not exported: the node addon references dist/preview.js by path
         entryPoint: './src/preview.ts',
         dts: false,
       },

@@ -108,7 +108,7 @@ export const vitestCommonConfig = defineConfig({
     environment: 'node',
     server: {
       deps: {
-        // Built presets and native plugin entries, which `importModule` loads by path, run in Node's
+        // Built presets and native addon entries, which `importModule` loads by path, run in Node's
         // loader as in a real host: Vitest's module runner can hand a concurrent importer the
         // unfinished exports of a module still evaluating. Other built files stay inlined, since
         // tests mock and spy on them and some only load through Vite.

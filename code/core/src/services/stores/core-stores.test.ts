@@ -41,7 +41,7 @@ afterEach(async () => {
 });
 
 async function createInstance({ attached = false } = {}): Promise<Storybook> {
-  const storybook = await createStorybook(
+  const storybook = createStorybook(
     {
       configDir: fileURLToPath(new URL('../../instance/__fixtures__/first', import.meta.url)),
       main: { stories: [] },
@@ -51,6 +51,7 @@ async function createInstance({ attached = false } = {}): Promise<Storybook> {
     { builtInAddons: [] }
   );
   INSTANCES.push(storybook);
+  await storybook.ready();
   return storybook;
 }
 

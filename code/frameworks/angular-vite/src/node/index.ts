@@ -2,7 +2,7 @@ import {
   defineFramework,
   defineMain as coreDefineMain,
   defineRenderer,
-  type RendererPlugin,
+  type RendererAddon,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
 import type { Options } from '@storybook/core/internal/types';
@@ -55,7 +55,7 @@ export const angularViteRenderer = defineRenderer<void, AngularRenderer>(() => (
 export const angularVite = defineFramework<
   '@storybook/angular-vite',
   AngularViteOptions | void,
-  RendererPlugin<AngularRenderer>
+  RendererAddon<AngularRenderer>
 >((input) => {
   const options = input || {};
   return {

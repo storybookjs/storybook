@@ -1,4 +1,4 @@
-import { framework, projectAddon } from '../../plugins.ts';
+import { framework, projectAddon } from '../../addons.ts';
 
 export default {
   framework: framework(),

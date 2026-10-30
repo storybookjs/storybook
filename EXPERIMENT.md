@@ -6,9 +6,9 @@ It exists to find every problem and to put numbers on the idea.
 
 ## The idea
 
-Storybook becomes a small core with everything else as a client or a plugin.
+Storybook becomes a small core with everything else as a client or an addon.
 One instance object replaces presets.
-Plugins register hooks on that instance.
+Addons register hooks on that instance.
 Tools, agents and tests talk to a running instance instead of loading the project themselves.
 
 ## What we built
@@ -25,7 +25,16 @@ Tools, agents and tests talk to a running instance instead of loading the projec
 ### Instance API
 
 - It is the root export: `import { createStorybook } from '@storybook/core'`.
-- `createStorybook({ configDir, workingDir, mode: 'dev' | 'build' | 'headless', attach? })`.
+- `createStorybook({ configDir, workingDir, mode: 'dev' | 'build' | 'headless', attach? })` returns the instance synchronously, like Nuxt's `createNuxt()`.
+- `overrides` merges config over the loaded `main.ts` before addons load, like Nuxt's `loadNuxt({ overrides })`; `storybookTest` uses it to turn builder docgen and MDX off instead of filtering Vite plugins by name.
+- `await storybook.ready()` loads `main.ts`, sets up every addon, and freezes `options`; it runs once and closes the instance on failure.
+- `await storybook.dev()` starts the dev server of a `mode: 'dev'` instance, like Nuxt's dev server, and returns `{ port, address, networkAddress, close }`; `storybook.close()` stops it.
+  - Core declares it; `storybook`'s `createStorybook` injects the server, so core's own `createStorybook` throws on `dev()`.
+  - `buildDevStandalone` keeps the CLI work (port, caches, warnings, output) and calls `storybook.dev()`.
+- `await storybook.build()` writes the static Storybook of a `mode: 'build'` instance and returns `{ outputDir }`; injected by `storybook` the same way.
+  - `buildStaticStandalone` keeps the CLI work (output dir checks, stats, telemetry, logging) and calls `storybook.build()`.
+- `storybook.addAddon(addon)` adds an addon before `ready()` or from another addon's setup, deduped and ordered like a `main.ts` addon; afterwards it throws.
+- Hooks, services and toolsets stay registrable after ready until close; only `options` freezes.
 - `defineAddon` with `setup(storybook)`.
 - `main.ts` imports `defineMain` and `defineAddon` from `storybook`, which re-exports that subset of core's root; projects never list `@storybook/core`.
 - One `defineMain`, typed by the framework: frameworks register their fields in core's `StorybookFrameworks`; the framework `/node` `defineMain` exports are deprecated aliases.
@@ -40,15 +49,15 @@ Tools, agents and tests talk to a running instance instead of loading the projec
 - Old preset specifiers map to native entries with a deprecation warning.
 - `scripts/check/check-no-preset.ts` enforces it.
 - First-party code calls `storybook.callHook` instead of `presets.apply`.
-  - Before: 52 `presets.apply` calls across core, lib, and addons (49 once plugins registered built-ins through hooks).
+  - Before: 52 `presets.apply` calls across core, lib, and addons (49 once addons registered built-ins through hooks).
   - After: 4, all in the compat layer (`compat/options.ts`, kept for third-party frameworks and builders).
   - `scripts/check/check-no-presets-apply.ts` enforces it for every package.
 
-### Plugins on core
+### Addons on core
 
 - Frameworks, renderers, builders and addons import `@storybook/core/*` on the Node side.
 - Postinstall code stays on `storybook/*`: it runs inside the end-user CLIs.
-- `storybook` is an optional peer of plugins (required for Angular).
+- `storybook` is an optional peer of addons (required for Angular).
 
 ### Every feature is an addon
 
@@ -75,7 +84,7 @@ Tools, agents and tests talk to a running instance instead of loading the projec
 ### Tools against a running instance
 
 - The dev server serves a toolset RPC; its registry record advertises `toolsetRpc: 1`.
-- The attached client is thin: no `createStorybook`, no `main.ts`, no plugins.
+- The attached client is thin: no `createStorybook`, no `main.ts`, no addons.
 - Handlers run in the dev server, which also records telemetry.
 - `storybook tools` picks its path before loading anything; older servers keep the delegated or child-host path.
 
@@ -99,11 +108,11 @@ Base is `storybook@11.0.0-alpha.7` from npm with its README images (`assets/docs
 | --- | --- | --- |
 | Full product, 5 packages | 4.22 MB | 4.13 MB (−2%) |
 | Tools only, core + open-service | 4.22 MB | 1.74 MB (−59%) |
-| Plugin tarballs, 36 packages | 1,949 KB | 1,802 KB (−7.5%) |
+| Addon tarballs, 36 packages | 1,949 KB | 1,802 KB (−7.5%) |
 
 - The split barely shrinks a full install: JS goes from 16.3 to 15.2 MB, `.d.ts` from 3.1 to 2.7 MB (unpacked).
 - The win is for tools, agents and CI jobs, which no longer install the manager, CLI, dev server and components.
-- Plugins lose their preset files and duplicate entries.
+- Addons lose their preset files and duplicate entries.
 - The published base also ships its README images; the branch drops them (`"!assets/docs/**/*"`). That fix is independent of the split and can land on `next` alone.
 
 ### Dev startup and build
@@ -111,6 +120,10 @@ Base is `storybook@11.0.0-alpha.7` from npm with its README images (`assets/docs
 - Startup is at parity on react-vite, react-webpack, nextjs, vue3-vite and the internal Storybook, warm and cold.
 - The Vite server phase costs +0.06–0.11 s; the browser phase wins most of it back.
 - Static builds move within ±5%.
+- Config load is ~300 ms in every setup; 85–88% of it is module loading (react-docgen, Babel and similar, loaded eagerly).
+- Loading presets once instead of twice saves only ~12–18 ms: the second pass hits Node's module cache.
+- The faster "server ready" on the branch comes from the index build (181 → 118 ms), not from the rearchitecture.
+- The other big phases are the server channel (chromatic ~110 ms, addon-vitest waiting for the index) and CLI boot (~170 ms).
 
 ### Tools
 
@@ -163,7 +176,7 @@ Measured on a react-vite fixture with esbuild, built-ins only.
 - Filtering built-ins by flag before setup dropped their preview annotations (base only hid the manager UI) and ignored flags set from preset functions or setup hooks; flags are now read lazily in the collect handlers, matching base per flag.
 - Deduplicating by name alone dropped Angular Vite's renderer, which shares the framework's name.
 - Core services read `channel` and `configDir` from the preset options; called as a hook they got neither, so they now read the instance.
-- Nothing deduplicated plugins, so an addon listed twice (or as a string and a native plugin) set up twice, and the checklist read a module-level story index promise instances never set; plugins now dedupe by name and the checklist reads the instance's generator.
+- Nothing deduplicated addons, so an addon listed twice (or as a string and a native addon) set up twice, and the checklist read a module-level story index promise instances never set; addons now dedupe by name and the checklist reads the instance's generator.
 - Node state lived in modules, so two instances in one process shared it: the MCP transport and origin, the Vitest child process and store, the project root (cached from the first `process.cwd()`), React's component-meta manager, and fallback readiness, dev-server subscriptions, module graph, and toolset registry.
   The second MCP endpoint answered with the first project's origin, and closing one instance killed the other's Vitest child.
   They now live on the instance, the fallbacks throw outside one, and `check-no-node-globals` blocks new module-level `let`/`var` in that code.

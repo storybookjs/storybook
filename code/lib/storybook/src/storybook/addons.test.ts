@@ -88,13 +88,14 @@ function builtIn(entries: PreviewAnnotation[]): string[] {
 }
 
 async function load(addons: StorybookConfig['addons']): Promise<Storybook> {
-  const instance = await createStorybook({
+  const instance = createStorybook({
     configDir: CONFIG_DIR,
     workingDir: CODE_DIR,
     mode: 'headless',
     main: { ...main, addons },
   });
   INSTANCES.push(instance);
+  await instance.ready();
   return instance;
 }
 
@@ -152,7 +153,7 @@ describe('official native addons', () => {
         ]);
         const values: Record<string, unknown> = {
           services: registered,
-          present: instance.hasPlugin(name),
+          present: instance.hasAddon(name),
         };
         for (const hook of hooks) {
           const args =
@@ -280,13 +281,14 @@ describe('manager entries', () => {
       },
     },
   ])('flags from $source hide only the built-in managers', async ({ config }) => {
-    const instance = await createStorybook({
+    const instance = createStorybook({
       configDir: CONFIG_DIR,
       workingDir: CODE_DIR,
       mode: 'headless',
       main: { ...main, ...config },
     });
     INSTANCES.push(instance);
+    await instance.ready();
     const app = { get: vi.fn(), post: vi.fn(), use: vi.fn() };
     await instance.callHook('server:app:extend', app as unknown as ServerApp);
 
@@ -316,13 +318,14 @@ describe('manager entries', () => {
       addons: [native('first'), native('second')],
       managerEntries: ['legacy-manager.js'],
     };
-    const instance = await createStorybook({
+    const instance = createStorybook({
       configDir: CONFIG_DIR,
       workingDir: CODE_DIR,
       mode: 'dev',
       main: config,
     });
     INSTANCES.push(instance);
+    await instance.ready();
     expect((await instance.callHook('manager:entries:collect', [])).slice(-3)).toEqual([
       'first-manager.js',
       'second-manager.js',

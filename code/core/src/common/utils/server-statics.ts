@@ -130,6 +130,17 @@ export async function useStatics(
     return sirvWorkaround(faviconDir)(req, res, next);
   });
 
+  serveStaticDirs(app, { configDir, staticDirs });
+}
+
+/** Mount each static directory, or single static file, on any connect-style app. */
+export function serveStaticDirs(
+  app: { use(route: string, handler: StaticDirHandler): unknown },
+  {
+    configDir,
+    staticDirs,
+  }: { configDir: string; staticDirs: NonNullable<StorybookConfigRaw['staticDirs']> }
+): void {
   const cacheDir = resolvePathInStorybookCache('', 'ignored-sub').split('ignored-sub')[0];
   staticDirs.map((dir) => {
     try {

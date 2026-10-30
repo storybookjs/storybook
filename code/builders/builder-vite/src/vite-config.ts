@@ -61,7 +61,7 @@ const DEFAULT_VITE_CONFIG_FILES = [
 
 const warnOnce = once('warn');
 
-/** Create the Vite plugins shared by the builder and the Vitest addon. */
+/** Create the Vite plugins shared by the builder and foreign preview hosts. */
 export async function viteCorePlugins(
   storybook: Storybook,
   preview: PreviewSources

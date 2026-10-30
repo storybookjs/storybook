@@ -1,4 +1,4 @@
-import { defineAddon } from '../../instance/plugins.ts';
+import { defineAddon } from '../../instance/addons.ts';
 
 /** Options the product passes when composing the ghost-stories addon. */
 export interface GhostStoriesAddonOptions {

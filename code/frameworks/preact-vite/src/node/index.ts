@@ -1,7 +1,7 @@
 import {
   defineFramework,
   defineMain as coreDefineMain,
-  type RendererPlugin,
+  type RendererAddon,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
 
@@ -21,7 +21,7 @@ export type PreactViteOptions = FrameworkOptions;
 export const preactVite = defineFramework<
   '@storybook/preact-vite',
   PreactViteOptions | void,
-  RendererPlugin<PreactRenderer>
+  RendererAddon<PreactRenderer>
 >((input) => {
   const options = input || {};
   return {

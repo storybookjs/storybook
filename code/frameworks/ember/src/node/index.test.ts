@@ -28,14 +28,15 @@ const CASES: Record<string, Partial<StorybookConfig> & { emberOptions?: EmberTem
 it('registers the framework hooks', async () => {
   const results: Record<string, unknown> = {};
   for (const [name, main] of Object.entries(CASES)) {
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: CONFIG_DIR,
       mode: 'headless',
       main: { ...main, stories: [] },
     });
+    await storybook.ready();
     try {
       results[name] = summarize({
-        plugins: storybook.plugins
+        addons: storybook.addons
           .filter(({ kind }) => kind !== 'addon')
           .map(({ kind, name }) => `${kind} ${name}`),
         framework: await storybook.callHook('core:framework:extend', ''),
@@ -50,6 +51,11 @@ it('registers the framework hooks', async () => {
   expect(results).toMatchInlineSnapshot(`
     {
       "emberOptions in framework options": {
+        "addons": [
+          "builder @storybook/builder-webpack5",
+          "renderer @storybook/ember/renderer",
+          "framework @storybook/ember",
+        ],
         "babel": {
           "error": "Cannot find package 'babel-plugin-htmlbars-inline-precompile'",
         },
@@ -63,11 +69,6 @@ it('registers the framework hooks', async () => {
             },
           },
         },
-        "plugins": [
-          "builder @storybook/builder-webpack5",
-          "renderer @storybook/ember/renderer",
-          "framework @storybook/ember",
-        ],
         "previewAnnotations": [
           "<code>/lib/storybook/dist/features/measure/preview.js",
           "<code>/lib/storybook/dist/features/backgrounds/preview.js",
@@ -87,6 +88,11 @@ it('registers the framework hooks', async () => {
         },
       },
       "emberOptions in main": {
+        "addons": [
+          "builder @storybook/builder-webpack5",
+          "renderer @storybook/ember/renderer",
+          "framework @storybook/ember",
+        ],
         "babel": {
           "error": "Cannot find package 'babel-plugin-htmlbars-inline-precompile'",
         },
@@ -94,11 +100,6 @@ it('registers the framework hooks', async () => {
           "name": "@storybook/ember",
           "options": {},
         },
-        "plugins": [
-          "builder @storybook/builder-webpack5",
-          "renderer @storybook/ember/renderer",
-          "framework @storybook/ember",
-        ],
         "previewAnnotations": [
           "<code>/lib/storybook/dist/features/measure/preview.js",
           "<code>/lib/storybook/dist/features/backgrounds/preview.js",
@@ -118,6 +119,11 @@ it('registers the framework hooks', async () => {
         },
       },
       "skipCompiler": {
+        "addons": [
+          "builder @storybook/builder-webpack5",
+          "renderer @storybook/ember/renderer",
+          "framework @storybook/ember",
+        ],
         "babel": {
           "error": "Cannot find package 'babel-plugin-htmlbars-inline-precompile'",
         },
@@ -125,11 +131,6 @@ it('registers the framework hooks', async () => {
           "name": "@storybook/ember",
           "options": {},
         },
-        "plugins": [
-          "builder @storybook/builder-webpack5",
-          "renderer @storybook/ember/renderer",
-          "framework @storybook/ember",
-        ],
         "previewAnnotations": [
           "<code>/lib/storybook/dist/features/measure/preview.js",
           "<code>/lib/storybook/dist/features/backgrounds/preview.js",
@@ -149,6 +150,11 @@ it('registers the framework hooks', async () => {
         },
       },
       "the default configuration": {
+        "addons": [
+          "builder @storybook/builder-webpack5",
+          "renderer @storybook/ember/renderer",
+          "framework @storybook/ember",
+        ],
         "babel": {
           "error": "Cannot find package 'babel-plugin-htmlbars-inline-precompile'",
         },
@@ -156,11 +162,6 @@ it('registers the framework hooks', async () => {
           "name": "@storybook/ember",
           "options": {},
         },
-        "plugins": [
-          "builder @storybook/builder-webpack5",
-          "renderer @storybook/ember/renderer",
-          "framework @storybook/ember",
-        ],
         "previewAnnotations": [
           "<code>/lib/storybook/dist/features/measure/preview.js",
           "<code>/lib/storybook/dist/features/backgrounds/preview.js",

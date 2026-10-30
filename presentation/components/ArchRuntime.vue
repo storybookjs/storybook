@@ -26,7 +26,7 @@ const OWNED_ROW = FIRST_HOOK_ROW + HOOKS.length
 <template>
   <div class="rt">
     <div class="rt__plugins">
-      <div class="rt__col-head">Plugins</div>
+      <div class="rt__col-head">Addons</div>
       <div class="rt__plain">
         <div class="rt__title">main.ts</div>
         <code>defineMain({ framework, addons })</code>
@@ -59,11 +59,11 @@ const OWNED_ROW = FIRST_HOOK_ROW + HOOKS.length
       <div class="rt__col-head rt__outputs-head">Outputs</div>
 
       <div class="rt__step" style="grid-row: 2">
-        <span class="rt__title">Resolve plugins</span>
+        <span class="rt__title">Resolve addons</span>
         <span class="rt__note">dedupe by kind + name; first options win, with a warning</span>
       </div>
       <div class="rt__step" style="grid-row: 3">
-        <span class="rt__title">Set up each plugin</span>
+        <span class="rt__title">Set up each addon</span>
         <span class="rt__note"><code>setup(storybook)</code> registers hooks; no <code>presets.apply</code></span>
       </div>
       <div class="rt__hooks-head" style="grid-row: 4">Hooks the product collects</div>

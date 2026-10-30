@@ -1,6 +1,6 @@
 import '../../storybook/server/hooks.ts';
 
-import { defineAddon } from '@storybook/core/internal/deep/instance/plugins';
+import { defineAddon } from '@storybook/core/internal/deep/instance/addons';
 
 import { initOpenInEditorChannel } from './open-in-editor-channel.ts';
 

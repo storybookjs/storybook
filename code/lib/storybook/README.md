@@ -43,8 +43,8 @@ The code lives in several packages:
 Direction: `core <- ui <- manager <- storybook`.
 Many `storybook/*` subpaths are shims that re-export the lower packages.
 
-The root entry `storybook` (`src/index.ts`) is what `main.ts` imports: `defineMain`, `defineAddon`, and the `StorybookConfig`, `StorybookFrameworks`, `Storybook`, `StorybookPlugin`, `MainConfig`, `MainTypes`, `StorybookHooks` and `HookHandler` types, re-exported from `@storybook/core`.
-Plugin and tool authors import the rest of the instance API (`defineFramework`, `defineBuilder`, `defineRenderer`, `declareHooks`, `createStorybook`) from `@storybook/core`.
+The root entry `storybook` (`src/index.ts`) is what `main.ts` imports: `defineMain`, `defineAddon`, and the `StorybookConfig`, `StorybookFrameworks`, `Storybook`, `StorybookAddon`, `MainConfig`, `MainTypes`, `StorybookHooks` and `HookHandler` types, re-exported from `@storybook/core`.
+Addon and tool authors import the rest of the instance API (`defineFramework`, `defineBuilder`, `defineRenderer`, `declareHooks`, `createStorybook`) from `@storybook/core`.
 
 ## What this package owns
 
@@ -53,7 +53,7 @@ Plugin and tool authors import the rest of the instance API (`defineFramework`, 
 - Compatibility for presets and older configurations (`src/storybook/compat`).
 - Built-in features such as controls, actions, viewport and the interaction debugger (`src/features`).
 
-Official packages register as plugins with no preset.
+Official packages register as addons with no preset.
 How legacy presets still load is in the [instance README](../../core/src/instance/README.md); the user-facing change is in [MIGRATION.md](../../../MIGRATION.md#official-packages-no-longer-export-presets).
 
 ## Copied runtimes

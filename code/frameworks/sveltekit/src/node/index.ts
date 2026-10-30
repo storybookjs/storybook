@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import {
   defineFramework,
   defineMain as coreDefineMain,
-  type RendererPlugin,
+  type RendererAddon,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
 
@@ -27,7 +27,7 @@ export type StorybookConfig = Omit<SvelteKitConfig, 'addons'> & Pick<InstanceCon
 export const sveltekit = defineFramework<
   '@storybook/sveltekit',
   FrameworkOptions | void,
-  RendererPlugin<SvelteTypes>
+  RendererAddon<SvelteTypes>
 >((input) => {
   const options = input || {};
   return {

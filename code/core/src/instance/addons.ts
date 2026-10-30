@@ -18,32 +18,32 @@ import type { PreviewHmr } from '../preview-page/constants.ts';
 import type { PreviewSources } from '../preview-page/preview-sources.ts';
 import type { Storybook } from './types.ts';
 
-/** Brand a plugin factory with its kind so `<pkg>/node` default exports load natively. */
-export const PLUGIN_FACTORY = Symbol.for('storybook.plugin-factory');
+/** Brand an addon factory with its kind so `<pkg>/node` default exports load natively. */
+export const ADDON_FACTORY = Symbol.for('storybook.addon-factory');
 
 /** Hold the options a branded factory was called with, so duplicate entries can be compared. */
-export const PLUGIN_OPTIONS = Symbol.for('storybook.plugin-options');
+export const ADDON_OPTIONS = Symbol.for('storybook.addon-options');
 
-/** Describe the metadata supplied by a plugin factory. */
-export interface PluginMetaInput {
+/** Describe the metadata supplied by an addon factory. */
+export interface AddonMetaInput {
   name: string;
   /** Register manager panels and tools in ascending order. */
   order?: number;
 }
 
-/** Describe an instance plugin before any setup function runs. */
-export type PluginMeta = PluginMetaInput & {
+/** Describe an instance addon before any setup function runs. */
+export type AddonMeta = AddonMetaInput & {
   kind: 'framework' | 'builder' | 'renderer' | 'addon';
 };
 
-/** Register one plugin's contributions during setup. */
-export interface StorybookPlugin<TTypes = unknown> {
+/** Register one addon's contributions during setup. */
+export interface StorybookAddon<TTypes = unknown> {
   /** Carry preview-facing types for inference; never assign at runtime. */
   readonly types?: TTypes;
-  meta: PluginMeta;
+  meta: AddonMeta;
   /** Locate the manager entry as an absolute path. */
   manager?: string;
-  /** Feature defaults applied before setup, at this plugin's position and before `main.ts`. */
+  /** Feature defaults applied before setup, at this addon's position and before `main.ts`. */
   features?: Partial<StorybookFeatures>;
   setup(storybook: Storybook): void | Promise<void>;
 }
@@ -65,9 +65,9 @@ export interface BuilderBuildHost {
 }
 
 /** Own the preview compiler and its change detection for one instance. */
-export interface BuilderPlugin extends StorybookPlugin {
+export interface BuilderAddon extends StorybookAddon {
   /** Identify the builder package. */
-  meta: PluginMeta & { kind: 'builder' };
+  meta: AddonMeta & { kind: 'builder' };
   /** Select the HMR API of the generated preview modules; defaults to `vite`. */
   hmr?: PreviewHmr;
   /** Serve the preview using the host's router and HTTP server. */
@@ -82,23 +82,23 @@ export interface BuilderPlugin extends StorybookPlugin {
 }
 
 /** Contribute rendering annotations and story types. */
-export interface RendererPlugin<TTypes = unknown> extends StorybookPlugin<TTypes> {
+export interface RendererAddon<TTypes = unknown> extends StorybookAddon<TTypes> {
   /** Identify the renderer package. */
-  meta: PluginMeta & { kind: 'renderer' };
+  meta: AddonMeta & { kind: 'renderer' };
   /** Contribute preview entries in order. */
   previewAnnotations?: string[];
 }
 
 /** Compose the builder, renderer, and default addons for a framework. */
-export interface FrameworkPlugin<
-  TRenderer extends StorybookPlugin<unknown> = RendererPlugin | StorybookPlugin,
-  TAddons extends readonly StorybookPlugin<unknown>[] = readonly StorybookPlugin<unknown>[],
+export interface FrameworkAddon<
+  TRenderer extends StorybookAddon<unknown> = RendererAddon | StorybookAddon,
+  TAddons extends readonly StorybookAddon<unknown>[] = readonly StorybookAddon<unknown>[],
   TName extends string = string,
-> extends StorybookPlugin {
+> extends StorybookAddon {
   /** Identify the framework package; the literal selects its `StorybookFrameworks` entry. */
-  meta: PluginMeta & { kind: 'framework'; name: TName };
+  meta: AddonMeta & { kind: 'framework'; name: TName };
   /** Own the preview compiler. */
-  builder: BuilderPlugin;
+  builder: BuilderAddon;
   /** Supply the renderer's annotations and story types. */
   renderer: TRenderer;
   /** Set up these defaults right before the framework, after its builder and renderer. */
@@ -106,7 +106,7 @@ export interface FrameworkPlugin<
 }
 
 /** Adapt a package-name preset to the instance loader. */
-export interface LegacyPreset extends StorybookPlugin {
+export interface LegacyPreset extends StorybookAddon {
   legacy: Preset;
 }
 
@@ -125,22 +125,22 @@ export interface LegacyPreset extends StorybookPlugin {
  */
 export interface StorybookFrameworks {}
 
-/** Accept existing package entries alongside instance plugins. */
+/** Accept existing package entries alongside instance addons. */
 export type StorybookConfig = Omit<LegacyConfig, 'framework' | 'addons'> & {
-  framework?: LegacyConfig['framework'] | FrameworkPlugin | LegacyPreset;
-  addons?: (Preset | StorybookPlugin<unknown>)[];
+  framework?: LegacyConfig['framework'] | FrameworkAddon | LegacyPreset;
+  addons?: (Preset | StorybookAddon<unknown>)[];
 };
 
 /** Read the main configuration's framework and native addon declarations. */
 export type MainConfig = Pick<StorybookConfig, 'framework' | 'addons'>;
 
 /** Combine a framework's renderer and default addon types. */
-export type FrameworkTypes<F extends FrameworkPlugin> = NonNullable<F['renderer']['types']> &
+export type FrameworkTypes<F extends FrameworkAddon> = NonNullable<F['renderer']['types']> &
   AddonTypes<NonNullable<F['addons']>>;
 
 /** Combine the configured renderer, built-in features, and native addon types. */
 export type MainTypes<TMain extends MainConfig> = FrameworkTypes<
-  Extract<NonNullable<TMain['framework']>, FrameworkPlugin>
+  Extract<NonNullable<TMain['framework']>, FrameworkAddon>
 > &
   BuiltInTypes &
   AddonTypes<NonNullable<TMain['addons']>>;
@@ -173,16 +173,18 @@ type RegisteredMainConfig<TName extends string, TEntry> = TEntry extends {
         framework:
           | TName
           | { name: TName; options?: TOptions }
-          | FrameworkPlugin<StorybookPlugin<unknown>, readonly StorybookPlugin<unknown>[], TName>;
+          | FrameworkAddon<StorybookAddon<unknown>, readonly StorybookAddon<unknown>[], TName>;
       }
   : never;
 
-type AddonTypes<TAddons extends readonly unknown[]> = [PluginTypes<TAddons[number]>] extends [never]
+type AddonTypes<TAddons extends readonly unknown[]> = [AddonTypesOf<TAddons[number]>] extends [
+  never,
+]
   ? {}
-  : UnionToIntersection<PluginTypes<TAddons[number]>>;
+  : UnionToIntersection<AddonTypesOf<TAddons[number]>>;
 
-type PluginTypes<TPlugin> =
-  TPlugin extends StorybookPlugin<infer TTypes>
+type AddonTypesOf<TAddon> =
+  TAddon extends StorybookAddon<infer TTypes>
     ? keyof TTypes extends never
       ? never
       : TTypes
@@ -205,25 +207,25 @@ export function defineMain<
 
 /** Create an addon factory with typed configuration options. */
 export function defineAddon<TOptions = void, TTypes = {}>(
-  factory: (options: TOptions) => Omit<StorybookPlugin<TTypes>, 'meta'> & {
-    meta: PluginMetaInput & { kind?: never };
+  factory: (options: TOptions) => Omit<StorybookAddon<TTypes>, 'meta'> & {
+    meta: AddonMetaInput & { kind?: never };
   }
-): (options: TOptions) => StorybookPlugin<TTypes> & { meta: PluginMeta & { kind: 'addon' } } {
+): (options: TOptions) => StorybookAddon<TTypes> & { meta: AddonMeta & { kind: 'addon' } } {
   return brand('addon', (options: TOptions) => {
-    const plugin = factory(options);
-    return { ...plugin, meta: { ...plugin.meta, kind: 'addon' as const } };
+    const addon = factory(options);
+    return { ...addon, meta: { ...addon.meta, kind: 'addon' as const } };
   });
 }
 
 /** Create a builder factory with typed configuration options. */
 export function defineBuilder<TOptions = void>(
-  factory: (options: TOptions) => Omit<BuilderPlugin, 'meta'> & {
-    meta: PluginMetaInput & { kind?: never };
+  factory: (options: TOptions) => Omit<BuilderAddon, 'meta'> & {
+    meta: AddonMetaInput & { kind?: never };
   }
-): (options: TOptions) => BuilderPlugin {
-  return brand('builder', (options: TOptions): BuilderPlugin => {
-    const plugin = factory(options);
-    return { ...plugin, meta: { ...plugin.meta, kind: 'builder' } };
+): (options: TOptions) => BuilderAddon {
+  return brand('builder', (options: TOptions): BuilderAddon => {
+    const addon = factory(options);
+    return { ...addon, meta: { ...addon.meta, kind: 'builder' } };
   });
 }
 
@@ -231,33 +233,33 @@ export function defineBuilder<TOptions = void>(
 export function defineFramework<
   const TName extends string,
   TOptions = void,
-  TRenderer extends StorybookPlugin<unknown> = RendererPlugin | StorybookPlugin,
-  TAddons extends readonly StorybookPlugin<unknown>[] = readonly StorybookPlugin<unknown>[],
+  TRenderer extends StorybookAddon<unknown> = RendererAddon | StorybookAddon,
+  TAddons extends readonly StorybookAddon<unknown>[] = readonly StorybookAddon<unknown>[],
 >(
-  factory: (options: TOptions) => Omit<FrameworkPlugin<TRenderer, TAddons, TName>, 'meta'> & {
-    meta: PluginMetaInput & { name: TName; kind?: never };
+  factory: (options: TOptions) => Omit<FrameworkAddon<TRenderer, TAddons, TName>, 'meta'> & {
+    meta: AddonMetaInput & { name: TName; kind?: never };
   }
-): (options: TOptions) => FrameworkPlugin<TRenderer, TAddons, TName> {
-  return brand('framework', (options: TOptions): FrameworkPlugin<TRenderer, TAddons, TName> => {
-    const plugin = factory(options);
-    return { ...plugin, meta: { ...plugin.meta, kind: 'framework' } };
+): (options: TOptions) => FrameworkAddon<TRenderer, TAddons, TName> {
+  return brand('framework', (options: TOptions): FrameworkAddon<TRenderer, TAddons, TName> => {
+    const addon = factory(options);
+    return { ...addon, meta: { ...addon.meta, kind: 'framework' } };
   });
 }
 
 /** Create a renderer factory with typed configuration and story types. */
 export function defineRenderer<TOptions = void, TTypes = unknown>(
-  factory: (options: TOptions) => Omit<RendererPlugin<TTypes>, 'meta'> & {
-    meta: PluginMetaInput & { kind?: never };
+  factory: (options: TOptions) => Omit<RendererAddon<TTypes>, 'meta'> & {
+    meta: AddonMetaInput & { kind?: never };
   }
-): (options: TOptions) => RendererPlugin<TTypes> {
-  return brand('renderer', (options: TOptions): RendererPlugin<TTypes> => {
-    const plugin = factory(options);
-    return { ...plugin, meta: { ...plugin.meta, kind: 'renderer' } };
+): (options: TOptions) => RendererAddon<TTypes> {
+  return brand('renderer', (options: TOptions): RendererAddon<TTypes> => {
+    const addon = factory(options);
+    return { ...addon, meta: { ...addon.meta, kind: 'renderer' } };
   });
 }
 
 /** Keep a package-name preset on the existing preset loading path. */
-export function legacyPreset(preset: Preset, kind: PluginMeta['kind'] = 'addon'): LegacyPreset {
+export function legacyPreset(preset: Preset, kind: AddonMeta['kind'] = 'addon'): LegacyPreset {
   return {
     meta: { name: typeof preset === 'string' ? preset : preset.name, kind },
     legacy: preset,
@@ -265,11 +267,11 @@ export function legacyPreset(preset: Preset, kind: PluginMeta['kind'] = 'addon')
   };
 }
 
-function brand<T extends (options: never) => StorybookPlugin<unknown>>(
-  kind: PluginMeta['kind'],
+function brand<T extends (options: never) => StorybookAddon<unknown>>(
+  kind: AddonMeta['kind'],
   factory: T
 ): T {
   const branded = ((options: never) =>
-    Object.defineProperty(factory(options), PLUGIN_OPTIONS, { value: options })) as T;
-  return Object.assign(branded, { [PLUGIN_FACTORY]: kind });
+    Object.defineProperty(factory(options), ADDON_OPTIONS, { value: options })) as T;
+  return Object.assign(branded, { [ADDON_FACTORY]: kind });
 }

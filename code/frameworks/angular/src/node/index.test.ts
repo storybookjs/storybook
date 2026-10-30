@@ -48,16 +48,17 @@ const CASES: Record<
 it('registers the framework hooks', async () => {
   const results: Record<string, unknown> = {};
   for (const [name, { framework, cliOptions }] of Object.entries(CASES)) {
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: CONFIG_DIR,
       mode: 'headless',
       main: { framework, stories: [] },
       cliOptions: cliOptions as CreateStorybookInput['cliOptions'],
     });
+    await storybook.ready();
     try {
       const ctx = { ...cliOptions, configType: 'DEVELOPMENT', configDir: CONFIG_DIR } as never;
       results[name] = summarize({
-        plugins: storybook.plugins
+        addons: storybook.addons
           .filter(({ name }) => !name.startsWith('storybook/'))
           .map(({ kind, name }) => `${kind} ${name}`),
         framework: await storybook.callHook('core:framework:extend', ''),
@@ -87,17 +88,17 @@ it('registers the framework hooks', async () => {
   expect(results).toMatchInlineSnapshot(`
     {
       "Ivy off": {
+        "addons": [
+          "builder @storybook/builder-webpack5",
+          "renderer @storybook/angular",
+          "framework @storybook/angular",
+        ],
         "framework": {
           "name": "@storybook/angular",
           "options": {
             "enableIvy": false,
           },
         },
-        "plugins": [
-          "builder @storybook/builder-webpack5",
-          "renderer @storybook/angular",
-          "framework @storybook/angular",
-        ],
         "previewAnnotations": [
           "<code>/frameworks/angular/dist/client/config.js",
         ],
@@ -127,15 +128,15 @@ it('registers the framework hooks', async () => {
         },
       },
       "builder options": {
-        "framework": {
-          "name": "@storybook/angular",
-          "options": {},
-        },
-        "plugins": [
+        "addons": [
           "builder @storybook/builder-webpack5",
           "renderer @storybook/angular",
           "framework @storybook/angular",
         ],
+        "framework": {
+          "name": "@storybook/angular",
+          "options": {},
+        },
         "previewAnnotations": [
           "<code>/frameworks/angular/dist/client/preview-prod.js",
           "<code>/frameworks/angular/dist/client/config.js",
@@ -183,15 +184,15 @@ it('registers the framework hooks', async () => {
         },
       },
       "defaults": {
-        "framework": {
-          "name": "@storybook/angular",
-          "options": {},
-        },
-        "plugins": [
+        "addons": [
           "builder @storybook/builder-webpack5",
           "renderer @storybook/angular",
           "framework @storybook/angular",
         ],
+        "framework": {
+          "name": "@storybook/angular",
+          "options": {},
+        },
         "previewAnnotations": [
           "<code>/frameworks/angular/dist/client/config.js",
         ],

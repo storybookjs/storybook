@@ -40,7 +40,7 @@ function fakeStorybook(compilerFactory?: unknown): Storybook {
     configDir: '/project/.storybook',
     workingDir: '/project',
     options: {},
-    plugins: [],
+    addons: [],
     channel: new Channel({}),
     callHook: vi.fn(async (name: string, value: unknown) =>
       name === 'builder:webpack-instance:extend' && compilerFactory ? compilerFactory : value

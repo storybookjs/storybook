@@ -1,7 +1,7 @@
 import {
   defineFramework,
   defineMain as coreDefineMain,
-  type RendererPlugin,
+  type RendererAddon,
   type Storybook,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
@@ -22,7 +22,7 @@ export type StorybookConfig = Omit<SvelteViteConfig, 'addons'> & Pick<InstanceCo
 export const svelteVite = defineFramework<
   '@storybook/svelte-vite',
   FrameworkOptions | void,
-  RendererPlugin<SvelteTypes>
+  RendererAddon<SvelteTypes>
 >((input) => {
   const options = input || {};
   return {
@@ -54,7 +54,10 @@ export function svelteViteHooks(
   }));
   storybook.hook('builder:vite:extend', (config) => {
     assertSvelteCsfAddonNotInstalledOnInstance({ storybook, framework: frameworkName });
-    return withSveltePlugins(config, { frameworkName, docgen: options.docgen });
+    return withSveltePlugins(config, {
+      frameworkName,
+      docgen: storybook.options.docs?.builderDocgen === false ? false : options.docgen,
+    });
   });
 }
 

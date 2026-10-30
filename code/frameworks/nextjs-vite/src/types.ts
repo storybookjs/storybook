@@ -1,4 +1,4 @@
-import type { FrameworkPlugin } from 'storybook/internal/instance';
+import type { FrameworkAddon } from 'storybook/internal/instance';
 import type { CompatibleString } from 'storybook/internal/types';
 
 import type { BuilderOptions } from '@storybook/builder-vite';
@@ -27,7 +27,7 @@ export interface NextjsViteOptions extends FrameworkOptions, Pick<ReactViteOptio
 
 type StorybookConfigFramework = {
   framework:
-    | FrameworkPlugin
+    | FrameworkAddon
     | FrameworkName
     | {
         name: FrameworkName;

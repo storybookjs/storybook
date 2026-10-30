@@ -8,13 +8,13 @@ import { isAbsolute, resolve } from 'pathe';
 
 import { importModule, safeResolveModule } from '../utils/module.ts';
 import {
-  PLUGIN_FACTORY,
-  type BuilderPlugin,
-  type FrameworkPlugin,
-  type PluginMeta,
-  type RendererPlugin,
-  type StorybookPlugin,
-} from './plugins.ts';
+  ADDON_FACTORY,
+  type BuilderAddon,
+  type FrameworkAddon,
+  type AddonMeta,
+  type RendererAddon,
+  type StorybookAddon,
+} from './addons.ts';
 
 /** Preset subpaths official packages exported before `<pkg>/node`; group 1 is the package name. */
 const OFFICIAL_PRESET_SPECIFIERS: RegExp[] = [
@@ -25,29 +25,29 @@ const OFFICIAL_PRESET_SPECIFIERS: RegExp[] = [
 
 const WARNED_SPECIFIERS = new Set<string>();
 
-/** The plugin a native factory of one kind creates. */
-export type NativePlugin<K extends PluginMeta['kind']> = K extends 'framework'
-  ? FrameworkPlugin
+/** The addon a native factory of one kind creates. */
+export type NativeAddon<K extends AddonMeta['kind']> = K extends 'framework'
+  ? FrameworkAddon
   : K extends 'builder'
-    ? BuilderPlugin
+    ? BuilderAddon
     : K extends 'renderer'
-      ? RendererPlugin
-      : StorybookPlugin;
+      ? RendererAddon
+      : StorybookAddon;
 
 /**
  * Load the factory a package exports by default from `<pkg>/node` when it is branded for `kind`.
  * `name` is a package name, an absolute or config-relative path inside the package, or a `file:`
  * URL.
  */
-export async function resolveNativeFactory<K extends PluginMeta['kind']>(
+export async function resolveNativeFactory<K extends AddonMeta['kind']>(
   name: string,
   kind: K,
   configDir: string
-): Promise<((options: unknown) => NativePlugin<K>) | undefined> {
+): Promise<((options: unknown) => NativeAddon<K>) | undefined> {
   const entry = resolveNodeEntry(name.startsWith('file:') ? fileURLToPath(name) : name, configDir);
   const factory = entry && (await importModule(entry));
   return typeof factory === 'function' &&
-    (factory as { [PLUGIN_FACTORY]?: unknown })[PLUGIN_FACTORY] === kind
+    (factory as { [ADDON_FACTORY]?: unknown })[ADDON_FACTORY] === kind
     ? factory
     : undefined;
 }

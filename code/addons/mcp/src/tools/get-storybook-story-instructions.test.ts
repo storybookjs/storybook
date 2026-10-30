@@ -17,14 +17,14 @@ import {
 // `mockStorybook` hooks or the `addonVitestAvailable` override instead of mocking an
 // addon-local probe.
 
-/** A Storybook whose `core:framework:extend` hook resolves to `framework` and has no plugins. */
+/** A Storybook whose `core:framework:extend` hook resolves to `framework` and has no addons. */
 function mockStorybook(framework: unknown): AddonContext['storybook'] {
   return {
     configDir: '/project/.storybook',
     callHook: vi.fn(async (name: string) =>
       name === 'core:framework:extend' ? framework : undefined
     ),
-    hasPlugin: () => false,
+    hasAddon: () => false,
   } as unknown as AddonContext['storybook'];
 }
 

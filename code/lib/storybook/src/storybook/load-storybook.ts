@@ -28,10 +28,11 @@ export async function experimental_loadStorybook(
     return { ...current.options, docs: options.docs };
   }
   // Left open: the returned `presets` apply against this instance's hooks.
-  const storybook = await createStorybook({
+  const storybook = createStorybook({
     configDir: options.configDir,
     mode: 'headless',
     cliOptions: options,
   });
+  await storybook.ready();
   return { ...options, ...storybook.options, docs: options.docs } as Options;
 }

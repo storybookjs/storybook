@@ -21,6 +21,7 @@ describe('bootstrapToolsRuntime', () => {
       attached: false,
       toolsets: { values: () => toolsets },
       services: { get: getService },
+      ready: vi.fn().mockResolvedValue(undefined),
       close,
     } as unknown as Storybook;
     createStorybook.mockResolvedValue(storybook);

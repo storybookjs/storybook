@@ -4,13 +4,13 @@ import { fileURLToPath } from 'node:url';
 import type { InterPresetOptions } from '@storybook/core/internal/common';
 import { resolvePackageDir, safeResolveModule } from '@storybook/core/internal/deep/utils/module';
 import type {
-  BuilderPlugin,
+  BuilderAddon,
   LegacyAdapter,
   LegacyPreset,
   LegacyRegistrar,
-  PluginMeta,
+  AddonMeta,
   Storybook,
-  StorybookPlugin,
+  StorybookAddon,
 } from '@storybook/core/internal/instance';
 import type { Builder, LoadedPreset, Options, PresetConfig } from '@storybook/core/internal/types';
 
@@ -19,26 +19,26 @@ import { dirname, isAbsolute, join } from 'pathe';
 import { getPreviewBuilder } from './get-builders.ts';
 import { loadAllPresets, resolveAddonName, type NativePresetResolver } from './presets.ts';
 
-/** Plugin kinds a nested preset entry may load as; a framework only comes from `main.framework`. */
-const NESTED_PLUGIN_KINDS: PluginMeta['kind'][] = ['addon', 'renderer', 'builder'];
+/** Addon kinds a nested preset entry may load as; a framework only comes from `main.framework`. */
+const NESTED_ADDON_KINDS: AddonMeta['kind'][] = ['addon', 'renderer', 'builder'];
 
 /** Load `<pkg>/preset` packages in two passes: discover the builder and renderer, then load all. */
 export const legacyAdapter: LegacyAdapter = {
-  async load({ storybook, main, plugins: inputPlugins, baseOptions, registrar }) {
-    const plugins = [...inputPlugins];
+  async load({ storybook, main, addons: inputAddons, baseOptions, registrar }) {
+    const addons = [...inputAddons];
     const options = { ...baseOptions };
     const frameworkName =
       typeof main.framework === 'string' ? main.framework : main.framework?.name;
     const corePresets: PresetConfig[] = frameworkName ? [join(frameworkName, 'preset')] : [];
     const previewCorePresets: PresetConfig[] = [];
     const previewOverridePresets: string[] = [];
-    const nativeFramework = plugins.some(
-      (plugin) => plugin.meta.kind === 'framework' && 'builder' in plugin
+    const nativeFramework = addons.some(
+      (addon) => addon.meta.kind === 'framework' && 'builder' in addon
     );
     const rendererPresets: PresetConfig[] = [];
-    // Plugins set up outside `plugins`, which nested preset entries must not set up again.
-    const setUp: StorybookPlugin[] = [];
-    let builder: BuilderPlugin | undefined;
+    // Addons set up outside `addons`, which nested preset entries must not set up again.
+    const setUp: StorybookAddon[] = [];
+    let builder: BuilderAddon | undefined;
     let discovery: Awaited<ReturnType<typeof loadAllPresets>> | undefined;
     if (!nativeFramework || storybook.mode === 'build') {
       let presetsList: LoadedPreset[] = [];
@@ -62,7 +62,7 @@ export const legacyAdapter: LegacyAdapter = {
     if (nativeFramework) {
       corePresets.splice(0);
     } else {
-      const discoveredPlugins: StorybookPlugin[] = [];
+      const discoveredAddons: StorybookAddon[] = [];
       const core = await discovery!.apply('core', {});
       const nativeRenderer =
         core.renderer &&
@@ -77,7 +77,7 @@ export const legacyAdapter: LegacyAdapter = {
         if (resolvedRenderer) {
           rendererPresets.push(resolvedRenderer);
         }
-        discoveredPlugins.push({
+        discoveredAddons.push({
           meta: { name: core.renderer, kind: 'renderer' },
           setup(): void {},
         });
@@ -90,11 +90,11 @@ export const legacyAdapter: LegacyAdapter = {
         builder = nativeBuilder(
           typeof core.builder === 'object' ? core.builder.options : undefined
         );
-        discoveredPlugins.unshift(builder);
+        discoveredAddons.unshift(builder);
       } else if (builderName) {
         const implementation = await getPreviewBuilder(builderName);
         builder = wrapLegacyBuilder(builderName, implementation);
-        discoveredPlugins.unshift(builder);
+        discoveredAddons.unshift(builder);
         if (implementation.corePresets) {
           previewCorePresets.push(...implementation.corePresets);
         } else {
@@ -105,20 +105,20 @@ export const legacyAdapter: LegacyAdapter = {
         }
         previewOverridePresets.push(...(implementation.overridePresets ?? []));
       }
-      plugins.splice(plugins[0]?.meta.kind === 'framework' ? 1 : 0, 0, ...discoveredPlugins);
+      addons.splice(addons[0]?.meta.kind === 'framework' ? 1 : 0, 0, ...discoveredAddons);
     }
-    for (const plugin of plugins) {
-      corePresets.push(registrar.virtualPreset(plugin));
-      if (!nativeFramework && plugin.meta.kind === 'framework') {
+    for (const addon of addons) {
+      corePresets.push(registrar.virtualPreset(addon));
+      if (!nativeFramework && addon.meta.kind === 'framework') {
         continue;
       }
-      if ('legacy' in plugin) {
-        const { legacy } = plugin as LegacyPreset;
+      if ('legacy' in addon) {
+        const { legacy } = addon as LegacyPreset;
         const name = typeof legacy === 'string' ? legacy : legacy.name;
         const legacyOptions = typeof legacy === 'string' ? undefined : legacy.options;
         const resolved = resolveAddonName(storybook.configDir, name, legacyOptions);
         if (!resolved) {
-          throw new Error(`Could not resolve legacy plugin "${name}".`);
+          throw new Error(`Could not resolve legacy addon "${name}".`);
         }
         corePresets.push({ ...resolved, options: legacyOptions } as PresetConfig);
       }
@@ -137,7 +137,7 @@ export const legacyAdapter: LegacyAdapter = {
         presetsList = loaded;
         presetOptions = context;
       },
-      createNativePresetResolver(registrar, options.configDir, [...plugins, ...setUp])
+      createNativePresetResolver(registrar, options.configDir, [...addons, ...setUp])
     );
     return { presets: presetsList, options: presetOptions, builder };
   },
@@ -145,37 +145,37 @@ export const legacyAdapter: LegacyAdapter = {
 
 /**
  * Load a preset or addon nested in `main.presets` or another preset through its native `<pkg>/node`
- * plugin when it has one, so official packages without a preset entry keep working there.
+ * addon when it has one, so official packages without a preset entry keep working there.
  */
 function createNativePresetResolver(
   registrar: LegacyRegistrar,
   configDir: string,
-  plugins: StorybookPlugin[]
+  addons: StorybookAddon[]
 ): NativePresetResolver {
-  const registered = new Set(plugins.map((plugin) => plugin.meta.name));
+  const registered = new Set(addons.map((addon) => addon.meta.name));
   return async (entry) => {
-    // Entries the loader already resolved, such as `main`, plugins, or absolute preset files.
+    // Entries the loader already resolved, such as `main`, addons, or absolute preset files.
     if (typeof entry !== 'string' && 'type' in entry) {
       return undefined;
     }
     const { name, options } =
       typeof entry === 'string' ? { name: entry, options: undefined } : entry;
-    for (const kind of NESTED_PLUGIN_KINDS) {
+    for (const kind of NESTED_ADDON_KINDS) {
       const factory = await registrar.resolveNativeFactory(name, kind, configDir);
       if (factory) {
-        const plugin = factory(options);
-        if (registered.has(plugin.meta.name)) {
+        const addon = factory(options);
+        if (registered.has(addon.meta.name)) {
           return null;
         }
-        registered.add(plugin.meta.name);
-        return registrar.virtualPreset(plugin);
+        registered.add(addon.meta.name);
+        return registrar.virtualPreset(addon);
       }
     }
     return undefined;
   };
 }
 
-function wrapLegacyBuilder(name: string, builder: Builder<unknown>): BuilderPlugin {
+function wrapLegacyBuilder(name: string, builder: Builder<unknown>): BuilderAddon {
   const getOptions = (storybook: Storybook): Options => {
     const { docs: _docs, ...options } = storybook.options;
     return { ...options, presets: storybook.presets, channel: storybook.channel };

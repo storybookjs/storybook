@@ -1,4 +1,4 @@
-import { defineAddon } from '../instance/plugins.ts';
+import { defineAddon } from '../instance/addons.ts';
 
 import type { TestTypes } from './preview.ts';
 

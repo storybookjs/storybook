@@ -7,7 +7,7 @@ import { registerCommonOverrides } from '../instance/common-overrides.ts';
 import { createHookRuntime } from '../instance/hooks.ts';
 import { features } from './preset.ts';
 
-/** Resolve `features.docgenServer` from core's defaults, a docgen plugin, `main.ts` and core's overrides. */
+/** Resolve `features.docgenServer` from core's defaults, a docgen addon, `main.ts` and core's overrides. */
 async function resolveDocgenServer({
   providerEnabled,
   mainFeatures,
@@ -32,16 +32,16 @@ async function resolveDocgenServer({
 describe('features.docgenServer', () => {
   it.each([
     {
-      name: 'a plugin can run a docgen provider',
+      name: 'an addon can run a docgen provider',
       input: { providerEnabled: true },
       expected: true,
     },
     {
-      name: 'the provider plugin reports it cannot run',
+      name: 'the provider addon reports it cannot run',
       input: { providerEnabled: false },
       expected: false,
     },
-    { name: 'no plugin declares a docgen provider', input: {}, expected: false },
+    { name: 'no addon declares a docgen provider', input: {}, expected: false },
     {
       name: 'main.ts opts out of an available provider',
       input: { providerEnabled: true, mainFeatures: { docgenServer: false } },

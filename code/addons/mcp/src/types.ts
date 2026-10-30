@@ -57,7 +57,7 @@ export type DocsServingContext = {
 /** The instance pieces the MCP server reads. */
 export type McpStorybook = Pick<
   Storybook,
-  'options' | 'configDir' | 'callHook' | 'hasPlugin' | 'getIndex' | 'getStoryIndexGenerator'
+  'options' | 'configDir' | 'callHook' | 'hasAddon' | 'getIndex' | 'getStoryIndexGenerator'
 >;
 
 /** The running Storybook the MCP request handler serves. */

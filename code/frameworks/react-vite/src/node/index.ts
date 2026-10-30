@@ -1,7 +1,7 @@
 import {
   defineFramework,
   defineMain as coreDefineMain,
-  type RendererPlugin,
+  type RendererAddon,
   type Storybook,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
@@ -21,7 +21,7 @@ export type StorybookConfig = Omit<ReactViteConfig, 'addons'> & Pick<InstanceCon
 export const reactVite = defineFramework<
   '@storybook/react-vite',
   ReactViteOptions | void,
-  RendererPlugin<ReactTypes>
+  RendererAddon<ReactTypes>
 >((input) => {
   const options = input || {};
   return {
@@ -51,10 +51,12 @@ export function reactViteHooks(storybook: Storybook, options: ReactViteOptions):
     }));
   }
   storybook.hook('builder:vite:extend', async (config) =>
-    withReactDocgen(config, {
-      features: storybook.options.features,
-      typescript: await storybook.callHook('core:typescript:extend', {}),
-    })
+    storybook.options.docs?.builderDocgen === false
+      ? config
+      : withReactDocgen(config, {
+          features: storybook.options.features,
+          typescript: await storybook.callHook('core:typescript:extend', {}),
+        })
   );
 }
 

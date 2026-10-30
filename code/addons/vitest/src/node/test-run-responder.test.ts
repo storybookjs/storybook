@@ -202,12 +202,13 @@ describe('wireTestRunResponder', () => {
     const responses = vi.fn();
     channel.on(TRIGGER_TEST_RUN_RESPONSE, responses);
 
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: fileURLToPath(new URL('./__fixtures__/first', import.meta.url)),
       mode: 'headless',
       main: { stories: [] },
       attach: { transport: { send() {}, setHandler() {} } },
     });
+    await storybook.ready();
     try {
       await runWithStorybook(storybook, () =>
         wireTestRunResponder({ channel, storybook: makeStorybook() })

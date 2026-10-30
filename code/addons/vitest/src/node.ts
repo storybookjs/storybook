@@ -22,7 +22,7 @@ export default defineAddon<VitestOptions | void>((input) => {
     setup(storybook): void {
       const runtime = createTestRunnerRuntime(storybook);
       storybook.hook('core:services:register', () =>
-        registerTestServices(storybook, storybook.hasPlugin('@storybook/addon-a11y'), runtime)
+        registerTestServices(storybook, storybook.hasAddon('@storybook/addon-a11y'), runtime)
       );
       storybook.hook('server:channel:ready', (channel) => {
         wireAiScoringChannels(storybook, channel);

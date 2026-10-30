@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import {
   defineFramework,
   defineMain as coreDefineMain,
-  type RendererPlugin,
+  type RendererAddon,
   type StorybookConfig as InstanceConfig,
 } from '@storybook/core';
 
@@ -29,7 +29,7 @@ export type StorybookConfig = Omit<NextjsConfig, 'addons'> & Pick<InstanceConfig
 export const nextjs = defineFramework<
   '@storybook/nextjs',
   FrameworkOptions | void,
-  RendererPlugin<ReactTypes>
+  RendererAddon<ReactTypes>
 >((input) => {
   const options = input || {};
   return {

@@ -1,14 +1,14 @@
 import { expectTypeOf, test } from 'vitest';
 
 import {
-  type BuilderPlugin,
+  type BuilderAddon,
   defineAddon,
   defineBuilder,
   defineFramework,
   defineRenderer,
-} from './plugins.ts';
+} from './addons.ts';
 
-declare const builder: BuilderPlugin;
+declare const builder: BuilderAddon;
 
 test('resolves addon metadata without a caller-supplied kind', () => {
   const addon = defineAddon(() => ({ meta: { name: 'x' }, setup() {} }))();
@@ -38,22 +38,22 @@ test('resolves builder, renderer, and framework kinds while preserving renderer 
 
 test('rejects caller-supplied kinds in factory metadata', () => {
   defineAddon(() => ({
-    // @ts-expect-error The helper owns the plugin kind.
+    // @ts-expect-error The helper owns the addon kind.
     meta: { name: 'x', kind: 'addon' },
     setup() {},
   }));
   defineBuilder(() => ({
     ...builder,
-    // @ts-expect-error The helper owns the plugin kind.
+    // @ts-expect-error The helper owns the addon kind.
     meta: { name: 'builder', kind: 'builder' },
   }));
   defineRenderer(() => ({
-    // @ts-expect-error The helper owns the plugin kind.
+    // @ts-expect-error The helper owns the addon kind.
     meta: { name: 'renderer', kind: 'renderer' },
     setup() {},
   }));
   defineFramework(() => ({
-    // @ts-expect-error The helper owns the plugin kind.
+    // @ts-expect-error The helper owns the addon kind.
     meta: { name: 'framework', kind: 'framework' },
     builder,
     renderer: defineRenderer(() => ({ meta: { name: 'renderer' }, setup() {} }))(),

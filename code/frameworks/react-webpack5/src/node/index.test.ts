@@ -44,14 +44,15 @@ const CASES: Record<string, Partial<StorybookConfig>> = {
 it('registers the framework hooks', async () => {
   const results: Record<string, unknown> = {};
   for (const [name, main] of Object.entries(CASES)) {
-    const storybook = await createStorybook({
+    const storybook = createStorybook({
       configDir: CONFIG_DIR,
       mode: 'headless',
       main: { ...main, stories: [] },
     });
+    await storybook.ready();
     try {
       results[name] = summarize({
-        plugins: storybook.plugins
+        addons: storybook.addons
           .filter(({ name }) => !name.startsWith('storybook/'))
           .map(({ kind, name }) => `${kind} ${name}`),
         renderer: (await storybook.callHook('core:config:extend', {})).renderer,
@@ -67,17 +68,17 @@ it('registers the framework hooks', async () => {
   expect(results).toMatchInlineSnapshot(`
     {
       "a framework name": {
-        "framework": {
-          "name": "@storybook/react-webpack5",
-          "options": {},
-        },
-        "frameworkOptions": {},
-        "plugins": [
+        "addons": [
           "builder @storybook/builder-webpack5",
           "renderer @storybook/react",
           "addon @storybook/preset-react-webpack",
           "framework @storybook/react-webpack5",
         ],
+        "framework": {
+          "name": "@storybook/react-webpack5",
+          "options": {},
+        },
+        "frameworkOptions": {},
         "renderer": "<code>/renderers/react/dist/node.js",
         "webpackConfig": {
           "plugins": [],
@@ -92,17 +93,17 @@ it('registers the framework hooks', async () => {
         },
       },
       "development mode for build": {
-        "framework": {
-          "name": "@storybook/react-webpack5",
-          "options": {},
-        },
-        "frameworkOptions": {},
-        "plugins": [
+        "addons": [
           "builder @storybook/builder-webpack5",
           "renderer @storybook/react",
           "addon @storybook/preset-react-webpack",
           "framework @storybook/react-webpack5",
         ],
+        "framework": {
+          "name": "@storybook/react-webpack5",
+          "options": {},
+        },
+        "frameworkOptions": {},
         "renderer": "<code>/renderers/react/dist/node.js",
         "webpackConfig": {
           "plugins": [
@@ -119,6 +120,12 @@ it('registers the framework hooks', async () => {
         },
       },
       "framework options": {
+        "addons": [
+          "builder @storybook/builder-webpack5",
+          "renderer @storybook/react",
+          "addon @storybook/preset-react-webpack",
+          "framework @storybook/react-webpack5",
+        ],
         "framework": {
           "name": "@storybook/react-webpack5",
           "options": {
@@ -134,12 +141,6 @@ it('registers the framework hooks', async () => {
           },
           "strictMode": true,
         },
-        "plugins": [
-          "builder @storybook/builder-webpack5",
-          "renderer @storybook/react",
-          "addon @storybook/preset-react-webpack",
-          "framework @storybook/react-webpack5",
-        ],
         "renderer": "<code>/renderers/react/dist/node.js",
         "webpackConfig": {
           "plugins": [],
@@ -154,17 +155,17 @@ it('registers the framework hooks', async () => {
         },
       },
       "react-docgen": {
-        "framework": {
-          "name": "@storybook/react-webpack5",
-          "options": {},
-        },
-        "frameworkOptions": {},
-        "plugins": [
+        "addons": [
           "builder @storybook/builder-webpack5",
           "renderer @storybook/react",
           "addon @storybook/preset-react-webpack",
           "framework @storybook/react-webpack5",
         ],
+        "framework": {
+          "name": "@storybook/react-webpack5",
+          "options": {},
+        },
+        "frameworkOptions": {},
         "renderer": "<code>/renderers/react/dist/node.js",
         "webpackConfig": {
           "plugins": [],
@@ -192,17 +193,17 @@ it('registers the framework hooks', async () => {
         },
       },
       "react-docgen-typescript": {
-        "framework": {
-          "name": "@storybook/react-webpack5",
-          "options": {},
-        },
-        "frameworkOptions": {},
-        "plugins": [
+        "addons": [
           "builder @storybook/builder-webpack5",
           "renderer @storybook/react",
           "addon @storybook/preset-react-webpack",
           "framework @storybook/react-webpack5",
         ],
+        "framework": {
+          "name": "@storybook/react-webpack5",
+          "options": {},
+        },
+        "frameworkOptions": {},
         "renderer": "<code>/renderers/react/dist/node.js",
         "webpackConfig": {
           "plugins": [],

@@ -216,17 +216,17 @@ describe('mcpServerHandler', () => {
     mcpServerHandler = (params: object) => handler.mcpServerHandler({ server, ...params } as never);
   });
 
-  /** Handler options for a Storybook whose hooks resolve to `hooks[name]` and which has `plugins`. */
+  /** Handler options for a Storybook whose hooks resolve to `hooks[name]` and which has `addons`. */
   function createMockOptions({
     port = 6006,
     core = { disableTelemetry: false },
     hooks = {},
-    plugins = [],
+    addons = [],
   }: {
     port?: number;
     core?: { disableTelemetry?: boolean };
     hooks?: Record<string, unknown>;
-    plugins?: string[];
+    addons?: string[];
   } = {}) {
     return {
       core,
@@ -235,7 +235,7 @@ describe('mcpServerHandler', () => {
         callHook: vi.fn(async (name: string, value?: unknown) =>
           name in hooks ? hooks[name] : value
         ),
-        hasPlugin: (name: string) => plugins.includes(name),
+        hasAddon: (name: string) => addons.includes(name),
         getIndex: vi.fn(),
         getStoryIndexGenerator: vi.fn(),
       },
@@ -301,7 +301,7 @@ describe('mcpServerHandler', () => {
   }
 
   it('should initialize MCP server and handle requests', async () => {
-    const mockOptions = createMockOptions({ plugins: ['@storybook/addon-vitest'] });
+    const mockOptions = createMockOptions({ addons: ['@storybook/addon-vitest'] });
     const mockReq = createMockIncomingMessage({
       method: 'POST',
       headers: { 'content-type': 'application/json' },

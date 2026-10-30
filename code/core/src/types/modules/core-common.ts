@@ -277,10 +277,10 @@ export interface BuilderOptions {
 
 export interface StorybookConfigOptions {
   presets: Presets;
-  /** @deprecated Use `plugins`, or `storybook.plugins` in define* plugins. Removed in Storybook 12. */
+  /** @deprecated Use `addons`, or `storybook.addons` in define* addons. Removed in Storybook 12. */
   presetsList?: LoadedPreset[];
-  /** Name and kind of every instance plugin, read by `main.ts` function fields. */
-  plugins?: readonly { name: string; kind: 'framework' | 'builder' | 'renderer' | 'addon' }[];
+  /** Name and kind of every instance addon, read by `main.ts` function fields. */
+  addons?: readonly { name: string; kind: 'framework' | 'builder' | 'renderer' | 'addon' }[];
   channel: ChannelLike;
   /** Read the preview annotations collected by the instance. */
   previewAnnotations?: PreviewAnnotation[];
@@ -386,6 +386,10 @@ export type DocsOptions = {
   defaultName?: string;
   /** Only show doc entries in the side bar (usually set with the `--docs` CLI flag) */
   docsMode?: boolean;
+  /** Set `false` to skip the frameworks' builder docgen plugins; server docgen is unaffected. */
+  builderDocgen?: boolean;
+  /** Set `false` to skip MDX compilation and its React aliasing in the builder. */
+  mdx?: boolean;
 };
 
 export interface TestBuildFlags {

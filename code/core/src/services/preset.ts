@@ -30,7 +30,7 @@ const SERVICES_LOADED = Symbol.for('storybook.instance.services-loaded');
 
 const babelPresetEnvMajor = getBabelPresetEnvMajor();
 
-/** Core's feature defaults; `docgenServer` follows whether a plugin can run a docgen provider. */
+/** Core's feature defaults; `docgenServer` follows whether an addon can run a docgen provider. */
 export async function features(
   existing: StorybookConfigRaw['features'],
   storybook: Pick<Storybook, 'callHook'>
@@ -56,7 +56,7 @@ export const csfIndexer: Indexer = {
   },
 };
 
-/** Put the CSF indexer ahead of the indexers plugins collected. */
+/** Put the CSF indexer ahead of the indexers addons collected. */
 export function experimental_indexers(existingIndexers: Indexer[] | undefined): Indexer[] {
   return [csfIndexer].concat(existingIndexers || []);
 }

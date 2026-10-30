@@ -73,7 +73,7 @@ it('isolates two dev managers, including their entries, output files, hooks, and
     );
     const main = (await import(`../../../../../core/src/instance/__fixtures__/${fixture}/main.ts`))
       .default;
-    const instance = await createStorybook({
+    const instance = createStorybook({
       configDir,
       mode: 'dev',
       cliOptions: { outputDir: resolve(`manager-${fixture}`), quiet: true },
@@ -97,6 +97,7 @@ it('isolates two dev managers, including their entries, output files, hooks, and
       },
     });
     INSTANCES.push(instance);
+    await instance.ready();
     return instance;
   };
   const [first, second] = await Promise.all([create('first'), create('second')]);

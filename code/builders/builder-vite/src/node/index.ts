@@ -10,13 +10,13 @@ import { createHeadlessViteChangeDetectionAdapter } from '../change-detection-ad
 import { createViteChangeDetectionAdapter } from '../change-detection-adapter/index.ts';
 import { getIframeHtml } from '../plugins/code-generator-plugin.ts';
 import type { BuilderOptions } from '../types.ts';
-import { resolveVitePublicDir, viteCorePlugins } from '../vite-config.ts';
+import { resolveVitePublicDir } from '../vite-config.ts';
 import { createViteServer } from '../vite-server.ts';
 
 /** Configure the preview compiler. */
 export type ViteBuilderOptions = BuilderOptions;
 
-export { viteCorePlugins };
+export { vitePreviewPlugins } from '../preview-plugins.ts';
 
 /** Create an isolated Vite preview builder. */
 export const vite = defineBuilder<ViteBuilderOptions | void>((input) => {

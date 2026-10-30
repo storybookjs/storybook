@@ -15,7 +15,7 @@ const COLUMNS: Pkg[][] = [
       path: 'code/core',
       name: '@storybook/core',
       dirs: [
-        ['src/instance', 'new: createStorybook, hooks, plugins, dedupe'],
+        ['src/instance', 'new: createStorybook, hooks, addons, dedupe'],
         ['src/services', 'change-detection, core-owned stores'],
         ['src/story-index', 'from core-server: generator, ghost-stories, manifests'],
         ['src/test', 'instrumenter, mocking'],

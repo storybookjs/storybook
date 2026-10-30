@@ -29,7 +29,7 @@ function createStorybook({ hooks = {}, core }: MountSetup = {}) {
       const result = name in hooks ? hooks[name] : value;
       return typeof result === 'function' ? result() : result;
     }),
-    hasPlugin: () => false,
+    hasAddon: () => false,
     getIndex: vi.fn(),
     getStoryIndexGenerator: vi.fn(),
   } satisfies Record<keyof McpStorybook, unknown>;
@@ -437,7 +437,7 @@ describe('mountMcpServer', () => {
   });
 
   it('should show Storybook version requirement for addon-vitest and a manual manifest link', async () => {
-    // The mock Storybook has no plugins, so addon-vitest reads as disabled.
+    // The mock Storybook has no addons, so addon-vitest reads as disabled.
     const manifestEnabledOptions: MountSetup = {
       hooks: {
         'core:features:extend': { experimentalComponentsManifest: true },

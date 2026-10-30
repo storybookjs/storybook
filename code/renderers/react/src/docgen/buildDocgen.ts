@@ -42,6 +42,14 @@ function isReactAttribute(prop: ComponentDoc['props'][string]) {
   );
 }
 
+/** Appends RCM's pre-split JSDoc tags to the description so the shared JSDoc parser can read them. */
+function withJsDocTags(description: string, jsDocTags: Record<string, string[]> | undefined) {
+  const tagLines = Object.entries(jsDocTags ?? {}).flatMap(([tag, texts]) =>
+    texts.map((text) => `@${tag} ${text}`.trimEnd())
+  );
+  return tagLines.length > 0 ? [description, ...tagLines].join('\n') : description;
+}
+
 /** Converts one RCM `ComponentDoc` into the `StrictArgTypes` shape consumed by args tables. */
 function extractArgTypesFromComponentMeta(
   componentMeta: ComponentDoc | undefined
@@ -55,11 +63,13 @@ function extractArgTypesFromComponentMeta(
   const props = Object.fromEntries(
     Object.entries(componentMeta.props)
       .filter(([, prop]) => !isReactAttribute(prop))
-      .map(([name, prop]) => [
+      .map(([name, { jsDocTags, ...prop }]) => [
         name,
-        prop.defaultValue
-          ? { ...prop, defaultValue: { ...prop.defaultValue, computed: false } }
-          : prop,
+        {
+          ...prop,
+          description: withJsDocTags(prop.description, jsDocTags),
+          ...(prop.defaultValue ? { defaultValue: { ...prop.defaultValue, computed: false } } : {}),
+        },
       ])
   );
   return extractArgTypes({ __docgenInfo: { ...componentMeta, props } }) ?? undefined;

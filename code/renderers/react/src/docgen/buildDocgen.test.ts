@@ -196,6 +196,57 @@ describe('buildDocgenPayload', () => {
     }
   );
 
+  it('keeps per-prop JSDoc tags in argTypes', { timeout: 30_000 }, async () => {
+    tempDir = createTempDir('docgen-build');
+
+    const files = writeFiles(tempDir, {
+      'tsconfig.json': tsconfigJSON(),
+      'Button.tsx': dedent`
+        import React, { type SyntheticEvent } from 'react';
+        interface Props {
+          /**
+           * This is case 1.
+           *
+           * @param {SyntheticEvent} event - React's original event.
+           * @returns {void}
+           */
+          case1: (event: SyntheticEvent) => void;
+          /**
+           * Old label.
+           *
+           * @deprecated Use label instead.
+           */
+          title?: string;
+        }
+        export const Button = (_props: Props) => <button />;
+      `,
+      'Button.stories.tsx': dedent`
+        import { Button } from './Button';
+        export default { component: Button, title: 'Forms/Button' };
+        export const Primary = () => <Button case1={() => {}} />;
+      `,
+    });
+
+    componentMetaManager = new ComponentMetaManager(ts);
+
+    const payload = await buildDocgenPayload(
+      { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
+      {
+        componentMetaManager,
+        resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)),
+      }
+    );
+
+    expect(payload!.argTypes?.case1.description).toBe('This is case 1.');
+    expect(payload!.argTypes?.case1.table).toMatchObject({
+      jsDocTags: { params: [{ name: 'event', description: "React's original event." }] },
+    });
+    expect(payload!.argTypes?.title.description).toBe('Old label.');
+    expect(payload!.argTypes?.title.table).toMatchObject({
+      jsDocTags: { deprecated: 'Use label instead.' },
+    });
+  });
+
   it('returns undefined when the story file is missing', { timeout: 15_000 }, async () => {
     tempDir = createTempDir('docgen-build');
     componentMetaManager = new ComponentMetaManager(ts);

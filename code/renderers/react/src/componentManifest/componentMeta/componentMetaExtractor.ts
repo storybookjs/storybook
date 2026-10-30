@@ -47,6 +47,7 @@ export interface PropItem {
   required: boolean;
   type: PropItemType;
   description: string;
+  jsDocTags?: Record<string, string[]>;
   defaultValue: { value: string } | null;
   parent?: ParentType;
   declarations?: ParentType[];
@@ -1291,7 +1292,7 @@ function extractPropItem(
   const propType = typeOverride ?? checker.getTypeOfSymbolAtLocation(prop, contextNode);
   const type = serializeType(typescript, checker, propType, isRequired);
 
-  const description = typescript.displayPartsToString(prop.getDocumentationComment(checker));
+  const { description, jsDocTags } = extractComponentJsDocInfo(typescript, checker, prop);
 
   const parent = getParentType(typescript, prop);
   const declarations = getAllDeclarationParents(typescript, prop);
@@ -1307,6 +1308,7 @@ function extractPropItem(
     required: isRequired,
     type,
     description,
+    ...(Object.keys(jsDocTags).length > 0 ? { jsDocTags } : {}),
     defaultValue: defaultStr !== undefined ? { value: defaultStr } : null,
     parent,
     declarations,

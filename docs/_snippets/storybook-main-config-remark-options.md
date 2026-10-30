@@ -1,8 +1,10 @@
-```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 3"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 4"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
 import remarkGfm from 'remark-gfm';
 
-export default {
-  // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+export default defineMain({
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   addons: [
@@ -18,10 +20,156 @@ export default {
       },
     },
   ],
-};
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 4"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
+import remarkGfm from 'remark-gfm';
+
+export default defineMain({
+  framework: '@storybook/your-framework',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  addons: [
+    // Other addons go here
+    {
+      name: '@storybook/addon-docs',
+      options: {
+        mdxPluginOptions: {
+          mdxCompileOptions: {
+            remarkPlugins: [remarkGfm],
+          },
+        },
+      },
+    },
+  ],
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF 4"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+import remarkGfm from 'remark-gfm';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  addons: [
+    // Other addons go here
+    {
+      name: '@storybook/addon-docs',
+      options: {
+        mdxPluginOptions: {
+          mdxCompileOptions: {
+            remarkPlugins: [remarkGfm],
+          },
+        },
+      },
+    },
+  ],
+});
+```
+
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF 4"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+import remarkGfm from 'remark-gfm';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  addons: [
+    // Other addons go here
+    {
+      name: '@storybook/addon-docs',
+      options: {
+        mdxPluginOptions: {
+          mdxCompileOptions: {
+            remarkPlugins: [remarkGfm],
+          },
+        },
+      },
+    },
+  ],
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF 4"
+import { defineMain } from '@storybook/angular/node';
+
+import remarkGfm from 'remark-gfm';
+
+export default defineMain({
+  framework: '@storybook/angular',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  addons: [
+    // Other addons go here
+    {
+      name: '@storybook/addon-docs',
+      options: {
+        mdxPluginOptions: {
+          mdxCompileOptions: {
+            remarkPlugins: [remarkGfm],
+          },
+        },
+      },
+    },
+  ],
+});
+```
+
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF 4"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+import remarkGfm from 'remark-gfm';
+
+export default defineMain({
+  framework: '@storybook/web-components-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  addons: [
+    // Other addons go here
+    {
+      name: '@storybook/addon-docs',
+      options: {
+        mdxPluginOptions: {
+          mdxCompileOptions: {
+            remarkPlugins: [remarkGfm],
+          },
+        },
+      },
+    },
+  ],
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+import remarkGfm from 'remark-gfm';
+
+export default defineMain({
+  framework: '@storybook/web-components-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  addons: [
+    // Other addons go here
+    {
+      name: '@storybook/addon-docs',
+      options: {
+        mdxPluginOptions: {
+          mdxCompileOptions: {
+            remarkPlugins: [remarkGfm],
+          },
+        },
+      },
+    },
+  ],
+});
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import remarkGfm from 'remark-gfm';
 
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
@@ -48,13 +196,12 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { defineMain } from '@storybook/your-framework/node';
-
+```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import remarkGfm from 'remark-gfm';
 
-export default defineMain({
+export default {
+  // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   addons: [
@@ -70,156 +217,5 @@ export default defineMain({
       },
     },
   ],
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { defineMain } from '@storybook/your-framework/node';
-
-import remarkGfm from 'remark-gfm';
-
-export default defineMain({
-  framework: '@storybook/your-framework',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  addons: [
-    // Other addons go here
-    {
-      name: '@storybook/addon-docs',
-      options: {
-        mdxPluginOptions: {
-          mdxCompileOptions: {
-            remarkPlugins: [remarkGfm],
-          },
-        },
-      },
-    },
-  ],
-});
-```
-
-```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import { defineMain } from '@storybook/vue3-vite/node';
-
-import remarkGfm from 'remark-gfm';
-
-export default defineMain({
-  framework: '@storybook/vue3-vite',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  addons: [
-    // Other addons go here
-    {
-      name: '@storybook/addon-docs',
-      options: {
-        mdxPluginOptions: {
-          mdxCompileOptions: {
-            remarkPlugins: [remarkGfm],
-          },
-        },
-      },
-    },
-  ],
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import { defineMain } from '@storybook/vue3-vite/node';
-
-import remarkGfm from 'remark-gfm';
-
-export default defineMain({
-  framework: '@storybook/vue3-vite',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  addons: [
-    // Other addons go here
-    {
-      name: '@storybook/addon-docs',
-      options: {
-        mdxPluginOptions: {
-          mdxCompileOptions: {
-            remarkPlugins: [remarkGfm],
-          },
-        },
-      },
-    },
-  ],
-});
-```
-
-```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import { defineMain } from '@storybook/angular/node';
-
-import remarkGfm from 'remark-gfm';
-
-export default defineMain({
-  framework: '@storybook/angular',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  addons: [
-    // Other addons go here
-    {
-      name: '@storybook/addon-docs',
-      options: {
-        mdxPluginOptions: {
-          mdxCompileOptions: {
-            remarkPlugins: [remarkGfm],
-          },
-        },
-      },
-    },
-  ],
-});
-```
-
-```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import { defineMain } from '@storybook/web-components-vite/node';
-
-import remarkGfm from 'remark-gfm';
-
-export default defineMain({
-  framework: '@storybook/web-components-vite',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  addons: [
-    // Other addons go here
-    {
-      name: '@storybook/addon-docs',
-      options: {
-        mdxPluginOptions: {
-          mdxCompileOptions: {
-            remarkPlugins: [remarkGfm],
-          },
-        },
-      },
-    },
-  ],
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import { defineMain } from '@storybook/web-components-vite/node';
-
-import remarkGfm from 'remark-gfm';
-
-export default defineMain({
-  framework: '@storybook/web-components-vite',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  addons: [
-    // Other addons go here
-    {
-      name: '@storybook/addon-docs',
-      options: {
-        mdxPluginOptions: {
-          mdxCompileOptions: {
-            remarkPlugins: [remarkGfm],
-          },
-        },
-      },
-    },
-  ],
-});
+};
 ```

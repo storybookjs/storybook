@@ -82,6 +82,8 @@
   - [`core/module-graph` query aliases removed](#coremodule-graph-query-aliases-removed)
   - [ExternalDocs and ExternalDocsContainer are removed](#externaldocs-and-externaldocscontainer-are-removed)
   - [CSF `.story` annotations removed](#csf-story-annotations-removed)
+  - [`argTypeTargetsV7` feature flag removed](#argtypetargetsv7-feature-flag-removed)
+  - [`disallowImplicitActionsInRenderV8` feature flag removed](#disallowimplicitactionsinrenderv8-feature-flag-removed)
 - [From version 10.6.1 to 10.6.2](#from-version-1061-to-1062)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-1)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-1)
@@ -2239,6 +2241,44 @@ If the value is not a static object, move the fields yourself. This includes a v
 ```
 
 `storybook migrate csf-2-to-3` still lifts a static `Story.story = { ... }` into a CSF 3 story object. It does not rewrite the dynamic cases above. The old `csf-hoist-story-annotations` codemod no longer ships.
+
+### `argTypeTargetsV7` feature flag removed
+
+The `features.argTypeTargetsV7` flag is removed, and Storybook no longer reads it. Args whose argType declares a `target` are always grouped by target: the render function receives only the untargeted `args`, and the rendering context carries the full `allArgs` plus the grouped `argsByTarget`. This has been the default behavior since Storybook 8. In portable-story runtimes without a `FEATURES` global, such as `composeStories` in Jest or Playwright component tests without the Vitest plugin, the grouping now applies there too; those runtimes previously skipped it.
+
+Delete the `argTypeTargetsV7` key from the `features` object in your `.storybook/main.js` / `main.ts` file:
+
+```diff
+// .storybook/main.ts
+export default {
+  features: {
+-   argTypeTargetsV7: false,
+  },
+};
+```
+
+The `remove-legacy-feature-flags` automigration deletes both it and the `disallowImplicitActionsInRenderV8` flag from your main config, whether they are `true` or `false`. You can also run it with `storybook automigrate remove-legacy-feature-flags`. If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand. A typed main config that still sets the flag fails type-checking until it is removed.
+
+If you had set the flag to `false` to pass targeted args through to the render function unfiltered, that pass-through is gone. Read the targeted values from `argsByTarget` in the rendering context instead of `args`. Args without a `target` on their argType are grouped under the `UNTARGETED` key.
+
+### `disallowImplicitActionsInRenderV8` feature flag removed
+
+The `features.disallowImplicitActionsInRenderV8` flag is removed, and Storybook no longer reads it. An implicit action—one of the handlers Storybook infers from `actions.argTypesRegex`—that gets called while the story is rendering or playing throws `ImplicitActionsDuringRendering`. Handlers created explicitly with `action()` (including through `argTypes.action`) or `fn()` are not affected.
+
+The flag was the opt-out that downgraded that throw to a warning. Delete the `disallowImplicitActionsInRenderV8` key from the `features` object in your `.storybook/main.js` / `main.ts` file:
+
+```diff
+// .storybook/main.ts
+export default {
+  features: {
+-   disallowImplicitActionsInRenderV8: false,
+  },
+};
+```
+
+The `remove-legacy-feature-flags` automigration deletes both it and the `argTypeTargetsV7` flag from your main config, whether they are `true` or `false`. You can also run it with `storybook automigrate remove-legacy-feature-flags`. If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand. A typed main config that still sets the flag fails type-checking until it is removed.
+
+`ImplicitActionsDuringRendering.data` no longer carries a `deprecated` field, so third-party code that inspects the error should read `phase` and `name` instead.
 
 ## From version 10.6.1 to 10.6.2
 
@@ -4975,6 +5015,8 @@ export const ButtonClick = {
 
 For more context, see this RFC:
 https://github.com/storybookjs/storybook/discussions/23649
+
+Removed in Storybook 11, see [`disallowImplicitActionsInRenderV8` feature flag removed](#disallowimplicitactionsinrenderv8-feature-flag-removed).
 
 To summarize:
 

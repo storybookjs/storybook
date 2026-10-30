@@ -1,4 +1,24 @@
+```ts filename="Histogram.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { HistogramComponent } from './histogram.component';
+
+const meta = preview.meta({
+  component: HistogramComponent,
+});
+
+export const Basic = meta.story({
+  args: {
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  },
+});
+```
+
 ```ts filename="Histogram.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { HistogramComponent } from './histogram.component';
@@ -18,25 +38,6 @@ export const Basic: Story = {
     label: 'Latency distribution',
   },
 };
-```
-
-```ts filename="Histogram.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { HistogramComponent } from './histogram.component';
-
-const meta = preview.meta({
-  component: HistogramComponent,
-});
-
-export const Basic = meta.story({
-  args: {
-    dataType: 'latency',
-    showHistogramLabels: true,
-    histogramAccentColor: '#1EA7FD',
-    label: 'Latency distribution',
-  },
-});
 ```
 
 ```js filename="Histogram.stories.js" renderer="html" language="js"
@@ -124,44 +125,42 @@ export const Basic = {
 };
 ```
 
-```js filename="Histogram.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```js filename="Histogram.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import { Histogram } from './Histogram';
 
-export default {
+const meta = preview.meta({
   component: Histogram,
-};
+});
 
-export const Basic = {
+export const Basic = meta.story({
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
     histogramAccentColor: '#1EA7FD',
     label: 'Latency distribution',
   },
-};
+});
 ```
 
-```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
 import { Histogram } from './Histogram';
 
-const meta = {
+const meta = preview.meta({
   component: Histogram,
-} satisfies Meta<typeof Histogram>;
+});
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Basic: Story = {
+export const Basic = meta.story({
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
     histogramAccentColor: '#1EA7FD',
     label: 'Latency distribution',
   },
-};
+});
 ```
 
 ```js filename="Histogram.stories.js|jsx" renderer="solid" language="js"
@@ -203,30 +202,7 @@ export const Basic: Story = {
 };
 ```
 
-```svelte filename="Histogram.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Histogram from './Histogram.svelte';
-
-  const { Story } = defineMeta({
-    component: Histogram,
-  });
-</script>
-
-<Story
-  name="Default"
-  args={{
-    dataType: 'latency',
-    showHistogramLabels: true,
-    histogramAccentColor: '#1EA7FD',
-    label: 'Latency distribution',
-  }}
-/>
-```
-
-```svelte filename="Histogram.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="Histogram.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -248,7 +224,8 @@ export const Basic: Story = {
 />
 ```
 
-```svelte filename="Histogram.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="Histogram.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -271,7 +248,7 @@ export const Basic: Story = {
 />
 ```
 
-```svelte filename="Histogram.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="Histogram.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
 <script module lang="ts">
   import preview from '../.storybook/preview';
 
@@ -293,19 +270,45 @@ export const Basic: Story = {
 />
 ```
 
-```js filename="Histogram.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+```svelte filename="Histogram.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Histogram from './Histogram.svelte';
+
+  const { Story } = defineMeta({
+    component: Histogram,
+  });
+</script>
+
+<Story
+  name="Default"
+  args={{
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  }}
+/>
+```
+
+```js filename="Histogram.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import Histogram from './Histogram.vue';
 
-export default {
+const meta = preview.meta({
   component: Histogram,
-};
+});
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const Basic = {
+export const Basic = meta.story({
   render: (args) => ({
     components: { Histogram },
     setup() {
@@ -319,10 +322,113 @@ export const Basic = {
     histogramAccentColor: '#1EA7FD',
     label: 'Latency distribution',
   },
+});
+```
+
+```ts filename="Histogram.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import Histogram from './Histogram.vue';
+
+const meta = preview.meta({
+  component: Histogram,
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Basic = meta.story({
+  render: (args) => ({
+    components: { Histogram },
+    setup() {
+      return { args };
+    },
+    template: '<Histogram v-bind="args" />',
+  }),
+  args: {
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  },
+});
+```
+
+```js filename="Histogram.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'histogram-component',
+});
+
+export const Basic = meta.story({
+  args: {
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  },
+});
+```
+
+```ts filename="Histogram.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'histogram-component',
+});
+
+export const Basic = meta.story({
+  args: {
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  },
+});
+```
+
+```js filename="Histogram.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+export default {
+  component: 'histogram-component',
+};
+
+export const Basic = {
+  args: {
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  },
+};
+```
+
+```ts filename="Histogram.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
+
+const meta: Meta = {
+  component: 'histogram-component',
+};
+
+export default meta;
+type Story = StoryObj;
+
+export const Basic: Story = {
+  args: {
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  },
 };
 ```
 
 ```ts filename="Histogram.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Histogram from './Histogram.vue';
@@ -356,12 +462,27 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="Histogram.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="Histogram.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import Histogram from './Histogram.vue';
+
 export default {
-  component: 'histogram-component',
+  component: Histogram,
 };
 
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
 export const Basic = {
+  render: (args) => ({
+    components: { Histogram },
+    setup() {
+      return { args };
+    },
+    template: '<Histogram v-bind="args" />',
+  }),
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
@@ -371,15 +492,19 @@ export const Basic = {
 };
 ```
 
-```ts filename="Histogram.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/web-components-vite';
+```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
-const meta: Meta = {
-  component: 'histogram-component',
-};
+import { Histogram } from './Histogram';
+
+const meta = {
+  component: Histogram,
+} satisfies Meta<typeof Histogram>;
 
 export default meta;
-type Story = StoryObj;
+type Story = StoryObj<typeof meta>;
 
 export const Basic: Story = {
   args: {
@@ -391,140 +516,20 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="Histogram.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'histogram-component',
-});
-
-export const Basic = meta.story({
-  args: {
-    dataType: 'latency',
-    showHistogramLabels: true,
-    histogramAccentColor: '#1EA7FD',
-    label: 'Latency distribution',
-  },
-});
-```
-
-```ts filename="Histogram.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'histogram-component',
-});
-
-export const Basic = meta.story({
-  args: {
-    dataType: 'latency',
-    showHistogramLabels: true,
-    histogramAccentColor: '#1EA7FD',
-    label: 'Latency distribution',
-  },
-});
-```
-
-```ts filename="Histogram.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import Histogram from './Histogram.vue';
-
-const meta = preview.meta({
-  component: Histogram,
-});
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Basic = meta.story({
-  render: (args) => ({
-    components: { Histogram },
-    setup() {
-      return { args };
-    },
-    template: '<Histogram v-bind="args" />',
-  }),
-  args: {
-    dataType: 'latency',
-    showHistogramLabels: true,
-    histogramAccentColor: '#1EA7FD',
-    label: 'Latency distribution',
-  },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="Histogram.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import Histogram from './Histogram.vue';
-
-const meta = preview.meta({
-  component: Histogram,
-});
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Basic = meta.story({
-  render: (args) => ({
-    components: { Histogram },
-    setup() {
-      return { args };
-    },
-    template: '<Histogram v-bind="args" />',
-  }),
-  args: {
-    dataType: 'latency',
-    showHistogramLabels: true,
-    histogramAccentColor: '#1EA7FD',
-    label: 'Latency distribution',
-  },
-});
-```
-
-```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="Histogram.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { Histogram } from './Histogram';
 
-const meta = preview.meta({
+export default {
   component: Histogram,
-});
+};
 
-export const Basic = meta.story({
+export const Basic = {
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
     histogramAccentColor: '#1EA7FD',
     label: 'Latency distribution',
   },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="Histogram.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { Histogram } from './Histogram';
-
-const meta = preview.meta({
-  component: Histogram,
-});
-
-export const Basic = meta.story({
-  args: {
-    dataType: 'latency',
-    showHistogramLabels: true,
-    histogramAccentColor: '#1EA7FD',
-    label: 'Latency distribution',
-  },
-});
+};
 ```

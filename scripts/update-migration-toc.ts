@@ -84,12 +84,17 @@ for (let i = firstH2; i < lines.length; i++) {
   if (m) headings.push({ level: m[1].length, text: m[2].replace(/\s+#*\s*$/, '') });
 }
 
-const seen = new Map<string, number>();
+const used = new Set<string>();
+const nextSuffix = new Map<string, number>();
 const tocLines = headings.map(({ level, text }) => {
   const base = slugify(text);
-  const n = seen.get(base) ?? 0;
-  seen.set(base, n + 1);
-  const slug = n === 0 ? base : `${base}-${n}`;
+  let slug = base;
+  while (used.has(slug)) {
+    const n = nextSuffix.get(base) ?? 1;
+    nextSuffix.set(base, n + 1);
+    slug = `${base}-${n}`;
+  }
+  used.add(slug);
   return `${'  '.repeat(level - 2)}- [${tocText(text)}](#${slug})`;
 });
 

@@ -16,7 +16,8 @@ describe('findUv', () => {
       if (cmd === 'uv') throw Object.assign(new Error('nope'), { code: 'ENOENT' });
       return Buffer.from('uv 0.9.0');
     });
-    expect(findUv()).toMatch(/\.local\/bin\/uv$/);
+    // join() emits native separators — accept both spellings.
+    expect(findUv()).toMatch(/\.local[/\\]bin[/\\]uv$/);
 
     execFileSync.mockImplementation(() => {
       throw Object.assign(new Error('nope'), { code: 'ENOENT' });

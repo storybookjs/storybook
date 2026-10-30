@@ -32,7 +32,10 @@ const DOC_ROOTS = ['src/components', 'src/docs'];
 const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'storybook-static']);
 
 export interface DsDoc {
-  /** Repo-relative path, for citing in the prompt. */
+  /**
+   * Repo-relative path, for citing in the prompt — always forward slashes,
+   * whatever the platform separator is.
+   */
   path: string;
   text: string;
 }
@@ -52,7 +55,7 @@ function mdxUnder(dir: string, root: string): string[] {
   return entries.flatMap((entry) => {
     const path = join(dir, entry.name);
     if (entry.isDirectory()) return SKIP_DIRS.has(entry.name) ? [] : mdxUnder(path, root);
-    return entry.name.endsWith('.mdx') ? [relative(root, path)] : [];
+    return entry.name.endsWith('.mdx') ? [relative(root, path).replaceAll('\\', '/')] : [];
   });
 }
 

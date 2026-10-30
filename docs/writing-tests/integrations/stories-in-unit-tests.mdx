@@ -23,6 +23,12 @@ These examples use Testing Library's `screen` queries because the composed stori
 
 <Callout variant="warning">
 
+Import `userEvent` from `storybook/test` in any test file that runs a composed story, not from `@testing-library/user-event`. Running a story loads Storybook's own copy of `user-event`, and two copies in one test file break each other, so typing and clicking from the `@testing-library/user-event` package stop reaching your component after the first story has run.
+
+</Callout>
+
+<Callout variant="warning">
+
 You **must** [configure your test environment to use portable stories](../../api/portable-stories/portable-stories-vitest.mdx#1-apply-project-level-annotations) to ensure your stories are composed with all aspects of your Storybook configuration, such as [decorators](../../writing-stories/decorators.mdx).
 
 </Callout>

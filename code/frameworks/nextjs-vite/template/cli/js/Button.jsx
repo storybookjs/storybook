@@ -2,7 +2,11 @@ import PropTypes from 'prop-types';
 
 import './button.css';
 
-/** Primary UI component for user interaction */
+/**
+ * Primary UI component for user interaction
+ *
+ * @param {{ primary?: boolean, backgroundColor?: string, size?: 'small' | 'medium' | 'large', label: string, onClick?: () => void }} props
+ */
 export const Button = ({ primary, backgroundColor, size, label, ...props }) => {
   const mode = primary ? 'storybook-button--primary' : 'storybook-button--secondary';
   return (

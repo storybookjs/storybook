@@ -1,7 +1,11 @@
 import PropTypes from 'prop-types';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-/** Primary UI component for user interaction */
+/**
+ * Primary UI component for user interaction
+ *
+ * @param {{ primary?: boolean, backgroundColor?: string, size?: 'small' | 'medium' | 'large', label: string, onPress?: () => void, style?: object }} props
+ */
 export const Button = ({
   primary = false,
   size = 'medium',

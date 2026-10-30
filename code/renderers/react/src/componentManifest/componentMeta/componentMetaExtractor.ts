@@ -35,6 +35,8 @@ export interface PropItemType {
   name: string;
   raw?: string;
   value?: { value: string }[];
+  /** Element type of an array, such as `string` for `string[]`. */
+  elements?: PropItemType[];
 }
 
 export interface ParentType {
@@ -691,6 +693,11 @@ function serializeType(
     return { name: checker.typeToString(type) };
   }
 
+  const arrayType = serializeArrayType(typescript, checker, type, depth);
+  if (arrayType) {
+    return arrayType;
+  }
+
   if (type.isUnion()) {
     // Filter undefined from union members before any further processing.
     // This replaces the fragile `typeString.replace(' | undefined', '')` pattern
@@ -736,7 +743,11 @@ function serializeType(
       nonUndefinedTypes.length === 1 &&
       nonUndefinedTypes.length < type.types.length
     ) {
-      return { name: checker.typeToString(nonUndefinedTypes[0]) };
+      return (
+        serializeArrayType(typescript, checker, nonUndefinedTypes[0], depth) ?? {
+          name: checker.typeToString(nonUndefinedTypes[0]),
+        }
+      );
     }
   }
 
@@ -746,6 +757,24 @@ function serializeType(
   }
 
   return { name: checker.typeToString(type) };
+}
+
+/** Keeps the TypeScript name and adds the element type, so args tables can show an array control. */
+function serializeArrayType(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  type: ts.Type,
+  depth: number
+): PropItemType | undefined {
+  if (!checker.isArrayType(type)) {
+    return undefined;
+  }
+  return {
+    name: checker.typeToString(type),
+    elements: checker
+      .getTypeArguments(type as ts.TypeReference)
+      .map((element) => serializeType(typescript, checker, element, true, depth + 1)),
+  };
 }
 
 // ---------------------------------------------------------------------------

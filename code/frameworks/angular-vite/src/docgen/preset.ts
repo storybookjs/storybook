@@ -9,6 +9,8 @@ import type {
 
 import { fileURLToPath } from 'node:url';
 
+import { getTypeScriptSpecifierForDocgen } from 'storybook/internal/common';
+
 import { resolvePropsTable } from '../props-table.ts';
 import type { AngularDocgenOptions } from './build-docgen.ts';
 import { DOCGEN_WORKER_SPECIFIER } from './worker-specifier.ts';
@@ -24,6 +26,7 @@ export const experimental_docgenProvider = async (
     moduleSpecifier: fileURLToPath(import.meta.resolve(DOCGEN_WORKER_SPECIFIER)),
     options: {
       propsTable: resolvePropsTable(await options?.presets?.apply('frameworkOptions'), features),
+      typeScriptSpecifier: options && (await getTypeScriptSpecifierForDocgen(options)),
     },
   };
 

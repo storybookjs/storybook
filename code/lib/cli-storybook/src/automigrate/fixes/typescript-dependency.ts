@@ -1,7 +1,8 @@
 import {
   RENDERERS_WITH_TYPESCRIPT_DOCGEN,
-  TYPESCRIPT_FOR_DOCGEN_PACKAGE,
-  hasTypeScriptCompilerApi,
+  isTypeScriptUsableForDocgen,
+  typeScriptDocgenApisFor,
+  typeScriptPackageForDocgen,
 } from 'storybook/internal/common';
 import { SupportedRenderer } from 'storybook/internal/types';
 
@@ -18,7 +19,7 @@ const upgradesAcrossPeerChange = ({ beforeVersion, storybookVersion, requested }
   requested ||
   (!!beforeVersion && crossesVersionBoundary(beforeVersion, storybookVersion, introducedIn));
 
-export const typescriptDependency: Fix<true> = {
+export const typescriptDependency: Fix<{ dependency: string }> = {
   id: 'typescript-dependency',
   link: 'https://storybook.js.org/docs/configure/integration/typescript',
 
@@ -29,21 +30,23 @@ export const typescriptDependency: Fix<true> = {
     }
     const renderer = getRendererName(mainConfig);
     const needsTypeScript = !!renderer && RENDERERS_WITH_TYPESCRIPT_DOCGEN.includes(renderer);
-    return needsTypeScript && !packageManager.isDependencyInstalled('typescript') ? true : null;
+    return needsTypeScript && !packageManager.isDependencyInstalled('typescript')
+      ? { dependency: typeScriptPackageForDocgen(typeScriptDocgenApisFor(renderer)) }
+      : null;
   },
 
-  prompt() {
-    return `Add ${TYPESCRIPT_FOR_DOCGEN_PACKAGE} to devDependencies, so Storybook can read your component types for Controls and the Docs args table`;
+  prompt(result) {
+    return `Add ${result?.dependency ?? typeScriptPackageForDocgen()} to devDependencies, so Storybook can read your component types for Controls and the Docs args table`;
   },
 
-  async run({ packageManager }) {
+  async run({ packageManager, result }) {
     await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
-      TYPESCRIPT_FOR_DOCGEN_PACKAGE,
+      result.dependency,
     ]);
   },
 };
 
-export const typescriptCompilerApi: Fix<{ version: string }> = {
+export const typescriptCompilerApi: Fix<{ version: string; nativeApiSupported: boolean }> = {
   id: 'typescript-compiler-api',
   promptType: 'notification',
   link: 'https://storybook.js.org/docs/configure/integration/typescript#typescript-7',
@@ -61,13 +64,22 @@ export const typescriptCompilerApi: Fix<{ version: string }> = {
       return null;
     }
     const version = coerce(await packageManager.getDeclaredVersionSpecifier('typescript'))?.version;
-    return version && !hasTypeScriptCompilerApi(version) ? { version } : null;
+    if (!version) {
+      return null;
+    }
+    const apis = typeScriptDocgenApisFor(renderer);
+    return isTypeScriptUsableForDocgen(version, apis)
+      ? null
+      : { version, nativeApiSupported: apis.includes('native') };
   },
 
   // The upgrade prints the full prompt only when it differs from the one-line hint without a result.
   prompt(result) {
     if (!result) {
       return 'TypeScript 7 has no compiler API, so Storybook cannot read your component types. Install TypeScript 6 side by side.';
+    }
+    if (result.nativeApiSupported) {
+      return `TypeScript 7.0 has no API that Storybook can use to read your component types. Upgrade to ${picocolors.cyan('typescript@^7.1')}. This is not automigrated.`;
     }
     const native = `"@typescript/native": "npm:typescript@^${result.version}"`;
     const typescript = `"typescript": "npm:@typescript/typescript6@^6.0.2"`;

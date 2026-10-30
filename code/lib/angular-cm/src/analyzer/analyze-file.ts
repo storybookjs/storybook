@@ -1,6 +1,7 @@
 import { logger } from 'storybook/internal/node-logger';
 
 import type * as tsModule from 'typescript';
+import type { DocgenTypeChecker, DocgenTypeScript } from '@storybook/component-meta-typescript';
 
 import type { Class, Directive, Injectable, Pipe, Property } from '../types.ts';
 import type { AngularFileMeta } from '../types.ts';
@@ -14,17 +15,17 @@ import { TypeIndex } from './type-index.ts';
 
 /** A context over one source file; shared between the file's analysis and its argTypes extraction. */
 export function analyzerContext(
-  ts: typeof tsModule,
+  ts: DocgenTypeScript,
   sourceFile: tsModule.SourceFile,
-  checker: tsModule.TypeChecker
+  checker: DocgenTypeChecker
 ): AnalyzerContext {
   return { ts, checker, types: new TypeIndex(ts, checker), sourceFile };
 }
 
 export function analyzeSourceFile(
-  ts: typeof tsModule,
+  ts: DocgenTypeScript,
   sourceFile: tsModule.SourceFile,
-  checker: tsModule.TypeChecker,
+  checker: DocgenTypeChecker,
   context: AnalyzerContext = analyzerContext(ts, sourceFile, checker)
 ): AngularFileMeta {
   const ctx = context;

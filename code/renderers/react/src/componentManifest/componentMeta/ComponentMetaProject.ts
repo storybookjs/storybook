@@ -3,13 +3,8 @@
  * `@volar/typescript`. Freshness is not decided here: the snapshot cache, projectVersion gate and
  * root-set re-checks all live in core's `ProjectFileTracker`, which the Angular analyzer shares.
  *
- * A generic component's props are not resolvable from its own file: the first parameter stays
- * `Props<T>` until a call site instantiates it. The story's JSX gives a resolved call signature, so
- * it is tried first, and a story with no JSX falls back to the component's own export. Nothing else
- * needs the use site - forwardRef, memo, styled() and HOC wrappers all resolve the same either way.
- *
- * The first matching JSX element wins, so for a component rendered with different type arguments
- * across stories, the documented type is the one the earliest story pins.
+ * The extraction itself is shared with the native-API project in `extract-entries.ts`; this class
+ * only supplies the program and checker of the compiler API.
  */
 import {
   type FileChange,
@@ -28,22 +23,25 @@ import * as path from 'path';
 import type ts from 'typescript';
 
 import type { StoryRef } from '../getComponentImports.ts';
-import type { ComponentRef, ResolvedComponentTarget } from '../types.ts';
 import {
-  metaComponentMatchesRef,
-  resolvePropsFromComponentExport,
-  resolvePropsFromComponentType,
-  resolvePropsFromStoryFile,
-  serializeComponentDoc,
-} from './componentMetaExtractor.ts';
+  type DocgenTypeScript,
+  createCompilerDocgenTypeScript,
+} from '@storybook/component-meta-typescript';
+import { extractEntries } from './extract-entries.ts';
 
-export class ComponentMetaProject extends ProgramBackedProject<
-  ts.IScriptSnapshot,
-  ts.SourceFile | undefined
-> {
+/** What the manager drives on a project of either backend. */
+export interface ReactComponentMetaProject {
+  extractPropsFromStories(entries: StoryRef[]): void;
+}
+
+export class ComponentMetaProject
+  extends ProgramBackedProject<ts.IScriptSnapshot, ts.SourceFile | undefined>
+  implements ReactComponentMetaProject
+{
   protected readonly service: ts.LanguageService;
   /** Invalidation state machine shared with the Angular component-meta project. */
   protected readonly files: ProjectFileTracker<ts.IScriptSnapshot>;
+  private readonly docgenTypeScript: DocgenTypeScript;
   private warmupTimer?: ReturnType<typeof setTimeout>;
   /** Entries to extract - set by the generator, replayed during warmup for targeted type resolution. */
   private entries: StoryRef[] = [];
@@ -63,6 +61,7 @@ export class ComponentMetaProject extends ProgramBackedProject<
     private documentRegistry?: ts.DocumentRegistry
   ) {
     super();
+    this.docgenTypeScript = createCompilerDocgenTypeScript(typescript);
     this.files = new ProjectFileTracker(
       typescript,
       commandLine,
@@ -161,10 +160,6 @@ export class ComponentMetaProject extends ProgramBackedProject<
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Primary extraction method - probe-free
-  // ---------------------------------------------------------------------------
-
   extractPropsFromStories(entries: StoryRef[]): void {
     this.entries = entries;
 
@@ -178,185 +173,20 @@ export class ComponentMetaProject extends ProgramBackedProject<
     if (!program) {
       return;
     }
-    const checker = program.getTypeChecker();
-    const serializationContextByComponentPath = new Map<
-      string,
-      { sourceFile: ts.SourceFile; defaultsSourcePath?: string }
-    >();
-
-    for (const entry of entries) {
-      try {
-        const storySourceFile = program.getSourceFile(entry.storyPath);
-        const entryComponent = entry.component;
-        const componentPath = entryComponent?.path;
-        const exportName = entryComponent?.importName;
-        if (!storySourceFile || !componentPath || !exportName || !entryComponent) {
-          continue;
-        }
-
-        const importId = entryComponent.importId;
-        const isPackageImport = importId && !importId.startsWith('.');
-        let componentSourceFile: ts.SourceFile | undefined;
-
-        if (isPackageImport) {
-          const resolved = this.typescript.resolveModuleName(
-            importId!,
-            entry.storyPath,
+    extractEntries(
+      {
+        typescript: this.docgenTypeScript,
+        checker: program.getTypeChecker(),
+        program,
+        resolveModule: (importId, fromFile) =>
+          this.typescript.resolveModuleName(
+            importId,
+            fromFile,
             this.commandLine.options,
             this.typescript.sys
-          );
-          componentSourceFile = resolved.resolvedModule
-            ? program.getSourceFile(resolved.resolvedModule.resolvedFileName)
-            : program.getSourceFile(componentPath);
-        } else {
-          componentSourceFile = program.getSourceFile(componentPath);
-        }
-
-        if (!componentSourceFile) {
-          continue;
-        }
-
-        // Path 1: Find JSX in story file
-        let resolvedComponent: ResolvedComponentTarget | undefined;
-        if (importId) {
-          resolvedComponent = resolvePropsFromStoryFile(
-            this.typescript,
-            checker,
-            storySourceFile,
-            entryComponent
-          );
-        }
-
-        // Path 2: Fallback - resolve from meta.component in the story file.
-        // Only fires when the user explicitly set `component:` in the meta object.
-        // Only applies to the meta component itself, not declared subcomponents.
-        if (!resolvedComponent) {
-          resolvedComponent = this.resolveFromMetaComponent(
-            checker,
-            storySourceFile,
-            entryComponent
-          );
-        }
-
-        // Path 3: Resolve directly from the component module export (declared subcomponents).
-        if (!resolvedComponent) {
-          resolvedComponent = resolvePropsFromComponentExport(
-            this.typescript,
-            checker,
-            componentSourceFile,
-            entryComponent
-          );
-        }
-
-        if (!resolvedComponent) {
-          continue;
-        }
-
-        let serializationContext = serializationContextByComponentPath.get(componentPath);
-        if (serializationContext === undefined) {
-          const resolvedFileName = componentSourceFile.fileName;
-          serializationContext = {
-            sourceFile: componentSourceFile,
-            defaultsSourcePath:
-              resolvedFileName.endsWith('.d.ts') ||
-              resolvedFileName.endsWith('.d.mts') ||
-              resolvedFileName.endsWith('.d.cts')
-                ? componentPath
-                : undefined,
-          };
-          serializationContextByComponentPath.set(componentPath, serializationContext);
-        }
-
-        const doc = serializeComponentDoc(this.typescript, checker, {
-          sourceFile: serializationContext.sourceFile,
-          resolvedComponent,
-          defaultsSourcePath: serializationContext.defaultsSourcePath,
-        });
-
-        if (doc) {
-          entryComponent.reactComponentMeta = doc;
-          entryComponent.componentJsDocTags = doc.jsDocTags;
-          entryComponent.importOverride = entryComponent.componentJsDocTags?.import?.[0]?.trim();
-        }
-      } catch {
-        // One bad component should not kill the entire batch.
-        continue;
-      }
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Internal helpers
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Path 2 fallback: resolve the component type from the story file's `meta.component` property.
-   * Only works when the user explicitly set `component:` in the meta - no node means no
-   * extraction.
-   */
-  private resolveFromMetaComponent(
-    checker: ts.TypeChecker,
-    storySourceFile: ts.SourceFile,
-    componentRef: ComponentRef
-  ): ResolvedComponentTarget | undefined {
-    const { member: memberAccess } = componentRef;
-    const moduleSymbol = checker.getSymbolAtLocation(storySourceFile);
-    if (!moduleSymbol) {
-      return undefined;
-    }
-
-    const defaultExport = checker
-      .getExportsOfModule(moduleSymbol)
-      .find((e) => e.getName() === 'default');
-    if (!defaultExport) {
-      return undefined;
-    }
-
-    const metaType = checker.getTypeOfSymbol(defaultExport);
-    const componentProp = metaType.getProperty('component');
-    if (
-      !componentProp?.valueDeclaration ||
-      !this.typescript.isPropertyAssignment(componentProp.valueDeclaration)
-    ) {
-      return undefined;
-    }
-
-    const metaComponentInitializer = componentProp.valueDeclaration.initializer;
-    if (
-      !metaComponentInitializer ||
-      !metaComponentMatchesRef(
-        this.typescript,
-        checker,
-        storySourceFile,
-        componentRef,
-        metaComponentInitializer
-      )
-    ) {
-      return undefined;
-    }
-
-    let componentType = checker.getTypeOfSymbol(componentProp);
-    let selectedSymbol = checker.getSymbolAtLocation(metaComponentInitializer);
-
-    if (memberAccess) {
-      const prop = componentType.getProperty(memberAccess);
-      if (prop) {
-        componentType = checker.getTypeOfSymbol(prop);
-        selectedSymbol = prop;
-      } else {
-        return undefined;
-      }
-    }
-
-    const propsType = resolvePropsFromComponentType(this.typescript, checker, componentType);
-    if (!propsType || !selectedSymbol) {
-      return undefined;
-    }
-
-    return {
-      componentRef,
-      propsType,
-      symbol: selectedSymbol,
-    };
+          ).resolvedModule?.resolvedFileName,
+      },
+      entries
+    );
   }
 }

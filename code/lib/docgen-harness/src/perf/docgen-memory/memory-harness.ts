@@ -62,9 +62,38 @@ interface ComponentMetaManagerLike {
 }
 
 type ComponentMetaManagerCtor = new (
-  typescript: typeof ts,
+  typescript: unknown,
   recycleHeapPressureRatio?: number
 ) => ComponentMetaManagerLike;
+
+// `native` is the `typescript-native` alias (TypeScript 7.1).
+const TYPESCRIPT_APIS = ['compiler', 'native'] as const;
+
+async function loadTypeScript(api: (typeof TYPESCRIPT_APIS)[number]): Promise<unknown> {
+  if (api === 'compiler') {
+    return ts;
+  }
+  return {
+    api: 'native',
+    typescript: {
+      sync: await import('typescript-native/sync'),
+      ast: await import('typescript-native/ast'),
+      factory: await import('typescript-native/ast/factory'),
+    },
+  };
+}
+
+/** How many props the extraction documented, so the pair ratio reads as like-for-like. */
+const countDocumentedProps = (entries: StoryRefLike[]) =>
+  entries.reduce(
+    (count, entry) =>
+      count +
+      Object.keys(
+        (entry.component as { reactComponentMeta?: { props?: object } }).reactComponentMeta
+          ?.props ?? {}
+      ).length,
+    0
+  );
 
 const MODES = ['refresh', 'live'] as const;
 /**
@@ -90,6 +119,7 @@ const OPTIONS = {
   scope: { type: 'string' },
   shape: { type: 'string' },
   recycle: { type: 'string' },
+  typescript: { type: 'string' },
   heavy: { type: 'boolean' },
   'heavy-factor': { type: 'string' },
   'base64-kb': { type: 'string' },
@@ -112,6 +142,7 @@ const SCHEMA = z.object({
     .enum(RECYCLE)
     .default('on')
     .transform((recycle) => (recycle === 'off' ? Number.POSITIVE_INFINITY : undefined)),
+  typescript: z.enum(TYPESCRIPT_APIS).default('compiler'),
   heavyTypes: z.boolean().default(false),
   heavyFactor: positiveCountOption(1),
   base64Kb: countOption(0),
@@ -243,8 +274,9 @@ function refreshEngine(
 
   return {
     async cold() {
-      manager.batchExtract(firstStory ? [entries[0]] : entries);
-      return undefined;
+      const extracted = firstStory ? [entries[0]] : entries;
+      manager.batchExtract(extracted);
+      return countDocumentedProps(extracted);
     },
     async applySave(save) {
       const i = changedIndex(save);
@@ -263,8 +295,9 @@ function refreshEngine(
       manager.onFilesChanged([{ filePath: componentPath, type: 'changed' }]);
     },
     async reextract(save) {
-      manager.batchExtract(options.scope === 'changed' ? [entries[changedIndex(save)]] : entries);
-      return undefined;
+      const extracted = options.scope === 'changed' ? [entries[changedIndex(save)]] : entries;
+      manager.batchExtract(extracted);
+      return countDocumentedProps(extracted);
     },
     dispose: () => manager.dispose(),
   };
@@ -277,7 +310,7 @@ harnessMain(async () => {
   console.log(
     `  components=${options.components} variants=${options.variants} props=${options.props} ` +
       `saves=${options.saves} mode=${options.mode} scope=${options.scope} shape=${options.shape} ` +
-      `forceGc=${options.forceGc && gcAvailable()}`
+      `typescript=${options.typescript} forceGc=${options.forceGc && gcAvailable()}`
   );
   if (options.forceGc && !gcAvailable()) {
     console.log('  (run with `node --expose-gc` to measure retained heap; continuing without it)');
@@ -290,7 +323,10 @@ harnessMain(async () => {
 
   const project = resolveProject(options);
   const ComponentMetaManager = await loadComponentMetaManager();
-  const manager = new ComponentMetaManager(ts, options.recycleHeapPressureRatio);
+  const manager = new ComponentMetaManager(
+    await loadTypeScript(options.typescript),
+    options.recycleHeapPressureRatio
+  );
   const entries = buildStoryRefs(project.componentPaths, project.storyPaths);
 
   if (options.mode === 'live') {

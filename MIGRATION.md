@@ -1002,7 +1002,7 @@ The manager resolves `SELECT_STORY` payloads from `storyId` or `title`/`name`, a
 
 The `experimentalDocgenServer` feature is now `docgenServer`, and Storybook no longer reads the old name.
 Server-side component metadata extraction is enabled by default for every React and Vue 3 framework, including Webpack-based ones, for `@storybook/angular-vite`, for `@storybook/web-components-vite`, and for `@storybook/svelte-vite` and `@storybook/sveltekit`.
-Server-side docgen reads components with the TypeScript compiler API, also in JavaScript projects. The default is only on when the `typescript` package is installed and is TypeScript 5.9 or 6, or, for Web Components, when a Custom Elements Manifest is configured. Otherwise Storybook keeps builder docgen and prints a warning that tells you what to install. Set `features.docgenServer: false` in `.storybook/main.ts` to opt out of server-side docgen without that warning.
+Server-side docgen reads components with the TypeScript API, also in JavaScript projects. The default is only on when the `typescript` package is installed and is TypeScript 5.9 or 6 (or, for React and Angular with `@storybook/angular-vite`, also TypeScript 7.1 or newer; `typescript.docgenSpecifier` in `.storybook/main.ts` names another package to read TypeScript from), or, for Web Components, when a Custom Elements Manifest is configured. TypeScript 7.0 has no API that Storybook can use. Otherwise Storybook keeps builder docgen and prints a warning that tells you what to install. Set `features.docgenServer: false` in `.storybook/main.ts` to opt out of server-side docgen without that warning.
 Other frameworks keep builder docgen.
 
 The `docgen-server` automigration renames `experimentalDocgenServer` to `docgenServer` and keeps its value.

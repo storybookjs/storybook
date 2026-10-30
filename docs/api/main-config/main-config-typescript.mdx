@@ -14,6 +14,7 @@ Type:
 {
   check?: boolean;
   checkOptions?: CheckOptions;
+  docgenSpecifier?: string;
   reactDocgen?: 'react-docgen' | 'react-docgen-typescript' | false;
   reactDocgenTypescriptOptions?: ReactDocgenTypescriptOptions;
   skipCompiler?: boolean;
@@ -22,7 +23,20 @@ Type:
 
 </If>
 
-<If renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'svelte', 'preact', 'qwik','solid' ]}>
+<If renderer="angular">
+
+```ts
+{
+  check?: boolean;
+  checkOptions?: CheckOptions;
+  docgenSpecifier?: string;
+  skipCompiler?: boolean;
+}
+```
+
+</If>
+
+<If renderer={['vue', 'web-components', 'ember', 'html', 'svelte', 'preact', 'qwik','solid' ]}>
 
 ```ts
 {
@@ -51,6 +65,33 @@ Type: `CheckOptions`
 Options to pass to `fork-ts-checker-webpack-plugin`, if [enabled](#check). See [docs for available options](https://github.com/TypeStrong/fork-ts-checker-webpack-plugin/blob/v4.1.6/README.md#options).
 
 <CodeSnippets path="main-config-typescript-check-options.md" />
+
+<If renderer={['react', 'angular']}>
+
+## `docgenSpecifier`
+
+Type: `string`
+
+Default: `'typescript'`
+
+The TypeScript package that Storybook loads to read your component types for Controls and the Docs args table. Storybook resolves it as if your main config imported it, so the value is a package name or a path to the package's folder, absolute or relative to the config directory. Do not include a subpath such as `/sync`. For Angular, `@storybook/angular-vite` reads this option.
+
+Storybook reads the package's version and uses the API that version has: the compiler API of TypeScript 5.9 and 6, or the API of TypeScript 7.1 and newer, which is faster. TypeScript 7.0 has neither.
+
+Set this option when the `typescript` package must stay on TypeScript 6, for example because Angular's compiler or `typescript-eslint` requires it, and you install TypeScript 7.1 or newer under another name. The [TypeScript 7 announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/) recommends this side-by-side setup in `package.json`:
+
+```json
+{
+  "devDependencies": {
+    "@typescript/native": "npm:typescript@^7.1",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
+  }
+}
+```
+
+<CodeSnippets path="main-config-typescript-docgen-specifier.md" />
+
+</If>
 
 <If renderer="react">
 

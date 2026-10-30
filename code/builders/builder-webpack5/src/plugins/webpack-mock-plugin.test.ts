@@ -16,7 +16,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { basename, dirname, join, normalize } from 'pathe';
 import webpack from 'webpack';
-import type { Configuration, NormalModule, Stats, WebpackPluginInstance } from 'webpack';
+import type { Configuration, NormalModule, Stats } from 'webpack';
 
 import { WebpackMockPlugin } from './webpack-mock-plugin.ts';
 
@@ -38,6 +38,11 @@ const files: Record<string, string> = {
     "sb.mock('ext-pkg');",
   ].join('\n'),
   '.storybook/preview-without-mocks.js': 'export default {};',
+  '.storybook/preview-with-unresolvable-mock.js': [
+    "import { sb } from 'storybook/test';",
+    "sb.mock('../src/api.js');",
+    "sb.mock('../src/data');",
+  ].join('\n'),
   'src/index.js': [
     "import { api } from './api.js';",
     "import { format } from '@/utils/format';",
@@ -47,10 +52,11 @@ const files: Record<string, string> = {
     'export default [api, format, Button, ext, other];',
   ].join('\n'),
   'src/api.js': "export const api = 'REAL_API';",
+  'src/data.json': '{}',
   'src/__mocks__/api.js':
     "import { helper } from './helper.js'; export const api = 'MOCKED_API_' + helper;",
   'src/__mocks__/helper.js': "export const helper = 'FROM_MOCKS_DIR';",
-  'src/utils/format.js': "export const format = () => 'REAL_FORMAT';",
+  'src/utils/format.js': "export const format = () => 'REAL_FORMAT' + 'NEEDS_PROJECT_LOADER';",
   'src/components/Button.tsx':
     "import { Icon } from './Icon'; export const Button = () => 'BUTTON' + Icon();",
   'src/components/Icon.tsx': "export const Icon = () => 'REAL_ICON';",
@@ -60,8 +66,11 @@ const files: Record<string, string> = {
   '__mocks__/ext-pkg.js': "export const ext = 'MOCKED_EXT_' + 'NEEDS_PROJECT_LOADER';",
   'project-loader.cjs':
     "module.exports = (source) => source.replace('NEEDS_PROJECT_LOADER', 'PROJECT_LOADER_RAN');",
-  'automock-loader-stub.cjs':
-    'module.exports = function (source) { return `${source}\\n// automocked with ${JSON.stringify(this.getOptions())}`; };',
+  'automock-loader-stub.cjs': [
+    'module.exports = function (source) {',
+    "  return `${source}\\n// automocked with ${JSON.stringify(this.getOptions())}, after project loader: ${source.includes('PROJECT_LOADER_RAN')}`;",
+    '};',
+  ].join('\n'),
 };
 
 // Vitest starts its workers with `--conditions code`, so the real automock loader would import
@@ -69,22 +78,6 @@ const files: Record<string, string> = {
 const automockLoader = fileURLToPath(
   import.meta.resolve('@storybook/builder-webpack5/loaders/webpack-automock-loader')
 );
-const stubAutomockLoader: WebpackPluginInstance = {
-  apply(compiler) {
-    compiler.hooks.compilation.tap('stub-automock-loader', (compilation) => {
-      webpack.NormalModule.getCompilationHooks(compilation).beforeLoaders.tap(
-        'stub-automock-loader',
-        (loaders) => {
-          for (const item of loaders) {
-            if (item.loader === automockLoader) {
-              item.loader = join(project, 'automock-loader-stub.cjs');
-            }
-          }
-        }
-      );
-    });
-  },
-};
 
 beforeAll(() => {
   root = normalize(realpathSync(mkdtempSync(join(tmpdir(), 'webpack-mock-plugin-'))));
@@ -99,6 +92,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   vi.mocked(logger.info).mockImplementation(() => {});
+  vi.mocked(logger.warn).mockImplementation(() => {});
 });
 
 afterAll(() => {
@@ -134,10 +128,8 @@ async function compile({
             },
           ],
         },
-        plugins: [
-          new WebpackMockPlugin({ previewConfigPath: join(context, previewFile) }),
-          stubAutomockLoader,
-        ],
+        resolveLoader: { alias: { [automockLoader]: join(project, 'automock-loader-stub.cjs') } },
+        plugins: [new WebpackMockPlugin({ previewConfigPath: join(context, previewFile) })],
         ...config,
         resolve: {
           extensions: ['.tsx', '.js'],
@@ -149,63 +141,58 @@ async function compile({
     )
   );
   expect(stats.toString({ all: false, errors: true })).toBe('');
-  const modules = [...stats.compilation.modules];
+  const modules = [...stats.compilation.modules].filter(
+    (module): module is NormalModule => 'resource' in module
+  );
   return {
     bundle: readFileSync(join(outputPath, 'bundle.js'), 'utf-8'),
-    modules,
-    moduleFor: (file: string) => {
-      const module = modules
-        .filter((candidate): candidate is NormalModule => 'resource' in candidate)
-        .find((candidate) => normalize(candidate.resource) === join(context, file));
+    sourceOf: (file: string) => {
+      const module = modules.find(
+        (candidate) => normalize(candidate.resource) === join(context, file)
+      );
       expect(module, `module ${file}`).toBeDefined();
-      return module!;
+      return String(module!.originalSource()?.source());
     },
   };
 }
 
-const loaderNames = (module: NormalModule) =>
-  module.loaders.map((item) => `${basename(item.loader)}?${item.options}`);
-
 describe('WebpackMockPlugin', () => {
-  it('replaces a relative mock with its __mocks__ file', async () => {
-    const { bundle } = await compile();
+  let build: Awaited<ReturnType<typeof compile>>;
 
-    expect(bundle).toContain('MOCKED_API_');
-    expect(bundle).not.toContain('REAL_API');
+  beforeAll(async () => {
+    build = await compile();
   });
 
-  it("resolves the __mocks__ file's own imports from the __mocks__ directory", async () => {
-    const { bundle } = await compile();
-
-    expect(bundle).toContain('FROM_MOCKS_DIR');
+  it('replaces a relative mock with its __mocks__ file', () => {
+    expect(build.bundle).toContain('MOCKED_API_');
+    expect(build.bundle).not.toContain('REAL_API');
   });
 
-  it('automocks a module imported through an alias, after the project loaders', async () => {
-    const { moduleFor } = await compile();
-    const module = moduleFor('src/utils/format.js');
-
-    expect(loaderNames(module)).toEqual([
-      'automock-loader-stub.cjs?spy=false',
-      'project-loader.cjs?undefined',
-    ]);
-    expect(module.identifier()).toContain('webpack-automock-loader.js?spy=false!');
-    expect(module.originalSource()?.source()).toContain('// automocked with {"spy":"false"}');
+  it("resolves the __mocks__ file's own imports from the __mocks__ directory", () => {
+    expect(build.bundle).toContain('FROM_MOCKS_DIR');
   });
 
-  it('automocks a .tsx module imported without an extension and passes the spy option', async () => {
-    const { moduleFor } = await compile();
-    const module = moduleFor('src/components/Icon.tsx');
-
-    expect(module.originalSource()?.source()).toContain('// automocked with {"spy":"true"}');
-    expect(module.identifier()).toContain('webpack-automock-loader.js?spy=true!');
+  it('automocks a module imported through an alias, after the project loaders', () => {
+    expect(build.sourceOf('src/utils/format.js')).toContain(
+      '// automocked with {"spy":"false"}, after project loader: true'
+    );
   });
 
-  it('replaces a bare specifier with its __mocks__ file and runs the project loaders on it', async () => {
-    const { bundle, moduleFor } = await compile();
+  it('automocks a .tsx module imported without an extension and passes the spy option', () => {
+    expect(build.sourceOf('src/components/Icon.tsx')).toContain(
+      '// automocked with {"spy":"true"}'
+    );
+  });
 
-    expect(bundle).toContain('PROJECT_LOADER_RAN');
-    expect(bundle).not.toContain('REAL_EXT');
-    expect(moduleFor('__mocks__/ext-pkg.js').identifier()).toContain('project-loader.cjs');
+  it('replaces a bare specifier with its __mocks__ file and runs the project loaders on it', () => {
+    expect(build.bundle).toContain('PROJECT_LOADER_RAN');
+    expect(build.bundle).not.toContain('REAL_EXT');
+    expect(build.sourceOf('__mocks__/ext-pkg.js')).toContain('MOCKED_EXT_');
+  });
+
+  it('leaves unmocked modules alone', () => {
+    expect(build.bundle).toContain('OTHER');
+    expect(build.sourceOf('src/other.js')).not.toContain('automocked');
   });
 
   it('applies relative mocks when webpack keeps symlinked paths', async () => {
@@ -218,11 +205,16 @@ describe('WebpackMockPlugin', () => {
     expect(bundle).not.toContain('REAL_API');
   });
 
-  it('leaves unmocked modules alone', async () => {
-    const { bundle, moduleFor } = await compile();
+  // Node resolves `../src/data` to `data.json`; webpack's configured extensions do not.
+  it('warns about a mock that webpack cannot resolve and keeps the others', async () => {
+    const { bundle } = await compile({
+      previewFile: '.storybook/preview-with-unresolvable-mock.js',
+    });
 
-    expect(bundle).toContain('OTHER');
-    expect(loaderNames(moduleFor('src/other.js'))).toEqual(['project-loader.cjs?undefined']);
+    expect(bundle).toContain('MOCKED_API_');
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Could not resolve "../src/data"')
+    );
   });
 
   it('changes nothing when the preview file has no mocks', async () => {
@@ -230,6 +222,6 @@ describe('WebpackMockPlugin', () => {
 
     expect(bundle).toContain('REAL_API');
     expect(bundle).toContain('REAL_EXT');
-    expect(bundle).not.toContain('webpack-automock-loader');
+    expect(bundle).not.toContain('automocked');
   });
 });

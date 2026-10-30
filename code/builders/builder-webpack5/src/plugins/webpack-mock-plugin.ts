@@ -36,18 +36,33 @@ export class WebpackMockPlugin {
         return;
       }
       const { previewConfigPath } = this.options;
+      const previewDir = dirname(previewConfigPath);
       const mocks = extractMockCalls(
-        { previewConfigPath, configDir: dirname(previewConfigPath) },
+        { previewConfigPath, configDir: previewDir },
         compiler.context,
         findMockRedirect
       );
       // Mocks resolve through webpack's resolver so that aliases, symlink handling and package
-      // conditions match the resolution of the imports they are compared against.
-      const resolver = compiler.resolverFactory.get('normal', { dependencyType: 'esm' });
-      const paths = await Promise.all(
-        mocks.map((mock) => resolveWithWebpack(resolver, dirname(previewConfigPath), mock))
+      // conditions match the resolution of the imports they are compared against. A dual package
+      // can resolve to one file for `import` and another for `require`, so both are keyed.
+      const resolvers = ['esm', 'commonjs'].map((dependencyType) =>
+        compiler.resolverFactory.get('normal', { dependencyType })
       );
-      this.mocksByPath = new Map(mocks.map((mock, index) => [normalize(paths[index]), mock]));
+      this.mocksByPath = new Map();
+      for (const mock of mocks) {
+        const paths = await Promise.all(
+          resolvers.map((resolver) => resolveWithWebpack(resolver, previewDir, mock.specifier))
+        );
+        const resolved = paths.filter((path): path is string => path !== undefined);
+        if (resolved.length === 0) {
+          logger.warn(
+            `Could not resolve "${mock.specifier}" from ${previewDir}, so its sb.mock() call is ignored.`
+          );
+        }
+        for (const path of resolved) {
+          this.mocksByPath.set(normalize(path), mock);
+        }
+      }
       this.lastPreviewMtime = previewMtime;
 
       if (mocks.length > 0) {
@@ -64,17 +79,14 @@ export class WebpackMockPlugin {
         if (!mock) {
           return callback();
         }
-        if (!mock.redirectPath) {
-          const { createData } = resolveData;
-          const loader = { loader: automockLoader, options: `spy=${mock.spy}` };
-          // Index 0 runs last, so the automock sees the output of the configured loaders.
-          createData.loaders!.unshift(loader);
-          createData.request = `${loader.loader}?${loader.options}!${createData.request}`;
-          return callback();
+        // Resolving the replacement through webpack again gives a `__mocks__` file its own loaders
+        // and context, and places the inline automock loader between the post and normal loaders.
+        if (mock.redirectPath) {
+          resolveData.request = mock.redirectPath;
+          resolveData.context = dirname(mock.redirectPath);
+        } else {
+          resolveData.request = `${automockLoader}?spy=${mock.spy}!${resolveData.createData.resource}`;
         }
-        // Resolving the mock file through webpack again gives it its own loaders and context.
-        resolveData.request = mock.redirectPath;
-        resolveData.context = dirname(mock.redirectPath);
         factory.hooks.resolve.callAsync(resolveData, (error) => callback(error));
       });
     });
@@ -109,11 +121,11 @@ export class WebpackMockPlugin {
   }
 }
 
-function resolveWithWebpack(resolver: Resolver, context: string, mock: MockCall) {
-  return new Promise<string>((resolve) => {
-    resolver.resolve({}, context, mock.specifier, {}, (error, _result, request) => {
+function resolveWithWebpack(resolver: Resolver, context: string, specifier: string) {
+  return new Promise<string | undefined>((resolve) => {
+    resolver.resolve({}, context, specifier, {}, (error, _result, request) => {
       const path = request?.path;
-      resolve(!error && typeof path === 'string' ? path : mock.absolutePath);
+      resolve(!error && typeof path === 'string' ? path : undefined);
     });
   });
 }

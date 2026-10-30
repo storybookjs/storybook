@@ -10,7 +10,10 @@ import path from 'pathe';
 
 import { buildComponentDocgenFromResolved } from '../componentManifest/buildReactComponentDocgen.ts';
 import type { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
-import type { ComponentDoc } from '../componentManifest/componentMeta/componentMetaExtractor.ts';
+import type {
+  ComponentDoc,
+  PropItemType,
+} from '../componentManifest/componentMeta/componentMetaExtractor.ts';
 import type {
   ComponentRef,
   StoryRef,
@@ -42,6 +45,19 @@ function isReactAttribute(prop: ComponentDoc['props'][string]) {
   );
 }
 
+/**
+ * RCM names arrays as TypeScript prints them (`string[]`). The args table conversion only reads
+ * them as arrays in the PropTypes `arrayOf` shape, which also keeps the `string[]` type summary.
+ */
+function toArgsTableType(
+  type: PropItemType
+): PropItemType | { name: 'arrayOf'; raw: string; value: unknown } {
+  if (type.elements?.length !== 1) {
+    return type;
+  }
+  return { name: 'arrayOf', raw: type.name, value: toArgsTableType(type.elements[0]) };
+}
+
 /** Converts one RCM `ComponentDoc` into the `StrictArgTypes` shape consumed by args tables. */
 function extractArgTypesFromComponentMeta(
   componentMeta: ComponentDoc | undefined
@@ -57,9 +73,11 @@ function extractArgTypesFromComponentMeta(
       .filter(([, prop]) => !isReactAttribute(prop))
       .map(([name, prop]) => [
         name,
-        prop.defaultValue
-          ? { ...prop, defaultValue: { ...prop.defaultValue, computed: false } }
-          : prop,
+        {
+          ...prop,
+          type: toArgsTableType(prop.type),
+          ...(prop.defaultValue ? { defaultValue: { ...prop.defaultValue, computed: false } } : {}),
+        },
       ])
   );
   return extractArgTypes({ __docgenInfo: { ...componentMeta, props } }) ?? undefined;

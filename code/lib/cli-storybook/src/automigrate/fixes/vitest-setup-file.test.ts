@@ -13,11 +13,16 @@ import { dedent } from 'ts-dedent';
 import { stripVTControlCharacters } from 'util';
 import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
-import { formatExistingFile } from 'storybook/internal/common';
+import { formatExistingFile, type JsPackageManager } from 'storybook/internal/common';
 import { loadConfig } from 'storybook/internal/csf-tools';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
-import { transformSetupFile, vitestSetupFile } from './vitest-setup-file.ts';
+import {
+  transformSetupFile,
+  vitestSetupFile,
+  type VitestSetupFileOptions,
+} from './vitest-setup-file.ts';
 
 vi.mock('storybook/internal/common', { spy: true });
 
@@ -36,6 +41,13 @@ const A11Y_SETUP_FILE = dedent`
   import * as projectAnnotations from './preview';
 
   setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
+`;
+
+const A11Y_ONLY_SETUP_FILE = dedent`
+  import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
+  import { setProjectAnnotations } from '@storybook/react-vite';
+
+  setProjectAnnotations([a11yAddonAnnotations]);
 `;
 
 const SB_8_6_0_SETUP_FILE = dedent`
@@ -74,6 +86,39 @@ const STANDARD_VITEST_CONFIG = dedent`
   });
 `;
 
+// A root-level config whose unit/ui projects have no Storybook plugin (ixartz/Next-js-Boilerplate)
+const UNIT_UI_VITEST_CONFIG = dedent`
+  import { defineConfig } from 'vitest/config';
+
+  export default defineConfig({
+    test: {
+      projects: [
+        { extends: true, test: { name: 'unit', include: ['src/**/*.test.{js,ts}'] } },
+        { extends: true, test: { name: 'ui', include: ['**/*.test.tsx'] } },
+      ],
+    },
+  });
+`;
+
+// A config inside the Storybook config dir, loaded via `vitest run --config .storybook/vitest.config.ts`;
+// its relative entry resolves against the invocation cwd, not the config file's directory
+const CONFIG_DIR_VITEST_CONFIG = dedent`
+  import { defineConfig } from 'vitest/config';
+  import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+
+  export default defineConfig({
+    plugins: [storybookTest()],
+    test: {
+      projects: [
+        {
+          extends: true,
+          test: { name: 'storybook', setupFiles: ['.storybook/vitest.setup.ts'] },
+        },
+      ],
+    },
+  });
+`;
+
 // A project that relies on the `extends` default to pick up the root's Storybook plugin
 const ROOT_PLUGIN_PROJECT_CONFIG = dedent`
   import { defineConfig } from 'vitest/config';
@@ -91,7 +136,10 @@ const ROOT_PLUGIN_PROJECT_CONFIG = dedent`
   });
 `;
 
-const MAIN_CONFIG = { addons: ['@storybook/addon-vitest', '@storybook/addon-a11y'] };
+const MAIN_CONFIG: StorybookConfigRaw = {
+  addons: ['@storybook/addon-vitest', '@storybook/addon-a11y'],
+  stories: [],
+};
 
 let fixtureRoot: string;
 let installedVitestVersion: string | null = '4.0.0';
@@ -135,12 +183,13 @@ describe('vitestSetupFile', () => {
     });
 
     it('detects the setup file in configDir and the config referencing it', async () => {
-      const { result, setupFilePath, configPath } = await check({
+      const { result, setupFilePath, configPath, configDir } = await check({
         '.storybook/vitest.setup.ts': PREVIEW_ONLY_SETUP_FILE,
         'vitest.config.ts': STANDARD_VITEST_CONFIG,
       });
 
       expect(result).toEqual({
+        configDir,
         setupFiles: [{ path: setupFilePath, transform: { kind: 'empty' } }],
         configFiles: [configPath],
         unresolvedEntries: [],
@@ -149,7 +198,7 @@ describe('vitestSetupFile', () => {
     });
 
     it('detects setup files outside configDir referenced from the config', async () => {
-      const { result, configPath } = await check({
+      const { result, configPath, configDir } = await check({
         'src/vitest.setup.ts': PREVIEW_ONLY_SETUP_FILE.replace(
           "'./preview'",
           "'../.storybook/preview'"
@@ -161,10 +210,103 @@ describe('vitestSetupFile', () => {
       });
 
       expect(result).toEqual({
+        configDir,
         setupFiles: [
           { path: path.join(fixtureRoot, 'src/vitest.setup.ts'), transform: { kind: 'empty' } },
         ],
         configFiles: [configPath],
+        unresolvedEntries: [],
+        inheritsRootByDefault: false,
+      });
+    });
+
+    it('detects the setup file referenced by a vitest config inside the Storybook config dir', async () => {
+      const { result, setupFilePath, configDir } = await check(
+        {
+          'vitest.config.ts': UNIT_UI_VITEST_CONFIG,
+          '.storybook/vitest.config.ts': CONFIG_DIR_VITEST_CONFIG,
+          '.storybook/vitest.setup.ts': A11Y_SETUP_FILE,
+        },
+        { addons: ['@storybook/addon-a11y'] }
+      );
+
+      expect(result).toEqual({
+        configDir,
+        setupFiles: [{ path: setupFilePath, transform: { kind: 'empty' } }],
+        configFiles: [path.join(configDir, 'vitest.config.ts')],
+        unresolvedEntries: [],
+        inheritsRootByDefault: false,
+      });
+    });
+
+    it('finds the package vitest config when the Storybook config dir is outside the package dir', async () => {
+      const fixture = createFixture({
+        // `storybook automigrate -c ../shared/.storybook` run from `app/`: the package vitest
+        // config is only found by also walking up from the package manager's instance dir
+        'shared/.storybook/vitest.setup.ts': PREVIEW_ONLY_SETUP_FILE,
+        'app/vitest.config.ts': dedent`
+          import { defineConfig } from 'vitest/config';
+          import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+
+          export default defineConfig({
+            plugins: [storybookTest({ configDir: '../shared/.storybook' })],
+            test: {
+              setupFiles: ['../shared/.storybook/vitest.setup.ts'],
+            },
+          });
+        `,
+      });
+      const result = await checkFix(vitestSetupFile, {
+        mainConfig: MAIN_CONFIG,
+        configDir: path.join(fixtureRoot, 'shared/.storybook'),
+        packageManager: { ...fixture.packageManager, instanceDir: path.join(fixtureRoot, 'app') },
+      } as any);
+
+      expect(result).toEqual({
+        configDir: path.join(fixtureRoot, 'shared/.storybook'),
+        setupFiles: [
+          {
+            path: path.join(fixtureRoot, 'shared/.storybook/vitest.setup.ts'),
+            transform: { kind: 'empty' },
+          },
+        ],
+        configFiles: [path.join(fixtureRoot, 'app/vitest.config.ts')],
+        unresolvedEntries: [],
+        inheritsRootByDefault: false,
+      });
+    });
+
+    it('resolves entries against the config file dir when the Storybook config dir is the vitest root', async () => {
+      const fixture = createFixture({
+        // A package whose Storybook config dir is its root: `main.ts` and the vitest config are
+        // siblings, as when running `storybook automigrate -c .`
+        'main.ts':
+          "export default { addons: ['@storybook/addon-vitest', '@storybook/addon-a11y'] };",
+        'vitest.setup.ts': PREVIEW_ONLY_SETUP_FILE,
+        'vitest.config.ts': dedent`
+          import { defineConfig } from 'vitest/config';
+          import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+
+          export default defineConfig({
+            plugins: [storybookTest({ configDir: '.' })],
+            test: {
+              setupFiles: ['vitest.setup.ts'],
+            },
+          });
+        `,
+      });
+      const result = await checkFix(vitestSetupFile, {
+        mainConfig: MAIN_CONFIG,
+        configDir: fixtureRoot,
+        packageManager: fixture.packageManager,
+      } as any);
+
+      expect(result).toEqual({
+        configDir: fixtureRoot,
+        setupFiles: [
+          { path: path.join(fixtureRoot, 'vitest.setup.ts'), transform: { kind: 'empty' } },
+        ],
+        configFiles: [fixture.configPath],
         unresolvedEntries: [],
         inheritsRootByDefault: false,
       });
@@ -193,16 +335,78 @@ describe('vitestSetupFile', () => {
       loadConfig(updatedConfig, configPath);
     });
 
+    it('migrates a setup file referenced from a vitest config inside the Storybook config dir', async () => {
+      const { configDir } = await migrate(
+        {
+          'vitest.config.ts': UNIT_UI_VITEST_CONFIG,
+          '.storybook/vitest.config.ts': CONFIG_DIR_VITEST_CONFIG,
+          '.storybook/vitest.setup.ts': A11Y_SETUP_FILE,
+        },
+        { addons: ['@storybook/addon-a11y'] }
+      );
+
+      expect(existsSync(path.join(configDir, 'vitest.setup.ts'))).toBe(false);
+
+      const updatedConfig = readFixture('.storybook/vitest.config.ts');
+      expect(updatedConfig).not.toContain('vitest.setup.ts');
+      loadConfig(updatedConfig, path.join(configDir, 'vitest.config.ts'));
+    });
+
+    it('migrates the project-root setup file when both setup files exist', async () => {
+      const { configDir } = await migrate(
+        {
+          '.storybook/vitest.config.ts': CONFIG_DIR_VITEST_CONFIG.replace(
+            "setupFiles: ['.storybook/vitest.setup.ts'] },",
+            "setupFiles: ['vitest.setup.ts'] },"
+          ),
+          '.storybook/vitest.setup.ts': "import '@testing-library/jest-dom/vitest';",
+          'vitest.setup.ts': A11Y_ONLY_SETUP_FILE,
+        },
+        { addons: ['@storybook/addon-a11y'] }
+      );
+
+      // Vitest resolves the entry against the invocation cwd, so it loads the project-root file
+      expect(existsSync(path.join(fixtureRoot, 'vitest.setup.ts'))).toBe(false);
+      expect(existsSync(path.join(configDir, 'vitest.setup.ts'))).toBe(true);
+
+      const updatedConfig = readFixture('.storybook/vitest.config.ts');
+      expect(updatedConfig).not.toContain('vitest.setup.ts');
+      loadConfig(updatedConfig, path.join(configDir, 'vitest.config.ts'));
+    });
+
+    it('migrates a config-dir setup file against an explicit test.root', async () => {
+      const { configDir } = await migrate(
+        {
+          '.storybook/vitest.config.ts': CONFIG_DIR_VITEST_CONFIG.replace(
+            "setupFiles: ['.storybook/vitest.setup.ts'] },",
+            "setupFiles: ['vitest.setup.ts'] },"
+          ).replace(
+            "test: { name: 'storybook',",
+            "test: { root: './vitest-root', name: 'storybook',"
+          ),
+          '.storybook/vitest-root/vitest.setup.ts': A11Y_ONLY_SETUP_FILE,
+          // An explicit root wins even though the project root also has a setup file
+          'vitest.setup.ts': A11Y_ONLY_SETUP_FILE,
+        },
+        { addons: ['@storybook/addon-a11y'] }
+      );
+
+      expect(existsSync(path.join(configDir, 'vitest-root/vitest.setup.ts'))).toBe(false);
+      expect(readFixture('vitest.setup.ts')).toBe(A11Y_ONLY_SETUP_FILE);
+
+      const updatedConfig = readFixture('.storybook/vitest.config.ts');
+      expect(updatedConfig).not.toContain('vitest.setup.ts');
+      loadConfig(updatedConfig, path.join(configDir, 'vitest.config.ts'));
+    });
+
     it('keeps the setup file when its config entry cannot be rewritten', async () => {
-      const { result, setupFilePath } = await check({
+      const { result, setupFilePath, packageManager } = await check({
         '.storybook/vitest.setup.ts': PREVIEW_ONLY_SETUP_FILE,
         'vitest.config.ts': STANDARD_VITEST_CONFIG,
       });
       vi.mocked(formatExistingFile).mockRejectedValueOnce(new Error('formatter crashed'));
 
-      await expect(runFix(vitestSetupFile, { result: result! } as any)).rejects.toThrow(
-        'formatter crashed'
-      );
+      await expect(runMigration({ packageManager }, result!)).rejects.toThrow('formatter crashed');
 
       // Deleting the file first would leave vitest.config.ts pointing at a file that no longer exists
       expect(existsSync(setupFilePath)).toBe(true);
@@ -236,7 +440,7 @@ describe('vitestSetupFile', () => {
       } as any);
 
       expect(result).not.toBeNull();
-      await runFix(vitestSetupFile, { result } as any);
+      await runMigration(fixture, result!);
 
       expect(existsSync(path.join(configDir, 'vitest.setup.ts'))).toBe(false);
       const updatedConfig = readFixture('vitest.config.ts');
@@ -274,7 +478,7 @@ describe('vitestSetupFile', () => {
       } as any);
 
       expect(result).not.toBeNull();
-      await runFix(vitestSetupFile, { result } as any);
+      await runMigration(fixture, result!);
 
       expect(existsSync(path.join(configDir, 'vitest.setup.ts'))).toBe(false);
       const updatedConfig = readFixture('vitest.config.ts');
@@ -309,7 +513,7 @@ describe('vitestSetupFile', () => {
       } as any);
 
       expect(result).not.toBeNull();
-      await expect(runFix(vitestSetupFile, { result } as any)).rejects.toThrow();
+      await expect(runMigration(fixture, result!)).rejects.toThrow();
 
       expect(readFixture('app/.storybook/vitest.setup.ts')).toBe(PREVIEW_ONLY_SETUP_FILE);
       expect(readFixture('vitest.config.ts')).toBe(configSource);
@@ -340,7 +544,7 @@ describe('vitestSetupFile', () => {
       } as any);
 
       expect(result).not.toBeNull();
-      await runFix(vitestSetupFile, { result } as any);
+      await runMigration(fixture, result!);
 
       expect(existsSync(path.join(configDir, 'vitest.setup.ts'))).toBe(false);
       const updatedConfig = readFixture('vitest.config.ts');
@@ -709,15 +913,13 @@ describe('vitestSetupFile', () => {
           },
         });
       `;
-      const { result } = await check({
+      const { result, packageManager } = await check({
         '.storybook/vitest.setup.ts': CUSTOM_CODE_SETUP_FILE,
         'vitest.config.ts': config,
       });
 
       expect(result).not.toBeNull();
-      await expect(runFix(vitestSetupFile, { result: result! } as any)).rejects.toThrow(
-        'automigration'
-      );
+      await expect(runMigration({ packageManager }, result!)).rejects.toThrow('automigration');
       expect(readFixture('.storybook/vitest.setup.ts')).toBe(CUSTOM_CODE_SETUP_FILE);
       expect(readFixture('vitest.config.ts')).toBe(config);
     });
@@ -774,15 +976,13 @@ describe('vitestSetupFile', () => {
           },
         });
       `;
-      const { result } = await check({
+      const { result, packageManager } = await check({
         '.storybook/vitest.setup.ts': PREVIEW_ONLY_SETUP_FILE,
         'vitest.config.ts': config,
       });
 
       expect(result).not.toBeNull();
-      await expect(runFix(vitestSetupFile, { result: result! } as any)).rejects.toThrow(
-        'automigration'
-      );
+      await expect(runMigration({ packageManager }, result!)).rejects.toThrow('automigration');
       expect(readFixture('.storybook/vitest.setup.ts')).toBe(PREVIEW_ONLY_SETUP_FILE);
       expect(readFixture('vitest.config.ts')).toBe(config);
     });
@@ -878,16 +1078,17 @@ describe('vitestSetupFile', () => {
         '.storybook/vitest.setup.ts': PREVIEW_ONLY_SETUP_FILE,
         'vitest.config.ts': STANDARD_VITEST_CONFIG,
       });
+      const configDir = path.relative(process.cwd(), fixture.configDir);
       const result = await checkFix(vitestSetupFile, {
         mainConfig: MAIN_CONFIG,
-        configDir: path.relative(process.cwd(), fixture.configDir),
+        configDir,
         packageManager: fixture.packageManager,
       } as any);
 
       expect(result?.setupFiles).toEqual([
         { path: fixture.setupFilePath, transform: { kind: 'empty' } },
       ]);
-      await runFix(vitestSetupFile, { result: result! } as any);
+      await runMigration(fixture, result!);
 
       expect(existsSync(fixture.setupFilePath)).toBe(false);
       expect(readFixture('vitest.config.ts')).not.toContain('vitest.setup.ts');
@@ -1361,7 +1562,11 @@ function readFixture(filePath: string) {
   return normalize(readFileSync(path.join(fixtureRoot, filePath), 'utf8'));
 }
 
-async function check(files: Record<string, string>, mainConfig = MAIN_CONFIG) {
+// The fix's check only reads `addons`; tests pass partial main configs
+async function check(
+  files: Record<string, string>,
+  mainConfig: Pick<StorybookConfigRaw, 'addons'> = MAIN_CONFIG
+) {
   const fixture = createFixture(files);
   const result = await checkFix(vitestSetupFile, {
     mainConfig,
@@ -1371,16 +1576,44 @@ async function check(files: Record<string, string>, mainConfig = MAIN_CONFIG) {
   return { ...fixture, result };
 }
 
-async function migrate(files: Record<string, string>, mainConfig = MAIN_CONFIG) {
+type Fixture = ReturnType<typeof createFixture>;
+
+/**
+ * Builds the fix's full `RunOptions` from a fixture, so a missing field fails at compile time
+ * instead of crashing `run` at runtime.
+ */
+async function runMigration(
+  fixture: Pick<Fixture, 'packageManager'>,
+  result: VitestSetupFileOptions
+) {
+  return runFix<VitestSetupFileOptions>(vitestSetupFile, {
+    result,
+    packageManager: fixture.packageManager,
+    // The runner passes the user-provided config dir; `run` reads the resolved one from the result
+    configDir: result.configDir,
+    mainConfig: MAIN_CONFIG,
+    mainConfigPath: path.join(result.configDir, 'main.ts'),
+    storybookVersion: '9.0.0',
+    storiesPaths: [],
+  });
+}
+
+async function migrate(
+  files: Record<string, string>,
+  mainConfig: Pick<StorybookConfigRaw, 'addons'> = MAIN_CONFIG
+) {
   const fixture = await check(files, mainConfig);
-  await runFix(vitestSetupFile, { result: fixture.result! } as any);
+  await runMigration(fixture, fixture.result!);
   return fixture;
 }
 
-async function migrateAndCaptureError(files: Record<string, string>, mainConfig = MAIN_CONFIG) {
+async function migrateAndCaptureError(
+  files: Record<string, string>,
+  mainConfig: Pick<StorybookConfigRaw, 'addons'> = MAIN_CONFIG
+) {
   const fixture = await check(files, mainConfig);
   try {
-    await runFix(vitestSetupFile, { result: fixture.result! } as any);
+    await runMigration(fixture, fixture.result!);
   } catch (error) {
     return normalize(String(error instanceof Error ? error.message : error));
   }
@@ -1412,8 +1645,9 @@ function createFixture(files: Record<string, string>) {
     setupFilePath: path.join(fixtureRoot, '.storybook', 'vitest.setup.ts'),
     configPath: path.join(fixtureRoot, 'vitest.config.ts'),
     packageManager: {
-      instanceDir: path.join(fixtureRoot, 'node_modules'),
+      // The package root, the directory Vitest runs from and resolves relative entries against
+      instanceDir: fixtureRoot,
       getInstalledVersion: async () => installedVitestVersion,
-    },
+    } as unknown as JsPackageManager,
   };
 }

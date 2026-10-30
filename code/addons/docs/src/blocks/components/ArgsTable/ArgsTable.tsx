@@ -181,12 +181,13 @@ const TablePositionWrapper = styled.div({
 
 const ButtonPositionWrapper = styled.div({
   position: 'absolute',
-  right: 22,
+  insetInlineEnd: 22,
   top: 10,
 });
 
 const StyledButton = styled(Button)({
-  margin: '-4px -12px -4px 0',
+  marginBlock: -4,
+  marginInline: '0 -12px',
 });
 
 export enum ArgsTableError {

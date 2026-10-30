@@ -27,25 +27,28 @@ import type {
 export function collectDeduplicatedDiagnostics(
   projectResults: Record<string, ProjectDoctorResults>
 ): DiagnosticResult[] {
-  const diagnosticMap = new Map<DiagnosticType, DiagnosticResult>();
+  const diagnosticMap = new Map<string, DiagnosticResult>();
 
   Object.entries(projectResults).forEach(([configDir, result]) => {
     Object.entries(result.diagnostics).forEach(([type, status]) => {
       if (status !== DiagnosticStatus.PASSED) {
         const diagnosticType = type as DiagnosticType;
-        const message = result.messages[diagnosticType];
+        const diagnostic = result.messages[diagnosticType];
 
-        if (message) {
-          const existing = diagnosticMap.get(diagnosticType);
+        if (diagnostic) {
+          // Diagnostics of the same type can still differ per project (e.g. distinct
+          // configuration errors), so deduplicate by their content
+          const key = `${diagnosticType}:${diagnostic.message}`;
+          const existing = diagnosticMap.get(key);
           if (existing) {
             // Add project to existing diagnostic
             existing.projects.push({ configDir });
           } else {
             // Create new diagnostic entry
-            diagnosticMap.set(diagnosticType, {
+            diagnosticMap.set(key, {
               type: diagnosticType,
-              title: type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
-              message,
+              title: diagnostic.title,
+              message: diagnostic.message,
               projects: [{ configDir }],
             });
           }
@@ -100,14 +103,13 @@ export function displayDoctorResults(
       // Display each diagnostic issue
       Object.entries(result.diagnostics).forEach(([type, status]) => {
         if (status !== DiagnosticStatus.PASSED) {
-          const message = result.messages[type as DiagnosticType];
-          if (message) {
-            const title = type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
-            logger.logBox(message, {
+          const diagnostic = result.messages[type as DiagnosticType];
+          if (diagnostic) {
+            logger.logBox(diagnostic.message, {
               title:
                 status === DiagnosticStatus.CHECK_ERROR
-                  ? CLI_COLORS.error(title)
-                  : CLI_COLORS.warning(title),
+                  ? CLI_COLORS.error(diagnostic.title)
+                  : CLI_COLORS.warning(diagnostic.title),
             });
           }
         }
@@ -176,6 +178,7 @@ export async function runMultiProjectDoctor(
     packageManager: project.packageManager,
     storybookVersion: project.storybookVersion,
     mainConfig: project.mainConfig,
+    configurationError: project.configurationError,
   }));
 
   // Always return the project-based results structure
@@ -189,12 +192,11 @@ export const doctor = async ({
 }: DoctorOptions) => {
   logger.step('Checking the health of your Storybook..');
 
-  const diagnosticResults: DiagnosticResult[] = [];
-
   let packageManager!: JsPackageManager;
   let configDir!: string;
   let versionInstalled: string | undefined;
   let mainConfig!: StorybookConfigRaw;
+  let configurationError: { title: string; message: string } | undefined;
 
   try {
     ({ packageManager, configDir, versionInstalled, mainConfig } = await getStorybookData({
@@ -215,12 +217,7 @@ export const doctor = async ({
       message = `❌ ${err.message}`;
     }
 
-    diagnosticResults.push({
-      type: DiagType.CONFIGURATION_ERROR,
-      title,
-      message,
-      projects: [{ configDir }],
-    });
+    configurationError = { title, message };
   }
 
   const doctorResults = await collectDoctorResultsByProject([
@@ -229,6 +226,7 @@ export const doctor = async ({
       packageManager,
       storybookVersion: versionInstalled,
       mainConfig,
+      configurationError,
     },
   ]);
 
@@ -245,22 +243,26 @@ export async function getDoctorDiagnostics({
   packageManager,
   storybookVersion,
   mainConfig,
+  configurationError,
 }: {
   configDir: string;
   packageManager: JsPackageManager;
   storybookVersion?: string;
   mainConfig: StorybookConfigRaw;
+  configurationError?: { title: string; message: string };
 }): Promise<DoctorCheckResult[]> {
   const results: DoctorCheckResult[] = [];
 
   if (!storybookVersion) {
     results.push({
       type: DiagType.CONFIGURATION_ERROR,
-      title: 'Version Detection Failed',
-      message: dedent`
-        ❌ Unable to determine Storybook version so the command will not proceed.
-        🤔 Are you running storybook doctor from your project directory? Please specify your Storybook config directory with the --config-dir flag.
-      `,
+      title: configurationError?.title ?? 'Version Detection Failed',
+      message:
+        configurationError?.message ??
+        dedent`
+          ❌ Unable to determine Storybook version so the command will not proceed.
+          🤔 Are you running storybook doctor from your project directory? Please specify your Storybook config directory with the --config-dir flag.
+        `,
       project: { configDir },
     });
     return results;
@@ -363,7 +365,7 @@ export async function collectDoctorResultsByProject(
         DiagnosticType,
         DiagnosticStatus
       >;
-      const messages: Record<DiagnosticType, string> = {} as Record<DiagnosticType, string>;
+      const messages: ProjectDoctorResults['messages'] = {} as ProjectDoctorResults['messages'];
 
       // Initialize all diagnostic types as passed
       Object.values(DiagType).forEach((type) => {
@@ -382,7 +384,10 @@ export async function collectDoctorResultsByProject(
           diagnostics[checkResult.type] = DiagnosticStatus.HAS_ISSUES;
           hasIssues = true;
         }
-        messages[checkResult.type] = checkResult.message;
+        messages[checkResult.type] = {
+          title: checkResult.title,
+          message: checkResult.message,
+        };
       }
 
       const status = hasErrors ? 'check_error' : hasIssues ? 'has_issues' : 'healthy';
@@ -401,15 +406,17 @@ export async function collectDoctorResultsByProject(
         DiagnosticType,
         DiagnosticStatus
       >;
-      const messages: Record<DiagnosticType, string> = {} as Record<DiagnosticType, string>;
+      const messages: ProjectDoctorResults['messages'] = {} as ProjectDoctorResults['messages'];
 
       Object.values(DiagType).forEach((type) => {
         diagnostics[type] = DiagnosticStatus.PASSED;
       });
 
       diagnostics[DiagType.CONFIGURATION_ERROR] = DiagnosticStatus.CHECK_ERROR;
-      messages[DiagType.CONFIGURATION_ERROR] =
-        `Failed to run doctor checks: ${error instanceof Error ? error.message : String(error)}`;
+      messages[DiagType.CONFIGURATION_ERROR] = {
+        title: 'Configuration Error',
+        message: `Failed to run doctor checks: ${error instanceof Error ? error.message : String(error)}`,
+      };
 
       projectResults[configDir] = {
         configDir,

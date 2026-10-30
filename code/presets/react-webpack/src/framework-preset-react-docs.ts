@@ -1,5 +1,9 @@
 import { fileURLToPath } from 'node:url';
 
+import {
+  getTypeScriptForDocgenError,
+  isDocgenServerDisabledInMainConfig,
+} from 'storybook/internal/common';
 import { deprecate } from 'storybook/internal/node-logger';
 
 import type { Configuration } from 'webpack';
@@ -27,12 +31,18 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
     return config;
   }
 
-  deprecate(
-    `Builder docgen (\`typescript.reactDocgen: '${reactDocgen}'\`) is deprecated and will be removed in Storybook 12. ` +
-      `It runs because \`features.docgenServer\` is off. Server-side docgen needs the \`typescript\` package: install it and remove any \`docgenServer: false\` from your \`.storybook/main.ts\`.`
+  if (await isDocgenServerDisabledInMainConfig(options)) {
+    deprecate(
+      `Builder docgen (\`typescript.reactDocgen: '${reactDocgen}'\`) is deprecated and will be removed in Storybook 12. ` +
+        `It runs because your Storybook main config sets \`features.docgenServer: false\`. Remove that setting to use server-side docgen.`
+    );
+  }
+
+  const typescriptUsable = !getTypeScriptForDocgenError((specifier) =>
+    import.meta.resolve(specifier)
   );
 
-  if (reactDocgen !== 'react-docgen-typescript') {
+  if (reactDocgen !== 'react-docgen-typescript' || !typescriptUsable) {
     return {
       ...config,
       module: {

@@ -53,7 +53,15 @@ export interface CoreConfig {
       };
   renderer?: RendererName;
   disableWebpackDefaults?: boolean;
-  channelOptions?: Partial<TelejsonOptions> & { wsToken?: string };
+  channelOptions?: Partial<TelejsonOptions> & {
+    wsToken?: string;
+    /**
+     * WebSocket path the manager and preview connect to. Defaults to `/storybook-server-channel`.
+     * Only the browser side honours it: the host serving Storybook must route this path to the
+     * server channel.
+     */
+    wsPath?: string;
+  };
   /** Disables the generation of project.json, a file containing Storybook metadata */
   disableProjectJson?: boolean;
   /**
@@ -228,6 +236,11 @@ export interface LoadOptions {
   configDir?: string;
   cacheKey?: string;
   extendServer?: (server: HttpServer) => void;
+  /**
+   * URL path prefix Storybook is served from, normalized to start and end with `/`.
+   * @default '/'
+   */
+  basePath?: string;
 }
 
 export interface CLIBaseOptions {
@@ -577,22 +590,6 @@ export interface StorybookFeatures {
    * @default true
    */
   menuOnboardingChecklist?: boolean;
-
-  /**
-   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-   *
-   * Filter args with a "target" on the type from the render function (EXPERIMENTAL)
-   */
-  argTypeTargetsV7?: boolean;
-
-  /**
-   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-   *
-   * Disallow implicit actions during rendering. This will be the default in Storybook 8.
-   *
-   * This will make sure that your story renders the same no matter if docgen is enabled or not.
-   */
-  disallowImplicitActionsInRenderV8?: boolean;
 
   /**
    * @temporary This feature flag is a migration assistant, and is scheduled to be removed.

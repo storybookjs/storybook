@@ -1,0 +1,26 @@
+## Props
+
+```
+export type GradioButtonProps = {
+  /** Element id. */
+  elem_id?: string | null;
+  /** Element class names. */
+  elem_classes?: string[] | null = [];
+  /** Visibility state. */
+  visible?: boolean | "hidden" = true;
+  /** Button variant. */
+  variant?: "primary" | "secondary" | "stop" = "secondary";
+  /** Button label. */
+  value?: string | null = null;
+  /** Flex scale. */
+  scale?: number | null = null;
+  /** Minimum width. */
+  min_width?: number | null;
+  /** Icon file data. */
+  icon?: FileData | null;
+  /** Click callback. */
+  onclick?: () => void = function;
+  /** Button content. */
+  children?: Snippet<[]>;
+}
+```

@@ -10,7 +10,7 @@ export type StorybookWorkflowCall = {
   source: 'mcp' | 'cli';
 };
 
-// `storybook skills write-story` and `stories` serve the document the MCP
+// `storybook skills write-story` and `ui-workflow` serve the document the MCP
 // channel exposes as the get-storybook-story-instructions tool, which
 // assertions ask for by name. Remove the alias once the MCP tool and the skill
 // share one name (or the tool is retired).
@@ -21,7 +21,7 @@ export function workflowCallMatchesName(call: StorybookWorkflowCall, name: strin
   return (
     name === 'get-storybook-story-instructions' &&
     call.name === 'skills-get' &&
-    (call.input.id === 'write-story' || call.input.id === 'stories' || call.input.all === true)
+    (call.input.id === 'write-story' || call.input.id === 'ui-workflow' || call.input.all === true)
   );
 }
 

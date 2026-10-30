@@ -1,6 +1,9 @@
+import { unwrapExpression } from 'storybook/internal/csf-tools';
+
 import type { ESTreeAST } from '../../ast.ts';
 import type { SvelteASTNodes } from './nodes.ts';
 import { isOneOf } from '../../../utils/is-one-of.ts';
+import { skipTypeCalls } from '../../../utils/import-source.ts';
 import type { CompiledASTNodes } from '../compiled/nodes.ts';
 
 import { GetDefineMetaFirstArgumentError } from '../../../utils/error/parser/extract/svelte.ts';
@@ -42,26 +45,24 @@ export function extractDefineMetaPropertiesNodes<
 }
 
 /**
- * `defineMeta` accepts only one argument - an {@link ObjectExpression},
+ * `defineMeta` and `preview.meta` accept only one argument - an {@link ObjectExpression},
  * which should satisfy `@storybook/svelte`'s interface {@link Meta}.
  */
 export function getDefineMetaFirstArgumentObjectExpression(
   options: Pick<Options<Array<keyof ComponentAnnotations<Cmp>>>, 'filename' | 'nodes'>
 ): ESTreeAST.ObjectExpression {
   const { nodes, filename } = options;
-  const { defineMetaVariableDeclaration, defineMetaImport } = nodes;
+  const { defineMetaVariableDeclaration } = nodes;
   const { declarations } = defineMetaVariableDeclaration;
   const declaration = declarations[0];
-  const { init } = declaration;
+  const init = declaration.init && skipTypeCalls(declaration.init);
+  const argument =
+    init?.type === 'CallExpression' && init.arguments.length === 1
+      ? unwrapExpression(init.arguments[0])
+      : undefined;
 
-  if (
-    init?.type === 'CallExpression' &&
-    init.callee.type === 'Identifier' &&
-    init.callee.name === defineMetaImport.local.name && // NOTE: the callee.name could be renamed by user
-    init.arguments.length === 1 &&
-    init.arguments[0].type === 'ObjectExpression'
-  ) {
-    return init.arguments[0];
+  if (argument?.type === 'ObjectExpression') {
+    return argument;
   }
 
   throw new GetDefineMetaFirstArgumentError({

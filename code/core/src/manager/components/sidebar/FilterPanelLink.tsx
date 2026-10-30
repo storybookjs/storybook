@@ -4,7 +4,7 @@ import { ActionList, Form } from 'storybook/internal/components';
 
 import { DeleteIcon } from '@storybook/icons';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
 import type { FilterItem } from './FilterPanel.utils.ts';
@@ -13,13 +13,12 @@ const MutedText = styled.span(({ theme }) => ({
   color: theme.textMutedColor,
 }));
 
-export const StatusIcon = styled.span<{ $iconColor?: string | null }>(({ $iconColor }) => ({
+export const StatusIcon = styled.span({
   display: 'contents',
-  color: $iconColor ?? undefined,
   '> svg': {
     transform: 'scale(1.3)',
   },
-}));
+});
 
 export const createFilterLink = ({
   id,

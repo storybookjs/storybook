@@ -4,7 +4,7 @@ import { ResetWrapper } from 'storybook/internal/components';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, screen, within } from 'storybook/test';
+import { expect, screen, waitFor, within } from 'storybook/test';
 
 import { ArgRow } from './ArgRow';
 import { TableWrapper } from './ArgsTable';
@@ -358,6 +358,35 @@ export const LongFunc = {
     expect(
       await screen.findByText(/Calculate various metrics between a and b/)
     ).toBeInTheDocument();
+  },
+} satisfies StoryObj<typeof ArgRow>;
+
+export const LongDetail = {
+  args: {
+    row: {
+      key: 'icon',
+      name: 'Icon',
+      description: 'The type detail is taller than the viewport.',
+      table: {
+        type: {
+          summary: 'IconName',
+          detail: Array.from({ length: 150 }, (_, i) => `'icon${i}'`).join('\n| '),
+        },
+      },
+      control: {
+        type: 'text',
+      },
+    },
+  },
+  play: async ({ canvas }) => {
+    await canvas.getByRole('button', { name: 'IconName' }).click();
+    const dialog = await screen.findByRole('dialog');
+    const viewport = dialog.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+    // The detail renders after the popover opens, so wait for it to overflow.
+    await waitFor(() => expect(viewport.scrollHeight).toBeGreaterThan(viewport.clientHeight));
+    const { top, bottom } = dialog.getBoundingClientRect();
+    await expect(top).toBeGreaterThanOrEqual(0);
+    await expect(bottom).toBeLessThanOrEqual(window.innerHeight);
   },
 } satisfies StoryObj<typeof ArgRow>;
 

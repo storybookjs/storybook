@@ -1,5 +1,14 @@
 # Code review
 
+Every review follows this document: a human review, a review skill, a subagent, or a reply to a review bot.
+
+## Real inputs only
+
+Report a finding only when its input happens in real projects: something a user, an editor, a build tool or a framework produces.
+For each finding, name where that input comes from in real life. If you cannot, drop the finding and say why.
+Do not ask for a guard, a fallback or a test against a hand-built state (a hand-corrupted file, an impossible event order, a value the types rule out). A guard for an imaginary input is code to maintain and review for nothing.
+Apply the same rule when you act on findings from someone else.
+
 ## Scope and evidence
 
 When a claim depends on compiler, bundler, browser, or dependency behavior, run a focused probe if execution is available and permitted.

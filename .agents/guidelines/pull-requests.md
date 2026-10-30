@@ -15,3 +15,7 @@ Reproduce it locally against a real PR with `DANGER_GITHUB_API_TOKEN="$(gh auth 
 - **Do not add a `ci:*` label.** The review bot or a maintainer adds it once automated review has finished, so CI does not run on work that is still changing.
 
 For a pkg.pr.new canary, follow the [canary skill](../skills/canary/SKILL.md) and [`CONTRIBUTING/RELEASING.md`](../../CONTRIBUTING/RELEASING.md).
+
+## Greptile review
+
+Greptile does not review a draft PR by itself. To ask for a review, comment `@greptileai review` on the PR (`gh pr comment <number> --body "@greptileai review"`). Greptile reacts with 👀, starts a "Greptile Review" check on the head commit, and posts a summary comment and inline comments after about five minutes. It reviews the head at the time of the comment, so push first. A local `greptile review` CLI run does not replace the review on the PR.

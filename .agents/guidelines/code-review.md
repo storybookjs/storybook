@@ -46,6 +46,7 @@ Include a command a maintainer can rerun with the finding.
 
 - Follow [Testing](./testing.md).
 - Check keyboard and pointer interaction, accessible names and descriptions, and the consumers of the surrounding component.
+- For a change to rendered UI, apply the checklist in [review-a11y](../skills/review-a11y/SKILL.md).
 - Review fresh-page and first-attempt behavior when tests depend on focus, hover, timers, or retained state.
 
 ## Structure and maintainability

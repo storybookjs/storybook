@@ -6,8 +6,9 @@ import type { Polka } from 'polka';
 
 export async function extractStorybookMetadata(outputFile: string, configDir: string) {
   const storybookMetadata = await getStorybookMetadata(configDir);
-
-  await writeFile(outputFile, JSON.stringify(storybookMetadata));
+  const serialized = JSON.stringify(storybookMetadata);
+  await writeFile(outputFile, serialized);
+  return serialized;
 }
 
 export function useStorybookMetadata(app: Polka, configDir?: string) {

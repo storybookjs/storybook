@@ -29,6 +29,9 @@ function skipSourceRender(context: StoryContext<WebComponentsRenderer>) {
 }
 
 export function renderStorySource(storyResult: WebComponentsRenderer['storyResult']): string {
+  if (typeof storyResult === 'string') {
+    return storyResult.replace(LIT_EXPRESSION_COMMENTS, '');
+  }
   const container = window.document.createElement('div');
   if (storyResult instanceof DocumentFragment) {
     render(storyResult.cloneNode(true), container);
@@ -56,10 +59,7 @@ export function sourceDecorator(
   });
 
   if (!skipSourceRender(context)) {
-    source =
-      typeof renderedForSource === 'string'
-        ? renderedForSource
-        : renderStorySource(renderedForSource);
+    source = renderStorySource(renderedForSource);
   }
 
   return story;

@@ -35,6 +35,19 @@ describe('sourceDecorator – raw HTML string stories', () => {
     );
   });
 
+  it('strips lit expression comments but keeps regular comments', async () => {
+    const storyFn = () =>
+      `<!-- header --><deepgram-header><!--?lit$123$-->Hi<!----></deepgram-header>` as any;
+
+    sourceDecorator(storyFn, makeContext() as any);
+    await tick();
+
+    expect(emitTransformCode).toHaveBeenCalledWith(
+      '<!-- header --><deepgram-header>Hi</deepgram-header>',
+      expect.anything()
+    );
+  });
+
   it('still serializes lit `html` templates correctly (no regression)', async () => {
     const storyFn = () =>
       html`

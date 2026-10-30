@@ -58,7 +58,7 @@ const CONFIG_DIR = path.resolve(__dirname, '../src/configs/');
 
 export async function update() {
   // setup config directory
-  await fs.mkdir(CONFIG_DIR);
+  await fs.mkdir(CONFIG_DIR, { recursive: true }).catch(() => {});
 
   // Update/add rule files
   await Promise.all(

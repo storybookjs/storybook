@@ -112,6 +112,9 @@ This file owns Storybook-specific editorial, MDX component, frontmatter, and val
 
 - `<If renderer={[...]}>` / `<If notRenderer={[...]}>` — conditional rendering.
 - `<CodeSnippets path="..." />` — path must exist in `docs/_snippets/`. `[auto]`
+  - In a snippet file, a `tabTitle="CSF 4"` block must come before its `tabTitle="CSF 3"` counterpart (same `renderer` and `language`; `renderer="common"` blocks count for every renderer). Fix with `yarn --cwd scripts docs:fix-snippets`. `[auto]`
+  - Snippet tab titles use `CSF 3` and `CSF 4`, not `CSF Next`, `Svelte CSF`, `Svelte CSF 3`, or `Svelte CSF 4`. `[auto]`
+  - Each CSF 3 block starts with the comment `⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4`, in the block's comment syntax: `//` for JS and TS, `<!-- -->` for Svelte, `{/* */}` for MDX. Fix with `yarn --cwd scripts docs:fix-snippets`. `[auto]`
 - `<Video src="..." />` — embedded video.
 - `<YouTubeCallout id="..." title="..." />` — YouTube embed.
 

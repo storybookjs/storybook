@@ -1,4 +1,43 @@
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
+import { moduleMetadata, argsToTemplate } from '@storybook/angular';
+
+import { CommonModule } from '@angular/common';
+
+import preview from '../.storybook/preview';
+
+import { Layout } from './layout.component';
+import { MyComponent } from './my-component.component';
+
+const meta = preview.meta({
+  component: MyComponent,
+  decorators: [
+    moduleMetadata({
+      declarations: [Layout],
+      imports: [CommonModule],
+    }),
+  ],
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: (args) => ({
+    props: args,
+    template: `
+      <app-layout>
+        <header>
+          <h1>Example</h1>
+        </header>
+        <article>
+          <app-my-component ${argsToTemplate(args)}></app-my-component>
+        </article>
+      </app-layout>
+    `,
+  }),
+});
+```
+
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { type Meta, type StoryObj, moduleMetadata, argsToTemplate } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
@@ -37,44 +76,6 @@ export const Example: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import { moduleMetadata, argsToTemplate } from '@storybook/angular';
-
-import { CommonModule } from '@angular/common';
-
-import preview from '../.storybook/preview';
-
-import { Layout } from './layout.component';
-import { MyComponent } from './my-component.component';
-
-const meta = preview.meta({
-  component: MyComponent,
-  decorators: [
-    moduleMetadata({
-      declarations: [Layout],
-      imports: [CommonModule],
-    }),
-  ],
-});
-
-// This story uses a render function to fully control how the component renders.
-export const Example = meta.story({
-  render: (args) => ({
-    props: args,
-    template: `
-      <app-layout>
-        <header>
-          <h1>Example</h1>
-        </header>
-        <article>
-          <app-my-component ${argsToTemplate(args)}></app-my-component>
-        </article>
-      </app-layout>
-    `,
-  }),
-});
-```
-
 ```jsx filename="MyComponent.stories.js|jsx" renderer="preact" language="js"
 /** @jsx h */
 import { h } from 'preact';
@@ -101,16 +102,18 @@ export const Example = {
 };
 ```
 
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import { Layout } from './Layout';
 import { MyComponent } from './MyComponent';
 
-export default {
+const meta = preview.meta({
   component: MyComponent,
-};
+});
 
 // This story uses a render function to fully control how the component renders.
-export const Example = {
+export const Example = meta.story({
   render: () => (
     <Layout>
       <header>
@@ -121,10 +124,36 @@ export const Example = {
       </article>
     </Layout>
   ),
-};
+});
+```
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { Layout } from './Layout';
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: () => (
+    <Layout>
+      <header>
+        <h1>Example</h1>
+      </header>
+      <article>
+        <MyComponent />
+      </article>
+    </Layout>
+  ),
+});
 ```
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -153,18 +182,17 @@ export const Example: Story = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { Layout } from './Layout';
 import { MyComponent } from './MyComponent';
 
-const meta = preview.meta({
+export default {
   component: MyComponent,
-});
+};
 
 // This story uses a render function to fully control how the component renders.
-export const Example = meta.story({
+export const Example = {
   render: () => (
     <Layout>
       <header>
@@ -175,32 +203,7 @@ export const Example = meta.story({
       </article>
     </Layout>
   ),
-});
-```
-
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { Layout } from './Layout';
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-// This story uses a render function to fully control how the component renders.
-export const Example = meta.story({
-  render: () => (
-    <Layout>
-      <header>
-        <h1>Example</h1>
-      </header>
-      <article>
-        <MyComponent />
-      </article>
-    </Layout>
-  ),
-});
+};
 ```
 
 ```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js"
@@ -255,16 +258,18 @@ export const Example: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import Layout from './Layout.vue';
 import MyComponent from './MyComponent.vue';
 
-export default {
+const meta = preview.meta({
   component: MyComponent,
-};
+});
 
 // This story uses a render function to fully control how the component renders.
-export const Example = {
+export const Example = meta.story({
   render: () => ({
     components: { Layout, MyComponent },
     template: `
@@ -278,10 +283,39 @@ export const Example = {
       </Layout>
     `,
   }),
-};
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import Layout from './Layout.vue';
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: () => ({
+    components: { Layout, MyComponent },
+    template: `
+      <Layout>
+        <header>
+          <h1>Example</h1>
+        </header>
+        <article>
+          <MyComponent />
+        </article>
+      </Layout>
+    `,
+  }),
+});
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Layout from './Layout.vue';
@@ -312,18 +346,17 @@ export const Example: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import Layout from './Layout.vue';
 import MyComponent from './MyComponent.vue';
 
-const meta = preview.meta({
+export default {
   component: MyComponent,
-});
+};
 
 // This story uses a render function to fully control how the component renders.
-export const Example = meta.story({
+export const Example = {
   render: () => ({
     components: { Layout, MyComponent },
     template: `
@@ -337,38 +370,59 @@ export const Example = meta.story({
       </Layout>
     `,
   }),
+};
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: () => html`
+    <my-layout>
+      <header>
+        <h1>Example</h1>
+      </header>
+      <article>
+        <my-component />
+      </article>
+    </my-layout>
+  `,
 });
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
+import { html } from 'lit';
+
 import preview from '../.storybook/preview';
 
-import Layout from './Layout.vue';
-import MyComponent from './MyComponent.vue';
-
 const meta = preview.meta({
-  component: MyComponent,
+  component: 'my-component',
 });
 
 // This story uses a render function to fully control how the component renders.
 export const Example = meta.story({
-  render: () => ({
-    components: { Layout, MyComponent },
-    template: `
-      <Layout>
-        <header>
-          <h1>Example</h1>
-        </header>
-        <article>
-          <MyComponent />
-        </article>
-      </Layout>
-    `,
-  }),
+  render: () => html`
+    <my-layout>
+      <header>
+        <h1>Example</h1>
+      </header>
+      <article>
+        <my-component />
+      </article>
+    </my-layout>
+  `,
 });
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { html } from 'lit';
 
 export default {
@@ -391,6 +445,7 @@ export const Example = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -417,84 +472,7 @@ export const Example: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import { html } from 'lit';
-
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'my-component',
-});
-
-// This story uses a render function to fully control how the component renders.
-export const Example = meta.story({
-  render: () => html`
-    <my-layout>
-      <header>
-        <h1>Example</h1>
-      </header>
-      <article>
-        <my-component />
-      </article>
-    </my-layout>
-  `,
-});
-```
-
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import { html } from 'lit';
-
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'my-component',
-});
-
-// This story uses a render function to fully control how the component renders.
-export const Example = meta.story({
-  render: () => html`
-    <my-layout>
-      <header>
-        <h1>Example</h1>
-      </header>
-      <article>
-        <my-component />
-      </article>
-    </my-layout>
-  `,
-});
-```
-
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Layout from './Layout.svelte';
-  import MyComponent from './MyComponent.svelte';
-
-  const { Story } = defineMeta({
-    component: MyComponent,
-  });
-</script>
-
-<Story
-  name="Example"
->
-  {#snippet template(args)}
-   <Layout>
-      <header>
-        <h1>Example</h1>
-      </header>
-      <article>
-        <MyComponent />
-      </article>
-    </Layout>
-  {/snippet}
-</Story>
-```
-
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -522,7 +500,8 @@ export const Example = meta.story({
 </Story>
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -551,7 +530,7 @@ export const Example = meta.story({
 </Story>
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
 <script module lang="ts">
   import preview from '../.storybook/preview';
 
@@ -559,6 +538,36 @@ export const Example = meta.story({
   import MyComponent from './MyComponent.svelte';
 
   const { Story } = preview.meta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="Example"
+>
+  {#snippet template(args)}
+   <Layout>
+      <header>
+        <h1>Example</h1>
+      </header>
+      <article>
+        <MyComponent />
+      </article>
+    </Layout>
+  {/snippet}
+</Story>
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Layout from './Layout.svelte';
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
     component: MyComponent,
   });
 </script>

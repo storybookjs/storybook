@@ -18,7 +18,7 @@ describe('StorybookSvelteCSFError', () => {
     const error = new MissingModuleTagError('Button.stories.svelte');
 
     expect(error.message).toContain(
-      `More info: https://github.com/storybookjs/storybook/blob/v${rendererPkg.version}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001`
+      `More info: https://github.com/storybookjs/storybook/blob/v${rendererPkg.version}/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0001`
     );
   });
 
@@ -55,7 +55,7 @@ describe('StorybookSvelteCSFError', () => {
           'message'
         )?.get?.call({ ...error, fullErrorCode: error.fullErrorCode, template: () => '' });
         expect(message).toBe(
-          `\n\nMore info: https://github.com/storybookjs/storybook/blob/v${rendererPkg.version}/code/renderers/svelte/src/svelte-csf/ERRORS.md#${error.fullErrorCode}\n`
+          `\n\nMore info: https://github.com/storybookjs/storybook/blob/v${rendererPkg.version}/code/renderers/svelte/src/svelte-csf/ERRORS.md#${error.fullErrorCode.toLowerCase()}\n`
         );
         if (!headings.has(error.fullErrorCode)) {
           missing.push(error.fullErrorCode);

@@ -2,6 +2,7 @@
 import {
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
   symlinkSync,
   unlinkSync,
@@ -203,5 +204,45 @@ describe('SvelteComponentMetaManager', () => {
     const componentMetaManager = new SvelteComponentMetaManager();
 
     expect(propNames(componentMetaManager, join(root, 'src/Button.svelte'))).toEqual(['label']);
+  });
+});
+
+describe('library props in the server docgen', () => {
+  const docgenOf = (files: Record<string, string>, path: string) => {
+    const root = project({ 'tsconfig.json': TSCONFIG, ...files });
+    return new SvelteComponentMetaManager().generateDocgen(join(root, path), { server: true });
+  };
+
+  it('drops the attribute props of a union of library types, as `WithoutChild<CalendarRootProps>` gives', () => {
+    const docgen = docgenOf(
+      {
+        'src/lib.d.ts': `import type { HTMLAttributes } from 'svelte/elements';\ntype Div = Omit<HTMLAttributes<HTMLDivElement>, 'children'>;\ntype Snippets = { child?: () => void };\nexport type RootProps = ({ type: 'single'; value?: string } & Snippets & Div) | ({ type: 'multiple'; value?: string[] } & Snippets & Div);\n`,
+        // shadcn-svelte's helper, which distributes over the union.
+        'src/utils.ts': `export type WithoutChild<T> = T extends { child?: any } ? Omit<T, 'child'> : T;\n`,
+        'src/Calendar.svelte': `<script lang="ts">\n  import type { RootProps } from './lib';\n  import type { WithoutChild } from './utils';\n  let { ...rest }: WithoutChild<RootProps> = $props();\n</script>\n`,
+      },
+      'src/Calendar.svelte'
+    );
+
+    expect(docgen.props.map((prop) => prop.name)).toEqual(['type', 'value']);
+    expect(docgen.omittedTypes).toMatchInlineSnapshot(`
+      [
+        "(Omit<{ type: "single"; value?: string | undefined; } & Snippets & Div, "child"> | Omit<{ type: "multiple"; value?: string[] | undefined; } & Snippets & Div, "child">)",
+      ]
+    `);
+  });
+
+  it('reads the type params of a Svelte 4 `$$Generic`', () => {
+    const root = project({
+      'tsconfig.json': TSCONFIG,
+      'src/List.svelte': `<script lang="ts">\n  type T = $$Generic<string>;\n  export let items: T[] = [];\n</script>\n`,
+    });
+    const path = join(root, 'src/List.svelte');
+    const docgen = new SvelteComponentMetaManager().generateDocgen(path, {
+      server: true,
+      documentationSource: readFileSync(path, 'utf8'),
+    });
+
+    expect(docgen.typeParams).toBe('T extends string');
   });
 });

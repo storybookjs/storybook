@@ -1,4 +1,89 @@
+```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="story CSF 4"
+import { moduleMetadata } from '@storybook/angular';
+
+import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
+import { graphql, HttpResponse, delay } from 'msw';
+
+import preview from '../.storybook/preview';
+
+import { DocumentHeader } from './document-header.component';
+import { DocumentList } from './document-list.component';
+import { PageLayout } from './page-layout.component';
+import { DocumentScreen } from './your-page.component';
+import { MockGraphQLModule } from './mock-graphql.module';
+
+const meta = preview.meta({
+  component: DocumentScreen,
+  decorators: [
+    moduleMetadata({
+      declarations: [DocumentList, DocumentHeader, PageLayout],
+      imports: [CommonModule, HttpClientModule, MockGraphQLModule],
+    }),
+  ],
+});
+
+//👇The mocked data that will be used in the story
+const TestData = {
+  user: {
+    userID: 1,
+    name: 'Someone',
+  },
+  document: {
+    id: 1,
+    userID: 1,
+    title: 'Something',
+    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    status: 'approved',
+  },
+  subdocuments: [
+    {
+      id: 1,
+      userID: 1,
+      title: 'Something',
+      content:
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      status: 'approved',
+    },
+  ],
+};
+
+export const MockedSuccess = meta.story({
+  beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', () => {
+        return HttpResponse.json({
+          data: {
+            allInfo: {
+              ...TestData,
+            },
+          },
+        });
+      }),
+    );
+  },
+});
+
+export const MockedError = meta.story({
+  beforeEach({ msw }) {
+    msw.use(
+      graphql.query('AllInfoQuery', async () => {
+        await delay(800);
+        return HttpResponse.json({
+          errors: [
+            {
+              message: 'Access denied',
+            },
+          ],
+        });
+      }),
+    );
+  },
+});
+```
+
 ```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="story CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { type Meta, type StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
@@ -84,90 +169,6 @@ export const MockedError: Story = {
 };
 ```
 
-```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="story CSF Next 🧪"
-import { moduleMetadata } from '@storybook/angular';
-
-import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
-import { graphql, HttpResponse, delay } from 'msw';
-
-import preview from '../.storybook/preview';
-
-import { DocumentHeader } from './document-header.component';
-import { DocumentList } from './document-list.component';
-import { PageLayout } from './page-layout.component';
-import { DocumentScreen } from './your-page.component';
-import { MockGraphQLModule } from './mock-graphql.module';
-
-const meta = preview.meta({
-  component: DocumentScreen,
-  decorators: [
-    moduleMetadata({
-      declarations: [DocumentList, DocumentHeader, PageLayout],
-      imports: [CommonModule, HttpClientModule, MockGraphQLModule],
-    }),
-  ],
-});
-
-//👇The mocked data that will be used in the story
-const TestData = {
-  user: {
-    userID: 1,
-    name: 'Someone',
-  },
-  document: {
-    id: 1,
-    userID: 1,
-    title: 'Something',
-    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-    status: 'approved',
-  },
-  subdocuments: [
-    {
-      id: 1,
-      userID: 1,
-      title: 'Something',
-      content:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-      status: 'approved',
-    },
-  ],
-};
-
-export const MockedSuccess = meta.story({
-  beforeEach({ msw }) {
-    msw.use(
-      graphql.query('AllInfoQuery', () => {
-        return HttpResponse.json({
-          data: {
-            allInfo: {
-              ...TestData,
-            },
-          },
-        });
-      }),
-    );
-  },
-});
-
-export const MockedError = meta.story({
-  beforeEach({ msw }) {
-    msw.use(
-      graphql.query('AllInfoQuery', async () => {
-        await delay(800);
-        return HttpResponse.json({
-          errors: [
-            {
-              message: 'Access denied',
-            },
-          ],
-        });
-      }),
-    );
-  },
-});
-```
-
 ```ts filename="mock-graphql.module.ts" renderer="angular" language="ts" tabTitle="mock-apollo-module"
 import { NgModule } from '@angular/core';
 import { APOLLO_OPTIONS } from 'apollo-angular';
@@ -207,10 +208,12 @@ export function createApollo(httpLink: HttpLink): ApolloClientOptions<any> {
 export class MockGraphQLModule {}
 ```
 
-```jsx filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```jsx filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import * as React from 'react';
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import { graphql, HttpResponse, delay } from 'msw';
+
+import preview from '../.storybook/preview';
 
 import { DocumentScreen } from './YourPage';
 
@@ -254,7 +257,7 @@ const TestData = {
   ],
 };
 
-export default {
+const meta = preview.meta({
   component: DocumentScreen,
   decorators: [
     (Story) => (
@@ -263,9 +266,9 @@ export default {
       </ApolloProvider>
     ),
   ],
-};
+});
 
-export const MockedSuccess = {
+export const MockedSuccess = meta.story({
   beforeEach({ msw }) {
     msw.use(
       graphql.query('AllInfoQuery', () => {
@@ -279,9 +282,9 @@ export const MockedSuccess = {
       }),
     );
   },
-};
+});
 
-export const MockedError = {
+export const MockedError = meta.story({
   beforeEach({ msw }) {
     msw.use(
       graphql.query('AllInfoQuery', async () => {
@@ -296,16 +299,15 @@ export const MockedError = {
       }),
     );
   },
-};
+});
 ```
 
-```tsx filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```tsx filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
 import * as React from 'react';
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import { graphql, HttpResponse, delay } from 'msw';
 
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
-import type { Meta, StoryObj } from '@storybook/your-framework';
+import preview from '../.storybook/preview';
 
 import { DocumentScreen } from './YourPage';
 
@@ -348,7 +350,7 @@ const TestData = {
     },
   ],
 };
-const meta = {
+const meta = preview.meta({
   component: DocumentScreen,
   decorators: [
     (Story) => (
@@ -357,12 +359,9 @@ const meta = {
       </ApolloProvider>
     ),
   ],
-} satisfies Meta<typeof DocumentScreen>;
+});
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const MockedSuccess: Story = {
+export const MockedSuccess = meta.story({
   beforeEach({ msw }) {
     msw.use(
       graphql.query('AllInfoQuery', () => {
@@ -376,9 +375,9 @@ export const MockedSuccess: Story = {
       }),
     );
   },
-};
+});
 
-export const MockedError: Story = {
+export const MockedError = meta.story({
   beforeEach({ msw }) {
     msw.use(
       graphql.query('AllInfoQuery', async () => {
@@ -393,20 +392,19 @@ export const MockedError: Story = {
       }),
     );
   },
-};
+});
 ```
 
-```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
+  import preview from '../.storybook/preview';
 
   import { graphql, HttpResponse, delay } from 'msw';
 
   import MockApolloWrapperClient from './MockApolloWrapperClient.svelte';
   import DocumentScreen from './YourPage.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     component: DocumentScreen,
     decorators: [() => MockApolloWrapperClient],
   });
@@ -473,16 +471,18 @@ export const MockedError: Story = {
 />
 ```
 
-```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
 <script module>
-  import preview from '../.storybook/preview';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import { graphql, HttpResponse, delay } from 'msw';
 
   import MockApolloWrapperClient from './MockApolloWrapperClient.svelte';
   import DocumentScreen from './YourPage.svelte';
 
-  const { Story } = preview.meta({
+  const { Story } = defineMeta({
     component: DocumentScreen,
     decorators: [() => MockApolloWrapperClient],
   });
@@ -573,17 +573,16 @@ export const MockedError: Story = {
 </div>
 ```
 
-```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
   import { graphql, HttpResponse, delay } from 'msw';
 
   import MockApolloWrapperClient from './MockApolloWrapperClient.svelte';
   import DocumentScreen from './YourPage.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     component: DocumentScreen,
     decorators: [() => MockApolloWrapperClient],
   });
@@ -650,16 +649,18 @@ export const MockedError: Story = {
 />
 ```
 
-```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
-<script module lang="ts">
-  import preview from '../.storybook/preview';
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import { graphql, HttpResponse, delay } from 'msw';
 
   import MockApolloWrapperClient from './MockApolloWrapperClient.svelte';
   import DocumentScreen from './YourPage.svelte';
 
-  const { Story } = preview.meta({
+  const { Story } = defineMeta({
     component: DocumentScreen,
     decorators: [() => MockApolloWrapperClient],
   });
@@ -985,12 +986,14 @@ export const MockedError: Story = {
 </script>
 ```
 
-```tsx filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import * as React from 'react';
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import { graphql, HttpResponse, delay } from 'msw';
 
-import preview from '../.storybook/preview';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { DocumentScreen } from './YourPage';
 
@@ -1033,7 +1036,7 @@ const TestData = {
     },
   ],
 };
-const meta = preview.meta({
+const meta = {
   component: DocumentScreen,
   decorators: [
     (Story) => (
@@ -1042,9 +1045,12 @@ const meta = preview.meta({
       </ApolloProvider>
     ),
   ],
-});
+} satisfies Meta<typeof DocumentScreen>;
 
-export const MockedSuccess = meta.story({
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const MockedSuccess: Story = {
   beforeEach({ msw }) {
     msw.use(
       graphql.query('AllInfoQuery', () => {
@@ -1058,9 +1064,9 @@ export const MockedSuccess = meta.story({
       }),
     );
   },
-});
+};
 
-export const MockedError = meta.story({
+export const MockedError: Story = {
   beforeEach({ msw }) {
     msw.use(
       graphql.query('AllInfoQuery', async () => {
@@ -1075,17 +1081,14 @@ export const MockedError = meta.story({
       }),
     );
   },
-});
+};
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```jsx filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import * as React from 'react';
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import { graphql, HttpResponse, delay } from 'msw';
-
-import preview from '../.storybook/preview';
 
 import { DocumentScreen } from './YourPage';
 
@@ -1129,7 +1132,7 @@ const TestData = {
   ],
 };
 
-const meta = preview.meta({
+export default {
   component: DocumentScreen,
   decorators: [
     (Story) => (
@@ -1138,9 +1141,9 @@ const meta = preview.meta({
       </ApolloProvider>
     ),
   ],
-});
+};
 
-export const MockedSuccess = meta.story({
+export const MockedSuccess = {
   beforeEach({ msw }) {
     msw.use(
       graphql.query('AllInfoQuery', () => {
@@ -1154,9 +1157,9 @@ export const MockedSuccess = meta.story({
       }),
     );
   },
-});
+};
 
-export const MockedError = meta.story({
+export const MockedError = {
   beforeEach({ msw }) {
     msw.use(
       graphql.query('AllInfoQuery', async () => {
@@ -1171,10 +1174,10 @@ export const MockedError = meta.story({
       }),
     );
   },
-});
+};
 ```
 
-```ts filename="YourPage.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourPage.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import { graphql, HttpResponse, delay } from 'msw';
 
 import preview from '../.storybook/preview';
@@ -1249,9 +1252,7 @@ export const MockedError = meta.story({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="YourPage.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="YourPage.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
 import { graphql, HttpResponse, delay } from 'msw';
 
 import preview from '../.storybook/preview';

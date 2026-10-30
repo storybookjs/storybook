@@ -84,6 +84,7 @@
   - [CSF `.story` annotations removed](#csf-story-annotations-removed)
   - [`argTypeTargetsV7` feature flag removed](#argtypetargetsv7-feature-flag-removed)
   - [`disallowImplicitActionsInRenderV8` feature flag removed](#disallowimplicitactionsinrenderv8-feature-flag-removed)
+  - [JavaScript init templates use JSDoc types instead of `propTypes`](#javascript-init-templates-use-jsdoc-types-instead-of-proptypes)
 - [From version 10.6.1 to 10.6.2](#from-version-1061-to-1062)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-1)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-1)
@@ -1020,7 +1021,7 @@ For Angular-Vite, `framework.options.compodoc: false` does not disable the docge
 Client-side docgen that runs in the builder is deprecated and will be removed in Storybook 12.
 This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`, and the Svelte `docgen` framework option in `@storybook/svelte-vite` and `@storybook/sveltekit` (including the sveltedoc-shaped `__docgen`).
 Builder docgen only runs when `features.docgenServer` is `false`. Storybook prints a deprecation warning when your `.storybook/main.ts` sets `docgenServer: false`. When server-side docgen is off because TypeScript is missing or unusable, Storybook prints the TypeScript warning instead. For no docgen and no warnings, also turn builder docgen off: `typescript.reactDocgen: false` for React, and the `docgen: false` framework option for Vue 3 and Svelte.
-Remove `docgenServer: false` to use server-side docgen.
+Install the `typescript` package and remove `docgenServer: false` to use server-side docgen.
 
 #### Svelte
 
@@ -2279,6 +2280,12 @@ export default {
 The `remove-legacy-feature-flags` automigration deletes both it and the `argTypeTargetsV7` flag from your main config, whether they are `true` or `false`. You can also run it with `storybook automigrate remove-legacy-feature-flags`. If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand. A typed main config that still sets the flag fails type-checking until it is removed.
 
 `ImplicitActionsDuringRendering.data` no longer carries a `deprecated` field, so third-party code that inspects the error should read `phase` and `name` instead.
+
+### JavaScript init templates use JSDoc types instead of `propTypes`
+
+`storybook init` for React JavaScript projects now writes `Button.jsx` and `Header.jsx` templates whose props are typed with JSDoc, and no longer adds the `prop-types` package. React 19 no longer checks `propTypes` on function components, and `React.PropTypes` moved to the separate `prop-types` package in React 15.5.
+
+Server-side docgen, the default in Storybook 11, reads the JSDoc types, so a new project's Docs args table shows the same types and descriptions as the TypeScript template. The deprecated builder docgen (`react-docgen`, active only when `features.docgenServer` is `false`) does not: without `propTypes` it reports no prop types or descriptions for these templates and folds the JSDoc `@param` lines into the component description. Install the `typescript` package and remove `docgenServer: false` to use server-side docgen.
 
 ## From version 10.6.1 to 10.6.2
 

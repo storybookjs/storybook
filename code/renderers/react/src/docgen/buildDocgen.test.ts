@@ -263,4 +263,97 @@ describe('buildDocgenPayload', () => {
       type: { name: 'number', required: false },
     });
   });
+
+  it('extracts argTypes through React.memo', { timeout: 30_000 }, async () => {
+    tempDir = createTempDir('docgen-build');
+
+    const files = writeFiles(tempDir, {
+      'tsconfig.json': tsconfigJSON(),
+      'Button.tsx': dedent`
+        import React from 'react';
+        function Button({ label, onClick }: { label: string; onClick: () => void }) {
+          return <button onClick={onClick}>{label}</button>;
+        }
+        const MemoButton = React.memo(Button);
+        export const component = MemoButton;
+      `,
+      'Button.stories.tsx': dedent`
+        import { component } from './Button';
+        export default { component, title: 'Forms/Button' };
+        export const Primary = () => <component label="hi" onClick={() => {}} />;
+      `,
+    });
+
+    componentMetaManager = new ComponentMetaManager(ts);
+
+    const payload = await buildDocgenPayload(
+      { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
+      {
+        componentMetaManager,
+        resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)),
+      }
+    );
+
+    expect(Object.keys(payload!.argTypes ?? {}).sort()).toEqual(['label', 'onClick']);
+    expect(payload!.argTypes?.label).toMatchObject({
+      name: 'label',
+      type: { name: 'string', required: true },
+    });
+    expect(payload!.argTypes?.onClick).toMatchObject({
+      name: 'onClick',
+      type: { name: 'function', required: true },
+    });
+  });
+
+  it(
+    'extracts JSDoc-typed argTypes through React.memo in a JavaScript component',
+    { timeout: 30_000 },
+    async () => {
+      tempDir = createTempDir('docgen-build');
+
+      // No tsconfig: a JavaScript project is served by the inferred project, which allows JS.
+      const files = writeFiles(tempDir, {
+        'Button.jsx': dedent`
+          import React from 'react';
+
+          /**
+           * @param {object} props
+           * @param {string} props.label
+           * @param {() => void} props.onClick
+           */
+          function Button({ label, onClick }) {
+            return <button onClick={onClick}>{label}</button>;
+          }
+
+          const MemoButton = React.memo(Button);
+          export const component = MemoButton;
+        `,
+        'Button.stories.jsx': dedent`
+          import { component } from './Button';
+          export default { component, title: 'Forms/Button' };
+          export const Primary = () => <component label="hi" onClick={() => {}} />;
+        `,
+      });
+
+      componentMetaManager = new ComponentMetaManager(ts);
+
+      const payload = await buildDocgenPayload(
+        { entry: makeStoryIndexEntry(files['Button.stories.jsx'], 'Forms/Button') },
+        {
+          componentMetaManager,
+          resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)),
+        }
+      );
+
+      expect(Object.keys(payload!.argTypes ?? {}).sort()).toEqual(['label', 'onClick']);
+      expect(payload!.argTypes?.label).toMatchObject({
+        name: 'label',
+        type: { name: 'string', required: true },
+      });
+      expect(payload!.argTypes?.onClick).toMatchObject({
+        name: 'onClick',
+        type: { name: 'function', required: true },
+      });
+    }
+  );
 });

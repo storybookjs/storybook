@@ -1,8 +1,14 @@
-import PropTypes from 'prop-types';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from './Button';
 
+/**
+ * @param {object} props
+ * @param {{ name: string }} [props.user] The signed-in user, if any
+ * @param {() => void} props.onLogin Called when the user presses Log in
+ * @param {() => void} props.onLogout Called when the user presses Log out
+ * @param {() => void} props.onCreateAccount Called when the user presses Sign up
+ */
 export const Header = ({ user, onLogin, onLogout, onCreateAccount }) => (
   <View>
     <View style={styles.wrapper}>
@@ -68,16 +74,3 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
-
-Header.propTypes = {
-  user: PropTypes.shape({
-    name: PropTypes.string.isRequired,
-  }),
-  onLogin: PropTypes.func.isRequired,
-  onLogout: PropTypes.func.isRequired,
-  onCreateAccount: PropTypes.func.isRequired,
-};
-
-Header.defaultProps = {
-  user: null,
-};

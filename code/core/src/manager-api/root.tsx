@@ -334,8 +334,6 @@ export function useStorybookApi(): API {
 }
 
 export type {
-  /** @deprecated Now IndexHash */
-  API_IndexHash as StoriesHash,
   API_IndexHash as IndexHash,
   API_RootEntry as RootEntry,
   API_GroupEntry as GroupEntry,

@@ -1,3 +1,5 @@
+import { unwrapExpression } from 'storybook/internal/csf-tools';
+
 import type { ESTreeAST, SvelteAST } from '../../ast.ts';
 import {
   AttributeNotArrayError,
@@ -29,8 +31,10 @@ export function getLiteralValueFromAttribute(
   }
 
   if (!Array.isArray(value)) {
-    if (value.expression.type === 'Literal') {
-      return value.expression.value;
+    const expression = unwrapExpression(value.expression);
+
+    if (expression.type === 'Literal') {
+      return expression.value;
     }
 
     throw new AttributeNotStringError({ filename, component, attribute: node });
@@ -42,12 +46,10 @@ export function getLiteralValueFromAttribute(
     return first.data;
   }
 
-  if (
-    first.type === 'ExpressionTag' &&
-    first.expression.type === 'Literal' &&
-    typeof first.expression.value === 'string'
-  ) {
-    return first.expression.value;
+  const expression = unwrapExpression(first.expression);
+
+  if (expression.type === 'Literal' && typeof expression.value === 'string') {
+    return expression.value;
   }
 
   throw new AttributeNotStringError({ filename, component, attribute: node });
@@ -88,7 +90,9 @@ export function getArrayOfStringsValueFromAttribute(params: Params) {
 
   // value is SvelteAST.ExpressionTag
   if (!Array.isArray(value)) {
-    if (value.expression.type !== 'ArrayExpression') {
+    const expression = unwrapExpression(value.expression);
+
+    if (expression.type !== 'ArrayExpression') {
       throw new AttributeNotArrayError({
         component,
         filename,
@@ -98,7 +102,9 @@ export function getArrayOfStringsValueFromAttribute(params: Params) {
 
     const arrayOfStrings: string[] = [];
 
-    for (const element of value.expression.elements) {
+    for (const elementNode of expression.elements) {
+      const element = unwrapExpression(elementNode);
+
       if (element?.type !== 'Literal' || typeof element.value !== 'string') {
         throw new AttributeNotArrayOfStringsError({
           filename,
@@ -115,7 +121,10 @@ export function getArrayOfStringsValueFromAttribute(params: Params) {
   }
 
   // value is Array<SvelteAST.ExpressionTag | SvelteAST.Text> - I haven't figured out when it would happen
-  if (value[0].type !== 'ExpressionTag' || value[0].expression.type !== 'ArrayExpression') {
+  const [first] = value;
+  const expression = first.type === 'ExpressionTag' ? unwrapExpression(first.expression) : first;
+
+  if (expression.type !== 'ArrayExpression') {
     throw new AttributeNotArrayError({
       component,
       filename,
@@ -125,7 +134,9 @@ export function getArrayOfStringsValueFromAttribute(params: Params) {
 
   const arrayOfStrings: string[] = [];
 
-  for (const element of value[0].expression.elements) {
+  for (const elementNode of expression.elements) {
+    const element = unwrapExpression(elementNode);
+
     if (element?.type !== 'Literal' || typeof element.value !== 'string') {
       throw new AttributeNotArrayOfStringsError({
         filename,

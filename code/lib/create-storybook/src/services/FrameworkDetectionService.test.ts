@@ -244,6 +244,81 @@ describe('FrameworkDetectionService', () => {
       );
     });
 
+    describe('with a renderer', () => {
+      beforeEach(() => {
+        vi.mocked(find.any).mockReturnValue(undefined);
+      });
+
+      describe('when only Webpack is detected and the renderer has no Webpack framework', () => {
+        beforeEach(() => {
+          vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+            webpack: '^5.0.0',
+          });
+          vi.mocked(prompt.select).mockResolvedValue(SupportedBuilder.VITE);
+        });
+
+        it('offers only the builders the renderer supports', async () => {
+          const result = await service.detectBuilder(SupportedRenderer.HTML);
+
+          expect(result).toBe(SupportedBuilder.VITE);
+          expect(prompt.select).toHaveBeenCalledWith(
+            {
+              message: expect.stringContaining('We were not able to detect the right builder'),
+              options: [
+                { label: 'Vite', value: SupportedBuilder.VITE },
+                { label: 'Rsbuild', value: SupportedBuilder.RSBUILD },
+              ],
+            },
+            expect.objectContaining({ onCancel: expect.any(Function) })
+          );
+        });
+      });
+
+      describe('when Vite and Webpack are detected and the renderer has no Webpack framework', () => {
+        beforeEach(() => {
+          vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+            vite: '^7.0.0',
+            webpack: '^5.0.0',
+          });
+        });
+
+        it('uses Vite without prompting', async () => {
+          const result = await service.detectBuilder(SupportedRenderer.HTML);
+
+          expect(result).toBe(SupportedBuilder.VITE);
+          expect(prompt.select).not.toHaveBeenCalled();
+        });
+      });
+
+      describe('when the renderer has a framework for one builder only', () => {
+        beforeEach(() => {
+          vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
+        });
+
+        it('uses that builder without prompting', async () => {
+          const result = await service.detectBuilder(SupportedRenderer.PREACT);
+
+          expect(result).toBe(SupportedBuilder.VITE);
+          expect(prompt.select).not.toHaveBeenCalled();
+        });
+      });
+
+      describe('when the renderer has a framework for the detected builder', () => {
+        beforeEach(() => {
+          vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+            webpack: '^5.0.0',
+          });
+        });
+
+        it('uses the detected builder', async () => {
+          const result = await service.detectBuilder(SupportedRenderer.REACT);
+
+          expect(result).toBe(SupportedBuilder.WEBPACK5);
+          expect(prompt.select).not.toHaveBeenCalled();
+        });
+      });
+    });
+
     it('should prompt user when no builders are detected', async () => {
       vi.mocked(find.any).mockReturnValue(undefined);
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
@@ -275,7 +350,7 @@ describe('FrameworkDetectionService', () => {
       const onCancel = vi.mocked(prompt.select).mock.calls[0]?.[1]?.onCancel;
       const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
 
-      await onCancel?.();
+      await onCancel?.('cancel');
 
       expect(mockTelemetryService.trackPromptCancel).toHaveBeenCalledWith('builder-selection');
       expect(exitSpy).toHaveBeenCalledWith(0);

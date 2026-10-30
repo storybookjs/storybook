@@ -1,6 +1,44 @@
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import preview from '../.storybook/preview';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = preview.meta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="MyStory"
+  parameters={{
+    sveltekit_experimental: {
+      state: {
+        page: {
+          data: {
+            test: 'passed',
+          },
+        },
+        navigating: {
+          to: {
+            route: { id: '/storybook' },
+            params: {},
+            url: new URL('http://localhost/storybook'),
+          },
+        },
+        updated: {
+          current: true,
+        },
+      },
+    },
+  }}
+/>
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  import { defineMeta } from '@storybook/sveltekit';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -35,15 +73,20 @@
 />
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import MyComponent from './MyComponent.svelte';
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-export default {
-  component: MyComponent,
-};
+  import MyComponent from './MyComponent.svelte';
 
-export const MyStory = {
-  parameters: {
+  const { Story } = preview.meta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="MyStory"
+  parameters={{
     sveltekit_experimental: {
       state: {
         page: {
@@ -63,13 +106,14 @@ export const MyStory = {
         },
       },
     },
-  },
-};
+  }}
+/>
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/sveltekit';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -102,41 +146,4 @@ export const MyStory = {
     },
   }}
 />
-```
-
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/sveltekit';
-
-import MyComponent from './MyComponent.svelte';
-
-const meta = {
-  component: MyComponent,
-} satisfies Meta<typeof MyComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const MyStory: Story = {
-  parameters: {
-    sveltekit_experimental: {
-      state: {
-        page: {
-          data: {
-            test: 'passed',
-          },
-        },
-        navigating: {
-          to: {
-            route: { id: '/storybook' },
-            params: {},
-            url: new URL('http://localhost/storybook'),
-          },
-        },
-        updated: {
-          current: true,
-        },
-      },
-    },
-  },
-};
 ```

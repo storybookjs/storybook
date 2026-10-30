@@ -1,6 +1,9 @@
 import { dedent } from 'ts-dedent';
 
-import { getDefineMetaComponentValue } from '../define-meta/component-identifier.ts';
+import {
+  getDefineMetaComponentName,
+  getDefineMetaComponentValue,
+} from '../define-meta/component-identifier.ts';
 import type { SvelteAST } from '../../ast.ts';
 import type { extractSvelteASTNodes } from '../../extract/svelte/nodes.ts';
 import { extractStoryTemplateSnippetBlock } from '../../extract/svelte/story/template.ts';
@@ -15,6 +18,8 @@ interface Params {
     component: SvelteAST.Component;
     svelte: Awaited<ReturnType<typeof extractSvelteASTNodes>>;
   };
+  // Overrides the `asChild` prop of the component, for a story that inherits it
+  asChild?: boolean;
   originalCode: string;
   filename?: string;
 }
@@ -89,7 +94,7 @@ export function getStoryContentRawCode(params: Params): string {
     });
 
     // NOTE: It should never be `undefined` in this particular case, otherwise Storybook wouldn't know what to render.
-    return `<${defineMetaComponentValue?.name} {...args} />`;
+    return `<${getDefineMetaComponentName(defineMetaComponentValue)} {...args} />`;
   }
 
   /**
@@ -122,10 +127,8 @@ export function getStoryContentRawCode(params: Params): string {
    * </Story>
    * ```
    */
-  const { asChild } = extractStoryAttributesNodes({
-    component,
-    attributes: ['asChild'],
-  });
+  const asChild =
+    params.asChild ?? extractStoryAttributesNodes({ component, attributes: ['asChild'] }).asChild;
 
   const { fragment } = component;
   const firstNode = fragment.nodes[0];
@@ -158,9 +161,11 @@ export function getStoryContentRawCode(params: Params): string {
     return rawCode;
   }
 
-  return dedent(`<${defineMetaComponentValue.name} {...args}>
+  const componentName = getDefineMetaComponentName(defineMetaComponentValue);
+
+  return dedent(`<${componentName} {...args}>
     ${rawCode}
-  </${defineMetaComponentValue.name}>`).trim();
+  </${componentName}>`).trim();
 }
 
 /**

@@ -1,10 +1,16 @@
+import {
+  getTypeScriptForDocgenError,
+  isDocgenServerDisabledInMainConfig,
+} from 'storybook/internal/common';
+import { deprecate } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import { assertSvelteCsfAddonNotInstalled } from '@storybook/svelte/internal/svelte-csf/addon-check';
 
 import { svelteCsf } from './plugins/svelte-csf.ts';
+import { resolveDocgenContext, SVELTE_BUILDER_DOCGEN_DEPRECATION } from './docgen/options.ts';
 import { svelteDocgen } from './plugins/svelte-docgen.ts';
-import type { FrameworkOptions, StorybookConfig } from './types.ts';
+import type { StorybookConfig } from './types.ts';
 import { handleSvelteKit } from './utils.ts';
 
 export const core: PresetProperty<'core'> = {
@@ -18,13 +24,18 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
 
   assertSvelteCsfAddonNotInstalled({ presetsList: options.presetsList, framework });
 
-  // Get framework options to check if docgen is disabled
-  const frameworkOptions: FrameworkOptions =
-    typeof framework === 'string' ? {} : (framework.options ?? {});
-
-  // Check if docgen is disabled in framework options (default is true/enabled)
-  if (frameworkOptions.docgen !== false) {
-    plugins.push(await svelteDocgen());
+  const { docgen, docgenServerActive } = await resolveDocgenContext(options);
+  // Builder docgen runs on the same TypeScript engine as server docgen.
+  const typescriptUsable = !getTypeScriptForDocgenError((specifier) =>
+    import.meta.resolve(specifier)
+  );
+  if (docgen && !docgenServerActive) {
+    if (await isDocgenServerDisabledInMainConfig(options)) {
+      deprecate(SVELTE_BUILDER_DOCGEN_DEPRECATION);
+    }
+    if (typescriptUsable) {
+      plugins.push(await svelteDocgen());
+    }
   }
 
   await handleSvelteKit(plugins, options);

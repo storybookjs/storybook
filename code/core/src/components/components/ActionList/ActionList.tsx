@@ -2,7 +2,7 @@ import React, { type ComponentProps, forwardRef } from 'react';
 
 import { darken, transparentize } from 'polished';
 import type { TransitionStatus } from 'react-transition-state';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { Button } from '../Button/Button.tsx';
 import { ToggleButton } from '../ToggleButton/ToggleButton.tsx';
@@ -15,6 +15,11 @@ const StyledButton = styled(Button)(({ size }) => ({
     outlineOffset: -2,
   },
 }));
+
+// A collapsing item must drop its min-height too, otherwise block-size: 0 never shrinks it. An
+// entering item starts collapsed so that its growth mirrors the exit of the item it replaces.
+const collapsedItem = { opacity: 0, blockSize: 0, minHeight: 0 } as const;
+const expandedItem = { opacity: 1, blockSize: 'auto', contentVisibility: 'visible' } as const;
 
 const ActionListItem = styled.li<{
   active?: boolean;
@@ -72,7 +77,7 @@ const ActionListItem = styled.li<{
       interpolateSize: 'allow-keywords',
       transitionBehavior: 'allow-discrete',
       transitionDuration: 'var(--transition-duration, 0.2s)',
-      transitionProperty: 'opacity, block-size, content-visibility',
+      transitionProperty: 'opacity, block-size, min-height, content-visibility',
     },
 
     '@media (prefers-reduced-motion: reduce)': {
@@ -84,17 +89,11 @@ const ActionListItem = styled.li<{
       case 'preEnter':
       case 'exiting':
       case 'exited':
-        return {
-          opacity: 0,
-          blockSize: 0,
-          contentVisibility: 'hidden',
-        };
+        return { ...collapsedItem, contentVisibility: 'hidden' };
+      case 'entering':
+        return { ...expandedItem, '@starting-style': collapsedItem };
       default:
-        return {
-          opacity: 1,
-          blockSize: 'auto',
-          contentVisibility: 'visible',
-        };
+        return expandedItem;
     }
   }
 );

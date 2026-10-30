@@ -1,4 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { getTypeScriptForDocgenError } from 'storybook/internal/common';
+import { TypeScriptWithoutCompilerApiError } from 'storybook/internal/server-errors';
 
 import type { TypescriptOptions } from '@storybook/core-webpack';
 import ReactDocgenTypescriptPlugin from '@storybook/react-docgen-typescript-plugin';
@@ -6,6 +9,8 @@ import ReactDocgenTypescriptPlugin from '@storybook/react-docgen-typescript-plug
 import type { Configuration } from 'webpack';
 
 import * as preset from './framework-preset-react-docs.ts';
+
+vi.mock('storybook/internal/common', { spy: true });
 
 vi.mock('./requirer', () => ({
   requirer: (resolver: any, path: string) => path,
@@ -101,6 +106,35 @@ describe('framework-preset-react-docgen', () => {
         },
         plugins: [expect.any(ReactDocgenTypescriptPlugin)],
       });
+    });
+  });
+
+  describe('react-docgen-typescript without a usable typescript', () => {
+    beforeEach(() => {
+      vi.mocked(getTypeScriptForDocgenError).mockReturnValue(
+        new TypeScriptWithoutCompilerApiError({ version: '7.0.2' })
+      );
+    });
+
+    it('uses react-docgen for every file instead', async () => {
+      const config = await preset.webpackFinal?.(
+        { plugins: [] },
+        {
+          presets: {
+            // @ts-expect-error (not strict)
+            apply: async (name: string) =>
+              name === 'typescript'
+                ? { check: false, reactDocgen: 'react-docgen-typescript' }
+                : undefined,
+          },
+          presetsList: presetsListWithDocs,
+        }
+      );
+
+      expect(config?.plugins).toEqual([]);
+      expect(config?.module?.rules).toEqual([
+        expect.objectContaining({ test: /\.(cjs|mjs|tsx?|jsx?)$/ }),
+      ]);
     });
   });
 

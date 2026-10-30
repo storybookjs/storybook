@@ -55,19 +55,17 @@ test.describe('addon-docs', () => {
     await showCodeButton.click();
     const sourceCode = root.locator('pre.prismjs');
     const expectedSource = dedent`{
-      args: {
-        label: 'Another'
-      },
+      args: { label: 'Another' },
       parameters: {
         docs: {
           source: {
-            type: 'code'
-          }
-        }
+            type: 'code',
+          },
+        },
       },
       play: async () => {
-        await new Promise(resolve => resolve('Play function'));
-      }
+        await new Promise((resolve) => resolve('Play function'));
+      },
     }`;
     await expect(sourceCode).toHaveText(expectedSource);
   });
@@ -82,9 +80,8 @@ test.describe('addon-docs', () => {
   });
 
   test('should provide source snippet', async ({ page }) => {
-    // templateName is e.g. 'vue-cli/default-js'
     test.skip(
-      /^(vue3|vue-cli|preact)/i.test(`${templateName}`),
+      /^(vue3|preact)/i.test(`${templateName}`),
       `Skipping ${templateName}, which does not support dynamic source snippets`
     );
 
@@ -233,6 +230,7 @@ test.describe('addon-docs', () => {
     let expectedReactVersionRange = /^19/;
     if (
       templateName.includes('internal/react18-webpack-babel') ||
+      templateName.includes('preact-vite/10-ts') ||
       templateName.includes('react-webpack/18-ts')
     ) {
       expectedReactVersionRange = /^18/;

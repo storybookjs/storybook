@@ -1,4 +1,36 @@
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Primary = meta.story({
+  args: {
+    backgroundColor: '#ff0',
+    label: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    ...Primary.input.args,
+    label: '😄👍😍💯',
+  },
+});
+
+export const Tertiary = meta.story({
+  args: {
+    ...Primary.input.args,
+    label: '📚📕📈🤓',
+  },
+});
+```
+
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -30,37 +62,6 @@ export const Tertiary: Story = {
     label: '📚📕📈🤓',
   },
 };
-```
-
-```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { Button } from './button.component';
-
-const meta = preview.meta({
-  component: Button,
-});
-
-export const Primary = meta.story({
-  args: {
-    backgroundColor: '#ff0',
-    label: 'Button',
-  },
-});
-
-export const Secondary = meta.story({
-  args: {
-    ...Primary.input.args,
-    label: '😄👍😍💯',
-  },
-});
-
-export const Tertiary = meta.story({
-  args: {
-    ...Primary.input.args,
-    label: '📚📕📈🤓',
-  },
-});
 ```
 
 ```js filename="Button.stories.js" renderer="html" language="js"
@@ -149,68 +150,66 @@ export const Tertiary: Story = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import { Button } from './Button';
 
-export default {
+const meta = preview.meta({
   component: Button,
-};
+});
 
-export const Primary = {
+export const Primary = meta.story({
   args: {
     backgroundColor: '#ff0',
     label: 'Button',
   },
-};
+});
 
-export const Secondary = {
+export const Secondary = meta.story({
   args: {
-    ...Primary.args,
+    ...Primary.input.args,
     label: '😄👍😍💯',
   },
-};
+});
 
-export const Tertiary = {
+export const Tertiary = meta.story({
   args: {
-    ...Primary.args,
+    ...Primary.input.args,
     label: '📚📕📈🤓',
   },
-};
+});
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
 import { Button } from './Button';
 
-const meta = {
+const meta = preview.meta({
   component: Button,
-} satisfies Meta<typeof Button>;
+});
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Primary: Story = {
+export const Primary = meta.story({
   args: {
     backgroundColor: '#ff0',
     label: 'Button',
   },
-};
+});
 
-export const Secondary: Story = {
+export const Secondary = meta.story({
   args: {
-    ...Primary.args,
+    ...Primary.input.args,
     label: '😄👍😍💯',
   },
-};
+});
 
-export const Tertiary: Story = {
+export const Tertiary = meta.story({
   args: {
-    ...Primary.args,
+    ...Primary.input.args,
     label: '📚📕📈🤓',
   },
-};
+});
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="solid" language="js"
@@ -276,9 +275,47 @@ export const Tertiary: Story = {
 };
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import preview from '../.storybook/preview';
+
+  import Button from './Button.svelte';
+
+  const { Story } = preview.meta({
+    component: Button,
+  });
+</script>
+
+<Story
+  name="Primary"
+  args={{
+    backgroundColor: '#ff0',
+    label: 'Button',
+  }}
+/>
+
+<Story
+  name="Secondary"
+  args={{
+    backgroundColor: '#ff0',
+    label: '😄👍😍💯',
+  }}
+/>
+
+<Story
+  name="Tertiary"
+  args={{
+    backgroundColor:'#ff0',
+    label: '📚📕📈🤓',
+  }}
+/>
+```
+
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
   import Button from './Button.svelte';
 
@@ -312,11 +349,256 @@ export const Tertiary: Story = {
 />
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Button from './Button.svelte';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
 
-export default {
+  import Button from './Button.svelte';
+
+  const { Story } = preview.meta({
+    component: Button,
+  });
+</script>
+
+<Story
+  name="Primary"
+  args={{
+    backgroundColor: '#ff0',
+    label: 'Button',
+  }}
+/>
+
+<Story
+  name="Secondary"
+  args={{
+    backgroundColor: '#ff0',
+    label: '😄👍😍💯',
+  }}
+/>
+
+<Story
+  name="Tertiary"
+  args={{
+    backgroundColor:'#ff0',
+    label: '📚📕📈🤓',
+  }}
+/>
+```
+
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+
+<Story
+  name="Primary"
+  args={{
+    backgroundColor: '#ff0',
+    label: 'Button',
+  }}
+/>
+
+<Story
+  name="Secondary"
+  args={{
+    backgroundColor: '#ff0',
+    label: '😄👍😍💯',
+  }}
+/>
+
+<Story
+  name="Tertiary"
+  args={{
+    backgroundColor:'#ff0',
+    label: '📚📕📈🤓',
+  }}
+/>
+```
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
   component: Button,
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Primary = meta.story({
+  render: (args) => ({
+    components: { Button },
+    setup() {
+      return { args };
+    },
+    template: '<Button v-bind="args" />',
+  }),
+  args: {
+    backgroundColor: '#ff0',
+    label: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  render: (args) => ({
+    components: { Button },
+    setup() {
+      return { args };
+    },
+    template: '<Button v-bind="args" />',
+  }),
+  args: {
+    ...Primary.input.args,
+    label: '😄👍😍💯',
+  },
+});
+
+export const Tertiary = meta.story({
+  render: (args) => ({
+    components: { Button },
+    setup() {
+      return { args };
+    },
+    template: '<Button v-bind="args" />',
+  }),
+  args: {
+    ...Primary.input.args,
+    label: '📚📕📈🤓',
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Primary = meta.story({
+  render: (args) => ({
+    components: { Button },
+    setup() {
+      return { args };
+    },
+    template: '<Button v-bind="args" />',
+  }),
+  args: {
+    background: '#ff0',
+    label: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  render: (args) => ({
+    components: { Button },
+    setup() {
+      return { args };
+    },
+    template: '<Button v-bind="args" />',
+  }),
+  args: {
+    ...Primary.input.args,
+    label: '😄👍😍💯',
+  },
+});
+
+export const Tertiary = meta.story({
+  render: (args) => ({
+    components: { Button },
+    setup() {
+      return { args };
+    },
+    template: '<Button v-bind="args" />',
+  }),
+  args: {
+    ...Primary.input.args,
+    label: '📚📕📈🤓',
+  },
+});
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+});
+
+export const Primary = meta.story({
+  args: {
+    backgroundColor: '#ff0',
+    label: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    ...Primary.input.args,
+    label: '😄👍😍💯',
+  },
+});
+
+export const Tertiary = meta.story({
+  args: {
+    ...Primary.input.args,
+    label: '📚📕📈🤓',
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+});
+
+export const Primary = meta.story({
+  args: {
+    backgroundColor: '#ff0',
+    label: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    ...Primary.input.args,
+    label: '😄👍😍💯',
+  },
+});
+
+export const Tertiary = meta.story({
+  args: {
+    ...Primary.input.args,
+    label: '📚📕📈🤓',
+  },
+});
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+export default {
+  component: 'demo-button',
 };
 
 export const Primary = {
@@ -341,54 +623,16 @@ export const Tertiary = {
 };
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-  });
-</script>
-
-<Story
-  name="Primary"
-  args={{
-    backgroundColor: '#ff0',
-    label: 'Button',
-  }}
-/>
-
-<Story
-  name="Secondary"
-  args={{
-    backgroundColor: '#ff0',
-    label: '😄👍😍💯',
-  }}
-/>
-
-<Story
-  name="Tertiary"
-  args={{
-    backgroundColor:'#ff0',
-    label: '📚📕📈🤓',
-  }}
-/>
-```
-
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import Button from './Button.svelte';
-
-const meta = {
-  component: Button,
-} satisfies Meta<typeof Button>;
+const meta: Meta = {
+  component: 'demo-button',
+};
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj;
 
 export const Primary: Story = {
   args: {
@@ -412,62 +656,8 @@ export const Tertiary: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
-import Button from './Button.vue';
-
-export default {
-  component: Button,
-};
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Primary = {
-  render: (args) => ({
-    components: { Button },
-    setup() {
-      return { args };
-    },
-    template: '<Button v-bind="args" />',
-  }),
-  args: {
-    backgroundColor: '#ff0',
-    label: 'Button',
-  },
-};
-
-export const Secondary = {
-  args: {
-    ...Primary.args,
-    label: '😄👍😍💯',
-  },
-  render: (args) => ({
-    components: { Button },
-    setup() {
-      return { args };
-    },
-    template: '<Button v-bind="args" />',
-  }),
-};
-
-export const Tertiary = {
-  args: {
-    ...Primary.args,
-    label: '📚📕📈🤓',
-  },
-  render: (args) => ({
-    components: { Button },
-    setup() {
-      return { args };
-    },
-    template: '<Button v-bind="args" />',
-  }),
-};
-```
-
 ```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
@@ -527,12 +717,27 @@ export const Tertiary: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import Button from './Button.vue';
+
 export default {
-  component: 'demo-button',
+  component: Button,
 };
 
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
 export const Primary = {
+  render: (args) => ({
+    components: { Button },
+    setup() {
+      return { args };
+    },
+    template: '<Button v-bind="args" />',
+  }),
   args: {
     backgroundColor: '#ff0',
     label: 'Button',
@@ -544,6 +749,13 @@ export const Secondary = {
     ...Primary.args,
     label: '😄👍😍💯',
   },
+  render: (args) => ({
+    components: { Button },
+    setup() {
+      return { args };
+    },
+    template: '<Button v-bind="args" />',
+  }),
 };
 
 export const Tertiary = {
@@ -551,18 +763,29 @@ export const Tertiary = {
     ...Primary.args,
     label: '📚📕📈🤓',
   },
+  render: (args) => ({
+    components: { Button },
+    setup() {
+      return { args };
+    },
+    template: '<Button v-bind="args" />',
+  }),
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/web-components-vite';
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
-const meta: Meta = {
-  component: 'demo-button',
-};
+import { Button } from './Button';
+
+const meta = {
+  component: Button,
+} satisfies Meta<typeof Button>;
 
 export default meta;
-type Story = StoryObj;
+type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {
   args: {
@@ -586,240 +809,32 @@ export const Tertiary: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'demo-button',
-});
-
-export const Primary = meta.story({
-  args: {
-    backgroundColor: '#ff0',
-    label: 'Button',
-  },
-});
-
-export const Secondary = meta.story({
-  args: {
-    ...Primary.input.args,
-    label: '😄👍😍💯',
-  },
-});
-
-export const Tertiary = meta.story({
-  args: {
-    ...Primary.input.args,
-    label: '📚📕📈🤓',
-  },
-});
-```
-
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'demo-button',
-});
-
-export const Primary = meta.story({
-  args: {
-    backgroundColor: '#ff0',
-    label: 'Button',
-  },
-});
-
-export const Secondary = meta.story({
-  args: {
-    ...Primary.input.args,
-    label: '😄👍😍💯',
-  },
-});
-
-export const Tertiary = meta.story({
-  args: {
-    ...Primary.input.args,
-    label: '📚📕📈🤓',
-  },
-});
-```
-
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import Button from './Button.vue';
-
-const meta = preview.meta({
-  component: Button,
-});
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Primary = meta.story({
-  render: (args) => ({
-    components: { Button },
-    setup() {
-      return { args };
-    },
-    template: '<Button v-bind="args" />',
-  }),
-  args: {
-    background: '#ff0',
-    label: 'Button',
-  },
-});
-
-export const Secondary = meta.story({
-  render: (args) => ({
-    components: { Button },
-    setup() {
-      return { args };
-    },
-    template: '<Button v-bind="args" />',
-  }),
-  args: {
-    ...Primary.input.args,
-    label: '😄👍😍💯',
-  },
-});
-
-export const Tertiary = meta.story({
-  render: (args) => ({
-    components: { Button },
-    setup() {
-      return { args };
-    },
-    template: '<Button v-bind="args" />',
-  }),
-  args: {
-    ...Primary.input.args,
-    label: '📚📕📈🤓',
-  },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import Button from './Button.vue';
-
-const meta = preview.meta({
-  component: Button,
-});
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Primary = meta.story({
-  render: (args) => ({
-    components: { Button },
-    setup() {
-      return { args };
-    },
-    template: '<Button v-bind="args" />',
-  }),
-  args: {
-    backgroundColor: '#ff0',
-    label: 'Button',
-  },
-});
-
-export const Secondary = meta.story({
-  render: (args) => ({
-    components: { Button },
-    setup() {
-      return { args };
-    },
-    template: '<Button v-bind="args" />',
-  }),
-  args: {
-    ...Primary.input.args,
-    label: '😄👍😍💯',
-  },
-});
-
-export const Tertiary = meta.story({
-  render: (args) => ({
-    components: { Button },
-    setup() {
-      return { args };
-    },
-    template: '<Button v-bind="args" />',
-  }),
-  args: {
-    ...Primary.input.args,
-    label: '📚📕📈🤓',
-  },
-});
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { Button } from './Button';
 
-const meta = preview.meta({
+export default {
   component: Button,
-});
+};
 
-export const Primary = meta.story({
+export const Primary = {
   args: {
     backgroundColor: '#ff0',
     label: 'Button',
   },
-});
+};
 
-export const Secondary = meta.story({
+export const Secondary = {
   args: {
-    ...Primary.input.args,
+    ...Primary.args,
     label: '😄👍😍💯',
   },
-});
+};
 
-export const Tertiary = meta.story({
+export const Tertiary = {
   args: {
-    ...Primary.input.args,
+    ...Primary.args,
     label: '📚📕📈🤓',
   },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-});
-
-export const Primary = meta.story({
-  args: {
-    backgroundColor: '#ff0',
-    label: 'Button',
-  },
-});
-
-export const Secondary = meta.story({
-  args: {
-    ...Primary.input.args,
-    label: '😄👍😍💯',
-  },
-});
-
-export const Tertiary = meta.story({
-  args: {
-    ...Primary.input.args,
-    label: '📚📕📈🤓',
-  },
-});
+};
 ```

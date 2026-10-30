@@ -54,14 +54,19 @@ test.describe('sidebar scrolling', () => {
               ).dataset.itemId!;
         return { deepest, atEnd: area.scrollTop + area.clientHeight >= area.scrollHeight - 1 };
       });
+    // On a loaded CI machine a poll takes seconds, and the checklist can mount after five, so the
+    // default 5s timeout can expire before two settled readings are possible.
     let lastRowId: string | null = null;
     await expect
-      .poll(async () => {
-        const { deepest, atEnd } = await jumpToEnd();
-        const settled = atEnd && deepest !== null && deepest === lastRowId;
-        lastRowId = deepest;
-        return settled;
-      })
+      .poll(
+        async () => {
+          const { deepest, atEnd } = await jumpToEnd();
+          const settled = atEnd && deepest !== null && deepest === lastRowId;
+          lastRowId = deepest;
+          return settled;
+        },
+        { timeout: 30_000 }
+      )
       .toBe(true);
     const clearance = await page.evaluate(
       ([rowId, areaSelector]) => {

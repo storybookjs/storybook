@@ -1,4 +1,246 @@
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './my-component.component';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvas to query the DOM
+ */
+export const FirstStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByTestId('an-element'), 'example-value');
+  },
+});
+
+export const SecondStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByTestId('other-element'), 'another value');
+  },
+});
+
+export const CombinedStories = meta.story({
+  play: async ({ context, canvas, userEvent }) => {
+    // Runs the FirstStory and Second story play function before running this story's play function
+    await FirstStory.play(context);
+    await SecondStory.play(context);
+    await userEvent.type(canvas.getByTestId('another-element'), 'random value');
+  },
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-my-component',
+});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvas to query the DOM
+ */
+export const FirstStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByTestId('an-element'), 'example-value');
+  },
+});
+
+export const SecondStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByTestId('other-element'), 'another value');
+  },
+});
+
+export const CombinedStories = meta.story({
+  play: async ({ context, canvas, userEvent }) => {
+    // Runs the FirstStory and Second story play function before running this story's play function
+    await FirstStory.play(context);
+    await SecondStory.play(context);
+    await userEvent.type(canvas.getByTestId('another-element'), 'random value');
+  },
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-my-component',
+});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvas to query the DOM
+ */
+export const FirstStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByTestId('an-element'), 'example-value');
+  },
+});
+
+export const SecondStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByTestId('other-element'), 'another value');
+  },
+});
+
+export const CombinedStories = meta.story({
+  play: async ({ context, canvas, userEvent }) => {
+    // Runs the FirstStory and Second story play function before running this story's play function
+    await FirstStory.play(context);
+    await SecondStory.play(context);
+    await userEvent.type(canvas.getByTestId('another-element'), 'random value');
+  },
+});
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvas to query the DOM
+ */
+export const FirstStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByTestId('an-element'), 'example-value');
+  },
+});
+
+export const SecondStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByTestId('other-element'), 'another value');
+  },
+});
+
+export const CombinedStories = meta.story({
+  play: async ({ context, canvas, userEvent }) => {
+    // Runs the FirstStory and Second story play function before running this story's play function
+    await FirstStory.play(context);
+    await SecondStory.play(context);
+    await userEvent.type(canvas.getByTestId('another-element'), 'random value');
+  },
+});
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvas to query the DOM
+ */
+export const FirstStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByTestId('an-element'), 'example-value');
+  },
+});
+
+export const SecondStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByTestId('other-element'), 'another value');
+  },
+});
+
+export const CombinedStories = meta.story({
+  play: async ({ context, canvas, userEvent }) => {
+    // Runs the FirstStory and Second story play function before running this story's play function
+    await FirstStory.play(context);
+    await SecondStory.play(context);
+    await userEvent.type(canvas.getByTestId('another-element'), 'random value');
+  },
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvas to query the DOM
+ */
+export const FirstStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByTestId('an-element'), 'example-value');
+  },
+});
+
+export const SecondStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByTestId('other-element'), 'another value');
+  },
+});
+
+export const CombinedStories = meta.story({
+  play: async ({ context, canvas, userEvent }) => {
+    // Runs the FirstStory and Second story play function before running this story's play function
+    await FirstStory.play(context);
+    await SecondStory.play(context);
+    await userEvent.type(canvas.getByTestId('another-element'), 'random value');
+  },
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvas to query the DOM
+ */
+export const FirstStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByTestId('an-element'), 'example-value');
+  },
+});
+
+export const SecondStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByTestId('other-element'), 'another value');
+  },
+});
+
+export const CombinedStories = meta.story({
+  play: async ({ context, canvas, userEvent }) => {
+    // Runs the FirstStory and Second story play function before running this story's play function
+    await FirstStory.play(context);
+    await SecondStory.play(context);
+    await userEvent.type(canvas.getByTestId('another-element'), 'random value');
+  },
+});
+```
+
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { MyComponent } from './my-component.component';
@@ -36,75 +278,8 @@ export const CombinedStories: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './my-component.component';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvas to query the DOM
- */
-export const FirstStory = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByTestId('an-element'), 'example-value');
-  },
-});
-
-export const SecondStory = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByTestId('other-element'), 'another value');
-  },
-});
-
-export const CombinedStories = meta.story({
-  play: async ({ context, canvas, userEvent }) => {
-    // Runs the FirstStory and Second story play function before running this story's play function
-    await FirstStory.play(context);
-    await SecondStory.play(context);
-    await userEvent.type(canvas.getByTestId('another-element'), 'random value');
-  },
-});
-```
-
-```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
-import { MyComponent } from './MyComponent';
-
-export default {
-  component: MyComponent,
-};
-
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvas to query the DOM
- */
-export const FirstStory = {
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByTestId('an-element'), 'example-value');
-  },
-};
-
-export const SecondStory = {
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByTestId('other-element'), 'another value');
-  },
-};
-
-export const CombinedStories = {
-  play: async ({ context, canvas, userEvent }) => {
-    // Runs the FirstStory and Second story play function before running this story's play function
-    await FirstStory.play(context);
-    await SecondStory.play(context);
-    await userEvent.type(canvas.getByTestId('another-element'), 'random value');
-  },
-};
-```
-
 ```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -143,9 +318,12 @@ export const CombinedStories: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import { MyComponent } from './MyComponent';
+
 export default {
-  component: 'demo-my-component',
+  component: MyComponent,
 };
 
 /*
@@ -175,6 +353,7 @@ export const CombinedStories = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 const meta: Meta = {
   component: 'demo-my-component',
@@ -209,212 +388,34 @@ export const CombinedStories: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+export default {
   component: 'demo-my-component',
-});
+};
 
 /*
  * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvas to query the DOM
  */
-export const FirstStory = meta.story({
+export const FirstStory = {
   play: async ({ canvas, userEvent }) => {
     await userEvent.type(canvas.getByTestId('an-element'), 'example-value');
   },
-});
+};
 
-export const SecondStory = meta.story({
+export const SecondStory = {
   play: async ({ canvas, userEvent }) => {
     await userEvent.type(canvas.getByTestId('other-element'), 'another value');
   },
-});
+};
 
-export const CombinedStories = meta.story({
+export const CombinedStories = {
   play: async ({ context, canvas, userEvent }) => {
     // Runs the FirstStory and Second story play function before running this story's play function
     await FirstStory.play(context);
     await SecondStory.play(context);
     await userEvent.type(canvas.getByTestId('another-element'), 'random value');
   },
-});
-```
-
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'demo-my-component',
-});
-
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvas to query the DOM
- */
-export const FirstStory = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByTestId('an-element'), 'example-value');
-  },
-});
-
-export const SecondStory = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByTestId('other-element'), 'another value');
-  },
-});
-
-export const CombinedStories = meta.story({
-  play: async ({ context, canvas, userEvent }) => {
-    // Runs the FirstStory and Second story play function before running this story's play function
-    await FirstStory.play(context);
-    await SecondStory.play(context);
-    await userEvent.type(canvas.getByTestId('another-element'), 'random value');
-  },
-});
-```
-
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvas to query the DOM
- */
-export const FirstStory = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByTestId('an-element'), 'example-value');
-  },
-});
-
-export const SecondStory = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByTestId('other-element'), 'another value');
-  },
-});
-
-export const CombinedStories = meta.story({
-  play: async ({ context, canvas, userEvent }) => {
-    // Runs the FirstStory and Second story play function before running this story's play function
-    await FirstStory.play(context);
-    await SecondStory.play(context);
-    await userEvent.type(canvas.getByTestId('another-element'), 'random value');
-  },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvas to query the DOM
- */
-export const FirstStory = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByTestId('an-element'), 'example-value');
-  },
-});
-
-export const SecondStory = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByTestId('other-element'), 'another value');
-  },
-});
-
-export const CombinedStories = meta.story({
-  play: async ({ context, canvas, userEvent }) => {
-    // Runs the FirstStory and Second story play function before running this story's play function
-    await FirstStory.play(context);
-    await SecondStory.play(context);
-    await userEvent.type(canvas.getByTestId('another-element'), 'random value');
-  },
-});
-```
-
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import MyComponent from './MyComponent.vue';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvas to query the DOM
- */
-export const FirstStory = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByTestId('an-element'), 'example-value');
-  },
-});
-
-export const SecondStory = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByTestId('other-element'), 'another value');
-  },
-});
-
-export const CombinedStories = meta.story({
-  play: async ({ context, canvas, userEvent }) => {
-    // Runs the FirstStory and Second story play function before running this story's play function
-    await FirstStory.play(context);
-    await SecondStory.play(context);
-    await userEvent.type(canvas.getByTestId('another-element'), 'random value');
-  },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import MyComponent from './MyComponent.vue';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvas to query the DOM
- */
-export const FirstStory = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByTestId('an-element'), 'example-value');
-  },
-});
-
-export const SecondStory = meta.story({
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByTestId('other-element'), 'another value');
-  },
-});
-
-export const CombinedStories = meta.story({
-  play: async ({ context, canvas, userEvent }) => {
-    // Runs the FirstStory and Second story play function before running this story's play function
-    await FirstStory.play(context);
-    await SecondStory.play(context);
-    await userEvent.type(canvas.getByTestId('another-element'), 'random value');
-  },
-});
+};
 ```

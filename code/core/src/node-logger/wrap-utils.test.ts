@@ -5,25 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaSync } from 'execa';
 
-import {
-  createHyperlink,
-  getTerminalWidth,
-  protectUrls,
-  wrapTextForClack,
-  wrapTextForClackHint,
-} from './wrap-utils.ts';
+import { createHyperlink, getTerminalWidth, protectUrls, wrapTextForClack } from './wrap-utils.ts';
 
 // Mock dependencies at the top with spy: true option
-vi.mock('@clack/prompts', () => ({
-  S_BAR: '│',
-}));
-
-vi.mock('picocolors', () => ({
-  cyan: vi.fn((text) => `cyan(${text})`),
-  dim: vi.fn((text) => `dim(${text})`),
-  reset: vi.fn((text) => `reset(${text})`),
-}));
-
 vi.mock('execa', () => ({
   execaSync: vi.fn(),
 }));
@@ -174,102 +158,6 @@ describe('wrap-utils', () => {
       expect(lines[0]).toContain('Line 1');
       expect(lines[1]).toContain('Line 2');
       expect(lines[2]).toContain('Line 3');
-    });
-  });
-
-  describe('wrapTextForClackHint', () => {
-    it('should wrap hint text with proper continuation line indentation', () => {
-      const text =
-        'This is a very long hint text that should be wrapped with proper indentation for continuation lines';
-      const result = wrapTextForClackHint(text, 60, 'Label');
-
-      if (result.includes('\n')) {
-        const lines = result.split('\n');
-        expect(lines.length).toBeGreaterThan(1);
-
-        // First line should be the original text start
-        expect(lines[0]).toContain('This is a very');
-
-        // Continuation lines should have proper indentation structure
-        for (let i = 1; i < lines.length; i++) {
-          // Should contain the stroke character and proper spacing
-          expect(lines[i]).toMatch(/cyan\(│\)/);
-          expect(lines[i]).toMatch(/dim\(/);
-
-          // Should have meaningful content after indentation
-          const contentAfterIndent = lines[i].replace(/^.*dim\(/, '').replace(/\)$/, '');
-          expect(contentAfterIndent.trim()).not.toBe('');
-        }
-      }
-    });
-
-    it('should not wrap short text and return it unchanged', () => {
-      const text = 'Short hint';
-      const result = wrapTextForClackHint(text, 80, 'Label');
-
-      expect(result).toBe(text);
-      expect(result).not.toContain('\n');
-      expect(result).not.toContain('cyan(│)');
-    });
-
-    it('should calculate available width correctly based on label length', () => {
-      const text = 'This hint text should account for the long label when calculating wrap width';
-      const longLabel = 'Very long label name that takes up space';
-      const shortLabel = 'Short';
-
-      const resultWithLongLabel = wrapTextForClackHint(text, 60, longLabel);
-      const resultWithShortLabel = wrapTextForClackHint(text, 60, shortLabel);
-
-      // With longer label, should wrap earlier (more lines)
-      const longLabelLines = resultWithLongLabel.split('\n').length;
-      const shortLabelLines = resultWithShortLabel.split('\n').length;
-
-      if (longLabelLines > 1 || shortLabelLines > 1) {
-        expect(longLabelLines).toBeGreaterThanOrEqual(shortLabelLines);
-      }
-    });
-
-    it('should handle hint text without label parameter', () => {
-      const text =
-        'Hint without label that might be long enough to wrap depending on terminal width constraints';
-      const result = wrapTextForClackHint(text, 50);
-
-      // Should still work without label
-      expect(typeof result).toBe('string');
-      expect(stripVTControlCharacters(result)).toContain('Hint without label');
-
-      // If wrapped, should still have proper structure
-      if (result.includes('\n')) {
-        const lines = result.split('\n');
-        for (let i = 1; i < lines.length; i++) {
-          expect(lines[i]).toMatch(/cyan\(│\)/);
-        }
-      }
-    });
-
-    it('should maintain minimum content width of 30 characters', () => {
-      const text = 'Test hint text that should maintain minimum width';
-      const veryLongLabel = 'A'.repeat(50); // Very long label
-      const result = wrapTextForClackHint(text, 10, veryLongLabel); // Very small terminal width
-
-      // Should still produce reasonable output
-      expect(typeof result).toBe('string');
-      expect(result.length).toBeGreaterThan(0);
-      expect(stripVTControlCharacters(result)).toContain('Test hint text');
-    });
-
-    it('should handle empty hint text', () => {
-      const result = wrapTextForClackHint('', 80, 'Label');
-      expect(result).toBe('');
-    });
-
-    it('should preserve ANSI codes in hint text', () => {
-      const text = '\u001b[33mYellow hint text\u001b[0m with normal text that might wrap';
-      const result = wrapTextForClackHint(text, 40, 'Label');
-
-      // ANSI codes should be preserved
-      expect(result).toMatch(/\u001b\[33m/); // Yellow color
-      expect(result).toMatch(/\u001b\[0m/); // Reset
     });
   });
 

@@ -295,7 +295,7 @@
   "devDependencies": {
     "@aw-web-design/x-default-browser": "1.4.126",
     "@babel/core": "^7.28.5",
-    "@clack/prompts": "1.0.0-alpha.7",
+    "@clack/prompts": "1.8.1",
     "@devtools-ds/object-inspector": "^1.1.2",
     "@discoveryjs/json-ext": "^0.5.3",
     "@emotion/cache": "^11.14.0",

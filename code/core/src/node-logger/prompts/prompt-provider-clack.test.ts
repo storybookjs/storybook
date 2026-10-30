@@ -1,3 +1,5 @@
+import { stripVTControlCharacters } from 'node:util';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@clack/prompts', () => ({
@@ -93,6 +95,8 @@ describe('ClackPromptProvider', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   // Vitest workers do not write to a terminal, so the provider assumes 80 columns.
@@ -112,6 +116,42 @@ describe('ClackPromptProvider', () => {
     log.success('done');
 
     expect(task.message).toHaveBeenCalledWith(`${short}\n${'x'.repeat(51)} .storybook/preview`);
+  });
+
+  it('shortens a multiselect hint link to the width clack wraps option lines at', async () => {
+    const stdout = Object.create(process.stdout);
+    Object.defineProperty(stdout, 'columns', { configurable: true, value: 100 });
+    Object.defineProperty(stdout, 'isTTY', { configurable: true, value: true });
+    const stubbedProcess = Object.create(process);
+    Object.defineProperty(stubbedProcess, 'stdout', { configurable: true, value: stdout });
+    vi.stubGlobal('process', stubbedProcess);
+    vi.stubEnv('TERM_PROGRAM', 'iTerm.app');
+    vi.stubEnv('TERM_PROGRAM_VERSION', '3.4.0');
+    const url =
+      'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#parameterscomponentsubtitle-removed';
+
+    await provider.multiselect({
+      message: 'Select automigrations to run',
+      options: [{ value: 'fix', label: 'fix', hint: `Move it\nMore info: ${url}` }],
+    });
+
+    const { hint } = vi.mocked(clack.multiselect).mock.calls[0][0].options[0];
+    const linkLine = stripVTControlCharacters(hint ?? '').split('\n')[1];
+    expect(`${linkLine})`.length).toBeLessThanOrEqual(100 - 13);
+    expect(hint).toContain(`\u001b]8;;${url}\u0007`);
+  });
+
+  // Clack wraps prompt messages with its own guide bar; a pre-wrapped message renders the bar twice.
+  it('leaves wrapping prompt messages to clack', async () => {
+    const message = `Do you want to run the 'component-subtitle' migration on your project? ${'word '.repeat(20)}`;
+
+    await provider.confirm({ message });
+    await provider.select({ message, options: [{ label: 'A', value: 'a' }] });
+
+    expect(vi.mocked(clack.confirm)).toHaveBeenCalledWith(expect.objectContaining({ message }));
+    expect(vi.mocked(clack.select)).toHaveBeenCalledWith(
+      expect.objectContaining({ message, showInstructions: false })
+    );
   });
 
   it('awaits an async onCancel handler before rejecting the aborted prompt', async () => {

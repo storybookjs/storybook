@@ -14,7 +14,12 @@ import { definePreview } from '../../../../csf/csf-factories.ts';
 import { Tag } from '../../../../shared/constants/tags.ts';
 import * as defaultExportAnnotations from './__mocks__/defaultExportAnnotations.mockfile.ts';
 import * as namedExportAnnotations from './__mocks__/namedExportAnnotations.mockfile.ts';
-import { composeStories, composeStory, setProjectAnnotations } from './portable-stories.ts';
+import {
+  cleanupStories,
+  composeStories,
+  composeStory,
+  setProjectAnnotations,
+} from './portable-stories.ts';
 
 type StoriesModule = Store_CSFExports & Record<string, any>;
 
@@ -557,5 +562,157 @@ describe('setProjectAnnotations', () => {
     expect(() => setProjectAnnotations({})).toThrow(
       'setProjectAnnotations() was called from a Vitest setup file'
     );
+  });
+});
+
+describe('cleanupStories', () => {
+  it('executes cleanups in reverse order and clears the registry', async () => {
+    const order: number[] = [];
+    const story = composeStory(
+      { render: () => {} },
+      {},
+      {
+        renderToCanvas: () => () => {
+          order.push(2);
+        },
+        beforeEach: () => () => {
+          order.push(1);
+        },
+      }
+    );
+
+    await story.run({ canvasElement: {} as HTMLElement });
+    expect(order).toEqual([]);
+
+    await cleanupStories();
+    expect(order).toEqual([2, 1]);
+
+    // Repeated call is safe and does not re-run callbacks
+    await cleanupStories();
+    expect(order).toEqual([2, 1]);
+  });
+
+  it('executes later callbacks even when an earlier callback fails, preserves reverse order, and reports single failure', async () => {
+    const executionOrder: string[] = [];
+    const story = composeStory(
+      { render: () => {} },
+      {},
+      {
+        // Registered 2nd: will execute 1st in reverse order
+        renderToCanvas: () => () => {
+          executionOrder.push('first-to-run (failing)');
+          throw new Error('first cleanup error');
+        },
+        // Registered 1st: will execute 2nd in reverse order
+        beforeEach: () => () => {
+          executionOrder.push('second-to-run (succeeding)');
+        },
+      }
+    );
+
+    await story.run({ canvasElement: {} as HTMLElement });
+
+    await expect(cleanupStories()).rejects.toThrow('first cleanup error');
+    expect(executionOrder).toEqual(['first-to-run (failing)', 'second-to-run (succeeding)']);
+
+    // Repeated call is safe and does not throw or re-run
+    await expect(cleanupStories()).resolves.toBeUndefined();
+    expect(executionOrder).toEqual(['first-to-run (failing)', 'second-to-run (succeeding)']);
+  });
+
+  it('collects multiple errors and rejects with AggregateError after all callbacks have executed, supporting async rejections', async () => {
+    const executionOrder: string[] = [];
+    const story = composeStory(
+      { render: () => {} },
+      {},
+      {
+        // Registered 2nd: will execute 1st in reverse order
+        renderToCanvas: () => async () => {
+          executionOrder.push('first');
+          throw new Error('async error 1');
+        },
+        // Registered 1st: will execute 2nd in reverse order
+        beforeEach: () => () => {
+          executionOrder.push('second');
+          throw new Error('sync error 2');
+        },
+      }
+    );
+
+    await story.run({ canvasElement: {} as HTMLElement });
+
+    let caughtError: unknown;
+    try {
+      await cleanupStories();
+    } catch (e) {
+      caughtError = e;
+    }
+
+    expect(executionOrder).toEqual(['first', 'second']);
+    expect(caughtError).toBeInstanceOf(AggregateError);
+    expect((caughtError as AggregateError).message).toBe('Cleanups failed with multiple errors');
+    expect((caughtError as AggregateError).errors.map((e: Error) => e.message)).toEqual([
+      'async error 1',
+      'sync error 2',
+    ]);
+
+    // Repeated call is safe and does not re-throw old errors
+    await expect(cleanupStories()).resolves.toBeUndefined();
+  });
+
+  it('runs all callbacks even when earlier callbacks fail and intermediate callbacks succeed', async () => {
+    const executionOrder: string[] = [];
+    const story = composeStory(
+      { render: () => {} },
+      {},
+      {
+        renderToCanvas: () => async () => {
+          executionOrder.push('first (failing async)');
+          throw new Error('async error 1');
+        },
+        beforeEach: [
+          () => () => {
+            executionOrder.push('third (failing sync)');
+            throw new Error('sync error 2');
+          },
+          () => () => {
+            executionOrder.push('second (succeeding)');
+          },
+        ],
+      }
+    );
+
+    await story.run({ canvasElement: {} as HTMLElement });
+
+    let caughtError: unknown;
+    try {
+      await cleanupStories();
+    } catch (e) {
+      caughtError = e;
+    }
+
+    expect(executionOrder).toEqual([
+      'first (failing async)',
+      'second (succeeding)',
+      'third (failing sync)',
+    ]);
+    expect(caughtError).toBeInstanceOf(AggregateError);
+    expect((caughtError as AggregateError).message).toBe('Cleanups failed with multiple errors');
+    expect((caughtError as AggregateError).errors.map((e: Error) => e.message)).toEqual([
+      'async error 1',
+      'sync error 2',
+    ]);
+
+    // Repeated call is safe and does not re-throw old errors or re-run callbacks
+    await expect(cleanupStories()).resolves.toBeUndefined();
+    expect(executionOrder).toEqual([
+      'first (failing async)',
+      'second (succeeding)',
+      'third (failing sync)',
+    ]);
+  });
+
+  it('is safe to call when no cleanups are registered', async () => {
+    await expect(cleanupStories()).resolves.toBeUndefined();
   });
 });

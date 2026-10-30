@@ -30,39 +30,39 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "code": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./node": {
-      "types": "./dist/node/index.d.ts",
       "code": "./src/node/index.ts",
+      "types": "./dist/node/index.d.ts",
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
     "./preset": {
-      "types": "./dist/preset.d.ts",
       "code": "./src/preset.ts",
+      "types": "./dist/preset.d.ts",
       "default": "./dist/preset.js"
     },
     "./preview": {
-      "types": "./dist/preview.d.ts",
       "code": "./src/preview.tsx",
+      "types": "./dist/preview.d.ts",
       "default": "./dist/preview.js"
     },
     "./react-router": {
-      "types": "./dist/export-mocks/react-router.d.ts",
       "code": "./src/export-mocks/react-router.ts",
+      "types": "./dist/export-mocks/react-router.d.ts",
       "default": "./dist/export-mocks/react-router.js"
     },
     "./start": {
-      "types": "./dist/export-mocks/start.d.ts",
       "code": "./src/export-mocks/start.ts",
+      "types": "./dist/export-mocks/start.d.ts",
       "default": "./dist/export-mocks/start.js"
     },
     "./start-storage-context": {
-      "types": "./dist/export-mocks/start-storage-context.d.ts",
       "code": "./src/export-mocks/start-storage-context.ts",
+      "types": "./dist/export-mocks/start-storage-context.d.ts",
       "default": "./dist/export-mocks/start-storage-context.js"
     }
   },

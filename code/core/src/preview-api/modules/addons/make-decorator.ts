@@ -1,10 +1,11 @@
 import type {
   Addon_LegacyStoryFn,
+  Addon_MakeDecoratorResult,
   Addon_StoryContext,
   Addon_StoryWrapper,
 } from 'storybook/internal/types';
 
-export type MakeDecoratorResult = (...args: any) => any;
+export type MakeDecoratorResult = Addon_MakeDecoratorResult;
 
 export interface MakeDecoratorOptions {
   name: string;
@@ -39,14 +40,14 @@ export interface MakeDecoratorOptions {
  * @param {Addon_StoryWrapper} options.wrapper - The function that will be used to wrap the story.
  * @param {boolean} [options.skipIfNoParametersOrOptions=false] - Whether to skip the decorator if
  *   no options or parameters are provided. Default is `false`
- * @returns {MakeDecoratorResult} A function that can be used as a Storybook decorator.
+ * @returns {Addon_MakeDecoratorResult} A function that can be used as a Storybook decorator.
  */
 export const makeDecorator = ({
   name,
   parameterName,
   wrapper,
   skipIfNoParametersOrOptions = false,
-}: MakeDecoratorOptions): MakeDecoratorResult => {
+}: MakeDecoratorOptions): Addon_MakeDecoratorResult => {
   const decorator: any =
     (options: object) => (storyFn: Addon_LegacyStoryFn, context: Addon_StoryContext) => {
       const parameters = context.parameters && context.parameters[parameterName];

@@ -620,6 +620,14 @@ export interface StorybookFeatures {
   angularFilterNonInputControls?: boolean;
 
   /**
+   * Render canvas stories through Angular's TestBed instead of bootstrapping a standalone
+   * application per story. `@storybook/angular-vite` only.
+   *
+   * @default false
+   */
+  previewTestBedRenderer?: boolean;
+
+  /**
    * Enable component manifest generation for MCP and other tooling integrations.
    *
    * `@storybook/react`, `@storybook/vue3`, and `@storybook/angular-vite` default this to `true`.

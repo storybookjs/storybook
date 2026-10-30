@@ -1,4 +1,4 @@
-import type { ApplicationRef, NgModule } from '@angular/core';
+import type { ApplicationRef, EnvironmentProviders, NgModule, Provider, Type } from '@angular/core';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import type { Subject } from 'rxjs';
@@ -15,6 +15,18 @@ type StoryRenderInfo = {
   storyFnAngular: StoryFnAngularReturnType;
   moduleMetadataSnapshot: string;
 };
+
+export interface StoryMountOptions {
+  storyFnAngular: StoryFnAngularReturnType;
+  component: Type<unknown> | undefined;
+  analyzedMetadata: PropertyExtractor;
+  // Application-level providers: the story props, providers lifted out of restricted imports and
+  // the story's applicationConfig providers.
+  providers: Array<Provider | EnvironmentProviders>;
+  targetDOMNode: HTMLElement;
+  // Selector of the root element created by initAngularRootElement.
+  componentSelector: string;
+}
 
 declare global {
   const STORYBOOK_ANGULAR_OPTIONS: {
@@ -119,13 +131,6 @@ export abstract class AbstractRenderer {
       element.toggleAttribute(storyUid, true);
     }
 
-    const application = getApplication({
-      storyFnAngular,
-      component,
-      targetSelector: componentSelector,
-      analyzedMetadata,
-    });
-
     const providers = [
       storyPropsProvider(newStoryProps$),
       ...analyzedMetadata.applicationProviders,
@@ -136,14 +141,39 @@ export abstract class AbstractRenderer {
       providers.unshift(provideZonelessChangeDetection());
     }
 
-    const applicationRef = await queueBootstrapping(() => {
+    const applicationRef = await this.mountStory({
+      storyFnAngular,
+      component,
+      analyzedMetadata,
+      providers,
+      targetDOMNode,
+      componentSelector,
+    });
+
+    applicationRefs.set(targetDOMNode, applicationRef);
+  }
+
+  // TestBedRenderer overrides this seam.
+  protected async mountStory({
+    storyFnAngular,
+    component,
+    analyzedMetadata,
+    providers,
+    componentSelector,
+  }: StoryMountOptions): Promise<ApplicationRef> {
+    const application = getApplication({
+      storyFnAngular,
+      component,
+      targetSelector: componentSelector,
+      analyzedMetadata,
+    });
+
+    return queueBootstrapping(() => {
       return bootstrapApplication(application, {
         ...storyFnAngular.applicationConfig,
         providers,
       });
     });
-
-    applicationRefs.set(targetDOMNode, applicationRef);
   }
 
   /**

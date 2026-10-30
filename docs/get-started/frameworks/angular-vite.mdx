@@ -227,6 +227,27 @@ By default, this framework runs with zoneless change detection (`zoneless: true`
 
 When `zoneless` is `false`, `zone.js` is automatically imported at the start of the preview.
 
+### TestBed rendering
+
+By default, every canvas story is mounted by bootstrapping a standalone Angular application.
+Set the [`previewTestBedRenderer`](../../api/main-config/main-config-features.mdx#previewtestbedrenderer) feature to mount canvas stories through Angular's [`TestBed`](https://angular.dev/api/core/testing/TestBed) instead:
+
+```ts title=".storybook/main.ts"
+export default defineMain({
+  framework: '@storybook/angular-vite',
+  features: {
+    previewTestBedRenderer: true,
+  },
+});
+```
+
+Stories, decorators, `moduleMetadata`, and `applicationConfig` work the same way with both strategies.
+Under `TestBed`, a story that renders its `component` without a `template` mounts that component as the fixture root, the way `TestBed.createComponent()` does in a unit test: args that match inputs and outputs are bound to them, and every other arg is assigned to the component instance.
+With either kind of story, a provider in `moduleMetadata.providers` also overrides a provider the component declares in its own `providers`, which `bootstrapApplication` cannot do, so a mock that the component's own provider used to hide now reaches the component.
+A play function can read the story's providers with `TestBed.inject()`, and the `TestBed` singleton is reset before every story render.
+As in Angular's own component tests, an exception thrown from an event handler or during change detection is rethrown and fails the play function, where `bootstrapApplication` only reports it through `ErrorHandler`.
+Docs pages always bootstrap an application per story.
+
 ### Custom Vite configuration
 
 You can extend the Vite configuration used by Storybook in your `.storybook/main.ts` file via [`viteFinal`](../../api/main-config/main-config-vite-final.mdx):

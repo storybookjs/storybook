@@ -1,0 +1,100 @@
+{
+  "argTypes": {
+    "backgroundColor": {
+      "description": "What background color to use",
+      "name": "backgroundColor",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "classes": {
+      "name": "classes",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "string[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "label": {
+      "description": "Button contents",
+      "name": "label",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": true
+      }
+    },
+    "onClick": {
+      "action": "onClick",
+      "description": "Optional click handler",
+      "name": "onClick",
+      "table": {
+        "category": "outputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "Event"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "primary": {
+      "description": "Is this the principal call to action on the page?",
+      "name": "primary",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": false
+        },
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean"
+      }
+    },
+    "size": {
+      "description": "How large should the button be?",
+      "name": "size",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": "medium"
+        },
+        "type": {
+          "summary": "\"medium\" | \"small\""
+        }
+      },
+      "type": {
+        "name": "enum",
+        "value": ["medium", "small"]
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-signal-button",
+  "jsDocTags": {},
+  "name": "SignalButtonComponent",
+  "path": "./src/stories/frameworks/angular-vite/signal/button.stories.ts"
+}

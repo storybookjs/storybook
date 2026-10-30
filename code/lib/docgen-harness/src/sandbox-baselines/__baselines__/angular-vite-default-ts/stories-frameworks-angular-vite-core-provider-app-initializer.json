@@ -1,0 +1,22 @@
+{
+  "argTypes": {
+    "labelService": {
+      "name": "labelService",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "LabelService"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-core-provider-app-initializer",
+  "jsDocTags": {},
+  "name": "AppInitializerComponent",
+  "path": "./src/stories/frameworks/angular-vite/core/provider/app-initializer.stories.ts"
+}

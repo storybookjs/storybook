@@ -33,4 +33,16 @@ describe('transformIframeHtml', () => {
 
     expect(html).not.toContain('INSECURE_IFRAME_MESSAGING');
   });
+
+  it.each([
+    { base: undefined, expected: 'src="/@id/__x00__virtual:/@storybook/builder-vite/vite-app.js"' },
+    {
+      base: '/__storybook/',
+      expected: 'src="/__storybook/@id/__x00__virtual:/@storybook/builder-vite/vite-app.js"',
+    },
+  ])('points the dev app entry at Vite base $base', async ({ base, expected }) => {
+    const options = { ...createOptions(), configType: 'DEVELOPMENT' } as Options;
+
+    expect(await transformIframeHtml(template, options, base)).toContain(expected);
+  });
 });

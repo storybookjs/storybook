@@ -16,6 +16,9 @@ import { createViteServer } from './vite-server.ts';
 export { withoutVitePlugins } from './utils/without-vite-plugins.ts';
 export { hasVitePlugins } from './utils/has-vite-plugins.ts';
 
+export { experimental_vitePlugin } from './vite-plugin/index.ts';
+export type { UserOptions as experimental_VitePluginUserOptions } from './vite-plugin/types.ts';
+
 export * from './types.ts';
 
 function iframeHandler(options: Options, server: ViteDevServer): Middleware {
@@ -68,13 +71,15 @@ export const start: ViteBuilder['start'] = async ({
   router,
   server: devServer,
 }) => {
-  server = await createViteServer(options as Options, devServer);
+  const viteServer = await createViteServer(options as Options, devServer);
+  server = viteServer;
 
-  router.get('/iframe.html', iframeHandler(options as Options, server));
-  router.use(server.middlewares);
+  router.get('/iframe.html', iframeHandler(options as Options, viteServer));
+  router.use(viteServer.middlewares);
 
   return {
-    bail,
+    // Bound to this start: a later start may replace `server` before an old host closes.
+    bail: () => viteServer.close(),
     stats: {
       toJson: () => {
         throw new NoStatsForViteDevError();

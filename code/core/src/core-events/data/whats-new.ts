@@ -1,3 +1,7 @@
+export interface WhatsNewRequest {
+  force?: boolean;
+}
+
 export interface WhatsNewCache {
   lastDismissedPost?: string;
   lastReadPost?: string;
@@ -17,4 +21,7 @@ export type WhatsNewData =
     }
   | {
       status: 'ERROR';
+    }
+  | {
+      status: 'DISABLED';
     };

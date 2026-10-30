@@ -17,6 +17,7 @@ import { matchesKeyCode, matchesModifiers } from '../keybinding.ts';
 import { AboutPage } from './AboutPage.tsx';
 import { GuidePage } from './GuidePage.tsx';
 import { ShortcutsPage } from './ShortcutsPage.tsx';
+import { canOpenWhatsNew } from './whats_new.tsx';
 import { WhatsNewPage } from './whats_new_page.tsx';
 
 const { document } = global;
@@ -163,7 +164,7 @@ const SettingsPages: FC = () => {
 
   return (
     <Pages
-      enableWhatsNew={state.whatsNewData?.status === 'SUCCESS'}
+      enableWhatsNew={canOpenWhatsNew(state.whatsNewData)}
       enableShortcuts={state.ui.enableShortcuts}
       changeTab={changeTab}
       onClose={api.closeSettings}

@@ -2,7 +2,7 @@ import type { IndexInput, Indexer } from 'storybook/internal/types';
 
 import { parseForIndexer } from './parser.ts';
 import { IndexerParseError } from '../utils/error/parser/extract/svelte.ts';
-import { isStorybookSvelteCSFError } from '../utils/error.ts';
+import { StorybookSvelteCSFError } from '../utils/error.ts';
 import { SVELTE_CSF_V5_TAG } from '../constants.ts';
 export const createIndexer = (): Indexer => ({
   test: /\.svelte$/,
@@ -22,8 +22,7 @@ export const createIndexer = (): Indexer => ({
         } satisfies IndexInput;
       });
     } catch (error) {
-      // WARN: We can't use `instanceof StorybookSvelteCSFError`, because is an _abstract_ class
-      if (isStorybookSvelteCSFError(error)) {
+      if (error instanceof StorybookSvelteCSFError) {
         throw error;
       }
 

@@ -14,10 +14,7 @@ interface Params {
   filename?: string;
 }
 
-/**
- * Replaces `defineMeta({ ... })` with `defineMeta(meta)`,
- * and also it returns {@link ESTreeASTAST.ObjectExpression} which was replaced with {@link ESTreeAST.Identifier}
- */
+// Replaces `defineMeta({ ... })` with `defineMeta($__meta)` and returns the object it replaced.
 export function replaceDefineMetaArgument(params: Params): ESTreeAST.ObjectExpression {
   const defineMetaFirstArgumentObjectExpression = getDefineMetaFirstArgumentObjectExpression({
     nodes: params.nodes.compiled,

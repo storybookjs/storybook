@@ -20,14 +20,14 @@ describe(extractModuleNodes.name, () => {
 
       <script module>
         import { defineMeta } from "@storybook/svelte-vite";
-        
+
         const { Story } = defineMeta({});
       </script>
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
       With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
 
-      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0001
+      More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
       ]
     `);
   });
@@ -45,14 +45,14 @@ describe(extractModuleNodes.name, () => {
 
       <script module>
         import { defineMeta } from "@storybook/svelte-vite";
-        
+
         const { Story } = defineMeta({});
       </script>
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
       With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
 
-      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0003
+      More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
       ]
     `);
   });
@@ -73,14 +73,14 @@ describe(extractModuleNodes.name, () => {
 
       <script module>
         import { defineMeta } from "@storybook/svelte-vite";
-        
+
         const { Story } = defineMeta({});
       </script>
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
       With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
 
-      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0004
+      More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
       ]
     `);
   });
@@ -101,14 +101,14 @@ describe(extractModuleNodes.name, () => {
 
       <script module>
         import { defineMeta } from "@storybook/svelte-vite";
-        
+
         const { Story } = defineMeta({});
       </script>
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
       With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
 
-      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0004
+      More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
       ]
     `);
   });
@@ -269,7 +269,7 @@ describe(extractModuleNodes.name, () => {
 
         In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 
-        More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0002
+        More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
         ]
       `);
     });
@@ -380,14 +380,14 @@ describe(extractModuleNodes.name, () => {
 
         <script module>
           import { defineMeta } from "@storybook/svelte-vite";
-          
+
           const { Story } = defineMeta({});
         </script>
 
         In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
         With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
 
-        More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0005
+        More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
         ]
       `);
     });
@@ -409,7 +409,7 @@ describe(extractModuleNodes.name, () => {
         calls both defineMeta() and preview.meta(). A stories file can only have one meta.
         Use preview.meta() for CSF factories, or defineMeta() otherwise.
 
-        More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0010
+        More info: https://storybook.js.org/docs/writing-stories/csf/api?renderer=svelte&ref=error#previewmeta
         ]
       `);
     });
@@ -426,9 +426,9 @@ describe(extractModuleNodes.name, () => {
         `,
       });
 
-      await expect(extractModuleNodes({ module })).rejects.toThrow(
-        'sb_svelte_csf_parser_extract_svelte_0012'
-      );
+      await expect(extractModuleNodes({ module })).rejects.toMatchObject({
+        fullErrorCode: 'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0012',
+      });
     });
 
     it('fails when preview is not imported from a preview file', async ({ expect }) => {
@@ -453,7 +453,7 @@ describe(extractModuleNodes.name, () => {
 
         The import path must end with '/preview', with or without a file extension.
 
-        More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0011
+        More info: https://storybook.js.org/docs/writing-stories/csf/api?renderer=svelte&ref=error#previewmeta
         ]
       `);
     });

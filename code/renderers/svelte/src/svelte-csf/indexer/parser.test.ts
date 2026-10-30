@@ -2,7 +2,7 @@ import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { SVELTE_CSF_IMPORT_SOURCES } from '../constants.ts';
 import { parseForIndexer } from './parser.ts';
@@ -293,9 +293,9 @@ describe('parseForIndexer', () => {
         import { defineMeta } from '@storybook/svelte';
       `);
 
-      await expect(parseForIndexer(file)).rejects.toThrow(
-        'sb_svelte_csf_parser_extract_svelte_0004'
-      );
+      await expect(parseForIndexer(file)).rejects.toMatchObject({
+        fullErrorCode: 'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004',
+      });
     });
 
     it('fails without a named defineMeta import', async ({ expect }) => {
@@ -303,9 +303,9 @@ describe('parseForIndexer', () => {
         import Button from './Button.svelte';
       `);
 
-      await expect(parseForIndexer(file)).rejects.toThrow(
-        'sb_svelte_csf_parser_extract_svelte_0003'
-      );
+      await expect(parseForIndexer(file)).rejects.toMatchObject({
+        fullErrorCode: 'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003',
+      });
     });
 
     it('fails with only a namespace import', async ({ expect }) => {
@@ -314,9 +314,9 @@ describe('parseForIndexer', () => {
         const { Story } = SB.defineMeta({ title: 'Example' });
       `);
 
-      await expect(parseForIndexer(file)).rejects.toThrow(
-        'sb_svelte_csf_parser_extract_svelte_0002'
-      );
+      await expect(parseForIndexer(file)).rejects.toMatchObject({
+        fullErrorCode: 'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002',
+      });
     });
   });
   describe('CSF factories', () => {
@@ -464,9 +464,9 @@ describe('parseForIndexer', () => {
         const { Story: FactoryStory } = preview.meta({});
       `);
 
-      await expect(parseForIndexer(file)).rejects.toThrow(
-        'sb_svelte_csf_parser_extract_svelte_0010'
-      );
+      await expect(parseForIndexer(file)).rejects.toMatchObject({
+        fullErrorCode: 'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0010',
+      });
     });
 
     it('fails when a file calls preview.meta() twice', async ({ expect }) => {
@@ -476,9 +476,9 @@ describe('parseForIndexer', () => {
         const { Story } = preview.meta({});
       `);
 
-      await expect(parseForIndexer(file)).rejects.toThrow(
-        'sb_svelte_csf_parser_extract_svelte_0012'
-      );
+      await expect(parseForIndexer(file)).rejects.toMatchObject({
+        fullErrorCode: 'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0012',
+      });
     });
 
     it('fails when the result of preview.meta() is not stored', async ({ expect }) => {
@@ -487,9 +487,9 @@ describe('parseForIndexer', () => {
         preview.meta({ title: 'Example' });
       `);
 
-      await expect(parseForIndexer(file)).rejects.toThrow(
-        'sb_svelte_csf_parser_extract_svelte_0004'
-      );
+      await expect(parseForIndexer(file)).rejects.toMatchObject({
+        fullErrorCode: 'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004',
+      });
     });
 
     it('fails when the meta is exported', async ({ expect }) => {
@@ -499,9 +499,9 @@ describe('parseForIndexer', () => {
         const { Story } = meta;
       `);
 
-      await expect(parseForIndexer(file)).rejects.toThrow(
-        'sb_svelte_csf_parser_extract_svelte_0004'
-      );
+      await expect(parseForIndexer(file)).rejects.toMatchObject({
+        fullErrorCode: 'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004',
+      });
     });
 
     it('fails when preview is not imported from a preview file', async ({ expect }) => {
@@ -510,9 +510,9 @@ describe('parseForIndexer', () => {
         const { Story } = preview.meta({});
       `);
 
-      await expect(parseForIndexer(file)).rejects.toThrow(
-        'sb_svelte_csf_parser_extract_svelte_0011'
-      );
+      await expect(parseForIndexer(file)).rejects.toMatchObject({
+        fullErrorCode: 'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0011',
+      });
     });
   });
 
@@ -586,62 +586,70 @@ describe('parseForIndexer', () => {
       expect(stories.map((story) => story.exportName)).toEqual(['Primary', 'PrimaryStatic']);
     });
 
-    it.for([
+    it.for<[string, string, Record<string, unknown>, string?]>([
       [
         'the stories file calls defineMeta()',
         '<Story name="Primary" /><Story extend="Primary" name="Small" />',
-        'sb_svelte_csf_parser_analyse_story_0010',
+        { fullErrorCode: 'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0010' },
         'defineMeta({})',
       ],
       [
         'no story has the name',
         '<Story name="Primary" /><Story extend="Secondary" name="Small" />',
-        'sb_svelte_csf_parser_analyse_story_0011',
+        { fullErrorCode: 'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0011' },
       ],
       [
         'the value is the exportName of a named story',
         '<Story name="Primary Large" /><Story extend="PrimaryLarge" name="Small" />',
-        'Did you mean extend="Primary Large"?',
+        { message: expect.stringContaining('Did you mean extend="Primary Large"?') },
       ],
       [
         'the story has only an exportName',
         '<Story exportName="Primary" /><Story extend="Primary" name="Small" />',
-        'sb_svelte_csf_parser_analyse_story_0012',
+        { fullErrorCode: 'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0012' },
       ],
       [
         'more than one story has the name',
         '<Story name="Primary" /><Story name="Primary" exportName="Other" /><Story extend="Primary" name="Small" />',
-        'sb_svelte_csf_parser_analyse_story_0013',
+        { fullErrorCode: 'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0013' },
       ],
       [
         'a story extends itself',
         '<Story extend="Primary" name="Primary" />',
-        "Stories extend each other in a cycle: 'Primary' extends 'Primary'",
+        {
+          message: expect.stringContaining(
+            "Stories extend each other in a cycle: 'Primary' extends 'Primary'"
+          ),
+        },
       ],
       [
         'stories extend each other',
         '<Story extend="B" name="A" /><Story extend="C" name="B" /><Story extend="A" name="C" />',
-        "Stories extend each other in a cycle: 'A' extends 'B' extends 'C' extends 'A'",
+        {
+          message: expect.stringContaining(
+            "Stories extend each other in a cycle: 'A' extends 'B' extends 'C' extends 'A'"
+          ),
+        },
       ],
       [
         'the value is not a string literal',
         '<Story name="Primary" /><Story extend={name} name="Small" />',
-        'sb_svelte_csf_parser_analyse_story_0001',
+        { fullErrorCode: 'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001' },
       ],
       [
         'the value has more than one part',
         '<Story name="Primary" /><Story name="PrimaryLarge" /><Story extend="Primary{\'Large\'}" name="Small" />',
-        'sb_svelte_csf_parser_analyse_story_0001',
+        { fullErrorCode: 'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001' },
       ],
       [
         'the value is empty',
         '<Story name="" exportName="Empty" /><Story extend="" name="Small" />',
-        'sb_svelte_csf_parser_analyse_story_0011',
+        { fullErrorCode: 'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0011' },
       ],
     ])('fails when %s', async ([, stories, error, meta], { expect }) => {
       const file = await writeExtendStoriesFile(stories, meta);
 
-      await expect(parseForIndexer(file)).rejects.toThrow(error);
+      await expect(parseForIndexer(file)).rejects.toMatchObject(error);
     });
   });
 });

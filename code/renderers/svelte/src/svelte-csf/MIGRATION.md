@@ -142,8 +142,8 @@ Difference:
 
 ### `<Story>` slots replaced with snippets
 
-1. [Inline snippet](./README.md#inline-snippet)
-1. [Shared snippet](./README.md#shared-snippet)
+1. [Inline snippet](https://storybook.js.org/docs/writing-stories?renderer=svelte#custom-rendering)
+1. [Shared snippet](https://storybook.js.org/docs/writing-stories?renderer=svelte#custom-rendering)
 
 ---
 
@@ -224,8 +224,8 @@ Difference:
 Svelte has deprecated support for slots in favour of **snippets**.\
 We have **new ways of setting a template** for our `<Story>` components:
 
-1. [Static template](./README.md#static-template)
-1. [Default template](./README.md#default-template)
+1. [Static template](https://storybook.js.org/docs/writing-stories?renderer=svelte#defining-stories)
+1. [Default template](https://storybook.js.org/docs/writing-stories?renderer=svelte#custom-rendering)
 
 > [!IMPORTANT]:
 > **It’s also no longer required to define a template.** Stories without templates will just render the component with args becoming props.

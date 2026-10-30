@@ -94,7 +94,7 @@ describe(getStoryIdentifiers.name, () => {
       [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0004 (NoStoryIdentifierError): Missing 'name' or 'exportName' attribute (prop) in a '<Story />' definition in the stories file:  '<cwd>/invalid.stories.svelte'.
       All stories must either have a 'name' or an 'exportName' prop, or both.
 
-      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_analyse_story_0004
+      More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#rename-stories
       ]
     `
     );
@@ -217,11 +217,11 @@ describe(getStoryIdentifiers.name, () => {
       `
       [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0005 (InvalidStoryExportNameError): Invalid attribute 'exportName' value 'default' found in '<Story />' component inside stories file: <cwd>/invalid.stories.svelte
 
-        'exportName' value must be a valid JavaScript variable name.
-        It must start with a letter, $ or _, followed by letters, numbers, $ or _.
-        Reserved words like 'default' are also not allowed (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#reserved_words)
+      'exportName' value must be a valid JavaScript variable name.
+      It must start with a letter, $ or _, followed by letters, numbers, $ or _.
+      Reserved words like 'default' are also not allowed (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#reserved_words)
 
-      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_analyse_story_0005
+      More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#rename-stories
       ]
     `
     );
@@ -297,7 +297,7 @@ describe(getStoriesIdentifiers.name, () => {
       eg. 'Some story name!!' will be converted to 'SomeStoryName'.
       You can fix this collision by providing a unique 'exportName' prop with <Story exportName="SomeUniqueExportName" ... />.
 
-      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_analyse_story_0006
+      More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#rename-stories
       ]
     `
     );
@@ -333,7 +333,7 @@ describe(getStoriesIdentifiers.name, () => {
       eg. 'Some story name!!' will be converted to 'SomeStoryName'.
       You can fix this collision by providing a unique 'exportName' prop with <Story exportName="SomeUniqueExportName" ... />.
 
-      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_analyse_story_0006
+      More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#rename-stories
       ]
     `
     );

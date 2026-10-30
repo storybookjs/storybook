@@ -12,5 +12,5 @@ export default {
   'docs/_snippets/**/*.{js,jsx,mjs,ts,tsx,html,json}': [fmtCmd],
   '**/*.ejs': ['yarn --cwd scripts exec ejslint'],
   '**/package.json': ['yarn --cwd scripts lint:package'],
-  'MIGRATION.md': [`yarn --cwd scripts update-migration-toc${tocSuffix}`],
+  './MIGRATION.md': [`yarn --cwd scripts update-migration-toc${tocSuffix}`],
 };

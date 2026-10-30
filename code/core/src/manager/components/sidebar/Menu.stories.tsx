@@ -1,7 +1,5 @@
 import React from 'react';
 
-import { TooltipLinkList } from 'storybook/internal/components';
-
 import { LinkIcon } from '@storybook/icons';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -14,7 +12,7 @@ import { initialState } from '../../../shared/checklist-store/checklistData.stat
 import { useMenu } from '../../container/Menu.tsx';
 import { internal_universalChecklistStore as mockStore } from '../../manager-stores.mock.ts';
 import { LayoutProvider } from '../layout/LayoutProvider.tsx';
-import { type MenuList, SidebarMenu } from './Menu.tsx';
+import { type MenuList, SidebarMenu, SidebarMenuList } from './Menu.tsx';
 
 const getAPIMocks = () => ({
   getShortcutKeys: fn()
@@ -92,7 +90,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Items: Story = {
-  render: () => <TooltipLinkList links={fakemenu} />,
+  render: () => <SidebarMenuList menu={fakemenu} onHide={fn()} />,
 };
 
 export const Real: Story = {

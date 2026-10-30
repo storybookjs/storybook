@@ -82,7 +82,7 @@ export const AttentionBanner: FC<AttentionBannerProps> = (props) => {
       <Region ref={regionRef} {...landmarkProps}>
         <Bar role="status" aria-live="polite">
           <span>A new review is available.</span>
-          <Button variant="solid" padding="small" onClick={onAccept}>
+          <Button ariaLabel={false} variant="solid" padding="small" onClick={onAccept}>
             Update
           </Button>
         </Bar>

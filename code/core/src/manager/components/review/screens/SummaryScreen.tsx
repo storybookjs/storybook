@@ -13,7 +13,6 @@ import {
   Card,
   Collapsible,
   DocumentWrapper,
-  IconButton,
   ScrollArea,
   ToggleButton,
 } from 'storybook/internal/components';
@@ -168,7 +167,7 @@ const SummaryHeading = styled.h2(({ theme }) => ({
 
 // A plain clickable row, not a semantic control: making the whole header
 // toggle is just a convenience affordance for pointer users. The real
-// accessible control is the chevron <IconButton> inside, which carries the
+// accessible control is the chevron <Button> inside, which carries the
 // aria-label and aria-expanded state for assistive technologies.
 const CardHead = styled.div({
   display: 'flex',
@@ -470,7 +469,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                               >
                                 {storyIds.length}
                               </CardCount>
-                              <IconButton
+                              <Button
                                 variant="ghost"
                                 size="small"
                                 padding="small"
@@ -488,7 +487,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
                                 <ToggleChevronIcon
                                   style={{ transform: `rotate(${isExpanded ? -180 : 0}deg)` }}
                                 />
-                              </IconButton>
+                              </Button>
                             </CardControls>
                           </CardHead>
                         }

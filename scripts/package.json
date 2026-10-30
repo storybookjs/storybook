@@ -76,7 +76,7 @@
     "@types/wait-on": "^5.3.4",
     "@types/window-size": "^1.1.4",
     "@vitest/coverage-v8": "^5.0.0",
-    "chromatic": "^18.0.1",
+    "chromatic": "^18.13.0",
     "citty": "^0.2.1",
     "codecov": "^3.8.1",
     "commander": "^14.0.2",

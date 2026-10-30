@@ -92,6 +92,7 @@ describe('extractMockCalls', () => {
     expect(result).toEqual([
       {
         path: 'foo',
+        specifier: 'foo',
         absolutePath: '/abs/path',
         redirectPath: null,
         spy: true,
@@ -132,6 +133,7 @@ describe('extractMockCalls', () => {
     expect(result).toEqual([
       {
         path: 'bar',
+        specifier: 'bar',
         absolutePath: '/abs/path',
         redirectPath: null,
         spy: false,
@@ -150,6 +152,7 @@ describe('extractMockCalls', () => {
     expect(result).toEqual([
       {
         path: './bar/baz',
+        specifier: './bar/baz',
         absolutePath: '/abs/path',
         redirectPath: null,
         spy: true,
@@ -168,6 +171,7 @@ describe('extractMockCalls', () => {
     expect(result).toEqual([
       {
         path: './bar/baz',
+        specifier: './bar/baz.js',
         absolutePath: '/abs/path/bar/baz.js',
         redirectPath: null,
         spy: true,
@@ -186,6 +190,7 @@ describe('extractMockCalls', () => {
     expect(result).toEqual([
       {
         path: './bar/baz.utils',
+        specifier: './bar/baz.utils.ts',
         absolutePath: '/abs/path/bar/baz.utils.ts',
         redirectPath: null,
         spy: true,
@@ -204,6 +209,7 @@ describe('extractMockCalls', () => {
     expect(result).toEqual([
       {
         path: './bar/baz.utils',
+        specifier: './bar/baz.utils',
         absolutePath: '/abs/path/bar/baz.utils.ts',
         redirectPath: null,
         spy: true,

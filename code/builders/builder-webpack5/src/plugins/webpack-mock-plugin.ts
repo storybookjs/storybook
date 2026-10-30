@@ -1,12 +1,11 @@
-import { dirname, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { extractMockCalls, findMockRedirect } from 'storybook/internal/mocking-utils';
 import type { MockCall } from 'storybook/internal/mocking-utils';
 import { logger } from 'storybook/internal/node-logger';
 
-import { normalize } from 'pathe';
-import type { Compiler, ResolveData } from 'webpack';
+import { dirname, normalize } from 'pathe';
+import type { Compiler, ResolveData, Resolver } from 'webpack';
 
 export interface WebpackMockPluginOptions {
   previewConfigPath: string;
@@ -14,11 +13,8 @@ export interface WebpackMockPluginOptions {
 
 const PLUGIN_NAME = 'storybook-mock-plugin';
 
-const isBareSpecifier = (path: string) => !path.startsWith('.') && !isAbsolute(path);
-
 export class WebpackMockPlugin {
   private mocksByPath = new Map<string, MockCall>();
-  private mocksBySpecifier = new Map<string, MockCall>();
   private lastPreviewMtime: number | undefined;
   private readonly options: WebpackMockPluginOptions;
 
@@ -34,7 +30,7 @@ export class WebpackMockPlugin {
       import.meta.resolve('@storybook/builder-webpack5/loaders/webpack-automock-loader')
     );
 
-    const updateMocks = () => {
+    const updateMocks = async () => {
       const previewMtime = this.getPreviewConfigMtime(compiler);
       if (previewMtime !== undefined && previewMtime === this.lastPreviewMtime) {
         return;
@@ -45,10 +41,13 @@ export class WebpackMockPlugin {
         compiler.context,
         findMockRedirect
       );
-      this.mocksByPath = new Map(mocks.map((mock) => [mock.absolutePath, mock]));
-      this.mocksBySpecifier = new Map(
-        mocks.filter((mock) => isBareSpecifier(mock.path)).map((mock) => [mock.path, mock])
+      // Mocks resolve through webpack's resolver so that aliases, symlink handling and package
+      // conditions match the resolution of the imports they are compared against.
+      const resolver = compiler.resolverFactory.get('normal', { dependencyType: 'esm' });
+      const paths = await Promise.all(
+        mocks.map((mock) => resolveWithWebpack(resolver, dirname(previewConfigPath), mock))
       );
+      this.mocksByPath = new Map(mocks.map((mock, index) => [normalize(paths[index]), mock]));
       this.lastPreviewMtime = previewMtime;
 
       if (mocks.length > 0) {
@@ -56,8 +55,8 @@ export class WebpackMockPlugin {
       }
     };
 
-    compiler.hooks.beforeRun.tap(PLUGIN_NAME, updateMocks);
-    compiler.hooks.watchRun.tap(PLUGIN_NAME, updateMocks);
+    compiler.hooks.beforeRun.tapPromise(PLUGIN_NAME, updateMocks);
+    compiler.hooks.watchRun.tapPromise(PLUGIN_NAME, updateMocks);
 
     compiler.hooks.normalModuleFactory.tap(PLUGIN_NAME, (factory) => {
       factory.hooks.afterResolve.tapAsync(PLUGIN_NAME, (resolveData, callback) => {
@@ -91,16 +90,12 @@ export class WebpackMockPlugin {
     });
   }
 
-  private findMock({ resourceResolveData, resource, rawRequest }: ResolveData['createData']) {
+  private findMock({ resourceResolveData, resource }: ResolveData['createData']) {
     if (this.mocksByPath.size === 0) {
       return undefined;
     }
     const path = resourceResolveData?.path;
-    const resourcePath = normalize(typeof path === 'string' ? path : (resource ?? ''));
-    return (
-      this.mocksByPath.get(resourcePath) ??
-      (rawRequest === undefined ? undefined : this.mocksBySpecifier.get(rawRequest))
-    );
+    return this.mocksByPath.get(normalize(typeof path === 'string' ? path : (resource ?? '')));
   }
 
   private getPreviewConfigMtime(compiler: Compiler): number | undefined {
@@ -112,4 +107,13 @@ export class WebpackMockPlugin {
       return undefined;
     }
   }
+}
+
+function resolveWithWebpack(resolver: Resolver, context: string, mock: MockCall) {
+  return new Promise<string>((resolve) => {
+    resolver.resolve({}, context, mock.specifier, {}, (error, _result, request) => {
+      const path = request?.path;
+      resolve(!error && typeof path === 'string' ? path : mock.absolutePath);
+    });
+  });
 }

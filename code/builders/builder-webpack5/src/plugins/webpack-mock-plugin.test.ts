@@ -1,13 +1,20 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import { normalize } from 'pathe';
+import { basename, dirname, join, normalize } from 'pathe';
 import webpack from 'webpack';
 import type { Configuration, NormalModule, Stats, WebpackPluginInstance } from 'webpack';
 
@@ -18,6 +25,8 @@ vi.mock('storybook/internal/node-logger', { spy: true });
 // The plugin extracts mocks with Node's resolver, which reads the real disk, so memfs cannot host
 // this fixture.
 let root: string;
+let project: string;
+let linkedProject: string;
 
 const files: Record<string, string> = {
   'package.json': JSON.stringify({ name: 'fixture' }),
@@ -68,7 +77,7 @@ const stubAutomockLoader: WebpackPluginInstance = {
         (loaders) => {
           for (const item of loaders) {
             if (item.loader === automockLoader) {
-              item.loader = join(root, 'automock-loader-stub.cjs');
+              item.loader = join(project, 'automock-loader-stub.cjs');
             }
           }
         }
@@ -78,50 +87,76 @@ const stubAutomockLoader: WebpackPluginInstance = {
 };
 
 beforeAll(() => {
-  vi.mocked(logger.info).mockImplementation(() => {});
-  root = realpathSync(mkdtempSync(join(tmpdir(), 'webpack-mock-plugin-')));
+  root = normalize(realpathSync(mkdtempSync(join(tmpdir(), 'webpack-mock-plugin-'))));
+  project = join(root, 'project');
+  linkedProject = join(root, 'linked');
   for (const [file, content] of Object.entries(files)) {
-    mkdirSync(dirname(join(root, file)), { recursive: true });
-    writeFileSync(join(root, file), content);
+    mkdirSync(dirname(join(project, file)), { recursive: true });
+    writeFileSync(join(project, file), content);
   }
+  symlinkSync(project, linkedProject, 'junction');
+});
+
+beforeEach(() => {
+  vi.mocked(logger.info).mockImplementation(() => {});
 });
 
 afterAll(() => {
   rmSync(root, { recursive: true, force: true });
 });
 
-async function compile(previewFile = '.storybook/preview.js') {
-  const outputPath = join(root, 'dist', previewFile.replace(/\W/g, '-'));
-  const config: Configuration = {
-    mode: 'development',
-    devtool: false,
-    context: root,
-    entry: './src/index.js',
-    output: { path: outputPath, filename: 'bundle.js' },
-    resolve: { extensions: ['.tsx', '.js'], alias: { '@': join(root, 'src') } },
-    module: {
-      rules: [
-        { test: /\.(js|tsx)$/, exclude: /node_modules/, loader: join(root, 'project-loader.cjs') },
-      ],
-    },
-    plugins: [
-      new WebpackMockPlugin({ previewConfigPath: join(root, previewFile) }),
-      stubAutomockLoader,
-    ],
-  };
+interface CompileOptions {
+  previewFile?: string;
+  context?: string;
+  config?: Partial<Configuration>;
+}
+
+async function compile({
+  previewFile = '.storybook/preview.js',
+  context = project,
+  config = {},
+}: CompileOptions = {}) {
+  const outputPath = join(root, 'dist', `${basename(context)}-${previewFile.replace(/\W/g, '-')}`);
   const stats = await new Promise<Stats>((resolve, reject) =>
-    webpack(config, (error, result) => (error || !result ? reject(error) : resolve(result)))
+    webpack(
+      {
+        mode: 'development',
+        devtool: false,
+        context,
+        entry: './src/index.js',
+        output: { path: outputPath, filename: 'bundle.js' },
+        module: {
+          rules: [
+            {
+              test: /\.(js|tsx)$/,
+              exclude: /node_modules/,
+              loader: join(project, 'project-loader.cjs'),
+            },
+          ],
+        },
+        plugins: [
+          new WebpackMockPlugin({ previewConfigPath: join(context, previewFile) }),
+          stubAutomockLoader,
+        ],
+        ...config,
+        resolve: {
+          extensions: ['.tsx', '.js'],
+          alias: { '@': join(context, 'src') },
+          ...config.resolve,
+        },
+      },
+      (error, result) => (error || !result ? reject(error) : resolve(result))
+    )
   );
   expect(stats.toString({ all: false, errors: true })).toBe('');
-  const modules = [...stats.compilation.modules].filter(
-    (module): module is NormalModule => 'resource' in module
-  );
+  const modules = [...stats.compilation.modules];
   return {
     bundle: readFileSync(join(outputPath, 'bundle.js'), 'utf-8'),
+    modules,
     moduleFor: (file: string) => {
-      const module = modules.find(
-        (candidate) => normalize(candidate.resource) === normalize(join(root, file))
-      );
+      const module = modules
+        .filter((candidate): candidate is NormalModule => 'resource' in candidate)
+        .find((candidate) => normalize(candidate.resource) === join(context, file));
       expect(module, `module ${file}`).toBeDefined();
       return module!;
     },
@@ -129,7 +164,7 @@ async function compile(previewFile = '.storybook/preview.js') {
 }
 
 const loaderNames = (module: NormalModule) =>
-  module.loaders.map((item) => `${item.loader.split('/').pop()}?${item.options}`);
+  module.loaders.map((item) => `${basename(item.loader)}?${item.options}`);
 
 describe('WebpackMockPlugin', () => {
   it('replaces a relative mock with its __mocks__ file', async () => {
@@ -173,6 +208,16 @@ describe('WebpackMockPlugin', () => {
     expect(moduleFor('__mocks__/ext-pkg.js').identifier()).toContain('project-loader.cjs');
   });
 
+  it('applies relative mocks when webpack keeps symlinked paths', async () => {
+    const { bundle } = await compile({
+      context: linkedProject,
+      config: { resolve: { symlinks: false } },
+    });
+
+    expect(bundle).toContain('MOCKED_API_');
+    expect(bundle).not.toContain('REAL_API');
+  });
+
   it('leaves unmocked modules alone', async () => {
     const { bundle, moduleFor } = await compile();
 
@@ -181,7 +226,7 @@ describe('WebpackMockPlugin', () => {
   });
 
   it('changes nothing when the preview file has no mocks', async () => {
-    const { bundle } = await compile('.storybook/preview-without-mocks.js');
+    const { bundle } = await compile({ previewFile: '.storybook/preview-without-mocks.js' });
 
     expect(bundle).toContain('REAL_API');
     expect(bundle).toContain('REAL_EXT');

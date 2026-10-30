@@ -8,6 +8,7 @@ import type {} from '@vitest/browser-playwright';
 import {
   DEFAULT_FILES_PATTERN,
   HandledError,
+  extractRenderer,
   getInterpretedFile,
   normalizeStories,
   optionalEnvToBoolean,
@@ -30,7 +31,7 @@ import {
   telemetry,
   setTelemetryEnabled,
 } from 'storybook/internal/telemetry';
-import type { Presets } from 'storybook/internal/types';
+import { type Presets, SupportedRenderer } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
 import { join, normalize, relative, resolve, sep } from 'pathe';
@@ -323,6 +324,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       }
 
       const frameworkName = typeof framework === 'string' ? framework : framework.name;
+      const renderer = frameworkName ? await extractRenderer(frameworkName) : null;
 
       // If we end up needing to know if we are running in browser mode later
       // const isRunningInBrowserMode = config.plugins.find((plugin: Plugin) =>
@@ -457,9 +459,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             // imported by the setup files; without pinning, its CJS-only deps (via
             // @testing-library/dom) reach the browser raw on hoisted node_modules layouts
             'storybook/test',
-            ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
-              ? ['react-dom/test-utils']
-              : []),
+            ...(renderer === SupportedRenderer.REACT ? ['react-dom/test-utils'] : []),
           ],
           // Vitest only excludes these when coverage is enabled at startup. Storybook can enable
           // coverage later, and without this Vite would optimize them mid-run and reload the tests.
@@ -467,7 +467,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         },
 
         define: {
-          ...(frameworkName?.includes('vue3')
+          ...(renderer === SupportedRenderer.VUE3
             ? { __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false' }
             : {}),
           FEATURES: JSON.stringify(features),

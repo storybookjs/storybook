@@ -1154,6 +1154,97 @@ function followVariableReferences(
   return current;
 }
 
+/** Follows an identifier reference (`Button.propTypes = myPropTypes`) to its object literal. */
+function followObjectLiteralReference(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  expression: ts.Expression
+): ts.ObjectLiteralExpression | undefined {
+  let node = expression;
+  if (typescript.isIdentifier(node)) {
+    const sym = checker.getSymbolAtLocation(node);
+    const symDecl = sym?.valueDeclaration;
+    if (symDecl && typescript.isVariableDeclaration(symDecl) && symDecl.initializer) {
+      node = symDecl.initializer;
+    }
+  }
+  return typescript.isObjectLiteralExpression(node) ? node : undefined;
+}
+
+/**
+ * Finds the initializer expressions assigned to a named component annotation —
+ * `Component.<annotationName> = {...}` and `class Component { static <annotationName> = {...} }` —
+ * resolving the component symbol through imports and aliases. Value readers stay in the callers.
+ */
+function findComponentAnnotationInitializers(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  resolved: ts.Symbol,
+  annotationName: string
+): ts.ObjectLiteralExpression[] {
+  const initializers: ts.ObjectLiteralExpression[] = [];
+
+  const decl = resolved.valueDeclaration ?? resolved.getDeclarations()?.[0];
+  if (!decl) {
+    return initializers;
+  }
+  const componentSourceFile = decl.getSourceFile();
+
+  for (const stmt of componentSourceFile.statements) {
+    // Pattern 1: Class with static <annotationName> = { size: 'md' }
+    if (typescript.isClassDeclaration(stmt) && stmt.name) {
+      const classSymbol = checker.getSymbolAtLocation(stmt.name);
+      if (classSymbol !== resolved) {
+        continue;
+      }
+
+      for (const member of stmt.members) {
+        if (!typescript.isPropertyDeclaration(member)) {
+          continue;
+        }
+        if (!member.name || member.name.getText() !== annotationName || !member.initializer) {
+          continue;
+        }
+        const initializer = followObjectLiteralReference(typescript, checker, member.initializer);
+        if (initializer) {
+          initializers.push(initializer);
+        }
+      }
+    }
+
+    // Pattern 2: Component.<annotationName> = { size: 'md' }
+    if (
+      typescript.isExpressionStatement(stmt) &&
+      typescript.isBinaryExpression(stmt.expression) &&
+      stmt.expression.operatorToken.kind === typescript.SyntaxKind.EqualsToken
+    ) {
+      const left = stmt.expression.left;
+      if (!typescript.isPropertyAccessExpression(left) || left.name.text !== annotationName) {
+        continue;
+      }
+
+      const targetSymbol = checker.getSymbolAtLocation(left.expression);
+      if (!targetSymbol) {
+        continue;
+      }
+      const targetResolved =
+        targetSymbol.flags & typescript.SymbolFlags.Alias
+          ? checker.getAliasedSymbol(targetSymbol)
+          : targetSymbol;
+      if (targetResolved !== resolved) {
+        continue;
+      }
+
+      const initializer = followObjectLiteralReference(typescript, checker, stmt.expression.right);
+      if (initializer) {
+        initializers.push(initializer);
+      }
+    }
+  }
+
+  return initializers;
+}
+
 /**
  * Extracts default values from `Component.defaultProps = {...}` and `static defaultProps = {...}`
  * patterns.
@@ -1167,93 +1258,14 @@ function extractStaticDefaultProps(
   resolved: ts.Symbol
 ): Map<string, string> {
   const defaults = new Map<string, string>();
-
-  const decl = resolved.valueDeclaration ?? resolved.getDeclarations()?.[0];
-  if (!decl) {
-    return defaults;
+  for (const initializer of findComponentAnnotationInitializers(
+    typescript,
+    checker,
+    resolved,
+    'defaultProps'
+  )) {
+    collectObjectLiteralDefaults(typescript, checker, initializer, defaults);
   }
-  const componentSourceFile = decl.getSourceFile();
-
-  for (const stmt of componentSourceFile.statements) {
-    // Pattern 1: Class with static defaultProps = { size: 'md' }
-    if (typescript.isClassDeclaration(stmt) && stmt.name) {
-      const classSymbol = checker.getSymbolAtLocation(stmt.name);
-      if (classSymbol !== resolved) {
-        continue;
-      }
-
-      for (const member of stmt.members) {
-        if (!typescript.isPropertyDeclaration(member)) {
-          continue;
-        }
-        if (!member.name || member.name.getText() !== 'defaultProps') {
-          continue;
-        }
-        if (!member.initializer) {
-          continue;
-        }
-
-        let initializer: ts.Expression = member.initializer;
-        // Follow identifier reference: static defaultProps = myDefaults
-        if (typescript.isIdentifier(initializer)) {
-          const sym = checker.getSymbolAtLocation(initializer);
-          const symDecl = sym?.valueDeclaration;
-          if (symDecl && typescript.isVariableDeclaration(symDecl) && symDecl.initializer) {
-            initializer = symDecl.initializer;
-          }
-        }
-
-        if (typescript.isObjectLiteralExpression(initializer)) {
-          collectObjectLiteralDefaults(typescript, checker, initializer, defaults);
-        }
-      }
-    }
-
-    // Pattern 2: Component.defaultProps = { size: 'md' }
-    if (
-      typescript.isExpressionStatement(stmt) &&
-      typescript.isBinaryExpression(stmt.expression) &&
-      stmt.expression.operatorToken.kind === typescript.SyntaxKind.EqualsToken
-    ) {
-      const left = stmt.expression.left;
-      if (!typescript.isPropertyAccessExpression(left)) {
-        continue;
-      }
-      if (left.name.text !== 'defaultProps') {
-        continue;
-      }
-
-      // Check if the expression target is our component
-      const targetSymbol = checker.getSymbolAtLocation(left.expression);
-      if (!targetSymbol) {
-        continue;
-      }
-
-      const targetResolved =
-        targetSymbol.flags & typescript.SymbolFlags.Alias
-          ? checker.getAliasedSymbol(targetSymbol)
-          : targetSymbol;
-
-      if (targetResolved !== resolved) {
-        continue;
-      }
-
-      let right: ts.Expression = stmt.expression.right;
-      // Follow identifier reference: Button.defaultProps = myDefaults
-      if (typescript.isIdentifier(right)) {
-        const sym = checker.getSymbolAtLocation(right);
-        const symDecl = sym?.valueDeclaration;
-        if (symDecl && typescript.isVariableDeclaration(symDecl) && symDecl.initializer) {
-          right = symDecl.initializer;
-        }
-      }
-
-      if (typescript.isObjectLiteralExpression(right)) {
-        collectObjectLiteralDefaults(typescript, checker, right, defaults);
-      }
-    }
-  }
-
   return defaults;
 }
 
@@ -1273,6 +1285,180 @@ function getJSDocDefault(
 }
 
 // ---------------------------------------------------------------------------
+// PropTypes fallback (legacy React pattern)
+// ---------------------------------------------------------------------------
+
+/**
+ * PropTypes scalar members that map directly to a legacy react-docgen type name. The names are the
+ * docgen conventions (`bool`, `func`) because the core argTypes converter switches on them. Anything
+ * unrecognized — including the composite members (`oneOfType`, `arrayOf`, `shape`, `exact`) — stays
+ * with the checker's type (`any`).
+ */
+const PROPTYPES_SCALAR_MEMBERS = new Set([
+  'string',
+  'number',
+  'bool',
+  'func',
+  'object',
+  'array',
+  'node',
+  'element',
+  'elementType',
+  'symbol',
+]);
+
+/** A PropTypes annotation read into converter vocabulary, with the `.isRequired` signal kept. */
+type PropTypeEntry = { type: PropItemType; required?: boolean };
+
+/**
+ * Reads one PropTypes annotation into the RDT-compatible {@link PropItemType}, plus the
+ * `.isRequired` signal the checker cannot supply for untyped JS props.
+ *
+ * Purely syntactic — `prop-types` may not even resolve in the project — so only the member names
+ * of the access/call chain are interpreted and the root object is not resolved: `myValidators.string`
+ * also reads as `string`, and destructured `import { string } from 'prop-types'` stays unrecognized.
+ * Returns `undefined` for anything unrecognized, which keeps the checker's type.
+ *
+ * Only scalars and `oneOf` are covered. The composite members need `PropItemType.value` shapes
+ * (`value` as a single type, a record, or full type arrays) that the interface — and both manifest
+ * consumers, which `.map` over `value` expecting `{ value }` members — do not model. Widen
+ * `PropItemType.value` first, then add them here.
+ */
+function serializePropTypeExpression(
+  typescript: typeof ts,
+  expression: ts.Expression
+): PropTypeEntry | undefined {
+  // Unwrap a trailing `.isRequired` — for an untyped JS prop it is the only requiredness signal.
+  let node: ts.Expression = expression;
+  let required: boolean | undefined;
+  if (typescript.isPropertyAccessExpression(node) && node.name.text === 'isRequired') {
+    node = node.expression;
+    required = true;
+  }
+
+  // Scalar members: PropTypes.string → { name: 'string' }
+  if (typescript.isPropertyAccessExpression(node)) {
+    const member = node.name.text;
+    return PROPTYPES_SCALAR_MEMBERS.has(member) ? { type: { name: member }, required } : undefined;
+  }
+
+  if (typescript.isCallExpression(node)) {
+    const callee = typescript.isPropertyAccessExpression(node.expression)
+      ? node.expression
+      : undefined;
+    if (!callee) {
+      return undefined;
+    }
+    const arg = node.arguments[0];
+
+    // oneOf(['small', 'medium']) → enum. Unlike serializeType's literal unions, an all-boolean
+    // oneOf stays an enum: there is no checker union to collapse, and the choices feed the
+    // Controls select.
+    if (callee.name.text === 'oneOf') {
+      if (!arg || !typescript.isArrayLiteralExpression(arg)) {
+        return undefined;
+      }
+      const values = arg.elements.map((element) => readOneOfElementValue(typescript, element));
+      if (values.length === 0 || values.some((value) => value === undefined)) {
+        return undefined;
+      }
+      return {
+        type: {
+          name: 'enum',
+          raw: values.map((value) => JSON.stringify(value)).join(' | '),
+          value: values.map((value) => ({ value: JSON.stringify(value) })),
+        },
+        required,
+      };
+    }
+
+    return undefined;
+  }
+
+  return undefined;
+}
+
+/**
+ * Reads a `oneOf` array element into its JSON-serialized value — string, number (including a
+ * unary minus like `-1`), or boolean. Returns `undefined` for anything else, which rejects the
+ * whole enum and keeps the checker's type.
+ */
+function readOneOfElementValue(
+  typescript: typeof ts,
+  element: ts.Expression
+): string | number | boolean | undefined {
+  if (typescript.isStringLiteral(element)) {
+    return element.text;
+  }
+  if (typescript.isNumericLiteral(element)) {
+    return Number(element.text);
+  }
+  if (
+    typescript.isPrefixUnaryExpression(element) &&
+    element.operator === typescript.SyntaxKind.MinusToken &&
+    typescript.isNumericLiteral(element.operand)
+  ) {
+    return -Number(element.operand.text);
+  }
+  if (element.kind === typescript.SyntaxKind.TrueKeyword) {
+    return true;
+  }
+  if (element.kind === typescript.SyntaxKind.FalseKeyword) {
+    return false;
+  }
+  return undefined;
+}
+
+function collectPropTypeEntries(
+  typescript: typeof ts,
+  objectLiteral: ts.ObjectLiteralExpression,
+  propTypes: Map<string, PropTypeEntry>
+): void {
+  for (const property of objectLiteral.properties) {
+    if (!typescript.isPropertyAssignment(property)) {
+      continue;
+    }
+    // A quoted key ({ 'label': PropTypes.string }) names the same prop as an identifier key.
+    const propName =
+      typescript.isIdentifier(property.name) || typescript.isStringLiteral(property.name)
+        ? property.name.text
+        : undefined;
+    if (!propName) {
+      continue;
+    }
+    const entry = serializePropTypeExpression(typescript, property.initializer);
+    if (entry) {
+      propTypes.set(propName, entry);
+    }
+  }
+}
+
+/**
+ * Extracts prop types from a `Component.propTypes = {...}` assignment (or `static propTypes`),
+ * the legacy React pattern that carries the only type information for untyped JS components.
+ *
+ * The TypeScript checker resolves a JS component's destructured, unannotated props to `any`, so
+ * callers use this map to replace an uninformative `any` with the annotated type. Uses the same
+ * annotation lookup as {@link extractStaticDefaultProps}.
+ */
+function extractPropTypes(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  resolved: ts.Symbol
+): Map<string, PropTypeEntry> {
+  const propTypes = new Map<string, PropTypeEntry>();
+  for (const initializer of findComponentAnnotationInitializers(
+    typescript,
+    checker,
+    resolved,
+    'propTypes'
+  )) {
+    collectPropTypeEntries(typescript, initializer, propTypes);
+  }
+  return propTypes;
+}
+
+// ---------------------------------------------------------------------------
 // Single prop extraction
 // ---------------------------------------------------------------------------
 
@@ -1282,14 +1468,28 @@ function extractPropItem(
   prop: ts.Symbol,
   contextNode: ts.Node,
   defaultsMap?: Map<string, string>,
-  typeOverride?: ts.Type
+  typeOverride?: ts.Type,
+  propTypesMap?: Map<string, PropTypeEntry>
 ): PropItem {
   const isOptional = !!(prop.flags & typescript.SymbolFlags.Optional);
   const isRequired = !isOptional;
 
   // Union props keep one member's metadata but need the merged type.
   const propType = typeOverride ?? checker.getTypeOfSymbolAtLocation(prop, contextNode);
-  const type = serializeType(typescript, checker, propType, isRequired);
+  let type = serializeType(typescript, checker, propType, isRequired);
+  let required = isRequired;
+
+  // Untyped JS components carry their real types in the propTypes block. Precedence is decided by
+  // declaration origin, not by the checker type's name: a destructuring default gives
+  // `size = 'medium'` a perfectly valid `string` that still loses to the `oneOf` annotation, while
+  // TS declarations and JSDoc-typed props keep the checker's type.
+  const propTypesEntry = propTypesMap?.get(prop.getName());
+  if (propTypesEntry && isUntypedJsProp(typescript, prop, contextNode)) {
+    type = propTypesEntry.type;
+    // The checker marks untyped JS props non-optional, so `.isRequired` is the only requiredness
+    // signal for them.
+    required = propTypesEntry.required ?? false;
+  }
 
   const description = typescript.displayPartsToString(prop.getDocumentationComment(checker));
 
@@ -1304,13 +1504,76 @@ function extractPropItem(
 
   return {
     name: propName,
-    required: isRequired,
+    required,
     type,
     description,
     defaultValue: defaultStr !== undefined ? { value: defaultStr } : null,
     parent,
     declarations,
   };
+}
+
+/**
+ * The implementation function behind a component declaration node, when the component is declared
+ * as a function: `const Button = (props) => …` (arrow or function expression) or
+ * `function Button(props) {}`. Re-bindings (`const Button = Inner`) have no function to read.
+ */
+function getComponentFunction(
+  typescript: typeof ts,
+  contextNode: ts.Node
+): ts.SignatureDeclaration | undefined {
+  if (typescript.isVariableDeclaration(contextNode)) {
+    const initializer = contextNode.initializer;
+    if (
+      initializer &&
+      (typescript.isArrowFunction(initializer) || typescript.isFunctionExpression(initializer))
+    ) {
+      return initializer;
+    }
+    return undefined;
+  }
+  if (
+    typescript.isFunctionDeclaration(contextNode) ||
+    typescript.isMethodDeclaration(contextNode)
+  ) {
+    return contextNode;
+  }
+  return undefined;
+}
+
+const JS_SOURCE_PATTERN = /\.[cm]?jsx?$/i;
+
+/**
+ * True when the prop is untyped JavaScript — so the checker's type is inference noise rather
+ * than stated intent, and the component's propTypes block is the real type source. The checker
+ * often synthesizes these prop symbols without any declaration, so the component's own source
+ * file (via the context node) is the origin signal. Every signal of *stated* intent keeps
+ * checker precedence over propTypes:
+ * - a typed props parameter (syntactic annotation or `@param {…}`/`@param {Props}` JSDoc),
+ * - a JSDoc-sourced prop declaration (`NodeFlags.JSDoc` property signatures from `@param {{…}}`),
+ * - a declaration outside .js/.jsx (a `.jsx` re-binding of a `.tsx` component),
+ * - a `@type`-style JSDoc annotation on the declaration itself.
+ */
+function isUntypedJsProp(typescript: typeof ts, prop: ts.Symbol, contextNode: ts.Node): boolean {
+  if (!JS_SOURCE_PATTERN.test(contextNode.getSourceFile().fileName)) {
+    return false;
+  }
+  const componentFn = getComponentFunction(typescript, contextNode);
+  const propsParam = componentFn?.parameters[0];
+  if (propsParam && (propsParam.type || typescript.getJSDocType(propsParam))) {
+    return false;
+  }
+  const decl = prop.valueDeclaration ?? prop.getDeclarations()?.[0];
+  if (!decl) {
+    return true;
+  }
+  if (decl.flags & typescript.NodeFlags.JSDoc) {
+    return false;
+  }
+  if (!JS_SOURCE_PATTERN.test(decl.getSourceFile().fileName)) {
+    return false;
+  }
+  return typescript.getJSDocType(decl) === undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -1531,6 +1794,9 @@ export function serializeComponentDoc(
     }
   }
 
+  // PropTypes (same legacy pattern): the only type source for untyped JS components
+  const propTypesMap = extractPropTypes(typescript, checker, implementation);
+
   const props: Record<string, PropItem> = {};
   for (const prop of allProperties) {
     if (
@@ -1551,7 +1817,8 @@ export function serializeComponentDoc(
       prop,
       contextNode,
       defaultsMap,
-      unionPropType
+      unionPropType,
+      propTypesMap
     );
     if (unionForceOptional?.has(prop.getName())) {
       item.required = false;

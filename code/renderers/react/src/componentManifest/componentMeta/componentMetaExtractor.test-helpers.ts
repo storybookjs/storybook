@@ -9,7 +9,7 @@ import ts from 'typescript';
 import { type StoryRef, getComponents } from '../getComponentImports.ts';
 import { findMatchingComponent } from '../resolveComponents.ts';
 import { ComponentMetaProject } from './ComponentMetaProject.ts';
-import { createTempProject, writeFiles } from './test-helpers.ts';
+import { createTempProject, cleanup, writeFiles } from './test-helpers.ts';
 
 /**
  * Shared LanguageService across all tests — avoids re-parsing @types/react per test. First
@@ -17,18 +17,27 @@ import { createTempProject, writeFiles } from './test-helpers.ts';
  */
 const { projectDir, configPath } = createTempProject({});
 const fsFileSnapshots = new Map<string, [number | undefined, ts.IScriptSnapshot | undefined]>();
-const sharedProject = new ComponentMetaProject(
-  ts,
-  ts.parseJsonSourceFileConfigFileContent(
-    ts.readJsonConfigFile(configPath, ts.sys.readFile),
-    ts.sys,
-    projectDir,
-    {},
-    configPath
-  ),
-  configPath,
-  fsFileSnapshots
-);
+const sharedProject = createProject(projectDir, configPath, fsFileSnapshots);
+
+/** Builds the LanguageService-backed project over a parsed tsconfig on disk. */
+function createProject(
+  projectDir: string,
+  configPath: string,
+  fsFileSnapshots: Map<string, [number | undefined, ts.IScriptSnapshot | undefined]>
+): ComponentMetaProject {
+  return new ComponentMetaProject(
+    ts,
+    ts.parseJsonSourceFileConfigFileContent(
+      ts.readJsonConfigFile(configPath, ts.sys.readFile),
+      ts.sys,
+      projectDir,
+      {},
+      configPath
+    ),
+    configPath,
+    fsFileSnapshots
+  );
+}
 
 /** Reads a project file from the in-memory mirror populated by {@link withProject}. */
 export function readProjectFile(filePath: string): string {
@@ -84,6 +93,35 @@ export async function loadDeclaredSubcomponentComponents({
 }
 
 /**
+ * The extraction steps shared by every project variant: parse CSF, resolve components, and run
+ * extraction. Project configuration happens at the call sites.
+ */
+async function extractFromProject(
+  project: ComponentMetaProject,
+  filePaths: Record<string, string>,
+  storyFileName: string,
+  componentName?: string
+): Promise<StoryRef> {
+  const storyPath = filePaths[storyFileName];
+  const title = path.basename(storyFileName).replace(/\.stories\.\w+$/, '');
+  const csf = loadCsf(readProjectFile(storyPath), {
+    makeTitle: () => title,
+  }).parse();
+
+  const components = await getComponents({
+    csf,
+    storyFilePath: storyPath,
+    docgenEngine: 'react-component-meta',
+  });
+
+  const component = findMatchingComponent(components, componentName ?? csf._meta?.component, title);
+
+  const entry: StoryRef = { storyPath, component };
+  project.extractPropsFromStories([entry]);
+  return entry;
+}
+
+/**
  * Full production flow: loadCsf → getComponents → extractPropsFromStories. Title is auto-derived
  * from the story file name for findMatchingComponent.
  */
@@ -92,26 +130,35 @@ export async function extractFromStory(
   storyFileName: string,
   options?: { componentName?: string }
 ): Promise<StoryRef> {
-  return withProject(files, async (project, filePaths) => {
-    const storyPath = filePaths[storyFileName];
-    const title = path.basename(storyFileName).replace(/\.stories\.\w+$/, '');
-    const csf = loadCsf(readProjectFile(storyPath), {
-      makeTitle: () => title,
-    }).parse();
+  return withProject(files, (project, filePaths) =>
+    extractFromProject(project, filePaths, storyFileName, options?.componentName)
+  );
+}
 
-    const components = await getComponents({
-      csf,
-      storyFilePath: storyPath,
-      docgenEngine: 'react-component-meta',
-    });
+/**
+ * Full production flow through a dedicated project with a custom tsconfig — for suites whose
+ * fixtures need compiler options the shared project does not enable (e.g. allowJs for untyped
+ * .jsx components). Sharing one global config would change behavior for every other suite (e.g.
+ * docgen's unresolved-default resolution), so these build their own project and mirror the files
+ * into the memfs volume the extraction reads from.
+ */
+export async function extractFromStoryWithConfig(
+  files: Record<string, string>,
+  storyFileName: string,
+  tsconfig: object
+): Promise<StoryRef> {
+  vol.reset();
+  const { projectDir, configPath, filePaths } = createTempProject(files, tsconfig);
+  vol.fromNestedJSON(
+    Object.fromEntries(Object.entries(filePaths).map(([name, filePath]) => [filePath, files[name]]))
+  );
+  const project = createProject(projectDir, configPath, new Map());
 
-    const componentName = options?.componentName ?? csf._meta?.component;
-    const component = findMatchingComponent(components, componentName, title);
-
-    const entry: StoryRef = { storyPath, component };
-    project.extractPropsFromStories([entry]);
-    return entry;
-  });
+  try {
+    return await extractFromProject(project, filePaths, storyFileName);
+  } finally {
+    cleanup(projectDir);
+  }
 }
 
 /**

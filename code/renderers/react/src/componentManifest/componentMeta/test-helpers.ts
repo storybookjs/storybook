@@ -50,7 +50,7 @@ export function createTempDir(prefix = 'meta-test'): string {
   return dir;
 }
 
-const DEFAULT_TSCONFIG = {
+export const DEFAULT_TSCONFIG = {
   compilerOptions: {
     target: 'ES2020',
     module: 'ESNext',

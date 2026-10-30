@@ -29,12 +29,13 @@ export const hasStorybookMinimumAgeExclusions = (configuredPatterns: string[]) =
 // input: @storybook/addon-essentials@npm:7.0.0
 // output: { name: '@storybook/addon-essentials', value: { version : '7.0.0', location: '' } }
 export const parsePackageData = (packageName = '') => {
-  const [first, second, third] = packageName
-    .replace(/[└─├]+/g, '')
-    .trim()
-    .split('@');
-  const version = (third || second).replace('npm:', '');
-  const name = third ? `@${second}` : first;
+  const descriptor = packageName.replace(/[└─├]+/g, '').trim();
+  const separator = descriptor.indexOf('@', 1);
+  const name = descriptor.slice(0, separator);
+  const reference = descriptor.slice(separator + 1);
+  // Yarn Berry lists patched packages, such as its built-in `typescript` compat patch, as
+  // `typescript@patch:typescript@npm%3A7.0.2#optional!builtin<compat/typescript>::version=7.0.2&hash=…`.
+  const version = reference.match(/::version=([^&]+)/)?.[1] ?? reference.replace('npm:', '');
 
   const value = { version, location: '' };
   return { name, value };

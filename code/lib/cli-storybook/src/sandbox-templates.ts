@@ -625,9 +625,6 @@ export const baseTemplates = {
       // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
       // Also, Angular 22 needs TypeScript 6 or more recent.
       extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
-      resolutions: {
-        webpack: '5.107.2',
-      },
       useCsfFactory: true,
     },
     extraCiSteps: {

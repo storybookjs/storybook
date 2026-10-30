@@ -1,30 +1,44 @@
 import type { PreprocessorGroup } from 'svelte/compiler';
-import type { Plugin, ResolvedConfig } from 'vite';
-import { describe, expect, it, vi } from 'vitest';
+import { normalizePath, type Plugin, type ResolvedConfig } from 'vite';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE,
-  svelteCsfRuntimeStoriesPath,
   transformSvelteCsf,
 } from '@storybook/svelte/internal/svelte-csf/transform';
 
 import { svelteCsf } from './svelte-csf.ts';
 
+// Windows-style on purpose: resolveId must return forward-slash ids on every OS
+const WINDOWS_RUNTIME_PATH = vi.hoisted(
+  () =>
+    'C:\\Users\\dev\\app\\node_modules\\@storybook\\svelte\\dist\\internal\\svelte-csf\\create-runtime-stories.js'
+);
+
 vi.mock('@storybook/svelte/internal/svelte-csf/transform', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   transformSvelteCsf: vi.fn(async () => ({ code: '', map: null })),
+  svelteCsfRuntimeStoriesPath: WINDOWS_RUNTIME_PATH,
 }));
+
+// Vite's normalizePath rewrites backslashes only when the process runs on Windows, so pin it to
+// Vite's id contract (forward slashes on every OS) to keep this suite deterministic on any OS
+vi.mock('vite', { spy: true });
 
 type Handler<T> = { filter: { id: RegExp }; handler: T };
 
 describe(svelteCsf.name, () => {
+  beforeEach(() => {
+    vi.mocked(normalizePath).mockImplementation((id) => id.replaceAll('\\', '/'));
+  });
+
   it('resolves the runtime stories import to its file, and leaves other imports alone', () => {
     const { filter, handler } = svelteCsf().resolveId as Handler<() => string>;
 
     expect(filter.id.test(SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE)).toBe(true);
     expect(filter.id.test(`${SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE}.js`)).toBe(false);
     expect(filter.id.test('./Button.svelte')).toBe(false);
-    expect(handler()).toBe(svelteCsfRuntimeStoriesPath);
+    expect(handler()).toBe(WINDOWS_RUNTIME_PATH.replaceAll('\\', '/'));
   });
 
   it('only transforms stories files and their styles', () => {

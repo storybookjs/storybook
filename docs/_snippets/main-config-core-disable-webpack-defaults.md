@@ -1,4 +1,67 @@
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 4"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
+  framework: '@storybook/your-framework',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  core: {
+    disableWebpackDefaults: true,
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 4"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
+  framework: '@storybook/your-framework',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  core: {
+    disableWebpackDefaults: true,
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF 4"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  core: {
+    disableWebpackDefaults: true,
+  },
+});
+```
+
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF 4"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  core: {
+    disableWebpackDefaults: true,
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF 4"
+import { defineMain } from '@storybook/angular/node';
+
+export default defineMain({
+  framework: '@storybook/angular',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  core: {
+    disableWebpackDefaults: true,
+  },
+});
+```
+
 ```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 export default {
   // Replace your-framework with the framework you are using, e.g. react-webpack5, nextjs, angular, etc.
   framework: '@storybook/your-framework',
@@ -10,6 +73,7 @@ export default {
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // Replace your-framework with the framework you are using, e.g. react-webpack5, nextjs, angular, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 
@@ -22,70 +86,4 @@ const config: StorybookConfig = {
 };
 
 export default config;
-```
-
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { defineMain } from '@storybook/your-framework/node';
-
-export default defineMain({
-  framework: '@storybook/your-framework',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  core: {
-    disableWebpackDefaults: true,
-  },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { defineMain } from '@storybook/your-framework/node';
-
-export default defineMain({
-  framework: '@storybook/your-framework',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  core: {
-    disableWebpackDefaults: true,
-  },
-});
-```
-
-```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import { defineMain } from '@storybook/vue3-vite/node';
-
-export default defineMain({
-  framework: '@storybook/vue3-vite',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  core: {
-    disableWebpackDefaults: true,
-  },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import { defineMain } from '@storybook/vue3-vite/node';
-
-export default defineMain({
-  framework: '@storybook/vue3-vite',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  core: {
-    disableWebpackDefaults: true,
-  },
-});
-```
-
-```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import { defineMain } from '@storybook/angular/node';
-
-export default defineMain({
-  framework: '@storybook/angular',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  core: {
-    disableWebpackDefaults: true,
-  },
-});
 ```

@@ -20,7 +20,10 @@ export function isModuleDirectory(path: string) {
 }
 
 export type MockCall = {
+  /** The declared path, without its extension when that matches the resolved file. */
   path: string;
+  /** The declared path exactly as written in the `sb.mock()` call. */
+  specifier: string;
   absolutePath: string;
   redirectPath: string | null;
   spy: boolean;
@@ -191,6 +194,7 @@ export function extractMockCalls(
 
         mocks.push({
           path: pathWithoutExtensionAndBasename,
+          specifier: path,
           absolutePath,
           redirectPath,
           spy,

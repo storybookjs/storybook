@@ -1,4 +1,32 @@
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
+import { argsToTemplate } from '@storybook/angular';
+
+import preview from '../.storybook/preview';
+
+import { Page } from './page.component';
+
+type CustomArgs = { footer?: string };
+
+const meta = preview.type<{ args: CustomArgs }>().meta({
+  component: Page,
+  render: ({ footer, ...args }) => ({
+    props: args,
+    template: `
+      <storybook-page ${argsToTemplate(args)}>
+        <ng-container footer>${footer}</ng-container>
+      </storybook-page>`,
+  }),
+});
+
+export const CustomFooter = meta.story({
+  args: {
+    footer: 'Built with Storybook',
+  },
+});
+```
+
 ```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { type Meta, type StoryObj, argsToTemplate } from '@storybook/angular';
 
 import { Page } from './page.component';
@@ -26,24 +54,18 @@ export const CustomFooter: Story = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import { argsToTemplate } from '@storybook/angular';
-
+```jsx filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
-import { Page } from './page.component';
+import { Page } from './Page';
 
-type CustomArgs = { footer?: string };
-
-const meta = preview.type<{ args: CustomArgs }>().meta({
+const meta = preview.meta({
   component: Page,
-  render: ({ footer, ...args }) => ({
-    props: args,
-    template: `
-      <storybook-page ${argsToTemplate(args)}>
-        <ng-container footer>${footer}</ng-container>
-      </storybook-page>`,
-  }),
+  render: ({ footer, ...args }) => (
+    <Page {...args}>
+      <footer>{footer}</footer>
+    </Page>
+  ),
 });
 
 export const CustomFooter = meta.story({
@@ -53,50 +75,27 @@ export const CustomFooter = meta.story({
 });
 ```
 
-```jsx filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```tsx filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import { Page } from './Page';
 
-export default {
+type CustomArgs = { footer?: string };
+
+const meta = preview.type<{ args: CustomArgs }>().meta({
   component: Page,
   render: ({ footer, ...args }) => (
     <Page {...args}>
       <footer>{footer}</footer>
     </Page>
   ),
-};
+});
 
-export const CustomFooter = {
+export const CustomFooter = meta.story({
   args: {
     footer: 'Built with Storybook',
   },
-};
-```
-
-```tsx filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { Page } from './Page';
-
-type PagePropsAndCustomArgs = React.ComponentProps<typeof Page> & { footer?: string };
-
-const meta = {
-  component: Page,
-  render: ({ footer, ...args }) => (
-    <Page {...args}>
-      <footer>{footer}</footer>
-    </Page>
-  ),
-} satisfies Meta<PagePropsAndCustomArgs>;
-export default meta;
-
-type Story = StoryObj<typeof meta>;
-
-export const CustomFooter = {
-  args: {
-    footer: 'Built with Storybook',
-  },
-} satisfies Story;
+});
 ```
 
 ```jsx filename="Page.stories.js|jsx" renderer="solid" language="js"
@@ -146,28 +145,7 @@ export const CustomFooter = {
 } satisfies Story;
 ```
 
-```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
-
-  import Page from './Page.svelte';
-
-  const { Story } = defineMeta({
-    component: Page
-  });
-</script>
-
-<Story name="CustomFooter" args={{ footer: 'Built with Storybook' }}>
-  {#snippet template(args)}
-    <Page {...args} >
-      <footer>{args.footer}</footer>
-    </Page>
-  {/snippet}
-</Story>
-```
-
-```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -187,7 +165,8 @@ export const CustomFooter = {
 </Story>
 ```
 
-```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -208,7 +187,7 @@ export const CustomFooter = {
 </Story>
 ```
 
-```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
 <script module lang="ts">
   import preview from '../.storybook/preview';
 
@@ -228,10 +207,34 @@ export const CustomFooter = {
 </Story>
 ```
 
-```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
+
+  import Page from './Page.svelte';
+
+  const { Story } = defineMeta({
+    component: Page
+  });
+</script>
+
+<Story name="CustomFooter" args={{ footer: 'Built with Storybook' }}>
+  {#snippet template(args)}
+    <Page {...args} >
+      <footer>{args.footer}</footer>
+    </Page>
+  {/snippet}
+</Story>
+```
+
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import Page from './Page.vue';
 
-export default {
+const meta = preview.meta({
   component: Page,
   render: (args) => ({
     components: { Page },
@@ -246,16 +249,48 @@ export default {
       </page>
     `,
   }),
-};
+});
 
-export const CustomFooter = {
+export const CustomFooter = meta.story({
   args: {
     footer: 'Built with Storybook',
   },
-};
+});
+```
+
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import Page from './Page.vue';
+
+type CustomArgs = { footer?: string };
+
+const meta = preview.type<{ args: CustomArgs }>().meta({
+  component: Page,
+  render: (args) => ({
+    components: { Page },
+    setup() {
+      return { args };
+    },
+    template: `
+      <page v-bind="args">
+        <template v-slot:footer>
+          <footer v-if="args.footer" v-html="args.footer" />
+        </template>
+      </page>
+    `,
+  }),
+});
+
+export const Primary = meta.story({
+  args: {
+    footer: 'Built with Storybook',
+  },
+});
 ```
 
 ```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { ComponentPropsAndSlots, Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Page from './Page.vue';
@@ -289,14 +324,11 @@ export const Primary = {
 } satisfies Story;
 ```
 
-```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import Page from './Page.vue';
 
-type CustomArgs = { footer?: string };
-
-const meta = preview.type<{ args: CustomArgs }>().meta({
+export default {
   component: Page,
   render: (args) => ({
     components: { Page },
@@ -311,35 +343,52 @@ const meta = preview.type<{ args: CustomArgs }>().meta({
       </page>
     `,
   }),
+};
+
+export const CustomFooter = {
+  args: {
+    footer: 'Built with Storybook',
+  },
+};
+```
+
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  title: 'Page',
+  component: 'demo-page',
+  render: ({ footer }) => html`
+    <demo-page>
+      <footer>${footer}</footer>
+    </demo-page>
+  `,
 });
 
-export const Primary = meta.story({
+export const CustomFooter = meta.story({
   args: {
     footer: 'Built with Storybook',
   },
 });
 ```
 
-```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
+import { html } from 'lit';
+
 import preview from '../.storybook/preview';
 
-import Page from './Page.vue';
+type CustomArgs = { footer?: string };
 
-const meta = preview.meta({
-  component: Page,
-  render: (args) => ({
-    components: { Page },
-    setup() {
-      return { args };
-    },
-    template: `
-      <page v-bind="args">
-        <template v-slot:footer>
-          <footer v-if="args.footer" v-html="args.footer" />
-        </template>
-      </page>
-    `,
-  }),
+const meta = preview.type<{ args: CustomArgs }>().meta({
+  title: 'Page',
+  component: 'demo-page',
+  render: ({ footer }) => html`
+    <demo-page>
+      <footer>${footer}</footer>
+    </demo-page>
+  `,
 });
 
 export const CustomFooter = meta.story({
@@ -350,6 +399,7 @@ export const CustomFooter = meta.story({
 ```
 
 ```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { html } from 'lit';
 
 export default {
@@ -370,6 +420,7 @@ export const CustomFooter = {
 ```
 
 ```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { html } from 'lit';
 
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
@@ -394,92 +445,50 @@ export const CustomFooter: Story = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import { html } from 'lit';
-
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  title: 'Page',
-  component: 'demo-page',
-  render: ({ footer }) => html`
-    <demo-page>
-      <footer>${footer}</footer>
-    </demo-page>
-  `,
-});
-
-export const CustomFooter = meta.story({
-  args: {
-    footer: 'Built with Storybook',
-  },
-});
-```
-
-```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import { html } from 'lit';
-
-import preview from '../.storybook/preview';
-
-type CustomArgs = { footer?: string };
-
-const meta = preview.type<{ args: CustomArgs }>().meta({
-  title: 'Page',
-  component: 'demo-page',
-  render: ({ footer }) => html`
-    <demo-page>
-      <footer>${footer}</footer>
-    </demo-page>
-  `,
-});
-
-export const CustomFooter = meta.story({
-  args: {
-    footer: 'Built with Storybook',
-  },
-});
-```
-
-```tsx filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
+```tsx filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Page } from './Page';
 
-type CustomArgs = { footer?: string };
+type PagePropsAndCustomArgs = React.ComponentProps<typeof Page> & { footer?: string };
 
-const meta = preview.type<{ args: CustomArgs }>().meta({
+const meta = {
   component: Page,
   render: ({ footer, ...args }) => (
     <Page {...args}>
       <footer>{footer}</footer>
     </Page>
   ),
-});
+} satisfies Meta<PagePropsAndCustomArgs>;
+export default meta;
 
-export const CustomFooter = meta.story({
+type Story = StoryObj<typeof meta>;
+
+export const CustomFooter = {
   args: {
     footer: 'Built with Storybook',
   },
-});
+} satisfies Story;
 ```
 
-```jsx filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```jsx filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { Page } from './Page';
 
-const meta = preview.meta({
+export default {
   component: Page,
   render: ({ footer, ...args }) => (
     <Page {...args}>
       <footer>{footer}</footer>
     </Page>
   ),
-});
+};
 
-export const CustomFooter = meta.story({
+export const CustomFooter = {
   args: {
     footer: 'Built with Storybook',
   },
-});
+};
 ```

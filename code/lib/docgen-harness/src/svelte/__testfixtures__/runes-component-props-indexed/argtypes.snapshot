@@ -46,7 +46,7 @@
     "table": {
       "category": "properties",
       "defaultValue": {
-        "summary": "...",
+        "summary": """",
       },
       "type": {
         "summary": "string",
@@ -122,7 +122,7 @@
     "table": {
       "category": "properties",
       "defaultValue": {
-        "summary": "...",
+        "summary": undefined,
       },
       "type": {
         "summary": "boolean",

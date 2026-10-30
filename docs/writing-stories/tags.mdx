@@ -62,6 +62,8 @@ To remove a tag from a story, prefix it with `!`. For example:
 
 Tags can be removed for all stories in your project (in `.storybook/preview.*`), all stories for a component (in the CSF file meta), or a single story (as above).
 
+Removing `dev` in `.storybook/preview.*` or in a CSF file's meta does not remove MDX docs pages from the sidebar. To hide an MDX docs page, remove `dev` in its own `Meta` block, for example `<Meta title="Intro" tags={['!dev']} />` or `<Meta of={ButtonStories} tags={['!dev']} />`. A tag with [`hideFromSidebar`](#hiding-stories-and-tags) also hides MDX docs pages.
+
 ## Filtering the sidebar by tags
 
 Both built-in and custom tags are available as filters in Storybook's sidebar. Selecting a tag in the filter causes the sidebar to only show stories with that tag. Selecting multiple tags shows stories that contain any of those tags.

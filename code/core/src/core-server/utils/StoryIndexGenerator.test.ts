@@ -2105,6 +2105,93 @@ describe('StoryIndexGenerator', () => {
           storiesImports: ['./src/A.stories.js', './src/B.stories.ts'],
         });
       });
+
+      describe('dev tag on mdx docs', () => {
+        const getTagsById = async (generator: StoryIndexGenerator) => {
+          await generator.initialize();
+          const { storyIndex } = await generator.getIndexAndStats();
+          return Object.fromEntries(
+            Object.values(storyIndex.entries).map((entry) => [entry.id, entry.tags])
+          );
+        };
+
+        it('keeps dev when project tags remove it, unless their own Meta removes it', async () => {
+          const generator = new StoryIndexGenerator(
+            [
+              normalizeStoriesEntry('./dev-tag/*.stories.js', options),
+              normalizeStoriesEntry('./dev-tag/*.mdx', options),
+            ],
+            options
+          );
+          generator.getProjectTags = () => [Tag.DEV, Tag.TEST, Tag.MANIFEST, '!dev'];
+
+          expect(await getTagsById(generator)).toMatchInlineSnapshot(`
+            {
+              "button--docs": [
+                "test",
+                "manifest",
+                "dev",
+                "attached-mdx",
+              ],
+              "button--hiddenbutton": [
+                "test",
+                "manifest",
+                "attached-mdx",
+              ],
+              "button--story-one": [
+                "test",
+                "manifest",
+              ],
+              "guide--docs": [
+                "test",
+                "manifest",
+                "dev",
+                "unattached-mdx",
+              ],
+              "hiddenguide--docs": [
+                "test",
+                "manifest",
+                "unattached-mdx",
+              ],
+              "nodev--docs": [
+                "test",
+                "manifest",
+                "dev",
+                "attached-mdx",
+              ],
+              "nodev--story-one": [
+                "test",
+                "manifest",
+              ],
+            }
+          `);
+        });
+
+        it('keeps dev on attached mdx when the CSF meta removes it', async () => {
+          const generator = new StoryIndexGenerator(
+            [
+              normalizeStoriesEntry('./dev-tag/NoDev.stories.js', options),
+              normalizeStoriesEntry('./dev-tag/NoDev.mdx', options),
+            ],
+            options
+          );
+
+          expect(await getTagsById(generator)).toMatchInlineSnapshot(`
+            {
+              "nodev--docs": [
+                "dev",
+                "test",
+                "manifest",
+                "attached-mdx",
+              ],
+              "nodev--story-one": [
+                "test",
+                "manifest",
+              ],
+            }
+          `);
+        });
+      });
     });
 
     describe('errors', () => {

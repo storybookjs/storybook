@@ -97,7 +97,8 @@ describe('vue-component-meta plugin', () => {
     });
 
     transform = await getTransformHandler();
-  });
+    // The hook cold-starts the plugin via dynamic imports, which stalls on loaded CI runners.
+  }, 30_000);
 
   describe('barrel file substring matching (issue #34521)', () => {
     it('should NOT inject __docgenInfo for export names that are substrings of barrel re-export paths (star case)', async () => {

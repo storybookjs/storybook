@@ -11,6 +11,9 @@ const TYPESCRIPT = createRequire(import.meta.url).resolve('typescript/bin/tsc');
 const TYPESCRIPT_5 = createRequire(import.meta.url).resolve('typescript-5/bin/tsc');
 const DTS_BUILT = existsSync(DTS_ARTIFACT);
 const REPOSITORY_ROOT = join(import.meta.dirname, '../../../..');
+// Compiling the public API surface with tsc takes 30s+ on loaded Windows CI
+// runners, so use a fixed generous timeout instead of the 10s Vitest default.
+const compileTimeoutMs = 90_000;
 const TSC_OPTIONS = [
   '--module',
   'Node16',
@@ -49,13 +52,18 @@ describe('storybook/test declaration contract', () => {
         cwd: REPOSITORY_ROOT,
         stdio: 'pipe',
       });
-    }
+    },
+    compileTimeoutMs
   );
 
-  it.runIf(DTS_BUILT)('compiles the public test API consumer fixture with TypeScript 5.9.3', () => {
-    execFileSync(process.execPath, [TYPESCRIPT_5, ...TSC_OPTIONS], {
-      cwd: REPOSITORY_ROOT,
-      stdio: 'pipe',
-    });
-  });
+  it.runIf(DTS_BUILT)(
+    'compiles the public test API consumer fixture with TypeScript 5.9.3',
+    () => {
+      execFileSync(process.execPath, [TYPESCRIPT_5, ...TSC_OPTIONS], {
+        cwd: REPOSITORY_ROOT,
+        stdio: 'pipe',
+      });
+    },
+    compileTimeoutMs
+  );
 });

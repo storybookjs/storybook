@@ -13,6 +13,9 @@ const CONSUMER_FIXTURE = join(import.meta.dirname, '__testfixtures__/typescript-
 const TYPESCRIPT = createRequire(import.meta.url).resolve('typescript/bin/tsc');
 const TYPESCRIPT_5 = createRequire(import.meta.url).resolve('typescript-5/bin/tsc');
 const REPOSITORY_ROOT = join(import.meta.dirname, '../../../..');
+// Compiling the theming API surface with tsc takes 30s+ on loaded Windows CI
+// runners, so use a fixed generous timeout instead of the 10s Vitest default.
+const compileTimeoutMs = 90_000;
 
 // A dev compile writes the JS bundle and skips declarations. CI builds both before the suite.
 const JS_BUILT = existsSync(CREATE_JS);
@@ -121,7 +124,7 @@ describe('published theming entries', () => {
         stdio: 'pipe',
       });
     },
-    30_000
+    compileTimeoutMs
   );
 
   it.runIf(DTS_BUILT)(
@@ -132,6 +135,6 @@ describe('published theming entries', () => {
         stdio: 'pipe',
       });
     },
-    30_000
+    compileTimeoutMs
   );
 });

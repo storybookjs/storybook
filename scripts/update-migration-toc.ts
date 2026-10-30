@@ -13,9 +13,7 @@ import { dirname, resolve } from 'pathe';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const positional = argv.slice(2).filter((a) => !a.startsWith('--'));
-const file = positional[0]
-  ? resolve(cwd(), positional[0])
-  : resolve(repoRoot, 'MIGRATION.md');
+const file = positional[0] ? resolve(cwd(), positional[0]) : resolve(repoRoot, 'MIGRATION.md');
 const check = argv.includes('--check');
 
 const src = await readFile(file, 'utf8');
@@ -110,5 +108,8 @@ if (check) {
   exit(1);
 }
 
-await writeFile(file, [...lines.slice(0, tocStart), ...tocLines, ...lines.slice(tocEnd + 1)].join('\n'));
+await writeFile(
+  file,
+  [...lines.slice(0, tocStart), ...tocLines, ...lines.slice(tocEnd + 1)].join('\n')
+);
 console.log(`${file}: TOC updated.`);

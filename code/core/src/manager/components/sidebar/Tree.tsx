@@ -346,6 +346,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
   expandedRef.current = expanded;
   const hoistedDataRef = useRef(hoistedData);
   hoistedDataRef.current = hoistedData;
+  const setExpandedRef = useRef(setExpanded);
+  setExpandedRef.current = setExpanded;
   const selectedStoryIdRef = useRef(selectedStoryId);
   selectedStoryIdRef.current = selectedStoryId;
 
@@ -416,6 +418,17 @@ export const Tree = React.memo<TreeProps>(function Tree({
     });
   }, []);
   const closeContextMenu = useCallback(() => contextMenuStoreRef.current!.setState(null), []);
+
+  // Expand all branch descendants of a root without expanding the root's own rows' siblings.
+  const expandUnder = useCallback((rootId: string) => {
+    const branches = getBranchDescendants(hoistedDataRef.current, rootId);
+    setExpandedRef.current({ ids: branches, append: true, value: true });
+  }, []);
+
+  const collapseUnder = useCallback((rootId: string) => {
+    const branches = getBranchDescendants(hoistedDataRef.current, rootId);
+    setExpandedRef.current({ ids: branches, append: true, value: false });
+  }, []);
 
   // Geometry of the visible rows, in render order.
   const rows = useMemo(() => flattenRows(tree, expanded), [tree, expanded]);
@@ -728,6 +741,9 @@ export const Tree = React.memo<TreeProps>(function Tree({
         hasTestProviders,
         onRowFocus: reportRowFocus,
         collectionDependencies,
+        hoistedDataRef,
+        expandUnder,
+        collapseUnder,
       }),
     [
       api,
@@ -742,6 +758,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
       hasTestProviders,
       reportRowFocus,
       collectionDependencies,
+      expandUnder,
+      collapseUnder,
     ]
   );
 
@@ -823,6 +841,34 @@ interface RenderNodeProps extends Pick<
   onRowFocus: ReportRowFocus;
   /** Shared with every Collection level so react-aria invalidates its node cache consistently. */
   collectionDependencies: unknown[];
+  /** Ref to the latest hoistedData, for computing per-root expand state without adding it as a dep. */
+  hoistedDataRef: React.MutableRefObject<IndexHash>;
+  /** Expand all branch descendants of a given root. */
+  expandUnder: (rootId: string) => void;
+  /** Collapse all branch descendants of a given root. */
+  collapseUnder: (rootId: string) => void;
+}
+
+/** Returns all branch (non-leaf) descendant ids of a root, for bulk expand/collapse. */
+function getBranchDescendants(data: IndexHash, rootId: string): string[] {
+  const entry = data[rootId];
+  if (!entry || !('children' in entry)) {
+    return [];
+  }
+  const result: string[] = [];
+  const stack = [...(entry.children ?? [])];
+  while (stack.length) {
+    const id = stack.pop()!;
+    const child = data[id];
+    if (!child) {
+      continue;
+    }
+    if ('children' in child && child.children?.length) {
+      result.push(id);
+      stack.push(...child.children);
+    }
+  }
+  return result;
 }
 
 function renderNode({
@@ -833,9 +879,31 @@ function renderNode({
   hasTestProviders,
   onRowFocus,
   collectionDependencies,
+  hoistedDataRef,
+  expandUnder,
+  collapseUnder,
   ...props
 }: RenderNodeProps) {
   const renderNodeLevel = (item: TreeEntry) => {
+    let isFullyExpanded: boolean | undefined;
+    let onExpandCollapseAll: (() => void) | undefined;
+
+    if (item.type === 'root') {
+      const branches = getBranchDescendants(hoistedDataRef.current, item.id);
+      if (branches.length > 0) {
+        isFullyExpanded = branches.every((id) => expanded.has(id));
+        const targetExpand = !isFullyExpanded;
+        const rootId = item.id;
+        onExpandCollapseAll = () => {
+          if (targetExpand) {
+            expandUnder(rootId);
+          } else {
+            collapseUnder(rootId);
+          }
+        };
+      }
+    }
+
     return (
       <TreeNode
         {...props}
@@ -847,6 +915,8 @@ function renderNode({
         closeContextMenu={closeContextMenu}
         hasTestProviders={hasTestProviders}
         onRowFocus={onRowFocus}
+        isFullyExpanded={isFullyExpanded}
+        onExpandCollapseAll={onExpandCollapseAll}
       >
         {item.resolvedChildren && (
           <Collection items={item.resolvedChildren} dependencies={collectionDependencies}>

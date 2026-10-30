@@ -625,13 +625,6 @@ export const baseTemplates = {
       // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
       // Also, Angular 22 needs TypeScript 6 or more recent.
       extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
-      // @angular-devkit/build-angular 22.x deep-imports webpack/lib/dependencies/amd/AMDDefineDependency,
-      // which only exists in webpack >= 5.112.0 (new amd layout; 5.111.x lacks it). The old exact
-      // 5.107.2 pin (05504e2af06, a webpack-regression workaround) forces the pre-5.112 layout onto
-      // build-angular.
-      resolutions: {
-        webpack: '^5.112.0',
-      },
       useCsfFactory: true,
     },
     extraCiSteps: {

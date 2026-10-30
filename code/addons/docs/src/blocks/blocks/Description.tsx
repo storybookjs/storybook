@@ -108,7 +108,16 @@ const DescriptionComponentWithServices: FC<{
   resolvedOf: Extract<ResolvedOf, { type: 'meta' | 'component' }>;
   componentId: string;
 }> = ({ resolvedOf, componentId }) => {
-  const serviceComponentDescription = useServiceDocgen(componentId).data?.description || undefined;
+  const docgen = useServiceDocgen(componentId).data;
+  const examples = docgen?.renderer === 'angular' ? docgen.jsDocTags.example : undefined;
+  const serviceComponentDescription = [
+    docgen?.description,
+    ...(examples ?? [])
+      .filter(Boolean)
+      .map((example) => (/^\s*(?:```|~~~)/.test(example) ? example : `\`\`\`\n${example}\n\`\`\``)),
+  ]
+    .filter(Boolean)
+    .join('\n\n');
   const lang =
     resolvedOf.type === 'meta'
       ? resolvedOf.preparedMeta.parameters.docs?.lang || 'en'

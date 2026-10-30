@@ -1332,6 +1332,9 @@ The `preview-stats.json` file that `@storybook/builder-vite` writes for `storybo
 - Virtual modules such as `/virtual:/@storybook/builder-vite/project-annotations.js` and their edges
 - Proxy modules that Vite and Rollup insert between your code and its dependencies, for example `\0./node_modules/react/index.js?commonjs-es-import`
 - Sub-modules with a query string, for example `./src/Button.vue?vue&type=style&index=0&lang.css` next to `./src/Button.vue`
+- Files that a plugin reads itself and registers with `this.addWatchFile()` while it loads or transforms a module, for example an Angular `templateUrl` or a Sass partial. Each file is listed as a dependency of that module, so a change to it now traces to the stories that use it. Directories, globs and relative paths are left out. A stylesheet keeps only the stylesheets it watches, such as Sass partials and `@import`ed CSS files. A partial of a stylesheet that `.storybook/preview` imports makes TurboSnap capture every story, as any other change to the preview does.
+
+The other files that a stylesheet watches are left out: the source files that Tailwind scans for class names, a Tailwind v3 `tailwind.config.*`, a JavaScript plugin loaded with Tailwind v4's `@plugin`, and the fonts and images that `url()` references. They trace as they did before: a scanned source file through the stories that import it, and the other files to no story. To capture every story when one of these other files changes, pass it to Chromatic's `--externals` option, for example `--externals "tailwind.config.*"`.
 
 Chromatic TurboSnap reads this file. It needs `chromatic-cli` [v18.13.1](https://github.com/chromaui/chromatic-cli/releases/tag/v18.13.1) or later, which merges these nodes into the files they stand for. With an older version, a changed Vue or Svelte component can trace to zero stories. Upgrade `chromatic-cli` to v18.13.1 or later before you upgrade Storybook.
 

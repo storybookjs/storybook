@@ -53,7 +53,7 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
             key={refId}
             isLoading={isLoading}
             hasEntries={hasEntries}
-            selectedStoryId={selected?.refId === ref.id ? selected.storyId : null}
+            selectedStoryId={selected && selected.refId === ref.id ? selected.storyId : null}
           />
         ))}
       </SidebarScrollArea>

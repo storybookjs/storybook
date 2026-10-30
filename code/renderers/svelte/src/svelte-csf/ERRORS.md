@@ -90,7 +90,7 @@ The `Story` component might have been incorrectly created:
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0006`
 
 The **first argument** to the `defineMeta()` call was invalid.
-It must be a valid **object expression** with the same structure as [the Default export in CSF](https://storybook.js.org/docs/api/csf#default-export).
+It must be a valid **object expression** with the same structure as [the Meta in CSF](https://storybook.js.org/docs/writing-stories/csf#story-files).
 
 ```diff
 <script module>

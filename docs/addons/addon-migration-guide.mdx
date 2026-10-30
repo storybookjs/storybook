@@ -119,9 +119,9 @@ If your addon or its development Storybook uses Preact, upgrade Preact before St
 
 The official Preact framework is `@storybook/preact-vite`. The same minimum applies to custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack.
 
-### CSF Next support
+### CSF 4 support
 
-[CSF Next](https://storybook.js.org/docs/api/csf/csf-next) becomes the default CSF format in Storybook 11. Your users will need your addon to support CSF Next to get type safety benefits. You will need to update your `src/index.ts` file to export a `definePreviewAddon` callback. Users will call it in their `preview.ts` file to register your addon's preview annotations.
+[CSF 4](../writing-stories/csf/index.mdx) becomes the default CSF format in Storybook 11. Your users will need your addon to support CSF 4 to get type safety benefits. You will need to update your `src/index.ts` file to export a `definePreviewAddon` callback. Users will call it in their `preview.ts` file to register your addon's preview annotations.
 
 If you haven't done so already when porting to Storybook 10, apply the following change:
 
@@ -253,7 +253,7 @@ The `useThemeParameters` hook is removed in Storybook 11. You may instead direct
 
 ## Optional changes
 
-### Port your local Storybook to use CSF Next
+### Port your local Storybook to use CSF 4
 
 You may load your own preview annotations in your local Storybook instance, to test that they work as intended:
 
@@ -276,7 +276,7 @@ You may load your own preview annotations in your local Storybook instance, to t
 +});
 ```
 
-Change all your stories to use the [factory functions](https://storybook.js.org/docs/api/csf/csf-next) (e.g. `preview.meta()`, `meta.story()`) and check for any type errors that become visible with CSF Next's type safety.
+Change all your stories to use the [factory functions](../writing-stories/csf/api.mdx) (e.g. `preview.meta()`, `meta.story()`) and check for any type errors that become visible with CSF 4's type safety.
 
 ### NPM Trusted Publishing
 

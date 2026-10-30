@@ -1,0 +1,213 @@
+---
+title: Component Story Format (CSF)
+sidebar:
+  order: 1
+isTab: true
+tab:
+  order: 1
+  title: Overview
+---
+
+<If notRenderer={['react', 'vue', 'angular', 'web-components', 'svelte']}>
+
+<Callout variant="info" icon="🧪">
+
+CSF 4 is supported in [React](?renderer=react), [Vue](?renderer=vue), [Angular](?renderer=angular), [Web Components](?renderer=web-components), and [Svelte](?renderer=svelte) projects.
+
+</Callout>
+
+</If>
+
+Component Story Format (CSF) is the way to write stories for your components in Storybook, providing a standardized and type-safe approach to defining component metadata and story behavior.
+
+<Callout variant="info" icon="ℹ️">
+
+This document is primarily a reference for the latest version of the Component Story Format, **CSF 4**. Earlier versions are documented in the [Storybook 10 docs](../../../release-10-6/docs/api/csf/index.mdx).
+
+</Callout>
+
+There are two types of files in CSF:
+
+- **Preview file**: This file contains the global configuration for your stories, such as decorators, parameters, and addons. It is typically located in the `.storybook` directory and named `preview.js|jsx` or `preview.ts|tsx`.
+- **Story files**: These files define the individual stories for your components. They include the component metadata and the story definitions themselves. Story files usually have the <If notRenderer="svelte">`.stories.js|jsx`, `.stories.ts|tsx`, or `.stories.svelte` extensions</If><If renderer="svelte">`.stories.svelte` extension</If>.
+
+## Preview file
+
+The preview file contains the configuration for every story in your Storybook project. It can include [addons](api.mdx#addons), [decorators](../decorators.mdx), [parameters](../parameters.mdx), and other metadata that applies to all stories.
+
+With CSF 4, the preview config is created using the [`definePreview`](./api.mdx#definepreview) function, which provides type safety both in this file and in the story files that consume it.
+
+The properties that define this metadata are called [annotations](api.mdx#annotations). Most annotations defined here can be overridden in story files.
+
+The preview file must default export a `preview` object.
+
+<CodeSnippets path="parameters-in-preview.md" />
+
+## Story files
+
+Story files define a component in Storybook (the `meta` object) and its [stories](../index.mdx).
+
+### Meta
+
+The `meta` object specifies the component that the stories are for, along with other annotations that apply to all stories within that file and override those defined in the preview file.
+
+With CSF 4, the `meta` object is created using the [`preview.meta`](./api.mdx#previewmeta) function and does not need to be exported. Because it is defined within the preview context, it automatically inherits type safety and other benefits provided by the preview configuration.
+
+CSF 3 and earlier require the default export of `meta`.
+
+### Stories
+
+Each story is a named export within the file, and can include its own annotations, such as `args`, `decorators`, and `parameters`, which override those defined in the `meta` object and the preview file.
+
+With CSF 4, each story is created using the [`meta.story`](./api.mdx#metastory) function. Once again, type safety is automatically inherited from the `meta` object.
+
+<CodeSnippets path="button-story-with-args.md" />
+
+But how does Storybook know how to render your component? By default, Storybook uses the `component` property in the `meta` object to determine which component to render for each story. It then passes along any `args` applied to a story as props or attributes to the component. You can control this behavior by specifying a [custom `render` function](#custom-render-functions).
+
+<Callout variant="info" icon="💡">
+
+<a name="subpath-imports" />
+
+If you would like to use absolute imports instead of relative imports for your preview config, like below, you can configure that using subpath imports or an alias.
+
+```ts
+// ✅ Absolute imports won't break if you move story files around
+import preview from '#.storybook/preview';
+
+// ❌ Relative imports can break if you move story files around
+import preview from '../../../.storybook/preview';
+```
+
+<details>
+<summary>Configuration</summary>
+
+Subpath imports are a Node.js standard that allows you to define custom import paths in your project, which you can then use throughout your codebase.
+
+To configure subpath imports, add the following to your `package.json`:
+
+```json title="package.json"
+{
+  "imports": {
+    "#*": ["./*", "./*.ts", "./*.tsx"]
+  }
+}
+```
+
+For more information, refer to the [subpath imports documentation](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#subpath-imports).
+
+---
+
+Alternatively, you can [configure an alias in your builder](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#builder-aliases) (Vite or Webpack).
+
+</details>
+
+</Callout>
+
+#### Story configuration
+
+Stories are configured by applying [annotations](./api.mdx#annotations), which are properties in the story object that define their behavior and supply metadata. Some common annotations are:
+
+- [`args`](./api.mdx#args): Define the arguments (props) for the story, which can be controlled dynamically in the Storybook UI.
+- [`parameters`](./api.mdx#parameters): Pass additional metadata and configuration options to the story.
+- [`decorators`](./api.mdx#decorators): Wrap stories with additional markup or context, such as context providers or layout components.
+- [`play`](./api.mdx#play): Define interactions and tests for the story after it has rendered.
+- [`tags`](./api.mdx#tags): Assign tags to the story for categorization or filtering purposes.
+
+In addition to configuring individual stories, nearly all annotations can be defined at the meta level (which applies to all stories of the component) or at the preview level (which applies globally to all stories in the Storybook). Annotations defined at the story level will override or merge with those defined at the meta level, which override or merge with those defined at the preview level.
+
+#### Story names
+
+<If notRenderer="svelte">
+
+For a story's display name, the exported identifiers will be converted to "start case" similar to Lodash's [startCase](https://lodash.com/docs/#startCase) function. For example:
+
+| Identifier       | Transformation    |
+| ---------------- | ----------------- |
+| name             | Name              |
+| someName         | Some Name         |
+| someNAME         | Some NAME         |
+| some_custom_NAME | Some Custom NAME  |
+| someName1234     | Some Name 1 2 3 4 |
+
+We recommend that all export names to start with a capital letter.
+
+You can also customize the display name of a story by using the [`name`](../../writing-stories/index.mdx#rename-stories) property within the story object. There are two main cases where this is useful:
+
+1. You want the name to show up in the Storybook UI in a way that's not possible with a named export, e.g., reserved keywords like "default", special characters like emoji, spacing/capitalization other than what's provided by the default transformation.
+2. You want to preserve the Story ID independently from changing how it's displayed. Having stable Story IDs is helpful for integration with third-party tools.
+
+<CodeSnippets path="my-component-story-with-storyname.md" />
+
+</If>
+
+### Custom render functions
+
+<If notRenderer="svelte">
+
+[`render` functions](./api.mdx#render) give you additional control over how the story renders. For example, if you have a `Button` component and you want to have it rendered within an `Alert`, you could write the following:
+
+<CodeSnippets path="render-custom-in-meta.md" />
+
+Note that `args` are available as the `render` function's first argument. Typically you'll pass them to your component(s) to control its rendering. But you can also use them in any way you need within the `render` function.
+
+The example above demonstrates how to define a custom render function at the meta level, which will be applied to all stories of the component. You can also specify a `render` function for individual stories if you need different rendering behavior for specific cases.
+
+<CodeSnippets path="render-custom-in-story.md" />
+
+</If>
+
+<If renderer="svelte">
+
+If you're using Svelte CSF to write your stories, you can add a custom snippet to allow you additional control over how your story renders. For example, if you have a `Button` component and you want to have it rendered within an `Alert`, you could write the following:
+
+<CodeSnippets path="render-custom-in-meta.md" />
+
+The example above demonstrates how to define a custom render function at the meta level, which will be applied to all stories of the component. You can also provide a custom snippet for individual stories if you need different rendering behavior for specific cases.
+
+<CodeSnippets path="render-custom-in-story.md" />
+
+</If>
+
+<If notRenderer="svelte">
+
+### Non-story exports
+
+In some cases, you may want to export a mixture of stories and non-stories (e.g., mocked data).
+
+You can use the optional configuration fields `includeStories` and `excludeStories` in the `meta` to make this possible. You can define them as an array of strings or regular expressions.
+
+Consider the following story file:
+
+<CodeSnippets path="my-component-story-with-nonstory.md" />
+
+When this file renders in Storybook, it treats `ComplexStory` and `SimpleStory` as stories and ignores the `data` named exports.
+
+For this particular example, you could achieve the same result in different ways, depending on what's convenient:
+
+- `includeStories: /^[A-Z]/`
+- `includeStories: /.*Story$/`
+- `includeStories: ['SimpleStory', 'ComplexStory']`
+- `excludeStories: /^[a-z]/`
+- `excludeStories: /.*Data$/`
+- `excludeStories: ['simpleData', 'complexData']`
+
+The first option is the recommended solution if you follow the best practice of starting story exports with an uppercase letter (i.e., use UpperCamelCase).
+
+</If>
+
+## Frequently asked questions (FAQ)
+
+### Will I have to migrate all of my stories to this new format?
+
+Storybook will continue to support CSF 1, [CSF 2](../../../release-6-5/docs/api/stories/csf.mdx), and [CSF 3](../../../release-10-6/docs/api/csf/index.mdx) for the foreseeable future. None of these prior formats are deprecated.
+
+While using CSF 4, you can still use the older formats, as long as they are not mixed in the same file. If you want to migrate your existing files to the new format, refer to [the upgrade guide](./upgrade.mdx).
+
+### How do I use custom arg types with this format?
+
+The [`preview.type`](./api.mdx#previewtypemeta) function allows you to specify custom types for your story's args, which can be used to provide type safety for custom arg types. To specify them for a single story, use the [`meta.type`](./api.mdx#metatypestory) function.
+
+### Will this format work with MDX docs pages?
+
+Yes, the [doc blocks](../../writing-docs/doc-blocks.mdx) used to reference stories in MDX files support the CSF 4 format with no changes needed.

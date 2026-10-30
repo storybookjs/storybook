@@ -28,7 +28,7 @@ This document outlines some of the processes that the maintainers should adhere 
 | configuration                  | Issue, bug, or pull request related to Storybook [configuration](/docs/configure/index.mdx)                                                          |
 | core                           | Issue, bug, or pull request related to Storybook's Core                                                                                              |
 | cra                            | Issue, bug, or pull request that affects Storybook's compatibility with Create React APP ([CRA](https://create-react-app.dev/docs/getting-started/)) |
-| CSF                            | Issue, bug, or pull request related to Storybook's [Component Story Format (CSF)](/docs/api/csf.mdx)                                                 |
+| CSF                            | Issue, bug, or pull request related to Storybook's [Component Story Format (CSF)](/docs/writing-stories/csf/index.mdx)                                     |
 | decorators                     | Issue, bug, or pull related to Storybook's [Decorators](/docs/writing-stories/decorators.mdx)                                                        |
 | dependencies                   | Issue, bug, or pull request that related to upstream dependencies                                                                                    |
 | discussion                     | Issue currently being discussed between the maintainers and community                                                                                |

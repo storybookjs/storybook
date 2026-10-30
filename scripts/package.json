@@ -42,6 +42,7 @@
     "task": "jiti ./task.ts",
     "test": "cd .. && NODE_OPTIONS=--max_old_space_size=4096 vitest run --project scripts",
     "test:watch": "cd .. && NODE_OPTIONS=--max_old_space_size=4096 vitest watch --project scripts",
+    "update-migration-toc": "node ./update-migration-toc.ts",
     "upgrade": "jiti ./task.ts",
     "upload-bench": "jiti ./upload-bench.ts"
   },

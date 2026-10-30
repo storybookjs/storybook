@@ -26,6 +26,33 @@ const isReactSyntheticEvent = (e: unknown): e is SyntheticEvent =>
     findProto(e, (proto) => /^Synthetic(?:Base)?Event$/.test(proto.constructor.name)) &&
     typeof (e as SyntheticEvent).persist === 'function'
   );
+// `window` is one of the few properties readable on a cross-origin Window, and
+// anything else (e.g. `constructor`) throws a SecurityError.
+const hasWindowView = (target: object): boolean => {
+  try {
+    if (!('view' in target)) {
+      return false;
+    }
+    const { view } = target;
+    return typeof view === 'object' && view !== null && 'window' in view && view.window === view;
+  } catch {
+    return false;
+  }
+};
+
+// Sending a real Window over the channel makes the serializer walk `top`/`frames`
+// into cross-origin iframes in the manager document and throw a SecurityError.
+const stubWindowView = (target: object) => {
+  if (hasWindowView(target)) {
+    Object.defineProperty(target, 'view', {
+      enumerable: Object.getOwnPropertyDescriptor(target, 'view')?.enumerable ?? true,
+      configurable: true,
+      writable: true,
+      value: {},
+    });
+  }
+};
+
 const serializeArg = <T extends object>(a: T) => {
   if (isReactSyntheticEvent(a)) {
     const e: SyntheticEvent = Object.create(
@@ -33,14 +60,21 @@ const serializeArg = <T extends object>(a: T) => {
       Object.getOwnPropertyDescriptors(a)
     );
     e.persist();
-    const viewDescriptor = Object.getOwnPropertyDescriptor(e, 'view');
-    // don't send the entire window object over.
-    const view: unknown = viewDescriptor?.value;
-    if (typeof view === 'object' && view?.constructor.name === 'Window') {
-      Object.defineProperty(e, 'view', {
-        ...viewDescriptor,
-        value: Object.create(view.constructor.prototype),
-      });
+    stubWindowView(e);
+
+    // React 19 stamps the native event's `view` as a non-configurable accessor,
+    // so it is dropped from a copy and the event retained by the spy stays untouched.
+    const nativeEventDescriptor = Object.getOwnPropertyDescriptor(e, 'nativeEvent');
+    const nativeEvent = nativeEventDescriptor?.value;
+    if (typeof nativeEvent === 'object' && nativeEvent !== null) {
+      const nativeEventDescriptors = Object.getOwnPropertyDescriptors(nativeEvent);
+      delete nativeEventDescriptors.view;
+      const nativeEventCopy = Object.create(
+        Object.getPrototypeOf(nativeEvent),
+        nativeEventDescriptors
+      );
+      stubWindowView(nativeEventCopy);
+      Object.defineProperty(e, 'nativeEvent', { ...nativeEventDescriptor, value: nativeEventCopy });
     }
     return e;
   }
@@ -77,7 +111,7 @@ export function action(name: string, options: ActionOptions = {}): HandlerFuncti
     const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
     const minDepth = 5; // anything less is really just storybook internals
     const serializedArgs = args.map(serializeArg);
-    const normalizedArgs = args.length > 1 ? serializedArgs : serializedArgs[0];
+    const normalizedArgs = args.length === 1 ? serializedArgs[0] : serializedArgs;
 
     const actionDisplayToEmit: ActionDisplay = {
       id,

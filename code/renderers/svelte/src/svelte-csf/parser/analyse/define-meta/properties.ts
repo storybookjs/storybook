@@ -1,3 +1,5 @@
+import { unwrapExpression } from 'storybook/internal/csf-tools';
+
 import type { ESTreeAST } from '../../ast.ts';
 import {
   ArrayElementNotStringError,
@@ -12,12 +14,13 @@ interface GetStringOptions {
 
 export function getPropertyStringValue(options: GetStringOptions) {
   const { node, filename } = options;
+  const valueNode = unwrapExpression(node.value);
 
-  if (node.value.type !== 'Literal') {
+  if (valueNode.type !== 'Literal') {
     throw new NoStringLiteralError({ filename, property: node });
   }
 
-  const { value } = node.value;
+  const { value } = valueNode;
 
   if (typeof value !== 'string') {
     throw new NoStringLiteralError({ filename, property: node });
@@ -33,14 +36,16 @@ interface GetArrayOfStringOptions {
 
 export function getPropertyArrayOfStringsValue(options: GetArrayOfStringOptions) {
   const { node, filename } = options;
+  const valueNode = unwrapExpression(node.value);
 
-  if (node.value.type !== 'ArrayExpression') {
+  if (valueNode.type !== 'ArrayExpression') {
     throw new NoArrayExpressionError({ filename, property: node });
   }
 
   const array: string[] = [];
 
-  for (const element of node.value.elements) {
+  for (const elementNode of valueNode.elements) {
+    const element = unwrapExpression(elementNode);
     if (!element || element.type !== 'Literal' || typeof element.value !== 'string') {
       throw new ArrayElementNotStringError({
         filename,

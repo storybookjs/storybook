@@ -12,6 +12,7 @@ import * as find from 'empathic/find';
 import type { ResultPromise } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
+import { normalize } from 'pathe';
 import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
@@ -207,7 +208,7 @@ export class NPMProxy extends JsPackageManager {
     };
   }
 
-  protected runInstall(options?: { force?: boolean }) {
+  protected runInstall(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     const packageJsonPath = this.packageJsonPaths[0];
     const workspacePackageJsonPath = this.packageJsonPaths.find((ancestorPath) => {
       const workspaces = JsPackageManager.getPackageJson(ancestorPath).workspaces;
@@ -226,19 +227,26 @@ export class NPMProxy extends JsPackageManager {
               .filter((pattern: string) => pattern.startsWith('!'))
               .map((pattern: string) => `${pattern.slice(1)}/package.json`),
           }
-        ).includes(packageJsonPath)
+        )
+          .map(normalize)
+          .includes(normalize(packageJsonPath))
       );
     });
 
     return executeCommand({
       command: 'npm',
-      args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
+      args: [
+        'install',
+        ...this.getInstallArgs(),
+        ...(options?.force ? ['--force'] : []),
+        ...(options?.legacyPeerDeps ? ['--legacy-peer-deps'] : []),
+      ],
       cwd: workspacePackageJsonPath ? dirname(workspacePackageJsonPath) : this.cwd,
       stdio: prompt.getPreferredStdio(),
     });
   }
 
-  async installDependencies(options?: { force?: boolean }) {
+  async installDependencies(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
     try {
       await super.installDependencies(options);
     } catch (error) {
@@ -372,6 +380,20 @@ export class NPMProxy extends JsPackageManager {
     }
   }
 
+  protected async runGetPeerDependencies(
+    packageSpec: string
+  ): Promise<Record<string, string> | undefined> {
+    const result = await executeCommand({
+      command: 'npm',
+      args: ['info', packageSpec, 'peerDependencies', '--json'],
+      cwd: this.cwd,
+      stdio: 'pipe',
+    });
+    // npm prints nothing when the version has no peer dependencies.
+    const output = typeof result.stdout === 'string' ? result.stdout.trim() : '';
+    return output ? JSON.parse(output) : undefined;
+  }
+
   /**
    * @param input The output of `npm ls --json`
    * @param pattern A list of package names to filter the result. * can be used as a placeholder
@@ -383,28 +405,28 @@ export class NPMProxy extends JsPackageManager {
 
     const recurse = ([name, packageInfo]: [string, NpmDependency]): void => {
       // transform pattern into regex where `*` is replaced with `.*`
-      if (!name || !pattern.some((p) => new RegExp(`^${p.replace(/\*/g, '.*')}$`).test(name))) {
-        return;
-      }
+      if (name && pattern.some((p) => new RegExp(`^${p.replace(/\*/g, '.*')}$`).test(name))) {
+        const value = {
+          version: packageInfo.version,
+          location: '',
+        };
 
-      const value = {
-        version: packageInfo.version,
-        location: '',
-      };
+        if (!existingVersions[name]?.includes(value.version)) {
+          if (acc[name]) {
+            acc[name].push(value);
+          } else {
+            acc[name] = [value];
+          }
+          existingVersions[name] = sort([...(existingVersions[name] || []), value.version]);
 
-      if (!existingVersions[name]?.includes(value.version)) {
-        if (acc[name]) {
-          acc[name].push(value);
-        } else {
-          acc[name] = [value];
-        }
-        existingVersions[name] = sort([...(existingVersions[name] || []), value.version]);
-
-        if (existingVersions[name].length > 1) {
-          duplicatedDependencies[name] = existingVersions[name];
+          if (existingVersions[name].length > 1) {
+            duplicatedDependencies[name] = existingVersions[name];
+          }
         }
       }
 
+      // keep walking non-matching nodes: intermediary entries such as workspace
+      // members hide matching dependencies beneath them
       if (packageInfo.dependencies) {
         Object.entries(packageInfo.dependencies).forEach(recurse);
       }

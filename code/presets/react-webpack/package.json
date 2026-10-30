@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preset-react-webpack",
-  "version": "11.0.0-alpha.6",
+  "version": "11.0.0-alpha.8",
   "description": "Storybook for React: Develop React Component in isolation with Hot Reloading",
   "keywords": [
     "storybook"
@@ -54,12 +54,8 @@
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0",
-    "storybook": "workspace:^"
-  },
-  "peerDependenciesMeta": {
-    "typescript": {
-      "optional": true
-    }
+    "storybook": "workspace:^",
+    "typescript": "^5.9.0 || ^6.0.0 || ^7.0.0"
   },
   "publishConfig": {
     "access": "public"

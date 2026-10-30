@@ -1,4 +1,46 @@
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { Route } from './Page';
+
+const meta = preview.meta({
+  parameters: {
+    layout: 'fullscreen',
+    tanstack: {
+      router: {
+        route: Route, // 👈 Supply the Route here
+        // 👇 Rest of these properties are type-safe
+        params: { id: '42' },
+        query: { tab: 'details' },
+      },
+    },
+  },
+});
+
+export const Default = meta.story();
+
+export const WithCustomLoader = meta.story({
+  parameters: {
+    tanstack: {
+      router: {
+        route: Route, // 👈 Supply the Route here
+        // 👇 Rest of these properties are type-safe
+        params: { id: '42' },
+        routeOverrides: {
+          '/items/$id': {
+            loader: async () => ({
+              item: { id: '42', name: 'Loaded inside Storybook' },
+            }),
+          },
+        },
+      },
+    },
+  },
+});
+```
+
 ```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/tanstack-react';
 
 import { Route } from './Page';
@@ -41,45 +83,4 @@ export const WithCustomLoader: Story = {
     },
   },
 };
-```
-
-```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { Route } from './Page';
-
-const meta = preview.meta({
-  parameters: {
-    layout: 'fullscreen',
-    tanstack: {
-      router: {
-        route: Route, // 👈 Supply the Route here
-        // 👇 Rest of these properties are type-safe
-        params: { id: '42' },
-        query: { tab: 'details' },
-      },
-    },
-  },
-});
-
-export const Default = meta.story();
-
-export const WithCustomLoader = meta.story({
-  parameters: {
-    tanstack: {
-      router: {
-        route: Route, // 👈 Supply the Route here
-        // 👇 Rest of these properties are type-safe
-        params: { id: '42' },
-        routeOverrides: {
-          '/items/$id': {
-            loader: async () => ({
-              item: { id: '42', name: 'Loaded inside Storybook' },
-            }),
-          },
-        },
-      },
-    },
-  },
-});
 ```

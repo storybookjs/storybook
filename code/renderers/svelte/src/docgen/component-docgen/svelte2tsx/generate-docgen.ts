@@ -1,0 +1,819 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { extractJSDocInfo } from 'storybook/internal/csf-tools';
+
+import svelte2tsx, { internalHelpers } from 'svelte2tsx';
+import { VERSION, parse } from 'svelte/compiler';
+import ts from 'typescript';
+
+export type Docgen = {
+  name?: string;
+  description?: string;
+  /** The `generics` attribute of the instance script, such as `Value extends string`. */
+  typeParams?: string;
+  /** The library types the props extend whose members `props` leaves out, such as `HTMLInputAttributes`. */
+  omittedTypes?: string[];
+  jsDocTags?: Record<string, string[]>;
+  props: PropInfo[];
+  events?: PropInfo[];
+  slots?: PropInfo[];
+};
+
+export type PropInfo = {
+  name: string;
+  type?: Type;
+  optional?: boolean;
+  defaultValue?: DefaultValue;
+  description?: string;
+  jsDocTags?: { name: string; text: string }[];
+  typeText?: string;
+};
+
+type BaseType = object;
+
+type ScalarType = BaseType & {
+  type: 'number' | 'string' | 'boolean' | 'symbol' | 'any' | 'null' | 'undefined' | 'void';
+};
+type FunctionType = BaseType & {
+  type: 'function';
+  text: string;
+};
+type LiteralType = BaseType & {
+  type: 'literal';
+  value: string | number | boolean;
+  text: string;
+};
+type ArrayType = BaseType & {
+  type: 'array';
+  text: string;
+};
+type ObjectType = BaseType & {
+  type: 'object';
+  text: string;
+};
+type UnionType = BaseType & {
+  type: 'union';
+  types: Type[];
+};
+type IntersectionType = BaseType & {
+  type: 'intersection';
+  types: Type[];
+};
+
+export type Type =
+  | ScalarType
+  | LiteralType
+  | FunctionType
+  | ArrayType
+  | ObjectType
+  | UnionType
+  | IntersectionType;
+
+type DefaultValue = {
+  text: string;
+};
+
+/** The default text for an initializer the extractor cannot print, such as `id = slugify()`. */
+export const UNPRINTABLE_DEFAULT = '...';
+
+function convertType(type: ts.Type, checker: ts.TypeChecker): Type | undefined {
+  // TypeScript compiler uses bit flags to represent type information.
+  // Note the use of the bitwise AND (&) operator here.
+  // See examples at: https://github.com/search?q=repo%3Amicrosoft%2FTypeScript+TypeFlags.&type=code
+  if (type.flags & ts.TypeFlags.Any) {
+    return { type: 'any' };
+  }
+  if (type.flags & ts.TypeFlags.Number) {
+    return { type: 'number' };
+  }
+  if (type.flags & ts.TypeFlags.String) {
+    return { type: 'string' };
+  }
+  if (type.flags & ts.TypeFlags.Boolean) {
+    return { type: 'boolean' };
+  }
+  if (type.flags & ts.TypeFlags.ESSymbol) {
+    return { type: 'symbol' };
+  }
+  if (type.flags & ts.TypeFlags.Null) {
+    return { type: 'null' };
+  }
+  if (type.flags & ts.TypeFlags.Undefined) {
+    return { type: 'undefined' };
+  }
+  if (type.flags & ts.TypeFlags.Void) {
+    return { type: 'void' };
+  }
+  if (type.getCallSignatures().length > 0) {
+    return { type: 'function', text: checker.typeToString(type) };
+  }
+  if (type.flags & ts.TypeFlags.Object) {
+    const indexType = checker.getIndexTypeOfType(type, ts.IndexKind.Number);
+    if (indexType) {
+      return { type: 'array', text: checker.typeToString(type) };
+    }
+    return { type: 'object', text: checker.typeToString(type) };
+  }
+  if (type.isNumberLiteral() || type.isStringLiteral()) {
+    return {
+      type: 'literal',
+      value: type.value,
+      text:
+        type.flags & ts.TypeFlags.EnumLiteral
+          ? checker.typeToString(type)
+          : JSON.stringify(type.value),
+    };
+  }
+  if (type.flags & ts.TypeFlags.BooleanLiteral) {
+    const text = checker.typeToString(type);
+    return { type: 'literal', value: text === 'true', text: text };
+  }
+  if (type.isUnion()) {
+    // TypeA | TypeB
+    const types = type.types
+      .map((t) => convertType(t, checker))
+      .filter((t) => {
+        return t !== undefined && t.type !== 'undefined';
+      }) as Type[];
+
+    // Boolean is represented as 'true' | 'false' in TypeScript's type checker,
+    // so we need to merge them into a single 'boolean' type.
+    const idxTrue = types.findIndex((t) => t.type === 'literal' && t.value === true);
+    const idxFalse = types.findIndex((t) => t.type === 'literal' && t.value === false);
+    if (idxTrue !== -1 && idxFalse !== -1) {
+      types.splice(Math.max(idxTrue, idxFalse), 1);
+      types.splice(Math.min(idxTrue, idxFalse), 1, { type: 'boolean' });
+    }
+
+    return types.length > 1 ? { type: 'union', types: types } : types[0];
+  }
+  if (type.isIntersection()) {
+    // TypeA & TypeB
+    const types = type.types
+      .map((t) => convertType(t, checker))
+      .filter((t) => t !== undefined) as Type[];
+    return { type: 'intersection', types };
+  }
+
+  return undefined;
+}
+
+function initializerToDefaultValue(
+  expr: ts.Expression,
+  checker: ts.TypeChecker
+): DefaultValue | undefined {
+  if (ts.isNumericLiteral(expr)) {
+    return { text: expr.text };
+  } else if (ts.isStringLiteral(expr)) {
+    return { text: JSON.stringify(expr.text) };
+  } else if (ts.isIdentifier(expr) || ts.isPropertyAccessExpression(expr)) {
+    const symbol = checker.getSymbolAtLocation(expr);
+    if (symbol && checker.isUndefinedSymbol(symbol)) {
+      return undefined;
+    }
+    const type = checker.getTypeAtLocation(expr);
+    if (type.flags & ts.TypeFlags.EnumLiteral) {
+      return { text: checker.typeToString(type) };
+    } else if (type.isLiteral()) {
+      // string or number
+      return { text: JSON.stringify(type.value) };
+    } else if (type.flags & ts.TypeFlags.Null) {
+      return { text: 'null' };
+    } else if (type.flags & ts.TypeFlags.BooleanLiteral) {
+      return { text: checker.typeToString(type) };
+    } else if (type.getCallSignatures().length > 0) {
+      return { text: 'function' };
+    }
+  } else if (
+    ts.isArrayLiteralExpression(expr) ||
+    ts.isObjectLiteralExpression(expr) ||
+    ts.isNewExpression(expr)
+  ) {
+    return { text: expr.getText() };
+  } else if (ts.isArrowFunction(expr)) {
+    return { text: 'function' };
+  }
+  switch (expr.kind) {
+    case ts.SyntaxKind.TrueKeyword:
+      return { text: 'true' };
+    case ts.SyntaxKind.FalseKeyword:
+      return { text: 'false' };
+    case ts.SyntaxKind.NullKeyword:
+      return { text: 'null' };
+  }
+  return { text: UNPRINTABLE_DEFAULT };
+}
+
+const FORCED_OPTIONS: ts.CompilerOptions = {
+  sourceMap: false,
+  noEmit: true,
+  strict: true,
+  allowJs: true,
+  checkJs: true,
+  skipLibCheck: true,
+  skipDefaultLibCheck: true,
+};
+
+/**
+ * A parsed config, as a docgen program is built from it. `rootNames` are the config's `.svelte` files
+ * as svelte2tsx `.svelte.tsx` files, then the svelte2tsx shim; `fileNames` and `projectReferences` are
+ * what core's component-meta manager matches components against.
+ */
+export interface SvelteCommandLine {
+  fileNames: string[];
+  rootNames: string[];
+  options: ts.CompilerOptions;
+  projectReferences?: readonly ts.ProjectReference[];
+}
+
+export type DocgenOptions = { server?: boolean; documentationSource?: string };
+
+/** Map a `.svelte` component to the `.svelte.tsx` file svelte2tsx compiles it to. */
+export function virtualFileName(fileName: string): string {
+  return fileName.endsWith('.svelte') ? `${fileName}.tsx` : fileName;
+}
+
+function shimFileName(server: boolean): string {
+  const shimFilename = import.meta.resolve('svelte2tsx/svelte-shims-v4.d.ts');
+  return server ? fileURLToPath(shimFilename) : shimFilename;
+}
+
+// A tsconfig anywhere up the tree wins over a closer jsconfig.
+function findSvelteConfig(basepath: string): string | undefined {
+  return (
+    ts.findConfigFile(basepath, ts.sys.fileExists) ||
+    ts.findConfigFile(basepath, ts.sys.fileExists, 'jsconfig.json')
+  );
+}
+
+export function parseSvelteConfig(configPath: string, server = true): SvelteCommandLine {
+  const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
+  const config = ts.parseJsonConfigFileContent(
+    configFile.config,
+    ts.sys,
+    path.dirname(configPath),
+    undefined,
+    configPath,
+    undefined,
+    [
+      {
+        extension: 'svelte',
+        isMixedContent: true,
+        scriptKind: ts.ScriptKind.Deferred,
+      },
+    ]
+  );
+
+  return {
+    fileNames: config.fileNames,
+    projectReferences: config.projectReferences,
+    rootNames: [
+      ...config.fileNames
+        .filter((fileName) => fileName.endsWith('.svelte'))
+        .map((fileName) => fileName + '.tsx'),
+      shimFileName(server),
+    ],
+    options: {
+      ...config.options,
+      ...FORCED_OPTIONS,
+    },
+  };
+}
+
+/** Build the config for a component no tsconfig or jsconfig covers. */
+export function inferredCommandLine(server = true): SvelteCommandLine {
+  return { fileNames: [], rootNames: [shimFileName(server)], options: FORCED_OPTIONS };
+}
+
+function loadConfig(basepath: string, server: boolean): SvelteCommandLine {
+  const configPath = findSvelteConfig(basepath);
+  return configPath ? parseSvelteConfig(configPath, server) : inferredCommandLine(server);
+}
+
+export interface DocgenCache {
+  filenameToModifiedTime: Record<string, Date | undefined>;
+  filenameToSourceFile: Record<string, ts.SourceFile>;
+  fileCache: Record<string, string>;
+  oldProgram?: ts.Program;
+  options?: ts.CompilerOptions;
+  rootNames?: Set<string>;
+}
+
+export function createDocgenCache(): DocgenCache {
+  return {
+    filenameToModifiedTime: {},
+    filenameToSourceFile: {},
+    fileCache: {},
+  };
+}
+
+// Like React's server docgen, so that extending `HTMLButtonAttributes` lists no native attributes.
+const LARGE_DECLARATION_FILE_THRESHOLD = 30;
+
+function declarationFile(prop: ts.Symbol): string | undefined {
+  return declaration(prop)?.getSourceFile().fileName;
+}
+
+// A prop that went through `Omit` points back to the prop it copies. Through `Omit<Omit<...>>`, as in
+// bits-ui's props, that prop is a copy too.
+function declaration(prop: ts.Symbol | undefined): ts.Declaration | undefined {
+  return (
+    prop &&
+    (prop.valueDeclaration ??
+      declaration((prop as any).links?.syntheticOrigin) ??
+      unionDeclaration(prop))
+  );
+}
+
+// A prop of a union of `Omit`s, as `WithoutChild<CalendarRootProps>` gives for bits-ui's single and
+// multiple calendar, has one declaration per member and no value declaration. It counts as a library
+// prop only when every member declares it in the same library file.
+function unionDeclaration(prop: ts.Symbol): ts.Declaration | undefined {
+  if (!(prop as any).links?.containingType?.isUnion()) {
+    return undefined;
+  }
+  const [first, ...rest] = prop.declarations ?? [];
+  const file = first?.getSourceFile().fileName;
+  return first && rest.every((other) => other.getSourceFile().fileName === file)
+    ? first
+    : undefined;
+}
+
+function isLibraryFile(file: string | undefined): boolean {
+  return !!file && (file.endsWith('.d.ts') || file.includes('/node_modules/'));
+}
+
+// Walks the props type down to the library types it extends, such as `HTMLInputAttributes` in
+// `interface Props extends HTMLInputAttributes` or `Omit<HTMLInputAttributes, 'type'>` in an
+// intersection, and keeps those that brought a left-out prop.
+function libraryTypesWithOmittedProps(
+  type: ts.Type,
+  omitted: Set<string>,
+  checker: ts.TypeChecker
+): string[] {
+  const alias = type.aliasSymbol?.declarations?.[0];
+  // `type Props = Omit<HTMLLabelAttributes, 'id'>` gives the library's `Omit` the local alias.
+  const localAlias =
+    alias && ts.isTypeAliasDeclaration(alias) && !isLibraryFile(alias.getSourceFile().fileName)
+      ? alias
+      : undefined;
+  const symbol = localAlias ? type.getSymbol() : (type.aliasSymbol ?? type.getSymbol());
+  if (isLibraryFile(symbol?.declarations?.[0]?.getSourceFile().fileName)) {
+    if (!type.getProperties().some((prop) => omitted.has(prop.getName()))) {
+      return [];
+    }
+    // The alias name means nothing outside the component, so print what it stands for.
+    return [
+      localAlias && !type.aliasTypeArguments
+        ? localAlias.type.getText()
+        : checker.typeToString(type, undefined, ts.TypeFormatFlags.NoTruncation),
+    ];
+  }
+  // In a union, such as bits-ui's single and multiple calendar, each variant can extend its own library
+  // type. Joined with `&`, they would ask for the props of both variants at once.
+  if (type.isUnion()) {
+    const variants = [
+      ...new Set(
+        type.types
+          .map((member) => libraryTypesWithOmittedProps(member, omitted, checker).join(' & '))
+          .filter(Boolean)
+      ),
+    ];
+    return variants.length > 1 ? [`(${variants.join(' | ')})`] : variants;
+  }
+  if (type.isIntersection()) {
+    return type.types.flatMap((member) => libraryTypesWithOmittedProps(member, omitted, checker));
+  }
+  if (type.isClassOrInterface()) {
+    return (checker.getBaseTypes(type) ?? []).flatMap((base) =>
+      libraryTypesWithOmittedProps(base, omitted, checker)
+    );
+  }
+  return [];
+}
+
+// The props a mapped type such as `Pick<HTMLButtonAttributes, 'type'>` selects count apart from the
+// props the declaration file brings by inheritance, so a few picked props stay. Within a mapped type
+// each file counts apart, so `Omit<CheckboxRootProps, 'child'>` keeps bits-ui's own props.
+function bulkLibraryProps(props: ts.Symbol[]): Set<ts.Symbol> {
+  const groups = new Map<string, Map<object | string, ts.Symbol[]>>();
+  for (const prop of props) {
+    const file = declarationFile(prop);
+    if (file && isLibraryFile(file)) {
+      const mappedType = (prop as any).links?.mappedType ?? file;
+      const byMappedType = groups.get(file) ?? new Map<object | string, ts.Symbol[]>();
+      groups.set(file, byMappedType);
+      const group = byMappedType.get(mappedType) ?? [];
+      byMappedType.set(mappedType, group);
+      group.push(prop);
+    }
+  }
+  return new Set(
+    [...groups.values()]
+      .flatMap((byMappedType) => [...byMappedType.values()])
+      .filter((group) => group.length > LARGE_DECLARATION_FILE_THRESHOLD)
+      .flat()
+  );
+}
+
+// svelte2tsx returns `bindings: __sveltets_$$bindings('ref', 'value')` for the `$bindable()` props.
+// The builder program has no svelte2tsx shims to type it, so the names are read from the call.
+function bindableNames(renderFunction: ts.FunctionDeclaration): Set<string> {
+  const returned = renderFunction.body?.statements.find(ts.isReturnStatement)?.expression;
+  const bindings =
+    returned && ts.isObjectLiteralExpression(returned)
+      ? returned.properties.find(
+          (property): property is ts.PropertyAssignment =>
+            ts.isPropertyAssignment(property) && property.name.getText() === 'bindings'
+        )?.initializer
+      : undefined;
+  return new Set(
+    bindings && ts.isCallExpression(bindings)
+      ? bindings.arguments.filter(ts.isStringLiteral).map((argument) => argument.text)
+      : []
+  );
+}
+
+// TypeScript 7's `typescript` package exports only its version, without the compiler API.
+export function assertCompilerApi() {
+  if (typeof ts.createProgram !== 'function') {
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    throw new Error(
+      `Svelte docgen needs the TypeScript compiler API, which \`typescript@${ts.version}\` does not have. ` +
+        'Install TypeScript 6 next to TypeScript 7, as described in ' +
+        'https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0'
+    );
+  }
+}
+
+export function generateDocgen(
+  targetFileName: string,
+  cache: DocgenCache,
+  options: DocgenOptions = {}
+): Docgen {
+  assertCompilerApi();
+  targetFileName = virtualFileName(targetFileName);
+
+  if (cache.options === undefined || !cache.rootNames?.has(targetFileName)) {
+    const commandLine = loadConfig(targetFileName, !!options.server);
+    cache.options = commandLine.options;
+    cache.rootNames = new Set([...commandLine.rootNames, targetFileName]);
+  }
+
+  const program = createDocgenProgram(
+    Array.from(cache.rootNames),
+    cache.options,
+    cache,
+    cache.oldProgram
+  );
+  cache.oldProgram = program;
+  return extractDocgen(program, program.getTypeChecker(), targetFileName, options);
+}
+
+/**
+ * Build a program over `rootNames` whose host compiles `.svelte` files with svelte2tsx, reusing every
+ * source file whose mtime has not moved since `cache` saw it.
+ */
+export function createDocgenProgram(
+  rootNames: string[],
+  compilerOptions: ts.CompilerOptions,
+  cache: DocgenCache,
+  oldProgram?: ts.Program
+): ts.Program {
+  assertCompilerApi();
+  // Create a custom host
+  const originalHost = ts.createCompilerHost(compilerOptions);
+  const host: ts.CompilerHost = {
+    ...originalHost,
+    readFile(fileName) {
+      // Cache package.json
+      const isCacheTarget = fileName.endsWith(path.sep + 'package.json');
+      if (isCacheTarget && cache.fileCache[fileName]) {
+        return cache.fileCache[fileName];
+      }
+      const content = originalHost.readFile(fileName);
+      if (content && isCacheTarget) {
+        cache.fileCache[fileName] = content;
+      }
+      return content;
+    },
+    fileExists(fileName) {
+      const isCacheTarget = fileName.endsWith(path.sep + 'package.json');
+      if (isCacheTarget && cache.fileCache[fileName]) {
+        return true;
+      }
+
+      let exists = originalHost.fileExists(fileName);
+      if (exists) {
+        return exists;
+      }
+
+      // Virtual .svelte.tsx file
+      if (fileName.endsWith('.svelte.tsx') || fileName.endsWith('.svelte.jsx')) {
+        fileName = fileName.slice(0, -4); // remove .tsx or .jsx
+        exists = originalHost.fileExists(fileName);
+        return exists;
+      }
+
+      return false;
+    },
+    getSourceFile(fileName, languageVersion, onError) {
+      if (fileName.endsWith('.svelte.tsx') || fileName.endsWith('.svelte.jsx')) {
+        // .svelte file (`import ... from './path/to/file.svelte'`)
+
+        const realFileName = fileName.slice(0, -4); // remove .tsx or .jsx
+
+        const modifiedTime: Date | undefined = ts.sys.getModifiedTime
+          ? ts.sys.getModifiedTime(realFileName)
+          : undefined;
+        if (modifiedTime) {
+          const cachedModifiedTime = cache.filenameToModifiedTime[fileName];
+          if (cachedModifiedTime?.getTime() === modifiedTime.getTime()) {
+            return cache.filenameToSourceFile[fileName];
+          }
+        }
+
+        const content = originalHost.readFile(realFileName);
+        if (content === undefined) {
+          return;
+        }
+
+        const isTsFile = /<script\s+[^>]*?lang=('|")(ts|typescript)('|")/.test(content);
+
+        const tsx = svelte2tsx.svelte2tsx(content, {
+          version: VERSION,
+          isTsFile,
+          mode: 'dts',
+        });
+
+        const sourceFile = ts.createSourceFile(
+          fileName,
+          tsx.code,
+          languageVersion,
+          true,
+          isTsFile ? ts.ScriptKind.TS : ts.ScriptKind.JS // Set to 'JS' to enable TypeScript to parse JSDoc.
+        );
+
+        // update cache
+        cache.filenameToSourceFile[fileName] = sourceFile;
+        cache.filenameToModifiedTime[fileName] = modifiedTime;
+
+        return sourceFile;
+      } else {
+        // non-svelte file
+
+        let staticCaching = false;
+        staticCaching ||= fileName
+          .split(path.sep)
+          .some((part) => part.toLowerCase() === 'node_modules');
+
+        // We can significantly speed up the docgen process by caching source files.
+        const cachedSourceFile = cache.filenameToSourceFile[fileName];
+        if (cachedSourceFile && staticCaching) {
+          return cachedSourceFile;
+        }
+        const modifiedTime: Date | undefined = ts.sys.getModifiedTime
+          ? ts.sys.getModifiedTime(fileName)
+          : undefined;
+        if (modifiedTime) {
+          const cachedModifiedTime = cache.filenameToModifiedTime[fileName];
+          if (cachedModifiedTime?.getTime() === modifiedTime.getTime()) {
+            return cache.filenameToSourceFile[fileName];
+          }
+        }
+
+        const content = originalHost.readFile(fileName);
+        if (content === undefined) {
+          return;
+        }
+
+        const sourceFile = ts.createSourceFile(fileName, content, languageVersion, true);
+
+        // update cache
+        cache.filenameToSourceFile[fileName] = sourceFile;
+        cache.filenameToModifiedTime[fileName] = modifiedTime;
+
+        return sourceFile;
+      }
+    },
+    writeFile() {
+      // Write nothing
+    },
+  };
+
+  return ts.createProgram({ rootNames, options: compilerOptions, host, oldProgram });
+}
+
+/** Read the docs of `targetFileName`, a `.svelte.tsx` file of `program`, through `checker`. */
+export function extractDocgen(
+  program: ts.Program,
+  checker: ts.TypeChecker,
+  targetFileName: string,
+  options: DocgenOptions
+): Docgen {
+  const sourceFile = program.getSourceFile(targetFileName);
+  if (sourceFile === undefined) {
+    return {
+      props: [],
+    };
+  }
+
+  const propMap: Map<string, PropInfo> = new Map();
+  const omitted = new Set<string>();
+  const events: PropInfo[] = [];
+  const slots: PropInfo[] = [];
+
+  // Get render function generated by svelte2tsx
+  const renderFunction = sourceFile.statements.find((statement) => {
+    return (
+      ts.isFunctionDeclaration(statement) && statement.name?.text === internalHelpers.renderName
+    );
+  }) as ts.FunctionDeclaration | undefined;
+  if (renderFunction === undefined) {
+    return {
+      props: [],
+    };
+  }
+
+  let propsType: ts.Type | undefined;
+
+  const signature = checker.getSignatureFromDeclaration(renderFunction);
+
+  if (signature && signature.declaration) {
+    // Get props type from ReturnType<render>
+    const type = checker.getReturnTypeOfSignature(signature);
+
+    type.getProperties().forEach((retObjProp) => {
+      if (retObjProp.name === 'events' || retObjProp.name === 'slots') {
+        const decl = signature.getDeclaration();
+        const members = checker.getTypeOfSymbolAtLocation(retObjProp, decl);
+        const target = retObjProp.name === 'events' ? events : slots;
+        for (const member of members.getProperties()) {
+          const memberType = checker.getTypeOfSymbolAtLocation(member, decl);
+          target.push({
+            name: member.getName(),
+            description:
+              [
+                ts.displayPartsToString(member.getDocumentationComment(checker)),
+                retObjProp.name === 'slots'
+                  ? memberType
+                      .getProperties()
+                      .map((param) => `\`${param.getName()}\``)
+                      .join(' ')
+                  : undefined,
+              ]
+                .filter(Boolean)
+                .join('\n\n') || undefined,
+            type: convertType(memberType, checker),
+            typeText: checker.typeToString(memberType, undefined, ts.TypeFormatFlags.NoTruncation),
+          });
+        }
+      }
+      if (retObjProp.name === 'props') {
+        const decl = signature.getDeclaration();
+        propsType = checker.getTypeOfSymbolAtLocation(retObjProp, decl);
+        const props = propsType.getProperties();
+        const bulkProps = bulkLibraryProps(props);
+        // `value = $bindable()` makes the `value` of `HTMLInputAttributes` part of the component's API.
+        const bindable = bindableNames(renderFunction);
+        props.forEach((prop) => {
+          const name = prop.getName();
+          let description =
+            ts.displayPartsToString(prop.getDocumentationComment(checker)) || undefined;
+
+          // Infer prop type
+          const propType = checker.getTypeOfSymbolAtLocation(prop, decl);
+
+          if (prop.valueDeclaration) {
+            // Comment from JSDoc '@type {type} comment'
+            const typeTag = ts.getJSDocTypeTag(prop.valueDeclaration);
+            if (typeTag?.comment) {
+              description = ((description || '') + '\n' + typeTag.comment).trim();
+            }
+          }
+
+          // Ignore props from svelte/elements.d.ts (HTMLAttributes, AriaAttributes and DOMAttributes).
+          // Some libraries use these for {...$$restProps}
+          if (
+            !bindable.has(name) &&
+            (options.server
+              ? bulkProps.has(prop)
+              : declarationFile(prop)?.includes('node_modules/svelte/elements.d.ts'))
+          ) {
+            omitted.add(name);
+            return;
+          }
+
+          // Check if this prop is optional
+          const optional = (prop.flags & ts.SymbolFlags.Optional) !== 0;
+          propMap.set(name, {
+            name,
+            optional,
+            description,
+            type: convertType(propType, checker),
+            typeText: checker.typeToString(propType, undefined, ts.TypeFormatFlags.NoTruncation),
+            jsDocTags: prop.getJsDocTags(checker).map((tag) => ({
+              name: tag.name,
+              text: ts.displayPartsToString(tag.text),
+            })),
+          });
+        });
+      }
+    });
+  }
+
+  renderFunction.body?.forEachChild((node) => {
+    if (ts.isVariableStatement(node)) {
+      node.declarationList.declarations.forEach((declaration) => {
+        // Extract default values from:
+        //     let { <name> = <defaultValue>, ... }: <propsType> = $props();
+
+        if (ts.isObjectBindingPattern(declaration.name)) {
+          const isPropsRune =
+            declaration.initializer &&
+            ts.isCallExpression(declaration.initializer) &&
+            ts.isIdentifier(declaration.initializer.expression) &&
+            declaration.initializer.expression.text === '$props';
+
+          const isPropsType =
+            declaration.type && propsType === checker.getTypeFromTypeNode(declaration.type);
+
+          if (isPropsRune || isPropsType) {
+            declaration.name.elements.forEach((element) => {
+              // `class: className = ''` declares the prop `class`.
+              const key = element.propertyName ?? element.name;
+              const name =
+                ts.isIdentifier(key) || ts.isStringLiteral(key) ? key.text : key.getText();
+              const prop = propMap.get(name);
+              if (prop && element.initializer) {
+                const bindable =
+                  ts.isCallExpression(element.initializer) &&
+                  ts.isIdentifier(element.initializer.expression) &&
+                  element.initializer.expression.text === '$bindable'
+                    ? element.initializer
+                    : undefined;
+                if (bindable) {
+                  prop.jsDocTags = [...(prop.jsDocTags ?? []), { name: 'bindable', text: '' }];
+                }
+                // `$bindable('')` defaults to its argument, and `$bindable()` has no default.
+                const initializer = bindable ? bindable.arguments[0] : element.initializer;
+                const defaultValue = initializer && initializerToDefaultValue(initializer, checker);
+                if (defaultValue) {
+                  prop.defaultValue = defaultValue;
+                }
+              }
+            });
+          }
+        }
+
+        // Extract default values from:
+        //    export let <name> = <defaultValue>
+        if (
+          ts.isVariableDeclaration(declaration) &&
+          ts.isIdentifier(declaration.name) &&
+          propMap.has(declaration.name.text)
+        ) {
+          const prop = propMap.get(declaration.name.text);
+          if (prop && declaration.initializer) {
+            prop.optional = true;
+            const defaultValue = initializerToDefaultValue(declaration.initializer, checker);
+            if (defaultValue) {
+              prop.defaultValue = defaultValue;
+            }
+          }
+        }
+      });
+    }
+  });
+
+  const source = options.documentationSource;
+  const ast = source ? parse(source, { modern: true }) : undefined;
+  const comment = ast?.fragment.nodes.find(
+    (node) => node.type === 'Comment' && /@component\b/.test(node.data)
+  );
+  // svelte2tsx gives the render function the type params of both the `generics` attribute and
+  // Svelte 4's `type T = $$Generic<string>`.
+  const typeParams = renderFunction.typeParameters?.map((param) => param.getText()).join(', ');
+  const docs =
+    comment && comment.type === 'Comment'
+      ? extractJSDocInfo(
+          comment.data
+            .replace(/@component\b/, '')
+            .replace(/\s+(@[a-zA-Z]+\b)/g, '\n$1')
+            .trim()
+        )
+      : undefined;
+  const omittedTypes =
+    propsType && omitted.size
+      ? [...new Set(libraryTypesWithOmittedProps(propsType, omitted, checker))]
+      : [];
+  return {
+    props: Array.from(propMap.values()),
+    events,
+    slots,
+    ...(typeParams ? { typeParams } : {}),
+    ...(omittedTypes.length ? { omittedTypes } : {}),
+    ...(docs ? { description: docs.description.trim(), jsDocTags: docs.tags } : {}),
+  };
+}

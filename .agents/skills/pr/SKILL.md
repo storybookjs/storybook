@@ -36,12 +36,7 @@ Add these labels to the PR:
 - `BREAKING CHANGE` - breaks compatibility
 - `other` - doesn't fit above
 
-**CI (required, pick one):**
-
-- `ci:normal` - standard sandbox set; default for most code changes
-- `ci:merged` - merged sandbox set
-- `ci:daily` - daily sandbox set; use this when changes affect prerelease sandboxes or sandboxes pinned to a framework or React version other than latest
-- `ci:docs` - documentation-only changes (use with `documentation` category)
+**CI:** do not add a `ci:*` label. The review bot or a maintainer adds it once automated review has finished.
 
 **Canary (optional):**
 
@@ -96,5 +91,5 @@ Replace `<branch>` with Chromatic's normalized slug (special chars → dashes, e
 Always create PRs in draft mode:
 
 ```bash
-gh pr create --draft --title "<Area>: <Description>" --body "<FILLED_TEMPLATE>" --label "<category>,<ci>,<qa>"
+gh pr create --draft --title "<Area>: <Description>" --body "<FILLED_TEMPLATE>" --label "<category>,<qa>"
 ```

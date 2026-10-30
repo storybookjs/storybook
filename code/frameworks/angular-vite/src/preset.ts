@@ -1,6 +1,5 @@
-import { findConfigFile } from 'storybook/internal/common';
+import { findConfigFile, isTypeScriptReadyForDocgen } from 'storybook/internal/common';
 import {
-  babelParser,
   extractMockCalls,
   findMockRedirect,
   getAutomockCode,
@@ -26,9 +25,9 @@ import type { FrameworkOptions } from './types.ts';
 import type { UserConfig, Plugin } from 'vite';
 
 export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
-// Turns `features.docgenServer` on by default; read through `presets.apply('isDocgenProviderEnabled')`
-// so the default never has to call the provider, which itself reads `features`.
-export const isDocgenProviderEnabled = true;
+// Default for `features.docgenServer`; a project without a usable `typescript` keeps builder docgen.
+export const isDocgenProviderEnabled = (_existing: unknown, options: Options) =>
+  isTypeScriptReadyForDocgen((specifier) => import.meta.resolve(specifier), options);
 export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
 
 export const addons: PresetProperty<'addons'> = [];
@@ -534,7 +533,7 @@ export function angularOptionsPlugin(
 // the same mock calls and re-applies them on whatever analogjs produced:
 //   - `__mocks__/…` redirect → return the redirect file contents.
 //   - plain `sb.mock(...)` automock → wrap the post-analogjs exports with
-//     `getAutomockCode(code, spy, parse)`.
+//     `getAutomockCode(code, spy, id)`.
 function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
   let viteConfig: { resolve?: { preserveSymlinks?: boolean } } = {};
   let redirects: Array<{ absolutePath: string; redirectPath: string }> = [];
@@ -555,7 +554,6 @@ function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
       try {
         const calls = extractMockCalls(
           { previewConfigPath, configDir: options.configDir },
-          babelParser,
           (viteConfig as any).root ?? process.cwd(),
           findMockRedirect
         );
@@ -608,7 +606,7 @@ function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
           return null;
         }
         try {
-          const automocked = getAutomockCode(code, a.spy, babelParser as any);
+          const automocked = getAutomockCode(code, a.spy, id);
           return {
             code: automocked.toString(),
             map: automocked.generateMap(),

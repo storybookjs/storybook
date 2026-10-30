@@ -11,7 +11,7 @@ import {
   shortcutMatchesShortcut,
   shortcutToHumanString,
 } from 'storybook/manager-api';
-import { keyframes, styled } from 'storybook/theming';
+import { keyframes, styled } from 'storybook/theming/emotion';
 
 import SettingsFooter from './SettingsFooter.tsx';
 
@@ -122,10 +122,10 @@ const shortcutLabels = {
   toolbar: 'Toggle toolbar',
   search: 'Focus search',
   focusNav: 'Focus sidebar',
-  focusIframe: 'Focus canvas',
+  focusIframe: 'Focus preview area',
   focusPanel: 'Focus addons',
-  prevComponent: 'Previous component',
-  nextComponent: 'Next component',
+  prevComponent: 'Previous component or page',
+  nextComponent: 'Next component or page',
   prevStory: 'Previous story',
   nextStory: 'Next story',
   shortcutsPage: 'Go to shortcuts page',

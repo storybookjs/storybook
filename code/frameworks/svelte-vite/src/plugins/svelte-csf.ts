@@ -5,7 +5,7 @@ import {
   svelteCsfRuntimeStoriesPath,
   transformSvelteCsf,
 } from '@storybook/svelte/internal/svelte-csf/transform';
-import type { Plugin } from 'vite';
+import { type Plugin, normalizePath } from 'vite';
 
 export function svelteCsf(): Plugin {
   let sveltePlugin: { api?: { options?: SvelteOptions } } | undefined;
@@ -26,12 +26,20 @@ export function svelteCsf(): Plugin {
       order: 'pre',
       filter: { id: exactRegex(SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE) },
       handler() {
-        return svelteCsfRuntimeStoriesPath;
+        return normalizePath(svelteCsfRuntimeStoriesPath);
       },
     },
     transform: {
-      filter: { id: /\.stories\.svelte$/ },
+      filter: { id: /\.stories\.svelte(\?svelte&type=style\b.*)?$/ },
       handler(compiledCode, id) {
+        const query = id.indexOf('?');
+        if (query !== -1) {
+          // vite-plugin-svelte keeps the CSS of a component only while its default export is used. A
+          // stories file with `preview.meta()` compiles to stories without a default export, so the
+          // production build would drop its CSS. Keep the CSS while the stories file is used.
+          const cssScopeTo = [id.slice(0, query), undefined] as const;
+          return { code: compiledCode, meta: { vite: { cssScopeTo } } };
+        }
         return transformSvelteCsf({
           filename: id,
           compiledCode,

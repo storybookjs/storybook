@@ -19,6 +19,8 @@ export type {
   UserPreferencesResult,
 } from './UserPreferencesCommand.ts';
 
+export { executeTypeScriptDependency } from './TypeScriptDependencyCommand.ts';
+
 export { executeGeneratorExecution } from './GeneratorExecutionCommand.ts';
 
 export { executeAddonConfiguration } from './AddonConfigurationCommand.ts';

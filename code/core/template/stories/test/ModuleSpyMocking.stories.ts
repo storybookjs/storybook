@@ -2,7 +2,7 @@ import { global as globalThis } from '@storybook/global';
 
 import { expect, mocked } from 'storybook/test';
 
-import { fn } from './ModuleSpyMocking.utils';
+import { Counter, fn, list } from './ModuleSpyMocking.utils';
 
 // This story demonstrates module mocking with spies. The imported util function is autospied,
 // meaning that it is mocked automatically by Storybook, because the
@@ -22,5 +22,19 @@ export const Original = {
   play: async ({ canvasElement }: any) => {
     expect(mocked(fn)).toHaveBeenCalledWith();
     await expect(canvasElement.innerHTML).toContain('Function: original value');
+  },
+};
+
+export const ArrayExport = {
+  play: async () => {
+    await expect(list).toEqual(['a', 'b']);
+  },
+};
+
+export const ClassExport = {
+  play: async () => {
+    const counter = new Counter(1);
+    await expect(counter.value).toBe(1);
+    await expect(mocked(Counter)).toHaveBeenCalledWith(1);
   },
 };

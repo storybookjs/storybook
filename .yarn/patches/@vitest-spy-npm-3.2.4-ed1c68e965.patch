@@ -1,0 +1,47 @@
+diff --git a/dist/index.js b/dist/index.js
+index f9cfa1750d4330f60d6c55ee8e2901ec1986a56b..9994bde59db92de6ed8150b180e5b8e769ec41d8 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -32,6 +32,19 @@ function spyOn(obj, method, accessType) {
+ 	}
+ }
+ let callOrder = 0;
++function requiresNew(fn) {
++	const prototype = Object.getOwnPropertyDescriptor(fn, "prototype");
++	if (prototype) {
++		return prototype.writable === false;
++	}
++	// Bound functions have no own prototype but can still be constructors; arrows and methods can't.
++	try {
++		Reflect.construct(String, [], fn);
++		return true;
++	} catch {
++		return false;
++	}
++}
+ function enhanceSpy(spy) {
+ 	const stub = spy;
+ 	let implementation;
+@@ -89,10 +102,21 @@ function enhanceSpy(spy) {
+ 		}
+ 	};
+ 	function mockCall(...args) {
+-		instances.push(this);
++		const index = instances.push(this) - 1;
+ 		contexts.push(this);
+ 		invocations.push(++callOrder);
+ 		const impl = implementationChangedTemporarily ? implementation : onceImplementations.shift() || implementation || state.getOriginal() || (() => {});
++		// Patched for storybook: backports Vitest 4's `new` handling for classes, built-ins and bound constructors,
++		// while plain function and arrow implementations keep the 3.x `apply` behavior.
++		// Remove once the bundled @vitest/spy is on Vitest 4 or later.
++		if (new.target && requiresNew(impl)) {
++			// The stub's prototype only inherits from the original's, so replacements and bound constructors build from their own.
++			const target = new.target === stub && (impl !== state.getOriginal() || !impl.prototype) ? impl : new.target;
++			const instance = Reflect.construct(impl, args, target);
++			instances[index] = instance;
++			contexts[index] = instance;
++			return instance;
++		}
+ 		return impl.apply(this, args);
+ 	}
+ 	let name = stub.name;

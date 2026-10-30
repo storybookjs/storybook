@@ -161,6 +161,47 @@ describe('buildDocgenPayload', () => {
     }
   );
 
+  it('gives array props the array type in argTypes', { timeout: 30_000 }, async () => {
+    tempDir = createTempDir('docgen-build');
+
+    const files = writeFiles(tempDir, {
+      'tsconfig.json': tsconfigJSON(),
+      'List.tsx': dedent`
+        import React from 'react';
+        export const List = (_props: { items: string[]; tags?: string[] }) => <ul />;
+      `,
+      'List.stories.tsx': dedent`
+        import { List } from './List';
+        export default { component: List, title: 'Data/List' };
+        export const Primary = () => <List items={[]} />;
+      `,
+    });
+
+    componentMetaManager = new ComponentMetaManager(ts);
+
+    const payload = await buildDocgenPayload(
+      { entry: makeStoryIndexEntry(files['List.stories.tsx'], 'Data/List') },
+      {
+        componentMetaManager,
+        resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)),
+      }
+    );
+
+    expect(payload!.argTypes?.items.type).toEqual({
+      name: 'array',
+      raw: 'string[]',
+      value: { name: 'string' },
+      required: true,
+    });
+    expect(payload!.argTypes?.tags.type).toEqual({
+      name: 'array',
+      raw: 'string[]',
+      value: { name: 'string' },
+      required: false,
+    });
+    expect(payload!.argTypes?.items.table?.type).toEqual({ summary: 'string[]' });
+  });
+
   it(
     "leaves React's own ref and key out of argTypes, like builder docgen did",
     { timeout: 30_000 },

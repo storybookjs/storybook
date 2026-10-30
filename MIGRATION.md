@@ -17,6 +17,7 @@
   - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
   - [Deprecated CSF and manager type aliases removed](#deprecated-csf-and-manager-type-aliases-removed)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
+    - [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or newer](#typescript-59-or-newer)
@@ -1015,6 +1016,18 @@ RDT options such as `propFilter` and a Vue docgen `tsconfig` have no server equi
 Set `features.docgenServer: false` to keep builder extraction.
 For Angular-Vite, `framework.options.compodoc: false` does not disable the docgen server; use the feature flag to opt out.
 
+#### Temporary regressions on source snippet generation
+
+With server-side docgen, React, Angular, Vue 3 and Web Components build story source snippets on the server from the story file.
+Whilst this change enables support for agent skills, we have had to completely rewrite source snippet generation server-side. Our new snippet generation comes with significant improvements for several frameworks, but also with temporary regressions.
+
+In Storybook 11.0, server-side source snippets do not update dynamically when you change a story's args. This is a known limitation and it will be fixed in Storybook 11.1 at the latest.
+
+Besides, some stories may be missing source snippets in the code panel. Stories are affected depending on whether their args, template functions, etc., could be interpreted server-side. You will see a warning when Storybook failed to render source snippets. We will address the various limitations causing snippet generation to fail over time.
+
+Set `features.docgenServer: false` to restore runtime snippets and runtime docgen, if your Storybook is affected by these limitations.
+
+
 ### Builder docgen is deprecated
 
 Client-side docgen that runs in the builder is deprecated and will be removed in Storybook 12.
@@ -1739,6 +1752,7 @@ The `--renderer` flag of `storybook automigrate` is also removed. Only the remov
 ### Web Components: server-side docgen suffixes event, slot and part argType keys
 
 With server-side docgen, which is on by default (see [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)), `@storybook/web-components-vite` builds argTypes from the Custom Elements Manifest on the Storybook server.
+Story source snippets are built on the server too; see [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation).
 Events, slots and CSS shadow parts are keyed with their category as a suffix, the same keys `@wc-toolkit/storybook-helpers` uses:
 
 | Manifest item     | Runtime docgen key | Server docgen key |

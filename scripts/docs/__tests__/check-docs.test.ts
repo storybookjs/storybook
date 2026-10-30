@@ -475,7 +475,8 @@ describe('check-docs', () => {
 
       const changed = await fixSnippets(docsDir);
 
-      expect(changed).toEqual([file]);
+      // tinyglobby returns drive-absolute paths on Windows.
+      expect(changed.map((p) => p.replace(/^[A-Za-z]:/, ''))).toEqual([file]);
       expect(await fs.readFile(file, 'utf8')).toBe(
         [
           '<!-- comment -->\n\n' + csf4('react', 'js'),

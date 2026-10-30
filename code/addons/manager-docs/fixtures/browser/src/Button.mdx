@@ -1,0 +1,28 @@
+import * as SB from '@storybook/experimental-addon-manager-docs/mdx';
+import * as ButtonStories from './Button.stories';
+
+# Buttons
+
+A button shown with the default toolbar and panel.
+
+<SB.Story of={ButtonStories.Primary} />
+
+Explicit toolbar and both panel tabs.
+
+<SB.Story of={ButtonStories.Secondary} toolbar={true} panel={['actions', 'interactions']} />
+
+Actions only.
+
+<SB.Story of={ButtonStories.Primary} toolbar={[]} panel={['actions']} />
+
+No toolbar and no panel.
+
+<SB.Story of={ButtonStories.Secondary} toolbar={[]} panel={false} focus />
+
+Fixed pixel height.
+
+<SB.Story of={ButtonStories.Primary} height="480" />
+
+16:9 frame.
+
+<SB.Story of={ButtonStories.Secondary} ratio="16/9" />

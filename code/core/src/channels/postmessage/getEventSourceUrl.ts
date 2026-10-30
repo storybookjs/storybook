@@ -20,23 +20,34 @@ const pickFrameByRefId = (
   );
 };
 
+const FRAME_SELECTOR = 'iframe[data-is-storybook], iframe[data-manager-docs-instance]';
+
+const frameUrl = (src: string): string => {
+  const { protocol, host, pathname } = new URL(src, document.location.toString());
+  return `${protocol}//${host}${pathname}`;
+};
+
 export const getEventSourceUrl = (event: MessageEvent, refId?: string): string | null => {
-  const frames: HTMLIFrameElement[] = Array.from(
-    document.querySelectorAll('iframe[data-is-storybook]')
-  );
-  // try to find the originating iframe by matching it's contentWindow
-  // This might not be cross-origin safe
+  const frames: HTMLIFrameElement[] = Array.from(document.querySelectorAll(FRAME_SELECTOR));
+  // Several docs iframes share /iframe.html, so the path match alone cannot tell them apart.
+  const exact = frames.find((element) => {
+    try {
+      return element.contentWindow === event.source;
+    } catch {
+      return false;
+    }
+  });
+  if (exact) {
+    const src = exact.getAttribute('src');
+    return src ? frameUrl(src) : null;
+  }
+
   const candidates = frames.filter((element) => {
     try {
       return (
         element.contentWindow?.location.origin === (event.source as Window).location.origin &&
         element.contentWindow?.location.pathname === (event.source as Window).location.pathname
       );
-    } catch {
-      // continue
-    }
-    try {
-      return element.contentWindow === event.source;
     } catch {
       // continue
     }
@@ -59,8 +70,7 @@ export const getEventSourceUrl = (event: MessageEvent, refId?: string): string |
   const src = pickFrameByRefId(candidates, refId)?.getAttribute('src');
 
   if (src) {
-    const { protocol, host, pathname } = new URL(src, document.location.toString());
-    return `${protocol}//${host}${pathname}`;
+    return frameUrl(src);
   }
 
   if (candidates.length > 1) {

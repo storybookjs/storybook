@@ -67,4 +67,12 @@ export class GlobalsStore {
       }
     }
   }
+
+  replace(next: Globals) {
+    this.globals = { ...this.filterAllowedGlobals(next) };
+  }
+
+  resetToInitial() {
+    this.globals = { ...this.initialGlobals };
+  }
 }

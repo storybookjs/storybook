@@ -24,7 +24,9 @@ import type { IndexEntry } from './indexer.ts';
 
 export type Addon_Types = Exclude<
   Addon_TypesEnum,
-  Addon_TypesEnum.experimental_PAGE | Addon_TypesEnum.experimental_TEST_PROVIDER
+  | Addon_TypesEnum.experimental_PAGE
+  | Addon_TypesEnum.experimental_TEST_PROVIDER
+  | Addon_TypesEnum.experimental_MANAGER_DOCS
 >;
 
 export interface Addon_ArgType<TArg = unknown> extends InputType {
@@ -324,7 +326,8 @@ export type Addon_Type =
   | Addon_BaseType
   | Addon_PageType
   | Addon_WrapperType
-  | Addon_TestProviderType;
+  | Addon_TestProviderType
+  | Addon_ManagerDocsType;
 export interface Addon_BaseType {
   /**
    * The title of the addon. This can be a simple string, but it can also be a
@@ -345,6 +348,7 @@ export interface Addon_BaseType {
     | Addon_TypesEnum.PREVIEW
     | Addon_TypesEnum.experimental_PAGE
     | Addon_TypesEnum.experimental_TEST_PROVIDER
+    | Addon_TypesEnum.experimental_MANAGER_DOCS
   >;
   /**
    * The unique id of the addon.
@@ -439,17 +443,42 @@ export interface Addon_TestProviderType {
   clear?: () => void;
 }
 
+export interface Addon_ManagerDocsProps {
+  storyId?: string;
+  viewMode?: string;
+  baseUrl: string;
+  entry?: {
+    id?: string;
+    type?: string;
+    importPath?: string;
+  };
+}
+
+/**
+ * Render docs mode in the manager instead of the preview iframe.
+ *
+ * With nothing registered, docs mode keeps today's single preview iframe.
+ */
+export interface Addon_ManagerDocsType {
+  type: Addon_TypesEnum.experimental_MANAGER_DOCS;
+  /** The unique id of the addon. */
+  id: string;
+  render: FC<Addon_ManagerDocsProps>;
+}
+
 type Addon_TypeBaseNames = Exclude<
   Addon_TypesEnum,
   | Addon_TypesEnum.PREVIEW
   | Addon_TypesEnum.experimental_PAGE
   | Addon_TypesEnum.experimental_TEST_PROVIDER
+  | Addon_TypesEnum.experimental_MANAGER_DOCS
 >;
 
 export interface Addon_TypesMapping extends Record<Addon_TypeBaseNames, Addon_BaseType> {
   [Addon_TypesEnum.PREVIEW]: Addon_WrapperType;
   [Addon_TypesEnum.experimental_PAGE]: Addon_PageType;
   [Addon_TypesEnum.experimental_TEST_PROVIDER]: Addon_TestProviderType;
+  [Addon_TypesEnum.experimental_MANAGER_DOCS]: Addon_ManagerDocsType;
 }
 
 export type Addon_Loader<API> = (api: API) => void;
@@ -499,4 +528,10 @@ export enum Addon_TypesEnum {
   experimental_PAGE = 'page',
   /** This adds items to the Testing Module in the sidebar. */
   experimental_TEST_PROVIDER = 'test-provider',
+  /**
+   * Renders the docs route in the manager instead of the preview iframe.
+   *
+   * @unstable
+   */
+  experimental_MANAGER_DOCS = 'manager-docs',
 }

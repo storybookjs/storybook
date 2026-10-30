@@ -1,6 +1,7 @@
 import a11yConfig from '../../code/addons/a11y/build-config.ts';
 import docsConfig from '../../code/addons/docs/build-config.ts';
 import linksConfig from '../../code/addons/links/build-config.ts';
+import managerDocsConfig from '../../code/addons/manager-docs/build-config.ts';
 import mcpAddonConfig from '../../code/addons/mcp/build-config.ts';
 import onboardingConfig from '../../code/addons/onboarding/build-config.ts';
 import pseudoStatesConfig from '../../code/addons/pseudo-states/build-config.ts';
@@ -58,6 +59,7 @@ export const buildEntries = {
   'storybook-addon-pseudo-states': pseudoStatesConfig,
   '@storybook/addon-themes': themesConfig,
   '@storybook/addon-vitest': vitestConfig,
+  '@storybook/experimental-addon-manager-docs': managerDocsConfig,
 
   // builders
   '@storybook/builder-vite': builderViteConfig,

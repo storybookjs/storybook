@@ -47,6 +47,13 @@ import { global } from '@storybook/global';
 
 import { StoryStore, composeProjectAnnotationsWithCore } from '../../store.ts';
 import { addons } from '../addons/index.ts';
+import {
+  acceptsAddressedUpdate,
+  applyAddressedUpdate,
+  managerDocsInstanceFromSearch,
+  reuseAddressedPreview,
+  storyIdFromSearch,
+} from '../store/addressed-preview.ts';
 import type { CsfDocsRender } from './render/CsfDocsRender.ts';
 import type { MdxDocsRender } from './render/MdxDocsRender.ts';
 import { StoryRender } from './render/StoryRender.ts';
@@ -74,6 +81,12 @@ export class Preview<TRenderer extends Renderer> {
 
   protected storeInitializationPromise: Promise<void>;
 
+  managerDocsInstanceId: string | null = null;
+
+  addressedStoryId: string | null = null;
+
+  private managerDocsGeneration = 1;
+
   protected resolveStoreInitializationPromise!: () => void;
 
   protected rejectStoreInitializationPromise!: (err: Error) => void;
@@ -92,7 +105,9 @@ export class Preview<TRenderer extends Renderer> {
       this.rejectStoreInitializationPromise = reject;
     });
 
-    // Cannot await this in constructor, but if you want to await it, use `ready()`
+    const search = global.location?.search ?? '';
+    this.managerDocsInstanceId = managerDocsInstanceFromSearch(search);
+    this.addressedStoryId = this.managerDocsInstanceId ? storyIdFromSearch(search) : null;
 
     // Cannot await this in constructor, but if you want to await it, use `ready()`
     if (shouldInitialize) {
@@ -310,10 +325,15 @@ export class Preview<TRenderer extends Renderer> {
   async onUpdateGlobals({
     globals: updatedGlobals,
     currentStory,
+    instanceId,
   }: {
     globals: Globals;
     currentStory?: PreparedStory<TRenderer>;
+    instanceId?: string;
   }) {
+    if (!acceptsAddressedUpdate(this.managerDocsInstanceId, instanceId)) {
+      return;
+    }
     if (!this.storyStoreValue) {
       await this.storeInitializationPromise;
     }
@@ -323,7 +343,7 @@ export class Preview<TRenderer extends Renderer> {
 
     this.storyStoreValue.userGlobals.update(updatedGlobals);
 
-    if (currentStory) {
+    if (!this.managerDocsInstanceId && currentStory) {
       const { initialGlobals, storyGlobals, userGlobals, globals } =
         this.storyStoreValue.getStoryContext(currentStory);
       this.channel.emit(GLOBALS_UPDATED, {
@@ -332,7 +352,7 @@ export class Preview<TRenderer extends Renderer> {
         storyGlobals,
         globals,
       } satisfies GlobalsUpdatedPayload);
-    } else {
+    } else if (!this.managerDocsInstanceId) {
       // If there is no known selected story (e.g. if we are in docs mode), the userGlobals
       // are not overridden.
       const { initialGlobals, globals } = this.storyStoreValue.userGlobals;
@@ -347,12 +367,146 @@ export class Preview<TRenderer extends Renderer> {
     await Promise.all(this.storyRenders.map((r) => r.rerender()));
   }
 
-  async onUpdateArgs({ storyId, updatedArgs }: { storyId: StoryId; updatedArgs: Args }) {
+  async onUpdateArgs({
+    storyId,
+    updatedArgs,
+    instanceId,
+  }: {
+    storyId: StoryId;
+    updatedArgs: Args;
+    instanceId?: string;
+  }) {
+    if (!acceptsAddressedUpdate(this.managerDocsInstanceId, instanceId)) {
+      return;
+    }
     if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'onUpdateArgs' });
     }
     this.storyStoreValue.args.update(storyId, updatedArgs);
+    await this.rerenderStory(storyId);
+    if (this.managerDocsInstanceId) {
+      return;
+    }
 
+    this.channel.emit(STORY_ARGS_UPDATED, {
+      storyId,
+      args: this.storyStoreValue.args.get(storyId),
+    });
+  }
+
+  async updateInstanceStoryArgs(update: {
+    instanceId: string;
+    storyId: StoryId;
+    updatedArgs: Args;
+    generation?: number;
+  }): Promise<boolean> {
+    if (!this.acceptsInstanceStory(update.instanceId, update.storyId)) {
+      return false;
+    }
+    await this.storeInitializationPromise;
+    if (!this.storyStoreValue) {
+      throw new CalledPreviewMethodBeforeInitializationError({
+        methodName: 'updateInstanceStoryArgs',
+      });
+    }
+    await this.storyStoreValue.loadStory({ storyId: update.storyId });
+    const applied = applyAddressedUpdate(this.addressedDocument(update.storyId), {
+      kind: 'args',
+      instanceId: update.instanceId,
+      storyId: update.storyId,
+      args: update.updatedArgs,
+      generation: update.generation,
+    });
+    if (!applied) {
+      return false;
+    }
+    await this.rerenderStory(update.storyId);
+    return true;
+  }
+
+  async updateStory(selection: {
+    storyId: StoryId;
+    managerDocsInstance: string;
+    args?: Args;
+    globals?: Globals;
+  }): Promise<boolean> {
+    if (!this.managerDocsInstanceId) {
+      return false;
+    }
+    await this.storeInitializationPromise;
+    if (!this.storyStoreValue) {
+      throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'updateStory' });
+    }
+    await this.storyStoreValue.loadStory({ storyId: selection.storyId });
+    let args = selection.args;
+    if (!args) {
+      try {
+        args = this.storyStoreValue.args.get(selection.storyId);
+      } catch {
+        args = {};
+      }
+    }
+    const doc = this.addressedDocument(this.addressedStoryId ?? selection.storyId);
+    reuseAddressedPreview(doc, {
+      instanceId: selection.managerDocsInstance,
+      storyId: selection.storyId,
+      args,
+      globals: selection.globals ?? {},
+    });
+    this.managerDocsInstanceId = doc.instanceId;
+    this.addressedStoryId = doc.storyId;
+    this.managerDocsGeneration = doc.generation;
+    return true;
+  }
+
+  async updateInstanceGlobals(update: {
+    instanceId: string;
+    globals: Globals;
+    generation?: number;
+  }): Promise<boolean> {
+    if (!acceptsAddressedUpdate(this.managerDocsInstanceId, update.instanceId)) {
+      return false;
+    }
+    await this.storeInitializationPromise;
+    if (!this.storyStoreValue) {
+      throw new CalledPreviewMethodBeforeInitializationError({
+        methodName: 'updateInstanceGlobals',
+      });
+    }
+    const applied = applyAddressedUpdate(this.addressedDocument(this.addressedStoryId ?? ''), {
+      kind: 'globals',
+      instanceId: update.instanceId,
+      globals: update.globals,
+      generation: update.generation,
+    });
+    if (!applied) {
+      return false;
+    }
+    await Promise.all(this.storyRenders.map((r) => r.rerender()));
+    return true;
+  }
+
+  private acceptsInstanceStory(instanceId: string, storyId: StoryId): boolean {
+    if (!acceptsAddressedUpdate(this.managerDocsInstanceId, instanceId)) {
+      return false;
+    }
+    return !this.addressedStoryId || this.addressedStoryId === storyId;
+  }
+
+  private addressedDocument(storyId: StoryId) {
+    if (!this.storyStoreValue) {
+      throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'addressedDocument' });
+    }
+    return {
+      instanceId: this.managerDocsInstanceId,
+      generation: this.managerDocsGeneration,
+      storyId,
+      args: this.storyStoreValue.args,
+      globals: this.storyStoreValue.userGlobals,
+    };
+  }
+
+  private async rerenderStory(storyId: StoryId) {
     await Promise.all(
       this.storyRenders
         .filter((r) => r.id === storyId && !r.renderOptions.forceInitialArgs)
@@ -362,11 +516,6 @@ export class Preview<TRenderer extends Renderer> {
           r.story && r.story.usesMount ? r.remount() : r.rerender()
         )
     );
-
-    this.channel.emit(STORY_ARGS_UPDATED, {
-      storyId,
-      args: this.storyStoreValue.args.get(storyId),
-    });
   }
 
   async onRequestArgTypesInfo({ id, payload }: RequestData<ArgTypesRequestPayload>) {

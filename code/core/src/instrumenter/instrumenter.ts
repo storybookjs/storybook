@@ -11,6 +11,7 @@ import { global } from '@storybook/global';
 
 import { processError } from '@vitest/utils/error';
 
+import { managerDocsInstanceFromSearch } from '../preview-api/modules/store/addressed-preview.ts';
 import { EVENTS } from './EVENTS.ts';
 import { addons } from './preview-api.ts';
 import type {
@@ -285,9 +286,16 @@ export class Instrumenter {
     }
   }
 
+  // Several manager-docs iframes can show the same story, so each keeps its own slot on the parent.
+  private readonly instanceId = managerDocsInstanceFromSearch(global.window?.location?.search);
+
   loadParentWindowState = () => {
     try {
-      this.state = global.window?.parent?.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ || {};
+      const parent = global.window?.parent;
+      this.state =
+        (this.instanceId
+          ? parent?.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_INSTANCE_STATE__?.[this.instanceId]
+          : parent?.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__) || {};
     } catch {
       // This happens when window.parent is not on the same origin (e.g. for a composed storybook)
       this.detached = true;
@@ -296,7 +304,14 @@ export class Instrumenter {
 
   updateParentWindowState = () => {
     try {
-      global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = this.state;
+      const parent = global.window.parent;
+      if (this.instanceId) {
+        parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_INSTANCE_STATE__ ??= {};
+        parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_INSTANCE_STATE__[this.instanceId] =
+          this.state;
+      } else {
+        parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = this.state;
+      }
     } catch {
       // This happens when window.parent is not on the same origin (e.g. for a composed storybook)
       this.detached = true;

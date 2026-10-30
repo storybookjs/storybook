@@ -7,6 +7,7 @@ import type {
   Addon_Config,
   Addon_Elements,
   Addon_Loaders,
+  Addon_ManagerDocsType,
   Addon_PageType,
   Addon_TestProviderType,
   Addon_Type,
@@ -82,7 +83,8 @@ export class AddonStore {
     T extends
       | Addon_Types
       | Addon_TypesEnum.experimental_PAGE
-      | Addon_TypesEnum.experimental_TEST_PROVIDER,
+      | Addon_TypesEnum.experimental_TEST_PROVIDER
+      | Addon_TypesEnum.experimental_MANAGER_DOCS,
   >(type: T): Addon_Collection<Addon_TypesMapping[T]> | any {
     if (!this.elements[type]) {
       this.elements[type] = {};
@@ -104,6 +106,7 @@ export class AddonStore {
       | Omit<Addon_TestProviderType, 'id'>
       | Omit<Addon_PageType, 'id'>
       | Omit<Addon_WrapperType, 'id'>
+      | Omit<Addon_ManagerDocsType, 'id'>
   ): void {
     const { type } = addon;
     const collection = this.getElements(type);
@@ -145,7 +148,8 @@ export class AddonStore {
     T extends
       | Addon_Types
       | Addon_TypesEnum.experimental_PAGE
-      | Addon_TypesEnum.experimental_TEST_PROVIDER,
+      | Addon_TypesEnum.experimental_TEST_PROVIDER
+      | Addon_TypesEnum.experimental_MANAGER_DOCS,
   >(type?: T) {
     return type ? Object.keys(this.getElements(type)) : Object.keys(this.loaders);
   }

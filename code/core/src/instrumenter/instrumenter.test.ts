@@ -790,6 +790,41 @@ describe('Instrumenter', () => {
     });
   });
 
+  describe('in a manager-docs instance iframe', () => {
+    const withSearch = (search: string) => {
+      const previous = global.window.location;
+      // @ts-expect-error (global scope type conflicts)
+      global.window.location = { ...previous, search };
+      const created = new Instrumenter();
+      // @ts-expect-error (global scope type conflicts)
+      global.window.location = previous;
+      return created;
+    };
+
+    beforeEach(() => {
+      global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_INSTANCE_STATE__ = {};
+    });
+
+    it('keeps its state apart from the main canvas and from another instance of the same story', () => {
+      const first = withSearch(`?id=${storyId}&managerDocsInstance=${storyId}%231`);
+      const second = withSearch(`?id=${storyId}&managerDocsInstance=${storyId}%232`);
+      global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = {};
+
+      first.setState(storyId, { isDebugging: true, cursor: 3 });
+
+      const slots =
+        global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_INSTANCE_STATE__;
+      expect(slots[`${storyId}#1`][storyId]).toMatchObject({ isDebugging: true, cursor: 3 });
+      expect(slots[`${storyId}#2`]).toBeUndefined();
+      expect(global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__).toEqual({});
+      expect(second.getState(storyId).isDebugging).toBe(false);
+
+      const reloaded = withSearch(`?id=${storyId}&managerDocsInstance=${storyId}%231`);
+      expect(reloaded.getState(storyId)).toMatchObject({ isDebugging: true, cursor: 3 });
+      expect(withSearch(`?id=${storyId}`).getState(storyId).isDebugging).toBe(false);
+    });
+  });
+
   describe('while detached from parent window', () => {
     beforeEach(() => {
       global.window.parent = {

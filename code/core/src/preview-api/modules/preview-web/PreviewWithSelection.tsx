@@ -246,7 +246,28 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     }
   }
 
-  async onSetCurrentStory(selection: { storyId: StoryId; viewMode?: ViewMode }) {
+  async onSetCurrentStory(selection: {
+    storyId: StoryId;
+    viewMode?: ViewMode;
+    managerDocsInstance?: string;
+    args?: Args;
+    globals?: Globals;
+    options?: { target?: string };
+  }) {
+    if (this.managerDocsInstanceId) {
+      if (!selection.managerDocsInstance) {
+        return;
+      }
+      const reused = await this.updateStory({
+        storyId: selection.storyId,
+        managerDocsInstance: selection.managerDocsInstance,
+        args: selection.args,
+        globals: selection.globals,
+      });
+      if (!reused) {
+        return;
+      }
+    }
     /**
      * At the end of the initialization promise we will read the current story from the selection
      * store, so make sure we've updated it with the new selection or we'll lose track of it at the
@@ -264,10 +285,10 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     this.selectionStore.setQueryParams(queryParams);
   }
 
-  async onUpdateGlobals({ globals }: { globals: Globals }) {
+  async onUpdateGlobals({ globals, instanceId }: { globals: Globals; instanceId?: string }) {
     const currentStory =
       (this.currentRender instanceof StoryRender && this.currentRender.story) || undefined;
-    await super.onUpdateGlobals({ globals, currentStory });
+    await super.onUpdateGlobals({ globals, currentStory, instanceId });
     if (
       this.currentRender instanceof MdxDocsRender ||
       this.currentRender instanceof CsfDocsRender
@@ -276,8 +297,33 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     }
   }
 
-  async onUpdateArgs({ storyId, updatedArgs }: { storyId: StoryId; updatedArgs: Args }) {
-    super.onUpdateArgs({ storyId, updatedArgs });
+  async onUpdateArgs(update: { storyId: StoryId; updatedArgs: Args; instanceId?: string }) {
+    super.onUpdateArgs(update);
+  }
+
+  hasDeferredPlay(): boolean {
+    return this.currentRender instanceof StoryRender && this.currentRender.hasDeferredPlay();
+  }
+
+  async runInstancePlay(): Promise<boolean> {
+    if (!this.managerDocsInstanceId) {
+      return false;
+    }
+    const render = this.currentRender;
+    if (!(render instanceof StoryRender)) {
+      return false;
+    }
+    return render.runDeferredPlay();
+  }
+
+  cancelInstancePlay(): void {
+    if (!this.managerDocsInstanceId) {
+      return;
+    }
+    const render = this.currentRender;
+    if (render instanceof StoryRender) {
+      render.cancelPlayFunction();
+    }
   }
 
   async onPreloadStories({ ids }: { ids: string[] }) {

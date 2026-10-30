@@ -3,7 +3,7 @@ import React, { Fragment, useEffect, useRef, useState } from 'react';
 
 import { Loader } from 'storybook/internal/components';
 import { PREVIEW_BUILDER_PROGRESS, SET_CURRENT_STORY } from 'storybook/internal/core-events';
-import type { Addon_WrapperType } from 'storybook/internal/types';
+import { Addon_TypesEnum, type Addon_WrapperType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -13,6 +13,7 @@ import { Consumer, addons, type Combo } from 'storybook/manager-api';
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { isReviewCollectionStoryRoute } from '../../../shared/review/routes.ts';
 import { ReviewToolbarHeader } from '../review/components/ReviewToolbarHeader.tsx';
+import { selectDocsCanvas, showsPreviewToolbar } from './docs-canvas.ts';
 import { FramesRenderer } from './FramesRenderer.tsx';
 import { ToolbarComp } from './Toolbar.tsx';
 import { ApplyWrappers } from './Wrappers.tsx';
@@ -53,7 +54,11 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
 
   const shouldScale = viewMode === 'story';
   const { showToolbar } = options;
-  const customisedShowToolbar = api.getShowToolbarWithCustomisations(showToolbar);
+  const customisedShowToolbar = showsPreviewToolbar(
+    api.getShowToolbarWithCustomisations(showToolbar),
+    viewMode,
+    api.getElements(Addon_TypesEnum.experimental_MANAGER_DOCS)
+  );
   const isReviewCollectionStory = isReviewCollectionStoryRoute(path, queryParams);
 
   const previousStoryId = useRef(storyId);
@@ -160,18 +165,32 @@ const Canvas: FC<{
         const rootLoading = !refId && (!previewInitialized || isBuilding);
         const isLoading = entry ? refLoading || rootLoading : rootLoading;
 
+        const docsCanvas = selectDocsCanvas(
+          viewMode,
+          api.getElements(Addon_TypesEnum.experimental_MANAGER_DOCS)
+        );
+        const DocsView = docsCanvas?.render;
+
         return (
           <ZoomConsumer>
             {({ value: scale }) => {
               return (
                 <>
-                  {withLoader && isLoading && (
+                  {/* This view replaces the preview iframe, which is what clears isLoading. */}
+                  {withLoader && isLoading && !DocsView && (
                     <S.LoaderWrapper>
                       <Loader id="preview-loader" role="progressbar" progress={progress} />
                     </S.LoaderWrapper>
                   )}
                   <ApplyWrappers id={id} storyId={storyId} viewMode={viewMode} wrappers={wrappers}>
-                    {customCanvas ? (
+                    {DocsView ? (
+                      <DocsView
+                        baseUrl={baseUrl}
+                        entry={entry}
+                        storyId={storyId}
+                        viewMode={viewMode}
+                      />
+                    ) : customCanvas ? (
                       customCanvas(storyId, viewMode, id, baseUrl, scale, queryParams)
                     ) : (
                       <FramesRenderer

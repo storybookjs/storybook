@@ -3,6 +3,7 @@ export default {
   '@storybook/addon-a11y': '11.0.0-alpha.6',
   '@storybook/addon-docs': '11.0.0-alpha.6',
   '@storybook/addon-links': '11.0.0-alpha.6',
+  '@storybook/experimental-addon-manager-docs': '11.0.0-alpha.6',
   '@storybook/addon-mcp': '11.0.0-alpha.6',
   '@storybook/addon-onboarding': '11.0.0-alpha.6',
   'storybook-addon-pseudo-states': '11.0.0-alpha.6',

@@ -435,6 +435,77 @@ describe('PostMessageTransport origin validation', () => {
 
       expect(postMessage).toHaveBeenCalledWith(expect.any(String), '*');
     });
+
+    it('sends an instance target to that iframe and not to the main canvas or another instance', () => {
+      const frame = (instanceId: string | null) => {
+        const iframe = document.createElement('iframe');
+        iframe.setAttribute('src', `${OWN_ORIGIN}/iframe.html`);
+        if (instanceId) {
+          iframe.dataset.managerDocsInstance = instanceId;
+        } else {
+          iframe.id = 'storybook-preview-iframe';
+          iframe.setAttribute('data-is-storybook', 'true');
+          iframe.setAttribute('data-is-loaded', 'true');
+        }
+        const postMessage = vi.fn();
+        Object.defineProperty(iframe, 'contentWindow', {
+          value: { postMessage, location: { href: `${OWN_ORIGIN}/iframe.html` } },
+        });
+        return { iframe, postMessage };
+      };
+
+      const main = frame(null);
+      const instanceA = frame('button--primary#4:1');
+      const instanceB = frame('button--primary#6:1');
+      vi.spyOn(document, 'querySelectorAll').mockImplementation((selector) => {
+        const matched =
+          selector === 'iframe[data-manager-docs-instance]'
+            ? [instanceA.iframe, instanceB.iframe]
+            : String(selector).includes('data-is-storybook')
+              ? [main.iframe]
+              : [];
+        return matched as unknown as ReturnType<typeof document.querySelectorAll>;
+      });
+      const transport = createTransport('manager');
+
+      transport.send(
+        { type: 'experimental-manager-docs/instance', args: [], from: 'manager' },
+        { target: 'button--primary#4:1' }
+      );
+
+      expect(instanceA.postMessage).toHaveBeenCalledOnce();
+      expect(instanceB.postMessage).not.toHaveBeenCalled();
+      expect(main.postMessage).not.toHaveBeenCalled();
+    });
+
+    it('accepts a channel message from one manager-docs iframe when several are mounted', () => {
+      const frame = (instanceId: string) => {
+        const iframe = document.createElement('iframe');
+        iframe.dataset.managerDocsInstance = instanceId;
+        iframe.setAttribute('src', `${OWN_ORIGIN}/iframe.html`);
+        const contentWindow = {} as Window;
+        Object.defineProperty(iframe, 'contentWindow', { value: contentWindow });
+        return { iframe, contentWindow };
+      };
+      const first = frame('pages-homepage--default#13:1');
+      const second = frame('pages-restaurantdetailpage--with-modal-open#25:1');
+      vi.spyOn(document, 'querySelectorAll').mockReturnValue([
+        first.iframe,
+        second.iframe,
+      ] as unknown as ReturnType<typeof document.querySelectorAll>);
+      createTransport('manager');
+
+      receiveFrom(second.contentWindow, OWN_ORIGIN, {
+        key: KEY,
+        event: { type: 'experimental-manager-docs/instance', args: [] },
+      });
+
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'experimental-manager-docs/instance' })
+      );
+      expect(logger.error).not.toHaveBeenCalled();
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
   });
 });
 

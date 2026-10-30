@@ -80,6 +80,8 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
   public torndown = false;
 
+  private deferredPlay: (() => Promise<void>) | null = null;
+
   constructor(
     public channel: Channel,
     public store: StoryStore<TRenderer>,
@@ -220,6 +222,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       // We might want to change that in the future.
       this.cancelRender();
       this.abortController = new AbortController();
+      // A remount reuses this render instead of creating a new one, so a previous
+      // teardown() (e.g. from an earlier remount) must not permanently block a later
+      // runDeferredPlay() call for this cycle.
+      this.torndown = false;
     }
 
     // We need a stable reference to the signal -- if a re-mount happens the
@@ -332,56 +338,64 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       };
 
       // The phase should be 'rendering' but it might be set to 'aborted' by another render cycle
-      if (this.renderOptions.autoplay && forceRemount && playFunction && this.phase !== 'errored') {
-        window?.addEventListener?.('error', onError);
-        window?.addEventListener?.('unhandledrejection', onUnhandledRejection);
-        this.disableKeyListeners = true;
-        try {
-          if (!isMountDestructured) {
-            context.mount = async () => {
-              throw new MountMustBeDestructuredError({ playFunction: playFunction.toString() });
-            };
-            await this.runPhase(abortSignal, 'playing', async () => playFunction(hookContext));
-          } else {
-            // when mount is used the playing phase will start later, right after mount is called in the play function
-            await playFunction(hookContext);
-          }
+      if (playFunction && this.phase !== 'errored') {
+        const play = playFunction;
+        const executePlay = async () => {
+          window?.addEventListener?.('error', onError);
+          window?.addEventListener?.('unhandledrejection', onUnhandledRejection);
+          this.disableKeyListeners = true;
+          try {
+            if (!isMountDestructured) {
+              context.mount = async () => {
+                throw new MountMustBeDestructuredError({ playFunction: play.toString() });
+              };
+              await this.runPhase(abortSignal, 'playing', async () => play(hookContext));
+            } else {
+              // when mount is used the playing phase will start later, right after mount is called in the play function
+              await play(hookContext);
+            }
 
-          if (!mounted) {
-            throw new NoStoryMountedError();
-          }
-          this.checkIfAborted(abortSignal);
+            if (!mounted) {
+              throw new NoStoryMountedError();
+            }
+            this.checkIfAborted(abortSignal);
 
+            if (!ignoreUnhandledErrors && unhandledErrors.size > 0) {
+              await this.runPhase(abortSignal, 'errored');
+            } else {
+              await this.runPhase(abortSignal, 'played');
+            }
+          } catch (error) {
+            // Remove the loading screen, even if there was an error before rendering
+            this.callbacks.showStoryDuringRender?.();
+
+            await this.runPhase(abortSignal, 'errored', async () => {
+              this.channel.emit(PLAY_FUNCTION_THREW_EXCEPTION, serializeError(error));
+            });
+
+            if (story.parameters.throwPlayFunctionExceptions !== false) {
+              throw error;
+            }
+            console.error(error);
+          }
           if (!ignoreUnhandledErrors && unhandledErrors.size > 0) {
-            await this.runPhase(abortSignal, 'errored');
-          } else {
-            await this.runPhase(abortSignal, 'played');
+            this.channel.emit(
+              UNHANDLED_ERRORS_WHILE_PLAYING,
+              Array.from(unhandledErrors).map(serializeError)
+            );
           }
-        } catch (error) {
-          // Remove the loading screen, even if there was an error before rendering
-          this.callbacks.showStoryDuringRender?.();
-
-          await this.runPhase(abortSignal, 'errored', async () => {
-            this.channel.emit(PLAY_FUNCTION_THREW_EXCEPTION, serializeError(error));
-          });
-
-          if (this.story.parameters.throwPlayFunctionExceptions !== false) {
-            throw error;
+          this.disableKeyListeners = false;
+          window?.removeEventListener?.('unhandledrejection', onUnhandledRejection);
+          window?.removeEventListener?.('error', onError);
+        };
+        if (this.renderOptions.autoplay && forceRemount) {
+          this.deferredPlay = null;
+          await executePlay();
+          if (abortSignal.aborted) {
+            return;
           }
-          console.error(error);
-        }
-        if (!ignoreUnhandledErrors && unhandledErrors.size > 0) {
-          this.channel.emit(
-            UNHANDLED_ERRORS_WHILE_PLAYING,
-            Array.from(unhandledErrors).map(serializeError)
-          );
-        }
-        this.disableKeyListeners = false;
-        window?.removeEventListener?.('unhandledrejection', onUnhandledRejection);
-        window?.removeEventListener?.('error', onError);
-
-        if (abortSignal.aborted) {
-          return;
+        } else if (!this.renderOptions.autoplay) {
+          this.deferredPlay = executePlay;
         }
       }
 
@@ -466,7 +480,22 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   // (possibly the loaders or the play function are still running). We use the controller
   // as a method to abort them, ASAP, but this is not foolproof as we cannot control what
   // happens inside the user's code.
+  hasDeferredPlay(): boolean {
+    return this.deferredPlay !== null;
+  }
+
+  async runDeferredPlay(): Promise<boolean> {
+    const play = this.deferredPlay;
+    if (!play || this.torndown) {
+      return false;
+    }
+    this.deferredPlay = null;
+    await play();
+    return true;
+  }
+
   cancelRender() {
+    this.deferredPlay = null;
     this.abortController.abort();
   }
 

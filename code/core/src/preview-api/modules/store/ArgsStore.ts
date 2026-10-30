@@ -84,4 +84,20 @@ export class ArgsStore {
       ...argsUpdate,
     });
   }
+
+  replace(storyId: StoryId, args: Args) {
+    if (!(storyId in this.argsByStoryId)) {
+      throw new Error(`No args known for ${storyId} -- has it been rendered yet?`);
+    }
+
+    this.argsByStoryId[storyId] = structuredClone(args);
+  }
+
+  resetToInitial(storyId: StoryId) {
+    if (!(storyId in this.initialArgsByStoryId)) {
+      throw new Error(`No args known for ${storyId} -- has it been rendered yet?`);
+    }
+
+    this.argsByStoryId[storyId] = structuredClone(this.initialArgsByStoryId[storyId]);
+  }
 }

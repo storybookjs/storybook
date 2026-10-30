@@ -49,7 +49,7 @@ export interface PanelState {
   unhandledErrors?: SerializedError[];
 }
 
-const INITIAL_CONTROL_STATES = {
+export const INITIAL_CONTROL_STATES: ControlStates = {
   detached: false,
   start: false,
   back: false,
@@ -200,7 +200,7 @@ export const trackRenderPhase = (
   };
 };
 
-const getInternalRenderCall = (storyId: string, exception?: Call['exception']): Call => ({
+export const getInternalRenderCall = (storyId: string, exception?: Call['exception']): Call => ({
   id: INTERNAL_RENDER_CALL_ID,
   method: 'render',
   args: [],
@@ -213,7 +213,7 @@ const getInternalRenderCall = (storyId: string, exception?: Call['exception']): 
   exception,
 });
 
-const getInternalRenderLogItem = (status: CallStates): LogItem => ({
+export const getInternalRenderLogItem = (status: CallStates): LogItem => ({
   callId: INTERNAL_RENDER_CALL_ID,
   status,
   ancestors: [],

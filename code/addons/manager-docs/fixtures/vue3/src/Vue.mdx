@@ -1,0 +1,13 @@
+import * as SB from '@storybook/experimental-addon-manager-docs/mdx';
+import * as SourceCodeStories from '../../../../../renderers/vue3/template/stories_vue3-vite-default-ts/SourceCode.stories';
+import * as TsComponentStories from '../../../../../renderers/vue3/template/stories_vue3-vite-default-ts/component-meta/TsComponent.stories';
+
+# Vue preview
+
+Existing Vue stories. The source story is mounted twice.
+
+<SB.Story of={SourceCodeStories.Default} />
+
+<SB.Story of={SourceCodeStories.Default} />
+
+<SB.Story of={TsComponentStories.Default} />

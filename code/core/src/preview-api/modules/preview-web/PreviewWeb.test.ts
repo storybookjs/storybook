@@ -2900,6 +2900,49 @@ describe('PreviewWeb', () => {
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_RENDERED, 'component-one--a');
       });
     });
+
+    describe('manager-docs instance iframe', () => {
+      it('switches the rendered story when SET_CURRENT_STORY carries managerDocsInstance', async () => {
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview();
+        preview.managerDocsInstanceId = 'a';
+        preview.addressedStoryId = 'component-one--a';
+
+        mockChannel.emit.mockClear();
+        emitter.emit(SET_CURRENT_STORY, {
+          storyId: 'component-one--b',
+          viewMode: 'story',
+          managerDocsInstance: 'a2',
+          args: {},
+          globals: {},
+          options: { target: 'a' },
+        });
+        await waitForSetCurrentStory();
+        await waitForRender();
+
+        expect(preview.managerDocsInstanceId).toBe('a2');
+        expect(preview.addressedStoryId).toBe('component-one--b');
+        expect(mockChannel.emit).toHaveBeenCalledWith(STORY_RENDERED, 'component-one--b');
+      });
+
+      it('ignores SET_CURRENT_STORY when managerDocsInstance is absent', async () => {
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview();
+        preview.managerDocsInstanceId = 'a';
+        preview.addressedStoryId = 'component-one--a';
+
+        mockChannel.emit.mockClear();
+        emitter.emit(SET_CURRENT_STORY, {
+          storyId: 'component-one--b',
+          viewMode: 'story',
+        });
+        await waitForQuiescence();
+
+        expect(preview.managerDocsInstanceId).toBe('a');
+        expect(preview.addressedStoryId).toBe('component-one--a');
+        expect(mockChannel.emit).not.toHaveBeenCalledWith(CURRENT_STORY_WAS_SET, expect.anything());
+      });
+    });
   });
 
   describe('onStoriesChanged', () => {

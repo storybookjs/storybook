@@ -202,6 +202,12 @@ export class PostMessageTransport implements ChannelTransport {
   private getFrames(target?: string): FrameTarget[] {
     // Manager implementation.
     if (this.config.page === 'manager') {
+      if (target) {
+        const addressed = this.addressedManagerDocsFrame(target);
+        if (addressed) {
+          return [addressed];
+        }
+      }
       const nodes: HTMLIFrameElement[] = Array.from(
         document.querySelectorAll('iframe[data-is-storybook][data-is-loaded]')
       );
@@ -228,6 +234,23 @@ export class PostMessageTransport implements ChannelTransport {
     }
 
     return [];
+  }
+
+  private addressedManagerDocsFrame(target: string): FrameTarget | undefined {
+    const frames = document.querySelectorAll('iframe[data-manager-docs-instance]');
+    for (const frame of frames) {
+      if (!(frame instanceof HTMLIFrameElement) || !frame.contentWindow) {
+        continue;
+      }
+      if (frame.dataset.managerDocsInstance !== target) {
+        continue;
+      }
+      return {
+        contentWindow: frame.contentWindow,
+        targetOrigin: this.getIframeTargetOrigin(frame),
+      };
+    }
+    return undefined;
   }
 
   private getCurrentFrames(): FrameTarget[] {
@@ -339,7 +362,10 @@ export class PostMessageTransport implements ChannelTransport {
           (frame) => frame.contentWindow === rawEvent.source
         )
       : undefined;
-    if (senderFrame?.hasAttribute('data-is-storybook')) {
+    if (
+      senderFrame?.hasAttribute('data-is-storybook') ||
+      senderFrame?.hasAttribute('data-manager-docs-instance')
+    ) {
       if (!this.pinsTargetOrigin) {
         return true;
       }

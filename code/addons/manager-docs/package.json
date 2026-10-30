@@ -1,0 +1,78 @@
+{
+  "name": "@storybook/experimental-addon-manager-docs",
+  "version": "11.0.0-alpha.6",
+  "description": "Experimental Storybook docs that render in the manager, with one preview iframe per story instance",
+  "keywords": [
+    "docs",
+    "documentation",
+    "experimental",
+    "markdown",
+    "mdx",
+    "storybook",
+    "storybook-addon"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/manager-docs",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/addons/manager-docs"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./blocks-runtime": "./dist/blocks/runtime.js",
+    "./manager": "./dist/manager.js",
+    "./mdx": {
+      "types": "./dist/mdx.d.ts",
+      "code": "./src/mdx.ts",
+      "default": "./dist/mdx.js"
+    },
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js",
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "code": "./src/preview.ts",
+      "default": "./dist/preview.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "dependencies": {
+    "pathe": "^1.1.2"
+  },
+  "devDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^6.0.3",
+    "watchpack": "^2.5.0"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "storybook": {
+    "displayName": "Manager docs (experimental)",
+    "unsupportedFrameworks": [
+      "react-native"
+    ]
+  }
+}

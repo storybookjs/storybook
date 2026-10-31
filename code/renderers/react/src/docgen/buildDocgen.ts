@@ -47,7 +47,7 @@ function isReactAttribute(prop: ComponentDoc['props'][string]) {
 
 /**
  * RCM names arrays as TypeScript prints them (`string[]`). The args table conversion only reads
- * them as arrays in the PropTypes `arrayOf` shape, which also keeps the `string[]` type summary.
+ * them as arrays in the PropTypes `arrayOf` shape.
  */
 function toArgsTableType(
   type: PropItemType
@@ -59,7 +59,7 @@ function toArgsTableType(
 }
 
 /** Converts one RCM `ComponentDoc` into the `StrictArgTypes` shape consumed by args tables. */
-function extractArgTypesFromComponentMeta(
+export function extractArgTypesFromComponentMeta(
   componentMeta: ComponentDoc | undefined
 ): StrictArgTypes | undefined {
   if (!componentMeta) {
@@ -80,7 +80,16 @@ function extractArgTypesFromComponentMeta(
         },
       ])
   );
-  return extractArgTypes({ __docgenInfo: { ...componentMeta, props } }) ?? undefined;
+  const argTypes = extractArgTypes({ __docgenInfo: { ...componentMeta, props } }) ?? undefined;
+  // `arrayOf` rebuilds the summary from the element type, which drops `readonly` and the
+  // parentheses around union elements, so show array types as TypeScript printed them.
+  for (const [name, prop] of Object.entries(componentMeta.props)) {
+    const table = argTypes?.[name]?.table;
+    if (prop.type.elements && table?.type) {
+      table.type = { ...table.type, summary: prop.type.name };
+    }
+  }
+  return argTypes;
 }
 
 /**

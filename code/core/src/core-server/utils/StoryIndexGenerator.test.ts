@@ -2445,6 +2445,34 @@ describe('StoryIndexGenerator', () => {
         expect(toId).toHaveBeenCalledTimes(3);
       });
 
+      describe('after a csf file failed to index', () => {
+        beforeEach(() => {
+          loadCsfMock.mockImplementationOnce(() => {
+            throw new Error('Syntax error');
+          });
+        });
+
+        it('recovers docs dependents after the csf file is fixed', async () => {
+          const storiesSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+            './src/A.stories.(ts|js|mjs|jsx)',
+            options
+          );
+          const docsSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+            './src/docs2/*.mdx',
+            options
+          );
+
+          const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
+          await generator.initialize();
+          await expect(generator.getIndex()).rejects.toThrow();
+
+          generator.invalidate('./src/A.stories.js', false);
+
+          const { entries } = await generator.getIndex();
+          expect(Object.keys(entries)).toContain('a--metaof');
+        });
+      });
+
       it('does call the sort function a second time', async () => {
         const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
           './src/**/*.stories.(ts|js|mjs|jsx)',

@@ -848,6 +848,15 @@ export class StoryIndexGenerator {
       });
     }
 
+    // Docs files that failed to index are not registered as dependents, so retry them too
+    this.specifierToCache.forEach((otherCache) => {
+      Object.entries(otherCache).forEach(([fileName, entry]) => {
+        if (entry && entry.type === 'error' && this.isDocsMdx(fileName)) {
+          otherCache[fileName] = false;
+        }
+      });
+    });
+
     if (removed) {
       if (cacheEntry && cacheEntry.type === 'docs') {
         const absoluteImports = cacheEntry.storiesImports.map((p) =>

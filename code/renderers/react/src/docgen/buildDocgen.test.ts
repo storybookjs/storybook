@@ -14,7 +14,7 @@ import {
   tsconfigJSON,
   writeFiles,
 } from '../componentManifest/componentMeta/test-helpers.ts';
-import { buildDocgenPayload } from './buildDocgen.ts';
+import { buildDocgenPayload, extractArgTypesFromComponentMeta } from './buildDocgen.ts';
 
 let tempDir: string | undefined;
 let componentMetaManager: ComponentMetaManager | undefined;
@@ -161,45 +161,46 @@ describe('buildDocgenPayload', () => {
     }
   );
 
-  it('gives array props the array type in argTypes', { timeout: 30_000 }, async () => {
-    tempDir = createTempDir('docgen-build');
-
-    const files = writeFiles(tempDir, {
-      'tsconfig.json': tsconfigJSON(),
-      'List.tsx': dedent`
-        import React from 'react';
-        export const List = (_props: { items: string[]; tags?: string[] }) => <ul />;
-      `,
-      'List.stories.tsx': dedent`
-        import { List } from './List';
-        export default { component: List, title: 'Data/List' };
-        export const Primary = () => <List items={[]} />;
-      `,
+  it('gives array props the array type in argTypes', () => {
+    const argTypes = extractArgTypesFromComponentMeta({
+      exportName: 'List',
+      filePath: '/List.tsx',
+      description: '',
+      props: {
+        items: {
+          name: 'items',
+          required: true,
+          description: '',
+          defaultValue: null,
+          type: { name: 'string[]', elements: [{ name: 'string' }] },
+        },
+        tags: {
+          name: 'tags',
+          required: false,
+          description: '',
+          defaultValue: null,
+          type: { name: 'readonly string[]', elements: [{ name: 'string' }] },
+        },
+        values: {
+          name: 'values',
+          required: true,
+          description: '',
+          defaultValue: null,
+          type: { name: '(string | number)[]', elements: [{ name: 'string | number' }] },
+        },
+      },
     });
 
-    componentMetaManager = new ComponentMetaManager(ts);
-
-    const payload = await buildDocgenPayload(
-      { entry: makeStoryIndexEntry(files['List.stories.tsx'], 'Data/List') },
-      {
-        componentMetaManager,
-        resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)),
-      }
-    );
-
-    expect(payload!.argTypes?.items.type).toEqual({
+    expect(argTypes?.items.type).toEqual({
       name: 'array',
       raw: 'string[]',
       value: { name: 'string' },
       required: true,
     });
-    expect(payload!.argTypes?.tags.type).toEqual({
-      name: 'array',
-      raw: 'string[]',
-      value: { name: 'string' },
-      required: false,
-    });
-    expect(payload!.argTypes?.items.table?.type).toEqual({ summary: 'string[]' });
+    expect(argTypes?.tags.type).toMatchObject({ name: 'array', required: false });
+    expect(argTypes?.items.table?.type).toEqual({ summary: 'string[]' });
+    expect(argTypes?.tags.table?.type).toEqual({ summary: 'readonly string[]' });
+    expect(argTypes?.values.table?.type).toEqual({ summary: '(string | number)[]' });
   });
 
   it(

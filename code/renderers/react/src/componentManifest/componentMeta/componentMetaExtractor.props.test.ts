@@ -83,6 +83,7 @@ describe('prop extraction', () => {
             items: string[];
             matrix: number[][];
             nodes: Array<React.ReactNode>;
+            tags?: readonly string[];
           }
           export const List = (props: Props) => <ul />;
         `
@@ -90,9 +91,15 @@ describe('prop extraction', () => {
 
       expect(entry.component?.reactComponentMeta).toMatchObject({
         props: {
-          items: { type: { name: 'string[]' } },
-          matrix: { type: { name: 'number[][]' } },
-          nodes: { type: { name: 'ReactNode[]' } },
+          items: { type: { name: 'string[]', elements: [{ name: 'string' }] } },
+          matrix: {
+            type: {
+              name: 'number[][]',
+              elements: [{ name: 'number[]', elements: [{ name: 'number' }] }],
+            },
+          },
+          nodes: { type: { name: 'ReactNode[]', elements: [{ name: 'ReactNode' }] } },
+          tags: { type: { name: 'readonly string[]', elements: [{ name: 'string' }] } },
         },
       });
     });

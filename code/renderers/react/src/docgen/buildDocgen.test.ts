@@ -14,7 +14,7 @@ import {
   tsconfigJSON,
   writeFiles,
 } from '../componentManifest/componentMeta/test-helpers.ts';
-import { buildDocgenPayload } from './buildDocgen.ts';
+import { buildDocgenPayload, extractArgTypesFromComponentMeta } from './buildDocgen.ts';
 
 let tempDir: string | undefined;
 let componentMetaManager: ComponentMetaManager | undefined;
@@ -160,6 +160,48 @@ describe('buildDocgenPayload', () => {
       expect(payload!.argTypes?.label.table?.defaultValue).toEqual({ summary: 'imported' });
     }
   );
+
+  it('gives array props the array type in argTypes', () => {
+    const argTypes = extractArgTypesFromComponentMeta({
+      exportName: 'List',
+      filePath: '/List.tsx',
+      description: '',
+      props: {
+        items: {
+          name: 'items',
+          required: true,
+          description: '',
+          defaultValue: null,
+          type: { name: 'string[]', elements: [{ name: 'string' }] },
+        },
+        tags: {
+          name: 'tags',
+          required: false,
+          description: '',
+          defaultValue: null,
+          type: { name: 'readonly string[]', elements: [{ name: 'string' }] },
+        },
+        values: {
+          name: 'values',
+          required: true,
+          description: '',
+          defaultValue: null,
+          type: { name: '(string | number)[]', elements: [{ name: 'string | number' }] },
+        },
+      },
+    });
+
+    expect(argTypes?.items.type).toEqual({
+      name: 'array',
+      raw: 'string[]',
+      value: { name: 'string' },
+      required: true,
+    });
+    expect(argTypes?.tags.type).toMatchObject({ name: 'array', required: false });
+    expect(argTypes?.items.table?.type).toEqual({ summary: 'string[]' });
+    expect(argTypes?.tags.table?.type).toEqual({ summary: 'readonly string[]' });
+    expect(argTypes?.values.table?.type).toEqual({ summary: '(string | number)[]' });
+  });
 
   it(
     "leaves React's own ref and key out of argTypes, like builder docgen did",

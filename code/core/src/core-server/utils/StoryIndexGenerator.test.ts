@@ -2445,27 +2445,32 @@ describe('StoryIndexGenerator', () => {
         expect(toId).toHaveBeenCalledTimes(3);
       });
 
-      it('recovers docs dependents after a csf file is fixed', async () => {
-        const storiesSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
-          './src/A.stories.(ts|js|mjs|jsx)',
-          options
-        );
-        const docsSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
-          './src/docs2/*.mdx',
-          options
-        );
-
-        loadCsfMock.mockImplementationOnce(() => {
-          throw new Error('Syntax error');
+      describe('after a csf file failed to index', () => {
+        beforeEach(() => {
+          loadCsfMock.mockImplementationOnce(() => {
+            throw new Error('Syntax error');
+          });
         });
-        const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
-        await generator.initialize();
-        await expect(generator.getIndex()).rejects.toThrow();
 
-        generator.invalidate('./src/A.stories.js', false);
+        it('recovers docs dependents after the csf file is fixed', async () => {
+          const storiesSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+            './src/A.stories.(ts|js|mjs|jsx)',
+            options
+          );
+          const docsSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+            './src/docs2/*.mdx',
+            options
+          );
 
-        const { entries } = await generator.getIndex();
-        expect(Object.keys(entries)).toContain('a--metaof');
+          const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
+          await generator.initialize();
+          await expect(generator.getIndex()).rejects.toThrow();
+
+          generator.invalidate('./src/A.stories.js', false);
+
+          const { entries } = await generator.getIndex();
+          expect(Object.keys(entries)).toContain('a--metaof');
+        });
       });
 
       it('does call the sort function a second time', async () => {

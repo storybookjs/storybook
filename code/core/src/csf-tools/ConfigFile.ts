@@ -15,6 +15,7 @@ import {
   type CsfMutationResult,
   type CsfObject,
   type CsfObjectHost,
+  type CsfSetOptions,
   type CsfValue,
   createCsfObject,
 } from './CsfObject.ts';
@@ -258,8 +259,8 @@ export class ConfigFile implements CsfObject {
    * object.getValue(['parameters']); // { a11y: { test: 'todo', enabled: true } }
    * ```
    */
-  set(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
-    return this._mutate((object) => object.set(path, value));
+  set(path: CsfPath, value: CsfValue<CsfExpression>, options?: CsfSetOptions): CsfMutationResult {
+    return this._mutate((object) => object.set(path, value, options));
   }
 
   /**

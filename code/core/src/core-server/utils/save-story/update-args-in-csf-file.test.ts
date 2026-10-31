@@ -135,7 +135,7 @@ describe('success', () => {
     const source = [
       `export default { title: 'X' };`,
       `export const Base = { args: { a: 1 } };`,
-      `export const A = { args: { a: 1, ...Base.args } };`,
+      `export const A = { args: { a: 1, ...getArgs() } };`,
     ].join('\n');
     const parsed = loadCsf(source, { makeTitle }).parse();
 
@@ -618,7 +618,7 @@ describe('refusal messages', () => {
   test('names the arg a spread could override, and keeps the diagnostic as the cause', () => {
     const error = refusal([
       `const Base = { args: {} };`,
-      `export const A = { args: { a: 1, ...Base.args } };`,
+      `export const A = { args: { a: 1, ...getArgs() } };`,
     ]);
     expect(error.message).toBe(
       'Cannot save arg "a" of story A because a spread in the story could override it.'

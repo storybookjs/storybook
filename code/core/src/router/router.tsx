@@ -63,7 +63,7 @@ export const useNavigate = () => {
       // the preview scroll, and the manager's NAVIGATE_URL handler performs the actual `#hash`
       // navigation through the in-page branch above.
       if (search === document.location.search && hash) {
-        addons.getChannel().emit(NAVIGATE_URL, `#${hash}`);
+        addons.getChannel().emit(NAVIGATE_URL, `#${hash}`, options);
 
         return undefined;
       }

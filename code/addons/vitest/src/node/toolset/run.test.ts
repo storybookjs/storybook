@@ -3,7 +3,11 @@ import * as v from 'valibot';
 
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from '../../constants.ts';
+import {
+  TRIGGER_TEST_RUN_REQUEST,
+  TRIGGER_TEST_RUN_RESPONSE,
+  type TriggerTestRunRequestPayload,
+} from '../../constants.ts';
 import { createTestToolset, type TestRunResult } from './definition.ts';
 import {
   createAsyncQueue,
@@ -264,6 +268,166 @@ describe('runStoryTests', () => {
     expect(channel.handlers.get(TRIGGER_TEST_RUN_RESPONSE) ?? []).toHaveLength(0);
 
     vi.useRealTimers();
+  });
+});
+
+describe('runStoryTests per-story globals', () => {
+  const indexWithTests: StoryIndex = {
+    v: 5,
+    entries: {
+      ...index.entries,
+      'button--secondary': {
+        type: 'story',
+        subtype: 'story',
+        id: 'button--secondary',
+        name: 'Secondary',
+        title: 'Button',
+        importPath: './src/Button.stories.tsx',
+        tags: ['story'],
+      },
+      'button--secondary:clicks': {
+        type: 'story',
+        subtype: 'test',
+        id: 'button--secondary:clicks',
+        name: 'clicks',
+        title: 'Button',
+        importPath: './src/Button.stories.tsx',
+        tags: ['test-fn'],
+        parent: 'button--secondary',
+        parentName: 'Secondary',
+      },
+    },
+  };
+
+  function captureRequests(channel: ReturnType<typeof createMockChannel>) {
+    const requests: TriggerTestRunRequestPayload[] = [];
+    channel.emit = (event, payload) => {
+      if (event === TRIGGER_TEST_RUN_REQUEST) {
+        const request = payload as TriggerTestRunRequestPayload;
+        requests.push(request);
+        queueMicrotask(() =>
+          respond(channel, {
+            requestId: request.requestId,
+            status: 'completed',
+            result: sampleResult,
+          })
+        );
+      }
+    };
+    return requests;
+  }
+
+  it('sends each story its globals in the run config, keyed by story id', async () => {
+    const channel = createMockChannel();
+    const requests = captureRequests(channel);
+
+    await runStoryTests({
+      channel,
+      getIndex: async () => indexWithTests,
+      stories: [
+        { storyId: 'button--primary', globals: { theme: 'dark' } },
+        { storyId: 'button--secondary:clicks' },
+      ],
+    });
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0].config).toEqual({
+      a11y: true,
+      storyGlobals: { 'button--primary': { theme: 'dark' } },
+    });
+  });
+
+  it('sends only the a11y flag when no story sets globals', async () => {
+    const channel = createMockChannel();
+    const requests = captureRequests(channel);
+
+    await runStoryTests({
+      channel,
+      getIndex: async () => indexWithTests,
+      stories: [{ storyId: 'button--primary' }],
+      a11y: false,
+    });
+
+    expect(requests[0].config).toEqual({ a11y: false });
+  });
+
+  it("applies a story's globals to its tests, which run with it", async () => {
+    const channel = createMockChannel();
+    const requests = captureRequests(channel);
+
+    await runStoryTests({
+      channel,
+      getIndex: async () => indexWithTests,
+      stories: [{ storyId: 'button--secondary', globals: { locale: 'fr' } }],
+    });
+
+    expect(requests[0].config).toEqual({
+      a11y: true,
+      storyGlobals: {
+        'button--secondary': { locale: 'fr' },
+        'button--secondary:clicks': { locale: 'fr' },
+      },
+    });
+  });
+
+  it('fails without running when a story is requested with different globals', async () => {
+    const channel = createMockChannel();
+    const requests = captureRequests(channel);
+
+    const result = await runStoryTests({
+      channel,
+      getIndex: async () => indexWithTests,
+      stories: [
+        { storyId: 'button--primary', globals: { theme: 'dark' } },
+        { storyId: 'button--primary', globals: { theme: 'light' } },
+      ],
+    });
+
+    expect(requests).toHaveLength(0);
+    expect(result).toEqual({
+      status: 'error',
+      error: { message: expect.stringContaining('button--primary') },
+    });
+  });
+
+  it('fails without running when a test is requested with globals that differ from its story', async () => {
+    const channel = createMockChannel();
+    const requests = captureRequests(channel);
+
+    const result = await runStoryTests({
+      channel,
+      getIndex: async () => indexWithTests,
+      stories: [
+        { storyId: 'button--secondary', globals: { theme: 'dark' } },
+        { storyId: 'button--secondary:clicks', globals: { theme: 'light' } },
+      ],
+    });
+
+    expect(requests).toHaveLength(0);
+    expect(result).toEqual({
+      status: 'error',
+      error: { message: expect.stringContaining('button--secondary:clicks') },
+    });
+  });
+
+  it('accepts a story requested twice with the same globals', async () => {
+    const channel = createMockChannel();
+    const requests = captureRequests(channel);
+
+    const result = await runStoryTests({
+      channel,
+      getIndex: async () => indexWithTests,
+      stories: [
+        { storyId: 'button--primary', globals: { theme: 'dark' } },
+        { storyId: 'button--primary', globals: { theme: 'dark' } },
+      ],
+    });
+
+    expect(result.status).toBe('completed');
+    expect(requests[0].config).toEqual({
+      a11y: true,
+      storyGlobals: { 'button--primary': { theme: 'dark' } },
+    });
   });
 });
 

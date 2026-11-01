@@ -21,11 +21,18 @@ const HeadingImpl: FC<PropsWithChildren<HeadingProps>> = ({
   disableAnchor,
   ...props
 }) => {
-  if (disableAnchor || typeof children !== 'string') {
+  const slugger = React.useContext(DocsSluggerContext) ?? slugs;
+  const text = typeof children === 'string' ? children : undefined;
+  // Docs pages re-render (rather than remount) on a globals change, so derive the anchor only when
+  // its inputs change: slugging on every render would give the same heading a new `-1` anchor.
+  const tagID = React.useMemo(
+    () => (disableAnchor || text === undefined ? undefined : slugger.slug(text.toLowerCase())),
+    [disableAnchor, slugger, text]
+  );
+
+  if (tagID === undefined) {
     return <H2>{children}</H2>;
   }
-  const slugger = React.useContext(DocsSluggerContext) ?? slugs;
-  const tagID = slugger.slug(children.toLowerCase());
   return (
     <HeaderMdx as="h2" id={tagID} {...props}>
       {children}

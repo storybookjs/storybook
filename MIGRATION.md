@@ -66,6 +66,7 @@
   - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
   - [Web Components: server-side docgen suffixes event, slot and part argType keys](#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys)
   - [Web Components: the default render binds args by key](#web-components-the-default-render-binds-args-by-key)
+  - [Web Components: `@wc-toolkit/storybook-helpers` is built in](#web-components-wc-toolkitstorybook-helpers-is-built-in)
   - [Web Components: the runtime Custom Elements Manifest API is deprecated](#web-components-the-runtime-custom-elements-manifest-api-is-deprecated)
   - [SvelteKit: Require v3 and up](#sveltekit-require-v3-and-up)
   - [Svelte CSF is built into the Svelte frameworks](#svelte-csf-is-built-into-the-svelte-frameworks)
@@ -81,6 +82,8 @@
   - [`core/module-graph` query aliases removed](#coremodule-graph-query-aliases-removed)
   - [ExternalDocs and ExternalDocsContainer are removed](#externaldocs-and-externaldocscontainer-are-removed)
   - [CSF `.story` annotations removed](#csf-story-annotations-removed)
+  - [`argTypeTargetsV7` feature flag removed](#argtypetargetsv7-feature-flag-removed)
+  - [`disallowImplicitActionsInRenderV8` feature flag removed](#disallowimplicitactionsinrenderv8-feature-flag-removed)
 - [From version 10.6.1 to 10.6.2](#from-version-1061-to-1062)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-1)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-1)
@@ -999,7 +1002,7 @@ The manager resolves `SELECT_STORY` payloads from `storyId` or `title`/`name`, a
 
 The `experimentalDocgenServer` feature is now `docgenServer`, and Storybook no longer reads the old name.
 Server-side component metadata extraction is enabled by default for every React and Vue 3 framework, including Webpack-based ones, for `@storybook/angular-vite`, for `@storybook/web-components-vite`, and for `@storybook/svelte-vite` and `@storybook/sveltekit`.
-React and Vue 3 extract component metadata with TypeScript, so for them the default is only on when the `typescript` package is installed; a JavaScript project without it keeps builder docgen.
+Server-side docgen reads components with the TypeScript compiler API, also in JavaScript projects. The default is only on when the `typescript` package is installed and is TypeScript 5.9 or 6, or, for Web Components, when a Custom Elements Manifest is configured. Otherwise Storybook keeps builder docgen and prints a warning that tells you what to install. Set `features.docgenServer: false` in `.storybook/main.ts` to opt out of server-side docgen without that warning.
 Other frameworks keep builder docgen.
 
 The `docgen-server` automigration renames `experimentalDocgenServer` to `docgenServer` and keeps its value.
@@ -1016,12 +1019,12 @@ For Angular-Vite, `framework.options.compodoc: false` does not disable the docge
 
 Client-side docgen that runs in the builder is deprecated and will be removed in Storybook 12.
 This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`, and the Svelte `docgen` framework option in `@storybook/svelte-vite` and `@storybook/sveltekit` (including the sveltedoc-shaped `__docgen`).
-Builder docgen only runs when `features.docgenServer` is `false`, and Storybook now prints a deprecation warning when it does.
+Builder docgen only runs when `features.docgenServer` is `false`. Storybook prints a deprecation warning when your `.storybook/main.ts` sets `docgenServer: false`. When server-side docgen is off because TypeScript is missing or unusable, Storybook prints the TypeScript warning instead. For no docgen and no warnings, also turn builder docgen off: `typescript.reactDocgen: false` for React, and the `docgen: false` framework option for Vue 3 and Svelte.
 Remove `docgenServer: false` to use server-side docgen.
 
 #### Svelte
 
-Server-side docgen is enabled by default for `@storybook/svelte-vite` and `@storybook/sveltekit`. It brings its own TypeScript 6 to read components, so it does not need `typescript` in your project, and it works in projects on TypeScript 7. Setting `framework.options.docgen: false` still disables builder docgen without a warning. The deprecated APIs stay available until Storybook 12.
+Server-side docgen is enabled by default for `@storybook/svelte-vite` and `@storybook/sveltekit`. Like the other frameworks, it needs the `typescript` package in your project. Setting `framework.options.docgen: false` still disables builder docgen without a warning. The deprecated APIs stay available until Storybook 12.
 
 The server output changes the Controls panel:
 
@@ -1043,7 +1046,11 @@ Storybook accepts prerelease Node.js builds when their version meets this minimu
 
 Storybook 11 requires TypeScript 5.9 or newer. Upgrade your project's TypeScript dependency before upgrading Storybook, then run your project's type check.
 
-There is no automatic source migration. Updating the compiler can expose errors in application code or dependencies that require project-specific fixes. JavaScript-only projects do not need to install TypeScript.
+There is no automatic source migration. Updating the compiler can expose errors in application code or dependencies that require project-specific fixes.
+
+`typescript` is now a required peer dependency of the React, Vue 3, Svelte and Web Components renderers and their frameworks, also in JavaScript projects, because server-side docgen uses it to read components and JSDoc. If your project has no `typescript` dependency, add `typescript@^6` to your devDependencies, whatever your package manager. Yarn does not install a missing peer dependency. npm and pnpm do, but they install the newest version in the range, TypeScript 7, which docgen cannot use. The `typescript-dependency` automigration adds `typescript@^6` for you when your project has no TypeScript.
+
+Svelte and Web Components no longer ship their own TypeScript 6. Before, their docgen also worked in projects on TypeScript 7. Now these projects need the side-by-side setup below, like React and Vue 3 projects.
 
 TypeScript 7 does not include the compiler API that Storybook uses to generate Controls and the Docs args table. Keep TypeScript 7 for `tsc`, and point the `typescript` package at TypeScript 6. npm, Yarn, and pnpm all accept this alias:
 
@@ -1823,6 +1830,39 @@ A decorator that calls element methods on the story result must read the element
 },
 ```
 
+### Web Components: `@wc-toolkit/storybook-helpers` is built in
+
+Server-side docgen for web components is a port of [`@wc-toolkit/storybook-helpers`](https://github.com/wc-toolkit/storybook-helpers).
+The argTypes built from the manifest, the suffixed keys and the default render's bindings are what `getStorybookHelpers` returned as `argTypes` and `template`.
+If you use the library, remove it and let Storybook do the work:
+
+```ts
+// Before
+import { getStorybookHelpers } from '@wc-toolkit/storybook-helpers';
+
+const { args, argTypes, template } = getStorybookHelpers<MyElement>('my-element');
+
+const meta: Meta<MyElement> = {
+  component: 'my-element',
+  args,
+  argTypes,
+  render: (args) => template(args),
+};
+
+// After
+const meta: Meta<MyElement> = {
+  component: 'my-element',
+  args: { variant: 'primary' },
+};
+```
+
+ArgTypes come from the manifest, so keep only the `argTypes` you override.
+Manifest defaults only fill the Default column of the Controls table; they no longer become initial `args`.
+The element still applies its own defaults, but Controls and a `play` function only see the `args` you set, so set explicitly any starting value you rely on.
+Stories that passed slot content as the second argument of `template` pass it as the `default-slot` arg instead.
+Events logged by `logEvent` or the `events` list are logged by passing `fn()` as the `<name>-event` arg.
+Rows hidden with `setStorybookHelpersConfig({ excludeCategories })` are hidden per key with `table: { disable: true }`.
+
 ### Web Components: the runtime Custom Elements Manifest API is deprecated
 
 `setCustomElementsManifest()` and `setCustomElements()`, which hand the preview a Custom Elements Manifest from `.storybook/preview.ts`, are deprecated and will be removed in Storybook 12, together with the `getCustomElements()`, `isValidComponent()` and `isValidMetaData()` helpers.
@@ -2201,6 +2241,44 @@ If the value is not a static object, move the fields yourself. This includes a v
 ```
 
 `storybook migrate csf-2-to-3` still lifts a static `Story.story = { ... }` into a CSF 3 story object. It does not rewrite the dynamic cases above. The old `csf-hoist-story-annotations` codemod no longer ships.
+
+### `argTypeTargetsV7` feature flag removed
+
+The `features.argTypeTargetsV7` flag is removed, and Storybook no longer reads it. Args whose argType declares a `target` are always grouped by target: the render function receives only the untargeted `args`, and the rendering context carries the full `allArgs` plus the grouped `argsByTarget`. This has been the default behavior since Storybook 8. In portable-story runtimes without a `FEATURES` global, such as `composeStories` in Jest or Playwright component tests without the Vitest plugin, the grouping now applies there too; those runtimes previously skipped it.
+
+Delete the `argTypeTargetsV7` key from the `features` object in your `.storybook/main.js` / `main.ts` file:
+
+```diff
+// .storybook/main.ts
+export default {
+  features: {
+-   argTypeTargetsV7: false,
+  },
+};
+```
+
+The `remove-legacy-feature-flags` automigration deletes both it and the `disallowImplicitActionsInRenderV8` flag from your main config, whether they are `true` or `false`. You can also run it with `storybook automigrate remove-legacy-feature-flags`. If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand. A typed main config that still sets the flag fails type-checking until it is removed.
+
+If you had set the flag to `false` to pass targeted args through to the render function unfiltered, that pass-through is gone. Read the targeted values from `argsByTarget` in the rendering context instead of `args`. Args without a `target` on their argType are grouped under the `UNTARGETED` key.
+
+### `disallowImplicitActionsInRenderV8` feature flag removed
+
+The `features.disallowImplicitActionsInRenderV8` flag is removed, and Storybook no longer reads it. An implicit action—one of the handlers Storybook infers from `actions.argTypesRegex`—that gets called while the story is rendering or playing throws `ImplicitActionsDuringRendering`. Handlers created explicitly with `action()` (including through `argTypes.action`) or `fn()` are not affected.
+
+The flag was the opt-out that downgraded that throw to a warning. Delete the `disallowImplicitActionsInRenderV8` key from the `features` object in your `.storybook/main.js` / `main.ts` file:
+
+```diff
+// .storybook/main.ts
+export default {
+  features: {
+-   disallowImplicitActionsInRenderV8: false,
+  },
+};
+```
+
+The `remove-legacy-feature-flags` automigration deletes both it and the `argTypeTargetsV7` flag from your main config, whether they are `true` or `false`. You can also run it with `storybook automigrate remove-legacy-feature-flags`. If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand. A typed main config that still sets the flag fails type-checking until it is removed.
+
+`ImplicitActionsDuringRendering.data` no longer carries a `deprecated` field, so third-party code that inspects the error should read `phase` and `name` instead.
 
 ## From version 10.6.1 to 10.6.2
 
@@ -4937,6 +5015,8 @@ export const ButtonClick = {
 
 For more context, see this RFC:
 https://github.com/storybookjs/storybook/discussions/23649
+
+Removed in Storybook 11, see [`disallowImplicitActionsInRenderV8` feature flag removed](#disallowimplicitactionsinrenderv8-feature-flag-removed).
 
 To summarize:
 

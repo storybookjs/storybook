@@ -228,7 +228,7 @@ https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0001`
 
 The `component` property in `defineMeta` was not referencing an imported Svelte component.
-It expected an identifier to a Svelte component but got something else.
+It expected a plain identifier, or a member expression over an identifier like `Input.Select`, but got something else.
 
 Ensure you're using the correct syntax, following the example below:
 
@@ -237,12 +237,15 @@ Ensure you're using the correct syntax, following the example below:
   import { defineMeta } from '@storybook/svelte-vite';
 
   import Button from './Button.svelte';
+  import { Input } from './Input.ts';
 
   const { Story } = defineMeta({
-    component: Button,
+    component: Input.Select,
   });
 </script>
 ```
+
+Computed access like `Input['Select']`, deeper chains like `Input.Group.Item`, and expressions on `this` are not supported.
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0002`
 

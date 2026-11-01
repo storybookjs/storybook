@@ -1,4 +1,4 @@
-import { createLazyDocgenMiddleware } from 'storybook/internal/common';
+import { createLazyDocgenMiddleware, loadTypeScriptCompilerApi } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware } from 'storybook/internal/types';
 
@@ -13,6 +13,7 @@ export const createDocgenProvider = (): DocgenMiddleware =>
     storyFileTest: SVELTE_DOCGEN_STORY_FILE_TEST_REGEXP,
     createManager: async () => {
       try {
+        await loadTypeScriptCompilerApi(() => import('typescript'));
         const [{ SvelteComponentMetaManager }, { buildDocgenPayload }] = await Promise.all([
           import('./component-docgen/component-meta/svelte-project-manager.ts'),
           import('./component-docgen/build-docgen.ts'),

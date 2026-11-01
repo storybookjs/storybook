@@ -59,6 +59,7 @@ export function insertSvelteCSFToStoryParameters(params: Params) {
       svelte,
     },
     asChild: content?.asChild,
+    filename,
     originalCode,
   });
 

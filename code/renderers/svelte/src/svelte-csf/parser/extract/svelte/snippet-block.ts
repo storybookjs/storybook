@@ -1,3 +1,5 @@
+import { unwrapExpression } from 'storybook/internal/csf-tools';
+
 import type { SvelteAST } from '../../ast.ts';
 import type { SvelteASTNodes } from './nodes.ts';
 import { extractStoryAttributesNodes } from './story/attributes.ts';
@@ -42,7 +44,7 @@ export function findStoryAttributeTemplateSnippetBlock(options: {
   }
 
   return findSnippetBlockByName({
-    name: (template.value.expression as any).name,
+    name: (unwrapExpression(template.value.expression) as any).name,
     nodes: nodes,
   });
 }

@@ -4,8 +4,8 @@ import { useTheme } from 'storybook/theming/emotion';
 
 import { useMediaQuery } from '../../hooks/useMedia.tsx';
 
-function findActiveLandmarkElement() {
-  let currentElement: Element | null = document.activeElement;
+function findLandmarkElement(element: EventTarget | null) {
+  let currentElement = element instanceof Element ? element : null;
   let landmarkElement: HTMLElement | null = null;
 
   while (currentElement) {
@@ -54,31 +54,41 @@ export function useRegionFocusAnimation() {
   return animateLandmark;
 }
 
-// Global keyboard handler for F6/Shift+F6 landmark navigation that
-// highlights the landmark containing the current element. This helps
-// users who navigate through landmark shortcuts more quickly visualise
-// which region of the UI they landed into.
+// Highlights the landmark that F6/Shift+F6 landmark navigation lands in, so users who move
+// between regions with the keyboard can see which region of the UI they landed into.
 // Call this once at the app root.
 export function useLandmarkIndicator() {
   const animateLandmark = useRegionFocusAnimation();
 
   useEffect(() => {
+    // React Aria moves focus in a React effect after the keydown, so the landmark to highlight is
+    // only known once focus has landed: the keydown arms the indicator, and the focus change that
+    // follows fires it. A key that moves no focus leaves it to expire.
+    let armedUntil = 0;
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'F6') {
+      if (e.key === 'F6') {
+        armedUntil = Date.now() + 250;
+      }
+    };
+
+    const handleFocusIn = (e: FocusEvent) => {
+      if (Date.now() > armedUntil) {
         return;
       }
+      armedUntil = 0;
 
-      const landmarkElement = findActiveLandmarkElement();
-      if (!landmarkElement) {
-        return;
+      const landmarkElement = findLandmarkElement(e.target);
+      if (landmarkElement) {
+        animateLandmark(landmarkElement);
       }
-
-      animateLandmark(landmarkElement);
     };
 
     document.addEventListener('keydown', handleKeyDown, { capture: true });
+    document.addEventListener('focusin', handleFocusIn, { capture: true });
     return () => {
       document.removeEventListener('keydown', handleKeyDown, { capture: true });
+      document.removeEventListener('focusin', handleFocusIn, { capture: true });
     };
   }, [animateLandmark]);
 }

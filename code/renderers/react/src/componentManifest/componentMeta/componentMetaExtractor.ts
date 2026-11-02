@@ -740,6 +740,18 @@ function serializeType(
     ) {
       return serializeLeaf(typescript, checker, nonUndefinedTypes[0], depth);
     }
+
+    // A nullable array keeps TypeScript's name, but its array member still supplies the element
+    // type so the args table can offer the array control.
+    const nonNullishTypes = nonUndefinedTypes.filter(
+      (t) => !(t.getFlags() & typescript.TypeFlags.Null)
+    );
+    if (nonNullishTypes.length === 1 && checker.isArrayType(nonNullishTypes[0])) {
+      return {
+        name: checker.typeToString(type),
+        elements: serializeElements(typescript, checker, nonNullishTypes[0], depth),
+      };
+    }
   }
 
   const constraint = type.getConstraint?.();
@@ -760,15 +772,21 @@ function serializeLeaf(
   type: ts.Type,
   depth: number
 ): PropItemType {
-  if (!checker.isArrayType(type)) {
-    return { name: checker.typeToString(type) };
-  }
-  return {
-    name: checker.typeToString(type),
-    elements: checker
-      .getTypeArguments(type as ts.TypeReference)
-      .map((element) => serializeType(typescript, checker, element, true, depth + 1)),
-  };
+  const name = checker.typeToString(type);
+  return checker.isArrayType(type)
+    ? { name, elements: serializeElements(typescript, checker, type, depth) }
+    : { name };
+}
+
+function serializeElements(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  arrayType: ts.Type,
+  depth: number
+): PropItemType[] {
+  return checker
+    .getTypeArguments(arrayType as ts.TypeReference)
+    .map((element) => serializeType(typescript, checker, element, true, depth + 1));
 }
 
 // ---------------------------------------------------------------------------

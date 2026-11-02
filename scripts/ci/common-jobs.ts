@@ -199,7 +199,7 @@ export const internalStorybookE2e = defineJob(
           name: 'Run internal Storybook E2E tests',
           command: 'yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit',
           environment: {
-            PLAYWRIGHT_WORKERS: '3',
+            PLAYWRIGHT_WORKERS: '2',
           },
         },
       },

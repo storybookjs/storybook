@@ -97,6 +97,8 @@ const StickyRow = styled.button<{ $level: number; $isRoot: boolean }>(
 
     // Show the context menu button on hover; hide status icons when the menu button appears,
     // matching the scrolling rows' toggle pattern.
+    // NOTE: sticky tree rows aren't normally reachable via keyboard, so we don't need to show
+    // the button when the tree row itself is focused.
     '&:hover [data-sticky-menu]': { display: 'flex' },
     '&:hover [data-sticky-menu] ~ [data-sticky-status]': { display: 'none' },
   })

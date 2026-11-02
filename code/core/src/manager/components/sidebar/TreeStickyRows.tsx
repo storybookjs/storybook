@@ -1,6 +1,6 @@
 import React, { type RefObject } from 'react';
 
-import { transparentize } from 'polished';
+import { darken, lighten, transparentize } from 'polished';
 import type { API, IndexHash } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming/emotion';
 
@@ -103,15 +103,21 @@ const StickyMenuButton = styled.span(({ theme }) => ({
   alignItems: 'center',
   justifyContent: 'center',
   flexShrink: 0,
-  width: 20,
-  height: 20,
+  width: 28,
+  height: 28,
   borderRadius: 4,
   padding: 0,
   color: 'inherit',
   background: 'transparent',
   cursor: 'pointer',
   position: 'relative',
-  '&:hover': { background: theme.background.hoverable },
+  '&:hover': {
+    color: theme.color.secondary,
+    background:
+      theme.base === 'dark'
+        ? darken(0.3, theme.color.secondary)
+        : lighten(0.4, theme.color.secondary),
+  },
   '&:focus-visible': {
     outline: `2px solid ${theme.color.secondary}`,
     outlineOffset: -2,

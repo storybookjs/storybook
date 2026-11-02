@@ -205,7 +205,9 @@ export const git = {
     if (shallow) {
       flags.push('--depth 1');
     } else {
-      flags.push('--depth 500');
+      // Chromatic walks the commit graph for baselines and diffs trees for TurboSnap; the blobs of
+      // 500 commits are most of the download and nothing in the job reads them.
+      flags.push('--depth 500 --filter=blob:none');
     }
 
     if (forceHttps) {

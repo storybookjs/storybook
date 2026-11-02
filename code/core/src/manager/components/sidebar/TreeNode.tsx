@@ -344,11 +344,23 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
         doc.removeEventListener('focusin', onFocusIn, true);
         clearTimeout(timer);
       };
+      // A focus scope that restores focus to the row synchronously inside our own blur call
+      // would recurse through this handler forever. The flag breaks the sync loop by standing
+      // the handler down on the first re-entrant focusin; layered scopes that restore in later
+      // ticks still land their own blur, because the flag has cleared by then.
+      let blurring = false;
       const onFocusIn = (event: FocusEvent) => {
-        // Layered focus scopes restore more than once, so stay armed for the whole window and
-        // stand down only when focus lands somewhere else on purpose.
         if (event.target instanceof HTMLElement && row?.contains(event.target)) {
-          event.target.blur();
+          if (blurring) {
+            cancel();
+            return;
+          }
+          blurring = true;
+          try {
+            event.target.blur();
+          } finally {
+            blurring = false;
+          }
           return;
         }
         cancel();

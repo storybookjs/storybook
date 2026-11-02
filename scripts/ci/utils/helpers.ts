@@ -215,6 +215,9 @@ export const git = {
     return {
       'git-shallow-clone/checkout_advanced': {
         clone_options: flags.join(' '),
+        // On `pull/N/head` branches the orb's fetch defaults to `--tags`, which pulls every
+        // release tag and its history and costs more than the clone itself.
+        tag_fetch_options: '--no-tags',
       },
     };
   },

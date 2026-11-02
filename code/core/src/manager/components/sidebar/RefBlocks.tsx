@@ -43,26 +43,11 @@ const Text = styled.div(({ theme }) => ({
   },
 }));
 
-const ErrorDisplay = styled.pre<{ isMobile: boolean }>(
-  {
-    boxSizing: 'border-box',
-    borderRadius: 8,
-    overflow: 'auto',
-    whiteSpace: 'pre',
-  },
-  ({ isMobile }) =>
-    isMobile
-      ? {
-          maxWidth: 'calc(100vw - 40px)',
-        }
-      : {
-          minWidth: 420,
-          maxWidth: 640,
-        },
-  ({ theme }) => ({
-    color: theme.color.dark,
-  })
-);
+const ErrorDisplay = styled.pre(({ theme }) => ({
+  borderRadius: 8,
+  maxWidth: 640,
+  color: theme.color.dark,
+}));
 
 export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }) => {
   const [isAuthAttempted, setAuthAttempted] = useState(false);
@@ -133,7 +118,7 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => {
             offset={isMobile ? 0 : 8}
             placement={isMobile ? 'bottom-end' : 'bottom-start'}
             popover={
-              <ErrorDisplay isMobile={isMobile}>
+              <ErrorDisplay>
                 <ErrorFormatter error={error} />
               </ErrorDisplay>
             }

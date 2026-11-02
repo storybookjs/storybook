@@ -98,11 +98,11 @@ export const csfFactories: CommandFix = {
     if (!yes && !inSandbox && !isReactNativePreview) {
       // prompt whether the user wants to use imports map
       logger.logBox(dedent`
-        The CSF Factories format can benefit from using absolute imports of your ${picocolors.cyan(previewConfigPath)} file. We can configure that for you, using subpath imports (a node standard), by adjusting the imports property of your package.json.
+        The CSF 4 format can benefit from using absolute imports of your ${picocolors.cyan(previewConfigPath)} file. We can configure that for you, using subpath imports (a node standard), by adjusting the imports property of your package.json.
         
         However, we cannot broadly recommend it for all projects, because it might not work in some monorepo setups or if you have an outdated tsconfig, use custom paths, or have type alias plugins configured in your project. You can always rerun this codemod and select another option to update your code later.
         
-        More info: ${picocolors.yellow('https://storybook.js.org/docs/api/csf/csf-next?ref=upgrade#previewmeta')}
+        More info: ${picocolors.yellow('https://storybook.js.org/docs/writing-stories/csf/?ref=upgrade#subpath-imports')}
       `);
 
       useSubPathImports = await prompt.select<boolean>({
@@ -166,10 +166,10 @@ export const csfFactories: CommandFix = {
 
     logger.logBox(
       dedent`
-          You can now run Storybook with the new CSF factories format.
+          You can now run Storybook with the new CSF 4 format.
           
           For more info, check out the docs:
-          ${picocolors.yellow('https://storybook.js.org/docs/api/csf/csf-next?ref=upgrade')}
+          ${picocolors.yellow('https://storybook.js.org/docs/writing-stories/csf/upgrade?ref=upgrade')}
         `
     );
   },

@@ -1,34 +1,25 @@
-```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF 3"
+```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF 4"
 import MockDate from 'mockdate';
 
-// ...rest of story file
+import preview from '../.storybook/preview';
 
-export const ChristmasUI = {
+import Page from './Page';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const ChristmasUI = meta.story({
   async play({ mount }) {
     MockDate.set('2024-12-25');
     // 👇 Render the component with the mocked date
     await mount();
     // ...rest of test
   },
-};
+});
 ```
 
-```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
-import MockDate from 'mockdate';
-
-// ...rest of story file
-
-export const ChristmasUI: Story = {
-  async play({ mount }) {
-    MockDate.set('2024-12-25');
-    // 👇 Render the component with the mocked date
-    await mount();
-    // ...rest of test
-  },
-};
-```
-
-```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
 import MockDate from 'mockdate';
 
 import preview from '../.storybook/preview';
@@ -49,30 +40,28 @@ export const ChristmasUI = meta.story({
 });
 ```
 
-```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
-<script module>
-  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-  import { defineMeta } from '@storybook/your-framework';
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF 4"
+import MockDate from 'mockdate';
 
-  import Page from './Page.svelte';
+import preview from '../.storybook/preview';
 
-  const { Story } = defineMeta({
-    component: Page,
-  });
-</script>
+import Page from './Page';
 
-<Story
-  name="ChristmasUI"
-  play={async ({ mount }) => {
+const meta = preview.meta({
+  component: Page,
+});
+
+export const ChristmasUI = meta.story({
+  async play({ mount }) {
     MockDate.set('2024-12-25');
     // 👇 Render the component with the mocked date
     await mount();
     // ...rest of test
-  }}
-/>
+  },
+});
 ```
 
-```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 4"
 <script module lang="ts">
   import preview from '../.storybook/preview';
 
@@ -94,7 +83,8 @@ export const ChristmasUI = meta.story({
 />
 ```
 
-```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
 <script module>
   // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
   import { defineMeta } from '@storybook/your-framework';
@@ -117,7 +107,7 @@ export const ChristmasUI = meta.story({
 />
 ```
 
-```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 4"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -139,51 +129,31 @@ export const ChristmasUI = meta.story({
 />
 ```
 
-```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import MockDate from 'mockdate';
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="CSF 3"
+<!-- ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4 -->
+<script module>
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import { defineMeta } from '@storybook/your-framework';
 
-import preview from '../.storybook/preview';
+  import Page from './Page.svelte';
 
-import Page from './Page';
+  const { Story } = defineMeta({
+    component: Page,
+  });
+</script>
 
-const meta = preview.meta({
-  component: Page,
-});
-
-export const ChristmasUI = meta.story({
-  async play({ mount }) {
+<Story
+  name="ChristmasUI"
+  play={async ({ mount }) => {
     MockDate.set('2024-12-25');
     // 👇 Render the component with the mocked date
     await mount();
     // ...rest of test
-  },
-});
+  }}
+/>
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import MockDate from 'mockdate';
-
-import preview from '../.storybook/preview';
-
-import Page from './Page';
-
-const meta = preview.meta({
-  component: Page,
-});
-
-export const ChristmasUI = meta.story({
-  async play({ mount }) {
-    MockDate.set('2024-12-25');
-    // 👇 Render the component with the mocked date
-    await mount();
-    // ...rest of test
-  },
-});
-```
-
-```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import MockDate from 'mockdate';
 
 import preview from '../.storybook/preview';
@@ -204,7 +174,7 @@ export const ChristmasUI = meta.story({
 });
 ```
 
-```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
 import MockDate from 'mockdate';
 
 import preview from '../.storybook/preview';
@@ -223,4 +193,36 @@ export const ChristmasUI = meta.story({
     // ...rest of test
   },
 });
+```
+
+```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import MockDate from 'mockdate';
+
+// ...rest of story file
+
+export const ChristmasUI: Story = {
+  async play({ mount }) {
+    MockDate.set('2024-12-25');
+    // 👇 Render the component with the mocked date
+    await mount();
+    // ...rest of test
+  },
+};
+```
+
+```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import MockDate from 'mockdate';
+
+// ...rest of story file
+
+export const ChristmasUI = {
+  async play({ mount }) {
+    MockDate.set('2024-12-25');
+    // 👇 Render the component with the mocked date
+    await mount();
+    // ...rest of test
+  },
+};
 ```

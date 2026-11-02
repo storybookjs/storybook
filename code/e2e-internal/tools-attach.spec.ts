@@ -59,9 +59,9 @@ const REVIEW_INPUT = JSON.stringify({
 });
 
 test.describe('storybook tools attach', () => {
-  // Declaration order matters (the full-extraction test must stay last — see its comment), which
-  // the config's fullyParallel would not preserve outside CI's single worker. Not 'serial': these
-  // tests are independent, so one failure must not skip the rest.
+  // Declaration order matters (the full-extraction test must stay last — see its comment); the
+  // config's serial project runs this file in order on one worker. Not 'serial': these tests are
+  // independent, so one failure must not skip the rest.
   test.describe.configure({ mode: 'default' });
   test.setTimeout(90_000);
 

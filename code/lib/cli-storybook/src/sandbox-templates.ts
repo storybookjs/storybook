@@ -459,6 +459,8 @@ export const baseTemplates = {
       renderer: '@storybook-astro/renderer',
       builder: '@storybook/builder-vite',
     },
+    // TODO: remove `inDevelopment` once the nightly sandbox generation has published this template.
+    inDevelopment: true,
     // `chromatic` needs a CHROMATIC_TOKEN_ASTRO_VITE_DEFAULT_TS secret in CI; enable it once the
     // Chromatic project exists.
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration', 'chromatic'],

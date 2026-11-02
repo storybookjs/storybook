@@ -1,0 +1,20 @@
+## Props
+
+```
+export type ModalProps = {
+  /** Confirm button variant. */
+  confirmType?: "primary" | "secondary" = "primary";
+  /** Open state. */
+  open?: boolean; // bind:open={...}
+  /** Error message. */
+  error?: string = ""; // bind:error={...}
+  /** Dialog id. */
+  id: string;
+  /** Main content. */
+  content?: Snippet<[]>;
+  /** Footer content. */
+  footer?: Snippet<[]>;
+  /** Cancel callback. */
+  onCancelModal?: () => void;
+} & HTMLAttributes<HTMLDialogElement>
+```

@@ -136,8 +136,6 @@ export const createGlobal = memoize(1)(({
       borderTop: `1px solid ${color.border}`,
     },
 
-    '.sb-sr-only, .sb-hidden-until-focus:not(:focus)': srOnlyStyles,
-
     '.sb-hidden-until-focus': {
       opacity: 0,
       transition: 'opacity 150ms ease-out',
@@ -151,11 +149,20 @@ export const createGlobal = memoize(1)(({
       position: 'relative',
     },
 
-    '[data-sb-landmark]:focus-visible': {
+    // After the landmark rule, which has the same specificity: a visually hidden landmark (the
+    // sidebar's explorer while the search results show) must still leave the flow, or it keeps its
+    // flex share of the column and pushes the content below it down.
+    '.sb-sr-only, .sb-hidden-until-focus:not(:focus)': srOnlyStyles,
+
+    // Landmarks cannot be reached with a pointer, only moved to from keyboard-driven flows
+    // (landmark navigation, skip links, shortcuts), so plain `:focus` is the keyboard case.
+    // `:focus-visible` would miss it for a shortcut relayed from the preview iframe, where the
+    // manager document has had no keyboard interaction of its own.
+    '[data-sb-landmark]:focus': {
       outline: 'none',
     },
 
-    '[data-sb-landmark]:focus-visible::after': {
+    '[data-sb-landmark]:focus::after': {
       outline: `2px solid ${color.primary}`,
       outlineOffset: '-2px',
     },

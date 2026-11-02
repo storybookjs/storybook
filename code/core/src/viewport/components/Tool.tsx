@@ -4,7 +4,7 @@ import { Select } from 'storybook/internal/components';
 
 import { GrowIcon } from '@storybook/icons';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { useViewport } from '../useViewport.ts';
 import { iconsMap } from '../viewportIcons.tsx';

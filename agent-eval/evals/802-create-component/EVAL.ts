@@ -48,8 +48,8 @@ describe('creating a ProfileCard component', () => {
       expectWorkflowCalls(['docs-show'])
     );
 
-    test.skipIf(integration === 'mcp')('invokes the stories skill', () =>
-      expectSkillInvoked('stories')
+    test.skipIf(integration === 'mcp')('invokes the ui-workflow skill', () =>
+      expectSkillInvoked('ui-workflow')
     );
 
     test.skipIf(integration !== 'plugin')(

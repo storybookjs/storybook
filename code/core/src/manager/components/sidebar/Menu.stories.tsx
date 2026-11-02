@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { initialState } from '../../../shared/checklist-store/checklistData.state.ts';
 import { useMenu } from '../../container/Menu.tsx';
@@ -35,7 +35,7 @@ const getAPIMocks = () => ({
   toggleNav: fn().mockName('api::toggleNav'),
   toggleToolbar: fn().mockName('api::toggleToolbar'),
   togglePanel: fn().mockName('api::togglePanel'),
-  jumpToComponent: fn().mockName('api::jumpToComponent'),
+  jumpToSubtree: fn().mockName('api::jumpToSubtree'),
   jumpToStory: fn().mockName('api::jumpToStory'),
   emit: fn().mockName('api::emit'),
 });

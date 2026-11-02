@@ -6,7 +6,28 @@ sidebar:
 
 Storybook provides an integrated [TypeScript](https://www.typescriptlang.org/) experience, including zero-configuration setup and built-in types for APIs, addons, and stories.
 
-Storybook requires TypeScript 5.9 or 6.x.
+Storybook requires TypeScript 5.9 or newer.
+
+## TypeScript 7
+
+TypeScript 7 does not include the compiler API that Storybook uses to read your component types for Controls and the Docs args table. Other tools that import `typescript`, such as typescript-eslint, need that API too.
+
+Install TypeScript 7 and TypeScript 6 side by side, using the [setup from the TypeScript team](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0). `tsc` stays on TypeScript 7. The package named `typescript`, which Storybook imports, is TypeScript 6. npm, Yarn, and pnpm all accept this alias:
+
+```json
+{
+  "devDependencies": {
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
+  }
+}
+```
+
+`npx tsc` then runs TypeScript 7. If you replace `typescript` and leave out `@typescript/native`, the TypeScript 7 `tsc` binary is gone and only `tsc6` remains.
+
+Your editor uses the package named `typescript` by default, so its language service stays on TypeScript 6 until you select `@typescript/native`.
+
+If your project depends on TypeScript 7 directly, including a new Vite app, replace that `typescript` dependency with the two entries above.
 
 ## Configure Storybook with TypeScript
 

@@ -9,7 +9,7 @@ const templateName = process.env.STORYBOOK_TEMPLATE_NAME;
 
 test.describe('Next.js', () => {
   // TODO: improve these E2E tests given that we have more version of Next.js to test
-  // and this only tests nextjs/default-js
+  // and this only tests nextjs/default-ts
   test.skip(
     !templateName?.includes('nextjs/default-ts'),
     'Only run this test for the Frameworks that support next/navigation'

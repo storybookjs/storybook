@@ -12,7 +12,6 @@ import type {
   API_PreparedIndexEntry,
   API_RefStoryRuntimeData,
 } from './api-stories.ts';
-import type { SetStoriesStory, SetStoriesStoryData } from './channelApi.ts';
 import type { DocsOptions } from './core-common.ts';
 import type { StoryIndex } from './indexer.ts';
 
@@ -50,7 +49,6 @@ export interface API_Provider<API> {
     sidebar?: API_SidebarOptions<API>;
     theme?: ThemeVars;
     selectedPanel?: string;
-    StoryMapper?: API_StoryMapper;
     [k: string]: any;
   };
   [key: string]: any;
@@ -161,12 +159,9 @@ type API_Versions = Record<string, string>;
 
 export type API_SetRefData = Partial<
   API_ComposedRef & {
-    setStoriesData: SetStoriesStoryData;
     storyIndex: StoryIndex;
   }
 >;
-
-export type API_StoryMapper = (ref: API_ComposedRef, story: SetStoriesStory) => SetStoriesStory;
 
 export interface API_LoadedRefData {
   index?: API_IndexHash;

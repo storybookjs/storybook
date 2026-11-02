@@ -26,4 +26,5 @@ export const defaultShortcuts: State['shortcuts'] = {
   goToNextLandmark: ['F6'], // hardcoded in react-aria
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: ['alt', 'shift', 'C'],
+  contextMenu: ['ctrl', 'shift', 'U'],
 };

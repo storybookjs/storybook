@@ -97,6 +97,36 @@ describe('serverCodeEliminationPlugin', () => {
       expect(result!.code).not.toContain('const handler');
     });
 
+    it.each([
+      'export function handler() { return 1; }',
+      'export default function handler() { return 1; }',
+      'export class handler {}',
+    ])('keeps an exported handler declaration intact: %s', async (declaration) => {
+      const code = [
+        `import { createServerFn } from '@tanstack/react-start';`,
+        declaration,
+        `export const f = createServerFn().handler(handler);`,
+      ].join('\n');
+      const result = await transform(code);
+      expect(result!.code).toContain(declaration);
+      expect(result!.code).toContain('__sb_fn()');
+    });
+
+    it('keeps declarations that live code writes or reads through tricky scopes', async () => {
+      const code = [
+        `import { createServerFn } from '@tanstack/react-start';`,
+        `import { config } from './config';`,
+        `let token;`,
+        `export function setSession(s) { token = s.token; }`,
+        `export function useThing(c = config) { const config = 1; return c + config; }`,
+        `export const getData = createServerFn().handler(async () => token + config);`,
+      ].join('\n');
+      const result = await transform(code);
+      expect(result!.code).toContain('let token;');
+      expect(result!.code).toContain(`import { config } from './config';`);
+      expect(result!.code).toContain('__sb_fn()');
+    });
+
     it('handles chained .middleware().handler()', async () => {
       const code = [
         `import { createServerFn } from '@tanstack/react-start';`,

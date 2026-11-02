@@ -7,7 +7,7 @@ import type { Addon_BaseType } from 'storybook/internal/types';
 import { UndoIcon, ZoomIcon } from '@storybook/icons';
 
 import { types, useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { Shortcut } from '../../Shortcut.tsx';
 import { NumericInput } from '../NumericInput.tsx';

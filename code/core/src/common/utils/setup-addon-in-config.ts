@@ -1,12 +1,9 @@
 import type { ConfigFile } from 'storybook/internal/csf-tools';
-import { writeConfig } from 'storybook/internal/csf-tools';
+import { parseExpression, writeConfig } from 'storybook/internal/csf-tools';
 
 import { loadMainConfig } from './load-main-config.ts';
 import { syncStorybookAddons } from './sync-main-preview-addons.ts';
-import {
-  getAbsolutePathWrapperName,
-  wrapValueWithGetAbsolutePathWrapper,
-} from './wrap-getAbsolutePath-utils.ts';
+import { getAbsolutePathCall, getAbsolutePathWrapperName } from './wrap-getAbsolutePath-utils.ts';
 
 export interface SetupAddonInConfigOptions {
   addonName: string;
@@ -27,13 +24,15 @@ export async function setupAddonInConfig({
   configDir,
   mainConfigCSFFile,
 }: SetupAddonInConfigOptions): Promise<void> {
-  const mainConfigAddons = mainConfigCSFFile.getFieldNode(['addons']);
-  if (mainConfigAddons && getAbsolutePathWrapperName(mainConfigCSFFile) !== null) {
-    const addonNode = mainConfigCSFFile.valueToNode(addonName);
-    mainConfigCSFFile.appendNodeToArray(['addons'], addonNode as any);
-    wrapValueWithGetAbsolutePathWrapper(mainConfigCSFFile, addonNode as any);
-  } else {
-    mainConfigCSFFile.appendValueToArray(['addons'], addonName);
+  const wrapped =
+    mainConfigCSFFile.inspect(['addons']).kind === 'value' &&
+    getAbsolutePathWrapperName(mainConfigCSFFile) !== null;
+  const result = mainConfigCSFFile.append(
+    ['addons'],
+    wrapped ? parseExpression(getAbsolutePathCall(mainConfigCSFFile, addonName)) : addonName
+  );
+  if (!result.ok) {
+    throw new Error(result.diagnostic.message);
   }
 
   await writeConfig(mainConfigCSFFile);

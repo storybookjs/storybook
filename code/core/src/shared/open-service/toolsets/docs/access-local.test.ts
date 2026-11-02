@@ -8,6 +8,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { listEntryNames } from './access.ts';
 import { createLocalDocsAccess } from './access-local.ts';
 import type { RawManifests } from './access-manifest.ts';
 
@@ -61,6 +62,13 @@ describe('createLocalDocsAccess', () => {
     const listing = await createAccess().list({ withStoryIds: false });
 
     expect(Object.keys(listing.componentManifest.components)).toEqual(['button']);
+    expect(getService).not.toHaveBeenCalled();
+  });
+
+  it('lists entry names from the story index once the docgen services registered', async () => {
+    getRegisteredServices.mockReturnValue([{ id: 'core/docgen' }, { id: 'core/story-docs' }]);
+
+    await expect(listEntryNames(createAccess())).resolves.toEqual([]);
     expect(getService).not.toHaveBeenCalled();
   });
 

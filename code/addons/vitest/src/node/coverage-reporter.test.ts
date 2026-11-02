@@ -34,10 +34,10 @@ it.runIf(BUILT).each([
           const reporter = await (${loader})(
             '@storybook/addon-vitest/internal/coverage-reporter',
             {
-              testManager: {
+              getTestManager: () => ({
                 onCoverageCollected: (summary) => summaries.push(summary),
                 vitestManager: { vitest: { config: { coverage: { watermarks: { statements: [50, 90] } } } } },
-              },
+              }),
             }
           );
           reporter.onSummary({
@@ -69,7 +69,7 @@ it.each([
         vitest: { config: { coverage: { watermarks: { statements: watermarks } } } },
       },
     } as unknown as TestManager;
-    const reporter = new StorybookCoverageReporter({ testManager });
+    const reporter = new StorybookCoverageReporter({ getTestManager: () => testManager });
     reporter.onSummary({
       isRoot: () => true,
       getCoverageSummary: () => ({ data: { statements: { pct: percentage } } }),
@@ -81,7 +81,7 @@ it.each([
 it('ignores nested coverage summaries', () => {
   const onCoverageCollected = vi.fn();
   const reporter = new StorybookCoverageReporter({
-    testManager: { onCoverageCollected } as unknown as TestManager,
+    getTestManager: () => ({ onCoverageCollected }) as unknown as TestManager,
   });
   reporter.onSummary({ isRoot: () => false } as ReportNode);
   expect(onCoverageCollected).not.toHaveBeenCalled();

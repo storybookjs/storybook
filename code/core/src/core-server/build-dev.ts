@@ -144,6 +144,8 @@ export async function buildDevStandalone(
   options.serverChannelUrl = getServerChannelUrl(port, options);
   options.localAddress = localAddress;
   options.networkAddress = networkAddress;
+  // The CLI dev server always serves from the root; only `loadStorybook` callers mount it elsewhere.
+  options.basePath = '/';
 
   const config = await loadMainConfig(options);
   const { core, framework } = config;

@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import React from 'react';
 
 import * as managerApi from 'storybook/manager-api';
-import { ThemeProvider, convert, themes } from 'storybook/theming';
+import { ThemeProvider, convert, themes } from 'storybook/theming/emotion';
 
 import { type EnhancedResults } from '../types.ts';
 import { A11YPanel } from './A11YPanel.tsx';

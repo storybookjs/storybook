@@ -22,6 +22,7 @@ import type {
   StoryContext,
   StoryObj,
 } from './public-types.ts';
+import { __definePreview } from './preview.ts';
 import { defineMeta } from './svelte-csf/index.ts';
 import type { SvelteRenderer } from './types.ts';
 
@@ -242,6 +243,20 @@ describe('Args', () => {
     const { Story } = defineMeta({ component: Button });
 
     expectTypeOf<SvelteArgs<typeof Story>>().toEqualTypeOf<ComponentProps<typeof Button>>();
+  });
+
+  it('is the template args of a Svelte CSF factories story with its Story component', () => {
+    const { Story } = __definePreview({ addons: [] }).meta({
+      component: Button,
+      args: { disabled: false },
+    });
+    type TArgs = SvelteArgs<typeof Story>;
+
+    expectTypeOf<TArgs['label']>().toEqualTypeOf<string>();
+    expectTypeOf<TArgs['disabled']>().toEqualTypeOf<boolean>();
+    expectTypeOf<Snippet<[TArgs]>>().toExtend<
+      NonNullable<ComponentProps<typeof Story>['template']>
+    >();
   });
 
   it('is never for a type argument that is not a Story component', () => {

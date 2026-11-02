@@ -467,6 +467,86 @@ describe('parseReactDocgenTypescript', () => {
 describe.each([
   ['parseReactDocgenTypescript', parseReactDocgenTypescript],
   ['parseReactComponentMeta', parseReactComponentMeta],
+])('%s named-alias enums (#35778)', (_parserName, parseComponentDocLike) => {
+  test('renders the full union for a named-alias enum whose raw is only the alias name', () => {
+    const result = parseComponentDocLike({
+      displayName: 'Button',
+      filePath: 'src/Button.tsx',
+      description: '',
+      methods: [],
+      props: {
+        size: {
+          name: 'size',
+          description: 'Visual size',
+          type: {
+            name: 'enum',
+            raw: 'Size',
+            value: [{ value: '"small"' }, { value: '"medium"' }, { value: '"large"' }],
+          },
+          defaultValue: null,
+          required: false,
+        },
+      },
+    });
+    expect(result.props.size!.type).toBe('"small" | "medium" | "large"');
+  });
+
+  test('joins inline union members back to the exact string raw already holds', () => {
+    const raw = '"primary" | "secondary" | "danger"';
+    const result = parseComponentDocLike({
+      displayName: 'Button',
+      filePath: 'src/Button.tsx',
+      description: '',
+      methods: [],
+      props: {
+        variant: {
+          name: 'variant',
+          description: 'The variant',
+          type: {
+            name: 'enum',
+            raw,
+            value: [{ value: '"primary"' }, { value: '"secondary"' }, { value: '"danger"' }],
+          },
+          defaultValue: null,
+          required: false,
+        },
+      },
+    });
+    // Byte-identical to the previous `raw` output for inline unions.
+    expect(result.props.variant!.type).toBe(raw);
+  });
+
+  test('keeps flat type.name for non-enum props', () => {
+    const result = parseComponentDocLike({
+      displayName: 'Button',
+      filePath: 'src/Button.tsx',
+      description: '',
+      methods: [],
+      props: {
+        label: {
+          name: 'label',
+          description: 'The label',
+          type: { name: 'string' },
+          defaultValue: null,
+          required: true,
+        },
+        onClick: {
+          name: 'onClick',
+          description: 'Click handler',
+          type: { name: '(event: MouseEvent) => void' },
+          defaultValue: null,
+          required: true,
+        },
+      },
+    });
+    expect(result.props.label!.type).toBe('string');
+    expect(result.props.onClick!.type).toBe('(event: MouseEvent) => void');
+  });
+});
+
+describe.each([
+  ['parseReactDocgenTypescript', parseReactDocgenTypescript],
+  ['parseReactComponentMeta', parseReactComponentMeta],
 ])('%s component tags', (_parserName, parseComponentDocLike) => {
   test('normalizes flat tag values into arrays', () => {
     const result = parseComponentDocLike({

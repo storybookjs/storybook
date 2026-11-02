@@ -1,5 +1,7 @@
 import { camelCase, upperFirst } from 'es-toolkit/string';
 
+export type TransformFile = { path: string; source: string };
+
 export const sanitizeName = (name: string) => {
   let key = upperFirst(camelCase(name)) as string;
   // prepend _ if name starts with a digit

@@ -1,7 +1,7 @@
 import { logger } from 'storybook/internal/client-logger';
 import type { GlobalTypes, Globals } from 'storybook/internal/types';
 
-import { DEEPLY_EQUAL, deepDiff } from './args.ts';
+import { DEEPLY_EQUAL, combineArgs, deepDiff } from './args.ts';
 
 export class GlobalsStore {
   // We use ! here because TS doesn't analyse the .set() function to see if it actually get set
@@ -51,7 +51,7 @@ export class GlobalsStore {
     const allowedUrlGlobals = this.filterAllowedGlobals(persisted);
     // Note that unlike args, we do not have the same type information for globals to allow us
     // to type check them here, so we just set them naively
-    this.globals = { ...this.globals, ...allowedUrlGlobals };
+    this.globals = combineArgs(this.globals, allowedUrlGlobals);
   }
 
   get() {

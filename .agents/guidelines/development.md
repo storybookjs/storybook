@@ -28,6 +28,8 @@ Add `-c production` only when you need sandbox-related NX tasks or are explicitl
 | Check TypeScript errors quickly | `yarn nx run-many -t check` (or `yarn task check`)                           |
 | Lint everything                 | `yarn lint`                                                                  |
 | Lint one file                   | `yarn --cwd code lint:js:cmd <file-relative-to-code-folder> --fix`           |
+| Update the MIGRATION.md TOC     | `yarn --cwd scripts update-migration-toc`                                    |
+| Check the MIGRATION.md TOC      | `yarn --cwd scripts update-migration-toc --check`                            |
 | Format                          | `cd code && yarn fmt:write`                                                  |
 | Start the internal Storybook UI | `cd code && yarn storybook:ui`                                               |
 | Build the internal Storybook UI | `cd code && yarn storybook:ui:build`                                         |
@@ -40,6 +42,8 @@ Add `-c production` only when you need sandbox-related NX tasks or are explicitl
 | Verify sandbox docgen baselines | `yarn workspace @storybook/docgen-harness baselines:sandbox`                 |
 | List docs via tools CLI         | `cd code && node core/dist/bin/dispatcher.js tools docs list`                |
 | Require attach / force local    | add `--attach` or `--no-attach` before the toolset name                      |
+
+Changes to `MIGRATION.md` are automatically updated by lint-staged. Use the commands above to update or check the table of contents manually.
 
 ## Normal code changes
 

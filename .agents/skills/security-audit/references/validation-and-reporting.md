@@ -96,7 +96,7 @@ A match on root cause marks the record as a duplicate with the matched id. A mat
 
 The chat report has these parts in this order and no others. Parts with nothing to say contain the word `none`.
 
-1. **Verdict line**: `SECURITY-AUDIT: PASS | FAIL | NEEDS-VALIDATION` followed on the same line by `mode=<pr|full|triage> effort=<low|medium|high> ref=<commit> integrations=<notion:ok|unreachable, linear:ok|unreachable, github:ok|unreachable>`. `FAIL` when any `confirmed` record exists; `NEEDS-VALIDATION` when none is confirmed and at least one needs validation; `PASS` otherwise.
+1. **Verdict line**: `SECURITY-AUDIT: PASS | FAIL | NEEDS-VALIDATION` followed on the same line by `mode=<pr|full|triage> effort=<low|medium|high> ref=<commit> integrations=<notion:ok|unreachable, linear:ok|unreachable, github:ok|unreachable> verification=<fresh|self>`. `verification=self` means no subagent tool was available and no record has been checked by a fresh agent. `FAIL` when any `confirmed` record exists; `NEEDS-VALIDATION` when none is confirmed and at least one needs validation; `PASS` otherwise.
 2. **Findings**: chain records first, then step records, `confirmed` before `needs-validation`, `pre-existing` marked. Then `hardening` under its own heading, then `rejected` under its own heading with one line each.
 3. **Coverage**: a table of surfaces with columns Surface, Status (`reviewed`, `partial`, `not reviewed`), Hunter, Classes applied, Reason when not fully reviewed. In `pr` mode the rows are the touched surfaces plus any surface a finding reached.
 4. **Threat model delta**: the items the delta procedure in `threat-model.md` requires.
@@ -154,9 +154,12 @@ content that does anything when executed, and do not combine two steps into one
 working sequence. A step that only matters as part of a chain is still one
 record, with its chain membership noted.
 
-Do not contact deployed Storybooks, Chromatic, the npm registry, or the telemetry
-endpoint. Do not run `yarn start` or `yarn task dev`. Use `yarn test <pattern>`
-for unit tests and the commands in .agents/guidelines/testing.md for the rest.
+Do not contact deployed Storybooks, Chromatic, or the telemetry endpoint, and do
+not fetch packages beyond the repository's own lockfile; running `yarn` at the
+root to install that lockfile is fine. Do not run `yarn start` or `yarn task dev`.
+Use `yarn test <pattern>` for unit tests and the commands in
+.agents/guidelines/testing.md for the rest. If no subagent tool is available to
+you, say so in your result; the caller marks your records self-verified.
 ```
 
 ### Hunter method

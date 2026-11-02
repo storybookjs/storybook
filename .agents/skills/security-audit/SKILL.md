@@ -31,6 +31,8 @@ If the request fits both `pr` and `full`, ask one question before launching any 
 - Note which integrations are reachable: Notion (threat model), Linear (security project), GitHub (PR data). Each unreachable one is stated on the verdict line; the run continues with the committed threat-model copy and ready-to-paste text.
 - Create a scratchpad directory for this run. Every test a hunter or verifier writes goes there. Nothing is written under the repository, and nothing is committed.
 - Check the running context. If the session is a GitHub workflow run, the output is public: emit only the verdict line and the holding sentence from the disclosure rules.
+- Check for a subagent tool. If none is available, the invoking agent applies the hunter and verifier methods itself, marks every record `self-verified`, and puts `verification=self` on the verdict line so a maintainer can dispatch fresh verifiers later.
+- Make sure the repository's dependencies are installed (`yarn` at the root) so the harness can run. Installing the repository's own lockfile is allowed; fetching anything else from the registry is not.
 
 ## `pr` mode
 
@@ -75,8 +77,12 @@ Each critic prompt contains: the critic block; the threat model's surface list; 
 - Post findings, review text, or test contents on a public PR, issue, comment, or CI log. The human posts the ready-to-paste text.
 - Commit a test that reproduces a `pre-existing` weakness. It is described in the record for the fix PR.
 - Assign severity to a `needs-validation` or `hardening` record.
-- Run `yarn start`, `yarn task dev` without a template, or anything that contacts a deployed Storybook, Chromatic, the npm registry, or the telemetry endpoint.
+- Run `yarn start`, `yarn task dev` without a template, or anything that contacts a deployed Storybook, Chromatic, or the telemetry endpoint, or that fetches packages beyond the repository's own lockfile.
 - Treat a story, config, preset, or addon author as a principal.
+
+## Changing this skill
+
+Run the scenarios under `scenarios/` with a fresh agent before and after an edit, and compare against each scenario's checks. An edit that makes a scenario fail is reverted or the scenario is updated in the same change.
 
 ## Handoffs
 

@@ -154,11 +154,15 @@ export const createGlobal = memoize(1)(({
     // flex share of the column and pushes the content below it down.
     '.sb-sr-only, .sb-hidden-until-focus:not(:focus)': srOnlyStyles,
 
-    '[data-sb-landmark]:focus-visible': {
+    // Landmarks cannot be reached with a pointer, only moved to from keyboard-driven flows
+    // (landmark navigation, skip links, shortcuts), so plain `:focus` is the keyboard case.
+    // `:focus-visible` would miss it for a shortcut relayed from the preview iframe, where the
+    // manager document has had no keyboard interaction of its own.
+    '[data-sb-landmark]:focus': {
       outline: 'none',
     },
 
-    '[data-sb-landmark]:focus-visible::after': {
+    '[data-sb-landmark]:focus::after': {
       outline: `2px solid ${color.primary}`,
       outlineOffset: '-2px',
     },

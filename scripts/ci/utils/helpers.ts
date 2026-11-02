@@ -11,6 +11,14 @@ export const cancelWorkflowStep = {
   },
 };
 
+export const compileStep = () => ({
+  run: {
+    name: 'Compile',
+    working_directory: 'code',
+    command: 'yarn task --task compile --start-from=auto --no-link --debug',
+  },
+});
+
 /**
  * The `Persisting to workspace` step is bytes-bound: CircleCI gzips the
  * workspace layer single-threaded at roughly 20MB/s, so ~2.5GB of

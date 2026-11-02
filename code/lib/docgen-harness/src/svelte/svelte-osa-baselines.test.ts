@@ -60,13 +60,13 @@ const entries = new Map(
 
 const provider = createDocgenProvider()(async () => undefined);
 
-const withoutArgTypes = (
+const withoutOwnSnapshots = (
   payload: DocgenPayload | undefined
-): Omit<DocgenPayload, 'argTypes'> | undefined => {
+): Omit<DocgenPayload, 'argTypes' | 'apiDescription'> | undefined => {
   if (!payload) {
     return payload;
   }
-  const { argTypes: _argTypes, ...rest } = payload;
+  const { argTypes: _argTypes, apiDescription: _apiDescription, ...rest } = payload;
   return rest;
 };
 
@@ -97,11 +97,14 @@ describe('svelte server-side docgen baselines', () => {
         },
       ],
     });
-    await expect(withoutArgTypes(payload)).toMatchFileSnapshot(
+    await expect(withoutOwnSnapshots(payload)).toMatchFileSnapshot(
       join(testDir, 'osa-payload.snapshot')
     );
     await expect(payload?.description ?? '').toMatchFileSnapshot(
       join(testDir, 'osa-description.snapshot')
+    );
+    await expect(payload?.apiDescription ?? '').toMatchFileSnapshot(
+      join(testDir, 'osa-api-description.snapshot')
     );
   });
 });

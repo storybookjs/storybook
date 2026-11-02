@@ -12,35 +12,17 @@ import {
 } from '../../../utils/error/parser/extract/compiled.ts';
 import { DefaultOrNamespaceImportUsedError } from '../../../utils/error/parser/extract/svelte.ts';
 
-/**
- * Important AST nodes from the compiled output of a single `*.stories.svelte` file.
- * They are needed for further code transformation.
- * Powered by `rollup`'s internal [`this.parse()`](https://rollupjs.org/plugin-development/#this-parse)
- */
 export interface CompiledASTNodes {
-  /** `true` when the meta comes from `preview.meta()`, which creates a CSF factories meta. */
+  // `true` for `preview.meta()`, which creates a CSF factories meta
   isFactory: boolean;
-  /**
-   * Variable declaration with the meta call: `const { Story } = defineMeta({ })`, or
-   * `preview.meta({ })` in place of `defineMeta({ })`. It can also be `const meta =
-   * preview.meta({ })`, followed by `const { Story } = meta`.
-   */
+  // `const { Story } = defineMeta({})` or `preview.meta({})`, or `const meta = preview.meta({})` then `const { Story } = meta`
   defineMetaVariableDeclaration: ESTreeAST.VariableDeclaration;
-  /** `meta` in `const meta = preview.meta({ })`. */
+  // `meta` in `const meta = preview.meta({})`
   metaIdentifier?: ESTreeAST.Identifier;
-  /**
-   * Store the `export default declaration`, we will need to remove it later.
-   * Why? Storybook expects `export default meta`, instead of what `@sveltejs/vite-plugin-svelte` will produce.
-   */
+  // Removed later, because Storybook expects `export default meta` instead of the compiled component
   exportDefault: ESTreeAST.ExportDefaultDeclaration;
-  /**
-   * The names of the `<Story />` components.
-   * It could be destructured with rename - e.g. `const { Story: S } = defineMeta({ ... })`
-   */
+  // Local names, because the destructuring can rename `Story`, as in `const { Story: S } = defineMeta({})`
   storyNames: string[];
-  /**
-   * A function declaration for the main Svelte component which is the `*.stories.svelte` file.
-   */
   storiesFunctionDeclaration: ESTreeAST.FunctionDeclaration;
 }
 
@@ -50,10 +32,6 @@ interface Params {
   filename?: string;
 }
 
-/**
- * Extract compiled AST nodes from Vite _(via `rollup`)_.
- * Those nodes are required for further code transformation.
- */
 export async function extractCompiledASTNodes(params: Params): Promise<CompiledASTNodes> {
   const { ast, filename } = params;
 

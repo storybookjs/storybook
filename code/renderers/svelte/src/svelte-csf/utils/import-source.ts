@@ -1,4 +1,4 @@
-import { isValidPreviewPath } from 'storybook/internal/csf-tools';
+import { isValidPreviewPath, unwrapExpression } from 'storybook/internal/csf-tools';
 
 import type * as ESTreeAST from 'estree';
 
@@ -168,9 +168,10 @@ function getMetaFunctionName(
 }
 
 // `preview.type<…>()` and `meta.type<…>()` return the same preview or meta with more types, so
-// `preview.type<…>().meta()` is a meta of `preview`, and `meta.type<…>()` is `meta`
+// `preview.type<…>().meta()` is a meta of `preview`, and `meta.type<…>()` is `meta`. The same goes
+// for TypeScript expressions such as `meta as typeof meta`.
 export function skipTypeCalls(expression: ESTreeAST.Expression | ESTreeAST.Super) {
-  let current = expression;
+  let current = unwrapExpression(expression);
 
   while (
     current.type === 'CallExpression' &&
@@ -180,7 +181,7 @@ export function skipTypeCalls(expression: ESTreeAST.Expression | ESTreeAST.Super
     current.callee.property.type === 'Identifier' &&
     current.callee.property.name === 'type'
   ) {
-    current = current.callee.object;
+    current = unwrapExpression(current.callee.object);
   }
 
   return current;

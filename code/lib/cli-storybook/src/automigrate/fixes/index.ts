@@ -12,6 +12,7 @@ import { docgenServer } from './docgen-server.ts';
 import { nextjsToNextjsVite } from './nextjs-to-nextjs-vite.ts';
 import { reactViteToTanstackReact } from './react-vite-to-tanstack-react.ts';
 import { removeChangeDetectionFlag } from './remove-change-detection-flag.ts';
+import { removeLegacyFeatureFlags } from './remove-legacy-feature-flags.ts';
 import { removeExperimentalReview } from './remove-experimental-review.ts';
 import { rnOndeviceAddonsToDeviceAddons } from './rn-ondevice-addons-to-device-addons.ts';
 import { storybookPackageNameConflict } from './storybook-package-name-conflict.ts';
@@ -20,6 +21,7 @@ import { setConfigLayout } from './set-config-layout.ts';
 import { sidebarFilters } from './sidebar-filters.ts';
 import { skills } from './skills.ts';
 import { tagFilterApi } from './tag-filter-api.ts';
+import { typescriptCompilerApi, typescriptDependency } from './typescript-dependency.ts';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies.ts';
 import { vitestSetupFile } from './vitest-setup-file.ts';
 import { wrapGetAbsolutePath } from './wrap-getAbsolutePath.ts';
@@ -48,8 +50,11 @@ export const allFixes: Fix[] = [
   csfNextMockedArgs,
   removeExperimentalReview,
   removeChangeDetectionFlag,
+  removeLegacyFeatureFlags,
   skills,
   docgenServer,
+  typescriptDependency,
+  typescriptCompilerApi,
 ];
 
 export const commandFixes: CommandFix[] = [csfFactories];

@@ -5,21 +5,19 @@ sidebar:
   title: Best practices
 ---
 
-<Callout variant="info" icon="🧪">
+<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
 
-The best practices here relate to the [generated manifests](./manifests.mdx), which are in [preview](../releases/features.mdx#preview).
-The API may change in future releases.
-We welcome feedback and contributions to help improve this feature.
+These practices help your agent reuse your components, by improving the [manifests](./reference/manifests.mdx) that it reads. Storybook's AI features aren't available for your framework yet. See [supported frameworks](./connect.mdx#supported-frameworks).
 
-See [framework support](./mcp/overview.mdx#framework-support) for which frameworks generate manifests today.
+</If>
 
-</Callout>
+<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
 
-Use Storybook together with an AI agent effectively by following these best practices.
+Your agent reads your stories and component docs from the [manifests](./reference/manifests.mdx) that Storybook generates. The better you document your components, the better your agent reuses them. These practices apply to [skills](./connect.mdx#skills), the [MCP server](./reference/mcp-server.mdx), and [published Storybooks](./published-storybook.mdx).
 
 ## Writing effective stories
 
-Stories are referenced by the [MCP server](./mcp/overview.mdx) to provide examples of how your components are used. They are also tested to ensure your components work as expected. Whenever possible, they should demonstrate one concept or use case, and be as descriptive about the "why" behind the story, not just the "what". This will help agents understand when and why to use certain components or patterns.
+Agents read stories as examples of how your components are used. They are also tested to ensure your components work as expected. Whenever possible, they should demonstrate one concept or use case, and be as descriptive about the "why" behind the story, not just the "what". This will help agents understand when and why to use certain components or patterns.
 
 <CodeSnippets path="best-practices-in-story.md" />
 
@@ -27,7 +25,7 @@ You might be wondering how well an agent handles abstractions like [`args`](../w
 
 ## Documenting your components
 
-To reuse your components effectively, agents depend on how well you document their purpose, usage, and APIs. There are a few key aspects that are well worth taking the time to document (ask your agent to help!). To provide these details, you can use [JSDoc comments](https://jsdoc.app/about-getting-started) in your code, which Storybook will automatically extract and include in the generated [manifest](./manifests.mdx) for the agent.
+To reuse your components effectively, agents depend on how well you document their purpose, usage, and APIs. There are a few key aspects that are well worth taking the time to document (ask your agent to help!). To provide these details, you can use [JSDoc comments](https://jsdoc.app/about-getting-started) in your code, which Storybook will automatically extract and include in the generated [manifest](./reference/manifests.mdx) for the agent.
 
 Of course, with [Autodocs](../writing-docs/autodocs.mdx), any documentation efforts you make will help human developers, too!
 
@@ -201,10 +199,11 @@ import { Meta } from '@storybook/addon-docs/blocks';
 <Meta title="Doc for Humans Only" tags={['!manifest']} />
 ```
 
+</If>
+{/* End supported renderers */}
+
 **More AI resources**
 
-- [Agentic setup](./setup.mdx)
-- [MCP server overview](./mcp/overview.mdx)
-- [MCP server API](./mcp/api.mdx)
-- [Sharing your MCP server](./mcp/sharing.mdx)
-- [Manifests](./manifests.mdx)
+- [Connect your agent](./connect.mdx)
+- [Component docs](./skills/component-docs.mdx)
+- [Manifests](./reference/manifests.mdx)

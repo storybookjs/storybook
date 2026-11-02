@@ -84,7 +84,7 @@ Initializes Storybook in your project (i.e. runs [`npm create storybook@latest`]
 
 ### `setup`
 
-Sets up your Storybook for agentic workflows, automatically configures your project to correctly render your components, and writes story files for a variety of component types. See the [agentic setup docs](https://storybook.js.org/docs/ai/agentic-setup) for more details.
+Sets up your Storybook for agentic workflows, automatically configures your project to correctly render your components, and writes story files for a variety of component types. See the [agentic setup docs](https://storybook.js.org/docs/ai/skills/setup) for more details.
 
 ### `component-docs`
 
@@ -100,4 +100,4 @@ Upgrades your Storybook to the latest version. This is the same as running [`npx
 
 ## Tools
 
-Agents with the plugin get the same tools as the [Storybook MCP server](https://storybook.js.org/docs/ai/mcp/overview#toolsets), through the `storybook tools` CLI.
+Agents with the plugin get the same tools as the [Storybook MCP server](https://storybook.js.org/docs/ai/reference/mcp-server), through the `storybook tools` CLI.

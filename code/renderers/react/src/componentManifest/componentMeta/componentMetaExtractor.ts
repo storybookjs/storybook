@@ -693,11 +693,6 @@ function serializeType(
     return { name: checker.typeToString(type) };
   }
 
-  const arrayType = serializeArrayType(typescript, checker, type, depth);
-  if (arrayType) {
-    return arrayType;
-  }
-
   if (type.isUnion()) {
     // Filter undefined from union members before any further processing.
     // This replaces the fragile `typeString.replace(' | undefined', '')` pattern
@@ -743,11 +738,7 @@ function serializeType(
       nonUndefinedTypes.length === 1 &&
       nonUndefinedTypes.length < type.types.length
     ) {
-      return (
-        serializeArrayType(typescript, checker, nonUndefinedTypes[0], depth) ?? {
-          name: checker.typeToString(nonUndefinedTypes[0]),
-        }
-      );
+      return serializeLeaf(typescript, checker, nonUndefinedTypes[0], depth);
     }
   }
 
@@ -756,18 +747,21 @@ function serializeType(
     return serializeType(typescript, checker, constraint, isRequired, depth + 1);
   }
 
-  return { name: checker.typeToString(type) };
+  return serializeLeaf(typescript, checker, type, depth);
 }
 
-/** Keeps the TypeScript name and adds the element type, so args tables can show an array control. */
-function serializeArrayType(
+/**
+ * Names a type as TypeScript prints it. Arrays also get their element type, so args tables can
+ * show an array control.
+ */
+function serializeLeaf(
   typescript: typeof ts,
   checker: ts.TypeChecker,
   type: ts.Type,
   depth: number
-): PropItemType | undefined {
+): PropItemType {
   if (!checker.isArrayType(type)) {
-    return undefined;
+    return { name: checker.typeToString(type) };
   }
   return {
     name: checker.typeToString(type),

@@ -116,7 +116,7 @@ Type: `string`
 
 Default: The original [`fileName`](#filename) passed to the `createIndex` function
 
-The file to import from, e.g. the [CSF](../csf/index.mdx) file.
+The file to import from, e.g. the [CSF](../../writing-stories/csf/index.mdx) file.
 
 It is likely that the [`fileName`](#filename) being indexed is not CSF, in which you will need to [transpile it to CSF](#transpiling-to-csf) so that Storybook can read it in the browser.
 
@@ -154,7 +154,7 @@ Default: Auto-generated from [`title`](#title)
 
 Define the custom id for meta of the entry.
 
-If specified, the export default (meta) in the CSF file _must_ have a corresponding `id` property, to be correctly matched.
+If specified, the meta (or default export) in the CSF file _must_ have a corresponding `id` property, to be correctly matched.
 
 ##### `name`
 
@@ -196,7 +196,7 @@ Only use this if you need to override the auto-generated id.
 
 ## Transpiling to CSF
 
-The value of [`importPath`](#importpath) in an [`IndexInput`](#indexinput) must resolve to a [CSF](../csf/index.mdx) file. Most custom indexers, however, are only necessary because the input is _not_ CSF. Therefore, you will likely need to transpile the input to CSF, so that Storybook can read it in the browser and render your stories.
+The value of [`importPath`](#importpath) in an [`IndexInput`](#indexinput) must resolve to a [CSF](../../writing-stories/csf/index.mdx) file. Most custom indexers, however, are only necessary because the input is _not_ CSF. Therefore, you will likely need to transpile the input to CSF, so that Storybook can read it in the browser and render your stories.
 
 Transpiling the custom source format to CSF is beyond the scope of this documentation. This transpilation is often done at the builder level ([Vite](../../builders/vite.mdx) and/or [Webpack](../../builders/webpack.mdx)), and we recommend using [unplugin](https://github.com/unjs/unplugin) to create plugins for multiple builders.
 
@@ -249,18 +249,19 @@ That resulting CSF file would then be indexed by Storybook. It would look someth
 
 ```js
 // virtual:Button.variants.js|ts
+import preview from '../.storybook/preview';
 
 import { Button } from './Button';
 
-export default {
+const meta = preview.meta({
   component: Button,
-};
+});
 
-export const Primary = {
+export const Primary = meta.story({
   args: {
     primary: true,
   },
-};
+});
 ```
 
 ## Examples
@@ -329,11 +330,13 @@ function JsonStoriesPlugin(): PluginOption {
       const { componentPath, stories } = getComponentStoriesFromJson(content, componentName);
 
       return `
+        import preview from '../.storybook/preview';
+
         import ${componentName} from '${componentPath}';
 
-        export default { component: ${componentName} };
+        const meta = preview.meta({ component: ${componentName} });
 
-        ${stories.map((story) => `export const ${story.name} = ${story.config};\n`)}
+        ${stories.map((story) => `export const ${story.name} = meta.story(${story.config});\n`)}
       `;
     },
   };

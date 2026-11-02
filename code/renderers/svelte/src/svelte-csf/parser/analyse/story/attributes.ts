@@ -120,7 +120,7 @@ export function getArrayOfStringsValueFromAttribute(params: Params) {
     return arrayOfStrings;
   }
 
-  // value is Array<SvelteAST.ExpressionTag | SvelteAST.Text> - I haven't figured out when it would happen
+  // A quoted value, such as `tags="{['a']}"`, parses as an array of text and expression tags
   const [first] = value;
   const expression = first.type === 'ExpressionTag' ? unwrapExpression(first.expression) : first;
 

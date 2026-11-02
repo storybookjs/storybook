@@ -40,10 +40,7 @@ export function getStoryIdentifiers(options: GetIdentifiersParams): StoryIdentif
 
   if (!exportNameValue) {
     if (!name) {
-      throw new NoStoryIdentifierError({
-        component,
-        filename,
-      });
+      throw new NoStoryIdentifierError(filename);
     }
     exportName = storyNameToExportName(name);
   } else if (typeof exportNameValue === 'string') {
@@ -51,7 +48,6 @@ export function getStoryIdentifiers(options: GetIdentifiersParams): StoryIdentif
   } else {
     throw new InvalidStoryExportNameError({
       filename,
-      component,
       value: String(exportNameValue),
     });
   }
@@ -59,7 +55,6 @@ export function getStoryIdentifiers(options: GetIdentifiersParams): StoryIdentif
   if (!isValidVariableName(exportName)) {
     throw new InvalidStoryExportNameError({
       filename,
-      component,
       value: exportName,
     });
   }

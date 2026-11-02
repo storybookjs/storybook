@@ -138,11 +138,12 @@ Use `applicationConfig` for providers that belong to the application bootstrap e
 If your component has dependencies on other Angular directives and modules, these can be supplied using the `moduleMetadata` [decorator](../../writing-stories/decorators.mdx) either for all stories of a component or for individual stories.
 
 ```ts title="YourComponent.stories.ts"
-import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import preview from '../.storybook/preview';
+import { moduleMetadata } from '@storybook/angular';
 
 import { YourComponent } from './your.component';
 
-const meta: Meta<YourComponent> = {
+const meta = preview.meta({
   component: YourComponent,
   decorators: [
     // Apply metadata to all stories
@@ -155,13 +156,11 @@ const meta: Meta<YourComponent> = {
       providers: [...],
     }),
   ],
-};
-export default meta;
-type Story = StoryObj<YourComponent>;
+});
 
-export const Base: Story = {};
+export const Base = meta.story();
 
-export const WithCustomProvider: Story = {
+export const WithCustomProvider = meta.story({
   decorators: [
     // Apply metadata to a specific story
     moduleMetadata({
@@ -170,7 +169,7 @@ export const WithCustomProvider: Story = {
       providers: [...],
     }),
   ],
-};
+});
 ```
 
 ## FAQ

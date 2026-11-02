@@ -9,8 +9,7 @@ declare module 'svelte/compiler' {
       [propName: string]: any;
     }
 
-    // FIXME: Those types are not exported from `svelte/compiler` - need to create an issue
-    // Temporarily manually exporting them
+    // `svelte/compiler` does not export these types
 
     export type Block =
       | AST.EachBlock

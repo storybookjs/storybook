@@ -1,0 +1,20 @@
+## Props
+
+```
+export type RadioGroupProps<Value extends string> = {
+  /** Anchor target id. */
+  anchor?: string;
+  /** Visible group label. */
+  label: string;
+  /** Hide the visible label. */
+  labelless?: boolean = false;
+  /** Value change callback. */
+  onchange: (value: Value) => void;
+  /** Control size. */
+  size?: "icon" | "wide";
+  /** Selected value. */
+  value: Value;
+  /** Available values. */
+  values: [Value, string, (string | undefined)?][];
+}
+```

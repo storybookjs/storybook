@@ -1,7 +1,7 @@
 import path, { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import { getProjectRoot, isTypeScriptReadyForDocgen } from 'storybook/internal/common';
 import type { ArgTypes } from 'storybook/internal/csf';
 import type { Options, PresetProperty } from 'storybook/internal/types';
 
@@ -29,17 +29,9 @@ export { enrichCsf as experimental_enrichCsf } from './enrichCsf.ts';
 
 export { experimental_docgenProvider } from './docgen/preset.ts';
 
-// Turns `features.docgenServer` on by default; read through `presets.apply('isDocgenProviderEnabled')`
-// so the default never has to call the provider, which itself reads `features`. Server docgen runs on
-// the optional `typescript` peer, so a project without it keeps builder docgen.
-export const isDocgenProviderEnabled = () => {
-  try {
-    import.meta.resolve('typescript');
-    return true;
-  } catch {
-    return false;
-  }
-};
+// Default for `features.docgenServer`; a project without a usable `typescript` keeps builder docgen.
+export const isDocgenProviderEnabled = (_existing: unknown, options: Options) =>
+  isTypeScriptReadyForDocgen((specifier) => import.meta.resolve(specifier), options);
 
 export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
 

@@ -129,6 +129,23 @@ describe('toBaseline', () => {
     expect(result).toHaveProperty('argTypes');
   });
 
+  it("drops a subcomponent's fields that are not part of the portable payload", () => {
+    const result = toBaseline(
+      payload({
+        apiDescription: '## Props',
+        subcomponents: {
+          Icon: { name: 'Icon', path: './Icon.svelte', jsDocTags: {}, apiDescription: '## Props' },
+        },
+      }),
+      SANDBOX
+    );
+
+    expect(result).not.toHaveProperty('apiDescription');
+    expect(result.subcomponents).toEqual({
+      Icon: { name: 'Icon', path: './Icon.svelte', jsDocTags: {} },
+    });
+  });
+
   it('omits absent optional fields rather than recording them as undefined', () => {
     expect(Object.keys(toBaseline(payload(), SANDBOX))).toEqual([
       'id',

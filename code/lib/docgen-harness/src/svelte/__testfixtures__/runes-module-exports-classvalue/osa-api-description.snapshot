@@ -1,0 +1,16 @@
+## Props
+
+```
+export type AvatarProps = {
+  /** Display name. */
+  name: string;
+  /** Avatar size. */
+  size?: Size = 32;
+  /** Linked profile URL. */
+  href?: string;
+  /** Extra class value. */
+  class?: ClassValue;
+  /** Override display letter. */
+  letter?: string;
+}
+```

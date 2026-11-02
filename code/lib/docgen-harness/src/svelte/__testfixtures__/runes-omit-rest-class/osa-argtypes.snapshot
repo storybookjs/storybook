@@ -8,7 +8,7 @@
     "table": {
       "category": "properties",
       "defaultValue": {
-        "summary": undefined,
+        "summary": """",
       },
       "type": {
         "summary": "string | string & ClassArray | string & ClassDictionary",
@@ -54,7 +54,7 @@
     "table": {
       "category": "properties",
       "defaultValue": {
-        "summary": "...",
+        "summary": undefined,
       },
       "jsDocTags": {
         "bindable": [
@@ -118,7 +118,7 @@
     "table": {
       "category": "properties",
       "defaultValue": {
-        "summary": "...",
+        "summary": """",
       },
       "jsDocTags": {
         "bindable": [

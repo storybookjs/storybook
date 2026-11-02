@@ -9,7 +9,11 @@ import { EllipsisIcon } from '@storybook/icons';
 import { getAncestorIds } from '../../utils/tree.ts';
 import { getStatus } from '../../utils/status.tsx';
 import { CollapseIcon } from './CollapseIcon.tsx';
-import { hasContextMenu, hasProviderMenuEntriesFor } from './ContextMenu.tsx';
+import {
+  hasContextMenu,
+  hasProviderMenuEntriesFor,
+  type ContextMenuTrigger,
+} from './ContextMenu.tsx';
 import { useRowStatus } from './StatusStore.tsx';
 import {
   SECTION_GAP,
@@ -216,7 +220,7 @@ interface StickyRowItemProps {
   accentId: string | null;
   selectionLine: SelectionLine | null;
   onCollapse: (id: string) => void;
-  openContextMenu?: (itemId: string) => void;
+  openContextMenu?: (itemId: string, openedBy: ContextMenuTrigger) => void;
   hasTestProviders: boolean;
   scrollIntoSlot: (id: string, slot: number) => void;
   focusRealRow: (id: string, attempt?: number) => void;
@@ -303,7 +307,7 @@ function StickyRowItem({
               scrollIntoSlot(id, slot);
               // Wait one frame for the virtualizer to render the real row at its new
               // position before opening the menu on it.
-              requestAnimationFrame(() => openContextMenu(id));
+              requestAnimationFrame(() => openContextMenu(id, 'pointer'));
             }}
           >
             <EllipsisIcon />
@@ -340,7 +344,7 @@ interface StickyRowsProps {
   /** Collapse a branch after the user presses its chevron. */
   onCollapse: (id: string) => void;
   /** Open the context menu on the real (non-sticky) row with this id. */
-  openContextMenu?: (itemId: string) => void;
+  openContextMenu?: (itemId: string, openedBy: ContextMenuTrigger) => void;
   /** Whether any test provider addon is registered, for gating the ⋯ button. */
   hasTestProviders: boolean;
 }

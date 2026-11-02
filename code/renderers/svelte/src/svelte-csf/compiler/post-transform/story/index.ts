@@ -22,10 +22,6 @@ interface Params {
   originalCode: string;
 }
 
-/**
- * Transform compiled `<Story />` component when necessary,
- * and print updated AST node of compiled version to original raw source code {@link MagicString}.
- */
 export function transformStory(params: Params): void {
   const { code, nodes, filename, originalCode } = params;
   const { component } = nodes;

@@ -24,29 +24,13 @@ interface Params {
   filename?: string;
 }
 
-/**
- * Extract the source code of the `<Story />` component content (children or template snippet).
- * Reference: Step 2 from the comment: https://github.com/storybookjs/addon-svelte-csf/pull/181#issuecomment-2143539873
- */
 export function getStoryContentRawCode(params: Params): string {
   const { nodes, originalCode, filename } = params;
   const { component, svelte } = nodes;
 
   // `<Story />` component is self-closing...
   if (component.fragment.nodes.length === 0) {
-    /**
-     * Case - "explicit template" - `template` attribute references to a snippet block at the root level of fragment.
-     *
-     * Example:
-     *
-     * ```svelte
-     * {#snippet template1(args)}
-     *     <SomeComponent {...args} />
-     * {/snippet}
-     *
-     * <Story name="Default" template={template1} />
-     * ```
-     */
+    // <Story template={snippet} />
     const storyAttributTemplateSnippetBlock = findStoryAttributeTemplateSnippetBlock({
       component,
       nodes: svelte,
@@ -57,27 +41,7 @@ export function getStoryContentRawCode(params: Params): string {
       return getSnippetBlockBodyRawCode(originalCode, storyAttributTemplateSnippetBlock);
     }
 
-    /**
-     * Case - `render` was set in `defineMeta`
-     *
-     * Example:
-     *
-     * ```svelte
-     * <script module>
-     *     import { defineMeta } from "@storybook/svelte";
-     *
-     *     const { Story } = defineMeta({
-     *       render: myCustomTemplate,
-     *     });
-     * </script>
-     *
-     * {#snippet myCustomTemplate(args)}
-     *     <SomeComponent {...args} />
-     * {/snippet}
-     *
-     * <Story name="Default" />
-     * ```
-     */
+    // defineMeta({ render: snippet })
     const metaRenderSnippetBlock = findMetaRenderSnippetBlock({
       nodes: svelte,
       filename,
@@ -87,7 +51,7 @@ export function getStoryContentRawCode(params: Params): string {
       return getSnippetBlockBodyRawCode(originalCode, metaRenderSnippetBlock);
     }
 
-    /* Case - No `children` attribute provided, no `render` used, just a Story */
+    // <Story /> with no template and no meta render
     const defineMetaComponentValue = getDefineMetaComponentValue({
       nodes: svelte,
       filename,
@@ -97,36 +61,14 @@ export function getStoryContentRawCode(params: Params): string {
     return `<${getDefineMetaComponentName(defineMetaComponentValue)} {...args} />`;
   }
 
-  /**
-   * Case - Story with children - and with a snippet block `template` inside
-   *
-   * Example:
-   *
-   * ```svelte
-   * <Story name="Default">
-   *     {#snippet template(args)}
-   *          <SomeComponent {...args} />
-   *     {/snippet}
-   * </Story>
-   * ```
-   */
+  // <Story>{#snippet template(args)}...{/snippet}</Story>
   const storyChildrenSnippetBlock = extractStoryTemplateSnippetBlock(component);
 
   if (storyChildrenSnippetBlock) {
     return getSnippetBlockBodyRawCode(originalCode, storyChildrenSnippetBlock);
   }
 
-  /**
-   * Case - Inner children used directly with `asChild` attribute
-   *
-   * Example:
-   *
-   * ```svelte
-   * <Story name="Default" asChild>
-   *     <SomeComponent foo="bar" />
-   * </Story>
-   * ```
-   */
+  // <Story asChild>...</Story>
   const asChild =
     params.asChild ?? extractStoryAttributesNodes({ component, attributes: ['asChild'] }).asChild;
 
@@ -139,17 +81,7 @@ export function getStoryContentRawCode(params: Params): string {
     return rawCode;
   }
 
-  /**
-   * Case - `children` provided as prop to component or template
-   *
-   * Example:
-   *
-   * ```svelte
-   * <Story name="Default">
-   *     <SomeComponent foo="bar" />
-   * </Story>
-   * ```
-   */
+  // <Story>...</Story>, where the content becomes the children of the meta component
   const defineMetaComponentValue = getDefineMetaComponentValue({
     nodes: svelte,
     filename,
@@ -168,28 +100,6 @@ export function getStoryContentRawCode(params: Params): string {
   </${componentName}>`).trim();
 }
 
-/**
- * Extract from the original code a string slice with the body of the svelte's snippet block.
- * Starting from the start of the first node, and ending with the end of the last node.
- *
- * For example, from the following case:
- *
- * ```svelte
- * {#snippet template(args)}
- *   <!-- Some comment... -->
- *   "Static text"
- *   <Component {...args } />
- * {/snippet}
- * ```
- *
- * The result would be:
- *
- * ```txt
- * <!-- Some comment... -->
- * "Static text"
- * <Component {...args } />
- * ```
- */
 function getSnippetBlockBodyRawCode(originalCode: string, node: SvelteAST.SnippetBlock) {
   const { body } = node;
   const { nodes } = body;

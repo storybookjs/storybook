@@ -1,5 +1,3 @@
-import type { ChannelLike } from 'storybook/internal/channels';
-
 import { STATIC_MDX_MANIFEST_FILE } from '../constants.ts';
 import { ManagerDocsError, ManagerDocsParseError } from '../errors.ts';
 import { parseManagerDocs } from '../parser/parse-mdx.ts';
@@ -10,6 +8,7 @@ import {
   staticStoryBindings,
   type IndexedEntry,
 } from './docs-page.ts';
+import { readMdxSourceFromService } from './mdx-source.ts';
 import type { DocsArticleModel, StoryArgs } from './page-model.ts';
 import type { ChannelState } from './channel-router.ts';
 
@@ -81,7 +80,6 @@ export async function loadDocsArticle(input: {
   file: string;
   globals: StoryArgs;
   entries: IndexedEntry[];
-  channel: ChannelLike;
   production: boolean;
   readManifest: () => Promise<StaticMdxManifest>;
 }): Promise<{ model: DocsArticleModel; channelState: ChannelState; source: string }> {
@@ -90,9 +88,9 @@ export async function loadDocsArticle(input: {
   }
   return openDocsPage({
     file: input.file,
-    channel: input.channel,
     entries: input.entries,
     globals: input.globals,
+    readSource: readMdxSourceFromService,
   });
 }
 

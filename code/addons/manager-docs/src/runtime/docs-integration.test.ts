@@ -21,7 +21,6 @@ import {
   bindInstanceParticipant,
   connectInstanceTransport,
 } from './instance-transport.ts';
-import { serveMdxSource } from './source-transport.ts';
 
 const mdx = [
   "import * as SB from '@storybook/experimental-addon-manager-docs/mdx';",
@@ -71,7 +70,12 @@ describe('docs view slot', () => {
     expect(manager).toContain('addons.add');
     expect(manager).toContain('types.experimental_MANAGER_DOCS');
     expect(manager).toContain('ManagerDocsCanvas');
+    expect(manager).toContain('registerService');
+    expect(manager).toContain('mdxSourceServiceDef');
     expect(manager).not.toContain('setConfig');
+    expect(readSource('../preset.ts')).toContain('export const services');
+    expect(readSource('../preset.ts')).toContain('registerMdxSourceService');
+    expect(readSource('../preset.ts')).not.toContain('serveMdxSource');
     expect(readSource('../preview.ts')).toContain('bindInstanceParticipant');
     expect(readSource('../preview.ts')).toContain('getChannel()');
   });
@@ -94,12 +98,11 @@ describe('docs view slot', () => {
 describe('instance channel transport', () => {
   it('keeps args for two instances of one story separate from each other and the main canvas', async () => {
     const channel = new Channel({});
-    serveMdxSource(channel, async () => mdx);
     const opened = await openDocsPage({
       file: 'src/Button.mdx',
-      channel,
       entries,
       globals: { viewport: 'desktop' },
+      readSource: async () => mdx,
     });
     const [first, second] = opened.model.instances;
     expect(first?.storyId).toBe('button--primary');
@@ -175,11 +178,8 @@ describe('instance channel transport', () => {
 
 describe('indexed story paths', () => {
   it('resolves a story when the index importPath has the ./ prefix Storybook writes', async () => {
-    const channel = new Channel({});
-    serveMdxSource(channel, async () => mdx);
     const opened = await openDocsPage({
       file: './src/Button.mdx',
-      channel,
       entries: [
         {
           type: 'story',
@@ -190,6 +190,7 @@ describe('indexed story paths', () => {
         },
       ],
       globals: {},
+      readSource: async () => mdx,
     });
 
     expect(opened.model.instances.map((instance) => instance.storyId)).toEqual([
@@ -199,11 +200,8 @@ describe('indexed story paths', () => {
   });
 
   it('leaves story args with the iframe when the index omits them', async () => {
-    const channel = new Channel({});
-    serveMdxSource(channel, async () => mdx);
     const opened = await openDocsPage({
       file: './src/Button.mdx',
-      channel,
       entries: [
         {
           type: 'story',
@@ -213,6 +211,7 @@ describe('indexed story paths', () => {
         },
       ],
       globals: {},
+      readSource: async () => mdx,
     });
     const host = mountDocsInstances(createIframeHost(), opened.model.instances);
 
@@ -224,18 +223,15 @@ describe('indexed story paths', () => {
 
 describe('MDX docs handoff', () => {
   it('delivers an MDX Story to the page model the manager view renders', async () => {
-    const channel = new Channel({});
     const reads: string[] = [];
-    serveMdxSource(channel, async (importPath) => {
-      reads.push(importPath);
-      return mdx;
-    });
-
     const opened = await openDocsPage({
       file: 'src/Button.mdx',
-      channel,
       entries,
       globals: { viewport: 'desktop' },
+      readSource: async (importPath) => {
+        reads.push(importPath);
+        return mdx;
+      },
     });
     const canvas = readSource('../manager/ManagerDocsCanvas.tsx');
 
@@ -255,6 +251,7 @@ describe('MDX docs handoff', () => {
     expect(opened.model.instances[0]?.args).not.toBe(opened.model.instances[1]?.args);
     expect(opened.model.instances[0]?.globals).toEqual({ viewport: 'desktop' });
     expect(canvas).toContain('loadDocsArticle');
+    expect(readSource('../runtime/static-manifest.ts')).toContain('readMdxSourceFromService');
     expect(canvas).toContain('<ManagerDocsView');
     expect(canvas).toContain('model={model}');
     expect(canvas).toContain('connectInstanceTransport');

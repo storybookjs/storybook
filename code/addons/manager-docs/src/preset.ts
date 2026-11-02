@@ -4,6 +4,7 @@ import type { Channel } from 'storybook/internal/channels';
 import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
+import { registerMdxSourceService } from './mdx-source-service/server.ts';
 import { projectMdxReader } from './server/read-mdx.ts';
 import {
   BLOCK_BUILDER_ENV,
@@ -17,9 +18,13 @@ import {
 import { addMdxSourceRule, managerDocsMdxPlugin } from './server/mdx-as-data.ts';
 import { docsMdxFiles, watchMdxSources } from './server/watch-mdx.ts';
 import type { IndexedEntry } from './runtime/docs-page.ts';
-import { MDX_SOURCE_CHANGED, serveMdxSource } from './runtime/source-transport.ts';
+import { MDX_SOURCE_CHANGED } from './runtime/source-transport.ts';
 
 export const experimentalManagerDocs = true;
+
+export const services = async (): Promise<void> => {
+  registerMdxSourceService({ read: createProjectReader() });
+};
 
 type ServerChannelOptions = {
   presets?: {
@@ -32,10 +37,13 @@ type DevIndexGenerator = {
   onInvalidated?: (listener: () => void) => () => void;
 };
 
+function createProjectReader(projectRoot = process.cwd()) {
+  return projectMdxReader(projectRoot, (absolutePath) => readFile(absolutePath, 'utf8'));
+}
+
 export async function experimental_serverChannel(channel: Channel, options?: ServerChannelOptions) {
   const projectRoot = process.cwd();
-  const read = projectMdxReader(projectRoot, (absolutePath) => readFile(absolutePath, 'utf8'));
-  serveMdxSource(channel, read);
+  const read = createProjectReader(projectRoot);
   if (options?.presets) {
     const watcher = watchMdxSources({
       projectRoot,

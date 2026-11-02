@@ -423,7 +423,6 @@ export function ManagerDocsCanvas({
 
     loadDocsArticle({
       file: mdxFile,
-      channel,
       entries: indexedEntries(indexRef.current),
       globals: api.getGlobals() ?? {},
       production: productionBuild,

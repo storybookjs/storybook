@@ -2,12 +2,14 @@ import { readFileSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
-import { Channel } from 'storybook/internal/channels';
 import * as memfs from 'memfs';
 import { vol } from 'memfs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { clearRegistry } from '../../../../core/src/shared/open-service/server.ts';
 
 import { STATIC_MDX_MANIFEST_FILE } from '../constants.ts';
+import { registerMdxSourceService } from '../mdx-source-service/server.ts';
 import { emitStaticMdxDuringBuild } from '../server/emit-static-manifest.ts';
 import { openDocsPage, openDocsPageFromSource } from './docs-page.ts';
 import {
@@ -15,7 +17,6 @@ import {
   openDocsPageFromManifest,
   parseStaticMdxManifest,
 } from './static-manifest.ts';
-import { serveMdxSource } from './source-transport.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 
@@ -61,14 +62,16 @@ describe('static MDX manifest', () => {
     );
   });
 
-  it('reconstructs the dev channel page model from the emitted asset', async () => {
-    const channel = new Channel({});
-    serveMdxSource(channel, async () => source);
-    const viaChannel = await openDocsPage({
+  afterEach(() => {
+    clearRegistry();
+  });
+
+  it('reconstructs the development page model from the emitted asset', async () => {
+    const viaDev = await openDocsPage({
       file: 'src/Button.mdx',
-      channel,
       entries,
       globals,
+      readSource: async () => source,
     });
 
     const assetPath = await emitStaticMdxDuringBuild(
@@ -91,7 +94,7 @@ describe('static MDX manifest', () => {
     const viaStatic = openDocsPageFromManifest(emitted, 'src/Button.mdx', globals);
 
     expect(assetPath).toBe(`/out/${STATIC_MDX_MANIFEST_FILE}`);
-    expect(viaStatic.model).toEqual(viaChannel.model);
+    expect(viaStatic.model).toEqual(viaDev.model);
     expect(viaStatic.model.instances.map((instance) => instance.storyId)).toEqual([
       'button--primary',
       'button--secondary',
@@ -99,17 +102,17 @@ describe('static MDX manifest', () => {
     expect(viaStatic.model.instances.map((instance) => instance.focus)).toEqual([false, true]);
   });
 
-  it('keeps the dev channel path and skips the static file outside production', async () => {
-    const channel = new Channel({});
+  it('loads development MDX through the open service and skips the static file', async () => {
     const reads: string[] = [];
-    serveMdxSource(channel, async (importPath) => {
-      reads.push(importPath);
-      return source;
+    registerMdxSourceService({
+      read: async (importPath) => {
+        reads.push(importPath);
+        return source;
+      },
     });
 
     const viaDev = await loadDocsArticle({
       file: 'src/Button.mdx',
-      channel,
       entries,
       globals,
       production: false,

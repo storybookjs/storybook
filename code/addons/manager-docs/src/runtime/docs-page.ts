@@ -1,4 +1,3 @@
-import type { ChannelLike } from 'storybook/internal/channels';
 import { dirname, join, normalize } from 'pathe';
 
 import { ManagerDocsError, ManagerDocsParseError } from '../errors.ts';
@@ -24,12 +23,7 @@ import {
   type StoryInstance,
   type StoryReference,
 } from './page-model.ts';
-import {
-  mdxSourceError,
-  requestMdxSource,
-  type MdxSourceChange,
-  type MdxSourceError,
-} from './source-transport.ts';
+import { mdxSourceError, type MdxSourceChange, type MdxSourceError } from './source-transport.ts';
 
 export type IndexedEntry = {
   type: string;
@@ -45,11 +39,11 @@ const STORY_EXTENSION = /\.(?:[cm]?[jt]sx?)$/;
 // Story ids come from the index. The CSF modules named by the MDX imports are not executed.
 export async function openDocsPage(input: {
   file: string;
-  channel: ChannelLike;
   entries: IndexedEntry[];
   globals: StoryArgs;
+  readSource: (importPath: string) => Promise<string>;
 }): Promise<{ model: DocsArticleModel; channelState: ChannelState; source: string }> {
-  const source = await requestMdxSource(input.channel, input.file);
+  const source = await input.readSource(input.file);
   return openDocsPageFromSource({
     file: input.file,
     source,

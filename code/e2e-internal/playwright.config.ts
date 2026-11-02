@@ -5,9 +5,13 @@ import { defineConfig, devices } from '@playwright/test';
  * Sandbox e2e uses `code/playwright.config.ts` and `code/e2e-sandbox/`.
  */
 
-// These specs edit source files or push the dev server through a full docgen extraction, which
-// can reload or starve another test's page, so they run alone after the parallel pass.
-const SERIAL_SPECS = /(docgen-hot-update|story-docs|tools-attach)\.spec\.ts/;
+// Tests that cannot share the dev server with another worker's page: these specs edit source
+// files or push the server through a full docgen extraction, which can reload or starve other
+// pages, and the websocket-route tests drop or hold frames to prove a repair, which any other
+// page's sync request would short-circuit with a broadcast snapshot. Matched against the full
+// title path, so a file name or a describe title both work.
+const SERIAL_TESTS =
+  /(docgen-hot-update|story-docs|tools-attach)\.spec\.ts|two-tab writes under a websocket route/;
 
 export default defineConfig({
   testDir: '.',
@@ -39,11 +43,11 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: SERIAL_SPECS,
+      grepInvert: SERIAL_TESTS,
     },
     {
       name: 'chromium-serial',
-      testMatch: SERIAL_SPECS,
+      grep: SERIAL_TESTS,
       dependencies: ['chromium'],
       fullyParallel: false,
       workers: 1,

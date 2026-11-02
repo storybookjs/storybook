@@ -48,6 +48,8 @@ export type BuildEntries = {
    * This can be useful to expose non-compiled/non-js files such as Svelte components,
    */
   extraOutputs?: Record<string, any>;
+  /** Package-owned rewrite of pre-bundled declarations, applied before the dts bundler. */
+  transformEmittedDeclarations?: (context: { emitDir: string; packageName: string }) => void;
   /**
    * The function to run before the build
    *
@@ -61,8 +63,6 @@ export type BuildEntries = {
    */
   postbuild?: (cwd: string) => Promise<void>;
 };
-
-export type BuildEntriesByPackageName = Record<string, BuildEntries>;
 
 export const measure = async (fn: () => Promise<void>) => {
   const start = process.hrtime();
@@ -117,3 +117,32 @@ export const getExternal = async (cwd: string) => {
 
   return { runtimeExternal, typesExternal };
 };
+
+/**
+ * Create a predicate that tells whether a module id is one of `packages`, a subpath of one, or a
+ * file inside `node_modules/<package>/` (with `separator` between path segments).
+ */
+export function createPackageMatcher(packages: readonly string[], separator: string) {
+  const names = new Set(packages);
+  const nodeModules = `${separator}node_modules${separator}`;
+  const hasPrefixBefore = (value: string, delimiter: string) => {
+    for (let i = value.indexOf(delimiter); i !== -1; i = value.indexOf(delimiter, i + 1)) {
+      if (names.has(value.slice(0, i))) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  return (id: string): boolean => {
+    if (names.has(id) || hasPrefixBefore(id, '/')) {
+      return true;
+    }
+    for (let i = id.indexOf(nodeModules); i !== -1; i = id.indexOf(nodeModules, i + 1)) {
+      if (hasPrefixBefore(id.slice(i + nodeModules.length), separator)) {
+        return true;
+      }
+    }
+    return false;
+  };
+}

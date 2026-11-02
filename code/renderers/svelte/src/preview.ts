@@ -172,6 +172,7 @@ type ArgsProp<TArgs> = {} extends TArgs ? { args?: TArgs } : { args: TArgs };
 /**
  * The props of the `Story` component of a Svelte CSF file. Args that meta didn't set are required,
  * unless the story renders static content: `asChild`, or a `template` snippet without parameters.
+ * A story that extends another story can leave out every arg, because the parent can set them.
  */
 export type SvelteCsfStoryProps<
   T extends SvelteTypes,
@@ -193,35 +194,60 @@ export type SvelteCsfStoryProps<
   // TypeScript reports a type error against the last member that doesn't match, so a story with
   // only args is last: its error names the missing args.
   (
-    | {
-        template: Snippet<[]>;
-        children?: never;
-        asChild?: never;
+    | ({
+        /**
+         * The `name` of another story in this file to extend, like `story.extend()`. The story
+         * inherits the args and other annotations of that story, and its children, `template`
+         * and play function unless it sets its own.
+         */
+        extend: string;
         args?: Partial<T['args']>;
-      }
-    | {
-        template?: never;
-        children: Snippet;
-        /** Render the children as the static content of the story, without the component. */
-        asChild: true;
-        args?: Partial<T['args']>;
-      }
-    | ({
-        template?: never;
-        /** The children of the component. With `asChild`, the static content of the story. */
-        children: Snippet;
-        asChild?: false;
-        // The children of the story are the `children` arg of the component.
-      } & ArgsProp<StoryArgs<T['args'], TMetaArgKeys | 'children'>>)
-    | ({
-        /** Render the story with this snippet, which takes the args and the story context. */
-        template: Snippet<[T['args'], StoryContext<T, T['args']>]>;
-        children?: never;
-        asChild?: never;
-      } & ArgsProp<StoryArgs<T['args'], TMetaArgKeys>>)
-    | ({
-        template?: never;
-        children?: never;
-        asChild?: false;
-      } & ArgsProp<StoryArgs<T['args'], TMetaArgKeys>>)
+      } & StoryContentProps<T>)
+    | ({ extend?: undefined } & (
+        | {
+            template: Snippet<[]>;
+            children?: never;
+            asChild?: never;
+            args?: Partial<T['args']>;
+          }
+        | {
+            template?: never;
+            children: Snippet;
+            /** Render the children as the static content of the story, without the component. */
+            asChild: true;
+            args?: Partial<T['args']>;
+          }
+        | ({
+            template?: never;
+            /** The children of the component. With `asChild`, the static content of the story. */
+            children: Snippet;
+            asChild?: false;
+            // The children of the story are the `children` arg of the component.
+          } & ArgsProp<StoryArgs<T['args'], TMetaArgKeys | 'children'>>)
+        | ({
+            /** Render the story with this snippet, which takes the args and the story context. */
+            template: Snippet<[T['args'], StoryContext<T, T['args']>]>;
+            children?: never;
+            asChild?: never;
+          } & ArgsProp<StoryArgs<T['args'], TMetaArgKeys>>)
+        | ({
+            template?: never;
+            children?: never;
+            asChild?: false;
+          } & ArgsProp<StoryArgs<T['args'], TMetaArgKeys>>)
+      ))
   );
+
+// The content props of a story that extends another story. Without them, it renders the content of
+// the story it extends.
+type StoryContentProps<T extends SvelteTypes> =
+  | {
+      template: Snippet<[T['args'], StoryContext<T, T['args']>]>;
+      children?: never;
+      asChild?: never;
+    }
+  | {
+      template?: never;
+      children?: Snippet;
+      asChild?: boolean;
+    };

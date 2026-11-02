@@ -63,7 +63,7 @@ export const summarizeTransforms = async (
   const enriched = await run(async () => {
     const csf = loadCsf(code, { fileName: file, makeTitle }).parse();
     await enrichCsf(csf, loadCsf(code, { fileName: file, makeTitle }).parse());
-    return formatCsf(csf) as string;
+    return formatCsf(csf);
   });
   const vitest = await run(
     async () =>

@@ -7,7 +7,7 @@ import { CloseIcon, CogIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { useStorybookApi } from 'storybook/manager-api';
-import { type Theme, css, styled } from 'storybook/theming';
+import { type Theme, css, styled } from 'storybook/theming/emotion';
 
 import type { useMenu } from '../../container/Menu.tsx';
 import { useLayout } from '../layout/LayoutProvider.tsx';

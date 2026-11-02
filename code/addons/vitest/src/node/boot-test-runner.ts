@@ -155,6 +155,8 @@ const bootTestRunner = async ({
             STORYBOOK_PREVIEW_ANNOTATIONS: JSON.stringify(previewAnnotations),
           },
           extendEnv: true,
+          // Execa's ipcOutput would otherwise retain reports from every previous test run.
+          buffer: { ipc: false },
         },
       });
       sentStoryIndex = undefined;

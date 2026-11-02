@@ -1,5 +1,20 @@
-import { type Access, carriedSpread, carriedSpreads, lookupProperty } from './ObjectMembers.ts';
-import { type MemberInsert, type ObjectRoot, literalRoot } from './ObjectRoot.ts';
+import {
+  type CsfPath,
+  type Located,
+  type Slot,
+  creatable,
+  insertAt,
+  isInvalidIndex,
+  isKey,
+  listAt,
+  locate,
+  printCsfPath,
+  refusedKey,
+  unsafePath,
+  valueAt,
+} from './CsfObjectPath.ts';
+import { type Access, lookupMember } from './ObjectMembers.ts';
+import { type ObjectRoot, listRoot, literalRoot } from './ObjectRoot.ts';
 import {
   type E,
   type Node,
@@ -12,9 +27,9 @@ import {
 } from './estree/ast.ts';
 import {
   type SourceEditor,
+  detachedSource,
   detachedTextOf,
   printKey,
-  printMembers,
   printValue,
 } from './estree/editor.ts';
 import {
@@ -24,7 +39,6 @@ import {
   nodeWithoutParse,
   readValue,
   resolveExpression,
-  valueSource,
 } from './estree/values.ts';
 
 export type { CsfValue };
@@ -37,6 +51,7 @@ export type CsfObjectTarget =
 
 export type CsfMutationDiagnosticCode =
   | 'unsupported-initializer'
+  | 'aliased-story'
   | 'ambiguous-binding'
   | 'duplicate-field'
   | 'spread-field'
@@ -48,12 +63,20 @@ export type CsfMutationDiagnosticCode =
   | 'evaluation-order'
   | 'invalid-csf';
 
+/** What a diagnostic is about: an editor's object, or the whole file for an edit of its imports. */
+export type CsfMutationTarget = CsfObjectTarget | { kind: 'file' };
+
 export interface CsfMutationDiagnostic {
   code: CsfMutationDiagnosticCode;
-  target: CsfObjectTarget;
-  path: readonly string[];
+  target: CsfMutationTarget;
+  path: CsfPath;
   message: string;
   loc?: SourceLocation;
+  /**
+   * For `aliased-story`, the export name of the story whose object the alias shares: `Primary` for
+   * `Secondary` in `export const Secondary = Primary` or `export { Primary, Primary as Secondary }`.
+   */
+  aliasOf?: string;
 }
 
 /**
@@ -66,12 +89,27 @@ export type CsfInspection =
   | { kind: 'unreadable'; diagnostic: CsfMutationDiagnostic };
 
 /**
+ * What `append` and `prepend` would act on at a path: the list they add to, a detached copy of the
+ * array literal or, at an item path, the call, whose arguments are its items; a missing one they
+ * create; or the diagnostic they would refuse with.
+ */
+export type CsfListInspection =
+  | { kind: 'list'; node: E.ArrayExpression | E.CallExpression }
+  | { kind: 'missing' }
+  | { kind: 'refused'; diagnostic: CsfMutationDiagnostic };
+
+/**
  * Outcome of a mutation. A refused one leaves the file as it was, also when its edit would leave a
  * file the CSF indexer rejects, such as a meta `tags` that is no longer an array of string literals.
  */
 export type CsfMutationResult =
   | { ok: true; changed: boolean }
   | { ok: false; changed: false; diagnostic: CsfMutationDiagnostic };
+
+/** A story's editor, or the diagnostic that says why it has none. */
+export type CsfObjectLookup =
+  | { ok: true; object: CsfObject }
+  | { ok: false; diagnostic: CsfMutationDiagnostic };
 
 /**
  * An expression detached from any file, as returned by `get` and accepted by `set` and
@@ -106,7 +144,8 @@ export interface CsfObject {
   /**
    * Find the object literal this editor edits in the current parse. It is `undefined` for a config
    * made of named exports, for a story without an object literal, whose fields are all
-   * `Story.name = value` assignments, and once the object is gone. It is the file's own node, not
+   * `Story.name = value` assignments, for a CSF factory call without an argument until a write adds
+   * it, and once the object is gone. It is the file's own node, not
    * a copy: do not change it, and read it again after a mutation, which parses the file again.
    *
    * @example
@@ -120,9 +159,10 @@ export interface CsfObject {
    */
   readonly node: E.ObjectExpression | undefined;
   /**
-   * Read a detached copy of the expression at a property path. Missing fields return `undefined`;
-   * so does a path through a value that is not an object literal, or one a spread, computed key, or
-   * duplicate field leaves unproven. `inspect` tells these apart.
+   * Read a detached copy of the expression at a path of keys and indexes, such as `['addons', 0]`.
+   * Missing fields return `undefined`; so does a path that does not fit a value, such as a key into
+   * an array, or one a spread, computed key, or duplicate field leaves unproven. `inspect` tells
+   * these apart.
    *
    * @example
    * ```ts
@@ -131,9 +171,9 @@ export interface CsfObject {
    * object.get(['missing']); // undefined
    * ```
    */
-  get(path: readonly string[]): CsfExpression | undefined;
+  get(path: CsfPath): CsfExpression | undefined;
   /**
-   * Read the expression at a property path like `get`, telling a missing field from one that cannot
+   * Read the expression at a path like `get`, telling a missing field from one that cannot
    * be read statically, and why.
    *
    * @example
@@ -144,7 +184,7 @@ export interface CsfObject {
    * object.inspect(['args', 'size']).kind; // 'unreadable'
    * ```
    */
-  inspect(path: readonly string[]): CsfInspection;
+  inspect(path: CsfPath): CsfInspection;
   /**
    * Read plain values without executing code, following local constants. Missing fields and
    * expressions it cannot evaluate, such as calls and functions, return `undefined`.
@@ -157,9 +197,10 @@ export interface CsfObject {
    * object.getValue(['missing']); // undefined
    * ```
    */
-  getValue(path: readonly string[]): CsfValue;
+  getValue(path: CsfPath): CsfValue;
   /**
-   * Set a plain value or an expression from `get` / `parseExpression`, creating missing parents.
+   * Set a plain value or an expression from `get`, `parseExpression` or `parseModule`, creating
+   * missing parents at keys. An index replaces the element or argument it addresses.
    * Expressions can also be nested in the arrays and objects of a plain value.
    *
    * @example
@@ -170,7 +211,7 @@ export interface CsfObject {
    * object.getValue(['parameters']); // { a11y: { test: 'todo', enabled: true } }
    * ```
    */
-  set(path: readonly string[], value: CsfValue<CsfExpression>): CsfMutationResult;
+  set(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult;
   /**
    * Replace a value derived from its current expression. Return a new expression, or `undefined`
    * (or the input) to leave the value unchanged.
@@ -185,11 +226,14 @@ export interface CsfObject {
    * ```
    */
   transform(
-    path: readonly string[],
+    path: CsfPath,
     derive: (value: CsfExpression) => CsfExpression | undefined
   ): CsfMutationResult;
   /**
-   * Remove a property and recursively clean up empty parents. Missing fields are a no-op.
+   * Remove a property and recursively clean up the objects it leaves empty. At an index, remove
+   * that one element or argument and keep the list, also when it is left empty. Missing fields are
+   * a no-op. An index on a field that holds a call addresses the call's arguments, whatever the
+   * callee, such as `filter` in `[...].filter(Boolean)`.
    *
    * @example
    * ```ts
@@ -199,7 +243,7 @@ export interface CsfObject {
    * object.remove(['parameters']); // { ok: true, changed: false }
    * ```
    */
-  remove(path: readonly string[]): CsfMutationResult;
+  remove(path: CsfPath): CsfMutationResult;
   /**
    * Rename a property within its parent. An occupied destination produces a diagnostic
    * and leaves the source unchanged.
@@ -211,7 +255,7 @@ export interface CsfObject {
    * object.getValue(['a11y']); // { context: '#root' }
    * ```
    */
-  rename(path: readonly string[], name: string): CsfMutationResult;
+  rename(path: CsfPath, name: string): CsfMutationResult;
   /**
    * Move a property to another path, creating missing destination parents and cleaning up
    * empty source parents. Rejects occupied destinations. Use `group` when nesting siblings must
@@ -225,7 +269,7 @@ export interface CsfObject {
    * object.getValue(['globals']); // undefined
    * ```
    */
-  move(from: readonly string[], to: readonly string[]): CsfMutationResult;
+  move(from: CsfPath, to: CsfPath): CsfMutationResult;
   /**
    * Nest named sibling properties under a destination, retaining their source order. Rejects
    * conflicts and relocations that could change evaluation order. Missing source fields are ignored.
@@ -238,12 +282,51 @@ export interface CsfObject {
    * object.getValue(['showNav']); // undefined
    * ```
    */
-  group(path: readonly string[], names: readonly string[]): CsfMutationResult;
-}
-
-// `CsfObject` with the mutation `ConfigFile` adds: a new array at a missing field.
-export interface CsfObjectEditor extends CsfObject {
-  createArray(path: readonly string[], items: string[]): CsfMutationResult;
+  group(path: CsfPath, names: readonly string[]): CsfMutationResult;
+  /**
+   * Add a plain value or an expression after the last element of the array at a path, or the last
+   * argument of the call at an item path such as `['loaders', 0]`. A missing array is created,
+   * carrying the spreads before it forward like a missing parent. A field is a list only when it
+   * holds an array literal: one that holds a call, such as `[...].filter(Boolean)`, is refused, as
+   * an argument of `filter` would be no entry. A method, such as `addons() {}`, is refused as the
+   * `Property` it is written as.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig("export default { addons: ['a'] };").parse();
+   * object.append(['addons'], 'b'); // { ok: true, changed: true }
+   * object.getValue(['addons']); // ['a', 'b']
+   * ```
+   */
+  append(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult;
+  /**
+   * Add a plain value or an expression before the first element of the array at a path, or the
+   * first argument of the call at an item path. A missing array is created, and a field holding a
+   * call refused, like for `append`.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig("export default { addons: ['a'] };").parse();
+   * object.prepend(['addons'], 'b'); // { ok: true, changed: true }
+   * object.getValue(['addons']); // ['b', 'a']
+   * ```
+   */
+  prepend(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult;
+  /**
+   * Read what `append` and `prepend` would act on at a path, by the rule they apply, without
+   * editing or reporting: the list, `missing` when they would create it, or the diagnostic they
+   * would refuse it with. A refusal of the added value, such as `invalid-csf` for an entry that
+   * leaves a meta `tags` invalid, is not foreseen.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig('export default { addons: [a], tags: tags() };').parse();
+   * object.inspectList(['addons']).kind; // 'list'
+   * object.inspectList(['loaders']); // { kind: 'missing' }
+   * object.inspectList(['tags']).kind; // 'refused'
+   * ```
+   */
+  inspectList(path: CsfPath): CsfListInspection;
 }
 
 export interface CsfObjectOptions {
@@ -260,8 +343,6 @@ export interface CsfObjectHost {
 type ReportDiagnostic = (diagnostic: CsfMutationDiagnostic) => void;
 type MarkChanged = () => void;
 
-const unsafePath = (path: readonly string[]) => path.includes('__proto__');
-
 // `set` prints a node from its source, so a change to its fields would be lost: it throws instead.
 const readOnly = <T extends object>(node: T): T => {
   for (const value of Object.values(node)) {
@@ -272,7 +353,7 @@ const readOnly = <T extends object>(node: T): T => {
   return Object.freeze(node);
 };
 
-class Editor implements CsfObjectEditor {
+class Editor implements CsfObject {
   #changed = false;
 
   readonly target: CsfObjectTarget;
@@ -315,13 +396,13 @@ class Editor implements CsfObjectEditor {
     return root;
   }
 
-  get(path: readonly string[]): CsfExpression | undefined {
-    const property = this.getProperty(path);
-    return property && readOnly(parseExpression(valueSource(this.editor, property)));
+  get(path: CsfPath): CsfExpression | undefined {
+    const found = this.find(path);
+    return found.kind === 'value' ? readOnly(parseExpression(found.source)) : undefined;
   }
 
   // Unlike `get`, which reads the object itself as missing, `inspect` reports it.
-  inspect(path: readonly string[]): CsfInspection {
+  inspect(path: CsfPath): CsfInspection {
     if (path.length === 0) {
       const message = `Cannot read the object itself, which is not a field of this ${this.target.kind} object`;
       return {
@@ -330,46 +411,48 @@ class Editor implements CsfObjectEditor {
       };
     }
     const found = this.find(path);
-    return found.kind === 'property'
-      ? { kind: 'value', node: readOnly(parseExpression(valueSource(this.editor, found.property))) }
+    return found.kind === 'value'
+      ? { kind: 'value', node: readOnly(parseExpression(found.source)) }
       : found;
   }
 
-  getValue(path: readonly string[]): CsfValue {
-    const property = this.getProperty(path);
-    if (!property || property.method) {
+  getValue(path: CsfPath): CsfValue {
+    const found = this.find(path);
+    if (found.kind !== 'value' || !found.expression) {
       return undefined;
     }
-    const value = readValue(this.editor.scopes, property.value);
+    const value = readValue(this.editor.scopes, found.expression);
     return value === UNRESOLVED ? undefined : value;
   }
 
   private find(
-    path: readonly string[]
+    path: CsfPath
   ):
-    | { kind: 'property'; property: Property }
+    | ({ kind: 'value' } & Slot)
     | { kind: 'missing' }
     | { kind: 'unreadable'; diagnostic: CsfMutationDiagnostic } {
     if (path.length === 0) {
       return { kind: 'missing' };
     }
+    if (path.some(isInvalidIndex)) {
+      return {
+        kind: 'unreadable',
+        diagnostic: this.diagnostic('unsupported-member', path, this.anchor()),
+      };
+    }
     const found = this.locate(path, 'read', false);
     if (found.ok === false) {
       return { kind: 'unreadable', diagnostic: this.diagnostic(found.code, path, found.node) };
     }
-    return found.property ? { kind: 'property', property: found.property } : { kind: 'missing' };
+    const slot = valueAt(this.editor, found);
+    return slot ? { kind: 'value', ...slot } : { kind: 'missing' };
   }
 
-  private getProperty(path: readonly string[]): Property | undefined {
-    const found = this.find(path);
-    return found.kind === 'property' ? found.property : undefined;
-  }
-
-  set(path: readonly string[], value: CsfValue<CsfExpression>): CsfMutationResult {
+  set(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
     return this.atomic(() => this.setValue(path, value));
   }
 
-  private setValue(path: readonly string[], value: CsfValue<CsfExpression>): CsfMutationResult {
+  private setValue(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
     if (path.length === 0 || unsafePath(path)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
@@ -381,77 +464,83 @@ class Editor implements CsfObjectEditor {
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
-    if (inspected.missing !== undefined) {
-      const refused = this.refusedKey(inspected.parent, path[inspected.missing], path);
-      if (refused) {
-        return refused;
-      }
+    const { quote, indent } = this.editor;
+    const text = () => printValue(value, quote, { indent });
+    if (inspected.kind === 'item') {
+      inspected.parent.replace(inspected.index, text());
+      return this.commit(path);
     }
-    if (inspected.missing !== undefined && inspected.missing < path.length - 1) {
-      const carried = carriedSpreads(
-        this.editor,
-        inspected.parent.properties,
-        path[inspected.missing]
-      );
-      if (carried.ok === false) {
-        return this.failure(carried.code, path, carried.node);
-      }
+    if (inspected.kind === 'property') {
+      inspected.parent.replaceValue(inspected.property, text());
+      return this.commit(path);
+    }
+    const creation = creatable(this.editor, inspected, path, 'when-creating-parents');
+    if (!creation.ok) {
+      return this.failure(creation.code, path, creation.node, creation.message);
+    }
+    const key = creation.keys.at(-1)!;
+    const printed = text();
+    insertAt(this.editor, this.root(), path.slice(0, -1), {
+      members: [{ key, value: printed, text: `${printKey(key, quote)}: ${printed}` }],
+    });
+    return this.commit(path);
+  }
+
+  append(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
+    return this.atomic(() => this.addItem(path, value, 'append'));
+  }
+
+  prepend(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
+    return this.atomic(() => this.addItem(path, value, 'prepend'));
+  }
+
+  private addItem(
+    path: CsfPath,
+    value: CsfValue<CsfExpression>,
+    end: 'append' | 'prepend'
+  ): CsfMutationResult {
+    const unprintable = this.unprintable(path, value);
+    if (unprintable) {
+      return unprintable;
+    }
+    const list = listAt(this.editor, this.root(), path);
+    if (list.ok === false) {
+      return this.failure(list.code, path, list.node, list.message);
     }
     const { quote, indent } = this.editor;
-    const text = printValue(value, quote, { indent, expand: 'multiline' });
-    if (inspected.property) {
-      inspected.parent.replaceValue(inspected.property, text);
+    const text = printValue(value, quote, { indent });
+    if (list.kind === 'missing') {
+      insertAt(this.editor, this.root(), path, { items: [text], first: end === 'prepend' });
     } else {
-      const key = path.at(-1)!;
-      this.insert(path.slice(0, -1), {
-        members: [{ key, value: text, text: `${printKey(key, quote)}: ${text}` }],
-      });
+      listRoot(this.editor, list.list)[end]([text]);
     }
     return this.commit(path);
   }
 
-  // `set` of an array of `items` at a missing path, which carries the spreads before it forward
-  // like a missing parent, for appending to the array a spread may provide.
-  createArray(path: readonly string[], items: string[]): CsfMutationResult {
-    return this.atomic(() => this.insertArray(path, items));
-  }
-
-  private insertArray(path: readonly string[], items: string[]): CsfMutationResult {
-    if (path.length === 0 || unsafePath(path)) {
-      return this.failure('unsupported-member', path, this.anchor());
+  inspectList(path: CsfPath): CsfListInspection {
+    const list = listAt(this.editor, this.root(), path);
+    if (list.ok === false) {
+      const diagnostic = this.diagnostic(list.code, path, list.node, list.message);
+      return { kind: 'refused', diagnostic };
     }
-    const inspected = this.locate(path, 'set');
-    if (inspected.ok === false) {
-      return this.failure(inspected.code, path, inspected.node);
+    if (list.kind === 'missing') {
+      return { kind: 'missing' };
     }
-    if (inspected.property) {
-      return this.failure('occupied-destination', path, inspected.property);
-    }
-    const refused = this.refusedKey(inspected.parent, path[inspected.missing!], path);
-    if (refused) {
-      return refused;
-    }
-    const carried = carriedSpreads(
-      this.editor,
-      inspected.parent.properties,
-      path[inspected.missing!]
-    );
-    if (carried.ok === false) {
-      return this.failure(carried.code, path, carried.node);
-    }
-    this.insert(path, { items });
-    return this.commit(path);
+    // `f?.(a)` parses as the chain around the call.
+    const copy = readOnly(parseExpression(detachedSource(this.editor, list.list)));
+    const node = copy.type === 'ChainExpression' ? copy.expression : copy;
+    return { kind: 'list', node: node as E.ArrayExpression | E.CallExpression };
   }
 
   transform(
-    path: readonly string[],
+    path: CsfPath,
     derive: (value: CsfExpression) => CsfExpression | undefined
   ): CsfMutationResult {
     return this.atomic(() => this.transformValue(path, derive));
   }
 
   private transformValue(
-    path: readonly string[],
+    path: CsfPath,
     derive: (value: CsfExpression) => CsfExpression | undefined
   ): CsfMutationResult {
     if (path.length === 0 || unsafePath(path)) {
@@ -461,11 +550,11 @@ class Editor implements CsfObjectEditor {
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
-    const { property, parent } = inspected;
-    if (!property) {
+    const slot = valueAt(this.editor, inspected);
+    if (!slot) {
       return { ok: true, changed: false };
     }
-    const value = readOnly(parseExpression(valueSource(this.editor, property)));
+    const value = readOnly(parseExpression(slot.source));
     const derived = derive(value);
     if (!derived || derived === value) {
       return { ok: true, changed: false };
@@ -474,15 +563,19 @@ class Editor implements CsfObjectEditor {
     if (unprintable) {
       return unprintable;
     }
-    parent.replaceValue(property, detachedTextOf(derived));
+    if (inspected.kind === 'item') {
+      inspected.parent.replace(inspected.index, detachedTextOf(derived));
+    } else if (inspected.kind === 'property') {
+      inspected.parent.replaceValue(inspected.property, detachedTextOf(derived));
+    }
     return this.commit(path);
   }
 
-  remove(path: readonly string[]): CsfMutationResult {
+  remove(path: CsfPath): CsfMutationResult {
     return this.atomic(() => this.removeValue(path));
   }
 
-  private removeValue(path: readonly string[]): CsfMutationResult {
+  private removeValue(path: CsfPath): CsfMutationResult {
     if (path.length === 0 || unsafePath(path)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
@@ -490,10 +583,15 @@ class Editor implements CsfObjectEditor {
     if (inspected.ok === false) {
       return this.failure(inspected.code, path, inspected.node);
     }
-    if (!inspected.property) {
+    if (inspected.kind === 'item') {
+      // An emptied list stays: `tags: []` is not a missing `tags`.
+      inspected.parent.remove(inspected.index);
+      return this.commit(path);
+    }
+    if (inspected.kind !== 'property') {
       return { ok: true, changed: false };
     }
-    const removal = lookupProperty(inspected.parent.properties, path.at(-1)!, 'remove');
+    const removal = lookupMember(this.editor, inspected.parent.properties, inspected.key, 'remove');
     if (!removal.ok) {
       return this.failure(removal.code, path, removal.node);
     }
@@ -505,18 +603,28 @@ class Editor implements CsfObjectEditor {
     return this.removeEmptyParents(path) ?? removed;
   }
 
-  rename(path: readonly string[], name: string): CsfMutationResult {
+  rename(path: CsfPath, name: string): CsfMutationResult {
     const destination = [...path.slice(0, -1), name];
     return this.move(path, destination);
   }
 
-  move(from: readonly string[], to: readonly string[]): CsfMutationResult {
+  move(from: CsfPath, to: CsfPath): CsfMutationResult {
     return this.atomic(() => this.moveValue(from, to));
   }
 
-  private moveValue(from: readonly string[], to: readonly string[]): CsfMutationResult {
+  private moveValue(from: CsfPath, to: CsfPath): CsfMutationResult {
     if (from.length === 0 || to.length === 0 || unsafePath(from) || unsafePath(to)) {
       return this.failure('unsupported-member', from.length === 0 ? from : to, this.anchor());
+    }
+    const name = from.at(-1);
+    const key = to.at(-1);
+    if (typeof name !== 'string' || typeof key !== 'string') {
+      return this.failure(
+        'unsupported-member',
+        typeof name === 'string' ? to : from,
+        this.anchor(),
+        `Cannot move ${printCsfPath(from)} to ${printCsfPath(to)}: an element or argument has a position, not a key`
+      );
     }
     if (from.length === to.length && from.every((part, index) => to[index] === part)) {
       return { ok: true, changed: false };
@@ -529,10 +637,10 @@ class Editor implements CsfObjectEditor {
     if (source.ok === false) {
       return this.failure(source.code, from, source.node);
     }
-    if (!source.property) {
+    if (source.kind !== 'property') {
       return { ok: true, changed: false };
     }
-    const removal = lookupProperty(source.parent.properties, from.at(-1)!, 'remove');
+    const removal = lookupMember(this.editor, source.parent.properties, name, 'remove');
     if (!removal.ok) {
       return this.failure(removal.code, from, removal.node);
     }
@@ -540,15 +648,14 @@ class Editor implements CsfObjectEditor {
     if (destination.ok === false) {
       return this.failure(destination.code, to, destination.node);
     }
-    if (destination.property) {
+    if (destination.kind === 'property') {
       return this.failure('occupied-destination', to, destination.property);
     }
-    const refused = this.refusedKey(destination.parent, to[destination.missing!], to);
-    if (refused) {
-      return refused;
+    const creation = creatable(this.editor, destination, to, 'when-creating-parents');
+    if (!creation.ok) {
+      return this.failure(creation.code, to, creation.node, creation.message);
     }
 
-    const key = to.at(-1)!;
     const sourceParent = from.slice(0, -1);
     const destinationParent = to.slice(0, -1);
     if (
@@ -561,14 +668,14 @@ class Editor implements CsfObjectEditor {
 
     const moved = source.parent.take(source.property, key);
     // The source is removed after the insertion, looked up again since the insertion moved its spans.
-    this.insert(to.slice(0, -1), { members: [{ ...moved, key }] });
+    insertAt(this.editor, this.root(), to.slice(0, -1), { members: [{ ...moved, key }] });
     const inserted = this.commit(from);
     if (!inserted.ok) {
       return inserted;
     }
     const remaining = this.locate(from);
-    if (remaining.ok === false || !remaining.property) {
-      throw new Error(`CsfObject: ${from.join('.')} was not found again after moving it`);
+    if (remaining.ok === false || remaining.kind !== 'property') {
+      throw new Error(`CsfObject: ${printCsfPath(from)} was not found again after moving it`);
     }
     remaining.parent.remove([remaining.property]);
     const removed = this.commit(from);
@@ -578,15 +685,23 @@ class Editor implements CsfObjectEditor {
     return this.removeEmptyParents(from) ?? removed;
   }
 
-  group(path: readonly string[], names: readonly string[]): CsfMutationResult {
+  group(path: CsfPath, names: readonly string[]): CsfMutationResult {
     return this.atomic(() => this.groupValues(path, names));
   }
 
-  private groupValues(path: readonly string[], names: readonly string[]): CsfMutationResult {
+  private groupValues(path: CsfPath, names: readonly string[]): CsfMutationResult {
     if (path.length === 0 || unsafePath(path) || unsafePath(names)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
     const group = path.at(-1)!;
+    if (!isKey(group)) {
+      return this.failure(
+        'unsupported-member',
+        path,
+        this.anchor(),
+        `Cannot group into ${printCsfPath(path)}: an element or argument has a position, not a key`
+      );
+    }
     if (names.includes(group)) {
       return this.failure('cyclic-move', path, this.anchor());
     }
@@ -596,12 +711,13 @@ class Editor implements CsfObjectEditor {
       if (inspected.ok === false) {
         return this.failure(inspected.code, path, inspected.node);
       }
-      if (!inspected.property) {
+      const slot = valueAt(this.editor, inspected);
+      if (!slot) {
         return { ok: true, changed: false };
       }
-      const value = resolveExpression(this.editor.scopes, inspected.property.value);
+      const value = slot.expression && resolveExpression(this.editor.scopes, slot.expression);
       if (value?.type !== 'ObjectExpression') {
-        return this.failure('unsupported-member', path, inspected.property);
+        return this.failure('unsupported-member', path, slot.node);
       }
       parent = literalRoot(this.editor, value);
     }
@@ -642,7 +758,7 @@ class Editor implements CsfObjectEditor {
       }
       sourceNames.add(name);
     }
-    const destination = lookupProperty(parent.properties, group);
+    const destination = lookupMember(this.editor, parent.properties, group);
     if (destination.ok === false) {
       return this.failure(
         destination.code,
@@ -715,9 +831,9 @@ class Editor implements CsfObjectEditor {
       );
       parent.remove(moved);
     } else {
-      const refused = this.refusedKey(parent, group, path);
+      const refused = refusedKey(this.editor, parent, group);
       if (refused) {
-        return refused;
+        return this.failure(refused.code, path, refused.node, refused.message);
       }
       if (parent.detached) {
         const effectful = moved.find((property) => !isEvaluationInert(property.value));
@@ -756,17 +872,18 @@ class Editor implements CsfObjectEditor {
   }
 
   // Returns the result of a rejected commit, which ends the clean-up.
-  private removeEmptyParents(path: readonly string[]): CsfMutationResult | undefined {
+  // Stops at an element or argument: the list keeps it, as it keeps an emptied list.
+  private removeEmptyParents(path: CsfPath): CsfMutationResult | undefined {
     for (let depth = path.length - 1; depth > 0; depth--) {
       const ancestor = this.locate(path.slice(0, depth));
-      if (ancestor.ok === false || !ancestor.property || ancestor.property.method) {
+      if (ancestor.ok === false || ancestor.kind !== 'property' || ancestor.property.method) {
         return;
       }
       const value = resolveExpression(this.editor.scopes, ancestor.property.value);
       if (value?.type !== 'ObjectExpression' || value.properties.length > 0) {
         return;
       }
-      if (!lookupProperty(ancestor.parent.properties, path[depth - 1], 'remove').ok) {
+      if (!lookupMember(this.editor, ancestor.parent.properties, ancestor.key, 'remove').ok) {
         return;
       }
       ancestor.parent.remove([ancestor.property]);
@@ -778,118 +895,21 @@ class Editor implements CsfObjectEditor {
     return undefined;
   }
 
-  // `access` applies to the last field of the path, and to its parents for a `set`, which creates
-  // missing ones; other parents are read. Only a lookup for a read follows a shared constant.
-  private locate(
-    path: readonly string[],
-    access: Access = 'read',
-    edits = true
-  ):
-    | { ok: true; parent: ObjectRoot; property?: Property; missing?: number }
-    | { ok: false; code: CsfMutationDiagnosticCode; node: Node } {
-    let parent = this.root();
-    let property: Property | undefined;
-
-    for (const [index, name] of path.entries()) {
-      const lookup = lookupProperty(
-        parent.properties,
-        name,
-        index === path.length - 1 || access === 'set' ? access : 'read'
-      );
-      if (lookup.ok === false) {
-        return lookup;
-      }
-      property = lookup.property;
-      if (!property) {
-        return { ok: true, parent, missing: index };
-      }
-      if (index === path.length - 1) {
-        return { ok: true, parent, property };
-      }
-      if (property.method) {
-        return { ok: false, code: 'unsupported-member', node: property };
-      }
-      const value = resolveExpression(this.editor.scopes, property.value, edits ? 'write' : 'read');
-      if (value?.type !== 'ObjectExpression') {
-        return { ok: false, code: 'unsupported-member', node: property.value };
-      }
-      parent = literalRoot(this.editor, value);
-    }
-
-    return { ok: true, parent, property };
-  }
-
-  // Writes `content` into the object at `containers`, creating the missing ones, which carry the
-  // spreads before them forward; the last one is an array for `items`. The caller has validated it.
-  private insert(
-    containers: readonly string[],
-    content: { members: MemberInsert[] } | { items: string[] }
-  ) {
-    let parent = this.root();
-    const { quote, indent } = this.editor;
-    const invalidated = () => new Error('CsfObject mutation preflight was invalidated');
-    for (const [index, name] of containers.entries()) {
-      const lookup = lookupProperty(parent.properties, name, 'set');
-      if (lookup.ok === false) {
-        throw invalidated();
-      }
-      if (!lookup.property) {
-        const carried = carriedSpreads(this.editor, parent.properties, name);
-        if (carried.ok === false) {
-          throw invalidated();
-        }
-        const missing = containers.slice(index);
-        const texts =
-          'members' in content ? content.members.map((member) => member.text) : content.items;
-        // Comments travel with moved members; a line comment needs the object to span lines.
-        const multiline = texts.some((text) => text.includes('\n'));
-        const block = (members: string[]) =>
-          multiline ? printMembers(members, indent) : `{ ${members.join(', ')} }`;
-        const forward = (depth: number, into: 'object' | 'array' = 'object') => {
-          const spread = carriedSpread(carried.spread, missing.slice(0, depth + 1), quote, into);
-          return spread ? [spread] : [];
-        };
-        const last = missing.length - 1;
-        let nested =
-          'members' in content
-            ? block([...forward(last), ...texts])
-            : `[${[...forward(last, 'array'), ...texts].join(', ')}]`;
-        for (let depth = last - 1; depth >= 0; depth--) {
-          nested = block([...forward(depth), `${printKey(missing[depth + 1], quote)}: ${nested}`]);
-        }
-        parent.append([{ key: name, value: nested, text: `${printKey(name, quote)}: ${nested}` }]);
-        return;
-      }
-      const value = lookup.property.method
-        ? undefined
-        : resolveExpression(this.editor.scopes, lookup.property.value);
-      if (value?.type !== 'ObjectExpression') {
-        throw invalidated();
-      }
-      parent = literalRoot(this.editor, value);
-    }
-    if (!('members' in content)) {
-      throw invalidated();
-    }
-    parent.append(content.members);
+  private locate(path: CsfPath, access?: Access, edits?: boolean): Located {
+    return locate(this.editor, this.root(), path, access, edits);
   }
 
   // `printValue` would print a node no parse produced as its fields.
-  private unprintable(path: readonly string[], value: CsfValue<CsfExpression>) {
+  private unprintable(path: CsfPath, value: CsfValue<CsfExpression>) {
     const node = nodeWithoutParse(value);
     return node
       ? this.failure(
           'unsupported-value',
           path,
           this.anchor(),
-          `Cannot set ${path.join('.')} to a ${node.type} node that did not come from \`get\`, \`transform\` or \`parseExpression\``
+          `Cannot set ${printCsfPath(path)} to a ${node.type} node that did not come from \`get\`, \`transform\`, \`parseExpression\` or \`parseModule\``
         )
       : undefined;
-  }
-
-  private refusedKey(parent: ObjectRoot, key: string, path: readonly string[]) {
-    const refusal = parent.refuseKey?.(key);
-    return refusal ? this.failure('unsupported-member', path, this.anchor(), refusal) : undefined;
   }
 
   private anchor(): Node {
@@ -898,9 +918,9 @@ class Editor implements CsfObjectEditor {
 
   private diagnostic(
     code: CsfMutationDiagnosticCode,
-    path: readonly string[],
+    path: CsfPath,
     node: Node,
-    message = `Cannot mutate ${path.join('.')} because the target contains ${code.replaceAll('-', ' ')}`
+    message = `Cannot mutate ${printCsfPath(path)} because the target contains ${code.replaceAll('-', ' ')}`
   ): CsfMutationDiagnostic {
     return {
       code,
@@ -913,12 +933,7 @@ class Editor implements CsfObjectEditor {
     };
   }
 
-  private failure(
-    code: CsfMutationDiagnosticCode,
-    path: readonly string[],
-    node: Node,
-    message?: string
-  ) {
+  private failure(code: CsfMutationDiagnosticCode, path: CsfPath, node: Node, message?: string) {
     const diagnostic = this.diagnostic(code, path, node, message);
     this.reportDiagnostic(diagnostic);
     // Unlike a read, a refused mutation rolls back the transaction it runs in.
@@ -950,7 +965,7 @@ class Editor implements CsfObjectEditor {
 
   // A file the indexer rejects is valid JS, so that is a diagnostic rather than an error. Code that
   // does not parse throws, and the error is the caller's.
-  private commit(path: readonly string[]): CsfMutationResult {
+  private commit(path: CsfPath): CsfMutationResult {
     try {
       this.editor.commit();
     } catch (error) {
@@ -962,7 +977,7 @@ class Editor implements CsfObjectEditor {
         'invalid-csf',
         path,
         this.anchor(),
-        `Edited ${path.join('.')}, but the result is not valid CSF: ${reason}`
+        `Edited ${printCsfPath(path)}, but the result is not valid CSF: ${reason}`
       );
     }
     return { ok: true, changed: true };
@@ -974,4 +989,4 @@ export const createCsfObject = (
   host: CsfObjectHost,
   report: ReportDiagnostic,
   markChanged: MarkChanged
-): CsfObjectEditor => new Editor(target, host, report, markChanged);
+): CsfObject => new Editor(target, host, report, markChanged);

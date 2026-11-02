@@ -1,3 +1,5 @@
+import { logger } from 'storybook/internal/node-logger';
+
 import remapping, { type SourceMapInput } from '@jridgewell/remapping';
 import MagicString, { SourceMap } from 'magic-string';
 
@@ -15,7 +17,6 @@ import {
   normalizeLineEndings,
   outerSpan,
   parseModule,
-  parsePrintable,
   placeableTextOf,
   restoreLineEndings,
   sourceOf,
@@ -136,7 +137,7 @@ export class SourceEditor {
     this.fileName = fileName;
     this._onCommit = onCommit;
     this._originalCode = code;
-    this._module = parsePrintable(code, fileName);
+    this._module = parseModule(code, fileName);
     this._batch = newBatch(this.code, fileName);
   }
 
@@ -204,7 +205,7 @@ export class SourceEditor {
     const what = 'type' in value ? `${value.type} node` : 'list';
     if (module) {
       throw new Error(
-        `Cannot edit a ${what} of another parse: stale after \`commit()\`, or from \`parseExpression\`/\`get()\`; use \`textOf\` for those`
+        `Cannot edit a ${what} of another parse: stale after \`commit()\`, or from \`parseModule\`, \`parseExpression\` or \`get()\`; use \`textOf\` for those`
       );
     }
     if ('type' in value) {
@@ -222,7 +223,7 @@ export class SourceEditor {
     if (!this.pending) {
       return false;
     }
-    let module = parsePrintable(this.edits.toString(), this.fileName);
+    let module = parseModule(this.edits.toString(), this.fileName);
     this._style ??= inferStyle(this._module);
     this._committed.push(this.edits);
     let appended = this._appendedWithoutBlankLine
@@ -235,7 +236,7 @@ export class SourceEditor {
       for (const statement of apart) {
         spacing.appendLeft(ownLineStart(module, statement), '\n');
       }
-      module = parsePrintable(spacing.toString(), this.fileName);
+      module = parseModule(spacing.toString(), this.fileName);
       this._committed.push(spacing);
       appended = appended
         .filter((statement) => !apart.includes(statement))
@@ -301,18 +302,31 @@ export class SourceEditor {
   /**
    * Hi-res map from the code the editor was created with to `toString()`, through every commit,
    * and through `inputSourceMap` when the code came from an earlier transform. Without an input
-   * map, `sourcesContent` is that code as it was passed in, line endings included.
+   * map, `sourcesContent` is that code as it was passed in, line endings included. An input map
+   * that cannot be read only costs the mapping through it: the map then starts at the editor's
+   * code, as without one, and the reason is logged at debug level.
    */
   generateMap(options: { source?: string; inputSourceMap?: InputSourceMap } = {}): GeneratedMap {
     const source = options.source ?? this.fileName ?? '';
+    if (options.inputSourceMap !== undefined) {
+      try {
+        return this._generateMap(source, options.inputSourceMap);
+      } catch (error) {
+        logger.debug(`Could not compose the source map of ${source}: ${error}`);
+      }
+    }
+    return this._generateMap(source);
+  }
+
+  _generateMap(source: string, inputSourceMap?: InputSourceMap): GeneratedMap {
     const chain = [this.edits, ...this._committed.slice().reverse()].map((edits) =>
       edits.generateMap({ hires: true, includeContent: true, source: mapSource(this) })
     );
     const [current] = chain;
     const input =
-      typeof options.inputSourceMap === 'string'
-        ? (JSON.parse(options.inputSourceMap) as Exclude<InputSourceMap, string>)
-        : options.inputSourceMap;
+      typeof inputSourceMap === 'string'
+        ? (JSON.parse(inputSourceMap) as Exclude<InputSourceMap, string>)
+        : inputSourceMap;
     if (chain.length === 1 && !input) {
       current.sources = [source];
       current.sourcesContent = [this._originalCode];
@@ -370,9 +384,18 @@ export class SourceEditor {
     this._style ??= inferStyle(this._module);
     return this._style.semicolons;
   }
+
+  /**
+   * Whether a generated object or array laid out one item per line ends with a comma, as most of
+   * the file's do.
+   */
+  get trailingCommas() {
+    this._style ??= inferStyle(this._module);
+    return this._style.trailingCommas;
+  }
 }
 
-type Style = { quote: "'" | '"'; indent: string; semicolons: boolean };
+type Style = { quote: "'" | '"'; indent: string; semicolons: boolean; trailingCommas: boolean };
 
 interface Batch {
   edits: SourceEdits;
@@ -380,7 +403,8 @@ interface Batch {
   lists: Map<string, Appended>;
   // The text inserted last after each statement.
   lastInsertedAfter: Map<Span, string>;
-  // The line starts statements were inserted at, which a removal around them keeps.
+  // The line starts statements were inserted at, which a removal around them keeps. One can be
+  // where code sharing a line starts, which the inserted statements moved to a line of its own.
   insertedAt: Set<number>;
 }
 
@@ -426,11 +450,16 @@ const endsWithOptionalSemicolon = (node: Node, parent: Node | null) => {
 const inferStyle = ({ code, program }: ParsedModule): Style => {
   const counts = { "'": 0, '"': 0 };
   const endings = { with: 0, without: 0 };
+  const lastItems = { with: 0, without: 0 };
   let first: "'" | '"' | undefined;
   let indent: string | undefined;
   walk(program, (node, parent) => {
     if (endsWithOptionalSemicolon(node, parent)) {
       endings[code[node.end - 1] === ';' ? 'with' : 'without']++;
+    }
+    const trailingComma = trailingCommaOf(code, node);
+    if (trailingComma !== undefined) {
+      lastItems[trailingComma ? 'with' : 'without']++;
     }
     if (isStringLiteral(node) && parent?.type !== 'JSXAttribute') {
       const quote = node.raw?.[0];
@@ -443,7 +472,30 @@ const inferStyle = ({ code, program }: ParsedModule): Style => {
   });
   const quote =
     counts["'"] === counts['"'] ? (first ?? '"') : counts["'"] > counts['"'] ? "'" : '"';
-  return { quote, indent: indent ?? '  ', semicolons: endings.without <= endings.with };
+  return {
+    quote,
+    indent: indent ?? '  ',
+    semicolons: endings.without <= endings.with,
+    trailingCommas: lastItems.with > lastItems.without,
+  };
+};
+
+// Whether an object or array whose closing bracket is on a line after its last item has a comma
+// after that item.
+const trailingCommaOf = (code: string, node: Node) => {
+  const last =
+    node.type === 'ObjectExpression'
+      ? node.properties.at(-1)
+      : node.type === 'ArrayExpression'
+        ? node.elements.at(-1)
+        : undefined;
+  if (!last) {
+    return undefined;
+  }
+  const after = code
+    .slice(outerSpan(last).end, node.end - 1)
+    .replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
+  return after.includes('\n') ? after.trimStart().startsWith(',') : undefined;
 };
 
 // The indent step from a block's line to the line of its first item, if that is a deeper one.
@@ -481,22 +533,40 @@ export const printString = (value: string, quote: string) => {
     : `'${json.slice(1, -1).replaceAll('\\"', '"').replaceAll("'", "\\'")}'`;
 };
 
-const printLines = (items: string[], indent: string, open: string, close: string) =>
+type LinesLayout = { indent: string; trailingComma: boolean };
+
+const printLines = (
+  items: string[],
+  { indent, trailingComma }: LinesLayout,
+  open: string,
+  close: string
+) =>
   items.length === 0
     ? `${open}${close}`
-    : `${open}\n${items.map((item) => `${indent}${withComma(reindent(item, '', indent), ',', true)}`).join('\n')}\n${close}`;
+    : `${open}${itemLines(items, indent, trailingComma ? ',' : '', true)}\n${close}`;
 
-/** An object literal laid out one member per line, so formatters keep it expanded. */
-export const printMembers = (members: string[], indent: string) =>
-  printLines(members, indent, '{', '}');
+/**
+ * An object literal of member texts, on one line or one member per line at an indent, which
+ * formatters keep expanded.
+ */
+export const printMembers = (members: string[], layout: LinesLayout | 'one-line') =>
+  layout !== 'one-line'
+    ? printLines(members, layout, '{', '}')
+    : members.length === 0
+      ? '{}'
+      : `{ ${members.join(', ')} }`;
 
-// Objects, or with `multiline` only objects and arrays with an item that spans lines, are laid out
-// one item per line.
-type ValueLayout = { indent: string; expand: 'objects' | 'multiline' };
+// With a layout, objects and arrays with an item that spans lines are laid out one item per line.
+type ValueLayout = { indent: string };
 
 const spansLines = (texts: string[]) => texts.some((text) => text.includes('\n'));
 
-// A JS value as source, and a node of `get`, `parseExpression` or a file in it as `detachedTextOf`.
+// A new object literal: on one line, unless a member spans lines.
+export const printObject = (members: string[], indent: string) =>
+  printMembers(members, spansLines(members) ? { indent, trailingComma: true } : 'one-line');
+
+// A JS value as source, and a node of `get`, `parseExpression`, `parseModule` or a file in it as
+// `detachedTextOf`.
 export const printValue = (value: unknown, quote: string, layout?: ValueLayout): string => {
   if (value === undefined) {
     return 'undefined';
@@ -533,18 +603,18 @@ export const printValue = (value: unknown, quote: string, layout?: ValueLayout):
   }
   if (Array.isArray(value)) {
     const items = Array.from(value, (item) => printValue(item, quote, layout));
-    return layout?.expand === 'multiline' && spansLines(items)
-      ? printLines(items, layout.indent, '[', ']')
+    return layout && spansLines(items)
+      ? printLines(items, { indent: layout.indent, trailingComma: true }, '[', ']')
       : `[${items.join(', ')}]`;
   }
   if (typeof value === 'object') {
     const members = Object.entries(value as Record<string, unknown>).map(
       ([key, item]) => `${printKey(key, quote)}: ${printValue(item, quote, layout)}`
     );
-    if (layout && (layout.expand === 'objects' || spansLines(members))) {
-      return printMembers(members, layout.indent);
-    }
-    return members.length === 0 ? '{}' : `{ ${members.join(', ')} }`;
+    return printMembers(
+      members,
+      layout && spansLines(members) ? { indent: layout.indent, trailingComma: true } : 'one-line'
+    );
   }
   throw new Error(`Cannot print value of type ${typeof value}`);
 };
@@ -822,8 +892,8 @@ const reindentLines = (text: string, from: string, to: string, literals: readonl
     cursor = lineBreak + 1;
     const inLiteral = literals.some((span) => span.start < lineBreak && lineBreak < span.end);
     if (!inLiteral && text.startsWith(from, cursor)) {
-      result += to;
       cursor += from.length;
+      result += text[cursor] === '\n' ? '' : to;
     }
   }
   return result + text.slice(cursor);
@@ -859,7 +929,7 @@ export const detachedSource = (editor: SourceEditor, span: Span) => {
 
 /**
  * `placeableTextOf` dedented as if the node's line had no indent, to place a node of `get`,
- * `parseExpression` or a `SourceEditor` at another indent.
+ * `parseExpression`, `parseModule` or a `SourceEditor` at another indent.
  */
 export const detachedTextOf = (node: Node) =>
   reindent(placeableTextOf(node), lineIndent(moduleOf(node)!.code, node.start), '');
@@ -1026,6 +1096,14 @@ const appendFirst = (editor: SourceEditor, list: List, texts: string[]): Appende
     // Only comments can be inside an empty list, and the items go after them.
     const inner = code.slice(list.open, list.close);
     const end = list.open + inner.trimEnd().length;
+    const oneLine = { right: false, indent: undefined, trailingComma: '', lineBreakFollows: false };
+    // A formatter hugs the parentheses of a call around its arguments: `f(() => {…})`.
+    if (code[list.open - 1] === '(' && end === list.open && !texts.some(endsInLineComment)) {
+      if (list.close > list.open) {
+        edits.remove(list.open, list.close);
+      }
+      return write({ ...oneLine, at: list.open }, inline(editor, list, texts, '', false));
+    }
     if ((inner.includes('\n') && end > list.open) || texts.some((text) => text.includes('\n'))) {
       // Multi-line items, or comments on lines of their own: lay the items out one per line, lined
       // up with the last comment when that starts a line.
@@ -1042,7 +1120,6 @@ const appendFirst = (editor: SourceEditor, list: List, texts: string[]): Appende
       const layout = { at: end, right: false, indent, trailingComma: ',', lineBreakFollows: true };
       return write(layout, itemLines(texts, indent, ',', true));
     }
-    const oneLine = { right: false, indent: undefined, trailingComma: '', lineBreakFollows: false };
     if (end > list.open) {
       if (end === list.close) {
         close(padding);
@@ -1229,8 +1306,8 @@ export const groupMembers = (
   const { start } = members[0];
   const indent = /[ \t]*$/.exec(editor.code.slice(lineStart(editor.code, start), start))![0];
   const inner = multiline
-    ? reindent(printMembers(texts, editor.indent), '', indent)
-    : `{ ${texts.join(', ')} }`;
+    ? reindent(printMembers(texts, { indent: editor.indent, trailingComma: true }), '', indent)
+    : printMembers(texts, 'one-line');
   // The comments of the first member move into the group with it.
   const lead = multiline ? `\n${indent}` : ' ';
   editor.edits.overwrite(
@@ -1339,27 +1416,29 @@ export const insertStatementAfter = (editor: SourceEditor, statement: Span, text
   // A statement without `;` ends before code that would continue it, such as `[1].map(f)`.
   const terminator =
     !endsStatement(body) && CONTINUES_STATEMENT.test(code.slice(next).trimStart()) ? ';' : '';
-  const written = `\n${lead}${separator}${body}${terminator}`;
-  // At the start of the next line: not at the statement's end, which can be its last expression's
-  // end, where later text belongs to the expression, and left of the next statement, where text
-  // belongs to that one. A removal of the statement keeps text at the start of the next line.
-  if (next === code.length) {
-    edits.appendRight(next, written);
+  const line = `${lead}${separator}${body}${terminator}`;
+  const lineBreak = lineEnd(code, next);
+  const shared = keepsCode(editor, end, lineBreak);
+  if (!shared && lineBreak === code.length) {
+    edits.appendRight(code.length, `\n${line}`);
     return;
   }
-  if (code[next] === '\n') {
-    const at = next + 1;
-    edits.appendLeft(at, `${written.slice(1)}\n`);
-    batch.insertedAt.add(at);
-    return;
+  // At a line start the batch tracks, so a removal around it keeps the text: of the next line, or
+  // of the code sharing the statement's line, which a line break moves to a line of its own. Not
+  // at the statement's end, which can be its last expression's end, where later text belongs to
+  // the expression.
+  const at = shared ? next : lineBreak + 1;
+  if (shared && !batch.insertedAt.has(at) && !isRemoved(editor, statement)) {
+    if (pullUpSemicolon(editor, statement, '\n')) {
+      edits.remove(end, next);
+    } else if (next > end) {
+      edits.overwrite(end, next, '\n');
+    } else {
+      edits.appendLeft(end, '\n');
+    }
   }
-  edits.appendLeft(end, written);
-  // The same line break for every statement inserted here.
-  if (next > end) {
-    edits.overwrite(end, next, '\n');
-  } else {
-    edits.appendRight(next, '\n');
-  }
+  edits.appendLeft(at, `${line}\n`);
+  batch.insertedAt.add(at);
 };
 
 /** Insert a statement after the last import, or as the first statement when there is none. */
@@ -1402,14 +1481,23 @@ export const prependStatement = (editor: SourceEditor, text: string) => {
   );
 };
 
-// Whether pending edits removed a span; one cutting through either end of it counts as that.
-const isRemoved = (editor: SourceEditor, span: Span) => {
+// The code between two offsets as pending edits leave it, unless an edit cuts through either end.
+const pendingSource = (editor: SourceEditor, start: number, end: number) => {
   try {
-    return editor.edits.slice(span.start, span.end) === '';
+    return editor.edits.slice(start, end);
   } catch {
-    return true;
+    return undefined;
   }
 };
+
+// Whether pending edits removed a span; one cutting through either end of it counts as that.
+const isRemoved = (editor: SourceEditor, span: Span) =>
+  (pendingSource(editor, span.start, span.end) ?? '') === '';
+
+// Whether code is left between two offsets once the pending edits are made, as written where an
+// edit cuts through either end. Only inserted statements add code between statements.
+const keepsCode = (editor: SourceEditor, start: number, end: number) =>
+  editor.code.slice(start, end).trim() !== '' && pendingSource(editor, start, end)?.trim() !== '';
 
 // `remove`, split around the statements inserted inside the range, as removing a range clears what
 // other edits wrote inside it.
@@ -1422,6 +1510,45 @@ const removeKeeping = (editor: SourceEditor, start: number, end: number) => {
     editor.edits.remove(from, at);
     from = at;
   }
+};
+
+// Put the `;` that ends a statement at the start of a line back after the statement's code, before
+// the comments between them, for when nothing else is left on that line: `a = 1 // c\n;` becomes
+// `a = 1; // c`. `lineBreak` takes the place of the `;` and the line breaks before it. Returns
+// whether it moved the `;`.
+const pullUpSemicolon = (editor: SourceEditor, statement: Span, lineBreak = '') => {
+  const { code, edits } = editor;
+  const semicolon = statement.end - 1;
+  if (
+    code[semicolon] !== ';' ||
+    statement.start === semicolon ||
+    code.slice(lineStart(code, semicolon), semicolon).trim() ||
+    statementEnd(editor, statement) !== statement.end ||
+    isRemoved(editor, { start: semicolon, end: statement.end })
+  ) {
+    return false;
+  }
+  const trimmedEnd = (index: number) =>
+    statement.start + code.slice(statement.start, index).trimEnd().length;
+  const contentEnd = trimmedEnd(semicolon);
+  let codeEnd = contentEnd;
+  for (
+    let comment = commentAt(editor, codeEnd, 'end');
+    comment && comment.start > statement.start;
+    comment = commentAt(editor, codeEnd, 'end')
+  ) {
+    codeEnd = trimmedEnd(comment.start);
+  }
+  const replacement = codeEnd === contentEnd ? `;${lineBreak}` : lineBreak;
+  if (codeEnd < contentEnd) {
+    edits.appendRight(codeEnd, ';');
+  }
+  if (replacement) {
+    edits.overwrite(contentEnd, statement.end, replacement);
+  } else {
+    edits.remove(contentEnd, statement.end);
+  }
+  return true;
 };
 
 /**
@@ -1438,7 +1565,10 @@ export const appendStatement = (editor: SourceEditor, text: string) => {
     return;
   }
   // The text inserted last may lead with the blank line that set it apart.
-  const before = editor._batch.lastInsertedAfter.get(last)?.trim() ?? editor.source(last);
+  const before =
+    editor._batch.lastInsertedAfter.get(last)?.trim() ??
+    pendingSource(editor, last.start, last.end) ??
+    editor.source(last);
   const multiline = text.includes('\n') || before.includes('\n');
   if (!multiline) {
     editor._appendedWithoutBlankLine.push(text);
@@ -1504,20 +1634,59 @@ export const statementSpan = (editor: SourceEditor, statement: Span): Span => ({
   end: statementEnd(editor, statement),
 });
 
+// Whether code stays on the line from `from` up to `start`. A removed statement that ends on the
+// line leaves no code there.
+const keepsCodeBefore = (editor: SourceEditor, from: number, start: number) => {
+  if (!keepsCode(editor, from, start)) {
+    return false;
+  }
+  const spanning = editor.program.body.find(
+    (node) => node.start < from && from < node.end && node.end <= start
+  );
+  const removedUpTo =
+    spanning && isRemoved(editor, spanning) ? statementEnd(editor, spanning) : from;
+  return keepsCode(editor, removedUpTo, start);
+};
+
+// Removes the statement from `start` to `end` that follows code on its line, which starts at
+// `from`, with the spaces after that code.
+const removeAfterCodeOnLine = (editor: SourceEditor, from: number, start: number, end: number) => {
+  const { code } = editor;
+  const previous = editor.program.body.findLast(
+    (node) => node.end <= start && !isRemoved(editor, node)
+  );
+  editor.edits.remove(start - /[^\S\n]*$/.exec(code.slice(from, start))![0].length, end);
+  if (!previous) {
+    return;
+  }
+  const after = Math.min(statementEnd(editor, previous), start);
+  if (after >= from && !keepsCode(editor, after, start)) {
+    // The statements between them are removed too, as in `a(); b(); c();` without `b` and `c`:
+    // take the spaces after `a();` as well, each removal keeping its own span.
+    editor.edits.remove(after, after + /^[^\S\n]*/.exec(code.slice(after, start))![0].length);
+  }
+  if (!keepsCode(editor, previous.end, start)) {
+    pullUpSemicolon(editor, previous);
+  }
+};
+
 /** Remove a statement with the comments it owns, and its lines when nothing else shares them. */
 export const removeStatement = (editor: SourceEditor, statement: Span, atTop?: boolean) => {
   const { code } = editor;
   const { start, end } = statementSpan(editor, statement);
   const lineBreak = lineEnd(code, end);
-  let from = lineStart(code, start);
-  if (code.slice(end, lineBreak).trim()) {
+  // A statement inserted before the code sharing its line moved that code to a line of its own.
+  let from = Math.max(
+    lineStart(code, start),
+    ...[...editor._batch.insertedAt].filter((at) => at <= start)
+  );
+  if (keepsCode(editor, end, lineBreak)) {
     // Code stays after it on the line: take the spaces before that code.
     editor.edits.remove(start, end + /^[^\S\n]*/.exec(code.slice(end))![0].length);
     return;
   }
-  if (code.slice(from, start).trim()) {
-    // Code stays before it on the line: take the spaces after that code.
-    editor.edits.remove(start - /[^\S\n]*$/.exec(code.slice(from, start))![0].length, end);
+  if (keepsCodeBefore(editor, from, start)) {
+    removeAfterCodeOnLine(editor, from, start, end);
     return;
   }
   // The statement takes the blank lines above it, so none are left behind; at the top of the
@@ -1610,18 +1779,25 @@ export const replaceValue = (editor: SourceEditor, member: Property, text: strin
       methodFromFunction(indented, keySource(editor, member)) ??
       `${keySource(editor, member)}: ${indented}`;
   }
-  // A text ending in a line comment takes the comma after the replaced code on its line before
-  // the comment. The comma is removed as an edit of its own, so a removal of the next member can
-  // still take it. Any other text leaves the comma to other edits.
+  replaceSpan(editor, span, replacement);
+};
+
+// A text ending in a line comment takes the comma after the replaced code on its line before the
+// comment. The comma is removed as an edit of its own, so a removal of the next item can still
+// take it. Any other text leaves the comma to other edits.
+export const replaceSpan = (editor: SourceEditor, span: Span, text: string) => {
+  const { code } = editor;
   const { comments, end } = triviaAfter(editor, span.end, SPACE_ON_LINE);
   const comma = comments.length === 0 && code[end] === ',' ? end + 1 : undefined;
-  const takesComma = comma !== undefined && endsInLineComment(replacement);
+  const takesComma = comma !== undefined && endsInLineComment(text);
   const to = takesComma ? comma : span.end;
-  editor.edits.overwrite(
-    span.start,
-    span.end,
-    withComma(replacement, takesComma ? ',' : '', lineBreakAt(code, to))
-  );
+  const replacement = withComma(text, takesComma ? ',' : '', lineBreakAt(code, to));
+  if (span.start === span.end) {
+    // A hole, which the text fills in front of its comma.
+    editor.edits.appendLeft(span.start, replacement);
+  } else {
+    editor.edits.overwrite(span.start, span.end, replacement);
+  }
   if (takesComma) {
     if (end > span.end) {
       editor.edits.remove(span.end, end);

@@ -171,7 +171,7 @@ export interface Addon_BaseAnnotations<
   /**
    * Dynamic data that are provided (and possibly updated by) Storybook and its addons.
    *
-   * @see [Arg story inputs](https://storybook.js.org/docs/api/csf#args-story-inputs)
+   * @see [Args](https://storybook.js.org/docs/writing-stories/args)
    */
   args?: Partial<TArgs>;
 
@@ -224,7 +224,7 @@ export interface Addon_Annotations<TArgs, StoryFnReturnType> extends Addon_BaseA
    * includeStories: /.*Story$/;
    * ```
    *
-   * @see [Non-story exports](https://storybook.js.org/docs/api/csf#non-story-exports)
+   * @see [Non-story exports](https://storybook.js.org/docs/writing-stories/csf#non-story-exports)
    */
   includeStories?: string[] | RegExp;
 
@@ -239,7 +239,7 @@ export interface Addon_Annotations<TArgs, StoryFnReturnType> extends Addon_BaseA
    * excludeStories: /.*Data$/;
    * ```
    *
-   * @see [Non-story exports](https://storybook.js.org/docs/api/csf#non-story-exports)
+   * @see [Non-story exports](https://storybook.js.org/docs/writing-stories/csf#non-story-exports)
    */
   excludeStories?: string[] | RegExp;
 }

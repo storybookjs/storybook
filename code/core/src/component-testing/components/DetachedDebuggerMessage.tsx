@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Link } from 'storybook/internal/components';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { PANEL_ID } from '../constants.ts';
 

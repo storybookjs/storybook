@@ -13,7 +13,9 @@ import {
   expectNoStaleSnippets,
   NO_SNIPPET_SENTINEL,
   recordServerSnippet,
-} from './story-docs/snippet-recorder.ts';
+} from '../compare/server-snippet-recorder.ts';
+
+const STYLE_BLOCK_REGEXP = /^<style>[\s\S]*?<\/style>\n/;
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 const storyDocsFixturesDir = join(
@@ -81,6 +83,9 @@ describe('web-components story-docs server snippets', () => {
         ...(storyDoc?.warning === undefined ? [] : [`warning: ${storyDoc.warning}`]),
       ].join('\n\n');
       await recordServerSnippet({
+        framework: 'web-components',
+        normalize: (snippet) => snippet.replace(STYLE_BLOCK_REGEXP, ''),
+        prefix: 'server-snippet-',
         testDir,
         exportName,
         snippet: storyDoc?.snippet,

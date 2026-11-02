@@ -19,8 +19,14 @@ import { dedent } from 'ts-dedent';
 
 import { Tag } from '../shared/constants/tags.ts';
 import type { PrintResultType } from './PrintResultType.ts';
-import { type CsfMutationDiagnostic, type CsfObject, type CsfObjectOptions } from './CsfObject.ts';
-import { discoverCsfObjects } from './CsfObjectDiscovery.ts';
+import {
+  type CsfMutationDiagnostic,
+  type CsfMutationResult,
+  type CsfObject,
+  type CsfObjectLookup,
+  type CsfObjectOptions,
+} from './CsfObject.ts';
+import { discoverCsfObjects, discoverStory } from './CsfObjectDiscovery.ts';
 import {
   type E,
   EstreeParseError,
@@ -44,6 +50,7 @@ import {
   appendStatement,
   insertStatementAfter,
 } from './estree/editor.ts';
+import { type ImportBindings, removeImport, setImport } from './estree/imports.ts';
 import { generateUid, isDeclared } from './estree/scope.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
 
@@ -132,6 +139,62 @@ function parseTags(prop: Node | null | undefined) {
     }
     throw new Error(`CSF: Expected tag to be string literal`);
   }) as Tag[];
+}
+
+function resolveTags(tags: Node, program: E.Program) {
+  return parseTags(tags.type === 'Identifier' ? findVarInitialization(tags.name, program) : tags);
+}
+
+// The tags of a parent story. A parent that isn't exported isn't indexed on its own, so tags that
+// aren't static don't fail the file: the story inherits none of them.
+function inheritedTags(tags: Node, program: E.Program) {
+  try {
+    return resolveTags(tags, program);
+  } catch {
+    return [];
+  }
+}
+
+// The tags a `Story.extend()` call inherits from its chain of parent stories, and whether one of
+// them has a play function. A `meta.story()` call inherits nothing.
+function extendedStoryTags(
+  call: CsfFactoryCall,
+  program: E.Program,
+  visited = new Set<string>()
+): { tags: string[]; play: boolean } {
+  if (call.callee.property.name !== 'extend') {
+    return { tags: [], play: false };
+  }
+  // Follow `const Alias = Story` to the story
+  let parentName = csfFactoryReceiver(call).name;
+  let parent: Node | null = null;
+  while (!visited.has(parentName)) {
+    visited.add(parentName);
+    const init = findVarInitialization(parentName, program);
+    parent = init && unwrapExpression(init);
+    if (parent?.type !== 'Identifier') {
+      break;
+    }
+    parentName = parent.name;
+  }
+  if (!isCsfFactoryCall(parent)) {
+    return { tags: [], play: false };
+  }
+  const inherited = extendedStoryTags(parent, program, visited);
+  const config = parent.arguments[0] && unwrapExpression(parent.arguments[0]);
+  const annotations = config?.type === 'ObjectExpression' ? config.properties : [];
+  const tags = annotations.find(
+    (property): property is E.ObjectProperty =>
+      property.type === 'Property' && staticKey(property) === 'tags' && !property.method
+  );
+  return {
+    tags: [...inherited.tags, ...(tags ? inheritedTags(tags.value, program) : [])],
+    play:
+      inherited.play ||
+      annotations.some(
+        (property) => property.type === 'Property' && staticKey(property) === 'play'
+      ),
+  };
 }
 
 function parseTestTags(optionsNode: Node | null | undefined, program: E.Program) {
@@ -299,8 +362,12 @@ export interface StaticMeta extends Pick<
 }
 
 export interface StaticStory extends Pick<StoryAnnotations, 'name' | 'parameters' | 'tags'> {
+  /** The name the story is exported as: `B` for `export { A as B }`. */
+  exportName: string;
   id: string;
   localName?: string;
+  /** Whether the story is a CSF factory call, such as `meta.story({})` or `Primary.extend({})`. */
+  factory: boolean;
   __stats: IndexInputStats;
 }
 
@@ -362,6 +429,8 @@ export class CsfFile {
 
   _storyAnnotations: Record<string, Record<string, Node>> = {};
 
+  _storyFactoryCalls: Record<string, CsfFactoryCall> = {};
+
   _templates: Record<string, Node> = {};
 
   _namedExportsOrder?: string[];
@@ -421,7 +490,7 @@ export class CsfFile {
   }
 
   /**
-   * Report whether any object editor has changed this story file.
+   * Report whether a mutation has changed this story file.
    *
    * @example
    * ```ts
@@ -456,17 +525,118 @@ export class CsfFile {
       this,
       options,
       (diagnostic) => state.diagnostics.push(diagnostic),
-      () => {
-        // The transaction running, if any, resets the flag when it rolls back, also when it was
-        // started on `editor` directly.
-        if (!state.changed) {
-          state.changed = true;
-          this.editor._onRollback(() => {
-            state.changed = false;
-          });
-        }
-      }
+      () => this._markChanged()
     );
+  }
+
+  /**
+   * Find the editor of the story exported as `exportName`, as `objects()` would give it, or the
+   * diagnostic that says why it has none, which is added to `mutationDiagnostics` as well. Returns
+   * `undefined` when the file has no story of that name. A story that shares its object with
+   * another story, such as `Secondary` in `export { Primary as Secondary }` or `export const
+   * Secondary = Primary`, has none: it is refused as `aliased-story`, naming `Primary`, whose
+   * editor edits both. An automigration that edits through `storyObject` handles `ok: false`.
+   *
+   * @example
+   * ```ts
+   * const csf = loadCsf('export default {}; export const Primary = {};', {
+   *   makeTitle: () => 'Example',
+   * }).parse();
+   * const found = csf.storyObject('Primary');
+   * if (found?.ok) {
+   *   found.object.set(['args', 'disabled'], true);
+   * }
+   * ```
+   */
+  storyObject(exportName: string): CsfObjectLookup | undefined {
+    const state = mutationStates.get(this)!;
+    return discoverStory(
+      this,
+      exportName,
+      (diagnostic) => state.diagnostics.push(diagnostic),
+      () => this._markChanged()
+    );
+  }
+
+  // The transaction running, if any, resets the flag when it rolls back, also when it was started
+  // on `editor` directly.
+  _markChanged() {
+    const state = mutationStates.get(this)!;
+    if (!state.changed) {
+      state.changed = true;
+      this.editor._onRollback(() => {
+        state.changed = false;
+      });
+    }
+  }
+
+  /**
+   * Add import bindings of a module, like `ConfigFile.setImport`: a string as the default import,
+   * an array of names or `'name as alias'` as named imports, `{ namespace }` as a namespace import
+   * and `null` as a side-effect import. A binding a value import of the module has already is
+   * skipped; one only a type-only import has becomes a value import. An edit that leaves a file the
+   * CSF indexer rejects is refused with an `invalid-csf` diagnostic.
+   *
+   * @example
+   * ```ts
+   * csf.setImport(['expect', 'userEvent'], 'storybook/test'); // { ok: true, changed: true }
+   * csf.setImport(['expect'], 'storybook/test'); // { ok: true, changed: false }
+   * ```
+   *
+   * @throws When a name is neither an identifier nor `'name as alias'`.
+   */
+  setImport(importSpecifier: ImportBindings, fromImport: string): CsfMutationResult {
+    return this._editImports(fromImport, (editor) =>
+      setImport(editor, importSpecifier, fromImport)
+    );
+  }
+
+  /**
+   * Remove import and `require` bindings of a module, like `ConfigFile.removeImport`. A removal
+   * that leaves a file the CSF indexer rejects, such as one whose `export { Button }` loses its
+   * binding, is refused with an `invalid-csf` diagnostic.
+   *
+   * @example
+   * ```ts
+   * csf.removeImport(['fn'], 'storybook/test'); // { ok: true, changed: true }
+   * ```
+   *
+   * @throws When a name is neither an identifier nor `'name as alias'`.
+   */
+  removeImport(importSpecifier: ImportBindings, fromImport: string): CsfMutationResult {
+    return this._editImports(fromImport, (editor) =>
+      removeImport(editor, importSpecifier, fromImport)
+    );
+  }
+
+  // Runs in a transaction of its own, so a refused or throwing edit leaves the file as it was.
+  _editImports(fromImport: string, edit: (editor: SourceEditor) => boolean): CsfMutationResult {
+    let result: CsfMutationResult = { ok: true, changed: false };
+    this.editor.transaction(() => {
+      try {
+        result = { ok: true, changed: edit(this.editor) };
+      } catch (error) {
+        if (error !== this._indexError) {
+          throw error;
+        }
+        const reason = error instanceof Error ? error.message : String(error);
+        const diagnostic: CsfMutationDiagnostic = {
+          code: 'invalid-csf',
+          target: { kind: 'file' },
+          path: [],
+          message: `Edited the imports of '${fromImport}', but the result is not valid CSF: ${reason}`,
+        };
+        mutationStates.get(this)!.diagnostics.push(diagnostic);
+        result = { ok: false, changed: false, diagnostic };
+        return false;
+      }
+    });
+    if (!result.ok) {
+      this.editor._refuse();
+    } else if (result.changed) {
+      this._markChanged();
+    }
+    return result;
   }
 
   /**
@@ -516,6 +686,7 @@ export class CsfFile {
     this._metaFactoryCall = undefined;
     this._metaNodeIsSynthetic = undefined;
     this._storyAnnotations = {};
+    this._storyFactoryCalls = {};
     this._templates = {};
     this._namedExportsOrder = undefined;
     this.imports = [];
@@ -760,6 +931,7 @@ export class CsfFile {
         let storyIsFactory = false;
         if (isCsfFactoryCall(storyNode)) {
           storyIsFactory = true;
+          this._storyFactoryCalls[exportName] = storyNode;
           storyNode = storyNode.arguments[0] as Node | undefined;
         }
 
@@ -830,9 +1002,11 @@ export class CsfFile {
           parameters.__isArgsStory = storyNode ? isArgsStory(storyNode, isTopLevel, this) : false;
         }
         this._stories[exportName] = {
+          exportName,
           id: 'FIXME',
           name,
           parameters,
+          factory: storyIsFactory,
           __stats: {
             factory: storyIsFactory,
           },
@@ -871,6 +1045,7 @@ export class CsfFile {
           const unwrappedDecl = unwrapExpression(decl);
           if (this._metaIsFactory && isCsfFactoryCall(unwrappedDecl)) {
             storyIsFactory = true;
+            this._storyFactoryCalls[exportName] = unwrappedDecl;
             storyNode = unwrappedDecl.arguments[0] as Node | undefined;
           }
           // A story from another file is kept: its declaration isn't in this file
@@ -890,10 +1065,12 @@ export class CsfFile {
           this._storyAnnotations[exportName] = annotations;
           this._storyStatements[exportName] = decl as Node;
           this._stories[exportName] = {
+            exportName,
             id: 'FIXME',
             name: exportName,
             localName,
             parameters: {},
+            factory: storyIsFactory,
             __stats: storyIsFactory ? { factory: true } : {},
           };
         }
@@ -1099,12 +1276,14 @@ export class CsfFile {
         acc[key] = { ...story, id, parameters };
         const storyAnnotations = this._storyAnnotations[key];
         const { tags, play } = storyAnnotations;
-        if (tags) {
-          const node =
-            tags.type === 'Identifier' ? findVarInitialization(tags.name, this.program) : tags;
-          acc[key].tags = parseTags(node);
+        const factoryCall = this._storyFactoryCalls[key];
+        const inherited = factoryCall
+          ? extendedStoryTags(factoryCall, this.program)
+          : { tags: [], play: false };
+        if (tags || inherited.tags.length > 0) {
+          acc[key].tags = [...inherited.tags, ...(tags ? resolveTags(tags, this.program) : [])];
         }
-        if (play) {
+        if (play || inherited.play) {
           acc[key].tags = [...(acc[key].tags || []), Tag.PLAY_FN];
         }
         const stats = acc[key].__stats;
@@ -1298,10 +1477,22 @@ export interface FormatCsfOptions {
  * Print the file with its pending edits. With `sourceMaps`, returns the code and a hi-res source map
  * from the loaded code to the output.
  */
-export const formatCsf = (
+export function formatCsf(
+  csf: CsfFile,
+  options: FormatCsfOptions & { sourceMaps: true }
+): { code: string; map: CsfSourceMap };
+export function formatCsf(
+  csf: CsfFile,
+  options?: FormatCsfOptions & { sourceMaps?: false }
+): string;
+export function formatCsf(
+  csf: CsfFile,
+  options?: FormatCsfOptions
+): { code: string; map: CsfSourceMap } | string;
+export function formatCsf(
   csf: CsfFile,
   options: FormatCsfOptions = { sourceMaps: false }
-): { code: string; map: CsfSourceMap } | string => {
+): { code: string; map: CsfSourceMap } | string {
   const code = csf.editor.toString();
   if (!options.sourceMaps) {
     return code;
@@ -1313,7 +1504,7 @@ export const formatCsf = (
       inputSourceMap: options.inputSourceMap,
     }) as unknown as CsfSourceMap,
   };
-};
+}
 
 /**
  * Print the file with its pending edits. Untouched code is kept as written, except that every line

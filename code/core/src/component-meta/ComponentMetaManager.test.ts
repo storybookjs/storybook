@@ -98,14 +98,15 @@ describe('ComponentMetaManager file watching', () => {
     }
   );
 
-  it.skipIf(isWindows)('reports a new file as created from its lone rename event', async () => {
+  it.skipIf(isWindows)('reports a new file as created from its rename event', async () => {
     writeFileSync(newFile, 'export const Card = 1;');
 
     await expectCreatedReported();
+    // macOS and Linux on Node 24 and older report a lone `rename`. Linux on Node 26 follows it
+    // with a `change`, like Windows does.
     const cardEvents = rawEvents
       .filter(({ filename }) => filename === 'src/Card.ts')
       .map(({ eventType }) => eventType);
     expect(cardEvents).toContain('rename');
-    expect(cardEvents).not.toContain('change');
   });
 });

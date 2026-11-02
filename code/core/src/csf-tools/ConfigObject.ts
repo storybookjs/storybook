@@ -1,7 +1,7 @@
 import type { ConfigFile } from './ConfigFile.ts';
 import {
   type CsfMutationDiagnostic,
-  type CsfObjectEditor,
+  type CsfObject,
   type CsfObjectHost,
   createCsfObject,
 } from './CsfObject.ts';
@@ -473,7 +473,7 @@ export function createConfigObject(
   mode: 'read' | 'mutate',
   report: (diagnostic: CsfMutationDiagnostic) => void,
   markChanged: () => void
-): { ok: true; object: CsfObjectEditor } | { ok: false; diagnostic: CsfMutationDiagnostic } {
+): { ok: true; object: CsfObject } | { ok: false; diagnostic: CsfMutationDiagnostic } {
   const located = locateConfigRoot(config, mode);
   if (located.ok === false) {
     return located;

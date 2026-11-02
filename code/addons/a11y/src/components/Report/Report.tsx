@@ -6,7 +6,7 @@ import { Badge, Button, EmptyTabContent } from 'storybook/internal/components';
 import { ChevronSmallDownIcon } from '@storybook/icons';
 
 import type { ImpactValue } from 'axe-core';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { getTitleForAxeResult } from '../../axeRuleMappingHelper.ts';
 import { type EnhancedResult, RuleType } from '../../types.ts';

@@ -2,9 +2,10 @@ import React, { type HTMLAttributes, forwardRef } from 'react';
 
 import { CloseIcon } from '@storybook/icons';
 
-import { lighten, styled } from 'storybook/theming';
+import { lighten, styled } from 'storybook/theming/emotion';
 
 import { Button } from '../Button/Button.tsx';
+import { ScrollArea } from '../ScrollArea/ScrollArea.tsx';
 
 export interface PopoverProps extends HTMLAttributes<HTMLDivElement> {
   /** Content of the popover. */
@@ -24,6 +25,15 @@ export interface PopoverProps extends HTMLAttributes<HTMLDivElement> {
 
   /** Padding between the content and popover edge. */
   padding?: number | string;
+
+  /**
+   * Whether the content scrolls once the popover is as tall as the space left in the viewport, or
+   * wider than the viewport. True by default.
+   *
+   * ScrollArea clips Popover content, so turn this off for content that draws outside the
+   * popover box, like the Color control handle.
+   */
+  scrollable?: boolean;
 }
 
 const Wrapper = styled.div<{
@@ -31,14 +41,23 @@ const Wrapper = styled.div<{
   hasChrome: boolean;
   hasCloseButton: boolean;
   padding: NonNullable<PopoverProps['padding']>;
+  scrollable: boolean;
 }>(
-  ({ hasCloseButton, padding }) => ({
-    display: 'inline-block',
+  ({ theme, hasCloseButton, padding, scrollable }) => ({
+    display: 'inline-grid',
+    // A sized row lets the scroll area resolve its percentage height against the capped popover.
+    gridTemplateRows: 'minmax(0, 1fr)',
+    // Baseline alignment would add the overlay's descender space below the popover.
+    verticalAlign: 'top',
     position: 'relative',
     minHeight: hasCloseButton ? 36 : undefined,
     zIndex: 2147483647,
-    colorScheme: 'light dark',
-    padding,
+    colorScheme: theme.base,
+    padding: scrollable ? 0 : padding,
+    // The overlay caps its height to the viewport; the cap carries down to the scroll viewport.
+    maxHeight: 'inherit',
+    maxWidth: 'calc(100vw - 24px)',
+    boxSizing: 'border-box',
   }),
   ({ theme, hasChrome }) =>
     hasChrome
@@ -69,6 +88,10 @@ const Wrapper = styled.div<{
     }
 );
 
+const Padded = styled.div<{ padding: NonNullable<PopoverProps['padding']> }>(({ padding }) => ({
+  padding,
+}));
+
 const AbsoluteButton = styled(Button)({
   position: 'absolute',
   top: 4,
@@ -84,6 +107,7 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(
       hideLabel = 'Close',
       onHide,
       padding = 8,
+      scrollable = true,
       ...props
     },
     ref
@@ -94,10 +118,17 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(
         hasChrome={hasChrome}
         hasCloseButton={!!onHide}
         padding={padding}
+        scrollable={scrollable}
         ref={ref}
         {...props}
       >
-        {children}
+        {scrollable ? (
+          <ScrollArea vertical horizontal>
+            <Padded padding={padding}>{children}</Padded>
+          </ScrollArea>
+        ) : (
+          children
+        )}
         {onHide && (
           <AbsoluteButton
             ariaLabel={hideLabel}

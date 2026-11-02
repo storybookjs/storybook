@@ -61,11 +61,6 @@
     "storybook": "workspace:^",
     "typescript": "^5.9.0 || ^6.0.0 || ^7.0.0"
   },
-  "peerDependenciesMeta": {
-    "typescript": {
-      "optional": true
-    }
-  },
   "publishConfig": {
     "access": "public"
   },

@@ -13,5 +13,6 @@
     "static/**/*.svelte",
     "template/**/*",
     "template/**/*.svelte"
-  ]
+  ],
+  "exclude": ["src/docgen/component-docgen/__testfixtures__/**"]
 }

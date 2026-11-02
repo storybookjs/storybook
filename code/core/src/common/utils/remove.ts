@@ -49,15 +49,17 @@ export async function removeAddon(addon: string, options: RemoveAddonOptions) {
   }
 
   try {
-    // Every entry that names the addon, such as `'<addon>/preset'` or an absolute path to it.
-    const entries = (main.getNamesFromPath(['addons']) ?? []).filter(
-      (name) => normalizeAddonName(name) === addon
+    // The index of every entry that names the addon, such as `'<addon>/preset'` or an absolute
+    // path to it: `getNamesFromPath` reads one name per element.
+    const indexes = (main.getNamesFromPath(['addons']) ?? []).flatMap((name, index) =>
+      normalizeAddonName(name) === addon ? [index] : []
     );
 
     // Fault tolerant as the addon might have been removed already
-    if (entries.length > 0) {
+    if (indexes.length > 0) {
       logger.debug(`Removing '${addon}' from main.js addons field.`);
-      entries.forEach((entry) => main.removeEntryFromArray(['addons'], entry));
+      // From the last, so the indexes before it still address the same entries.
+      indexes.reverse().forEach((index) => main.remove(['addons', index]));
       await writeConfig(main);
     }
   } catch (err) {

@@ -1,4 +1,4 @@
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -11,6 +11,7 @@ import {
   SAVE_STORY_RESPONSE,
   STORY_RENDERED,
 } from 'storybook/internal/core-events';
+import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
 import { initializeSaveStory } from './save-story.ts';
@@ -22,7 +23,7 @@ vi.mock('storybook/internal/node-logger', { spy: true });
 
 const importPath = relative(process.cwd(), join(__dirname, 'mocks/csf-variances.stories.tsx'));
 
-function saveStory(payload: { args?: string; name?: string }) {
+function saveStory(payload: { args?: string; name?: string; csfId?: string }) {
   const channel = new Channel({});
   initializeSaveStory(channel, {} as Options);
   vi.mocked(writeFile).mockImplementation(async () => channel.emit(STORY_RENDERED));
@@ -87,7 +88,7 @@ describe('save-story', () => {
       success: true,
       payload: {
         sourceFileContent: expect.stringMatching(
-          /export const NewStory = \{\s+args: \{\s+class: "primary",\s+nested: \{\s+"not-an-identifier": 1,/
+          /export const NewStory = \{\s+args: \{ class: "primary", nested: \{ "not-an-identifier": 1 \} \},/
         ),
       },
     });
@@ -104,5 +105,41 @@ describe('save-story', () => {
       success: true,
       payload: { sourceFileContent: expect.stringContaining('onClick: () => {},') },
     });
+  });
+
+  it('shows why a save is refused, and logs the diagnostic behind it', async () => {
+    vi.mocked(readFile).mockResolvedValueOnce(
+      [
+        `export default { title: 'X' };`,
+        `const shared = { a: 1 };`,
+        `export const A = { args: shared };`,
+        `export const B = { args: shared };`,
+      ].join('\n')
+    );
+
+    const response = await saveStory({ csfId: 'x--a', args: JSON.stringify({ a: 2 }) });
+
+    expect(response).toMatchObject({
+      success: false,
+      error:
+        'Cannot save arg "a" of story A because the args of the story are not an object written in the story itself, for example a constant that other stories share.',
+    });
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Caused by: Cannot mutate args.a because the target contains unsupported member'
+      )
+    );
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
+  it('refuses a new story whose name the file already uses', async () => {
+    const response = await saveStory({ args: '{}', name: 'MyComponent' });
+
+    expect(response).toMatchObject({
+      success: false,
+      error:
+        'Cannot create story MyComponent because the file already uses the name MyComponent. Choose another name.',
+    });
+    expect(writeFile).not.toHaveBeenCalled();
   });
 });

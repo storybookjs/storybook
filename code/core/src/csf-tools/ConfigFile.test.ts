@@ -4,7 +4,7 @@ import { dedent } from 'ts-dedent';
 
 import { formatConfig, loadConfig, printConfig } from './ConfigFile.ts';
 import type { CsfExpression } from './CsfObject.ts';
-import { parseExpression } from './estree/ast.ts';
+import { parseExpression, textOf } from './estree/ast.ts';
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -773,6 +773,34 @@ describe('ConfigFile', () => {
     });
   });
 
+  describe('element paths', () => {
+    it('addresses the elements of a named export like those of a default export field', () => {
+      const config = loadConfig("export const addons = ['a', 'b', 'c'];").parse();
+
+      expect(config.getValue(['addons', 1])).toBe('b');
+      expect(config.set(['addons', 0], 'x')).toEqual({ ok: true, changed: true });
+      expect(config.remove(['addons', 1])).toEqual({ ok: true, changed: true });
+      expect(printConfig(config).code).toBe("export const addons = ['x', 'c'];");
+    });
+
+    it('edits the elements of a constant that only the config refers to', () => {
+      const single = loadConfig("const addons = ['a'];\nexport default { addons };").parse();
+
+      expect(single.set(['addons', 0], 'x')).toEqual({ ok: true, changed: true });
+      expect(printConfig(single).code).toBe("const addons = ['x'];\nexport default { addons };");
+
+      const source = "const addons = ['a'];\nexport default { addons, other: addons };";
+      const shared = loadConfig(source).parse();
+
+      expect(shared.getValue(['addons', 0])).toBe('a');
+      expect(shared.set(['addons', 0], 'x')).toMatchObject({
+        ok: false,
+        diagnostic: { code: 'unsupported-member', path: ['addons', 0] },
+      });
+      expect(printConfig(shared).code).toBe(source);
+    });
+  });
+
   describe('appendToArray', () => {
     it('missing export', () => {
       expect(
@@ -787,6 +815,49 @@ describe('ConfigFile', () => {
         `export default { core: { builder: 'webpack5' }, addons: ['docs'] };`
       );
     });
+    it('reports a field that holds a call, which append would add an argument to', () => {
+      const source = "export default { addons: ['a'].filter(Boolean) };";
+      const config = loadConfig(source).parse();
+
+      expect(config.appendValueToArray(['addons'], 'b')).toMatchObject({
+        ok: false,
+        diagnostic: {
+          code: 'unsupported-value',
+          message: "Expected an array literal at 'addons', got 'CallExpression'",
+        },
+      });
+      expect(config.removeEntryFromArray(['addons'], 'a')).toMatchObject({ ok: false });
+      expect(printConfig(config).code).toBe(source);
+    });
+
+    it('refuses a call below a constant, and appends to an array there', () => {
+      const source =
+        "const opts = { list: ['a'].filter(Boolean) };\nexport default { framework: { options: opts } };";
+      const config = loadConfig(source).parse();
+
+      expect(config.appendValueToArray(['framework', 'options', 'list'], 'z')).toMatchObject({
+        ok: false,
+        diagnostic: {
+          code: 'unsupported-value',
+          message: "Expected an array literal at 'framework.options.list', got 'CallExpression'",
+        },
+      });
+      expect(printConfig(config).code).toBe(source);
+      expect(
+        appendToArray(
+          ['framework', 'options', 'list'],
+          'z',
+          "const opts = { list: ['a'] };\nexport default { framework: { options: opts } };"
+        ).split('\n')[0]
+      ).toBe("const opts = { list: ['a', 'z'] };");
+    });
+
+    it('appends to an array a constant holds', () => {
+      expect(
+        appendToArray(['addons'], 'b', "const addons = ['a'];\nexport default { addons };")
+      ).toBe("const addons = ['a', 'b'];\nexport default { addons };");
+    });
+
     it('reports a field that is not an array literal and leaves it as written', () => {
       const config = loadConfig(`export default { addons: 5 };`).parse();
       const result = config.appendValueToArray(['addons'], 'docs');
@@ -914,6 +985,22 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.appendNodeToArray(['addons'], parseExpression(expression));
 
+      expect(printConfig(config).code).toBe(output);
+    });
+
+    it('re-indents a multi-line node from its own line, at the indent of the array', () => {
+      const source = 'export default {\n  a: [\n    [\n      1,\n    ],\n  ],\n  list: [],\n};';
+      const output =
+        'export default {\n  a: [\n    [\n      1,\n    ],\n  ],\n  list: [\n    [\n      1,\n    ],\n  ],\n};';
+      const config = loadConfig(source).parse();
+      const array = config.get(['a']);
+      expect(array?.type).toBe('ArrayExpression');
+      const child = array?.type === 'ArrayExpression' ? array.elements[0] : undefined;
+
+      expect(config.appendNodeToArray(['list'], child as CsfExpression)).toEqual({
+        ok: true,
+        changed: true,
+      });
       expect(printConfig(config).code).toBe(output);
     });
   });
@@ -1510,6 +1597,34 @@ describe('ConfigFile', () => {
     });
   });
 
+  describe('import results', () => {
+    it('reports whether an import helper changed the file, and sets changed', () => {
+      const config = loadConfig(`import { a } from 'x';\nexport default {};`).parse();
+
+      expect(config.setImport(['a'], 'x')).toEqual({ ok: true, changed: false });
+      expect(config.removeImport(['b'], 'x')).toEqual({ ok: true, changed: false });
+      expect(config.changed).toBe(false);
+      expect(config.setRequireImport(['b'], 'y')).toEqual({ ok: true, changed: true });
+      expect(config.changed).toBe(true);
+      expect(config.removeImport(['a'], 'x')).toEqual({ ok: true, changed: true });
+      expect(printConfig(config).code).toBe(`const { b } = require('y');\nexport default {};`);
+    });
+
+    it('rolls back an import and changed with the transaction it runs in', () => {
+      const source = `export default { tags: 'a' };`;
+      const config = loadConfig(source).parse();
+
+      const kept = config.transaction(() => {
+        config.setImport(['a'], 'x');
+        config.appendValueToArray(['tags'], 'b');
+      });
+
+      expect(kept).toBe(false);
+      expect(printConfig(config).code).toBe(source);
+      expect(config.changed).toBe(false);
+    });
+  });
+
   describe('setRequireImport', () => {
     it(`supports setting a default import for a field that does not exist`, () => {
       const source = dedent`
@@ -2018,6 +2133,98 @@ describe('ConfigFile', () => {
     });
   });
 
+  describe('inspectList', () => {
+    it.each([
+      ['an array literal', "export default { addons: ['a'] };", ['addons'], "['a']"],
+      [
+        'the array of a constant only the config refers to',
+        "const addons = ['a'] as const;\nexport default { addons };",
+        ['addons'],
+        "['a']",
+      ],
+      [
+        'the call at an item path',
+        'export default { loaders: [mswLoader()] };',
+        ['loaders', 0],
+        'mswLoader()',
+      ],
+      [
+        'an optional call at an item path, without its chain',
+        'export default { loaders: [loader?.()] };',
+        ['loaders', 0],
+        'loader?.()',
+      ],
+    ])('reads %s, which append adds to', (_case, source, path, text) => {
+      const config = loadConfig(source).parse();
+      const list = config.inspectList(path);
+
+      expect(list.kind === 'list' && list.node.type).toBe(
+        typeof path[1] === 'number' ? 'CallExpression' : 'ArrayExpression'
+      );
+      expect(list.kind === 'list' && textOf(list.node)).toBe(text);
+      expect(config.mutationDiagnostics).toEqual([]);
+    });
+
+    it.each([
+      ['a missing field', 'export default { tags: [] };'],
+      [
+        'a field a spread may provide, which append carries forward',
+        'export default { ...shared };',
+      ],
+    ])('reads %s as missing, which append creates', (_case, source) => {
+      const config = loadConfig(source).parse();
+
+      expect(config.inspectList(['addons'])).toEqual({ kind: 'missing' });
+      expect(config.append(['addons'], 'b')).toEqual({ ok: true, changed: true });
+    });
+
+    it.each([
+      ['holds a call', 'export default { addons: getAddons() };', 'unsupported-value'],
+      [
+        'a later spread could replace',
+        "export default { addons: ['a'], ...shared };",
+        'spread-field',
+      ],
+      [
+        'is a constant that other code refers to as well',
+        "const addons = ['a'];\nexport default { addons };\nregister(addons);",
+        'unsupported-value',
+      ],
+      ['a computed key could provide', 'export default { [key]: [] };', 'dynamic-key'],
+    ])('refuses, with the diagnostic of append, a field that %s', (_case, source, code) => {
+      const config = loadConfig(source).parse();
+      const list = config.inspectList(['addons']);
+
+      expect(list).toMatchObject({ kind: 'refused', diagnostic: { code, path: ['addons'] } });
+      expect(config.mutationDiagnostics).toEqual([]);
+      expect(config.append(['addons'], 'b')).toEqual({
+        ok: false,
+        changed: false,
+        diagnostic: list.kind === 'refused' && list.diagnostic,
+      });
+      expect(printConfig(config).code).toBe(source);
+    });
+
+    it('refuses, like append, a config that mixes a default export with named exports', () => {
+      const config = loadConfig('export const tags = [];\nexport default { addons: [] };').parse();
+      const list = config.inspectList(['addons']);
+
+      expect(list).toMatchObject({ kind: 'refused', diagnostic: { code: 'ambiguous-binding' } });
+      expect(config.append(['addons'], 'b')).toMatchObject({
+        diagnostic: list.kind === 'refused' && list.diagnostic,
+      });
+    });
+
+    it('refuses the object itself, which is no list', () => {
+      const config = loadConfig('export default { addons: [] };').parse();
+
+      expect(config.inspectList([])).toMatchObject({
+        kind: 'refused',
+        diagnostic: { code: 'unsupported-member', path: [] },
+      });
+    });
+  });
+
   describe('removeEntryFromArray', () => {
     it('removes a string literal entry', () => {
       const source = dedent`
@@ -2082,6 +2289,66 @@ describe('ConfigFile', () => {
       expect(config.changed).toBe(true);
     });
 
+    it.each([
+      [
+        'a constant',
+        "const addons = ['a', 'b'];\nexport default { addons };",
+        "const addons = ['a'];",
+      ],
+      [
+        'an `as const` export',
+        "export const addons = ['a', 'b'] as const;",
+        "export const addons = ['a'] as const;",
+      ],
+      [
+        'an export of a constant',
+        "const list = ['a', 'b'];\nexport const addons = list;",
+        "const list = ['a'];",
+      ],
+    ])('removes an entry of the array %s holds', (_case, source, line) => {
+      const config = loadConfig(source).parse();
+
+      expect(config.removeEntryFromArray(['addons'], 'b')).toEqual({ ok: true, changed: true });
+      expect(printConfig(config).code.split('\n')[0]).toBe(line);
+    });
+
+    it('reports an array a later spread could replace, like append', () => {
+      const source = "export default { addons: ['a'], ...base };";
+      const config = loadConfig(source).parse();
+
+      expect(config.removeEntryFromArray(['addons'], 'a')).toMatchObject({
+        ok: false,
+        diagnostic: { code: 'spread-field', path: ['addons'] },
+      });
+      expect(config.appendValueToArray(['addons'], 'b')).toMatchObject({
+        diagnostic: { code: 'spread-field' },
+      });
+      expect(printConfig(config).code).toBe(source);
+    });
+
+    it.each([
+      [
+        'a constant that other code refers to as well',
+        "const addons = ['a'];\nexport default { addons };\nregister(addons);",
+        "Cannot edit 'addons' because it is a constant that other code refers to as well",
+      ],
+      [
+        'a config that mixes a default export with named exports',
+        "export const tags = [];\nexport default { addons: ['a'] };",
+        undefined,
+      ],
+    ])('refuses, like append, an array in %s, also without the entry', (_case, source, message) => {
+      for (const value of ['a', 'x']) {
+        const config = loadConfig(source).parse();
+
+        expect(config.removeEntryFromArray(['addons'], value)).toMatchObject({
+          ok: false,
+          diagnostic: message ? { message } : {},
+        });
+        expect(printConfig(config).code).toBe(source);
+      }
+    });
+
     it('reports a field that is not an array literal', () => {
       const config = loadConfig(`export default { addons: {} };`).parse();
       const result = config.removeEntryFromArray(['addons'], 'x');
@@ -2105,12 +2372,14 @@ describe('ConfigFile', () => {
       }
     );
 
-    it.each(['const X = 1;', 'type X = {};', 'import { X } from "x";'])(
-      'accepts export { X } after %s',
-      (declaration) => {
-        expect(() => loadConfig(`${declaration}\nexport { X };`, 'main.ts').parse()).not.toThrow();
-      }
-    );
+    it.each([
+      'const X = 1;',
+      'type X = {};',
+      'import { X } from "x";',
+      'export default interface X {}',
+    ])('accepts export { X } after %s', (declaration) => {
+      expect(() => loadConfig(`${declaration}\nexport { X };`, 'main.ts').parse()).not.toThrow();
+    });
 
     it("export { X } with X is import { X } from 'another-file'", () => {
       const source = dedent`

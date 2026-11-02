@@ -3,12 +3,21 @@ import type { E, Property, Span } from './estree/ast.ts';
 import {
   type SourceEditor,
   appendMembers,
+  appendToList,
+  argumentList,
+  arrayList,
   groupMembers,
+  lineIndent,
   prependMembers,
+  prependToList,
   printKey,
+  printObject,
+  reindent,
+  removeFromList,
   removeMembers,
   renameKey,
   renamedMemberText,
+  replaceSpan,
   replaceValue,
 } from './estree/editor.ts';
 import { placeableValueSource } from './estree/values.ts';
@@ -86,3 +95,65 @@ export const literalRoot = (editor: SourceEditor, object: E.ObjectExpression): O
     text: renamedMemberText(editor, object, member, printKey(key, editor.quote)),
   }),
 });
+
+const noMembers = (): never => {
+  throw new Error('CsfObject: a call without an argument has no members');
+};
+
+// The missing object argument of a call such as `meta.story()`. Its first member writes the object,
+// which the next parse finds as the call's argument.
+export const argumentRoot = (editor: SourceEditor, call: E.CallExpression): ObjectRoot => {
+  const write = (members: MemberInsert[]) => {
+    editor.assertCurrent(call);
+    const object = printObject(
+      members.map((member) => member.text),
+      editor.indent
+    );
+    const close = call.end - 1;
+    editor.edits.appendLeft(close, reindent(object, '', lineIndent(editor.code, close)));
+  };
+  return {
+    properties: [],
+    detached: false,
+    append: write,
+    prepend: write,
+    remove: noMembers,
+    replaceValue: noMembers,
+    rename: noMembers,
+    group: noMembers,
+    take: noMembers,
+  };
+};
+
+// The elements of an array or the arguments of a call, by their position in the source.
+export interface ListRoot {
+  readonly node: E.ArrayExpression | E.CallExpression;
+  // `null` is a hole.
+  readonly items: readonly (E.Expression | E.SpreadElement | null)[];
+  append(texts: string[]): void;
+  prepend(texts: string[]): void;
+  remove(index: number): void;
+  replace(index: number, text: string): void;
+}
+
+export const listRoot = (
+  editor: SourceEditor,
+  node: E.ArrayExpression | E.CallExpression
+): ListRoot => {
+  const list = () =>
+    node.type === 'ArrayExpression' ? arrayList(editor, node) : argumentList(editor, node);
+  return {
+    node,
+    items: node.type === 'ArrayExpression' ? node.elements : node.arguments,
+    append: (texts) => appendToList(editor, list(), texts),
+    prepend: (texts) => prependToList(editor, list(), texts),
+    remove: (index) => {
+      const current = list();
+      removeFromList(editor, current, [current.items[index]]);
+    },
+    replace: (index, text) => {
+      const span = list().items[index];
+      replaceSpan(editor, span, reindent(text, '', lineIndent(editor.code, span.start)));
+    },
+  };
+};

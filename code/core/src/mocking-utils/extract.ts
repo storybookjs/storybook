@@ -9,7 +9,7 @@ import { walk } from 'estree-walker';
 import { basename, normalize } from 'pathe';
 
 import { parseModule } from '../csf-tools/estree/ast.ts';
-import { SourceEditor } from '../csf-tools/estree/editor.ts';
+import { type InputSourceMap, SourceEditor } from '../csf-tools/estree/editor.ts';
 import { resolveMock } from './resolve.ts';
 
 const DEFAULT_MODULE_DIRECTORIES = ['/node_modules/'];
@@ -20,7 +20,10 @@ export function isModuleDirectory(path: string) {
 }
 
 export type MockCall = {
+  /** The declared path, without its extension when that matches the resolved file. */
   path: string;
+  /** The declared path exactly as written in the `sb.mock()` call. */
+  specifier: string;
   absolutePath: string;
   redirectPath: string | null;
   spy: boolean;
@@ -42,8 +45,35 @@ const isStringLiteral = (node: any): boolean =>
 const isStaticImport = (node: any): boolean =>
   node?.type === 'ImportExpression' && isStringLiteral(node.source);
 
-/** Utility to rewrite sb.mock(import('...'), ...) to sb.mock('...', ...) */
-export function rewriteSbMockImportCalls(code: string, fileName: string) {
+/** A source map as a plain object, which loaders such as webpack's and babel-loader accept. */
+export interface MockRewriteSourceMap {
+  version: number;
+  file: string;
+  sources: string[];
+  /**
+   * Typed as webpack's and Rollup's map types expect. An entry is `null` only when the input map
+   * carried no content for its source, which webpack and Vite accept at runtime.
+   */
+  sourcesContent: string[];
+  names: string[];
+  mappings: string;
+  sourceRoot?: string;
+}
+
+export interface RewriteSbMockImportCallsOptions {
+  /** Map of `code` to its original, when it came from an earlier transform. */
+  inputSourceMap?: InputSourceMap;
+}
+
+/**
+ * Rewrite `sb.mock(import('...'), ...)` to `sb.mock('...', ...)`. The map goes from the original
+ * of `code`, through `inputSourceMap` when given, to the output, and is `null` when nothing changed.
+ */
+export function rewriteSbMockImportCalls(
+  code: string,
+  fileName: string,
+  options: RewriteSbMockImportCallsOptions = {}
+): { code: string; map: MockRewriteSourceMap | null } {
   const editor = new SourceEditor(code, fileName);
 
   walk(editor.program as any, {
@@ -67,11 +97,13 @@ export function rewriteSbMockImportCalls(code: string, fileName: string) {
   if (!editor.pending) {
     return { code, map: null };
   }
-  // Spread into a plain object: babel-loader, next in the webpack chain, rejects a string map.
-  const map = { ...editor.generateMap() };
+  // `sb.mock` needs the rewrite, so an input map the editor cannot read only costs the mapping.
+  const map = editor.generateMap({ inputSourceMap: options.inputSourceMap });
   return {
     code: editor.toString(),
-    map: { ...map, sourcesContent: map.sourcesContent as string[] },
+    // A plain object: babel-loader, next in the webpack chain, rejects a string map. Its
+    // `sourcesContent` is typed as the loaders expect, as `MockRewriteSourceMap` says.
+    map: { ...map, file: fileName, sourcesContent: map.sourcesContent as string[] },
   };
 }
 
@@ -162,6 +194,7 @@ export function extractMockCalls(
 
         mocks.push({
           path: pathWithoutExtensionAndBasename,
+          specifier: path,
           absolutePath,
           redirectPath,
           spy,

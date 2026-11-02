@@ -11,7 +11,7 @@ import {
   textOf,
   unwrapExpression,
 } from '../estree/ast.ts';
-import { detachedTextOf, reindent } from '../estree/editor.ts';
+import { detachedTextOf, printMembers } from '../estree/editor.ts';
 import { analyzeScopes } from '../estree/scope.ts';
 import { type ImportRef } from './import-statements.ts';
 import { type ImportBinding, collectImportBindings } from './imports.ts';
@@ -190,12 +190,8 @@ const objectFrom = (
     const shorthand = 'type' in property && property.shorthand && value === property.value;
     members.push(shorthand ? key : `${key}: ${detachedTextOf(value)}`);
   }
-  // One member per line, so formatters keep the object expanded.
-  const { indent } = ctx.editor;
   return rebuilt(
-    members.length === 0
-      ? '{}'
-      : `{\n${members.map((member) => `${indent}${reindent(member, '', indent)}`).join(',\n')}\n}`
+    printMembers(members, { indent: ctx.editor.indent, trailingComma: ctx.editor.trailingCommas })
   );
 };
 

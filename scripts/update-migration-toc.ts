@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 import { dirname, resolve } from 'pathe';
 
+import { getLineContexts } from './docs/utils.ts';
+
 /**
  * Rebuild the table of contents at the top of MIGRATION.md so it matches the
  * current `##`–`######` headings in the file. Mirrors the output of the vscode
@@ -40,11 +42,11 @@ function tocText(heading: string): string {
   return out;
 }
 
+const contexts = getLineContexts(lines);
+
 let firstH2 = -1;
-let inCode = false;
 for (let i = 0; i < lines.length; i++) {
-  if (/^```/.test(lines[i])) inCode = !inCode;
-  if (!inCode && /^## /.test(lines[i])) {
+  if (contexts[i] === 'content' && /^## /.test(lines[i])) {
     firstH2 = i;
     break;
   }
@@ -56,7 +58,7 @@ if (firstH2 < 0) {
 
 let tocStart = -1;
 for (let i = 0; i < firstH2; i++) {
-  if (/^- \[/.test(lines[i])) {
+  if (contexts[i] === 'content' && /^- \[/.test(lines[i])) {
     tocStart = i;
     break;
   }
@@ -68,19 +70,13 @@ if (tocStart < 0) {
 
 let tocEnd = tocStart;
 for (let i = tocStart; i < firstH2; i++) {
-  if (/^(?:- \[|\s+- \[)/.test(lines[i])) tocEnd = i;
+  if (contexts[i] === 'content' && /^(?:- \[|\s+- \[)/.test(lines[i])) tocEnd = i;
 }
 
 const headings: { level: number; text: string }[] = [];
-inCode = false;
 for (let i = firstH2; i < lines.length; i++) {
-  const l = lines[i];
-  if (/^```/.test(l)) {
-    inCode = !inCode;
-    continue;
-  }
-  if (inCode) continue;
-  const m = l.match(/^(#{2,6}) (.+?)\s*$/);
+  if (contexts[i] !== 'content') continue;
+  const m = lines[i].match(/^(#{2,6}) (.+?)\s*$/);
   if (m) headings.push({ level: m[1].length, text: m[2].replace(/\s+#*\s*$/, '') });
 }
 

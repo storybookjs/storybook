@@ -309,6 +309,9 @@ export const init: Task['run'] = async (
       extra = { type: 'react_native_web' };
       await prepareReactNativeWebSandbox(cwd);
       break;
+    case '@storybook-astro/framework':
+      await prepareAstroSandbox(cwd);
+      break;
   }
 
   await executeCLIStep(steps.init, {
@@ -1163,6 +1166,68 @@ async function getConfigFile(names: string[], cwd: string) {
   // findFirstPath returns a path relative to `cwd`; resolve it so readConfig
   // does not resolve it against the script's own working directory.
   return join(cwd, firstPath);
+}
+
+// `@storybook-astro/renderer` ships no CLI template stories, so `storybook init` adds none.
+async function prepareAstroSandbox(cwd: string) {
+  const componentsDir = join(cwd, 'src', 'components');
+  const storiesDir = join(cwd, 'src', 'stories');
+  await mkdir(componentsDir, { recursive: true });
+  await mkdir(storiesDir, { recursive: true });
+
+  await writeFile(
+    join(componentsDir, 'Button.astro'),
+    dedent`
+      ---
+      interface Props {
+        label: string;
+        primary?: boolean;
+      }
+
+      const { label, primary = false } = Astro.props;
+      ---
+
+      <button class:list={['button', { primary }]}>{label}</button>
+
+      <style>
+        .button {
+          border: 1px solid #333;
+          border-radius: 3em;
+          padding: 0.75em 1.5em;
+        }
+        .primary {
+          background: #1ea7fd;
+          border-color: #1ea7fd;
+          color: white;
+        }
+      </style>
+    `
+  );
+
+  await writeFile(
+    join(storiesDir, 'Button.stories.ts'),
+    dedent`
+      import Button from '../components/Button.astro';
+
+      export default {
+        title: 'Example/Button',
+        component: Button,
+        tags: ['autodocs'],
+        argTypes: {
+          label: { control: 'text' },
+          primary: { control: 'boolean' },
+        },
+      };
+
+      export const Primary = {
+        args: { label: 'Button', primary: true },
+      };
+
+      export const Secondary = {
+        args: { label: 'Button' },
+      };
+    `
+  );
 }
 
 async function prepareSvelteSandbox(cwd: string) {

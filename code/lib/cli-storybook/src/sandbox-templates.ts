@@ -450,6 +450,19 @@ export const baseTemplates = {
     // Re-enable once storybook-solidjs-vite releases a version that works with Storybook 11.
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration', 'chromatic'],
   },
+  'astro-vite/default-ts': {
+    name: 'Astro Latest (Vite | TypeScript)',
+    script:
+      'npx create-astro@latest {{beforeDir}} --template minimal --no-install --no-git --no-ai --skip-houston --yes',
+    expected: {
+      framework: '@storybook-astro/framework',
+      renderer: '@storybook-astro/renderer',
+      builder: '@storybook/builder-vite',
+    },
+    // `chromatic` needs a CHROMATIC_TOKEN_ASTRO_VITE_DEFAULT_TS secret in CI; enable it once the
+    // Chromatic project exists.
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration', 'chromatic'],
+  },
   'tanstack-react-router/default-ts': {
     name: 'TanStack React Router Latest (Vite | TypeScript)',
     script: 'npx @tanstack/cli@latest create {{beforeDir}} --no-install --tailwind --router-only',
@@ -1013,6 +1026,7 @@ export const daily: TemplateKey[] = [
   'preact-vite/default-ts',
   'html-vite/default-ts',
   'solid-vite/default-ts',
+  'astro-vite/default-ts',
   // Disabled in CI: the published storybook-builder-rsbuild imports `babelParser` from
   // `storybook/internal/mocking-utils`, which Storybook 11 removed, so the sandbox cannot be
   // created. Fix: https://github.com/rstackjs/storybook-rsbuild/pull/603

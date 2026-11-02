@@ -966,11 +966,8 @@ For Angular-Vite, `framework.options.compodoc: false` does not disable the docge
 #### Temporary regressions on source snippet generation
 
 With server-side docgen, React, Angular, Vue 3 and Web Components build story source snippets on the server from the story file.
-Whilst this change enables support for agent skills, we have had to completely rewrite source snippet generation server-side. Our new snippet generation comes with significant improvements for several frameworks, but also with temporary regressions.
 
 In Storybook 11.0, server-side source snippets do not update dynamically when you change a story's args. This is a known limitation and it will be fixed in Storybook 11.1 at the latest.
-
-Besides, some stories may be missing source snippets in the code panel. Stories are affected depending on whether their args, template functions, etc., could be interpreted server-side. You will see a warning when Storybook failed to render source snippets. We will address the various limitations causing snippet generation to fail over time.
 
 Set `features.docgenServer: false` to restore runtime snippets and runtime docgen, if your Storybook is affected by these limitations.
 

@@ -16,9 +16,6 @@ export function getSvelteAST(options: GetSvelteASTOptions) {
   return ast;
 }
 
-/**
- * Create ESTree compliant AST node for {@link ESTreeAST.Property}
- */
 export function createASTProperty(
   name: string,
   value: ESTreeAST.Property['value']
@@ -37,10 +34,6 @@ export function createASTProperty(
   };
 }
 
-/**
- * Create ESTree compliant AST node for {@link ESTreeAST.ArrayExpression} with optional array of elements.
- * By default it will create an empty array.
- */
 export function createASTArrayExpression(
   elements: ESTreeAST.ArrayExpression['elements'] = []
 ): ESTreeAST.ArrayExpression {
@@ -50,10 +43,6 @@ export function createASTArrayExpression(
   };
 }
 
-/**
- * Create ESTree compliant AST node for {@link ESTreeAST.ObjectExpression} with optional array of properties.
- * By default it will create an empty object.
- */
 export function createASTObjectExpression(
   properties: ESTreeAST.ObjectExpression['properties'] = []
 ): ESTreeAST.ObjectExpression {
@@ -63,10 +52,7 @@ export function createASTObjectExpression(
   };
 }
 
-/**
- * Append a property to an {@link ESTreeAST.ObjectExpression}.
- * It replaces the array instead of using `push`, because Rollup's parser returns a frozen array for an empty object literal.
- */
+// Replaces the array instead of pushing, because Rollup's parser returns a frozen array for an empty object literal.
 export function appendASTProperty(
   node: ESTreeAST.ObjectExpression,
   property: ESTreeAST.ObjectExpression['properties'][number]
@@ -74,9 +60,6 @@ export function appendASTProperty(
   node.properties = [...node.properties, property];
 }
 
-/**
- * Create ESTree compliant AST node for {@link ESTreeAST.Identifier}.
- */
 export function createASTIdentifier(name: string): ESTreeAST.Identifier {
   return {
     type: 'Identifier',

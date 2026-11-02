@@ -9,10 +9,7 @@ interface Params {
   filename?: string;
 }
 
-/**
- * We need to remove the default export from the code,
- * because Storybook internally expects export default `meta`.
- */
+// Storybook expects the default export to be the meta, so the compiled component's default export goes.
 export function removeExportDefault(params: Params) {
   const { code, nodes } = params;
   const { exportDefault, storiesFunctionDeclaration } = nodes;

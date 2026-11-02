@@ -6,8 +6,6 @@ export const MAIN_CANVAS_ID = 'storybook-preview-iframe' as const;
 
 export const INSTANCE_QUERY_PARAM = 'managerDocsInstance' as const;
 
-export const STATIC_MDX_MANIFEST_FILE = 'manager-docs.json' as const;
-
 export const STATIC_COMPONENT_BLOCKS_FILE = 'manager-docs-blocks.js' as const;
 
 export const VIEWPORT_GLOBAL = 'viewport' as const;

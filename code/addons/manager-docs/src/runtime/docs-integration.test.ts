@@ -75,7 +75,12 @@ describe('docs view slot', () => {
     expect(manager).not.toContain('setConfig');
     expect(readSource('../preset.ts')).toContain('export const services');
     expect(readSource('../preset.ts')).toContain('registerMdxSourceService');
+    expect(readSource('../preset.ts')).toContain('applyMdxSourceChange');
+    expect(readSource('../preset.ts')).toContain('StoryIndexGenerator');
+    expect(readSource('../preset.ts')).not.toContain('MDX_SOURCE_CHANGED');
     expect(readSource('../preset.ts')).not.toContain('serveMdxSource');
+    expect(readSource('../preset.ts')).not.toContain('emitStaticMdxDuringBuild');
+    expect(readSource('../preset.ts')).not.toContain('manager-docs.json');
     expect(readSource('../preview.ts')).toContain('bindInstanceParticipant');
     expect(readSource('../preview.ts')).toContain('getChannel()');
   });
@@ -251,7 +256,14 @@ describe('MDX docs handoff', () => {
     expect(opened.model.instances[0]?.args).not.toBe(opened.model.instances[1]?.args);
     expect(opened.model.instances[0]?.globals).toEqual({ viewport: 'desktop' });
     expect(canvas).toContain('loadDocsArticle');
+    expect(canvas).toContain('subscribeMdxSource');
+    expect(canvas).toContain('indexedEntries');
+    expect(canvas).not.toContain('MDX_SOURCE_CHANGED');
+    expect(canvas).not.toContain('fetchStaticMdxManifest');
+    expect(canvas).not.toContain('manager-docs.json');
     expect(readSource('../runtime/static-manifest.ts')).toContain('readMdxSourceFromService');
+    expect(readSource('../runtime/static-manifest.ts')).not.toContain('fetchStaticMdxManifest');
+    expect(readSource('../runtime/static-manifest.ts')).not.toContain('production');
     expect(canvas).toContain('<ManagerDocsView');
     expect(canvas).toContain('model={model}');
     expect(canvas).toContain('connectInstanceTransport');

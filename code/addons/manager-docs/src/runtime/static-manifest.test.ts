@@ -1,24 +1,15 @@
 import { readFileSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
-import * as memfs from 'memfs';
-import { vol } from 'memfs';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+
+import type { StoryIndex } from 'storybook/internal/types';
 
 import { clearRegistry } from '../../../../core/src/shared/open-service/server.ts';
 
-import { STATIC_MDX_MANIFEST_FILE } from '../constants.ts';
 import { registerMdxSourceService } from '../mdx-source-service/server.ts';
-import { emitStaticMdxDuringBuild } from '../server/emit-static-manifest.ts';
 import { openDocsPage, openDocsPageFromSource } from './docs-page.ts';
-import {
-  loadDocsArticle,
-  openDocsPageFromManifest,
-  parseStaticMdxManifest,
-} from './static-manifest.ts';
-
-vi.mock('node:fs/promises', { spy: true });
+import { loadDocsArticle } from './static-manifest.ts';
 
 const source = readFileSync(
   fileURLToPath(new URL('./fixtures/Button.mdx', import.meta.url)),
@@ -49,89 +40,45 @@ const entries = [
 
 const globals = { viewport: 'desktop' };
 
-describe('static MDX manifest', () => {
-  beforeEach(() => {
-    vol.reset();
-    vol.fromJSON({ '/proj/src/Button.mdx': source });
-    vi.mocked(mkdir).mockImplementation(memfs.fs.promises.mkdir as unknown as typeof mkdir);
-    vi.mocked(readFile).mockImplementation(
-      memfs.fs.promises.readFile as unknown as typeof readFile
-    );
-    vi.mocked(writeFile).mockImplementation(
-      memfs.fs.promises.writeFile as unknown as typeof writeFile
-    );
-  });
+function indexFrom(docsEntries: Array<{ id: string }>): StoryIndex {
+  return {
+    v: 5,
+    entries: Object.fromEntries(docsEntries.map((entry) => [entry.id, entry])),
+  } as StoryIndex;
+}
 
+describe('loadDocsArticle', () => {
   afterEach(() => {
     clearRegistry();
   });
 
-  it('reconstructs the development page model from the emitted asset', async () => {
-    const viaDev = await openDocsPage({
+  it('opens the same page model as a direct parse, through the MDX source service', async () => {
+    registerMdxSourceService({
+      read: async () => source,
+      getIndex: async () => indexFrom(entries),
+    });
+
+    const viaService = await loadDocsArticle({
+      file: 'src/Button.mdx',
+      entries,
+      globals,
+    });
+    const viaDirect = await openDocsPage({
       file: 'src/Button.mdx',
       entries,
       globals,
       readSource: async () => source,
     });
 
-    const assetPath = await emitStaticMdxDuringBuild(
-      {
-        configType: 'PRODUCTION',
-        outputDir: '/out',
-        presets: {
-          apply: async () => ({
-            getIndex: async () => ({
-              entries: Object.fromEntries(entries.map((entry) => [entry.id, entry])),
-            }),
-          }),
-        },
-      },
-      '/proj'
-    );
-    const emitted = parseStaticMdxManifest(
-      await readFile(`/out/${STATIC_MDX_MANIFEST_FILE}`, 'utf8')
-    );
-    const viaStatic = openDocsPageFromManifest(emitted, 'src/Button.mdx', globals);
-
-    expect(assetPath).toBe(`/out/${STATIC_MDX_MANIFEST_FILE}`);
-    expect(viaStatic.model).toEqual(viaDev.model);
-    expect(viaStatic.model.instances.map((instance) => instance.storyId)).toEqual([
+    expect(viaService.model).toEqual(viaDirect.model);
+    expect(viaService.model.instances.map((instance) => instance.storyId)).toEqual([
       'button--primary',
       'button--secondary',
     ]);
-    expect(viaStatic.model.instances.map((instance) => instance.focus)).toEqual([false, true]);
+    expect(viaService.model.instances.map((instance) => instance.focus)).toEqual([false, true]);
   });
 
-  it('loads development MDX through the open service and skips the static file', async () => {
-    const reads: string[] = [];
-    registerMdxSourceService({
-      read: async (importPath) => {
-        reads.push(importPath);
-        return source;
-      },
-    });
-
-    const viaDev = await loadDocsArticle({
-      file: 'src/Button.mdx',
-      entries,
-      globals,
-      production: false,
-      readManifest: async () => {
-        throw new Error('dev must not read the static manifest');
-      },
-    });
-    const skipped = await emitStaticMdxDuringBuild({
-      configType: 'DEVELOPMENT',
-      outputDir: '/out',
-    });
-
-    expect(reads).toEqual(['src/Button.mdx']);
-    expect(skipped).toBeUndefined();
-    expect(vol.toJSON()[`/out/${STATIC_MDX_MANIFEST_FILE}`]).toBeUndefined();
-    expect(viaDev.model.instances).toHaveLength(2);
-  });
-
-  it('reconstructs the page model when story index paths start with ./', async () => {
+  it('resolves stories from the full index when import paths start with ./', async () => {
     const docsFile = './src/Button.mdx';
     const indexed = [
       { type: 'docs', id: 'button--docs', importPath: docsFile },
@@ -150,6 +97,16 @@ describe('static MDX manifest', () => {
         args: { label: 'Bye' },
       },
     ];
+    registerMdxSourceService({
+      read: async () => source,
+      getIndex: async () => indexFrom(indexed),
+    });
+
+    const viaService = await loadDocsArticle({
+      file: docsFile,
+      entries: indexed,
+      globals,
+    });
     const direct = openDocsPageFromSource({
       file: docsFile,
       source,
@@ -157,27 +114,7 @@ describe('static MDX manifest', () => {
       globals,
     });
 
-    await emitStaticMdxDuringBuild(
-      {
-        configType: 'PRODUCTION',
-        outputDir: '/out',
-        presets: {
-          apply: async () => ({
-            getIndex: async () => ({
-              entries: Object.fromEntries(indexed.map((entry) => [entry.id, entry])),
-            }),
-          }),
-        },
-      },
-      '/proj'
-    );
-    const viaStatic = openDocsPageFromManifest(
-      parseStaticMdxManifest(await readFile(`/out/${STATIC_MDX_MANIFEST_FILE}`, 'utf8')),
-      docsFile,
-      globals
-    );
-
-    expect(viaStatic.model).toEqual(direct.model);
+    expect(viaService.model).toEqual(direct.model);
     expect(direct.model.instances.map((instance) => instance.storyId)).toEqual([
       'button--primary',
       'button--secondary',

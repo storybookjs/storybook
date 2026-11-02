@@ -36,7 +36,8 @@ import {
   type IframePlayQueue,
 } from '../runtime/iframe-plays.ts';
 import { hasComponentBlocks, loadComponentBlocks } from '../runtime/component-blocks.ts';
-import { fetchStaticMdxManifest, loadDocsArticle } from '../runtime/static-manifest.ts';
+import { subscribeMdxSource } from '../runtime/mdx-source.ts';
+import { loadDocsArticle } from '../runtime/static-manifest.ts';
 import { createIframeHost, type IframeHost } from '../runtime/iframe-session.ts';
 import {
   clearInstanceActions,
@@ -60,11 +61,7 @@ import {
   withPlayPanelPhase,
   type PlayPanelRegistry,
 } from '../runtime/play-panel.ts';
-import {
-  MDX_SOURCE_CHANGED,
-  type MdxSourceChange,
-  type MdxSourceError,
-} from '../runtime/source-transport.ts';
+import { type MdxSourceChange, type MdxSourceError } from '../runtime/source-transport.ts';
 import { ManagerDocsView } from './ManagerDocsView.tsx';
 
 const DocsColumn = styled.div(DOCS_ARTICLE_ALIGN);
@@ -388,9 +385,9 @@ export function ManagerDocsCanvas({
       }
       apply(acceptMdxSourceChange(liveRef.current, change, build));
     };
-    if (!productionBuild) {
-      channel.on(MDX_SOURCE_CHANGED, onSourceChange);
-    }
+    const unsubscribeSource = productionBuild
+      ? undefined
+      : subscribeMdxSource(mdxFile, onSourceChange);
 
     const root = document.getElementById('storybook-preview-wrapper');
     const observer =
@@ -425,8 +422,6 @@ export function ManagerDocsCanvas({
       file: mdxFile,
       entries: indexedEntries(indexRef.current),
       globals: api.getGlobals() ?? {},
-      production: productionBuild,
-      readManifest: fetchStaticMdxManifest,
     })
       .then((opened) => {
         if (cancelled) {
@@ -464,7 +459,7 @@ export function ManagerDocsCanvas({
       cancelled = true;
       observer?.disconnect();
       observerRef.current = null;
-      channel.off(MDX_SOURCE_CHANGED, onSourceChange);
+      unsubscribeSource?.();
       for (const stop of listeners.values()) {
         stop();
       }

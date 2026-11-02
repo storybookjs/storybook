@@ -2,7 +2,6 @@ import { dirname, join, normalize } from 'pathe';
 
 import { ManagerDocsError, ManagerDocsParseError } from '../errors.ts';
 import { parseManagerDocs } from '../parser/parse-mdx.ts';
-import type { DocsPage } from '../parser/types.ts';
 import { createChannelState, registerInstance, type ChannelState } from './channel-router.ts';
 import { planViewportPool, type PoolAssignment } from './iframe-pool.ts';
 import {
@@ -168,23 +167,6 @@ export function acceptMdxSourceChange(
   }
   const update = reviseDocsPage(live, change.source, build);
   return { ...update, live: { ...update.live, revision: change.revision } };
-}
-
-export function staticStoryBindings(
-  docsFile: string,
-  page: DocsPage,
-  entries: IndexedEntry[]
-): IndexedEntry[] {
-  const sources = new Set(
-    page.imports.map((statement) => storyPathKey(resolveSpecifier(docsFile, statement.source)))
-  );
-  return entries.filter(
-    (entry) =>
-      entry.type === 'story' &&
-      entry.importPath !== undefined &&
-      entry.exportName !== undefined &&
-      sources.has(storyPathKey(entry.importPath))
-  );
 }
 
 export function resolveIndexedStory(

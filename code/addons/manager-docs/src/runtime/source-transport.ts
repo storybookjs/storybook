@@ -1,7 +1,5 @@
 import type { ManagerDocsParseError } from '../errors.ts';
 
-export const MDX_SOURCE_CHANGED = 'experimental-manager-docs/mdx-source-changed';
-
 export type MdxSourceError = {
   file: string;
   line: number;

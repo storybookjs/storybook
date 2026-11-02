@@ -1,29 +1,31 @@
 import { readFile } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
-import { registerMdxSourceService } from './mdx-source-service/server.ts';
+import { applyMdxSourceChange, registerMdxSourceService } from './mdx-source-service/server.ts';
 import { projectMdxReader } from './server/read-mdx.ts';
 import {
   BLOCK_BUILDER_ENV,
   componentBlocksLauncher,
   emitStaticComponentBlocks,
 } from './server/component-blocks.ts';
-import {
-  emitStaticMdxDuringBuild,
-  type StaticBuildOptions,
-} from './server/emit-static-manifest.ts';
 import { addMdxSourceRule, managerDocsMdxPlugin } from './server/mdx-as-data.ts';
 import { docsMdxFiles, watchMdxSources } from './server/watch-mdx.ts';
 import type { IndexedEntry } from './runtime/docs-page.ts';
-import { MDX_SOURCE_CHANGED } from './runtime/source-transport.ts';
 
 export const experimentalManagerDocs = true;
 
-export const services = async (): Promise<void> => {
-  registerMdxSourceService({ read: createProjectReader() });
+export const services = async (_value: void, options: Options): Promise<void> => {
+  registerMdxSourceService({
+    read: createProjectReader(),
+    getIndex: () =>
+      options.presets
+        .apply<StoryIndexGenerator>('storyIndexGenerator')
+        .then((generator) => generator.getIndex()),
+  });
 };
 
 type ServerChannelOptions = {
@@ -48,7 +50,11 @@ export async function experimental_serverChannel(channel: Channel, options?: Ser
     const watcher = watchMdxSources({
       projectRoot,
       read,
-      publish: (change) => channel.emit(MDX_SOURCE_CHANGED, change),
+      publish: (change) => {
+        void applyMdxSourceChange(change).catch((error: unknown) => {
+          logger.warn(`Manager docs cannot publish MDX change: ${String(error)}`);
+        });
+      },
     });
     void watchIndexedDocs(options.presets, watcher.watch).catch((error: unknown) => {
       logger.warn(`Manager docs cannot watch MDX files: ${String(error)}`);
@@ -80,22 +86,16 @@ type VitePreviewConfig = {
   plugins?: unknown[];
 };
 
-type PreviewBuilderOptions = StaticBuildOptions & Partial<Omit<Options, 'presets'>>;
-
-export async function viteFinal<Config>(
-  config: Config,
-  options: PreviewBuilderOptions
-): Promise<Config> {
+export async function viteFinal<Config>(config: Config, options: Options): Promise<Config> {
   if (!process.env[BLOCK_BUILDER_ENV]) {
-    await emitStaticMdxDuringBuild(options);
-    await emitStaticComponentBlocks(options as Options);
+    await emitStaticComponentBlocks(options);
   }
   const viteConfig = config as Config & VitePreviewConfig;
   const launchesBlocks =
     options.configType === 'DEVELOPMENT' && !!options.channel && !process.env[BLOCK_BUILDER_ENV];
   viteConfig.plugins = [
     managerDocsMdxPlugin(),
-    ...(launchesBlocks ? [componentBlocksLauncher(options as Options)] : []),
+    ...(launchesBlocks ? [componentBlocksLauncher(options)] : []),
     ...(viteConfig.plugins ?? []),
   ];
   return config;
@@ -107,10 +107,6 @@ type WebpackPreviewConfig = {
   };
 };
 
-export async function webpackFinal<Config>(
-  config: Config,
-  options: StaticBuildOptions
-): Promise<Config> {
-  await emitStaticMdxDuringBuild(options);
+export async function webpackFinal<Config>(config: Config): Promise<Config> {
   return addMdxSourceRule(config as Config & WebpackPreviewConfig);
 }

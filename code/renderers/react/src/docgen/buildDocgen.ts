@@ -1,7 +1,10 @@
+import { convert } from 'storybook/internal/docs-tools';
+import type { DocgenInfo } from 'storybook/internal/docs-tools';
 import type {
   DocgenPayload,
   DocgenProviderInput,
   DocgenSubcomponent,
+  SBType,
   StrictArgTypes,
 } from 'storybook/internal/types';
 
@@ -46,16 +49,20 @@ function isReactAttribute(prop: ComponentDoc['props'][string]) {
 }
 
 /**
- * RCM names arrays as TypeScript prints them (`string[]`). The args table conversion only reads
- * them as arrays in the PropTypes `arrayOf` shape.
+ * RCM names arrays as TypeScript prints them (`string[]`), which the shared conversion reads as
+ * `other`. Builds the `array` type from the element type instead, like the Vue 3 adapter does.
  */
-function toArgsTableType(
-  type: PropItemType
-): PropItemType | { name: 'arrayOf'; raw: string; value: unknown } {
+function toArrayType(type: PropItemType): SBType | undefined {
   if (type.elements?.length !== 1) {
-    return type;
+    return undefined;
   }
-  return { name: 'arrayOf', raw: type.name, value: toArgsTableType(type.elements[0]) };
+  const [element] = type.elements;
+  return {
+    name: 'array',
+    raw: type.name,
+    value: toArrayType(element) ??
+      convert({ type: element } as DocgenInfo) ?? { name: 'other', value: element.name },
+  };
 }
 
 /** Converts one RCM `ComponentDoc` into the `StrictArgTypes` shape consumed by args tables. */
@@ -73,20 +80,17 @@ export function extractArgTypesFromComponentMeta(
       .filter(([, prop]) => !isReactAttribute(prop))
       .map(([name, prop]) => [
         name,
-        {
-          ...prop,
-          type: toArgsTableType(prop.type),
-          ...(prop.defaultValue ? { defaultValue: { ...prop.defaultValue, computed: false } } : {}),
-        },
+        prop.defaultValue
+          ? { ...prop, defaultValue: { ...prop.defaultValue, computed: false } }
+          : prop,
       ])
   );
   const argTypes = extractArgTypes({ __docgenInfo: { ...componentMeta, props } }) ?? undefined;
-  // `arrayOf` rebuilds the summary from the element type, which drops `readonly` and the
-  // parentheses around union elements, so show array types as TypeScript printed them.
   for (const [name, prop] of Object.entries(componentMeta.props)) {
-    const table = argTypes?.[name]?.table;
-    if (prop.type.elements && table?.type) {
-      table.type = { ...table.type, summary: prop.type.name };
+    const arrayType = toArrayType(prop.type);
+    const argType = argTypes?.[name];
+    if (arrayType && argType) {
+      argType.type = { required: prop.required, ...arrayType };
     }
   }
   return argTypes;

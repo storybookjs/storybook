@@ -188,6 +188,16 @@ describe('buildDocgenPayload', () => {
           defaultValue: null,
           type: { name: '(string | number)[]', elements: [{ name: 'string | number' }] },
         },
+        matrix: {
+          name: 'matrix',
+          required: true,
+          description: '',
+          defaultValue: null,
+          type: {
+            name: 'number[][]',
+            elements: [{ name: 'number[]', elements: [{ name: 'number' }] }],
+          },
+        },
       },
     });
 
@@ -198,6 +208,12 @@ describe('buildDocgenPayload', () => {
       required: true,
     });
     expect(argTypes?.tags.type).toMatchObject({ name: 'array', required: false });
+    expect(argTypes?.matrix.type).toEqual({
+      name: 'array',
+      raw: 'number[][]',
+      value: { name: 'array', raw: 'number[]', value: { name: 'number' } },
+      required: true,
+    });
     expect(argTypes?.items.table?.type).toEqual({ summary: 'string[]' });
     expect(argTypes?.tags.table?.type).toEqual({ summary: 'readonly string[]' });
     expect(argTypes?.values.table?.type).toEqual({ summary: '(string | number)[]' });

@@ -37,7 +37,12 @@ import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templ
 import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService.ts';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task.ts';
 import { executeCLIStep, steps } from '../utils/cli-step.ts';
-import { CODE_DIRECTORY, REPROS_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants.ts';
+import {
+  CODE_DIRECTORY,
+  REPROS_DIRECTORY,
+  ROOT_DIRECTORY,
+  SCRIPTS_DIRECTORY,
+} from '../utils/constants.ts';
 import { exec } from '../utils/exec.ts';
 import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir.ts';
 import { addPreviewAnnotations, readConfig } from '../utils/main-js.ts';
@@ -1170,64 +1175,7 @@ async function getConfigFile(names: string[], cwd: string) {
 
 // `@storybook-astro/renderer` ships no CLI template stories, so `storybook init` adds none.
 async function prepareAstroSandbox(cwd: string) {
-  const componentsDir = join(cwd, 'src', 'components');
-  const storiesDir = join(cwd, 'src', 'stories');
-  await mkdir(componentsDir, { recursive: true });
-  await mkdir(storiesDir, { recursive: true });
-
-  await writeFile(
-    join(componentsDir, 'Button.astro'),
-    dedent`
-      ---
-      interface Props {
-        label: string;
-        primary?: boolean;
-      }
-
-      const { label, primary = false } = Astro.props;
-      ---
-
-      <button class:list={['button', { primary }]}>{label}</button>
-
-      <style>
-        .button {
-          border: 1px solid #333;
-          border-radius: 3em;
-          padding: 0.75em 1.5em;
-        }
-        .primary {
-          background: #1ea7fd;
-          border-color: #1ea7fd;
-          color: white;
-        }
-      </style>
-    `
-  );
-
-  await writeFile(
-    join(storiesDir, 'Button.stories.ts'),
-    dedent`
-      import Button from '../components/Button.astro';
-
-      export default {
-        title: 'Example/Button',
-        component: Button,
-        tags: ['autodocs'],
-        argTypes: {
-          label: { control: 'text' },
-          primary: { control: 'boolean' },
-        },
-      };
-
-      export const Primary = {
-        args: { label: 'Button', primary: true },
-      };
-
-      export const Secondary = {
-        args: { label: 'Button' },
-      };
-    `
-  );
+  await cp(join(SCRIPTS_DIRECTORY, 'sandbox', 'fixtures', 'astro-vite'), cwd, { recursive: true });
 }
 
 async function prepareSvelteSandbox(cwd: string) {

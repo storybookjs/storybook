@@ -5,6 +5,7 @@ import {
   getAutomockCode,
   getRealPath,
 } from 'storybook/internal/mocking-utils';
+import type { MockCall } from 'storybook/internal/mocking-utils';
 import { logger } from 'storybook/internal/node-logger';
 import {
   AngularMissingStylePreprocessorError,
@@ -558,12 +559,7 @@ function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
           findMockRedirect
         );
         redirects = calls
-          .filter(
-            (
-              call
-            ): call is { absolutePath: string; redirectPath: string; spy: boolean; path: string } =>
-              !!call.redirectPath
-          )
+          .filter((call): call is MockCall & { redirectPath: string } => !!call.redirectPath)
           .map((call) => ({
             absolutePath: call.absolutePath,
             redirectPath: call.redirectPath,

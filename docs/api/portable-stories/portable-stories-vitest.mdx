@@ -23,7 +23,7 @@ Portable stories in Vitest are currently only supported in [React](?renderer=rea
 
   <Callout variant="info">
 
-This feature is not supported with the Svelte CSF. To opt-in to this feature with Svelte, you must use Storybook's [Component Story Format](../csf/index.mdx).
+This feature is not supported with the Svelte CSF. To opt-in to this feature with Svelte, you must use Storybook's [Component Story Format](../../writing-stories/csf/index.mdx).
 
 </Callout>
 
@@ -188,7 +188,11 @@ These are the configurations needed in the setup file:
 
 <CodeSnippets path="portable-stories-vitest-set-project-annotations.md" />
 
-{/* TODO: Create issue for interest in non-Testing Library render option, with recipe, and mention here (Jest, too) */}
+<Callout variant="warning">
+
+Note that the CSF 4 setup only applies if you use CSF 4 for **all** your tested stories. If you use a mix of CSF 1, 2, or 3 and CSF 4, you must maintain and reference a setup file for pre-CSF 4 stories and another for CSF 4 stories.
+
+</Callout>
 
 Sometimes a story can require an addon's [decorator](../../writing-stories/decorators.mdx) or [loader](../../writing-stories/loaders.mdx) to render properly. For example, an addon can apply a decorator that wraps your story in the necessary router context. In this case, you must include that addon's `preview` export in the project annotations set. See `addonAnnotations` in the example above.
 

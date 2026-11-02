@@ -10968,6 +10968,7 @@ __metadata:
     json5: "npm:^2.2.3"
     junit-xml: "npm:^1.2.0"
     knip: "npm:^6.38.0"
+    memfs: "npm:^4.68.2"
     memoizerific: "npm:^1.11.3"
     minimatch: "npm:^10.0.1"
     node-gyp: "npm:^12.1.0"

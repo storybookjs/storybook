@@ -1,5 +1,8 @@
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 3"
-export default {
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 4"
+// Replace your-framework with nextjs or nextjs-vite
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
   // ...
   staticDirs: [
     {
@@ -7,10 +10,26 @@ export default {
       to: 'src/components/fonts',
     },
   ],
-};
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 4"
+// Replace your-framework with nextjs or nextjs-vite
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
+  // ...
+  staticDirs: [
+    {
+      from: '../src/components/fonts',
+      to: 'src/components/fonts',
+    },
+  ],
+});
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // Replace your-framework with nextjs or nextjs-vite
 import type { StorybookConfig } from '@storybook/your-framework';
 
@@ -27,11 +46,9 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-// Replace your-framework with nextjs or nextjs-vite
-import { defineMain } from '@storybook/your-framework/node';
-
-export default defineMain({
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+export default {
   // ...
   staticDirs: [
     {
@@ -39,22 +56,5 @@ export default defineMain({
       to: 'src/components/fonts',
     },
   ],
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-// Replace your-framework with nextjs or nextjs-vite
-import { defineMain } from '@storybook/your-framework/node';
-
-export default defineMain({
-  // ...
-  staticDirs: [
-    {
-      from: '../src/components/fonts',
-      to: 'src/components/fonts',
-    },
-  ],
-});
+};
 ```

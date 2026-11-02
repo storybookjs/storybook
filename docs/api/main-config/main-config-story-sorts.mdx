@@ -68,8 +68,11 @@ export const storySorts = (existing = []) => [...existing, { method: 'alphabetic
 Storybook applies the main configuration after all addons, so a plain `storySorts` array in main comes after the sorters that addons add.
 To give your own sorters precedence over them, write `storySorts` as a function and put yours first:
 
-```js title=".storybook/main.js"
-export default {
+```js title=".storybook/main.ts"
+// Replace your-framework with the framework you are using (e.g., nextjs-vite, sveltekit, etc.)
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
   storySorts: (existing = []) => [{ order: ['Intro'] }, ...existing],
-};
+});
 ```

@@ -461,6 +461,8 @@ export const baseTemplates = {
     },
     // TODO: remove `inDevelopment` once the nightly sandbox generation has published this template.
     inDevelopment: true,
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration', 'chromatic'],
+  },
   'tanstack-react-router/default-ts': {
     name: 'TanStack React Router Latest (Vite | TypeScript)',
     script: 'npx @tanstack/cli@latest create {{beforeDir}} --no-install --tailwind --router-only',

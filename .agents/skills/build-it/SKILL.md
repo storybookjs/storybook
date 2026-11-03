@@ -27,13 +27,13 @@ Each step names the skill that does the work. Read that skill when you reach the
 6. **Shape the history.** Rebuild the commits as the [`pr` skill](../pr/SKILL.md) "Commit history" section says.
 
 7. **Open the draft PR, and get two reviews in parallel.**
-   - Open the PR with [`open-pr`](../open-pr/SKILL.md). Add no `ci:*` label; see [Pull requests](../../guidelines/pull-requests.md).
+   - Open the PR with [`open-pr`](../open-pr/SKILL.md), without its questions: choose the type and QA labels yourself with the heuristics of the [`pr` skill](../pr/SKILL.md), and skip the canary. Add no `ci:*` label; see [Pull requests](../../guidelines/pull-requests.md).
    - Ask Greptile for a review, as [Pull requests](../../guidelines/pull-requests.md) says.
    - Run [`second-opinion`](../second-opinion/SKILL.md) on the PR.
 
 8. **Act on the reviews.** Handle each bot thread as the [`handle-pr-comments`](../handle-pr-comments/SKILL.md) "Bot comments" section says, and fix the confirmed findings of the second opinion. Push, and wait for Greptile to review the new head. Repeat until the bots are quiet. Then list the unresolved review threads of every open PR in the stack, not only this one: the bots review again on each push. Done when no bot thread is unresolved.
 
-9. **Hand over.** Tell the user the PR is ready for review. Give the PR link and, per reviewer (code review, hunt, real-world QA, Greptile, second opinion), what it found, what you fixed, and what you dropped and why. Present each held design-level decision with a recommendation.
+9. **Hand over.** Tell the user the PR is ready for review. Give the PR link, the labels you chose, and, per reviewer (code review, hunt, real-world QA, Greptile, second opinion), what it found, what you fixed, and what you dropped and why. Present each held design-level decision with a recommendation.
 
 ## After the hand-over
 

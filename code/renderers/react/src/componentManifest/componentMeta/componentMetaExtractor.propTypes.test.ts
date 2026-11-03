@@ -255,4 +255,38 @@ describe('PropTypes fallback for JS components', () => {
     const argTypes = extractArgTypes({ __docgenInfo: meta });
     expect(argTypes?.flag?.type).toMatchObject({ name: 'enum', value: [true, false] });
   });
+
+  it('decodes escaped string choices through argTypes conversion', async () => {
+    const entry = await extractFromStoryWithConfig(
+      {
+        'test/NewlineButton.jsx': dedent`
+          import React from 'react';
+          import PropTypes from 'prop-types';
+
+          export const Button = ({ label }) => <button>{label}</button>;
+
+          Button.propTypes = {
+            label: PropTypes.oneOf(['a\\nb', 'static']),
+          };
+        `,
+        'test/NewlineButton.stories.jsx': dedent`
+          import { Button } from './NewlineButton';
+
+          export default { component: Button };
+        `,
+      },
+      'test/NewlineButton.stories.jsx',
+      JS_TSCONFIG
+    );
+
+    const meta = entry.component?.reactComponentMeta;
+    if (!meta) {
+      throw new Error('expected component meta for NewlineButton');
+    }
+
+    // The choice must reach Controls as the value the component declared — a real
+    // newline — not the two-character backslash-n of the serialized literal.
+    const argTypes = extractArgTypes({ __docgenInfo: meta });
+    expect(argTypes?.label?.type).toMatchObject({ name: 'enum', value: ['a\nb', 'static'] });
+  });
 });

@@ -638,6 +638,7 @@ describe('storybook type system', () => {
           oneOfMiscellaneous: PropTypes.oneOf([false, true, undefined]),
           oneOfStringNumber: PropTypes.oneOf(['1', '2', '3']),
           oneOfString: PropTypes.oneOf(['static', 'timed']),
+          oneOfStringEscape: PropTypes.oneOf(['a\\nb', 'static']),
         };
         "
       `);
@@ -672,6 +673,13 @@ describe('storybook type system', () => {
             "value": [
               "static",
               "timed"
+            ]
+          },
+          "oneOfStringEscape": {
+            "name": "enum",
+            "value": [
+              "a\\nb",
+              "static"
             ]
           }
         }

@@ -8,4 +8,5 @@ Component.propTypes = {
   oneOfMiscellaneous: PropTypes.oneOf([false, true, undefined]),
   oneOfStringNumber: PropTypes.oneOf(['1', '2', '3']),
   oneOfString: PropTypes.oneOf(['static', 'timed']),
+  oneOfStringEscape: PropTypes.oneOf(['a\nb', 'static']),
 };

@@ -20,11 +20,9 @@ Some skills aren't available for every framework. See [supported frameworks](#su
 
 </Callout>
 
-## Skills
+## Install the skills
 
 Skills are short instruction files in your repository. Each one tells your agent when to use it and gets its full instructions from your installed Storybook. Because skills live in your repository, every person and agent working on the project gets the same version, and that version matches your Storybook.
-
-### Install the skills
 
 When you run [`storybook init`](../api/cli-options.mdx#init), it asks whether to install the skills. The default answer is yes.
 
@@ -36,13 +34,20 @@ To install the skills at any other time, run this command from the root of your 
 
 Every install method adds the same files:
 
-- The skills: `storybook-init`, `storybook-setup`, `storybook-upgrade`, `ui-workflow`, and `component-docs`. They're installed for Claude Code (`.claude/skills/`) and for other agents (`.agents/skills/`).
+- The skills: `storybook-init`, [`storybook-setup`](./skills/setup.mdx), `storybook-upgrade`, [`ui-workflow`](./skills/ui-workflow.mdx), and [`component-docs`](./skills/component-docs.mdx). They're installed for Claude Code (`.claude/skills/`) and for other agents (`.agents/skills/`).
 - `skills-lock.json`, which records the installed version.
-- A Storybook section in `AGENTS.md`. See [Tell your agent when to use the skills](#tell-your-agent-when-to-use-the-skills).
+- A Storybook section in `AGENTS.md` (see below)
 
 Commit these files so everyone on your team gets them. When you run [`storybook upgrade`](../releases/upgrading.mdx), Storybook updates the skills to match the new version.
 
-### Tell your agent when to use the skills
+<details>
+<summary>Plugins</summary>
+
+Storybook also has plugins for [Claude Code](https://github.com/storybookjs/storybook/tree/next/code/lib/claude-plugin#readme) and [Codex](https://github.com/storybookjs/storybook/tree/next/code/lib/codex-plugin#readme). A plugin installs the same skills once for every project on your machine. We recommend the skills in your repository instead, because they always match the Storybook version of each project, and your whole team gets them.
+
+</details>
+
+## Tell your agent when to use the skills
 
 Agents don't use the Storybook skills on their own. The section that Storybook adds to `AGENTS.md` tells your agent to use `ui-workflow` for UI changes and `component-docs` for questions about components:
 
@@ -64,24 +69,24 @@ Storybook replaces the text between the markers when you upgrade. To customize t
 
 If your project has a `CLAUDE.md` that doesn't import `AGENTS.md`, Storybook adds the same section to `CLAUDE.md`, so Claude Code sees it too.
 
-### Upgrade from the MCP server
+## MCP server
 
-If you used the Storybook MCP server in Storybook 10, the `skills` automigration installs the skills but keeps your MCP setup. Your agent then gets two sets of instructions for the same work. Choose one:
+While we recommend using the skills for most agents, Storybook also provides an MCP server as an alternative way for your agent to interact with your Storybook instance.
+
+**Upgrade to skills**
+
+If you used the [MCP server](./reference/mcp-server.mdx) in Storybook 10, the `skills` automigration installs the skills but keeps your MCP setup. Your agent then gets two sets of instructions for the same work. Choose one:
 
 - **Use skills (recommended):** remove `@storybook/addon-mcp` with [`storybook remove`](../api/cli-options.mdx#remove), and remove the Storybook MCP server from your agent's configuration. Also remove any instructions about the MCP server from `AGENTS.md`.
 - **Keep the MCP server:** remove the installed skills and the Storybook section from `AGENTS.md`.
 
-### Plugins
+**Alternative for agents that can't run shell commands**
 
-Storybook also has plugins for [Claude Code](https://github.com/storybookjs/storybook/tree/next/code/lib/claude-plugin#readme) and [Codex](https://github.com/storybookjs/storybook/tree/next/code/lib/codex-plugin#readme). A plugin installs the same skills once for every project on your machine. We recommend the skills in your repository instead, because they always match the Storybook version of each project, and your whole team gets them.
+If your agent can't run shell commands, [connect it to the MCP server instead](./reference/mcp-server.mdx). The MCP server gives your agent the same capabilities as the skills, but it needs a running Storybook dev server.
 
-## MCP server
+## Connect to a published Storybook
 
-If your agent can't run shell commands, connect it to the Storybook MCP server instead. The MCP server gives your agent the same capabilities as the skills, but it needs a running Storybook dev server. See [MCP server](./reference/mcp-server.mdx) to set it up.
-
-## Use a published Storybook
-
-To give your agent access to component docs from a Storybook that doesn't run on your machine, such as your team's design system, see [Use a published Storybook](./published-storybook.mdx).
+You can also connect your agent to a published Storybook instead of running it locally. To give your agent access to component docs from a Storybook that doesn't run on your machine, such as your team's design system, see [Use a published Storybook](./published-storybook.mdx).
 
 </If>
 {/* End supported renderers */}

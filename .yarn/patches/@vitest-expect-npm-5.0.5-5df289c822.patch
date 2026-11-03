@@ -1,5 +1,5 @@
 diff --git a/dist/index.js b/dist/index.js
-index dc5c106ee3a3d29452f2b9079e088f45df59a64b..f2550885e8acee10a856ad4e6a018cf800d6eec3 100644
+index 30caa9b8a5dcfb2b0e2de843f50a363db21b7ee6..77527881ce7bb312471cf78f145e59e3980da0a7 100644
 --- a/dist/index.js
 +++ b/dist/index.js
 @@ -59,7 +59,9 @@ const ChaiStyleAssertions = (chai, utils) => {
@@ -13,7 +13,7 @@ index dc5c106ee3a3d29452f2b9079e088f45df59a64b..f2550885e8acee10a856ad4e6a018cf8
  const GLOBAL_EXPECT = Symbol.for("expect-global");
  const ASYMMETRIC_MATCHERS_OBJECT = Symbol.for("asymmetric-matchers-object");
  
-@@ -765,11 +767,11 @@ function isStandardSchema(obj) {
+@@ -743,11 +745,11 @@ function isStandardSchema(obj) {
  	return !!obj && (typeof obj === "object" || typeof obj === "function") && obj["~standard"] && typeof obj["~standard"].validate === "function";
  }
  
@@ -28,7 +28,7 @@ index dc5c106ee3a3d29452f2b9079e088f45df59a64b..f2550885e8acee10a856ad4e6a018cf8
  	// `configurable` so that vm pools can strip the accessors from a disposed
  	// context: the getters capture the expect state, which would otherwise keep
  	// the whole test-file world reachable from the leaked context shell
-@@ -777,14 +779,21 @@ if (!Object.hasOwn(globalThis, MATCHERS_OBJECT)) {
+@@ -755,14 +757,21 @@ if (!Object.hasOwn(globalThis, MATCHERS_OBJECT)) {
  		configurable: true,
  		get: () => globalState
  	});

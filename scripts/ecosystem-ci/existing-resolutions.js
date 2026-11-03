@@ -22,7 +22,7 @@ export const EXISTING_RESOLUTIONS = new Set([
   '@vercel/agent-eval-playground/react',
   '@vercel/agent-eval-playground/react-dom',
   '@vercel/agent-eval@npm:1.2.0',
-  '@vitest/expect@npm:5.1.0',
+  '@vitest/expect@npm:5.0.5',
   'aria-query@5.3.0',
   'buffer-equal-constant-time@npm:1.0.1',
   'caniuse-lite',

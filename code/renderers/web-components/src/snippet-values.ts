@@ -1,4 +1,4 @@
-import { findTagEnd, parseHtml } from './docgen/story-docs/html-tree.ts';
+import { findTagEnd, parseHtml } from './html-parse.ts';
 
 // How a story-docs snippet prints one arg value in html, for the story-docs build that prints the
 // static snippet and for the preview filler that prints a value a control changed, so both print a
@@ -57,6 +57,16 @@ export const cssDeclarations = (
     .map(({ name, value }) => `${name}: ${String(value)};`);
   return declarations.length === 0 ? undefined : declarations.join(' ');
 };
+
+/** Whether lit's `?name=${value}` sets the attribute. */
+export const isTruthy = (value: unknown): boolean => Boolean(value);
+
+/** Whether lit's `ifDefined(value)` sets the attribute. */
+export const isDefined = (value: unknown): boolean => value !== null && value !== undefined;
+
+/** The `<style>` of part and state rules. */
+export const styleElement = (rules: { selector: string; declarations: string }[]): string =>
+  `<style>${styleText(rules)}</style>`;
 
 /** The text of a `<style>` of part and state rules. */
 export const styleText = (rules: { selector: string; declarations: string }[]): string =>

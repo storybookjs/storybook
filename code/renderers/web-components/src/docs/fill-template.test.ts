@@ -1,20 +1,21 @@
-import { describe, expect, it } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { UnprintableArgError } from 'storybook/internal/docs-tools';
+import type { IndexEntry } from 'storybook/internal/types';
 
-import {
-  boundText,
-  childText,
-  cssDeclarations,
-  escapeAttribute,
-  escapeText,
-  inlineText,
-  printAttribute,
-  quotedAttribute,
-  slotText,
-  slottedHtml,
-  styleText,
-} from '../snippet-values.ts';
+import type { WebComponentsDocgenPayload } from '../docgen/component-docgen/build-docgen.ts';
+import { mapArgTypes } from '../docgen/component-docgen/arg-types/map-arg-types.ts';
+import type {
+  ManifestClassField,
+  ManifestDeclaration,
+} from '../docgen/component-docgen/manifest/types.ts';
+import { buildStoryDocsPayload } from '../docgen/story-docs/build-story-docs.ts';
+
+import { childText, slotText } from '../snippet-values.ts';
 import { fillTemplate } from './fill-template.ts';
 
 describe('fillTemplate', () => {
@@ -151,38 +152,146 @@ describe('a changed arg', () => {
   ];
   const unprintable: unknown[] = [() => {}, Symbol('s'), { ['_$litType$']: 1, strings: [] }];
 
-  // What the shared printers print for each kind of hole, as the static snippet prints a value
-  // there.
-  const shared: Record<string, (value: unknown) => string> = {
-    '⟦attr label v⟧': (value) => printAttribute('label', value) ?? '',
-    '⟦attr label v field⟧': (value) => printAttribute('label', value, true) ?? '',
-    '⟦attr label v bind⟧': (value) => quotedAttribute('label', boundText(value)),
-    '⟦attr label v defined⟧': (value) =>
-      value === null || value === undefined ? '' : quotedAttribute('label', boundText(value)),
-    '⟦attr style - css --accent=v⟧': (value) => {
-      const style = cssDeclarations([{ name: '--accent', value }]);
-      return style === undefined ? '' : quotedAttribute('style', style);
+  const holes = [
+    '⟦attr label v⟧',
+    '⟦attr label v field⟧',
+    '⟦attr label v bind⟧',
+    '⟦attr label v defined⟧',
+    '⟦attr style - css --accent=v⟧',
+    '⟦bool disabled v⟧',
+    '⟦quoted v⟧',
+    '⟦text v ^ $⟧',
+    '⟦html v⟧',
+    '⟦slot actions v⟧',
+    '⟦style x-el::part(p)=v⟧',
+  ];
+
+  // Each place a story prints an arg in, as the arg `x`, and the values whose static snippet next
+  // prints there without laying the value out anew.
+  const places: { name: string; story: string; values: (value: unknown) => boolean }[] = [
+    { name: 'an attribute', story: '', values: () => true },
+    { name: 'a css custom property', story: '', values: () => true },
+    {
+      name: 'a lit binding',
+      story: 'html`<test-element label=${args.x}></test-element>`',
+      values: () => true,
     },
-    '⟦bool disabled v⟧': (value) => (value ? 'disabled' : ''),
-    '⟦quoted v⟧': (value) => escapeAttribute(boundText(value)),
-    '⟦text v ^ $⟧': (value) => escapeText(inlineText(childText(value), true, true)),
-    '⟦html v⟧': (value) => childText(value),
-    '⟦slot actions v⟧': (value) => slottedHtml('actions', slotText(value)),
-    '⟦style x-el::part(p)=v⟧': (value) =>
-      value === undefined
-        ? ''
-        : `<style>${styleText([{ selector: 'x-el::part(p)', declarations: String(value) }])}</style>\n`,
+    {
+      name: 'a lit ifDefined binding',
+      story: 'html`<test-element label=${ifDefined(args.x)}></test-element>`',
+      values: () => true,
+    },
+    {
+      name: 'a lit boolean binding',
+      story: 'html`<test-element ?disabled=${args.x}></test-element>`',
+      values: () => true,
+    },
+    {
+      name: 'a quoted lit value',
+      story: 'html`<test-element title="a ${args.x}"></test-element>`',
+      values: () => true,
+    },
+    {
+      name: 'lit text',
+      story: 'html`<test-element>${args.x}</test-element>`',
+      values: (value) => childText(value).trim() !== '',
+    },
+    {
+      name: 'a named slot',
+      story: '',
+      // An empty slot changes the element's layout, which a template keeps from the story's args.
+      values: (value) =>
+        slotText(value) !== '' &&
+        (/^<(\w+)>[^<]*<\/\1>$/.test(slotText(value)) || !/[<\s]/.test(slotText(value))),
+    },
+  ];
+  const argOf: Record<string, string> = {
+    'an attribute': 'label',
+    'a css custom property': '--accent',
+    'a named slot': 'actions-slot',
   };
 
-  it.each(Object.keys(shared))('prints in %s what the shared printer prints', (hole) => {
-    for (const value of values) {
-      expect(fillTemplate(hole, { v: value }), String(value)).toBe(shared[hole]!(value));
+  const dirs: string[] = [];
+  afterEach(() => {
+    for (const dir of dirs.splice(0)) {
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  it.each(Object.keys(shared))('cannot print a function or lit value in %s', (hole) => {
+  // The static snippet and the template of a story whose own arg is `value`, from the build.
+  const build = async (place: (typeof places)[number], value: unknown) => {
+    const arg = argOf[place.name] ?? 'x';
+    const dir = mkdtempSync(join(tmpdir(), 'wc-fill-'));
+    dirs.push(dir);
+    const storyPath = join(dir, 'input.stories.ts');
+    const literal = value === undefined ? 'undefined' : JSON.stringify(value);
+    writeFileSync(
+      storyPath,
+      [
+        "import { html } from 'lit';",
+        "import { ifDefined } from 'lit/directives/if-defined.js';",
+        "export default { title: 'Example/TestElement', component: 'test-element' };",
+        `export const Primary = { args: { ${JSON.stringify(arg)}: ${literal} }${
+          place.story ? `, render: (args) => ${place.story}` : ''
+        } };`,
+      ].join('\n')
+    );
+    const entry: IndexEntry = {
+      id: 'example-testelement--primary',
+      name: 'Primary',
+      title: 'Example/TestElement',
+      type: 'story',
+      subtype: 'story',
+      importPath: storyPath,
+    };
+    const payload = await buildStoryDocsPayload(
+      { entry },
+      { getDocgenPayload: async () => docgen, resolvePath: (path) => path }
+    );
+    return { arg, story: Object.values(payload!.stories)[0]! };
+  };
+
+  // A template is laid out for the story's own args; a changed value is printed in that layout.
+  it.each(places.map((place) => [place.name, place] as const))(
+    'prints a value in %s as the static snippet of a story written with it',
+    async (_name, place) => {
+      const { story: seed } = await build(place, 'Seed');
+      for (const value of values.filter(place.values)) {
+        const { arg, story } = await build(place, value);
+        expect(fillTemplate(seed.template!, { [arg]: value }), JSON.stringify(value)).toBe(
+          story.snippet
+        );
+      }
+    }
+  );
+
+  it.each(holes)('cannot print a function or lit value in %s', (hole) => {
     for (const value of unprintable) {
       expect(() => fillTemplate(hole, { v: value })).toThrow(new UnprintableArgError('v'));
     }
   });
 });
+
+const declaration = {
+  kind: 'class',
+  name: 'TestElement',
+  customElement: true,
+  tagName: 'test-element',
+  attributes: [{ name: 'label', fieldName: 'label' }],
+  members: [
+    { kind: 'field', name: 'label', attribute: 'label' } as ManifestClassField & {
+      attribute: string;
+    },
+  ],
+  slots: [{ name: '' }, { name: 'actions' }],
+  cssProperties: [{ name: '--accent' }],
+} satisfies ManifestDeclaration;
+
+const docgen: WebComponentsDocgenPayload = {
+  id: 'example-testelement',
+  name: 'test-element',
+  path: 'input.stories.ts',
+  argTypes: mapArgTypes(declaration),
+  jsDocTags: {},
+  customElementsManifest: { manifestPath: 'custom-elements.json', declaration },
+};

@@ -7,6 +7,7 @@ import {
   walk,
 } from 'storybook/internal/csf-tools';
 
+import { isDefined, isTruthy } from '../../snippet-values.ts';
 import { FAILED, evaluateArgValue, isFunctionNode, primitiveLiteralValue } from './arg-values.ts';
 import type { AliasValue, HtmlTemplate, TemplateScope } from './template-scope.ts';
 import {
@@ -71,7 +72,7 @@ export const resolveHoleValue = (expression: E.Expression, context: HoleContext)
   }
   if (isIfDefinedCall(unwrapped, context.bindings)) {
     const value = resolveHoleValue(unwrapped.arguments[0], context);
-    return value.kind === 'value' && value.value !== null && value.value !== undefined
+    return value.kind === 'value' && isDefined(value.value)
       ? value
       : { kind: 'nothing', ...(value.arg ? { arg: value.arg } : {}) };
   }
@@ -103,7 +104,7 @@ export const collectReferencedArgs = (expression: Node, scope: TemplateScope): S
 
 export const isTruthyAttributeValue = (value: HoleValue): boolean =>
   value.kind === 'value'
-    ? Boolean(value.value)
+    ? isTruthy(value.value)
     : value.kind === 'template' || value.kind === 'function';
 
 export const attributeValue = (

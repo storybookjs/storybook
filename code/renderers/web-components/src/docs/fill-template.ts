@@ -11,11 +11,13 @@ import {
   escapeAttribute,
   escapeText,
   inlineText,
+  isDefined,
+  isTruthy,
   printAttribute,
   quotedAttribute,
   slotText,
   slottedHtml,
-  styleText,
+  styleElement,
 } from '../snippet-values.ts';
 
 // Fills a template from `build-story-docs.ts`: the html of the static snippet with a hole wherever
@@ -47,14 +49,14 @@ export const fillTemplate: FillSnippetTemplate = (template, args) =>
         }
         if (mode === 'bind' || mode === 'defined') {
           const bound = value(second);
-          return mode === 'defined' && (bound === null || bound === undefined)
+          return mode === 'defined' && !isDefined(bound)
             ? ''
             : quotedAttribute(first, boundText(bound));
         }
         return printAttribute(first, value(second), mode === 'field') ?? '';
       case 'bool':
         // Lit sets the attribute while the value is truthy, as the static snippet reads it.
-        return value(second) ? first : '';
+        return isTruthy(value(second)) ? first : '';
       case 'quoted':
         return escapeAttribute(boundText(value(first)));
       case 'text':
@@ -73,7 +75,7 @@ export const fillTemplate: FillSnippetTemplate = (template, args) =>
             ? []
             : [{ selector, declarations: String(declarations) }];
         });
-        return rules.length === 0 ? '' : `<style>${styleText(rules)}</style>\n`;
+        return rules.length === 0 ? '' : `${styleElement(rules)}\n`;
       }
       default:
         // A hole of another renderer's template, which this one cannot print.

@@ -6,10 +6,10 @@ import {
   slotPlacement,
   slotText,
   slottedHtml,
-  styleText,
+  styleElement,
 } from '../../snippet-values.ts';
-import type { HtmlAttribute, HtmlNode } from './html-tree.ts';
-import { parseHtml, printHtml } from './html-tree.ts';
+import { type HtmlAttribute, type HtmlNode, parseHtml } from '../../html-parse.ts';
+import { printHtml } from './html-tree.ts';
 
 /**
  * What the element of a story without a render prints. An entry with an `arg` prints a hole in the
@@ -51,7 +51,9 @@ export function printElementSnippet(snippet: ElementSnippet, holes = false): str
   const listenerScript = printListenerScript(snippet.tag, snippet.listeners);
   const withScript = (html: string) => (listenerScript ? `${html}\n${listenerScript}` : html);
   if (!holes) {
-    return withScript(printHtml([...styleNodes(rules), element]));
+    return withScript(
+      [...(rules.length > 0 ? [styleElement(rules)] : []), printHtml([element])].join('\n')
+    );
   }
   // The `<style>` of the part and state args fills to its html and a line break, or to nothing.
   const styleArgs = snippet.styleRules.filter((rule) => rule.arg !== undefined);
@@ -59,7 +61,7 @@ export function printElementSnippet(snippet: ElementSnippet, holes = false): str
     styleArgs.length > 0
       ? hole('style', ...styleArgs.map((rule) => holeWord(`${rule.selector}=${rule.arg}`)))
       : rules.length > 0
-        ? `${printHtml(styleNodes(rules))}\n`
+        ? `${styleElement(rules)}\n`
         : '';
   return withScript(`${style}${printHtml([element], true)}`);
 }
@@ -119,19 +121,6 @@ const uniqueListenersByEvent = (
     return true;
   });
 };
-
-const styleNodes = (rules: { selector: string; declarations: string }[]): HtmlNode[] =>
-  rules.length === 0
-    ? []
-    : [
-        {
-          attributes: [],
-          closed: true,
-          kind: 'rawText',
-          name: 'style',
-          text: styleText(rules),
-        },
-      ];
 
 // Each attribute an arg prints is a hole in the template: `⟦attr name arg⟧`, or `⟦attr name arg
 // field⟧` for one a field reflects, and `⟦attr style - css property=arg…⟧` for the custom properties.

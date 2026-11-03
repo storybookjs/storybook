@@ -99,6 +99,24 @@ describe('html template story snippets', () => {
       },
     },
     {
+      name: 'an arg whose name html escapes, read in a quoted attribute',
+      source: `
+        import { html } from 'lit';
+        export default { component: 'template-element' };
+        export const Primary = {
+          args: { 'a&b': 'v' },
+          render: (args) => html\`<template-element title="x \${args['a&b']}"></template-element>\`,
+        };
+      `,
+      expected: {
+        listeners: [],
+        properties: [],
+        referenced: ['a&b'],
+        snippet: '<template-element title="x v"></template-element>',
+        unresolved: [],
+      },
+    },
+    {
       name: 'text with whitespace',
       source: `
         import { html } from 'lit';

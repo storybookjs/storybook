@@ -4,8 +4,8 @@ import { hole, holeWord } from 'storybook/internal/docs-tools';
 
 import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
 import { fieldDefault, pairedAttribute } from './classify-args.ts';
-import type { HtmlAttribute, HtmlNode } from './html-tree.ts';
-import { parseHtml, printHtml } from './html-tree.ts';
+import { type HtmlAttribute, type HtmlNode, parseHtml } from '../../html-parse.ts';
+import { printHtml } from './html-tree.ts';
 import { boundText, childText, escapeText, printAttribute } from '../../snippet-values.ts';
 import { printRootListenerScript } from './print-element.ts';
 import type { HoleContext, HoleValue } from './template-holes.ts';

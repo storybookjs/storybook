@@ -84,7 +84,7 @@ export async function buildStoryDocsPayload(
   };
 }
 
-/** The story file of an index entry, parsed, with the resolver of its stories' args. */
+// The story file of an index entry, parsed, with the resolver of its stories' args.
 export async function readStoryFile(input: StoryDocsProviderInput) {
   const path = getStoryImportPathFromEntry(input.entry);
   if (!path) return undefined;
@@ -199,16 +199,9 @@ function storySnippet(
   };
 }
 
-/**
- * The code a story writes each arg with, which the preview fills a template with while the arg
- * keeps that value: every arg but a string, `true`, `false`, `null`, `undefined` or a number written
- * as the preview prints it, which print as their value.
- *
- * Not core's `argCode`: next's Svelte printer writes an arg's source text as it stands in the file,
- * without its parentheses (it adds its own where a read needs them, the `p` word) and without
- * dedenting it, so this code is that text. A string is never code either, as the `'` word keeps
- * its quotes.
- */
+// The code a story writes each arg with, as next's printer writes it: its source text, without its
+// parentheses (the `p` word adds them where a read needs them). An arg the preview prints as
+// written, see `literalOf`, has none.
 export function argCode(args: Record<string, Node>): Record<string, string> {
   const code: Record<string, string> = {};
   for (const [name, value] of Object.entries(args)) {
@@ -220,7 +213,7 @@ export function argCode(args: Record<string, Node>): Record<string, string> {
   return code;
 }
 
-/** The value of an arg written as a literal the preview prints as written, as `{ value }`. */
+// The value of an arg written as a literal the preview prints as written, as `{ value }`.
 export function literalOf(node: Node): { value: unknown } | undefined {
   if (node.type === 'Identifier' && node.name === 'undefined') return { value: undefined };
   if (node.type === 'Literal') {

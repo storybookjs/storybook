@@ -1,6 +1,5 @@
 import {
   type FillSnippetTemplate,
-  UnprintableArgError,
   defaultCode,
   fillHoles,
   isAction,
@@ -13,6 +12,7 @@ import {
   type PropValue,
   attributeText,
   fragmentText,
+  isPrimary,
   printProp,
   printRead,
   printSpreadAttribute,
@@ -20,23 +20,13 @@ import {
   readText,
 } from '../snippet-values.ts';
 
-/**
- * Fills a template of the Svelte story-docs provider, whose holes stand where its printer writes an
- * arg's value (see `printTemplate` in `docgen/story-docs/print-template.ts`), printing each value
- * with the printers it prints the static snippet with:
- *
- * - `⟦spread …⟧`: a `{...args}` spread, the args as attributes, but those its `-name` words name,
- *   joined by its `|` word, between its `<` and `>` words, or its `?code` word while it passes none.
- * - `⟦spreadattr name⟧`: an attribute a later `{...args}` spread writes over with the arg.
- * - `⟦attrvalue arg …⟧`, `⟦quoted arg …⟧`, `⟦fragment arg …⟧`: an `{args.x}` attribute value,
- *   part of a quoted attribute value or text, which prints a plain string as text.
- * - `⟦code arg …⟧`, `⟦value arg …⟧`: an arg read in code.
- *
- * Words: `p` when the code the story writes the arg with needs parentheses, `'` (or `'name` in a
- * spread) when the story quotes a string with `'`, `<code` and `>code` for the code around the
- * value, `=name` for the attribute name, and a `?code` default for an arg that is unset, which next
- * leaves as the story writes it.
- */
+// Fills a template of the Svelte story-docs provider (`printTemplate` in
+// `docgen/story-docs/print-template.ts`) with the printers it prints the static snippet with. Kinds:
+// `spread`, `spreadattr` (an attribute a later spread writes over), `attrvalue`, `quoted` and
+// `fragment` (a read that prints a string as text), `code` and `value` (a read in code). Words:
+// `p` parentheses, `'` single quotes, `<code` and `>code` around the value, `=name` the attribute,
+// `?code` the code while the arg is unset; in a spread `-name`, `'name` and the layout words `<`,
+// `|`, `>`.
 export const fillTemplate: FillSnippetTemplate = (template, args) =>
   fillHoles(template, (kind, words) => fill(kind, words, args));
 
@@ -48,16 +38,15 @@ function fill(kind: string, words: string[], args: Args): string {
   const word = (prefix: string) => decoded(flags, prefix)[0];
   const unset = defaultCode(flags.find((flag) => flag.startsWith('?')));
   const quote = flags.includes("'") ? "'" : '"';
-  if (unset !== undefined && !Object.hasOwn(args, arg)) {
+  // An action Storybook adds is no value of the story's, so it fills as an unset arg.
+  const isSet = Object.hasOwn(args, arg) && !isAction(args[arg]);
+  if (kind === 'spreadattr') {
+    return isSet ? printSpreadAttribute(arg, propValue(arg, args[arg], quote)) : (unset ?? '');
+  }
+  if (unset !== undefined && !isSet) {
     return unset;
   }
-  const value = args[arg];
-  if (kind === 'spreadattr') {
-    if (!Object.hasOwn(args, arg) || isAction(value)) {
-      return unset ?? '';
-    }
-    return printSpreadAttribute(arg, propValue(arg, value, quote));
-  }
+  const value = isSet ? args[arg] : undefined;
   const code = () =>
     (word('<') ?? '') + read(arg, value, flags.includes('p'), quote) + (word('>') ?? '');
   const text = typeof value === 'string' ? readText(value) : undefined;
@@ -85,13 +74,7 @@ function spread(args: Args, words: string[]): string {
     const printed = written.has(name)
       ? undefined
       : propValue(name, value, quoted.has(name) ? "'" : '"');
-    if (printed === undefined) {
-      return [];
-    }
-    if (!/^[A-Za-z_$][\w:$-]*$/.test(name)) {
-      throw new UnprintableArgError(name);
-    }
-    return [printProp(name, printed)];
+    return printed === undefined ? [] : [printProp(name, printed)];
   });
   const [before = '', separator = ' ', after = ''] = ['<', '|', '>'].map(
     (prefix) => decoded(words, prefix)[0]
@@ -116,12 +99,26 @@ function propValue(name: string, value: unknown, quote: '"' | "'"): PropValue {
 }
 
 // An arg read in code: the code the story writes it with, which needs parentheses where its `p`
-// word says, or its value, which needs them for a negative number or an object literal.
+// word says, or its value, which needs them where the code it prints as would.
 function read(name: string, value: unknown, parentheses: boolean, quote: '"' | "'"): string {
-  const needs =
-    writtenCode(value) !== undefined
-      ? parentheses
-      : (typeof value === 'number' && !(value >= 0)) ||
-        (typeof value === 'object' && value !== null && !Array.isArray(value));
+  const needs = writtenCode(value) !== undefined ? parentheses : !isPrimary(...printedType(value));
   return printRead(printValue(value, name, { quote }), needs);
+}
+
+// The node type of the code `printValue` prints for a value, and whether it is a negative number.
+function printedType(value: unknown): [string, boolean] {
+  if (typeof value === 'number') {
+    return Number.isNaN(value) || value === Infinity
+      ? ['Identifier', false]
+      : ['Literal', value < 0];
+  }
+  if (value === undefined) {
+    return ['Identifier', false];
+  }
+  if (Array.isArray(value)) {
+    return ['ArrayExpression', false];
+  }
+  return typeof value === 'object' && value !== null
+    ? ['ObjectExpression', false]
+    : ['Literal', false];
 }

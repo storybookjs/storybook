@@ -14,6 +14,7 @@ import {
   type PropValue,
   attributeText,
   fragmentText,
+  isPrimary,
   printProp,
   printRead,
   printSpreadAttribute,
@@ -237,13 +238,26 @@ export function printTemplate({
           'name' in node &&
           node.type.endsWith('Directive') &&
           !code.slice(at(node).start, range.start).includes('=');
-        // Next keeps a shorthand it substitutes nothing in, as for an unset arg.
+        // Next keeps a shorthand it substitutes nothing in, as for an unset arg, and writes the long
+        // form once a control sets it.
         if (
           shorthand &&
           holes &&
           replaceArgsReads(code.slice(range.start, range.end), { ...reads, holes: false }) ===
             undefined
         ) {
+          if (replaced.single) {
+            edits.push({
+              ...range,
+              value: hole(
+                'code',
+                ...replaced.single.words,
+                `<${encodeURIComponent(`${node.name}={`)}`,
+                `>${encodeURIComponent('}')}`,
+                defaultWord(code.slice(range.start, range.end))
+              ),
+            });
+          }
           continue;
         }
         edits.push({
@@ -438,7 +452,7 @@ function replaceArgsReads(
 // needs parentheses where a read stood, and `'` when the story quotes it so.
 function readWords(key: string, value: Node | undefined): string[] {
   const node = value && unwrapExpression(value);
-  return [holeWord(key), ...(node && !isPrimary(node) ? ['p'] : []), ...quoteWords(value)];
+  return [holeWord(key), ...(node && !isPrimaryNode(node) ? ['p'] : []), ...quoteWords(value)];
 }
 
 // `'` for a string the story writes in single quotes, which next prints as written.
@@ -569,7 +583,7 @@ function printMemberRead(value: Node, keys: string[]): { value: string; node?: N
     .map((key) => (/^[A-Za-z_$][\w$]*$/.test(key) ? `.${key}` : `[${JSON.stringify(key)}]`))
     .join('');
   return {
-    value: printRead(textOf(node), !isPrimary(node)) + accessors,
+    value: printRead(textOf(node), !isPrimaryNode(node)) + accessors,
     ...(rest.length ? {} : { node }),
   };
 }
@@ -589,20 +603,10 @@ function memberOf(node: Node, key: string): Node | undefined {
   return undefined;
 }
 
-// A value that keeps its meaning wherever an `args.x` read stood, without parentheses. An object
-// literal does not: in `() => args.o` it would become a block body.
-function isPrimary(node: Node): boolean {
-  switch (node.type) {
-    case 'Identifier':
-    case 'ThisExpression':
-    case 'TemplateLiteral':
-    case 'ArrayExpression':
-    case 'MemberExpression':
-    case 'CallExpression':
-      return true;
-    case 'Literal':
-      return typeof node.value !== 'number' || node.value >= 0;
-    default:
-      return false;
-  }
+// Whether an arg's code keeps its meaning where an `args.x` read stood, as `isPrimary` decides.
+function isPrimaryNode(node: Node): boolean {
+  return isPrimary(
+    node.type,
+    node.type === 'Literal' && typeof node.value === 'number' && node.value < 0
+  );
 }

@@ -335,6 +335,45 @@ describe('printTemplate with holes', () => {
     );
   });
 
+  it('fills an action Storybook adds as an unset arg', () => {
+    const action = Object.assign(() => {}, { isAction: true });
+    const written = template(
+      '<Panel onclick={args.onclick} label={args.label} />',
+      "{ label: 'Go' }"
+    );
+    expect(fillTemplate(written, { label: 'Stop', onclick: action })).toBe(
+      '<Panel onclick={args.onclick} label="Stop" />'
+    );
+  });
+
+  it('writes the long form of a directive shorthand once a control sets its arg', () => {
+    const parameter = { aliases: { active: 'active' } };
+    expect(print('<div class:active>{active}</div>', "{ label: 'Go' }", false, parameter)).toBe(
+      '<div class:active>{active}</div>'
+    );
+    const written = printTemplate({
+      code: '<div class:active>{active}</div>',
+      args: args("{ label: 'Go' }"),
+      typescript: false,
+      parameter,
+      holes: true,
+    });
+    expect(fillTemplate(written, { label: 'Go', active: true })).toBe(
+      '<div class:active={true}>{true}</div>'
+    );
+  });
+
+  it('spreads an arg whose name is no identifier', () => {
+    expect(print('<Panel {...args} />', "{ 'a.b': 'x' }")).toBe('<Panel a.b="x" />');
+  });
+
+  it('puts a value in parentheses where the code it prints as needs them', () => {
+    const written = template('<Panel onclick={() => go(args.x)} />', '{ x: 1 }');
+    expect(fillTemplate(written, { x: Number.NaN })).toBe('<Panel onclick={() => go(NaN)} />');
+    expect(fillTemplate(written, { x: -1 })).toBe('<Panel onclick={() => go((-1))} />');
+    expect(fillTemplate(written, { x: { a: 1 } })).toBe('<Panel onclick={() => go(({ a: 1 }))} />');
+  });
+
   it('prints the code an unchanged arg is written with, and a changed one as its value', () => {
     const written = template('<Button onclick={args.onclick} />', "{ onclick: () => alert('hi') }");
     // As next prints it: code that is no name, call or literal gets parentheses where a read stood.

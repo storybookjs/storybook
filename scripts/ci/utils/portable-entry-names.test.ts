@@ -1,10 +1,28 @@
+import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { workspace } from './helpers.ts';
 import {
   findNonPortableEntryNames,
   formatNonPortableEntriesError,
+  listEntryNamesUnder,
 } from './portable-entry-names.ts';
+
+// Symlink creation needs privileges on Windows; the scripts tests run on Linux
+// CI, where it always works.
+const canSymlink = await (async () => {
+  const probeDir = await mkdtemp(join(tmpdir(), 'portable-names-probe-'));
+  try {
+    await symlink('target', join(probeDir, 'link'));
+    return true;
+  } catch {
+    return false;
+  } finally {
+    await rm(probeDir, { recursive: true, force: true });
+  }
+})();
 
 describe('findNonPortableEntryNames', () => {
   it('flags emoji-named entries, keeping the archive-relative path', () => {
@@ -43,6 +61,66 @@ describe('findNonPortableEntryNames', () => {
 
     expect(findNonPortableEntryNames(entries)).toEqual(entries);
   });
+});
+
+describe('listEntryNamesUnder', () => {
+  it('lists the same names tar stores, relative to the scanned root', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'portable-names-'));
+    try {
+      await mkdir(join(root, 'storybook-static', 'assets'), { recursive: true });
+      await writeFile(join(root, 'index.html'), '');
+      await writeFile(join(root, 'storybook-static', 'assets', 'unicode.stories-CpR9-KhQ.js'), '');
+
+      expect(await listEntryNamesUnder(root)).toEqual([
+        'index.html',
+        'storybook-static',
+        'storybook-static/assets',
+        'storybook-static/assets/unicode.stories-CpR9-KhQ.js',
+      ]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it.runIf(canSymlink)('does not traverse symlink targets — tar stores only the link', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'portable-names-'));
+    const outside = await mkdtemp(join(tmpdir(), 'portable-names-outside-'));
+    try {
+      await mkdir(join(root, 'assets'), { recursive: true });
+      await writeFile(join(outside, '😀.json'), '');
+      // A portable link whose target holds an emoji name: tar never stores the
+      // target's contents, so the guard must pass this tree.
+      await symlink(outside, join(root, 'assets', 'link'), 'dir');
+      await writeFile(join(root, 'index.html'), '');
+
+      const names = await listEntryNamesUnder(root);
+
+      expect(names).toEqual(['assets', 'assets/link', 'index.html']);
+      expect(findNonPortableEntryNames(names)).toEqual([]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+      await rm(outside, { recursive: true, force: true });
+    }
+  });
+
+  it.runIf(canSymlink)(
+    'still flags a real emoji-named file inside a symlinked directory',
+    async () => {
+      const root = await mkdtemp(join(tmpdir(), 'portable-names-'));
+      try {
+        await mkdir(join(root, 'target-dir'), { recursive: true });
+        await writeFile(join(root, 'target-dir', '😀.json'), '');
+        await symlink('target-dir', join(root, 'link'), 'dir');
+
+        const names = await listEntryNamesUnder(root);
+
+        expect(names).toEqual(['link', 'target-dir', 'target-dir/😀.json']);
+        expect(findNonPortableEntryNames(names)).toEqual(['target-dir/😀.json']);
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
+    }
+  );
 });
 
 describe('formatNonPortableEntriesError', () => {

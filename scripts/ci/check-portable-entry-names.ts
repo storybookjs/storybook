@@ -1,11 +1,10 @@
 // Fails when a name under the sandbox directory cannot be encoded in the
 // Windows ANSI code page, because the Windows unpack step could not extract
 // such an archive. Usage: node scripts/ci/check-portable-entry-names.ts <dir>
-import { readdir } from 'node:fs/promises';
-
 import {
   findNonPortableEntryNames,
   formatNonPortableEntriesError,
+  listEntryNamesUnder,
 } from './utils/portable-entry-names.ts';
 
 const root = (process.argv[2] ?? '').replace(/[/\\]+$/, '');
@@ -15,11 +14,8 @@ if (!root) {
   process.exit(2);
 }
 
-const entries = await readdir(root, { recursive: true });
-
-// The recursive listing is already relative to the scanned directory — the form
-// tar stores entry names in.
-const nonPortable = findNonPortableEntryNames(entries.sort());
+const entries = await listEntryNamesUnder(root);
+const nonPortable = findNonPortableEntryNames(entries);
 
 if (nonPortable.length > 0) {
   console.error(formatNonPortableEntriesError(nonPortable));

@@ -1,3 +1,5 @@
+import type ts from 'typescript';
+
 import type {
   StorybookConfig as StorybookConfigBase,
   TypescriptOptions as TypescriptOptionsBase,
@@ -7,33 +9,53 @@ import type {
 export type { BuilderResult } from '@storybook/core-webpack';
 
 /**
- * Options of the deprecated builder docgen plugin for `react-docgen-typescript`.
+ * The `react-docgen-typescript` parser options, copied from its type declarations.
  *
- * Declared here instead of imported, because the plugin is an optional peer dependency: the
- * published types must not import a package that is not installed.
+ * Builder docgen packages are optional peer dependencies, so published types must not import them:
+ * a `.d.ts` import of a missing package fails `tsc` with TS2307 without `skipLibCheck`. A type test
+ * keeps these shapes assignable both ways with the originals.
  */
-export interface ReactDocgenTypescriptOptions {
-  /** Glob patterns of the files to parse. */
-  include?: string[];
-  /** Glob patterns of the files to skip. */
-  exclude?: string[];
-  /** Path to the tsconfig.json to read compiler options from. */
-  tsconfigPath?: string;
-  /** TypeScript compiler options, used instead of `tsconfigPath`. */
-  compilerOptions?: Record<string, unknown>;
-  /** Filter out props, for example those from `node_modules`. */
-  propFilter?: ((prop: any, component: any) => boolean) | Record<string, unknown>;
+export interface ReactDocgenTypescriptParserOptions {
+  propFilter?:
+    | { skipPropsWithName?: string[] | string; skipPropsWithoutDoc?: boolean }
+    | ((
+        props: {
+          name: string;
+          required: boolean;
+          type: { name: string; value?: any; raw?: string };
+          description: string;
+          defaultValue: any;
+          parent?: { name: string; fileName: string };
+          declarations?: { name: string; fileName: string }[];
+          tags?: {};
+        },
+        component: { name: string }
+      ) => boolean);
+  componentNameResolver?: (
+    exp: ts.Symbol,
+    source: ts.SourceFile
+  ) => string | undefined | null | false;
   shouldExtractLiteralValuesFromEnum?: boolean;
-  shouldExtractValuesFromUnion?: boolean;
   shouldRemoveUndefinedFromOptional?: boolean;
-  shouldIncludePropTagMap?: boolean;
-  shouldIncludeExpression?: boolean;
+  shouldExtractValuesFromUnion?: boolean;
+  shouldSortUnions?: boolean;
   skipChildrenPropWithoutDoc?: boolean;
   savePropValueAsString?: boolean;
-  componentNameResolver?: (exp: any, source: any) => string | undefined | null | false;
+  shouldIncludePropTagMap?: boolean;
+  shouldIncludeExpression?: boolean;
   customComponentTypes?: string[];
-  [option: string]: unknown;
 }
+
+/** Options of `@storybook/react-docgen-typescript-plugin`, copied from its declarations. */
+export type ReactDocgenTypescriptOptions = ReactDocgenTypescriptParserOptions & {
+  docgenCollectionName?: string | null;
+  setDisplayName?: boolean;
+  typePropName?: string;
+  tsconfigPath?: string;
+  compilerOptions?: ts.CompilerOptions;
+  exclude?: string[];
+  include?: string[];
+};
 
 export interface ReactOptions {
   strictMode?: boolean;

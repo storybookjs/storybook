@@ -82,6 +82,10 @@ describe('published declarations', () => {
     (dir) => {
       const dist = join(CODE_DIR, dir, 'dist');
       const files = existsSync(dist) ? listDts(dist) : [];
+      // Locally the packages may not be built yet; CI builds them before unit tests.
+      if (process.env.CI) {
+        expect(files.length, `${dir} has no built declarations`).toBeGreaterThan(0);
+      }
       for (const file of files) {
         const source = readFileSync(file, 'utf-8');
         for (const name of builderDocgenPackages) {

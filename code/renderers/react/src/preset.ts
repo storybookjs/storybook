@@ -135,6 +135,22 @@ export async function internal_getArgTypesData(
     return null;
   }
 
+  const absoluteComponentFilePath = path.isAbsolute(componentFilePath)
+    ? componentFilePath
+    : join(getProjectRoot(), componentFilePath);
+
+  // On the docgen server, infer arg types with its engine, so the optional builder docgen packages
+  // are not needed. The docgen server ignores `typescript.reactDocgen`.
+  const features = await presets?.apply('features', {});
+  if (features?.docgenServer) {
+    const { extractArgTypesFromComponentFile } =
+      await import('./docgen/extractArgTypesFromComponentFile.ts');
+    return extractArgTypesFromComponentFile({
+      componentFilePath: absoluteComponentFilePath,
+      componentExportName,
+    });
+  }
+
   // Get typescript options from presets to determine which docgen to use
   let typescriptOptions: TypescriptOptionsWithDocgen = {};
   if (presets) {
@@ -153,11 +169,7 @@ export async function internal_getArgTypesData(
     return null;
   }
 
-  const resolvedFilePath = path.isAbsolute(componentFilePath)
-    ? componentFilePath
-    : join(getProjectRoot(), componentFilePath);
-
-  // Choose the appropriate extractor based on the reactDocgen option. Both engines are optional
+  // Builder docgen: choose the extractor based on the reactDocgen option. Both engines are optional
   // peer dependencies, so import them only here; without them there are no arg types to infer.
   let argTypesData;
   try {
@@ -165,7 +177,7 @@ export async function internal_getArgTypesData(
       const { extractArgTypesFromDocgenTypescript } =
         await import('./componentManifest/reactDocgen/extractReactTypescriptDocgenInfo.ts');
       argTypesData = await extractArgTypesFromDocgenTypescript({
-        componentFilePath: resolvedFilePath,
+        componentFilePath: absoluteComponentFilePath,
         componentExportName,
         reactDocgenTypescriptOptions,
       });
@@ -174,7 +186,7 @@ export async function internal_getArgTypesData(
       const { extractArgTypesFromDocgen } =
         await import('./componentManifest/reactDocgen/extractReactDocgenInfo.ts');
       argTypesData = extractArgTypesFromDocgen({
-        componentFilePath: resolvedFilePath,
+        componentFilePath: absoluteComponentFilePath,
         componentExportName,
       });
     }

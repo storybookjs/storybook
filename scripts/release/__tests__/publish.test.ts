@@ -26,6 +26,7 @@ describe('publishAllPackages', () => {
     tag: 'next',
     currentVersion: '10.6.0-alpha.6',
     packageNames: ['storybook', '@storybook/react'],
+    sleep: vi.fn(async () => {}),
   };
 
   it('succeeds when Yarn publish succeeds', async () => {
@@ -114,5 +115,53 @@ describe('publishAllPackages', () => {
       'Failed to publish version 10.6.0-alpha.6. Still missing: storybook'
     );
     expect(execaCommand).toHaveBeenCalledTimes(3);
+  });
+
+  describe('when Sigstore rejects the tlog entry before upload', () => {
+    const tlogFailure = (...lines: string[]) =>
+      Object.assign(new Error('foreach exited 1'), { stderr: lines.join('\n') });
+    const tlogLine = (name: string) =>
+      `\u001b[38;5;167m[${name}]\u001b[39m: \u27a4 YN0001: gM: error creating tlog entry - (409) an equivalent entry already exists in the transparency log with UUID abc`;
+
+    beforeEach(() => {
+      vi.mocked(options.sleep).mockClear();
+    });
+
+    it('retries publish right away without waiting for the registry', async () => {
+      vi.mocked(execaCommand)
+        .mockRejectedValueOnce(tlogFailure(tlogLine('storybook')))
+        .mockResolvedValueOnce({} as never);
+      vi.mocked(listUnpublishedPackages).mockResolvedValue(['storybook']);
+
+      await publishAllPackages(options);
+
+      expect(waitForPackagesToBePublished).not.toHaveBeenCalled();
+      expect(options.sleep).toHaveBeenCalledWith(20_000);
+      expect(vi.mocked(execaCommand).mock.calls[1][0]).toBe(publishCommand('next', ['storybook']));
+    });
+
+    it('takes the registry path when a missing package has no tlog failure', async () => {
+      vi.mocked(execaCommand)
+        .mockRejectedValueOnce(tlogFailure('[storybook]: error creating tlog entry - (409)'))
+        .mockResolvedValueOnce({} as never);
+      vi.mocked(listUnpublishedPackages).mockResolvedValue(['storybook', '@storybook/react']);
+      vi.mocked(waitForPackagesToBePublished).mockResolvedValue(['storybook', '@storybook/react']);
+
+      await publishAllPackages(options);
+
+      expect(waitForPackagesToBePublished).toHaveBeenCalledTimes(1);
+      expect(options.sleep).not.toHaveBeenCalledWith(20_000);
+    });
+
+    it('fails with the missing package list after 10 signing attempts', async () => {
+      vi.mocked(execaCommand).mockRejectedValue(tlogFailure(tlogLine('storybook')));
+      vi.mocked(listUnpublishedPackages).mockResolvedValue(['storybook']);
+
+      await expect(publishAllPackages(options)).rejects.toThrow(
+        'Failed to publish version 10.6.0-alpha.6. Still missing: storybook'
+      );
+      expect(execaCommand).toHaveBeenCalledTimes(10);
+      expect(waitForPackagesToBePublished).not.toHaveBeenCalled();
+    });
   });
 });

@@ -119,21 +119,24 @@ export const waitForPackagesToBePublished = async ({
   return missing;
 };
 
-export const packagesAcceptedByRegistry = (output: string) => {
-  const accepted = new Set<string>();
+const workspacesWithLineMatching = (output: string, markers: string[]) => {
+  const workspaces = new Set<string>();
   for (const line of output.split('\n')) {
     const prefix = stripVTControlCharacters(line).match(/\[([^\]]+)\]:/);
-    if (!prefix) {
-      continue;
-    }
-    if (
-      line.includes('Package archive published') ||
-      line.includes('Registry already knows about version') ||
-      line.includes('previously staged version') ||
-      line.includes('previously published versions')
-    ) {
-      accepted.add(prefix[1]);
+    if (prefix && markers.some((marker) => line.includes(marker))) {
+      workspaces.add(prefix[1]);
     }
   }
-  return [...accepted];
+  return [...workspaces];
 };
+
+export const packagesAcceptedByRegistry = (output: string) =>
+  workspacesWithLineMatching(output, [
+    'Package archive published',
+    'Registry already knows about version',
+    'previously staged version',
+    'previously published versions',
+  ]);
+
+export const packagesNotUploaded = (output: string) =>
+  workspacesWithLineMatching(output, ['error creating tlog entry']);

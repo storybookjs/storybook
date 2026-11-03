@@ -14,6 +14,7 @@ import { getCodeWorkspaces } from '../utils/workspace.ts';
 import {
   listUnpublishedPackages,
   packagesAcceptedByRegistry,
+  packagesNotUploaded,
   waitForPackagesToBePublished,
 } from './npm-registry.ts';
 
@@ -47,7 +48,10 @@ type Options = {
 const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
 const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
-const MAX_PUBLISH_ATTEMPTS = 3;
+type AttemptClass = 'registry' | 'signing';
+
+const ATTEMPT_BUDGETS: Record<AttemptClass, number> = { registry: 3, signing: 10 };
+const SIGNING_BACKOFF_MS = 20_000;
 const REGISTRY_POLL_INTERVAL_MS = 15_000;
 const REGISTRY_POLL_TIMEOUT_MS = 15 * 60 * 1000;
 
@@ -95,12 +99,14 @@ export const publishAllPackages = async ({
   dryRun,
   currentVersion,
   packageNames,
+  sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)),
 }: {
   tag: string;
   verbose?: boolean;
   dryRun?: boolean;
   currentVersion: string;
   packageNames: string[];
+  sleep?: (ms: number) => Promise<void>;
 }) => {
   console.log(`📦 Publishing all packages...`);
   if (dryRun) {
@@ -114,8 +120,9 @@ export const publishAllPackages = async ({
   let unpublished = [...packageNames];
   const accepted = new Set<string>();
   let lastError: unknown;
+  const attemptsUsed: Record<AttemptClass, number> = { registry: 0, signing: 0 };
 
-  for (let attempt = 1; attempt <= MAX_PUBLISH_ATTEMPTS; attempt += 1) {
+  for (;;) {
     const command = publishCommand(tag, toPublish);
     if (verbose) {
       console.log(`📦 Executing: ${command}`);
@@ -132,7 +139,8 @@ export const publishAllPackages = async ({
       return;
     } catch (error) {
       lastError = error;
-      for (const name of packagesAcceptedByRegistry(execaOutput(error))) {
+      const output = execaOutput(error);
+      for (const name of packagesAcceptedByRegistry(output)) {
         accepted.add(name);
       }
       toPublish = toPublish.filter((name) => !accepted.has(name));
@@ -150,25 +158,43 @@ export const publishAllPackages = async ({
         return;
       }
 
-      console.log(
-        picocolors.yellow(
-          dedent`❗ ${unpublished.length} package(s) are not yet visible on npm: ${unpublished.join(', ')}
-          This was attempt number ${attempt}, there are ${MAX_PUBLISH_ATTEMPTS - attempt} retries left.
-          Waiting for the registry instead of publishing over a staged version.`
-        )
-      );
+      // A tlog failure happens before the registry PUT, so nothing is staged: https://github.com/yarnpkg/berry/issues/7308
+      const notUploaded = new Set(packagesNotUploaded(output));
+      const attemptClass: AttemptClass = unpublished.every((name) => notUploaded.has(name))
+        ? 'signing'
+        : 'registry';
+      attemptsUsed[attemptClass] += 1;
+      const attempt = attemptsUsed[attemptClass];
+      const retriesLeft = ATTEMPT_BUDGETS[attemptClass] - attempt;
 
-      unpublished = await waitForPackagesToBePublished({
-        packageNames: unpublished,
-        version: currentVersion,
-        timeoutMs: REGISTRY_POLL_TIMEOUT_MS,
-        intervalMs: REGISTRY_POLL_INTERVAL_MS,
-        verbose,
-      });
+      if (attemptClass === 'signing') {
+        console.log(
+          picocolors.yellow(
+            dedent`❗ ${unpublished.length} package(s) failed in Sigstore before upload: ${unpublished.join(', ')}
+            This was attempt number ${attempt}, there are ${retriesLeft} retries left.`
+          )
+        );
+      } else {
+        console.log(
+          picocolors.yellow(
+            dedent`❗ ${unpublished.length} package(s) are not yet visible on npm: ${unpublished.join(', ')}
+            This was attempt number ${attempt}, there are ${retriesLeft} retries left.
+            Waiting for the registry instead of publishing over a staged version.`
+          )
+        );
 
-      if (unpublished.length === 0) {
-        console.log(`📦 All packages became visible on npm. Treating as success.`);
-        return;
+        unpublished = await waitForPackagesToBePublished({
+          packageNames: unpublished,
+          version: currentVersion,
+          timeoutMs: REGISTRY_POLL_TIMEOUT_MS,
+          intervalMs: REGISTRY_POLL_INTERVAL_MS,
+          verbose,
+        });
+
+        if (unpublished.length === 0) {
+          console.log(`📦 All packages became visible on npm. Treating as success.`);
+          return;
+        }
       }
 
       toPublish = unpublished.filter((name) => !accepted.has(name));
@@ -179,15 +205,22 @@ export const publishAllPackages = async ({
         );
       }
 
-      if (attempt === MAX_PUBLISH_ATTEMPTS) {
+      if (retriesLeft === 0) {
         break;
       }
 
-      console.log(
-        picocolors.yellow(
-          `❗ Still missing ${toPublish.join(', ')}. Retrying publish for those packages only.`
-        )
-      );
+      if (attemptClass === 'signing') {
+        console.log(
+          picocolors.yellow(`❗ Retrying ${toPublish.join(', ')} in ${SIGNING_BACKOFF_MS / 1000}s.`)
+        );
+        await sleep(SIGNING_BACKOFF_MS);
+      } else {
+        console.log(
+          picocolors.yellow(
+            `❗ Still missing ${toPublish.join(', ')}. Retrying publish for those packages only.`
+          )
+        );
+      }
     }
   }
 

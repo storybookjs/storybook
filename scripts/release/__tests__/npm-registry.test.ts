@@ -4,6 +4,7 @@ import {
   isPackageVersionPublished,
   listUnpublishedPackages,
   packagesAcceptedByRegistry,
+  packagesNotUploaded,
   waitForPackagesToBePublished,
 } from '../npm-registry.ts';
 
@@ -159,5 +160,28 @@ describe('packagesAcceptedByRegistry', () => {
         ].join('\n')
       )
     ).toEqual(['storybook', '@storybook/react']);
+  });
+});
+
+describe('packagesNotUploaded', () => {
+  const tlogError =
+    ': \u27a4 YN0001: gM: error creating tlog entry - (409) an equivalent entry already exists in the transparency log with UUID 108e9186e8c5677a';
+
+  it('extracts workspaces whose Sigstore tlog entry failed', () => {
+    expect(
+      packagesNotUploaded(
+        [`[@storybook/react-webpack5]${tlogError}`, '[storybook]: YN0033: network error'].join('\n')
+      )
+    ).toEqual(['@storybook/react-webpack5']);
+  });
+
+  it('extracts workspaces when Yarn prefixes lines with ANSI color codes', () => {
+    expect(
+      packagesNotUploaded(`\u001b[38;5;167m[@storybook/react-webpack5]\u001b[39m${tlogError}`)
+    ).toEqual(['@storybook/react-webpack5']);
+  });
+
+  it('ignores lines without the tlog marker', () => {
+    expect(packagesNotUploaded('[storybook]: Package archive published')).toEqual([]);
   });
 });

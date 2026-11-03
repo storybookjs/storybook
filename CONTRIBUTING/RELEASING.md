@@ -402,7 +402,9 @@ If you need to release a change to an older minor version that is not the latest
     4.  [`create-storybook`](https://www.npmjs.com/package/create-storybook/access)
 13. Get your npm access token or generate a new one at https://www.npmjs.com/settings/your-username/tokens. Remember to give it access to the `storybook` org and the packages not in the org, as listed above.
 14. Publish all packages with `YARN_NPM_AUTH_TOKEN=<NPM_TOKEN> yarn release:publish --tag tag-for-publishing-older-releases --verbose`
-    - It goes through all packages and publishes them. If any number of packages fails to publish, it will retry 5 times, skipping those that have already been published.
+    - It goes through all packages and publishes them.
+      If a package fails to publish, it retries only the missing packages and skips those already on npm.
+      Failures from the Sigstore transparency log are retried up to 10 times after a 20 second pause, and any other failure up to 3 times after waiting for npm to show the version.
 15. Confirm the new version has been released on npm with the tag `tag-for-publishing-older-releases`:
     1. [`@storybook/react-vite`](https://www.npmjs.com/package/@storybook/react-vite?activeTab=versions)
     2. [`storybook`](https://www.npmjs.com/package/storybook?activeTab=versions)

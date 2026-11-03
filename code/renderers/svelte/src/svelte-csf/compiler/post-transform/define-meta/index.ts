@@ -35,8 +35,8 @@ export function transformDefineMeta(params: Params): void {
   const { defineMetaVariableDeclaration } = compiled;
   const { start, end } = defineMetaVariableDeclaration;
 
-  code.update(start as number, end as number, print(defineMetaVariableDeclaration).code);
-  code.appendLeft(start as number, print(metaVariableDeclaration).code + '\n');
+  code.update(start, end, print(defineMetaVariableDeclaration).code);
+  code.appendLeft(start, print(metaVariableDeclaration).code + '\n');
 }
 
 // Names the meta `$__meta`, unless the file already does, so that the stories can call `meta.story()`
@@ -52,7 +52,7 @@ function transformFactoryMeta(params: Params): void {
     declarator.init = createASTIdentifier(STORYBOOK_META_IDENTIFIER);
   }
 
-  code.update(start as number, end as number, printed + print(defineMetaVariableDeclaration).code);
+  code.update(start, end, printed + print(defineMetaVariableDeclaration).code);
 }
 
 export function createMetaVariableDeclaration({
@@ -63,9 +63,13 @@ export function createMetaVariableDeclaration({
   return {
     type: 'VariableDeclaration',
     kind: 'const',
+    start: 0,
+    end: 0,
     declarations: [
       {
         type: 'VariableDeclarator',
+        start: 0,
+        end: 0,
         id: createASTIdentifier(STORYBOOK_META_IDENTIFIER),
         init,
       },

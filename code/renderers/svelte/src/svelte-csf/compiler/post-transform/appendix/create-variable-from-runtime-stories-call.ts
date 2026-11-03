@@ -16,13 +16,19 @@ export function createVariableFromRuntimeStoriesCall(
   return {
     type: 'VariableDeclaration',
     kind: 'const',
+    start: 0,
+    end: 0,
     declarations: [
       {
         type: 'VariableDeclarator',
+        start: 0,
+        end: 0,
         id: createASTIdentifier(RUNTIME_STORIES_IDENTIFIER),
         init: {
           type: 'CallExpression',
           optional: false,
+          start: 0,
+          end: 0,
           // WARN: Tempting to use `createRuntimeStories.name` here.
           // It will break, because this function imports `*.svelte` files.
           callee: createASTIdentifier('createRuntimeStories'),
@@ -33,6 +39,8 @@ export function createVariableFromRuntimeStoriesCall(
                   type: 'MemberExpression',
                   computed: false,
                   optional: false,
+                  start: 0,
+                  end: 0,
                   object: factoryMeta,
                   property: createASTIdentifier('input'),
                 }

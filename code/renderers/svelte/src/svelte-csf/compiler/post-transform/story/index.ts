@@ -39,5 +39,5 @@ export function transformStory(params: Params): void {
   const { compiled } = component;
   const { start, end } = compiled;
 
-  code.update(start as number, end as number, print(compiled).code);
+  code.update(start, end, print(compiled).code);
 }

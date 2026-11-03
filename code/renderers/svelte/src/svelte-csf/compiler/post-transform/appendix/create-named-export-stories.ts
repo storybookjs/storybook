@@ -11,6 +11,8 @@ export function createNamedExportStories(
 ): ESTreeAST.ExportNamedDeclaration {
   return {
     type: 'ExportNamedDeclaration',
+    start: 0,
+    end: 0,
     specifiers: params.storiesIdentifiers.map(createExportSpecifier),
     declaration: null,
     attributes: [],
@@ -22,6 +24,8 @@ function createExportSpecifier(
 ): ESTreeAST.ExportSpecifier {
   return {
     type: 'ExportSpecifier',
+    start: 0,
+    end: 0,
     local: createASTIdentifier(`${STORYBOOK_INTERNAL_PREFIX}${storyIdentifier.exportName}`),
     exported: createASTIdentifier(storyIdentifier.exportName),
   };

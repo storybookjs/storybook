@@ -18,10 +18,10 @@ export function removeExportDefault(params: Params) {
     const { start, end } = exportDefault;
 
     // NOTE: It updates code by removing `export default` from the stories function declaration.
-    code.update(start as number, end as number, print(storiesFunctionDeclaration).code);
+    code.update(start, end, print(storiesFunctionDeclaration).code);
   }
 
   if (exportDefault.declaration.type === 'Identifier') {
-    code.remove(exportDefault.start as number, exportDefault.end as number);
+    code.remove(exportDefault.start, exportDefault.end);
   }
 }

@@ -109,6 +109,8 @@ export function insertDefineMetaParameters(params: Params): void {
     createASTProperty('component', {
       type: 'Literal',
       value: extractDescription(nodes.svelte.defineMetaVariableDeclaration.leadingComments),
+      start: 0,
+      end: 0,
     })
   );
 }

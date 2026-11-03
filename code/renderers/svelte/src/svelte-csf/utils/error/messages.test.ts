@@ -27,7 +27,7 @@ const attribute = (node: SvelteAST.Component, name: string) =>
   )!;
 
 const identifierProperty = (name: string) =>
-  createASTProperty(name, { type: 'Identifier', name: 'value' });
+  createASTProperty(name, { type: 'Identifier', name: 'value', start: 0, end: 0 });
 
 const cases: [string, () => Error][] = [
   ['MissingModuleTagError', () => new svelte.MissingModuleTagError(filename)],
@@ -83,7 +83,12 @@ const cases: [string, () => Error][] = [
     () =>
       new defineMeta.InvalidComponentValueError({
         filename,
-        componentProperty: createASTProperty('component', { type: 'Literal', value: 'Button' }),
+        componentProperty: createASTProperty('component', {
+          type: 'Literal',
+          value: 'Button',
+          start: 0,
+          end: 0,
+        }),
       }),
   ],
   [
@@ -93,7 +98,9 @@ const cases: [string, () => Error][] = [
         filename,
         defineMetaVariableDeclarator: {
           type: 'VariableDeclarator',
-          id: { type: 'Identifier', name: 'Story' },
+          start: 0,
+          end: 0,
+          id: { type: 'Identifier', name: 'Story', start: 0, end: 0 },
         },
       }),
   ],
@@ -110,8 +117,13 @@ const cases: [string, () => Error][] = [
     () =>
       new defineMeta.ArrayElementNotStringError({
         filename,
-        property: createASTProperty('tags', { type: 'ArrayExpression', elements: [] }),
-        element: { type: 'Identifier', name: 'tag' },
+        property: createASTProperty('tags', {
+          type: 'ArrayExpression',
+          elements: [],
+          start: 0,
+          end: 0,
+        }),
+        element: { type: 'Identifier', name: 'tag', start: 0, end: 0 },
       }),
   ],
   [
@@ -122,8 +134,10 @@ const cases: [string, () => Error][] = [
         renderProperty: createASTProperty('render', {
           type: 'ArrowFunctionExpression',
           params: [],
-          body: { type: 'BlockStatement', body: [] },
+          body: { type: 'BlockStatement', body: [], start: 0, end: 0 },
           expression: false,
+          start: 0,
+          end: 0,
         }),
       }),
   ],
@@ -153,7 +167,7 @@ const cases: [string, () => Error][] = [
         filename,
         component: componentWithTagsArray,
         attribute: attribute(componentWithTagsArray, 'tags'),
-        element: { type: 'Identifier', name: 'tag' },
+        element: { type: 'Identifier', name: 'tag', start: 0, end: 0 },
       }),
   ],
   ['NoStoryIdentifierError', () => new story.NoStoryIdentifierError(filename)],

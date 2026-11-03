@@ -59,6 +59,8 @@ export async function createAppendix(params: Params) {
   const appendix = print({
     type: 'Program',
     sourceType: 'module',
+    start: 0,
+    end: 0,
     body: [
       createRuntimeStoriesImport(),
       variableFromRuntimeStoriesCall,
@@ -76,6 +78,8 @@ export async function createAppendix(params: Params) {
 function createExportDefaultMeta(): ESTreeAST.ExportDefaultDeclaration {
   return {
     type: 'ExportDefaultDeclaration',
+    start: 0,
+    end: 0,
     declaration: createASTIdentifier(STORYBOOK_META_IDENTIFIER),
   };
 }
@@ -86,9 +90,17 @@ interface GetStoryTagsParams {
 }
 function getStoryTags(params: GetStoryTagsParams): ESTreeAST.ArrayExpression | undefined {
   const storyComponent = params.storyComponents[params.idx];
-  const tags = storyComponent.component.attributes.find((a) => a.name === 'tags');
+  const tags = storyComponent.component.attributes.find(
+    (attribute): attribute is SvelteAST.Attribute =>
+      attribute.type === 'Attribute' && attribute.name === 'tags'
+  );
 
   if (!tags) return;
 
-  return (tags.value as SvelteAST.ExpressionTag).expression as ESTreeAST.ArrayExpression;
+  const { value } = tags;
+  // A `tags` attribute is either `true` (no value), a single `{...}` expression tag, or an array of
+  // text/expression tags for quoted strings. Only the expression tag holds `.expression`.
+  if (typeof value !== 'object' || Array.isArray(value)) return;
+
+  return value.expression as ESTreeAST.ArrayExpression;
 }

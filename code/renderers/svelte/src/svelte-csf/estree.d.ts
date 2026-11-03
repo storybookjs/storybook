@@ -8,8 +8,7 @@ import 'estree';
 
 declare module 'estree' {
   export interface BaseNode {
-    start?: number;
-    end?: number;
-    [propName: string]: any;
+    start: number;
+    end: number;
   }
 }

@@ -35,10 +35,14 @@ export const findNodeModulesRoots = (startDir: string): string[] => {
  * anything compiles a component. Under Vitest, addon-vitest's setup file imports the project
  * annotations early — and on Angular toolchains where the linker no longer AOT-processes libraries
  * like `@angular/common` (PlatformLocation), they fall back to JIT at that point. Importing
- * `@angular/compiler` as a `setupFiles` entry runs early enough (a preview annotation does not), and
- * the bare specifier resolves via Node so the framework needs no extra package export.
+ * `@angular/compiler` as a `setupFiles` entry runs early enough (a preview annotation does not).
+ *
+ * The entry is a wrapper module rather than the bare `@angular/compiler` specifier: Vitest re-imports
+ * setup files under a fresh `?browserv=` URL before every test file, so the bare specifier
+ * re-evaluated the whole compiler per test file, and with `browser.isolate: false` kept every copy.
+ * The wrapper's own import of the compiler keeps a stable URL, so it is evaluated once.
  */
-const COMPILER_SETUP = '@angular/compiler';
+export const COMPILER_SETUP = '@storybook/angular-vite/internal/vitest-compiler-setup';
 
 /**
  * Angular build options that influence how stories compile under Vitest.

@@ -1,8 +1,10 @@
+import { readFileSync } from 'node:fs';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import { type AngularVitestOptions, storybookAngularVitest } from './vitest.ts';
+import { type AngularVitestOptions, COMPILER_SETUP, storybookAngularVitest } from './vitest.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   logger: { warn: vi.fn() },
@@ -65,6 +67,27 @@ describe('storybookAngularVitest', () => {
 
     expect(() => storybookAngularVitest(circular)).toThrow(/non-serializable/);
     expect(process.env[ENV_KEY]).toBeUndefined();
+  });
+
+  it('registers the compiler wrapper as a setup file, not the bare @angular/compiler specifier', () => {
+    const config = (storybookAngularVitest().config as () => { test: { setupFiles: string[] } })();
+
+    // Vitest re-imports setup files under a fresh URL per test file; a bare specifier would
+    // re-evaluate the compiler each time.
+    expect(config.test.setupFiles).toEqual([COMPILER_SETUP]);
+    expect(config.test.setupFiles).not.toContain('@angular/compiler');
+  });
+
+  it('exports the compiler wrapper, which only imports @angular/compiler', () => {
+    const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
+    const subpath = COMPILER_SETUP.replace('@storybook/angular-vite', '.');
+    const source = readFileSync(
+      new URL('../client/vitest-compiler-setup.ts', import.meta.url),
+      'utf8'
+    );
+
+    expect(pkg.exports[subpath]).toBe('./dist/client/vitest-compiler-setup.js');
+    expect(source.replace(/^\s*\/\/.*$/gm, '').trim()).toBe("import '@angular/compiler';");
   });
 
   it('exports storybookAngularVitest as a function (export contract)', () => {

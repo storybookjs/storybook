@@ -13,7 +13,7 @@ A second opinion is a **blind review**: a model from another provider, in a fres
 
 1. **Pin the change.** The base ref and head (`git diff <base>...HEAD`), or the PR number. Done when you can name it by ref or URL.
 
-2. **Pick the reviewer.** A model of another provider than yours, at its default effort. The user's choice wins.
+2. **Pick the reviewer.** A model of another provider than yours, at its default effort. When no other provider is available, use a stronger model of your provider (for example Fable instead of Opus), or your own model at a higher reasoning effort. The user's choice wins.
 
 3. **Write your own view first.** A few lines: the risks you see and your verdict. Keep it out of the brief. It is your baseline for step 6.
 
@@ -28,8 +28,9 @@ A second opinion is a **blind review**: a model from another provider, in a fres
 5. **Run the reviewer** from the checkout, read-only, in the background. Use the first that your environment has:
    - **A delegation tool** of your agent environment that can start a session on another provider (for example T3 Code's `delegate_task`).
    - **The other provider's CLI:** `codex exec -s read-only -m <model> -o <reply-file> - < <brief-file>`, or `claude -p --permission-mode plan --model <model> < <brief-file> > <reply-file>`.
+   - **A subagent** on the model from step 2, when no other provider is available. Give it the brief only, not this conversation.
 
-   Tell the user which model reviews.
+   Tell the user which model reviews. A reviewer of your own provider shares more of your blind spots, so say so in the report.
 
 6. **Check and compare.** The reviewer can be wrong. Check each finding against the code yourself, and give it a verdict: **confirmed**, or **disputed** (with the reason). For a finding that names no producer of its input, judge it as "Edge cases and guards" says. Then report: both verdicts, new confirmed findings your baseline missed, shared findings, disagreements, and what neither of you checked.
 

@@ -25,6 +25,10 @@ export function supportsCsfFactories(framework: SupportedFramework): boolean {
     case SupportedFramework.VUE3_RSBUILD:
     case SupportedFramework.WEB_COMPONENTS_RSBUILD:
       return true;
+    // Preact: https://github.com/storybookjs/storybook/issues/33701
+    // Nuxt: https://github.com/nuxt-modules/storybook/issues/1097
+    // Qwik: https://github.com/literalpie/storybook-framework-qwik/issues/96
+    // Ember, HTML, Server, Solid: no factories tracker yet.
     case SupportedFramework.EMBER:
     case SupportedFramework.HTML_VITE:
     case SupportedFramework.PREACT_VITE:

@@ -561,21 +561,19 @@ export class ConfigFile implements CsfObject {
           this._parseExportsObject(decl);
         } else {
           const exported = unwrapExpression(node.declaration as Node);
-          const imported =
+          const binding =
             isTopLevel && exported.type === 'Identifier'
-              ? this.program.body.find(
-                  (statement) =>
-                    statement.type === 'ImportDeclaration' &&
-                    statement.importKind !== 'type' &&
-                    statement.specifiers.some(
-                      (specifier) =>
-                        specifier.local.name === exported.name &&
-                        (specifier.type !== 'ImportSpecifier' || specifier.importKind !== 'type')
-                    )
-                )
+              ? this.editor.scopes.bindingOf(exported)
+              : undefined;
+          const imported =
+            binding?.kind === 'import' &&
+            binding.declaration?.type === 'ImportDeclaration' &&
+            binding.declaration.importKind !== 'type' &&
+            (binding.node.type !== 'ImportSpecifier' || binding.node.importKind !== 'type')
+              ? binding.declaration
               : undefined;
           logger.debug(
-            imported?.type === 'ImportDeclaration'
+            imported
               ? dedent`
                   Cannot statically read the default export in ${this.fileName ? `'${this.fileName}'` : 'a config file'}: its value comes from '${imported.source.value}'.
                   Storybook does not follow imports when analyzing this config file.

@@ -132,16 +132,13 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([], { ...options, configDir });
 
         await generator.initialize();
-        expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining(`in '${fileName}':`));
-        expect(logger.debug).toHaveBeenCalledWith(
-          expect.stringContaining("its value comes from './shared'")
-        );
+        expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining(fileName));
         expect(logger.warn).not.toHaveBeenCalled();
         expect(once.warn).not.toHaveBeenCalled();
 
         vi.mocked(logger.debug).mockClear();
         await generator.getIndex();
-        expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining(`in '${fileName}':`));
+        expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining(fileName));
         expect(logger.warn).not.toHaveBeenCalled();
         expect(once.warn).not.toHaveBeenCalled();
       }

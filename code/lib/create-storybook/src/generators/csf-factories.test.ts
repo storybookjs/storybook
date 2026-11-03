@@ -32,6 +32,9 @@ describe('supportsCsfFactories', () => {
     [SupportedFramework.ANGULAR, true],
     [SupportedFramework.ANGULAR_VITE, true],
     [SupportedFramework.WEB_COMPONENTS_VITE, true],
+    [SupportedFramework.REACT_RSBUILD, true],
+    [SupportedFramework.VUE3_RSBUILD, true],
+    [SupportedFramework.WEB_COMPONENTS_RSBUILD, true],
     [SupportedFramework.PREACT_VITE, false],
     [SupportedFramework.HTML_VITE, false],
     [SupportedFramework.EMBER, false],
@@ -39,7 +42,7 @@ describe('supportsCsfFactories', () => {
     [SupportedFramework.NUXT, false],
     [SupportedFramework.SOLID, false],
     [SupportedFramework.QWIK, false],
-    [SupportedFramework.REACT_RSBUILD, false],
+    [SupportedFramework.HTML_RSBUILD, false],
   ] as const)('%s => %s', (framework, expected) => {
     expect(supportsCsfFactories(framework)).toBe(expected);
   });
@@ -131,9 +134,9 @@ describe('rewriteCopiedStoryPreviewImports', () => {
 describe('native CLI templates', () => {
   it.each([
     ['renderers/svelte/template/cli/ts/Button.stories.svelte', true],
-    ['renderers/react/template/cli/ts/Button.stories.ts', false],
-    ['renderers/vue3/template/cli/ts/Button.stories.ts', false],
-    ['renderers/web-components/template/cli/ts/Button.stories.ts', false],
+    ['renderers/react/template/cli/ts/Button.stories.ts', true],
+    ['renderers/vue3/template/cli/ts/Button.stories.ts', true],
+    ['renderers/web-components/template/cli/ts/Button.stories.ts', true],
     ['frameworks/react-vite/template/cli/ts/Button.stories.ts', true],
     ['frameworks/angular/template/cli/button.stories.ts', true],
     ['frameworks/sveltekit/template/cli/ts/Button.stories.svelte', true],

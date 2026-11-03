@@ -21,6 +21,9 @@ export function supportsCsfFactories(framework: SupportedFramework): boolean {
     case SupportedFramework.TANSTACK_REACT:
     case SupportedFramework.VUE3_VITE:
     case SupportedFramework.WEB_COMPONENTS_VITE:
+    case SupportedFramework.REACT_RSBUILD:
+    case SupportedFramework.VUE3_RSBUILD:
+    case SupportedFramework.WEB_COMPONENTS_RSBUILD:
       return true;
     case SupportedFramework.EMBER:
     case SupportedFramework.HTML_VITE:
@@ -29,10 +32,7 @@ export function supportsCsfFactories(framework: SupportedFramework): boolean {
     case SupportedFramework.HTML_RSBUILD:
     case SupportedFramework.NUXT:
     case SupportedFramework.QWIK:
-    case SupportedFramework.REACT_RSBUILD:
     case SupportedFramework.SOLID:
-    case SupportedFramework.VUE3_RSBUILD:
-    case SupportedFramework.WEB_COMPONENTS_RSBUILD:
       return false;
   }
 }

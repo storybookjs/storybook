@@ -179,7 +179,7 @@ To keep builder docgen, set `features.docgenServer: false` in `.storybook/main.j
 
 ### Other changed defaults
 
-- **`storybook dev` no longer opens a browser.** It prints the local URL. To open a browser, add `--open` to your `storybook dev` script.
+- **`storybook dev` no longer opens a browser.** It prints the local URL. To open a browser, add `--open` to your `storybook dev` script, or set `"open": true` in the Angular builder options.
 - **The Code panel is on.** With `@storybook/addon-docs` installed, every story has a Code panel. To hide it, set `parameters.docs.codePanel` to `false` in `.storybook/preview.js|ts`.
 - **Change detection and agentic review are always on.** In `storybook dev`, the sidebar shows new and modified stories and the **Review** button. You can no longer turn them off.
 - **Standalone docs pages are single sidebar entries.** An MDX page that is not attached to a component is no longer wrapped in a component with one `Docs` child. If your `sidebar.renderLabel` function or sidebar filters read that wrapper, see the [sidebar notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sidebar-standalone-docs-pages-are-no-longer-wrapped-in-a-component).

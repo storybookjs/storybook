@@ -35,6 +35,7 @@ describe('supportsCsfFactories', () => {
     [SupportedFramework.REACT_RSBUILD, true],
     [SupportedFramework.VUE3_RSBUILD, true],
     [SupportedFramework.WEB_COMPONENTS_RSBUILD, true],
+    [SupportedFramework.ASTRO, true],
     [SupportedFramework.PREACT_VITE, false],
     [SupportedFramework.HTML_VITE, false],
     [SupportedFramework.EMBER, false],

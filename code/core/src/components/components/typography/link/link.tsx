@@ -1,8 +1,6 @@
 import type { AnchorHTMLAttributes, MouseEvent } from 'react';
 import React, { forwardRef } from 'react';
 
-import { deprecate } from 'storybook/internal/client-logger';
-
 import { ChevronRightIcon } from '@storybook/icons';
 
 import { darken } from 'polished';
@@ -26,7 +24,6 @@ export interface LinkStylesProps {
   tertiary?: boolean;
   nochrome?: boolean;
   inverse?: boolean;
-  isButton?: boolean;
 }
 
 export interface LinkInnerProps {
@@ -175,8 +172,8 @@ const A = styled.a<LinkStylesProps>(
           },
         }
       : {},
-  ({ isButton, theme }) =>
-    isButton
+  ({ href, theme }) =>
+    !href
       ? {
           border: 0,
           borderRadius: theme.input.borderRadius,
@@ -205,25 +202,17 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(
       withArrow = false,
       containsIcon = false,
       className = undefined,
-      isButton = undefined,
       href,
       ...rest
     },
     ref
   ) => {
-    if (isButton !== undefined) {
-      deprecate(
-        'Link: `isButton` is deprecated and will be removed in Storybook 11. Links without a `href` are automatically rendered as buttons.'
-      );
-    }
-
     return (
       <A
         as={href ? 'a' : 'button'}
         href={href}
         {...rest}
         ref={ref}
-        isButton={!href || isButton === true}
         onClick={onClick && cancel ? (e) => cancelled(e, onClick) : onClick}
         className={className}
       >

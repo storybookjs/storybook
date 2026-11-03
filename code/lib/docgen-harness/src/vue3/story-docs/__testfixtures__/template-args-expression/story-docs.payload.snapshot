@@ -43,7 +43,7 @@ const status = ⟦value status script⟧;
   <div
     :style="{
       '--sidebar-width-collapsed': '52px',
-      width: ⟦value isCollapsed⟧ ? '52px' : '176px',
+      width: ⟦value isCollapsed op⟧ ? '52px' : '176px',
       overflow: 'hidden'
     }"
   >
@@ -91,7 +91,7 @@ const status = ⟦value status script⟧;
   <div
     :style="{
       '--sidebar-width-collapsed': '52px',
-      width: ⟦value isCollapsed⟧ ? '52px' : '176px',
+      width: ⟦value isCollapsed op⟧ ? '52px' : '176px',
       overflow: 'hidden'
     }"
   >

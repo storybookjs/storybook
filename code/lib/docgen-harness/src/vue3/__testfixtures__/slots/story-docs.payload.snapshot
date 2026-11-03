@@ -30,7 +30,7 @@ import SlotsShowcase from './SlotsShowcase.vue';
 </script>
 
 <template>
-  <SlotsShowcase⟦attr heading heading ~%20⟧⟦props -default -header -heading -item ~%20⟧>⟦text default ~%0A%20%20%20%20⟧
+  <SlotsShowcase⟦attr heading heading ~%20⟧⟦props -default -header -heading -item ~%20⟧>⟦text default slot ~%0A%20%20%20%20⟧
   </SlotsShowcase>
 </template>",
     },

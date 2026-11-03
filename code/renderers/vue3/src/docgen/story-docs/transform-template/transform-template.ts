@@ -22,23 +22,23 @@ import {
 } from 'storybook/internal/csf-tools';
 
 import type { ClassifiedArg } from '../classify-args/classify-args.ts';
-import { isFunctionExpression, printValue } from '../../shared/classify-value.ts';
+import { isFunctionExpression, printValue, snippetValueOf } from '../../shared/classify-value.ts';
 import { readForwardableSetup, type ForwardableSetup } from './forward-setup.ts';
 import {
   createRenderContext,
-  escapeTextContent,
   hoistArgValue,
   hoistModelRef,
   importStatementForBinding,
   quoteWords,
   scriptValue,
-  inlinePrimitiveSource,
   renderArgsBindingExpansion,
   renderBoundArgAttribute,
   renderPreparedSfcSnippet,
   wrapSlotContent,
+  writtenTextWords,
   type RenderContext,
 } from '../../shared/render-primitives.ts';
+import { expressionCode, fitsBraces, interpolatedText, operand } from '../../../snippet-values.ts';
 import { renderSlotArgContent } from './render-slot-content.ts';
 
 export interface TemplateRenderConfig {
@@ -311,14 +311,11 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
  * lexes the dot into the number
  */
 function wrapSubstitution(text: string, following: string): string {
-  // The preview wraps the value a hole prints, which a `.` word says code reads on.
+  // The preview wraps the value a hole prints here, an `op` word, as code reads on after a `.`.
   if (VALUE_HOLE_REGEXP.test(text)) {
-    return following.startsWith('.') ? `${text.slice(0, -1)} .⟧` : text;
+    return `${text.slice(0, -1)} op${following.startsWith('.') ? ' .' : ''}⟧`;
   }
-  if (text.startsWith('-') || (following.startsWith('.') && /^\d/.test(text))) {
-    return `(${text})`;
-  }
-  return text;
+  return operand(text, following.startsWith('.'));
 }
 
 const VALUE_HOLE_REGEXP = /^⟦value [^⟧]*⟧$/;
@@ -374,36 +371,36 @@ function transformInterpolation(
   }
 
   const arg = state.argsByName.get(argName);
-  const textHole = hole('text', holeWord(argName));
+  const start = node.loc.start.offset;
+  const end = node.loc.end.offset;
+  // A value edge touching an author '{' would concatenate into a new '{{', which the preview
+  // checks a value it prints there for.
+  const braces = [
+    ...(state.template[start - 1] === '{' ? ['{<'] : []),
+    ...(state.template[end] === '{' ? ['{>'] : []),
+  ];
+  const textHole = (words: string[]) => hole('text', holeWord(argName), ...braces, ...words);
   if (!arg && state.unsetArgs.has(argName)) {
-    const text = state.ctx.holes ? textHole : '';
-    state.edits.push({ start: node.loc.start.offset, end: node.loc.end.offset, text });
+    state.edits.push({ start, end, text: state.ctx.holes ? textHole([]) : '' });
     return true;
   }
   if (!arg) {
     return false;
   }
 
-  const rendered = inlinePrimitiveSource(arg.value);
-  if (rendered === undefined) {
-    return false;
-  }
-
   // Runtime interpolation renders escaped text, so markup and mustache characters in the value
   // are entity-escaped to decode back to the same text when the snippet re-parses.
-  const text = escapeTextContent(rendered);
-
-  // A value edge touching an author '{' would concatenate into a new '{{'.
-  const start = node.loc.start.offset;
-  const end = node.loc.end.offset;
-  if (
-    (text.startsWith('{') && state.template[start - 1] === '{') ||
-    (text.endsWith('{') && state.template[end] === '{')
-  ) {
+  const value = snippetValueOf(arg.value);
+  const text = interpolatedText(value);
+  if (text === undefined || !fitsBraces(text, braces)) {
     return false;
   }
 
-  state.edits.push({ start, end, text: state.ctx.holes ? textHole : text });
+  state.edits.push({
+    start,
+    end,
+    text: state.ctx.holes ? textHole(writtenTextWords(value)) : text,
+  });
   return true;
 }
 
@@ -934,7 +931,7 @@ function replacementForArgsReference(
       : hoistArgValue(arg.name, arg.value, state.ctx);
 
   // Vue entity-decodes generated markup on re-parse, so `&` cannot be substituted faithfully.
-  if ((quote && text.includes(quote)) || text.includes('}}') || text.includes('&')) {
+  if (expressionCode(text, quote) === undefined) {
     return undefined;
   }
 

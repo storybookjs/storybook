@@ -17,7 +17,6 @@ import {
 } from '../classify-args/classify-args.ts';
 import { isFunctionExpression, printValue } from '../../shared/classify-value.ts';
 import {
-  escapeTextContent,
   formatRenderedProp,
   importStatementForBinding,
   indent,
@@ -28,6 +27,7 @@ import {
   wrapSlotContent,
   type RenderContext,
 } from '../../shared/render-primitives.ts';
+import { escapeTextContent } from '../../../snippet-values.ts';
 
 export interface PrintHInput {
   /** Render-function expression to print as template markup. */

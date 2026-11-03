@@ -7,6 +7,8 @@ import {
   walk,
 } from 'storybook/internal/csf-tools';
 
+import type { SnippetValue } from '../../snippet-values.ts';
+
 /**
  * How one arg value reaches the generated SFC.
  *
@@ -87,6 +89,21 @@ export function classifyValue(node: Node): ValuePlan {
   }
 
   return isResolvable(value) ? { kind: 'hoist' } : { kind: 'unrepresentable' };
+}
+
+/** An arg value as the snippet prints it: a boolean, string or number literal, or its code. */
+export function snippetValueOf(node: Node): SnippetValue {
+  const value = unwrapExpression(node);
+  if (value.type === 'Literal' && typeof value.value === 'boolean') {
+    return { kind: 'boolean', value: value.value };
+  }
+  if (isStringLiteral(value)) {
+    return { kind: 'string', value: value.value };
+  }
+  if (value.type === 'Literal' && typeof value.value === 'number') {
+    return { kind: 'number', value: value.value, code: printValue(value) };
+  }
+  return { kind: 'code', code: printValue(value) };
 }
 
 // Strips the story file's nesting from continuation lines so the value reads naturally when hoisted.

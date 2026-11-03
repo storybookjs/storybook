@@ -362,7 +362,7 @@ describe('vue3 filled story templates', () => {
   it.each<[Exclude<keyof typeof sharedValuesStories, 'default'>, Record<string, unknown>]>([
     ['ForEachItem', { items: [{ id: 3 }, { id: 4 }, { id: 5 }] }],
     ['SetupMutation', { items: ['x', 'y'] }],
-    ['SpreadWithClass', { label: HOSTILE }],
+    ['SpreadWithClass', { label: 'say "hi" <b>' }],
   ])('%s renders as its story', async (name, args) => {
     const payload = await buildFixturePayload(fixtureCase);
     const [, story] = Object.entries(payload?.stories ?? {}).find(([id]) =>

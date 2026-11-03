@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SourceEditor } from 'storybook/internal/csf-tools';
+import { UnprintableArgError } from 'storybook/internal/docs-tools';
 import type { IndexEntry, StoryDoc } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
@@ -260,7 +261,7 @@ describe('template', () => {
       </script>
 
       <template>
-        <MyButton ⟦attr count count⟧ ⟦attr label label⟧ ⟦props -count -label⟧ />
+        <MyButton⟦attr count count ~%20⟧⟦attr label label ~%20⟧⟦props -count -label ~%20⟧ />
       </template>"
     `);
     expect(filled(story, { label: 'Go', count: 3, active: true })).toContain(
@@ -281,7 +282,7 @@ export const Primary = {
 `);
     expect(story?.snippet).toContain('<MyButton label="Go" :count="2" />');
     expect(story?.template).toContain(
-      '<MyButton label="Go" ⟦attr count count⟧ ⟦props -count -label⟧ />'
+      '<MyButton label="Go"⟦attr count count ~%20⟧⟦props -count -label ~%20⟧ />'
     );
   });
 
@@ -296,7 +297,7 @@ export const Primary = {
       `export const Primary = { args: { label: 'Hi', onHover: () => {} } };`
     );
     expect(story?.snippet).not.toContain('onHover');
-    expect(story?.template).toContain('⟦props -label -onHover⟧');
+    expect(story?.template).toContain('⟦props -label -onHover ~%20⟧');
   });
 
   it('fills to the snippet for a number written another way than it prints', async () => {
@@ -314,9 +315,31 @@ export const Primary = {
     expect(story?.snippet).toContain('{{ null }}');
   });
 
-  it('keeps a hoisted string from ending the script block once a control changes it', async () => {
+  it('prints a hoisted string with a closing tag as the snippet prints one', async () => {
     const story = await primaryStory(`export const Primary = { args: { size: { tag: 'a' } } };`);
-    expect(filled(story, { size: { tag: '</script>' } })).toContain(`'<\\/script>'`);
+    expect(filled(story, { size: { tag: '</d>' } })).toContain("const size = { tag: '</d>' };");
+  });
+
+  it('shows the static snippet for an attribute a changed string cannot be written in', async () => {
+    const story = await primaryStory(`export const Primary = { args: { label: 'Hi' } };`);
+    expect(() => fillTemplate(story!.template!, { label: `a & "b" 'c'` })).toThrow(
+      UnprintableArgError
+    );
+  });
+
+  it('fills to the snippet for a number the story writes other than as it shows', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { count: 1e3 },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton :count="args.count">{{ args.count }}</MyButton>',
+  }),
+};
+`);
+    expect(story?.snippet).toContain('<MyButton :count="1e3">1000</MyButton>');
+    expect(filled(story, { count: 7 })).toContain('<MyButton :count="7">7</MyButton>');
   });
 
   it('fills to the snippet for a hoisted value holding a closing tag', async () => {

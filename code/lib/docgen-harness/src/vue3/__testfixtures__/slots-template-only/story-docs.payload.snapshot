@@ -33,8 +33,8 @@ import TemplateOnlySlots from './TemplateOnlySlots.vue';
 </script>
 
 <template>
-  <TemplateOnlySlots⟦props -default -header -item ~%20⟧>⟦text default ~%0A%20%20%20%20⟧
-    <template #header>⟦text header ~%0A%20%20%20%20%20%20⟧
+  <TemplateOnlySlots⟦props -default -header -item ~%20⟧>⟦text default slot ~%0A%20%20%20%20⟧
+    <template #header>⟦text header slot ~%0A%20%20%20%20%20%20⟧
     </template>
   </TemplateOnlySlots>
 </template>",

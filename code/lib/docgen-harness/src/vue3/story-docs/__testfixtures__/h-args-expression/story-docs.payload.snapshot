@@ -21,7 +21,7 @@ import HArgsExpression from './HArgsExpression.vue';
 </script>
 
 <template>
-  <HArgsExpression :count="⟦value count⟧ + 1" :label="`${⟦value count⟧} items`" />
+  <HArgsExpression :count="⟦value count op⟧ + 1" :label="`${⟦value count op⟧} items`" />
 </template>",
     },
   },

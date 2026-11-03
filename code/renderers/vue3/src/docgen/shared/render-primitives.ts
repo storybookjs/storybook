@@ -14,7 +14,14 @@ import type {
   ClassifiedSlotArg,
   RenderableValuePlan,
 } from '../story-docs/classify-args/classify-args.ts';
-import { printValue } from './classify-value.ts';
+import {
+  type SnippetValue,
+  attributeOrder,
+  printAttribute,
+  quoteAttributeValue,
+  slotContent,
+} from '../../snippet-values.ts';
+import { printValue, snippetValueOf } from './classify-value.ts';
 
 export interface RenderSfcMarkupInput {
   /** Rendered Vue template markup without the wrapping `<template>` block. */
@@ -82,10 +89,10 @@ function partitionArgsByRole(args: ClassifiedArg[]): {
   return {
     props: args
       .filter((arg): arg is ClassifiedPropLikeArg => arg.role === 'model' || arg.role === 'prop')
-      .sort((a, b) => a.name.localeCompare(b.name)),
+      .sort((a, b) => attributeOrder(a.name, b.name)),
     events: args
       .filter((arg): arg is ClassifiedPropLikeArg => arg.role === 'event')
-      .sort((a, b) => a.name.localeCompare(b.name)),
+      .sort((a, b) => attributeOrder(a.name, b.name)),
     slots: args
       .filter((arg): arg is ClassifiedSlotArg => arg.role === 'slot')
       .sort((a, b) => slotSortKey(a.name).localeCompare(slotSortKey(b.name))),
@@ -150,7 +157,8 @@ function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): Rende
     return hoistedProp(input, ctx, scriptValue(input.variableName, value, ctx));
   }
 
-  if (isStringLiteral(value) && quoteAttributeValue(value.value) === undefined) {
+  const attribute = printAttribute(input.attributeName, snippetValueOf(value));
+  if (attribute === undefined) {
     return hoistedProp(input, ctx, scriptValue(input.variableName, value, ctx));
   }
 
@@ -158,17 +166,7 @@ function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): Rende
     return { attrName: hole('attr', holeWord(input.attributeName), holeWord(input.variableName)) };
   }
 
-  if (value.type === 'Literal' && typeof value.value === 'boolean') {
-    return value.value
-      ? { attrName: input.attributeName }
-      : { attrName: `:${input.attributeName}`, value: 'false' };
-  }
-
-  if (isStringLiteral(value)) {
-    return { attrName: input.attributeName, value: value.value };
-  }
-
-  return { attrName: `:${input.attributeName}`, value: printValue(value) };
+  return { attrName: attribute };
 }
 
 /** Arg-value hoists share one const per arg name, so every reference keeps the same identity. */
@@ -212,13 +210,13 @@ export function renderSlotContent(
   const holes = ctx.holes && !arg.returned;
 
   if (plan.kind === 'inline') {
-    const source = inlinePrimitiveSource(value);
-    if (source === undefined) {
-      return holes ? hole('text', holeWord(arg.name)) : `{{ ${printValue(value)} }}`;
-    }
+    const printed = snippetValueOf(value);
+    const content = slotContent(printed);
     // Vue's whitespace condensing would alter padded text, so it hoists to an interpolation.
-    if (!/^\s|\s$/.test(source)) {
-      return holes ? hole('text', holeWord(arg.name)) : escapeTextContent(source);
+    if (content !== undefined) {
+      return holes
+        ? hole('text', holeWord(arg.name), 'slot', ...writtenTextWords(printed))
+        : content;
     }
   }
 
@@ -242,17 +240,13 @@ export function inlinePrimitiveSource(node: Node): string | undefined {
 }
 
 /**
- * Escapes a string value so it reaches the reader as the text the story passed.
- *
- * Vue compiles the generated snippet, so an unescaped `<` opens a tag and `{{` opens an
- * interpolation, both of which would render something the story never produced.
+ * The words of a text hole for a number the story writes other than as it prints, such as `1e3`:
+ * the text it shows while the arg holds it, as the preview passes its code then.
  */
-export function escapeTextContent(text: string): string {
-  return text
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('{{', '&#123;&#123;');
+export function writtenTextWords(value: SnippetValue): string[] {
+  return value.kind === 'number' && value.code !== String(value.value)
+    ? [holeWord(`=${String(value.value)}`)]
+    : [];
 }
 
 function renderScript(ctx: RenderContext): string | undefined {
@@ -309,22 +303,6 @@ function toIdentifier(input: string): string {
     .replace(/^[-0-9]+/, '')
     .replace(/[-\s]+(.)?/g, (_, next?: string) => (next ? next.toUpperCase() : ''));
   return name && !RESERVED_WORDS.has(name) ? name : `_${name}`;
-}
-
-/** Quoted attribute value, or `undefined` when both quote styles occur and it must be hoisted. */
-function quoteAttributeValue(value: string): string | undefined {
-  // Attribute values are entity-decoded on re-parse, so an `&` would come back as a different
-  // string than the story set. Text content escapes instead; an attribute has to hoist.
-  if (value.includes('&')) {
-    return undefined;
-  }
-  if (!value.includes('"')) {
-    return `"${value}"`;
-  }
-  if (!value.includes("'")) {
-    return `'${value}'`;
-  }
-  return undefined;
 }
 
 /** Format one structured attribute at the SFC print boundary. */

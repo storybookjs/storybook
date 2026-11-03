@@ -93,7 +93,7 @@ See [TypeScript 7 configuration](../configure/integration/typescript.mdx#typescr
 
 ### Check for removed support
 
-Storybook 11 removes support for these setups. If your project uses one, switch before you upgrade:
+Storybook 11 removes support for the following setups. If your project is impacted, switch before you upgrade:
 
 - **Create React App preset.** `@storybook/preset-create-react-app` is no longer published, and the upgrade stops while it is installed. Use `@storybook/react-vite` instead. See the [Create React App notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#create-react-app-support-removed).
 - **Yarn Plug'n'Play.** Set `nodeLinker: node-modules` in `.yarnrc.yml` and run `yarn install`. See the [Yarn PnP notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#yarn-pnp-support-removed).
@@ -141,7 +141,7 @@ These automigrations are new in Storybook 11. To run one again later, use `npx s
 | `vitest-setup-file`               | Removes `setProjectAnnotations` calls from Vitest setup files                                                                   |
 | `web-components-runtime-manifest` | Replaces `setCustomElementsManifest()` with `framework.options.customElementsManifest`                                          |
 
-An automigration that cannot edit a file safely stops with instructions or lists the file in `automigrations-summary.md`. For example, `story-sort-to-main` does not move comparator functions or imported values. Make those changes by hand.
+An automigration stops when it cannot safely edit a file. It prints instructions for you to manually make changes, and lists affected files in `automigrations-summary.md`.
 
 ## What changes after you upgrade
 

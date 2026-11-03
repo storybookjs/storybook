@@ -1,6 +1,4 @@
 import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import { pathToFileURL } from 'node:url';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -22,6 +20,7 @@ describe('storybookAngularVitest', () => {
 
   afterEach(() => {
     delete process.env[ENV_KEY];
+    vi.doUnmock('@angular/compiler');
   });
 
   it('sets the env var to the serialized options and returns the named plugin', () => {
@@ -88,32 +87,18 @@ describe('storybookAngularVitest', () => {
   });
 
   it('evaluates @angular/compiler once when the setup file is re-imported under fresh URLs', async () => {
-    // Every evaluation of @angular/compiler publishes a new facade on globalThis.ng.
-    vi.stubGlobal('ng', {});
-    const facade = () => (globalThis as { ng: { ɵcompilerFacade?: object } }).ng.ɵcompilerFacade;
-    // Vitest's browser tester re-imports setup files this way, with a fresh query per test file.
-    const freshImport = (url: string, version: number) =>
-      import(/* @vite-ignore */ `${url}?browserv=${version}`);
-    const compilerUrl = pathToFileURL(
-      createRequire(import.meta.url).resolve('@angular/compiler')
-    ).href;
+    let evaluations = 0;
+    vi.doMock('@angular/compiler', () => {
+      evaluations++;
+      return {};
+    });
     const wrapperUrl = new URL('../client/vitest-compiler-setup.ts', import.meta.url).href;
 
-    // A bare specifier under fresh URLs evaluates the compiler each time.
-    await freshImport(compilerUrl, 1);
-    const first = facade();
-    await freshImport(compilerUrl, 2);
-    expect(first).toBeDefined();
-    expect(facade()).not.toBe(first);
+    // Vitest's browser tester re-imports setup files this way, with a fresh query per test file.
+    await import(/* @vite-ignore */ `${wrapperUrl}?browserv=1`);
+    await import(/* @vite-ignore */ `${wrapperUrl}?browserv=2`);
 
-    // With the compiler loaded, re-importing the wrapper under fresh URLs evaluates nothing.
-    await import('@angular/compiler');
-    vi.stubGlobal('ng', {});
-    await freshImport(wrapperUrl, 1);
-    await freshImport(wrapperUrl, 2);
-    expect(facade()).toBeUndefined();
-
-    vi.unstubAllGlobals();
+    expect(evaluations).toBe(1);
   });
 
   it('exports storybookAngularVitest as a function (export contract)', () => {

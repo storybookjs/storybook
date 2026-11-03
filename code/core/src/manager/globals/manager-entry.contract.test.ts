@@ -20,7 +20,8 @@ describe('built-in manager entry', () => {
   });
 
   // Every Storybook loads this entry in the manager. storybook/test is no manager global, so a
-  // module that imports it (e.g. `storybook/internal/csf`) would bundle its test libraries here.
+  // module that imports it (e.g. `storybook/internal/csf`) would bundle its test libraries here,
+  // from `dist/test` or from the preview runtime's chunks that it and the instrumenter share.
   it.runIf(BUILT)('does not bundle storybook/test', async () => {
     const { metafile } = await build({
       entryPoints: [COMMON_MANAGER],
@@ -36,7 +37,9 @@ describe('built-in manager entry', () => {
 
     expect(
       Object.keys(metafile.inputs).filter((input) =>
-        /dist\/test\/|node_modules\/(chai|@vitest|@testing-library)\//.test(input)
+        /dist\/(test|preview\/(vendor|_chunks))\/|node_modules\/(chai|@vitest|@testing-library)\//.test(
+          input
+        )
       )
     ).toEqual([]);
   });

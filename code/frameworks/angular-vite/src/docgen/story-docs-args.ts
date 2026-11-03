@@ -47,23 +47,11 @@ export const argFieldValue = (node: Node): string =>
 // comments a template expression cannot take (a class field keeps them). Every expression is
 // escaped for the attribute position it lands in: the double-quote delimiter and text Angular's
 // lexer would decode as a character reference survive the round-trip unchanged.
-export const evaluateArgExpression = (node: Node, enums: SnippetEnum[]): string =>
-  escapeAttributeExpression(evaluateArgLiteral(node, enums) ?? argExpressionCode(node));
-
-/** The code an arg is written with, as a binding carries it before its attribute escaping. */
-export const argExpressionCode = (node: Node): string =>
-  expandTabs(withoutComments(detachedTextOf(unwrapExpression(node))));
-
-/**
- * The value an arg evaluates to, as the preview holds it while no control changed it, or
- * `undefined` in `found: false` when it needs the story to run.
- */
-export const evaluateArgValue = (
-  node: Node,
-  enums: SnippetEnum[]
-): { found: true; value: unknown } | { found: false } => {
-  const value = evaluateNode(unwrapExpression(node), enums);
-  return value === EVAL_FAILED ? { found: false } : { found: true, value };
+export const evaluateArgExpression = (node: Node, enums: SnippetEnum[]): string => {
+  const literal = evaluateArgLiteral(node, enums);
+  return escapeAttributeExpression(
+    literal ?? expandTabs(withoutComments(detachedTextOf(unwrapExpression(node))))
+  );
 };
 
 // Tabs on code lines become spaces, deepest first so each line is converted once. Lines inside

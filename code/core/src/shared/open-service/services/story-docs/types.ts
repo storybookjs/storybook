@@ -30,8 +30,6 @@ export interface StoryDoc {
    * through the renderer's `parameters.docs.source.printHole`, so the snippet follows the controls.
    */
   template?: string;
-  /** Read by the legacy hole contract only, until every provider writes wrapping holes. */
-  argCode?: Record<string, string>;
   description?: string;
   summary?: string;
   /**

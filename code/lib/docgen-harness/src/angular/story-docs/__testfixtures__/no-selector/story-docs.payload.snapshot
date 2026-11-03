@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-no-selector--primary": {
-      "argCode": {},
       "id": "storydocs-no-selector--primary",
       "name": "Primary",
       "snippet": "import { NgComponentOutlet } from '@angular/common';

@@ -19,10 +19,7 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import {
-  legacyFindHoles as findHoles,
-  legacyWithHoleSpace as withHoleSpace,
-} from 'storybook/internal/docs-tools';
+import { withHoleSpace } from 'storybook/internal/docs-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
@@ -30,7 +27,6 @@ import { resolve } from 'node:path';
 import type { AngularComponentSnippetMeta, AngularDocgenPayload } from './build-docgen.ts';
 import { parseStoryFile } from './resolve-component.ts';
 import {
-  argExpressionCode,
   argFieldValue,
   createArgExternalizer,
   evaluateArgExpression,
@@ -189,12 +185,7 @@ const buildStoryDoc = async (
       name,
       ...(rendered === undefined ? {} : { snippet: rendered.snippet }),
       ...(rendered?.warning === undefined ? {} : { warning: rendered.warning }),
-      ...(rendered?.template === undefined
-        ? {}
-        : {
-            template: rendered.template,
-            argCode: rendered.argCode,
-          }),
+      ...(rendered?.template === undefined ? {} : { template: rendered.template }),
       ...(description ? { description } : {}),
       ...(summary === undefined ? {} : { summary }),
     };
@@ -241,12 +232,11 @@ const renderedSnippet = async (
 
 interface StoryTemplate {
   template: string;
-  argCode: Record<string, string>;
 }
 
 /**
- * The story's template: the same print as its static snippet, with a hole wherever that prints an
- * arg's value, or nothing where a hole cannot be told apart, such as a value printed twice.
+ * The story's template: its static snippet with each value of an arg it prints wrapped in a hole,
+ * from the same print with a placeholder there, or nothing where the two prints do not line up.
  */
 const storyTemplate = async (
   snippetMeta: AngularComponentSnippetMeta,
@@ -254,7 +244,7 @@ const storyTemplate = async (
   decorators: Node | undefined,
   deps: StoryDocDeps,
   derived: RenderedSnippet
-): Promise<StoryTemplate | {}> => {
+): Promise<Partial<StoryTemplate>> => {
   const placeholders = printPlaceholders();
   const printed = await renderStorySnippet(
     snippetMeta,
@@ -264,16 +254,11 @@ const storyTemplate = async (
     placeholders,
     derived.analysis
   );
-  const template = placeholders.template(printed.snippet);
-  const written = placeholders.argCode();
-  if (template === undefined || written === undefined) {
-    return {};
-  }
-  const holeArgs = new Set(findHoles(template).map(({ words: [arg = ''] }) => arg));
-  const argCode = Object.fromEntries(
-    Object.entries(written).filter(([name]) => holeArgs.has(name))
-  );
-  return { template: withHoleSpace(template, takesSpace), argCode };
+  const template = placeholders.template(printed.snippet, derived.snippet);
+  // A binding a control clears leaves no gap, and a value over a line of its own no empty line.
+  return template === undefined
+    ? {}
+    : { template: withHoleSpace(template, (kind) => kind === 'prop' || kind === 'text') };
 };
 
 type RenderedSnippet = HostComponentSnippet & {
@@ -514,21 +499,14 @@ const componentBindings = (
     if (!inputNames.has(name)) {
       continue;
     }
-    const literal = evaluateArgLiteral(node, snippetMeta.enums);
-    if (literal === undefined && isSelfContained(node)) {
-      const code = argFieldValue(node);
-      fields.push({ name, value: printer.show(name, 'field', code, code) });
+    if (evaluateArgLiteral(node, snippetMeta.enums) === undefined && isSelfContained(node)) {
+      fields.push({ name, value: printer.show(name, 'field', argFieldValue(node)) });
       inputs.push({ name, expression: formatPropInTemplate(name) });
       continue;
     }
     inputs.push({
       name,
-      expression: printer.show(
-        name,
-        'bind',
-        evaluateArgExpression(node, snippetMeta.enums),
-        literal === undefined ? argExpressionCode(node) : undefined
-      ),
+      expression: printer.show(name, 'bind', evaluateArgExpression(node, snippetMeta.enums)),
     });
   }
   inputs.push(...unsetInputs(snippetMeta, shape, printer, (name) => !(name in shape.args)));
@@ -572,16 +550,10 @@ const argsExpansion = (
       }
     } else if (inputNames.has(name)) {
       const expression = evaluateArgExpression(node, snippetMeta.enums);
-      const literal = evaluateArgLiteral(node, snippetMeta.enums);
       inputs.push({
         name,
         expression,
-        attribute: printer.show(
-          name,
-          'prop',
-          inputBinding(name, expression),
-          literal === undefined ? argExpressionCode(node) : undefined
-        ),
+        attribute: printer.show(name, 'prop', inputBinding(name, expression)),
       });
     }
   }
@@ -613,6 +585,3 @@ const isUndefinedValue = (node: Node): boolean => {
     (unwrapped.type === 'UnaryExpression' && unwrapped.operator === 'void')
   );
 };
-
-// A binding that prints nothing leaves no gap, and no hole leaves an empty line.
-const takesSpace = (kind: string, space: string) => kind === 'prop' || space.includes('\n');

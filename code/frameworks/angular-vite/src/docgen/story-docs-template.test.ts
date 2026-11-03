@@ -9,9 +9,9 @@ import { dedent } from 'ts-dedent';
 
 import { vol } from 'memfs';
 
-import { asWrittenArgs } from 'storybook/internal/docs-tools';
+import { fillTemplate, stripHoles } from 'storybook/internal/docs-tools';
 
-import { fillTemplate } from '../client/docs/fill-template.ts';
+import { printHole } from '../client/docs/print-hole.ts';
 import type { AngularDocgenPayload } from './build-docgen.ts';
 import { buildStoryDocsPayload } from './story-docs-build.ts';
 
@@ -59,12 +59,10 @@ const storyDocs = async (source: string): Promise<StoryDoc[]> => {
   return Object.values(payload!.stories);
 };
 
-// As the preview fills a template: an arg no control changed is the code it is written with.
-const fill = (story: StoryDoc, initialArgs: Record<string, unknown>, args = initialArgs) =>
-  fillTemplate(
-    story.template!,
-    asWrittenArgs({ args, unmappedArgs: args, initialArgs }, story.argCode)
-  );
+const fill = (story: StoryDoc, initialArgs: Record<string, unknown>, args = initialArgs) => {
+  expect(stripHoles(story.template!)).toBe(story.snippet);
+  return fillTemplate(story.template!, { initialArgs, unmappedArgs: args }, printHole);
+};
 
 const IMPORTS = dedent`
   import { argsToTemplate } from '@storybook/angular-vite';
@@ -81,10 +79,9 @@ describe('story-docs templates', () => {
       };
     `);
     expect(story!.template).toContain(
-      '[label]="⟦bind label⟧"\n        [config]="⟦bind config⟧"\n        [formatter]="formatter"'
+      `[label]="⟦bind label⟫'Go'⟧"\n        [config]="⟦bind config⟫{a: 1}⟧"\n        [formatter]="formatter"`
     );
-    expect(story!.template).toContain('formatter = ⟦field formatter⟧;');
-    expect(story!.argCode).toEqual({ formatter: '(value) => value.trim()' });
+    expect(story!.template).toContain('formatter = ⟦field formatter⟫(value) => value.trim()⟧;');
 
     const own = { label: 'Go', config: { a: 1 }, formatter: () => '' };
     expect(fill(story!, own)).toBe(story!.snippet);
@@ -102,7 +99,7 @@ describe('story-docs templates', () => {
       };
     `);
     expect(story!.template).toContain(
-      '<sb-button⟦prop label ~%20⟧⟦prop size ~%20⟧⟦prop config ~%20⟧⟦prop formatter ~%20⟧></sb-button>'
+      `<sb-button⟦prop label ~%20⟫[label]="'Go'"⟧⟦prop size ~%20⟫[size]="'lg'"⟧⟦prop config ~%20⟫⟧⟦prop formatter ~%20⟫⟧></sb-button>`
     );
     const own = { label: 'Go', size: 'lg' };
     expect(fill(story!, own)).toBe(story!.snippet);
@@ -155,7 +152,7 @@ describe('story-docs templates', () => {
         render: ({ label }) => ({ template: \`<sb-button>\${label}</sb-button>\` }),
       };
     `);
-    expect(story!.template).toContain('<sb-button>⟦text label⟧</sb-button>');
+    expect(story!.template).toContain('<sb-button>⟦text label⟫⟧</sb-button>');
     expect(fill(story!, { label: '' })).toBe(story!.snippet);
     expect(fill(story!, { label: '' }, { label: 'Stop' })).toContain('<sb-button>Stop</sb-button>');
   });
@@ -168,7 +165,7 @@ describe('story-docs templates', () => {
         render: ({ label }) => ({ template: \`<sb-button>\${label}</sb-button>\` }),
       };
     `);
-    expect(story!.template).toContain('<sb-button>⟦text label⟧</sb-button>');
+    expect(story!.template).toContain('<sb-button>⟦text label⟫Go⟧</sb-button>');
     expect(fill(story!, { label: 'Go' }, { label: 'Stop' })).toContain(
       '<sb-button>Stop</sb-button>'
     );

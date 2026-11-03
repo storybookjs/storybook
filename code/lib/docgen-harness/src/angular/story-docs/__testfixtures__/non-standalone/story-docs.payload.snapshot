@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-non-standalone--primary": {
-      "argCode": {},
       "id": "storydocs-non-standalone--primary",
       "name": "Primary",
       "snippet": "import { Component } from '@angular/core';
@@ -22,7 +21,7 @@ export class DemoComponent {
 @Component({
   selector: 'app-demo',
   imports: [],
-  template: `<sb-non-standalone [label]="⟦bind label⟧" (pressed)="pressed($event)" />`,
+  template: `<sb-non-standalone [label]="⟦bind label⟫'Legacy'⟧" (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}

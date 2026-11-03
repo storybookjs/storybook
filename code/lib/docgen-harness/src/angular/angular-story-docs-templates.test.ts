@@ -12,10 +12,10 @@ import { parseTemplate } from '@angular/compiler';
 import ts from 'typescript';
 
 import { loadCsf } from 'storybook/internal/csf-tools';
-import { UnprintableArgError, writtenArg } from 'storybook/internal/docs-tools';
+import { UnprintableArgError, fillTemplate, stripHoles } from 'storybook/internal/docs-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
-import { fillTemplate } from '../../../../frameworks/angular-vite/src/client/docs/fill-template.ts';
+import { printHole } from '../../../../frameworks/angular-vite/src/client/docs/print-hole.ts';
 import { buildStoryDocsPayload } from '../../../../frameworks/angular-vite/src/docgen/story-docs-build.ts';
 import { extractHostComponentTemplate } from '../../../../frameworks/angular-vite/src/docgen/story-docs-snippet.ts';
 import { analyzeStoryTemplate } from '../../../../frameworks/angular-vite/src/docgen/story-docs-template-analysis.ts';
@@ -50,12 +50,6 @@ const stressValues: unknown[] = [
   true,
 ];
 
-// The args as the preview fills them while they hold the values the story writes.
-const asWritten = (args: Record<string, unknown>, argCode: Record<string, string> = {}) => ({
-  ...args,
-  ...Object.fromEntries(Object.entries(argCode).map(([name, code]) => [name, writtenArg(code)])),
-});
-
 const argSets = (args: Record<string, unknown>) => [
   args,
   {},
@@ -79,9 +73,14 @@ const expectCompiles = (filled: string, label: string) => {
   expect(parseTemplate(markup, 'filled.html').errors ?? [], `${label}\n${markup}`).toEqual([]);
 };
 
-const fillOrSkip = (template: string, args: Record<string, unknown>) => {
+// The template filled once a control changed the story's args to `args`.
+const fillOrSkip = (
+  template: string,
+  initialArgs: Record<string, unknown>,
+  unmappedArgs: Record<string, unknown>
+) => {
   try {
-    return fillTemplate(template, args);
+    return fillTemplate(template, { initialArgs, unmappedArgs }, printHole);
   } catch (error) {
     if (error instanceof UnprintableArgError) {
       return undefined;
@@ -119,7 +118,6 @@ interface FilledStory {
   template: string;
   snippet: string;
   warning?: string;
-  argCode?: Record<string, string>;
   args: Record<string, unknown>;
 }
 
@@ -156,7 +154,7 @@ const buildStories = async (fixtureCase: string) => {
     Annotations | undefined
   >;
   const snippets = Object.entries(csf._stories).flatMap(([exportName, story]) => {
-    const { template = '', snippet, warning, argCode } = payload!.stories[story.id]!;
+    const { template = '', snippet, warning } = payload!.stories[story.id]!;
     const args = { ...argsOf(storiesModule.default), ...argsOf(storiesModule[exportName]) };
     return snippet === undefined
       ? []
@@ -166,7 +164,6 @@ const buildStories = async (fixtureCase: string) => {
             template,
             snippet,
             warning,
-            argCode,
             args,
           },
         ];
@@ -176,14 +173,10 @@ const buildStories = async (fixtureCase: string) => {
 
 describe('angular story-docs templates', () => {
   it.each(cases)('%s fills to code that parses and markup that compiles', async (fixtureCase) => {
-    for (const { name, template, snippet, args, argCode } of (await buildFixture(fixtureCase))
-      .stories) {
-      expect(
-        fillTemplate(template, asWritten(args, argCode)),
-        `${name} filled with its own args`
-      ).toBe(snippet);
+    for (const { name, template, snippet, args } of (await buildFixture(fixtureCase)).stories) {
+      expect(stripHoles(template), `${name} while no arg changes`).toBe(snippet);
       for (const set of argSets(args)) {
-        const filled = fillOrSkip(template, set);
+        const filled = fillOrSkip(template, args, set);
         if (filled !== undefined) {
           expectCompiles(filled, `${name} ${JSON.stringify(set)}`);
         }
@@ -196,7 +189,7 @@ describe('angular story-docs templates', () => {
     for (const { name, template, snippet, warning, args } of snippets) {
       expectDeclaresWhatItReads(snippet, warning, `${name}'s static snippet`);
       for (const set of template === '' ? [] : argSets(args)) {
-        const filled = fillOrSkip(template, set);
+        const filled = fillOrSkip(template, args, set);
         if (filled !== undefined) {
           expectDeclaresWhatItReads(filled, warning, `${name} filled with ${JSON.stringify(set)}`);
         }

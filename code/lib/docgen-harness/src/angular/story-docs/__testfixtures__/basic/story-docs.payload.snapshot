@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-basic--primary": {
-      "argCode": {},
       "description": "The default state.",
       "id": "storydocs-basic--primary",
       "name": "Primary",
@@ -26,14 +25,13 @@ import { BasicComponent } from './basic.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [BasicComponent],
-  template: `<sb-basic [label]="⟦bind label⟧" [count]="⟦bind count⟧" (pressed)="pressed($event)" />`,
+  template: `<sb-basic [label]="⟦bind label⟫'Base'⟧" [count]="⟦bind count⟫3⟧" (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}
 }",
     },
     "storydocs-basic--renamed": {
-      "argCode": {},
       "description": "Named through the `name` annotation.",
       "id": "storydocs-basic--renamed",
       "name": "Custom name",
@@ -54,7 +52,7 @@ import { BasicComponent } from './basic.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [BasicComponent],
-  template: `<sb-basic [label]="⟦bind label⟧"⟦prop count ~%20⟧ (pressed)="pressed($event)" />`,
+  template: `<sb-basic [label]="⟦bind label⟫'Override'⟧"⟦prop count ~%20⟫⟧ (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}

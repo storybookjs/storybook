@@ -1,7 +1,7 @@
 import { SourceType } from 'storybook/internal/docs-tools';
 import type { DecoratorFunction, Parameters } from 'storybook/internal/types';
 
-import { fillTemplate } from './fill-template.ts';
+import { printHole } from './print-hole.ts';
 import { sourceDecorator } from './sourceDecorator';
 
 // With the docgen server on, the Source block and Code panel show the story-docs snippet, which is
@@ -15,8 +15,8 @@ export const parameters: Parameters = {
     source: {
       type: SourceType.DYNAMIC,
       language: useStaticServiceSnippets ? 'ts' : 'html',
-      // Fills the story-docs `template`, so the snippet follows the controls.
-      ...(useStaticServiceSnippets ? { fillTemplate } : {}),
+      // Prints a changed arg into the story-docs `template`, so the snippet follows the controls.
+      ...(useStaticServiceSnippets ? { printHole } : {}),
     },
   },
 };

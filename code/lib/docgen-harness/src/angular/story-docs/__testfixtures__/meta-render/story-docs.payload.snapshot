@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-meta-render--inherits-meta-render": {
-      "argCode": {},
       "description": "Inherits the meta-level render, so no snippet can be derived.",
       "id": "storydocs-meta-render--inherits-meta-render",
       "name": "Inherits Meta Render",
@@ -28,7 +27,7 @@ import { MetaRenderComponent } from './meta-render.component.ts';
   template: `<sb-meta-render [label]="label"></sb-meta-render>`,
 })
 export class DemoComponent {
-  label = ⟦field label⟧;
+  label = ⟦field label⟫'Meta'⟧;
 }",
     },
   },

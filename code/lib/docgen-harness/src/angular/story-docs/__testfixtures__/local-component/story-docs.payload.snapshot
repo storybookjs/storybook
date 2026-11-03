@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-local-component--primary": {
-      "argCode": {},
       "id": "storydocs-local-component--primary",
       "name": "Primary",
       "snippet": "import { Component } from '@angular/core';
@@ -20,7 +19,7 @@ export class DemoComponent {}",
 @Component({
   selector: 'app-demo',
   imports: [LocalComponent],
-  template: `<sb-local-component [heading]="⟦bind heading⟧" />`,
+  template: `<sb-local-component [heading]="⟦bind heading⟫'Declared here'⟧" />`,
 })
 export class DemoComponent {}",
       "warning": "LocalComponent is declared in the story file, so the snippet references it without importing it.",

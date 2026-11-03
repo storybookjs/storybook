@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-csf4--empty": {
-      "argCode": {},
       "description": "A factory story with no config at all.",
       "id": "storydocs-csf4--empty",
       "name": "Empty",
@@ -25,14 +24,13 @@ import { CsfFourComponent } from './csf4.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [CsfFourComponent],
-  template: `<sb-csf4 [label]="⟦bind label⟧" (saved)="saved($event)" />`,
+  template: `<sb-csf4 [label]="⟦bind label⟫'Base'⟧" (saved)="saved($event)" />`,
 })
 export class DemoComponent {
   saved(event: unknown) {}
 }",
     },
     "storydocs-csf4--primary": {
-      "argCode": {},
       "description": "A CSF4 factory story.",
       "id": "storydocs-csf4--primary",
       "name": "Primary",
@@ -54,7 +52,7 @@ import { CsfFourComponent } from './csf4.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [CsfFourComponent],
-  template: `<sb-csf4 [label]="⟦bind label⟧" (saved)="saved($event)" />`,
+  template: `<sb-csf4 [label]="⟦bind label⟫'Save'⟧" (saved)="saved($event)" />`,
 })
 export class DemoComponent {
   saved(event: unknown) {}

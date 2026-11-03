@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-live-args--computed-props": {
-      "argCode": {},
       "id": "storydocs-live-args--computed-props",
       "name": "Computed Props",
       "snippet": "import { Component } from '@angular/core';
@@ -28,9 +27,6 @@ export class DemoComponent {}",
       "warning": "Incomplete snippet: `describe` could not be provided, since the story declares no such arg.",
     },
     "storydocs-live-args--imported-control": {
-      "argCode": {
-        "control": "SHARED_CONTROL",
-      },
       "id": "storydocs-live-args--imported-control",
       "name": "Imported Control",
       "snippet": "import { Component } from '@angular/core';
@@ -50,7 +46,7 @@ import { LiveArgsComponent } from './live-args.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [LiveArgsComponent],
-  template: `<sb-live-args [control]="⟦bind control⟧"⟦prop formatter ~%20⟧⟦prop label ~%20⟧ (pressed)="pressed($event)" />`,
+  template: `<sb-live-args [control]="⟦bind control⟫SHARED_CONTROL⟧"⟦prop formatter ~%20⟫⟧⟦prop label ~%20⟫⟧ (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}
@@ -58,9 +54,6 @@ export class DemoComponent {
       "warning": "Incomplete snippet: `SHARED_CONTROL` could not be resolved statically.",
     },
     "storydocs-live-args--imported-formatter": {
-      "argCode": {
-        "formatter": "shout",
-      },
       "id": "storydocs-live-args--imported-formatter",
       "name": "Imported Formatter",
       "snippet": "import { Component } from '@angular/core';
@@ -80,7 +73,7 @@ import { LiveArgsComponent } from './live-args.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [LiveArgsComponent],
-  template: `<sb-live-args [label]="⟦bind label⟧" [formatter]="⟦bind formatter⟧"⟦prop control ~%20⟧ (pressed)="pressed($event)" />`,
+  template: `<sb-live-args [label]="⟦bind label⟫'Go'⟧" [formatter]="⟦bind formatter⟫shout⟧"⟦prop control ~%20⟫⟧ (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}
@@ -88,7 +81,6 @@ export class DemoComponent {
       "warning": "Incomplete snippet: `shout` could not be resolved statically.",
     },
     "storydocs-live-args--null-label": {
-      "argCode": {},
       "id": "storydocs-live-args--null-label",
       "name": "Null Label",
       "snippet": "import { Component } from '@angular/core';
@@ -108,14 +100,13 @@ import { LiveArgsComponent } from './live-args.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [LiveArgsComponent],
-  template: `<sb-live-args [label]="⟦bind label⟧"⟦prop control ~%20⟧⟦prop formatter ~%20⟧ (pressed)="pressed($event)" />`,
+  template: `<sb-live-args [label]="⟦bind label⟫null⟧"⟦prop control ~%20⟫⟧⟦prop formatter ~%20⟫⟧ (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}
 }",
     },
     "storydocs-live-args--own-markup-function": {
-      "argCode": {},
       "id": "storydocs-live-args--own-markup-function",
       "name": "Own Markup Function",
       "snippet": "import { Component } from '@angular/core';
@@ -138,7 +129,7 @@ import { LiveArgsComponent } from './live-args.component.ts';
   template: `<sb-live-args [label]="label" [formatter]="formatter"></sb-live-args>`,
 })
 export class DemoComponent {
-  label = ⟦field label⟧;
+  label = ⟦field label⟫'Save'⟧;
 }",
       "warning": "Incomplete snippet: `(value) => value.trim()` could not be resolved statically.",
     },

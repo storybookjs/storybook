@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-render-function--custom-render": {
-      "argCode": {},
       "description": "Renders a hand-written template.",
       "id": "storydocs-render-function--custom-render",
       "name": "Custom Render",
@@ -28,11 +27,10 @@ import { RenderFunctionComponent } from './render-function.component.ts';
   template: `<sb-render-function [label]="label"></sb-render-function>`,
 })
 export class DemoComponent {
-  label = ⟦field label⟧;
+  label = ⟦field label⟫'Render'⟧;
 }",
     },
     "storydocs-render-function--no-render": {
-      "argCode": {},
       "id": "storydocs-render-function--no-render",
       "name": "No Render",
       "snippet": "import { Component } from '@angular/core';
@@ -50,7 +48,7 @@ import { RenderFunctionComponent } from './render-function.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [RenderFunctionComponent],
-  template: `<sb-render-function [label]="⟦bind label⟧" />`,
+  template: `<sb-render-function [label]="⟦bind label⟫'Plain'⟧" />`,
 })
 export class DemoComponent {}",
     },

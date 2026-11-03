@@ -1,9 +1,8 @@
 import { logger } from 'storybook/internal/node-logger';
 
-import open from 'open';
 import { dedent } from 'ts-dedent';
 
-import { getMissingLinuxCommand, openBrowser, warnMissingLinuxCommand } from './opener.ts';
+import { openBrowser, openSafely } from './opener.ts';
 
 export async function openInBrowser(address: string) {
   let errorOccurred = false;
@@ -21,17 +20,9 @@ export async function openInBrowser(address: string) {
     return;
   }
 
-  if (errorOccurred) {
-    const missingCommand = getMissingLinuxCommand();
-    if (missingCommand) {
-      warnMissingLinuxCommand(address, missingCommand);
-      return;
-    }
-  }
-
   try {
     if (errorOccurred) {
-      await open(address);
+      await openSafely(address);
       errorOccurred = false;
     }
   } catch (error) {

@@ -33599,7 +33599,7 @@ __metadata:
     cross-spawn: "npm:^7.0.6"
     deep-object-diff: "npm:^1.1.0"
     deepsignal: "npm:^1.6.0"
-    default-browser: "npm:^5.2.1"
+    default-browser-id: "npm:^5.0.0"
     dequal: "npm:^2.0.2"
     detect-indent: "npm:^7.0.1"
     detect-port: "npm:^1.6.1"

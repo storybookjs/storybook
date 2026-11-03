@@ -349,7 +349,7 @@
     "cross-spawn": "^7.0.6",
     "deep-object-diff": "^1.1.0",
     "deepsignal": "^1.6.0",
-    "default-browser": "^5.2.1",
+    "default-browser-id": "^5.0.0",
     "dequal": "^2.0.2",
     "detect-indent": "^7.0.1",
     "detect-port": "^1.6.1",

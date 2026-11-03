@@ -6,22 +6,19 @@
  */
 import { execSync } from 'node:child_process';
 import { accessSync, constants } from 'node:fs';
-import { delimiter, join } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 
 import spawn from 'cross-spawn';
-import defaultBrowser from 'default-browser';
+import defaultBrowserId from 'default-browser-id';
 import isInsideContainer from 'is-inside-container';
-import open from 'open';
+import open, { type Options } from 'open';
+import { delimiter, join } from 'pathe';
 import picocolors from 'picocolors';
 import { isWsl } from 'wsl-utils';
 
 import { resolvePackageDir } from '../../../common/index.ts';
 import { StorybookError } from '../../../storybook-error.ts';
-
-// https://github.com/sindresorhus/open#app
-const OSX_CHROME = 'google chrome';
 
 enum Actions {
   NONE = 0,
@@ -92,11 +89,11 @@ function isExecutable(command: string) {
   });
 }
 
-// Returns the command that `open` would spawn on Linux when it cannot be found. `open` spawns
-// without an error listener, so a missing command crashes Storybook with an unhandled ENOENT
-// (#32949, #24191). It is bundled, so it cannot reach the copy of `xdg-open` that it ships with.
-// The conditions mirror `open`: macOS, Windows and WSL (outside a container) use other launchers.
-export function getMissingLinuxCommand(app?: string) {
+// Returns the command that `open` would spawn on Linux when it cannot be found, so Storybook can
+// say what is missing (#32949, #24191). `open` is bundled, so it cannot reach the copy of
+// `xdg-open` that it ships with. The conditions mirror `open`: macOS, Windows and WSL (outside a
+// container) use other launchers.
+function getMissingLinuxCommand(app?: string) {
   if (process.platform === 'darwin' || process.platform === 'win32') {
     return undefined;
   }
@@ -108,12 +105,23 @@ export function getMissingLinuxCommand(app?: string) {
   return isExecutable(command) ? undefined : command;
 }
 
-export function warnMissingLinuxCommand(url: string, command: string) {
+function warnMissingLinuxCommand(url: string, command: string) {
   const hint =
     command === 'xdg-open'
       ? 'Install xdg-utils, or set the BROWSER environment variable.'
       : 'Check the BROWSER environment variable.';
   logger.warn(`Could not open ${url} in a browser, because "${command}" was not found. ${hint}`);
+}
+
+// `open` spawns without an error listener, so a failing spawn (for example a missing PowerShell
+// on WSL) would crash Storybook with an unhandled 'error' event. Calling it after an `await` keeps
+// the spawn inside the microtask queue, so the listener below is attached before Node emits it.
+export async function openSafely(url: string, options?: Options) {
+  await Promise.resolve();
+  const child = await open(url, options);
+  child.once('error', (error) => {
+    logger.warn(`Could not open ${url} in a browser: ${error.message}`);
+  });
 }
 
 export class BrowserEnvError extends StorybookError {
@@ -163,7 +171,8 @@ function executeShellScript(scriptPath: string, url: string) {
 }
 
 // macOS bundle IDs of the Chromium browsers that `openBrowser.applescript` can drive, mapped to
-// their application names. Bundle names differ from those, for example "Chrome".
+// their application names. Bundle names differ from those, for example "Chrome". The IDs are
+// lowercase because LaunchServices may store them that way.
 const CHROMIUM_BROWSERS_BY_BUNDLE_ID: Record<string, string> = {
   'com.google.chrome.canary': 'Google Chrome Canary',
   'com.google.chrome.dev': 'Google Chrome Dev',
@@ -175,20 +184,19 @@ const CHROMIUM_BROWSERS_BY_BUNDLE_ID: Record<string, string> = {
   'org.chromium.chromium': 'Chromium',
 };
 
-// The tab-reusing AppleScript only runs for the browser that would open anyway: the default
-// browser when it is Chromium-based, or Chrome when BROWSER asks for it. Probing every running
-// Chromium browser ignored the default browser (#15316, #22929) and could start a Parallels VM
-// through its "Microsoft Edge" app (#34631).
+// The tab-reusing AppleScript only runs for the browser that would open anyway: the Chromium
+// browser named in BROWSER (any case), or else the default browser when it is Chromium-based.
+// Probing every running Chromium browser ignored the default browser (#15316, #22929) and could
+// start a Parallels VM through its "Microsoft Edge" app (#34631). `default-browser-id` only reads
+// a LaunchServices plist; `default-browser` would also script Finder, which can prompt for access.
 async function getAppleScriptBrowser(browser: string | undefined) {
-  if (browser === OSX_CHROME) {
-    return 'Google Chrome';
-  }
   if (typeof browser === 'string') {
-    return undefined;
+    return Object.values(CHROMIUM_BROWSERS_BY_BUNDLE_ID).find(
+      (name) => name.toLowerCase() === browser.toLowerCase()
+    );
   }
   try {
-    const { id } = await defaultBrowser();
-    return CHROMIUM_BROWSERS_BY_BUNDLE_ID[id.toLowerCase()];
+    return CHROMIUM_BROWSERS_BY_BUNDLE_ID[(await defaultBrowserId()).toLowerCase()];
   } catch {
     return undefined;
   }
@@ -249,17 +257,13 @@ async function startBrowserProcess(browser: string | undefined, url: string, arg
 
   // Fallback to open
   // (It will always open new tab)
-  try {
-    const options = {
-      app: browser ? { name: browser, arguments: args } : undefined,
-      wait: false,
-      url: true,
-    };
-    open(url, options).catch(() => {}); // Prevent `unhandledRejection` error.
-    return true;
-  } catch {
-    return false;
-  }
+  const options = {
+    app: browser ? { name: browser, arguments: args } : undefined,
+    wait: false,
+    url: true,
+  };
+  openSafely(url, options).catch(() => {}); // Prevent `unhandledRejection` error.
+  return true;
 }
 
 /**

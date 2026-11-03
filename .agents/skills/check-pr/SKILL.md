@@ -20,6 +20,7 @@ Reports what is left on a pull request in `storybookjs/storybook`. It changes no
 3. **Collect.** For each area, list what needs action:
    - **Checks:** each failing check and the reason. Danger checks the title, the labels and the "Manual testing" section; see [Pull requests](../../guidelines/pull-requests.md).
    - **Review threads:** each unresolved thread, with its author, file and line. Use GraphQL, because only GraphQL gives a thread's id and whether it is resolved.
+   - **PR comments:** each comment on the PR itself (`comments` in `gh pr view`) that asks for something and has no answer yet, from humans and bots.
    - **Greptile summary:** Greptile edits one summary comment on each review. Read its latest version (newest `updated_at`), with the confidence score and the findings.
    - **Description:** placeholders, an empty "Manual testing" section, and "How to review" links to commits that are no longer on the branch.
 

@@ -3,12 +3,12 @@
 ## PR details and checks
 
 ```bash
-gh pr view <number> --json title,body,state,labels,reviews,headRefOid,statusCheckRollup
+gh pr view <number> --json title,body,state,labels,reviews,comments,headRefOid,statusCheckRollup
 ```
 
 ## Unresolved review threads
 
-Repeat with `-f cursor=<endCursor>` while `hasNextPage` is `true`.
+Repeat with `-f cursor=<endCursor>` while `hasNextPage` is `true`. A thread with more than 100 comments (`totalCount`) needs its own query for the rest.
 
 ```bash
 gh api graphql -f query='
@@ -23,7 +23,8 @@ query($cursor: String) {
           isOutdated
           path
           line
-          comments(first: 10) {
+          comments(first: 100) {
+            totalCount
             nodes { author { login } body createdAt }
           }
         }

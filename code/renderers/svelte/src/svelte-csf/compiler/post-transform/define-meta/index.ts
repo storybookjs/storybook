@@ -18,10 +18,6 @@ interface Params {
   filename?: string;
 }
 
-/**
- * Attempt to transform compiled `defineMeta()` when necessary.
- * And in the end, update the compiled code using {@link MagicString}.
- */
 export function transformDefineMeta(params: Params): void {
   const { code, nodes, filename } = params;
 

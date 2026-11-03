@@ -450,6 +450,19 @@ export const baseTemplates = {
     // Re-enable once storybook-solidjs-vite releases a version that works with Storybook 11.
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration', 'chromatic'],
   },
+  'astro-vite/default-ts': {
+    name: 'Astro Latest (Vite | TypeScript)',
+    script:
+      'npx create-astro@latest {{beforeDir}} --template minimal --no-install --no-git --no-ai --skip-houston --yes',
+    expected: {
+      framework: '@storybook-astro/framework',
+      renderer: '@storybook-astro/renderer',
+      builder: '@storybook/builder-vite',
+    },
+    // TODO: remove `inDevelopment` once the nightly sandbox generation has published this template.
+    inDevelopment: true,
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration', 'chromatic'],
+  },
   'tanstack-react-router/default-ts': {
     name: 'TanStack React Router Latest (Vite | TypeScript)',
     script: 'npx @tanstack/cli@latest create {{beforeDir}} --no-install --tailwind --router-only',
@@ -625,9 +638,6 @@ export const baseTemplates = {
       // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
       // Also, Angular 22 needs TypeScript 6 or more recent.
       extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
-      resolutions: {
-        webpack: '5.107.2',
-      },
       useCsfFactory: true,
     },
     extraCiSteps: {
@@ -1016,6 +1026,7 @@ export const daily: TemplateKey[] = [
   'preact-vite/default-ts',
   'html-vite/default-ts',
   'solid-vite/default-ts',
+  'astro-vite/default-ts',
   // Disabled in CI: the published storybook-builder-rsbuild imports `babelParser` from
   // `storybook/internal/mocking-utils`, which Storybook 11 removed, so the sandbox cannot be
   // created. Fix: https://github.com/rstackjs/storybook-rsbuild/pull/603

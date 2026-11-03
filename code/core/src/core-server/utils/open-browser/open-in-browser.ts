@@ -3,7 +3,7 @@ import { logger } from 'storybook/internal/node-logger';
 import open from 'open';
 import { dedent } from 'ts-dedent';
 
-import { isSystemXdgOpenMissing, openBrowser } from './opener.ts';
+import { getMissingLinuxCommand, openBrowser, warnMissingLinuxCommand } from './opener.ts';
 
 export async function openInBrowser(address: string) {
   let errorOccurred = false;
@@ -21,8 +21,16 @@ export async function openInBrowser(address: string) {
     return;
   }
 
+  if (errorOccurred) {
+    const missingCommand = getMissingLinuxCommand();
+    if (missingCommand) {
+      warnMissingLinuxCommand(address, missingCommand);
+      return;
+    }
+  }
+
   try {
-    if (errorOccurred && !isSystemXdgOpenMissing()) {
+    if (errorOccurred) {
       await open(address);
       errorOccurred = false;
     }

@@ -6,14 +6,16 @@
  */
 import { execSync } from 'node:child_process';
 import { accessSync, constants } from 'node:fs';
-import { release } from 'node:os';
 import { delimiter, join } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 
 import spawn from 'cross-spawn';
+import defaultBrowser from 'default-browser';
+import isInsideContainer from 'is-inside-container';
 import open from 'open';
 import picocolors from 'picocolors';
+import { isWsl } from 'wsl-utils';
 
 import { resolvePackageDir } from '../../../common/index.ts';
 import { StorybookError } from '../../../storybook-error.ts';
@@ -75,27 +77,43 @@ function getBrowserEnv():
   return { action: Actions.BROWSER, value, args };
 }
 
-// `open` is bundled into Storybook, so it cannot reach the copy of `xdg-open` that it ships with and
-// runs the system one instead. Without it, `open` crashes Storybook with an unhandled ENOENT
-// (#32949). This mirrors when `open` picks `xdg-open`: not macOS, Windows or WSL, and no app.
-export function isSystemXdgOpenMissing(app?: string) {
-  const usesXdgOpen =
-    !['darwin', 'win32', 'android'].includes(process.platform) &&
-    !app &&
-    !release().toLowerCase().includes('microsoft');
+function isExecutable(command: string) {
+  const candidates = command.includes('/')
+    ? [command]
+    : (process.env.PATH ?? '').split(delimiter).map((dir) => join(dir, command));
 
-  if (!usesXdgOpen) {
-    return false;
-  }
-
-  return !(process.env.PATH ?? '').split(delimiter).some((dir) => {
+  return candidates.some((candidate) => {
     try {
-      accessSync(join(dir, 'xdg-open'), constants.X_OK);
+      accessSync(candidate, constants.X_OK);
       return true;
     } catch {
       return false;
     }
   });
+}
+
+// Returns the command that `open` would spawn on Linux when it cannot be found. `open` spawns
+// without an error listener, so a missing command crashes Storybook with an unhandled ENOENT
+// (#32949, #24191). It is bundled, so it cannot reach the copy of `xdg-open` that it ships with.
+// The conditions mirror `open`: macOS, Windows and WSL (outside a container) use other launchers.
+export function getMissingLinuxCommand(app?: string) {
+  if (process.platform === 'darwin' || process.platform === 'win32') {
+    return undefined;
+  }
+  if (isWsl && !isInsideContainer() && !app) {
+    return undefined;
+  }
+
+  const command = app ?? 'xdg-open';
+  return isExecutable(command) ? undefined : command;
+}
+
+export function warnMissingLinuxCommand(url: string, command: string) {
+  const hint =
+    command === 'xdg-open'
+      ? 'Install xdg-utils, or set the BROWSER environment variable.'
+      : 'Check the BROWSER environment variable.';
+  logger.warn(`Could not open ${url} in a browser, because "${command}" was not found. ${hint}`);
 }
 
 export class BrowserEnvError extends StorybookError {
@@ -144,57 +162,73 @@ function executeShellScript(scriptPath: string, url: string) {
   return true;
 }
 
-function startBrowserProcess(browser: string | undefined, url: string, args: string[]) {
-  // If we're on OS X, the user hasn't specifically
-  // requested a different browser, we can try opening
-  // Chrome with AppleScript. This lets us reuse an
+// macOS bundle IDs of the Chromium browsers that `openBrowser.applescript` can drive, mapped to
+// their application names. Bundle names differ from those, for example "Chrome".
+const CHROMIUM_BROWSERS_BY_BUNDLE_ID: Record<string, string> = {
+  'com.google.chrome.canary': 'Google Chrome Canary',
+  'com.google.chrome.dev': 'Google Chrome Dev',
+  'com.google.chrome.beta': 'Google Chrome Beta',
+  'com.google.chrome': 'Google Chrome',
+  'com.microsoft.edgemac': 'Microsoft Edge',
+  'com.brave.browser': 'Brave Browser',
+  'com.vivaldi.vivaldi': 'Vivaldi',
+  'org.chromium.chromium': 'Chromium',
+};
+
+// The tab-reusing AppleScript only runs for the browser that would open anyway: the default
+// browser when it is Chromium-based, or Chrome when BROWSER asks for it. Probing every running
+// Chromium browser ignored the default browser (#15316, #22929) and could start a Parallels VM
+// through its "Microsoft Edge" app (#34631).
+async function getAppleScriptBrowser(browser: string | undefined) {
+  if (browser === OSX_CHROME) {
+    return 'Google Chrome';
+  }
+  if (typeof browser === 'string') {
+    return undefined;
+  }
+  try {
+    const { id } = await defaultBrowser();
+    return CHROMIUM_BROWSERS_BY_BUNDLE_ID[id.toLowerCase()];
+  } catch {
+    return undefined;
+  }
+}
+
+async function startBrowserProcess(browser: string | undefined, url: string, args: string[]) {
+  // If we're on OS X, try opening a Chromium browser with AppleScript. This lets us reuse an
   // existing tab when possible instead of creating a new one.
-  const shouldTryOpenChromiumWithAppleScript =
-    process.platform === 'darwin' && (typeof browser !== 'string' || browser === OSX_CHROME);
+  const chromiumBrowser =
+    process.platform === 'darwin' ? await getAppleScriptBrowser(browser) : undefined;
 
-  if (shouldTryOpenChromiumWithAppleScript) {
-    // Will use the first open browser found from list
-    const supportedChromiumBrowsers = [
-      'Google Chrome Canary',
-      'Google Chrome Dev',
-      'Google Chrome Beta',
-      'Google Chrome',
-      'Microsoft Edge',
-      'Brave Browser',
-      'Vivaldi',
-      'Chromium',
-    ];
+  if (chromiumBrowser) {
+    try {
+      // Try our best to reuse existing tab
+      // on OSX Chromium-based browser with AppleScript
+      execSync(`ps cax | grep "${chromiumBrowser}"`);
+      const pathToApplescript = join(
+        resolvePackageDir('storybook'),
+        'assets',
+        'server',
+        'openBrowser.applescript'
+      );
 
-    for (const chromiumBrowser of supportedChromiumBrowsers) {
-      try {
-        // Try our best to reuse existing tab
-        // on OSX Chromium-based browser with AppleScript
-        execSync(`ps cax | grep "${chromiumBrowser}"`);
-        const pathToApplescript = join(
-          resolvePackageDir('storybook'),
-          'assets',
-          'server',
-          'openBrowser.applescript'
-        );
+      const command = `osascript "${pathToApplescript}" \"`
+        .concat(encodeURI(url), '" "')
+        .concat(
+          process.env.OPEN_MATCH_HOST_ONLY === 'true'
+            ? encodeURI(new URL(url).origin)
+            : encodeURI(url),
+          '" "'
+        )
+        .concat(chromiumBrowser, '"');
 
-        const command = `osascript "${pathToApplescript}" \"`
-          .concat(encodeURI(url), '" "')
-          .concat(
-            process.env.OPEN_MATCH_HOST_ONLY === 'true'
-              ? encodeURI(new URL(url).origin)
-              : encodeURI(url),
-            '" "'
-          )
-          .concat(chromiumBrowser, '"');
+      execSync(command, {
+        cwd: __dirname,
+      });
 
-        execSync(command, {
-          cwd: __dirname,
-        });
-
-        return true;
-      } catch {
-        // Ignore errors.
-      }
+      return true;
+    } catch {
+      // Ignore errors.
     }
   }
 
@@ -206,10 +240,9 @@ function startBrowserProcess(browser: string | undefined, url: string, args: str
     browser = undefined;
   }
 
-  if (isSystemXdgOpenMissing(browser)) {
-    logger.warn(
-      `Could not open ${url} in a browser, because xdg-open is not installed. Install xdg-utils, or set the BROWSER environment variable.`
-    );
+  const missingCommand = getMissingLinuxCommand(browser);
+  if (missingCommand) {
+    warnMissingLinuxCommand(url, missingCommand);
     // Handled: returning false would mean BROWSER=none, and throwing would retry with `open`.
     return true;
   }
@@ -233,7 +266,7 @@ function startBrowserProcess(browser: string | undefined, url: string, args: str
  * Reads the BROWSER environment variable and decides what to do with it. Returns true if it opened
  * a browser or ran a node.js script, otherwise false.
  */
-export function openBrowser(url: string) {
+export async function openBrowser(url: string) {
   const { action, value, args } = getBrowserEnv();
   // Returns win32 on PowerShell and Linux on WSL. Matches conditions when `sh` can be invoked.
   const canRunShell = process.platform !== 'win32';
@@ -255,7 +288,7 @@ export function openBrowser(url: string) {
       );
     }
     case Actions.BROWSER: {
-      return startBrowserProcess(value, url, args);
+      return await startBrowserProcess(value, url, args);
     }
     default: {
       throw new BrowserEnvError('Not implemented.');
